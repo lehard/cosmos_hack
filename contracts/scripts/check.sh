@@ -13,7 +13,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT"
 SCRIPTS=contracts/scripts
-CHECKS=(lint-schemas check-catalog check-errors check-tables asyncapi check-vectors check-internal check-examples check-normative check-bpmn)
+CHECKS=(lint-schemas check-catalog check-errors check-tables asyncapi check-vectors check-internal check-examples check-normative check-bpmn check-bpmn-js)
 
 node_ok() {
   command -v node >/dev/null 2>&1 || return 1

@@ -127,6 +127,7 @@
 | Е-74 `item.released` | Ф | `item.release.recorded` | |
 | `erp.posting_sent` | И | `operation.message.thrown` → `erp.posting.requested` | бизнес-ключ идемпотентности (AD-7) |
 | Е-75 `integration.ack` / `integration.error` | И | `erp.posting.responded` (`outcome`) | ось «учёт в 1С» — только по подтверждению |
+| Е-76 `erp.control_result_sent` [П процессной сессии] | И | `erp.posting.requested` (`action = inspection_result`) → `erp.posting.responded` | «результат контроля» уже есть в порте учёта (AD-18, кейс §3.3); изделие не держит |
 | Е-80 `quality.signal_raised` | В | `quality.signal.raised` | |
 | Е-81 `quality.observation_linked` | В | `quality.observation.linked` (новый дефект — `quality.defect.identified`) | |
 | Е-82 `quality.inspection_missing` | В | `quality.inspection.missing` | |
@@ -163,6 +164,8 @@
 | П-06 `capa.action_implemented` | Ф | `incident.action.implemented` | |
 | П-07 `capa.effectiveness_confirmed` / `capa.effectiveness_failed` | Р | `incident.action.evaluated` (`result`) | |
 | П-08 `norm.version_approved` | Р | `normative.version.activated` | после закрытия маршрута кворума |
+
+Не сведено, ждёт решения: предложение процессной сессии «возврат из брака в производство» (после удачной переделки на повторной ЗТ) — нового учётного действия в порте учёта AD-18 нет; если его примут, это совместимое расширение: новое значение `action` в `erp.posting.requested` и `erpAction` в `contracts/bpmn-ext/rules.yaml`.
 
 ### Коды ошибок процессной сессии
 
