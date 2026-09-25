@@ -36,13 +36,14 @@ COMPOSE_LOCKED := $(DOCKER_LOCKED) compose -f $(ROOT)/compose.yaml
 # Своя БД агента (make dev-db) подхватывается контейнером Go автоматически.
 DEV_DB_ENV := $(ROOT)/.dev/db.env
 
-GO_RUN = $(DOCKER_LOCKED) run --rm --network host -u $(UID):$(GID) \
+GO_DOCKER_ARGS = run --rm -u $(UID):$(GID) \
 	-e HOME=/tmp -e GOTOOLCHAIN=local -e GOFLAGS=-buildvcs=false \
 	-e GOCACHE=/cache/go-build -e GOMODCACHE=/cache/gomod \
 	-e GOLANGCI_LINT_CACHE=/cache/golangci -e TOOLBIN=/cache/bin \
 	-v $(CACHE)/go:/cache -v $(ROOT):/src -w /src/backend \
-	$(if $(wildcard $(DEV_DB_ENV)),--env-file $(DEV_DB_ENV) -v $(HOME)/.config/ant-dev:/run/ant-dev:ro) \
-	$(GO_IMAGE)
+	$(if $(wildcard $(DEV_DB_ENV)),--network ant-dev --env-file $(DEV_DB_ENV) -v $(HOME)/.config/ant-dev:/run/ant-dev:ro) \
+	$(GO_EXTRA) $(GO_IMAGE)
+GO_RUN = $(DOCKER_LOCKED) $(GO_DOCKER_ARGS)
 
 NODE_RUN = $(DOCKER_LOCKED) run --rm -u $(UID):$(GID) \
 	-e HOME=/tmp -e npm_config_cache=/cache/npm -e npm_config_update_notifier=false \
@@ -89,9 +90,12 @@ vendor: ## go mod tidy + go mod vendor (после изменения завис
 fmt: ## gofmt -w для бэкенда
 	$(GO_RUN) sh -c 'gofmt -w $$(find . -name "*.go" -not -path "./vendor/*")'
 
-run: ## Запустить роль api из исходников против своей БД (make dev-db)
+ANT_DEV_HTTP_PORT ?= 8481
+run: ## Запустить роль api из исходников против своей БД (make dev-db), порт ANT_DEV_HTTP_PORT
 	@test -f $(DEV_DB_ENV) || { echo "сначала make dev-db"; exit 1; }
-	$(GO_RUN) go run ./cmd/ant -role=api -config /src/deploy/config/ant.yaml
+	$(DOCKER) $(GO_DOCKER_ARGS) go run ./cmd/ant -role=api -config /src/deploy/config/ant.yaml
+run: GO_EXTRA = --name ant-dev-api-$(UID)-$(ANT_DEV_HTTP_PORT) -p 127.0.0.1:$(ANT_DEV_HTTP_PORT):8080 \
+	-e ANT_HTTP_ADDR=:8080 -e ANT_PROFILE=$(or $(ANT_PROFILE),demo)
 
 # --------------------------------------------------------- база агента -----
 

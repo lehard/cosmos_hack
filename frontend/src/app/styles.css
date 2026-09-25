@@ -1,0 +1,12 @@
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: 'PT Sans', system-ui, sans-serif;
+  color: #1f2937;
+  background: #f9fafb;
+}

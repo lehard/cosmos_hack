@@ -25,6 +25,10 @@ func runAPI(ctx context.Context, env *environment) error {
 		return err
 	}
 	defer pool.Close()
+	// Отмена раньше pool.Close: Close ждёт возврата всех соединений, в том
+	// числе занятых самопроверкой.
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
 	// Самопроверка после старта (FR-109): процесс жив сразу, готов — когда
 	// ответила БД. Пока БД не ответила, /readyz отдаёт 503.
@@ -67,10 +71,12 @@ func runAPI(ctx context.Context, env *environment) error {
 		BaseContext:       func(net.Listener) context.Context { return ctx },
 	}
 	errc := make(chan error, 1)
-	go func() {
-		log.Info("HTTP слушает", "addr", cfg.HTTP.Addr)
-		errc <- srv.ListenAndServe()
-	}()
+	ln, err := net.Listen("tcp", cfg.HTTP.Addr)
+	if err != nil {
+		return err
+	}
+	log.Info("HTTP слушает", "addr", ln.Addr().String())
+	go func() { errc <- srv.Serve(ln) }()
 
 	select {
 	case err := <-errc:

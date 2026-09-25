@@ -1,0 +1,44 @@
+{
+  "name": "ant-frontend",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Интерфейс ant: столы ролей, живая карта, паспорт изделия (Vue 3 + Naive UI)",
+  "license": "UNLICENSED",
+  "type": "module",
+  "engines": {
+    "node": "24.21.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "vue-tsc --noEmit -p tsconfig.app.json && vue-tsc --noEmit -p tsconfig.node.json",
+    "lint": "eslint --max-warnings=0 .",
+    "licenses": "license-checker-rseidelsohn --production --csv --out ../docs/licenses/npm.csv"
+  },
+  "dependencies": {
+    "@fontsource/pt-mono": "5.3.0",
+    "@fontsource/pt-sans": "5.3.0",
+    "@tanstack/vue-query": "5.103.2",
+    "@vicons/tabler": "0.13.0",
+    "naive-ui": "2.45.3",
+    "pinia": "4.0.3",
+    "vue": "3.5.43",
+    "vue-router": "5.3.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@tsconfig/node24": "24.0.5",
+    "@types/node": "24.19.0",
+    "@vitejs/plugin-vue": "6.0.9",
+    "@vue/tsconfig": "0.9.1",
+    "eslint": "10.11.0",
+    "eslint-plugin-vue": "10.11.1",
+    "globals": "17.12.0",
+    "license-checker-rseidelsohn": "5.0.1",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.70.1",
+    "vite": "8.3.1",
+    "vue-eslint-parser": "10.4.1",
+    "vue-tsc": "3.3.11"
+  }
+}
