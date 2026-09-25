@@ -1,0 +1,34 @@
+{
+  "case": "Неизвестное значение перечисления",
+  "note": "Причина паузы «coffee_break» неизвестна: принято как UNKNOWN(coffee_break) с флагом `ingest.anomaly.flagged`.",
+  "expect": {
+    "outcome": "accepted_with_flag",
+    "code": "ingest.unknown_enum_value",
+    "field": "/data/pause_reason",
+    "stored_as": "UNKNOWN(coffee_break)"
+  },
+  "message": {
+    "event_id": "01929a2b-7c3d-7e4f-8a5b-6c7d8e9f1004",
+    "event_type": "operation.run.paused",
+    "schema_version": 1,
+    "source_id": "terminal-weld-2",
+    "source_seq": 44,
+    "source_kind": "manual_entry",
+    "reliability": "high",
+    "occurred_at": "2026-09-25T10:15:30.123Z",
+    "correlation_id": "01929a2b-7c3d-7e4f-8a5b-000000000001",
+    "causation_id": null,
+    "item_id": "ENT01:FL-0007",
+    "integrity": {
+      "format_version": 1,
+      "crypto_profile": "gost",
+      "signers": [
+        "person-welder-o17@1"
+      ]
+    },
+    "data": {
+      "operation_run_id": "run-W2-FL-0007-1",
+      "pause_reason": "coffee_break"
+    }
+  }
+}

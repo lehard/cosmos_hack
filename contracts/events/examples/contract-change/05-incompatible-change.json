@@ -1,0 +1,59 @@
+{
+  "case": "Несовместимое изменение без новой мажорной версии",
+  "note": "Источник перешёл на форму v2 (execution/condition), но оставил schema_version 1: по схеме v1 нет обязательного machine_state — карантин. Правильный путь — новая мажорная версия (versions/equipment.state.changed.v2.json); в сборке несовместимость ловит проверка контракта.",
+  "expect": {
+    "outcome": "quarantined",
+    "code": "ingest.missing_required_field",
+    "field": "/data/machine_state"
+  },
+  "message": {
+    "event_id": "01929a2b-7c3d-7e4f-8a5b-6c7d8e9f1006",
+    "event_type": "equipment.state.changed",
+    "schema_version": 1,
+    "source_id": "edge-weld-1",
+    "source_seq": 102,
+    "source_kind": "machine",
+    "reliability": "high",
+    "occurred_at": "2026-09-25T10:15:30.123Z",
+    "correlation_id": "01929a2b-7c3d-7e4f-8a5b-000000000001",
+    "causation_id": null,
+    "item_id": "ENT01:FL-0007",
+    "integrity": {
+      "format_version": 1,
+      "crypto_profile": "gost",
+      "signers": [
+        "device-edge-weld-1@1"
+      ]
+    },
+    "data": {
+      "equipment_id": "IS-1",
+      "station_id": "weld-2",
+      "execution": "running",
+      "controller_mode": "automatic",
+      "condition": "warning",
+      "parameter": "current",
+      "value": {
+        "value": 1780,
+        "scale": 1,
+        "unit": "A"
+      },
+      "setpoint": {
+        "nominal": {
+          "value": 160,
+          "scale": 0,
+          "unit": "A"
+        },
+        "lower": {
+          "value": 150,
+          "scale": 0,
+          "unit": "A"
+        },
+        "upper": {
+          "value": 170,
+          "scale": 0,
+          "unit": "A"
+        }
+      }
+    }
+  }
+}

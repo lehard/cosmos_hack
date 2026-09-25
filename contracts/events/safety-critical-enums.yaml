@@ -1,0 +1,12 @@
+# Поля-перечисления, важные для безопасности (FR-29, AD-20): неизвестное значение в них — карантин
+# (`ingest.unknown_enum_value_critical`), а не `UNKNOWN(значение)` с флагом. Путь — JSON Pointer внутри `data`,
+# `*` — любой элемент массива. Остальные перечисления при неизвестном значении принимаются с флагом.
+version: 1
+fields:
+  inspection.result.recorded: [/outcome, /processing_state, /defects/*/severity, /measurements/*/verdict]
+  equipment.state.changed: [/condition, /execution]
+  equipment.deviation.detected: [/deviation_kind]
+  operator.check.skipped: []
+  operation.run.finished: [/completion]
+  erp.posting.responded: [/outcome]
+  federation.extract.received: [/origin_status]

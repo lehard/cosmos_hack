@@ -1,0 +1,37 @@
+{
+  "case": "Новое необязательное поле",
+  "note": "В data и в конверте есть поля, которых нет в схеме v1: сообщение принимается, исходник сохраняется целиком (схемы событий открыты).",
+  "expect": {
+    "outcome": "accepted"
+  },
+  "message": {
+    "event_id": "01929a2b-7c3d-7e4f-8a5b-6c7d8e9f1002",
+    "event_type": "operation.run.started",
+    "schema_version": 1,
+    "source_id": "terminal-weld-2",
+    "source_seq": 43,
+    "source_kind": "manual_entry",
+    "reliability": "high",
+    "occurred_at": "2026-09-25T10:15:30.123Z",
+    "correlation_id": "01929a2b-7c3d-7e4f-8a5b-000000000001",
+    "causation_id": null,
+    "item_id": "ENT01:FL-0007",
+    "integrity": {
+      "format_version": 1,
+      "crypto_profile": "gost",
+      "signers": [
+        "person-welder-o17@1"
+      ]
+    },
+    "data": {
+      "operation_run_id": "run-W2-FL-0007-1",
+      "operation_code": "030",
+      "step_key": "welding.weld",
+      "station_id": "weld-2",
+      "equipment_id": "IS-1",
+      "operator_id": "O17",
+      "spindle_warmup_s": 120
+    },
+    "trace_note": "edge-agent 2.4"
+  }
+}
