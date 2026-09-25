@@ -1,0 +1,71 @@
+{
+  "$comment": "Источник правил направления зависимостей (AD-1, AD-4, AD-40). Из него archgen генерирует backend/.golangci.yml. После правки: make generate.",
+  "module": "ant",
+  "domain_order": [
+    "reference",
+    "signing",
+    "access",
+    "item",
+    "process",
+    "vision",
+    "quality",
+    "machinelogs",
+    "documents",
+    "nonconformity",
+    "analysis",
+    "notifications",
+    "crossitem",
+    "engine"
+  ],
+  "domain_base": [
+    "reference",
+    "signing",
+    "access"
+  ],
+  "domain_other": [
+    "security",
+    "federation",
+    "analytics",
+    "simulation",
+    "erp",
+    "mes",
+    "cad",
+    "ingest",
+    "journal",
+    "ops",
+    "materials"
+  ],
+  "domain_extra_allow": [
+    "ant/internal/contracts",
+    "go.stargrave.org/gogost/v7/gost34112012256"
+  ],
+  "domain_deny_std": [
+    "os",
+    "math/rand",
+    "crypto/rand",
+    "net",
+    "database/sql",
+    "syscall",
+    "unsafe",
+    "log",
+    "plugin"
+  ],
+  "zones": [
+    "storage",
+    "transport",
+    "integration",
+    "fixtures"
+  ],
+  "tech_zones": [
+    "observability",
+    "security"
+  ],
+  "application_deny": [
+    "net/http",
+    "database/sql",
+    "github.com/danielgtaylor/huma",
+    "github.com/jackc/pgx",
+    "github.com/casbin",
+    "github.com/prometheus"
+  ]
+}

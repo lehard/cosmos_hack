@@ -1,5 +1,11 @@
 .claude/
 node_modules/
 /frontend/dist/
+/frontend/.npm-cache/*
+!/frontend/.npm-cache/.gitkeep
+/backend/internal/infrastructure/transport/webui/dist/*
+!/backend/internal/infrastructure/transport/webui/dist/.gitkeep
 .demo-keys/
+/.dev/
 *.log
+*.tsbuildinfo

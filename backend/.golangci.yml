@@ -1,0 +1,657 @@
+# СГЕНЕРИРОВАНО backend/tools/archgen из backend/tools/archgen/layers.json — руками не править.
+# Перегенерация: make generate. Правила: AD-1 (слои, зоны, порядок импорта), AD-4 (детерминизм домена).
+version: "2"
+run:
+  modules-download-mode: vendor
+  tests: true
+linters:
+  default: none
+  enable: [depguard, forbidigo, govet, errcheck, ineffassign, staticcheck, unused]
+  settings:
+    depguard:
+      rules:
+        domain:
+          list-mode: strict
+          files:
+            - "**/internal/domain/**"
+          allow:
+            - "$gostd"
+            - "ant/internal/contracts"
+            - "go.stargrave.org/gogost/v7/gost34112012256"
+            - "ant/internal/domain/access"
+            - "ant/internal/domain/analysis"
+            - "ant/internal/domain/analytics"
+            - "ant/internal/domain/cad"
+            - "ant/internal/domain/crossitem"
+            - "ant/internal/domain/documents"
+            - "ant/internal/domain/engine"
+            - "ant/internal/domain/erp"
+            - "ant/internal/domain/federation"
+            - "ant/internal/domain/ingest"
+            - "ant/internal/domain/item"
+            - "ant/internal/domain/journal"
+            - "ant/internal/domain/machinelogs"
+            - "ant/internal/domain/materials"
+            - "ant/internal/domain/mes"
+            - "ant/internal/domain/nonconformity"
+            - "ant/internal/domain/notifications"
+            - "ant/internal/domain/ops"
+            - "ant/internal/domain/process"
+            - "ant/internal/domain/quality"
+            - "ant/internal/domain/reference"
+            - "ant/internal/domain/security"
+            - "ant/internal/domain/signing"
+            - "ant/internal/domain/simulation"
+            - "ant/internal/domain/vision"
+          deny:
+            - pkg: "crypto/rand"
+              desc: "AD-1, AD-4: домен — только stdlib без ввода-вывода, часов и случайности, контракты, Стрибог-256 и доменные модули"
+            - pkg: "database/sql"
+              desc: "AD-1, AD-4: домен — только stdlib без ввода-вывода, часов и случайности, контракты, Стрибог-256 и доменные модули"
+            - pkg: "database/sql/driver"
+              desc: "AD-1, AD-4: домен — только stdlib без ввода-вывода, часов и случайности, контракты, Стрибог-256 и доменные модули"
+            - pkg: "log"
+              desc: "AD-1, AD-4: домен — только stdlib без ввода-вывода, часов и случайности, контракты, Стрибог-256 и доменные модули"
+            - pkg: "log/slog"
+              desc: "AD-1, AD-4: домен — только stdlib без ввода-вывода, часов и случайности, контракты, Стрибог-256 и доменные модули"
+            - pkg: "log/syslog"
+              desc: "AD-1, AD-4: домен — только stdlib без ввода-вывода, часов и случайности, контракты, Стрибог-256 и доменные модули"
+            - pkg: "math/rand"
+              desc: "AD-1, AD-4: домен — только stdlib без ввода-вывода, часов и случайности, контракты, Стрибог-256 и доменные модули"
+            - pkg: "math/rand/v2"
+              desc: "AD-1, AD-4: домен — только stdlib без ввода-вывода, часов и случайности, контракты, Стрибог-256 и доменные модули"
+            - pkg: "net"
+              desc: "AD-1, AD-4: домен — только stdlib без ввода-вывода, часов и случайности, контракты, Стрибог-256 и доменные модули"
+            - pkg: "net/http"
+              desc: "AD-1, AD-4: домен — только stdlib без ввода-вывода, часов и случайности, контракты, Стрибог-256 и доменные модули"
+            - pkg: "net/http/cgi"
+              desc: "AD-1, AD-4: домен — только stdlib без ввода-вывода, часов и случайности, контракты, Стрибог-256 и доменные модули"
+            - pkg: "net/http/cookiejar"
+              desc: "AD-1, AD-4: домен — только stdlib без ввода-вывода, часов и случайности, контракты, Стрибог-256 и доменные модули"
+            - pkg: "net/http/fcgi"
+              desc: "AD-1, AD-4: домен — только stdlib без ввода-вывода, часов и случайности, контракты, Стрибог-256 и доменные модули"
+            - pkg: "net/http/httptest"
+              desc: "AD-1, AD-4: домен — только stdlib без ввода-вывода, часов и случайности, контракты, Стрибог-256 и доменные модули"
+            - pkg: "net/http/httptrace"
+              desc: "AD-1, AD-4: домен — только stdlib без ввода-вывода, часов и случайности, контракты, Стрибог-256 и доменные модули"
+            - pkg: "net/http/httputil"
+              desc: "AD-1, AD-4: домен — только stdlib без ввода-вывода, часов и случайности, контракты, Стрибог-256 и доменные модули"
+            - pkg: "net/http/pprof"
+              desc: "AD-1, AD-4: домен — только stdlib без ввода-вывода, часов и случайности, контракты, Стрибог-256 и доменные модули"
+            - pkg: "net/mail"
+              desc: "AD-1, AD-4: домен — только stdlib без ввода-вывода, часов и случайности, контракты, Стрибог-256 и доменные модули"
+            - pkg: "net/netip"
+              desc: "AD-1, AD-4: домен — только stdlib без ввода-вывода, часов и случайности, контракты, Стрибог-256 и доменные модули"
+            - pkg: "net/rpc"
+              desc: "AD-1, AD-4: домен — только stdlib без ввода-вывода, часов и случайности, контракты, Стрибог-256 и доменные модули"
+            - pkg: "net/rpc/jsonrpc"
+              desc: "AD-1, AD-4: домен — только stdlib без ввода-вывода, часов и случайности, контракты, Стрибог-256 и доменные модули"
+            - pkg: "net/smtp"
+              desc: "AD-1, AD-4: домен — только stdlib без ввода-вывода, часов и случайности, контракты, Стрибог-256 и доменные модули"
+            - pkg: "net/textproto"
+              desc: "AD-1, AD-4: домен — только stdlib без ввода-вывода, часов и случайности, контракты, Стрибог-256 и доменные модули"
+            - pkg: "net/url"
+              desc: "AD-1, AD-4: домен — только stdlib без ввода-вывода, часов и случайности, контракты, Стрибог-256 и доменные модули"
+            - pkg: "os"
+              desc: "AD-1, AD-4: домен — только stdlib без ввода-вывода, часов и случайности, контракты, Стрибог-256 и доменные модули"
+            - pkg: "os/exec"
+              desc: "AD-1, AD-4: домен — только stdlib без ввода-вывода, часов и случайности, контракты, Стрибог-256 и доменные модули"
+            - pkg: "os/signal"
+              desc: "AD-1, AD-4: домен — только stdlib без ввода-вывода, часов и случайности, контракты, Стрибог-256 и доменные модули"
+            - pkg: "os/user"
+              desc: "AD-1, AD-4: домен — только stdlib без ввода-вывода, часов и случайности, контракты, Стрибог-256 и доменные модули"
+            - pkg: "plugin"
+              desc: "AD-1, AD-4: домен — только stdlib без ввода-вывода, часов и случайности, контракты, Стрибог-256 и доменные модули"
+            - pkg: "syscall"
+              desc: "AD-1, AD-4: домен — только stdlib без ввода-вывода, часов и случайности, контракты, Стрибог-256 и доменные модули"
+            - pkg: "unsafe"
+              desc: "AD-1, AD-4: домен — только stdlib без ввода-вывода, часов и случайности, контракты, Стрибог-256 и доменные модули"
+          # AD-1, AD-4: домен — только stdlib без ввода-вывода, часов и случайности, контракты, Стрибог-256 и доменные модули
+        domain-reference:
+          list-mode: strict
+          files:
+            - "**/internal/domain/reference/**"
+          allow:
+            - "$gostd"
+            - "ant/internal/contracts"
+            - "go.stargrave.org/gogost/v7/gost34112012256"
+            - "ant/internal/domain/reference"
+          # AD-1: domain/reference импортирует только доменные модули раньше себя в порядке reference → signing → access → item → process → vision → quality → machinelogs → documents → nonconformity → analysis → notifications → crossitem → engine
+        domain-signing:
+          list-mode: strict
+          files:
+            - "**/internal/domain/signing/**"
+          allow:
+            - "$gostd"
+            - "ant/internal/contracts"
+            - "go.stargrave.org/gogost/v7/gost34112012256"
+            - "ant/internal/domain/reference"
+            - "ant/internal/domain/signing"
+          # AD-1: domain/signing импортирует только доменные модули раньше себя в порядке reference → signing → access → item → process → vision → quality → machinelogs → documents → nonconformity → analysis → notifications → crossitem → engine
+        domain-access:
+          list-mode: strict
+          files:
+            - "**/internal/domain/access/**"
+          allow:
+            - "$gostd"
+            - "ant/internal/contracts"
+            - "go.stargrave.org/gogost/v7/gost34112012256"
+            - "ant/internal/domain/reference"
+            - "ant/internal/domain/signing"
+            - "ant/internal/domain/access"
+          # AD-1: domain/access импортирует только доменные модули раньше себя в порядке reference → signing → access → item → process → vision → quality → machinelogs → documents → nonconformity → analysis → notifications → crossitem → engine
+        domain-item:
+          list-mode: strict
+          files:
+            - "**/internal/domain/item/**"
+          allow:
+            - "$gostd"
+            - "ant/internal/contracts"
+            - "go.stargrave.org/gogost/v7/gost34112012256"
+            - "ant/internal/domain/reference"
+            - "ant/internal/domain/signing"
+            - "ant/internal/domain/access"
+            - "ant/internal/domain/item"
+          # AD-1: domain/item импортирует только доменные модули раньше себя в порядке reference → signing → access → item → process → vision → quality → machinelogs → documents → nonconformity → analysis → notifications → crossitem → engine
+        domain-process:
+          list-mode: strict
+          files:
+            - "**/internal/domain/process/**"
+          allow:
+            - "$gostd"
+            - "ant/internal/contracts"
+            - "go.stargrave.org/gogost/v7/gost34112012256"
+            - "ant/internal/domain/reference"
+            - "ant/internal/domain/signing"
+            - "ant/internal/domain/access"
+            - "ant/internal/domain/item"
+            - "ant/internal/domain/process"
+          # AD-1: domain/process импортирует только доменные модули раньше себя в порядке reference → signing → access → item → process → vision → quality → machinelogs → documents → nonconformity → analysis → notifications → crossitem → engine
+        domain-vision:
+          list-mode: strict
+          files:
+            - "**/internal/domain/vision/**"
+          allow:
+            - "$gostd"
+            - "ant/internal/contracts"
+            - "go.stargrave.org/gogost/v7/gost34112012256"
+            - "ant/internal/domain/reference"
+            - "ant/internal/domain/signing"
+            - "ant/internal/domain/access"
+            - "ant/internal/domain/item"
+            - "ant/internal/domain/process"
+            - "ant/internal/domain/vision"
+          # AD-1: domain/vision импортирует только доменные модули раньше себя в порядке reference → signing → access → item → process → vision → quality → machinelogs → documents → nonconformity → analysis → notifications → crossitem → engine
+        domain-quality:
+          list-mode: strict
+          files:
+            - "**/internal/domain/quality/**"
+          allow:
+            - "$gostd"
+            - "ant/internal/contracts"
+            - "go.stargrave.org/gogost/v7/gost34112012256"
+            - "ant/internal/domain/reference"
+            - "ant/internal/domain/signing"
+            - "ant/internal/domain/access"
+            - "ant/internal/domain/item"
+            - "ant/internal/domain/process"
+            - "ant/internal/domain/vision"
+            - "ant/internal/domain/quality"
+          # AD-1: domain/quality импортирует только доменные модули раньше себя в порядке reference → signing → access → item → process → vision → quality → machinelogs → documents → nonconformity → analysis → notifications → crossitem → engine
+        domain-machinelogs:
+          list-mode: strict
+          files:
+            - "**/internal/domain/machinelogs/**"
+          allow:
+            - "$gostd"
+            - "ant/internal/contracts"
+            - "go.stargrave.org/gogost/v7/gost34112012256"
+            - "ant/internal/domain/reference"
+            - "ant/internal/domain/signing"
+            - "ant/internal/domain/access"
+            - "ant/internal/domain/item"
+            - "ant/internal/domain/process"
+            - "ant/internal/domain/vision"
+            - "ant/internal/domain/quality"
+            - "ant/internal/domain/machinelogs"
+          # AD-1: domain/machinelogs импортирует только доменные модули раньше себя в порядке reference → signing → access → item → process → vision → quality → machinelogs → documents → nonconformity → analysis → notifications → crossitem → engine
+        domain-documents:
+          list-mode: strict
+          files:
+            - "**/internal/domain/documents/**"
+          allow:
+            - "$gostd"
+            - "ant/internal/contracts"
+            - "go.stargrave.org/gogost/v7/gost34112012256"
+            - "ant/internal/domain/reference"
+            - "ant/internal/domain/signing"
+            - "ant/internal/domain/access"
+            - "ant/internal/domain/item"
+            - "ant/internal/domain/process"
+            - "ant/internal/domain/vision"
+            - "ant/internal/domain/quality"
+            - "ant/internal/domain/machinelogs"
+            - "ant/internal/domain/documents"
+          # AD-1: domain/documents импортирует только доменные модули раньше себя в порядке reference → signing → access → item → process → vision → quality → machinelogs → documents → nonconformity → analysis → notifications → crossitem → engine
+        domain-nonconformity:
+          list-mode: strict
+          files:
+            - "**/internal/domain/nonconformity/**"
+          allow:
+            - "$gostd"
+            - "ant/internal/contracts"
+            - "go.stargrave.org/gogost/v7/gost34112012256"
+            - "ant/internal/domain/reference"
+            - "ant/internal/domain/signing"
+            - "ant/internal/domain/access"
+            - "ant/internal/domain/item"
+            - "ant/internal/domain/process"
+            - "ant/internal/domain/vision"
+            - "ant/internal/domain/quality"
+            - "ant/internal/domain/machinelogs"
+            - "ant/internal/domain/documents"
+            - "ant/internal/domain/nonconformity"
+          # AD-1: domain/nonconformity импортирует только доменные модули раньше себя в порядке reference → signing → access → item → process → vision → quality → machinelogs → documents → nonconformity → analysis → notifications → crossitem → engine
+        domain-analysis:
+          list-mode: strict
+          files:
+            - "**/internal/domain/analysis/**"
+          allow:
+            - "$gostd"
+            - "ant/internal/contracts"
+            - "go.stargrave.org/gogost/v7/gost34112012256"
+            - "ant/internal/domain/reference"
+            - "ant/internal/domain/signing"
+            - "ant/internal/domain/access"
+            - "ant/internal/domain/item"
+            - "ant/internal/domain/process"
+            - "ant/internal/domain/vision"
+            - "ant/internal/domain/quality"
+            - "ant/internal/domain/machinelogs"
+            - "ant/internal/domain/documents"
+            - "ant/internal/domain/nonconformity"
+            - "ant/internal/domain/analysis"
+          # AD-1: domain/analysis импортирует только доменные модули раньше себя в порядке reference → signing → access → item → process → vision → quality → machinelogs → documents → nonconformity → analysis → notifications → crossitem → engine
+        domain-notifications:
+          list-mode: strict
+          files:
+            - "**/internal/domain/notifications/**"
+          allow:
+            - "$gostd"
+            - "ant/internal/contracts"
+            - "go.stargrave.org/gogost/v7/gost34112012256"
+            - "ant/internal/domain/reference"
+            - "ant/internal/domain/signing"
+            - "ant/internal/domain/access"
+            - "ant/internal/domain/item"
+            - "ant/internal/domain/process"
+            - "ant/internal/domain/vision"
+            - "ant/internal/domain/quality"
+            - "ant/internal/domain/machinelogs"
+            - "ant/internal/domain/documents"
+            - "ant/internal/domain/nonconformity"
+            - "ant/internal/domain/analysis"
+            - "ant/internal/domain/notifications"
+          # AD-1: domain/notifications импортирует только доменные модули раньше себя в порядке reference → signing → access → item → process → vision → quality → machinelogs → documents → nonconformity → analysis → notifications → crossitem → engine
+        domain-crossitem:
+          list-mode: strict
+          files:
+            - "**/internal/domain/crossitem/**"
+          allow:
+            - "$gostd"
+            - "ant/internal/contracts"
+            - "go.stargrave.org/gogost/v7/gost34112012256"
+            - "ant/internal/domain/reference"
+            - "ant/internal/domain/signing"
+            - "ant/internal/domain/access"
+            - "ant/internal/domain/item"
+            - "ant/internal/domain/process"
+            - "ant/internal/domain/vision"
+            - "ant/internal/domain/quality"
+            - "ant/internal/domain/machinelogs"
+            - "ant/internal/domain/documents"
+            - "ant/internal/domain/nonconformity"
+            - "ant/internal/domain/analysis"
+            - "ant/internal/domain/notifications"
+            - "ant/internal/domain/crossitem"
+          # AD-1: domain/crossitem импортирует только доменные модули раньше себя в порядке reference → signing → access → item → process → vision → quality → machinelogs → documents → nonconformity → analysis → notifications → crossitem → engine
+        domain-engine:
+          list-mode: strict
+          files:
+            - "**/internal/domain/engine/**"
+          allow:
+            - "$gostd"
+            - "ant/internal/contracts"
+            - "go.stargrave.org/gogost/v7/gost34112012256"
+            - "ant/internal/domain/reference"
+            - "ant/internal/domain/signing"
+            - "ant/internal/domain/access"
+            - "ant/internal/domain/item"
+            - "ant/internal/domain/process"
+            - "ant/internal/domain/vision"
+            - "ant/internal/domain/quality"
+            - "ant/internal/domain/machinelogs"
+            - "ant/internal/domain/documents"
+            - "ant/internal/domain/nonconformity"
+            - "ant/internal/domain/analysis"
+            - "ant/internal/domain/notifications"
+            - "ant/internal/domain/crossitem"
+            - "ant/internal/domain/engine"
+          # AD-1: domain/engine импортирует только доменные модули раньше себя в порядке reference → signing → access → item → process → vision → quality → machinelogs → documents → nonconformity → analysis → notifications → crossitem → engine
+        domain-security:
+          list-mode: strict
+          files:
+            - "**/internal/domain/security/**"
+          allow:
+            - "$gostd"
+            - "ant/internal/contracts"
+            - "go.stargrave.org/gogost/v7/gost34112012256"
+            - "ant/internal/domain/reference"
+            - "ant/internal/domain/signing"
+            - "ant/internal/domain/access"
+            - "ant/internal/domain/security"
+          # AD-1: domain/security импортирует из домена только reference, signing, access
+        domain-federation:
+          list-mode: strict
+          files:
+            - "**/internal/domain/federation/**"
+          allow:
+            - "$gostd"
+            - "ant/internal/contracts"
+            - "go.stargrave.org/gogost/v7/gost34112012256"
+            - "ant/internal/domain/reference"
+            - "ant/internal/domain/signing"
+            - "ant/internal/domain/access"
+            - "ant/internal/domain/federation"
+          # AD-1: domain/federation импортирует из домена только reference, signing, access
+        domain-analytics:
+          list-mode: strict
+          files:
+            - "**/internal/domain/analytics/**"
+          allow:
+            - "$gostd"
+            - "ant/internal/contracts"
+            - "go.stargrave.org/gogost/v7/gost34112012256"
+            - "ant/internal/domain/reference"
+            - "ant/internal/domain/signing"
+            - "ant/internal/domain/access"
+            - "ant/internal/domain/analytics"
+          # AD-1: domain/analytics импортирует из домена только reference, signing, access
+        domain-simulation:
+          list-mode: strict
+          files:
+            - "**/internal/domain/simulation/**"
+          allow:
+            - "$gostd"
+            - "ant/internal/contracts"
+            - "go.stargrave.org/gogost/v7/gost34112012256"
+            - "ant/internal/domain/reference"
+            - "ant/internal/domain/signing"
+            - "ant/internal/domain/access"
+            - "ant/internal/domain/simulation"
+          # AD-1: domain/simulation импортирует из домена только reference, signing, access
+        domain-erp:
+          list-mode: strict
+          files:
+            - "**/internal/domain/erp/**"
+          allow:
+            - "$gostd"
+            - "ant/internal/contracts"
+            - "go.stargrave.org/gogost/v7/gost34112012256"
+            - "ant/internal/domain/reference"
+            - "ant/internal/domain/signing"
+            - "ant/internal/domain/access"
+            - "ant/internal/domain/erp"
+          # AD-1: domain/erp импортирует из домена только reference, signing, access
+        domain-mes:
+          list-mode: strict
+          files:
+            - "**/internal/domain/mes/**"
+          allow:
+            - "$gostd"
+            - "ant/internal/contracts"
+            - "go.stargrave.org/gogost/v7/gost34112012256"
+            - "ant/internal/domain/reference"
+            - "ant/internal/domain/signing"
+            - "ant/internal/domain/access"
+            - "ant/internal/domain/mes"
+          # AD-1: domain/mes импортирует из домена только reference, signing, access
+        domain-cad:
+          list-mode: strict
+          files:
+            - "**/internal/domain/cad/**"
+          allow:
+            - "$gostd"
+            - "ant/internal/contracts"
+            - "go.stargrave.org/gogost/v7/gost34112012256"
+            - "ant/internal/domain/reference"
+            - "ant/internal/domain/signing"
+            - "ant/internal/domain/access"
+            - "ant/internal/domain/cad"
+          # AD-1: domain/cad импортирует из домена только reference, signing, access
+        domain-ingest:
+          list-mode: strict
+          files:
+            - "**/internal/domain/ingest/**"
+          allow:
+            - "$gostd"
+            - "ant/internal/contracts"
+            - "go.stargrave.org/gogost/v7/gost34112012256"
+            - "ant/internal/domain/reference"
+            - "ant/internal/domain/signing"
+            - "ant/internal/domain/access"
+            - "ant/internal/domain/ingest"
+          # AD-1: domain/ingest импортирует из домена только reference, signing, access
+        domain-journal:
+          list-mode: strict
+          files:
+            - "**/internal/domain/journal/**"
+          allow:
+            - "$gostd"
+            - "ant/internal/contracts"
+            - "go.stargrave.org/gogost/v7/gost34112012256"
+            - "ant/internal/domain/reference"
+            - "ant/internal/domain/signing"
+            - "ant/internal/domain/access"
+            - "ant/internal/domain/journal"
+          # AD-1: domain/journal импортирует из домена только reference, signing, access
+        domain-ops:
+          list-mode: strict
+          files:
+            - "**/internal/domain/ops/**"
+          allow:
+            - "$gostd"
+            - "ant/internal/contracts"
+            - "go.stargrave.org/gogost/v7/gost34112012256"
+            - "ant/internal/domain/reference"
+            - "ant/internal/domain/signing"
+            - "ant/internal/domain/access"
+            - "ant/internal/domain/ops"
+          # AD-1: domain/ops импортирует из домена только reference, signing, access
+        domain-materials:
+          list-mode: strict
+          files:
+            - "**/internal/domain/materials/**"
+          allow:
+            - "$gostd"
+            - "ant/internal/contracts"
+            - "go.stargrave.org/gogost/v7/gost34112012256"
+            - "ant/internal/domain/reference"
+            - "ant/internal/domain/signing"
+            - "ant/internal/domain/access"
+            - "ant/internal/domain/materials"
+          # AD-1: domain/materials импортирует из домена только reference, signing, access
+        domain-unlisted:
+          list-mode: strict
+          files:
+            - "**/internal/domain/**"
+            - "!**/internal/domain/access/**"
+            - "!**/internal/domain/analysis/**"
+            - "!**/internal/domain/analytics/**"
+            - "!**/internal/domain/cad/**"
+            - "!**/internal/domain/crossitem/**"
+            - "!**/internal/domain/documents/**"
+            - "!**/internal/domain/engine/**"
+            - "!**/internal/domain/erp/**"
+            - "!**/internal/domain/federation/**"
+            - "!**/internal/domain/ingest/**"
+            - "!**/internal/domain/item/**"
+            - "!**/internal/domain/journal/**"
+            - "!**/internal/domain/machinelogs/**"
+            - "!**/internal/domain/materials/**"
+            - "!**/internal/domain/mes/**"
+            - "!**/internal/domain/nonconformity/**"
+            - "!**/internal/domain/notifications/**"
+            - "!**/internal/domain/ops/**"
+            - "!**/internal/domain/process/**"
+            - "!**/internal/domain/quality/**"
+            - "!**/internal/domain/reference/**"
+            - "!**/internal/domain/security/**"
+            - "!**/internal/domain/signing/**"
+            - "!**/internal/domain/simulation/**"
+            - "!**/internal/domain/vision/**"
+          allow:
+            - "$gostd"
+            - "ant/internal/contracts"
+            - "go.stargrave.org/gogost/v7/gost34112012256"
+            - "ant/internal/domain/reference"
+            - "ant/internal/domain/signing"
+            - "ant/internal/domain/access"
+          # AD-1: доменный модуль не внесён в backend/tools/archgen/layers.json — внесите его и выполните make generate
+        application:
+          list-mode: lax
+          files:
+            - "**/internal/application/**"
+          deny:
+            - pkg: "ant/internal/infrastructure/"
+              desc: "AD-1: application зависит только от domain и своих портов; HTTP, БД и инфраструктура — в infrastructure"
+            - pkg: "ant/cmd"
+              desc: "AD-1: application зависит только от domain и своих портов; HTTP, БД и инфраструктура — в infrastructure"
+            - pkg: "net/http"
+              desc: "AD-1: application зависит только от domain и своих портов; HTTP, БД и инфраструктура — в infrastructure"
+            - pkg: "database/sql"
+              desc: "AD-1: application зависит только от domain и своих портов; HTTP, БД и инфраструктура — в infrastructure"
+            - pkg: "github.com/danielgtaylor/huma"
+              desc: "AD-1: application зависит только от domain и своих портов; HTTP, БД и инфраструктура — в infrastructure"
+            - pkg: "github.com/jackc/pgx"
+              desc: "AD-1: application зависит только от domain и своих портов; HTTP, БД и инфраструктура — в infrastructure"
+            - pkg: "github.com/casbin"
+              desc: "AD-1: application зависит только от domain и своих портов; HTTP, БД и инфраструктура — в infrastructure"
+            - pkg: "github.com/prometheus"
+              desc: "AD-1: application зависит только от domain и своих портов; HTTP, БД и инфраструктура — в infrastructure"
+        infrastructure-storage:
+          list-mode: lax
+          files:
+            - "**/internal/infrastructure/storage/**"
+          deny:
+            - pkg: "ant/internal/infrastructure/transport"
+              desc: "AD-1: зоны storage, transport, integration, fixtures не импортируют друг друга — только порты application"
+            - pkg: "ant/internal/infrastructure/integration"
+              desc: "AD-1: зоны storage, transport, integration, fixtures не импортируют друг друга — только порты application"
+            - pkg: "ant/internal/infrastructure/fixtures"
+              desc: "AD-1: зоны storage, transport, integration, fixtures не импортируют друг друга — только порты application"
+            - pkg: "ant/cmd"
+              desc: "AD-1: зоны storage, transport, integration, fixtures не импортируют друг друга — только порты application"
+        infrastructure-transport:
+          list-mode: lax
+          files:
+            - "**/internal/infrastructure/transport/**"
+          deny:
+            - pkg: "ant/internal/infrastructure/storage"
+              desc: "AD-1: зоны storage, transport, integration, fixtures не импортируют друг друга — только порты application"
+            - pkg: "ant/internal/infrastructure/integration"
+              desc: "AD-1: зоны storage, transport, integration, fixtures не импортируют друг друга — только порты application"
+            - pkg: "ant/internal/infrastructure/fixtures"
+              desc: "AD-1: зоны storage, transport, integration, fixtures не импортируют друг друга — только порты application"
+            - pkg: "ant/cmd"
+              desc: "AD-1: зоны storage, transport, integration, fixtures не импортируют друг друга — только порты application"
+        infrastructure-integration:
+          list-mode: lax
+          files:
+            - "**/internal/infrastructure/integration/**"
+          deny:
+            - pkg: "ant/internal/infrastructure/storage"
+              desc: "AD-1: зоны storage, transport, integration, fixtures не импортируют друг друга — только порты application"
+            - pkg: "ant/internal/infrastructure/transport"
+              desc: "AD-1: зоны storage, transport, integration, fixtures не импортируют друг друга — только порты application"
+            - pkg: "ant/internal/infrastructure/fixtures"
+              desc: "AD-1: зоны storage, transport, integration, fixtures не импортируют друг друга — только порты application"
+            - pkg: "ant/cmd"
+              desc: "AD-1: зоны storage, transport, integration, fixtures не импортируют друг друга — только порты application"
+        infrastructure-fixtures:
+          list-mode: lax
+          files:
+            - "**/internal/infrastructure/fixtures/**"
+          deny:
+            - pkg: "ant/internal/infrastructure/storage"
+              desc: "AD-1: зоны storage, transport, integration, fixtures не импортируют друг друга — только порты application"
+            - pkg: "ant/internal/infrastructure/transport"
+              desc: "AD-1: зоны storage, transport, integration, fixtures не импортируют друг друга — только порты application"
+            - pkg: "ant/internal/infrastructure/integration"
+              desc: "AD-1: зоны storage, transport, integration, fixtures не импортируют друг друга — только порты application"
+            - pkg: "ant/cmd"
+              desc: "AD-1: зоны storage, transport, integration, fixtures не импортируют друг друга — только порты application"
+        infrastructure-observability:
+          list-mode: lax
+          files:
+            - "**/internal/infrastructure/observability/**"
+          deny:
+            - pkg: "ant/internal/infrastructure/storage"
+              desc: "AD-1: observability и security — технические библиотеки, зоны модулей не импортируют"
+            - pkg: "ant/internal/infrastructure/transport"
+              desc: "AD-1: observability и security — технические библиотеки, зоны модулей не импортируют"
+            - pkg: "ant/internal/infrastructure/integration"
+              desc: "AD-1: observability и security — технические библиотеки, зоны модулей не импортируют"
+            - pkg: "ant/internal/infrastructure/fixtures"
+              desc: "AD-1: observability и security — технические библиотеки, зоны модулей не импортируют"
+            - pkg: "ant/cmd"
+              desc: "AD-1: observability и security — технические библиотеки, зоны модулей не импортируют"
+        infrastructure-security:
+          list-mode: lax
+          files:
+            - "**/internal/infrastructure/security/**"
+          deny:
+            - pkg: "ant/internal/infrastructure/storage"
+              desc: "AD-1: observability и security — технические библиотеки, зоны модулей не импортируют"
+            - pkg: "ant/internal/infrastructure/transport"
+              desc: "AD-1: observability и security — технические библиотеки, зоны модулей не импортируют"
+            - pkg: "ant/internal/infrastructure/integration"
+              desc: "AD-1: observability и security — технические библиотеки, зоны модулей не импортируют"
+            - pkg: "ant/internal/infrastructure/fixtures"
+              desc: "AD-1: observability и security — технические библиотеки, зоны модулей не импортируют"
+            - pkg: "ant/cmd"
+              desc: "AD-1: observability и security — технические библиотеки, зоны модулей не импортируют"
+        internal-no-cmd:
+          list-mode: lax
+          files:
+            - "**/internal/**"
+            - "!**/cmd/**"
+          deny:
+            - pkg: "ant/cmd"
+              desc: "AD-1: сборка зависимостей — только в cmd/*"
+    forbidigo:
+      analyze-types: true
+      forbid:
+        - pattern: "^time\\.(Now|Since|Until|After|AfterFunc|Tick|NewTimer|NewTicker|Sleep)$"
+          pkg: "^time$"
+          msg: "AD-4: домен не читает часы — время приходит аргументом из записей журнала (DomainClock — в application)"
+        - pattern: "^rand\\..*$"
+          pkg: "^(math/rand(/v2)?|crypto/rand)$"
+          msg: "AD-4: в домене нет случайности; идентификаторы реакций — UUIDv5 от NS_ANT"
+        - pattern: "^os\\..*$"
+          pkg: "^os$"
+          msg: "AD-4: домен не делает ввода-вывода"
+  exclusions:
+    generated: lax
+    rules:
+      - path-except: (^|/)internal/domain/
+        linters: [forbidigo]
+issues:
+  # Все нарушения в строке, а не только первое: иначе unused скрывает forbidigo.
+  uniq-by-line: false
+  max-issues-per-linter: 0
+  max-same-issues: 0
+formatters:
+  enable: [gofmt]
+  exclusions:
+    paths: [vendor]
