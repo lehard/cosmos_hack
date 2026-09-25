@@ -1,0 +1,34 @@
+# Классификатор видов дефектов v1 — нормативный слой (FR-125, FR-14, FR-37).
+# Код, наименование, класс тяжести по ГОСТ 15467 (критический / значительный / малозначительный),
+# методы, способные выявить вид, признак «измеряемая характеристика» (значение против допуска).
+# Сигнал с кодом, которого здесь нет, принимается как «неизвестный вид» с флагом (FR-125).
+# Физический дефект — ключ (изделие, зона, место) без вида; вид уточняется новым наблюдением (FR-37).
+# Все значения — проектные допущения [ПП] для демо-изделия «фланец люка гермокорпуса»; меняются новой версией нормы через кворум.
+version: 1
+item_type_id: FL-100.00.000
+defect_types:
+  # ── входной контроль и мехобработка ──
+  - {code: M-DENT,       name: "Забоина",                         severity: major, measurable: false, methods: [camera, visual_human],             zone_kinds: [surface, groove]}
+  - {code: M-SCRATCH,    name: "Риска, царапина",                 severity: minor, measurable: false, methods: [camera, visual_human],             zone_kinds: [surface, groove]}
+  - {code: M-BURR,       name: "Заусенец",                        severity: minor, measurable: false, methods: [camera, visual_human],             zone_kinds: [surface, hole, groove]}
+  - {code: M-CHATTER,    name: "Вибрационная рябь",               severity: minor, measurable: false, methods: [camera, visual_human],             zone_kinds: [surface]}
+  - {code: M-DIM,        name: "Размер вне допуска",              severity: major, measurable: true,  methods: [cmm],                              zone_kinds: [surface, hole, groove]}
+  - {code: I-CERT,       name: "Нет или не соответствует сертификат поставщика", severity: major, measurable: false, methods: [supplier_documents], zone_kinds: [other]}
+  # ── сварка (шов W-1, участки по 40 мм) ──
+  - {code: W-UNDERCUT,   name: "Подрез",                          severity: major,    measurable: true,  methods: [camera, visual_human],          zone_kinds: [weld_section]}
+  - {code: W-SPATTER,    name: "Брызги",                          severity: minor,    measurable: false, methods: [camera, visual_human],          zone_kinds: [weld_section, surface]}
+  - {code: W-PORE-S,     name: "Поры на поверхности шва",         severity: major,    measurable: false, methods: [camera, visual_human, radiography], zone_kinds: [weld_section]}
+  - {code: W-CRATER,     name: "Кратер",                          severity: major,    measurable: false, methods: [camera, visual_human],          zone_kinds: [weld_section]}
+  - {code: W-BURNTHRU,   name: "Прожог",                          severity: critical, measurable: false, methods: [camera, visual_human, radiography], zone_kinds: [weld_section]}
+  - {code: W-PORE-I,     name: "Внутренние поры",                 severity: major,    measurable: true,  methods: [radiography, ultrasonic],       zone_kinds: [weld_section]}
+  - {code: W-LOF,        name: "Несплавление",                    severity: critical, measurable: false, methods: [radiography, ultrasonic],       zone_kinds: [weld_section]}
+  # ── сборка ──
+  - {code: A-FOD,        name: "Посторонние предметы в зоне",     severity: critical, measurable: false, methods: [camera, visual_human],          zone_kinds: [groove, cavity]}
+  - {code: A-FASTENER-MISSING, name: "Нет крепежа",              severity: critical, measurable: false, methods: [camera, visual_human],          zone_kinds: [joint]}
+  - {code: A-TORQUE,     name: "Момент затяжки вне нормы",        severity: major,    measurable: true,  methods: [torque],                        zone_kinds: [joint]}
+  - {code: A-MARK-MISSING, name: "Нет метки затяжки",            severity: minor,    measurable: false, methods: [camera, visual_human],          zone_kinds: [joint]}
+  - {code: A-COVER-ORIENT, name: "Неправильная ориентация крышки", severity: major,  measurable: false, methods: [camera, visual_human],          zone_kinds: [joint, surface]}
+  # ── испытание и выпуск ──
+  - {code: T-LEAK,       name: "Течь",                            severity: critical, measurable: true,  methods: [leak_test],                     zone_kinds: [weld_section, groove, joint]}
+  - {code: H-DAMAGE,     name: "Повреждение при перемещении",     severity: major,    measurable: false, methods: [camera, visual_human],          zone_kinds: [surface]}
+  - {code: H-MARKING,    name: "Маркировка нечитаема",            severity: minor,    measurable: false, methods: [camera, visual_human],          zone_kinds: [surface]}

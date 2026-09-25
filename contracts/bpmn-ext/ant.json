@@ -1,0 +1,388 @@
+{
+  "name": "ant",
+  "uri": "urn:ant:bpmn-ext:1",
+  "prefix": "ant",
+  "xml": {
+    "tagAlias": "lowerCase"
+  },
+  "description": "Расширение BPMN 2.0 системы ant (AD-17, FR-12, FR-156): свойства элементов процесса в extensionElements пространства urn:ant:bpmn-ext:1. Источник схемы: из дескриптора генерируются Go-структуры XML, XSD и таблица документации (эпик 02). Значения перечислений и обязательность — contracts/bpmn-ext/rules.yaml.",
+  "associations": [],
+  "types": [
+    {
+      "name": "Properties",
+      "superClass": [
+        "Element"
+      ],
+      "description": "Свойства шага: стабильный ключ, вид, цех и склад, специальный процесс, буфер, закрытие доступа к зоне, заверитель бумажной подписи, закрывающая точка, точка контроля, лимит доработок, учётное действие, тип события-триггера, область таймера.",
+      "properties": [
+        {
+          "name": "stepKey",
+          "type": "String",
+          "isAttr": true,
+          "description": "Стабильный ключ шага, сохраняемый между версиями; смена смысла — новый ключ (AD-17)."
+        },
+        {
+          "name": "stepKind",
+          "type": "String",
+          "isAttr": true,
+          "description": "Вид шага: operation | automated_inspection | human_inspection | movement | storage."
+        },
+        {
+          "name": "workshop",
+          "type": "String",
+          "isAttr": true,
+          "description": "Цех (для дорожки) — id места вида workshop."
+        },
+        {
+          "name": "warehouse",
+          "type": "String",
+          "isAttr": true,
+          "description": "Склад цеха (для дорожки)."
+        },
+        {
+          "name": "specialProcess",
+          "type": "Boolean",
+          "isAttr": true,
+          "description": "Специальный процесс (FR-151, ГОСТ Р 58633 п. 3.17)."
+        },
+        {
+          "name": "bufferPlace",
+          "type": "Boolean",
+          "isAttr": true,
+          "description": "Буфер или место очереди (FR-12)."
+        },
+        {
+          "name": "closesZoneAccess",
+          "type": "String",
+          "isAttr": true,
+          "description": "Зоны, доступ к которым закрывает шаг, через пробел (FR-20)."
+        },
+        {
+          "name": "paperAttester",
+          "type": "String",
+          "isAttr": true,
+          "description": "Роль заверителя бумажной подписи на шаге (AD-43); у заверителя — полномочие paper_attestation в области."
+        },
+        {
+          "name": "closingPoint",
+          "type": "String",
+          "isAttr": true,
+          "description": "Закрывающая точка: ZT-1…ZT-6, ZT-4.1, ZT-4.2, ZT-R, ZT-V."
+        },
+        {
+          "name": "inspectionPoint",
+          "type": "String",
+          "isAttr": true,
+          "description": "Точка контроля: KT-1…KT-5, KT-4d."
+        },
+        {
+          "name": "operationCode",
+          "type": "String",
+          "isAttr": true,
+          "description": "Операция по маршрутной карте."
+        },
+        {
+          "name": "reworkLimit",
+          "type": "Integer",
+          "isAttr": true,
+          "description": "Лимит повторов или доработок (FR-18)."
+        },
+        {
+          "name": "reworkLimitScope",
+          "type": "String",
+          "isAttr": true,
+          "description": "К чему лимит: item | zone | loop."
+        },
+        {
+          "name": "erpAction",
+          "type": "String",
+          "isAttr": true,
+          "description": "Учётное действие на событии-сообщении «в 1С» (AD-18)."
+        },
+        {
+          "name": "triggerEventType",
+          "type": "String",
+          "isAttr": true,
+          "description": "Тип события каталога, которое запускает стартовое или промежуточное событие-сообщение (решение Д-5)."
+        },
+        {
+          "name": "timerScope",
+          "type": "String",
+          "isAttr": true,
+          "description": "Для граничного таймера: until_started — окно до начала операции; activity — всё время шага."
+        },
+        {
+          "name": "outcome",
+          "type": "String",
+          "isAttr": true,
+          "description": "Для конечного события вызываемого подпроцесса: значение переменной nc.outcome в точке вызова."
+        }
+      ]
+    },
+    {
+      "name": "Inspection",
+      "superClass": [
+        "Element"
+      ],
+      "description": "Метод контроля и покрытие видов дефектов (FR-12, FR-14).",
+      "properties": [
+        {
+          "name": "method",
+          "type": "String",
+          "isAttr": true,
+          "description": "Метод контроля (defs.v1.json#/definitions/inspection_method)."
+        },
+        {
+          "name": "phase",
+          "type": "String",
+          "isAttr": true,
+          "description": "Фаза контроля."
+        },
+        {
+          "name": "coverage",
+          "type": "String",
+          "isAttr": true,
+          "description": "Коды видов дефектов классификатора, которые метод способен выявить, через пробел."
+        },
+        {
+          "name": "recipeRef",
+          "type": "String",
+          "isAttr": true,
+          "description": "Карта контроля `‹id›@‹версия›`."
+        },
+        {
+          "name": "observationQualityMinBp",
+          "type": "Integer",
+          "isAttr": true,
+          "description": "Порог качества наблюдения, б. п.: ниже — «оценка невозможна»."
+        }
+      ]
+    },
+    {
+      "name": "Requirement",
+      "superClass": [
+        "Element"
+      ],
+      "description": "Требование КД: характеристика, допуск, ревизия (FR-12).",
+      "properties": [
+        {
+          "name": "characteristic",
+          "type": "String",
+          "isAttr": true,
+          "description": "Характеристика."
+        },
+        {
+          "name": "tolerance",
+          "type": "String",
+          "isAttr": true,
+          "description": "Допуск."
+        },
+        {
+          "name": "kdRef",
+          "type": "String",
+          "isAttr": true,
+          "description": "Документ КД и ревизия."
+        }
+      ]
+    },
+    {
+      "name": "ZoneRef",
+      "superClass": [
+        "Element"
+      ],
+      "description": "Зона изделия, к которой относится шаг (FR-12, FR-46).",
+      "properties": [
+        {
+          "name": "zone",
+          "type": "String",
+          "isAttr": true,
+          "description": "Идентификатор зоны из номенклатуры."
+        }
+      ]
+    },
+    {
+      "name": "PresentationPoint",
+      "superClass": [
+        "Element"
+      ],
+      "description": "Точка предъявления: полномочие, роль, срок ожидания, эскалация при повторном предъявлении (FR-19).",
+      "properties": [
+        {
+          "name": "authority",
+          "type": "String",
+          "isAttr": true,
+          "description": "Полномочие подписи."
+        },
+        {
+          "name": "role",
+          "type": "String",
+          "isAttr": true,
+          "description": "Роль."
+        },
+        {
+          "name": "stampKind",
+          "type": "String",
+          "isAttr": true,
+          "description": "Вид цифрового клейма."
+        },
+        {
+          "name": "waitLimitMinutes",
+          "type": "Integer",
+          "isAttr": true,
+          "description": "Срок ожидания, минут."
+        },
+        {
+          "name": "waitLimitWorkDays",
+          "type": "Integer",
+          "isAttr": true,
+          "description": "Срок ожидания, рабочих дней."
+        },
+        {
+          "name": "repeatAuthority",
+          "type": "String",
+          "isAttr": true,
+          "description": "Полномочие при повторном предъявлении (уровнем выше)."
+        },
+        {
+          "name": "customerAcceptance",
+          "type": "Boolean",
+          "isAttr": true,
+          "description": "Изделие в перечне приёмок ПЗ/ВП — нужна подпись представителя заказчика."
+        }
+      ]
+    },
+    {
+      "name": "Precondition",
+      "superClass": [
+        "Element"
+      ],
+      "description": "Предусловие операции на дату операции (FR-17, FR-20).",
+      "properties": [
+        {
+          "name": "kind",
+          "type": "String",
+          "isAttr": true,
+          "description": "Вид предусловия."
+        },
+        {
+          "name": "mode",
+          "type": "String",
+          "isAttr": true,
+          "description": "block | record_violation."
+        },
+        {
+          "name": "ref",
+          "type": "String",
+          "isAttr": true,
+          "description": "Параметр: квалификация, оборудование, зона, партия."
+        }
+      ]
+    },
+    {
+      "name": "Document",
+      "superClass": [
+        "Element"
+      ],
+      "description": "Документ шага — шаблон нормативного слоя (FR-12, AD-12).",
+      "properties": [
+        {
+          "name": "template",
+          "type": "String",
+          "isAttr": true,
+          "description": "Шаблон документа."
+        }
+      ]
+    },
+    {
+      "name": "ReactionMap",
+      "superClass": [
+        "Element"
+      ],
+      "description": "Карта реакций шага (FR-48).",
+      "properties": [
+        {
+          "name": "ref",
+          "type": "String",
+          "isAttr": true,
+          "description": "Карта реакций `‹id›@‹версия›`."
+        }
+      ]
+    },
+    {
+      "name": "Norm",
+      "superClass": [
+        "Element"
+      ],
+      "description": "Норма времени и пропускной способности узла (FR-5, FR-12).",
+      "properties": [
+        {
+          "name": "timeMinutes",
+          "type": "Integer",
+          "isAttr": true,
+          "description": "Норма времени, минут."
+        },
+        {
+          "name": "timeMinMinutes",
+          "type": "Integer",
+          "isAttr": true,
+          "description": "Нижняя граница нормы."
+        },
+        {
+          "name": "timeMaxMinutes",
+          "type": "Integer",
+          "isAttr": true,
+          "description": "Верхняя граница нормы."
+        },
+        {
+          "name": "queueNormMinutes",
+          "type": "Integer",
+          "isAttr": true,
+          "description": "Норма ожидания в очереди, минут."
+        },
+        {
+          "name": "throughputPerShift",
+          "type": "Integer",
+          "isAttr": true,
+          "description": "Пропускная способность за смену."
+        },
+        {
+          "name": "idleThresholdMinutes",
+          "type": "Integer",
+          "isAttr": true,
+          "description": "Порог простоя в рабочую смену."
+        }
+      ]
+    },
+    {
+      "name": "NormRef",
+      "superClass": [
+        "Element"
+      ],
+      "description": "Нормативная опора для слоя «нормы» (FR-156): пункт стандарта, что проверить, что делает система; только из проверенного перечня norm-anchors.yaml.",
+      "properties": [
+        {
+          "name": "standard",
+          "type": "String",
+          "isAttr": true,
+          "description": "Стандарт."
+        },
+        {
+          "name": "clause",
+          "type": "String",
+          "isAttr": true,
+          "description": "Пункт."
+        },
+        {
+          "name": "check",
+          "type": "String",
+          "description": "Что проверить на шаге."
+        },
+        {
+          "name": "systemAction",
+          "type": "String",
+          "description": "Что делает система на шаге."
+        }
+      ]
+    }
+  ]
+}

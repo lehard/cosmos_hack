@@ -1,0 +1,199 @@
+# Стартовая политика доступа v1 (AD-15, FR-78, FR-85, FR-145, PRD §11.16, §11.18).
+# Загружается генезисом записями policy.* (AD-33); дальше меняется только записями журнала через маршрут подписей.
+# Casbin — единственный вычислитель; модель: роль в области + наследование ролей + условия по атрибутам.
+# Действия — идентификаторы операций `‹модуль›.‹объект›.‹действие›` (x-ant-action, AD-40); `*` — любой сегмент.
+# Каталог операций объявляет эпик 02; при расхождении имён правится эта затравка (эпик 26 — владелец политики).
+# Сотрудники — только условные псевдонимы (кейс §4.6); демо-персоны сценариев — те же псевдонимы, ключи класса scenario (AD-33).
+version: 1
+enterprise_code: ENT01
+
+# Иерархия областей: здание → цех → участок → рабочее место (AD-15). Совпадает с normative/reference/flange/locations.yaml.
+scopes:
+  root: ent01
+  paths: [ent01, ent01/b1, ent01/b1/sk, ent01/b1/mc, ent01/b1/wc, ent01/b1/ac, ent01/b1/qa, ent01/b1/ndt]
+
+roles:
+  # ── пять ролей кейса (основа) ──
+  - id: quality_inspector
+    title: "Контролёр качества"
+    case_role: true
+    actions: ["quality.*.read", "nonconformity.signal.reject", "nonconformity.nonconformity.confirm", "nonconformity.recheck.request", "nonconformity.item.isolate", "nonconformity.presentation.resolve", "nonconformity.lot.resolve", "nonconformity.containment.set", "nonconformity.disposition.verify", "item.intervention.close", "item.identification.confirm", "analysis.item.assess", "documents.document.sign", "documents.document.request", "binding.link.assign", "item.*.read", "analysis.*.read", "process.*.read"]
+  - id: site_foreman
+    title: "Мастер участка"
+    case_role: true
+    actions: ["process.movement.send", "process.movement.receive", "item.presentation.record", "item.carrier.apply", "item.carrier.remove", "item.intervention.open", "access.assignment.set", "access.assignment.clear", "notifications.task.acknowledge", "documents.document.sign", "documents.document.request", "item.*.read", "process.*.read", "quality.*.read"]
+  - id: technologist
+    title: "Технолог"
+    case_role: true
+    actions: ["analysis.hypothesis.record", "analysis.cause.conclude", "analysis.scope.narrow", "analysis.scope.expand", "analysis.analysis.scope", "analysis.action.*", "nonconformity.disposition.set", "process.version.submit", "process.version.draft", "documents.document.sign", "documents.document.request", "analysis.*.read", "item.*.read", "process.*.read", "quality.*.read", "machinelogs.*.read"]
+  - id: production_manager
+    title: "Руководитель производства"
+    case_role: true
+    actions: ["process.version.activate", "process.version.retire", "nonconformity.process_hold.set", "nonconformity.process_hold.release", "documents.document.sign", "analytics.*.read", "item.*.read", "process.*.read", "analysis.*.read", "quality.*.read", "reference.*.read"]
+  - id: administrator
+    title: "Администратор (безопасности)"
+    case_role: true
+    actions: ["access.person.register", "access.account.activate", "access.policy.grant", "access.policy.revoke", "signing.key.register", "signing.key.revoke", "ops.source.disable", "ops.source.enable", "ops.processing.retry", "ingest.message.reprocess", "erp.posting.resend", "simulation.run.*", "reference.*.define", "ops.*.read", "ingest.*.read", "access.*.read"]
+  # ── дополнительные роли (PRD §2, AD-15) ──
+  - id: performer
+    title: "Исполнитель"
+    actions: ["process.operation.start", "process.operation.pause", "process.operation.resume", "process.operation.finish", "access.operator.confirm_step", "access.operator.report_deviation", "access.operator.request_inspection", "process.movement.receive", "notifications.task.acknowledge", "item.assembly.record"]
+  - id: storekeeper
+    title: "Кладовщик"
+    inherits: [performer]
+    actions: ["crossitem.lot.register", "crossitem.lot.issue", "item.release.record", "process.movement.send"]
+  - id: customer_representative
+    title: "Представитель заказчика (ВП / ПЗ)"
+    actions: ["documents.document.sign", "documents.decision_card.read"]
+  - id: approver
+    title: "Согласующий (держатель КД, метролог, член комиссии)"
+    actions: ["documents.document.sign", "documents.decision_card.read"]
+  - id: security_auditor
+    title: "Аудитор ИБ"
+    actions: ["security.*.read", "access.*.read", "journal.*.read", "access.audit.set_parameters", "signing.key.register", "access.policy.grant"]
+  # ── руководящие подписанты — наследники базовых ролей ──
+  - {id: head_of_qc,       title: "Начальник ОТК",           inherits: [quality_inspector], actions: ["analyzer.passport.reinstate", "analyzer.passport.admit", "nonconformity.containment.release", "nonconformity.concession.revoke", "access.policy.grant", "signing.key.register"]}
+  - {id: head_of_workshop, title: "Начальник цеха",          inherits: [site_foreman],      actions: ["nonconformity.containment.release"]}
+  - {id: chief_welder,     title: "Главный сварщик",         inherits: [technologist],      actions: []}
+  - {id: metrologist,      title: "Метролог",                inherits: [approver],          actions: ["reference.equipment.verify"]}
+  - {id: design_authority, title: "Держатель КД (конструктор)", inherits: [approver],       actions: []}
+  - {id: ndt_specialist,   title: "Дефектоскопист",          inherits: [performer],         actions: []}
+
+# Полномочия — особые права поверх роли с рамками и сроком (FR-50, FR-78). Цифровые клейма — ниже.
+authorities:
+  - {id: qc_acceptance,            title: "Приёмка на точке предъявления ОТК"}
+  - {id: qc_acceptance_repeat,     title: "Приёмка при повторном предъявлении (уровнем выше)"}
+  - {id: customer_acceptance,      title: "Приёмка представителем заказчика по перечню"}
+  - {id: first_article,            title: "Акт первой детали"}
+  - {id: quorum_signature,         title: "Подпись в кворуме версии процесса"}
+  - {id: nc_disposition,           title: "Решение по несоответствию (рамки по тяжести)"}
+  - {id: concession_approval,      title: "Подпись разрешения на отклонение"}
+  - {id: scrap_approval,           title: "Утверждение акта о браке"}
+  - {id: weld_repair_approval,     title: "Согласие на повторный ремонт шва"}
+  - {id: rework_limit_waiver,      title: "Разрешение сверх лимита доработок (FR-18)"}
+  - {id: cause_confirmation,       title: "Подтверждение причины"}
+  - {id: operator_error_confirmation, title: "Подтверждение ошибки исполнителя (после объяснения работника)"}
+  - {id: risk_scope_narrowing,     title: "Сужение области риска"}
+  - {id: containment_release,      title: "Снятие блока"}
+  - {id: process_hold,             title: "Остановка и снятие остановки точки процесса"}
+  - {id: analyzer_admission,       title: "Допуск версии анализатора"}
+  - {id: analyzer_reinstate,       title: "Возврат анализатора после отката"}
+  - {id: controller_assignment_approval, title: "Согласование назначения контролёра на пост (PRD §11.18)"}
+  - {id: paper_attestation,        title: "Заверение бумажной подписи (AD-43)"}
+  - {id: second_signature_qc,      title: "Вторая подпись: полномочия ОТК, клейма, ключи контролёров (AD-11)"}
+  - {id: second_signature_production, title: "Вторая подпись: полномочия и ключи производства (AD-11)"}
+  - {id: second_signature_audit,   title: "Вторая подпись: привилегии администраторов и аудита (AD-11)"}
+
+# Виды контроля для цифровых клейм (FR-145): одно клеймо на вид контроля.
+stamp_kinds: [incoming, dimensional, visual, weld, assembly, leak_test, final]
+
+persons:
+  - {id: INS-01,  name: "Контролёр ОТК 1",           roles: [{role: quality_inspector, scope: ent01/b1}]}
+  - {id: INS-02,  name: "Контролёр ОТК 2",           roles: [{role: quality_inspector, scope: ent01/b1}]}
+  - {id: HQC-01,  name: "Начальник ОТК",             roles: [{role: head_of_qc, scope: ent01}]}
+  - {id: FOR-SK,  name: "Мастер склада и ВК",        roles: [{role: site_foreman, scope: ent01/b1/sk}]}
+  - {id: FOR-MC,  name: "Мастер механического цеха", roles: [{role: site_foreman, scope: ent01/b1/mc}]}
+  - {id: FOR-WC,  name: "Мастер сварочного цеха",    roles: [{role: site_foreman, scope: ent01/b1/wc}]}
+  - {id: FOR-AC,  name: "Мастер сборочно-испытательного цеха", roles: [{role: site_foreman, scope: ent01/b1/ac}]}
+  - {id: HWS-WC,  name: "Начальник сварочного цеха", roles: [{role: head_of_workshop, scope: ent01/b1/wc}]}
+  - {id: HWS-AC,  name: "Начальник сборочно-испытательного цеха", roles: [{role: head_of_workshop, scope: ent01/b1/ac}]}
+  - {id: TEC-01,  name: "Технолог",                  roles: [{role: technologist, scope: ent01}]}
+  - {id: CWL-01,  name: "Главный сварщик",           roles: [{role: chief_welder, scope: ent01}]}
+  - {id: PM-01,   name: "Руководитель производства", roles: [{role: production_manager, scope: ent01}]}
+  - {id: ADM-01,  name: "Администратор безопасности", roles: [{role: administrator, scope: ent01}]}
+  - {id: AUD-01,  name: "Аудитор ИБ",                roles: [{role: security_auditor, scope: ent01}]}
+  - {id: O17,     name: "Оператор ЧПУ O17",          roles: [{role: performer, scope: ent01/b1/mc}]}
+  - {id: O18,     name: "Оператор ЧПУ O18",          roles: [{role: performer, scope: ent01/b1/mc}]}
+  - {id: W21,     name: "Сварщик W21",               roles: [{role: performer, scope: ent01/b1/wc}]}
+  - {id: W22,     name: "Сварщик W22",               roles: [{role: performer, scope: ent01/b1/wc}]}
+  - {id: A31,     name: "Сборщик A31",               roles: [{role: performer, scope: ent01/b1/ac}]}
+  - {id: T41,     name: "Испытатель T41",            roles: [{role: performer, scope: ent01/b1/ac}]}
+  - {id: STK-51,  name: "Кладовщик",                 roles: [{role: storekeeper, scope: ent01/b1}]}
+  - {id: NDT-61,  name: "Дефектоскопист",            roles: [{role: ndt_specialist, scope: ent01/b1/ndt}]}
+  - {id: CR-71,   name: "Представитель заказчика",   roles: [{role: customer_representative, scope: ent01}]}
+  - {id: DA-81,   name: "Держатель КД",              roles: [{role: design_authority, scope: ent01}]}
+  - {id: MET-82,  name: "Метролог",                  roles: [{role: metrologist, scope: ent01}]}
+
+grants:
+  authorities:
+    - {person: INS-01, authority: qc_acceptance,        scope: ent01/b1}
+    - {person: INS-02, authority: qc_acceptance,        scope: ent01/b1}
+    - {person: INS-01, authority: quorum_signature,     scope: ent01}
+    - {person: INS-01, authority: nc_disposition,       scope: ent01/b1, limits: {max_severity: minor}}
+    - {person: HQC-01, authority: qc_acceptance_repeat, scope: ent01}
+    - {person: HQC-01, authority: nc_disposition,       scope: ent01}
+    - {person: HQC-01, authority: concession_approval,  scope: ent01}
+    - {person: HQC-01, authority: containment_release,  scope: ent01}
+    - {person: HQC-01, authority: analyzer_admission,   scope: ent01}
+    - {person: HQC-01, authority: analyzer_reinstate,   scope: ent01}
+    - {person: HQC-01, authority: controller_assignment_approval, scope: ent01}
+    - {person: HQC-01, authority: second_signature_qc,  scope: ent01}
+    - {person: HQC-01, authority: risk_scope_narrowing, scope: ent01}
+    - {person: TEC-01, authority: nc_disposition,       scope: ent01}
+    - {person: TEC-01, authority: concession_approval,  scope: ent01}
+    - {person: TEC-01, authority: cause_confirmation,   scope: ent01}
+    - {person: TEC-01, authority: risk_scope_narrowing, scope: ent01}
+    - {person: TEC-01, authority: quorum_signature,     scope: ent01}
+    - {person: TEC-01, authority: analyzer_admission,   scope: ent01}
+    - {person: CWL-01, authority: weld_repair_approval, scope: ent01/b1/wc}
+    - {person: CWL-01, authority: rework_limit_waiver,  scope: ent01/b1/wc}
+    - {person: PM-01,  authority: quorum_signature,     scope: ent01}
+    - {person: PM-01,  authority: scrap_approval,       scope: ent01}
+    - {person: PM-01,  authority: process_hold,         scope: ent01}
+    - {person: PM-01,  authority: second_signature_production, scope: ent01}
+    - {person: HWS-WC, authority: process_hold,         scope: ent01/b1/wc}
+    - {person: AUD-01, authority: second_signature_audit, scope: ent01}
+    - {person: CR-71,  authority: customer_acceptance,  scope: ent01}
+    - {person: CR-71,  authority: concession_approval,  scope: ent01}
+    - {person: DA-81,  authority: concession_approval,  scope: ent01}
+    - {person: MET-82, authority: analyzer_admission,   scope: ent01}
+    - {person: INS-01, authority: first_article,        scope: ent01/b1/mc}
+    - {person: FOR-SK, authority: paper_attestation,    scope: ent01/b1/sk}
+    - {person: FOR-MC, authority: paper_attestation,    scope: ent01/b1/mc}
+    - {person: FOR-WC, authority: paper_attestation,    scope: ent01/b1/wc}
+    - {person: FOR-AC, authority: paper_attestation,    scope: ent01/b1/ac}
+    - {person: HQC-01, authority: paper_attestation,    scope: ent01}
+    - {person: HWS-WC, authority: paper_attestation,    scope: ent01/b1/wc}
+    - {person: HWS-AC, authority: paper_attestation,    scope: ent01/b1/ac}
+  stamps:
+    - {person: INS-01, stamp_id: "ОТК-01-ВК",  kind: incoming,    scope: ent01/b1/sk, order_ref: "Приказ № 1-К [ПП]"}
+    - {person: INS-01, stamp_id: "ОТК-01-РК",  kind: dimensional, scope: ent01/b1/mc, order_ref: "Приказ № 1-К [ПП]"}
+    - {person: INS-01, stamp_id: "ОТК-01-ВИЗ", kind: visual,      scope: ent01/b1,    order_ref: "Приказ № 1-К [ПП]"}
+    - {person: INS-01, stamp_id: "ОТК-01-СВ",  kind: weld,        scope: ent01/b1/wc, order_ref: "Приказ № 1-К [ПП]"}
+    - {person: INS-02, stamp_id: "ОТК-02-СБ",  kind: assembly,    scope: ent01/b1/ac, order_ref: "Приказ № 1-К [ПП]"}
+    - {person: INS-02, stamp_id: "ОТК-02-ГЕ",  kind: leak_test,   scope: ent01/b1/ac, order_ref: "Приказ № 1-К [ПП]"}
+    - {person: INS-02, stamp_id: "ОТК-02-ОК",  kind: final,       scope: ent01/b1/qa, order_ref: "Приказ № 1-К [ПП]"}
+    - {person: INS-02, stamp_id: "ОТК-02-ВИЗ", kind: visual,      scope: ent01/b1,    order_ref: "Приказ № 1-К [ПП]"}
+    - {person: HQC-01, stamp_id: "ОТК-00-ОК",  kind: final,       scope: ent01,       order_ref: "Приказ № 1-К [ПП]"}
+  qualifications:
+    - {person: W21, qualification: welder_argon_arc_amg6, scope: ent01/b1/wc, valid_until: "2027-06-30T00:00:00.000Z", certificate_ref: "НАКС [ПП]"}
+    - {person: W22, qualification: welder_argon_arc_amg6, scope: ent01/b1/wc, valid_until: "2026-12-31T00:00:00.000Z", certificate_ref: "НАКС [ПП]"}
+    - {person: O17, qualification: cnc_operator,          scope: ent01/b1/mc, valid_until: "2027-12-31T00:00:00.000Z"}
+    - {person: O18, qualification: cnc_operator,          scope: ent01/b1/mc, valid_until: "2027-12-31T00:00:00.000Z"}
+    - {person: NDT-61, qualification: ndt_radiography_level2, scope: ent01/b1/ndt, valid_until: "2027-03-31T00:00:00.000Z"}
+    - {person: T41, qualification: leak_test_operator,    scope: ent01/b1/ac, valid_until: "2027-12-31T00:00:00.000Z"}
+    - {person: A31, qualification: assembler_torque,      scope: ent01/b1/ac, valid_until: "2027-12-31T00:00:00.000Z"}
+
+# Разделение обязанностей (FR-56, AD-43, AD-11).
+separation_of_duties:
+  - id: SOD-1
+    statement: "Кто участвовал в изготовлении изделия, не принимает его на точке предъявления (FR-56)"
+    conflicting_actions: ["process.operation.start", "nonconformity.presentation.resolve"]
+  - id: SOD-2
+    statement: "Заверитель бумажной подписи ≠ подписант (AD-43)"
+    conflicting_actions: ["documents.document.sign", "documents.paper.attest"]
+  - id: SOD-3
+    statement: "Выдача прав себе — только со второй подписью независимой стороны (AD-11)"
+    conflicting_actions: ["access.policy.grant", "access.policy.receive"]
+
+# Вторая подпись при выдаче прав — от независимой стороны (AD-11, PRD §11.16).
+second_signature:
+  qc_authorities_stamps_keys: second_signature_qc
+  production_authorities_keys: second_signature_production
+  admin_and_audit_privileges: second_signature_audit
+
+# Параметры аудита — принадлежат Аудитору ИБ (AD-8, AD-15); в генезисе — policy.audit.parameters_set.
+audit:
+  checkpoint_interval_s: 30
+  checkpoint_max_gap_s: 120
+  security_bus_subscribers: [notifications, integrity_indicator, siem_export_file]

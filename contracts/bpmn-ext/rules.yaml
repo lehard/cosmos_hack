@@ -1,0 +1,67 @@
+# Правила расширения BPMN urn:ant:bpmn-ext:1 (AD-17, FR-11, FR-12, FR-13; решения дирижёра Д-4…Д-8).
+# Дескриптор moddle — ant.json (что можно записать); здесь — что обязательно и какие значения допустимы.
+# Проверка — contracts/scripts/check-bpmn.mjs; загрузчик движка (эпик 17) применяет те же правила
+# и отвечает кодами contracts/errors.yaml с id элемента (FR-13).
+version: 1
+namespace: "urn:ant:bpmn-ext:1"
+expression_language: "urn:ant:expr:1"
+
+# Поддерживаемое подмножество BPMN (FR-11). Прочее — process.unsupported_element с id элемента.
+supported_elements:
+  flow_nodes: [startEvent, endEvent, intermediateCatchEvent, intermediateThrowEvent, boundaryEvent, task, serviceTask, userTask,
+               exclusiveGateway, parallelGateway, inclusiveGateway, callActivity, subProcess]
+  event_definitions:
+    startEvent: [none, messageEventDefinition]                        # Д-5: старт по сообщению из 1С
+    endEvent: [none, terminateEventDefinition]                        # Д-4: terminate завершает все токены изделия
+    intermediateCatchEvent: [messageEventDefinition, timerEventDefinition]
+    intermediateThrowEvent: [none, messageEventDefinition]
+    boundaryEvent: [timerEventDefinition]                              # Д-8: окно времени на шаге
+  other: [definitions, collaboration, participant, process, laneSet, lane, sequenceFlow, message, documentation, extensionElements,
+          conditionExpression, timeDuration, incoming, outgoing, flowNodeRef, textAnnotation, association]
+
+# Неявные слияния запрещены (Д-6): у узла, кроме шлюза, не больше одной входящей стрелки.
+implicit_merge: {forbidden: true, code: process.implicit_merge}
+
+step_key:
+  required_on: flow_nodes            # у каждого узла — ant:properties/@stepKey (AD-17)
+  pattern: "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*$"
+  unique: definitions                # уникален во всём файле, включая вызываемые подпроцессы
+  code: process.step_key_missing
+
+step_kind:
+  required_on: [task, serviceTask, userTask]
+  values: [operation, automated_inspection, human_inspection, movement, storage]
+
+enums:
+  inspection.method: [camera, cmm, radiography, ultrasonic, penetrant, leak_test, torque, visual_human, supplier_documents, laboratory, other]
+  inspection.phase: [incoming, before_operation, after_operation, before_zone_closure, assembly, test, final, other]
+  precondition.kind: [qualification, equipment_verification, document_revision, material_expiry, time_window, zone_check, item_blocked, open_intervention, lot_accepted, rework_limit, status_expired]
+  precondition.mode: [block, record_violation]
+  properties.reworkLimitScope: [item, zone, loop]
+  properties.erpAction: [accept_into_work, warehouse_transfer, scrap_transfer_rework, scrap_transfer_writeoff, scrap_transfer_reprocess, return_to_supplier, release]
+  properties.timerScope: [until_started, activity]
+  properties.outcome: [rework_or_repair, use_as_is, scrapped, returned]
+  properties.closingPoint: [ZT-1, ZT-2, ZT-3, ZT-4.1, ZT-4.2, ZT-5, ZT-6, ZT-R, ZT-V]
+
+# Связки свойств (FR-13):
+constraints:
+  - "userTask с closingPoint обязан иметь ant:presentationPoint с authority (иначе process.presentation_point_without_role)"
+  - "serviceTask с stepKind=automated_inspection обязан иметь ant:inspection"
+  - "стартовое и промежуточное событие-сообщение обязаны иметь triggerEventType — тип события каталога (Д-5)"
+  - "промежуточное событие-сообщение «в 1С» (throw) обязано иметь erpAction"
+  - "граничный таймер обязан иметь timeDuration (ISO 8601) и timerScope"
+  - "конечные события вызываемого подпроцесса, чей итог проверяют условия (nc.outcome), обязаны иметь outcome"
+  - "коды в inspection.coverage — из классификатора дефектов; zoneRef и closesZoneAccess — зоны номенклатуры; presentationPoint.authority — полномочия политики; paperAttester — роль политики"
+  - "ant:normRef — только из norm-anchors.yaml"
+
+# Язык условий на стрелках urn:ant:expr:1 (Д-7) — грамматика в README.md.
+conditions:
+  variables:
+    decision:                 {type: enum, values: [accept, accept_with_concession, reject, insufficient_data], source: "decision.presentation.resolved.resolution на предыдущей закрывающей точке"}
+    disposition:              {type: enum, values: [rework, repair, use_as_is, scrap, return_to_supplier], source: "decision.disposition.set.disposition"}
+    nc.outcome:               {type: enum, values: [rework_or_repair, use_as_is, scrapped, returned], source: "ant:properties/@outcome конечного события вызванного подпроцесса"}
+    test.result:              {type: enum, values: [tight, leak, invalid], source: "inspection.result.recorded (leak_test) на шаге: no_defect_indicated → tight, defect_indicated → leak, unable_to_assess → invalid"}
+    tools.accounted:          {type: boolean, source: "inspection.result.recorded (visual_human) на шаге assembly.tool_accounting: no_defect_indicated → true"}
+    plan.radiography_required: {type: boolean, source: "план контроля нормативного слоя для типа изделия"}
+    presentation.no:          {type: integer, source: "номер предъявления на текущей точке предъявления"}
+    rework.count:             {type: integer, source: "число повторов текущего шага или зоны (FR-18)"}

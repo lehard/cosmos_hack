@@ -15,12 +15,30 @@
       "maximum": 2100,
       "description": "Год."
     },
+    "weekly_days_off": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "mon",
+          "tue",
+          "wed",
+          "thu",
+          "fri",
+          "sat",
+          "sun"
+        ],
+        "description": "День недели."
+      },
+      "description": "Еженедельные выходные.",
+      "uniqueItems": true
+    },
     "non_working_days": {
       "type": "array",
       "items": {
         "$ref": "../common/defs.v1.json#/definitions/date"
       },
-      "description": "Нерабочие дни.",
+      "description": "Нерабочие дни сверх еженедельных (праздники).",
       "uniqueItems": true
     },
     "shortened_days": {

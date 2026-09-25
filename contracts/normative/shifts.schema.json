@@ -1,0 +1,75 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/normative/shifts.schema.json",
+  "title": "ShiftsSeed",
+  "description": "Шаблоны смен (FR-81): normative/reference/*/shifts.yaml.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 999,
+      "description": "Версия."
+    },
+    "time_zone": {
+      "type": "string",
+      "description": "Часовой пояс IANA.",
+      "maxLength": 64
+    },
+    "patterns": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Шаблон смены.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Идентификатор.",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$"
+          },
+          "name": {
+            "type": "string",
+            "description": "Название.",
+            "maxLength": 64
+          },
+          "starts": {
+            "type": "string",
+            "description": "Начало, местное время.",
+            "pattern": "^[0-2][0-9]:[0-5][0-9]$"
+          },
+          "ends": {
+            "type": "string",
+            "description": "Конец, местное время.",
+            "pattern": "^[0-2][0-9]:[0-5][0-9]$"
+          },
+          "locations": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "Место.",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$"
+            },
+            "description": "Цеха.",
+            "minItems": 1
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "starts",
+          "ends",
+          "locations"
+        ]
+      },
+      "description": "Шаблоны.",
+      "minItems": 1
+    }
+  },
+  "required": [
+    "version",
+    "time_zone",
+    "patterns"
+  ]
+}
