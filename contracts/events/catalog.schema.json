@@ -1,0 +1,296 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/catalog.schema.json",
+  "title": "EventCatalog",
+  "description": "Схема файла contracts/events/catalog.yaml — каталога типов записей журнала (AD-40).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "catalog_version",
+    "modules",
+    "roles",
+    "streams",
+    "families",
+    "emitter_exceptions",
+    "types"
+  ],
+  "properties": {
+    "catalog_version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Версия формата каталога."
+    },
+    "modules": {
+      "type": "object",
+      "description": "Модули системы (одноимённые на всех слоях, AD-1) → назначение.",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "propertyNames": {
+        "enum": [
+          "journal",
+          "engine",
+          "crossitem",
+          "ingest",
+          "reference",
+          "process",
+          "item",
+          "quality",
+          "nonconformity",
+          "analysis",
+          "machinelogs",
+          "vision",
+          "documents",
+          "signing",
+          "access",
+          "security",
+          "materials",
+          "notifications",
+          "analytics",
+          "erp",
+          "mes",
+          "cad",
+          "federation",
+          "simulation",
+          "ops"
+        ]
+      }
+    },
+    "roles": {
+      "type": "object",
+      "description": "Роли процесса `cmd/ant`, в которых исполняется функция-эмитент.",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "streams": {
+      "type": "object",
+      "description": "Виды потоков записей (AD-39): поток изделия, потоки объектов вне изделия, глобальный.",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "families": {
+      "type": "object",
+      "description": "Семейства → модуль-владелец схемы (AD-40).",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "owner",
+          "title"
+        ],
+        "properties": {
+          "owner": {
+            "enum": [
+              "journal",
+              "engine",
+              "crossitem",
+              "ingest",
+              "reference",
+              "process",
+              "item",
+              "quality",
+              "nonconformity",
+              "analysis",
+              "machinelogs",
+              "vision",
+              "documents",
+              "signing",
+              "access",
+              "security",
+              "materials",
+              "notifications",
+              "analytics",
+              "erp",
+              "mes",
+              "cad",
+              "federation",
+              "simulation",
+              "ops"
+            ],
+            "description": "Модуль-владелец схемы семейства."
+          },
+          "title": {
+            "type": "string",
+            "description": "Что покрывает семейство."
+          }
+        }
+      }
+    },
+    "emitter_exceptions": {
+      "type": "object",
+      "description": "Типы, чей эмитент — не владелец семейства, с обоснованием из спайна.",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "types": {
+      "type": "object",
+      "description": "Типы записей: `семейство.сущность.действие` → описание.",
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9_]*\\.[a-z][a-z0-9_]*\\.[a-z][a-z0-9_]*$"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "title",
+          "emitter",
+          "role",
+          "kind",
+          "stream",
+          "axis",
+          "action_class",
+          "critical",
+          "ca_group",
+          "guard_relevant",
+          "publish_stage",
+          "provenance",
+          "versions",
+          "current_version",
+          "refs"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Смысл типа по-русски."
+          },
+          "emitter": {
+            "enum": [
+              "journal",
+              "engine",
+              "crossitem",
+              "ingest",
+              "reference",
+              "process",
+              "item",
+              "quality",
+              "nonconformity",
+              "analysis",
+              "machinelogs",
+              "vision",
+              "documents",
+              "signing",
+              "access",
+              "security",
+              "materials",
+              "notifications",
+              "analytics",
+              "erp",
+              "mes",
+              "cad",
+              "federation",
+              "simulation",
+              "ops"
+            ],
+            "description": "Единственный модуль-эмитент: доменный модуль, чья функция формирует запись."
+          },
+          "role": {
+            "type": "string",
+            "description": "Роль процесса, где исполняется функция-эмитент."
+          },
+          "kind": {
+            "enum": [
+              "fact",
+              "reaction",
+              "decision",
+              "service"
+            ],
+            "description": "Вид записи (AD-2)."
+          },
+          "stream": {
+            "type": "string",
+            "description": "Вид потока записи."
+          },
+          "axis": {
+            "enum": [
+              "none",
+              "position",
+              "quality",
+              "disposition",
+              "containment",
+              "erp_accounting",
+              "incident"
+            ],
+            "description": "Ось статуса (§3b), которую запись меняет у владельца оси (AD-30)."
+          },
+          "action_class": {
+            "enum": [
+              "record",
+              "protective",
+              "permissive",
+              "irreversible"
+            ],
+            "description": "Класс действия (AD-27); `record` — не действие (факт, наблюдение, служебная запись)."
+          },
+          "critical": {
+            "type": "boolean",
+            "description": "Критическое действие: пишется запись CA в той же транзакции (AD-28)."
+          },
+          "ca_group": {
+            "enum": [
+              null,
+              "product_decision",
+              "nc_decision",
+              "cause",
+              "risk_scope",
+              "control_change",
+              "authority",
+              "protected_data",
+              "admin_security"
+            ],
+            "description": "Группа критических действий (AD-28)."
+          },
+          "guard_relevant": {
+            "type": "boolean",
+            "description": "Запись меняет версию потока для гардов (AD-39)."
+          },
+          "publish_stage": {
+            "type": "boolean",
+            "description": "Запись изделия публикуется межизделийной стадии (AD-42)."
+          },
+          "provenance": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "enum": [
+                "device",
+                "personal",
+                "paper",
+                "partner",
+                "server-attested",
+                "scenario",
+                "genesis"
+              ]
+            },
+            "description": "Допустимые классы происхождения подписи (AD-2)."
+          },
+          "versions": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "description": "Существующие мажорные версии схемы `data`."
+          },
+          "current_version": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Версия, которую эмитент пишет сейчас; старые приводятся повышателями при чтении."
+          },
+          "refs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Опоры: FR PRD, пункты кейса, AD спайна, номера событий процессной сессии."
+          }
+        }
+      }
+    }
+  }
+}

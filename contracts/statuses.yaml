@@ -1,0 +1,113 @@
+# Словарь статусов изделия — одно перечисление на весь продукт (PRD §3b, AD-30, NFR-UI-3).
+# Источник правды для enum-ов осей в contracts/events/common/defs.v1.json (#/definitions/axis_*),
+# для цветов на столах и для текстов интерфейса (ключи ui-texts переименовываются под эти коды).
+# `make check` (contracts/scripts/check.sh) сверяет: коды здесь == enum в defs.v1.json.
+#
+# Поля значения:
+#   code  — машинный код (латиница, snake_case), неизменен между версиями;
+#   label — русский текст для интерфейса (термины словаря продукта);
+#   tone  — смысловой тон цвета (палитра ниже), color — цвет по умолчанию.
+# Правило смысла (NFR-UI-4): «снятие блока ≠ годность», «изоляция» — положение, «блок» — сдерживание,
+# «оценка невозможна» ≠ «годно», «под подозрением» ≠ «брак».
+
+version: 1
+
+palette:
+  neutral:   {color: "#8A8F98", note: "нет данных, ничего не происходит"}
+  info:      {color: "#2F6FDB", note: "идёт работа, в пути"}
+  attention: {color: "#E0A100", note: "нужно внимание, неопределённость, ожидание"}
+  danger:    {color: "#D64545", note: "подтверждённая проблема, блок"}
+  critical:  {color: "#8B1E1E", note: "критическая остановка, необратимое"}
+  success:   {color: "#2E9E5B", note: "годно, исключено"}
+  qualified: {color: "#7A9A2E", note: "годно с оговоркой (по разрешению на отклонение)"}
+  muted:     {color: "#B8BDC6", note: "завершено, неактивно"}
+
+axes:
+  position:
+    title: "Положение в процессе"
+    owner: process
+    changed_by: "реакции движка по фактам"
+    values:
+      - {code: in_queue,              label: "В очереди",              tone: neutral}
+      - {code: in_progress,           label: "В работе",               tone: info}
+      - {code: at_inspection,         label: "На контроле",            tone: info}
+      - {code: at_presentation_point, label: "На точке предъявления",  tone: attention}
+      - {code: in_transit,            label: "В перемещении",          tone: info}
+      - {code: in_storage,            label: "На хранении",            tone: neutral}
+      - {code: isolated,              label: "В изоляции",             tone: danger}
+      - {code: completed,             label: "Завершено",              tone: muted}
+  quality:
+    title: "Состояние качества"
+    owner: quality
+    changed_by: "реакции движка; подтверждение контролёра — решением nonconformity"
+    values:
+      - {code: not_inspected,            label: "Не проверено",                      tone: neutral}
+      - {code: conforming,               label: "Годно",                             tone: success}
+      - {code: accepted_with_concession, label: "Годно по разрешению на отклонение", tone: qualified}
+      - {code: unable_to_assess,         label: "Оценка невозможна",                 tone: attention}
+      - {code: signal,                   label: "Сигнал о признаке дефекта",         tone: attention}
+      - {code: nonconforming,            label: "Несоответствие подтверждено",       tone: danger}
+  disposition:
+    title: "Решение по изделию"
+    owner: nonconformity
+    changed_by: "человек или явно делегированное правило режима 2 (типовая переделка); необратимые — только уполномоченные (PRD §11.9)"
+    values:
+      - {code: none,               label: "Решения нет",        tone: neutral}
+      - {code: rework,             label: "Переделка",          tone: attention}
+      - {code: repair,             label: "Ремонт",             tone: attention}
+      - {code: use_as_is,          label: "Как есть",           tone: qualified}
+      - {code: scrap,              label: "Списание",           tone: critical}
+      - {code: return_to_supplier, label: "Возврат поставщику", tone: critical}
+  containment:
+    title: "Сдерживание"
+    owner: nonconformity
+    changed_by: "правило (защитное) или человек"
+    values:
+      - {code: none,             label: "Без сдерживания", tone: neutral}
+      - {code: observe,          label: "Наблюдать",       tone: info}
+      - {code: additional_check, label: "Доп. проверка",   tone: attention}
+      - {code: item_hold,        label: "Блок изделия",    tone: danger}
+      - {code: lot_hold,         label: "Блок партии",     tone: danger}
+  erp_accounting:
+    title: "Учёт в 1С"
+    owner: erp
+    changed_by: "квитанции внешней системы"
+    values:
+      - {code: not_sent,             label: "Не передано в 1С",      tone: neutral}
+      - {code: accepted_into_work,   label: "Принято в работу",      tone: info}
+      - {code: moved,                label: "Перемещено",            tone: info}
+      - {code: transferred_to_scrap, label: "Переведено в брак",     tone: critical}
+      - {code: returned_to_supplier, label: "Возвращено поставщику", tone: critical}
+      - {code: released,             label: "Выпущено",              tone: success}
+  incident:
+    title: "Статус в инциденте (для каждого инцидента отдельно)"
+    owner: analysis
+    changed_by: "человек по основаниям; расширение — правило"
+    values:
+      - {code: confirmed, label: "Подтверждено",    tone: danger}
+      - {code: suspect,   label: "Под подозрением", tone: attention}
+      - {code: excluded,  label: "Исключено",       tone: success}
+      - {code: unknown,   label: "Неизвестно",      tone: neutral}
+
+# Дополнительные словари — не оси §3b, но тоже единые для всех экранов.
+dictionaries:
+  incident_action:
+    title: "Что делать с изделием в инциденте (FR-62)"
+    values:
+      - {code: observe, label: "Наблюдать",     tone: info}
+      - {code: check,   label: "Проверить",     tone: attention}
+      - {code: block,   label: "Заблокировать", tone: danger}
+      - {code: release, label: "Выпустить",     tone: success}
+  process_containment:
+    title: "Сдерживание процесса — отдельный объект от сдерживания изделий (FR-49)"
+    values:
+      - {code: process_point_stop, label: "Стоп точки процесса",   tone: danger}
+      - {code: critical_stop,      label: "Критическая остановка", tone: critical}
+  erp_message_status:
+    title: "Состояние исходящего учётного сообщения (не ось: ось меняет только квитанция)"
+    values:
+      - {code: queued,       label: "В очереди на отправку",            tone: neutral}
+      - {code: sent,         label: "Отправлено — ждём подтверждения 1С", tone: attention}
+      - {code: acknowledged, label: "Подтверждено 1С",                  tone: success}
+      - {code: rejected,     label: "Ошибка обмена",                    tone: danger}
+      - {code: quarantined,  label: "В карантине — нужна переотправка", tone: danger}
