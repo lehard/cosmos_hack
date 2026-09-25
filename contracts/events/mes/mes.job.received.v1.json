@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/mes/mes.job.received.v1.json",
+  "title": "MesJobReceivedV1",
+  "description": "Получено задание MES — сменное задание или наряд из MES (подмножество B2MML-JSON, AD-18) — без повторного ручного ввода (FR-93).",
+  "type": "object",
+  "properties": {
+    "job_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Внутренний ID задания."
+    },
+    "external_number": {
+      "type": "string",
+      "description": "Номер в MES.",
+      "maxLength": 64
+    },
+    "order_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Производственное задание."
+    },
+    "operation_code": {
+      "type": "string",
+      "description": "Операция.",
+      "maxLength": 64
+    },
+    "station_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Участок."
+    },
+    "planned_start": {
+      "$ref": "../common/defs.v1.json#/definitions/timestamp",
+      "description": "План начала."
+    }
+  },
+  "required": [
+    "job_id",
+    "external_number",
+    "operation_code"
+  ]
+}

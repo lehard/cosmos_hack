@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/obligation/obligation.due.cleared.v1.json",
+  "title": "ObligationDueClearedV1",
+  "description": "Срок снят — обязательство выполнено или больше не действует.",
+  "type": "object",
+  "properties": {
+    "obligation_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Обязательство."
+    },
+    "cause": {
+      "type": "string",
+      "enum": [
+        "fulfilled",
+        "withdrawn",
+        "superseded"
+      ],
+      "description": "Почему снят."
+    }
+  },
+  "required": [
+    "obligation_id",
+    "cause"
+  ]
+}

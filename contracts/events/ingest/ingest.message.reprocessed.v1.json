@@ -1,0 +1,34 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/ingest/ingest.message.reprocessed.v1.json",
+  "title": "IngestMessageReprocessedV1",
+  "description": "Сообщение из карантина переобработано — администратор повторно обработал сообщение (например, после появления повышателя версии) (FR-30).",
+  "type": "object",
+  "properties": {
+    "quarantine_event_id": {
+      "$ref": "../common/defs.v1.json#/definitions/uuid",
+      "description": "Запись карантина."
+    },
+    "outcome": {
+      "type": "string",
+      "enum": [
+        "accepted",
+        "still_invalid",
+        "discarded"
+      ],
+      "description": "Итог."
+    },
+    "accepted_event_id": {
+      "$ref": "../common/defs.v1.json#/definitions/uuid",
+      "description": "Принятая запись."
+    },
+    "reason": {
+      "$ref": "../common/defs.v1.json#/definitions/reason",
+      "description": "Причина: код и текст."
+    }
+  },
+  "required": [
+    "quarantine_event_id",
+    "outcome"
+  ]
+}

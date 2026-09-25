@@ -1,0 +1,115 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/reference/reference.item_type.defined.v1.json",
+  "title": "ReferenceItemTypeDefinedV1",
+  "description": "Тип изделия определён — номенклатура: обозначение, ревизия, состав, зоны изделия, способ маркировки (FR-46, AD-31).",
+  "type": "object",
+  "properties": {
+    "item_type_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Тип изделия."
+    },
+    "designation": {
+      "type": "string",
+      "description": "Обозначение по КД.",
+      "maxLength": 128
+    },
+    "name": {
+      "type": "string",
+      "description": "Наименование.",
+      "maxLength": 256
+    },
+    "revision": {
+      "type": "string",
+      "description": "Ревизия.",
+      "maxLength": 32
+    },
+    "zones": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "description": "Зона изделия.",
+        "properties": {
+          "zone_id": {
+            "$ref": "../common/defs.v1.json#/definitions/object_id",
+            "description": "Зона."
+          },
+          "name": {
+            "type": "string",
+            "description": "Название.",
+            "maxLength": 128
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "weld_section",
+              "joint",
+              "hole",
+              "surface",
+              "cavity",
+              "groove",
+              "other"
+            ],
+            "description": "Вид зоны."
+          }
+        },
+        "required": [
+          "zone_id",
+          "name",
+          "kind"
+        ],
+        "title": "ZoneDef"
+      },
+      "description": "Зоны."
+    },
+    "components": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "description": "Позиция состава.",
+        "properties": {
+          "item_type_id": {
+            "$ref": "../common/defs.v1.json#/definitions/object_id",
+            "description": "Тип компонента."
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100000,
+            "description": "Количество."
+          },
+          "lot_tracked": {
+            "type": "boolean",
+            "description": "Учитывается партией."
+          }
+        },
+        "required": [
+          "item_type_id",
+          "quantity",
+          "lot_tracked"
+        ],
+        "title": "ComponentDef"
+      },
+      "description": "Состав."
+    },
+    "marking": {
+      "$ref": "../common/defs.v1.json#/definitions/carrier_type",
+      "description": "Постоянный носитель по КД."
+    },
+    "valid_from": {
+      "$ref": "../common/defs.v1.json#/definitions/timestamp",
+      "description": "Начало действия (доменное время)."
+    },
+    "valid_until": {
+      "$ref": "../common/defs.v1.json#/definitions/timestamp",
+      "description": "Окончание действия; отсутствует — бессрочно."
+    }
+  },
+  "required": [
+    "item_type_id",
+    "designation",
+    "name",
+    "revision",
+    "valid_from"
+  ]
+}

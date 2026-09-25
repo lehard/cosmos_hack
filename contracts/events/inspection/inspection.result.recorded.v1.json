@@ -1,0 +1,166 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/inspection/inspection.result.recorded.v1.json",
+  "title": "InspectionResultRecordedV1",
+  "description": "Результат контроля записан — единый тип результата любого метода (камера, КИМ, рентген, стенд, человек) с тремя исходами; «не обнаружено» при плохом наблюдении — не годность (FR-36, кейс §4.5). Имя типа результат не кодирует (AD-23).",
+  "type": "object",
+  "properties": {
+    "observation_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Идентификатор наблюдения у источника."
+    },
+    "method": {
+      "$ref": "../common/defs.v1.json#/definitions/inspection_method"
+    },
+    "phase": {
+      "type": "string",
+      "enum": [
+        "incoming",
+        "before_operation",
+        "after_operation",
+        "before_zone_closure",
+        "assembly",
+        "test",
+        "final",
+        "other"
+      ],
+      "description": "Фаза контроля: вход / до операции / после операции / перед закрытием зоны / сборка / испытание / окончательный."
+    },
+    "step_key": {
+      "$ref": "../common/defs.v1.json#/definitions/step_key",
+      "description": "Ключ шага процесса (`ant:properties/@stepKey`), к которому относится запись."
+    },
+    "inspection_point": {
+      "type": "string",
+      "description": "Точка контроля (КТ) процесса, например `KT-3`.",
+      "maxLength": 32
+    },
+    "operation_run_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Идентификатор выполнения операции; повтор операции — новый идентификатор со ссылкой `rework_of` (FR-47)."
+    },
+    "lot_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Партия — для входного контроля партии."
+    },
+    "outcome": {
+      "$ref": "../common/defs.v1.json#/definitions/inspection_outcome"
+    },
+    "unable_reason": {
+      "type": "string",
+      "enum": [
+        "poor_image",
+        "zone_occluded",
+        "carrier_unreadable",
+        "analyzer_failure",
+        "processing_aborted",
+        "not_measured",
+        "document_missing",
+        "test_invalid",
+        "other"
+      ],
+      "description": "Почему оценка невозможна (если исход `unable_to_assess`)."
+    },
+    "processing_state": {
+      "$ref": "../common/defs.v1.json#/definitions/processing_state"
+    },
+    "zone_ids": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/object_id",
+        "description": "Зона."
+      },
+      "description": "Зоны, которые охватило наблюдение.",
+      "uniqueItems": true
+    },
+    "defects": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/defect"
+      },
+      "description": "Признаки дефектов; один сигнал может содержать несколько (FR-37)."
+    },
+    "measurements": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/measurement_result"
+      },
+      "description": "Измерения «значение против допуска»."
+    },
+    "comparison_before": {
+      "type": "string",
+      "enum": [
+        "was_before",
+        "appeared",
+        "changed",
+        "unchanged",
+        "not_comparable"
+      ],
+      "description": "Сравнение с состоянием зоны до операции."
+    },
+    "analyzer_confidence_bp": {
+      "$ref": "../common/defs.v1.json#/definitions/bp",
+      "description": "Уверенность анализатора — не вероятность брака (NFR-UI-4)."
+    },
+    "observation_quality_bp": {
+      "$ref": "../common/defs.v1.json#/definitions/bp",
+      "description": "Качество наблюдения — отдельно от уверенности (FR-38)."
+    },
+    "stages": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/analyzer_stage"
+      },
+      "description": "Ступени анализатора с версиями и уверенностью (FR-38)."
+    },
+    "recommendation": {
+      "type": "string",
+      "enum": [
+        "pass_to_next",
+        "manual_review",
+        "isolate",
+        "none"
+      ],
+      "description": "Рекомендация анализатора — только совет, решает карта реакций (FR-48)."
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "description": "Ограничение наблюдения.",
+        "maxLength": 256
+      },
+      "description": "Ограничения наблюдения и метода."
+    },
+    "versions": {
+      "$ref": "../common/defs.v1.json#/definitions/analyzer_versions",
+      "description": "Вектор версий наблюдения (AD-29); для человека-контролёра — версия карты контроля и приложения."
+    },
+    "equipment_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Средство контроля: камера, КИМ, стенд, течеискатель."
+    },
+    "inspector_id": {
+      "$ref": "../common/defs.v1.json#/definitions/person_ref_or_unknown",
+      "description": "Контролёр или дефектоскопист, если контроль выполнял человек."
+    },
+    "conclusion_ref": {
+      "type": "string",
+      "description": "Номер заключения (НК, протокол КИМ, протокол испытаний).",
+      "maxLength": 128
+    },
+    "evidence_refs": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/evidence_ref"
+      },
+      "description": "Материалы; отсутствие обрабатывается корректно (кейс §5.4)."
+    }
+  },
+  "required": [
+    "method",
+    "phase",
+    "outcome",
+    "processing_state"
+  ]
+}

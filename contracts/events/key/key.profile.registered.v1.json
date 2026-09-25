@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/key/key.profile.registered.v1.json",
+  "title": "KeyProfileRegisteredV1",
+  "description": "Криптопрофиль зарегистрирован — реестр профилей: какой профиль обязателен для класса объекта с какого момента (AD-10, AD-32).",
+  "type": "object",
+  "properties": {
+    "profile_id": {
+      "type": "string",
+      "enum": [
+        "gost",
+        "pq",
+        "hybrid"
+      ],
+      "description": "Профиль."
+    },
+    "object_classes": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/code"
+      },
+      "description": "Классы пакетов, для которых профиль обязателен.",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "effective_from_seq": {
+      "$ref": "../common/defs.v1.json#/definitions/seq",
+      "description": "С какой позиции журнала обязателен."
+    }
+  },
+  "required": [
+    "profile_id",
+    "object_classes"
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/document/document.paper.status_changed.v1.json",
+  "title": "DocumentPaperStatusChangedV1",
+  "description": "Статус бумажного экземпляра — напечатан / подписан / уничтожен; журнал не трогается (AD-12).",
+  "type": "object",
+  "properties": {
+    "document_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Документ."
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100000,
+      "description": "Версия."
+    },
+    "paper_status": {
+      "type": "string",
+      "enum": [
+        "printed",
+        "signed",
+        "destroyed"
+      ],
+      "description": "Статус бумажного экземпляра."
+    },
+    "copy_no": {
+      "type": "string",
+      "description": "Номер экземпляра.",
+      "maxLength": 64
+    }
+  },
+  "required": [
+    "document_id",
+    "version",
+    "paper_status"
+  ]
+}

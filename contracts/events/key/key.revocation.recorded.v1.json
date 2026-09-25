@@ -1,0 +1,33 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/key/key.revocation.recorded.v1.json",
+  "title": "KeyRevocationRecordedV1",
+  "description": "Ключ отозван — отзыв несёт «скомпрометирован с X» (X может быть раньше отзыва) и порождает защитную реакцию для решений, подписанных после X (AD-11).",
+  "type": "object",
+  "properties": {
+    "key_ref": {
+      "$ref": "../common/defs.v1.json#/definitions/key_ref",
+      "description": "Отзываемый ключ."
+    },
+    "compromised_since": {
+      "$ref": "../common/defs.v1.json#/definitions/timestamp",
+      "description": "Скомпрометирован с; отсутствует — отзыв без компрометации."
+    },
+    "compromised_since_seq": {
+      "$ref": "../common/defs.v1.json#/definitions/seq",
+      "description": "Скомпрометирован с позиции журнала (криптографический момент)."
+    },
+    "reason": {
+      "$ref": "../common/defs.v1.json#/definitions/reason",
+      "description": "Причина: код и текст."
+    },
+    "document_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Акт отзыва."
+    }
+  },
+  "required": [
+    "key_ref",
+    "reason"
+  ]
+}

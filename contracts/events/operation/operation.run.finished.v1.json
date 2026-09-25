@@ -1,0 +1,37 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/operation/operation.run.finished.v1.json",
+  "title": "OperationRunFinishedV1",
+  "description": "Операция завершена — работа сделана или прервана; это не «годно». Длительность — со смыслом интервала и происхождением (кейс §4.6, FR-88).",
+  "type": "object",
+  "properties": {
+    "operation_run_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Идентификатор выполнения операции; повтор операции — новый идентификатор со ссылкой `rework_of` (FR-47)."
+    },
+    "completion": {
+      "type": "string",
+      "enum": [
+        "completed",
+        "interrupted"
+      ],
+      "description": "Итог выполнения: завершена / прервана."
+    },
+    "operation_started_at": {
+      "$ref": "../common/defs.v1.json#/definitions/timestamp",
+      "description": "Начало по данным источника, если доступно."
+    },
+    "operation_finished_at": {
+      "$ref": "../common/defs.v1.json#/definitions/timestamp",
+      "description": "Конец по данным источника, если доступен."
+    },
+    "reported_duration": {
+      "$ref": "../common/defs.v1.json#/definitions/duration",
+      "description": "Длительность, переданная источником (значение, единица, смысл интервала, происхождение)."
+    }
+  },
+  "required": [
+    "operation_run_id",
+    "completion"
+  ]
+}

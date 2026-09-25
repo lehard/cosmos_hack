@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/decision/decision.rework_limit.waived.v1.json",
+  "title": "DecisionReworkLimitWaivedV1",
+  "description": "Разрешено превысить лимит доработок — сверх лимита доработок зоны — только по отдельному разрешению уполномоченного (FR-18); без него гард отвечает `decision.rework_limit_reached`.",
+  "type": "object",
+  "properties": {
+    "zone_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Зона."
+    },
+    "used": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 1000,
+      "description": "Сколько доработок уже было."
+    },
+    "limit": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 1000,
+      "description": "Лимит по нормативному слою."
+    },
+    "extra_allowed": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100,
+      "description": "Сколько дополнительных доработок разрешено."
+    },
+    "reason": {
+      "$ref": "../common/defs.v1.json#/definitions/reason",
+      "description": "Причина: код и текст."
+    }
+  },
+  "required": [
+    "zone_id",
+    "used",
+    "limit",
+    "extra_allowed",
+    "reason"
+  ]
+}

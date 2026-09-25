@@ -1,0 +1,27 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/erp/erp.posting.resend_requested.v1.json",
+  "title": "ErpPostingResendRequestedV1",
+  "description": "Переотправка запрошена администратором — ручная переотправка сообщения из карантина с тем же бизнес-ключом (FR-96).",
+  "type": "object",
+  "properties": {
+    "business_key": {
+      "type": "string",
+      "description": "Бизнес-ключ.",
+      "maxLength": 256
+    },
+    "request_event_id": {
+      "$ref": "../common/defs.v1.json#/definitions/uuid",
+      "description": "Запрос."
+    },
+    "reason": {
+      "$ref": "../common/defs.v1.json#/definitions/reason",
+      "description": "Причина: код и текст."
+    }
+  },
+  "required": [
+    "business_key",
+    "request_event_id",
+    "reason"
+  ]
+}

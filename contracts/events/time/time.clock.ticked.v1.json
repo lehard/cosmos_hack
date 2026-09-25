@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/time/time.clock.ticked.v1.json",
+  "title": "TimeClockTickedV1",
+  "description": "Тик виртуальных часов сценария — доменное «сейчас» в режиме `scenario` — последняя такая запись; ведёт simulation (AD-37).",
+  "type": "object",
+  "properties": {
+    "now": {
+      "$ref": "../common/defs.v1.json#/definitions/timestamp",
+      "description": "Доменное «сейчас»."
+    },
+    "speed": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 1000,
+      "description": "Скорость ×1…×1000."
+    }
+  },
+  "required": [
+    "now",
+    "speed"
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/item/item.intervention.closed.v1.json",
+  "title": "ItemInterventionClosedV1",
+  "description": "Вмешательство закрыто — установлено обратно, зона проверена повторно, подпись контролёра; приёмка снова возможна (FR-21, ЗТ-В).",
+  "type": "object",
+  "properties": {
+    "intervention_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Закрываемая запись вмешательства."
+    },
+    "recheck_event_ids": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/uuid"
+      },
+      "description": "Результаты повторной проверки зон (`inspection.result.recorded`).",
+      "uniqueItems": true
+    },
+    "retest_required": {
+      "type": "boolean",
+      "description": "Вскрывали после испытания — нужно повторное испытание."
+    }
+  },
+  "required": [
+    "intervention_id",
+    "recheck_event_ids"
+  ]
+}

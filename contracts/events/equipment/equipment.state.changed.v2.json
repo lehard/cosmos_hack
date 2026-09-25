@@ -1,0 +1,73 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/equipment/equipment.state.changed.v2.json",
+  "title": "EquipmentStateChangedV2",
+  "description": "Состояние оборудования изменилось — один тип на смысл от любого источника (ручной ввод, датчик, контроллер, ЧПУ, OPC UA, MTConnect) с пометкой источника; классификация MTConnect: EXECUTION, CONTROLLER_MODE, CONDITION (FR-147, AD-29). v2: несовместимо с v1 — `machine_state` разделён.",
+  "type": "object",
+  "properties": {
+    "equipment_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Оборудование."
+    },
+    "station_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Участок."
+    },
+    "execution": {
+      "type": "string",
+      "enum": [
+        "running",
+        "idle",
+        "stopped",
+        "setup",
+        "interrupted",
+        "unknown"
+      ],
+      "description": "Режим работы (MTConnect EXECUTION)."
+    },
+    "controller_mode": {
+      "type": "string",
+      "enum": [
+        "automatic",
+        "manual",
+        "manual_data_input",
+        "unknown"
+      ],
+      "description": "Режим управления (авто / ручной)."
+    },
+    "condition": {
+      "type": "string",
+      "enum": [
+        "normal",
+        "warning",
+        "fault",
+        "unknown"
+      ],
+      "description": "Исправность (MTConnect CONDITION): норма / предупреждение / неисправность."
+    },
+    "code": {
+      "type": "string",
+      "description": "Код состояния или аварии у источника.",
+      "maxLength": 64
+    },
+    "parameter": {
+      "type": "string",
+      "description": "Параметр, по которому предупреждение или неисправность.",
+      "maxLength": 64
+    },
+    "value": {
+      "$ref": "../common/defs.v1.json#/definitions/measurement",
+      "description": "Значение параметра."
+    },
+    "setpoint": {
+      "$ref": "../common/defs.v1.json#/definitions/tolerance",
+      "description": "Уставка."
+    }
+  },
+  "required": [
+    "equipment_id",
+    "execution",
+    "controller_mode",
+    "condition"
+  ]
+}

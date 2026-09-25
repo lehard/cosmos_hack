@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/ingest/ingest.source.loss_suspected.v1.json",
+  "title": "IngestSourceLossSuspectedV1",
+  "description": "Возможна потеря данных источника — разрыв `source_seq` не закрыт досылкой за окно ожидания — реакция планировщика; досылка в окне её отменяет (AD-7).",
+  "type": "object",
+  "properties": {
+    "source_id": {
+      "$ref": "../common/defs.v1.json#/definitions/source_id",
+      "description": "Источник."
+    },
+    "missing_from_seq": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991,
+      "description": "Нет с номера."
+    },
+    "missing_to_seq": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991,
+      "description": "По номер."
+    }
+  },
+  "required": [
+    "source_id",
+    "missing_from_seq",
+    "missing_to_seq"
+  ]
+}

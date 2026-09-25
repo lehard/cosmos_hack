@@ -1,0 +1,45 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/item/item.intervention.opened.v1.json",
+  "title": "ItemInterventionOpenedV1",
+  "description": "Вмешательство в собранное изделие открыто — разборка собранного или принятого изделия: что, зона, кто, зачем; пока открыто — приёмка и отгрузка запрещены, прежние результаты зоны «устарели» (FR-21).",
+  "type": "object",
+  "properties": {
+    "intervention_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Идентификатор записи вмешательства."
+    },
+    "zone_ids": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/object_id",
+        "description": "Зона."
+      },
+      "description": "Затронутые зоны.",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "removed_components": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/object_id",
+        "description": "Компонент."
+      },
+      "description": "Что снято (крышка, крепёж).",
+      "uniqueItems": true
+    },
+    "purpose": {
+      "$ref": "../common/defs.v1.json#/definitions/reason",
+      "description": "Зачем вскрыли."
+    },
+    "qc_consent_by": {
+      "$ref": "../common/defs.v1.json#/definitions/person_ref",
+      "description": "Контролёр ОТК, давший согласие."
+    }
+  },
+  "required": [
+    "intervention_id",
+    "zone_ids",
+    "purpose"
+  ]
+}

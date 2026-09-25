@@ -1,0 +1,65 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/operation/operation.run.started.v1.json",
+  "title": "OperationRunStartedV1",
+  "description": "Операция начата — начато выполнение операции над изделием; до начала проверяются предусловия (FR-17). Источник — терминал, MES или станок.",
+  "type": "object",
+  "properties": {
+    "operation_run_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Идентификатор выполнения операции; повтор операции — новый идентификатор со ссылкой `rework_of` (FR-47)."
+    },
+    "operation_code": {
+      "type": "string",
+      "description": "Операция по маршрутной карте.",
+      "maxLength": 64
+    },
+    "step_key": {
+      "$ref": "../common/defs.v1.json#/definitions/step_key",
+      "description": "Ключ шага процесса (`ant:properties/@stepKey`), к которому относится запись."
+    },
+    "line_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Линия."
+    },
+    "station_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Участок (пост)."
+    },
+    "workplace_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Рабочее место."
+    },
+    "equipment_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Оборудование, если известно."
+    },
+    "operator_id": {
+      "$ref": "../common/defs.v1.json#/definitions/person_ref_or_unknown",
+      "description": "Исполнитель; null — неизвестен (FR-123)."
+    },
+    "program_ref": {
+      "type": "string",
+      "description": "Управляющая программа и её ревизия.",
+      "maxLength": 128
+    },
+    "rework_of": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Прежнее выполнение, если это повтор (FR-47)."
+    },
+    "group_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Временная группа (садка) для групповой операции (FR-15)."
+    },
+    "operation_started_at": {
+      "$ref": "../common/defs.v1.json#/definitions/timestamp",
+      "description": "Время начала, если источник его сообщает отдельно от `occurred_at`."
+    }
+  },
+  "required": [
+    "operation_run_id",
+    "operation_code",
+    "step_key",
+    "operator_id"
+  ]
+}

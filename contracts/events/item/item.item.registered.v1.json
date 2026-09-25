@@ -1,0 +1,59 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/item/item.item.registered.v1.json",
+  "title": "ItemItemRegisteredV1",
+  "description": "Изделие зарегистрировано и запущено в работу — у изделия появляется внутренний ID и паспорт; закрепляются версия процесса и нормативного слоя (AD-16, AD-17). ID из метки не выводится.",
+  "type": "object",
+  "properties": {
+    "item_id": {
+      "$ref": "../common/defs.v1.json#/definitions/item_id",
+      "description": "Внутренний ID нового изделия: `код_предприятия:локальный_id`."
+    },
+    "item_type_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Тип изделия (номенклатура, обозначение по КД)."
+    },
+    "item_revision": {
+      "type": "string",
+      "description": "Ревизия КД и ТП на момент запуска.",
+      "maxLength": 64
+    },
+    "order_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Производственное задание (внутренний ID; внешний номер 1С — через `reference.external_id.mapped`)."
+    },
+    "lot_ids": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/object_id",
+        "description": "Партия."
+      },
+      "description": "Партии материала и покупных, из которых изготавливается изделие (корни генеалогии).",
+      "uniqueItems": true
+    },
+    "process_version_hash": {
+      "$ref": "../common/defs.v1.json#/definitions/digest",
+      "description": "Хеш закреплённой версии процесса — XML как загружен (AD-17)."
+    },
+    "normative_rev": {
+      "type": "string",
+      "description": "Ревизия нормативного слоя, закреплённая при запуске: план контроля, карта реакций, классификатор, шаблоны.",
+      "maxLength": 128
+    },
+    "entry_step_key": {
+      "$ref": "../common/defs.v1.json#/definitions/step_key",
+      "description": "Ключ шага процесса (`ant:properties/@stepKey`), к которому относится запись."
+    },
+    "is_assembly": {
+      "type": "boolean",
+      "description": "Изделие — сборочная единица."
+    }
+  },
+  "required": [
+    "item_id",
+    "item_type_id",
+    "item_revision",
+    "process_version_hash",
+    "normative_rev"
+  ]
+}

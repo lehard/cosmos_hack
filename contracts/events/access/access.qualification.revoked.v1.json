@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/access/access.qualification.revoked.v1.json",
+  "title": "AccessQualificationRevokedV1",
+  "description": "Квалификация отозвана — квалификация больше не действует с указанной даты (FR-80).",
+  "type": "object",
+  "properties": {
+    "person_id": {
+      "$ref": "../common/defs.v1.json#/definitions/person_ref",
+      "description": "Сотрудник."
+    },
+    "qualification_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Вид квалификации."
+    },
+    "effective_from": {
+      "$ref": "../common/defs.v1.json#/definitions/timestamp",
+      "description": "С какого момента не действует."
+    },
+    "reason": {
+      "$ref": "../common/defs.v1.json#/definitions/reason",
+      "description": "Причина: код и текст."
+    }
+  },
+  "required": [
+    "person_id",
+    "qualification_id",
+    "effective_from"
+  ]
+}

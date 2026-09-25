@@ -1,0 +1,33 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/simulation/simulation.injection.applied.v1.json",
+  "title": "SimulationInjectionAppliedV1",
+  "description": "Инъекция цифрового стенда — кнопка поверх идущего прогона: повтор, опоздавшее событие, испорченный кадр, сбой станка, потеря данных (FR-152).",
+  "type": "object",
+  "properties": {
+    "run_id": {
+      "$ref": "../common/defs.v1.json#/definitions/run_id",
+      "description": "Прогон."
+    },
+    "injection": {
+      "type": "string",
+      "enum": [
+        "duplicate_event",
+        "late_event",
+        "corrupt_frame",
+        "machine_fault",
+        "data_loss",
+        "tamper_outside"
+      ],
+      "description": "Кнопка."
+    },
+    "target_event_id": {
+      "$ref": "../common/defs.v1.json#/definitions/uuid",
+      "description": "Целевое событие."
+    }
+  },
+  "required": [
+    "run_id",
+    "injection"
+  ]
+}

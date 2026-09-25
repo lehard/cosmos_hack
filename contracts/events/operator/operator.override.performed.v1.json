@@ -1,0 +1,39 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/operator/operator.override.performed.v1.json",
+  "title": "OperatorOverridePerformedV1",
+  "description": "Ручное вмешательство в автоматику — исполнитель обошёл блокировку или автоматику (в том числе работа при отказе в допуске к рабочему месту); критическое действие (AD-28).",
+  "type": "object",
+  "properties": {
+    "operation_run_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Идентификатор выполнения операции; повтор операции — новый идентификатор со ссылкой `rework_of` (FR-47)."
+    },
+    "workplace_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Рабочее место."
+    },
+    "operator_id": {
+      "$ref": "../common/defs.v1.json#/definitions/person_ref",
+      "description": "Исполнитель (по входу на рабочее место, не по лицу)."
+    },
+    "bypassed": {
+      "type": "string",
+      "enum": [
+        "interlock",
+        "automation",
+        "workplace_admission",
+        "other"
+      ],
+      "description": "Что обошли."
+    },
+    "reason": {
+      "$ref": "../common/defs.v1.json#/definitions/reason",
+      "description": "Причина: код и текст."
+    }
+  },
+  "required": [
+    "operator_id",
+    "bypassed"
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/journal/journal.segment.opened.v1.json",
+  "title": "JournalSegmentOpenedV1",
+  "description": "Открыт новый сегмент цепочки — смена хеш-функции — новый сегмент: связь головы старого с перехешированием (AD-32).",
+  "type": "object",
+  "properties": {
+    "chain_format_version": {
+      "type": "integer",
+      "minimum": 2,
+      "maximum": 999,
+      "description": "Новая версия формата цепочки."
+    },
+    "previous_head_seq": {
+      "$ref": "../common/defs.v1.json#/definitions/seq",
+      "description": "Голова старого сегмента."
+    },
+    "previous_head_link": {
+      "$ref": "../common/defs.v1.json#/definitions/digest",
+      "description": "Звено старого сегмента."
+    }
+  },
+  "required": [
+    "chain_format_version",
+    "previous_head_seq",
+    "previous_head_link"
+  ]
+}

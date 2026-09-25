@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/item/item.identification.confirmed.v1.json",
+  "title": "ItemIdentificationConfirmedV1",
+  "description": "Идентификация подтверждена человеком — повторная идентификация уполномоченным с подписью снимает «идентификацию под сомнением» (AD-16).",
+  "type": "object",
+  "properties": {
+    "method": {
+      "$ref": "../common/defs.v1.json#/definitions/carrier_type",
+      "description": "Как подтверждено."
+    },
+    "carrier_value": {
+      "type": "string",
+      "description": "Прочитанное значение носителя.",
+      "maxLength": 256
+    },
+    "questioned_event_id": {
+      "$ref": "../common/defs.v1.json#/definitions/uuid",
+      "description": "Запись «идентификация под сомнением», которую снимает решение."
+    }
+  },
+  "required": [
+    "method",
+    "questioned_event_id"
+  ]
+}

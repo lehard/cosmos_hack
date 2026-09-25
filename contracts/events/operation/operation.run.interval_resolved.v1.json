@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/operation/operation.run.interval_resolved.v1.json",
+  "title": "OperationRunIntervalResolvedV1",
+  "description": "Интервал выполнения операции определён — по началу и концу выполнения вычислен интервал для привязки событий оборудования; публикуется межизделийной стадии (AD-29, AD-42).",
+  "type": "object",
+  "properties": {
+    "operation_run_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Идентификатор выполнения операции; повтор операции — новый идентификатор со ссылкой `rework_of` (FR-47)."
+    },
+    "equipment_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Оборудование выполнения."
+    },
+    "interval_start": {
+      "$ref": "../common/defs.v1.json#/definitions/timestamp",
+      "description": "Начало интервала."
+    },
+    "interval_end": {
+      "$ref": "../common/defs.v1.json#/definitions/timestamp",
+      "description": "Конец интервала; отсутствует, пока операция идёт."
+    },
+    "interval_origin": {
+      "type": "string",
+      "enum": [
+        "source_reported",
+        "system_computed"
+      ],
+      "description": "Откуда границы: переданы источником / вычислены системой."
+    }
+  },
+  "required": [
+    "operation_run_id",
+    "interval_start",
+    "interval_origin"
+  ]
+}

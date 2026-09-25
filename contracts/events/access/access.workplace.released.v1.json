@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/access/access.workplace.released.v1.json",
+  "title": "AccessWorkplaceReleasedV1",
+  "description": "Сеанс рабочего места завершён сотрудником — сотрудник закрыл сеанс рабочего места.",
+  "type": "object",
+  "properties": {
+    "workplace_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Рабочее место."
+    },
+    "workplace_session_id": {
+      "$ref": "../common/defs.v1.json#/definitions/uuid",
+      "description": "Сеанс."
+    }
+  },
+  "required": [
+    "workplace_id",
+    "workplace_session_id"
+  ]
+}

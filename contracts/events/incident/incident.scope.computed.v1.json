@@ -1,0 +1,100 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/incident/incident.scope.computed.v1.json",
+  "title": "IncidentScopeComputedV1",
+  "description": "Новая версия области риска вычислена — область риска по общему фактору в окне от последней подтверждённо годной детали до обнаружения; расширяется консервативно; разбивка по местонахождению (FR-61).",
+  "type": "object",
+  "properties": {
+    "incident_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Инцидент."
+    },
+    "scope_version": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100000,
+      "description": "Версия области."
+    },
+    "window_start": {
+      "$ref": "../common/defs.v1.json#/definitions/timestamp",
+      "description": "Начало окна — последнее подтверждённо нормальное состояние."
+    },
+    "window_end": {
+      "$ref": "../common/defs.v1.json#/definitions/timestamp",
+      "description": "Конец окна — обнаружение."
+    },
+    "last_known_good_event_id": {
+      "$ref": "../common/defs.v1.json#/definitions/uuid",
+      "description": "Запись последнего подтверждённо нормального состояния."
+    },
+    "added_item_ids": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/item_id",
+        "description": "Изделие."
+      },
+      "description": "Добавленные изделия.",
+      "uniqueItems": true
+    },
+    "size": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991,
+      "description": "Размер области после версии."
+    },
+    "breakdown": {
+      "type": "object",
+      "description": "Разбивка: в производстве / ушли дальше / собраны / отгружены (FR-61).",
+      "properties": {
+        "in_production": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "description": "В производстве."
+        },
+        "moved_on": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "description": "Ушли дальше."
+        },
+        "assembled": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "description": "Собраны."
+        },
+        "shipped": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "description": "Отгружены."
+        }
+      },
+      "required": [
+        "in_production",
+        "moved_on",
+        "assembled",
+        "shipped"
+      ],
+      "title": "ScopeBreakdown"
+    },
+    "basis": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/uuid"
+      },
+      "description": "Основания — `event_id` записей, на которые опирается запись.",
+      "uniqueItems": true
+    }
+  },
+  "required": [
+    "incident_id",
+    "scope_version",
+    "window_start",
+    "window_end",
+    "size",
+    "breakdown",
+    "basis"
+  ]
+}

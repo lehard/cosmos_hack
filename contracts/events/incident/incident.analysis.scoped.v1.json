@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/incident/incident.analysis.scoped.v1.json",
+  "title": "IncidentAnalysisScopedV1",
+  "description": "Решено, нужен ли полный разбор — по политике: тяжесть, повторяемость, критичность, размер области; единичный мелкий случай — коррекция и закрытие (FR-64).",
+  "type": "object",
+  "properties": {
+    "incident_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Инцидент."
+    },
+    "full_analysis": {
+      "type": "boolean",
+      "description": "Нужен полный разбор."
+    },
+    "reason": {
+      "$ref": "../common/defs.v1.json#/definitions/reason",
+      "description": "Причина: код и текст."
+    }
+  },
+  "required": [
+    "incident_id",
+    "full_analysis",
+    "reason"
+  ]
+}

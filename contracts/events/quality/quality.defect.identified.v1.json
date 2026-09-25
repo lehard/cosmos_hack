@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/quality/quality.defect.identified.v1.json",
+  "title": "QualityDefectIdentifiedV1",
+  "description": "Физический дефект установлен — новый дефект по ключу (изделие, зона, место) без вида; уточнение вида в новом наблюдении не создаёт новый дефект (FR-37).",
+  "type": "object",
+  "properties": {
+    "defect_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Ключ физического дефекта."
+    },
+    "zone_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Зона."
+    },
+    "location": {
+      "type": "string",
+      "description": "Место в зоне.",
+      "maxLength": 256
+    },
+    "first_observation_event_id": {
+      "$ref": "../common/defs.v1.json#/definitions/uuid",
+      "description": "Первое наблюдение."
+    },
+    "defect_type_code": {
+      "type": "string",
+      "description": "Текущий вид по последнему наблюдению.",
+      "maxLength": 32
+    }
+  },
+  "required": [
+    "defect_id",
+    "zone_id",
+    "first_observation_event_id"
+  ]
+}

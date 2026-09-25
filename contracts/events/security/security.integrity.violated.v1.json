@@ -1,0 +1,39 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/security/security.integrity.violated.v1.json",
+  "title": "SecurityIntegrityViolatedV1",
+  "description": "Нарушение целостности обнаружено — звено цепочки не сходится, расхождение с контрольной точкой, проекция расходится с журналом (CA-…) — индикатор целостности на столах (FR-74).",
+  "type": "object",
+  "properties": {
+    "violation": {
+      "type": "string",
+      "enum": [
+        "chain_link_mismatch",
+        "checkpoint_mismatch",
+        "projection_mismatch",
+        "source_seq_gap",
+        "late_write",
+        "signature_invalid"
+      ],
+      "description": "Вид нарушения."
+    },
+    "seq": {
+      "$ref": "../common/defs.v1.json#/definitions/seq",
+      "description": "Место нарушения."
+    },
+    "ca_ref": {
+      "type": "string",
+      "description": "Номер критического действия `CA-‹n›`, если затронуто.",
+      "pattern": "^CA-[1-9][0-9]*$"
+    },
+    "detail": {
+      "type": "string",
+      "maxLength": 4000,
+      "description": "Что и где."
+    }
+  },
+  "required": [
+    "violation",
+    "detail"
+  ]
+}

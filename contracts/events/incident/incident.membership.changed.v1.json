@@ -1,0 +1,37 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/incident/incident.membership.changed.v1.json",
+  "title": "IncidentMembershipChangedV1",
+  "description": "Статус изделия в инциденте изменён — адресованная запись межизделийной стадии изделию: что известно и что делать (FR-62); распространяется вверх по дереву сборки (AD-42).",
+  "type": "object",
+  "properties": {
+    "incident_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Инцидент."
+    },
+    "scope_version": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100000,
+      "description": "Версия области."
+    },
+    "status": {
+      "$ref": "../common/defs.v1.json#/definitions/axis_incident",
+      "description": "Что известно об изделии в этом инциденте."
+    },
+    "action": {
+      "$ref": "../common/defs.v1.json#/definitions/dict_incident_action",
+      "description": "Что делать с изделием."
+    },
+    "via_assembly_of": {
+      "$ref": "../common/defs.v1.json#/definitions/item_id",
+      "description": "Компонент, через который изделие попало в область (распространение вверх по сборке)."
+    }
+  },
+  "required": [
+    "incident_id",
+    "scope_version",
+    "status",
+    "action"
+  ]
+}
