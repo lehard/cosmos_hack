@@ -1,0 +1,9 @@
+# Контекст сборки образа: только то, что нужно deploy/Dockerfile.
+**
+!backend/
+backend/tools/
+!deploy/config/
+!frontend/
+frontend/node_modules/
+frontend/dist/
+!third_party/

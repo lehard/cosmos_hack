@@ -1,0 +1,4 @@
+# ant — запуск одной командой: docker compose up (FR-109).
+# Состав и параметры — deploy/compose/compose.yaml.
+include:
+  - deploy/compose/compose.yaml

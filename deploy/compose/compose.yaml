@@ -1,0 +1,126 @@
+# Демо-стенд ant: `docker compose up` из корня репозитория (AD-25, FR-109).
+#
+# Порядок запуска: secrets-init (пароль БД в том, один раз) → postgres →
+# migrate (разовая роль) → ant (роль api, фронтенд встроен).
+# Следующие эпики добавляют сюда init (ключи, генезис), ant-worker ×N, keeper,
+# verifier, edge-agent, demo-signer.
+#
+# Память — под ~2,4 ГБ на всю систему (спайн, AD-25). Сейчас занято:
+#   postgres 768 МБ + ant 384 МБ (+ разовые secrets-init 32 МБ, migrate 128 МБ);
+#   остаток ~1,2 ГБ — воркерам, хранителю, верификатору и stand-ам.
+#
+# Переменные (необязательно): ANT_PROFILE (fixtures | demo | load | prod),
+# ANT_HTTP_PORT (порт на машине, по умолчанию 8480), ANT_HTTP_BIND
+# (по умолчанию 127.0.0.1 — закрытый контур), ANT_IMAGE, ANT_VERSION.
+
+x-ant-image: &ant-image
+  image: ${ANT_IMAGE:-ant:local}
+  build:
+    context: ../..
+    dockerfile: deploy/Dockerfile
+    args:
+      VERSION: ${ANT_VERSION:-dev}
+    labels:
+      ant.project: ant
+
+x-ant-common: &ant-common
+  environment:
+    ANT_PROFILE: ${ANT_PROFILE:-demo}
+    ANT_DB_HOST: postgres
+    ANT_DB_USER: ant_admin
+    ANT_DB_NAME: ant
+    ANT_DB_PASSWORD_FILE: /run/ant-secrets/ant/db_password
+  volumes:
+    - secrets:/run/ant-secrets:ro
+    - ../config/ant.yaml:/etc/ant/ant.yaml:ro
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+  labels:
+    ant.project: ant
+
+services:
+  secrets-init:
+    image: ${ANT_PG_IMAGE:-postgres:18.6-alpine}
+    entrypoint: ["/bin/sh", "/init/secrets-init.sh"]
+    volumes:
+      - secrets:/secrets
+      - ./secrets-init.sh:/init/secrets-init.sh:ro
+    network_mode: none
+    mem_limit: 32m
+    restart: "no"
+    labels:
+      ant.project: ant
+
+  postgres:
+    image: ${ANT_PG_IMAGE:-postgres:18.6-alpine}
+    depends_on:
+      secrets-init:
+        condition: service_completed_successfully
+    environment:
+      POSTGRES_USER: ant_admin
+      POSTGRES_DB: ant
+      POSTGRES_PASSWORD_FILE: /run/ant-secrets/postgres/db_password
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --data-checksums"
+    command:
+      - postgres
+      - -c
+      - shared_buffers=128MB
+      - -c
+      - effective_cache_size=384MB
+      - -c
+      - work_mem=4MB
+      - -c
+      - maintenance_work_mem=64MB
+      - -c
+      - max_connections=80
+    volumes:
+      - pgdata:/var/lib/postgresql
+      - secrets:/run/ant-secrets:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -q -U ant_admin -d ant"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+      start_period: 5s
+    mem_limit: 768m
+    shm_size: 128m
+    restart: unless-stopped
+    labels:
+      ant.project: ant
+
+  migrate:
+    <<: [*ant-image, *ant-common]
+    command: ["-role=migrate"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    mem_limit: 128m
+    restart: "no"
+
+  ant:
+    <<: [*ant-image, *ant-common]
+    command: ["-role=api"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    ports:
+      - "${ANT_HTTP_BIND:-127.0.0.1}:${ANT_HTTP_PORT:-8480}:8080"
+    tmpfs:
+      - /tmp:size=64m
+    healthcheck:
+      test: ["CMD", "/ant", "-healthcheck"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    mem_limit: 384m
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+    labels:
+      ant.project: ant
+  secrets:
+    labels:
+      ant.project: ant
