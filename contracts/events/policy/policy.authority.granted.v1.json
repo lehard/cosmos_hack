@@ -1,0 +1,84 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/policy/policy.authority.granted.v1.json",
+  "title": "PolicyAuthorityGrantedV1",
+  "description": "Полномочие выдано — особое право поверх роли с рамками (программа, семейство изделий, тяжесть, типы решений) и сроком; делегирование — тоже полномочие (FR-50, FR-78).",
+  "type": "object",
+  "properties": {
+    "person_id": {
+      "$ref": "../common/defs.v1.json#/definitions/person_ref",
+      "description": "Сотрудник."
+    },
+    "authority_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Полномочие (например, `quorum_signature`, `first_article`, `concession_approval`, `paper_attestation`)."
+    },
+    "scope": {
+      "type": "string",
+      "description": "Область действия: путь `здание/цех/участок/рабочее место` (иерархия областей, AD-15).",
+      "pattern": "^[a-z0-9_-]+(/[a-z0-9_-]+)*$",
+      "maxLength": 256
+    },
+    "limits": {
+      "type": "object",
+      "description": "Рамки полномочия.",
+      "properties": {
+        "programs": {
+          "type": "array",
+          "items": {
+            "$ref": "../common/defs.v1.json#/definitions/object_id",
+            "description": "Программа."
+          },
+          "description": "Программы.",
+          "uniqueItems": true
+        },
+        "item_type_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "../common/defs.v1.json#/definitions/object_id",
+            "description": "Тип изделия."
+          },
+          "description": "Семейства изделий.",
+          "uniqueItems": true
+        },
+        "max_severity": {
+          "$ref": "../common/defs.v1.json#/definitions/severity",
+          "description": "Наибольшая тяжесть."
+        },
+        "decision_types": {
+          "type": "array",
+          "items": {
+            "$ref": "../common/defs.v1.json#/definitions/code"
+          },
+          "description": "Типы решений.",
+          "uniqueItems": true
+        }
+      },
+      "required": [],
+      "title": "AuthorityLimits"
+    },
+    "delegated_by": {
+      "$ref": "../common/defs.v1.json#/definitions/person_ref",
+      "description": "Кто делегировал, если это делегирование."
+    },
+    "order_ref": {
+      "type": "string",
+      "description": "Приказ.",
+      "maxLength": 128
+    },
+    "valid_from": {
+      "$ref": "../common/defs.v1.json#/definitions/timestamp",
+      "description": "Начало действия (доменное время)."
+    },
+    "valid_until": {
+      "$ref": "../common/defs.v1.json#/definitions/timestamp",
+      "description": "Окончание действия; отсутствует — бессрочно."
+    }
+  },
+  "required": [
+    "person_id",
+    "authority_id",
+    "scope",
+    "valid_from"
+  ]
+}

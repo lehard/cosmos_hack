@@ -1,0 +1,110 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/key/key.registration.recorded.v1.json",
+  "title": "KeyRegistrationRecordedV1",
+  "description": "Ключ зарегистрирован актом — акт регистрации ключа человека, устройства или системы: открытый ключ, профиль, допустимые классы пакетов, доказательство владения, подтверждение субъекта, маршрут подписей (AD-11). Ротация — регистрация с `rotates`.",
+  "type": "object",
+  "properties": {
+    "key_ref": {
+      "$ref": "../common/defs.v1.json#/definitions/key_ref",
+      "description": "Регистрируемый ключ `key_id@версия`."
+    },
+    "subject_kind": {
+      "type": "string",
+      "enum": [
+        "person",
+        "device",
+        "engine",
+        "gateway",
+        "enterprise_gateway",
+        "keeper",
+        "verifier",
+        "demo_persona",
+        "partner_root"
+      ],
+      "description": "Чей ключ."
+    },
+    "subject_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Субъект: псевдоним, устройство, модуль."
+    },
+    "profile_id": {
+      "type": "string",
+      "enum": [
+        "gost",
+        "pq"
+      ],
+      "description": "Профиль ключа."
+    },
+    "algorithm": {
+      "type": "string",
+      "enum": [
+        "gost3410_2012_256_paramset_a",
+        "ml_dsa_65"
+      ],
+      "description": "Алгоритм."
+    },
+    "public_key_b64": {
+      "type": "string",
+      "description": "Открытый ключ в base64 (кодирование — contracts/crypto/README.md).",
+      "pattern": "^[A-Za-z0-9+/]+={0,2}$",
+      "maxLength": 4096
+    },
+    "fingerprint": {
+      "$ref": "../common/defs.v1.json#/definitions/digest",
+      "description": "Отпечаток открытого ключа."
+    },
+    "payload_classes": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/code"
+      },
+      "description": "Допустимые классы пакетов для ключа.",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "rotates": {
+      "$ref": "../common/defs.v1.json#/definitions/key_ref",
+      "description": "Предыдущий ключ при ротации."
+    },
+    "proof_of_possession_b64": {
+      "type": "string",
+      "description": "Подпись нового ключа над актом (доказательство владения).",
+      "pattern": "^[A-Za-z0-9+/]+={0,2}$",
+      "maxLength": 8192
+    },
+    "subject_confirmation": {
+      "type": "string",
+      "enum": [
+        "rotation_signature",
+        "paper_receipt",
+        "genesis"
+      ],
+      "description": "Подтверждение субъекта: подпись действующим ключом при ротации / бумажная расписка с отпечатком при первичной выдаче."
+    },
+    "document_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Акт — документ с маршрутом подписей."
+    },
+    "valid_from": {
+      "$ref": "../common/defs.v1.json#/definitions/timestamp",
+      "description": "Начало действия (доменное время)."
+    },
+    "valid_until": {
+      "$ref": "../common/defs.v1.json#/definitions/timestamp",
+      "description": "Окончание действия; отсутствует — бессрочно."
+    }
+  },
+  "required": [
+    "key_ref",
+    "subject_kind",
+    "subject_id",
+    "profile_id",
+    "algorithm",
+    "public_key_b64",
+    "fingerprint",
+    "payload_classes",
+    "subject_confirmation",
+    "valid_from"
+  ]
+}

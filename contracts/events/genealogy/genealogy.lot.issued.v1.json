@@ -1,0 +1,45 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/genealogy/genealogy.lot.issued.v1.json",
+  "title": "GenealogyLotIssuedV1",
+  "description": "Партия выдана в производство — какие изделия или задания получили материал или покупные из партии — связь «партия → изделия» для области риска (FR-45).",
+  "type": "object",
+  "properties": {
+    "lot_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Партия."
+    },
+    "item_ids": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/item_id",
+        "description": "Изделие."
+      },
+      "description": "Изделия-получатели.",
+      "uniqueItems": true
+    },
+    "order_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Задание."
+    },
+    "quantity": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100000000,
+      "description": "Количество."
+    },
+    "issued_by": {
+      "$ref": "../common/defs.v1.json#/definitions/person_ref",
+      "description": "Кладовщик."
+    },
+    "to_location_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Куда выдано."
+    }
+  },
+  "required": [
+    "lot_id",
+    "quantity",
+    "issued_by"
+  ]
+}

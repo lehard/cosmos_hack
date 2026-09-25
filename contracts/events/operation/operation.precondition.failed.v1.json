@@ -1,0 +1,55 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/operation/operation.precondition.failed.v1.json",
+  "title": "OperationPreconditionFailedV1",
+  "description": "Нарушено предусловие операции — перед операцией не выполнено условие на дату операции: квалификация, поверка, ревизия КД/ТП, срок годности материала, окно времени, проверка зоны, блок (FR-17, FR-20).",
+  "type": "object",
+  "properties": {
+    "operation_run_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Идентификатор выполнения операции; повтор операции — новый идентификатор со ссылкой `rework_of` (FR-47)."
+    },
+    "step_key": {
+      "$ref": "../common/defs.v1.json#/definitions/step_key",
+      "description": "Ключ шага процесса (`ant:properties/@stepKey`), к которому относится запись."
+    },
+    "precondition": {
+      "type": "string",
+      "enum": [
+        "qualification",
+        "equipment_verification",
+        "document_revision",
+        "material_expiry",
+        "time_window",
+        "zone_check",
+        "item_blocked",
+        "open_intervention",
+        "rework_limit",
+        "status_expired"
+      ],
+      "description": "Какое условие нарушено."
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "block",
+        "record_violation"
+      ],
+      "description": "Реакция по свойству шага: блокировка или нарушение с записью."
+    },
+    "subject_ref": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Объект условия: сотрудник, оборудование, партия, зона."
+    },
+    "detail": {
+      "type": "string",
+      "maxLength": 4000,
+      "description": "Подробности для карточки."
+    }
+  },
+  "required": [
+    "step_key",
+    "precondition",
+    "mode"
+  ]
+}

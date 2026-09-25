@@ -1,0 +1,20 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/journal/journal.build.changed.v1.json",
+  "title": "JournalBuildChangedV1",
+  "description": "Сменилась сборка доменного пакета — после смены сборки воркер пересматривает слоты с пометкой «пересмотрено из-за обновления» (AD-9).",
+  "type": "object",
+  "properties": {
+    "domain_build": {
+      "$ref": "../common/defs.v1.json#/definitions/digest",
+      "description": "Хеш доменного пакета."
+    },
+    "previous_build": {
+      "$ref": "../common/defs.v1.json#/definitions/digest",
+      "description": "Прежний хеш."
+    }
+  },
+  "required": [
+    "domain_build"
+  ]
+}

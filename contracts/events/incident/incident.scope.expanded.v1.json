@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/incident/incident.scope.expanded.v1.json",
+  "title": "IncidentScopeExpandedV1",
+  "description": "Область риска расширена человеком — осторожный шаг: человек добавляет изделия с основанием (FR-61).",
+  "type": "object",
+  "properties": {
+    "incident_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Инцидент."
+    },
+    "item_ids": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/item_id",
+        "description": "Изделие."
+      },
+      "description": "Добавляемые изделия.",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "reason": {
+      "$ref": "../common/defs.v1.json#/definitions/reason",
+      "description": "Основание расширения."
+    }
+  },
+  "required": [
+    "incident_id",
+    "item_ids",
+    "reason"
+  ]
+}

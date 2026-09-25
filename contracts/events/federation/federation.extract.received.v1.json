@@ -1,0 +1,46 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/federation/federation.extract.received.v1.json",
+  "title": "FederationExtractReceivedV1",
+  "description": "Выписка паспорта партнёра принята — получатель сам проверил подписи до корней партнёра (класс `partner`); непроверяемая — «происхождение не подтверждено»; изменённая — отклонена (FR-132, AD-19).",
+  "type": "object",
+  "properties": {
+    "partner_code": {
+      "type": "string",
+      "description": "Отправитель.",
+      "pattern": "^[A-Z0-9][A-Z0-9_-]{0,15}$"
+    },
+    "extract_digest": {
+      "$ref": "../common/defs.v1.json#/definitions/digest",
+      "description": "Отпечаток выписки."
+    },
+    "lot_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Партия, корнем генеалогии которой становится выписка."
+    },
+    "heat_no": {
+      "type": "string",
+      "description": "Плавка.",
+      "maxLength": 64
+    },
+    "origin_status": {
+      "type": "string",
+      "enum": [
+        "verified",
+        "server_confirmed_only",
+        "unverified"
+      ],
+      "description": "Статус происхождения."
+    },
+    "material_address": {
+      "$ref": "../common/defs.v1.json#/definitions/digest",
+      "description": "Адрес выписки в хранилище материалов."
+    }
+  },
+  "required": [
+    "partner_code",
+    "extract_digest",
+    "origin_status",
+    "material_address"
+  ]
+}

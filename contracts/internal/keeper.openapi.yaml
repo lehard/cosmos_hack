@@ -1,0 +1,144 @@
+openapi: 3.1.0
+info:
+  title: ant keeper — хранитель контрольных точек
+  version: 1.0.0
+  description: |
+    Контракт собственного процесса `cmd/keeper` (AD-8, AD-46). Транспорт — mTLS (сертификаты от `ant init`);
+    в промышленной эксплуатации хранитель — хост службы ИБ или ВП в другом административном домене.
+    Хранитель принимает новую голову, только если звенья от прежней головы сходятся (цепочка продолжена,
+    а не переписана); отвергает точку с seq не больше последней или с тем же seq и другим звеном.
+    Контрольная точка — пакет DSSE класса `checkpoint` профиля `hybrid` (contracts/crypto/checkpoint.schema.json).
+    Хранитель сам поднимает тревогу, если головы не приходили дольше 2N секунд (N — из policy.audit.*).
+servers:
+  - url: https://keeper:8444
+    description: Контейнер keeper в демо (mTLS)
+paths:
+  /v1/heads:
+    post:
+      operationId: keeper.heads.submit
+      summary: Передать головы цепочек и звенья от прежней головы
+      description: ant раз в N секунд передаёт головы обеих цепочек (main, ca) и все звенья после прежней принятой головы.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/HeadsSubmission'}
+      responses:
+        '200':
+          description: Головы приняты — выдана новая контрольная точка
+          content:
+            application/json:
+              schema: {$ref: '../crypto/dsse-envelope.schema.json'}
+        '409':
+          description: Звенья не сходятся (переписывание, вилка) или seq не больше последней — тревога записана
+          content:
+            application/problem+json:
+              schema: {$ref: '../problem.schema.json'}
+  /v1/checkpoints/latest:
+    get:
+      operationId: keeper.checkpoints.latest
+      summary: Последняя контрольная точка
+      responses:
+        '200':
+          description: Пакет DSSE контрольной точки
+          content:
+            application/json:
+              schema: {$ref: '../crypto/dsse-envelope.schema.json'}
+        '404':
+          description: Точек ещё нет
+          content:
+            application/problem+json:
+              schema: {$ref: '../problem.schema.json'}
+  /v1/checkpoints:
+    get:
+      operationId: keeper.checkpoints.list
+      summary: Контрольные точки после номера
+      description: Для верификатора — все точки после after_no.
+      parameters:
+        - {name: after_no, in: query, required: false, schema: {type: integer, minimum: 0}, description: "Номер, после которого выдать"}
+        - {name: limit, in: query, required: false, schema: {type: integer, minimum: 1, maximum: 1000}, description: Сколько выдать}
+      responses:
+        '200':
+          description: Пакеты DSSE по возрастанию номера
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '../crypto/dsse-envelope.schema.json'}
+  /v1/verifier-reports:
+    post:
+      operationId: keeper.reports.submit
+      summary: Сдать подписанный отчёт верификатора
+      description: Первичный канал вердикта — отчёт у хранителя; Аудитор ИБ и ВП получают его без ant (AD-46).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '../crypto/dsse-envelope.schema.json'}
+      responses:
+        '201':
+          description: Отчёт принят
+        '422':
+          description: Подпись верификатора не проверяется по trust-anchors
+          content:
+            application/problem+json:
+              schema: {$ref: '../problem.schema.json'}
+  /v1/verifier-reports/latest:
+    get:
+      operationId: keeper.reports.latest
+      summary: Последний отчёт верификатора
+      description: ant забирает его и журналирует security.integrity.checked; индикатор на столах — «по данным сервера».
+      responses:
+        '200':
+          description: Пакет DSSE класса verifier-report (contracts/internal/verifier/report.v1.json)
+          content:
+            application/json:
+              schema: {$ref: '../crypto/dsse-envelope.schema.json'}
+        '404':
+          description: Отчётов ещё нет
+          content:
+            application/problem+json:
+              schema: {$ref: '../problem.schema.json'}
+  /healthz:
+    get:
+      operationId: keeper.health
+      summary: Живость
+      responses:
+        '200':
+          description: Работает
+components:
+  schemas:
+    HeadsSubmission:
+      type: object
+      additionalProperties: false
+      required: [heads, links, committed_at_from, committed_at_to]
+      description: Головы цепочек и звенья от прежней головы.
+      properties:
+        heads:
+          type: array
+          minItems: 1
+          maxItems: 2
+          description: Головы main и ca.
+          items:
+            type: object
+            additionalProperties: false
+            required: [chain, seq, link]
+            properties:
+              chain: {type: string, enum: [main, ca], description: Цепочка}
+              seq: {type: integer, minimum: 0, description: Номер головы}
+              link: {type: string, pattern: '^streebog256:[0-9a-f]{64}$', description: Звено головы}
+        links:
+          type: array
+          description: Звенья после прежней принятой головы по порядку seq — чтобы хранитель проверил продолжение цепочки.
+          items:
+            type: object
+            additionalProperties: false
+            required: [chain, seq, commit, open_fields_hash, link]
+            properties:
+              chain: {type: string, enum: [main, ca], description: Цепочка}
+              seq: {type: integer, minimum: 1, description: Номер}
+              commit: {type: string, pattern: '^streebog256:[0-9a-f]{64}$', description: Обязательство}
+              open_fields_hash: {type: string, pattern: '^streebog256:[0-9a-f]{64}$', description: H(JCS(открытые поля без link))}
+              link: {type: string, pattern: '^streebog256:[0-9a-f]{64}$', description: Звено}
+        committed_at_from: {type: string, format: date-time, description: Наименьший committed_at}
+        committed_at_to: {type: string, format: date-time, description: Наибольший committed_at}

@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/operation/operation.run.resumed.v1.json",
+  "title": "OperationRunResumedV1",
+  "description": "Операция возобновлена — выполнение операции продолжено после паузы.",
+  "type": "object",
+  "properties": {
+    "operation_run_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Идентификатор выполнения операции; повтор операции — новый идентификатор со ссылкой `rework_of` (FR-47)."
+    }
+  },
+  "required": [
+    "operation_run_id"
+  ]
+}

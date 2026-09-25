@@ -1,0 +1,37 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/item/item.presentation.recorded.v1.json",
+  "title": "ItemPresentationRecordedV1",
+  "description": "Изделие предъявлено — мастер предъявляет изделие ОТК или представителю заказчика на точке предъявления; номер предъявления растёт, повторное требует подписи выше (FR-19).",
+  "type": "object",
+  "properties": {
+    "step_key": {
+      "$ref": "../common/defs.v1.json#/definitions/step_key",
+      "description": "Ключ шага процесса (`ant:properties/@stepKey`), к которому относится запись."
+    },
+    "presentation_no": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100,
+      "description": "Номер предъявления: 1 — первое, 2 — повторное и т. д."
+    },
+    "presented_to": {
+      "type": "string",
+      "enum": [
+        "qc",
+        "customer_representative"
+      ],
+      "description": "Кому предъявлено."
+    },
+    "presented_by": {
+      "$ref": "../common/defs.v1.json#/definitions/person_ref",
+      "description": "Кто предъявил (мастер)."
+    }
+  },
+  "required": [
+    "step_key",
+    "presentation_no",
+    "presented_to",
+    "presented_by"
+  ]
+}

@@ -1,0 +1,83 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/equipment/equipment.cycle.summarized.v1.json",
+  "title": "EquipmentCycleSummarizedV1",
+  "description": "Сводка параметров за цикл — edge-агент на окно цикла отдаёт сводку (среднее, максимум, выход за уставку) — не миллисекундную телеметрию; сырые данные остаются на краю (FR-147, AD-25). `event_id` = UUIDv5(устройство, окно, вид сводки).",
+  "type": "object",
+  "properties": {
+    "equipment_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Оборудование."
+    },
+    "station_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Участок."
+    },
+    "window_start": {
+      "$ref": "../common/defs.v1.json#/definitions/timestamp",
+      "description": "Начало окна."
+    },
+    "window_end": {
+      "$ref": "../common/defs.v1.json#/definitions/timestamp",
+      "description": "Конец окна."
+    },
+    "cycle_ref": {
+      "type": "string",
+      "description": "Идентификатор цикла у источника.",
+      "maxLength": 128
+    },
+    "parameters": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "description": "Сводка одного параметра.",
+        "properties": {
+          "parameter": {
+            "type": "string",
+            "description": "Параметр (ток, напряжение, скорость, давление, момент…).",
+            "maxLength": 64
+          },
+          "mean": {
+            "$ref": "../common/defs.v1.json#/definitions/measurement",
+            "description": "Среднее."
+          },
+          "max": {
+            "$ref": "../common/defs.v1.json#/definitions/measurement",
+            "description": "Максимум."
+          },
+          "min": {
+            "$ref": "../common/defs.v1.json#/definitions/measurement",
+            "description": "Минимум."
+          },
+          "setpoint": {
+            "$ref": "../common/defs.v1.json#/definitions/tolerance",
+            "description": "Уставка."
+          },
+          "out_of_setpoint_ms": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "description": "Сколько миллисекунд вне уставки."
+          }
+        },
+        "required": [
+          "parameter"
+        ],
+        "title": "ParameterSummary"
+      },
+      "description": "Сводки параметров.",
+      "minItems": 1
+    },
+    "raw_ref": {
+      "type": "string",
+      "description": "Ссылка на сырые данные на краю или в историческом хранилище.",
+      "maxLength": 256
+    }
+  },
+  "required": [
+    "equipment_id",
+    "window_start",
+    "window_end",
+    "parameters"
+  ]
+}

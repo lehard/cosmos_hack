@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/operator/operator.check.skipped.v1.json",
+  "title": "OperatorCheckSkippedV1",
+  "description": "Пропущена обязательная проверка — обязательной проверки нет — для этой точки «неизвестно»; изделие не пройдёт закрывающую точку, пока проверки нет; критическое действие исполнителя (FR-28, AD-28).",
+  "type": "object",
+  "properties": {
+    "operation_run_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Идентификатор выполнения операции; повтор операции — новый идентификатор со ссылкой `rework_of` (FR-47)."
+    },
+    "workplace_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Рабочее место."
+    },
+    "operator_id": {
+      "$ref": "../common/defs.v1.json#/definitions/person_ref",
+      "description": "Исполнитель (по входу на рабочее место, не по лицу)."
+    },
+    "inspection_point": {
+      "type": "string",
+      "description": "Какая проверка.",
+      "maxLength": 32
+    },
+    "step_key": {
+      "$ref": "../common/defs.v1.json#/definitions/step_key",
+      "description": "Ключ шага процесса (`ant:properties/@stepKey`), к которому относится запись."
+    },
+    "reason": {
+      "$ref": "../common/defs.v1.json#/definitions/reason",
+      "description": "Причина, если указал."
+    }
+  },
+  "required": [
+    "operator_id",
+    "step_key"
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "case": "Нет обязательного поля",
+  "note": "В результате контроля нет исхода `outcome`: problem+json с кодом и карантин.",
+  "expect": {
+    "outcome": "quarantined",
+    "code": "ingest.missing_required_field",
+    "field": "/data/outcome"
+  },
+  "message": {
+    "event_id": "01929a2b-7c3d-7e4f-8a5b-6c7d8e9f1003",
+    "event_type": "inspection.result.recorded",
+    "schema_version": 1,
+    "source_id": "edge-kt3",
+    "source_seq": 5001,
+    "source_kind": "camera",
+    "reliability": "high",
+    "occurred_at": "2026-09-25T10:15:30.123Z",
+    "correlation_id": "01929a2b-7c3d-7e4f-8a5b-000000000001",
+    "causation_id": null,
+    "item_id": "ENT01:FL-0007",
+    "integrity": {
+      "format_version": 1,
+      "crypto_profile": "gost",
+      "signers": [
+        "device-edge-kt3@1"
+      ]
+    },
+    "data": {
+      "method": "camera",
+      "phase": "after_operation",
+      "step_key": "welding.kt3_camera",
+      "inspection_point": "KT-3",
+      "operation_run_id": "run-W2-FL-0007-1",
+      "processing_state": "completed",
+      "zone_ids": [
+        "W-1.U3"
+      ],
+      "defects": [
+        {
+          "defect_type_code": "W-UNDERCUT",
+          "zone_id": "W-1.U3",
+          "severity": "major",
+          "stage_confidence_bp": 8700
+        }
+      ],
+      "analyzer_confidence_bp": 8700,
+      "observation_quality_bp": 9100,
+      "versions": {
+        "recipe_ref": "kt3-weld@1",
+        "analyzer_version": "vqc-emu-1.2.0",
+        "contract_version": "1"
+      }
+    }
+  }
+}

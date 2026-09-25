@@ -1,0 +1,61 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/decision/decision.presentation.resolved.v1.json",
+  "title": "DecisionPresentationResolvedV1",
+  "description": "Решение на точке предъявления — контролёр ОТК (или ПЗ/ВП) на закрывающей точке: принять / принять по разрешению на отклонение / не принять / мало данных. Без подписи изделие не проходит (FR-19, FR-44, FR-56).",
+  "type": "object",
+  "properties": {
+    "step_key": {
+      "$ref": "../common/defs.v1.json#/definitions/step_key",
+      "description": "Ключ шага процесса (`ant:properties/@stepKey`), к которому относится запись."
+    },
+    "closing_point": {
+      "type": "string",
+      "description": "Закрывающая точка: `ZT-1`…`ZT-6`, `ZT-R`, `ZT-V`.",
+      "maxLength": 16
+    },
+    "resolution": {
+      "type": "string",
+      "enum": [
+        "accept",
+        "accept_with_concession",
+        "reject",
+        "insufficient_data"
+      ],
+      "description": "Решение; значение попадает в условие ветки BPMN `decision`."
+    },
+    "presentation_no": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100,
+      "description": "Номер предъявления."
+    },
+    "concession_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Разрешение на отклонение для `accept_with_concession`."
+    },
+    "method_event_ids": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/uuid"
+      },
+      "description": "Результаты методов, на которых основано решение.",
+      "uniqueItems": true
+    },
+    "document_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Документ (журнал предъявления, протокол) с маршрутом подписей."
+    },
+    "reason": {
+      "$ref": "../common/defs.v1.json#/definitions/reason",
+      "description": "Причина: код и текст."
+    }
+  },
+  "required": [
+    "step_key",
+    "closing_point",
+    "resolution",
+    "presentation_no",
+    "method_event_ids"
+  ]
+}

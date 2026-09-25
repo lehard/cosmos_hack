@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/erp/erp.posting.compensation_decided.v1.json",
+  "title": "ErpPostingCompensationDecidedV1",
+  "description": "Решение об исправлении отправленного — новая версия реакции с тем же бизнес-ключом и другим содержимым уходит исправлением (сторно + новое) только по решению человека (AD-7).",
+  "type": "object",
+  "properties": {
+    "business_key": {
+      "type": "string",
+      "description": "Бизнес-ключ.",
+      "maxLength": 256
+    },
+    "superseded_request_event_id": {
+      "$ref": "../common/defs.v1.json#/definitions/uuid",
+      "description": "Отправленное ранее."
+    },
+    "new_request_event_id": {
+      "$ref": "../common/defs.v1.json#/definitions/uuid",
+      "description": "Новая версия."
+    },
+    "decision": {
+      "type": "string",
+      "enum": [
+        "send_correction",
+        "keep_as_sent"
+      ],
+      "description": "Решение."
+    },
+    "reason": {
+      "$ref": "../common/defs.v1.json#/definitions/reason",
+      "description": "Причина: код и текст."
+    }
+  },
+  "required": [
+    "business_key",
+    "superseded_request_event_id",
+    "decision",
+    "reason"
+  ]
+}

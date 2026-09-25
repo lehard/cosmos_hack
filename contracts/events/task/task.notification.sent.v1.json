@@ -1,0 +1,53 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/task/task.notification.sent.v1.json",
+  "title": "TaskNotificationSentV1",
+  "description": "Уведомление — адресное: информация / тревога / запрос решения; только тем, у кого есть действие (FR-57).",
+  "type": "object",
+  "properties": {
+    "notification_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Уведомление."
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "info",
+        "alarm",
+        "decision_request"
+      ],
+      "description": "Тип."
+    },
+    "recipient_role_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Роль-получатель."
+    },
+    "recipient_person_id": {
+      "$ref": "../common/defs.v1.json#/definitions/person_ref",
+      "description": "Получатель."
+    },
+    "subject_ref": {
+      "$ref": "../common/defs.v1.json#/definitions/stream_ref",
+      "description": "Субъект."
+    },
+    "text_key": {
+      "type": "string",
+      "description": "Ключ текста интерфейса (ui-texts).",
+      "maxLength": 128
+    },
+    "params": {
+      "type": "object",
+      "description": "Параметры текста.",
+      "additionalProperties": {
+        "type": "string",
+        "maxLength": 256
+      }
+    }
+  },
+  "required": [
+    "notification_id",
+    "severity",
+    "subject_ref",
+    "text_key"
+  ]
+}

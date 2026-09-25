@@ -1,0 +1,13 @@
+# Классы подписанных пакетов (AD-10): payloadType = application/vnd.ant.‹класс›+json; v=‹версия›.
+# Акт регистрации ключа перечисляет допустимые для ключа классы (key.registration.recorded.payload_classes).
+version: 1
+classes:
+  event:              {version: 1, schema: "contracts/events/common/envelope.v1.json", title: "Событие журнала: факт, решение, реакция, служебная запись"}
+  document-signature: {version: 1, schema: "contracts/events/document/document.signature.recorded.v1.json", title: "Подпись документа над отпечатком (в конверте события)"}
+  paper-attestation:  {version: 1, schema: "contracts/events/document/document.signature.recorded.v1.json", title: "Заверение бумажной подписи (method = paper)"}
+  shift-report:       {version: 1, schema: "contracts/internal/token-agent/shift-report.v1.json", title: "Сменный рапорт: корень Меркла подписей смены (уровень 3)"}
+  checkpoint:         {version: 1, schema: "contracts/crypto/checkpoint.schema.json", title: "Контрольная точка хранителя"}
+  genesis:            {version: 1, schema: "contracts/events/common/envelope.v1.json", title: "Записи блока генезиса"}
+  key-act:            {version: 1, schema: "contracts/events/common/envelope.v1.json", title: "Акт регистрации или отзыва ключа"}
+  verifier-report:    {version: 1, schema: "contracts/internal/verifier/report.v1.json", title: "Подписанный отчёт верификатора"}
+  passport-extract:   {version: 1, schema: "contracts/events/common/envelope.v1.json", title: "Выписка паспорта для межзаводского обмена"}

@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/analyzer/analyzer.passport.suspended.v1.json",
+  "title": "AnalyzerPassportSuspendedV1",
+  "description": "Паспорт допуска приостановлен — откат в сторону строгости по триггеру (дрейф, провал эталонного набора, рост расхождений, пропуск брака) — делегированное правило режима 2; действует на будущее, сильнее закреплённой версии (FR-101, AD-17, AD-29).",
+  "type": "object",
+  "properties": {
+    "passport_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Паспорт."
+    },
+    "trigger": {
+      "type": "string",
+      "enum": [
+        "drift",
+        "reference_set_failed",
+        "disagreement_growth",
+        "escape_detected"
+      ],
+      "description": "Триггер."
+    },
+    "fallback": {
+      "type": "string",
+      "enum": [
+        "previous_passport",
+        "manual_control"
+      ],
+      "description": "Что действует вместо."
+    },
+    "fallback_passport_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Предыдущий допущенный паспорт."
+    },
+    "basis": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/uuid"
+      },
+      "description": "Основания — `event_id` записей, на которые опирается запись.",
+      "uniqueItems": true
+    }
+  },
+  "required": [
+    "passport_id",
+    "trigger",
+    "fallback",
+    "basis"
+  ]
+}

@@ -1,0 +1,103 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/security/security.critical_action.recorded.v1.json",
+  "title": "SecurityCriticalActionRecordedV1",
+  "description": "Критическое действие — запись цепочки критических действий: действие, объект, было → стало, кто, полномочие и клеймо с ревизией политики, основание, материалы, ссылка на подписанную запись основного журнала; формирует только `domain/security.BuildCA` в той же транзакции (AD-28). Отмена — новой записью с `cancels`.",
+  "type": "object",
+  "properties": {
+    "ca_no": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991,
+      "description": "Номер `CA-‹n›` — позиция в цепочке критических действий (в хеш состояния не входит)."
+    },
+    "ca_group": {
+      "type": "string",
+      "enum": [
+        "product_decision",
+        "nc_decision",
+        "cause",
+        "risk_scope",
+        "control_change",
+        "authority",
+        "protected_data",
+        "admin_security"
+      ],
+      "description": "Группа (AD-28)."
+    },
+    "action_type": {
+      "$ref": "../common/defs.v1.json#/definitions/event_type",
+      "description": "Тип основной записи."
+    },
+    "main_event_id": {
+      "$ref": "../common/defs.v1.json#/definitions/uuid",
+      "description": "Основная запись."
+    },
+    "main_commit": {
+      "$ref": "../common/defs.v1.json#/definitions/digest",
+      "description": "Обязательство `commit` основной записи."
+    },
+    "object_ref": {
+      "$ref": "../common/defs.v1.json#/definitions/stream_ref",
+      "description": "Объект действия."
+    },
+    "before": {
+      "type": "string",
+      "maxLength": 4000,
+      "description": "Было (кратко)."
+    },
+    "after": {
+      "type": "string",
+      "maxLength": 4000,
+      "description": "Стало (кратко)."
+    },
+    "actor_id": {
+      "$ref": "../common/defs.v1.json#/definitions/person_ref",
+      "description": "Кто."
+    },
+    "attested_by": {
+      "$ref": "../common/defs.v1.json#/definitions/person_ref",
+      "description": "Заверитель бумажной подписи, если был."
+    },
+    "authority_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Полномочие."
+    },
+    "stamp_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Цифровое клеймо."
+    },
+    "policy_seq": {
+      "$ref": "../common/defs.v1.json#/definitions/seq",
+      "description": "Ревизия политики."
+    },
+    "basis_event_ids": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/uuid"
+      },
+      "description": "Основание и материалы.",
+      "uniqueItems": true
+    },
+    "cancels": {
+      "type": "string",
+      "description": "Отменяемое критическое действие `CA-‹n›`.",
+      "pattern": "^CA-[1-9][0-9]*$"
+    },
+    "cancel_reason": {
+      "$ref": "../common/defs.v1.json#/definitions/reason",
+      "description": "Причина отмены."
+    }
+  },
+  "required": [
+    "ca_no",
+    "ca_group",
+    "action_type",
+    "main_event_id",
+    "main_commit",
+    "object_ref",
+    "before",
+    "after",
+    "basis_event_ids"
+  ]
+}

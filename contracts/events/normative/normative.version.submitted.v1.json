@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/normative/normative.version.submitted.v1.json",
+  "title": "NormativeVersionSubmittedV1",
+  "description": "Версия отправлена на утверждение — черновик технолога → «на утверждении»: лист утверждения с читаемой разницей (FR-22…24).",
+  "type": "object",
+  "properties": {
+    "version_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Версия."
+    },
+    "process_version_hash": {
+      "$ref": "../common/defs.v1.json#/definitions/digest",
+      "description": "Хеш BPMN XML."
+    },
+    "bundle_digest": {
+      "$ref": "../common/defs.v1.json#/definitions/digest",
+      "description": "Отпечаток пакета."
+    },
+    "base_version_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Действующая версия, от которой разница."
+    },
+    "approval_document_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Лист утверждения (документ с маршрутом кворума)."
+    }
+  },
+  "required": [
+    "version_id",
+    "process_version_hash",
+    "bundle_digest",
+    "approval_document_id"
+  ]
+}

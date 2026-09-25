@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/access/access.account.activated.v1.json",
+  "title": "AccessAccountActivatedV1",
+  "description": "Учётная запись активирована — заявка на регистрацию активирована администратором с назначением роли (FR-128).",
+  "type": "object",
+  "properties": {
+    "person_id": {
+      "$ref": "../common/defs.v1.json#/definitions/person_ref",
+      "description": "Сотрудник."
+    },
+    "login": {
+      "type": "string",
+      "description": "Логин.",
+      "pattern": "^[a-z0-9._-]{3,64}$"
+    },
+    "initial_role_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Роль при активации."
+    }
+  },
+  "required": [
+    "person_id",
+    "login"
+  ]
+}

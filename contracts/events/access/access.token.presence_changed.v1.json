@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/access/access.token.presence_changed.v1.json",
+  "title": "AccessTokenPresenceChangedV1",
+  "description": "Токен вставлен или извлечён — агент токена сообщает о вставке или извлечении токена; вынутый ключ меняет статус поста не позднее 2 с (FR-6, FR-84).",
+  "type": "object",
+  "properties": {
+    "person_id": {
+      "$ref": "../common/defs.v1.json#/definitions/person_ref",
+      "description": "Владелец токена."
+    },
+    "workplace_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Рабочее место."
+    },
+    "present": {
+      "type": "boolean",
+      "description": "Токен вставлен."
+    }
+  },
+  "required": [
+    "person_id",
+    "workplace_id",
+    "present"
+  ]
+}

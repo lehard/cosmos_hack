@@ -1,0 +1,41 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/equipment/equipment.tool.changed.v1.json",
+  "title": "EquipmentToolChangedV1",
+  "description": "Инструмент установлен или заменён — инструмент и его ресурс (например, 73/75); замена инструмента сужает окно области риска (FR-147, FR-61).",
+  "type": "object",
+  "properties": {
+    "equipment_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Оборудование."
+    },
+    "station_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Участок."
+    },
+    "tool_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Инструмент."
+    },
+    "tool_life_used": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10000000,
+      "description": "Сделано циклов."
+    },
+    "tool_life_limit": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10000000,
+      "description": "Допустимо циклов."
+    },
+    "fixture_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Оснастка."
+    }
+  },
+  "required": [
+    "equipment_id",
+    "tool_id"
+  ]
+}

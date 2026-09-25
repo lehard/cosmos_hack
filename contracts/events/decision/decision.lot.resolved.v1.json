@@ -1,0 +1,46 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/decision/decision.lot.resolved.v1.json",
+  "title": "DecisionLotResolvedV1",
+  "description": "Решение по партии на входном контроле — ЗТ-1: партия годна / годна частично / не годна / мало данных; без подписи партия в работу не идёт.",
+  "type": "object",
+  "properties": {
+    "lot_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Партия."
+    },
+    "resolution": {
+      "type": "string",
+      "enum": [
+        "accept",
+        "accept_partially",
+        "reject",
+        "insufficient_data"
+      ],
+      "description": "Решение по партии."
+    },
+    "accepted_quantity": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10000000,
+      "description": "Принятое количество при частичной приёмке."
+    },
+    "method_event_ids": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/uuid"
+      },
+      "description": "Результаты контроля партии.",
+      "uniqueItems": true
+    },
+    "reason": {
+      "$ref": "../common/defs.v1.json#/definitions/reason",
+      "description": "Причина: код и текст."
+    }
+  },
+  "required": [
+    "lot_id",
+    "resolution",
+    "method_event_ids"
+  ]
+}

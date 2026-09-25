@@ -1,0 +1,3187 @@
+# Каталог типов записей журнала v1 (AD-40, FR-27, FR-28, кейс §4.3–4.4).
+# Все эпики берут имена событий только отсюда. Модуль расширяет своё семейство совместимо сам
+# (новый тип, новое необязательное поле); ломающие изменения и чужие семейства — через дирижёра.
+# Схема этого файла — catalog.schema.json; проверки — contracts/scripts/check.sh:
+#   у каждого типа есть схема data и ровно один эмитент; эмитент = владелец семейства
+#   (кроме emitter_exceptions); ось статуса меняет только её модуль-владелец (AD-30);
+#   у критического действия есть группа CA (AD-28); у каждого типа есть класс действия (AD-27).
+catalog_version: 1
+
+modules:
+  journal: "запись (Append), цепочки, контрольные точки, генезис, время"
+  engine: "композиция свёртки изделия и сценарий воркера — своих типов записей не эмитит"
+  crossitem: "межизделийная стадия: генеалогия, партии, привязка, адресованные записи"
+  ingest: "приём, подпись, схема, дедупликация, карантин, импорт"
+  reference: "справочники с версиями, календарь и смены, соответствия внешних ID"
+  process: "нормативный слой, версии процесса, исполнитель BPMN, операции и перемещения"
+  item: "паспорт, носители идентификатора, сборка, вмешательства"
+  quality: "результаты контроля, сигналы, дефекты, полнота контроля"
+  nonconformity: "несоответствия, решения, сдерживание, разрешения на отклонение"
+  analysis: "инциденты, область риска, гипотезы, причины, корректирующие меры"
+  machinelogs: "события оборудования, сводки выполнения, окна нарушений"
+  vision: "паспорта допуска анализаторов, проверки, откат"
+  documents: "документы, подписи, маршруты"
+  signing: "криптопрофили, ключи, акты регистрации и отзыва"
+  access: "люди, роли, полномочия, клейма, допуск к рабочему месту, действия исполнителя"
+  security: "события безопасности, журнал критических действий"
+  materials: "хранилище материалов по адресу содержимого"
+  notifications: "сроки, задачи, уведомления, эскалации"
+  analytics: "показатели — только проекции, своих типов записей не эмитит"
+  erp: "1С и Галактика: вход и исходящие учётные сообщения"
+  mes: "MES: задания, блокировки"
+  cad: "КОМПАС-3D: импорт условной сборки"
+  federation: "межзаводской обмен, партнёры, выписки"
+  simulation: "прогоны сценариев, виртуальные часы, инъекции стенда"
+  ops: "эксплуатация: сбои обработки, источники, интеграции"
+
+roles:
+  api: "команды и приём фактов (операции Huma, ingest)"
+  worker: "свёртка изделия и его реакции (AD-5)"
+  crossitem: "межизделийная стадия, одна копия-лидер (AD-42)"
+  projector: "глобальные потребители журнала, одна копия-лидер (AD-45)"
+  scheduler: "сроки, «наступил срок», окна ожидания"
+  outbox: "отправка исходящих сообщений и их квитанции"
+  stands: "stand-ы внешних систем и прогоны сценариев"
+  init: "ant init: генезис"
+
+streams:
+  item: "поток изделия `item:‹item_id›` — триггер свёртки (AD-5)"
+  lot: "партия, садка, плавка `lot:‹id›`"
+  group: "временная группа изделий (садка, групповая операция) `group:‹id›`"
+  concession: "разрешение на отклонение `concession:‹id›` — расход лимита атомарно (AD-39)"
+  incident: "инцидент и область риска `incident:‹id›`"
+  document: "документ вне изделия `document:‹id›`"
+  policy: "политика доступа `policy:‹область›`"
+  workplace: "рабочее место и его сеансы `workplace:‹id›`"
+  equipment: "оборудование и точка процесса `equipment:‹id›`"
+  process_version: "версия нормативного слоя `process_version:‹id›`"
+  analyzer_passport: "паспорт допуска карты контроля `analyzer_passport:‹id›`"
+  partner: "предприятие-партнёр `partner:‹код›`"
+  key: "ключ и его акты `key:‹key_id›`"
+  source: "источник событий `source:‹source_id›`"
+  person: "сотрудник `person:‹псевдоним›`"
+  reference: "справочник `reference:‹вид›:‹id›`"
+  order: "производственное задание `order:‹id›`"
+  erp_message: "исходящее учётное сообщение `erp_message:‹бизнес-ключ›`"
+  run: "прогон сценария `run:‹run_id›`"
+  global: "служебный глобальный поток"
+
+families:
+  item: {owner: item, title: "Изделие: регистрация, носители идентификатора, сборка, предъявление, вмешательства, выпуск"}
+  operation: {owner: process, title: "Операции и перемещения: начало, пауза, завершение, переходы, предусловия, точки процесса"}
+  inspection: {owner: quality, title: "Контроль: результат любого метода (три исхода), режим точки контроля"}
+  quality: {owner: quality, title: "Качество: сигналы, дефекты, повторные наблюдения, полнота, пропуск брака"}
+  equipment: {owner: machinelogs, title: "Оборудование: состояние, программа, инструмент, сводки, отклонения, окна нарушений"}
+  operator: {owner: access, title: "Исполнитель: действия у рабочего места, пропуски проверок, ручные вмешательства, наблюдения OperatorVision"}
+  decision: {owner: nonconformity, title: "Решения по изделию и несоответствию, сдерживание, разрешения на отклонение"}
+  erp: {owner: erp, title: "Учётные системы (1С, Галактика): входящие задания и справочники, исходящие учётные сообщения и квитанции"}
+  mes: {owner: mes, title: "MES: задания, блокировки изделий и партий"}
+  cad: {owner: cad, title: "КОМПАС-3D: импорт условной сборки"}
+  security: {owner: security, title: "Безопасность: шина событий безопасности и журнал критических действий"}
+  document: {owner: documents, title: "Документы: версии, подписи, маршруты, бумажные экземпляры"}
+  policy: {owner: access, title: "Политика доступа: роли, полномочия, цифровые клейма, разделение обязанностей, параметры аудита"}
+  access: {owner: access, title: "Доступ: сотрудники, учётные записи, СКУД, токены, допуск к рабочему месту, назначения, квалификации"}
+  key: {owner: signing, title: "Ключи и криптопрофили: регистрация, отзыв"}
+  time: {owner: journal, title: "Время: режим часов, тики виртуальных часов сценария"}
+  journal: {owner: journal, title: "Журнал: генезис, якорь, контрольные точки, сегменты, сборки, восстановление"}
+  ingest: {owner: ingest, title: "Приём: карантин, переобработка, импорт, флаги аномалий, потеря данных источника"}
+  material: {owner: materials, title: "Материалы: помещение в хранилище по адресу содержимого"}
+  binding: {owner: crossitem, title: "Привязка событий к изделию"}
+  genealogy: {owner: crossitem, title: "Генеалогия: партии, выдача партий, связи сборки, временные группы"}
+  normative: {owner: process, title: "Нормативный слой: версии процесса и их жизненный цикл"}
+  reference: {owner: reference, title: "Справочники: номенклатура, места, оборудование и поверка, календарь, смены, соответствия внешних ID"}
+  obligation: {owner: notifications, title: "Сроки: установка, снятие, наступление, эскалация"}
+  task: {owner: notifications, title: "Задачи и уведомления"}
+  incident: {owner: analysis, title: "Инциденты и причины: область риска, гипотезы, причины, корректирующие меры, предложения"}
+  analyzer: {owner: vision, title: "Анализаторы: проверки, паспорта допуска, приостановка и возврат"}
+  federation: {owner: federation, title: "Федерация: партнёры, выписки паспорта, межзаводские сообщения"}
+  simulation: {owner: simulation, title: "Симуляция: прогоны, пауза, инъекции цифрового стенда"}
+  ops: {owner: ops, title: "Эксплуатация: сбои обработки, отключение источников, деградация интеграций"}
+
+emitter_exceptions:
+  time.clock.ticked: "AD-37, AD-40: виртуальные часы сценария ведёт simulation; семейство time принадлежит journal"
+
+types:
+  # ── item (владелец схемы: item) ──
+  item.item.registered:
+    title: "Изделие зарегистрировано и запущено в работу"
+    emitter: "item"
+    role: "api"
+    kind: "decision"
+    stream: "item"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: true
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-42", "FR-45", "AD-16", "AD-17", "Е-09 item.registered"]
+  item.carrier.applied:
+    title: "Носитель идентификатора нанесён"
+    emitter: "item"
+    role: "api"
+    kind: "fact"
+    stream: "item"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: true
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-34", "AD-16", "Е-07 item.marked"]
+  item.carrier.verified:
+    title: "Носитель проверен считыванием"
+    emitter: "item"
+    role: "api"
+    kind: "fact"
+    stream: "item"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["AD-16"]
+  item.carrier.removed:
+    title: "Носитель снят"
+    emitter: "item"
+    role: "api"
+    kind: "fact"
+    stream: "item"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: true
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["AD-16", "AD-41"]
+  item.assembly.recorded:
+    title: "Компонент включён в сборку"
+    emitter: "item"
+    role: "api"
+    kind: "fact"
+    stream: "item"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: true
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-45", "кейс §4.6", "AD-42", "Е-41, Е-51 assembly.component_linked"]
+  item.presentation.recorded:
+    title: "Изделие предъявлено"
+    emitter: "item"
+    role: "api"
+    kind: "fact"
+    stream: "item"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-19", "Е-72 item.presented"]
+  item.intervention.opened:
+    title: "Вмешательство в собранное изделие открыто"
+    emitter: "item"
+    role: "api"
+    kind: "decision"
+    stream: "item"
+    axis: "none"
+    action_class: "protective"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-21", "FR-46", "Е-120 intervention.opened"]
+  item.intervention.closed:
+    title: "Вмешательство закрыто"
+    emitter: "item"
+    role: "api"
+    kind: "decision"
+    stream: "item"
+    axis: "none"
+    action_class: "permissive"
+    critical: true
+    ca_group: "product_decision"
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-21", "Е-121 intervention.closed"]
+  item.identification.questioned:
+    title: "Идентификация изделия под сомнением"
+    emitter: "item"
+    role: "worker"
+    kind: "reaction"
+    stream: "item"
+    axis: "none"
+    action_class: "protective"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["server_attested"]
+    versions: [1]
+    current_version: 1
+    refs: ["AD-16", "FR-34"]
+  item.identification.confirmed:
+    title: "Идентификация подтверждена человеком"
+    emitter: "item"
+    role: "api"
+    kind: "decision"
+    stream: "item"
+    axis: "none"
+    action_class: "permissive"
+    critical: true
+    ca_group: "protected_data"
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["AD-16"]
+  item.release.recorded:
+    title: "Изделие сдано на склад готовой продукции"
+    emitter: "item"
+    role: "api"
+    kind: "fact"
+    stream: "item"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: true
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-44", "FR-91", "Е-74 item.released"]
+
+  # ── operation (владелец схемы: process) ──
+  operation.run.started:
+    title: "Операция начата"
+    emitter: "process"
+    role: "api"
+    kind: "fact"
+    stream: "item"
+    axis: "position"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: true
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-27", "FR-44", "FR-47", "кейс §4.3", "Е-10, Е-40, Е-60 operation.started"]
+  operation.run.paused:
+    title: "Операция приостановлена"
+    emitter: "process"
+    role: "api"
+    kind: "fact"
+    stream: "item"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["кейс §4.3", "Е-11 operation.paused"]
+  operation.run.resumed:
+    title: "Операция возобновлена"
+    emitter: "process"
+    role: "api"
+    kind: "fact"
+    stream: "item"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["кейс §4.3", "Е-11 operation.resumed"]
+  operation.run.finished:
+    title: "Операция завершена"
+    emitter: "process"
+    role: "api"
+    kind: "fact"
+    stream: "item"
+    axis: "position"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: true
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-27", "кейс §4.4", "кейс §4.6", "Е-12 operation.finished"]
+  operation.run.interval_resolved:
+    title: "Интервал выполнения операции определён"
+    emitter: "process"
+    role: "worker"
+    kind: "reaction"
+    stream: "item"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: true
+    provenance: ["server_attested"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-121", "AD-29", "AD-42"]
+  operation.precondition.failed:
+    title: "Нарушено предусловие операции"
+    emitter: "process"
+    role: "worker"
+    kind: "reaction"
+    stream: "item"
+    axis: "none"
+    action_class: "protective"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["server_attested"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-17", "FR-20", "Е-13 operation.precondition_failed"]
+  operation.movement.sent:
+    title: "Изделие отправлено"
+    emitter: "process"
+    role: "api"
+    kind: "fact"
+    stream: "item"
+    axis: "position"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-16", "FR-130", "Е-30 movement.sent"]
+  operation.movement.received:
+    title: "Изделие принято на новом месте"
+    emitter: "process"
+    role: "api"
+    kind: "fact"
+    stream: "item"
+    axis: "position"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-16", "FR-55", "FR-130", "Е-31 movement.received", "Е-93 movement.isolator_confirmed"]
+  operation.message.thrown:
+    title: "Достигнуто событие-сообщение процесса"
+    emitter: "process"
+    role: "worker"
+    kind: "reaction"
+    stream: "item"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["server_attested"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-91", "FR-130", "AD-18", "каталог процессной сессии §5"]
+
+  # ── inspection (владелец схемы: quality) ──
+  inspection.result.recorded:
+    title: "Результат контроля записан"
+    emitter: "quality"
+    role: "api"
+    kind: "fact"
+    stream: "item"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: true
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-27", "FR-36", "FR-37", "FR-38", "FR-97", "FR-98", "кейс §4.4", "кейс §4.5", "Е-05, Е-06, Е-17, Е-18, Е-44, Е-45, Е-52, Е-54, Е-62, Е-70 inspection.result"]
+  inspection.point.mode_changed:
+    title: "Режим точки контроля изменён"
+    emitter: "quality"
+    role: "api"
+    kind: "fact"
+    stream: "equipment"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-35", "Е-86 checkpoint.mode_changed"]
+
+  # ── quality (владелец схемы: quality) ──
+  quality.signal.raised:
+    title: "Сигнал о признаке дефекта или нарушении"
+    emitter: "quality"
+    role: "worker"
+    kind: "reaction"
+    stream: "item"
+    axis: "quality"
+    action_class: "protective"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: true
+    provenance: ["server_attested"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-48", "FR-121", "кейс §2.3", "Е-80 quality.signal_raised"]
+  quality.defect.identified:
+    title: "Физический дефект установлен"
+    emitter: "quality"
+    role: "worker"
+    kind: "reaction"
+    stream: "item"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: true
+    provenance: ["server_attested"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-37", "кейс §4.5"]
+  quality.observation.linked:
+    title: "Наблюдение связано с известным дефектом"
+    emitter: "quality"
+    role: "worker"
+    kind: "reaction"
+    stream: "item"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["server_attested"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-37", "Е-81 quality.observation_linked"]
+  quality.inspection.missing:
+    title: "Нет данных контроля"
+    emitter: "quality"
+    role: "worker"
+    kind: "reaction"
+    stream: "item"
+    axis: "quality"
+    action_class: "protective"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["server_attested"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-35", "FR-14", "Е-82 quality.inspection_missing"]
+  quality.escape.recorded:
+    title: "Пропуск брака зафиксирован"
+    emitter: "quality"
+    role: "worker"
+    kind: "reaction"
+    stream: "item"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: true
+    provenance: ["server_attested"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-100", "П-01 quality.escape_recorded"]
+  quality.inspection.auto_passed:
+    title: "Уверенный результат пропущен к следующему контролю"
+    emitter: "quality"
+    role: "worker"
+    kind: "reaction"
+    stream: "item"
+    axis: "none"
+    action_class: "permissive"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["server_attested"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-48", "FR-98", "AD-27", "AD-29"]
+
+  # ── equipment (владелец схемы: machinelogs) ──
+  equipment.state.changed:
+    title: "Состояние оборудования изменилось (v1)"
+    emitter: "machinelogs"
+    role: "api"
+    kind: "fact"
+    stream: "equipment"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: true
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
+    versions: [1, 2]
+    current_version: 2
+    refs: ["FR-110", "FR-121", "кейс §4.4 machine_state", "Е-14…Е-16 machine.state"]
+  equipment.program.changed:
+    title: "Программа оборудования сменилась"
+    emitter: "machinelogs"
+    role: "api"
+    kind: "fact"
+    stream: "equipment"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: true
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-147"]
+  equipment.tool.changed:
+    title: "Инструмент установлен или заменён"
+    emitter: "machinelogs"
+    role: "api"
+    kind: "fact"
+    stream: "equipment"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: true
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-147", "FR-61"]
+  equipment.cycle.summarized:
+    title: "Сводка параметров за цикл"
+    emitter: "machinelogs"
+    role: "api"
+    kind: "fact"
+    stream: "equipment"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: true
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-147", "FR-148", "AD-25", "Е-42, Е-53, Е-61 machine.parameters"]
+  equipment.deviation.detected:
+    title: "Отклонение оборудования выделено"
+    emitter: "machinelogs"
+    role: "api"
+    kind: "fact"
+    stream: "equipment"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: true
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-121", "FR-147", "FR-149", "Е-15, Е-43 machine.state warning"]
+  equipment.violation.window_resolved:
+    title: "Окно нарушения режима определено"
+    emitter: "machinelogs"
+    role: "crossitem"
+    kind: "reaction"
+    stream: "equipment"
+    axis: "none"
+    action_class: "protective"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["server_attested"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-151", "AD-29", "AD-42"]
+
+  # ── operator (владелец схемы: access) ──
+  operator.step.confirmed:
+    title: "Шаг подтверждён исполнителем"
+    emitter: "access"
+    role: "api"
+    kind: "fact"
+    stream: "item"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-66", "FR-137", "Е-23 operator.action confirmation"]
+  operator.check.skipped:
+    title: "Пропущена обязательная проверка"
+    emitter: "access"
+    role: "api"
+    kind: "fact"
+    stream: "item"
+    axis: "none"
+    action_class: "record"
+    critical: true
+    ca_group: "control_change"
+    guard_relevant: true
+    publish_stage: true
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-28", "FR-77", "AD-28", "Е-21 operator.action check_skipped"]
+  operator.override.performed:
+    title: "Ручное вмешательство в автоматику"
+    emitter: "access"
+    role: "api"
+    kind: "fact"
+    stream: "item"
+    axis: "none"
+    action_class: "record"
+    critical: true
+    ca_group: "control_change"
+    guard_relevant: true
+    publish_stage: true
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["AD-28", "Е-22 operator.action manual_override"]
+  operator.mode.changed:
+    title: "Исполнитель сменил режим оборудования"
+    emitter: "access"
+    role: "api"
+    kind: "fact"
+    stream: "item"
+    axis: "none"
+    action_class: "record"
+    critical: true
+    ca_group: "control_change"
+    guard_relevant: false
+    publish_stage: true
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-28", "FR-147", "AD-28", "Е-20 operator.action mode_change"]
+  operator.deviation.reported:
+    title: "Исполнитель сообщил об отклонении"
+    emitter: "access"
+    role: "api"
+    kind: "fact"
+    stream: "item"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: true
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-137"]
+  operator.inspection.requested:
+    title: "Исполнитель запросил контроль"
+    emitter: "access"
+    role: "api"
+    kind: "fact"
+    stream: "item"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-137"]
+  operator.action.observed:
+    title: "Действие исполнителя замечено (OperatorVision)"
+    emitter: "access"
+    role: "api"
+    kind: "fact"
+    stream: "item"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: true
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-126", "Е-24 operator_action.detected"]
+
+  # ── decision (владелец схемы: nonconformity) ──
+  decision.nonconformity.drafted:
+    title: "Черновик карточки несоответствия"
+    emitter: "nonconformity"
+    role: "worker"
+    kind: "reaction"
+    stream: "item"
+    axis: "none"
+    action_class: "protective"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["server_attested"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-51", "Е-83 nc.draft_created"]
+  decision.nonconformity.registered:
+    title: "Несоответствие зарегистрировано правилом"
+    emitter: "nonconformity"
+    role: "crossitem"
+    kind: "reaction"
+    stream: "item"
+    axis: "none"
+    action_class: "protective"
+    critical: true
+    ca_group: "product_decision"
+    guard_relevant: true
+    publish_stage: true
+    provenance: ["server_attested"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-151", "AD-29", "AD-42"]
+  decision.nonconformity.confirmed:
+    title: "Несоответствие подтверждено"
+    emitter: "nonconformity"
+    role: "api"
+    kind: "decision"
+    stream: "item"
+    axis: "none"
+    action_class: "protective"
+    critical: true
+    ca_group: "product_decision"
+    guard_relevant: true
+    publish_stage: true
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-51", "FR-52", "FR-146", "кейс §4.5", "Е-90 decision.signal_confirmed"]
+  decision.signal.rejected:
+    title: "Сигнал отклонён"
+    emitter: "nonconformity"
+    role: "api"
+    kind: "decision"
+    stream: "item"
+    axis: "none"
+    action_class: "permissive"
+    critical: true
+    ca_group: "product_decision"
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-52", "FR-99", "FR-146", "Е-91 decision.signal_rejected"]
+  decision.recheck.requested:
+    title: "Назначена дополнительная проверка"
+    emitter: "nonconformity"
+    role: "api"
+    kind: "decision"
+    stream: "item"
+    axis: "containment"
+    action_class: "protective"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-52", "Е-92 decision.recheck_requested"]
+  decision.item.isolated:
+    title: "Изделие изолировано"
+    emitter: "nonconformity"
+    role: "api"
+    kind: "decision"
+    stream: "item"
+    axis: "none"
+    action_class: "protective"
+    critical: true
+    ca_group: "product_decision"
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-55", "FR-146", "Е-93 decision.item_isolated"]
+  decision.containment.applied:
+    title: "Сдерживание применено правилом"
+    emitter: "nonconformity"
+    role: "worker"
+    kind: "reaction"
+    stream: "item"
+    axis: "containment"
+    action_class: "protective"
+    critical: true
+    ca_group: "product_decision"
+    guard_relevant: true
+    publish_stage: true
+    provenance: ["server_attested"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-49", "FR-50", "AD-27", "Е-84 containment.hold_applied"]
+  decision.containment.set:
+    title: "Сдерживание установлено человеком"
+    emitter: "nonconformity"
+    role: "api"
+    kind: "decision"
+    stream: "item"
+    axis: "containment"
+    action_class: "protective"
+    critical: true
+    ca_group: "product_decision"
+    guard_relevant: true
+    publish_stage: true
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-49", "FR-146"]
+  decision.containment.released:
+    title: "Сдерживание снято"
+    emitter: "nonconformity"
+    role: "api"
+    kind: "decision"
+    stream: "item"
+    axis: "containment"
+    action_class: "permissive"
+    critical: true
+    ca_group: "product_decision"
+    guard_relevant: true
+    publish_stage: true
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-49", "FR-144", "FR-146"]
+  decision.disposition.set:
+    title: "Решение по изделию принято"
+    emitter: "nonconformity"
+    role: "api"
+    kind: "decision"
+    stream: "item"
+    axis: "disposition"
+    action_class: "irreversible"
+    critical: true
+    ca_group: "nc_decision"
+    guard_relevant: true
+    publish_stage: true
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-53", "FR-54", "FR-146", "AD-43", "Е-94 decision.disposition_set"]
+  decision.disposition.applied:
+    title: "Решение по изделию применено правилом"
+    emitter: "nonconformity"
+    role: "worker"
+    kind: "reaction"
+    stream: "item"
+    axis: "disposition"
+    action_class: "permissive"
+    critical: true
+    ca_group: "nc_decision"
+    guard_relevant: true
+    publish_stage: true
+    provenance: ["server_attested"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-50", "PRD §11.9", "AD-30"]
+  decision.disposition.verified:
+    title: "Исполнение решения проверено"
+    emitter: "nonconformity"
+    role: "api"
+    kind: "decision"
+    stream: "item"
+    axis: "none"
+    action_class: "permissive"
+    critical: true
+    ca_group: "product_decision"
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-53", "Е-96 decision.disposition_verified"]
+  decision.nonconformity.closed:
+    title: "Несоответствие закрыто по изделию"
+    emitter: "nonconformity"
+    role: "api"
+    kind: "decision"
+    stream: "item"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-51", "Е-98 nc.item_closed"]
+  decision.presentation.resolved:
+    title: "Решение на точке предъявления"
+    emitter: "nonconformity"
+    role: "api"
+    kind: "decision"
+    stream: "item"
+    axis: "none"
+    action_class: "permissive"
+    critical: true
+    ca_group: "product_decision"
+    guard_relevant: true
+    publish_stage: true
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-19", "FR-44", "FR-56", "FR-146", "Е-19, Е-47, Е-55, Е-63, Е-73 decision.gate_passed"]
+  decision.lot.resolved:
+    title: "Решение по партии на входном контроле"
+    emitter: "nonconformity"
+    role: "api"
+    kind: "decision"
+    stream: "lot"
+    axis: "none"
+    action_class: "permissive"
+    critical: true
+    ca_group: "product_decision"
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-19", "Е-08 decision.gate_passed (ЗТ-1)"]
+  decision.concession.revoked:
+    title: "Разрешение на отклонение отозвано"
+    emitter: "nonconformity"
+    role: "api"
+    kind: "decision"
+    stream: "concession"
+    axis: "none"
+    action_class: "protective"
+    critical: true
+    ca_group: "nc_decision"
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-54", "Е-95 permit.revoked"]
+  decision.rework_limit.waived:
+    title: "Разрешено превысить лимит доработок"
+    emitter: "nonconformity"
+    role: "api"
+    kind: "decision"
+    stream: "item"
+    axis: "none"
+    action_class: "permissive"
+    critical: true
+    ca_group: "nc_decision"
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-18", "Е-46 rework.limit_reached"]
+  decision.process_hold.set:
+    title: "Остановка точки процесса установлена"
+    emitter: "nonconformity"
+    role: "api"
+    kind: "decision"
+    stream: "equipment"
+    axis: "none"
+    action_class: "protective"
+    critical: true
+    ca_group: "product_decision"
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-49", "Е-114 process_hold.set"]
+  decision.process_hold.released:
+    title: "Остановка точки процесса снята"
+    emitter: "nonconformity"
+    role: "api"
+    kind: "decision"
+    stream: "equipment"
+    axis: "none"
+    action_class: "permissive"
+    critical: true
+    ca_group: "product_decision"
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-49", "Е-114 process_hold.released"]
+
+  # ── erp (владелец схемы: erp) ──
+  erp.order.received:
+    title: "Получено производственное задание"
+    emitter: "erp"
+    role: "api"
+    kind: "fact"
+    stream: "order"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["server_attested", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-91", "кейс §5.3", "Е-01 erp.order_received"]
+  erp.nomenclature.synced:
+    title: "Справочник номенклатуры получен"
+    emitter: "erp"
+    role: "api"
+    kind: "fact"
+    stream: "reference"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["server_attested", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-91", "Е-02 erp.nomenclature_synced"]
+  erp.lot.received:
+    title: "Партия поступила"
+    emitter: "erp"
+    role: "api"
+    kind: "fact"
+    stream: "lot"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["server_attested", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-91", "Е-03 erp.batch_received"]
+  erp.posting.requested:
+    title: "Учётное сообщение сформировано"
+    emitter: "erp"
+    role: "projector"
+    kind: "reaction"
+    stream: "erp_message"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["server_attested"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-91", "FR-96", "AD-7", "AD-18", "erp.posting_sent"]
+  erp.posting.responded:
+    title: "Ответ учётной системы"
+    emitter: "erp"
+    role: "outbox"
+    kind: "fact"
+    stream: "erp_message"
+    axis: "erp_accounting"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["server_attested", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-91", "FR-96", "AD-30", "Е-75 integration.ack / integration.error"]
+  erp.posting.quarantined:
+    title: "Исходящее сообщение в карантине"
+    emitter: "erp"
+    role: "outbox"
+    kind: "service"
+    stream: "erp_message"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["server_attested", "genesis"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-96", "AD-18"]
+  erp.posting.resend_requested:
+    title: "Переотправка запрошена администратором"
+    emitter: "erp"
+    role: "api"
+    kind: "decision"
+    stream: "erp_message"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-96"]
+  erp.posting.compensation_decided:
+    title: "Решение об исправлении отправленного"
+    emitter: "erp"
+    role: "api"
+    kind: "decision"
+    stream: "erp_message"
+    axis: "none"
+    action_class: "record"
+    critical: true
+    ca_group: "protected_data"
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["AD-7", "FR-96"]
+
+  # ── mes (владелец схемы: mes) ──
+  mes.job.received:
+    title: "Получено задание MES"
+    emitter: "mes"
+    role: "api"
+    kind: "fact"
+    stream: "order"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["server_attested", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-93"]
+  mes.hold.requested:
+    title: "Блокировка передаётся в MES"
+    emitter: "mes"
+    role: "projector"
+    kind: "reaction"
+    stream: "erp_message"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["server_attested"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-93", "AD-30"]
+  mes.hold.responded:
+    title: "Ответ MES на блокировку"
+    emitter: "mes"
+    role: "outbox"
+    kind: "fact"
+    stream: "erp_message"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["server_attested", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-93"]
+
+  # ── cad (владелец схемы: cad) ──
+  cad.assembly.imported:
+    title: "Условная сборка импортирована"
+    emitter: "cad"
+    role: "api"
+    kind: "fact"
+    stream: "reference"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["server_attested", "personal", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-94", "кейс §5.3", "PRD §11.15"]
+
+  # ── security (владелец схемы: security) ──
+  security.auth.failed:
+    title: "Неудачный вход"
+    emitter: "security"
+    role: "api"
+    kind: "service"
+    stream: "global"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["server_attested", "genesis"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-118", "AD-24"]
+  security.signature.invalid:
+    title: "Недействительная подпись"
+    emitter: "security"
+    role: "api"
+    kind: "service"
+    stream: "global"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["server_attested", "genesis"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-26", "FR-68", "FR-118", "AD-10", "AD-24"]
+  security.idempotency.conflict:
+    title: "Конфликт идемпотентности"
+    emitter: "security"
+    role: "api"
+    kind: "service"
+    stream: "source"
+    axis: "none"
+    action_class: "record"
+    critical: true
+    ca_group: "admin_security"
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["server_attested", "genesis"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-31", "FR-77", "AD-7"]
+  security.access.denied:
+    title: "Отказ в доступе"
+    emitter: "security"
+    role: "api"
+    kind: "service"
+    stream: "global"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["server_attested", "genesis"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-85", "FR-118", "AD-24"]
+  security.admission.denied:
+    title: "Отказ в допуске к рабочему месту"
+    emitter: "security"
+    role: "api"
+    kind: "service"
+    stream: "workplace"
+    axis: "none"
+    action_class: "record"
+    critical: true
+    ca_group: "admin_security"
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["server_attested", "genesis"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-77", "FR-83", "AD-15"]
+  security.key.alert:
+    title: "Тревога по ключу"
+    emitter: "security"
+    role: "api"
+    kind: "service"
+    stream: "key"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["server_attested", "genesis"]
+    versions: [1]
+    current_version: 1
+    refs: ["AD-11", "AD-14", "FR-118"]
+  security.keeper.alert:
+    title: "Тревога хранителя"
+    emitter: "security"
+    role: "api"
+    kind: "service"
+    stream: "global"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["server_attested", "genesis"]
+    versions: [1]
+    current_version: 1
+    refs: ["AD-8", "FR-72"]
+  security.integrity.violated:
+    title: "Нарушение целостности обнаружено"
+    emitter: "security"
+    role: "api"
+    kind: "service"
+    stream: "global"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["server_attested", "genesis"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-73", "FR-74", "AD-9", "AD-28"]
+  security.integrity.checked:
+    title: "Отчёт верификатора получен"
+    emitter: "security"
+    role: "api"
+    kind: "service"
+    stream: "global"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["server_attested", "genesis"]
+    versions: [1]
+    current_version: 1
+    refs: ["AD-9", "AD-46", "FR-73"]
+  security.presence.deviation:
+    title: "Отклонение присутствия"
+    emitter: "security"
+    role: "projector"
+    kind: "service"
+    stream: "workplace"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["server_attested", "genesis"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-84"]
+  security.critical_action.recorded:
+    title: "Критическое действие"
+    emitter: "security"
+    role: "api"
+    kind: "service"
+    stream: "global"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["server_attested", "genesis"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-77", "FR-146", "AD-28", "AD-44"]
+
+  # ── document (владелец схемы: documents) ──
+  document.version.requested:
+    title: "Запрошено оформление документа"
+    emitter: "documents"
+    role: "api"
+    kind: "decision"
+    stream: "document"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-136", "FR-146", "AD-12"]
+  document.version.drafted:
+    title: "Версия документа сформирована"
+    emitter: "documents"
+    role: "worker"
+    kind: "reaction"
+    stream: "document"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["server_attested"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-65", "AD-12", "AD-13", "AD-43"]
+  document.signature.recorded:
+    title: "Подпись документа записана"
+    emitter: "documents"
+    role: "api"
+    kind: "decision"
+    stream: "document"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-66", "FR-139", "AD-13", "AD-14", "AD-43"]
+  document.route.closed:
+    title: "Маршрут подписей закрыт"
+    emitter: "documents"
+    role: "worker"
+    kind: "reaction"
+    stream: "document"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: true
+    provenance: ["server_attested"]
+    versions: [1]
+    current_version: 1
+    refs: ["AD-43", "FR-50"]
+  document.version.annulled:
+    title: "Версия документа аннулирована"
+    emitter: "documents"
+    role: "api"
+    kind: "decision"
+    stream: "document"
+    axis: "none"
+    action_class: "record"
+    critical: true
+    ca_group: "protected_data"
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["AD-12"]
+  document.paper.status_changed:
+    title: "Статус бумажного экземпляра"
+    emitter: "documents"
+    role: "api"
+    kind: "fact"
+    stream: "document"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["personal", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["AD-12", "FR-139"]
+
+  # ── policy (владелец схемы: access) ──
+  policy.role.defined:
+    title: "Роль определена"
+    emitter: "access"
+    role: "api"
+    kind: "decision"
+    stream: "policy"
+    axis: "none"
+    action_class: "record"
+    critical: true
+    ca_group: "authority"
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario", "genesis"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-78", "AD-15"]
+  policy.role.assigned:
+    title: "Роль назначена в области"
+    emitter: "access"
+    role: "api"
+    kind: "decision"
+    stream: "policy"
+    axis: "none"
+    action_class: "permissive"
+    critical: true
+    ca_group: "authority"
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario", "genesis"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-78", "FR-85", "AD-15"]
+  policy.role.unassigned:
+    title: "Роль снята"
+    emitter: "access"
+    role: "api"
+    kind: "decision"
+    stream: "policy"
+    axis: "none"
+    action_class: "protective"
+    critical: true
+    ca_group: "authority"
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-78"]
+  policy.authority.granted:
+    title: "Полномочие выдано"
+    emitter: "access"
+    role: "api"
+    kind: "decision"
+    stream: "policy"
+    axis: "none"
+    action_class: "permissive"
+    critical: true
+    ca_group: "authority"
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario", "genesis"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-50", "FR-78", "FR-85"]
+  policy.authority.revoked:
+    title: "Полномочие отозвано"
+    emitter: "access"
+    role: "api"
+    kind: "decision"
+    stream: "policy"
+    axis: "none"
+    action_class: "protective"
+    critical: true
+    ca_group: "authority"
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-78"]
+  policy.stamp.issued:
+    title: "Цифровое клеймо выдано"
+    emitter: "access"
+    role: "api"
+    kind: "decision"
+    stream: "policy"
+    axis: "none"
+    action_class: "permissive"
+    critical: true
+    ca_group: "authority"
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario", "genesis"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-145", "AD-11", "AD-15"]
+  policy.stamp.revoked:
+    title: "Цифровое клеймо отозвано"
+    emitter: "access"
+    role: "api"
+    kind: "decision"
+    stream: "policy"
+    axis: "none"
+    action_class: "protective"
+    critical: true
+    ca_group: "authority"
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-145"]
+  policy.sod_rule.set:
+    title: "Правило разделения обязанностей"
+    emitter: "access"
+    role: "api"
+    kind: "decision"
+    stream: "policy"
+    axis: "none"
+    action_class: "record"
+    critical: true
+    ca_group: "authority"
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario", "genesis"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-56", "AD-15", "AD-43"]
+  policy.audit.parameters_set:
+    title: "Параметры аудита установлены"
+    emitter: "access"
+    role: "api"
+    kind: "decision"
+    stream: "policy"
+    axis: "none"
+    action_class: "record"
+    critical: true
+    ca_group: "admin_security"
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "genesis", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["AD-8", "AD-15", "AD-24"]
+
+  # ── access (владелец схемы: access) ──
+  access.person.registered:
+    title: "Сотрудник заведён"
+    emitter: "access"
+    role: "api"
+    kind: "decision"
+    stream: "person"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-78"]
+  access.account.activated:
+    title: "Учётная запись активирована"
+    emitter: "access"
+    role: "api"
+    kind: "decision"
+    stream: "person"
+    axis: "none"
+    action_class: "permissive"
+    critical: true
+    ca_group: "authority"
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-128"]
+  access.zone.passed:
+    title: "Проход через точку СКУД"
+    emitter: "access"
+    role: "api"
+    kind: "fact"
+    stream: "person"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["device", "server_attested", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-82", "FR-83"]
+  access.token.presence_changed:
+    title: "Токен вставлен или извлечён"
+    emitter: "access"
+    role: "api"
+    kind: "fact"
+    stream: "workplace"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-6", "FR-84"]
+  access.workplace.admitted:
+    title: "Допуск к рабочему месту открыт"
+    emitter: "access"
+    role: "api"
+    kind: "decision"
+    stream: "workplace"
+    axis: "none"
+    action_class: "permissive"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-83", "AD-15"]
+  access.workplace.released:
+    title: "Сеанс рабочего места завершён сотрудником"
+    emitter: "access"
+    role: "api"
+    kind: "decision"
+    stream: "workplace"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-83"]
+  access.workplace.revoked:
+    title: "Допуск к рабочему месту снят автоматически"
+    emitter: "access"
+    role: "projector"
+    kind: "reaction"
+    stream: "workplace"
+    axis: "none"
+    action_class: "protective"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["server_attested"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-83", "AD-15"]
+  access.assignment.set:
+    title: "Назначение на пост"
+    emitter: "access"
+    role: "api"
+    kind: "decision"
+    stream: "workplace"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-81", "PRD §11.18", "AD-15"]
+  access.assignment.cleared:
+    title: "Назначение на пост снято"
+    emitter: "access"
+    role: "api"
+    kind: "decision"
+    stream: "workplace"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-81"]
+  access.qualification.granted:
+    title: "Квалификация или аттестация выдана"
+    emitter: "access"
+    role: "api"
+    kind: "decision"
+    stream: "person"
+    axis: "none"
+    action_class: "permissive"
+    critical: true
+    ca_group: "authority"
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario", "genesis"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-80", "AD-2"]
+  access.qualification.revoked:
+    title: "Квалификация отозвана"
+    emitter: "access"
+    role: "api"
+    kind: "decision"
+    stream: "person"
+    axis: "none"
+    action_class: "protective"
+    critical: true
+    ca_group: "authority"
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-80"]
+
+  # ── key (владелец схемы: signing) ──
+  key.profile.registered:
+    title: "Криптопрофиль зарегистрирован"
+    emitter: "signing"
+    role: "init"
+    kind: "service"
+    stream: "global"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["genesis", "personal"]
+    versions: [1]
+    current_version: 1
+    refs: ["AD-10", "AD-32", "FR-76"]
+  key.registration.recorded:
+    title: "Ключ зарегистрирован актом"
+    emitter: "signing"
+    role: "api"
+    kind: "decision"
+    stream: "key"
+    axis: "none"
+    action_class: "permissive"
+    critical: true
+    ca_group: "admin_security"
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "genesis", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-70", "FR-79", "AD-11", "AD-32"]
+  key.revocation.recorded:
+    title: "Ключ отозван"
+    emitter: "signing"
+    role: "api"
+    kind: "decision"
+    stream: "key"
+    axis: "none"
+    action_class: "protective"
+    critical: true
+    ca_group: "admin_security"
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-70", "FR-79", "AD-11", "AD-32"]
+
+  # ── time (владелец схемы: journal) ──
+  time.clock.mode_set:
+    title: "Режим часов установлен"
+    emitter: "journal"
+    role: "init"
+    kind: "service"
+    stream: "global"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["genesis"]
+    versions: [1]
+    current_version: 1
+    refs: ["AD-37", "AD-33"]
+  time.clock.ticked:
+    title: "Тик виртуальных часов сценария"
+    emitter: "simulation"
+    role: "stands"
+    kind: "service"
+    stream: "run"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["server_attested", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["AD-37", "FR-106"]
+
+  # ── journal (владелец схемы: journal) ──
+  journal.genesis.recorded:
+    title: "Блок генезиса"
+    emitter: "journal"
+    role: "init"
+    kind: "service"
+    stream: "global"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["genesis"]
+    versions: [1]
+    current_version: 1
+    refs: ["AD-33", "FR-109"]
+  journal.anchor.destroyed:
+    title: "Ключ-якорь уничтожен"
+    emitter: "journal"
+    role: "init"
+    kind: "service"
+    stream: "global"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["genesis"]
+    versions: [1]
+    current_version: 1
+    refs: ["AD-33"]
+  journal.checkpoint.recorded:
+    title: "Контрольная точка хранителя"
+    emitter: "journal"
+    role: "api"
+    kind: "service"
+    stream: "global"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["server_attested", "genesis"]
+    versions: [1]
+    current_version: 1
+    refs: ["AD-8", "FR-72"]
+  journal.segment.opened:
+    title: "Открыт новый сегмент цепочки"
+    emitter: "journal"
+    role: "api"
+    kind: "service"
+    stream: "global"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["server_attested", "personal"]
+    versions: [1]
+    current_version: 1
+    refs: ["AD-32"]
+  journal.build.changed:
+    title: "Сменилась сборка доменного пакета"
+    emitter: "journal"
+    role: "api"
+    kind: "service"
+    stream: "global"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["server_attested", "genesis"]
+    versions: [1]
+    current_version: 1
+    refs: ["AD-9"]
+  journal.restore.recorded:
+    title: "Акт восстановления"
+    emitter: "journal"
+    role: "api"
+    kind: "decision"
+    stream: "global"
+    axis: "none"
+    action_class: "record"
+    critical: true
+    ca_group: "admin_security"
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["personal", "paper"]
+    versions: [1]
+    current_version: 1
+    refs: ["AD-34"]
+
+  # ── ingest (владелец схемы: ingest) ──
+  ingest.message.quarantined:
+    title: "Сообщение помещено в карантин"
+    emitter: "ingest"
+    role: "api"
+    kind: "service"
+    stream: "source"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["server_attested", "genesis"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-29", "FR-30", "AD-2", "AD-9"]
+  ingest.message.reprocessed:
+    title: "Сообщение из карантина переобработано"
+    emitter: "ingest"
+    role: "api"
+    kind: "decision"
+    stream: "source"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-30"]
+  ingest.import.completed:
+    title: "Импорт журнала завершён"
+    emitter: "ingest"
+    role: "api"
+    kind: "service"
+    stream: "source"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["server_attested", "genesis"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-141"]
+  ingest.anomaly.flagged:
+    title: "Флаг аномалии входа"
+    emitter: "ingest"
+    role: "api"
+    kind: "service"
+    stream: "item"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: true
+    provenance: ["server_attested", "genesis"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-29", "FR-33", "AD-5"]
+  ingest.source.loss_suspected:
+    title: "Возможна потеря данных источника"
+    emitter: "ingest"
+    role: "scheduler"
+    kind: "reaction"
+    stream: "source"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["server_attested"]
+    versions: [1]
+    current_version: 1
+    refs: ["AD-7", "FR-35", "FR-39"]
+
+  # ── material (владелец схемы: materials) ──
+  material.object.stored:
+    title: "Материал помещён в хранилище"
+    emitter: "materials"
+    role: "api"
+    kind: "service"
+    stream: "global"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["server_attested", "device", "personal", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-102", "AD-23", "кейс §5.4"]
+
+  # ── binding (владелец схемы: crossitem) ──
+  binding.link.resolved:
+    title: "Событие привязано к изделию"
+    emitter: "crossitem"
+    role: "crossitem"
+    kind: "reaction"
+    stream: "item"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["server_attested"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-34", "AD-41", "AD-42"]
+  binding.link.assigned:
+    title: "Привязка задана человеком"
+    emitter: "crossitem"
+    role: "api"
+    kind: "decision"
+    stream: "item"
+    axis: "none"
+    action_class: "record"
+    critical: true
+    ca_group: "protected_data"
+    guard_relevant: true
+    publish_stage: true
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-34", "AD-41", "Е-101 item.binding_corrected"]
+
+  # ── genealogy (владелец схемы: crossitem) ──
+  genealogy.lot.registered:
+    title: "Партия принята на входной контроль"
+    emitter: "crossitem"
+    role: "api"
+    kind: "fact"
+    stream: "lot"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-45", "Е-04 batch.registered"]
+  genealogy.lot.issued:
+    title: "Партия выдана в производство"
+    emitter: "crossitem"
+    role: "api"
+    kind: "fact"
+    stream: "lot"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-45", "Е-50 batch.issued"]
+  genealogy.link.added:
+    title: "Связь генеалогии добавлена"
+    emitter: "crossitem"
+    role: "crossitem"
+    kind: "reaction"
+    stream: "item"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["server_attested"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-45", "AD-42"]
+  genealogy.group.formed:
+    title: "Временная группа сформирована"
+    emitter: "crossitem"
+    role: "api"
+    kind: "fact"
+    stream: "group"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: true
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-15"]
+  genealogy.group.dissolved:
+    title: "Временная группа расформирована"
+    emitter: "crossitem"
+    role: "api"
+    kind: "fact"
+    stream: "group"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-15"]
+
+  # ── normative (владелец схемы: process) ──
+  normative.version.loaded:
+    title: "Стартовая версия нормативного слоя загружена"
+    emitter: "process"
+    role: "init"
+    kind: "service"
+    stream: "process_version"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["genesis"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-10", "FR-22", "AD-17", "AD-33"]
+  normative.version.submitted:
+    title: "Версия отправлена на утверждение"
+    emitter: "process"
+    role: "api"
+    kind: "decision"
+    stream: "process_version"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-22", "FR-23", "FR-24"]
+  normative.version.activated:
+    title: "Версия процесса введена в действие"
+    emitter: "process"
+    role: "api"
+    kind: "decision"
+    stream: "process_version"
+    axis: "none"
+    action_class: "irreversible"
+    critical: true
+    ca_group: "control_change"
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-22", "FR-23", "AD-17", "П-08 norm.version_approved"]
+  normative.version.retired:
+    title: "Версия выведена"
+    emitter: "process"
+    role: "api"
+    kind: "decision"
+    stream: "process_version"
+    axis: "none"
+    action_class: "record"
+    critical: true
+    ca_group: "control_change"
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-22", "AD-17"]
+
+  # ── reference (владелец схемы: reference) ──
+  reference.external_id.mapped:
+    title: "Соответствие внешнего идентификатора"
+    emitter: "reference"
+    role: "api"
+    kind: "fact"
+    stream: "reference"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["server_attested", "personal", "scenario", "genesis"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-95", "AD-18"]
+  reference.change.affects_item:
+    title: "Изменение справочника затрагивает изделие"
+    emitter: "reference"
+    role: "crossitem"
+    kind: "reaction"
+    stream: "item"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["server_attested"]
+    versions: [1]
+    current_version: 1
+    refs: ["AD-31", "AD-42"]
+  reference.item_type.defined:
+    title: "Тип изделия определён"
+    emitter: "reference"
+    role: "api"
+    kind: "decision"
+    stream: "reference"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "genesis", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-45", "FR-46", "AD-31"]
+  reference.location.defined:
+    title: "Место определено"
+    emitter: "reference"
+    role: "api"
+    kind: "decision"
+    stream: "reference"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "genesis", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-82", "FR-130", "AD-15", "AD-31"]
+  reference.equipment.defined:
+    title: "Оборудование определено"
+    emitter: "reference"
+    role: "api"
+    kind: "decision"
+    stream: "reference"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "genesis", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-17", "AD-31"]
+  reference.equipment.verified:
+    title: "Поверка или калибровка записана"
+    emitter: "reference"
+    role: "api"
+    kind: "decision"
+    stream: "reference"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "genesis", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-17", "AD-2", "AD-31"]
+  reference.calendar.defined:
+    title: "Производственный календарь"
+    emitter: "reference"
+    role: "api"
+    kind: "decision"
+    stream: "reference"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "genesis", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-55", "AD-4", "AD-31"]
+  reference.shift.scheduled:
+    title: "График смен"
+    emitter: "reference"
+    role: "api"
+    kind: "decision"
+    stream: "reference"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "genesis", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-81", "AD-31"]
+
+  # ── obligation (владелец схемы: notifications) ──
+  obligation.due.set:
+    title: "Срок установлен"
+    emitter: "notifications"
+    role: "worker"
+    kind: "reaction"
+    stream: "item"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["server_attested"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-55", "FR-57", "AD-4"]
+  obligation.due.cleared:
+    title: "Срок снят"
+    emitter: "notifications"
+    role: "worker"
+    kind: "reaction"
+    stream: "item"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["server_attested"]
+    versions: [1]
+    current_version: 1
+    refs: ["AD-4"]
+  obligation.due.reached:
+    title: "Наступил срок"
+    emitter: "notifications"
+    role: "scheduler"
+    kind: "service"
+    stream: "item"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["server_attested", "genesis"]
+    versions: [1]
+    current_version: 1
+    refs: ["AD-4", "FR-57"]
+  obligation.escalation.raised:
+    title: "Эскалация"
+    emitter: "notifications"
+    role: "worker"
+    kind: "reaction"
+    stream: "item"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["server_attested"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-8", "FR-57", "Е-97 nc.disposition_overdue"]
+
+  # ── task (владелец схемы: notifications) ──
+  task.task.created:
+    title: "Задача поставлена"
+    emitter: "notifications"
+    role: "worker"
+    kind: "reaction"
+    stream: "item"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["server_attested"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-57", "AD-3", "AD-5"]
+  task.task.withdrawn:
+    title: "Задача снята"
+    emitter: "notifications"
+    role: "worker"
+    kind: "reaction"
+    stream: "item"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["server_attested"]
+    versions: [1]
+    current_version: 1
+    refs: ["AD-3"]
+  task.task.acknowledged:
+    title: "Задача подтверждена"
+    emitter: "notifications"
+    role: "api"
+    kind: "decision"
+    stream: "item"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-57"]
+  task.notification.sent:
+    title: "Уведомление"
+    emitter: "notifications"
+    role: "worker"
+    kind: "reaction"
+    stream: "item"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["server_attested"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-57", "FR-84", "AD-24"]
+  task.notification.withdrawn:
+    title: "Уведомление отозвано"
+    emitter: "notifications"
+    role: "worker"
+    kind: "reaction"
+    stream: "item"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["server_attested"]
+    versions: [1]
+    current_version: 1
+    refs: ["AD-3"]
+
+  # ── incident (владелец схемы: analysis) ──
+  incident.incident.opened:
+    title: "Инцидент открыт"
+    emitter: "analysis"
+    role: "crossitem"
+    kind: "reaction"
+    stream: "incident"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["server_attested"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-61", "AD-42"]
+  incident.scope.computed:
+    title: "Новая версия области риска вычислена"
+    emitter: "analysis"
+    role: "crossitem"
+    kind: "reaction"
+    stream: "incident"
+    axis: "none"
+    action_class: "protective"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["server_attested"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-61", "FR-9", "AD-3", "Е-110 risk_scope.created", "Е-111 risk_scope.expanded"]
+  incident.membership.changed:
+    title: "Статус изделия в инциденте изменён"
+    emitter: "analysis"
+    role: "crossitem"
+    kind: "reaction"
+    stream: "item"
+    axis: "incident"
+    action_class: "protective"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["server_attested"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-62", "FR-9", "AD-42"]
+  incident.scope.expanded:
+    title: "Область риска расширена человеком"
+    emitter: "analysis"
+    role: "api"
+    kind: "decision"
+    stream: "incident"
+    axis: "none"
+    action_class: "protective"
+    critical: true
+    ca_group: "risk_scope"
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-61", "Е-111 risk_scope.expanded"]
+  incident.scope.narrowed:
+    title: "Область риска сужена"
+    emitter: "analysis"
+    role: "api"
+    kind: "decision"
+    stream: "incident"
+    axis: "none"
+    action_class: "permissive"
+    critical: true
+    ca_group: "risk_scope"
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-61", "FR-144", "FR-146", "Е-112 risk_scope.narrowed"]
+  incident.item.assessed:
+    title: "Изделие в области проверено"
+    emitter: "analysis"
+    role: "api"
+    kind: "decision"
+    stream: "incident"
+    axis: "none"
+    action_class: "permissive"
+    critical: true
+    ca_group: "risk_scope"
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-62", "Е-113 risk_scope.item_assessed"]
+  incident.incident.closed:
+    title: "Инцидент закрыт"
+    emitter: "analysis"
+    role: "api"
+    kind: "decision"
+    stream: "incident"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-9", "Е-115 risk_scope.closed"]
+  incident.hypothesis.computed:
+    title: "Гипотезы и обстоятельства пересчитаны"
+    emitter: "analysis"
+    role: "worker"
+    kind: "reaction"
+    stream: "item"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["server_attested"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-58", "FR-59", "FR-143", "FR-153", "Е-85 analysis.hypotheses_updated"]
+  incident.hypothesis.recorded:
+    title: "Гипотеза причины записана человеком"
+    emitter: "analysis"
+    role: "api"
+    kind: "decision"
+    stream: "incident"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-59", "П-03 cause.hypothesis_recorded"]
+  incident.cause.concluded:
+    title: "Вывод о причине"
+    emitter: "analysis"
+    role: "api"
+    kind: "decision"
+    stream: "incident"
+    axis: "none"
+    action_class: "irreversible"
+    critical: true
+    ca_group: "cause"
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-59", "FR-146", "П-04 cause.confirmed"]
+  incident.operator_error.confirmed:
+    title: "Ошибка исполнителя подтверждена"
+    emitter: "analysis"
+    role: "api"
+    kind: "decision"
+    stream: "incident"
+    axis: "none"
+    action_class: "irreversible"
+    critical: true
+    ca_group: "cause"
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-59", "FR-146"]
+  incident.analysis.scoped:
+    title: "Решено, нужен ли полный разбор"
+    emitter: "analysis"
+    role: "api"
+    kind: "decision"
+    stream: "incident"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-64", "П-02 cause.analysis_scoped"]
+  incident.action.assigned:
+    title: "Мера назначена"
+    emitter: "analysis"
+    role: "api"
+    kind: "decision"
+    stream: "incident"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-64", "П-05 capa.action_assigned"]
+  incident.action.implemented:
+    title: "Мера внедрена"
+    emitter: "analysis"
+    role: "api"
+    kind: "decision"
+    stream: "incident"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-64", "П-06 capa.action_implemented"]
+  incident.action.evaluated:
+    title: "Результативность меры оценена"
+    emitter: "analysis"
+    role: "api"
+    kind: "decision"
+    stream: "incident"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-64", "П-07 capa.effectiveness_confirmed / failed"]
+  incident.suggestion.recorded:
+    title: "Предложение записано"
+    emitter: "analysis"
+    role: "api"
+    kind: "fact"
+    stream: "global"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["server_attested", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-63", "FR-143", "AD-3"]
+
+  # ── analyzer (владелец схемы: vision) ──
+  analyzer.check.recorded:
+    title: "Проверка анализатора"
+    emitter: "vision"
+    role: "api"
+    kind: "fact"
+    stream: "analyzer_passport"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["device", "server_attested", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-101"]
+  analyzer.passport.admitted:
+    title: "Паспорт допуска введён в действие"
+    emitter: "vision"
+    role: "api"
+    kind: "decision"
+    stream: "analyzer_passport"
+    axis: "none"
+    action_class: "permissive"
+    critical: true
+    ca_group: "control_change"
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-98", "FR-101", "AD-29"]
+  analyzer.passport.suspended:
+    title: "Паспорт допуска приостановлен"
+    emitter: "vision"
+    role: "projector"
+    kind: "reaction"
+    stream: "analyzer_passport"
+    axis: "none"
+    action_class: "protective"
+    critical: true
+    ca_group: "control_change"
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["server_attested"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-101", "AD-17", "AD-29"]
+  analyzer.passport.reinstated:
+    title: "Анализатор возвращён в работу"
+    emitter: "vision"
+    role: "api"
+    kind: "decision"
+    stream: "analyzer_passport"
+    axis: "none"
+    action_class: "permissive"
+    critical: true
+    ca_group: "control_change"
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-101", "AD-27"]
+  analyzer.passport.retired:
+    title: "Паспорт допуска выведен"
+    emitter: "vision"
+    role: "api"
+    kind: "decision"
+    stream: "analyzer_passport"
+    axis: "none"
+    action_class: "record"
+    critical: true
+    ca_group: "control_change"
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-98"]
+
+  # ── federation (владелец схемы: federation) ──
+  federation.partner.registered:
+    title: "Партнёр зарегистрирован"
+    emitter: "federation"
+    role: "api"
+    kind: "decision"
+    stream: "partner"
+    axis: "none"
+    action_class: "permissive"
+    critical: true
+    ca_group: "admin_security"
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "genesis", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-131", "AD-19"]
+  federation.extract.received:
+    title: "Выписка паспорта партнёра принята"
+    emitter: "federation"
+    role: "api"
+    kind: "fact"
+    stream: "lot"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["partner", "server_attested", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-132", "AD-19"]
+  federation.message.sent:
+    title: "Межзаводское сообщение отправлено"
+    emitter: "federation"
+    role: "outbox"
+    kind: "service"
+    stream: "partner"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["server_attested", "genesis"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-131", "FR-133"]
+  federation.message.acknowledged:
+    title: "Партнёр подтвердил получение"
+    emitter: "federation"
+    role: "api"
+    kind: "fact"
+    stream: "partner"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["partner", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-131"]
+
+  # ── simulation (владелец схемы: simulation) ──
+  simulation.run.started:
+    title: "Прогон сценария запущен"
+    emitter: "simulation"
+    role: "stands"
+    kind: "service"
+    stream: "run"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["server_attested", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["AD-38", "FR-129"]
+  simulation.run.paused:
+    title: "Прогон на паузе"
+    emitter: "simulation"
+    role: "stands"
+    kind: "service"
+    stream: "run"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["server_attested", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-129"]
+  simulation.run.resumed:
+    title: "Прогон продолжен"
+    emitter: "simulation"
+    role: "stands"
+    kind: "service"
+    stream: "run"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["server_attested", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-129"]
+  simulation.run.finished:
+    title: "Прогон завершён"
+    emitter: "simulation"
+    role: "stands"
+    kind: "service"
+    stream: "run"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["server_attested", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-108", "FR-129"]
+  simulation.injection.applied:
+    title: "Инъекция цифрового стенда"
+    emitter: "simulation"
+    role: "stands"
+    kind: "service"
+    stream: "run"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["server_attested", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-152", "AD-26"]
+
+  # ── ops (владелец схемы: ops) ──
+  ops.processing.failed:
+    title: "Сбой обработки изделия"
+    emitter: "ops"
+    role: "worker"
+    kind: "service"
+    stream: "item"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["server_attested", "genesis"]
+    versions: [1]
+    current_version: 1
+    refs: ["AD-45", "FR-127"]
+  ops.processing.retried:
+    title: "Повтор обработки запрошен"
+    emitter: "ops"
+    role: "api"
+    kind: "decision"
+    stream: "item"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["AD-45"]
+  ops.source.disabled:
+    title: "Источник отключён"
+    emitter: "ops"
+    role: "api"
+    kind: "decision"
+    stream: "source"
+    axis: "none"
+    action_class: "protective"
+    critical: true
+    ca_group: "admin_security"
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["AD-28", "FR-127"]
+  ops.source.enabled:
+    title: "Источник включён"
+    emitter: "ops"
+    role: "api"
+    kind: "decision"
+    stream: "source"
+    axis: "none"
+    action_class: "permissive"
+    critical: true
+    ca_group: "admin_security"
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-127"]
+  ops.integration.degraded:
+    title: "Интеграция в режиме degraded"
+    emitter: "ops"
+    role: "api"
+    kind: "service"
+    stream: "source"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["server_attested", "genesis"]
+    versions: [1]
+    current_version: 1
+    refs: ["AD-18", "FR-127"]

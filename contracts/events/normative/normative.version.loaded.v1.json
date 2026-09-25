@@ -1,0 +1,52 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/normative/normative.version.loaded.v1.json",
+  "title": "NormativeVersionLoadedV1",
+  "description": "Стартовая версия нормативного слоя загружена — seed при первом запуске: BPMN как загружен, карта реакций, классификатор, шаблоны, политика; подписи кворума — ключами генезиса (FR-10, AD-33).",
+  "type": "object",
+  "properties": {
+    "version_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Версия."
+    },
+    "process_version_hash": {
+      "$ref": "../common/defs.v1.json#/definitions/digest",
+      "description": "Хеш BPMN XML как загружен (AD-17)."
+    },
+    "bundle_digest": {
+      "$ref": "../common/defs.v1.json#/definitions/digest",
+      "description": "Отпечаток всего пакета нормативного слоя."
+    },
+    "components": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "description": "Файл нормативного слоя.",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Путь в /normative.",
+            "maxLength": 256
+          },
+          "digest": {
+            "$ref": "../common/defs.v1.json#/definitions/digest",
+            "description": "Отпечаток."
+          }
+        },
+        "required": [
+          "path",
+          "digest"
+        ],
+        "title": "NormativeFile"
+      },
+      "description": "Состав пакета.",
+      "minItems": 1
+    }
+  },
+  "required": [
+    "version_id",
+    "process_version_hash",
+    "bundle_digest",
+    "components"
+  ]
+}

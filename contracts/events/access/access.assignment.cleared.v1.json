@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/access/access.assignment.cleared.v1.json",
+  "title": "AccessAssignmentClearedV1",
+  "description": "Назначение на пост снято — сотрудник снят с поста в смене.",
+  "type": "object",
+  "properties": {
+    "person_id": {
+      "$ref": "../common/defs.v1.json#/definitions/person_ref",
+      "description": "Сотрудник."
+    },
+    "workplace_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Пост."
+    },
+    "shift_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Смена."
+    },
+    "reason": {
+      "$ref": "../common/defs.v1.json#/definitions/reason",
+      "description": "Причина: код и текст."
+    }
+  },
+  "required": [
+    "person_id",
+    "workplace_id",
+    "shift_id"
+  ]
+}

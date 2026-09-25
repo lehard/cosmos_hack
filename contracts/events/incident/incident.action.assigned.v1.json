@@ -1,0 +1,89 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/incident/incident.action.assigned.v1.json",
+  "title": "IncidentActionAssignedV1",
+  "description": "Мера назначена — коррекция или корректирующее действие; без плана проверки результативности мера не создаётся (FR-64).",
+  "type": "object",
+  "properties": {
+    "incident_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Инцидент."
+    },
+    "action_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Мера."
+    },
+    "action_type": {
+      "type": "string",
+      "enum": [
+        "correction",
+        "corrective_action",
+        "preventive_action"
+      ],
+      "description": "Тип меры."
+    },
+    "direction": {
+      "type": "string",
+      "enum": [
+        "prevent_occurrence",
+        "improve_detection"
+      ],
+      "description": "Направление."
+    },
+    "owner_id": {
+      "$ref": "../common/defs.v1.json#/definitions/person_ref",
+      "description": "Владелец."
+    },
+    "due_at": {
+      "$ref": "../common/defs.v1.json#/definitions/timestamp",
+      "description": "Срок."
+    },
+    "effectiveness_plan": {
+      "type": "object",
+      "description": "План проверки результативности.",
+      "properties": {
+        "metric": {
+          "type": "string",
+          "description": "Метрика.",
+          "maxLength": 256
+        },
+        "baseline": {
+          "type": "string",
+          "maxLength": 4000,
+          "description": "Базовый уровень."
+        },
+        "window_days": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3650,
+          "description": "Окно наблюдения, дней."
+        },
+        "success_criterion": {
+          "type": "string",
+          "maxLength": 4000,
+          "description": "Критерий успеха."
+        },
+        "enhanced_control": {
+          "type": "string",
+          "maxLength": 4000,
+          "description": "Временно усиленный контроль."
+        }
+      },
+      "required": [
+        "metric",
+        "baseline",
+        "window_days",
+        "success_criterion"
+      ],
+      "title": "EffectivenessPlan"
+    }
+  },
+  "required": [
+    "incident_id",
+    "action_id",
+    "action_type",
+    "direction",
+    "owner_id",
+    "effectiveness_plan"
+  ]
+}

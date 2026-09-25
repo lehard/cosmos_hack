@@ -1,0 +1,45 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/operation/operation.message.thrown.v1.json",
+  "title": "OperationMessageThrownV1",
+  "description": "Достигнуто событие-сообщение процесса — токен прошёл промежуточное событие-сообщение BPMN (например, «В 1С: перемещение»); учётное действие формирует модуль erp (AD-18).",
+  "type": "object",
+  "properties": {
+    "step_key": {
+      "$ref": "../common/defs.v1.json#/definitions/step_key",
+      "description": "Ключ шага процесса (`ant:properties/@stepKey`), к которому относится запись."
+    },
+    "message_ref": {
+      "type": "string",
+      "description": "Сообщение BPMN (`bpmn:message/@id`).",
+      "maxLength": 128
+    },
+    "erp_action": {
+      "type": "string",
+      "enum": [
+        "accept_into_work",
+        "warehouse_transfer",
+        "scrap_transfer_rework",
+        "scrap_transfer_writeoff",
+        "scrap_transfer_reprocess",
+        "return_to_supplier",
+        "release"
+      ],
+      "description": "Учётное действие по свойству шага `ant:properties/@erpAction`."
+    },
+    "closing_basis": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/uuid"
+      },
+      "description": "Записи закрывающей точки, на которых основано действие.",
+      "uniqueItems": true
+    }
+  },
+  "required": [
+    "step_key",
+    "message_ref",
+    "erp_action",
+    "closing_basis"
+  ]
+}

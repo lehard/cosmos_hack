@@ -1,0 +1,20 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/time/time.clock.mode_set.v1.json",
+  "title": "TimeClockModeSetV1",
+  "description": "Режим часов установлен — свойство журнала: `system` или `scenario`; фиксируется генезисом, меняется только сбросом окружения (AD-37).",
+  "type": "object",
+  "properties": {
+    "mode": {
+      "type": "string",
+      "enum": [
+        "system",
+        "scenario"
+      ],
+      "description": "Режим часов."
+    }
+  },
+  "required": [
+    "mode"
+  ]
+}

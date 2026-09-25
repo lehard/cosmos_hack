@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/security/security.integrity.checked.v1.json",
+  "title": "SecurityIntegrityCheckedV1",
+  "description": "Отчёт верификатора получен — ant забрал последний подписанный отчёт верификатора у хранителя; индикатор «по данным сервера» (AD-46).",
+  "type": "object",
+  "properties": {
+    "report_digest": {
+      "$ref": "../common/defs.v1.json#/definitions/digest",
+      "description": "Отпечаток отчёта."
+    },
+    "verdict": {
+      "type": "string",
+      "enum": [
+        "intact",
+        "intact_with_reservations",
+        "violated"
+      ],
+      "description": "Общий вердикт."
+    },
+    "checked_up_to_seq": {
+      "$ref": "../common/defs.v1.json#/definitions/seq",
+      "description": "До какой позиции проверено."
+    },
+    "verifier_build": {
+      "$ref": "../common/defs.v1.json#/definitions/digest",
+      "description": "Хеш бинарника верификатора."
+    }
+  },
+  "required": [
+    "report_digest",
+    "verdict",
+    "checked_up_to_seq"
+  ]
+}

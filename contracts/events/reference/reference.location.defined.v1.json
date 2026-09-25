@@ -1,0 +1,65 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/reference/reference.location.defined.v1.json",
+  "title": "ReferenceLocationDefinedV1",
+  "description": "Место определено — иерархия областей здание → цех → участок → рабочее место, линии, склады и изоляторы; цех — дорожка BPMN со своим складом (FR-130, AD-15).",
+  "type": "object",
+  "properties": {
+    "location_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Место."
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "building",
+        "workshop",
+        "line",
+        "station",
+        "workplace",
+        "warehouse",
+        "isolator",
+        "storage"
+      ],
+      "description": "Вид места."
+    },
+    "parent_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Родитель в иерархии."
+    },
+    "scope": {
+      "type": "string",
+      "description": "Путь области для политики доступа.",
+      "pattern": "^[a-z0-9_-]+(/[a-z0-9_-]+)*$",
+      "maxLength": 256
+    },
+    "name": {
+      "type": "string",
+      "description": "Название.",
+      "maxLength": 128
+    },
+    "warehouse_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Склад цеха."
+    },
+    "access_zone_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Зона СКУД."
+    },
+    "valid_from": {
+      "$ref": "../common/defs.v1.json#/definitions/timestamp",
+      "description": "Начало действия (доменное время)."
+    },
+    "valid_until": {
+      "$ref": "../common/defs.v1.json#/definitions/timestamp",
+      "description": "Окончание действия; отсутствует — бессрочно."
+    }
+  },
+  "required": [
+    "location_id",
+    "kind",
+    "scope",
+    "name",
+    "valid_from"
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/reference/reference.equipment.verified.v1.json",
+  "title": "ReferenceEquipmentVerifiedV1",
+  "description": "Поверка или калибровка записана — статус поверки на дату — предусловие операции; непригодность — пересмотр прежних результатов (FR-17, ГОСТ Р 58876 п. 7.1.5.2).",
+  "type": "object",
+  "properties": {
+    "equipment_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Оборудование."
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "verification",
+        "calibration"
+      ],
+      "description": "Вид."
+    },
+    "result": {
+      "type": "string",
+      "enum": [
+        "valid",
+        "invalid"
+      ],
+      "description": "Итог."
+    },
+    "valid_until": {
+      "$ref": "../common/defs.v1.json#/definitions/date",
+      "description": "Действует до."
+    },
+    "certificate_ref": {
+      "type": "string",
+      "description": "Свидетельство.",
+      "maxLength": 128
+    }
+  },
+  "required": [
+    "equipment_id",
+    "kind",
+    "result"
+  ]
+}

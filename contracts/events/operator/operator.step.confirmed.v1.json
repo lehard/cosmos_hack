@@ -1,0 +1,34 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/operator/operator.step.confirmed.v1.json",
+  "title": "OperatorStepConfirmedV1",
+  "description": "Шаг подтверждён исполнителем — рутинная отметка исполнителя (уровень подписи 1, PIN на смену).",
+  "type": "object",
+  "properties": {
+    "operation_run_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Идентификатор выполнения операции; повтор операции — новый идентификатор со ссылкой `rework_of` (FR-47)."
+    },
+    "workplace_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Рабочее место."
+    },
+    "operator_id": {
+      "$ref": "../common/defs.v1.json#/definitions/person_ref",
+      "description": "Исполнитель (по входу на рабочее место, не по лицу)."
+    },
+    "step_key": {
+      "$ref": "../common/defs.v1.json#/definitions/step_key",
+      "description": "Ключ шага процесса (`ant:properties/@stepKey`), к которому относится запись."
+    },
+    "tp_step": {
+      "type": "string",
+      "description": "Шаг ТП внутри операции.",
+      "maxLength": 64
+    }
+  },
+  "required": [
+    "operator_id",
+    "step_key"
+  ]
+}

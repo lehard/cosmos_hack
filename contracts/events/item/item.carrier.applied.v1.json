@@ -1,0 +1,41 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/item/item.carrier.applied.v1.json",
+  "title": "ItemCarrierAppliedV1",
+  "description": "Носитель идентификатора нанесён — на изделие нанесён носитель (DPM DataMatrix, бирка с QR, тара и ячейка); связь «носитель → изделие» (AD-16).",
+  "type": "object",
+  "properties": {
+    "carrier_type": {
+      "$ref": "../common/defs.v1.json#/definitions/carrier_type"
+    },
+    "value": {
+      "type": "string",
+      "description": "Значение носителя.",
+      "maxLength": 256
+    },
+    "zone_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Зона нанесения по КД."
+    },
+    "is_temporary": {
+      "type": "boolean",
+      "description": "Временный носитель (бирка до DPM); не снятый временный носитель — задача контроля полноты."
+    },
+    "replaces_value": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Значение заменяемого носителя, если это перемаркировка; null — первичная маркировка."
+    },
+    "lot_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Партия и плавка, из которых экземпляр (связь «партия → экземпляр»)."
+    }
+  },
+  "required": [
+    "carrier_type",
+    "value",
+    "is_temporary"
+  ]
+}
