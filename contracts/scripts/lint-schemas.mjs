@@ -16,7 +16,8 @@ function isOpen(file) {
   return r[0] === 'events' && !r[r.length - 1].startsWith('catalog');
 }
 // Мета-схемы файлов конфигурации (catalog.schema.json) — не контракт данных, правила имён к ним не применяются.
-function isMeta(file) { return file.endsWith('catalog.schema.json'); }
+const META = ['catalog.schema.json', 'errors.schema.json'];
+function isMeta(file) { return META.includes(path.basename(file)); }
 
 function lintNode(node, where, file, ctx) {
   if (node === null || typeof node !== 'object') return;

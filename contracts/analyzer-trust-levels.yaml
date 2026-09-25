@@ -1,0 +1,47 @@
+# Уровень доверия паспорта допуска анализатора → допустимые автоматические действия (AD-29, FR-98, FR-50).
+# Реакция допустима, только если её одновременно разрешают класс действия (AD-27), режим правила (FR-50)
+# и — для сигналов анализатора — уровень доверия паспорта (эта таблица). Верификатор проверяет,
+# что ни одна реакция не превысила уровень (AD-27). Уровни накопительные: уровень N разрешает всё с уровней < N.
+# `actions` — какие записи движок может писать сам по сигналу анализатора этого уровня.
+version: 1
+
+levels:
+  - level: 0
+    title: "Только запись (теневой режим)"
+    automation_mode: 1
+    actions:
+      - {type: inspection.result.recorded, note: "наблюдение записывается; на изделие не влияет"}
+  - level: 1
+    title: "Рекомендация контролёру"
+    automation_mode: 1
+    actions:
+      - {type: task.task.created, constraint: "kind = decision_required — задача контролёру посмотреть"}
+  - level: 2
+    title: "«Под подозрением» и дополнительный контроль"
+    automation_mode: 2
+    actions:
+      - {type: quality.signal.raised, constraint: "reaction_outcome ∈ {manual_review}"}
+      - {type: decision.containment.applied, constraint: "level ∈ {observe, additional_check}"}
+  - level: 3
+    title: "Дополнительно — блок и изоляция"
+    automation_mode: 2
+    actions:
+      - {type: quality.signal.raised, constraint: "reaction_outcome ∈ {isolate}"}
+      - {type: decision.containment.applied, constraint: "level = item_hold"}
+  - level: 4
+    title: "Дополнительно — пропуск уверенных «признаков нет» по правилу режима 2"
+    automation_mode: 2
+    actions:
+      - {type: quality.inspection.auto_passed, constraint: "только outcome = no_defect_indicated при достаточном качестве наблюдения; не на закрывающей точке"}
+
+# Запрещено при любом уровне (FR-98): окончательный выпуск, ремонт, «как есть», списание,
+# исключение из области риска, снятие блока — это разрешающие или необратимые действия человека (AD-27).
+forbidden_always:
+  - {type: decision.presentation.resolved, note: "приёмка на закрывающей точке — только человек"}
+  - {type: decision.disposition.set, note: "ремонт, «как есть», списание — только уполномоченные"}
+  - {type: decision.containment.released, note: "снятие блока — разрешающее"}
+  - {type: incident.scope.narrowed, note: "сужение области — только человек"}
+  - {type: item.release.recorded, note: "выпуск — только по решению ОТК"}
+
+# Плохой кадр (качество наблюдения ниже порога карты контроля) при любом уровне → «оценка невозможна» → ручной контроль.
+# Нет паспорта у карты контроля → уровень 0 и сообщение analyzer.no_qualified_analyzer (контроль ручной).

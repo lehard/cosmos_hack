@@ -85,6 +85,8 @@ channels:
         $ref: "#/components/messages/quality.inspection.missing.v1"
       quality.escape.recorded.v1:
         $ref: "#/components/messages/quality.escape.recorded.v1"
+      quality.inspection.auto_passed.v1:
+        $ref: "#/components/messages/quality.inspection.auto_passed.v1"
   equipment:
     address: journal/equipment
     title: "Журнал: семейство equipment"
@@ -695,6 +697,7 @@ operations:
       - $ref: "#/channels/quality/messages/quality.observation.linked.v1"
       - $ref: "#/channels/quality/messages/quality.inspection.missing.v1"
       - $ref: "#/channels/quality/messages/quality.escape.recorded.v1"
+      - $ref: "#/channels/quality/messages/quality.inspection.auto_passed.v1"
   journal.equipment:
     action: send
     title: ant записывает записи семейства equipment
@@ -1693,6 +1696,29 @@ components:
       x-ant-stream: item
       x-ant-axis: none
       x-ant-action-class: record
+      x-ant-critical: false
+      x-ant-current: true
+    quality.inspection.auto_passed.v1:
+      name: quality.inspection.auto_passed.v1
+      title: Уверенный результат пропущен к следующему контролю
+      summary: Уверенный результат пропущен к следующему контролю — анализатор сам пропускает к следующему контролю только уверенные «признаков нет» — по делегированному правилу режима 2 и только при уровне доверия паспорта 4; «брак» и «оценка невозможна» всегда идут к человеку; часть пропущенных выборочно перепроверяет человек (FR-48, AD-27, AD-29). Закрывающую точку не проходит.
+      contentType: application/json
+      payload:
+        allOf:
+          - $ref: ./common/envelope.v1.json
+          - type: object
+            properties:
+              event_type:
+                const: quality.inspection.auto_passed
+              schema_version:
+                const: 1
+              data:
+                $ref: ./quality/quality.inspection.auto_passed.v1.json
+      x-ant-kind: reaction
+      x-ant-emitter: quality
+      x-ant-stream: item
+      x-ant-axis: none
+      x-ant-action-class: permissive
       x-ant-critical: false
       x-ant-current: true
     equipment.state.changed.v1:

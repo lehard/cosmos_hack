@@ -541,6 +541,22 @@ types:
     versions: [1]
     current_version: 1
     refs: ["FR-100", "П-01 quality.escape_recorded"]
+  quality.inspection.auto_passed:
+    title: "Уверенный результат пропущен к следующему контролю"
+    emitter: "quality"
+    role: "worker"
+    kind: "reaction"
+    stream: "item"
+    axis: "none"
+    action_class: "permissive"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["server-attested"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-48", "FR-98", "AD-27", "AD-29"]
 
   # ── equipment (владелец схемы: machinelogs) ──
   equipment.state.changed:
