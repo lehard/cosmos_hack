@@ -640,6 +640,25 @@
         "quarantined"
       ],
       "description": "Словарь «Состояние исходящего учётного сообщения (не ось: ось меняет только квитанция)»; источник — contracts/statuses.yaml."
+    },
+    "dict_item_summary": {
+      "type": "string",
+      "enum": [
+        "in_process",
+        "suspect",
+        "reinspection_required",
+        "hold",
+        "pending_decision",
+        "nonconforming",
+        "cleared",
+        "released",
+        "in_rework",
+        "in_repair",
+        "accepted_with_concession",
+        "scrapped",
+        "returned"
+      ],
+      "description": "Словарь «Сводный статус изделия для списков и карты (словарь продукта «Статусы изделия»); вычисляется из шести осей, сам осью не является»; источник — contracts/statuses.yaml."
     }
   }
 }

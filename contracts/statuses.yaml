@@ -111,3 +111,19 @@ dictionaries:
       - {code: acknowledged, label: "Подтверждено 1С",                  tone: success}
       - {code: rejected,     label: "Ошибка обмена",                    tone: danger}
       - {code: quarantined,  label: "В карантине — нужна переотправка", tone: danger}
+  item_summary:
+    title: "Сводный статус изделия для списков и карты (словарь продукта «Статусы изделия»); вычисляется из шести осей, сам осью не является"
+    values:
+      - {code: in_process,               label: "В работе",                          tone: info}
+      - {code: suspect,                  label: "Под подозрением",                   tone: attention}
+      - {code: reinspection_required,    label: "Ожидает доп. контроля",             tone: attention}
+      - {code: hold,                     label: "Заблокировано",                     tone: danger}
+      - {code: pending_decision,         label: "Ожидает решения",                   tone: attention}
+      - {code: nonconforming,            label: "Несоответствие подтверждено",       tone: danger}
+      - {code: cleared,                  label: "Исключено из подозрения",           tone: success}
+      - {code: released,                 label: "Разрешено к движению",              tone: success}
+      - {code: in_rework,                label: "На переделке",                      tone: attention}
+      - {code: in_repair,                label: "На ремонте",                        tone: attention}
+      - {code: accepted_with_concession, label: "Годно по разрешению на отклонение", tone: qualified}
+      - {code: scrapped,                 label: "Списано",                           tone: critical}
+      - {code: returned,                 label: "Возвращено поставщику",             tone: critical}
