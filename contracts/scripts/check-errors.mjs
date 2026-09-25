@@ -10,7 +10,7 @@ const doc = readYaml(P);
 const ajv = makeAjv();
 const v = ajv.getSchema('https://ant.invalid/contracts/errors.schema.json');
 if (!v(doc)) fail(rel(P), formatAjvErrors(v.errors));
-const PREFIXES = new Set(['api', 'ingest', 'journal', 'access', 'signing', 'decision', 'process', 'incident', 'erp', 'mes', 'analyzer', 'federation', 'simulation', 'document', 'item', 'quality', 'security', 'reference', 'ops']);
+const PREFIXES = new Set(['api', 'ingest', 'journal', 'access', 'signing', 'nonconformity', 'process', 'incident', 'erp', 'mes', 'analyzer', 'federation', 'simulation', 'document', 'item', 'quality', 'security', 'reference', 'ops']);
 const codes = doc.codes || {};
 const aliases = new Map();
 for (const [c, d] of Object.entries(codes)) {
@@ -23,7 +23,7 @@ for (const [c, d] of Object.entries(codes)) {
 for (const a of ['E_MISSING_FIELD', 'E_UNSUPPORTED_VERSION', 'E_UNKNOWN_ENUM', 'E_ID_CONFLICT', 'E_REWORK_LIMIT', 'E_PERMIT_REQUIRED', 'E_REF_NOT_FOUND'])
   if (!aliases.has(a)) fail('errors.yaml', `рабочий код процессной сессии ${a} не сведён`);
 // Упоминания кодов в контрактах: `prefix.reason` в обратных кавычках.
-const re = /`((?:api|ingest|journal|access|signing|decision|process|incident|erp|mes|analyzer|federation|simulation)\.[a-z][a-z0-9_]*)`/g;
+const re = /`((?:api|ingest|journal|access|signing|nonconformity|decision|reference|process|incident|erp|mes|analyzer|federation|simulation)\.[a-z][a-z0-9_]*)`/g;
 for (const f of walk(CONTRACTS, (p) => /\.(json|ya?ml|md)$/.test(p) && !p.endsWith('package-lock.json'))) {
   const txt = fs.readFileSync(f, 'utf8');
   for (const m of txt.matchAll(re)) {

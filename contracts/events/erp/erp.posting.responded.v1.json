@@ -30,7 +30,7 @@
     },
     "error_code": {
       "type": "string",
-      "description": "Код ошибки из contracts/errors.yaml (например, `erp.reference_not_found`).",
+      "description": "Код ошибки из contracts/errors.yaml (например, `reference.not_found`).",
       "maxLength": 96
     },
     "error_message": {

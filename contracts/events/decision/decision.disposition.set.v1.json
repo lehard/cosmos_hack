@@ -30,7 +30,7 @@
     },
     "concession_id": {
       "$ref": "../common/defs.v1.json#/definitions/object_id",
-      "description": "Разрешение на отклонение — обязательно для ремонта и «как есть» (гард `decision.concession_required`)."
+      "description": "Разрешение на отклонение — обязательно для ремонта и «как есть» (гард `nonconformity.concession_required`)."
     },
     "document_id": {
       "$ref": "../common/defs.v1.json#/definitions/object_id",

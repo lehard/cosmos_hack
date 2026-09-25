@@ -343,75 +343,65 @@ codes:
     ui_key: errors.generic
     refs: [AD-12]
 
-  # ── decision: гарды несоответствий и решений (nonconformity) ──
-  decision.concession_required:
+  # ── nonconformity: гарды несоответствий и решений (модуль nonconformity, семейство decision) ──
+  nonconformity.concession_required:
     status: 422
     title: "Нужно действующее разрешение на отклонение"
     detail: "«{decision}» без действующего разрешения на отклонение не подписывается"
     ui_key: errors.decision.concessionRequired
     guard: true
     aliases: [E_PERMIT_REQUIRED]
-    proposal: true
-    refs: [FR-53, FR-54]
-  decision.rework_limit_reached:
-    status: 422
-    title: "Лимит доработок зоны исчерпан"
-    detail: "Лимит доработок зоны {zone} исчерпан ({used} из {limit}) — нужно отдельное разрешение уполномоченного"
-    ui_key: errors.decision.reworkLimitReached
-    guard: true
-    aliases: [E_REWORK_LIMIT]
-    proposal: true
-    refs: [FR-18]
-  decision.reject_reason_required:
+    refs: [FR-53, FR-54, решение дирижёра Д-9]
+  nonconformity.reject_reason_required:
     status: 422
     title: "Нужна причина отклонения"
     detail: "Укажите, почему сигнал отклонён"
     ui_key: errors.decision.rejectReasonRequired
     guard: true
     refs: [FR-52]
-  decision.return_only_unprocessed:
+  nonconformity.return_only_unprocessed:
     status: 422
     title: "Вернуть поставщику можно только необработанное"
     detail: "Изделие {item_id} уже обрабатывалось — «вернуть поставщику» недопустимо"
     ui_key: errors.decision.returnOnlyUnprocessed
     guard: true
     refs: [FR-53]
-  decision.approvals_missing:
+  nonconformity.approvals_missing:
     status: 409
     title: "Не хватает подписей"
     detail: "Не хватает подписей: {who} — решение не исполняется"
     ui_key: errors.decision.approvalsMissing
     guard: true
     refs: [FR-50, AD-43]
-  decision.item_blocked:
+  nonconformity.item_blocked:
     status: 409
     title: "Изделие заблокировано"
     detail: "Изделие заблокировано — операция запрещена до решения"
     ui_key: errors.decision.itemBlocked
     guard: true
     refs: [FR-49, AD-30]
-  decision.gate_without_signature:
+  nonconformity.gate_without_signature:
     status: 403
     title: "Точка предъявления без подписи"
     detail: "Без подписи {role} изделие не проходит точку предъявления — попытка записана в журнал критических действий"
     ui_key: errors.decision.gateWithoutSignature
     guard: true
     refs: [FR-19, FR-44]
-  decision.method_result_missing:
+  nonconformity.method_result_missing:
     status: 409
     title: "Нет результата метода контроля"
     detail: "Нельзя принять: нет результата {method} на {inspection_point} — «нет данных» ≠ «годно»"
     ui_key: empty.inspectionMissing
     guard: true
     refs: [FR-14, FR-35]
-  decision.intervention_open:
+  nonconformity.intervention_open:
     status: 409
     title: "Открыто вмешательство"
     detail: "Открыта запись вмешательства — приёмка и отгрузка запрещены"
     ui_key: errors.decision.interventionOpen
     guard: true
     refs: [FR-21]
-  decision.concession_not_applicable:
+  nonconformity.concession_not_applicable:
     status: 422
     title: "Разрешение на отклонение не применимо"
     detail: "Разрешение {concession_id}: {reason} (истёк срок, отозвано, изделие вне области)"
@@ -496,6 +486,26 @@ codes:
     ui_key: errors.decision.zoneCheckRequired
     guard: true
     refs: [FR-20]
+  process.rework_limit_exceeded:
+    status: 422
+    title: "Лимит доработок зоны исчерпан"
+    detail: "Лимит доработок зоны {zone} исчерпан ({used} из {limit}) — нужно отдельное разрешение уполномоченного"
+    ui_key: errors.decision.reworkLimitReached
+    guard: true
+    aliases: [E_REWORK_LIMIT]
+    refs: [FR-18, решение дирижёра Д-9]
+  process.implicit_merge:
+    status: 422
+    title: "Неявное слияние стрелок без шлюза"
+    detail: "У элемента {element} несколько входящих стрелок без шлюза — поставьте явный шлюз слияния"
+    ui_key: errors.process.schemaViolation
+    refs: [FR-11, FR-13, решение дирижёра Д-6]
+  process.condition_invalid:
+    status: 422
+    title: "Условие на стрелке не по языку условий"
+    detail: "Стрелка {element}: {reason}"
+    ui_key: errors.process.schemaViolation
+    refs: [FR-11, FR-13, решение дирижёра Д-7]
   process.status_expired:
     status: 409
     title: "Истёк срок статуса"
@@ -545,14 +555,6 @@ codes:
     detail: "Не найден договор с контрагентом {counterparty}"
     ui_key: errors.integration.contractNotFound
     refs: [FR-91]
-  erp.reference_not_found:
-    status: 422
-    title: "В справочнике 1С не найдена запись"
-    detail: "В справочнике 1С не найдена запись: {field}"
-    ui_key: errors.integration.refNotFound
-    aliases: [E_REF_NOT_FOUND]
-    proposal: true
-    refs: [FR-91, FR-96]
   erp.no_ack:
     status: 504
     title: "1С не подтвердила приём"
@@ -622,6 +624,15 @@ codes:
     detail: "Подписи выписки проверить нельзя — принята с пометкой «происхождение не подтверждено»"
     ui_key: errors.federation.extractUnverifiable
     refs: [FR-132, AD-19]
+
+  # ── reference: справочники и соответствия внешних ID ──
+  reference.not_found:
+    status: 422
+    title: "Запись справочника не найдена"
+    detail: "Не найдена запись справочника: {field} — в том числе ответ 1С «в справочнике не найдена запись»"
+    ui_key: errors.integration.refNotFound
+    aliases: [E_REF_NOT_FOUND]
+    refs: [FR-91, FR-95, решение дирижёра Д-9]
 
   # ── simulation (AD-26, AD-38) ──
   simulation.scenario_keys_in_prod:
