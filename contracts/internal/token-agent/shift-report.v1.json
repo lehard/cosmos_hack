@@ -1,0 +1,113 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/internal/token-agent/shift-report.v1.json",
+  "title": "ShiftReportV1",
+  "description": "Сменный рапорт — уровень подписи 3 (AD-12, AD-13): одна подпись над корнем дерева Меркла RFC 6962 по отпечаткам подписей смены из локального журнала агента; счётчики по типам. Класс пакета `shift-report`. Закрытая схема.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "format_version": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 999,
+      "description": "Версия формата."
+    },
+    "crypto_profile": {
+      "type": "string",
+      "enum": [
+        "gost",
+        "hybrid"
+      ],
+      "description": "Профиль."
+    },
+    "signers": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "description": "Ключ.",
+        "pattern": "^[a-z0-9][a-z0-9._:-]{0,95}@[1-9][0-9]{0,5}$"
+      },
+      "description": "Подписанты.",
+      "minItems": 1,
+      "maxItems": 2
+    },
+    "person_id": {
+      "type": "string",
+      "description": "Подписант.",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$"
+    },
+    "shift_id": {
+      "type": "string",
+      "description": "Смена.",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$"
+    },
+    "workplace_id": {
+      "type": "string",
+      "description": "Рабочее место.",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$"
+    },
+    "window_from": {
+      "type": "string",
+      "description": "Начало окна.",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$"
+    },
+    "window_to": {
+      "type": "string",
+      "description": "Конец окна.",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$"
+    },
+    "merkle_root": {
+      "type": "string",
+      "description": "Корень: лист H(0x00‖отпечаток подписи), узел H(0x01‖l‖r), листья в порядке подписания.",
+      "pattern": "^streebog256:[0-9a-f]{64}$"
+    },
+    "leaf_count": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991,
+      "description": "Число листьев."
+    },
+    "counts_by_type": {
+      "type": "object",
+      "description": "Сколько подписей каждого типа.",
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9_]*\\.[a-z][a-z0-9_]*\\.[a-z][a-z0-9_]*$"
+      }
+    },
+    "first_local_seq": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991,
+      "description": "Первый номер локального журнала в окне."
+    },
+    "last_local_seq": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991,
+      "description": "Последний номер."
+    },
+    "seen_checkpoint": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991,
+      "description": "Последняя известная агенту контрольная точка."
+    }
+  },
+  "required": [
+    "format_version",
+    "crypto_profile",
+    "signers",
+    "person_id",
+    "shift_id",
+    "window_from",
+    "window_to",
+    "merkle_root",
+    "leaf_count",
+    "counts_by_type"
+  ]
+}

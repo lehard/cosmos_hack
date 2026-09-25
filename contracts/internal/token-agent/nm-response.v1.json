@@ -1,0 +1,262 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/internal/token-agent/nm-response.v1.json",
+  "title": "TokenAgentResponseV1",
+  "description": "Ответ агента токена расширению по Native Messaging (AD-14, AD-46). Вид — поле `type`.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "protocol_version": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 999,
+      "description": "Версия протокола."
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "hello",
+        "status",
+        "signed",
+        "shift_report",
+        "local_journal",
+        "error"
+      ],
+      "description": "Вид ответа."
+    },
+    "request_id": {
+      "type": "string",
+      "description": "Запрос, на который ответ.",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "hello": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Приветствие агента.",
+      "properties": {
+        "agent_version": {
+          "type": "string",
+          "description": "Версия агента.",
+          "maxLength": 64
+        },
+        "build_digest": {
+          "type": "string",
+          "description": "Хеш сборки: агент, сервер и demo-signer — из одного коммита (AD-12).",
+          "pattern": "^streebog256:[0-9a-f]{64}$"
+        },
+        "doc_format_versions": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 999
+          },
+          "description": "Поддерживаемые версии формата документа.",
+          "minItems": 1
+        },
+        "keys": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "Ключ на токене.",
+            "properties": {
+              "key_ref": {
+                "type": "string",
+                "description": "Ключ.",
+                "pattern": "^[a-z0-9][a-z0-9._:-]{0,95}@[1-9][0-9]{0,5}$"
+              },
+              "profile": {
+                "type": "string",
+                "enum": [
+                  "gost",
+                  "pq"
+                ],
+                "description": "Профиль."
+              },
+              "person_id": {
+                "type": "string",
+                "description": "Субъект.",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$"
+              }
+            },
+            "required": [
+              "key_ref",
+              "profile",
+              "person_id"
+            ]
+          },
+          "description": "Ключи."
+        }
+      },
+      "required": [
+        "agent_version",
+        "build_digest",
+        "doc_format_versions",
+        "keys"
+      ]
+    },
+    "status": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Состояние токена.",
+      "properties": {
+        "token_present": {
+          "type": "boolean",
+          "description": "Токен вставлен."
+        },
+        "pin_unlocked": {
+          "type": "boolean",
+          "description": "PIN введён в этой смене."
+        },
+        "person_id": {
+          "type": "string",
+          "description": "Владелец.",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$"
+        },
+        "workplace_id": {
+          "type": "string",
+          "description": "Рабочее место из конфигурации агента.",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$"
+        }
+      },
+      "required": [
+        "token_present",
+        "pin_unlocked"
+      ]
+    },
+    "signed": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Результат подписи.",
+        "properties": {
+          "envelope": {
+            "$ref": "../../crypto/dsse-envelope.schema.json"
+          },
+          "doc_digest": {
+            "type": "string",
+            "description": "Отпечаток, посчитанный агентом.",
+            "pattern": "^streebog256:[0-9a-f]{64}$"
+          },
+          "summary": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "description": "Поле сводки.",
+              "properties": {
+                "label": {
+                  "type": "string",
+                  "description": "Подпись поля.",
+                  "maxLength": 128
+                },
+                "value": {
+                  "type": "string",
+                  "description": "Значение.",
+                  "maxLength": 512
+                }
+              },
+              "required": [
+                "label",
+                "value"
+              ]
+            },
+            "description": "Поля сводки уровня 2 (3–7), которые агент вычислил сам из содержимого.",
+            "maxItems": 7
+          },
+          "local_journal_seq": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991,
+            "description": "Номер в локальном журнале подписанного."
+          },
+          "client_signed_at": {
+            "type": "string",
+            "description": "Время подписи по часам клиента — справочно, в порядок не входит (AD-37).",
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$"
+          }
+        },
+        "required": [
+          "envelope",
+          "local_journal_seq",
+          "client_signed_at"
+        ]
+      },
+      "description": "Подписанные пакеты (один или пачка).",
+      "minItems": 1
+    },
+    "shift_report": {
+      "$ref": "shift-report.v1.json"
+    },
+    "local_journal": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Запись локального журнала подписанного.",
+        "properties": {
+          "seq": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991,
+            "description": "Номер."
+          },
+          "event_type": {
+            "type": "string",
+            "description": "Тип.",
+            "maxLength": 96
+          },
+          "digest": {
+            "type": "string",
+            "description": "Отпечаток подписанного.",
+            "pattern": "^streebog256:[0-9a-f]{64}$"
+          },
+          "signed_at": {
+            "type": "string",
+            "description": "Когда.",
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$"
+          },
+          "server_seq": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "description": "seq журнала сервера из квитанции приёма, если получена."
+          }
+        },
+        "required": [
+          "seq",
+          "digest",
+          "signed_at"
+        ]
+      },
+      "description": "Локальный журнал подписанного."
+    },
+    "error": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Отказ агента.",
+      "properties": {
+        "code": {
+          "type": "string",
+          "description": "Код из contracts/errors.yaml (например, signing.level_not_allowed, signing.token_missing).",
+          "pattern": "^[a-z][a-z0-9]*\\.[a-z][a-z0-9_]*$"
+        },
+        "message": {
+          "type": "string",
+          "description": "Пояснение.",
+          "maxLength": 1000
+        }
+      },
+      "required": [
+        "code"
+      ]
+    }
+  },
+  "required": [
+    "protocol_version",
+    "type",
+    "request_id"
+  ]
+}

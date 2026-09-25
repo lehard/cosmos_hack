@@ -1,0 +1,86 @@
+openapi: 3.1.0
+info:
+  title: ant demo-signer — демо-персоны сценариев
+  version: 1.0.0
+  description: |
+    Контракт собственного процесса `cmd/demo-signer` (AD-26, AD-33, AD-46). demo-signer — код агента токена без
+    интерфейса, вне ant, **обычный клиент**: входит через IdentityProvider под демо-персоной, получает допуск
+    к рабочему месту событиями СКУД-stand, вызывает те же операции API из openapi.yaml, сам считает отпечаток и
+    подписывает ключом класса `scenario` только запросы, совпадающие с шагом из scenarios/definitions (том только
+    для чтения). Служебных обходов нет. Есть только в профилях fixtures, demo, load; профиль prod с ним не стартует.
+    Этот API вызывает модуль simulation в режиме автосверки: «выполни шаг сценария».
+servers:
+  - url: https://demo-signer:8445
+    description: Контейнер demo-signer (mTLS)
+paths:
+  /v1/steps:
+    post:
+      operationId: demo_signer.steps.execute
+      summary: Выполнить шаг сценария от имени демо-персоны
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/StepRequest'}
+      responses:
+        '200':
+          description: Итог шага
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/StepResult'}
+        '409':
+          description: Запрос ant не совпал с шагом сценария — не подписано
+          content:
+            application/problem+json:
+              schema: {$ref: '../problem.schema.json'}
+  /v1/personas:
+    get:
+      operationId: demo_signer.personas.list
+      summary: Демо-персоны и их открытые ключи
+      responses:
+        '200':
+          description: Персоны
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/Persona'}
+  /healthz:
+    get:
+      operationId: demo_signer.health
+      summary: Живость
+      responses:
+        '200':
+          description: Работает
+components:
+  schemas:
+    StepRequest:
+      type: object
+      additionalProperties: false
+      required: [run_id, scenario_id, step_id, persona_id]
+      description: Какой шаг сценария выполнить.
+      properties:
+        run_id: {type: string, pattern: '^[a-z0-9][a-z0-9-]{0,62}$', description: Прогон}
+        scenario_id: {type: string, maxLength: 128, description: Сценарий в scenarios/definitions}
+        step_id: {type: string, maxLength: 128, description: Шаг сценария (например, attest_paper, qc_accept)}
+        persona_id: {type: string, maxLength: 64, description: Демо-персона}
+    StepResult:
+      type: object
+      additionalProperties: false
+      required: [status]
+      description: Итог шага.
+      properties:
+        status: {type: string, enum: [signed, attested, skipped, mismatch], description: Что сделано}
+        command_id: {type: string, description: command_id (= event_id пакета) отправленной команды}
+        doc_digest: {type: string, pattern: '^streebog256:[0-9a-f]{64}$', description: Отпечаток, посчитанный demo-signer}
+        detail: {type: string, maxLength: 1000, description: Пояснение}
+    Persona:
+      type: object
+      additionalProperties: false
+      required: [persona_id, person_id, role_id, key_ref]
+      description: Демо-персона.
+      properties:
+        persona_id: {type: string, maxLength: 64, description: Персона}
+        person_id: {type: string, maxLength: 64, description: Псевдоним сотрудника}
+        role_id: {type: string, maxLength: 64, description: Роль}
+        key_ref: {type: string, pattern: '^[a-z0-9][a-z0-9._:-]{0,95}@[1-9][0-9]{0,5}$', description: Ключ класса scenario}
