@@ -1,0 +1,5 @@
+.claude/
+node_modules/
+/frontend/dist/
+.demo-keys/
+*.log
