@@ -1,0 +1,35 @@
+# Криптопрофили v1 (AD-10, AD-32, кейс §6.3). Реестр профилей в журнале — записи key.profile.registered.
+# Хеш-функцию задаёт версия формата цепочки, а не профиль подписи (AD-32).
+version: 1
+profiles:
+  gost:
+    title: "ГОСТ Р 34.10-2012, 256 бит"
+    algorithm: gost3410_2012_256_paramset_a
+    curve: id-tc26-gost-3410-12-256-paramSetA
+    hash: streebog256          # ГОСТ Р 34.11-2012, 256 бит
+    signatures_required: 1
+    production: true           # в промышленной эксплуатации — через сертифицированное СКЗИ за портом Signer/Verifier
+  pq:
+    title: "ML-DSA-65 (FIPS 204) — демонстрационный"
+    algorithm: ml_dsa_65
+    context_template: "ant/{payload_type}"
+    signatures_required: 1
+    production: false          # следующий промышленный постквантовый профиль — отечественный (ТК 26) за тем же id
+  hybrid:
+    title: "Гибрид: ГОСТ + ML-DSA-65, обе подписи обязательны"
+    components: [gost, pq]
+    signatures_required: 2     # удаление любой подписи — «отвергнуто: понижение профиля»
+    production: false
+
+# Объект → обязательный профиль в MVP (AD-32). Верификатор берёт профиль из реестра на момент подписи;
+# более слабый — «отвергнуто: понижение профиля».
+object_profiles:
+  checkpoint: hybrid
+  genesis: hybrid
+  key-act: hybrid
+  verifier-report: hybrid
+  event: gost                  # факты устройств, решения людей, реакции; hybrid — переключаемый в scenarios/crypto
+  document-signature: gost
+  shift-report: gost
+  paper-attestation: gost
+  passport-extract: gost

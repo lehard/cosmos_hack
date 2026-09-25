@@ -8,6 +8,7 @@ const BANNED_FORMATS = ['date', 'time', 'duration'];
 const MAXI = 9007199254740991;
 const CYR = /[А-Яа-яЁё]/;
 const NAME = /^[a-z][a-z0-9_]*$/;
+const EXTERNAL_NAMES = new Set(['payloadType']); // имена из внешних спецификаций (DSSE)
 const ENUM_VAL = /^[a-z][a-z0-9_]*$/;
 
 // Открытые схемы — события (FR-29); закрытые — всё остальное (AD-10).
@@ -42,7 +43,7 @@ function lintNode(node, where, file, ctx) {
     if (!open && !ctx.meta && node.properties && node.additionalProperties !== false) fail(where, 'закрытая схема: нужен additionalProperties: false (AD-10)');
     for (const [pn, pv] of Object.entries(node.properties || {})) {
       const pw = `${where}.properties.${pn}`;
-      if (!ctx.meta && !NAME.test(pn)) fail(pw, 'имя свойства не snake_case');
+      if (!ctx.meta && !NAME.test(pn) && !EXTERNAL_NAMES.has(pn)) fail(pw, 'имя свойства не snake_case');
       if (pv && typeof pv === 'object' && !('$ref' in pv)) {
         if (!pv.description) fail(pw, 'нет description');
         else if (!ctx.meta && !CYR.test(pv.description)) fail(pw, 'description не на русском');

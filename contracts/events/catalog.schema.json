@@ -260,7 +260,7 @@
                 "personal",
                 "paper",
                 "partner",
-                "server-attested",
+                "server_attested",
                 "scenario",
                 "genesis"
               ]

@@ -39,9 +39,9 @@ for (const [name, t] of Object.entries(cat.types || {})) {
   if (t.critical && !t.ca_group) fail(w, 'критическое действие без группы CA (AD-28)');
   if (!t.critical && t.ca_group) fail(w, 'группа CA у некритического типа');
   if (t.kind === 'fact' && t.action_class !== 'record') fail(w, 'факт — не действие: класс record (AD-27)');
-  if (t.kind === 'reaction' && !(t.provenance.length === 1 && t.provenance[0] === 'server-attested')) fail(w, 'реакции подписывает ключ движка: provenance [server-attested] (AD-3)');
-  if (t.kind === 'decision' && t.provenance.includes('server-attested')) fail(w, 'решение человека не может быть server-attested (AD-2)');
-  if (t.action_class === 'permissive' && t.kind === 'fact' && t.provenance.every((p) => p === 'server-attested')) fail(w, 'разрешающее действие только на server-attested (AD-2)');
+  if (t.kind === 'reaction' && !(t.provenance.length === 1 && t.provenance[0] === 'server_attested')) fail(w, 'реакции подписывает ключ движка: provenance [server_attested] (AD-3)');
+  if (t.kind === 'decision' && t.provenance.includes('server_attested')) fail(w, 'решение человека не может быть server_attested (AD-2)');
+  if (t.action_class === 'permissive' && t.kind === 'fact' && t.provenance.every((p) => p === 'server_attested')) fail(w, 'разрешающее действие только на server_attested (AD-2)');
   if (!t.versions.includes(t.current_version) || t.current_version !== Math.max(...t.versions)) fail(w, 'current_version должна быть наибольшей из versions');
   for (const v of t.versions) {
     const p = path.join(CONTRACTS, 'events', fam, `${name}.v${v}.json`);

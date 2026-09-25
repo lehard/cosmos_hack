@@ -131,7 +131,7 @@ types:
     ca_group: null
     guard_relevant: true
     publish_stage: true
-    provenance: ["device", "personal", "paper", "server-attested", "scenario"]
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
     versions: [1]
     current_version: 1
     refs: ["FR-34", "AD-16", "Е-07 item.marked"]
@@ -147,7 +147,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: false
-    provenance: ["device", "personal", "paper", "server-attested", "scenario"]
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
     versions: [1]
     current_version: 1
     refs: ["AD-16"]
@@ -163,7 +163,7 @@ types:
     ca_group: null
     guard_relevant: true
     publish_stage: true
-    provenance: ["device", "personal", "paper", "server-attested", "scenario"]
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
     versions: [1]
     current_version: 1
     refs: ["AD-16", "AD-41"]
@@ -179,7 +179,7 @@ types:
     ca_group: null
     guard_relevant: true
     publish_stage: true
-    provenance: ["device", "personal", "paper", "server-attested", "scenario"]
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
     versions: [1]
     current_version: 1
     refs: ["FR-45", "кейс §4.6", "AD-42", "Е-41, Е-51 assembly.component_linked"]
@@ -195,7 +195,7 @@ types:
     ca_group: null
     guard_relevant: true
     publish_stage: false
-    provenance: ["device", "personal", "paper", "server-attested", "scenario"]
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
     versions: [1]
     current_version: 1
     refs: ["FR-19", "Е-72 item.presented"]
@@ -243,7 +243,7 @@ types:
     ca_group: null
     guard_relevant: true
     publish_stage: false
-    provenance: ["server-attested"]
+    provenance: ["server_attested"]
     versions: [1]
     current_version: 1
     refs: ["AD-16", "FR-34"]
@@ -275,7 +275,7 @@ types:
     ca_group: null
     guard_relevant: true
     publish_stage: true
-    provenance: ["device", "personal", "paper", "server-attested", "scenario"]
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
     versions: [1]
     current_version: 1
     refs: ["FR-44", "FR-91", "Е-74 item.released"]
@@ -293,7 +293,7 @@ types:
     ca_group: null
     guard_relevant: true
     publish_stage: true
-    provenance: ["device", "personal", "paper", "server-attested", "scenario"]
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
     versions: [1]
     current_version: 1
     refs: ["FR-27", "FR-44", "FR-47", "кейс §4.3", "Е-10, Е-40, Е-60 operation.started"]
@@ -309,7 +309,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: false
-    provenance: ["device", "personal", "paper", "server-attested", "scenario"]
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
     versions: [1]
     current_version: 1
     refs: ["кейс §4.3", "Е-11 operation.paused"]
@@ -325,7 +325,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: false
-    provenance: ["device", "personal", "paper", "server-attested", "scenario"]
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
     versions: [1]
     current_version: 1
     refs: ["кейс §4.3", "Е-11 operation.resumed"]
@@ -341,7 +341,7 @@ types:
     ca_group: null
     guard_relevant: true
     publish_stage: true
-    provenance: ["device", "personal", "paper", "server-attested", "scenario"]
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
     versions: [1]
     current_version: 1
     refs: ["FR-27", "кейс §4.4", "кейс §4.6", "Е-12 operation.finished"]
@@ -357,7 +357,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: true
-    provenance: ["server-attested"]
+    provenance: ["server_attested"]
     versions: [1]
     current_version: 1
     refs: ["FR-121", "AD-29", "AD-42"]
@@ -373,7 +373,7 @@ types:
     ca_group: null
     guard_relevant: true
     publish_stage: false
-    provenance: ["server-attested"]
+    provenance: ["server_attested"]
     versions: [1]
     current_version: 1
     refs: ["FR-17", "FR-20", "Е-13 operation.precondition_failed"]
@@ -389,7 +389,7 @@ types:
     ca_group: null
     guard_relevant: true
     publish_stage: false
-    provenance: ["device", "personal", "paper", "server-attested", "scenario"]
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
     versions: [1]
     current_version: 1
     refs: ["FR-16", "FR-130", "Е-30 movement.sent"]
@@ -405,7 +405,7 @@ types:
     ca_group: null
     guard_relevant: true
     publish_stage: false
-    provenance: ["device", "personal", "paper", "server-attested", "scenario"]
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
     versions: [1]
     current_version: 1
     refs: ["FR-16", "FR-55", "FR-130", "Е-31 movement.received", "Е-93 movement.isolator_confirmed"]
@@ -421,7 +421,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: false
-    provenance: ["server-attested"]
+    provenance: ["server_attested"]
     versions: [1]
     current_version: 1
     refs: ["FR-91", "FR-130", "AD-18", "каталог процессной сессии §5"]
@@ -439,7 +439,7 @@ types:
     ca_group: null
     guard_relevant: true
     publish_stage: true
-    provenance: ["device", "personal", "paper", "server-attested", "scenario"]
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
     versions: [1]
     current_version: 1
     refs: ["FR-27", "FR-36", "FR-37", "FR-38", "FR-97", "FR-98", "кейс §4.4", "кейс §4.5", "Е-05, Е-06, Е-17, Е-18, Е-44, Е-45, Е-52, Е-54, Е-62, Е-70 inspection.result"]
@@ -455,7 +455,7 @@ types:
     ca_group: null
     guard_relevant: true
     publish_stage: false
-    provenance: ["device", "personal", "paper", "server-attested", "scenario"]
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
     versions: [1]
     current_version: 1
     refs: ["FR-35", "Е-86 checkpoint.mode_changed"]
@@ -473,7 +473,7 @@ types:
     ca_group: null
     guard_relevant: true
     publish_stage: true
-    provenance: ["server-attested"]
+    provenance: ["server_attested"]
     versions: [1]
     current_version: 1
     refs: ["FR-48", "FR-121", "кейс §2.3", "Е-80 quality.signal_raised"]
@@ -489,7 +489,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: true
-    provenance: ["server-attested"]
+    provenance: ["server_attested"]
     versions: [1]
     current_version: 1
     refs: ["FR-37", "кейс §4.5"]
@@ -505,7 +505,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: false
-    provenance: ["server-attested"]
+    provenance: ["server_attested"]
     versions: [1]
     current_version: 1
     refs: ["FR-37", "Е-81 quality.observation_linked"]
@@ -521,7 +521,7 @@ types:
     ca_group: null
     guard_relevant: true
     publish_stage: false
-    provenance: ["server-attested"]
+    provenance: ["server_attested"]
     versions: [1]
     current_version: 1
     refs: ["FR-35", "FR-14", "Е-82 quality.inspection_missing"]
@@ -537,7 +537,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: true
-    provenance: ["server-attested"]
+    provenance: ["server_attested"]
     versions: [1]
     current_version: 1
     refs: ["FR-100", "П-01 quality.escape_recorded"]
@@ -553,7 +553,7 @@ types:
     ca_group: null
     guard_relevant: true
     publish_stage: false
-    provenance: ["server-attested"]
+    provenance: ["server_attested"]
     versions: [1]
     current_version: 1
     refs: ["FR-48", "FR-98", "AD-27", "AD-29"]
@@ -571,7 +571,7 @@ types:
     ca_group: null
     guard_relevant: true
     publish_stage: true
-    provenance: ["device", "personal", "paper", "server-attested", "scenario"]
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
     versions: [1, 2]
     current_version: 2
     refs: ["FR-110", "FR-121", "кейс §4.4 machine_state", "Е-14…Е-16 machine.state"]
@@ -587,7 +587,7 @@ types:
     ca_group: null
     guard_relevant: true
     publish_stage: true
-    provenance: ["device", "personal", "paper", "server-attested", "scenario"]
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
     versions: [1]
     current_version: 1
     refs: ["FR-147"]
@@ -603,7 +603,7 @@ types:
     ca_group: null
     guard_relevant: true
     publish_stage: true
-    provenance: ["device", "personal", "paper", "server-attested", "scenario"]
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
     versions: [1]
     current_version: 1
     refs: ["FR-147", "FR-61"]
@@ -619,7 +619,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: true
-    provenance: ["device", "personal", "paper", "server-attested", "scenario"]
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
     versions: [1]
     current_version: 1
     refs: ["FR-147", "FR-148", "AD-25", "Е-42, Е-53, Е-61 machine.parameters"]
@@ -635,7 +635,7 @@ types:
     ca_group: null
     guard_relevant: true
     publish_stage: true
-    provenance: ["device", "personal", "paper", "server-attested", "scenario"]
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
     versions: [1]
     current_version: 1
     refs: ["FR-121", "FR-147", "FR-149", "Е-15, Е-43 machine.state warning"]
@@ -651,7 +651,7 @@ types:
     ca_group: null
     guard_relevant: true
     publish_stage: false
-    provenance: ["server-attested"]
+    provenance: ["server_attested"]
     versions: [1]
     current_version: 1
     refs: ["FR-151", "AD-29", "AD-42"]
@@ -669,7 +669,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: false
-    provenance: ["device", "personal", "paper", "server-attested", "scenario"]
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
     versions: [1]
     current_version: 1
     refs: ["FR-66", "FR-137", "Е-23 operator.action confirmation"]
@@ -685,7 +685,7 @@ types:
     ca_group: "control_change"
     guard_relevant: true
     publish_stage: true
-    provenance: ["device", "personal", "paper", "server-attested", "scenario"]
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
     versions: [1]
     current_version: 1
     refs: ["FR-28", "FR-77", "AD-28", "Е-21 operator.action check_skipped"]
@@ -701,7 +701,7 @@ types:
     ca_group: "control_change"
     guard_relevant: true
     publish_stage: true
-    provenance: ["device", "personal", "paper", "server-attested", "scenario"]
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
     versions: [1]
     current_version: 1
     refs: ["AD-28", "Е-22 operator.action manual_override"]
@@ -717,7 +717,7 @@ types:
     ca_group: "control_change"
     guard_relevant: false
     publish_stage: true
-    provenance: ["device", "personal", "paper", "server-attested", "scenario"]
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
     versions: [1]
     current_version: 1
     refs: ["FR-28", "FR-147", "AD-28", "Е-20 operator.action mode_change"]
@@ -733,7 +733,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: true
-    provenance: ["device", "personal", "paper", "server-attested", "scenario"]
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
     versions: [1]
     current_version: 1
     refs: ["FR-137"]
@@ -749,7 +749,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: false
-    provenance: ["device", "personal", "paper", "server-attested", "scenario"]
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
     versions: [1]
     current_version: 1
     refs: ["FR-137"]
@@ -765,7 +765,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: true
-    provenance: ["device", "personal", "paper", "server-attested", "scenario"]
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
     versions: [1]
     current_version: 1
     refs: ["FR-126", "Е-24 operator_action.detected"]
@@ -783,7 +783,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: false
-    provenance: ["server-attested"]
+    provenance: ["server_attested"]
     versions: [1]
     current_version: 1
     refs: ["FR-51", "Е-83 nc.draft_created"]
@@ -799,7 +799,7 @@ types:
     ca_group: "product_decision"
     guard_relevant: true
     publish_stage: true
-    provenance: ["server-attested"]
+    provenance: ["server_attested"]
     versions: [1]
     current_version: 1
     refs: ["FR-151", "AD-29", "AD-42"]
@@ -879,7 +879,7 @@ types:
     ca_group: "product_decision"
     guard_relevant: true
     publish_stage: true
-    provenance: ["server-attested"]
+    provenance: ["server_attested"]
     versions: [1]
     current_version: 1
     refs: ["FR-49", "FR-50", "AD-27", "Е-84 containment.hold_applied"]
@@ -943,7 +943,7 @@ types:
     ca_group: "nc_decision"
     guard_relevant: true
     publish_stage: true
-    provenance: ["server-attested"]
+    provenance: ["server_attested"]
     versions: [1]
     current_version: 1
     refs: ["FR-50", "PRD §11.9", "AD-30"]
@@ -1089,7 +1089,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: false
-    provenance: ["server-attested", "scenario"]
+    provenance: ["server_attested", "scenario"]
     versions: [1]
     current_version: 1
     refs: ["FR-91", "кейс §5.3", "Е-01 erp.order_received"]
@@ -1105,7 +1105,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: false
-    provenance: ["server-attested", "scenario"]
+    provenance: ["server_attested", "scenario"]
     versions: [1]
     current_version: 1
     refs: ["FR-91", "Е-02 erp.nomenclature_synced"]
@@ -1121,7 +1121,7 @@ types:
     ca_group: null
     guard_relevant: true
     publish_stage: false
-    provenance: ["server-attested", "scenario"]
+    provenance: ["server_attested", "scenario"]
     versions: [1]
     current_version: 1
     refs: ["FR-91", "Е-03 erp.batch_received"]
@@ -1137,7 +1137,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: false
-    provenance: ["server-attested"]
+    provenance: ["server_attested"]
     versions: [1]
     current_version: 1
     refs: ["FR-91", "FR-96", "AD-7", "AD-18", "erp.posting_sent"]
@@ -1153,7 +1153,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: false
-    provenance: ["server-attested", "scenario"]
+    provenance: ["server_attested", "scenario"]
     versions: [1]
     current_version: 1
     refs: ["FR-91", "FR-96", "AD-30", "Е-75 integration.ack / integration.error"]
@@ -1169,7 +1169,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: false
-    provenance: ["server-attested", "genesis"]
+    provenance: ["server_attested", "genesis"]
     versions: [1]
     current_version: 1
     refs: ["FR-96", "AD-18"]
@@ -1219,7 +1219,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: false
-    provenance: ["server-attested", "scenario"]
+    provenance: ["server_attested", "scenario"]
     versions: [1]
     current_version: 1
     refs: ["FR-93"]
@@ -1235,7 +1235,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: false
-    provenance: ["server-attested"]
+    provenance: ["server_attested"]
     versions: [1]
     current_version: 1
     refs: ["FR-93", "AD-30"]
@@ -1251,7 +1251,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: false
-    provenance: ["server-attested", "scenario"]
+    provenance: ["server_attested", "scenario"]
     versions: [1]
     current_version: 1
     refs: ["FR-93"]
@@ -1269,7 +1269,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: false
-    provenance: ["server-attested", "personal", "scenario"]
+    provenance: ["server_attested", "personal", "scenario"]
     versions: [1]
     current_version: 1
     refs: ["FR-94", "кейс §5.3", "PRD §11.15"]
@@ -1287,7 +1287,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: false
-    provenance: ["server-attested", "genesis"]
+    provenance: ["server_attested", "genesis"]
     versions: [1]
     current_version: 1
     refs: ["FR-118", "AD-24"]
@@ -1303,7 +1303,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: false
-    provenance: ["server-attested", "genesis"]
+    provenance: ["server_attested", "genesis"]
     versions: [1]
     current_version: 1
     refs: ["FR-26", "FR-68", "FR-118", "AD-10", "AD-24"]
@@ -1319,7 +1319,7 @@ types:
     ca_group: "admin_security"
     guard_relevant: false
     publish_stage: false
-    provenance: ["server-attested", "genesis"]
+    provenance: ["server_attested", "genesis"]
     versions: [1]
     current_version: 1
     refs: ["FR-31", "FR-77", "AD-7"]
@@ -1335,7 +1335,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: false
-    provenance: ["server-attested", "genesis"]
+    provenance: ["server_attested", "genesis"]
     versions: [1]
     current_version: 1
     refs: ["FR-85", "FR-118", "AD-24"]
@@ -1351,7 +1351,7 @@ types:
     ca_group: "admin_security"
     guard_relevant: false
     publish_stage: false
-    provenance: ["server-attested", "genesis"]
+    provenance: ["server_attested", "genesis"]
     versions: [1]
     current_version: 1
     refs: ["FR-77", "FR-83", "AD-15"]
@@ -1367,7 +1367,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: false
-    provenance: ["server-attested", "genesis"]
+    provenance: ["server_attested", "genesis"]
     versions: [1]
     current_version: 1
     refs: ["AD-11", "AD-14", "FR-118"]
@@ -1383,7 +1383,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: false
-    provenance: ["server-attested", "genesis"]
+    provenance: ["server_attested", "genesis"]
     versions: [1]
     current_version: 1
     refs: ["AD-8", "FR-72"]
@@ -1399,7 +1399,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: false
-    provenance: ["server-attested", "genesis"]
+    provenance: ["server_attested", "genesis"]
     versions: [1]
     current_version: 1
     refs: ["FR-73", "FR-74", "AD-9", "AD-28"]
@@ -1415,7 +1415,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: false
-    provenance: ["server-attested", "genesis"]
+    provenance: ["server_attested", "genesis"]
     versions: [1]
     current_version: 1
     refs: ["AD-9", "AD-46", "FR-73"]
@@ -1431,7 +1431,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: false
-    provenance: ["server-attested", "genesis"]
+    provenance: ["server_attested", "genesis"]
     versions: [1]
     current_version: 1
     refs: ["FR-84"]
@@ -1447,7 +1447,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: false
-    provenance: ["server-attested", "genesis"]
+    provenance: ["server_attested", "genesis"]
     versions: [1]
     current_version: 1
     refs: ["FR-77", "FR-146", "AD-28", "AD-44"]
@@ -1481,7 +1481,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: false
-    provenance: ["server-attested"]
+    provenance: ["server_attested"]
     versions: [1]
     current_version: 1
     refs: ["FR-65", "AD-12", "AD-13", "AD-43"]
@@ -1513,7 +1513,7 @@ types:
     ca_group: null
     guard_relevant: true
     publish_stage: true
-    provenance: ["server-attested"]
+    provenance: ["server_attested"]
     versions: [1]
     current_version: 1
     refs: ["AD-43", "FR-50"]
@@ -1741,7 +1741,7 @@ types:
     ca_group: null
     guard_relevant: true
     publish_stage: false
-    provenance: ["device", "server-attested", "scenario"]
+    provenance: ["device", "server_attested", "scenario"]
     versions: [1]
     current_version: 1
     refs: ["FR-82", "FR-83"]
@@ -1805,7 +1805,7 @@ types:
     ca_group: null
     guard_relevant: true
     publish_stage: false
-    provenance: ["server-attested"]
+    provenance: ["server_attested"]
     versions: [1]
     current_version: 1
     refs: ["FR-83", "AD-15"]
@@ -1953,7 +1953,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: false
-    provenance: ["server-attested", "scenario"]
+    provenance: ["server_attested", "scenario"]
     versions: [1]
     current_version: 1
     refs: ["AD-37", "FR-106"]
@@ -2003,7 +2003,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: false
-    provenance: ["server-attested", "genesis"]
+    provenance: ["server_attested", "genesis"]
     versions: [1]
     current_version: 1
     refs: ["AD-8", "FR-72"]
@@ -2019,7 +2019,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: false
-    provenance: ["server-attested", "personal"]
+    provenance: ["server_attested", "personal"]
     versions: [1]
     current_version: 1
     refs: ["AD-32"]
@@ -2035,7 +2035,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: false
-    provenance: ["server-attested", "genesis"]
+    provenance: ["server_attested", "genesis"]
     versions: [1]
     current_version: 1
     refs: ["AD-9"]
@@ -2069,7 +2069,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: false
-    provenance: ["server-attested", "genesis"]
+    provenance: ["server_attested", "genesis"]
     versions: [1]
     current_version: 1
     refs: ["FR-29", "FR-30", "AD-2", "AD-9"]
@@ -2101,7 +2101,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: false
-    provenance: ["server-attested", "genesis"]
+    provenance: ["server_attested", "genesis"]
     versions: [1]
     current_version: 1
     refs: ["FR-141"]
@@ -2117,7 +2117,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: true
-    provenance: ["server-attested", "genesis"]
+    provenance: ["server_attested", "genesis"]
     versions: [1]
     current_version: 1
     refs: ["FR-29", "FR-33", "AD-5"]
@@ -2133,7 +2133,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: false
-    provenance: ["server-attested"]
+    provenance: ["server_attested"]
     versions: [1]
     current_version: 1
     refs: ["AD-7", "FR-35", "FR-39"]
@@ -2151,7 +2151,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: false
-    provenance: ["server-attested", "device", "personal", "scenario"]
+    provenance: ["server_attested", "device", "personal", "scenario"]
     versions: [1]
     current_version: 1
     refs: ["FR-102", "AD-23", "кейс §5.4"]
@@ -2169,7 +2169,7 @@ types:
     ca_group: null
     guard_relevant: true
     publish_stage: false
-    provenance: ["server-attested"]
+    provenance: ["server_attested"]
     versions: [1]
     current_version: 1
     refs: ["FR-34", "AD-41", "AD-42"]
@@ -2203,7 +2203,7 @@ types:
     ca_group: null
     guard_relevant: true
     publish_stage: false
-    provenance: ["device", "personal", "paper", "server-attested", "scenario"]
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
     versions: [1]
     current_version: 1
     refs: ["FR-45", "Е-04 batch.registered"]
@@ -2219,7 +2219,7 @@ types:
     ca_group: null
     guard_relevant: true
     publish_stage: false
-    provenance: ["device", "personal", "paper", "server-attested", "scenario"]
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
     versions: [1]
     current_version: 1
     refs: ["FR-45", "Е-50 batch.issued"]
@@ -2235,7 +2235,7 @@ types:
     ca_group: null
     guard_relevant: true
     publish_stage: false
-    provenance: ["server-attested"]
+    provenance: ["server_attested"]
     versions: [1]
     current_version: 1
     refs: ["FR-45", "AD-42"]
@@ -2251,7 +2251,7 @@ types:
     ca_group: null
     guard_relevant: true
     publish_stage: true
-    provenance: ["device", "personal", "paper", "server-attested", "scenario"]
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
     versions: [1]
     current_version: 1
     refs: ["FR-15"]
@@ -2267,7 +2267,7 @@ types:
     ca_group: null
     guard_relevant: true
     publish_stage: false
-    provenance: ["device", "personal", "paper", "server-attested", "scenario"]
+    provenance: ["device", "personal", "paper", "server_attested", "scenario"]
     versions: [1]
     current_version: 1
     refs: ["FR-15"]
@@ -2351,7 +2351,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: false
-    provenance: ["server-attested", "personal", "scenario", "genesis"]
+    provenance: ["server_attested", "personal", "scenario", "genesis"]
     versions: [1]
     current_version: 1
     refs: ["FR-95", "AD-18"]
@@ -2367,7 +2367,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: false
-    provenance: ["server-attested"]
+    provenance: ["server_attested"]
     versions: [1]
     current_version: 1
     refs: ["AD-31", "AD-42"]
@@ -2481,7 +2481,7 @@ types:
     ca_group: null
     guard_relevant: true
     publish_stage: false
-    provenance: ["server-attested"]
+    provenance: ["server_attested"]
     versions: [1]
     current_version: 1
     refs: ["FR-55", "FR-57", "AD-4"]
@@ -2497,7 +2497,7 @@ types:
     ca_group: null
     guard_relevant: true
     publish_stage: false
-    provenance: ["server-attested"]
+    provenance: ["server_attested"]
     versions: [1]
     current_version: 1
     refs: ["AD-4"]
@@ -2513,7 +2513,7 @@ types:
     ca_group: null
     guard_relevant: true
     publish_stage: false
-    provenance: ["server-attested", "genesis"]
+    provenance: ["server_attested", "genesis"]
     versions: [1]
     current_version: 1
     refs: ["AD-4", "FR-57"]
@@ -2529,7 +2529,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: false
-    provenance: ["server-attested"]
+    provenance: ["server_attested"]
     versions: [1]
     current_version: 1
     refs: ["FR-8", "FR-57", "Е-97 nc.disposition_overdue"]
@@ -2547,7 +2547,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: false
-    provenance: ["server-attested"]
+    provenance: ["server_attested"]
     versions: [1]
     current_version: 1
     refs: ["FR-57", "AD-3", "AD-5"]
@@ -2563,7 +2563,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: false
-    provenance: ["server-attested"]
+    provenance: ["server_attested"]
     versions: [1]
     current_version: 1
     refs: ["AD-3"]
@@ -2595,7 +2595,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: false
-    provenance: ["server-attested"]
+    provenance: ["server_attested"]
     versions: [1]
     current_version: 1
     refs: ["FR-57", "FR-84", "AD-24"]
@@ -2611,7 +2611,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: false
-    provenance: ["server-attested"]
+    provenance: ["server_attested"]
     versions: [1]
     current_version: 1
     refs: ["AD-3"]
@@ -2629,7 +2629,7 @@ types:
     ca_group: null
     guard_relevant: true
     publish_stage: false
-    provenance: ["server-attested"]
+    provenance: ["server_attested"]
     versions: [1]
     current_version: 1
     refs: ["FR-61", "AD-42"]
@@ -2645,7 +2645,7 @@ types:
     ca_group: null
     guard_relevant: true
     publish_stage: false
-    provenance: ["server-attested"]
+    provenance: ["server_attested"]
     versions: [1]
     current_version: 1
     refs: ["FR-61", "FR-9", "AD-3", "Е-110 risk_scope.created", "Е-111 risk_scope.expanded"]
@@ -2661,7 +2661,7 @@ types:
     ca_group: null
     guard_relevant: true
     publish_stage: false
-    provenance: ["server-attested"]
+    provenance: ["server_attested"]
     versions: [1]
     current_version: 1
     refs: ["FR-62", "FR-9", "AD-42"]
@@ -2741,7 +2741,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: false
-    provenance: ["server-attested"]
+    provenance: ["server_attested"]
     versions: [1]
     current_version: 1
     refs: ["FR-58", "FR-59", "FR-143", "FR-153", "Е-85 analysis.hypotheses_updated"]
@@ -2869,7 +2869,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: false
-    provenance: ["server-attested", "scenario"]
+    provenance: ["server_attested", "scenario"]
     versions: [1]
     current_version: 1
     refs: ["FR-63", "FR-143", "AD-3"]
@@ -2887,7 +2887,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: false
-    provenance: ["device", "server-attested", "scenario"]
+    provenance: ["device", "server_attested", "scenario"]
     versions: [1]
     current_version: 1
     refs: ["FR-101"]
@@ -2919,7 +2919,7 @@ types:
     ca_group: "control_change"
     guard_relevant: true
     publish_stage: false
-    provenance: ["server-attested"]
+    provenance: ["server_attested"]
     versions: [1]
     current_version: 1
     refs: ["FR-101", "AD-17", "AD-29"]
@@ -2985,7 +2985,7 @@ types:
     ca_group: null
     guard_relevant: true
     publish_stage: false
-    provenance: ["partner", "server-attested", "scenario"]
+    provenance: ["partner", "server_attested", "scenario"]
     versions: [1]
     current_version: 1
     refs: ["FR-132", "AD-19"]
@@ -3001,7 +3001,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: false
-    provenance: ["server-attested", "genesis"]
+    provenance: ["server_attested", "genesis"]
     versions: [1]
     current_version: 1
     refs: ["FR-131", "FR-133"]
@@ -3035,7 +3035,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: false
-    provenance: ["server-attested", "scenario"]
+    provenance: ["server_attested", "scenario"]
     versions: [1]
     current_version: 1
     refs: ["AD-38", "FR-129"]
@@ -3051,7 +3051,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: false
-    provenance: ["server-attested", "scenario"]
+    provenance: ["server_attested", "scenario"]
     versions: [1]
     current_version: 1
     refs: ["FR-129"]
@@ -3067,7 +3067,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: false
-    provenance: ["server-attested", "scenario"]
+    provenance: ["server_attested", "scenario"]
     versions: [1]
     current_version: 1
     refs: ["FR-129"]
@@ -3083,7 +3083,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: false
-    provenance: ["server-attested", "scenario"]
+    provenance: ["server_attested", "scenario"]
     versions: [1]
     current_version: 1
     refs: ["FR-108", "FR-129"]
@@ -3099,7 +3099,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: false
-    provenance: ["server-attested", "scenario"]
+    provenance: ["server_attested", "scenario"]
     versions: [1]
     current_version: 1
     refs: ["FR-152", "AD-26"]
@@ -3117,7 +3117,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: false
-    provenance: ["server-attested", "genesis"]
+    provenance: ["server_attested", "genesis"]
     versions: [1]
     current_version: 1
     refs: ["AD-45", "FR-127"]
@@ -3181,7 +3181,7 @@ types:
     ca_group: null
     guard_relevant: false
     publish_stage: false
-    provenance: ["server-attested", "genesis"]
+    provenance: ["server_attested", "genesis"]
     versions: [1]
     current_version: 1
     refs: ["AD-18", "FR-127"]

@@ -83,3 +83,4 @@
 - Факт обязан нести `source_kind` и `reliability`; реакция — блок `reaction`; решение — блок `command`.
 - Запись с `corrects` — критическое действие группы `protected_data` независимо от типа (FR-122, AD-28).
 - Разрешающее действие не может опираться только на факты `server-attested` (AD-2); справочники, от которых зависят права и предусловия, не меняются фактами `server-attested`.
+- Классы происхождения спайна в контракте пишутся snake_case: `server-attested` → `server_attested`; остальные совпадают (`device`, `personal`, `paper`, `partner`, `scenario`, `genesis`).
