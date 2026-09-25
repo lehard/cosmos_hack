@@ -1,0 +1,22 @@
+diff -r n2/gogost.go n1/gogost.go
+4c4
+< const Version = "6.1.0"
+---
+> const Version = "7.0.0"
+diff -r n2/gost28147/wrap_test.go n1/gost28147/wrap_test.go
+6d5
+< 	"io"
+15,23c14,16
+< 		if _, err := io.ReadFull(rand.Reader, kek); err != nil {
+< 			t.Fatal(err)
+< 		}
+< 		if _, err := io.ReadFull(rand.Reader, cek); err != nil {
+< 			t.Fatal(err)
+< 		}
+< 		if _, err := io.ReadFull(rand.Reader, ukm); err != nil {
+< 			t.Fatal(err)
+< 		}
+---
+> 		rand.Read(kek)
+> 		rand.Read(cek)
+> 		rand.Read(ukm)

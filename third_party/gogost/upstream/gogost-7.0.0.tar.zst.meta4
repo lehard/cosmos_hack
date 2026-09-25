@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metalink xmlns="urn:ietf:params:xml:ns:metalink">
+  <file name="gogost-7.0.0.tar.zst">
+    <hash type="blake3-256">90a9044a8d472c42b80049875b95fbe277ba5f3702b323b550659defa1ccb234</hash>
+    <hash type="blake2b-512">b4ebe4064c15911ac7e1c951abbdba55d70834ef35ef6ba17c5bcc6417193a3efe30e70474243fbba6270ad9e3f093be1b07ba45d75a1597236e5b2dd685e3de</hash>
+    <hash type="blake2b-256">4f0db77ff03f68710c929c6e738efd101fb557a82ee98c30ffac973c0f01921c</hash>
+    <hash type="skein-512">b2aafdcf87d36f00224b6d43b4a97e8d66a042fb09940a97cf6fc33452caf8884fc594101499674a7e75112caa1ccd0dffde81d23a7b497a711b6c3e73bcc3a2</hash>
+    <hash type="shake128">cd14ce97e8402f25c1ffe70c678af2ef9203701c283c1bc0da2f775e714bfb38</hash>
+    <hash type="shake256">0ceab2538c519c362298329f0d4c7149cffc84552684ee152029257eddd9cc8a00f40d5d7a0f8ea91e08b2ff52c64824cc63ccdedcba9709bbac350dde830cd2</hash>
+    <hash type="sha-512">7c9a2877c3016a5a79a53e9d5b99cfec3e87703ae161045b707cf80459a428d30a48e13dc29fe98e58d51c47edd2560e33b5ce5edaa59e40d547f6f8a8e405e1</hash>
+    <hash type="sha-256">225aba5cc409546401a7ae37a12d506ee06ce91a4c29b164d8c5d30b7f9ce659</hash>
+    <hash type="streebog-512">869c3ec48dc39e37d608ab7a92fba03b6c53ee8fb68d010761de26844869a3a6ff0af0a24ee177db8b75c9e6de7d2a16bc04f9c9edbe89f0d86393b09286b1bb</hash>
+    <hash type="streebog-256">726bb23bea16e9a1a322d183d21822688f7140862ea2fdc7795f5102969d0f1f</hash>
+    <hash type="xxh3-128">117b56a1db97be89074f257abd41eea9</hash>
+    <signature mediatype="application/ssh-signature"><![CDATA[
+-----BEGIN SSH SIGNATURE-----
+U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgW8bjcAb6OOSK11027QOL2nIg3t
+tYhHKao7wAre2IxjsAAAAEZmlsZQAAAAAAAAAGc2hhNTEyAAAAUwAAAAtzc2gtZWQyNTUx
+OQAAAEB6Siji8IboijNe3uGTCPDvPi07sYjARNuDURpxRK+cdAquTUdxaOr8WeCzKdy1Tc
+ZtAFSRUdrmIneYw+8oIYMD
+-----END SSH SIGNATURE-----
+]]></signature>
+    <size>82132</size>
+    <url priority="1" location="ru">http://www.gogost.stargrave.org/gogost-7.0.0.tar.zst</url>
+    <url priority="2" location="ru">http://msk.www.gogost.stargrave.org/gogost-7.0.0.tar.zst</url>
+    <url priority="2" location="ru">http://spb.www.gogost.stargrave.org/gogost-7.0.0.tar.zst</url>
+    <url priority="3" location="ru">https://www.gogost.stargrave.org/gogost-7.0.0.tar.zst</url>
+    <url priority="4" location="ru">https://msk.www.gogost.stargrave.org/gogost-7.0.0.tar.zst</url>
+    <url priority="4" location="ru">https://spb.www.gogost.stargrave.org/gogost-7.0.0.tar.zst</url>
+    <url priority="5" location="ru">http://y.www.gogost.stargrave.org/gogost-7.0.0.tar.zst</url>
+    <url priority="5" location="ru">http://[322:3bd:cc26:9545:b00b:721f:6b97:1a3e]/gogost-7.0.0.tar.zst</url>
+    <url priority="6" location="ru">sftp://anonwww@msk.www.stargrave.org/gogost.stargrave.org/gogost-7.0.0.tar.zst</url>
+    <url priority="6" location="ru">sftp://anonwww@spb.www.stargrave.org/gogost.stargrave.org/gogost-7.0.0.tar.zst</url>
+  </file>
+  <file name="gogost-7.0.0.tar.zst.sig">
+    <size>294</size>
+    <url priority="1" location="ru">http://www.gogost.stargrave.org/gogost-7.0.0.tar.zst.sig</url>
+    <url priority="2" location="ru">http://msk.www.gogost.stargrave.org/gogost-7.0.0.tar.zst.sig</url>
+    <url priority="2" location="ru">http://spb.www.gogost.stargrave.org/gogost-7.0.0.tar.zst.sig</url>
+    <url priority="3" location="ru">https://www.gogost.stargrave.org/gogost-7.0.0.tar.zst.sig</url>
+    <url priority="4" location="ru">https://msk.www.gogost.stargrave.org/gogost-7.0.0.tar.zst.sig</url>
+    <url priority="4" location="ru">https://spb.www.gogost.stargrave.org/gogost-7.0.0.tar.zst.sig</url>
+    <url priority="5" location="ru">http://y.www.gogost.stargrave.org/gogost-7.0.0.tar.zst.sig</url>
+    <url priority="5" location="ru">http://[322:3bd:cc26:9545:b00b:721f:6b97:1a3e]/gogost-7.0.0.tar.zst.sig</url>
+    <url priority="6" location="ru">sftp://anonwww@msk.www.stargrave.org/gogost.stargrave.org/gogost-7.0.0.tar.zst.sig</url>
+    <url priority="6" location="ru">sftp://anonwww@spb.www.stargrave.org/gogost.stargrave.org/gogost-7.0.0.tar.zst.sig</url>
+  </file>
+  <generator>meta4ra/2.0.0</generator>
+  <published>2026-03-22T11:07:25Z</published>
+</metalink>

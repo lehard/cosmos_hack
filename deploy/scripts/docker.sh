@@ -24,6 +24,7 @@ fi
 
 if [[ $lock == 1 && -n "${ANT_BUILD_LOCK-}" ]] && command -v flock >/dev/null 2>&1; then
   mkdir -p "$(dirname "$ANT_BUILD_LOCK")"
-  exec flock "$ANT_BUILD_LOCK" "${cmd[@]}"
+  # Не ждать блокировку бесконечно: по умолчанию 10 минут (ANT_BUILD_LOCK_WAIT).
+  exec flock -w "${ANT_BUILD_LOCK_WAIT:-600}" "$ANT_BUILD_LOCK" "${cmd[@]}"
 fi
 exec "${cmd[@]}"

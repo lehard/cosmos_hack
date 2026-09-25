@@ -4,6 +4,7 @@ go 1.27.1
 
 require (
 	github.com/jackc/pgx/v5 v5.11.0
+	go.stargrave.org/gogost/v7 v7.0.0
 	go.yaml.in/yaml/v3 v3.0.5
 )
 
@@ -14,3 +15,7 @@ require (
 	golang.org/x/sync v0.17.0 // indirect
 	golang.org/x/text v0.29.0 // indirect
 )
+
+// GoGOST поставляется исходниками: go.stargrave.org недоступен go get (самоподписанный TLS).
+// Происхождение и проверка — third_party/gogost/SOURCE.
+replace go.stargrave.org/gogost/v7 => ../third_party/gogost

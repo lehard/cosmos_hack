@@ -1,0 +1,65 @@
+GoGOST 7.0.0 — поставка исходниками (спайн: AD-1, «Stack», «Заимствованный код»)
+==============================================================================
+
+Что:         GoGOST — реализация ГОСТ на чистом Go, автор Sergey Matveev <stargrave@stargrave.org>
+Версия:      7.0.0 (опубликована 2026-03-22)
+Модуль Go:   go.stargrave.org/gogost/v7
+Лицензия:    GNU GPL v3 (только версия 3) — файл COPYING. Входит в перечень
+             заимствованного кода (PRD §6.3, NFR-SEC-2; make licenses).
+Источник:    http://www.gogost.stargrave.org/Download.html
+             http://www.gogost.stargrave.org/gogost-7.0.0.tar.zst (+ .sig, .meta4)
+             Архив, подпись и метаданные автора лежат в upstream/ без изменений.
+
+Почему не go get: go.stargrave.org отдаёт самоподписанную цепочку TLS, proxy.golang.org
+модуль не отдаёт. Поэтому код поставляется здесь, а backend/go.mod содержит
+    replace go.stargrave.org/gogost/v7 => ../third_party/gogost
+и попадает в backend/vendor через go mod vendor.
+
+Архив
+-----
+Файл:        upstream/gogost-7.0.0.tar.zst, 82132 байта
+sha256:      225aba5cc409546401a7ae37a12d506ee06ce91a4c29b164d8c5d30b7f9ce659
+             (совпадает с журналом архитектора и с .meta4 автора)
+streebog-256 (из .meta4): 726bb23bea16e9a1a322d183d21822688f7140862ea2fdc7795f5102969d0f1f
+
+Что взято из архива (файлы побайтно совпадают с архивом, ничего не правилось)
+------------------------------------------------------------------------------
+gogost.go, go.mod, COPYING, AUTHORS, README, NEWS, THANKS, VERSION, PUBKEY-SSH.pub(.asc)
+gost34112012256/          Стрибог-256 (ГОСТ Р 34.11-2012) — хеш журнала (AD-44); единственный
+                          пакет GoGOST, разрешённый домену (depguard, AD-1)
+internal/gost34112012/    ядро Стрибога
+gost34112012512/          Стрибог-512
+gost3410/                 подпись ГОСТ Р 34.10-2012 (и VKO) — для криптопрофиля gost (эпик 05)
+gost28147/, gost341194/   зависимости пакета gost3410 (VKO 34.10-2001); без них gost3410 не собирается
+Не взято: cmd/, bench/, gost3412128 (Кузнечик), gost341264 (Магма), gost3413, mgm, prfplus.
+Если понадобятся — добавить те же файлы из upstream/ и перезапустить verify.sh.
+
+Проверка происхождения — ./verify.sh [--hybrid] [--deckhouse]
+--------------------------------------------------------------
+Выполнено 2026-09-25, все пункты зелёные:
+
+1. sha256 архива = значению выше и значению sha-256 в .meta4.
+2. Подпись ed25519 из .meta4 (SSH SIGNATURE, namespace "file") верна для ключа
+   PUBKEY-SSH.pub: ssh-ed25519, gogost@stargrave.org,
+   SHA256:u8X9rPDOhxpyzGs/IugbxXbDeOu/0AttKY+LGAvHBH0.
+   Проверяется локальным OpenSSH ≥ 8.1 (на машине сборки — 8.9).
+3. PUBKEY-SSH.pub подписан PGP-ключом автора (PUBKEY-SSH.pub.asc):
+   подключ DB2F F8ED 440A 7E94 986F B776 D223 7E84 0908 6CB7,
+   основной ключ 12AD 3268 9C66 0D42 6967 FD75 CB82 0563 2107 AD8A
+   «Sergey Matveev <stargrave@stargrave.org>». Открытый ключ получен с keys.openpgp.org
+   по отпечатку и сохранён в upstream/stargrave-pgp-12AD….asc. Сеть доверия PGP
+   (кто заверил ключ автора) не проверялась — отпечаток стоит сверить с сайтом автора,
+   когда он будет доступен.
+4. Все файлы здесь (кроме SOURCE, verify.sh и upstream/) побайтно совпадают с архивом.
+5. --hybrid: подпись upstream/gogost-7.0.0.tar.zst.sig типа ssh-mldsa44-ed25519
+   криптографически верна (ssh-keygen -Y check-novalidate, OpenSSH 10.5p1 из alpine:edge
+   в одноразовом контейнере), ключ SHA256:BNLMGBzQJNfWuPDr602Cn7ExhEip3sqLSKJgpAlGgLE.
+   ОГРАНИЧЕНИЕ: этот гибридный открытый ключ не опубликован в архиве; привязать его к автору
+   можно только по странице загрузки сайта, который сейчас недоступен. TODO: когда сайт
+   ответит, сверить отпечаток SHA256:BNLM… с опубликованным PUBKEY-SSH.pub автора.
+   Доверие к архиву сейчас держится на пунктах 2–3 (ed25519 + PGP).
+6. --deckhouse: код совпадает с github.com/deckhouse/gogost/v6 v6.2.0 (proxy.golang.org,
+   zip sha256 deb2cd7287916e1f712cc9a315599808623eb9ab145067a1d2c56bc0c9d02614) с точностью
+   до путей импорта и годов в копирайте; прочие отличия — ровно
+   upstream/deckhouse-v6.2.0-normalized.diff: константа Version и rand.Read вместо
+   io.ReadFull в одном тесте (gost28147/wrap_test.go).

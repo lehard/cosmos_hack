@@ -1,6 +1,7 @@
 * text=auto eol=lf
 backend/vendor/** linguist-vendored -diff
-third_party/** linguist-vendored
+# Заимствованный код хранится побайтно как в архиве автора (verify.sh сверяет байты).
+third_party/** -text linguist-vendored
 *_gen.go linguist-generated
 frontend/src/shared/api/generated/** linguist-generated
 backend/.golangci.yml linguist-generated

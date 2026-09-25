@@ -117,8 +117,8 @@ generate: ## Перегенерировать производные файлы 
 
 # ------------------------------------------------------------- проверки ----
 
-.PHONY: check check-backend check-frontend check-contracts
-check: check-backend check-frontend check-contracts ## Все проверки: слои, детерминизм, линтеры, тесты, фронтенд, контракты
+.PHONY: check check-backend check-frontend check-contracts check-third-party gogost-verify
+check: check-backend check-frontend check-third-party check-contracts ## Все проверки: слои, детерминизм, линтеры, тесты, фронтенд, GoGOST, контракты
 	@echo; echo "make check: зелёный"
 
 check-backend: ## Бэкенд: правила слоёв, gofmt, vet, golangci-lint, detcheck, тесты, самопроверка линтеров
@@ -126,6 +126,16 @@ check-backend: ## Бэкенд: правила слоёв, gofmt, vet, golangci-
 
 check-frontend: ## Фронтенд: ESLint (запрет ручных HTTP-вызовов), vue-tsc, сборка
 	$(NODE_RUN) /src/deploy/scripts/check-frontend.sh
+
+check-third-party: ## GoGOST: sha256, подпись автора, побайтное совпадение с архивом (офлайн)
+	@if command -v zstd >/dev/null && command -v ssh-keygen >/dev/null; then \
+		$(ROOT)/third_party/gogost/verify.sh; \
+	else \
+		echo "нет zstd или ssh-keygen — проверка GoGOST пропущена (make gogost-verify)"; \
+	fi
+
+gogost-verify: ## GoGOST полностью: + гибридная подпись (OpenSSH ≥ 10.4 в контейнере) и сверка с deckhouse/gogost v6.2.0
+	$(ROOT)/third_party/gogost/verify.sh --hybrid --deckhouse
 
 check-contracts: ## Контракты: contracts/scripts/check.sh (эпик 00), если он есть
 	@if [[ -f $(ROOT)/contracts/scripts/check.sh ]]; then \
