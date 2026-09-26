@@ -82,7 +82,7 @@ func accessLive(ctx context.Context, env *environment) (*accessBundle, error) {
 	b.now = dc.Now
 	proj := accessapp.NewProjection(seed, accessstore.PolicyLog{Journal: c.journal, Codec: c.codec, Signal: c.listener})
 	b.policy = proj
-	b.events = accessstore.SecurityBus{Journal: c.journal, Codec: c.codec}
+	b.events = accessstore.NewSecurityBus(c.journal, c.codec)
 	b.creds = accessstore.NewCredentials(c.pool)
 	b.decisions = accessapp.JournalDecisions{Journal: c.journal, DomainBuild: c.codec.DomainBuild, Now: c.codec.Now}
 

@@ -8,6 +8,8 @@ import (
 	"strings"
 
 	"go.yaml.in/yaml/v3"
+
+	accessdom "ant/internal/domain/access"
 )
 
 // Policy — то, что мир заготовок берёт из стартовой политики normative/policy
@@ -86,22 +88,16 @@ func (p *Policy) Role(id string) (PolicyRole, bool) {
 	return PolicyRole{}, false
 }
 
-// DeskFor — стол роли; у наследника без своего файла — стол ближайшей базовой роли (AD-21).
+// DeskFor — стол роли; у наследника без своего файла — стол ближайшей базовой
+// роли (AD-21) по одной функции наследования ролей access (accessdom.Roles.Closure).
 func (p *Policy) DeskFor(role string) (map[string]any, bool) {
-	seen := map[string]bool{}
-	queue := []string{role}
-	for len(queue) > 0 {
-		r := queue[0]
-		queue = queue[1:]
-		if seen[r] {
-			continue
-		}
-		seen[r] = true
+	h := make(accessdom.Roles, len(p.Roles))
+	for _, r := range p.Roles {
+		h[r.ID] = r.Inherits
+	}
+	for _, r := range h.Closure(role) {
 		if d, ok := p.Desks[r]; ok {
 			return d, true
-		}
-		if pr, ok := p.Role(r); ok {
-			queue = append(queue, pr.Inherits...)
 		}
 	}
 	return nil, false

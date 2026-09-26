@@ -128,11 +128,14 @@ func (g *Gate) refusal(ctx context.Context, rq Request, d Decision) *platform.Er
 			}
 		}
 	}
-	obj := rq.Object.Kind
-	if rq.Object.ID != "" {
-		obj += " " + rq.Object.ID
+	kv := []string{"action_id", rq.Action.ID, "action", rq.Action.ID}
+	if obj := strings.TrimSpace(rq.Object.Kind + " " + rq.Object.ID); obj != "" {
+		kv = append(kv, "object", obj)
 	}
-	e := platform.Fail(code, "action_id", rq.Action.ID, "action", rq.Action.ID, "object", obj, "workplace", rq.Scope)
+	if rq.Scope != "" {
+		kv = append(kv, "workplace", rq.Scope)
+	}
+	e := platform.Fail(code, kv...)
 	e.Detail = d.Reason
 	if e.Detail == "" {
 		switch code {
@@ -146,9 +149,11 @@ func (g *Gate) refusal(ctx context.Context, rq Request, d Decision) *platform.Er
 	return e
 }
 
-// report — событие шины безопасности об отказе (AD-24, FR-85).
+// report — событие шины безопасности об отказе (AD-24, FR-85). Запрос без
+// сеанса — не отказ в доступе, а отсутствие входа (барьер 1): его события —
+// неудачные входы (security.auth.failed), а не каждый анонимный запрос.
 func (g *Gate) report(ctx context.Context, p platform.Principal, act platform.Action, obj platform.ObjectRef, code errcodes.Code, at time.Time) {
-	if g.Events == nil {
+	if g.Events == nil || p.Anonymous() {
 		return
 	}
 	err := g.Events.AccessDenied(ctx, Denial{PersonID: p.PersonID, ActionID: act.ID, Object: obj, Code: string(code), At: at})

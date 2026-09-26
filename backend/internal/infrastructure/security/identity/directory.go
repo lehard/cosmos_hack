@@ -1,14 +1,20 @@
-// Пакет identity — адаптер порта IdentityProvider для демо-трека эпика 08
-// (ключ identity_provider: demo): вход демо-персоной без пароля и сеанс
-// подписанным токеном в cookie; каталог политики (роли, демо-персоны, столы)
-// из normative/policy и normative/desks.
+// Пакет identity — адаптеры порта IdentityProvider (барьер 1, AD-15, FR-128)
+// и затравка политики из нормативного слоя.
 //
-// Слой: infrastructure/security — технический механизм (AD-1); реализует порт
-// application/access.IdentityProvider и собирает access.Directory.
+//   - Local (identity_provider = local): логин и пароль (argon2id, Argon2id),
+//     сеансы scs в Postgres (SessionStore, pgxstore; cookie ant_session),
+//     ограничение частоты попыток (golang.org/x/time/rate), блокировка после
+//     N неудач, события неудачного входа security.auth.failed; в профилях
+//     fixtures и demo — ещё вход демо-персоной без пароля и заголовок
+//     Ant-Demo-Persona. Субъект и роли — по действующей политике на каждый запрос.
+//   - Demo (identity_provider = demo): только демо-персоны, токен HMAC без
+//     базы (выгрузка OpenAPI, тесты, запуск без Postgres).
+//   - LoadSeed, LoadDirectory, LoadPlaces — затравка политики (до генезиса,
+//     эпик 05), демо-персоны и столы ролей, области мест из normative/.
 //
-// Вход по логину и паролю (argon2id), сеансы scs в Postgres, блокировка после
-// неудач — эпик 08 во втором слое; этот адаптер тогда остаётся только для
-// профилей fixtures и demo.
+// Слой: infrastructure/security — технический механизм (AD-1); реализует
+// порты application/access (IdentityProvider, PasswordHasher, Places).
+// LDAP / ALD Pro / FreeIPA — следующий адаптер того же порта.
 package identity
 
 import (
