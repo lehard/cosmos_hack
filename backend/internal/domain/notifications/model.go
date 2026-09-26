@@ -235,17 +235,6 @@ func (s *State) task(id string) *Task {
 	return &s.Tasks[i]
 }
 
-// maxAt — наибольшее время среди причин.
-func maxAt(cs []Cause) time.Time {
-	var t time.Time
-	for _, c := range cs {
-		if c.At.After(t) {
-			t = c.At
-		}
-	}
-	return t
-}
-
 // records — причины в виде записей для kernel.NewReaction.
 func records(cs ...[]Cause) []kernel.Record {
 	var out []kernel.Record

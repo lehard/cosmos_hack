@@ -130,8 +130,7 @@ func (s *State) reach(r kernel.Record) {
 // целиком, поэтому в итоге свёртки на слот остаётся последний вывод (срок
 // поставлен или снят, задача поставлена или снята).
 func React(s State, env Env, up Upstream) kernel.Output {
-	_ = up
-	env = env.Defaults()
+	_, _ = up, env
 	var out kernel.Output
 	add := func(r kernel.Reaction, err error) {
 		if err != nil {
