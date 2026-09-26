@@ -36,4 +36,4 @@
 
 **Контрактный тест:** `go test ./internal/infrastructure/integration/mes/...` — эталоны по схемам, блок →
 эталонные сообщения, классы `ConfirmBOD`, шлюз входящих с BPMN фланца и схемами приёма, сквозной путь
-«сдерживание → `mes.hold.requested` → MES → `mes.hold.responded` → `mes.block.list`». Stand MES — эпик 43.
+«сдерживание → `mes.hold.requested` → MES → `mes.hold.responded` → `mes.block.list`». Stand MES — эпик 43 (`…/mes/b2mml/stand`): адаптер проверяется и на нём.
