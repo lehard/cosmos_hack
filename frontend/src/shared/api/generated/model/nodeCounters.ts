@@ -18,4 +18,6 @@ export interface NodeCounters {
   /** @minimum 0 */
   queue: number;
   step_key: string;
+  /** Имя узла BPMN версии процесса; нет — показывать step_key. */
+  step_name?: string;
 }

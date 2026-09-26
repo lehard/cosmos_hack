@@ -47,6 +47,17 @@ func (c *Ctx) nodeName(stepKey string) *string {
 	return nil
 }
 
+// stepNames — step_key → имя узла BPMN процесса фланца (UI-21).
+func stepNames(nodes map[string]*BpmnNode) map[string]string {
+	out := map[string]string{}
+	for k, n := range nodes {
+		if n != nil && n.Name != "" {
+			out[k] = n.Name
+		}
+	}
+	return out
+}
+
 func (c *Ctx) alerts() notifapp.AlertList {
 	al := notifapp.AlertList{Items: []notifapp.AlertEntry{}}
 	add := func(id string, at time.Time, kind string, f func(*notifapp.AlertEntry)) {

@@ -1668,6 +1668,9 @@ components:
       properties:
         step_key:
           type: string
+        step_name:
+          description: Имя узла BPMN версии процесса; нет — показывать step_key.
+          type: string
         wait:
           description: Среднее ожидание текстом с единицей («37 мин»).
           type: string
@@ -7979,6 +7982,11 @@ components:
           type: string
         process_version:
           $ref: "#/components/schemas/MapVersionRef"
+        step_names:
+          additionalProperties:
+            type: string
+          description: step_key → имя узла BPMN показанной версии для узлов ответа (в том числе data_gaps); нет имени — ключа нет.
+          type: object
         versions:
           items:
             $ref: "#/components/schemas/MapVersionRef"
@@ -8224,6 +8232,9 @@ components:
       properties:
         step_key:
           type: string
+        step_name:
+          description: Имя узла BPMN версии процесса; нет — показывать step_key.
+          type: string
         wait:
           description: Среднее ожидание текстом с единицей.
           type: string
@@ -8329,6 +8340,9 @@ components:
           type: string
         step_key:
           type: string
+        step_name:
+          description: Имя узла BPMN версии процесса; нет — показывать step_key.
+          type: string
         threshold:
           description: Порог текстом с единицей.
           type: string
@@ -8362,6 +8376,9 @@ components:
           minimum: 0
           type: integer
         step_key:
+          type: string
+        step_name:
+          description: Имя узла BPMN версии процесса; нет — показывать step_key.
           type: string
       required:
         - step_key
@@ -9560,6 +9577,9 @@ components:
           type: string
         step_key:
           type: string
+        step_name:
+          description: Имя узла BPMN версии процесса; нет — показывать step_key.
+          type: string
         threshold:
           description: Порог текстом с единицей.
           type: string
@@ -9592,6 +9612,11 @@ components:
           $ref: "#/components/schemas/Period"
         process_version_id:
           type: string
+        step_names:
+          additionalProperties:
+            type: string
+          description: step_key → имя узла BPMN для всех узлов ответа (в том числе data_gaps); нет имени — ключа нет.
+          type: object
       required:
         - period
         - process_version_id
@@ -9625,6 +9650,9 @@ components:
           minimum: 0
           type: integer
         step_key:
+          type: string
+        step_name:
+          description: Имя узла BPMN версии процесса; нет — показывать step_key.
           type: string
       required:
         - step_key

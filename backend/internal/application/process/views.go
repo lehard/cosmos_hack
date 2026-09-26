@@ -12,19 +12,21 @@ import (
 
 // MapNodeCounters — счётчики узла по step_key за период (FR-2, FR-3).
 type MapNodeCounters struct {
-	StepKey         string `json:"step_key"`
-	Queue           int    `json:"queue" minimum:"0"`
-	InProgress      int    `json:"in_progress" minimum:"0"`
-	Passed          int    `json:"passed" minimum:"0"`
-	Defects         int    `json:"defects" minimum:"0" doc:"Физические дефекты за период, не наблюдения (соглашение «Дефект»)."`
-	Nonconformities *int   `json:"nonconformities,omitempty" minimum:"0" doc:"Открытые несоответствия узла (FR-154)."`
+	StepKey         string  `json:"step_key"`
+	StepName        *string `json:"step_name,omitempty" doc:"Имя узла BPMN версии процесса; нет — показывать step_key."`
+	Queue           int     `json:"queue" minimum:"0"`
+	InProgress      int     `json:"in_progress" minimum:"0"`
+	Passed          int     `json:"passed" minimum:"0"`
+	Defects         int     `json:"defects" minimum:"0" doc:"Физические дефекты за период, не наблюдения (соглашение «Дефект»)."`
+	Nonconformities *int    `json:"nonconformities,omitempty" minimum:"0" doc:"Открытые несоответствия узла (FR-154)."`
 }
 
 // MapNodeAnomaly — аномалия узла (FR-5).
 type MapNodeAnomaly struct {
-	StepKey   string `json:"step_key"`
-	Kind      string `json:"kind" enum:"queue_above_norm,wait_above_norm,downtime_over_threshold,output_spike,defect_rate_out_of_control"`
-	Threshold string `json:"threshold,omitempty" doc:"Порог текстом с единицей."`
+	StepKey   string  `json:"step_key"`
+	StepName  *string `json:"step_name,omitempty" doc:"Имя узла BPMN версии процесса; нет — показывать step_key."`
+	Kind      string  `json:"kind" enum:"queue_above_norm,wait_above_norm,downtime_over_threshold,output_spike,defect_rate_out_of_control"`
+	Threshold string  `json:"threshold,omitempty" doc:"Порог текстом с единицей."`
 }
 
 // MapItem — изделие-точка в текущем узле (FR-2).
@@ -48,8 +50,9 @@ type MapVersionRef struct {
 
 // MapBottleneck — узел-ограничение линии (FR-5).
 type MapBottleneck struct {
-	StepKey string `json:"step_key"`
-	Wait    string `json:"wait,omitempty" doc:"Среднее ожидание текстом с единицей."`
+	StepKey  string  `json:"step_key"`
+	StepName *string `json:"step_name,omitempty" doc:"Имя узла BPMN версии процесса; нет — показывать step_key."`
+	Wait     string  `json:"wait,omitempty" doc:"Среднее ожидание текстом с единицей."`
 }
 
 // MapIncident — выбранный инцидент на карте (FR-9, FR-61).
@@ -76,6 +79,8 @@ type LiveMap struct {
 	DataGaps       []string          `json:"data_gaps" doc:"step_key узлов, где оценка невозможна: нет данных источника (не «норма»)."`
 	Incident       *MapIncident      `json:"incident,omitempty"`
 	BasisSeq       int64             `json:"basis_seq"`
+	// StepNames — имена узлов ответа (UI-21): data_gaps — строки step_key.
+	StepNames map[string]string `json:"step_names,omitempty" doc:"step_key → имя узла BPMN показанной версии для узлов ответа (в том числе data_gaps); нет имени — ключа нет."`
 }
 
 // LiveMapQuery — параметры живой карты помимо момента.

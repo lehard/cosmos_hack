@@ -2,6 +2,7 @@
  * СГЕНЕРИРОВАНО orval (frontend/scripts/generate.mjs) — руками не править (AD-20).
  * Источник: contracts/openapi.yaml
  */
+import type { LiveMapStepNames } from './liveMapStepNames';
 import type { MapBottleneck } from './mapBottleneck';
 import type { MapIncident } from './mapIncident';
 import type { MapItem } from './mapItem';
@@ -26,5 +27,7 @@ export interface LiveMap {
   /** Название процесса. */
   process_name: string;
   process_version: MapVersionRef;
+  /** step_key → имя узла BPMN показанной версии для узлов ответа (в том числе data_gaps); нет имени — ключа нет. */
+  step_names?: LiveMapStepNames;
   versions: MapVersionRef[];
 }

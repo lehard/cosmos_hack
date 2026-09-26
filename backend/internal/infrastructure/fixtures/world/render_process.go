@@ -194,6 +194,7 @@ func (c *Ctx) liveMap(cs map[string]*NodeCount, in *Incident) processapp.LiveMap
 	if in != nil {
 		lm.Incident = c.mapIncident(in)
 	}
+	lm.NameSteps(stepNames(c.M.Bpmn))
 	return lm
 }
 

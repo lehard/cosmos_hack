@@ -406,7 +406,43 @@ func (s *LiveService) LiveMap(ctx context.Context, q LiveMapQuery, m platform.Mo
 		}
 		lm.BasisSeq = max(lm.BasisSeq, ncs.BasisSeq)
 	}
+	lm.NameSteps(StepNames(shown))
 	return lm, nil
+}
+
+// NameSteps — имена узлов рядом с step_key (UI-21): счётчики, ограничение,
+// аномалии — полем step_name, data_gaps (строки) — словарём step_names.
+// Тот же вид у заготовок.
+func (lm *LiveMap) NameSteps(names map[string]string) {
+	name := func(k string) *string {
+		if n := names[k]; n != "" {
+			return &n
+		}
+		return nil
+	}
+	used := map[string]string{}
+	note := func(k string) *string {
+		n := name(k)
+		if n != nil {
+			used[k] = *n
+		}
+		return n
+	}
+	for i := range lm.Counters {
+		lm.Counters[i].StepName = note(lm.Counters[i].StepKey)
+	}
+	for i := range lm.Anomalies {
+		lm.Anomalies[i].StepName = note(lm.Anomalies[i].StepKey)
+	}
+	if lm.Bottleneck != nil {
+		lm.Bottleneck.StepName = note(lm.Bottleneck.StepKey)
+	}
+	for _, g := range lm.DataGaps {
+		note(g)
+	}
+	if len(used) > 0 {
+		lm.StepNames = used
+	}
 }
 
 // nodeKind — вид узла для карточки и читаемой версии (перечисление контракта).

@@ -54,6 +54,7 @@ func (c *Ctx) bracket() []loader.Response {
 	lm := processapp.LiveMap{ProcessID: BracketProcessID, ProcessName: BracketProcess, ProcessVersion: ver, Versions: []processapp.MapVersionRef{ver},
 		BpmnXML: loader.BlobPrefix + BracketBpmnBlob, Counters: counters, Items: []processapp.MapItem{}, Anomalies: []processapp.MapNodeAnomaly{},
 		DataGaps: []string{}, BasisSeq: c.Seq()}
+	lm.NameSteps(stepNames(byKey))
 	quorum := &processapp.VersionQuorum{Have: 3, Need: 3}
 	sum := processapp.ProcessVersionSummary{VersionID: BracketVersionID, ProcessID: BracketProcessID, Label: "v1", Status: "active", Hash: digest,
 		CreatedAt: created, EffectiveFrom: tptr(created), Quorum: quorum}

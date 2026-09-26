@@ -526,7 +526,37 @@ func (s *Service) NodeCounters(ctx context.Context, processVersionID string, p P
 	for _, a := range domain.Anomalies(nodes, d.rows, d.down, d.win.From, d.win.To, bucket(d.win.Period), norm) {
 		out.Anomalies = append(out.Anomalies, NodeAnomaly{StepKey: a.Step, Kind: a.Kind, Threshold: ptr(limitText(a))})
 	}
+	out.NameSteps(s.stepNames(ctx))
 	return out, nil
+}
+
+// NameSteps — имена узлов рядом с step_key (UI-21): счётчики, ограничение,
+// аномалии — полем step_name, data_gaps (строки) — словарём step_names.
+// Тот же вид у заготовок.
+func (n *NodeCounterSet) NameSteps(names map[string]string) {
+	used := map[string]string{}
+	note := func(k string) *string {
+		v := stepName(names, k)
+		if v != nil {
+			used[k] = *v
+		}
+		return v
+	}
+	for i := range n.Counters {
+		n.Counters[i].StepName = note(n.Counters[i].StepKey)
+	}
+	for i := range n.Anomalies {
+		n.Anomalies[i].StepName = note(n.Anomalies[i].StepKey)
+	}
+	if n.Bottleneck != nil {
+		n.Bottleneck.StepName = note(n.Bottleneck.StepKey)
+	}
+	for _, g := range n.DataGaps {
+		note(g)
+	}
+	if len(used) > 0 {
+		n.StepNames = used
+	}
 }
 
 // minutesText — «37 мин», «2 ч 5 мин».
