@@ -1,0 +1,41 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/access/access.qualification.granted.v1.json",
+  "title": "AccessQualificationGrantedV1",
+  "description": "Квалификация или аттестация выдана — квалификация с областью и сроком; проверяется на дату операции (FR-80, FR-17).",
+  "type": "object",
+  "properties": {
+    "person_id": {
+      "$ref": "../common/defs.v1.json#/definitions/person_ref",
+      "description": "Сотрудник."
+    },
+    "qualification_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Вид квалификации (например, аттестация сварщика по способу, материалу, толщине)."
+    },
+    "scope": {
+      "type": "string",
+      "description": "Область действия: путь `здание/цех/участок/рабочее место` (иерархия областей, AD-15).",
+      "pattern": "^[a-z0-9_-]+(/[a-z0-9_-]+)*$",
+      "maxLength": 256
+    },
+    "certificate_ref": {
+      "type": "string",
+      "description": "Номер удостоверения.",
+      "maxLength": 128
+    },
+    "valid_from": {
+      "$ref": "../common/defs.v1.json#/definitions/timestamp",
+      "description": "Начало действия (доменное время)."
+    },
+    "valid_until": {
+      "$ref": "../common/defs.v1.json#/definitions/timestamp",
+      "description": "Окончание действия; отсутствует — бессрочно."
+    }
+  },
+  "required": [
+    "person_id",
+    "qualification_id",
+    "valid_from"
+  ]
+}

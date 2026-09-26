@@ -1,0 +1,1022 @@
+# СГЕНЕРИРОВАНО из операций Huma (backend/internal/infrastructure/transport) командой
+# `ant -openapi` в make generate — руками не править (AD-20). Контракт фронтенда: клиент orval + Vue Query.
+components:
+  schemas:
+    ActionClass:
+      description: "Класс операции из x-ant-action (AD-27, AD-40): read — чтение, record — запись без последствий на осях, protective — защитное, permissive — разрешающее, irreversible — необратимое."
+      enum:
+        - read
+        - record
+        - protective
+        - permissive
+        - irreversible
+      type: string
+    Axis:
+      description: "Ось момента (AD-37): occurred — «как было» (по умолчанию), recorded — «что мы знали»."
+      enum:
+        - occurred
+        - recorded
+      type: string
+    BackendMode:
+      description: Режим ведущих портов, отдавших ответ (AD-36, FR-150).
+      enum:
+        - fixtures
+        - live
+      type: string
+    DemoPersona:
+      additionalProperties: false
+      properties:
+        id:
+          description: Псевдоним сотрудника (кейс §4.6).
+          type: string
+        name:
+          description: Отображаемое имя (условное).
+          type: string
+        role:
+          $ref: "#/components/schemas/RoleRef"
+        scope:
+          description: Область действия роли (здание → цех → участок → рабочее место).
+          type: string
+      required:
+        - id
+        - name
+        - role
+      type: object
+    DemoPersonaList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: "#/components/schemas/DemoPersona"
+          type: array
+      required:
+        - items
+      type: object
+    Density:
+      description: Плотность — мастеру и исполнителю крупно (large), технологу — плотный инженерный вид (compact).
+      enum:
+        - large
+        - comfortable
+        - compact
+      type: string
+    Desk:
+      additionalProperties: false
+      properties:
+        density:
+          $ref: "#/components/schemas/Density"
+        help_key:
+          description: Раздел встроенной справки роли.
+          type: string
+        role:
+          description: id роли из политики.
+          type: string
+        tabs:
+          items:
+            $ref: "#/components/schemas/DeskTab"
+          minItems: 1
+          type: array
+        title_key:
+          description: Ключ текста названия стола.
+          type: string
+        version:
+          description: Версия формата стола.
+          enum:
+            - 1
+          format: int64
+          type: integer
+      required:
+        - version
+        - role
+        - title_key
+        - density
+        - tabs
+      type: object
+    DeskArea:
+      enum:
+        - top
+        - left
+        - main
+        - right
+        - bottom
+      type: string
+    DeskLayout:
+      description: "Раскладка вкладки: single — main; main-side — main + right; queue-main-side — left + main + right; overview — top + main + right + bottom."
+      enum:
+        - single
+        - main-side
+        - queue-main-side
+        - overview
+      type: string
+    DeskSlot:
+      additionalProperties: false
+      properties:
+        area:
+          $ref: "#/components/schemas/DeskArea"
+        density:
+          $ref: "#/components/schemas/Density"
+        id:
+          pattern: ^[a-z][a-z0-9-]*$
+          type: string
+        slice:
+          additionalProperties: {}
+          description: Параметры среза — «одна правда, разные взгляды».
+          type: object
+        widget:
+          description: id виджета из frontend/src/widgets/registry.ts.
+          pattern: ^[a-z][a-z0-9-]*$
+          type: string
+      required:
+        - id
+        - area
+        - widget
+      type: object
+    DeskTab:
+      additionalProperties: false
+      properties:
+        density:
+          $ref: "#/components/schemas/Density"
+        id:
+          pattern: ^[a-z][a-z0-9-]*$
+          type: string
+        layout:
+          $ref: "#/components/schemas/DeskLayout"
+        slots:
+          items:
+            $ref: "#/components/schemas/DeskSlot"
+          type: array
+        title_key:
+          description: Ключ текста интерфейса (ru.json).
+          type: string
+      required:
+        - id
+        - title_key
+        - layout
+        - slots
+      type: object
+    EntityChanged:
+      additionalProperties: false
+      properties:
+        entity:
+          $ref: "#/components/schemas/EntityKind"
+          description: Вид сущности — первый элемент ключа Vue Query.
+        id:
+          description: Идентификатор сущности; для live_map и integrity — global.
+          maxLength: 128
+          type: string
+        mode:
+          $ref: "#/components/schemas/BackendMode"
+          description: Режим ведущих портов, отдавших изменение (AD-36).
+        run_id:
+          description: Прогон сценария, если изменение в его пространстве имён (AD-38).
+          maxLength: 128
+          type: string
+        seq:
+          description: Позиция журнала, после которой сущность изменилась; она же id события SSE.
+          format: int64
+          minimum: 1
+          type: integer
+      required:
+        - entity
+        - id
+        - seq
+      type: object
+    EntityKind:
+      description: Вид сущности — первый элемент ключа Vue Query и объект прав (как в contracts/events/common/sse-entity-changed.v1.json).
+      enum:
+        - item
+        - lot
+        - nonconformity
+        - incident
+        - document
+        - task
+        - notification
+        - workplace
+        - equipment
+        - process_version
+        - analyzer_passport
+        - erp_message
+        - run
+        - integrity
+        - live_map
+        - policy
+        - quarantine
+      type: string
+    Explanation:
+      additionalProperties: false
+      properties:
+        action:
+          description: x-ant-action id.
+          type: string
+        allowed:
+          type: boolean
+        allowed_actions:
+          description: Что можно сделать вместо (например, «Запросить решение»).
+          items:
+            type: string
+          type: array
+        code:
+          description: Код отказа из contracts/errors.yaml.
+          type: string
+        reason:
+          description: "Объяснение по-русски: роль, область, полномочие, клеймо, разделение обязанностей."
+          type: string
+      required:
+        - action
+        - allowed
+        - allowed_actions
+      type: object
+    IntegrityStatus:
+      additionalProperties: false
+      properties:
+        checked_at:
+          description: Время отчёта верификатора.
+          format: date-time
+          type: string
+        interval_seconds:
+          description: Интервал проверок верификатора.
+          format: int64
+          minimum: 1
+          type: integer
+        report_ref:
+          description: Отпечаток отчёта верификатора.
+          type: string
+        server_side:
+          description: Всегда true — показывается «по данным сервера».
+          type: boolean
+        status:
+          description: ok — последний отчёт верификатора «цело»; stale — свежего отчёта нет дольше двух интервалов.
+          enum:
+            - ok
+            - violated
+            - stale
+            - unknown
+          type: string
+      required:
+        - status
+        - interval_seconds
+        - server_side
+      type: object
+    ItemLookup:
+      additionalProperties: false
+      properties:
+        carrier_ref:
+          description: "Носитель, по которому найдено: ant:carrier:‹тип›:‹значение›."
+          type: string
+        item_id:
+          description: "Внутренний ID изделия: код_предприятия:локальный_id (AD-16)."
+          type: string
+      required:
+        - item_id
+      type: object
+    NotificationSummary:
+      additionalProperties: false
+      properties:
+        by_kind:
+          $ref: "#/components/schemas/NotificationSummaryByKind"
+          description: "По видам: информация, тревога, задача, запрос решения."
+        unread:
+          description: Непрочитанных всего.
+          format: int64
+          minimum: 0
+          type: integer
+      required:
+        - unread
+      type: object
+    NotificationSummaryByKind:
+      additionalProperties: false
+      properties:
+        alarm:
+          format: int64
+          minimum: 0
+          type: integer
+        decision_request:
+          format: int64
+          minimum: 0
+          type: integer
+        info:
+          format: int64
+          minimum: 0
+          type: integer
+        task:
+          format: int64
+          minimum: 0
+          type: integer
+      required:
+        - info
+        - alarm
+        - task
+        - decision_request
+      type: object
+    Permission:
+      additionalProperties: false
+      properties:
+        action:
+          description: x-ant-action id ‹модуль›.‹объект›.‹действие›.
+          type: string
+        action_class:
+          $ref: "#/components/schemas/ActionClass"
+        object_id:
+          description: Для списка по объекту — его id.
+          type: string
+        subject:
+          description: Вид объекта (EntityKind) или all.
+          type: string
+      required:
+        - action
+        - action_class
+        - subject
+      type: object
+    PermissionList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: "#/components/schemas/Permission"
+          type: array
+        policy_seq:
+          description: Версия политики, по которой вычислен список (AD-39).
+          format: int64
+          minimum: 0
+          type: integer
+      required:
+        - policy_seq
+        - items
+      type: object
+    Problem:
+      additionalProperties: false
+      properties:
+        allowed_actions:
+          description: "Что пользователь может сделать вместо: например, «Запросить решение» (FR-146)."
+          items:
+            type: string
+          type: array
+        basis_seq:
+          description: "Для journal.stale_*: на каком seq проверено."
+          format: int64
+          type: integer
+        ca_ref:
+          description: Критическое действие, записанное из-за отказа.
+          type: string
+        code:
+          description: Код из contracts/errors.yaml.
+          type: string
+        detail:
+          description: Пояснение по-русски для этого случая.
+          type: string
+        instance:
+          description: URI конкретного случая (путь запроса или id записи карантина).
+          type: string
+        params:
+          additionalProperties:
+            type: string
+          description: Параметры шаблона текста интерфейса.
+          type: object
+        quarantine_id:
+          description: Запись карантина (FR-30).
+          type: string
+        status:
+          description: HTTP-статус.
+          format: int64
+          maximum: 599
+          minimum: 200
+          type: integer
+        title:
+          description: Краткий заголовок по-русски (из каталога).
+          type: string
+        type:
+          description: "URI типа проблемы: urn:ant:problem:‹код›."
+          type: string
+        violations:
+          description: Нарушения по полям или элементам.
+          items:
+            $ref: "#/components/schemas/Violation"
+          type: array
+      required:
+        - type
+        - title
+        - status
+        - code
+      type: object
+    RoleRef:
+      additionalProperties: false
+      properties:
+        id:
+          description: id роли из политики (normative/policy).
+          pattern: ^[a-z][a-z0-9_]*$
+          type: string
+        inherits:
+          description: Базовые роли (руководящие подписанты — наследники).
+          items:
+            type: string
+          type: array
+        title:
+          description: Название роли из политики.
+          type: string
+      required:
+        - id
+        - title
+      type: object
+    Session:
+      additionalProperties: false
+      properties:
+        demo:
+          description: Вход демо-персоной без пароля.
+          type: boolean
+        policy_seq:
+          description: Версия политики, по которой вычислены права (AD-39).
+          format: int64
+          minimum: 0
+          type: integer
+        role:
+          $ref: "#/components/schemas/RoleRef"
+        scope:
+          description: Область роли.
+          type: string
+        shift:
+          $ref: "#/components/schemas/SessionShift"
+        user:
+          $ref: "#/components/schemas/SessionUser"
+        workplace:
+          $ref: "#/components/schemas/SessionWorkplace"
+      required:
+        - user
+        - role
+        - policy_seq
+        - demo
+      type: object
+    SessionCreate:
+      additionalProperties: false
+      properties:
+        login:
+          description: Логин.
+          maxLength: 128
+          type: string
+        password:
+          description: Пароль (argon2id на сервере, эпик 08).
+          maxLength: 256
+          type: string
+        persona_id:
+          description: Демо-персона (только профили fixtures и demo).
+          maxLength: 64
+          type: string
+      type: object
+    SessionShift:
+      additionalProperties: false
+      properties:
+        ends_at:
+          format: date-time
+          type: string
+        id:
+          type: string
+        starts_at:
+          format: date-time
+          type: string
+        title:
+          type: string
+      required:
+        - id
+        - title
+      type: object
+    SessionUser:
+      additionalProperties: false
+      properties:
+        id:
+          description: Псевдоним сотрудника.
+          type: string
+        name:
+          description: Отображаемое имя.
+          type: string
+      required:
+        - id
+        - name
+      type: object
+    SessionWorkplace:
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+      required:
+        - id
+        - title
+      type: object
+    Violation:
+      additionalProperties: false
+      properties:
+        code:
+          description: Код нарушения.
+          type: string
+        element_id:
+          description: Идентификатор элемента BPMN.
+          type: string
+        field:
+          description: JSON Pointer поля.
+          type: string
+        message:
+          description: Пояснение.
+          type: string
+      required:
+        - code
+      type: object
+info:
+  description: "HTTP API системы ant — доверенная система контроля качества. Сгенерировано из операций Huma (backend/internal/infrastructure/transport); руками не править (AD-20). Каждая операция несёт x-ant-action: id (он же operationId, ключ прав Casbin и @casl), класс (AD-27), критичность (AD-28), модуль-владелец (AD-40), гарды (AD-39), эмитируемые типы записей журнала. Чтение принимает axis и as_of (AD-21, AD-22); команды — command_id, basis_seq, policy_seq (AD-7, AD-39); режим fixtures | live — в заголовке ответа Ant-Backend (AD-36); ошибки — RFC 9457 problem+json с кодом из contracts/errors.yaml."
+  title: ant API
+  version: "1"
+openapi: 3.1.0
+paths:
+  /api/v1/auth/personas:
+    get:
+      description: "Демо-трек (эпик 08): экран входа предлагает выбрать демо-персону — псевдоним из стартовой политики (normative/policy) с ролью и областью. Вне профилей fixtures и demo операция отвечает 404 api.not_found, и экран показывает только вход по логину."
+      operationId: access.persona.list
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DemoPersonaList"
+          description: OK
+          headers:
+            Ant-Backend:
+              schema:
+                $ref: "#/components/schemas/BackendMode"
+                description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Error
+      summary: Демо-персоны для входа без пароля
+      tags:
+        - access
+      x-ant-action:
+        class: read
+        critical: false
+        id: access.persona.list
+        owner: access
+  /api/v1/auth/session:
+    delete:
+      description: Закрыть сеанс веба (FR-128).
+      operationId: access.session.delete
+      parameters:
+        - description: Cookie сеанса.
+          in: cookie
+          name: ant_session
+          schema:
+            description: Cookie сеанса.
+            type: string
+      responses:
+        "204":
+          description: No Content
+          headers:
+            Ant-Backend:
+              schema:
+                $ref: "#/components/schemas/BackendMode"
+                description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Error
+      summary: Выйти
+      tags:
+        - access
+      x-ant-action:
+        class: record
+        critical: false
+        id: access.session.delete
+        owner: access
+    get:
+      description: Пользователь, активная роль, область, смена, рабочее место, версия политики (FR-128); 401 access.unauthenticated — сеанса нет.
+      operationId: access.session.read
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+          description: OK
+          headers:
+            Ant-Backend:
+              schema:
+                $ref: "#/components/schemas/BackendMode"
+                description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Error
+      summary: Текущий сеанс
+      tags:
+        - access
+      x-ant-action:
+        class: read
+        critical: false
+        id: access.session.read
+        owner: access
+    post:
+      description: FR-128. Вход демо-персоной (persona_id, только профили fixtures и demo) или по логину. Пароль пока необязателен (демо-трек); после эпика 08 — обязателен для входа по логину (сеанс scs, argon2id). Ответ ставит cookie сеанса.
+      operationId: access.session.create
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SessionCreate"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+          description: Created
+          headers:
+            Ant-Backend:
+              schema:
+                $ref: "#/components/schemas/BackendMode"
+                description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Set-Cookie:
+              schema:
+                description: Cookie сеанса веба (HttpOnly, SameSite=Strict).
+                type: string
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Error
+      summary: Войти
+      tags:
+        - access
+      x-ant-action:
+        class: record
+        critical: false
+        id: access.session.create
+        owner: access
+  /api/v1/desk:
+    get:
+      description: "AD-21: стол — данные normative/desks/‹роль›.yaml (раскладка → вкладки → слоты → виджеты → срез и плотность), отдаётся через access.Queries.Desks. Для роли-наследника без своего файла — стол ближайшей базовой роли (inherits)."
+      operationId: access.desk.read
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Desk"
+          description: OK
+          headers:
+            Ant-Backend:
+              schema:
+                $ref: "#/components/schemas/BackendMode"
+                description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Error
+      summary: Стол активной роли
+      tags:
+        - access
+      x-ant-action:
+        class: read
+        critical: false
+        id: access.desk.read
+        owner: access
+  /api/v1/integrity:
+    get:
+      description: "AD-46: ant забирает последний подписанный отчёт верификатора у хранителя и журналирует security.integrity.checked. Индикатор на столах помечен «по данным сервера» и желтеет сам, если свежего отчёта нет дольше двух интервалов."
+      operationId: security.integrity.read
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IntegrityStatus"
+          description: OK
+          headers:
+            Ant-Backend:
+              schema:
+                $ref: "#/components/schemas/BackendMode"
+                description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Error
+      summary: Состояние целостности журнала «по данным сервера»
+      tags:
+        - security
+      x-ant-action:
+        class: read
+        critical: false
+        id: security.integrity.read
+        owner: security
+        subject: integrity
+  /api/v1/items/lookup:
+    get:
+      description: Разрешение носителя (AD-41) → изделие на момент. Не найдено — 404 api.not_found.
+      operationId: item.item.lookup
+      parameters:
+        - description: Номер детали или содержимое DataMatrix (ant:carrier:‹тип›:‹значение›).
+          explode: false
+          in: query
+          name: q
+          required: true
+          schema:
+            description: Номер детали или содержимое DataMatrix (ant:carrier:‹тип›:‹значение›).
+            maxLength: 256
+            minLength: 1
+            type: string
+        - description: "Ось момента: occurred — «как было» (по умолчанию), recorded — «что мы знали» (AD-37)."
+          explode: false
+          in: query
+          name: axis
+          schema:
+            $ref: "#/components/schemas/Axis"
+            description: "Ось момента: occurred — «как было» (по умолчанию), recorded — «что мы знали» (AD-37)."
+        - description: "Момент (RFC 3339 UTC); пусто — «сейчас». Задан — воспроизведение: команды выключены (AD-21)."
+          explode: false
+          in: query
+          name: as_of
+          schema:
+            description: "Момент (RFC 3339 UTC); пусто — «сейчас». Задан — воспроизведение: команды выключены (AD-21)."
+            format: date-time
+            type: string
+        - description: "Прогон сценария: данные в его пространстве имён (AD-38)."
+          explode: false
+          in: query
+          name: run_id
+          schema:
+            description: "Прогон сценария: данные в его пространстве имён (AD-38)."
+            maxLength: 128
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ItemLookup"
+          description: OK
+          headers:
+            Ant-Backend:
+              schema:
+                $ref: "#/components/schemas/BackendMode"
+                description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Error
+      summary: Найти изделие по номеру детали или скану DataMatrix
+      tags:
+        - item
+      x-ant-action:
+        class: read
+        critical: false
+        id: item.item.lookup
+        owner: item
+        subject: item
+  /api/v1/notifications/summary:
+    get:
+      description: "FR-57: непрочитанные по видам — информация, тревога, задача, запрос решения."
+      operationId: notifications.summary.read
+      parameters:
+        - description: "Ось момента: occurred — «как было» (по умолчанию), recorded — «что мы знали» (AD-37)."
+          explode: false
+          in: query
+          name: axis
+          schema:
+            $ref: "#/components/schemas/Axis"
+            description: "Ось момента: occurred — «как было» (по умолчанию), recorded — «что мы знали» (AD-37)."
+        - description: "Момент (RFC 3339 UTC); пусто — «сейчас». Задан — воспроизведение: команды выключены (AD-21)."
+          explode: false
+          in: query
+          name: as_of
+          schema:
+            description: "Момент (RFC 3339 UTC); пусто — «сейчас». Задан — воспроизведение: команды выключены (AD-21)."
+            format: date-time
+            type: string
+        - description: "Прогон сценария: данные в его пространстве имён (AD-38)."
+          explode: false
+          in: query
+          name: run_id
+          schema:
+            description: "Прогон сценария: данные в его пространстве имён (AD-38)."
+            maxLength: 128
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationSummary"
+          description: OK
+          headers:
+            Ant-Backend:
+              schema:
+                $ref: "#/components/schemas/BackendMode"
+                description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Error
+      summary: Сводка уведомлений для шапки
+      tags:
+        - notifications
+      x-ant-action:
+        class: read
+        critical: false
+        id: notifications.summary.read
+        owner: notifications
+        subject: notification
+  /api/v1/permissions:
+    get:
+      description: "AD-15 «Для фронтенда»: без subject — плоский список «действие → объект» для @casl/vue; с subject и id — допустимые действия по конкретному объекту. Сервер вычисляет его тем же Enforce, что проверяет команды («в списке ⇔ разрешено»). На момент as_of (воспроизведение) команд в списке нет."
+      operationId: access.permission.list
+      parameters:
+        - description: Вид объекта.
+          explode: false
+          in: query
+          name: subject
+          schema:
+            $ref: "#/components/schemas/EntityKind"
+            description: Вид объекта.
+        - description: Идентификатор объекта.
+          explode: false
+          in: query
+          name: id
+          schema:
+            description: Идентификатор объекта.
+            maxLength: 128
+            type: string
+        - description: "Ось момента: occurred — «как было» (по умолчанию), recorded — «что мы знали» (AD-37)."
+          explode: false
+          in: query
+          name: axis
+          schema:
+            $ref: "#/components/schemas/Axis"
+            description: "Ось момента: occurred — «как было» (по умолчанию), recorded — «что мы знали» (AD-37)."
+        - description: "Момент (RFC 3339 UTC); пусто — «сейчас». Задан — воспроизведение: команды выключены (AD-21)."
+          explode: false
+          in: query
+          name: as_of
+          schema:
+            description: "Момент (RFC 3339 UTC); пусто — «сейчас». Задан — воспроизведение: команды выключены (AD-21)."
+            format: date-time
+            type: string
+        - description: "Прогон сценария: данные в его пространстве имён (AD-38)."
+          explode: false
+          in: query
+          name: run_id
+          schema:
+            description: "Прогон сценария: данные в его пространстве имён (AD-38)."
+            maxLength: 128
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PermissionList"
+          description: OK
+          headers:
+            Ant-Backend:
+              schema:
+                $ref: "#/components/schemas/BackendMode"
+                description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Error
+      summary: Разрешённые действия
+      tags:
+        - access
+      x-ant-action:
+        class: read
+        critical: false
+        id: access.permission.list
+        owner: access
+  /api/v1/permissions/explain:
+    get:
+      description: "FR-136, FR-146: решение по действию над объектом с объяснением (роль, область, полномочие, клеймо, разделение обязанностей) и тем, что можно сделать вместо («Запросить решение»)."
+      operationId: access.permission.explain
+      parameters:
+        - description: x-ant-action id.
+          explode: false
+          in: query
+          name: action
+          required: true
+          schema:
+            description: x-ant-action id.
+            maxLength: 128
+            type: string
+        - description: Вид объекта.
+          explode: false
+          in: query
+          name: subject
+          schema:
+            $ref: "#/components/schemas/EntityKind"
+            description: Вид объекта.
+        - description: Идентификатор объекта.
+          explode: false
+          in: query
+          name: id
+          schema:
+            description: Идентификатор объекта.
+            maxLength: 128
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Explanation"
+          description: OK
+          headers:
+            Ant-Backend:
+              schema:
+                $ref: "#/components/schemas/BackendMode"
+                description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Error
+      summary: Почему вы можете или не можете
+      tags:
+        - access
+      x-ant-action:
+        class: read
+        critical: false
+        id: access.permission.explain
+        owner: access
+  /api/v1/stream:
+    get:
+      description: "Канал sse из contracts/events/asyncapi.yaml: `id:` = seq, `event: entity_changed`, `data:` — EntityChanged (components). Фронтенд инвалидирует ключ Vue Query [сущность, id]; переподключение — с Last-Event-ID (AD-21). Бюджет «событие → экран» ≤ 2 с (FR-2)."
+      operationId: journal.stream.subscribe
+      parameters:
+        - description: seq последнего полученного события (переподключение).
+          in: header
+          name: Last-Event-ID
+          schema:
+            description: seq последнего полученного события (переподключение).
+            type: string
+        - description: Прогон сценария (AD-38).
+          explode: false
+          in: query
+          name: run_id
+          schema:
+            description: Прогон сценария (AD-38).
+            maxLength: 128
+            type: string
+      responses:
+        "200":
+          content:
+            text/event-stream:
+              schema:
+                description: "Поток SSE; data: — EntityChanged"
+                type: string
+          description: Поток событий
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Error
+      summary: Живые обновления столов (SSE)
+      tags:
+        - journal
+      x-ant-action:
+        class: read
+        critical: false
+        id: journal.stream.subscribe
+        owner: journal
+        subject: live_map
+      x-sse-message:
+        data:
+          $ref: "#/components/schemas/EntityChanged"
+        event: entity_changed
+servers:
+  - url: /
+tags:
+  - description: люди, роли, полномочия, клейма, допуск к рабочему месту, действия исполнителя
+    name: access
+  - description: паспорт, носители идентификатора, сборка, вмешательства
+    name: item
+  - description: запись (Append), цепочки, контрольные точки, генезис, время
+    name: journal
+  - description: сроки, задачи, уведомления, эскалации
+    name: notifications
+  - description: события безопасности, журнал критических действий
+    name: security

@@ -1,0 +1,37 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/equipment/equipment.program.changed.v1.json",
+  "title": "EquipmentProgramChangedV1",
+  "description": "Программа оборудования сменилась — программа и её ревизия (MTConnect EVENT); смена программы — повод для акта первой детали (FR-147).",
+  "type": "object",
+  "properties": {
+    "equipment_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Оборудование."
+    },
+    "station_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Участок."
+    },
+    "program_ref": {
+      "type": "string",
+      "description": "Программа.",
+      "maxLength": 128
+    },
+    "program_revision": {
+      "type": "string",
+      "description": "Ревизия программы.",
+      "maxLength": 64
+    },
+    "planned": {
+      "type": "boolean",
+      "description": "Плановая смена (иначе — отклонение)."
+    }
+  },
+  "required": [
+    "equipment_id",
+    "program_ref",
+    "program_revision",
+    "planned"
+  ]
+}

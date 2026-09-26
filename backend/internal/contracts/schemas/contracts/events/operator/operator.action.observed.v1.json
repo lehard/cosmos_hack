@@ -1,0 +1,57 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/operator/operator.action.observed.v1.json",
+  "title": "OperatorActionObservedV1",
+  "description": "Действие исполнителя замечено (OperatorVision) — только гипотеза о действии: пропущен шаг, нарушен порядок, лишний шаг, инструмента нет; распознавания лиц нет, исполнитель — по входу на рабочее место; в показатели по исполнителям не идёт (FR-126).",
+  "type": "object",
+  "properties": {
+    "operation_run_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Идентификатор выполнения операции; повтор операции — новый идентификатор со ссылкой `rework_of` (FR-47)."
+    },
+    "workplace_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Рабочее место."
+    },
+    "tp_step": {
+      "type": "string",
+      "description": "Шаг ТП.",
+      "maxLength": 64
+    },
+    "observation": {
+      "type": "string",
+      "enum": [
+        "step_missed",
+        "sequence_broken",
+        "extra_step",
+        "tool_missing",
+        "tool_returned",
+        "manual_intervention",
+        "other"
+      ],
+      "description": "Наблюдение."
+    },
+    "analyzer_confidence_bp": {
+      "$ref": "../common/defs.v1.json#/definitions/bp",
+      "description": "Уверенность анализатора."
+    },
+    "observation_quality_bp": {
+      "$ref": "../common/defs.v1.json#/definitions/bp",
+      "description": "Качество наблюдения."
+    },
+    "versions": {
+      "$ref": "../common/defs.v1.json#/definitions/analyzer_versions",
+      "description": "Вектор версий."
+    },
+    "evidence_refs": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/evidence_ref"
+      },
+      "description": "Материалы."
+    }
+  },
+  "required": [
+    "observation"
+  ]
+}

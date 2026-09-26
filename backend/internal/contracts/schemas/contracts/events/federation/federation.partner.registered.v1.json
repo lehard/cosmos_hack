@@ -1,0 +1,43 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/federation/federation.partner.registered.v1.json",
+  "title": "FederationPartnerRegisteredV1",
+  "description": "Партнёр зарегистрирован — код предприятия и корни доверия партнёра; администратор безопасности + начальник ОТК (AD-19).",
+  "type": "object",
+  "properties": {
+    "partner_code": {
+      "type": "string",
+      "description": "Код предприятия-партнёра.",
+      "pattern": "^[A-Z0-9][A-Z0-9_-]{0,15}$"
+    },
+    "name": {
+      "type": "string",
+      "description": "Название.",
+      "maxLength": 256
+    },
+    "root_fingerprints": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/digest"
+      },
+      "description": "Отпечатки корневых ключей партнёра.",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "endpoint": {
+      "type": "string",
+      "description": "Адрес порта межзаводского обмена.",
+      "maxLength": 256
+    },
+    "document_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Акт регистрации."
+    }
+  },
+  "required": [
+    "partner_code",
+    "name",
+    "root_fingerprints",
+    "document_id"
+  ]
+}

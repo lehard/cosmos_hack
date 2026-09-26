@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/incident/incident.action.implemented.v1.json",
+  "title": "IncidentActionImplementedV1",
+  "description": "Мера внедрена — «внедрено» ≠ «эффективно»: начинается окно наблюдения (FR-64).",
+  "type": "object",
+  "properties": {
+    "action_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Мера."
+    },
+    "incident_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Инцидент."
+    },
+    "note": {
+      "type": "string",
+      "maxLength": 4000,
+      "description": "Что сделано."
+    }
+  },
+  "required": [
+    "action_id",
+    "incident_id"
+  ]
+}

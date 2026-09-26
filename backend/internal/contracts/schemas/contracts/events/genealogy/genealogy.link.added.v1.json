@@ -1,0 +1,39 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/genealogy/genealogy.link.added.v1.json",
+  "title": "GenealogyLinkAddedV1",
+  "description": "Связь генеалогии добавлена — адресованная запись обоим изделиям: компонент ← сборка, партия ← изделие; запросы вверх и вниз по дереву (FR-45, AD-42).",
+  "type": "object",
+  "properties": {
+    "parent_item_id": {
+      "$ref": "../common/defs.v1.json#/definitions/item_id",
+      "description": "Сборка."
+    },
+    "child_item_id": {
+      "$ref": "../common/defs.v1.json#/definitions/item_id",
+      "description": "Компонент-экземпляр."
+    },
+    "lot_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Партия (для партионной связи)."
+    },
+    "relation": {
+      "type": "string",
+      "enum": [
+        "component_of",
+        "made_from_lot",
+        "split_from",
+        "grouped_with"
+      ],
+      "description": "Вид связи."
+    },
+    "basis_event_id": {
+      "$ref": "../common/defs.v1.json#/definitions/uuid",
+      "description": "Запись-основание (`item.assembly.recorded`, `genealogy.lot.issued`)."
+    }
+  },
+  "required": [
+    "relation",
+    "basis_event_id"
+  ]
+}

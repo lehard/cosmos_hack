@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/operation/operation.movement.received.v1.json",
+  "title": "OperationMovementReceivedV1",
+  "description": "Изделие принято на новом месте — принимающий подтвердил получение и осмотр; между цехами — закрывающая точка смены склада; в изолятор — физическое подтверждение изоляции (FR-16, FR-55).",
+  "type": "object",
+  "properties": {
+    "from_location_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Откуда."
+    },
+    "to_location_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Где принято."
+    },
+    "destination_kind": {
+      "type": "string",
+      "enum": [
+        "station",
+        "workshop",
+        "warehouse",
+        "isolator",
+        "other"
+      ],
+      "description": "Вид места назначения."
+    },
+    "inspection_on_receipt": {
+      "type": "string",
+      "enum": [
+        "no_damage",
+        "damage_found",
+        "not_inspected"
+      ],
+      "description": "Осмотр при приёмке."
+    },
+    "received_by": {
+      "$ref": "../common/defs.v1.json#/definitions/person_ref",
+      "description": "Кто принял."
+    },
+    "step_key": {
+      "$ref": "../common/defs.v1.json#/definitions/step_key",
+      "description": "Ключ шага процесса (`ant:properties/@stepKey`), к которому относится запись."
+    }
+  },
+  "required": [
+    "to_location_id",
+    "destination_kind",
+    "inspection_on_receipt",
+    "received_by"
+  ]
+}

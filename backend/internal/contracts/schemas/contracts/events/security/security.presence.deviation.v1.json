@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/security/security.presence.deviation.v1.json",
+  "title": "SecurityPresenceDeviationV1",
+  "description": "Отклонение присутствия — «ключ вставлен, владельца нет в зоне» — тревога администратору; «по графику должен быть, ключа нет» — уведомление мастеру (FR-84).",
+  "type": "object",
+  "properties": {
+    "person_id": {
+      "$ref": "../common/defs.v1.json#/definitions/person_ref",
+      "description": "Сотрудник."
+    },
+    "workplace_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Рабочее место."
+    },
+    "deviation": {
+      "type": "string",
+      "enum": [
+        "token_without_presence",
+        "scheduled_without_token"
+      ],
+      "description": "Вид."
+    }
+  },
+  "required": [
+    "person_id",
+    "workplace_id",
+    "deviation"
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/operator/operator.mode.changed.v1.json",
+  "title": "OperatorModeChangedV1",
+  "description": "Исполнитель сменил режим оборудования — ручная смена режима (ручной режим, коррекция подачи или оборотов) — обстоятельство операции, не вина; критическое действие (FR-147, AD-28).",
+  "type": "object",
+  "properties": {
+    "operation_run_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Идентификатор выполнения операции; повтор операции — новый идентификатор со ссылкой `rework_of` (FR-47)."
+    },
+    "workplace_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Рабочее место."
+    },
+    "operator_id": {
+      "$ref": "../common/defs.v1.json#/definitions/person_ref",
+      "description": "Исполнитель (по входу на рабочее место, не по лицу)."
+    },
+    "equipment_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Оборудование."
+    },
+    "change": {
+      "type": "string",
+      "description": "Что изменено (например, «подача 130 %»).",
+      "maxLength": 256
+    },
+    "new_mode": {
+      "type": "string",
+      "enum": [
+        "automatic",
+        "manual",
+        "override_feed",
+        "override_speed",
+        "other"
+      ],
+      "description": "Новый режим."
+    }
+  },
+  "required": [
+    "operator_id",
+    "equipment_id",
+    "change"
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/decision/decision.signal.rejected.v1.json",
+  "title": "DecisionSignalRejectedV1",
+  "description": "Сигнал отклонён — ложное срабатывание; причина обязательна; исходный сигнал остаётся в истории (FR-52, кейс §5.1 «Решение пользователя»).",
+  "type": "object",
+  "properties": {
+    "signal_ids": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/object_id",
+        "description": "Сигнал."
+      },
+      "description": "Отклоняемые сигналы.",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "reason": {
+      "$ref": "../common/defs.v1.json#/definitions/reason",
+      "description": "Почему сигнал отклонён — обязательна."
+    },
+    "label_for_adaptation": {
+      "type": "boolean",
+      "description": "Снимок — кандидат в размеченные данные для настройки модели (FR-99)."
+    }
+  },
+  "required": [
+    "signal_ids",
+    "reason"
+  ]
+}

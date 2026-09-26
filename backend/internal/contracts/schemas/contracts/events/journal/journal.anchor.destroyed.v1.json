@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/journal/journal.anchor.destroyed.v1.json",
+  "title": "JournalAnchorDestroyedV1",
+  "description": "Ключ-якорь уничтожен — закрытый ключ-якорь уничтожен сразу после подписи генезиса (AD-33).",
+  "type": "object",
+  "properties": {
+    "anchor_fingerprint": {
+      "$ref": "../common/defs.v1.json#/definitions/digest",
+      "description": "Отпечаток якоря."
+    }
+  },
+  "required": [
+    "anchor_fingerprint"
+  ]
+}

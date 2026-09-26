@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/policy/policy.role.defined.v1.json",
+  "title": "PolicyRoleDefinedV1",
+  "description": "Роль определена — новая роль — запись политики без изменения кода; роли могут наследовать права других ролей (FR-78, AD-15).",
+  "type": "object",
+  "properties": {
+    "role_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Роль."
+    },
+    "title": {
+      "type": "string",
+      "description": "Название роли по-русски.",
+      "maxLength": 128
+    },
+    "inherits": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/object_id",
+        "description": "Роль."
+      },
+      "description": "Наследуемые роли.",
+      "uniqueItems": true
+    },
+    "actions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "description": "Действие каталога операций `‹модуль›.‹объект›.‹действие›`; `*` — любой сегмент.",
+        "pattern": "^([a-z][a-z0-9_]*|\\*)\\.([a-z][a-z0-9_]*|\\*)\\.([a-z][a-z0-9_]*|\\*)$"
+      },
+      "description": "Разрешённые действия.",
+      "uniqueItems": true
+    }
+  },
+  "required": [
+    "role_id",
+    "title",
+    "actions"
+  ]
+}

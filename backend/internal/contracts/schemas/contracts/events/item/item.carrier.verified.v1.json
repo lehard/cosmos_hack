@@ -1,0 +1,34 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/item/item.carrier.verified.v1.json",
+  "title": "ItemCarrierVerifiedV1",
+  "description": "Носитель проверен считыванием — результат считывания носителя: прочитан / нечитаем / не совпал; нечитаемый носитель — задача перемаркировки (AD-16).",
+  "type": "object",
+  "properties": {
+    "carrier_type": {
+      "$ref": "../common/defs.v1.json#/definitions/carrier_type"
+    },
+    "value": {
+      "type": "string",
+      "description": "Считанное значение (пусто, если не прочитан).",
+      "maxLength": 256
+    },
+    "read_outcome": {
+      "type": "string",
+      "enum": [
+        "readable",
+        "unreadable",
+        "mismatch"
+      ],
+      "description": "Исход считывания."
+    },
+    "step_key": {
+      "$ref": "../common/defs.v1.json#/definitions/step_key",
+      "description": "Ключ шага процесса (`ant:properties/@stepKey`), к которому относится запись."
+    }
+  },
+  "required": [
+    "carrier_type",
+    "read_outcome"
+  ]
+}

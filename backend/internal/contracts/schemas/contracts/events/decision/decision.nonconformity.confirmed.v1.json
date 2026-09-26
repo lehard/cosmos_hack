@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/decision/decision.nonconformity.confirmed.v1.json",
+  "title": "DecisionNonconformityConfirmedV1",
+  "description": "Несоответствие подтверждено — контролёр подтвердил: сигнал — несоответствие требованию КД (второй статус кейса §2.3). Исходный сигнал не меняется (FR-51, FR-52).",
+  "type": "object",
+  "properties": {
+    "nc_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Несоответствие."
+    },
+    "signal_ids": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/object_id",
+        "description": "Сигнал."
+      },
+      "description": "Подтверждаемые сигналы.",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "requirement_ref": {
+      "type": "string",
+      "description": "Требование КД и факт.",
+      "maxLength": 256
+    },
+    "severity": {
+      "$ref": "../common/defs.v1.json#/definitions/severity"
+    },
+    "defect_type_code": {
+      "type": "string",
+      "description": "Вид дефекта по классификатору.",
+      "maxLength": 32
+    },
+    "full_analysis_required": {
+      "type": "boolean",
+      "description": "Нужен ли полный разбор причин (по политике)."
+    },
+    "reason": {
+      "$ref": "../common/defs.v1.json#/definitions/reason",
+      "description": "Основание решения."
+    }
+  },
+  "required": [
+    "nc_id",
+    "signal_ids",
+    "severity",
+    "reason"
+  ]
+}

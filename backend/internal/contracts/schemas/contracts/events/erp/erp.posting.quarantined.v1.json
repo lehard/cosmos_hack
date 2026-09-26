@@ -1,0 +1,34 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/erp/erp.posting.quarantined.v1.json",
+  "title": "ErpPostingQuarantinedV1",
+  "description": "Исходящее сообщение в карантине — повтор при транспортных ошибках исчерпан или ошибка данных без автоповтора — задача администратору (FR-96).",
+  "type": "object",
+  "properties": {
+    "business_key": {
+      "type": "string",
+      "description": "Бизнес-ключ.",
+      "maxLength": 256
+    },
+    "request_event_id": {
+      "$ref": "../common/defs.v1.json#/definitions/uuid",
+      "description": "Запрос."
+    },
+    "attempts": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 1000,
+      "description": "Попыток."
+    },
+    "last_error_code": {
+      "type": "string",
+      "description": "Код последней ошибки.",
+      "maxLength": 96
+    }
+  },
+  "required": [
+    "business_key",
+    "request_event_id",
+    "attempts"
+  ]
+}

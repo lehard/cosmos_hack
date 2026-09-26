@@ -71,6 +71,12 @@ type Config struct {
 	Ports struct {
 		// Mode — fixtures | live: реализация ведущих портов Queries/Commands (AD-36).
 		Mode string `yaml:"mode"`
+		// Modules — переопределение режима по модулю: вертикальные срезы
+		// («сигнал → качество → несоответствие → карточка», AD-36).
+		Modules map[string]string `yaml:"modules"`
+		// Adapters — адаптер каждого ведомого порта платформы по ключу (AD-35):
+		// journal_store: postgres, access_control: permissive | casbin …
+		Adapters map[string]string `yaml:"adapters"`
 	} `yaml:"ports"`
 
 	Engine struct {
@@ -165,6 +171,11 @@ func (c *Config) Validate() error {
 	if c.Ports.Mode != PortsFixtures && c.Ports.Mode != PortsLive {
 		errs = append(errs, fmt.Errorf("ports.mode = %q, допустимы fixtures | live", c.Ports.Mode))
 	}
+	for m, mode := range c.Ports.Modules {
+		if mode != PortsFixtures && mode != PortsLive {
+			errs = append(errs, fmt.Errorf("ports.modules.%s = %q, допустимы fixtures | live", m, mode))
+		}
+	}
 	if c.Engine.Partitions <= 0 {
 		errs = append(errs, errors.New("engine.partitions должно быть > 0"))
 	}
@@ -200,6 +211,9 @@ func walk(t reflect.Type, prefix string, fn func(string, reflect.Type)) {
 			walk(f.Type, name, fn)
 			continue
 		}
+		if f.Type.Kind() == reflect.Map {
+			continue // карты задаются только файлом конфигурации
+		}
 		fn(name, f.Type)
 	}
 }
@@ -217,6 +231,9 @@ func applyEnv(v reflect.Value, prefix string, lookup func(string) (string, bool)
 		}
 		name := prefix + "_" + strings.ToUpper(tag)
 		fv := v.Field(i)
+		if f.Type.Kind() == reflect.Map {
+			continue // карты задаются только файлом конфигурации
+		}
 		if f.Type.Kind() == reflect.Struct && f.Type != durationType {
 			if err := applyEnv(fv, name, lookup); err != nil {
 				return err

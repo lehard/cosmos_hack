@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/decision/decision.nonconformity.closed.v1.json",
+  "title": "DecisionNonconformityClosedV1",
+  "description": "Несоответствие закрыто по изделию — закрыто по изделию ≠ проблема устранена: расследование причины идёт отдельно (FR-51).",
+  "type": "object",
+  "properties": {
+    "nc_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Несоответствие."
+    },
+    "summary": {
+      "type": "string",
+      "maxLength": 4000,
+      "description": "Итог по изделию."
+    }
+  },
+  "required": [
+    "nc_id"
+  ]
+}

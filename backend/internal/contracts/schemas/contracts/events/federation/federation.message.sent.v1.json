@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/federation/federation.message.sent.v1.json",
+  "title": "FederationMessageSentV1",
+  "description": "Межзаводское сообщение отправлено — выписка или адресное уведомление партнёру (область риска задела отгруженное, претензия поставщику) (FR-133).",
+  "type": "object",
+  "properties": {
+    "partner_code": {
+      "type": "string",
+      "description": "Получатель.",
+      "pattern": "^[A-Z0-9][A-Z0-9_-]{0,15}$"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "passport_extract",
+        "risk_notice",
+        "claim_notice"
+      ],
+      "description": "Вид."
+    },
+    "document_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Документ."
+    },
+    "message_id": {
+      "$ref": "../common/defs.v1.json#/definitions/uuid",
+      "description": "Идентификатор сообщения."
+    }
+  },
+  "required": [
+    "partner_code",
+    "kind",
+    "message_id"
+  ]
+}

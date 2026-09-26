@@ -1,9 +1,9 @@
 /**
  * СГЕНЕРИРОВАНО orval (frontend/scripts/generate.mjs) — руками не править (AD-20).
- * Источник: frontend/dev/openapi.draft.yaml (черновик до появления contracts/openapi.yaml)
+ * Источник: contracts/openapi.yaml
  */
 
 /**
- * Параметры среза — «одна правда, разные взгляды»
+ * Параметры среза — «одна правда, разные взгляды».
  */
-export type DeskSlotSlice = { [key: string]: unknown };
+export type DeskSlotSlice = {[key: string]: unknown};

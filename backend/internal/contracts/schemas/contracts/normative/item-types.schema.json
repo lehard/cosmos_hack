@@ -1,0 +1,203 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/normative/item-types.schema.json",
+  "title": "ItemTypesSeed",
+  "description": "Номенклатура, состав, зоны и связи изделия (FR-45, FR-46, PRD §11.15): normative/reference/*/item-types.yaml.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 999,
+      "description": "Версия."
+    },
+    "item_types": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Тип изделия.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Идентификатор.",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$"
+          },
+          "designation": {
+            "type": "string",
+            "description": "Обозначение.",
+            "maxLength": 128
+          },
+          "name": {
+            "type": "string",
+            "description": "Наименование.",
+            "maxLength": 256
+          },
+          "revision": {
+            "type": "string",
+            "description": "Ревизия.",
+            "maxLength": 32
+          },
+          "marking": {
+            "type": "string",
+            "enum": [
+              "dpm_datamatrix",
+              "tag_qr",
+              "container_cell",
+              "route_card",
+              "post_context",
+              "manual_entry",
+              "internal_id"
+            ],
+            "description": "Постоянный носитель."
+          },
+          "components": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "description": "Позиция состава.",
+              "properties": {
+                "item_type_id": {
+                  "type": "string",
+                  "description": "Тип.",
+                  "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$"
+                },
+                "quantity": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 100000,
+                  "description": "Количество."
+                },
+                "lot_tracked": {
+                  "type": "boolean",
+                  "description": "Учитывается партией."
+                }
+              },
+              "required": [
+                "item_type_id",
+                "quantity",
+                "lot_tracked"
+              ]
+            },
+            "description": "Состав."
+          },
+          "zones": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "description": "Зона.",
+              "properties": {
+                "zone_id": {
+                  "type": "string",
+                  "description": "Зона.",
+                  "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$"
+                },
+                "name": {
+                  "type": "string",
+                  "description": "Название.",
+                  "maxLength": 256
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "weld_section",
+                    "joint",
+                    "hole",
+                    "surface",
+                    "cavity",
+                    "groove",
+                    "other"
+                  ],
+                  "description": "Вид."
+                }
+              },
+              "required": [
+                "zone_id",
+                "name",
+                "kind"
+              ]
+            },
+            "description": "Зоны."
+          },
+          "links": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "description": "Связь сборки.",
+              "properties": {
+                "link_id": {
+                  "type": "string",
+                  "description": "Связь.",
+                  "maxLength": 32
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "weld",
+                    "bolted_joint",
+                    "seal",
+                    "other"
+                  ],
+                  "description": "Вид."
+                },
+                "zones": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "description": "Зона.",
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$"
+                  },
+                  "description": "Зоны.",
+                  "minItems": 1
+                },
+                "rework_limit_per_zone": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 100,
+                  "description": "Лимит ремонтов на зону (FR-18)."
+                },
+                "closes_access_to": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "description": "Зона.",
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$"
+                  },
+                  "description": "Закрывает доступ к зонам (FR-20)."
+                },
+                "install_before": {
+                  "type": "string",
+                  "description": "Ставится до связи.",
+                  "maxLength": 32
+                }
+              },
+              "required": [
+                "link_id",
+                "kind",
+                "zones"
+              ]
+            },
+            "description": "Связи."
+          }
+        },
+        "required": [
+          "id",
+          "designation",
+          "name",
+          "revision",
+          "marking"
+        ]
+      },
+      "description": "Типы.",
+      "minItems": 1
+    }
+  },
+  "required": [
+    "version",
+    "item_types"
+  ]
+}

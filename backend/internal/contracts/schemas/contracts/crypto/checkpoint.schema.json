@@ -1,0 +1,114 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/crypto/checkpoint.schema.json",
+  "title": "KeeperCheckpoint",
+  "description": "Содержимое контрольной точки хранителя (класс checkpoint, профиль hybrid, AD-8): головы обеих цепочек, звенья, диапазон committed_at, отпечаток предыдущей точки, время хранителя. Закрытая схема.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format_version",
+    "crypto_profile",
+    "signers",
+    "checkpoint_no",
+    "heads",
+    "committed_at_from",
+    "committed_at_to",
+    "previous_checkpoint_digest",
+    "keeper_time"
+  ],
+  "properties": {
+    "format_version": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 999,
+      "description": "Версия формата пакета."
+    },
+    "crypto_profile": {
+      "type": "string",
+      "enum": [
+        "hybrid"
+      ],
+      "description": "Профиль контрольных точек — hybrid (AD-32)."
+    },
+    "signers": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9][a-z0-9._:-]{0,95}@[1-9][0-9]{0,5}$"
+      },
+      "description": "Ключи хранителя (ГОСТ и ML-DSA)."
+    },
+    "checkpoint_no": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991,
+      "description": "Номер контрольной точки."
+    },
+    "heads": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 2,
+      "description": "Головы цепочек main и ca.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "chain",
+          "seq",
+          "link"
+        ],
+        "properties": {
+          "chain": {
+            "type": "string",
+            "enum": [
+              "main",
+              "ca"
+            ],
+            "description": "Цепочка."
+          },
+          "seq": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "description": "Номер головы."
+          },
+          "link": {
+            "type": "string",
+            "pattern": "^streebog256:[0-9a-f]{64}$",
+            "description": "Звено головы."
+          }
+        }
+      }
+    },
+    "committed_at_from": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$",
+      "description": "Наименьший committed_at покрытых записей."
+    },
+    "committed_at_to": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$",
+      "description": "Наибольший committed_at покрытых записей."
+    },
+    "previous_checkpoint_digest": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^streebog256:[0-9a-f]{64}$",
+      "description": "Отпечаток предыдущей точки; null у первой."
+    },
+    "genesis_digest": {
+      "type": "string",
+      "pattern": "^streebog256:[0-9a-f]{64}$",
+      "description": "Отпечаток генезиса — обязателен в первой точке каждой цепочки (AD-33)."
+    },
+    "keeper_time": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$",
+      "description": "Время по часам хранителя."
+    }
+  }
+}

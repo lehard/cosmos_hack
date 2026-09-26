@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/reference/reference.change.affects_item.v1.json",
+  "title": "ReferenceChangeAffectsItemV1",
+  "description": "Изменение справочника затрагивает изделие — изменение с датой действия в прошлом доходит до изделия адресованной записью межизделийной стадии (AD-31, AD-42).",
+  "type": "object",
+  "properties": {
+    "reference_event_id": {
+      "$ref": "../common/defs.v1.json#/definitions/uuid",
+      "description": "Изменение справочника."
+    },
+    "reference_kind": {
+      "$ref": "../common/defs.v1.json#/definitions/code",
+      "description": "Вид справочника."
+    },
+    "valid_from": {
+      "$ref": "../common/defs.v1.json#/definitions/timestamp",
+      "description": "С какого момента действует изменение."
+    }
+  },
+  "required": [
+    "reference_event_id",
+    "reference_kind",
+    "valid_from"
+  ]
+}

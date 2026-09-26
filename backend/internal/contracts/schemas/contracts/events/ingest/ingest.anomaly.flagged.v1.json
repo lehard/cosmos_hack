@@ -1,0 +1,45 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/ingest/ingest.anomaly.flagged.v1.json",
+  "title": "IngestAnomalyFlaggedV1",
+  "description": "Флаг аномалии входа — время из будущего, расхождение часов источника выше порога, нарушение последовательности, неизвестное значение перечисления `UNKNOWN(значение)` — принято с флагом (FR-29, FR-33, AD-5).",
+  "type": "object",
+  "properties": {
+    "subject_event_id": {
+      "$ref": "../common/defs.v1.json#/definitions/uuid",
+      "description": "Запись с флагом."
+    },
+    "flag": {
+      "type": "string",
+      "enum": [
+        "future_timestamp",
+        "clock_skew",
+        "sequence_violation",
+        "unknown_enum_value",
+        "unknown_defect_type",
+        "late_write"
+      ],
+      "description": "Флаг."
+    },
+    "field": {
+      "type": "string",
+      "description": "Поле (для неизвестного значения).",
+      "maxLength": 128
+    },
+    "raw_value": {
+      "type": "string",
+      "description": "Исходное значение: `UNKNOWN(значение)`.",
+      "maxLength": 256
+    },
+    "skew_ms": {
+      "type": "integer",
+      "minimum": -9007199254740991,
+      "maximum": 9007199254740991,
+      "description": "Расхождение часов, мс."
+    }
+  },
+  "required": [
+    "subject_event_id",
+    "flag"
+  ]
+}

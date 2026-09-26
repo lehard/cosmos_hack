@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/equipment/equipment.violation.window_resolved.v1.json",
+  "title": "EquipmentViolationWindowResolvedV1",
+  "description": "Окно нарушения режима определено — по журналам оборудования определено окно нарушения режима специального процесса; стадия регистрирует несоответствие всем изделиям окна (FR-151).",
+  "type": "object",
+  "properties": {
+    "equipment_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Оборудование."
+    },
+    "step_key": {
+      "$ref": "../common/defs.v1.json#/definitions/step_key",
+      "description": "Ключ шага процесса (`ant:properties/@stepKey`), к которому относится запись."
+    },
+    "window_start": {
+      "$ref": "../common/defs.v1.json#/definitions/timestamp",
+      "description": "Начало окна нарушения."
+    },
+    "window_end": {
+      "$ref": "../common/defs.v1.json#/definitions/timestamp",
+      "description": "Конец окна нарушения."
+    },
+    "deviation_event_ids": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/uuid"
+      },
+      "description": "Отклонения, образующие окно.",
+      "uniqueItems": true
+    },
+    "affected_operation_run_ids": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/object_id",
+        "description": "Идентификатор выполнения операции; повтор операции — новый идентификатор со ссылкой `rework_of` (FR-47)."
+      },
+      "description": "Выполнения операции в окне.",
+      "uniqueItems": true
+    }
+  },
+  "required": [
+    "equipment_id",
+    "window_start",
+    "window_end",
+    "deviation_event_ids",
+    "affected_operation_run_ids"
+  ]
+}

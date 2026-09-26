@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- СГЕНЕРИРОВАНО backend/tools/contractgen из contracts/bpmn-ext/ant.json — руками не править (AD-20). -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" targetNamespace="urn:ant:bpmn-ext:1" xmlns:ant="urn:ant:bpmn-ext:1" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xs:annotation><xs:documentation xml:lang="ru">Расширение BPMN 2.0 системы ant (AD-17, FR-12, FR-156): свойства элементов процесса в extensionElements пространства urn:ant:bpmn-ext:1. Источник схемы: из дескриптора генерируются Go-структуры XML, XSD и таблица документации (эпик 02). Значения перечислений и обязательность — contracts/bpmn-ext/rules.yaml.</xs:documentation></xs:annotation>
+  <xs:element name="properties">
+    <xs:annotation><xs:documentation xml:lang="ru">Свойства шага: стабильный ключ, вид, цех и склад, специальный процесс, буфер, закрытие доступа к зоне, заверитель бумажной подписи, закрывающая точка, точка контроля, лимит доработок, учётное действие, тип события-триггера, область таймера.</xs:documentation></xs:annotation>
+    <xs:complexType>
+      <xs:attribute name="stepKey" type="xs:string" use="optional">
+        <xs:annotation><xs:documentation xml:lang="ru">Стабильный ключ шага, сохраняемый между версиями; смена смысла — новый ключ (AD-17).</xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="stepKind" type="xs:string" use="optional">
+        <xs:annotation><xs:documentation xml:lang="ru">Вид шага: operation | automated_inspection | human_inspection | movement | storage.</xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="workshop" type="xs:string" use="optional">
+        <xs:annotation><xs:documentation xml:lang="ru">Цех (для дорожки) — id места вида workshop.</xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="warehouse" type="xs:string" use="optional">
+        <xs:annotation><xs:documentation xml:lang="ru">Склад цеха (для дорожки).</xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="specialProcess" type="xs:boolean" use="optional">
+        <xs:annotation><xs:documentation xml:lang="ru">Специальный процесс (FR-151, ГОСТ Р 58633 п. 3.17).</xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="bufferPlace" type="xs:boolean" use="optional">
+        <xs:annotation><xs:documentation xml:lang="ru">Буфер или место очереди (FR-12).</xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="closesZoneAccess" type="xs:string" use="optional">
+        <xs:annotation><xs:documentation xml:lang="ru">Зоны, доступ к которым закрывает шаг, через пробел (FR-20).</xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="paperAttester" type="xs:string" use="optional">
+        <xs:annotation><xs:documentation xml:lang="ru">Роль заверителя бумажной подписи на шаге (AD-43); у заверителя — полномочие paper_attestation в области.</xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="closingPoint" type="xs:string" use="optional">
+        <xs:annotation><xs:documentation xml:lang="ru">Закрывающая точка: ZT-1…ZT-6, ZT-4.1, ZT-4.2, ZT-R, ZT-V.</xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="inspectionPoint" type="xs:string" use="optional">
+        <xs:annotation><xs:documentation xml:lang="ru">Точка контроля: KT-1…KT-5, KT-4d.</xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="operationCode" type="xs:string" use="optional">
+        <xs:annotation><xs:documentation xml:lang="ru">Операция по маршрутной карте.</xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="reworkLimit" type="xs:integer" use="optional">
+        <xs:annotation><xs:documentation xml:lang="ru">Лимит повторов или доработок (FR-18).</xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="reworkLimitScope" type="xs:string" use="optional">
+        <xs:annotation><xs:documentation xml:lang="ru">К чему лимит: item | zone | loop.</xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="erpAction" type="xs:string" use="optional">
+        <xs:annotation><xs:documentation xml:lang="ru">Учётное действие на событии-сообщении «в 1С» (AD-18).</xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="triggerEventType" type="xs:string" use="optional">
+        <xs:annotation><xs:documentation xml:lang="ru">Тип события каталога, которое запускает стартовое или промежуточное событие-сообщение (решение Д-5).</xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="timerScope" type="xs:string" use="optional">
+        <xs:annotation><xs:documentation xml:lang="ru">Для граничного таймера: until_started — окно до начала операции; activity — всё время шага.</xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="outcome" type="xs:string" use="optional">
+        <xs:annotation><xs:documentation xml:lang="ru">Для конечного события вызываемого подпроцесса: значение переменной nc.outcome в точке вызова.</xs:documentation></xs:annotation>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="inspection">
+    <xs:annotation><xs:documentation xml:lang="ru">Метод контроля и покрытие видов дефектов (FR-12, FR-14).</xs:documentation></xs:annotation>
+    <xs:complexType>
+      <xs:attribute name="method" type="xs:string" use="optional">
+        <xs:annotation><xs:documentation xml:lang="ru">Метод контроля (defs.v1.json#/definitions/inspection_method).</xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="phase" type="xs:string" use="optional">
+        <xs:annotation><xs:documentation xml:lang="ru">Фаза контроля.</xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="coverage" type="xs:string" use="optional">
+        <xs:annotation><xs:documentation xml:lang="ru">Коды видов дефектов классификатора, которые метод способен выявить, через пробел.</xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="recipeRef" type="xs:string" use="optional">
+        <xs:annotation><xs:documentation xml:lang="ru">Карта контроля `‹id›@‹версия›`.</xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="observationQualityMinBp" type="xs:integer" use="optional">
+        <xs:annotation><xs:documentation xml:lang="ru">Порог качества наблюдения, б. п.: ниже — «оценка невозможна».</xs:documentation></xs:annotation>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="requirement">
+    <xs:annotation><xs:documentation xml:lang="ru">Требование КД: характеристика, допуск, ревизия (FR-12).</xs:documentation></xs:annotation>
+    <xs:complexType>
+      <xs:attribute name="characteristic" type="xs:string" use="optional">
+        <xs:annotation><xs:documentation xml:lang="ru">Характеристика.</xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="tolerance" type="xs:string" use="optional">
+        <xs:annotation><xs:documentation xml:lang="ru">Допуск.</xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="kdRef" type="xs:string" use="optional">
+        <xs:annotation><xs:documentation xml:lang="ru">Документ КД и ревизия.</xs:documentation></xs:annotation>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="zoneRef">
+    <xs:annotation><xs:documentation xml:lang="ru">Зона изделия, к которой относится шаг (FR-12, FR-46).</xs:documentation></xs:annotation>
+    <xs:complexType>
+      <xs:attribute name="zone" type="xs:string" use="optional">
+        <xs:annotation><xs:documentation xml:lang="ru">Идентификатор зоны из номенклатуры.</xs:documentation></xs:annotation>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="presentationPoint">
+    <xs:annotation><xs:documentation xml:lang="ru">Точка предъявления: полномочие, роль, срок ожидания, эскалация при повторном предъявлении (FR-19).</xs:documentation></xs:annotation>
+    <xs:complexType>
+      <xs:attribute name="authority" type="xs:string" use="optional">
+        <xs:annotation><xs:documentation xml:lang="ru">Полномочие подписи.</xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="role" type="xs:string" use="optional">
+        <xs:annotation><xs:documentation xml:lang="ru">Роль.</xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="stampKind" type="xs:string" use="optional">
+        <xs:annotation><xs:documentation xml:lang="ru">Вид цифрового клейма.</xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="waitLimitMinutes" type="xs:integer" use="optional">
+        <xs:annotation><xs:documentation xml:lang="ru">Срок ожидания, минут.</xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="waitLimitWorkDays" type="xs:integer" use="optional">
+        <xs:annotation><xs:documentation xml:lang="ru">Срок ожидания, рабочих дней.</xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="repeatAuthority" type="xs:string" use="optional">
+        <xs:annotation><xs:documentation xml:lang="ru">Полномочие при повторном предъявлении (уровнем выше).</xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="customerAcceptance" type="xs:boolean" use="optional">
+        <xs:annotation><xs:documentation xml:lang="ru">Изделие в перечне приёмок ПЗ/ВП — нужна подпись представителя заказчика.</xs:documentation></xs:annotation>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="precondition">
+    <xs:annotation><xs:documentation xml:lang="ru">Предусловие операции на дату операции (FR-17, FR-20).</xs:documentation></xs:annotation>
+    <xs:complexType>
+      <xs:attribute name="kind" type="xs:string" use="optional">
+        <xs:annotation><xs:documentation xml:lang="ru">Вид предусловия.</xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="mode" type="xs:string" use="optional">
+        <xs:annotation><xs:documentation xml:lang="ru">block | record_violation.</xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="ref" type="xs:string" use="optional">
+        <xs:annotation><xs:documentation xml:lang="ru">Параметр: квалификация, оборудование, зона, партия.</xs:documentation></xs:annotation>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="document">
+    <xs:annotation><xs:documentation xml:lang="ru">Документ шага — шаблон нормативного слоя (FR-12, AD-12).</xs:documentation></xs:annotation>
+    <xs:complexType>
+      <xs:attribute name="template" type="xs:string" use="optional">
+        <xs:annotation><xs:documentation xml:lang="ru">Шаблон документа.</xs:documentation></xs:annotation>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="reactionMap">
+    <xs:annotation><xs:documentation xml:lang="ru">Карта реакций шага (FR-48).</xs:documentation></xs:annotation>
+    <xs:complexType>
+      <xs:attribute name="ref" type="xs:string" use="optional">
+        <xs:annotation><xs:documentation xml:lang="ru">Карта реакций `‹id›@‹версия›`.</xs:documentation></xs:annotation>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="norm">
+    <xs:annotation><xs:documentation xml:lang="ru">Норма времени и пропускной способности узла (FR-5, FR-12).</xs:documentation></xs:annotation>
+    <xs:complexType>
+      <xs:attribute name="timeMinutes" type="xs:integer" use="optional">
+        <xs:annotation><xs:documentation xml:lang="ru">Норма времени, минут.</xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="timeMinMinutes" type="xs:integer" use="optional">
+        <xs:annotation><xs:documentation xml:lang="ru">Нижняя граница нормы.</xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="timeMaxMinutes" type="xs:integer" use="optional">
+        <xs:annotation><xs:documentation xml:lang="ru">Верхняя граница нормы.</xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="queueNormMinutes" type="xs:integer" use="optional">
+        <xs:annotation><xs:documentation xml:lang="ru">Норма ожидания в очереди, минут.</xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="throughputPerShift" type="xs:integer" use="optional">
+        <xs:annotation><xs:documentation xml:lang="ru">Пропускная способность за смену.</xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="idleThresholdMinutes" type="xs:integer" use="optional">
+        <xs:annotation><xs:documentation xml:lang="ru">Порог простоя в рабочую смену.</xs:documentation></xs:annotation>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="normRef">
+    <xs:annotation><xs:documentation xml:lang="ru">Нормативная опора для слоя «нормы» (FR-156): пункт стандарта, что проверить, что делает система; только из проверенного перечня norm-anchors.yaml.</xs:documentation></xs:annotation>
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="check" type="xs:string" minOccurs="0">
+          <xs:annotation><xs:documentation xml:lang="ru">Что проверить на шаге.</xs:documentation></xs:annotation>
+        </xs:element>
+        <xs:element name="systemAction" type="xs:string" minOccurs="0">
+          <xs:annotation><xs:documentation xml:lang="ru">Что делает система на шаге.</xs:documentation></xs:annotation>
+        </xs:element>
+      </xs:sequence>
+      <xs:attribute name="standard" type="xs:string" use="optional">
+        <xs:annotation><xs:documentation xml:lang="ru">Стандарт.</xs:documentation></xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="clause" type="xs:string" use="optional">
+        <xs:annotation><xs:documentation xml:lang="ru">Пункт.</xs:documentation></xs:annotation>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

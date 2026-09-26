@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/erp/erp.posting.responded.v1.json",
+  "title": "ErpPostingRespondedV1",
+  "description": "Ответ учётной системы — квитанция или ошибка 1С на исходящее сообщение; ось «учёт в 1С» меняется только по подтверждению (AD-30).",
+  "type": "object",
+  "properties": {
+    "business_key": {
+      "type": "string",
+      "description": "Бизнес-ключ.",
+      "maxLength": 256
+    },
+    "request_event_id": {
+      "$ref": "../common/defs.v1.json#/definitions/uuid",
+      "description": "Запись `erp.posting.requested`."
+    },
+    "outcome": {
+      "type": "string",
+      "enum": [
+        "accepted",
+        "duplicate",
+        "rejected"
+      ],
+      "description": "Итог."
+    },
+    "external_document_ref": {
+      "type": "string",
+      "description": "Документ 1С.",
+      "maxLength": 128
+    },
+    "error_code": {
+      "type": "string",
+      "description": "Код ошибки из contracts/errors.yaml (например, `reference.not_found`).",
+      "maxLength": 96
+    },
+    "error_message": {
+      "type": "string",
+      "maxLength": 4000,
+      "description": "Текст ошибки внешней системы."
+    },
+    "resulting_status": {
+      "$ref": "../common/defs.v1.json#/definitions/axis_erp_accounting",
+      "description": "Статус учёта изделия после подтверждения."
+    }
+  },
+  "required": [
+    "business_key",
+    "request_event_id",
+    "outcome"
+  ]
+}

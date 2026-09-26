@@ -1,0 +1,47 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/incident/incident.incident.opened.v1.json",
+  "title": "IncidentIncidentOpenedV1",
+  "description": "Инцидент открыт — связанная группа сигналов и несоответствий с общей предполагаемой причиной; вычисляет межизделийная стадия функциями analysis (AD-42).",
+  "type": "object",
+  "properties": {
+    "incident_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Инцидент."
+    },
+    "common_factor": {
+      "type": "string",
+      "enum": [
+        "equipment",
+        "tool",
+        "fixture",
+        "program",
+        "lot",
+        "heat",
+        "charge",
+        "operator",
+        "time_window",
+        "supplier",
+        "other"
+      ],
+      "description": "Общий фактор."
+    },
+    "factor_ref": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Объект фактора: станок, инструмент, партия и т. п."
+    },
+    "trigger_event_ids": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/uuid"
+      },
+      "description": "Записи, открывшие инцидент.",
+      "uniqueItems": true
+    }
+  },
+  "required": [
+    "incident_id",
+    "common_factor",
+    "trigger_event_ids"
+  ]
+}

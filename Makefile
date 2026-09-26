@@ -50,6 +50,12 @@ NODE_RUN = $(DOCKER_LOCKED) run --rm -u $(UID):$(GID) \
 	-v $(CACHE):/cache -v $(ROOT):/src -w /src/frontend \
 	$(NODE_IMAGE)
 
+# Node для генераторов и проверок контрактов (contracts/scripts, свои закреплённые зависимости).
+NODE_RUN_CONTRACTS = $(DOCKER_LOCKED) run --rm -u $(UID):$(GID) \
+	-e HOME=/tmp -e npm_config_cache=/cache/npm -e npm_config_update_notifier=false \
+	-v $(CACHE):/cache -v $(ROOT):/src -w /src/contracts/scripts \
+	$(NODE_IMAGE)
+
 .PHONY: help
 help: ## Список целей
 	@grep -hE '^[a-zA-Z0-9_-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-18s %s\n", $$1, $$2}'
@@ -111,9 +117,15 @@ dev-db-psql: ## psql в свою БД
 
 # ------------------------------------------------------------ генерация ----
 
-.PHONY: generate generate-frontend
-generate: ## Перегенерировать производные файлы (правила линтера слоёв; дальше — эпик 02)
-	$(GO_RUN) sh -c 'bin=$$(/src/deploy/scripts/go-tools.sh ./archgen) && cd tools && $$bin/archgen -layers archgen/layers.json -out ../.golangci.yml'
+.PHONY: generate generate-go generate-ts generate-frontend
+generate: generate-go generate-ts generate-frontend ## Перегенерировать всё производное из контрактов (AD-20): Go, TS, openapi.yaml, клиент фронтенда
+	@echo "make generate: готово (docs/codegen.md)"
+
+generate-go: ## Go: правила слоёв, каталог, коды ошибок, статусы, повышатели, BPMN (структуры + XSD), типы JSON Schema, sqlc, contracts/openapi.yaml
+	$(GO_RUN) /src/deploy/scripts/generate-go.sh
+
+generate-ts: ## TS-типы из JSON Schema и каталога → frontend/src/shared/contracts (contracts/scripts/gen-ts.mjs)
+	$(NODE_RUN_CONTRACTS) sh -c 'test -d node_modules && test ! package-lock.json -nt node_modules/.package-lock.json || npm ci --prefer-offline --no-audit --no-fund --loglevel=error; node gen-ts.mjs'
 
 generate-frontend: ## Клиент orval + Vue Query, словарь статусов и коды ошибок для фронтенда (frontend/src/shared/api/generated)
 	$(NODE_RUN) sh -c 'test -d node_modules || npm ci --prefer-offline --no-audit --no-fund; npm run --silent generate'

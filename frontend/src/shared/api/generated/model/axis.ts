@@ -1,10 +1,10 @@
 /**
  * СГЕНЕРИРОВАНО orval (frontend/scripts/generate.mjs) — руками не править (AD-20).
- * Источник: frontend/dev/openapi.draft.yaml (черновик до появления contracts/openapi.yaml)
+ * Источник: contracts/openapi.yaml
  */
 
 /**
- * Ось момента (AD-37).
+ * Ось момента (AD-37): occurred — «как было» (по умолчанию), recorded — «что мы знали».
  */
 export type Axis = typeof Axis[keyof typeof Axis];
 

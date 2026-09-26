@@ -23,6 +23,11 @@ export const errorCatalog = {
     "title": "В режиме воспроизведения действия недоступны",
     "uiKey": "errors.decision.replayReadOnly"
   },
+  "api.internal_error": {
+    "status": 500,
+    "title": "Внутренняя ошибка",
+    "uiKey": "errors.generic"
+  },
   "api.rate_limited": {
     "status": 429,
     "title": "Слишком много запросов",

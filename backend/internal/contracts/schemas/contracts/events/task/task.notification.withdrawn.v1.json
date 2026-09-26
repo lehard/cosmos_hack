@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/task/task.notification.withdrawn.v1.json",
+  "title": "TaskNotificationWithdrawnV1",
+  "description": "Уведомление отозвано — основание уведомления исчезло при пересвёртке (AD-3).",
+  "type": "object",
+  "properties": {
+    "notification_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Уведомление."
+    }
+  },
+  "required": [
+    "notification_id"
+  ]
+}

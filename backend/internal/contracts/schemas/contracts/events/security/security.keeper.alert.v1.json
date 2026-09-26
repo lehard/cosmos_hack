@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/security/security.keeper.alert.v1.json",
+  "title": "SecurityKeeperAlertV1",
+  "description": "Тревога хранителя — головы цепочек не приходили дольше 2N секунд, попытка вилки или отката, разрыв контрольных точек (AD-8).",
+  "type": "object",
+  "properties": {
+    "alert": {
+      "type": "string",
+      "enum": [
+        "heads_silent",
+        "fork_attempt",
+        "rollback_attempt",
+        "checkpoint_gap"
+      ],
+      "description": "Вид тревоги."
+    },
+    "chain": {
+      "type": "string",
+      "enum": [
+        "main",
+        "ca"
+      ],
+      "description": "Цепочка."
+    },
+    "last_seq": {
+      "$ref": "../common/defs.v1.json#/definitions/seq",
+      "description": "Последний принятый номер."
+    },
+    "detail": {
+      "type": "string",
+      "maxLength": 4000,
+      "description": "Подробности."
+    }
+  },
+  "required": [
+    "alert",
+    "chain"
+  ]
+}

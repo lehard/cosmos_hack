@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/ops/ops.processing.failed.v1.json",
+  "title": "OpsProcessingFailedV1",
+  "description": "Сбой обработки изделия — ошибка свёртки или проекции на записи: изделие «обработка остановлена», партиция продолжает (AD-45).",
+  "type": "object",
+  "properties": {
+    "consumer": {
+      "type": "string",
+      "description": "Потребитель.",
+      "maxLength": 64
+    },
+    "failed_seq": {
+      "$ref": "../common/defs.v1.json#/definitions/seq",
+      "description": "Запись."
+    },
+    "error": {
+      "type": "string",
+      "maxLength": 4000,
+      "description": "Ошибка."
+    }
+  },
+  "required": [
+    "consumer",
+    "failed_seq",
+    "error"
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/genealogy/genealogy.group.dissolved.v1.json",
+  "title": "GenealogyGroupDissolvedV1",
+  "description": "Временная группа расформирована — разгруппировка (FR-15).",
+  "type": "object",
+  "properties": {
+    "group_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Группа."
+    }
+  },
+  "required": [
+    "group_id"
+  ]
+}

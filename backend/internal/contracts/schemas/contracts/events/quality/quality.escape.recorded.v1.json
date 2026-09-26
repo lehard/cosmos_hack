@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/quality/quality.escape.recorded.v1.json",
+  "title": "QualityEscapeRecordedV1",
+  "description": "Пропуск брака зафиксирован — дефект найден позже, чем мог; связаны ранние наблюдения «не обнаружено» той же зоны и их версии, список изделий той же версии модели — на перепроверку (FR-100).",
+  "type": "object",
+  "properties": {
+    "defect_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Дефект."
+    },
+    "missed_observation_event_ids": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/uuid"
+      },
+      "description": "Ранние наблюдения «признаков нет» этой зоны.",
+      "uniqueItems": true
+    },
+    "method_covers_defect": {
+      "type": "boolean",
+      "description": "Метод пропустившей точки способен выявить этот вид (иначе это не ошибка модели)."
+    },
+    "analyzer_version": {
+      "type": "string",
+      "description": "Версия анализатора, пропустившая дефект.",
+      "maxLength": 128
+    }
+  },
+  "required": [
+    "defect_id",
+    "missed_observation_event_ids",
+    "method_covers_defect"
+  ]
+}

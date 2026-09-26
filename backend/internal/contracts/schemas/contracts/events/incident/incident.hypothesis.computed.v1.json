@@ -1,0 +1,96 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/incident/incident.hypothesis.computed.v1.json",
+  "title": "IncidentHypothesisComputedV1",
+  "description": "Гипотезы и обстоятельства пересчитаны — версия вывода разбора: окно возможного возникновения, кандидаты-обстоятельства, альтернативы, нехватка сведений; при позднем событии — новая версия (FR-58, FR-59, AD-3).",
+  "type": "object",
+  "properties": {
+    "nc_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Несоответствие."
+    },
+    "causal_window_start": {
+      "$ref": "../common/defs.v1.json#/definitions/timestamp",
+      "description": "Начало окна возможного возникновения."
+    },
+    "causal_window_end": {
+      "$ref": "../common/defs.v1.json#/definitions/timestamp",
+      "description": "Конец окна — первая находка."
+    },
+    "hypotheses": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "description": "Гипотеза причины — только предположение (третий статус кейса §2.3).",
+        "properties": {
+          "category": {
+            "type": "string",
+            "enum": [
+              "incoming",
+              "equipment",
+              "performer",
+              "handling",
+              "assembly",
+              "documentation",
+              "not_established"
+            ],
+            "description": "Категория причины."
+          },
+          "confidence_bp": {
+            "$ref": "../common/defs.v1.json#/definitions/bp",
+            "description": "Уверенность вывода, не вероятность вины."
+          },
+          "supporting_event_ids": {
+            "type": "array",
+            "items": {
+              "$ref": "../common/defs.v1.json#/definitions/uuid"
+            },
+            "description": "Доводы «за».",
+            "uniqueItems": true
+          },
+          "contradicting_event_ids": {
+            "type": "array",
+            "items": {
+              "$ref": "../common/defs.v1.json#/definitions/uuid"
+            },
+            "description": "Доводы «против».",
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "category",
+          "supporting_event_ids"
+        ],
+        "title": "Hypothesis"
+      },
+      "description": "Гипотезы с основаниями."
+    },
+    "missing_information": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "tool_unknown",
+          "cycle_end_time_unknown",
+          "no_observation_after_operation",
+          "no_observation_before_operation",
+          "operator_unknown",
+          "equipment_log_missing",
+          "other"
+        ],
+        "description": "Недостающее сведение."
+      },
+      "description": "Нехватка сведений (FR-58, FR-143)."
+    },
+    "conclusion_is_categorical": {
+      "type": "boolean",
+      "description": "Категоричный ли вывод; при недостатке сведений — false (кейс §5.1 «Неопределённость»)."
+    }
+  },
+  "required": [
+    "nc_id",
+    "hypotheses",
+    "missing_information",
+    "conclusion_is_categorical"
+  ]
+}

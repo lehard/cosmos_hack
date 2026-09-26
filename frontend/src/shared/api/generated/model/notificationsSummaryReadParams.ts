@@ -1,17 +1,21 @@
 /**
  * СГЕНЕРИРОВАНО orval (frontend/scripts/generate.mjs) — руками не править (AD-20).
- * Источник: frontend/dev/openapi.draft.yaml (черновик до появления contracts/openapi.yaml)
+ * Источник: contracts/openapi.yaml
  */
-import type { AsOfParameter } from './asOfParameter';
-import type { AxisParameter } from './axisParameter';
+import type { Axis } from './axis';
 
 export type NotificationsSummaryReadParams = {
 /**
- * Ось момента (AD-37).
+ * Ось момента: occurred — «как было» (по умолчанию), recorded — «что мы знали» (AD-37).
  */
-axis?: AxisParameter;
+axis?: Axis;
 /**
- * Момент (RFC 3339 UTC); пусто — «сейчас». Задан — воспроизведение, действия выключены.
+ * Момент (RFC 3339 UTC); пусто — «сейчас». Задан — воспроизведение: команды выключены (AD-21).
  */
-as_of?: AsOfParameter;
+as_of?: string;
+/**
+ * Прогон сценария: данные в его пространстве имён (AD-38).
+ * @maxLength 128
+ */
+run_id?: string;
 };

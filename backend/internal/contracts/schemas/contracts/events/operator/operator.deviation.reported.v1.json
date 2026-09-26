@@ -1,0 +1,34 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/operator/operator.deviation.reported.v1.json",
+  "title": "OperatorDeviationReportedV1",
+  "description": "Исполнитель сообщил об отклонении — сообщение о подозрении на дефект или отклонении с терминала (FR-137).",
+  "type": "object",
+  "properties": {
+    "operation_run_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Идентификатор выполнения операции; повтор операции — новый идентификатор со ссылкой `rework_of` (FR-47)."
+    },
+    "workplace_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Рабочее место."
+    },
+    "operator_id": {
+      "$ref": "../common/defs.v1.json#/definitions/person_ref",
+      "description": "Исполнитель (по входу на рабочее место, не по лицу)."
+    },
+    "zone_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Зона."
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 4000,
+      "description": "Что заметил."
+    }
+  },
+  "required": [
+    "operator_id",
+    "description"
+  ]
+}

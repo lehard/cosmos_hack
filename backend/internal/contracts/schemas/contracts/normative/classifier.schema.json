@@ -1,0 +1,111 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/normative/classifier.schema.json",
+  "title": "DefectClassifier",
+  "description": "Классификатор видов дефектов нормативного слоя (FR-125): normative/defects/classifier.v*.yaml.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 999,
+      "description": "Версия классификатора."
+    },
+    "item_type_id": {
+      "type": "string",
+      "description": "Тип изделия.",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$"
+    },
+    "defect_types": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Вид дефекта.",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Код вида.",
+            "pattern": "^[A-Z0-9][A-Z0-9_.-]{0,31}$"
+          },
+          "name": {
+            "type": "string",
+            "description": "Наименование.",
+            "maxLength": 128
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "critical",
+              "major",
+              "minor"
+            ],
+            "description": "Класс тяжести по ГОСТ 15467."
+          },
+          "measurable": {
+            "type": "boolean",
+            "description": "Измеряемая характеристика: значение против допуска."
+          },
+          "methods": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "camera",
+                "cmm",
+                "radiography",
+                "ultrasonic",
+                "penetrant",
+                "leak_test",
+                "torque",
+                "visual_human",
+                "supplier_documents",
+                "laboratory",
+                "other"
+              ],
+              "description": "Метод."
+            },
+            "description": "Методы, способные выявить вид (FR-14).",
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "zone_kinds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "weld_section",
+                "joint",
+                "hole",
+                "surface",
+                "cavity",
+                "groove",
+                "other"
+              ],
+              "description": "Вид зоны."
+            },
+            "description": "Где встречается.",
+            "minItems": 1,
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "code",
+          "name",
+          "severity",
+          "measurable",
+          "methods",
+          "zone_kinds"
+        ]
+      },
+      "description": "Виды дефектов.",
+      "minItems": 1
+    }
+  },
+  "required": [
+    "version",
+    "item_type_id",
+    "defect_types"
+  ]
+}

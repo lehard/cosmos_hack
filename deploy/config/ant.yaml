@@ -30,6 +30,26 @@ defaults:
     connect_timeout: 5s
   ports:
     mode: live # fixtures | live (AD-36)
+    # Переопределение режима по модулю — вертикальные срезы (AD-36), например:
+    # modules: {quality: live, nonconformity: live}
+    modules: {}
+    # Адаптеры ведомых портов платформы по ключам AD-35 (application/platform.PortKeys).
+    adapters:
+      journal_store: postgres
+      lease_store: postgres
+      material_store: volume
+      work_feed: postgres
+      publisher: http
+      telemetry: prometheus
+      signer: demo_signer
+      verifier: gogost
+      cipher: gogost
+      access_control: permissive # волна 1; эпик 08 — casbin
+      identity_provider: none    # волна 1; эпик 08 — local (+ демо-персоны в fixtures и demo)
+      domain_clock: system
+      infra_clock: system
+      fixture_cursor: postgres
+      consumer: postgres
   engine:
     partitions: 16 # P — фиксированные партиции по изделию (AD-6)
     fold_parallelism: 2

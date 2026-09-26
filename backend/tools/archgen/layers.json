@@ -1,7 +1,8 @@
 {
-  "$comment": "Источник правил направления зависимостей (AD-1, AD-4, AD-40). Из него archgen генерирует backend/.golangci.yml. После правки: make generate.",
+  "$comment": "Источник правил направления зависимостей (AD-1, AD-4, AD-40). Из него archgen генерирует backend/.golangci.yml. После правки: make generate. kernel — общее ядро домена (типы записей, реакций, намерений, гардов; UUIDv5) — базовый модуль, решение эпика 02.",
   "module": "ant",
   "domain_order": [
+    "kernel",
     "reference",
     "signing",
     "access",
@@ -18,6 +19,7 @@
     "engine"
   ],
   "domain_base": [
+    "kernel",
     "reference",
     "signing",
     "access"

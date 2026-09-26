@@ -1,0 +1,349 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/normative/reaction-map.schema.json",
+  "title": "ReactionMap",
+  "description": "Карта реакций нормативного слоя (FR-48, FR-50, AD-3): normative/reactions/reaction-map.v*.yaml.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 999,
+      "description": "Версия карты."
+    },
+    "id": {
+      "type": "string",
+      "description": "Идентификатор карты.",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$"
+    },
+    "owner_role": {
+      "type": "string",
+      "description": "Роль-владелец.",
+      "pattern": "^[a-z][a-z0-9_]*$"
+    },
+    "approved_by": {
+      "type": "string",
+      "description": "Кто утвердил.",
+      "maxLength": 256
+    },
+    "valid_from": {
+      "type": "string",
+      "description": "Действует с.",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$"
+    },
+    "valid_until": {
+      "type": "string",
+      "description": "Действует до.",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$"
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Рамки применения.",
+      "properties": {
+        "item_type_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "description": "Тип изделия.",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$"
+          },
+          "description": "Типы изделий.",
+          "minItems": 1
+        },
+        "step_keys": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "description": "Шаг.",
+            "maxLength": 96
+          },
+          "description": "Шаги процесса."
+        }
+      },
+      "required": [
+        "item_type_ids"
+      ]
+    },
+    "rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Правило реакции.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Идентификатор правила.",
+            "pattern": "^R-[0-9]{2,4}$"
+          },
+          "title": {
+            "type": "string",
+            "description": "Смысл.",
+            "maxLength": 256
+          },
+          "priority": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10000,
+            "description": "Порядок применения: меньше — раньше."
+          },
+          "automation_mode": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5,
+            "description": "Режим автоматизации 1–5 (FR-50)."
+          },
+          "match": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "Условие.",
+            "properties": {
+              "outcome": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "defect_indicated",
+                    "no_defect_indicated",
+                    "unable_to_assess"
+                  ],
+                  "description": "Исход."
+                },
+                "description": "Исходы наблюдения.",
+                "uniqueItems": true
+              },
+              "defect_types": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "description": "Код вида.",
+                  "pattern": "^[A-Z0-9][A-Z0-9_.-]{0,31}$"
+                },
+                "description": "Виды дефектов.",
+                "uniqueItems": true
+              },
+              "severity": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "critical",
+                    "major",
+                    "minor",
+                    "unknown"
+                  ],
+                  "description": "Тяжесть."
+                },
+                "description": "Тяжесть.",
+                "uniqueItems": true
+              },
+              "confidence_min_bp": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 10000,
+                "description": "Уверенность не ниже, б. п."
+              },
+              "observation_quality_below_recipe": {
+                "type": "boolean",
+                "description": "Качество наблюдения ниже порога карты контроля."
+              },
+              "no_requirement": {
+                "type": "boolean",
+                "description": "Нет требования КД для вида."
+              },
+              "trust_level_min": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 4,
+                "description": "Уровень доверия паспорта не ниже."
+              },
+              "basis_kind": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "inspection_result",
+                    "equipment_deviation",
+                    "check_skipped",
+                    "damage_on_receipt",
+                    "leak",
+                    "special_process_violation",
+                    "operator_report"
+                  ],
+                  "description": "Основание."
+                },
+                "description": "Основания.",
+                "uniqueItems": true
+              },
+              "deviation_kinds": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "out_of_setpoint",
+                    "overload",
+                    "tool_life_warning",
+                    "manual_override",
+                    "unplanned_program_change",
+                    "alarm",
+                    "other"
+                  ],
+                  "description": "Вид отклонения оборудования."
+                },
+                "description": "Отклонения.",
+                "uniqueItems": true
+              },
+              "special_process": {
+                "type": "boolean",
+                "description": "Шаг — специальный процесс."
+              }
+            },
+            "required": []
+          },
+          "reaction": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "Реакция.",
+            "properties": {
+              "outcome": {
+                "type": "string",
+                "enum": [
+                  "pass_to_next",
+                  "manual_review",
+                  "isolate",
+                  "question_to_technologist"
+                ],
+                "description": "Реакция карты."
+              },
+              "containment_level": {
+                "type": "string",
+                "enum": [
+                  "none",
+                  "observe",
+                  "additional_check",
+                  "item_hold",
+                  "lot_hold"
+                ],
+                "description": "Уровень сдерживания."
+              },
+              "draft_nc": {
+                "type": "boolean",
+                "description": "Черновик карточки несоответствия."
+              },
+              "special_process_window_nc": {
+                "type": "boolean",
+                "description": "Несоответствие всем изделиям окна нарушения (FR-151)."
+              },
+              "task": {
+                "type": "string",
+                "enum": [
+                  "recheck",
+                  "isolate_move",
+                  "decision_required",
+                  "inspection_missing"
+                ],
+                "description": "Задача."
+              },
+              "sampled_recheck_bp": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 10000,
+                "description": "Доля выборочной перепроверки человеком, б. п."
+              }
+            },
+            "required": [
+              "outcome",
+              "containment_level",
+              "draft_nc"
+            ]
+          },
+          "refs": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "Опора.",
+              "maxLength": 128
+            },
+            "description": "Опоры."
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "priority",
+          "automation_mode",
+          "match",
+          "reaction"
+        ]
+      },
+      "description": "Правила.",
+      "minItems": 1
+    },
+    "deadlines": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Сроки (FR-55).",
+      "properties": {
+        "nc_disposition_work_days": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 60,
+          "description": "Срок решения по изолированному изделию, рабочих дней."
+        },
+        "containment_review_minutes": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Срок быстрого сдерживания по классу риска, минут.",
+          "properties": {
+            "critical": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100000,
+              "description": "Тяжесть critical."
+            },
+            "major": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100000,
+              "description": "Тяжесть major."
+            },
+            "minor": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100000,
+              "description": "Тяжесть minor."
+            }
+          },
+          "required": [
+            "critical",
+            "major",
+            "minor"
+          ]
+        },
+        "isolation_move_minutes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10000,
+          "description": "Срок физического перемещения в изолятор, минут."
+        }
+      },
+      "required": [
+        "nc_disposition_work_days",
+        "containment_review_minutes",
+        "isolation_move_minutes"
+      ]
+    }
+  },
+  "required": [
+    "version",
+    "id",
+    "owner_role",
+    "approved_by",
+    "valid_from",
+    "scope",
+    "rules",
+    "deadlines"
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/ingest/ingest.import.completed.v1.json",
+  "title": "IngestImportCompletedV1",
+  "description": "Импорт журнала завершён — импорт Excel/CSV (журнал сварки, бумажный цех) через адаптер источника с проверкой входов, дублей и привязки; события получают пометку «импорт» (FR-141).",
+  "type": "object",
+  "properties": {
+    "source_id": {
+      "$ref": "../common/defs.v1.json#/definitions/source_id",
+      "description": "Адаптер импорта."
+    },
+    "file_digest": {
+      "$ref": "../common/defs.v1.json#/definitions/digest",
+      "description": "Отпечаток файла."
+    },
+    "file_name": {
+      "type": "string",
+      "description": "Имя файла.",
+      "maxLength": 256
+    },
+    "rows_total": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991,
+      "description": "Строк всего."
+    },
+    "rows_accepted": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991,
+      "description": "Принято."
+    },
+    "rows_duplicate": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991,
+      "description": "Дубли."
+    },
+    "rows_rejected": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991,
+      "description": "Отклонено."
+    },
+    "imported_by": {
+      "$ref": "../common/defs.v1.json#/definitions/person_ref",
+      "description": "Кто загрузил."
+    }
+  },
+  "required": [
+    "source_id",
+    "file_digest",
+    "rows_total",
+    "rows_accepted",
+    "rows_duplicate",
+    "rows_rejected"
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/analyzer/analyzer.check.recorded.v1.json",
+  "title": "AnalyzerCheckRecordedV1",
+  "description": "Проверка анализатора — экзамен, прогон эталонного набора, сравнение с людьми и прошлой версией, теневой режим; ориентиры AIAG: пропуск брака < 2 %, ложные тревоги < 5 % (FR-101).",
+  "type": "object",
+  "properties": {
+    "passport_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Паспорт допуска."
+    },
+    "check_kind": {
+      "type": "string",
+      "enum": [
+        "exam",
+        "reference_set",
+        "shadow_comparison",
+        "drift_monitor"
+      ],
+      "description": "Вид проверки."
+    },
+    "escape_rate_bp": {
+      "$ref": "../common/defs.v1.json#/definitions/bp",
+      "description": "Доля пропуска брака."
+    },
+    "false_alarm_rate_bp": {
+      "$ref": "../common/defs.v1.json#/definitions/bp",
+      "description": "Доля ложных тревог."
+    },
+    "disagreement_rate_bp": {
+      "$ref": "../common/defs.v1.json#/definitions/bp",
+      "description": "Доля расхождений с людьми."
+    },
+    "passed": {
+      "type": "boolean",
+      "description": "Критерии выполнены."
+    },
+    "versions": {
+      "$ref": "../common/defs.v1.json#/definitions/analyzer_versions",
+      "description": "Вектор версий."
+    }
+  },
+  "required": [
+    "passport_id",
+    "check_kind",
+    "passed",
+    "versions"
+  ]
+}

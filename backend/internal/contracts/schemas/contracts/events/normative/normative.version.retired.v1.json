@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/normative/normative.version.retired.v1.json",
+  "title": "NormativeVersionRetiredV1",
+  "description": "Версия выведена — версия больше не назначается новым изделиям; изделия прежних версий показываются на узлах своего `step_key` (AD-17).",
+  "type": "object",
+  "properties": {
+    "version_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Версия."
+    },
+    "reason": {
+      "$ref": "../common/defs.v1.json#/definitions/reason",
+      "description": "Причина: код и текст."
+    }
+  },
+  "required": [
+    "version_id",
+    "reason"
+  ]
+}
