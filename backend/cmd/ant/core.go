@@ -106,7 +106,7 @@ func openCore(ctx context.Context, env *environment) (*core, error) {
 	}
 	c := &core{
 		pool:     pool,
-		journal:  journalstore.NewStore(pool, infra, journalstore.WithBatchMax(batch)),
+		journal:  journalstore.NewStore(pool, infra, append([]journalstore.Option{journalstore.WithBatchMax(batch)}, trustOptions(cfg, env)...)...),
 		leases:   journalstore.NewLeases(pool, infra),
 		listener: journalstore.NewListener(pool, env.log),
 		engine:   &enginestore.Store{Pool: pool},

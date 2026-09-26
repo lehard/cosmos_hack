@@ -5,6 +5,7 @@ import (
 
 	"ant/cmd/internal/config"
 	ingestapp "ant/internal/application/ingest"
+	securityapp "ant/internal/application/security"
 	ingeststore "ant/internal/infrastructure/storage/ingest"
 	"ant/internal/infrastructure/storage/journal/clock"
 	materialsstore "ant/internal/infrastructure/storage/materials"
@@ -49,6 +50,8 @@ func ingestLive(ctx context.Context, env *environment) (*ingestapp.Service, erro
 			Materials:   mat,
 			DomainClock: clock.SystemDomain{},
 			InfraClock:  clock.System{},
+			// Шина безопасности модуля security (эпик 29) вместо моста эпика 06.
+			Security: securityapp.IngestBus{Enc: securityEncoder(cfg)},
 		}),
 	), nil
 }
