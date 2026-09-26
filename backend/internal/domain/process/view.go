@@ -2,6 +2,7 @@ package process
 
 import (
 	"strconv"
+	"strings"
 	"time"
 
 	"ant/internal/contracts/constants"
@@ -170,6 +171,30 @@ type HumanStep struct {
 	DueAt     *time.Time `json:"due_at,omitempty"`
 }
 
+// preparedBy — операция, для которой шаг n подготовительный: единственный
+// следующий узел — операция с предусловием time_window, отсчитываемым от
+// конца n (ref «‹хвост step_key n›<=…»); nil — n самостоятельная операция.
+func preparedBy(d *Definition, n *Node) *Node {
+	next := d.Next(n)
+	if len(next) != 1 {
+		return nil
+	}
+	nx := d.Node(next[0])
+	if nx == nil || nx.Props.StepKind != stepKindOperation {
+		return nil
+	}
+	short := n.StepKey()
+	if i := strings.LastIndexByte(short, '.'); i >= 0 {
+		short = short[i+1:]
+	}
+	for _, p := range nx.Preconditions {
+		if p.Kind == "time_window" && strings.HasPrefix(p.Ref, short+"<=") {
+			return nx
+		}
+	}
+	return nil
+}
+
 // HumanSteps — шаги с действием человека, на которых сейчас стоят токены
 // изделия (одно правило на все шаги процесса):
 //   - перемещение: в пути или приёмка цехом (userTask) — «принять» мастером
@@ -218,6 +243,17 @@ func (s State) HumanSteps(env Env) []HumanStep {
 				h.Operation = OpOperationStart
 				if n.Norm != nil {
 					norm = n.Norm.QueueNormMinutes
+				}
+				// Подготовительный шаг: следующая операция держит окно от его
+				// конца (ant:precondition time_window «edge_prep<=PT8H» у сварки).
+				// Исполнитель начинает сразу следующую операцию — подготовка
+				// засчитывается по её началу; задача — «Начать» её.
+				if nx := preparedBy(env.Def, n); nx != nil {
+					h.StepKey, h.Node, h.Name = nx.StepKey(), nx.ID, nx.Name
+					norm = nil
+					if nx.Norm != nil {
+						norm = nx.Norm.QueueNormMinutes
+					}
 				}
 			}
 		default:

@@ -146,7 +146,7 @@ func TestShowIncidentScope(t *testing.T) {
 	}
 	size := func(rs appanalysis.RiskScope) int { return rs.Versions[len(rs.Versions)-1].Size }
 	rs := scope()
-	if size(rs) != 34 || rs.LastKnownGood == nil || !strings.Contains(rs.LastKnownGood.Label, "F-202") {
+	if size(rs) != 34 || rs.LastKnownGood == nil || !strings.Contains(rs.LastKnownGood.Label, "Ф-202") {
 		t.Fatalf("v1: %d изделий, отсчёт %+v", size(rs), rs.LastKnownGood)
 	}
 	opt := func(rs appanalysis.RiskScope, what string) *appanalysis.NarrowOption {
@@ -160,6 +160,12 @@ func TestShowIncidentScope(t *testing.T) {
 	is1 := opt(rs, "на IS-1")
 	if is1 == nil || len(is1.ItemIDs) != 21 || !slices.Contains(is1.ItemIDs, item("F-001")) {
 		t.Fatalf("предложение сужения по ИС-1: %+v", is1)
+	}
+	// Метки изделий области — для людей (Ф-001), а не внутренний id.
+	for _, it := range rs.Items {
+		if it.ItemID == item("F-001") && it.Label != "Ф-001" {
+			t.Fatalf("метка Ф-001 в области: %q", it.Label)
+		}
 	}
 	tec := analysistest.Principal(ctx, "TEC-01")
 	narrow := func(rs appanalysis.RiskScope, items, evidence []string, reason string) {

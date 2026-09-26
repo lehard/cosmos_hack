@@ -54,6 +54,10 @@ func (v *itemView) Upstream() dom.Upstream {
 	return dom.Upstream{Item: &s.Item, Process: &s.Process, Vision: &s.Vision, Quality: &s.Quality, Machinelogs: &s.Machinelogs, Documents: &s.Documents}
 }
 
+// Label — метка изделия для людей (Ф-001 с бирки, DM-код, номер из id), а
+// не внутренний id: та же, что в задачах и паспорте.
+func (v *itemView) Label() string { return v.Snap.Item.DisplayLabel(v.ItemID) }
+
 // Record — запись входа по event_id.
 func (v *itemView) Record(id string) (kernel.Record, bool) {
 	i := slices.IndexFunc(v.Input, func(r kernel.Record) bool { return r.EventID == id })
