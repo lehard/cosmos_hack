@@ -159,3 +159,20 @@ func pointsOf(t *testing.T, w *nctest.World, bundles notifapp.Bundles, item stri
 	s, _ := engine.Fold(b, in.Input)
 	return s.Quality.Points
 }
+
+// Очередь контролёра: изделия, с которыми работают сейчас (живая партия
+// прогона), — выше изделий, чьи события давние (история прогона).
+func TestQueueCurrentItemsFirst(t *testing.T) {
+	w := nctest.NewWorld(t)
+	svc := w.Service(app.DemoRoutes{})
+	old, live := "ENT01:run-1/I-F1210000", "ENT01:run-1/I-F0010000"
+	w.Add(nctest.Record(catalog.ItemPresentationRecorded, old, nctest.T0.Add(-72*time.Hour), map[string]any{"step_key": "welding.zt3_acceptance",
+		"presentation_no": 1, "presented_to": "qc", "presented_by": "master-1"}))
+	w.Add(nctest.Record(catalog.ItemPresentationRecorded, live, nctest.T0, map[string]any{"step_key": "welding.zt3_acceptance",
+		"presentation_no": 1, "presented_to": "qc", "presented_by": "master-1"}))
+	w.Settle()
+	q, err := svc.Queue(nctest.As("INS-01", "quality_inspector"), app.QueueFilter{}, platform.Moment{}, platform.Page{})
+	if err != nil || len(q.Items) != 2 || q.Items[0].ItemID != live {
+		t.Fatalf("живая партия не первой: %+v %v", q.Items, err)
+	}
+}
