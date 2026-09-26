@@ -234,11 +234,12 @@ function caseLine(c: SimilarCase): string {
 
         <footer v-if="isOpen(h)" class="card-actions">
           <ActionButton overflow="wrap" :size="size" type="primary" secondary :disabled="!canConfirm || busy || moment.isReplay" data-testid="confirm" @click="openForm(h, 'confirm')" :label="t('decisions.cause.confirmCause')" />
-          <ActionButton overflow="wrap" :size="size" :disabled="!canReject || busy || moment.isReplay" data-testid="reject" @click="openForm(h, 'reject')" :label="t('decisions.cause.rejectHypothesis')" />
+          <ActionButton overflow="wrap" :size="size" quaternary :disabled="!canReject || busy || moment.isReplay" data-testid="reject" @click="openForm(h, 'reject')" :label="t('decisions.cause.rejectHypothesis')" />
           <ActionButton
             v-if="!nextText(h)"
             overflow="wrap"
             :size="size"
+            quaternary
             :disabled="!canMeasure || busy || moment.isReplay"
             data-testid="request-measurement"
             @click="openForm(h, 'measure')"
@@ -297,7 +298,7 @@ function caseLine(c: SimilarCase): string {
 .hypotheses {
   display: flex;
   flex-direction: column;
-  gap: var(--ant-space-3);
+  gap: var(--ant-space-5);
   min-width: 0;
   font-size: var(--ant-fs-body);
 }
@@ -351,11 +352,8 @@ p {
 }
 
 .branch-empty {
-  padding: var(--ant-space-2) var(--ant-space-3);
-  border: 1px dashed var(--ant-status-attention);
-  border-radius: var(--ant-radius-md);
-  background: var(--ant-status-attention-soft);
-  color: var(--ant-status-attention-text);
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-meta);
 }
 
 .card {
@@ -363,10 +361,8 @@ p {
   flex-direction: column;
   gap: var(--ant-space-2);
   min-width: 0;
-  padding: var(--ant-space-3);
-  border: 1px solid var(--ant-border);
-  border-radius: var(--ant-radius-md);
-  background: var(--ant-surface);
+  padding-top: var(--ant-space-3);
+  border-top: 1px solid var(--ant-border);
 }
 
 .card[data-status='rejected'] {
@@ -374,7 +370,8 @@ p {
 }
 
 .card[data-status='confirmed'] {
-  border-color: var(--ant-status-success);
+  box-shadow: inset 3px 0 0 var(--ant-status-success);
+  padding-left: var(--ant-space-3);
 }
 
 .card-head {
@@ -393,10 +390,8 @@ p {
 
 .status {
   flex: none;
-  padding: 0 var(--ant-space-2);
-  border-radius: var(--ant-radius-pill);
-  background: var(--ant-surface-subtle);
-  font-size: var(--ant-fs-xs);
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-meta);
 }
 
 .kind {
@@ -430,10 +425,8 @@ p {
   flex-direction: column;
   gap: var(--ant-space-1);
   align-items: flex-start;
-  padding: var(--ant-space-2) var(--ant-space-3);
-  border-left: 4px solid var(--ant-accent);
-  border-radius: var(--ant-radius-md);
-  background: var(--ant-accent-soft);
+  padding-left: var(--ant-space-3);
+  border-left: 3px solid var(--ant-accent);
 }
 
 .next-title {
@@ -460,10 +453,6 @@ p {
   display: flex;
   flex-direction: column;
   gap: var(--ant-space-1);
-  padding: var(--ant-space-3);
-  border: 1px solid var(--ant-border);
-  border-radius: var(--ant-radius-md);
-  background: var(--ant-surface-subtle);
 }
 
 .outcome-title {
@@ -486,14 +475,13 @@ p {
 .next-sections {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--ant-space-2);
+  gap: var(--ant-space-5);
 }
 
 .go {
-  padding: var(--ant-space-1) var(--ant-space-3);
-  border: 1px solid var(--ant-accent);
-  border-radius: var(--ant-radius-md);
-  background: var(--ant-accent-soft);
+  padding: 0;
+  border: 0;
+  background: none;
   color: var(--ant-accent);
   font: inherit;
   font-weight: var(--ant-fw-bold);

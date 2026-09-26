@@ -307,8 +307,8 @@ function submit(): void {
     </section>
 
     <footer class="actions">
-      <ActionButton overflow="wrap" :size="naiveSizeOf(density)" type="primary" secondary :disabled="!canNarrow || busy || moment.isReplay" data-testid="narrow" @click="openForm('narrow')" :label="t('riskScope.narrow')" />
-      <ActionButton overflow="wrap" :size="naiveSizeOf(density)" :disabled="!canExpand || busy || moment.isReplay" data-testid="expand" @click="openForm('expand')" :label="t('riskScope.expand')" />
+      <ActionButton overflow="wrap" :size="naiveSizeOf(density)" :type="model.narrow_options?.length ? 'default' : 'primary'" :quaternary="Boolean(model.narrow_options?.length)" :secondary="!model.narrow_options?.length" :disabled="!canNarrow || busy || moment.isReplay" data-testid="narrow" @click="openForm('narrow')" :label="t('riskScope.narrow')" />
+      <ActionButton overflow="wrap" :size="naiveSizeOf(density)" quaternary :disabled="!canExpand || busy || moment.isReplay" data-testid="expand" @click="openForm('expand')" :label="t('riskScope.expand')" />
     </footer>
 
     <form v-if="form" class="form" :data-form="form" @submit.prevent="submit">
@@ -349,7 +349,7 @@ function submit(): void {
 .scope {
   display: flex;
   flex-direction: column;
-  gap: var(--ant-space-4);
+  gap: var(--ant-space-5);
   min-width: 0;
   font-size: var(--ant-fs-body);
 }
@@ -593,7 +593,6 @@ summary.group-title {
 .path-item + .path-item::before {
   margin-right: var(--ant-space-2);
   color: var(--ant-text-3);
-  font-size: var(--ant-fs-display);
   content: '→';
 }
 
@@ -601,12 +600,12 @@ summary.group-title {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  min-width: 110px;
+  min-width: 90px;
   max-width: 200px;
-  padding: var(--ant-space-2) var(--ant-space-3);
-  border: 1px solid var(--ant-border);
-  border-radius: var(--ant-radius-md);
-  background: var(--ant-surface);
+  padding: 0 0 var(--ant-space-1);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
   color: inherit;
   font: inherit;
   text-align: left;
@@ -614,22 +613,21 @@ summary.group-title {
 }
 
 .step-btn:hover {
-  background: var(--ant-surface-hover);
+  border-bottom-color: var(--ant-border-strong);
 }
 
 .step-btn[aria-pressed='true'] {
-  border-color: var(--ant-accent);
-  background: var(--ant-accent-soft);
+  border-bottom-color: var(--ant-accent);
 }
 
 .step-btn[data-basis='missing'] {
-  border-color: var(--ant-status-danger);
+  border-bottom-color: var(--ant-status-danger);
 }
 
 .size {
-  font-size: var(--ant-fs-display);
+  font-size: var(--ant-fs-title);
   font-weight: var(--ant-fw-bold);
-  line-height: 1.1;
+  line-height: 1.2;
   font-variant-numeric: tabular-nums;
 }
 
@@ -652,10 +650,8 @@ summary.group-title {
   flex-direction: column;
   gap: var(--ant-space-1);
   min-width: 0;
-  padding: var(--ant-space-3) var(--ant-space-4);
-  border-left: 4px solid var(--ant-accent);
-  border-radius: var(--ant-radius-md);
-  background: var(--ant-surface-subtle);
+  padding-left: var(--ant-space-4);
+  border-left: 3px solid var(--ant-accent);
 }
 
 .step-title {
@@ -687,10 +683,8 @@ summary.group-title {
   flex-direction: column;
   gap: var(--ant-space-1);
   align-items: flex-start;
-  padding: var(--ant-space-3) var(--ant-space-4);
-  border: 1px solid var(--ant-accent);
-  border-radius: var(--ant-radius-md);
-  background: var(--ant-accent-soft);
+  padding-left: var(--ant-space-4);
+  border-left: 3px solid var(--ant-accent);
 }
 
 .option-label {

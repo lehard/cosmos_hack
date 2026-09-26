@@ -71,8 +71,8 @@ p {
 
 .chips {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--ant-space-2);
+  flex-direction: column;
+  gap: var(--ant-space-1);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -83,14 +83,10 @@ p {
   gap: var(--ant-space-2);
   align-items: baseline;
   min-width: 0;
-  padding: 2px var(--ant-space-2);
-  border: 1px solid var(--ant-border);
-  border-radius: var(--ant-radius-pill);
-  background: var(--ant-surface-subtle);
 }
 
 .chip[data-kind='all'] {
-  border-color: var(--ant-accent);
+  font-weight: var(--ant-fw-bold);
 }
 
 .value {

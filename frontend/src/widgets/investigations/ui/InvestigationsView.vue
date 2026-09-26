@@ -114,7 +114,7 @@ const counts = (i: IncidentSummary) =>
 .investigations {
   display: flex;
   flex-direction: column;
-  gap: var(--ant-space-3);
+  gap: var(--ant-space-6);
   min-width: 0;
 }
 
@@ -130,7 +130,7 @@ h3 {
 .hero {
   display: flex;
   flex-direction: column;
-  gap: var(--ant-space-3);
+  gap: var(--ant-space-4);
   min-width: 0;
 }
 
@@ -151,10 +151,8 @@ h3 {
 
 .stage {
   flex: none;
-  padding: 2px var(--ant-space-3);
-  border: 1px solid var(--tone);
-  border-radius: var(--ant-radius-pill);
-  background: var(--tone-soft);
+  color: var(--tone);
+  font-size: var(--ant-fs-meta);
   font-weight: var(--ant-fw-bold);
   white-space: nowrap;
 }
@@ -173,14 +171,15 @@ h3 {
 }
 
 .count {
-  padding: 2px var(--ant-space-2);
-  border-left: 4px solid var(--tone);
-  border-radius: var(--ant-radius-sm);
-  background: var(--ant-surface-subtle);
+  display: inline-flex;
+  gap: var(--ant-space-1);
+  align-items: baseline;
+  padding-left: var(--ant-space-2);
+  border-left: 3px solid var(--tone);
 }
 
 .now {
-  font-weight: var(--ant-fw-bold);
+  color: var(--ant-text-2);
 }
 
 /* Что делать дальше — главное действие страницы. */
@@ -189,10 +188,8 @@ h3 {
   flex-direction: column;
   gap: var(--ant-space-2);
   align-items: flex-start;
-  padding: var(--ant-space-3) var(--ant-space-4);
-  border-left: 4px solid var(--ant-accent);
-  border-radius: var(--ant-radius-md);
-  background: var(--ant-accent-soft);
+  padding: var(--ant-space-2) 0 var(--ant-space-2) var(--ant-space-4);
+  border-left: 3px solid var(--ant-accent);
 }
 
 .next-title {
@@ -237,10 +234,8 @@ h3 {
 .others {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--ant-space-2);
+  gap: var(--ant-space-2) var(--ant-space-4);
   align-items: center;
-  padding-top: var(--ant-space-2);
-  border-top: 1px solid var(--ant-border);
   font-size: var(--ant-fs-meta);
 }
 
@@ -248,16 +243,15 @@ h3 {
   display: inline-flex;
   gap: var(--ant-space-1);
   max-width: 320px;
-  padding: 2px var(--ant-space-2);
-  border: 1px solid var(--ant-border);
-  border-radius: var(--ant-radius-pill);
-  background: var(--ant-surface);
-  color: inherit;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ant-accent);
   font: inherit;
   cursor: pointer;
 }
 
 .other:hover {
-  background: var(--ant-surface-hover);
+  text-decoration: underline;
 }
 </style>
