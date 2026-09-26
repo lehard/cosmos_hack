@@ -232,7 +232,7 @@ sources: ['../docs/architecture-spine.md', 'prd.md', 'KosmoHackathon 2026 — п
 
 Что подсветить проверяющему: горизонтальное масштабирование доказывается хешем, а не числом копий — `rebuild_hash` на 1 и 4 обработчиках совпал на журнале MS-1 в 21 тыс. записей, а запись от копии, потерявшей аренду, отвергается (`ErrFenced`, `TestFencedAfterLeaseLoss`). Для OTel/Kafka ключ уже есть в коде и конфигурации (`ports.adapters.telemetry`, `ports.adapters.work_feed`), так что подключение — один адаптер и одна строка конфигурации.
 
-Честно о границах: у порта `Publisher` нет адаптера — см. K4. Действующие ключи конфигурации — `ports.adapters.telemetry` / `work_feed` / `publisher`; в `docs/observability-kafka-otel.md` и `docs/scaling.md` §9 предлагаемые секции помечены «добавит адаптер».
+Честно о границах: у порта `Publisher` пока один путь — исходящие идут через доменные порты `erp.Ledger` / `mes.Channel` из `cmd/ant/outbox.go` (HTTP с повтором), отдельного универсального адаптера нет; Kafka-адаптер встанет за тем же ключом `ports.adapters.publisher`. Действующие ключи конфигурации — `ports.adapters.telemetry` / `work_feed` / `publisher`; в `docs/observability-kafka-otel.md` и `docs/scaling.md` §9 предлагаемые секции помечены «добавит адаптер».
 
 ### L. §3.2 Состав целевой системы (10 компонентов)
 
