@@ -146,6 +146,8 @@ async function load(xml: string): Promise<void> {
     overlays.add(lane.bpmnId, 'ant-lane', { position: { top: 4, left: 36 }, html: el })
     lanes.push({ bpmnId: lane.bpmnId, el })
   }
+  // Шаги открывают окно по щелчку — курсор «рука» только у них (UI-23).
+  for (const node of idx.byBpmnId.values()) svc('canvas').addMarker(node.bpmnId, 'ant-step')
   index.value = markRaw(idx)
   nodeSlots.value = nodes
   laneSlots.value = lanes
@@ -254,6 +256,19 @@ defineExpose({ index })
 .canvas {
   position: absolute;
   inset: 0;
+}
+
+/* Курсор не «перемещение» при наведении (UI-23): обычная стрелка, у шагов —
+   «рука» (щелчок открывает окно шага). Перетаскивание схемы работает как было. */
+.canvas :deep(.djs-element),
+.canvas :deep(.djs-hit),
+.canvas :deep(svg) {
+  cursor: default;
+}
+
+.canvas :deep(.djs-element.ant-step),
+.canvas :deep(.djs-element.ant-step .djs-hit) {
+  cursor: pointer;
 }
 
 .lane-count {
