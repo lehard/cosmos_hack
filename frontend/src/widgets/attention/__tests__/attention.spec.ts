@@ -3,10 +3,10 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createPinia, setActivePinia } from 'pinia'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { notificationKeys, type AttentionEntry } from '@/entities/notification'
-import type { Envelope } from '@/shared/api/pending'
+import type { Envelope } from '@/shared/api/response'
 import { i18n } from '@/shared/i18n'
 import AttentionWidget from '../ui/AttentionWidget.vue'
 
@@ -41,6 +41,21 @@ async function mountWidget(seed: AttentionEntry[] | null) {
 
 const norm = (s: string) => s.replace(/\u00a0/g, ' ')
 
+
+/** Сервер отвечает problem+json с кодом (сгенерированный клиент бросает ошибку с info). */
+const serverFails = () =>
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () =>
+      new Response(JSON.stringify({ type: 'urn:ant:problem:api.not_implemented', title: 'Операция ещё не реализована', status: 501, code: 'api.not_implemented' }), {
+        status: 501,
+        headers: { 'Content-Type': 'application/problem+json' },
+      }),
+    ),
+  )
+
+afterEach(() => vi.unstubAllGlobals())
+
 describe('виджет «Требует вашего внимания»', () => {
   it('просроченное решение — с числом стоящих изделий и операций (проверка FR-8)', async () => {
     const { w } = await mountWidget(entries())
@@ -66,7 +81,8 @@ describe('виджет «Требует вашего внимания»', () => 
     expect(w.text()).toContain('Записей нет')
   })
 
-  it('операции ещё нет — «ошибка входа»', async () => {
+  it('сервер ответил ошибкой — «ошибка входа»', async () => {
+    serverFails()
     const { w } = await mountWidget(null)
     await vi.waitFor(() => expect(w.find('.widget-frame').attributes('data-state')).toBe('input_error'))
   })

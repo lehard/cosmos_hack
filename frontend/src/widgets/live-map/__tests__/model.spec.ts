@@ -91,7 +91,10 @@ describe('наложения', () => {
   })
 
   it('четыре состояния: норма / признак дефекта / оценка невозможна (NFR-UI-4)', () => {
-    const calm = { ...frameMorning(), bottleneck: null }
+    // Необязательные объекты контракта не пришли — ограничения и инцидента нет.
+    const calm = frameMorning()
+    delete calm.bottleneck
+    expect(calm.incident).toBeUndefined()
     expect(mapDataState(calm)).toBe('normal')
     expect(mapDataState(frameScope34())).toBe('defect_indication')
     expect(mapDataState({ ...calm, data_gaps: ['welding.kt3_camera'] })).toBe('unable_to_assess')

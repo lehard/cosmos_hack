@@ -3,19 +3,19 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createPinia, setActivePinia } from 'pinia'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { workplaceKeys, type PostRow } from '@/entities/workplace'
-import type { Envelope } from '@/shared/api/pending'
+import type { Envelope } from '@/shared/api/response'
 import { i18n } from '@/shared/i18n'
 import PostsWidget from '../ui/PostsWidget.vue'
 
 /** Образец постов сварочного цеха — только для тестов. */
 const rows = (): PostRow[] => [
   { workplace_id: 'WP-W2', station: 'Сварочный пост 2', assigned: { person_id: 'P-17', display: 'Сварщик С-17' }, presence: 'present', current_item: { item_id: 'ENT:FL-0041', label: 'ФЛ-0041' } },
-  { workplace_id: 'WP-W3', station: 'Сварочный пост 3', assigned: { person_id: 'P-21', display: 'Сварщик С-21' }, presence: 'key_missing', current_item: null },
-  { workplace_id: 'WP-K3', station: 'ЗТ-3 ОТК', assigned: { person_id: 'P-05', display: 'Контролёр К-05' }, presence: 'owner_absent', current_item: null },
-  { workplace_id: 'WP-A1', station: 'Сборка 1', assigned: null, presence: 'not_assigned', current_item: null },
+  { workplace_id: 'WP-W3', station: 'Сварочный пост 3', assigned: { person_id: 'P-21', display: 'Сварщик С-21' }, presence: 'key_missing' },
+  { workplace_id: 'WP-K3', station: 'ЗТ-3 ОТК', assigned: { person_id: 'P-05', display: 'Контролёр К-05' }, presence: 'owner_absent' },
+  { workplace_id: 'WP-A1', station: 'Сборка 1', presence: 'not_assigned' },
 ]
 
 async function mountWidget(seed: PostRow[] | null) {
@@ -38,6 +38,21 @@ async function mountWidget(seed: PostRow[] | null) {
   await flushPromises()
   return { w, router }
 }
+
+
+/** Сервер отвечает problem+json с кодом (сгенерированный клиент бросает ошибку с info). */
+const serverFails = () =>
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () =>
+      new Response(JSON.stringify({ type: 'urn:ant:problem:api.not_implemented', title: 'Операция ещё не реализована', status: 501, code: 'api.not_implemented' }), {
+        status: 501,
+        headers: { 'Content-Type': 'application/problem+json' },
+      }),
+    ),
+  )
+
+afterEach(() => vi.unstubAllGlobals())
 
 describe('виджет «Посты»', () => {
   it('участок — назначен — на месте ли — текущее изделие', async () => {
@@ -66,7 +81,8 @@ describe('виджет «Посты»', () => {
     expect(w.find('[data-presence="absent"]').text()).toContain('Нет на месте')
   })
 
-  it('операции ещё нет — «ошибка входа»', async () => {
+  it('сервер ответил ошибкой — «ошибка входа»', async () => {
+    serverFails()
     const { w } = await mountWidget(null)
     await vi.waitFor(() => expect(w.find('.widget-frame').attributes('data-state')).toBe('input_error'))
   })

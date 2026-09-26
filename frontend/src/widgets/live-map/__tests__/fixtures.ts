@@ -48,6 +48,7 @@ function scopeItems(statusOf: (n: number) => IncidentStatus | undefined): MapIte
 }
 
 const base = (): Omit<LiveMapData, 'items' | 'incident' | 'counters'> => ({
+  basis_seq: 4200,
   process_version: { process_version_id: V1, label: '1', is_current: true, items: 40 },
   versions: [
     { process_version_id: V1, label: '1', is_current: true, items: 40 },
@@ -79,7 +80,7 @@ const others = (): MapItem[] => [
 
 /** Кадр 0: утро, всё идёт, ограничение линии — ЗТ-3. */
 export function frameMorning(): LiveMapData {
-  return { ...base(), anomalies: [], counters: commonCounters(0), items: [...scopeItems(() => undefined), ...others()], incident: null }
+  return { ...base(), anomalies: [], counters: commonCounters(0), items: [...scopeItems(() => undefined), ...others()] }
 }
 
 /** Кадр 1: сигнал на КТ-3 и инцидент — область риска 34, все под подозрением. */

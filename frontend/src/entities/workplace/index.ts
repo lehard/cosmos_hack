@@ -3,46 +3,31 @@
  * картой — участок, назначенный сотрудник, присутствие (СКУД, ключ вставлен),
  * текущее изделие. Люди на схеме не показываются — только здесь (PRD §4.1).
  *
- * Операции ещё нет в contracts/openapi.yaml (эпик 02): запрос стоит на заглушке
- * `api.not_implemented`, форма данных — предложение для контракта.
+ * Операция — `access.workplace.list` (contracts/openapi.yaml), сгенерированный клиент.
  */
 import { computed, toValue, type MaybeRefOrGetter } from 'vue'
-import { useQuery } from '@tanstack/vue-query'
+import { keepPreviousData, useQuery } from '@tanstack/vue-query'
 import { entityKeys } from '@/shared/api/keys'
-import { pendingOperation, type Envelope } from '@/shared/api/pending'
+import { accessWorkplaceList } from '@/shared/api/generated/client'
+import type { PostRow, PostRowPresence } from '@/shared/api/generated/model'
+import type { Envelope } from '@/shared/api/response'
 import { useMomentStore } from '@/shared/model/moment'
 
 export const workplaceKeys = entityKeys('workplace')
 
-/**
- * Присутствие на посту (FR-6): на месте; по графику (СКУД) на месте, но ключ не
- * вставлен; ключ вставлен, а владельца нет в зоне; нет ни в зоне, ни ключа;
- * никто не назначен; данных нет — «неизвестно», а не «на месте».
- */
-export type PostPresence = 'present' | 'key_missing' | 'owner_absent' | 'absent' | 'not_assigned' | 'unknown'
+/** Присутствие на посту (FR-6): «неизвестно» — не «на месте». */
+export type PostPresence = PostRowPresence
+export type { PostRow }
 
-/** Строка панели «Посты». */
-export interface PostRow {
-  workplace_id: string
-  /** Участок (пост) — подпись. */
-  station: string
-  /** Цех (FR-130). */
-  workshop?: string
-  /** Назначенный сотрудник: псевдоним исполнителя (соглашение «Идентификаторы»). */
-  assigned: { person_id: string; display: string } | null
-  presence: PostPresence
-  current_item: { item_id: string; label: string } | null
-}
-
-/**
- * Посты под картой на момент из useMomentStore. Ожидаемая операция —
- * `access.workplace.list` (GET /api/v1/workplaces).
- */
+/** Посты под картой на момент из useMomentStore — `access.workplace.list`. */
 export function usePosts(params: MaybeRefOrGetter<{ workshop?: string; run_id?: string }>) {
   const moment = useMomentStore()
   return useQuery({
     queryKey: computed(() => workplaceKeys.list('posts', toValue(params), moment.params)),
-    queryFn: () => pendingOperation<Envelope<PostRow[]>>('access.workplace.list')(),
-    placeholderData: (prev: Envelope<PostRow[]> | undefined) => prev,
+    queryFn: async ({ signal }): Promise<Envelope<PostRow[]>> => {
+      const res = await accessWorkplaceList({ ...toValue(params), ...moment.params }, { signal })
+      return { data: res.data.items, headers: res.headers }
+    },
+    placeholderData: keepPreviousData,
   })
 }
