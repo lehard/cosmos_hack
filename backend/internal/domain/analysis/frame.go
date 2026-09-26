@@ -1,6 +1,9 @@
 package analysis
 
 import (
+	"time"
+
+	"ant/internal/contracts/catalog"
 	"ant/internal/domain/documents"
 	"ant/internal/domain/item"
 	"ant/internal/domain/kernel"
@@ -13,11 +16,6 @@ import (
 
 // Module — имя модуля-эмитента (AD-40).
 const Module kernel.Module = "analysis"
-
-// State — состояние модуля analysis в свёртке одного изделия (AD-5). Заполняет
-// эпик-владелец модуля; свёртка — чистая функция входа изделия, поэтому State
-// — значение, без ссылок на внешние ресурсы.
-type State struct{}
 
 // Env — закреплённая при запуске изделия часть нормативного слоя, нужная
 // модулю analysis (AD-17: процесс, план контроля, карта реакций, шаблоны …), и срез
@@ -40,25 +38,81 @@ type Upstream struct {
 // Reduce применяет запись входа изделия (факт, решение, адресованную запись
 // стадии) к состоянию модуля (AD-5). Реакции в свёртку не входят (AD-3).
 func Reduce(s State, r kernel.Record, env Env, up Upstream) State {
-	_, _ = r, env
-	_ = up
-	return s
+	_, _ = env, up
+	return reduceItem(s, r)
 }
+
+// RuleHypotheses — правило вывода разбора (AD-3: версия вывода разбора —
+// реакция; слот — правило, изделие, несоответствие).
+const RuleHypotheses = "analysis.hypotheses"
 
 // React вычисляет реакции модуля по состоянию после записи и намерения к
-// ранним модулям (AD-3, AD-40). Реакции строятся только через kernel.NewReaction
-// с собственными типами модуля.
+// ранним модулям (AD-3, AD-40): версию вывода разбора incident.hypothesis.computed
+// по каждому несоответствию изделия (FR-58, FR-59). Порт временной линии
+// оборудования в свёртке изделия не подключён (эпик 23 — через Upstream.Machinelogs),
+// поэтому выводов об оборудовании версия не содержит и не категорична;
+// полный разбор с оборудованием даёт запрос analysis.circumstances.read.
 func React(s State, env Env, up Upstream) kernel.Output {
-	_, _ = s, env
-	_ = up
-	return kernel.Output{}
+	_ = env
+	var out kernel.Output
+	subject := itemSubject(s)
+	for _, c := range s.Cases {
+		a, ok := Analyze(s, s.ItemID, c.NCID, EquipmentFrom(up))
+		if !ok {
+			continue
+		}
+		causes := make([]kernel.Record, 0, len(a.Causes))
+		for _, id := range a.Causes {
+			causes = append(causes, kernel.Record{EventID: id, OccurredAt: occurredOf(s, id)})
+		}
+		re, err := kernel.NewReaction(Module, catalog.IncidentHypothesisComputed,
+			kernel.Slot{RuleID: RuleHypotheses, Subject: subject, TriggerKey: c.NCID}, hypothesisComputed(a), causes...)
+		if err != nil {
+			continue
+		}
+		re.AutomationMode = 1
+		out.Reactions = append(out.Reactions, re)
+	}
+	return out
 }
 
-// Guard — доменный гард операций модуля analysis (AD-39): состояние изделия на
-// basis_seq и команда → nil или *kernel.Refusal с кодом из contracts/errors.yaml.
-// Его вызывают api до записи, свёртка при применении и верификатор.
-func Guard(s State, env Env, up Upstream, cmd kernel.Command) error {
-	_, _, _ = s, env, cmd
+// EquipmentFrom — события оборудования для разбора из состояния machinelogs в
+// свёртке изделия (порт временной линии, AD-42). Эпик 23 наполняет
+// machinelogs.State; до него — nil: «порт не подключён».
+func EquipmentFrom(up Upstream) []EquipmentEvent {
 	_ = up
+	return nil
+}
+
+// itemSubject — субъект слота реакции: поток изделия (reaction_id различается
+// у изделий группового несоответствия).
+func itemSubject(s State) string { return "item:" + s.ItemID }
+
+// occurredOf — время записи-причины (для occurred_at реакции = наибольший
+// среди причин, AD-37).
+func occurredOf(s State, id string) time.Time {
+	for _, m := range s.Marks {
+		if m.EventID == id {
+			return m.OccurredAt
+		}
+	}
+	for _, c := range s.Cases {
+		if c.EventID == id {
+			return c.At
+		}
+	}
+	for _, f := range s.Findings {
+		if f.EventID == id {
+			return f.At
+		}
+	}
+	return time.Time{}
+}
+
+// Guard — доменный гард операций модуля analysis над состоянием изделия (AD-39).
+// Операции analysis — над потоками инцидентов: их гард — GuardIncident над
+// состоянием инцидента; у изделия ограничений нет.
+func Guard(s State, env Env, up Upstream, cmd kernel.Command) error {
+	_, _, _, _ = s, env, up, cmd
 	return nil
 }
