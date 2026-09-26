@@ -210,7 +210,6 @@ func openRunStep(_ string, prev json.RawMessage, r kernel.Record) (json.RawMessa
 		RunID     string  `json:"operation_run_id"`
 		Operator  *string `json:"operator_id"`
 		Workplace *string `json:"workplace_id"`
-		Station   *string `json:"station_id"`
 	}
 	if json.Unmarshal(r.Data, &d) != nil || d.RunID == "" {
 		return prev, nil
@@ -221,11 +220,8 @@ func openRunStep(_ string, prev json.RawMessage, r kernel.Record) (json.RawMessa
 		if d.Operator != nil {
 			o.Operator = *d.Operator
 		}
-		switch {
-		case d.Workplace != nil && *d.Workplace != "":
+		if d.Workplace != nil {
 			o.Workplace = *d.Workplace
-		case d.Station != nil:
-			o.Workplace = *d.Station
 		}
 		v.Runs = append(v.Runs, o)
 	}

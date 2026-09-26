@@ -20,10 +20,30 @@ steps:
 # Стол технолога не пуст: область 3 → 2 → 1 с основаниями, гипотезы обеих веток
 # с доводами и проверкой, причина по обеим веткам, меры (одна внедрена — идёт
 # проверка эффективности), НС закрыто. Подписывает demo-signer до «сейчас».
+- at: '2026-09-07T09:45:00+03:00'
+  ref: Е-44
+  label: F-302/kt3
+  note: 'КТ-3 Ф-302: признаков нет — но ракурс 1 участок У2 не охватил (прижим), корень шва камера не видит вовсе'
+  fact: inspection.result.recorded
+  source: cam-kt3-a
+  item: F-302
+  data:
+    observation_id: '{local:KT3-F-302}'
+    method: camera
+    phase: after_operation
+    step_key: welding.kt3_camera
+    inspection_point: KT-3
+    operation_run_id: '{local:SV-302-1}'
+    zone_ids: ['{zone:U1}', '{zone:U3}', '{zone:U4}', '{zone:U5}', '{zone:U6}', '{zone:U7}', '{zone:U8}']
+    processing_state: completed
+    outcome: no_defect_indicated
+    analyzer_confidence_bp: 9400
+    observation_quality_bp: 9000
+    versions: {analyzer_version: vqc-weld 2.3.1, contract_version: '1.0', recipe_ref: kt3-weld@1, camera_config: angle-1, item_revision: Б}
 - at: '2026-09-07T14:00:00+03:00'
   ref: Е-45
   label: F-302/xray
-  note: 'Рентген Ф-302, РК-0907-02: прожог корня шва у кромки на участке У2 — зона корня в кадр камеры КТ-3 (участки шва У1…У8, лицевая сторона) не входит'
+  note: 'Рентген Ф-302, РК-0907-02: прожог корня шва на участке У2 — КТ-3 этот участок не охватила, корень камера не видит'
   fact: inspection.result.recorded
   source: xray
   item: F-302
@@ -33,13 +53,13 @@ steps:
     phase: after_operation
     step_key: welding.kt3_radiography
     operation_run_id: '{local:SV-302-1}'
-    zone_ids: ['{zone:U1}', '{zone:U2}', '{zone:U3}', '{zone:U4}', '{zone:U5}', '{zone:U6}', '{zone:U7}', '{zone:U8}', '{zone:EDGE}']
+    zone_ids: ['{zone:U1}', '{zone:U2}', '{zone:U3}', '{zone:U4}', '{zone:U5}', '{zone:U6}', '{zone:U7}', '{zone:U8}']
     outcome: defect_indicated
     processing_state: completed
     inspector_id: '{person:NDT-01}'
     conclusion_ref: РК-0907-02
     defects:
-    - {defect_type_code: W-BURNTHRU, description: Прожог корня шва, zone_id: '{zone:EDGE}', location: 'корень шва у кромки, участок У2', severity: critical}
+    - {defect_type_code: W-BURNTHRU, description: Прожог корня шва, zone_id: '{zone:U2}', location: 'участок У2, со стороны корня', severity: critical}
 - at: '2026-09-07T14:10:00+03:00'
   ref: Е-45
   label: F-303/xray
@@ -116,7 +136,7 @@ steps:
     incident_id: '{ref:INC-F302}'
     branch: why_missed
     category: documentation
-    statement: 'Камера КТ-3 снимает лицевую сторону шва (участки У1…У8): корень у кромки в её кадр не входит — прожог корня находит только рентген на ЗТ-3; карта контроля КТ-3 корень не проверяет'
+    statement: 'Камера КТ-3 снимает лицевую сторону шва, и у Ф-302 ракурс не охватил участок У2: прожог корня находит только рентген на ЗТ-3; карта контроля КТ-3 корень и полноту охвата участков не проверяет'
     supporting_event_ids: ['{event:F-302/kt3}', '{event:F-302/xray}']
 - at: '2026-09-08T11:30:00+03:00'
   label: HIST/measure-result
@@ -142,8 +162,8 @@ steps:
     category: documentation
     conclusion: confirmed
     nc_ids: ['{ref:NC-F302}']
-    reason: {code: detection_method_gap, text: 'КТ-3 снимает только лицевую сторону шва; прожог корня виден лишь на рентгене ЗТ-3'}
-    verification: 'КТ-3 Ф-302 — признаков нет, рентген РК-0907-02 — прожог корня; карта контроля kt3-weld@1 корень не включает'
+    reason: {code: detection_method_gap, text: 'КТ-3 снимает только лицевую сторону шва и не охватила участок У2; прожог корня виден лишь на рентгене ЗТ-3'}
+    verification: 'КТ-3 Ф-302 — признаков нет, участка У2 в кадре нет; рентген РК-0907-02 — прожог корня У2; карта контроля kt3-weld@1 корень не включает'
 - at: '2026-09-08T12:05:00+03:00'
   label: HIST/cause-made
   note: 'История: причина «почему возник» подтверждена — оборудование ИС-2, дрейф регулятора тока'

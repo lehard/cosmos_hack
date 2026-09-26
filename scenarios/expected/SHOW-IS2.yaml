@@ -181,7 +181,7 @@ checkpoints:
       op: eq
       value: done
     mapping: exact
-- at: '2026-09-21T11:27:00+03:00'
+- at: '2026-09-21T11:57:00+03:00'
   label: 'шаги 9–10: причина — оборудование ИС-2, переделка Ф-003'
   assertions:
   - id: SHOW-10
@@ -214,7 +214,7 @@ checkpoints:
       op: eq
       value: 0
     mapping: exact
-- at: '2026-09-21T12:40:00+03:00'
+- at: '2026-09-21T13:10:00+03:00'
   label: 'шаги 11–12: переварка Ф-003 на ИС-1, ЗТ-3 Ф-003 и Ф-002'
   assertions:
   - id: SHOW-11
