@@ -377,7 +377,7 @@ func TestManualAndImport(t *testing.T) {
 	ctx := platform.WithPrincipal(context.Background(), platform.Principal{PersonID: "O17"})
 	c := demoCore(t)
 	occ := t0.Add(-time.Hour)
-	r, err := c.Service.SubmitManual(ctx, platform.Command[app.ManualInput]{Meta: platform.CommandMeta{CommandID: uid(7)},
+	r, err := c.Service.SubmitManual(ctx, app.Cmd[app.ManualInput]{Meta: platform.CommandMeta{CommandID: uid(7)},
 		Body: app.ManualInput{SourceID: "terminal-weld-2", EventType: "operation.run.started", OccurredAt: &occ, ItemID: "ENT01:FL-0007",
 			Data: map[string]any{"operation_run_id": "run-W2-FL-0007-1", "operation_code": "030", "step_key": "welding.weld", "operator_id": "O17"}}})
 	if err != nil || r.Outcome != app.OutcomeAccepted || r.SignatureNote != app.ManualNote {
@@ -388,7 +388,7 @@ func TestManualAndImport(t *testing.T) {
 		t.Fatalf("пометка ручного ввода: %+v", e)
 	}
 	// Повтор формы с тем же command_id не удваивает факт.
-	if r2, _ := c.Service.SubmitManual(ctx, platform.Command[app.ManualInput]{Meta: platform.CommandMeta{CommandID: uid(7)},
+	if r2, _ := c.Service.SubmitManual(ctx, app.Cmd[app.ManualInput]{Meta: platform.CommandMeta{CommandID: uid(7)},
 		Body: app.ManualInput{SourceID: "terminal-weld-2", EventType: "operation.run.started", OccurredAt: &occ, ItemID: "ENT01:FL-0007",
 			Data: map[string]any{"operation_run_id": "run-W2-FL-0007-1", "operation_code": "030", "step_key": "welding.weld", "operator_id": "O17"}}}); r2.Outcome != app.OutcomeDuplicate {
 		t.Fatalf("повтор формы: %+v", r2)
@@ -398,7 +398,7 @@ func TestManualAndImport(t *testing.T) {
 		"W-002;operation.run.started;2026-09-25 09:30;ENT01:FL-0009;run-W2-FL-0009-1;030;welding.weld;weld-2;O17\n" +
 		"W-003;operation.run.started;вчера;ENT01:FL-0010;run-W2-FL-0010-1;030;welding.weld;weld-2;O17\n" +
 		"W-004;operation.run.started;2026-09-25 10:00:00;ENT01:FL-0011;;030;welding.weld;weld-2;O17\n"
-	in := platform.Command[app.ImportInput]{Meta: platform.CommandMeta{CommandID: uid(8)},
+	in := app.Cmd[app.ImportInput]{Meta: platform.CommandMeta{CommandID: uid(8)},
 		Body: app.ImportInput{SourceID: "import:weld-journal", FileName: "журнал сварки.csv", Content: []byte(csv), Defaults: map[string]string{"utc_offset": "+03:00"}}}
 	ir, err := c.Service.ImportCSV(ctx, in)
 	if err != nil || ir.Total != 4 || ir.Accepted != 2 || ir.Rejected != 2 {
@@ -437,12 +437,12 @@ func TestReprocess(t *testing.T) {
 	c := demoCore(t)
 	ex := examples(t)["01-unknown-version.json"]
 	r, _ := c.Service.Ingest(ctx, ex.Message)
-	rr, err := c.Service.Reprocess(ctx, platform.Command[app.ReprocessInput]{Meta: platform.CommandMeta{CommandID: uid(20), Reason: "повышатель v3 ещё не выпущен"},
+	rr, err := c.Service.ReprocessCommand(ctx, app.Cmd[app.ReprocessInput]{Meta: platform.CommandMeta{CommandID: uid(20), Reason: "повышатель v3 ещё не выпущен"},
 		Body: app.ReprocessInput{QuarantineID: r.QuarantineID}})
 	if err != nil || rr.Outcome != "still_invalid" {
 		t.Fatalf("переобработка: %+v %v", rr, err)
 	}
-	rr, err = c.Service.Reprocess(ctx, platform.Command[app.ReprocessInput]{Meta: platform.CommandMeta{CommandID: uid(21), Reason: "источник пришлёт заново"},
+	rr, err = c.Service.ReprocessCommand(ctx, app.Cmd[app.ReprocessInput]{Meta: platform.CommandMeta{CommandID: uid(21), Reason: "источник пришлёт заново"},
 		Body: app.ReprocessInput{QuarantineID: r.QuarantineID, Discard: true}})
 	if err != nil || rr.Outcome != "discarded" {
 		t.Fatalf("отброшено: %+v %v", rr, err)
@@ -453,7 +453,7 @@ func TestReprocess(t *testing.T) {
 	if c.Journal.Count("ingest.message.reprocessed") != 2 {
 		t.Fatal("решения переобработки")
 	}
-	list, _ := c.Service.Quarantine(ctx, app.QuarantineFilter{Status: app.QuarantineOpen})
+	list, _ := c.Service.QuarantineRecords(ctx, app.QuarantineQuery{Status: app.QuarantineOpen})
 	if len(list) != 0 {
 		t.Fatalf("%+v", list)
 	}

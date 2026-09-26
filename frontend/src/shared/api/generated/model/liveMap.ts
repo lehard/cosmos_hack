@@ -1,0 +1,26 @@
+/**
+ * СГЕНЕРИРОВАНО orval (frontend/scripts/generate.mjs) — руками не править (AD-20).
+ * Источник: contracts/openapi.yaml
+ */
+import type { MapBottleneck } from './mapBottleneck';
+import type { MapIncident } from './mapIncident';
+import type { MapItem } from './mapItem';
+import type { MapNodeAnomaly } from './mapNodeAnomaly';
+import type { MapNodeCounters } from './mapNodeCounters';
+import type { MapVersionRef } from './mapVersionRef';
+
+export interface LiveMap {
+  anomalies: MapNodeAnomaly[];
+  basis_seq: number;
+  /** Нет — ограничение не выявлено. */
+  bottleneck?: MapBottleneck;
+  /** BPMN 2.0 XML показанной версии: BPMNDI, documentation, ant:properties/@stepKey. */
+  bpmn_xml: string;
+  counters: MapNodeCounters[];
+  /** step_key узлов, где оценка невозможна: нет данных источника (не «норма»). */
+  data_gaps: string[];
+  incident?: MapIncident;
+  items: MapItem[];
+  process_version: MapVersionRef;
+  versions: MapVersionRef[];
+}

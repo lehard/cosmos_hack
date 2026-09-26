@@ -226,13 +226,13 @@ func (a *Agent) Enqueue(ev map[string]any) (Enqueued, error) {
 	return Enqueued{SourceSeq: seq, EventID: id}, nil
 }
 
-// batchResult — ответ ядра на пачку (application/ingest.BatchResult).
+// batchResult — ответ операции ingest.batch.submit (application/ingest.IngestResult).
 type batchResult struct {
-	Results []struct {
-		Outcome   string `json:"outcome"`
-		Code      string `json:"code"`
-		SourceSeq int64  `json:"source_seq"`
-	} `json:"results"`
+	Items []struct {
+		Index  int     `json:"index"`
+		Status string  `json:"status"`
+		Code   *string `json:"code"`
+	} `json:"items"`
 }
 
 // ErrCoreUnavailable — ядро недоступно или ответило ошибкой: сообщения
@@ -257,7 +257,7 @@ func (a *Agent) Flush(ctx context.Context) (int, error) {
 		msgs = append(msgs, b)
 	}
 	body, err := json.Marshal(map[string]any{"source_id": a.cfg.SourceID,
-		"sent_at": a.now().UTC().Format("2006-01-02T15:04:05.000Z"), "messages": msgs})
+		"sent_at": a.now().UTC().Format("2006-01-02T15:04:05.000Z"), "envelopes": msgs})
 	if err != nil {
 		return 0, err
 	}
@@ -279,17 +279,25 @@ func (a *Agent) Flush(ctx context.Context) (int, error) {
 		return 0, fmt.Errorf("%w: HTTP %d: %s", ErrCoreUnavailable, resp.StatusCode, strings.TrimSpace(string(rb)))
 	}
 	var br batchResult
-	if err := json.Unmarshal(rb, &br); err != nil || len(br.Results) != len(seqs) {
+	if err := json.Unmarshal(rb, &br); err != nil || len(br.Items) != len(seqs) {
 		return 0, fmt.Errorf("%w: ответ на пачку не разобран: %v", ErrCoreUnavailable, err)
 	}
-	for i, r := range br.Results {
-		switch r.Outcome {
-		case "accepted", "accepted_with_flag", "duplicate", "quarantined", "conflict":
-			if err := os.Remove(a.bufPath(seqs[i])); err != nil && !errors.Is(err, os.ErrNotExist) {
-				return i, err
+	for _, r := range br.Items {
+		if r.Index < 0 || r.Index >= len(seqs) {
+			continue
+		}
+		switch r.Status {
+		case "accepted", "duplicate", "quarantined", "rejected":
+			// Окончательный ответ: сообщение у ядра (принято, повтор или в карантине).
+			if err := os.Remove(a.bufPath(seqs[r.Index])); err != nil && !errors.Is(err, os.ErrNotExist) {
+				return r.Index, err
 			}
-			if r.Outcome == "quarantined" || r.Outcome == "conflict" {
-				a.log.Warn("ядро поместило сообщение в карантин", "source_seq", seqs[i], "code", r.Code)
+			if r.Status != "accepted" && r.Status != "duplicate" {
+				code := ""
+				if r.Code != nil {
+					code = *r.Code
+				}
+				a.log.Warn("ядро не приняло сообщение", "source_seq", seqs[r.Index], "status", r.Status, "code", code)
 			}
 		}
 	}

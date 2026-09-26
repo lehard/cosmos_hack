@@ -2,6 +2,7 @@ package ingest
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"ant/internal/application/journal"
@@ -78,9 +79,14 @@ func (s *Service) CheckLosses(ctx context.Context) ([]LossReport, error) {
 			pend = append(pend, p)
 			reps = append(reps, LossReport{SourceID: st.SourceID, From: g.From, To: g.To, EventID: id})
 		}
-		ar, err := s.deps.Journal.Append(ctx, journal.AppendRequest{Batch: pend})
-		if err == nil {
+		ar, err := s.deps.Journal.Append(ctx, journal.AppendRequest{Batch: pend,
+			Project: func(ctx context.Context, _ journal.AppendResult) error {
+				return s.deps.Registry.SaveSourceState(ctx, next)
+			}})
+		if errors.Is(err, journal.ErrDuplicate) {
+			// Сигнал по этому разрыву уже записан (id реакции — от слота): отметить разрыв.
 			err = s.deps.Registry.SaveSourceState(ctx, next)
+			reps = nil
 		}
 		unlock()
 		if err != nil {

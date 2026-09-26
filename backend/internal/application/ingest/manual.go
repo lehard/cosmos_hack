@@ -20,7 +20,7 @@ const ManualNote = "ручной ввод под сеансом, без подп
 // клиента — повтор формы не удваивает факт), привязка к изделию.
 // «Оператор отметил конец операции в 12:03» хранится как ручной ввод, а не как
 // данные станка (FR-140).
-func (s *Service) SubmitManual(ctx context.Context, cmd platform.Command[ManualInput]) (Result, error) {
+func (s *Service) SubmitManual(ctx context.Context, cmd Cmd[ManualInput]) (Result, error) {
 	if err := s.ready(); err != nil {
 		return Result{}, platform.NotImplemented("ingest.manual.submit")
 	}

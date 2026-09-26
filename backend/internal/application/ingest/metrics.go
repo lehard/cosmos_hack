@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"ant/internal/application/materials"
 	"ant/internal/application/platform"
 	"ant/internal/contracts/errcodes"
 )
@@ -97,9 +98,10 @@ func (s *Service) Stats(ctx context.Context) (Stats, error) {
 		l := slices.Clone(m.latencies)
 		slices.Sort(l)
 		st.LatencyP50MS = l[n/2].Milliseconds()
+		st.LatencyP95MS = l[min(n-1, n*95/100)].Milliseconds()
 	}
 	m.mu.Unlock()
-	open, err := s.deps.Quarantine.Count(ctx, QuarantineOpen)
+	open, err := s.unresolved(ctx)
 	if err != nil {
 		return Stats{}, err
 	}
@@ -113,6 +115,21 @@ func (s *Service) Stats(ctx context.Context) (Stats, error) {
 			CompletenessBP: src.CompletenessBP(), OpenGaps: len(src.Gaps)})
 	}
 	return st, nil
+}
+
+// unresolved — объём карантина: записи, ждущие решения (FR-41).
+func (s *Service) unresolved(ctx context.Context) (int64, error) {
+	a, err := s.deps.Quarantine.Count(ctx, QuarantineOpen)
+	if err != nil {
+		return 0, err
+	}
+	b, err := s.deps.Quarantine.Count(ctx, QuarantineStillInvalid)
+	return a + b, err
+}
+
+// materialsMeta — метаданные файла импорта в хранилище материалов.
+func materialsMeta(n int) materials.Meta {
+	return materials.Meta{ContentType: "text/csv", Size: int64(n), Kind: "attachment"}
 }
 
 // statusOf — HTTP-статус кода по contracts/errors.yaml.

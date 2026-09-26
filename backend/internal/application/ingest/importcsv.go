@@ -38,12 +38,12 @@ import (
 // ImportCSV — FR-141: журнал, загруженный из CSV, даёт те же события, что и
 // данные источника, с пометкой «импорт» (source_kind = import), через тот же
 // конвейер с проверкой входов, дублей и привязки; итог — ingest.import.completed.
-func (s *Service) ImportCSV(ctx context.Context, cmd platform.Command[ImportInput]) (ImportResult, error) {
+func (s *Service) ImportCSV(ctx context.Context, cmd Cmd[ImportInput]) (ImportReport, error) {
 	if err := s.ready(); err != nil {
-		return ImportResult{}, platform.NotImplemented("ingest.import.submit")
+		return ImportReport{}, platform.NotImplemented("ingest.import.submit")
 	}
 	if v, ok := s.replay(cmd.Meta.CommandID); ok && cmd.Meta.CommandID != "" {
-		r := v.(ImportResult)
+		r := v.(ImportReport)
 		r.Receipt.Replayed = true
 		return r, nil
 	}
@@ -56,10 +56,10 @@ func (s *Service) ImportCSV(ctx context.Context, cmd platform.Command[ImportInpu
 	if err != nil {
 		e := platform.Fail(errcodes.ApiValidationFailed, "field", "content", "reason", err.Error())
 		e.Detail = "CSV не разобран: " + err.Error()
-		return ImportResult{}, e
+		return ImportReport{}, e
 	}
 	p := platform.PrincipalFrom(ctx)
-	out := ImportResult{FileDigest: dom.Digest(in.Content)}
+	out := ImportReport{FileDigest: dom.Digest(in.Content)}
 	for i, row := range rows {
 		line := i + 2
 		raw, perr := s.importRow(src, row, in.Defaults, p.PersonID)
@@ -67,8 +67,12 @@ func (s *Service) ImportCSV(ctx context.Context, cmd platform.Command[ImportInpu
 		if perr != nil {
 			r = Result{Outcome: OutcomeQuarantined, Status: 422, Code: errcodes.IngestSchemaViolation, SourceID: src,
 				Detail: fmt.Sprintf("строка %d: %v", line, perr)}
+		} else if in.DryRun {
+			if r, err = s.dryCheck(ctx, raw); err != nil {
+				return ImportReport{}, err
+			}
 		} else if r, err = s.process(ctx, raw, msgCtx{Manual: &manualAuth{Provenance: "personal", Note: "импорт журнала, " + ManualNote}}); err != nil {
-			return ImportResult{}, err
+			return ImportReport{}, err
 		}
 		out.Rows = append(out.Rows, ImportRow{Line: line, Result: r})
 		out.Total++
@@ -81,9 +85,12 @@ func (s *Service) ImportCSV(ctx context.Context, cmd platform.Command[ImportInpu
 			out.Rejected++
 		}
 	}
+	if in.DryRun {
+		return out, nil
+	}
 	now, err := s.deps.DomainClock.Now(ctx)
 	if err != nil {
-		return ImportResult{}, err
+		return ImportReport{}, err
 	}
 	data := map[string]any{"source_id": src, "file_digest": out.FileDigest, "rows_total": out.Total,
 		"rows_accepted": out.Accepted, "rows_duplicate": out.Duplicate, "rows_rejected": out.Rejected}
@@ -96,11 +103,11 @@ func (s *Service) ImportCSV(ctx context.Context, cmd platform.Command[ImportInpu
 	pend, id, err := s.buildService(ctx, serviceRecord{Type: catalog.IngestImportCompleted, Data: data, Stream: "source:" + src,
 		Partition: s.cfg.StagePartition, OccurredAt: now, ReceivedAt: now})
 	if err != nil {
-		return ImportResult{}, err
+		return ImportReport{}, err
 	}
 	ar, err := s.deps.Journal.Append(ctx, journal.AppendRequest{Batch: []journal.Pending{pend}})
 	if err != nil {
-		return ImportResult{}, err
+		return ImportReport{}, err
 	}
 	out.Receipt = platform.Receipt{CommandID: cmd.Meta.CommandID, EventIDs: []string{id}, RecordedAt: now}
 	if len(ar.Seqs) > 0 {
@@ -254,4 +261,37 @@ func parseLocal(v, offset string) (time.Time, error) {
 		}
 	}
 	return time.Time{}, fmt.Errorf("occurred_at %q: ждали RFC 3339 или ГГГГ-ММ-ДД ЧЧ:ММ[:СС]", v)
+}
+
+// dryCheck — проверка строки без записи: схема, пять случаев и дубль по реестру.
+func (s *Service) dryCheck(ctx context.Context, raw []byte) (Result, error) {
+	canon, err := dom.Canonicalize(raw)
+	if err != nil {
+		return Result{Outcome: OutcomeQuarantined, Status: 422, Code: errcodes.IngestCanonicalFormViolation, Detail: err.Error()}, nil
+	}
+	h := parseHeader(canon)
+	r := Result{SourceID: h.SourceID, EventID: h.EventID, EventType: h.EventType, Status: 202, Outcome: OutcomeAccepted}
+	d, err := s.checkContract(canon, h)
+	if err != nil {
+		return Result{}, err
+	}
+	if d.Outcome == dom.OutcomeQuarantined {
+		r.Outcome, r.Status, r.Code, r.Field, r.Detail = OutcomeQuarantined, statusOf(d.Code, 422), d.Code, d.Field, d.Detail
+		return r, nil
+	}
+	fp, err := dom.ContentFingerprint(canon)
+	if err != nil {
+		return Result{}, err
+	}
+	prior, err := s.deps.Registry.Seen(ctx, h.SourceID, h.EventID)
+	if err != nil {
+		return Result{}, err
+	}
+	switch dom.CheckRepeat(prior, fp) {
+	case dom.RepeatDuplicate:
+		r.Outcome, r.Status, r.Seq = OutcomeDuplicate, 200, prior.Seq
+	case dom.RepeatConflict:
+		r.Outcome, r.Status, r.Code = OutcomeConflict, 409, errcodes.IngestDuplicateConflict
+	}
+	return r, nil
 }

@@ -19,8 +19,8 @@ func view(r QuarantineRecord) QuarantineView {
 		MaterialAddress: r.MaterialAddress, Status: r.Status, ReceivedAt: r.ReceivedAt, ResolvedBy: r.ResolvedBy}
 }
 
-// Quarantine — записи карантина для администратора (FR-30).
-func (s *Service) Quarantine(ctx context.Context, f QuarantineFilter) ([]QuarantineView, error) {
+// QuarantineRecords — записи карантина для администратора (FR-30).
+func (s *Service) QuarantineRecords(ctx context.Context, f QuarantineQuery) ([]QuarantineView, error) {
 	if err := s.ready(); err != nil {
 		return nil, platform.NotImplemented("ingest.quarantine.list")
 	}

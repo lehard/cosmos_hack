@@ -3,6 +3,7 @@ package ingest
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -139,6 +140,7 @@ func (s *Service) process(ctx context.Context, raw []byte, mc msgCtx) (Result, e
 	}
 	h := parseHeader(canon)
 	q.h = h
+	q.keyRef = first(f.KeyRefs)
 
 	// 2. Подпись источника (FR-26).
 	var auth authResult
@@ -205,6 +207,10 @@ func (s *Service) process(ctx context.Context, raw []byte, mc msgCtx) (Result, e
 	}
 	state.SourceID = h.SourceID
 	state2, obs := dom.ObserveSeq(state, h.SourceSeq, received)
+	state2.SourceKind, state2.LastReceivedAt = h.SourceKind, received
+	if len(h.Integrity.Signers) > 0 {
+		state2.KeyRef = h.Integrity.Signers[0]
+	}
 
 	// 6. Флаги: UNKNOWN(значение), часы, последовательность (FR-29, FR-33, AD-5).
 	var flags []FlagView
@@ -213,6 +219,10 @@ func (s *Service) process(ctx context.Context, raw []byte, mc msgCtx) (Result, e
 	}
 	for _, cf := range dom.CheckClock(occurred, received, mc.SentAt, s.cfg.Clock) {
 		flags = append(flags, FlagView{Flag: string(cf.Flag), SkewMS: cf.SkewMS})
+	}
+	if mc.SentAt != nil {
+		// FR-33: сдвиг часов оценивается по каждому источнику.
+		state2.SkewMS, state2.HasSkew = mc.SentAt.Sub(received).Milliseconds(), true
 	}
 	if obs.Kind == dom.SeqViolation {
 		flags = append(flags, FlagView{Flag: string(dom.FlagSequenceViolation), Field: "/source_seq", RawValue: fmt.Sprint(h.SourceSeq)})
@@ -272,17 +282,33 @@ func (s *Service) process(ctx context.Context, raw []byte, mc msgCtx) (Result, e
 		}
 		pend = append(pend, p)
 	}
-	ar, err := s.deps.Journal.Append(ctx, journal.AppendRequest{Batch: pend})
+	seen := dom.Seen{SourceID: h.SourceID, EventID: h.EventID, Fingerprint: fp, SourceSeq: h.SourceSeq, SignatureVerified: auth.Verified}
+	// Реестр приёма пишется в транзакции журнала (AppendRequest.Project, AD-45):
+	// сбой между записью факта и реестром невозможен — повтор после сбоя
+	// опознаётся как дубль, а не учитывается дважды (FR-31, FR-39).
+	ar, err := s.deps.Journal.Append(ctx, journal.AppendRequest{Batch: pend, Project: func(ctx context.Context, res journal.AppendResult) error {
+		if len(res.Seqs) > 0 {
+			seen.Seq = res.Seqs[0]
+		}
+		return s.deps.Registry.Commit(ctx, seen, state2)
+	}})
+	if errors.Is(err, journal.ErrDuplicate) {
+		// event_id уже в журнале (гонка копий api или сбой между записью и
+		// реестром): журнал не пишет второй раз — это повтор (AD-7).
+		seen.Seq = 0
+		if err := s.deps.Registry.Commit(ctx, seen, state2); err != nil {
+			return Result{}, err
+		}
+		return s.finish(start, 0, Result{Outcome: OutcomeDuplicate, Status: 200, SourceID: h.SourceID, EventID: h.EventID,
+			EventType: h.EventType, SourceSeq: h.SourceSeq, SignatureVerified: auth.Verified, SignatureNote: auth.Note, Replayed: true,
+			Detail: "повтор: запись уже есть в журнале"}, nil)
+	}
 	if err != nil {
 		return Result{}, fmt.Errorf("журнал: %w", err)
 	}
 	seq := int64(0)
 	if len(ar.Seqs) > 0 {
 		seq = ar.Seqs[0]
-	}
-	if err := s.deps.Registry.Commit(ctx, dom.Seen{SourceID: h.SourceID, EventID: h.EventID, Fingerprint: fp, Seq: seq,
-		SourceSeq: h.SourceSeq, SignatureVerified: auth.Verified}, state2); err != nil {
-		return Result{}, err
 	}
 	s.gauge(MetricCompleteness, state2.CompletenessBP(), "source_id", h.SourceID)
 
@@ -382,6 +408,7 @@ type quarantineIn struct {
 	h        header
 	dec      dom.Decision
 	authed   bool
+	keyRef   string
 	// sig, conflict — событие безопасности вместе с карантином.
 	sig      *SignatureFailure
 	conflict *IdempotencyConflict
@@ -409,7 +436,8 @@ func (s *Service) quarantineLocked(ctx context.Context, q quarantineIn) (Result,
 		src = "unknown"
 	}
 	res := Result{Outcome: OutcomeQuarantined, Status: statusOf(code, 422), Code: code, Field: q.dec.Field, Value: q.dec.Value,
-		Detail: q.dec.Detail, SourceID: src, EventID: q.h.EventID, EventType: q.h.EventType, SourceSeq: q.h.SourceSeq}
+		Detail: q.dec.Detail, SourceID: src, EventID: q.h.EventID, EventType: q.h.EventType, SourceSeq: q.h.SourceSeq,
+		SchemaVersion: q.h.SchemaVersion, KeyRef: q.keyRef}
 	if q.conflict != nil {
 		res.Outcome = OutcomeConflict
 	}
@@ -474,19 +502,8 @@ func (s *Service) quarantineLocked(ctx context.Context, q quarantineIn) (Result,
 			s.deps.Telemetry.Counter(MetricSecuritySuppressed, 1, "source_id", src)
 		}
 	}
-	ar, err := s.deps.Journal.Append(ctx, req)
-	if err != nil {
-		return Result{}, fmt.Errorf("журнал: %w", err)
-	}
-	if len(ar.Seqs) > 0 {
-		rec.JournalSeq = ar.Seqs[0]
-	}
-	if len(ar.CARefs) > 0 {
-		res.Detail += " (" + ar.CARefs[0] + ")"
-	}
-	if err := s.deps.Quarantine.Put(ctx, rec); err != nil {
-		return Result{}, err
-	}
+	// Номер подлинного источника учитывается и у сообщения в карантине (AD-7).
+	var seqState *dom.SourceState
 	if q.authed && !q.seqCounted && q.h.SourceSeq > 0 && src != "unknown" {
 		st, err := s.deps.Registry.SourceState(ctx, src)
 		if err != nil {
@@ -494,12 +511,31 @@ func (s *Service) quarantineLocked(ctx context.Context, q quarantineIn) (Result,
 		}
 		st.SourceID = src
 		if st2, obs := dom.ObserveSeq(st, q.h.SourceSeq, q.received); obs.Kind != dom.SeqViolation {
-			if err := s.deps.Registry.SaveSourceState(ctx, st2); err != nil {
-				return Result{}, err
-			}
+			seqState = &st2
 		}
 	}
-	if n, err := s.deps.Quarantine.Count(ctx, QuarantineOpen); err == nil {
+	// Запись карантина и учёт номера — в транзакции журнала (AD-45).
+	req.Project = func(ctx context.Context, r journal.AppendResult) error {
+		if len(r.Seqs) > 0 {
+			rec.JournalSeq = r.Seqs[0]
+		}
+		if err := s.deps.Quarantine.Put(ctx, rec); err != nil {
+			return err
+		}
+		if seqState != nil {
+			return s.deps.Registry.SaveSourceState(ctx, *seqState)
+		}
+		return nil
+	}
+	ar, err := s.deps.Journal.Append(ctx, req)
+	if err != nil {
+		return Result{}, fmt.Errorf("журнал: %w", err)
+	}
+	if len(ar.CARefs) > 0 {
+		res.CARef = ar.CARefs[0]
+		res.Detail += " (" + ar.CARefs[0] + ")"
+	}
+	if n, err := s.unresolved(ctx); err == nil {
 		s.gauge(MetricQuarantineOpen, n)
 	}
 	return res, nil

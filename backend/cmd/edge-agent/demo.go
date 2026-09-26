@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -17,8 +18,24 @@ import (
 
 	app "ant/internal/application/ingest"
 	"ant/internal/application/ingest/inmem"
+	"ant/internal/infrastructure/transport/httpapi"
 	ingesthttp "ant/internal/infrastructure/transport/ingest"
 )
+
+// coreHandler — HTTP ядра для самопоказа: те же операции Huma модуля ingest
+// (ingest.batch.submit, ingest.event.submit …), что в роли api, без прав.
+func coreHandler(svc *app.Service) http.Handler {
+	mux := http.NewServeMux()
+	api := httpapi.New(mux, httpapi.Config{Mode: "live"})
+	ingesthttp.Register(api, svc, svc)
+	return mux
+}
+
+// unsignedDSSE — конверт без подписей вокруг события (профиль demo).
+func unsignedDSSE(ev []byte) []byte {
+	b, _ := json.Marshal(map[string]any{"payloadType": PayloadTypeEvent, "payload": base64.StdEncoding.EncodeToString(ev), "signatures": []any{}})
+	return b
+}
 
 // DemoSummary — итог самопоказа (для теста и защиты).
 type DemoSummary struct {
@@ -84,13 +101,15 @@ func runDemo(ctx context.Context, out io.Writer, examplesDir, stateDir string) (
 	cfg := app.DefaultConfig()
 	cfg.Profile = "demo"
 	core := inmem.NewCore(cfg, nil, nil)
-	l := &link{inner: ingesthttp.RawHandler(core.Service)}
+	l := &link{inner: coreHandler(core.Service)}
 	l.mode.Store("up")
 	srv := httptest.NewServer(l)
 	defer srv.Close()
 	p := func(format string, a ...any) { _, _ = fmt.Fprintf(out, format+"\n", a...) }
-	post := func(body []byte) (int, map[string]any, error) {
-		req, _ := http.NewRequestWithContext(ctx, http.MethodPost, srv.URL+ingesthttp.PathEvents, bytes.NewReader(body))
+	post := func(ev []byte) (int, map[string]any, error) {
+		body, _ := json.Marshal(map[string]json.RawMessage{"envelope": unsignedDSSE(ev)})
+		req, _ := http.NewRequestWithContext(ctx, http.MethodPost, srv.URL+"/api/v1/ingest/events", bytes.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
 		resp, err := srv.Client().Do(req)
 		if err != nil {
 			return 0, nil, err
@@ -126,26 +145,24 @@ func runDemo(ctx context.Context, out io.Writer, examplesDir, stateDir string) (
 		if err != nil {
 			return sum, err
 		}
-		outcome, code := str(m["outcome"]), str(m["code"])
-		if outcome == "" { // problem+json
-			outcome = "quarantined"
-			if code == "ingest.duplicate_conflict" {
-				outcome = "conflict"
-			}
-		}
+		outcome, code := str(m["status"]), str(m["code"])
 		extra := ""
-		if q := str(m["quarantine_id"]); q != "" {
-			extra = " → карантин " + q
+		if outcome == "" { // problem+json: отказ с кодом и карантин
+			outcome = "quarantined"
+			if pm, ok := m["params"].(map[string]any); ok {
+				extra = " → карантин " + str(pm["quarantine_id"])
+			}
+			extra += " — " + str(m["detail"])
 		}
 		if fl, ok := m["flags"].([]any); ok && len(fl) > 0 {
-			extra = fmt.Sprintf(" → флаг %v", fl[0].(map[string]any)["raw_value"])
+			extra = fmt.Sprintf(" → флаг %v", fl)
 		}
-		if n := str(m["signature_note"]); n != "" {
-			extra += " (" + n + ")"
+		if c, ok := m["signature_checked"].(bool); ok && !c && outcome == "accepted" {
+			extra += " (" + app.SignatureNotVerified + ")"
 		}
 		p("  %-36s %-58s HTTP %d  %s %s%s", filepath.Base(f), ex.Case, st, outcome, code, extra)
 		sum.Cases[filepath.Base(f)] = strings.TrimSpace(outcome + " " + code)
-		if outcome == "accepted" {
+		if outcome == "accepted" && code == "" {
 			accepted, acceptedSeq = ex.Message, m["seq"]
 		}
 	}
@@ -159,7 +176,7 @@ func runDemo(ctx context.Context, out io.Writer, examplesDir, stateDir string) (
 			return sum, err
 		}
 		seqs = append(seqs, m["seq"])
-		p("  HTTP %d  %s  seq=%v  replayed=%v", st, str(m["outcome"]), m["seq"], m["replayed"])
+		p("  HTTP %d  %s  seq=%v", st, str(m["status"]), m["seq"])
 	}
 	sum.JournalAfter = len(core.Journal.Main())
 	sum.RepeatSeqSame = len(slices.Compact(slices.Clone(seqs))) == 1
@@ -177,7 +194,7 @@ func runDemo(ctx context.Context, out io.Writer, examplesDir, stateDir string) (
 		return sum, err
 	}
 	sum.ConflictCA, sum.ConflictSecEvt = len(core.Journal.CA()), core.Journal.Count("security.idempotency.conflict")
-	p("  HTTP %d  %s  %s", code, str(m["code"]), str(m["detail"]))
+	p("  HTTP %d  %s  %s (%s)", code, str(m["code"]), str(m["detail"]), str(m["ca_ref"]))
 	p("  событий безопасности: %d; записей журнала критических действий: %d; исходное не перезаписано", sum.ConflictSecEvt, sum.ConflictCA)
 
 	p("\n== Недоступность и восстановление (FR-39): edge-агент edge-weld-7")

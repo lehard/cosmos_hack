@@ -55,6 +55,9 @@ type Config struct {
 	SecurityPerMinute int
 	// DomainBuild — хеш доменного пакета для записей журнала (AD-9).
 	DomainBuild string
+	// ScenarioClock — журнал в режиме часов scenario (AD-37): recorded_at записей
+	// приёма — доменное «сейчас»; иначе пусто — Append ставит committed_at.
+	ScenarioClock bool
 	// GatewaySource — source_id служебных записей приёма; GatewayKey — ключ шлюза.
 	GatewaySource string
 	GatewayKey    string
@@ -68,7 +71,7 @@ func DefaultConfig() Config {
 		StagePartition:    16,
 		Clock:             dom.DefaultClockPolicy,
 		LossWindow:        time.Minute,
-		MaxBatch:          500,
+		MaxBatch:          1000,
 		SecurityPerMinute: 10,
 		DomainBuild:       dom.Digest([]byte("ant/domain:dev")),
 		GatewaySource:     "ant-ingest",
@@ -110,6 +113,7 @@ type Service struct {
 	stats   *metrics
 	cmdMu   sync.Mutex
 	cmds    map[string]any // command_id → прежний ответ (AD-7)
+	started time.Time
 }
 
 // Option — настройка Service.
@@ -135,6 +139,9 @@ func NewService(opts ...Option) *Service {
 		s.deps.Security = JournalSecurityBus{Gateway: s}
 	}
 	s.limiter = newRateLimiter(s.cfg.SecurityPerMinute)
+	if s.deps.InfraClock != nil {
+		s.started = s.deps.InfraClock.Now()
+	}
 	return s
 }
 

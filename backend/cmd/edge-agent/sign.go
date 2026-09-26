@@ -28,12 +28,16 @@ type Signer interface {
 	Signs() bool
 }
 
-// Unsigned — без ключа (профиль demo до эпика 05): ядро примет событие с
-// пометкой «подпись не проверялась»; в профиле prod — отказ с кодом.
+// Unsigned — без ключа (профиль demo до эпика 05): конверт DSSE без подписей;
+// ядро примет событие с пометкой «подпись не проверялась», в профиле prod —
+// отказ с кодом ingest.signature_invalid.
 type Unsigned struct{ Ref string }
 
-// Sign — событие как есть.
-func (u Unsigned) Sign(canon []byte) ([]byte, error) { return canon, nil }
+// Sign — конверт DSSE без подписей.
+func (u Unsigned) Sign(canon []byte) ([]byte, error) {
+	return json.Marshal(map[string]any{"payloadType": PayloadTypeEvent,
+		"payload": base64.StdEncoding.EncodeToString(canon), "signatures": []any{}})
+}
 
 // KeyRef — ожидаемый ключ устройства.
 func (u Unsigned) KeyRef() string { return u.Ref }

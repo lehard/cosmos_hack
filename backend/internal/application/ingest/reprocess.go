@@ -40,11 +40,11 @@ func commandBlock(m platform.CommandMeta, stream string) map[string]any {
 	return b
 }
 
-// Reprocess — FR-30: администратор повторно обрабатывает сообщение карантина
+// ReprocessCommand — FR-30: администратор повторно обрабатывает сообщение карантина
 // (например, после появления схемы и повышателя новой версии) или закрывает
 // его. Итог — решение ingest.message.reprocessed со ссылкой на запись карантина
 // и, если принято, на принятую запись.
-func (s *Service) Reprocess(ctx context.Context, cmd platform.Command[ReprocessInput]) (ReprocessResult, error) {
+func (s *Service) ReprocessCommand(ctx context.Context, cmd Cmd[ReprocessInput]) (ReprocessResult, error) {
 	if err := s.ready(); err != nil {
 		return ReprocessResult{}, platform.NotImplemented("ingest.quarantine.reprocess")
 	}
@@ -63,7 +63,7 @@ func (s *Service) Reprocess(ctx context.Context, cmd platform.Command[ReprocessI
 	if err != nil {
 		return ReprocessResult{}, err
 	}
-	if rec.Status != QuarantineOpen {
+	if !rec.Status.Unresolved() {
 		e := platform.Fail(errcodes.ApiValidationFailed, "field", "quarantine_id", "reason", "запись уже обработана")
 		e.Detail = "Запись карантина уже обработана: " + string(rec.Status)
 		return ReprocessResult{}, e
@@ -82,9 +82,9 @@ func (s *Service) Reprocess(ctx context.Context, cmd platform.Command[ReprocessI
 		out.Result = r
 		switch r.Outcome {
 		case OutcomeAccepted, OutcomeAcceptedWithFlag, OutcomeDuplicate:
-			out.Outcome, status = "accepted", QuarantineReprocessed
+			out.Outcome, status = "accepted", QuarantineAccepted
 		default:
-			out.Outcome, status = "still_invalid", QuarantineOpen
+			out.Outcome, status = "still_invalid", QuarantineStillInvalid
 		}
 	}
 	now, err := s.deps.DomainClock.Now(ctx)
@@ -106,14 +106,12 @@ func (s *Service) Reprocess(ctx context.Context, cmd platform.Command[ReprocessI
 	if err != nil {
 		return ReprocessResult{}, err
 	}
-	ar, err := s.deps.Journal.Append(ctx, journal.AppendRequest{Batch: []journal.Pending{pend}})
+	ar, err := s.deps.Journal.Append(ctx, journal.AppendRequest{Batch: []journal.Pending{pend},
+		Project: func(ctx context.Context, _ journal.AppendResult) error {
+			return s.deps.Quarantine.Resolve(ctx, rec.ID, status, id)
+		}})
 	if err != nil {
 		return ReprocessResult{}, err
-	}
-	if status != QuarantineOpen {
-		if err := s.deps.Quarantine.Resolve(ctx, rec.ID, status, id); err != nil {
-			return ReprocessResult{}, err
-		}
 	}
 	out.Receipt = platform.Receipt{CommandID: cmd.Meta.CommandID, EventIDs: []string{id}, RecordedAt: now}
 	if len(ar.Seqs) > 0 {

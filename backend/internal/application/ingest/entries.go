@@ -88,11 +88,13 @@ func (s *Service) entry(m entryMeta, envelope []byte) journal.Pending {
 		Partition:       m.Partition,
 		OccurredAt:      ts(m.OccurredAt),
 		ReceivedAt:      ts(m.ReceivedAt),
-		RecordedAt:      ts(m.ReceivedAt),
 		CorrelationID:   m.CorrelationID,
 		CausationID:     jc.JournalEntryCausationID(strp(m.CausationID)),
 		ProvenanceClass: jc.JournalEntryProvenanceClass(m.Provenance),
 		DomainBuild:     s.cfg.DomainBuild,
+	}
+	if s.cfg.ScenarioClock {
+		e.RecordedAt = ts(m.ReceivedAt)
 	}
 	return journal.Pending{Entry: e, Envelope: envelope}
 }

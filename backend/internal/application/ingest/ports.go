@@ -30,12 +30,22 @@ type Registry interface {
 // QuarantineStatus — состояние записи карантина.
 type QuarantineStatus string
 
-// Состояния записи карантина (FR-30).
+// Состояния записи карантина (FR-30; перечисление state операций ingest.quarantine.*).
 const (
-	QuarantineOpen        QuarantineStatus = "open"
-	QuarantineReprocessed QuarantineStatus = "reprocessed"
-	QuarantineDiscarded   QuarantineStatus = "discarded"
+	// QuarantineOpen — ждёт решения администратора.
+	QuarantineOpen QuarantineStatus = "open"
+	// QuarantineAccepted — переобработано и принято.
+	QuarantineAccepted QuarantineStatus = "accepted"
+	// QuarantineStillInvalid — переобработано, но по-прежнему не проходит (можно повторить).
+	QuarantineStillInvalid QuarantineStatus = "still_invalid"
+	// QuarantineDiscarded — отброшено администратором с причиной.
+	QuarantineDiscarded QuarantineStatus = "discarded"
 )
+
+// Unresolved — запись ещё ждёт решения (открыта или по-прежнему невалидна).
+func (s QuarantineStatus) Unresolved() bool {
+	return s == QuarantineOpen || s == QuarantineStillInvalid
+}
 
 // QuarantineRecord — сообщение в карантине (FR-30, AD-2): содержимое — в
 // MaterialStore по адресу H(байты), здесь — метаданные и ссылка на служебную
@@ -63,12 +73,14 @@ type QuarantineRecord struct {
 	ResolvedBy string
 }
 
-// QuarantineFilter — отбор карантина.
-type QuarantineFilter struct {
+// QuarantineQuery — отбор карантина в хранилище.
+type QuarantineQuery struct {
 	Status   QuarantineStatus
 	SourceID string
 	Code     errcodes.Code
-	Limit    int
+	// Offset, Limit — страница (новые сначала).
+	Offset int
+	Limit  int
 }
 
 // QuarantineStore — ведомый порт хранилища карантина (FR-30): повтор тех же
@@ -81,9 +93,11 @@ type QuarantineStore interface {
 	// Get — запись по ID; ErrNotFound — нет.
 	Get(ctx context.Context, id string) (QuarantineRecord, error)
 	// List — записи по фильтру, новые сначала.
-	List(ctx context.Context, f QuarantineFilter) ([]QuarantineRecord, error)
+	List(ctx context.Context, f QuarantineQuery) ([]QuarantineRecord, error)
 	// Count — число записей в состоянии (пусто — все).
 	Count(ctx context.Context, status QuarantineStatus) (int64, error)
+	// CountBySource — число нерешённых записей по источникам.
+	CountBySource(ctx context.Context) (map[string]int64, error)
 	// Resolve — отметить итог переобработки.
 	Resolve(ctx context.Context, id string, status QuarantineStatus, resolvedBy string) error
 }

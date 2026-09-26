@@ -16,7 +16,6 @@ import (
 	app "ant/internal/application/ingest"
 	"ant/internal/application/ingest/inmem"
 	"ant/internal/contracts/procs"
-	ingesthttp "ant/internal/infrastructure/transport/ingest"
 )
 
 // Самопоказ как проверка: пять случаев FR-29, повтор, конфликт и
@@ -32,7 +31,7 @@ func TestDemo(t *testing.T) {
 		"01-unknown-version.json":              "quarantined ingest.unknown_schema_version",
 		"02-new-optional-field.json":           "accepted",
 		"03-missing-required-field.json":       "quarantined ingest.missing_required_field",
-		"04a-unknown-enum-value.json":          "accepted_with_flag ingest.unknown_enum_value",
+		"04a-unknown-enum-value.json":          "accepted ingest.unknown_enum_value",
 		"04b-unknown-enum-value-critical.json": "quarantined ingest.unknown_enum_value_critical",
 		"05-incompatible-change.json":          "quarantined ingest.missing_required_field",
 	}
@@ -58,7 +57,7 @@ func TestAgentRestartKeepsBufferAndSeq(t *testing.T) {
 	dir := t.TempDir()
 	cfg := app.DefaultConfig()
 	core := inmem.NewCore(cfg, nil, nil)
-	srv := httptest.NewServer(ingesthttp.RawHandler(core.Service))
+	srv := httptest.NewServer(coreHandler(core.Service))
 	defer srv.Close()
 	down := Config{SourceID: "edge-cnc-1", CoreURL: "http://127.0.0.1:1", StateDir: dir, SourceKind: "machine", Reliability: "high"}
 	a, err := NewAgent(down, Unsigned{Ref: "device-edge-cnc-1@1"}, nil, nil, nil)
@@ -168,7 +167,7 @@ func TestGostSignerMatchesVectors(t *testing.T) {
 func TestExtractorAndLocalHandler(t *testing.T) {
 	cfg := app.DefaultConfig()
 	core := inmem.NewCore(cfg, nil, nil)
-	srv := httptest.NewServer(ingesthttp.RawHandler(core.Service))
+	srv := httptest.NewServer(coreHandler(core.Service))
 	defer srv.Close()
 	a, _ := NewAgent(Config{SourceID: "edge-weld-3", CoreURL: srv.URL, StateDir: t.TempDir()}, Unsigned{Ref: "device-edge-weld-3@1"}, srv.Client(), nil, nil)
 	h := LocalHandler(a, NewExtractor())

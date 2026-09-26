@@ -79,6 +79,16 @@ func Register(api *httpapi.API, q app.Queries, c app.Commands, gate *app.Gate) {
 			return httpapi.OK(v), err
 		})
 
+	httpapi.Read(api, httpapi.Get("/workplaces", "Посты",
+		"Панель «Посты» стола руководителя и участок мастера (PRD §3a, FR-6, FR-81): участок — кто назначен — на месте ли (СКУД, ключ) — текущая деталь."),
+		platform.Action{ID: "access.workplace.list", Owner: "access", Subject: "workplace"},
+		func(ctx context.Context, in *struct {
+			Workshop string `query:"workshop" maxLength:"128" doc:"Цех; пусто — вся область роли."`
+			httpapi.MomentQuery
+		}, m platform.Moment) (app.PostList, error) {
+			return q.Workplaces(ctx, in.Workshop, m)
+		})
+
 	type permissionsIn struct {
 		Subject platform.EntityKind `query:"subject" doc:"Вид объекта."`
 		ID      string              `query:"id" maxLength:"128" doc:"Идентификатор объекта."`

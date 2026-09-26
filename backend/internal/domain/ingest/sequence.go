@@ -17,6 +17,15 @@ type SourceState struct {
 	Received int64
 	// Gaps — незакрытые разрывы в порядке номеров.
 	Gaps []Gap
+	// SourceKind, KeyRef — вид источника и ключ из последнего принятого сообщения.
+	SourceKind string
+	KeyRef     string
+	// LastReceivedAt — когда принято последнее сообщение.
+	LastReceivedAt time.Time
+	// SkewMS — последняя оценка расхождения часов источника (часы источника
+	// минус часы ядра, мс; FR-33); HasSkew — оценка есть (пачка несла sent_at).
+	SkewMS  int64
+	HasSkew bool
 }
 
 // Gap — разрыв номеров [From, To], открытый приёмом в OpenedAt.

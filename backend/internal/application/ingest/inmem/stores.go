@@ -120,13 +120,18 @@ func (q *Quarantine) Get(_ context.Context, id string) (app.QuarantineRecord, er
 }
 
 // List — по фильтру, новые сначала.
-func (q *Quarantine) List(_ context.Context, f app.QuarantineFilter) ([]app.QuarantineRecord, error) {
+func (q *Quarantine) List(_ context.Context, f app.QuarantineQuery) ([]app.QuarantineRecord, error) {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 	var out []app.QuarantineRecord
+	skip := f.Offset
 	for i := len(q.recs) - 1; i >= 0; i-- {
 		r := q.recs[i]
 		if (f.Status != "" && r.Status != f.Status) || (f.SourceID != "" && r.SourceID != f.SourceID) || (f.Code != "" && r.Code != f.Code) {
+			continue
+		}
+		if skip > 0 {
+			skip--
 			continue
 		}
 		out = append(out, r)
@@ -148,6 +153,19 @@ func (q *Quarantine) Count(_ context.Context, st app.QuarantineStatus) (int64, e
 		}
 	}
 	return n, nil
+}
+
+// CountBySource — нерешённые записи по источникам.
+func (q *Quarantine) CountBySource(context.Context) (map[string]int64, error) {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	out := map[string]int64{}
+	for _, r := range q.recs {
+		if r.Status.Unresolved() {
+			out[r.SourceID]++
+		}
+	}
+	return out, nil
 }
 
 // Resolve — итог переобработки.

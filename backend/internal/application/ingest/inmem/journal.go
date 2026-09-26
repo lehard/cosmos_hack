@@ -37,7 +37,7 @@ func NewJournal(now func() time.Time) *Journal {
 }
 
 // Append — пачка основной цепочки и записи CA одной «транзакцией».
-func (j *Journal) Append(_ context.Context, rq journal.AppendRequest) (journal.AppendResult, error) {
+func (j *Journal) Append(ctx context.Context, rq journal.AppendRequest) (journal.AppendResult, error) {
 	j.mu.Lock()
 	defer j.mu.Unlock()
 	if err := j.FailNext; err != nil {
@@ -46,11 +46,24 @@ func (j *Journal) Append(_ context.Context, rq journal.AppendRequest) (journal.A
 	}
 	t := j.now().UTC()
 	var res journal.AppendResult
+	seen := map[string]bool{}
+	for _, s := range j.main {
+		seen[s.Entry.EventID] = true
+	}
+	for _, p := range rq.Batch {
+		if seen[p.Entry.EventID] {
+			return journal.AppendResult{}, journal.ErrDuplicate
+		}
+		seen[p.Entry.EventID] = true
+	}
 	for _, p := range rq.Batch {
 		e := p.Entry
 		e.Seq = len(j.main) + 1
 		e.Chain = jc.JournalEntryChainMain
 		e.CommittedAt = t.Format("2006-01-02T15:04:05.000Z")
+		if e.RecordedAt == "" {
+			e.RecordedAt = e.CommittedAt
+		}
 		j.main = append(j.main, Stored{Entry: e, Envelope: slices.Clone(p.Envelope)})
 		res.Seqs = append(res.Seqs, int64(e.Seq))
 	}
@@ -63,16 +76,30 @@ func (j *Journal) Append(_ context.Context, rq journal.AppendRequest) (journal.A
 		res.CARefs = append(res.CARefs, fmt.Sprintf("CA-%d", e.Seq))
 	}
 	res.Committed = t
+	if rq.Project != nil {
+		// Выход потребителя — в той же «транзакции»: ошибка откатывает пачку.
+		if err := rq.Project(ctx, res); err != nil {
+			j.main = j.main[:len(j.main)-len(rq.Batch)]
+			j.ca = j.ca[:len(j.ca)-len(rq.Critical)]
+			return journal.AppendResult{}, err
+		}
+	}
 	return res, nil
 }
 
-// Read — записи потока (пусто — все) после AfterSeq.
+// Read — записи цепочки по фильтру потока, партиции и типа после AfterSeq
+// (без осей момента — их проверяет журнал эпика 04).
 func (j *Journal) Read(_ context.Context, q journal.ReadQuery) ([]jc.JournalEntry, error) {
 	j.mu.Lock()
 	defer j.mu.Unlock()
+	src := j.main
+	if q.Chain == string(jc.JournalEntryChainCa) {
+		src = j.ca
+	}
 	var out []jc.JournalEntry
-	for _, s := range j.main {
-		if int64(s.Entry.Seq) <= q.AfterSeq || (q.Stream != "" && s.Entry.Stream != q.Stream) {
+	for _, s := range src {
+		if int64(s.Entry.Seq) <= q.AfterSeq || (q.Stream != "" && s.Entry.Stream != q.Stream) ||
+			(q.Partition != nil && s.Entry.Partition != *q.Partition) || (q.EventType != "" && s.Entry.EventType != q.EventType) {
 			continue
 		}
 		out = append(out, s.Entry)
