@@ -5,7 +5,9 @@
  * или отклонить сигнал», «решить, что делать с изделием», «принять на точке
  * предъявления»), у группы счётчик и число просроченных. Порядок — по риску или
  * по сроку — считает сервер: группы идут в порядке первой своей строки, строки
- * внутри — как прислал сервер. Щелчок или Enter по строке — открыть запись в
+ * внутри — как прислал сервер; «пересмотреть решение — пришли новые данные» —
+ * всегда первой: изделие может уйти дальше по маршруту на прежнем решении.
+ * В строке — суть (`reason`: вид дефекта и место), иначе заголовок сервера. Щелчок или Enter по строке — открыть запись в
  * правом окне (Д-70). Работа с клавиатуры: ↑/↓ — соседняя строка сквозь группы.
  */
 import { computed } from 'vue'
@@ -31,7 +33,7 @@ const emit = defineEmits<{
   select: [row: DecisionQueueRow]
   'update:sort': [sort: QueueSort]
 }>()
-const { t } = useI18n()
+const { t, d } = useI18n()
 
 const items = computed(() =>
   props.rows.map((row) => {
@@ -51,7 +53,8 @@ const groups = computed(() => {
     g.items.push(it)
     map.set(it.row.kind, g)
   }
-  return [...map.values()].map((g) => ({ ...g, overdue: g.items.filter((x) => x.overdue).length }))
+  const list = [...map.values()].map((g) => ({ ...g, overdue: g.items.filter((x) => x.overdue).length }))
+  return [...list.filter((g) => g.kind === 'review'), ...list.filter((g) => g.kind !== 'review')]
 })
 /** Строки в порядке показа — для ↑/↓ сквозь группы. */
 const flat = computed(() => groups.value.flatMap((g) => g.items))
@@ -96,12 +99,16 @@ function move(delta: number): void {
           >
             <div class="line head">
               <strong class="item">{{ row.item_label }}</strong>
-              <span class="title ant-ellipsis" :title="row.title">{{ row.title }}</span>
+              <span class="title ant-ellipsis" :title="row.reason ?? row.title" data-testid="row-title">{{ row.reason ?? row.title }}</span>
               <span v-if="due" class="due" data-testid="due">{{ due }}</span>
             </div>
             <div class="line meta">
               <span>{{ t('common.words.severity') }}: {{ codeText(SEVERITY_TEXT, row.severity, t) }}</span>
               <span v-if="row.presentation_no">{{ t('decisions.gate.presentationNumber', { n: row.presentation_no }) }}</span>
+              <span v-if="row.review_since" data-testid="review-since">{{ t('widgets.decisionQueue.reviewSince', { time: d(new Date(row.review_since), 'dateTime') }) }}</span>
+            </div>
+            <div v-if="row.reason && row.kind === 'review'" class="line meta">
+              <span class="ant-clamp-2" :title="row.title">{{ row.title }}</span>
             </div>
           </li>
         </ol>

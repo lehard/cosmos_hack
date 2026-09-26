@@ -54,6 +54,19 @@ describe('очередь «Ждут моего решения»', () => {
     expect(w.findAll('li.row').map((r) => r.attributes('data-key'))).toEqual(['presentation:PR-5', 'presentation:PR-6', 'signal:SIG-77'])
   })
 
+  it('пересмотр после новых данных — первой группой; в строке суть (reason), а не общий заголовок', () => {
+    const [a, b, c] = queueRows()
+    const review = { ...c!, kind: 'review' as const, object_id: 'REV-1', title: 'Решение ЗТ-3 принято до новых данных — пересмотрите: пришёл журнал', review_since: at('10:20'), reason: 'Ток выше уставки' }
+    const w = mountView({ rows: [a!, { ...b!, reason: 'Трещина · кромка' }, review] })
+    expect(w.findAll('section.group').map((g) => g.attributes('data-group'))).toEqual(['review', 'signal', 'isolated'])
+    expect(w.find('section.group .group-title').text()).toContain('Пересмотреть решение — пришли новые данные')
+    const rows = w.findAll('li.row')
+    expect(rows[0]!.find('[data-testid="row-title"]').text()).toBe('Ток выше уставки')
+    expect(rows[0]!.find('[data-testid="review-since"]').text()).toContain('новые данные с')
+    expect(rows[0]!.text()).toContain('пришёл журнал')
+    expect(rows[2]!.find('[data-testid="row-title"]').text()).toBe('Трещина · кромка')
+  })
+
   it('выбор мышью и с клавиатуры', async () => {
     const w = mountView({ selected: 'signal:SIG-77' })
     await w.findAll('li.row')[2]!.trigger('click')

@@ -91,6 +91,7 @@ export const INVESTIGATION_TEXT: Record<'none' | 'open' | 'closed', string> = {
 
 /** Вид строки очереди → группа-задача с глаголом (UI-25): что от контролёра нужно. */
 export const QUEUE_GROUP_TEXT: Record<DecisionQueueRowKind, string> = {
+  review: 'widgets.decisionQueue.group.review',
   signal: 'widgets.decisionQueue.group.signal',
   isolated: 'widgets.decisionQueue.group.isolated',
   presentation: 'widgets.decisionQueue.group.presentation',

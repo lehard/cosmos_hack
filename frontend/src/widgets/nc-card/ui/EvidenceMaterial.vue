@@ -1,14 +1,15 @@
 <script setup lang="ts">
 /**
  * Материал доказательства сигнала (AD-23, FR-102): кадр контроля по адресу
- * содержимого — метаданные (`materials.material.read`) и байты
- * (`materials.material.content`). Иллюстрация из открытого набора помечена
+ * содержимого — метаданные (`materials.material.read`), изображение браузер
+ * загружает сам по адресу `materials.material.content` (сервер отдаёт байты с
+ * типом материала, в том же сеансе). Иллюстрация из открытого набора помечена
  * «ИЛЛЮСТРАЦИЯ» и подписана: это не снимок этого изделия (NFR-UI-4).
  * Щелчок по кадру — показать крупно / вернуть.
  */
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useMaterialsMaterialContent, useMaterialsMaterialRead } from '@/shared/api/generated/client'
+import { getMaterialsMaterialContentUrl, useMaterialsMaterialRead } from '@/shared/api/generated/client'
 
 const props = defineProps<{ address: string }>()
 const { t, d } = useI18n()
@@ -16,23 +17,24 @@ const { t, d } = useI18n()
 const infoQ = useMaterialsMaterialRead(() => props.address, { query: { retry: false } })
 const info = computed(() => (infoQ.data.value?.status === 200 ? infoQ.data.value.data : null))
 const isImage = computed(() => !!info.value?.media_type.startsWith('image/'))
-const contentQ = useMaterialsMaterialContent(() => props.address, { query: { retry: false, enabled: isImage } })
-const src = computed(() => {
-  const r = contentQ.data.value
-  return info.value && r?.status === 200 && typeof r.data === 'string' ? `data:${info.value.media_type};base64,${r.data}` : null
-})
-const failed = computed(() => !!infoQ.error.value || !!contentQ.error.value)
+const src = computed(() => (isImage.value ? getMaterialsMaterialContentUrl(props.address) : null))
+const broken = ref(false)
+watch(
+  () => props.address,
+  () => (broken.value = false),
+)
+const failed = computed(() => !!infoQ.error.value || broken.value)
 const zoomed = ref(false)
 </script>
 
 <template>
   <figure class="material" :data-zoomed="zoomed || undefined" :data-illustration="info?.is_illustration || undefined" data-testid="evidence-material">
-    <button v-if="src" type="button" class="frame" :title="zoomed ? t('ncCard.material.zoomOut') : t('ncCard.material.zoomIn')" @click="zoomed = !zoomed">
-      <img :src="src" :alt="t('ncCard.material.alt')" />
+    <button v-if="src && !broken" type="button" class="frame" :title="zoomed ? t('ncCard.material.zoomOut') : t('ncCard.material.zoomIn')" @click="zoomed = !zoomed">
+      <img :src="src" :alt="t('ncCard.material.alt')" @error="broken = true" />
       <span v-if="info?.is_illustration" class="badge">{{ t('empty.illustration') }}</span>
     </button>
     <div v-else class="frame placeholder ant-wrap">
-      {{ failed ? t('ncCard.material.unavailable') : isImage || infoQ.isPending.value ? t('ncCard.material.loading') : t('ncCard.material.notImage') }}
+      {{ failed ? t('ncCard.material.unavailable') : infoQ.isPending.value ? t('ncCard.material.loading') : t('ncCard.material.notImage') }}
     </div>
     <figcaption class="caption ant-wrap">
       <template v-if="info?.is_illustration">{{ t('empty.illustrationBadge') }}</template>
