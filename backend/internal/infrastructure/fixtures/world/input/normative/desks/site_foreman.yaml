@@ -4,6 +4,7 @@ version: 1
 role: site_foreman
 title_key: desks.station
 density: large
+help_key: site_foreman # раздел встроенной справки (эпик 47); наследники роли получают его вместе со столом
 tabs:
   - id: station
     title_key: desks.station

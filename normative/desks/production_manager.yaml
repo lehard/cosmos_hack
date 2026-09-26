@@ -4,6 +4,7 @@ version: 1
 role: production_manager
 title_key: desks.dashboard
 density: comfortable
+help_key: production_manager # раздел встроенной справки (эпик 47); наследники роли получают его вместе со столом
 tabs:
   - id: overview
     title_key: desks.dashboard

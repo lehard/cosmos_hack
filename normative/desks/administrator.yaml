@@ -4,6 +4,7 @@ version: 1
 role: administrator
 title_key: desks.testScenarios
 density: comfortable
+help_key: administrator # раздел встроенной справки (эпик 47); наследники роли получают его вместе со столом
 tabs:
   - id: scenarios
     title_key: desks.testScenarios

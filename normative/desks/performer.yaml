@@ -4,6 +4,7 @@ version: 1
 role: performer
 title_key: desks.terminal
 density: large
+help_key: performer # раздел встроенной справки (эпик 47); наследники роли получают его вместе со столом
 tabs:
   - id: terminal
     title_key: desks.terminal

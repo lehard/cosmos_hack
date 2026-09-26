@@ -5,6 +5,7 @@ version: 1
 role: customer_representative
 title_key: desks.decisionCard
 density: comfortable
+help_key: customer_representative # раздел встроенной справки (эпик 47); наследники роли получают его вместе со столом
 tabs:
   - id: decision
     title_key: desks.decisionCard

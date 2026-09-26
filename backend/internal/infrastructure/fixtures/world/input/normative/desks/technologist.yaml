@@ -9,6 +9,7 @@ version: 1
 role: technologist
 title_key: desks.causeAnalysis
 density: compact
+help_key: technologist # раздел встроенной справки (эпик 47); наследники роли получают его вместе со столом
 tabs:
   - id: causes
     title_key: desks.causeAnalysis
