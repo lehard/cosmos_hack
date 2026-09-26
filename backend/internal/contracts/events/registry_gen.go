@@ -47,6 +47,7 @@ var dataTypes = [...]DataType{
 	{Type: "decision.nonconformity.drafted", Version: 1, New: func() any { return new(DecisionNonconformityDraftedV1) }},
 	{Type: "decision.nonconformity.registered", Version: 1, New: func() any { return new(DecisionNonconformityRegisteredV1) }},
 	{Type: "decision.presentation.resolved", Version: 1, New: func() any { return new(DecisionPresentationResolvedV1) }},
+	{Type: "decision.presentation.reviewed", Version: 1, New: func() any { return new(DecisionPresentationReviewedV1) }},
 	{Type: "decision.process_hold.released", Version: 1, New: func() any { return new(DecisionProcessHoldReleasedV1) }},
 	{Type: "decision.process_hold.set", Version: 1, New: func() any { return new(DecisionProcessHoldSetV1) }},
 	{Type: "decision.recheck.requested", Version: 1, New: func() any { return new(DecisionRecheckRequestedV1) }},

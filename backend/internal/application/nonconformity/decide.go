@@ -2,6 +2,7 @@ package nonconformity
 
 import (
 	"context"
+	"encoding/json"
 	"slices"
 	"strings"
 	"time"
@@ -70,7 +71,13 @@ func (s *Service) onItem(ctx context.Context, v *itemView, c itemCommand) (platf
 	if err := dom.Guard(v.State(), v.Env, v.Upstream(), cmd); err != nil {
 		return platform.Receipt{}, err
 	}
-	if p, ok := c.Data.(dom.PresentationResolvedData); ok {
+	switch p := c.Data.(type) {
+	case dom.PresentationResolvedData:
+		if err := s.gateAuthority(v, actor, p.StepKey); err != nil {
+			return platform.Receipt{}, err
+		}
+	case dom.PresentationReviewedData:
+		// Д-81: пересматривает обладатель полномочия той же точки.
 		if err := s.gateAuthority(v, actor, p.StepKey); err != nil {
 			return platform.Receipt{}, err
 		}
@@ -191,6 +198,43 @@ func (s *Service) ResolvePresentation(ctx context.Context, itemID string, in Res
 		}
 	}
 	return s.item(ctx, itemID, c)
+}
+
+// ReviewPresentation — пересмотр решения на точке, принятого до новых данных
+// (FR-32, FR-146, Д-81): новая запись decision.presentation.reviewed поверх
+// прежней. Точку, номер предъявления и шаг берёт из пересматриваемой записи;
+// рассмотренные факты по умолчанию — новые факты открытого пересмотра.
+func (s *Service) ReviewPresentation(ctx context.Context, itemID string, in ReviewPresentation) (platform.Receipt, error) {
+	if !s.live() {
+		return s.Unimplemented.ReviewPresentation(ctx, itemID, in)
+	}
+	v, err := s.loadItem(ctx, itemID, platform.Moment{})
+	if err != nil {
+		return platform.Receipt{}, err
+	}
+	data := dom.PresentationReviewedData{ReviewedEventID: strings.ToLower(in.ReviewedEventID), Outcome: in.Outcome,
+		NewFactIDs: slices.Clone(in.NewFactIDs), Reason: reasonOf(in.Reason)}
+	if r, ok := v.Record(data.ReviewedEventID); ok && r.Type == catalog.DecisionPresentationResolved {
+		var d dom.PresentationResolvedData
+		if json.Unmarshal(r.Data, &d) == nil {
+			data.StepKey, data.ClosingPoint, data.PresentationNo = d.StepKey, d.ClosingPoint, max(d.PresentationNo, 1)
+		}
+	}
+	if len(data.NewFactIDs) == 0 {
+		for _, rv := range s.reviewsOf(v) {
+			if rv.decision.EventID == data.ReviewedEventID {
+				for _, f := range rv.facts {
+					data.NewFactIDs = append(data.NewFactIDs, f.EventID)
+				}
+			}
+		}
+	}
+	if data.NewFactIDs == nil {
+		data.NewFactIDs = []string{}
+	}
+	slices.Sort(data.NewFactIDs)
+	data.NewFactIDs = slices.Compact(data.NewFactIDs)
+	return s.onItem(ctx, v, itemCommand{Action: dom.ActPresentationReview, Type: catalog.DecisionPresentationReviewed, Meta: in.CommandMeta(), Data: data})
 }
 
 // ResolveLot — решение по партии входного контроля (ЗТ-1), поток lot:‹id›.

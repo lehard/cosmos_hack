@@ -166,6 +166,29 @@ func TestDecisionBeforeNewData(t *testing.T) {
 	}
 }
 
+// Д-81: пересмотр после всех поздних данных закрывает задачу; новая поздняя
+// запись после пересмотра возвращает её. Сам пересмотр задачей не помечается.
+func TestReviewClosesDecisionBeforeNewData(t *testing.T) {
+	dec := kernel.Record{Seq: 2, EventID: "d1", Type: catalog.DecisionPresentationResolved, Kind: catalog.KindDecision,
+		ItemID: "ENT01:I-1", Stream: "item:ENT01:I-1", OccurredAt: t0.Add(time.Hour), BasisSeq: 1, Actor: "INS-01", Data: []byte(`{}`)}
+	in := []kernel.Record{inspection(1, "e1", time.Minute, "no_defect_indicated"), dec, inspection(3, "e0", 30*time.Minute, "no_defect_indicated")}
+	if _, rs := engine.Fold(engine.Bundle{}, in); len(rs) != 1 {
+		t.Fatalf("ждали задачу пересмотра: %+v", rs)
+	}
+	rv := kernel.Record{Seq: 4, EventID: "r1", Type: catalog.DecisionPresentationReviewed, Kind: catalog.KindDecision,
+		ItemID: "ENT01:I-1", Stream: "item:ENT01:I-1", OccurredAt: t0.Add(3 * time.Hour), BasisSeq: 3, Actor: "INS-01",
+		Data: []byte(`{"reviewed_event_id":"d1","outcome":"revoked"}`)}
+	in = append(in, rv)
+	if _, rs := engine.Fold(engine.Bundle{}, in); len(rs) != 0 {
+		t.Fatalf("пересмотр не закрыл задачу: %+v", rs)
+	}
+	in = append(in, inspection(5, "e5", 45*time.Minute, "no_defect_indicated"))
+	_, rs := engine.Fold(engine.Bundle{}, in)
+	if len(rs) != 1 || rs[0].Slot.TriggerKey != "d1" || len(rs[0].Causes) != 3 {
+		t.Fatalf("новая поздняя запись после пересмотра — задача по исходному решению: %+v", rs)
+	}
+}
+
 // Запрос на момент — свёртка префикса по оси (AD-22).
 func TestPrefixAxes(t *testing.T) {
 	a := inspection(1, "a", time.Minute, "defect_indicated")    // recorded t0+1h

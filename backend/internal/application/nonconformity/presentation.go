@@ -29,6 +29,8 @@ func (s *Service) Presentation(ctx context.Context, itemID string, m platform.Mo
 	st := v.State()
 	out := NCPresentationView{ItemID: v.ItemID, ItemLabel: v.ItemID, MethodResults: []NCRecordRef{}, BasisSeq: v.BasisSeq}
 	var p NCPresentationPoint
+	var open *review
+	var reviewed dom.PresentationResolvedData
 	reviews := s.reviewsOf(v)
 	switch pr := st.PendingPresentation(); {
 	case pr != nil:
@@ -54,6 +56,7 @@ func (s *Service) Presentation(ctx context.Context, itemID string, m platform.Mo
 			review.NewFacts = append(review.NewFacts, ref(r, summaryOf(r)))
 		}
 		out.Review = review
+		open, reviewed = &rv, d
 	default:
 		e := platform.Fail(errcodes.ApiNotFound, "object", "Предъявление", "id", itemID)
 		e.Detail = "Изделие " + itemID + " не ждёт решения на точке предъявления"
@@ -76,6 +79,16 @@ func (s *Service) Presentation(ctx context.Context, itemID string, m platform.Mo
 	}
 	p.AllowedResolutions = s.allowedResolutions(ctx, v, p)
 	out.Presentation = p
+	// Д-81: основание, значимость новых фактов, рекомендация и решения с
+	// последствиями — от сервера.
+	if open != nil {
+		significant := s.fillReview(ctx, v, *open, reviewed, out.Review)
+		out.Recommendation = reviewRecommendation(v.State(), significant)
+		out.Actions = s.reviewActions(ctx, v, *open, reviewed)
+	} else {
+		out.Actions = s.resolveActions(ctx, v, p)
+		out.Recommendation = presentationRecommendation(v, out.MethodResults, out.Actions)
+	}
 	return out, nil
 }
 

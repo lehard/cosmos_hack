@@ -1012,6 +1012,22 @@ types:
     versions: [1]
     current_version: 1
     refs: ["FR-19", "FR-44", "FR-56", "FR-146", "Е-19, Е-47, Е-55, Е-63, Е-73 decision.gate_passed"]
+  decision.presentation.reviewed:
+    title: "Пересмотр решения на точке предъявления"
+    emitter: "nonconformity"
+    role: "api"
+    kind: "decision"
+    stream: "item"
+    axis: "none"
+    action_class: "permissive"
+    critical: true
+    ca_group: "product_decision"
+    guard_relevant: true
+    publish_stage: true
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-32", "FR-146", "AD-5", "AD-7", "Д-81"]
   decision.lot.resolved:
     title: "Решение по партии на входном контроле"
     emitter: "nonconformity"

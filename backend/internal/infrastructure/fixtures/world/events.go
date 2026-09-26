@@ -363,7 +363,8 @@ func (m *Model) storyEvents() {
 	for _, rv := range m.Spec.Reviews {
 		it := m.itemByID[rv.Item]
 		m.ev("task.task.created", "reaction", rv.Flagged.Time(), fmt.Sprintf("Решение %s по %s помечено «принято до новых данных — пересмотрите»: основание %s", rv.Gate, it.Label, rv.LateEvent), withItem(it))
-		m.ev("decision.presentation.resolved", "decision", rv.Completed.Time(), fmt.Sprintf("Пересмотр приёмки %s: отозвано — изделие в инциденте RS-01, ждёт решения; исходная подпись остаётся", rv.Gate),
+		// Д-81: пересмотр — своя запись decision.presentation.reviewed поверх прежнего решения.
+		m.ev("decision.presentation.reviewed", "decision", rv.Completed.Time(), fmt.Sprintf("Пересмотр приёмки %s: отозвано — изделие в инциденте RS-01, ждёт решения; исходная подпись остаётся", rv.Gate),
 			withItem(it), withAuthor(rv.By), withStep("welding.zt3_acceptance"), withParams("outcome", rv.Outcome))
 	}
 	for _, iv := range m.Spec.Interventions {

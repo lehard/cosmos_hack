@@ -32,6 +32,8 @@ var Actions = []Action{
 	{Type: catalog.DecisionContainmentReleased, Name: "Снять блок / выпуск", Before: "заблокировано", After: "разрешено"},
 	{Type: catalog.DecisionPresentationResolved, Name: "Снять блок / выпуск: решение на точке предъявления", Before: "предъявлено", After: "решение принято"},
 	{Type: catalog.DecisionDispositionSet, Name: "Назначить переделку / решение по изделию", Before: "решения нет", After: "решение принято"},
+	// Пересмотр решения на точке (Д-81) — исправление прежнего решения новой записью.
+	{Type: catalog.DecisionPresentationReviewed, Name: "Исправить прежнее решение: пересмотр решения на точке предъявления", Before: "решение принято до новых данных", After: "решение пересмотрено"},
 	// Исправление прежнего решения — только новой записью (corrects), любой тип.
 	// Действия исполнителя (AD-28): пропуск проверки, работа при отказе в
 	// допуске, ручная смена режима оборудования, отключение источника.
@@ -114,6 +116,13 @@ func refine(a Action, data json.RawMessage) (before, after string) {
 	case catalog.DecisionPresentationResolved:
 		if d.Outcome != "" {
 			after = "решение на точке предъявления: " + d.Outcome
+		}
+	case catalog.DecisionPresentationReviewed:
+		switch d.Outcome {
+		case "revoked":
+			after = "приёмка отозвана: изделие заблокировано, годность не подтверждена"
+		case "upheld":
+			after = "прежнее решение оставлено в силе"
 		}
 	case catalog.OperatorModeChanged:
 		if d.NewMode != "" {

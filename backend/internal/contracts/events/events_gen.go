@@ -1394,6 +1394,40 @@ const DecisionPresentationResolvedV1ResolutionAcceptWithConcession DecisionPrese
 const DecisionPresentationResolvedV1ResolutionInsufficientData DecisionPresentationResolvedV1Resolution = "insufficient_data"
 const DecisionPresentationResolvedV1ResolutionReject DecisionPresentationResolvedV1Resolution = "reject"
 
+// Пересмотр решения на закрывающей точке, принятого до новых данных (FR-32,
+// FR-146, AD-5, Д-81): новая запись поверх прежней, прежняя не меняется. «Оставить
+// в силе» — приёмка подтверждена на текущем состоянии; «отозвать приёмку» —
+// основание приёмки не держится: блок изделия человеком, качество «не проверено»,
+// исправление результата контроля в учётной системе по решению человека (AD-7).
+type DecisionPresentationReviewedV1 struct {
+	// Закрывающая точка пересматриваемого решения: `ZT-1`…`ZT-6`, `ZT-R`, `ZT-V`.
+	ClosingPoint string `json:"closing_point"`
+
+	// Новые факты, которые рассмотрены при пересмотре (причины метки «принято до
+	// новых данных»).
+	NewFactIds []UUID `json:"new_fact_ids"`
+
+	// Исход пересмотра: оставить решение в силе / отозвать приёмку.
+	Outcome DecisionPresentationReviewedV1Outcome `json:"outcome"`
+
+	// Номер предъявления пересматриваемого решения.
+	PresentationNo int `json:"presentation_no"`
+
+	// Основание пересмотра: код и текст.
+	Reason Reason `json:"reason"`
+
+	// Пересматриваемое решение (decision.presentation.resolved).
+	ReviewedEventID UUID `json:"reviewed_event_id"`
+
+	// Шаг точки предъявления пересматриваемого решения.
+	StepKey StepKey `json:"step_key"`
+}
+
+type DecisionPresentationReviewedV1Outcome string
+
+const DecisionPresentationReviewedV1OutcomeRevoked DecisionPresentationReviewedV1Outcome = "revoked"
+const DecisionPresentationReviewedV1OutcomeUpheld DecisionPresentationReviewedV1Outcome = "upheld"
+
 // Остановка точки процесса снята — снимает только уполномоченный; после снятия —
 // «точка чистоты»: первые N изделий под усиленным контролем (FR-49).
 type DecisionProcessHoldReleasedV1 struct {

@@ -2,6 +2,7 @@ package world
 
 import (
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 	"time"
@@ -342,6 +343,16 @@ func (c *Ctx) investigation(n *NC) string {
 	return "none"
 }
 
+// lateSource — источник опоздавшей записи id по спецификации мира; нет — "".
+func (m *Model) lateSource(id string) string {
+	for _, le := range m.Spec.LateEvents {
+		if le.ID == id {
+			return le.Source
+		}
+	}
+	return ""
+}
+
 // lateRecord — запись журнала мира об опоздавшей записи источника id; нет — nil.
 func (m *Model) lateRecord(id string) *Event {
 	for _, e := range m.Events {
@@ -422,12 +433,127 @@ func (c *Ctx) presentationView(it *Item, r ncapp.DecisionQueueRow) ncapp.NCPrese
 		for _, x := range c.M.Spec.Reviews {
 			if e := c.M.lateRecord(x.LateEvent); x.Item == it.ID && e != nil && !e.Recorded.After(c.T) {
 				rv.NewFacts = append(rv.NewFacts, recRef(e))
+				c.reviewBasis(it, x, decision, e, rv, &v)
 			}
 		}
 		v.Review = rv
+	} else {
+		// Решения на ждущем предъявлении (Д-81): те же тексты, что у live.
+		gate := first(derefOr(p.ClosingPointLabel), p.ClosingPoint)
+		next := "следующий шаг процесса"
+		if p.NextStepLabel != nil {
+			next = "«" + *p.NextStepLabel + "»"
+		}
+		for _, r := range []string{"accept", "reject", "insufficient_data"} {
+			res := r
+			a := ncapp.NCPresentationAction{Operation: "nonconformity.presentation.resolve", Resolution: &res, Allowed: slices.Contains(p.AllowedResolutions, r)}
+			a.Label, a.WhyAvailable, a.Consequences = ncapp.ResolveTexts(r, gate, next, "", p.PresentationNo)
+			v.Actions = append(v.Actions, a)
+		}
+		v.Recommendation = &ncapp.NCRecommendation{Outcome: "accept", Why: []string{"Методы контроля признаков дефекта не нашли; блока и открытых несоответствий нет"}}
+		for _, m := range v.MethodResults {
+			if strings.Contains(m.Summary, "оценка невозможна") || strings.Contains(m.Summary, "качество 0,3") {
+				v.Recommendation = &ncapp.NCRecommendation{Outcome: "insufficient_data", Why: []string{m.Summary}}
+			}
+		}
 	}
 	v.Presentation = p
 	return v
+}
+
+func derefOr(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}
+
+func first(ss ...string) string {
+	for _, s := range ss {
+		if s != "" {
+			return s
+		}
+	}
+	return ""
+}
+
+// reviewBasis — пересмотр в заготовках (Д-81): «данных не было» по источнику
+// опоздавшей записи (запись о потере связи), почему запись значима,
+// рекомендация и решения с последствиями — теми же текстами, что у live.
+func (c *Ctx) reviewBasis(it *Item, x ReviewSpec, decision, late *Event, rv *ncapp.NCPresentationReview, v *ncapp.NCPresentationView) {
+	gate := first(derefOr(c.nodeName(decision.StepKey)), x.Gate)
+	var src *SourceSpec
+	for i := range c.M.Spec.Sources {
+		if s := &c.M.Spec.Sources[i]; late.Params["record"] != "" && s.ID == c.M.lateSource(x.LateEvent) {
+			src = s
+		}
+	}
+	if src != nil {
+		for _, e := range c.M.Events {
+			if e.Type == "ingest.source.loss_suspected" && e.Params["source_id"] == src.ID && !e.Occurred.After(decision.Occurred) {
+				a := recRef(e)
+				a.Absent, a.Summary = true, "Нет данных: журнала режима «"+srcEquipment(src)+"» на момент решения не было — источник без связи"
+				rv.KnownAtDecision = append(rv.KnownAtDecision, a)
+				break
+			}
+		}
+	}
+	op := first(derefOr(c.nodeName("welding.weld")), "сварка")
+	why := []string{
+		"Отклонение режима «" + first(srcEquipment(src), "оборудования") + "»: возникло за " + ncapp.Span(decision.Occurred.Sub(late.Occurred)) +
+			" до решения, стало известно через " + ncapp.Span(late.Recorded.Sub(decision.Occurred)) + " после него — решение принималось без этой записи",
+		"Относится к операции «" + op + "» " + it.Label + " до приёмки на точке «" + gate + "»",
+	}
+	significant := []string{}
+	if line := ncapp.OutOfSetpoint(late.Reading); line != "" {
+		why = append(why, line)
+		significant = append(significant, line)
+	}
+	if nd := c.M.Bpmn["welding.weld"]; nd != nil && nd.Props["specialProcess"] == "true" {
+		line := "«" + op + "» — специальный процесс: нарушение режима само по себе — несоответствие, даже если контроль дефекта не нашёл (FR-151)"
+		why = append(why, line)
+		significant = append(significant, line)
+	}
+	if src != nil {
+		why = append(why, "При подписи данных «"+srcEquipment(src)+"» не было: приёмка стояла только на результатах методов контроля")
+	}
+	rv.WhySignificant = why
+	v.Recommendation = &ncapp.NCRecommendation{Outcome: "revoked", Why: significant}
+
+	st := c.S(it)
+	var incidents []string
+	for _, id := range slices.Sorted(maps.Keys(st.Incidents)) {
+		incidents = append(incidents, id)
+	}
+	where := "текущем шаге"
+	if n := c.nodeName(st.Step); n != nil {
+		where = "«" + *n + "»"
+	}
+	revoked, upheld := ncapp.ReviewConsequences(gate, "accept", where, incidents)
+	policy := ptr("полномочие точки ЗТ-3; вторая подпись по политике не требуется (Д-81)")
+	rvk, uph := "revoked", "upheld"
+	blocked := st.Containment == "item_hold" || st.Containment == "lot_hold" || len(incidents) > 0
+	up := ncapp.NCPresentationAction{Operation: "nonconformity.presentation.review", Outcome: &uph, Label: ncapp.LabelUphold, Allowed: !blocked,
+		WhyAvailable: ncapp.ReviewWhyAllowed(uph, gate), Consequences: upheld, PolicyRef: policy}
+	if blocked {
+		up.WhyAvailable = "Изделие заблокировано — операция запрещена до решения: оставить приёмку в силе нельзя, путь — несоответствие и разрешение на отклонение"
+	}
+	v.Actions = []ncapp.NCPresentationAction{
+		{Operation: "nonconformity.presentation.review", Outcome: &rvk, Label: ncapp.LabelRevoke, Allowed: true,
+			WhyAvailable: ncapp.ReviewWhyAllowed(rvk, gate), Consequences: revoked, PolicyRef: policy},
+		up,
+	}
+}
+
+// srcEquipment — оборудование источника для людей («Сварочный источник ИС-2»).
+func srcEquipment(s *SourceSpec) string {
+	if s == nil {
+		return ""
+	}
+	if t := equipmentTitle[s.Equipment][0]; t != "" {
+		return t
+	}
+	return s.Equipment
 }
 
 // nextStepName — имя следующего шага при «Принять» (не шлюз, с именем); на

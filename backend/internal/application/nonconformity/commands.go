@@ -51,6 +51,17 @@ type ResolvePresentation struct {
 	Reason         *NCReason `json:"reason,omitempty"`
 }
 
+// ReviewPresentation — пересмотр решения на точке, принятого до новых данных
+// (decision.presentation.reviewed, FR-32, FR-146, Д-81): «оставить в силе»
+// или «отозвать приёмку»; основание обязательно.
+type ReviewPresentation struct {
+	platform.CommandHeader
+	ReviewedEventID string   `json:"reviewed_event_id" doc:"Пересматриваемое решение — review.decision.event_id из nonconformity.presentation.read."`
+	Outcome         string   `json:"outcome" enum:"upheld,revoked" doc:"upheld — оставить в силе; revoked — отозвать приёмку."`
+	NewFactIDs      []string `json:"new_fact_ids,omitempty" doc:"Рассмотренные новые факты (review.new_facts); пусто — все новые факты пересмотра."`
+	Reason          NCReason `json:"reason" doc:"Основание пересмотра."`
+}
+
 // ResolveLot — решение по партии входного контроля (decision.lot.resolved).
 type ResolveLot struct {
 	platform.CommandHeader

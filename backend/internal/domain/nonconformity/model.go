@@ -157,7 +157,19 @@ type Presentation struct {
 	// ResolvedEventID, Resolution — решение контролёра; пусто — ждёт решения.
 	ResolvedEventID string `json:"resolved_event_id,omitempty"`
 	Resolution      string `json:"resolution,omitempty"`
+	// ReviewEventID, ReviewOutcome — последний пересмотр решения (Д-81):
+	// upheld | revoked; пусто — не пересматривалось.
+	ReviewEventID string `json:"review_event_id,omitempty"`
+	ReviewOutcome string `json:"review_outcome,omitempty"`
 }
+
+// Accepted — решение на предъявлении — приёмка (годно или по разрешению).
+func (p Presentation) Accepted() bool {
+	return p.Resolution == "accept" || p.Resolution == "accept_with_concession"
+}
+
+// Revoked — приёмка отозвана пересмотром (Д-81).
+func (p Presentation) Revoked() bool { return p.ReviewOutcome == ReviewRevoked }
 
 // DecisionRef — решение человека в изделии (для карточки, FR-51).
 type DecisionRef struct {

@@ -324,6 +324,7 @@ import type {
   RetirePassport,
   RetireVersion,
   RetryProcessing,
+  ReviewPresentation,
   RevokeConcession,
   RevokeKey,
   RevokePolicy,
@@ -13805,6 +13806,127 @@ export const useNonconformityPresentationResolve = <TError = globalThis.Error & 
         TContext
       > => {
       return useMutation(getNonconformityPresentationResolveMutationOptions(options), queryClient);
+    }
+
+export type nonconformityPresentationReviewResponse200 = {
+  data: Receipt
+  status: 200
+}
+
+export type nonconformityPresentationReviewResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type nonconformityPresentationReviewResponseSuccess = (nonconformityPresentationReviewResponse200) & {
+  headers: Headers;
+};
+export type nonconformityPresentationReviewResponseError = (nonconformityPresentationReviewResponseDefault) & {
+  headers: Headers;
+};
+
+export const getNonconformityPresentationReviewUrl = (itemId: string,) => {
+
+
+
+
+  return `/api/v1/items/${itemId}/presentations/review`
+}
+
+/**
+ * FR-32, FR-146, Д-81: решение, принятое до новых данных, пересматривается новой записью — «оставить в силе» (только если приёмка прошла бы сейчас) или «отозвать приёмку» (блок изделия человеком, качество «не проверено», исправление результата контроля в 1С по решению человека). Прежняя запись не меняется; вторая подпись по политике не требуется.
+ * @summary Пересмотреть решение на точке предъявления
+ */
+export const nonconformityPresentationReview = async (itemId: string,
+    reviewPresentation: ReviewPresentation, options?: RequestInit): Promise<nonconformityPresentationReviewResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getNonconformityPresentationReviewUrl(itemId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(reviewPresentation)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: nonconformityPresentationReviewResponseError['data'], status?: number} = new globalThis.Error();
+    const data : nonconformityPresentationReviewResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: nonconformityPresentationReviewResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as nonconformityPresentationReviewResponseSuccess
+}
+
+
+
+
+
+export const getNonconformityPresentationReviewMutationKey = () => ['nonconformityPresentationReview'] as const;
+
+export const getNonconformityPresentationReviewMutationOptions = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof nonconformityPresentationReview>>, TError,NonconformityPresentationReviewMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof nonconformityPresentationReview>>, TError,NonconformityPresentationReviewMutationVariables, TContext> => {
+
+const mutationKey = getNonconformityPresentationReviewMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof nonconformityPresentationReview>>, NonconformityPresentationReviewMutationVariables> = (props) => {
+          const {itemId,data} = props ?? {};
+
+          return  nonconformityPresentationReview(itemId,data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type NonconformityPresentationReviewMutationResult = NonNullable<Awaited<ReturnType<typeof nonconformityPresentationReview>>>
+    export type NonconformityPresentationReviewMutationBody = ReviewPresentation
+    export type NonconformityPresentationReviewMutationError = globalThis.Error & { info?: Problem; status?: number }
+    export type NonconformityPresentationReviewMutationVariables = {itemId: string;data: ReviewPresentation}
+
+    /**
+ * @summary Пересмотреть решение на точке предъявления
+ */
+export const useNonconformityPresentationReview = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof nonconformityPresentationReview>>, TError,NonconformityPresentationReviewMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof nonconformityPresentationReview>>,
+        TError,
+        NonconformityPresentationReviewMutationVariables,
+        TContext
+      > => {
+      return useMutation(getNonconformityPresentationReviewMutationOptions(options), queryClient);
     }
 
 export type nonconformityRecheckRequestResponse200 = {

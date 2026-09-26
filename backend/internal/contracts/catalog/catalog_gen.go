@@ -130,6 +130,8 @@ const (
 	DecisionNonconformityRegistered Type = "decision.nonconformity.registered"
 	// Решение на точке предъявления
 	DecisionPresentationResolved Type = "decision.presentation.resolved"
+	// Пересмотр решения на точке предъявления
+	DecisionPresentationReviewed Type = "decision.presentation.reviewed"
 	// Остановка точки процесса снята
 	DecisionProcessHoldReleased Type = "decision.process_hold.released"
 	// Остановка точки процесса установлена
@@ -503,6 +505,7 @@ var types = [...]Info{
 	{Type: DecisionNonconformityDrafted, Title: "Черновик карточки несоответствия", Family: "decision", Emitter: "nonconformity", Role: "worker", Kind: "reaction", Stream: "item", Axis: "none", ActionClass: "protective", Critical: false, CAGroup: "", GuardRelevant: false, PublishStage: false, Provenance: []string{"server_attested"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: DecisionNonconformityRegistered, Title: "Несоответствие зарегистрировано правилом", Family: "decision", Emitter: "nonconformity", Role: "crossitem", Kind: "reaction", Stream: "item", Axis: "none", ActionClass: "protective", Critical: true, CAGroup: "product_decision", GuardRelevant: true, PublishStage: true, Provenance: []string{"server_attested"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: DecisionPresentationResolved, Title: "Решение на точке предъявления", Family: "decision", Emitter: "nonconformity", Role: "api", Kind: "decision", Stream: "item", Axis: "none", ActionClass: "permissive", Critical: true, CAGroup: "product_decision", GuardRelevant: true, PublishStage: true, Provenance: []string{"personal", "paper", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
+	{Type: DecisionPresentationReviewed, Title: "Пересмотр решения на точке предъявления", Family: "decision", Emitter: "nonconformity", Role: "api", Kind: "decision", Stream: "item", Axis: "none", ActionClass: "permissive", Critical: true, CAGroup: "product_decision", GuardRelevant: true, PublishStage: true, Provenance: []string{"personal", "paper", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: DecisionProcessHoldReleased, Title: "Остановка точки процесса снята", Family: "decision", Emitter: "nonconformity", Role: "api", Kind: "decision", Stream: "equipment", Axis: "none", ActionClass: "permissive", Critical: true, CAGroup: "product_decision", GuardRelevant: true, PublishStage: false, Provenance: []string{"personal", "paper", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: DecisionProcessHoldSet, Title: "Остановка точки процесса установлена", Family: "decision", Emitter: "nonconformity", Role: "api", Kind: "decision", Stream: "equipment", Axis: "none", ActionClass: "protective", Critical: true, CAGroup: "product_decision", GuardRelevant: true, PublishStage: false, Provenance: []string{"personal", "paper", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: DecisionRecheckRequested, Title: "Назначена дополнительная проверка", Family: "decision", Emitter: "nonconformity", Role: "api", Kind: "decision", Stream: "item", Axis: "containment", ActionClass: "protective", Critical: false, CAGroup: "", GuardRelevant: true, PublishStage: false, Provenance: []string{"personal", "paper", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
