@@ -16,6 +16,7 @@ import (
 	"ant/internal/application/ingest/inmem"
 	"ant/internal/application/platform"
 	"ant/internal/application/signing"
+	"ant/internal/contracts/crypto"
 	"ant/internal/contracts/errcodes"
 	dom "ant/internal/domain/ingest"
 )
@@ -484,4 +485,52 @@ func TestMetrics(t *testing.T) {
 	if c.Telemetry.Observed[app.MetricLatency+"{}"] != 3 {
 		t.Fatalf("%v", c.Telemetry.Observed)
 	}
+}
+
+// Операции API (формы views.go): пачка с sent_at, импорт, источники, метрики.
+func TestAPIForms(t *testing.T) {
+	ctx := context.Background()
+	c := demoCore(t)
+	env := func(ev []byte) crypto.DsseEnvelope {
+		cn, _ := dom.Canonicalize(ev)
+		return crypto.DsseEnvelope{PayloadType: app.PayloadTypeEvent, Payload: base64.StdEncoding.EncodeToString(cn)}
+	}
+	sent := t0.Add(-10 * time.Minute)
+	res, err := c.Service.SubmitBatch(ctx, app.IngestBatch{SourceID: "edge-weld-1", SentAt: &sent, Envelopes: []crypto.DsseEnvelope{
+		env(event(uid(1), "edge-weld-1", 1, t0.Add(-11*time.Minute), `"station_id":"weld-2"`)),
+		env(event(uid(1), "edge-weld-1", 1, t0.Add(-11*time.Minute), `"station_id":"weld-2"`)),
+		env(event(uid(3), "edge-weld-1", 3, t0.Add(-11*time.Minute), `"station_id":"weld-2"`)),
+	}})
+	if err != nil || res.Accepted != 2 || res.Duplicates != 1 || res.Items[0].SignatureChecked || !slices.Contains(res.Items[0].Flags, "clock_skew") {
+		t.Fatalf("пачка: %+v %v", res, err)
+	}
+	src, _ := c.Service.Sources(ctx, platform.Page{})
+	if len(src.Items) != 1 || src.Items[0].GapCount != 1 || *src.Items[0].ClockSkewMs != -600000 || *src.Items[0].LastSeq != 3 {
+		t.Fatalf("источники: %+v", src.Items)
+	}
+	csv := "row_id,occurred_at,item_id,data.operation_run_id,data.operation_code,data.step_key,data.operator_id\n" +
+		"1,2026-09-25T09:00:00.000Z,ENT01:FL-0020,run-1,030,welding.weld,O17\n2,2026-09-25T09:10:00.000Z,ENT01:FL-0021,run-2,030,welding.weld,\n"
+	in := app.ImportFile{Format: "csv", FileName: "weld.csv", Mapping: "operation.run.started", Content: base64.StdEncoding.EncodeToString([]byte(csv)), DryRun: true}
+	ir, err := c.Service.Import(ctx, in)
+	if err != nil || ir.RowsAccepted != 1 || ir.RowsRejected != 1 || c.Journal.Count("ingest.import.completed") != 0 {
+		t.Fatalf("проверка импорта: %+v %v", ir, err)
+	}
+	in.DryRun = false
+	if ir, err = c.Service.Import(ctx, in); err != nil || ir.RowsAccepted != 1 || ir.SourceID != "import:operation.run.started" || c.Journal.Count("ingest.import.completed") != 1 {
+		t.Fatalf("импорт: %+v %v", ir, err)
+	}
+	if _, err := c.Service.Import(ctx, app.ImportFile{Format: "xlsx"}); err == nil {
+		t.Fatal("xlsx")
+	}
+	m, err := c.Service.Metrics(ctx)
+	if err != nil || m.Accepted != 3 || m.Duplicates != 1 || m.CompletenessBP == 10000 {
+		t.Fatalf("метрики: %+v %v", m, err)
+	}
+	// Один отказ по ingest.event.submit — problem+json с кодом (ошибка порта).
+	bad := env([]byte(strings.Replace(string(event(uid(9), "cam-2", 1, t0, `"station_id":"weld-2"`)), `"schema_version":1`, `"schema_version":5`, 1)))
+	_, err = c.Service.SubmitEvent(ctx, app.ManualEvent{Envelope: bad})
+	if e, ok := platform.AsError(err); !ok || e.Code != errcodes.IngestUnknownSchemaVersion || e.Params["quarantine_id"] == "" {
+		t.Fatalf("отказ: %v", err)
+	}
+	checkEnvelopes(t, c)
 }
