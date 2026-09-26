@@ -20,6 +20,7 @@ type Spec struct {
 	Month            string            `yaml:"month"`
 	TZ               string            `yaml:"tz"`
 	InitialStep      int               `yaml:"initial_step"`
+	StartStep        int               `yaml:"start_step"`
 	LocalIDs         []string          `yaml:"local_ids"`
 	People           []PersonRef       `yaml:"people"`
 	Lines            []Line            `yaml:"lines"`

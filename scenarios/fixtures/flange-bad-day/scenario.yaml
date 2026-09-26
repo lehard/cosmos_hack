@@ -6,6 +6,7 @@ description: "Главная история демо (MS-1, Пн 21.09 – Чт 
 covers: ["S01","S02","S03","S04","S05","S06","S07","S08","S09","S10A","S11","S12"]
 case: ["§1.5","§4.2","§5.1","§5.2","§5.3"]
 initial_step: 16
+start_step: 7
 enterprise: ENT01
 local_ids: ["F-\\d{3}","R-\\d{3}","LOT-[A-Z]+-\\d+","ORD-\\d{4}","NC-(\\d{2}|G1)","RS-\\d{2}","SIG-[A-Z0-9-]+","EV-[A-Z0-9-]+","OUT-\\d{6}","Q-\\d{3}","TASK-\\d{3}","RUN-[A-Z0-9-]+"]
 steps:

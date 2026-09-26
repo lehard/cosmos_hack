@@ -23,6 +23,11 @@ type Scenario struct {
 	Decisions    int      `json:"decisions" minimum:"0" doc:"Сколько раз сценарий останавливается на решении человека."`
 	Kind         string   `json:"kind,omitempty" doc:"situation — ситуация кейса §4.2; check — проверка §5.1; demo — демо-сценарий; failure — сбой каталога; extra — сверх кейса; run — прогон целиком."`
 	RunDef       string   `json:"run_def,omitempty" doc:"Определение прогона, который запускается (scenarios/definitions/runs)."`
+	// StartStep, StartAt, StartTitle — точка старта сценария
+	// (simulation.run.start с start=start_step); нет — только с начала.
+	StartStep  *int       `json:"start_step,omitempty" minimum:"0" doc:"Точка старта сценария (заготовки): шаг для simulation.run.start с start=start_step."`
+	StartAt    *time.Time `json:"start_at,omitempty" doc:"Доменное время точки старта."`
+	StartTitle string     `json:"start_title,omitempty" doc:"Что происходит в точке старта: «Эталон Ф-001 выпущен…»."`
 }
 
 // ScenarioList — сценарии пульта.

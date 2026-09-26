@@ -184,9 +184,21 @@ func notFound(op string, params map[string]string) error {
 // mode: interactive — сценарий ждёт решений на столах ролей; autocheck —
 // решения «подписывает» demo-signer: ожидания пропускаются сами.
 func (r *Runtime) Start(ctx context.Context, scenario, runID, mode string, seed int64, speed int, now time.Time) (platform.CursorState, error) {
+	return r.StartFrom(ctx, scenario, runID, mode, seed, speed, 0, now)
+}
+
+// StartFrom — запуск прогона с шага from: курсор сразу на шаге from и его
+// часах. Шаги до него считаются пройденными (мир заготовок накопительный:
+// ответы шага from — уже «после» всех прошлых шагов, табло сверяет строки
+// шагов ≤ from), ожидания решений до него не останавливают прогон.
+// Сессионное наложение — чистое, как при старте с нуля.
+func (r *Runtime) StartFrom(ctx context.Context, scenario, runID, mode string, seed int64, speed, from int, now time.Time) (platform.CursorState, error) {
 	sc, ok := r.lib.Scenario(scenario)
 	if !ok {
 		return platform.CursorState{}, platform.Fail(errcodes.ApiNotFound, "object", "сценарий", "id", scenario)
+	}
+	if from < 0 || from >= sc.Steps() {
+		return platform.CursorState{}, platform.Fail(errcodes.ApiValidationFailed, "field", "from_step", "reason", fmt.Sprintf("шаг вне 0…%d", sc.Steps()-1))
 	}
 	if speed < 1 {
 		speed = 1
@@ -194,7 +206,7 @@ func (r *Runtime) Start(ctx context.Context, scenario, runID, mode string, seed 
 	if mode == "" {
 		mode = "interactive"
 	}
-	st := platform.CursorState{Scenario: scenario, RunID: runID, Step: 0, Speed: speed, ClockAt: sc.Manifest.Steps[0].Clock}
+	st := platform.CursorState{Scenario: scenario, RunID: runID, Step: from, Speed: speed, ClockAt: sc.Manifest.Steps[from].Clock}
 	if err := r.cur().Move(ctx, st); err != nil {
 		return st, err
 	}

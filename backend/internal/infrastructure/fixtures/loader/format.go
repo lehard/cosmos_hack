@@ -21,6 +21,11 @@ type Manifest struct {
 	Case        []string `yaml:"case,omitempty" json:"case,omitempty"`
 	// InitialStep — шаг курсора, пока пульт не запускал прогон.
 	InitialStep int `yaml:"initial_step" json:"initial_step"`
+	// StartStep — точка старта: шаг, с которого пульт запускает прогон по
+	// simulation.run.start с start=start_step; шаги до него считаются
+	// пройденными — их ответы и строки табло уже на месте, история начинается
+	// «у катастрофы», а не за сутки до неё. 0 — с начала.
+	StartStep int `yaml:"start_step,omitempty" json:"start_step,omitempty"`
 	// Enterprise — код предприятия в ID изделий (код:локальный_id, AD-16).
 	Enterprise string `yaml:"enterprise" json:"enterprise"`
 	// LocalIDs — регулярные выражения локальных ID сценария (изделия, партии,
@@ -152,6 +157,9 @@ func (m *Manifest) validate() error {
 	}
 	if m.InitialStep < 0 || m.InitialStep >= len(m.Steps) {
 		return fmt.Errorf("сценарий %s: initial_step %d вне шагов", m.ID, m.InitialStep)
+	}
+	if m.StartStep < 0 || m.StartStep >= len(m.Steps) {
+		return fmt.Errorf("сценарий %s: start_step %d вне шагов", m.ID, m.StartStep)
 	}
 	for _, p := range m.LocalIDs {
 		if _, err := regexp.Compile("^(?:" + p + ")$"); err != nil {

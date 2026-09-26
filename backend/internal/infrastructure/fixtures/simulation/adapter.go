@@ -69,11 +69,16 @@ func (a *Adapter) Scenarios(ctx context.Context) (app.ScenarioList, error) {
 			}
 		}
 		items, rows := a.totals(ctx, rt, sc)
-		out.Items = append(out.Items, app.Scenario{
+		v := app.Scenario{
 			ScenarioID: mf.ID, Version: "fixtures-1", Title: mf.Title, Description: mf.Description,
 			CaseRefs: append([]string{}, mf.Case...), Decisions: decisions,
 			DefaultSeed: defaultSeed(mf.ID), DefaultItems: items, Assertions: rows,
-		})
+		}
+		if n := mf.StartStep; n > 0 {
+			at := mf.Steps[n].Clock
+			v.StartStep, v.StartAt, v.StartTitle = &n, &at, mf.Steps[n].Title
+		}
+		out.Items = append(out.Items, v)
 	}
 	return out, nil
 }
@@ -121,7 +126,8 @@ func (a *Adapter) Injections(ctx context.Context, runID string) (app.InjectionLi
 	return out, err
 }
 
-// StartRun — запуск прогона сценария с шага 0 (simulation.run.start): новый run_id.
+// StartRun — запуск прогона сценария (simulation.run.start): новый run_id;
+// курсор — на шаге старта (startStep).
 func (a *Adapter) StartRun(ctx context.Context, scenarioID string, in app.StartRun) (app.StartedRun, error) {
 	rt, err := a.rt()
 	if err != nil {
@@ -140,11 +146,29 @@ func (a *Adapter) StartRun(ctx context.Context, scenarioID string, in app.StartR
 	if seed == 0 {
 		seed = defaultSeed(scenarioID)
 	}
-	st, err := rt.Start(ctx, scenarioID, runID, in.Mode, seed, in.Speed, a.now())
+	sc, ok := rt.Library().Scenario(scenarioID)
+	if !ok {
+		return app.StartedRun{}, platform.Fail(errcodes.ApiNotFound, "object", "сценарий", "id", scenarioID)
+	}
+	st, err := rt.StartFrom(ctx, scenarioID, runID, in.Mode, seed, in.Speed, startStep(sc, in), a.now())
 	if err != nil {
 		return app.StartedRun{}, err
 	}
 	return app.StartedRun{Receipt: receipt("simulation.run.start", in.CommandMeta(), st), RunID: runID}, nil
+}
+
+// startStep — шаг старта прогона: from_step, иначе start=start_step — точка
+// старта сценария (история сразу «у катастрофы»; шаги до него пройдены — мир
+// заготовок накопительный), иначе с начала (решение пользователя: основной
+// путь показа — с самого начала, точка старта — по запросу).
+func startStep(sc *loader.Scenario, in app.StartRun) int {
+	switch {
+	case in.FromStep != nil:
+		return *in.FromStep
+	case in.Start == "start_step":
+		return sc.Manifest.StartStep
+	}
+	return 0
 }
 
 // PauseRun — пауза прогона (simulation.run.pause): столы показывают шаг курсора.

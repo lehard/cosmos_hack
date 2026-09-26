@@ -30,6 +30,15 @@ export interface Scenario {
   run_def?: string;
   /** Идентификатор сценария (S01…S13, демо, сбой). */
   scenario_id: string;
+  /** Доменное время точки старта. */
+  start_at?: string;
+  /**
+     * Точка старта сценария (заготовки): шаг для simulation.run.start с start=start_step.
+     * @minimum 0
+     */
+  start_step?: number;
+  /** Что происходит в точке старта: «Эталон Ф-001 выпущен…». */
+  start_title?: string;
   title: string;
   /** Версия определения сценария. */
   version: string;
