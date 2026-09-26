@@ -78,6 +78,9 @@ type showSystem struct {
 
 type showRoute struct{ method, path string }
 
+// activeRunSkip — пути, которым фронт не подставляет run_id активного прогона (SKIP в active-run.ts).
+var activeRunSkip = regexp.MustCompile(`^/api/v1/(runs|scenarios|auth|tasks)(/|$)`)
+
 func freeAddr(t *testing.T) string {
 	t.Helper()
 	ln, err := net.Listen("tcp", "127.0.0.1:0")
@@ -206,6 +209,12 @@ func (s *showSystem) call(persona, op string, params map[string]string, body any
 	if strings.Contains(path, "{") {
 		s.t.Fatalf("%s: не хватает параметров пути в %s", op, path)
 	}
+	// Активный прогон (frontend/src/shared/api/active-run.ts): пока на пульте идёт
+	// прогон, все чтения /api/v1/* без run_id получают run_id активного прогона,
+	// кроме прогонов, сценариев, входа и задач.
+	if r.method == http.MethodGet && s.runID != "" && !q.Has("run_id") && !activeRunSkip.MatchString(r.path) {
+		q.Set("run_id", s.runID)
+	}
 	if len(q) > 0 {
 		path += "?" + q.Encode()
 	}
@@ -317,24 +326,11 @@ func (s *showSystem) waitLive() {
 func newID() string { return uuid.NewV7().String() }
 
 // tasks — открытые задачи персоны в выдвижном окне «Задачи» шапки
-// (NotificationsPanel → useTasks({state: 'open'}): limit 200, без run_id).
+// (NotificationsPanel → useTasks({state: 'open'}): limit 200; задачи фронт
+// читает без run_id — active-run.ts их не трогает).
 func (s *showSystem) tasks(persona string) []map[string]any {
 	s.t.Helper()
 	return list(s.read(persona, "notifications.task.list", map[string]string{"state": "open", "limit": "200"}), "items")
-}
-
-// deskTasks — открытые задачи в виджете «Задачи» стола (TasksWidget →
-// useTasks({run_id}): limit 200, прогон стола, все состояния — открытые
-// отбирает виджет).
-func (s *showSystem) deskTasks(persona string) []map[string]any {
-	s.t.Helper()
-	var out []map[string]any
-	for _, x := range list(s.read(persona, "notifications.task.list", map[string]string{"run_id": s.runID, "limit": "200"}), "items") {
-		if str(x, "state") == "open" {
-			out = append(out, x)
-		}
-	}
-	return out
 }
 
 // ─────────────────────────────── остановки ───────────────────────────────
@@ -578,12 +574,6 @@ func (s *showSystem) task(st *showStop, op, kind string) map[string]any {
 	case len(hits) > 1:
 		s.t.Fatalf("%s: в «Задачах» %s %d задач %s по %s — какую нажать? %s", st, st.Persona, len(hits), op, st.flange(), taskSummary(hits))
 	}
-	// Та же задача — и в виджете «Задачи» стола (с run_id прогона).
-	desk := s.deskTasks(st.Persona)
-	if !slices.ContainsFunc(desk, func(x map[string]any) bool { return str(x, "task_id") == str(hits[0], "task_id") }) {
-		s.t.Errorf("%s: задача «%s» есть в выдвижном окне, но её нет в виджете «Задачи» стола (run_id=%s): там открытых %d — %s",
-			st, str(hits[0], "title"), s.runID, len(desk), taskSummary(desk))
-	}
 	return hits[0]
 }
 
@@ -613,6 +603,9 @@ func (s *showSystem) receive(st *showStop) string {
 	body["to_location_id"] = str(t, "location_id")
 	body["destination_kind"] = "workshop"
 	body["inspection_on_receipt"] = "no_damage"
+	if k := str(t, "step_key"); k != "" {
+		body["step_key"] = k // шаг процесса из задачи (ReceiveAction :step-key)
+	}
 	s.command(st, st.Persona, st.Op, map[string]string{"item_id": item}, body)
 	return "задачи: «" + str(t, "title") + "» → форма «Принять»"
 }
@@ -704,15 +697,23 @@ func (s *showSystem) start(st *showStop) string {
 	if ss.workplace == "" {
 		s.t.Fatalf("%s: в сеансе %s нет рабочего места — терминал без допуска", st, st.Persona)
 	}
+	// Очередь терминала (PerformerTerminalWidget.candidates): изделия открытых
+	// задач «Начать» этого шага; нет таких задач — изделия шага (item.item.list).
 	var cands []string
-	for _, r := range list(s.read(st.Persona, "item.item.list", map[string]string{"step_key": step, "limit": "100"}), "items") {
-		cands = append(cands, str(r, "item_id"))
+	for _, x := range list(s.read(st.Persona, "notifications.task.list", map[string]string{"limit": "200"}), "items") {
+		if str(x, "state") == "open" && str(x, "operation_id") == "process.operation.start" && str(x, "step_key") == step && str(x, "item_id") != "" {
+			cands = append(cands, str(x, "item_id"))
+		}
+	}
+	if len(cands) == 0 {
+		for _, r := range list(s.read(st.Persona, "item.item.list", map[string]string{"step_key": step, "limit": "100"}), "items") {
+			cands = append(cands, str(r, "item_id"))
+		}
 	}
 	pp := s.passport(st.Persona, item)
 	if !slices.Contains(cands, item) {
-		// Терминал показывает «Начать» только у изделий шага (item.item.list?step_key):
-		// нет изделия — у сварщика нет кнопки, хотя задача есть.
-		s.t.Errorf("%s: на терминале нет кнопки «Начать» по %s — среди изделий шага %s его нет (%d); в паспорте шаг %s, состояние %v",
+		// Нет изделия в очереди терминала — у сварщика нет кнопки «Начать», хотя задача есть.
+		s.t.Errorf("%s: на терминале нет кнопки «Начать» по %s — в очереди шага %s его нет (%d); в паспорте шаг %s, состояние %v",
 			st, item, step, len(cands), str(pp, "step_key"), pp["status"])
 	}
 	eq := list(s.read(st.Persona, "machinelogs.equipment.list", map[string]string{"station_id": ss.workplace}), "items")
@@ -763,50 +764,30 @@ func (s *showSystem) finish(st *showStop) string {
 	return "задачи: «" + str(t, "title") + "» → терминал «Выполнено»"
 }
 
-// queueRows — очередь «Ждут моего решения» (DecisionQueueWidget → useDecisionQueue:
-// sort=risk, прогон стола или ?run= — run_id, если он есть; размер страницы по умолчанию).
-func (s *showSystem) queueRows(persona, run string) []map[string]any {
-	s.t.Helper()
-	q := map[string]string{"sort": "risk"}
-	if run != "" {
-		q["run_id"] = run
-	}
-	return list(s.read(persona, "nonconformity.queue.list", q), "items")
-}
-
-// queueRow — строка очереди по фланцу остановки: и без прогона, и с run_id
-// прогона (стол, открытый с пульта) — строка должна быть в обоих видах.
+// queueRow — строка очереди «Ждут моего решения» по фланцу остановки
+// (DecisionQueueWidget → useDecisionQueue: sort=risk, run_id активного прогона).
 func (s *showSystem) queueRow(st *showStop, kinds ...string) map[string]any {
 	s.t.Helper()
-	find := func(all []map[string]any) []map[string]any {
-		var hits []map[string]any
-		for _, r := range all {
-			if (len(kinds) == 0 || slices.Contains(kinds, str(r, "kind"))) && sameFlange(str(r, "item_label")+" "+str(r, "title"), st.flange()) {
-				hits = append(hits, r)
-			}
+	all := list(s.read(st.Persona, "nonconformity.queue.list", map[string]string{"sort": "risk"}), "items")
+	var hits []map[string]any
+	for _, r := range all {
+		if (len(kinds) == 0 || slices.Contains(kinds, str(r, "kind"))) && sameFlange(str(r, "item_label")+" "+str(r, "title"), st.flange()) {
+			hits = append(hits, r)
 		}
-		return hits
 	}
-	rowsOf := func(all []map[string]any) string {
+	if len(hits) == 0 {
 		var rows []string
 		for _, r := range all {
 			rows = append(rows, fmt.Sprintf("[%s %s %s «%s»]", str(r, "kind"), str(r, "item_label"), str(r, "item_id"), str(r, "title")))
 		}
-		return fmt.Sprintf("(%d) %s", len(all), strings.Join(rows, " "))
-	}
-	all, run := s.queueRows(st.Persona, ""), s.queueRows(st.Persona, s.runID)
-	hits, hitsRun := find(all), find(run)
-	switch {
-	case len(hits) == 0 && len(hitsRun) == 0:
-		s.t.Fatalf("%s: в очереди %s нет строки %v по %s; без прогона %s; с run_id %s\n%s", st, st.Persona, kinds, st.flange(), rowsOf(all), rowsOf(run), s.itemDiag(st.Item))
-	case len(hits) == 0:
-		s.t.Errorf("%s: строка %v по %s есть в очереди с run_id, но нет без прогона: %s", st, kinds, st.flange(), rowsOf(all))
-		hits = hitsRun
-	case len(hitsRun) == 0:
-		s.t.Errorf("%s: строка %v по %s есть в очереди без прогона, но нет с run_id=%s (стол с пульта): %s", st, kinds, st.flange(), s.runID, rowsOf(run))
+		s.t.Fatalf("%s: в очереди %s нет строки %v по %s; очередь (%d): %s\n%s", st, st.Persona, kinds, st.flange(), len(all), strings.Join(rows, " "), s.itemDiag(st.Item))
 	}
 	if len(hits) > 1 {
-		s.t.Logf("%s: в очереди %d строк по %s, беру первую: %v", st, len(hits), st.flange(), hits)
+		var rows []string
+		for _, r := range hits {
+			rows = append(rows, fmt.Sprintf("[%s «%s»]", str(r, "kind"), str(r, "title")))
+		}
+		s.t.Logf("%s: в очереди %d строк по %s, беру первую: %s", st, len(hits), st.flange(), strings.Join(rows, " "))
 	}
 	return hits[0]
 }
@@ -820,11 +801,6 @@ func (s *showSystem) resolve(st *showStop) string {
 	item := str(row, "item_id")
 	s.object(st, item, fmt.Sprintf("строка очереди «%s»", str(row, "title")))
 	v := s.read(st.Persona, "nonconformity.presentation.read", map[string]string{"item_id": item})
-	// Окно предъявления, открытое со стола прогона (?run=), — то же предъявление.
-	if code, vr := s.call(st.Persona, "nonconformity.presentation.read", map[string]string{"item_id": item, "run_id": s.runID}, nil); code != 200 ||
-		fmt.Sprint(vr["presentation"]) != fmt.Sprint(v["presentation"]) {
-		s.t.Errorf("%s: окно предъявления с run_id: HTTP %d %v, без прогона %v", st, code, vr["presentation"], v["presentation"])
-	}
 	var act map[string]any
 	for _, a := range list(v, "actions") {
 		if str(a, "operation") == st.Op && str(a, "resolution") == "accept" && a["allowed"] == true {
