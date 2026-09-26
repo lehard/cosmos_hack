@@ -17,7 +17,6 @@ const { t } = useI18n()
 
 const rows = computed(() => sortFactors(props.model.rows))
 const n = computed(() => props.model.nc_count)
-const share = (r: CommonFactorRow) => (n.value > 0 ? Math.min(100, (r.matches / n.value) * 100) : 0)
 
 type Kind = 'all' | 'some' | 'varies' | 'unknown'
 const kindOf = (r: CommonFactorRow): Kind => {
@@ -27,36 +26,25 @@ const kindOf = (r: CommonFactorRow): Kind => {
   if (r.distinct_values > 1 && r.matches <= 1) return 'varies'
   return 'some'
 }
-/** Сколько совпало — словами. */
-function howMany(r: CommonFactorRow): string {
-  switch (kindOf(r)) {
-    case 'all':
-      return t('widgets.analysis.factors.inAll', { n: n.value })
-    case 'varies':
-      return t('widgets.analysis.factors.variesIn', { k: r.distinct_values, n: n.value })
-    case 'unknown':
-      return t('widgets.analysis.factors.noData')
-    default:
-      return t('widgets.analysis.factors.inSome', { k: r.matches, n: n.value })
-  }
-}
+/** Совпавшие у двух и более — фишками; не совпавшие и без данных — одной строкой. */
+const shared = computed(() => rows.value.filter((r) => kindOf(r) === 'all' || kindOf(r) === 'some'))
+const differs = computed(() => rows.value.filter((r) => kindOf(r) === 'varies').map((r) => t(FACTOR_TEXT[r.factor]).toLowerCase()))
+const unknownList = computed(() => rows.value.filter((r) => kindOf(r) === 'unknown').map((r) => t(FACTOR_TEXT[r.factor]).toLowerCase()))
+
 </script>
 
 <template>
   <div class="factors" :class="`density-${density}`" data-testid="common-factors">
-    <p class="lead ant-wrap" :title="t('hints.commonFactors')">{{ t('widgets.analysis.factors.lead', { n }) }}</p>
-    <ul class="rows">
-      <li v-for="r in rows" :key="r.factor" class="row" :data-factor="r.factor" :data-kind="kindOf(r)">
-        <p class="what ant-wrap">
-          <span class="name">{{ t(FACTOR_TEXT[r.factor]) }}</span><template v-if="r.value !== null && kindOf(r) !== 'varies'">: <span class="value">{{ r.value_label || r.value }}</span></template>
-        </p>
-        <p class="how">
-          <span class="bar" aria-hidden="true"><span class="fill" :style="{ width: `${share(r)}%` }" /></span>
-          <span class="how-text ant-wrap" data-testid="how-many">{{ howMany(r) }}</span>
-        </p>
+    <p class="lead ant-wrap" :title="t('hints.commonFactors')">{{ t('widgets.analysis.factors.together') }} · {{ t('widgets.analysis.factors.lead', { n }) }}</p>
+    <ul v-if="shared.length" class="chips">
+      <li v-for="r in shared" :key="r.factor" class="chip" :data-factor="r.factor" :data-kind="kindOf(r)">
+        <span class="ant-wrap">{{ t(FACTOR_TEXT[r.factor]) }}: <strong class="value">{{ r.value_label || r.value }}</strong></span>
+        <span class="share" data-testid="how-many">{{ r.matches }}/{{ n }}</span>
       </li>
     </ul>
-    <p class="muted ant-wrap">{{ t('widgets.analysis.factors.notACause') }}</p>
+    <p v-if="differs.length" class="muted ant-wrap" data-testid="differs">{{ t('widgets.analysis.factors.differs', { what: differs.join(', ') }) }}</p>
+    <p v-if="unknownList.length" class="muted ant-wrap" data-testid="unknown">{{ t('widgets.analysis.factors.unknownList', { what: unknownList.join(', ') }) }}</p>
+    <p class="note ant-wrap">{{ t('widgets.analysis.factors.notACause') }}</p>
   </div>
 </template>
 
@@ -78,7 +66,40 @@ p {
 }
 
 .lead {
+  font-weight: var(--ant-fw-bold);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ant-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chip {
+  display: inline-flex;
+  gap: var(--ant-space-2);
+  align-items: baseline;
+  min-width: 0;
+  padding: 2px var(--ant-space-2);
+  border: 1px solid var(--ant-border);
+  border-radius: var(--ant-radius-pill);
+  background: var(--ant-surface-subtle);
+}
+
+.chip[data-kind='all'] {
+  border-color: var(--ant-accent);
+}
+
+.value {
+  white-space: nowrap;
+}
+
+.share {
   color: var(--ant-text-2);
+  font-variant-numeric: tabular-nums;
 }
 
 .muted {
@@ -86,73 +107,8 @@ p {
   font-size: var(--ant-fs-meta);
 }
 
-.rows {
-  display: flex;
-  flex-direction: column;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.row {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-  padding: var(--ant-space-2) 0;
-  border-top: 1px solid var(--ant-border);
-}
-
-.row:first-child {
-  border-top: 0;
-}
-
-.row[data-kind='all'] {
-  margin: 0 calc(-1 * var(--ant-space-2));
-  padding: var(--ant-space-2);
-  border-top: 0;
-  border-left: 4px solid var(--ant-accent);
-  border-radius: var(--ant-radius-md);
-  background: var(--ant-accent-soft);
-}
-
-.name {
-  font-weight: var(--ant-fw-bold);
-}
-
-/* Обозначение (ИС-2, П-88) не рвётся посередине. */
-.value {
-  white-space: nowrap;
-}
-
-.row[data-kind='unknown'] .what,
-.row[data-kind='unknown'] .how-text {
-  color: var(--ant-text-3);
-}
-
-.how {
-  display: flex;
-  gap: var(--ant-space-2);
-  align-items: center;
-  min-width: 0;
-}
-
-.bar {
-  flex: none;
-  width: 64px;
-  height: 6px;
-  overflow: hidden;
-  border-radius: var(--ant-radius-pill);
-  background: var(--ant-border);
-}
-
-.fill {
-  display: block;
-  height: 100%;
-  background: var(--ant-accent);
-}
-
-.row[data-kind='all'] .how-text {
-  font-weight: var(--ant-fw-bold);
+.note {
+  color: var(--ant-status-attention-text);
+  font-size: var(--ant-fs-meta);
 }
 </style>
