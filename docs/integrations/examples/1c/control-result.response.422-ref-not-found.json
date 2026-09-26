@@ -1,0 +1,11 @@
+{
+  "message_id": "qc-out-000126",
+  "contract_version": "1.0",
+  "result": "rejected",
+  "error": {
+    "code": "E_REF_NOT_FOUND",
+    "text": "Серия номенклатуры ser-91d0-0019 не найдена",
+    "field": "subject.items[2].series_ref_key",
+    "retryable": false
+  }
+}

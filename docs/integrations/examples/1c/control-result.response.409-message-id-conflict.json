@@ -1,0 +1,10 @@
+{
+  "message_id": "qc-out-000120",
+  "contract_version": "1.0",
+  "result": "rejected",
+  "error": {
+    "code": "E_MESSAGE_ID_CONFLICT",
+    "text": "Сообщение qc-out-000120 уже принято с другим содержимым; документ не изменён",
+    "retryable": false
+  }
+}

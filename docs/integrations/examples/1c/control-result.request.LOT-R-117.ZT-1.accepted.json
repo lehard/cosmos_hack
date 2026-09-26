@@ -1,0 +1,39 @@
+{
+  "contract": "qc-1c.control-result",
+  "contract_version": "1.0",
+  "message_id": "qc-out-000061",
+  "sent_at": "2026-09-22T11:00:20+03:00",
+  "result_id": "CR-LOT-R-117-ZT-1-1",
+  "gate": {"code": "ZT-1", "name": "Входной контроль", "presentation_no": 1},
+  "subject": {
+    "kind": "lot",
+    "lot": {
+      "internal_id": "LOT-R-117",
+      "display": "П-117",
+      "receipt_ref_key": "rcp-3f44-0117",
+      "component_ids": ["R-101", "R-102", "R-103", "R-104", "R-105", "R-106", "R-107", "R-108", "R-109", "R-110"]
+    },
+    "qty": 10,
+    "unit_okei": "796"
+  },
+  "nomenclature_ref_key": "nom-7a1e-0102",
+  "order_ref_key": null,
+  "operation": {"code": "OP-005", "name": "Входной контроль партии"},
+  "line_id": null,
+  "warehouse_ref_key": "wh-iqc",
+  "outcome": "accepted",
+  "data_completeness": "full",
+  "permit": null,
+  "nonconformities": [],
+  "disposition": null,
+  "signed": {
+    "at": "2026-09-22T11:00:00+03:00",
+    "signers": [{"ref": "QC-02", "role": "QC_INSPECTOR"}],
+    "signature_class": "token"
+  },
+  "basis": {
+    "decision_id": "DEC-LOT-R-117-ZT-1-1",
+    "nc_ids": [],
+    "evidence_url": "https://qc.local/lots/LOT-R-117"
+  }
+}

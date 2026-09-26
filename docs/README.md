@@ -19,6 +19,7 @@
 | [vision-camera-project.md](vision-camera-project.md), [target-components.md](target-components.md), [federation.md](federation.md) | Комплекс «камеры + ИИ»; компоненты кейса §3.2; межзаводская кооперация |
 | [document-catalog.md](document-catalog.md), [normative-anchors.md](normative-anchors.md), [bpmn-ext-properties.md](bpmn-ext-properties.md) | Документы по этапам; нормативные опоры (ГОСТ); свойства расширения BPMN |
 | [assumptions.md](assumptions.md), [third-party.md](third-party.md), [glossary.md](glossary.md) | Ограничения и допущения; заимствованный код и лицензии; термины |
+| [process/](process/README.md) | Материалы процессной сессии: наши находки, паспорт КТ-3, методы обнаружения, следующее наблюдение, предложения, фабрика документов, паспорт изделия, экран линии, краевой агент, схема v0.3.2; процессный набор сценариев — [../scenarios/process-session/README.md](../scenarios/process-session/README.md), эталонные сообщения внешних систем — [integrations/examples/README.md](integrations/examples/README.md) |
 | `licenses/` | Перечень зависимостей с лицензиями — `make licenses` (NFR-SEC-2) |
 | `scripts/check-docs.mjs` | Проверка документации: ссылки и якоря, руководства = справка, пути в путеводителе, заголовки пакетов Go (NFR-DOC-3) |
 

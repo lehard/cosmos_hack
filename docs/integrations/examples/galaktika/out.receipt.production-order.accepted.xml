@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Мы → Галактика. Квитанция на производственный заказ: принят, наш ID задания ORD-0917 -->
+<Package xmlns="urn:sergey-palych:integration:galaktika" contractVersion="1.0">
+  <Header>
+    <MessageId>gal-out-000100</MessageId>
+    <CorrelationId>gal-in-000314</CorrelationId>
+    <Sender>SERGEY-PALYCH-QC</Sender>
+    <Receiver>GALAKTIKA-ERP</Receiver>
+    <CreatedAt>2026-09-14T09:00:02+03:00</CreatedAt>
+    <Entity>Receipt</Entity>
+    <Operation>receipt</Operation>
+    <RoutingKey>receipt.galaktika</RoutingKey>
+  </Header>
+  <Key>
+    <ProductionOrder>ПЗ-0917</ProductionOrder>
+    <ExternalId>ORD-0917</ExternalId>
+  </Key>
+  <Body>
+    <Receipt>
+      <RefMessageId>gal-in-000314</RefMessageId>
+      <Result>accepted</Result>
+      <InternalId>ORD-0917</InternalId>
+    </Receipt>
+  </Body>
+</Package>

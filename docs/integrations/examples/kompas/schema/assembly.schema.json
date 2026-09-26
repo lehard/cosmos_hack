@@ -1,0 +1,301 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "urn:sergey-palych:integration:cad:assembly:1.0",
+  "title": "Условная сборка из КОМПАС-3D (файл), контракт cad-assembly 1.0 — предложение для contracts/integrations/cad/assembly.schema.json соседей [П]",
+  "description": "Входящий файл: терпимая схема (новые поля 1.x допускаются), но обязательные поля, типы и допустимые значения проверяются. Формат не меняется при переходе к прямому подключению (KOMPAS_DIRECT_CONNECTION.md).",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "format_version",
+    "source",
+    "assembly",
+    "components",
+    "links",
+    "id_mapping_hint"
+  ],
+  "properties": {
+    "format_version": {
+      "type": "string",
+      "pattern": "^1\\.[0-9]+$",
+      "description": "Неизвестная старшая версия — карантин файла E_UNSUPPORTED_VERSION"
+    },
+    "source": {
+      "type": "object",
+      "required": [
+        "system",
+        "export_kind",
+        "exported_at"
+      ],
+      "properties": {
+        "system": {
+          "type": "string"
+        },
+        "export_kind": {
+          "const": "assembly_structure"
+        },
+        "exported_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "adapter": {
+          "type": "string",
+          "description": "file | kompas-api7 | lotsman-plm [П]"
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    },
+    "assembly": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "assembly_id",
+        "designation",
+        "name",
+        "version",
+        "geometry"
+      ],
+      "properties": {
+        "assembly_id": {
+          "type": "string"
+        },
+        "designation": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Версия (изменение) КД: Б, В …"
+        },
+        "lifecycle_letter": {
+          "type": "string",
+          "description": "Литера: О, О1, А …"
+        },
+        "change_notice": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Номер извещения об изменении, которым введена версия [П, поле 1.1]"
+        },
+        "geometry": {
+          "type": "null"
+        },
+        "geometry_note": {
+          "type": "string"
+        },
+        "critical_characteristics": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "name",
+              "control"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "control": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 1
+              },
+              "note": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "components": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": [
+          "position",
+          "designation",
+          "name",
+          "kind",
+          "qty",
+          "unit",
+          "make_or_buy",
+          "parent",
+          "geometry"
+        ],
+        "properties": {
+          "position": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "designation": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Обозначение по КД — ключ сопоставления вместе с версией"
+          },
+          "name": {
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "detail",
+              "subassembly",
+              "standard_part",
+              "fastener",
+              "purchased_equipment",
+              "material"
+            ]
+          },
+          "qty": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "unit": {
+            "enum": [
+              "шт",
+              "кг",
+              "м",
+              "м2",
+              "л"
+            ]
+          },
+          "material": {
+            "type": "string"
+          },
+          "make_or_buy": {
+            "enum": [
+              "make",
+              "buy"
+            ]
+          },
+          "parent": {
+            "type": "string",
+            "description": "assembly_id или обозначение родителя"
+          },
+          "shelf_life_tracked": {
+            "type": "boolean"
+          },
+          "lot_tracked": {
+            "type": "boolean"
+          },
+          "serial_tracked": {
+            "type": "boolean"
+          },
+          "geometry": {
+            "type": "null",
+            "description": "Геометрия не передаётся — явно null"
+          },
+          "note": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "links": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": [
+          "type",
+          "id"
+        ],
+        "properties": {
+          "type": {
+            "enum": [
+              "weld",
+              "bolted_joint",
+              "seal",
+              "threaded_joint",
+              "adhesive",
+              "riveted_joint"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Z]-[0-9]+$"
+          },
+          "from": {
+            "type": "string"
+          },
+          "to": {
+            "type": "string"
+          },
+          "between": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "part": {
+            "type": "string"
+          },
+          "fasteners": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "qty": {
+            "type": "number"
+          },
+          "torque_nm": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "description": "Н·м"
+          },
+          "tolerance_pct": {
+            "type": "number",
+            "minimum": 0
+          },
+          "note": {
+            "type": "string"
+          }
+        },
+        "anyOf": [
+          {
+            "required": [
+              "from",
+              "to"
+            ]
+          },
+          {
+            "required": [
+              "between"
+            ]
+          }
+        ]
+      }
+    },
+    "id_mapping_hint": {
+      "type": "object",
+      "required": [
+        "rule",
+        "conflict_behavior"
+      ],
+      "properties": {
+        "rule": {
+          "type": "string"
+        },
+        "conflict_behavior": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,359 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Контракт qc-galaktika 1.0 — XML-пакет для «Галактика ESB» (брокер RabbitMQ, адаптеры ИС, каноническая модель).
+  [П] Это НАШ канонический пакет. Формат канонической модели «Галактика ESB» публично не описан:
+  перевод пакета в объекты «Галактика ERP» делает адаптер ИС на стороне шины — уточнить у вендора.
+  Имена элементов латиницей, значения — по-русски. Все ID и номера условные.
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns="urn:sergey-palych:integration:galaktika"
+           targetNamespace="urn:sergey-palych:integration:galaktika"
+           elementFormDefault="qualified">
+
+  <xs:element name="Package" type="PackageType"/>
+
+  <xs:complexType name="PackageType">
+    <xs:sequence>
+      <xs:element name="Header" type="HeaderType"/>
+      <xs:element name="Key" type="KeyType"/>
+      <xs:element name="Body" type="BodyType"/>
+    </xs:sequence>
+    <xs:attribute name="contractVersion" use="required">
+      <xs:simpleType>
+        <xs:restriction base="xs:string"><xs:pattern value="1\.[0-9]+"/></xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+  </xs:complexType>
+
+  <!-- Заголовок: одинаковый у всех сущностей -->
+  <xs:complexType name="HeaderType">
+    <xs:sequence>
+      <xs:element name="MessageId" type="MessageIdType"/>
+      <xs:element name="CorrelationId" type="xs:string" minOccurs="0"/>
+      <xs:element name="Sender" type="SystemType"/>
+      <xs:element name="Receiver" type="SystemType"/>
+      <xs:element name="CreatedAt" type="xs:dateTime"/>
+      <xs:element name="Entity" type="EntityType"/>
+      <xs:element name="Operation" type="OperationType"/>
+      <xs:element name="RoutingKey" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:simpleType name="MessageIdType">
+    <xs:restriction base="xs:string"><xs:pattern value="gal-(in|out)-[0-9]{6}"/></xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="SystemType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="SERGEY-PALYCH-QC"/>
+      <xs:enumeration value="GALAKTIKA-ERP"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="EntityType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="ProductionOrder"/>   <!-- производственный заказ: к нам -->
+      <xs:enumeration value="Mc"/>                <!-- МЦ и спецификация: к нам -->
+      <xs:enumeration value="McLot"/>             <!-- партия МЦ: к нам -->
+      <xs:enumeration value="IssueToProduction"/> <!-- накладная на отпуск в производство: от нас -->
+      <xs:enumeration value="Transfer"/>          <!-- накладная на передачу между цехами: от нас -->
+      <xs:enumeration value="DefectAct"/>         <!-- акт на брак: от нас -->
+      <xs:enumeration value="McQualityStatus"/>   <!-- статус и сортность МЦ: от нас -->
+      <xs:enumeration value="Release"/>           <!-- сдача по производственному заказу (выпуск): от нас -->
+      <xs:enumeration value="Receipt"/>           <!-- квитанция: в обе стороны -->
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="OperationType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="create"/>
+      <xs:enumeration value="upsert"/>
+      <xs:enumeration value="cancel"/>
+      <xs:enumeration value="receipt"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- Ключ: по нему приёмник находит объект и отсекает дубли -->
+  <xs:complexType name="KeyType">
+    <xs:sequence>
+      <xs:element name="ProductionOrder" type="xs:string" minOccurs="0"/>
+      <xs:element name="McCode" type="xs:string" minOccurs="0"/>
+      <xs:element name="Lot" type="xs:string" minOccurs="0"/>
+      <xs:element name="Serial" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="ExternalId" type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="BodyType">
+    <xs:choice>
+      <xs:element name="ProductionOrder" type="ProductionOrderType"/>
+      <xs:element name="Mc" type="McType"/>
+      <xs:element name="McLot" type="McLotType"/>
+      <xs:element name="IssueToProduction" type="IssueToProductionType"/>
+      <xs:element name="Transfer" type="TransferType"/>
+      <xs:element name="DefectAct" type="DefectActType"/>
+      <xs:element name="McQualityStatus" type="McQualityStatusType"/>
+      <xs:element name="Release" type="ReleaseType"/>
+      <xs:element name="Receipt" type="ReceiptType"/>
+    </xs:choice>
+  </xs:complexType>
+
+  <!-- Общие типы -->
+  <xs:complexType name="QtyType">
+    <xs:simpleContent>
+      <xs:extension base="xs:decimal">
+        <xs:attribute name="unit" use="required">
+          <xs:simpleType>
+            <xs:restriction base="xs:string"><xs:enumeration value="шт"/><xs:enumeration value="кг"/><xs:enumeration value="м"/></xs:restriction>
+          </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute name="okei" type="xs:string" use="required"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+
+  <xs:complexType name="McRefType">
+    <xs:sequence>
+      <xs:element name="Code" type="xs:string"/>
+      <xs:element name="Designation" type="xs:string" minOccurs="0"/>
+      <xs:element name="Name" type="xs:string" minOccurs="0"/>
+      <xs:element name="KdVersion" type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="SerialsType">
+    <xs:sequence>
+      <xs:element name="Serial" type="xs:string" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="SignerType">
+    <xs:attribute name="ref" type="xs:string" use="required"/>
+    <xs:attribute name="role" type="xs:string" use="required"/>
+  </xs:complexType>
+
+  <!-- Основание: наше подписанное решение. Гипотез, кадров и журналов нет -->
+  <xs:complexType name="BasisType">
+    <xs:sequence>
+      <xs:element name="DecisionId" type="xs:string"/>
+      <xs:element name="GateCode">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:enumeration value="ZT-1"/><xs:enumeration value="ZT-2"/><xs:enumeration value="ZT-3"/>
+            <xs:enumeration value="ZT-4"/><xs:enumeration value="ZT-5"/><xs:enumeration value="ZT-6"/>
+            <xs:enumeration value="ZT-R"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+      <xs:element name="NcId" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="SignedAt" type="xs:dateTime"/>
+      <xs:element name="Signer" type="SignerType" maxOccurs="unbounded"/>
+      <xs:element name="EvidenceUrl" type="xs:anyURI" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- К нам -->
+  <xs:complexType name="ProductionOrderType">
+    <xs:sequence>
+      <xs:element name="Number" type="xs:string"/>
+      <xs:element name="Date" type="xs:date"/>
+      <xs:element name="Status" type="xs:string"/>
+      <xs:element name="Mc" type="McRefType"/>
+      <xs:element name="Qty" type="QtyType"/>
+      <xs:element name="DueDate" type="xs:date"/>
+      <xs:element name="TechProcess" type="xs:string" minOccurs="0"/>
+      <xs:element name="Department" type="xs:string" minOccurs="0"/>
+      <xs:any namespace="##other" processContents="lax" minOccurs="0" maxOccurs="unbounded"/> <!-- расширения 1.x: см. GALAKTIKA_CONTRACT.md §8 -->
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="McType">
+    <xs:sequence>
+      <xs:element name="Mc" type="McRefType"/>
+      <xs:element name="Unit" type="xs:string"/>
+      <xs:element name="Tracking">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:enumeration value="serial"/><xs:enumeration value="lot"/><xs:enumeration value="none"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+      <xs:element name="SpecLine" minOccurs="0" maxOccurs="unbounded">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="Mc" type="McRefType"/>
+            <xs:element name="Qty" type="QtyType"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:any namespace="##other" processContents="lax" minOccurs="0" maxOccurs="unbounded"/> <!-- расширения 1.x: см. GALAKTIKA_CONTRACT.md §8 -->
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="McLotType">
+    <xs:sequence>
+      <xs:element name="LotNumber" type="xs:string"/>
+      <xs:element name="Mc" type="McRefType"/>
+      <xs:element name="Supplier">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="Code" type="xs:string"/>
+            <xs:element name="Name" type="xs:string"/>
+            <xs:element name="Contract" type="xs:string" minOccurs="0"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="Qty" type="QtyType"/>
+      <xs:element name="Certificate" type="xs:string" minOccurs="0"/>
+      <xs:element name="ReceivedAt" type="xs:dateTime"/>
+      <xs:element name="McStatus" type="xs:string"/>
+      <xs:element name="Serials" type="SerialsType" minOccurs="0"/>
+      <xs:any namespace="##other" processContents="lax" minOccurs="0" maxOccurs="unbounded"/> <!-- расширения 1.x: см. GALAKTIKA_CONTRACT.md §8 -->
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- От нас -->
+  <xs:complexType name="IssueToProductionType">
+    <xs:sequence>
+      <xs:element name="ProductionOrder" type="xs:string"/>
+      <xs:element name="Mc" type="McRefType"/>
+      <xs:element name="Lot" type="xs:string" minOccurs="0"/>
+      <xs:element name="Serials" type="SerialsType" minOccurs="0"/>
+      <xs:element name="Qty" type="QtyType"/>
+      <xs:element name="FromWarehouse" type="xs:string"/>
+      <xs:element name="ToDepartment" type="xs:string"/>
+      <xs:element name="Basis" type="BasisType"/>
+      <xs:any namespace="##other" processContents="lax" minOccurs="0" maxOccurs="unbounded"/> <!-- расширения 1.x: см. GALAKTIKA_CONTRACT.md §8 -->
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="TransferType">
+    <xs:sequence>
+      <xs:element name="ProductionOrder" type="xs:string"/>
+      <xs:element name="Mc" type="McRefType"/>
+      <xs:element name="Serials" type="SerialsType"/>
+      <xs:element name="Qty" type="QtyType"/>
+      <xs:element name="FromDepartment" type="xs:string"/>
+      <xs:element name="ToDepartment" type="xs:string"/>
+      <xs:element name="Basis" type="BasisType"/>
+      <xs:any namespace="##other" processContents="lax" minOccurs="0" maxOccurs="unbounded"/> <!-- расширения 1.x: см. GALAKTIKA_CONTRACT.md §8 -->
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="DefectActType">
+    <xs:sequence>
+      <xs:element name="ActKind">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:enumeration value="исправимый"/>
+            <xs:enumeration value="неисправимый"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+      <xs:element name="Decision">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:enumeration value="переделка"/>
+            <xs:enumeration value="замена компонента"/>
+            <xs:enumeration value="ремонт"/>
+            <xs:enumeration value="списание"/>
+            <xs:enumeration value="разборка"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+      <xs:element name="Nonconformity" type="xs:string"/>
+      <xs:element name="ProductionOrder" type="xs:string"/>
+      <xs:element name="Department" type="xs:string"/>
+      <xs:element name="Operation" type="xs:string"/>
+      <xs:element name="Mc" type="McRefType"/>
+      <xs:element name="Serials" type="SerialsType"/>
+      <xs:element name="Qty" type="QtyType"/>
+      <xs:element name="PermitNumber" type="xs:string" minOccurs="0"/>
+      <xs:element name="Basis" type="BasisType"/>
+      <xs:any namespace="##other" processContents="lax" minOccurs="0" maxOccurs="unbounded"/> <!-- расширения 1.x: см. GALAKTIKA_CONTRACT.md §8 -->
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:simpleType name="McQualityStatusValue">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="годен"/>
+      <xs:enumeration value="годен по разрешению"/>
+      <xs:enumeration value="брак — на исправление"/>
+      <xs:enumeration value="брак"/>
+      <xs:enumeration value="к возврату поставщику"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:complexType name="McQualityStatusType">
+    <xs:sequence>
+      <xs:element name="Mc" type="McRefType"/>
+      <xs:choice>
+        <xs:element name="Serials" type="SerialsType"/>
+        <xs:element name="Lot" type="xs:string"/>
+      </xs:choice>
+      <xs:element name="Qty" type="QtyType"/>
+      <xs:element name="Status" type="McQualityStatusValue"/>
+      <xs:element name="Sort" type="xs:string" minOccurs="0"/>
+      <xs:element name="ControlResult">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:enumeration value="годно"/>
+            <xs:enumeration value="годно по разрешению на отклонение"/>
+            <xs:enumeration value="не годно"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+      <xs:element name="Operation" type="xs:string"/>
+      <xs:element name="PermitNumber" type="xs:string" minOccurs="0"/>
+      <xs:element name="Basis" type="BasisType"/>
+      <xs:any namespace="##other" processContents="lax" minOccurs="0" maxOccurs="unbounded"/> <!-- расширения 1.x: см. GALAKTIKA_CONTRACT.md §8 -->
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="ReleaseType">
+    <xs:sequence>
+      <xs:element name="ProductionOrder" type="xs:string"/>
+      <xs:element name="Mc" type="McRefType"/>
+      <xs:element name="Serials" type="SerialsType"/>
+      <xs:element name="Qty" type="QtyType"/>
+      <xs:element name="ToWarehouse" type="xs:string"/>
+      <xs:element name="AfterRework" type="xs:boolean"/>
+      <xs:element name="PermitNumber" type="xs:string" minOccurs="0"/>
+      <xs:element name="Basis" type="BasisType"/>
+      <xs:any namespace="##other" processContents="lax" minOccurs="0" maxOccurs="unbounded"/> <!-- расширения 1.x: см. GALAKTIKA_CONTRACT.md §8 -->
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Квитанция: деловой ответ приёмника. Подтверждение брокера (publisher confirm) — не квитанция -->
+  <xs:complexType name="ReceiptType">
+    <xs:sequence>
+      <xs:element name="RefMessageId" type="MessageIdType"/>
+      <xs:element name="Result">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:enumeration value="accepted"/>
+            <xs:enumeration value="duplicate"/>
+            <xs:enumeration value="rejected"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+      <xs:element name="Document" type="xs:string" minOccurs="0"/>
+      <xs:element name="InternalId" type="xs:string" minOccurs="0"/>
+      <xs:element name="Error" minOccurs="0">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="Code">
+              <xs:simpleType>
+                <xs:restriction base="xs:string"><xs:pattern value="E_[A-Z0-9_]+"/></xs:restriction>
+              </xs:simpleType>
+            </xs:element>
+            <xs:element name="Text" type="xs:string"/>
+            <xs:element name="Field" type="xs:string" minOccurs="0"/>
+            <xs:element name="Retryable" type="xs:boolean"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:any namespace="##other" processContents="lax" minOccurs="0" maxOccurs="unbounded"/> <!-- расширения 1.x: см. GALAKTIKA_CONTRACT.md §8 -->
+    </xs:sequence>
+  </xs:complexType>
+</xs:schema>

@@ -1,0 +1,267 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "urn:sergey-palych:integration:mes:MaterialSubLot:1.0",
+  "title": "Мы → MES: удержание «не выдавать в работу» и его снятие (Sync MaterialSubLot), qc-mes 1.0 [П]",
+  "description": "Исходящее от нас: схема строгая (additionalProperties: false).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "ApplicationArea",
+    "DataArea"
+  ],
+  "properties": {
+    "ApplicationArea": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "Sender",
+        "Receiver",
+        "CreationDateTime",
+        "BODID",
+        "ContractVersion"
+      ],
+      "properties": {
+        "Sender": {
+          "type": "object",
+          "required": [
+            "LogicalID"
+          ],
+          "properties": {
+            "LogicalID": {
+              "enum": [
+                "SERGEY-PALYCH-QC",
+                "MES"
+              ]
+            }
+          }
+        },
+        "Receiver": {
+          "type": "object",
+          "required": [
+            "LogicalID"
+          ],
+          "properties": {
+            "LogicalID": {
+              "enum": [
+                "SERGEY-PALYCH-QC",
+                "MES"
+              ]
+            }
+          }
+        },
+        "CreationDateTime": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "BODID": {
+          "type": "string",
+          "pattern": "^mes-(in|out)-[0-9]{6}$",
+          "description": "Номер сообщения; при повторе не меняется"
+        },
+        "ContractVersion": {
+          "type": "string",
+          "pattern": "^1\\.[0-9]+$",
+          "description": "Версия контракта qc-mes. Не версия MES и не версия приложения"
+        }
+      }
+    },
+    "DataArea": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "Verb",
+        "MaterialSubLot"
+      ],
+      "properties": {
+        "Verb": {
+          "enum": [
+            "Sync"
+          ],
+          "description": "В B2MML глагол — отдельный элемент (Process, Sync, Acknowledge …); здесь упрощено до строки [П, уточнить по схеме B2MML]"
+        },
+        "MaterialSubLot": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "ID",
+              "MaterialDefinitionID",
+              "Status",
+              "Hold"
+            ],
+            "properties": {
+              "ID": {
+                "type": "string",
+                "description": "ID экземпляра в MES (из таблицы соответствий)"
+              },
+              "Description": {
+                "type": "string"
+              },
+              "MaterialDefinitionID": {
+                "type": "string"
+              },
+              "Status": {
+                "enum": [
+                  "Held",
+                  "Released"
+                ],
+                "description": "Held — не выдавать в работу; Released — удержание снято человеком"
+              },
+              "Hold": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "HoldID",
+                  "Kind",
+                  "Level",
+                  "SetAt",
+                  "Basis",
+                  "Instruction"
+                ],
+                "properties": {
+                  "HoldID": {
+                    "type": "string"
+                  },
+                  "Kind": {
+                    "const": "quality_hold"
+                  },
+                  "Level": {
+                    "enum": [
+                      "recheck",
+                      "quarantine",
+                      "block"
+                    ],
+                    "description": "доп. проверка / карантин / блок. Уровень «наблюдать» в MES не уходит"
+                  },
+                  "SetAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "SetBy": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "Kind",
+                      "Ref"
+                    ],
+                    "properties": {
+                      "Kind": {
+                        "enum": [
+                          "rule",
+                          "person"
+                        ]
+                      },
+                      "Ref": {
+                        "type": "string"
+                      },
+                      "RuleRevision": {
+                        "type": "integer"
+                      }
+                    }
+                  },
+                  "Basis": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "Kind",
+                      "Ref"
+                    ],
+                    "properties": {
+                      "Kind": {
+                        "enum": [
+                          "rule",
+                          "decision"
+                        ]
+                      },
+                      "Ref": {
+                        "type": "string",
+                        "description": "Номер правила или решения. Текст гипотезы, причина и круг подозреваемых не передаются"
+                      }
+                    }
+                  },
+                  "Instruction": {
+                    "type": "string",
+                    "maxLength": 120
+                  },
+                  "ReleasedAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "ReleasedBy": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "PersonRef",
+                      "Role",
+                      "DecisionID"
+                    ],
+                    "properties": {
+                      "PersonRef": {
+                        "type": "string"
+                      },
+                      "Role": {
+                        "type": "string"
+                      },
+                      "DecisionID": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              },
+              "Property": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "ID",
+                    "Value"
+                  ],
+                  "properties": {
+                    "ID": {
+                      "type": "string"
+                    },
+                    "Value": {
+                      "type": [
+                        "string",
+                        "number",
+                        "boolean"
+                      ]
+                    },
+                    "UnitOfMeasure": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "Status": {
+                      "const": "Released"
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "Hold": {
+                      "required": [
+                        "ReleasedAt",
+                        "ReleasedBy"
+                      ]
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}

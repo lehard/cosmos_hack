@@ -1,0 +1,28 @@
+{
+  "ApplicationArea": {
+    "Sender": {"LogicalID": "SERGEY-PALYCH-QC"},
+    "Receiver": {"LogicalID": "MES"},
+    "CreationDateTime": "2026-09-18T11:00:02+03:00",
+    "BODID": "mes-out-000031",
+    "ContractVersion": "1.0"
+  },
+  "DataArea": {
+    "Verb": "Process",
+    "TestResult": [
+      {
+        "ID": "CR-F-001-ZT-2-1",
+        "JobOrderID": "JO-0918-0001",
+        "MaterialSubLotID": "MSL-0917-001",
+        "TestDateTime": "2026-09-18T11:00:00+03:00",
+        "GateCode": "ZT-2",
+        "PresentationNo": 1,
+        "Result": "Accepted",
+        "Disposition": null,
+        "PermitNumber": null,
+        "NonconformityRef": [],
+        "SignedBy": [{"PersonRef": "QC-01", "Role": "QC_INSPECTOR"}],
+        "Property": [{"ID": "sp.item_id", "Value": "F-001"}]
+      }
+    ]
+  }
+}

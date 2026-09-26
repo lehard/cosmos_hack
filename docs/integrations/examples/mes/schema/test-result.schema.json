@@ -1,0 +1,268 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "urn:sergey-palych:integration:mes:TestResult:1.0",
+  "title": "Мы → MES: операция принята ОТК или нет, решение по изделию (Process TestResult), qc-mes 1.0 [П]",
+  "description": "Исходящее от нас: схема строгая (additionalProperties: false).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "ApplicationArea",
+    "DataArea"
+  ],
+  "properties": {
+    "ApplicationArea": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "Sender",
+        "Receiver",
+        "CreationDateTime",
+        "BODID",
+        "ContractVersion"
+      ],
+      "properties": {
+        "Sender": {
+          "type": "object",
+          "required": [
+            "LogicalID"
+          ],
+          "properties": {
+            "LogicalID": {
+              "enum": [
+                "SERGEY-PALYCH-QC",
+                "MES"
+              ]
+            }
+          }
+        },
+        "Receiver": {
+          "type": "object",
+          "required": [
+            "LogicalID"
+          ],
+          "properties": {
+            "LogicalID": {
+              "enum": [
+                "SERGEY-PALYCH-QC",
+                "MES"
+              ]
+            }
+          }
+        },
+        "CreationDateTime": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "BODID": {
+          "type": "string",
+          "pattern": "^mes-(in|out)-[0-9]{6}$",
+          "description": "Номер сообщения; при повторе не меняется"
+        },
+        "ContractVersion": {
+          "type": "string",
+          "pattern": "^1\\.[0-9]+$",
+          "description": "Версия контракта qc-mes. Не версия MES и не версия приложения"
+        }
+      }
+    },
+    "DataArea": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "Verb",
+        "TestResult"
+      ],
+      "properties": {
+        "Verb": {
+          "enum": [
+            "Process"
+          ],
+          "description": "В B2MML глагол — отдельный элемент (Process, Sync, Acknowledge …); здесь упрощено до строки [П, уточнить по схеме B2MML]"
+        },
+        "TestResult": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "ID",
+              "JobOrderID",
+              "MaterialSubLotID",
+              "TestDateTime",
+              "Result",
+              "GateCode",
+              "SignedBy"
+            ],
+            "properties": {
+              "ID": {
+                "type": "string",
+                "description": "Наш ID результата контроля"
+              },
+              "JobOrderID": {
+                "type": "string"
+              },
+              "MaterialSubLotID": {
+                "type": "string"
+              },
+              "TestDateTime": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "GateCode": {
+                "enum": [
+                  "ZT-1",
+                  "ZT-2",
+                  "ZT-3",
+                  "ZT-4",
+                  "ZT-5",
+                  "ZT-6",
+                  "ZT-R"
+                ]
+              },
+              "PresentationNo": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "Result": {
+                "enum": [
+                  "Accepted",
+                  "AcceptedByPermit",
+                  "NotAccepted"
+                ],
+                "description": "операция принята ОТК / принята по разрешению / не принята"
+              },
+              "Disposition": {
+                "enum": [
+                  null,
+                  "ReturnForRework",
+                  "Rework",
+                  "ComponentReplacement",
+                  "Repair",
+                  "UseAsIs",
+                  "Scrap",
+                  "Disassemble",
+                  "ReturnToSupplier"
+                ],
+                "description": "ReturnForRework — лёгкий возврат на свою операцию по ТП; остальное — решение ЗТ-Р; null — решение ещё не принято"
+              },
+              "PermitNumber": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "NonconformityRef": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "SignedBy": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "PersonRef",
+                    "Role"
+                  ],
+                  "properties": {
+                    "PersonRef": {
+                      "type": "string"
+                    },
+                    "Role": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "Property": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "ID",
+                    "Value"
+                  ],
+                  "properties": {
+                    "ID": {
+                      "type": "string"
+                    },
+                    "Value": {
+                      "type": [
+                        "string",
+                        "number",
+                        "boolean"
+                      ]
+                    },
+                    "UnitOfMeasure": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "Result": {
+                      "const": "AcceptedByPermit"
+                    }
+                  }
+                },
+                "then": {
+                  "required": [
+                    "PermitNumber"
+                  ],
+                  "properties": {
+                    "PermitNumber": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "Result": {
+                      "const": "NotAccepted"
+                    }
+                  }
+                },
+                "then": {
+                  "required": [
+                    "Disposition",
+                    "NonconformityRef"
+                  ]
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "GateCode": {
+                      "const": "ZT-R"
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "Result": {
+                      "const": "NotAccepted"
+                    },
+                    "Disposition": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}

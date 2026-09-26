@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Мы → Галактика. Акт на брак по производственному заказу: решение ЗТ-Р по НС-И1, 6 изделий на переделку.
+     Причина («дрейф тока ИС-2»), круг 34 → 13 → 6, кадры и журналы НЕ передаются. -->
+<Package xmlns="urn:sergey-palych:integration:galaktika" contractVersion="1.0">
+  <Header>
+    <MessageId>gal-out-000127</MessageId>
+    <Sender>SERGEY-PALYCH-QC</Sender>
+    <Receiver>GALAKTIKA-ERP</Receiver>
+    <CreatedAt>2026-09-23T15:30:20+03:00</CreatedAt>
+    <Entity>DefectAct</Entity>
+    <Operation>create</Operation>
+    <RoutingKey>quality.defect_act.create</RoutingKey>
+  </Header>
+  <Key>
+    <ProductionOrder>ПЗ-0917</ProductionOrder>
+    <McCode>МЦ-1001</McCode>
+    <Serial>Ф-015</Serial><Serial>Ф-017</Serial><Serial>Ф-019</Serial>
+    <Serial>Ф-021</Serial><Serial>Ф-023</Serial><Serial>Ф-025</Serial>
+    <ExternalId>NC-G1</ExternalId>
+  </Key>
+  <Body>
+    <DefectAct>
+      <ActKind>исправимый</ActKind>
+      <Decision>переделка</Decision>
+      <Nonconformity>НС-И1 «Сварка вне режима ТП»</Nonconformity>
+      <ProductionOrder>ПЗ-0917</ProductionOrder>
+      <Department>Сварочный цех</Department>
+      <Operation>Сварка фланца с кольцом</Operation>
+      <Mc>
+        <Code>МЦ-1001</Code>
+        <Designation>ФЛ-100.00.000 СБ</Designation>
+        <KdVersion>Б</KdVersion>
+      </Mc>
+      <Serials>
+        <Serial>Ф-015</Serial><Serial>Ф-017</Serial><Serial>Ф-019</Serial>
+        <Serial>Ф-021</Serial><Serial>Ф-023</Serial><Serial>Ф-025</Serial>
+      </Serials>
+      <Qty unit="шт" okei="796">6</Qty>
+      <Basis>
+        <DecisionId>DEC-RS-01-ZT-R-1</DecisionId>
+        <GateCode>ZT-R</GateCode>
+        <NcId>NC-G1</NcId><NcId>NC-01</NcId><NcId>NC-02</NcId><NcId>NC-03</NcId>
+        <SignedAt>2026-09-23T15:30:00+03:00</SignedAt>
+        <Signer ref="TECH-01" role="TECHNOLOGIST"/>
+        <Signer ref="QC-HEAD-01" role="QC_HEAD"/>
+        <Signer ref="CHW-01" role="CHIEF_WELDER"/>
+        <EvidenceUrl>https://qc.local/nc/NC-G1</EvidenceUrl>
+      </Basis>
+    </DefectAct>
+  </Body>
+</Package>

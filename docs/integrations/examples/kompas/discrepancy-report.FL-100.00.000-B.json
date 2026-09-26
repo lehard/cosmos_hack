@@ -1,0 +1,117 @@
+{
+  "report_id": "CAD-DR-0007",
+  "created_at": "2026-09-07T10:02:00+03:00",
+  "assembly": {
+    "designation": "ФЛ-100.00.000 СБ",
+    "version": "Б",
+    "previous_version": "А"
+  },
+  "source_file": {
+    "name": "assembly.FL-100.00.000-B.json",
+    "sha256": "523db7d404778eab1878c896147f92d4440cb77fb2a3ae4b03b99a89c0f5b73e",
+    "format_version": "1.0"
+  },
+  "import_status": "imported_with_discrepancies",
+  "summary": {
+    "components": 7,
+    "matched": 5,
+    "discrepancies": 2
+  },
+  "lines": [
+    {
+      "position": 1,
+      "designation": "ФЛ-100.01.001",
+      "check": "designation_in_1c",
+      "result": "ok",
+      "found_in_1c": {
+        "ref_key": "nom-7a1e-0101",
+        "description": "Фланец",
+        "article": "ФЛ-100.01.001",
+        "unit": "шт"
+      },
+      "action": "none",
+      "task_id": null
+    },
+    {
+      "position": 2,
+      "designation": "ФЛ-100.01.002",
+      "check": "designation_in_1c",
+      "result": "ok",
+      "found_in_1c": {
+        "ref_key": "nom-7a1e-0102",
+        "description": "Патрубок (кольцо)",
+        "article": "ФЛ-100.01.002",
+        "unit": "шт"
+      },
+      "action": "none",
+      "task_id": null
+    },
+    {
+      "position": 3,
+      "designation": "ФЛ-100.02.000",
+      "check": "designation_in_1c",
+      "result": "ok",
+      "found_in_1c": {
+        "ref_key": "nom-7a1e-0200",
+        "description": "Крышка люка",
+        "article": "ФЛ-100.02.000",
+        "unit": "шт"
+      },
+      "action": "none",
+      "task_id": null
+    },
+    {
+      "position": 4,
+      "designation": "ФЛ-100.00.004",
+      "check": "tracking_matches",
+      "result": "mismatch",
+      "found_in_1c": {
+        "ref_key": "nom-7a1e-0004",
+        "description": "Уплотнение кольцевое",
+        "article": "ФЛ-100.00.004",
+        "unit": "шт"
+      },
+      "action": "admin_map_existing",
+      "task_id": "TASK-ADM-0031",
+      "note": "В КД — учёт срока хранения; в 1С у номенклатуры не включён учёт серий [П]. Ничего не меняем сами: задача А-01"
+    },
+    {
+      "position": 5,
+      "designation": "Болт М6×20 [П]",
+      "check": "designation_in_1c",
+      "result": "ok",
+      "found_in_1c": {
+        "ref_key": "nom-7a1e-0501",
+        "description": "Болт М6×20",
+        "article": "М6×20",
+        "unit": "шт"
+      },
+      "action": "none",
+      "task_id": null
+    },
+    {
+      "position": 6,
+      "designation": "Шайба 6 [П]",
+      "check": "designation_in_1c",
+      "result": "ok",
+      "found_in_1c": {
+        "ref_key": "nom-7a1e-0502",
+        "description": "Шайба 6",
+        "article": "6",
+        "unit": "шт"
+      },
+      "action": "none",
+      "task_id": null
+    },
+    {
+      "position": 7,
+      "designation": "КВД-6 [ПП]",
+      "check": "designation_in_1c",
+      "result": "not_found",
+      "found_in_1c": null,
+      "action": "admin_request_nomenclature",
+      "task_id": "TASK-ADM-0032",
+      "note": "Обозначения нет в номенклатуре 1С. Номенклатуру не создаём: задача администратору 1С; до сопоставления клапан нельзя выдать на сборку"
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "urn:sergey-palych:integration:1c:response:1.0",
+  "title": "Ответ HTTP-сервиса 1С /erp/hs/qc/v1/… на наше сообщение, контракт qc-1c 1.0 [П]",
+  "description": "Входящее сообщение: мы — получатель, поэтому схема терпимая (additionalProperties: true). Решает HTTP-код, а не тело: 5xx и таймаут — повтор даже без тела или с HTML от веб-сервера.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["message_id", "result"],
+  "properties": {
+    "message_id": {"type": "string", "description": "Эхо X-Message-Id"},
+    "contract_version": {"type": "string"},
+    "result": {"enum": ["accepted", "duplicate", "rejected", "unavailable"]},
+    "ref_key": {"type": "string", "description": "Ref_Key созданного документа 1С (GUID в настоящей 1С)"},
+    "number": {"type": "string"},
+    "document": {"type": "string", "description": "Вид и номер документа 1С по-человечески"},
+    "status": {"type": "string", "description": "Статус документа в 1С, например «Отработан»"},
+    "received_at": {"type": "string", "format": "date-time"},
+    "retry_after_s": {"type": "integer", "minimum": 1},
+    "error": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["code", "text", "retryable"],
+      "properties": {
+        "code": {"type": "string", "pattern": "^E_[A-Z0-9_]+$"},
+        "text": {"type": "string"},
+        "field": {"type": "string"},
+        "retryable": {"type": "boolean"}
+      }
+    }
+  },
+  "allOf": [
+    {"if": {"properties": {"result": {"enum": ["accepted", "duplicate"]}}}, "then": {"required": ["ref_key", "document"]}},
+    {"if": {"properties": {"result": {"enum": ["rejected", "unavailable"]}}}, "then": {"required": ["error"]}}
+  ]
+}

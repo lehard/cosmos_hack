@@ -1,0 +1,19 @@
+{
+  "ApplicationArea": {
+    "Sender": {"LogicalID": "MES"},
+    "Receiver": {"LogicalID": "SERGEY-PALYCH-QC"},
+    "CreationDateTime": "2026-09-23T11:10:04+03:00",
+    "BODID": "mes-in-000205",
+    "ContractVersion": "1.0"
+  },
+  "DataArea": {
+    "Verb": "Acknowledge",
+    "Acknowledge": {
+      "OriginalBODID": "mes-out-000118",
+      "ResponseCode": "Rejected",
+      "Errors": [
+        {"Code": "E_REF_NOT_FOUND", "Text": "Экземпляр MSL-0911-221 не найден: заказ ЗП-0911 закрыт в MES", "Field": "DataArea.MaterialSubLot[0].ID", "Retryable": false}
+      ]
+    }
+  }
+}
