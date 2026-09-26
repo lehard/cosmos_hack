@@ -188,59 +188,81 @@ function stageState(i: number): string {
   if (STAGES[i] === 'execution' && handoff.value) return t('widgets.decisions.handoff', { who: handoff.value.role_label, what: handoff.value.task_title, status: handoff.value.status_label })
   return t(`widgets.decisions.stageNow.${STAGES[i]}`)
 }
+const actionLabel = (a: DecisionAction) => t(DECISION_ACTIONS[a].labelKey, { nextStep: t('widgets.decisions.nextStep'), method: '' })
+/** Коротко — до тире: «Переделка — вернуть на операцию» → «Переделка»; целиком — в подсказке. */
+const head = (text: string) => text.split(' — ')[0] ?? text
+/** Подсказка варианта: что это, условие и — если сервер не пускает — почему. */
+function optionHint(d: Disposition): string {
+  const why = serverActionFor('disposition', d)
+  return [t(DISPOSITION_SHORT[d]), t(DISPOSITION_TERM[d]), why?.allowed === false ? why.why_available : null].filter(Boolean).join(' · ')
+}
 const reasonLabel = computed(() => (draft.action === 'reject_signal' ? t('decisions.signal.rejectReasonLabel') : t('widgets.decisions.reasonLabel')))
 </script>
 
 <template>
   <div class="panel" :class="`density-${density}`" data-testid="decision-panel">
     <p v-if="!canAct" class="muted" data-testid="replay-note">{{ t('common.modes.replayReadOnly') }}</p>
-    <!-- Ход решения (UI-52): пройденный шаг свёрнут одной строкой, текущий — главный, будущий — «ещё не начато». -->
+    <!-- Ход решения (UI-52): одна строка шагов; состояние шага — подсказкой, передача исполнения — строкой под шагами. -->
     <ol class="stages" data-testid="stages" :aria-label="t('widgets.decisions.stage.title')">
-      <li v-for="(st, i) in STAGES" :key="st" class="stage" :data-stage="st" :data-state="i < stage ? 'done' : i === stage ? 'current' : 'next'">
-        <span class="stage-no">{{ i < stage ? '✓' : i + 1 }}</span>
-        <span class="stage-text ant-wrap">
-          <strong>{{ t(`widgets.decisions.stage.${st}`) }}</strong>
-          <span class="stage-state" data-testid="stage-state">{{ stageState(i) }}</span>
-        </span>
+      <li
+        v-for="(st, i) in STAGES"
+        :key="st"
+        class="stage"
+        :data-stage="st"
+        :data-state="i < stage ? 'done' : i === stage ? 'current' : 'next'"
+        :title="stageState(i)"
+      >
+        <span class="stage-no" aria-hidden="true">{{ i < stage ? '✓' : i + 1 }}</span>
+        <span class="stage-name ant-ellipsis">{{ t(`widgets.decisions.stage.${st}`) }}</span>
+        <span class="sr-only" data-testid="stage-state">{{ stageState(i) }}</span>
       </li>
     </ol>
+    <p v-if="stage === 2 && handoff" class="handoff ant-wrap" data-testid="handoff-line">{{ stageState(2) }}</p>
     <p v-if="!actions.length" class="muted" data-testid="nothing">{{ t('widgets.decisions.nothingToDecide') }}</p>
 
-    <section v-if="signalActions.length" class="group" data-group="signal">
-      <h4 v-if="stage > 0">{{ t('widgets.decisions.containmentTitle') }}</h4>
-      <ActionButton overflow="wrap"
-        v-for="a in signalActions"
-        :key="a"
-        :size="size"
-        :type="chosen.action === a ? 'primary' : 'default'"
-        :secondary="chosen.action !== a"
-        :disabled="!canAct || busy"
-        :data-action="a"
-        @click="choose(a)"
-        :label="t(DECISION_ACTIONS[a].labelKey, { nextStep: t('widgets.decisions.nextStep'), method: '' })"
-      />
+    <section v-if="signalActions.length" class="row" data-group="signal">
+      <span v-if="stage > 0" class="row-label">{{ t('widgets.decisions.containmentTitle') }}</span>
+      <div class="row-body">
+        <ActionButton
+          v-for="a in signalActions"
+          :key="a"
+          :size="stage > 0 ? 'small' : size"
+          :type="chosen.action === a ? 'primary' : 'default'"
+          :secondary="chosen.action !== a"
+          :disabled="!canAct || busy"
+          :data-action="a"
+          :label="stage > 0 ? head(actionLabel(a)) : actionLabel(a)"
+          :hint="stage > 0 ? actionLabel(a) : undefined"
+          @click="choose(a)"
+        />
+      </div>
     </section>
 
-    <section v-if="dispositionOpen" class="options" data-group="disposition">
-      <h4>{{ t('decisions.disposition.title') }}</h4>
-      <!-- Выбор судьбы изделия — компактно: название и условие; смысл и итог — после выбора. -->
-      <button
-        v-for="d in DISPOSITIONS"
-        :key="d"
-        type="button"
-        class="option"
-        :data-disposition="d"
-        :aria-pressed="chosen.action === 'disposition' && draft.disposition === d"
-        :data-allowed="serverActionFor('disposition', d)?.allowed === false ? 'false' : undefined"
-        :disabled="!canAct || busy || serverActionFor('disposition', d)?.allowed === false"
-        :title="serverActionFor('disposition', d)?.why_available"
-        @click="choose('disposition', d)"
-      >
-        <span class="option-title ant-wrap">{{ t(DISPOSITION_SHORT[d]) }}</span>
-        <span class="option-terms ant-wrap" :data-concession="needsConcession(d) || undefined">{{ t(DISPOSITION_TERM[d]) }}</span>
-        <span v-if="serverActionFor('disposition', d)?.allowed === false" class="option-why ant-wrap" data-testid="option-why">{{ serverActionFor('disposition', d)!.why_available }}</span>
-      </button>
-      <p class="muted">{{ t('decisions.disposition.decisionDoesNotWaitForCause') }}</p>
+    <section v-if="dispositionOpen" class="row" data-group="disposition">
+      <span class="row-label">{{ t('decisions.disposition.title') }}</span>
+      <!-- Судьба изделия — ряд пилюль: название; 🔒 — нужно разрешение на отклонение; условие и «почему нет» — подсказкой. Смысл и итог — после выбора. -->
+      <div class="row-body pills" role="group" :aria-label="t('decisions.disposition.title')">
+        <button
+          v-for="d in DISPOSITIONS"
+          :key="d"
+          type="button"
+          class="option"
+          :data-disposition="d"
+          :aria-pressed="chosen.action === 'disposition' && draft.disposition === d"
+          :data-allowed="serverActionFor('disposition', d)?.allowed === false ? 'false' : undefined"
+          :disabled="!canAct || busy || serverActionFor('disposition', d)?.allowed === false"
+          :title="optionHint(d)"
+          @click="choose('disposition', d)"
+        >
+          <span class="option-title">{{ head(t(DISPOSITION_SHORT[d])) }}</span>
+          <span v-if="needsConcession(d)" class="lock" aria-hidden="true">🔒</span>
+          <span class="option-terms sr-only" :data-concession="needsConcession(d) || undefined">{{ t(DISPOSITION_TERM[d]) }}</span>
+          <span v-if="serverActionFor('disposition', d)?.allowed === false" class="option-why sr-only" data-testid="option-why">{{ serverActionFor('disposition', d)!.why_available }}</span>
+        </button>
+      </div>
+      <p class="row-note muted ant-wrap">
+        <template v-if="DISPOSITIONS.some(needsConcession)">🔒 {{ t('widgets.decisions.option.needsConcessionShort') }} · </template>{{ t('decisions.disposition.decisionDoesNotWaitForCause') }}
+      </p>
     </section>
 
     <section v-if="chosen.action" class="form" :data-chosen="chosen.action" data-testid="decision-form">
@@ -361,10 +383,12 @@ const reasonLabel = computed(() => (draft.action === 'reject_signal' ? t('decisi
 </template>
 
 <style scoped>
+/* Нижняя панель окна: тихо и плотно — шаги строкой, ряды «подпись · кнопки»; подробности — только после выбора. */
 .panel {
+  container-type: inline-size;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--ant-space-2);
   font-size: var(--ant-fs-body);
 }
 
@@ -372,87 +396,181 @@ const reasonLabel = computed(() => (draft.action === 'reject_signal' ? t('decisi
   font-size: var(--ant-fs-lg);
 }
 
-.group {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  align-items: center;
-}
-
-.group h4,
-.options h4 {
-  flex-basis: 100%;
+p {
   margin: 0;
 }
 
-/* Варианты решения по изделию — карточки: название, смысл, условия и итог. */
-.options {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: var(--ant-space-2);
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
 
-.options h4,
-.options > .muted {
+/* Шаги — одна строка: ✓ пройдено · ● сейчас · ○ дальше, между ними тонкая линия. */
+.stages {
+  display: flex;
+  gap: var(--ant-space-2);
+  align-items: center;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-meta);
+}
+
+.stage {
+  position: relative;
+  display: flex;
+  flex: 0 1 auto;
+  gap: 6px;
+  align-items: center;
+  min-width: 0;
+}
+
+.stage + .stage::before {
+  flex: none;
+  width: 16px;
+  height: 1px;
+  margin-right: 2px;
+  background: var(--ant-border-strong);
+  content: '';
+}
+
+.stage-no {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--ant-border-strong);
+  border-radius: 50%;
+  font-size: 10px;
+  line-height: 1;
+}
+
+.stage[data-state='current'] {
+  color: var(--ant-text);
+  font-weight: var(--ant-fw-bold);
+}
+
+.stage[data-state='current'] .stage-no {
+  border-color: var(--ant-accent);
+  background: var(--ant-accent);
+  color: var(--ant-surface);
+}
+
+.stage[data-state='done'] {
+  color: var(--ant-status-success-text);
+}
+
+.stage[data-state='done'] .stage-no {
+  border-color: var(--ant-status-success);
+  background: var(--ant-status-success);
+  color: var(--ant-surface);
+}
+
+/* Ряд: подпись слева узкой колонкой, кнопки справа; на узком окне подпись над кнопками. */
+.row {
+  display: grid;
+  grid-template-columns: 9.5em minmax(0, 1fr);
+  gap: var(--ant-space-1) var(--ant-space-3);
+  align-items: center;
+  min-width: 0;
+}
+
+.row-label {
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-meta);
+  line-height: 1.2;
+}
+
+.row-body {
+  display: flex;
+  flex-wrap: wrap;
+  grid-column: 2;
+  gap: 6px;
+  min-width: 0;
+}
+
+.row[data-group='signal']:not(:has(.row-label)) .row-body {
   grid-column: 1 / -1;
 }
 
+.row-note {
+  grid-column: 2;
+}
+
+@container (max-width: 480px) {
+  .row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .row-body,
+  .row-note {
+    grid-column: 1;
+  }
+}
+
+/* Варианты судьбы — пилюли: выбранная залита акцентом, недоступная — бледная. */
 .option {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-  padding: var(--ant-space-2) var(--ant-space-3);
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  min-height: 28px;
+  padding: 2px 12px;
   border: 1px solid var(--ant-border);
-  border-radius: var(--ant-radius-md);
+  border-radius: 999px;
   background: var(--ant-surface);
   color: var(--ant-text);
   font: inherit;
-  text-align: start;
+  font-size: var(--ant-fs-meta);
+  white-space: nowrap;
   cursor: pointer;
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease,
+    color 0.12s ease;
 }
 
 .option:hover:not(:disabled) {
-  border-color: var(--ant-border-strong);
-  background: var(--ant-surface-hover);
+  border-color: var(--ant-accent);
+  color: var(--ant-accent);
 }
 
 .option[aria-pressed='true'] {
   border-color: var(--ant-accent);
-  background: var(--ant-accent-soft);
-  box-shadow: inset 0 0 0 1px var(--ant-accent);
+  background: var(--ant-accent);
+  color: var(--ant-surface);
 }
 
 .option:disabled {
+  border-style: dashed;
+  color: var(--ant-text-3);
   cursor: not-allowed;
-  opacity: 0.6;
 }
 
 .option-title {
   font-weight: var(--ant-fw-bold);
 }
 
-.option-meaning {
-  color: var(--ant-text-2);
-  font-size: var(--ant-fs-meta);
-}
-
-.option-terms {
-  color: var(--ant-text-3);
-  font-size: var(--ant-fs-xs);
-}
-
-.option-terms[data-concession] {
-  color: var(--ant-status-attention-text);
+.lock {
+  font-size: 10px;
+  opacity: 0.75;
 }
 
 .form {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 8px 10px;
+  gap: var(--ant-space-2);
+  padding: var(--ant-space-2) var(--ant-space-3);
   border: 1px solid var(--ant-border);
   border-radius: var(--ant-radius-md);
+  background: var(--ant-surface);
 }
 
 .field {
@@ -464,48 +582,18 @@ const reasonLabel = computed(() => (draft.action === 'reject_signal' ? t('decisi
 .muted,
 .warn,
 .receipt p {
-  margin: 0;
   font-size: var(--ant-fs-meta);
 }
 
-/* Ход решения: шаги сверху вниз, текущий — акцентом, пройденные — зелёной галочкой. */
-.stages {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ant-space-1);
-  margin: 0;
-  padding: 0;
-  list-style: none;
+.muted {
   color: var(--ant-text-3);
-  font-size: var(--ant-fs-meta);
 }
 
-.stage {
-  display: flex;
-  gap: var(--ant-space-2);
-  align-items: flex-start;
-  min-width: 0;
-}
-
-.stage-text {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0 var(--ant-space-2);
-  min-width: 0;
-}
-
-.stage-state {
-  font-weight: normal;
-}
-
-.stage[data-state='current'] {
-  padding: var(--ant-space-1) var(--ant-space-2);
-  border-radius: var(--ant-radius-md);
-  background: var(--ant-accent-soft);
+.warn {
+  color: var(--ant-status-attention-text);
 }
 
 .chosen-title {
-  margin: 0;
   font-weight: var(--ant-fw-bold);
 }
 
@@ -538,54 +626,9 @@ const reasonLabel = computed(() => (draft.action === 'reject_signal' ? t('decisi
   cursor: pointer;
 }
 
-.option-why {
-  color: var(--ant-status-attention-text);
-  font-size: var(--ant-fs-xs);
-}
-
 .handoff {
+  font-size: var(--ant-fs-meta);
   font-weight: var(--ant-fw-bold);
-}
-
-.stage-no {
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  justify-content: center;
-  width: 18px;
-  height: 18px;
-  border: 1px solid var(--ant-border-strong);
-  border-radius: 50%;
-  font-size: var(--ant-fs-xs);
-}
-
-.stage[data-state='current'] {
-  color: var(--ant-text);
-  font-weight: var(--ant-fw-bold);
-}
-
-.stage[data-state='current'] .stage-no {
-  border-color: var(--ant-accent);
-  background: var(--ant-accent);
-  color: var(--ant-surface);
-}
-
-.stage[data-state='done'] .stage-no {
-  border-color: var(--ant-status-success);
-  background: var(--ant-status-success);
-  color: var(--ant-surface);
-}
-
-.stage[data-state='done'] .stage-state {
-  color: var(--ant-status-success-text);
-}
-
-.muted {
-  color: var(--ant-text-3);
-}
-
-.warn {
-  color: var(--ant-status-attention-text);
 }
 
 .problems {
