@@ -40,13 +40,15 @@ type Attempt struct {
 // erp.message, писатель erp): версии, ответы, карантин, решения людей.
 // Очередь отправки — проекция журнала (AD-18).
 type View struct {
-	Key            string    `json:"business_key"`
-	System         string    `json:"external_system"`
-	Action         Action    `json:"action"`
-	ItemID         string    `json:"item_id,omitempty"`
-	LotID          string    `json:"lot_id,omitempty"`
-	Version        int       `json:"message_version"`
-	MessageID      string    `json:"message_id"`
+	Key       string `json:"business_key"`
+	System    string `json:"external_system"`
+	Action    Action `json:"action"`
+	ItemID    string `json:"item_id,omitempty"`
+	LotID     string `json:"lot_id,omitempty"`
+	Version   int    `json:"message_version"`
+	MessageID string `json:"message_id"`
+	// RunID — прогон сценария запроса (AD-38): ответы пишутся в тот же прогон.
+	RunID          string    `json:"run_id,omitempty"`
 	RequestEventID string    `json:"request_event_id"`
 	RequestedAt    time.Time `json:"requested_at"`
 	FirstSeq       int64     `json:"first_seq"`
@@ -55,6 +57,8 @@ type View struct {
 	Accounting   string `json:"accounting_state,omitempty"`
 	AfterRework  bool   `json:"after_rework"`
 	AckedVersion int    `json:"acked_version,omitempty"`
+	// AckedRequest — запрос подтверждённой версии (для решения об исправлении).
+	AckedRequest string `json:"acked_request,omitempty"`
 	// Generation — число ручных переотправок и решений об исправлении.
 	Generation int `json:"generation"`
 	// Correction — отправляется исправление (сторно прежнего + новое).
@@ -97,7 +101,7 @@ func (v View) Apply(r kernel.Record) (View, error) {
 			v.FirstSeq, v.RequestedAt = r.Seq, r.OccurredAt
 		}
 		v.Key, v.System, v.Action, v.Version = d.BusinessKey, string(d.ExternalSystem), Action(d.Action), d.MessageVersion
-		v.RequestEventID, v.Request = r.EventID, d
+		v.RequestEventID, v.Request, v.RunID = r.EventID, d, r.RunID
 		if d.MessageID != nil {
 			v.MessageID = string(*d.MessageID)
 		} else {
@@ -131,7 +135,7 @@ func (v View) Apply(r kernel.Record) (View, error) {
 		}
 		switch d.Outcome {
 		case ev.ErpPostingRespondedV1OutcomeAccepted, ev.ErpPostingRespondedV1OutcomeDuplicate:
-			v.Status, v.AckedVersion, v.LastErrorCode, v.Correction = StatusAcknowledged, v.Version, "", false
+			v.Status, v.AckedVersion, v.AckedRequest, v.LastErrorCode, v.Correction = StatusAcknowledged, v.Version, v.RequestEventID, "", false
 			if d.ResultingStatus != nil {
 				v.Accounting = string(*d.ResultingStatus)
 			} else if ax, ok := Axis(v.Action); ok {
@@ -290,6 +294,8 @@ type IndexEntry struct {
 	LotID    string `json:"l,omitempty"`
 	Status   Status `json:"s"`
 	FirstSeq int64  `json:"q"`
+	// Request — текущий запрос (erp.posting.requested) сообщения.
+	Request string `json:"r,omitempty"`
 }
 
 // IndexLimit — сколько последних сообщений держит индекс списка; остальные
@@ -301,11 +307,10 @@ type Index struct {
 	Entries []IndexEntry `json:"entries"`
 }
 
-// Put — строка сообщения v в индексе (новая — в конец; сверх предела старые уходят).
-func (x Index) Put(v View) Index {
-	e := IndexEntry{Key: v.Key, ItemID: v.ItemID, LotID: v.LotID, Status: v.Status, FirstSeq: v.FirstSeq}
+// Put — строка сообщения в индексе (новая — в конец; сверх предела старые уходят).
+func (x Index) Put(e IndexEntry) Index {
 	for i := range x.Entries {
-		if x.Entries[i].Key == v.Key {
+		if x.Entries[i].Key == e.Key {
 			x.Entries[i] = e
 			return x
 		}

@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	onecstand "ant/internal/infrastructure/integration/erp/onec/stand"
 	"ant/internal/infrastructure/integration/ingest/stands"
 	cncstand "ant/internal/infrastructure/integration/machinelogs/cnc/stand"
 	weldstand "ant/internal/infrastructure/integration/machinelogs/welder/stand"
@@ -30,7 +31,7 @@ func init() {
 //	stands.edge_url (ANT_STANDS_EDGE_URL) — локальный вход edge-агента для телеметрии (пусто — stand оборудования выключен);
 //	stands.interval (ANT_STANDS_INTERVAL) — период телеметрии (по умолчанию 5s).
 //
-// Stand-ы 1С, Галактики, MES и VisionQC (эпики 30–33, 43) добавляются в реестр здесь.
+// Stand-ы Галактики, MES и VisionQC (эпики 31–33, 43) добавляются в реестр здесь.
 func runStands(ctx context.Context, env *environment) error {
 	sc := env.cfg.Stands
 	addr := sc.Addr
@@ -38,6 +39,15 @@ func runStands(ctx context.Context, env *environment) error {
 		addr = ":8491"
 	}
 	reg := stands.NewRegistry()
+	// Эпик 30 (FR-91, AD-18): stand 1С — OData v3 и HTTP-сервис qc.v1 под
+	// /stand/1c/erp/, страница «глазами 1С» /stand/1c/; состояние — схема
+	// stand_onec (без БД — в памяти). Имя «onec» — то же для сценариев.
+	st, err := onecStand(ctx, env)
+	if err != nil {
+		return err
+	}
+	reg.Add(st)
+	reg.Add(onecstand.Alias(st))
 	if edge := strings.TrimSpace(sc.EdgeURL); edge != "" {
 		iv := sc.Interval
 		if iv <= 0 {
@@ -70,4 +80,16 @@ func runStands(ctx context.Context, env *environment) error {
 	sctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	return srv.Shutdown(sctx)
+}
+
+// onecStand — stand 1С с состоянием в схеме stand_onec на пуле ядра (роль
+// ant_app); ядро не открылось — состояние в памяти процесса роли stands.
+func onecStand(ctx context.Context, env *environment) (*onecstand.Stand, error) {
+	opt := onecstand.Options{Log: env.log.With("stand", onecstand.Name)}
+	if c, err := env.core(ctx); err == nil {
+		opt.Store = onecstand.Postgres{Pool: c.pool}
+	} else {
+		env.log.Warn("stand 1С: БД недоступна — состояние в памяти", "err", err)
+	}
+	return onecstand.New(opt)
 }

@@ -27,9 +27,9 @@
         "scrap_transfer_writeoff",
         "scrap_transfer_reprocess",
         "return_to_supplier",
-        "return_from_defect",
         "release",
-        "inspection_result"
+        "inspection_result",
+        "return_from_defect"
       ],
       "description": "Учётное действие порта учёта; `return_from_defect` — «возврат из брака в производство» после удачной переделки или ремонта (решение Д-17)."
     },

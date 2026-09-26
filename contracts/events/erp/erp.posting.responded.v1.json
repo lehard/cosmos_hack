@@ -55,9 +55,9 @@
         "scrap_transfer_writeoff",
         "scrap_transfer_reprocess",
         "return_to_supplier",
-        "return_from_defect",
         "release",
-        "inspection_result"
+        "inspection_result",
+        "return_from_defect"
       ],
       "description": "Учётное действие сообщения."
     },

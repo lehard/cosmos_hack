@@ -229,7 +229,6 @@ export * from './erpChannelList';
 export * from './erpChannelState';
 export * from './erpChannelSystem';
 export * from './erpMessage';
-export * from './erpMessageAction';
 export * from './erpMessageAttempt';
 export * from './erpMessageAttemptOutcome';
 export * from './erpMessageExternalSystem';

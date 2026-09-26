@@ -93,6 +93,9 @@ type apiOptions struct {
 	// analysis — live-реализация analysis над проекциями и журналом
 	// (engine.go, эпик 22); nil — заглушка 501.
 	analysis *analysisapp.Service
+	// erp — live-реализация erp над проекциями erp.*, каналами обмена и
+	// журналом (outbox.go, эпик 30); nil — заглушка 501.
+	erp *erpapp.Service
 	// ingest — live-приём над журналом ядра (ingest.go); nil — заглушка 501.
 	ingest *ingestapp.Service
 	// identity, directory — вход демо-персоной и каталог политики (демо-трек
@@ -215,7 +218,11 @@ func buildAPI(mux *http.ServeMux, o apiOptions) *httpapi.API {
 		analyticshttp.Register(a, q, c)
 	}
 	{
-		q, c := pick[erpapp.Queries, erpapp.Commands](a.ModeFor("erp"), erpapp.NewService(), erpfx.New())
+		live := o.erp
+		if live == nil {
+			live = erpapp.NewService()
+		}
+		q, c := pick[erpapp.Queries, erpapp.Commands](a.ModeFor("erp"), live, erpfx.New())
 		erphttp.Register(a, q, c)
 	}
 	{

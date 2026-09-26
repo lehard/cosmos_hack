@@ -2977,7 +2977,7 @@ external_system: ("onec" | "galaktika")
 /**
  * Учётное действие порта учёта; `return_from_defect` — «возврат из брака в производство» после удачной переделки или ремонта (решение Д-17).
  */
-action: ("accept_into_work" | "warehouse_transfer" | "scrap_transfer_rework" | "scrap_transfer_writeoff" | "scrap_transfer_reprocess" | "return_to_supplier" | "return_from_defect" | "release" | "inspection_result")
+action: ("accept_into_work" | "warehouse_transfer" | "scrap_transfer_rework" | "scrap_transfer_writeoff" | "scrap_transfer_reprocess" | "return_to_supplier" | "release" | "inspection_result" | "return_from_defect")
 /**
  * Внутренний идентификатор изделия: `код_предприятия:локальный_id` (AD-16). Из метки не выводится; в прогоне локальная часть несёт префикс прогона.
  */
@@ -3135,7 +3135,7 @@ message_id?: string
 /**
  * Учётное действие сообщения.
  */
-action?: ("accept_into_work" | "warehouse_transfer" | "scrap_transfer_rework" | "scrap_transfer_writeoff" | "scrap_transfer_reprocess" | "return_to_supplier" | "return_from_defect" | "release" | "inspection_result")
+action?: ("accept_into_work" | "warehouse_transfer" | "scrap_transfer_rework" | "scrap_transfer_writeoff" | "scrap_transfer_reprocess" | "return_to_supplier" | "release" | "inspection_result" | "return_from_defect")
 /**
  * Внутренний идентификатор изделия: `код_предприятия:локальный_id` (AD-16). Из метки не выводится; в прогоне локальная часть несёт префикс прогона.
  */
@@ -5476,7 +5476,7 @@ message_ref: string
 /**
  * Учётное действие по свойству шага `ant:properties/@erpAction`; `return_from_defect` — «возврат из брака в производство» (решение Д-17).
  */
-erp_action: ("accept_into_work" | "warehouse_transfer" | "scrap_transfer_rework" | "scrap_transfer_writeoff" | "scrap_transfer_reprocess" | "return_to_supplier" | "return_from_defect" | "release")
+erp_action: ("accept_into_work" | "warehouse_transfer" | "scrap_transfer_rework" | "scrap_transfer_writeoff" | "scrap_transfer_reprocess" | "return_to_supplier" | "release" | "return_from_defect")
 /**
  * Записи закрывающей точки, на которых основано действие.
  * 

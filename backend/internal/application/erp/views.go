@@ -44,7 +44,7 @@ type ErpMessageAttempt struct {
 type ErpMessage struct {
 	BusinessKey     string              `json:"business_key"`
 	ExternalSystem  string              `json:"external_system" enum:"onec,galaktika"`
-	Action          string              `json:"action" enum:"accept_into_work,warehouse_transfer,scrap_transfer_rework,scrap_transfer_writeoff,scrap_transfer_reprocess,return_to_supplier,release,inspection_result"`
+	Action          string              `json:"action" enum:"accept_into_work,warehouse_transfer,scrap_transfer_rework,scrap_transfer_writeoff,scrap_transfer_reprocess,return_to_supplier,release,inspection_result,return_from_defect" doc:"Учётное действие порта учёта; return_from_defect — «возврат из брака в производство» (Д-17)."`
 	ItemID          *string             `json:"item_id,omitempty"`
 	LotID           *string             `json:"lot_id,omitempty"`
 	MessageVersion  int                 `json:"message_version" minimum:"1"`

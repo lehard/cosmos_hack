@@ -9,6 +9,7 @@ import (
 	analysisapp "ant/internal/application/analysis"
 	crossitemapp "ant/internal/application/crossitem"
 	engineapp "ant/internal/application/engine"
+	erpapp "ant/internal/application/erp"
 	appjournal "ant/internal/application/journal"
 	machinelogsapp "ant/internal/application/machinelogs"
 	mldomain "ant/internal/domain/machinelogs"
@@ -35,6 +36,9 @@ func engineRegistry() *engineapp.Registry {
 	// analysis (эпик 22): разбор обстоятельств изделия, инциденты и версии
 	// области риска, несоответствия для гипотез и общих факторов.
 	analysisapp.MustRegister(r)
+	// erp (эпик 30): исходящие сообщения по бизнес-ключу и их индекс, ось
+	// «учёт в 1С» изделия, задания учётных систем.
+	erpapp.MustRegister(r)
 	return r
 }
 
@@ -78,16 +82,35 @@ func runProjector(ctx context.Context, env *environment) error {
 	if err != nil {
 		return err
 	}
-	if len(c.registry.Globals()) == 0 {
-		env.log.Info("проектор: глобальных проекций пока нет — ожидаю остановки")
-		<-ctx.Done()
-		return nil
-	}
 	p := &engineapp.Projector{
 		Consumer: feed.NewConsumer(c.journal, c.leases, c.listener, c.feedOptions(env, "projector")),
 		Codec:    c.codec, Store: c.engine, Registry: c.registry, Log: env.log,
 	}
-	return c.leader(env, "projector").Run(ctx, p.Run)
+	// Эпик 30: реакция «учётное сообщение сформировано» — глобальный
+	// потребитель роли projector со своим курсором erp.postings (AD-45).
+	rx, err := erpReactor(env, c)
+	if err != nil {
+		return err
+	}
+	return c.leader(env, "projector").Run(ctx, func(ctx context.Context, fence appjournal.Fence) error {
+		ctx, cancel := context.WithCancel(ctx)
+		defer cancel()
+		errc := make(chan error, 1)
+		go func() {
+			if err := rx.Run(ctx); err != nil && ctx.Err() == nil {
+				errc <- err
+				cancel()
+			}
+		}()
+		err := p.Run(ctx, fence)
+		cancel()
+		select {
+		case rerr := <-errc:
+			return errors.Join(err, rerr)
+		default:
+			return err
+		}
+	})
 }
 
 // runRebuild — разовая роль rebuild (FR-115, FR-124, AD-45): `ant rebuild`

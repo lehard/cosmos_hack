@@ -40,7 +40,7 @@ const (
 
 // Actions — все учётные действия в порядке контракта.
 var Actions = []Action{AcceptIntoWork, WarehouseTransfer, ScrapRework, ScrapWriteoff, ScrapReprocess,
-	ReturnToSupplier, ReturnFromDefect, Release, InspectionResult}
+	ReturnToSupplier, Release, InspectionResult, ReturnFromDefect}
 
 // Valid — действие из словаря порта учёта.
 func (a Action) Valid() bool {
