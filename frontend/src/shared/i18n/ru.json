@@ -606,7 +606,7 @@
   "decisions": {
     "panelTitle": "@:ncCard.zones.whatToDecide",
     "signal": {
-      "confirmNc": "Подтвердить несоответствие — изолировать до решения",
+      "confirmNc": "Подтвердить несоответствие",
       "rejectSignal": "Отклонить сигнал — изделие продолжает маршрут",
       "requestRecheck": "Назначить доп. проверку — {method}",
       "requestRecheckWaiting": "Назначить доп. проверку — изделие ждёт в изоляции",
