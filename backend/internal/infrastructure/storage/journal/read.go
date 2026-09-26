@@ -49,6 +49,9 @@ func (s *Store) Read(ctx context.Context, q app.ReadQuery) ([]jc.JournalEntry, e
 	}
 	if q.Backward {
 		order = "seq DESC"
+		if q.BeforeSeq > 0 {
+			add("seq < $%d", q.BeforeSeq)
+		}
 	} else {
 		add("seq > $%d", q.AfterSeq)
 	}
@@ -63,6 +66,9 @@ func (s *Store) Read(ctx context.Context, q app.ReadQuery) ([]jc.JournalEntry, e
 	}
 	if q.EventType != "" {
 		add("event_type = $%d", q.EventType)
+	}
+	if q.EventID != "" {
+		add("event_id = $%d", q.EventID)
 	}
 	if run := cmp.Or(q.RunID, q.Moment.RunID); run != "" {
 		add("run_id = $%d", run)

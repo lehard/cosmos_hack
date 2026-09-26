@@ -134,6 +134,8 @@ type Event struct {
 	} `json:"corrects"`
 	Command *struct {
 		OnBehalfOf string `json:"on_behalf_of"`
+		// KeyStorage — класс хранения ключа человека (Д-72): hardware_token | software_browser.
+		KeyStorage string `json:"key_storage"`
 	} `json:"command"`
 	Integrity struct {
 		Signers []string `json:"signers"`

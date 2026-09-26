@@ -100,11 +100,20 @@ func (Adapter) Desks(ctx context.Context) (app.Desk, error) {
 	return respond[app.Desk](ctx, "access.desk.read", map[string]string{"role": p.Role}, nil)
 }
 
-// Workplaces — панель «Посты» (access.workplace.list, FR-6).
-func (Adapter) Workplaces(ctx context.Context, workshop string, m platform.Moment) (app.PostList, error) {
+// Workplaces — панель «Посты» (access.workplace.list, FR-6); назначения
+// мастера в сессии (access.assignment.set / clear) видны на панели.
+func (a Adapter) Workplaces(ctx context.Context, workshop string, m platform.Moment) (app.PostList, error) {
 	v, err := respond[app.PostList](ctx, "access.workplace.list", map[string]string{"workshop": workshop}, &m)
-	if err != nil || workshop == "" {
+	if err != nil {
 		return v, err
+	}
+	if cur, ok := a.sessionPlan(ctx, m); ok {
+		for i := range v.Items {
+			overlayRow(&v.Items[i], cur[v.Items[i].WorkplaceID])
+		}
+	}
+	if workshop == "" {
+		return v, nil
 	}
 	out := v.Items[:0]
 	for _, r := range v.Items {
@@ -117,8 +126,22 @@ func (Adapter) Workplaces(ctx context.Context, workshop string, m platform.Momen
 }
 
 // WorkplaceCard — карточка поста (access.workplace.read, UI-16).
-func (Adapter) WorkplaceCard(ctx context.Context, workplaceID string, m platform.Moment) (app.WorkplaceCard, error) {
-	return respond[app.WorkplaceCard](ctx, "access.workplace.read", map[string]string{"workplace_id": workplaceID}, &m)
+func (a Adapter) WorkplaceCard(ctx context.Context, workplaceID string, m platform.Moment) (app.WorkplaceCard, error) {
+	v, err := respond[app.WorkplaceCard](ctx, "access.workplace.read", map[string]string{"workplace_id": workplaceID}, &m)
+	if err != nil {
+		return v, err
+	}
+	if cur, ok := a.sessionPlan(ctx, m); ok {
+		list := cur[workplaceID]
+		overlayRow(&v.PostRow, list)
+		v.Assignments = []app.WorkplaceAssignee{}
+		for _, x := range list {
+			v.ShiftID = x.ShiftID
+			v.Assignments = append(v.Assignments, app.WorkplaceAssignee{PersonID: x.PersonID, PersonDisplay: x.display, ShiftID: x.ShiftID,
+				AssigneeRole: x.AssigneeRole, QualificationOK: x.QualificationOK})
+		}
+	}
+	return v, nil
 }
 
 // WorkplaceHistory — история поста (access.workplace.history, UI-16): весь

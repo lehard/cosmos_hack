@@ -8,6 +8,8 @@ export interface VerifierReportSummary {
   checked_at: string;
   /** @minimum 0 */
   checked_up_to_seq: number;
+  /** Главная находка словами: где нарушение (для строки списка). */
+  headline?: string;
   /** Отпечаток подписанного отчёта. */
   report_digest: string;
   /** Всегда true: получено ant у хранителя — «по данным сервера». */

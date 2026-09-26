@@ -28,6 +28,8 @@ const ShiftsFile = "normative/reference/flange/shifts.yaml"
 type shiftPattern struct {
 	id, name     string
 	starts, ends int
+	// locations — места, где идёт смена (цеха справочника мест).
+	locations []string
 }
 
 // LoadShifts читает шаблоны смен справочника из fsys (корень репозитория).
@@ -59,7 +61,7 @@ func LoadShifts(fsys fs.FS) ([]shiftPattern, error) {
 		if err1 != nil || err2 != nil {
 			return nil, fmt.Errorf("%s: смена %s: время «чч:мм»", ShiftsFile, p.ID)
 		}
-		out = append(out, shiftPattern{id: p.ID, name: p.Name, starts: s, ends: e})
+		out = append(out, shiftPattern{id: p.ID, name: p.Name, starts: s, ends: e, locations: p.Locations})
 	}
 	return out, nil
 }

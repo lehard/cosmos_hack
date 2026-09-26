@@ -17,6 +17,8 @@ var BusTypes = []catalog.Type{
 	catalog.SecurityAuthFailed, catalog.SecuritySignatureInvalid, catalog.SecurityIdempotencyConflict,
 	catalog.SecurityAccessDenied, catalog.SecurityAdmissionDenied, catalog.SecurityKeyAlert, catalog.SecurityKeeperAlert,
 	catalog.SecurityIntegrityViolated, catalog.SecurityIntegrityChecked, catalog.SecurityPresenceDeviation,
+	// Выдача и снятие прав (AD-24: «выдача привилегий»; интерфейс 6 — смены прав на столе Аудитора ИБ).
+	catalog.PolicyRoleAssigned, catalog.PolicyRoleUnassigned, catalog.PolicyAuthorityGranted, catalog.PolicyAuthorityRevoked,
 }
 
 // ToSecurityEvent — событие шины безопасности для интерфейса и подписчиков:
@@ -32,6 +34,7 @@ func ToSecurityEvent(e jc.JournalEntry, ev Event) SecurityEvent {
 		return v
 	}
 	out.SourceID = str("source_id")
+	out.PersonID, out.WorkplaceID = str("person_id"), str("workplace_id")
 	switch catalog.Type(e.EventType) {
 	case catalog.SecurityAuthFailed:
 		out.Severity, out.Summary = "warning", "Неудачный вход"
@@ -40,9 +43,21 @@ func ToSecurityEvent(e jc.JournalEntry, ev Event) SecurityEvent {
 	case catalog.SecurityIdempotencyConflict:
 		out.Severity, out.Summary = "alarm", fmt.Sprintf("Конфликт целостности: событие %s источника %s пришло с другим содержимым", str("event_id"), str("source_id"))
 	case catalog.SecurityAccessDenied:
-		out.Severity, out.Summary = "warning", "Отказ в доступе"+suffix(": ", str("action"))
+		out.Severity, out.Summary = "warning", "Отказ в доступе"+suffix(": ", str("action_id"))
 	case catalog.SecurityAdmissionDenied:
-		out.Severity, out.Summary = "warning", "Отказ в допуске к рабочему месту"+suffix(": ", str("reason_code"))
+		var checks []string
+		if fc, ok := d["failed_checks"].([]any); ok {
+			for _, c := range fc {
+				if m, ok := c.(map[string]any); ok {
+					if v, _ := m["check"].(string); v != "" {
+						checks = append(checks, v)
+					}
+				} else if v, ok := c.(string); ok {
+					checks = append(checks, v)
+				}
+			}
+		}
+		out.Severity, out.Summary = "warning", "Отказ в допуске к рабочему месту"+suffix(": ", strings.Join(checks, ", "))+suffix(" — ", str("workplace_id"))
 	case catalog.SecurityKeyAlert:
 		out.Severity, out.Summary = "alarm", "Тревога по ключу"+suffix(": ", str("alert"))
 	case catalog.SecurityKeeperAlert:
@@ -66,6 +81,17 @@ func ToSecurityEvent(e jc.JournalEntry, ev Event) SecurityEvent {
 		default:
 			out.Severity, out.Summary = "warning", "Отклонение присутствия"
 		}
+	case catalog.PolicyRoleAssigned:
+		out.Summary = "Роль назначена: " + str("role_id") + suffix(" в области ", str("scope")) + suffix(" — ", str("person_id"))
+		if str("second_signature_by") != "" {
+			out.Summary += " (вторая подпись " + str("second_signature_by") + ")"
+		}
+	case catalog.PolicyRoleUnassigned:
+		out.Severity, out.Summary = "warning", "Роль снята: "+str("role_id")+suffix(" в области ", str("scope"))+suffix(" — ", str("person_id"))
+	case catalog.PolicyAuthorityGranted:
+		out.Summary = "Полномочие выдано: " + str("authority_id") + suffix(" в области ", str("scope")) + suffix(" — ", str("person_id"))
+	case catalog.PolicyAuthorityRevoked:
+		out.Severity, out.Summary = "warning", "Полномочие отозвано: "+str("authority_id")+suffix(" в области ", str("scope"))+suffix(" — ", str("person_id"))
 	default:
 		out.Summary = e.EventType
 	}

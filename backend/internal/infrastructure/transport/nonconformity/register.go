@@ -67,6 +67,19 @@ func Register(api *httpapi.API, q app.Queries, c app.Commands) {
 			return q.Presentation(ctx, in.ItemID, m)
 		})
 
+	httpapi.Read(api, httpapi.Get("/process/steps/{step_key}/station-view", "Окно операции участка",
+		"FR-49, Д-70 (интерфейс 6, стол мастера и начальника цеха): шаг процесса, счётчики, действующие остановки точки процесса "+
+			"(причина, с какого момента, уровень, условие снятия), предложение системы «остановить / снять» и действия "+
+			"nonconformity.process_hold.set / release с доступностью для вошедшего, причиной и последствиями — по образцу nonconformity.presentation.read."),
+		platform.Action{ID: "nonconformity.station.read", Owner: owner, Subject: "equipment"},
+		func(ctx context.Context, in *struct {
+			StepKey     string `path:"step_key" maxLength:"128" doc:"Шаг процесса (step_key)."`
+			EquipmentID string `query:"equipment_id" maxLength:"128" doc:"Оборудование поста (IS-2…): остановки этого оборудования — тоже, даже без шага в записи остановки."`
+			httpapi.MomentQuery
+		}, m platform.Moment) (app.StationView, error) {
+			return q.Station(ctx, in.StepKey, in.EquipmentID, m)
+		})
+
 	httpapi.Read(api, httpapi.Get("/concessions", "Разрешения на отклонение",
 		"FR-54: действующие разрешения на отклонение, применимые к изделию, с лимитом и остатком — для выбора при решении «ремонт» или «как есть»."),
 		platform.Action{ID: "nonconformity.concession.list", Owner: owner, Subject: "nonconformity"},

@@ -32,6 +32,7 @@ import type {
   AccessAssignmentListParams,
   AccessAuditParameters,
   AccessAuditReadParams,
+  AccessCandidateListParams,
   AccessGrantAssessParams,
   AccessGrantHistory,
   AccessGrantListParams,
@@ -191,6 +192,8 @@ import type {
   JournalEntryList,
   JournalEntryListParams,
   JournalEntryView,
+  JournalEventReadParams,
+  JournalEventView,
   JournalHead,
   JournalHeadReadParams,
   JournalStreamSubscribeParams,
@@ -225,6 +228,7 @@ import type {
   NonconformityNonconformityListParams,
   NonconformityPresentationReadParams,
   NonconformityQueueListParams,
+  NonconformityStationReadParams,
   NotificationSummary,
   NotificationsAlertListParams,
   NotificationsAttentionListParams,
@@ -371,6 +375,7 @@ import type {
   StartOperation,
   StartRun,
   StartedRun,
+  StationView,
   StoppedItemList,
   SubmitShiftReport,
   SubmitVersion,
@@ -392,6 +397,7 @@ import type {
   VisionObservationReadParams,
   VisionPassportReadParams,
   WaiveReworkLimit,
+  WorkplaceCandidateList,
   WorkplaceCard,
   WorkplaceHistory
 } from './model';
@@ -8136,6 +8142,129 @@ export function useQualityEscapeList<TData = Awaited<ReturnType<typeof qualityEs
  ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getQualityEscapeListQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+
+export type journalEventReadResponse200 = {
+  data: JournalEventView
+  status: 200
+}
+
+export type journalEventReadResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type journalEventReadResponseSuccess = (journalEventReadResponse200) & {
+  headers: Headers;
+};
+export type journalEventReadResponseError = (journalEventReadResponseDefault) & {
+  headers: Headers;
+};
+
+export const getJournalEventReadUrl = (eventId: string,
+    params?: JournalEventReadParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/events/${eventId}?${stringifiedParams}` : `/api/v1/events/${eventId}`
+}
+
+/**
+ * Интерфейс 6, Д-70: окно записи ?open=event:‹id› — доказательства ступеней области риска, доводы гипотез, отметки дорожек разбора. Запись словами (text, source_label), вид, позиция в журнале (journal_seq), материалы (evidence_refs) и числа режима (reading).
+ * @summary Запись журнала по event_id
+ */
+export const journalEventRead = async (eventId: string,
+    params?: JournalEventReadParams, options?: RequestInit): Promise<journalEventReadResponseSuccess> => {
+
+  const res = await fetch(getJournalEventReadUrl(eventId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: journalEventReadResponseError['data'], status?: number} = new globalThis.Error();
+    const data : journalEventReadResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: journalEventReadResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as journalEventReadResponseSuccess
+}
+
+
+
+
+
+export const getJournalEventReadQueryKey = (eventId: MaybeRefOrGetter<string>,
+    params?: MaybeRefOrGetter<JournalEventReadParams>,) => {
+    return [
+    'api','v1','events',eventId, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getJournalEventReadQueryOptions = <TData = Awaited<ReturnType<typeof journalEventRead>>, TError = globalThis.Error & { info?: Problem; status?: number }>(eventId: MaybeRefOrGetter<string>,
+    params?: MaybeRefOrGetter<JournalEventReadParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof journalEventRead>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getJournalEventReadQueryKey(eventId,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof journalEventRead>>> = ({ signal }) => journalEventRead(toValue(eventId),toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: computed(() => toValue(eventId) !== null && toValue(eventId) !== undefined), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof journalEventRead>>, TError, TData>
+}
+
+export type JournalEventReadQueryResult = NonNullable<Awaited<ReturnType<typeof journalEventRead>>>
+export type JournalEventReadQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Запись журнала по event_id
+ */
+
+export function useJournalEventRead<TData = Awaited<ReturnType<typeof journalEventRead>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ eventId: MaybeRefOrGetter<string>,
+    params?: MaybeRefOrGetter<JournalEventReadParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof journalEventRead>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getJournalEventReadQueryOptions(eventId,params,options)
 
   const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
@@ -22304,6 +22433,129 @@ export const useNonconformityProcessHoldRelease = <TError = globalThis.Error & {
       return useMutation(getNonconformityProcessHoldReleaseMutationOptions(options), queryClient);
     }
 
+export type nonconformityStationReadResponse200 = {
+  data: StationView
+  status: 200
+}
+
+export type nonconformityStationReadResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type nonconformityStationReadResponseSuccess = (nonconformityStationReadResponse200) & {
+  headers: Headers;
+};
+export type nonconformityStationReadResponseError = (nonconformityStationReadResponseDefault) & {
+  headers: Headers;
+};
+
+export const getNonconformityStationReadUrl = (stepKey: string,
+    params?: NonconformityStationReadParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/process/steps/${stepKey}/station-view?${stringifiedParams}` : `/api/v1/process/steps/${stepKey}/station-view`
+}
+
+/**
+ * FR-49, Д-70 (интерфейс 6, стол мастера и начальника цеха): шаг процесса, счётчики, действующие остановки точки процесса (причина, с какого момента, уровень, условие снятия), предложение системы «остановить / снять» и действия nonconformity.process_hold.set / release с доступностью для вошедшего, причиной и последствиями — по образцу nonconformity.presentation.read.
+ * @summary Окно операции участка
+ */
+export const nonconformityStationRead = async (stepKey: string,
+    params?: NonconformityStationReadParams, options?: RequestInit): Promise<nonconformityStationReadResponseSuccess> => {
+
+  const res = await fetch(getNonconformityStationReadUrl(stepKey,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: nonconformityStationReadResponseError['data'], status?: number} = new globalThis.Error();
+    const data : nonconformityStationReadResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: nonconformityStationReadResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as nonconformityStationReadResponseSuccess
+}
+
+
+
+
+
+export const getNonconformityStationReadQueryKey = (stepKey: MaybeRefOrGetter<string>,
+    params?: MaybeRefOrGetter<NonconformityStationReadParams>,) => {
+    return [
+    'api','v1','process','steps',stepKey,'station-view', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getNonconformityStationReadQueryOptions = <TData = Awaited<ReturnType<typeof nonconformityStationRead>>, TError = globalThis.Error & { info?: Problem; status?: number }>(stepKey: MaybeRefOrGetter<string>,
+    params?: MaybeRefOrGetter<NonconformityStationReadParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof nonconformityStationRead>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getNonconformityStationReadQueryKey(stepKey,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof nonconformityStationRead>>> = ({ signal }) => nonconformityStationRead(toValue(stepKey),toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: computed(() => toValue(stepKey) !== null && toValue(stepKey) !== undefined), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof nonconformityStationRead>>, TError, TData>
+}
+
+export type NonconformityStationReadQueryResult = NonNullable<Awaited<ReturnType<typeof nonconformityStationRead>>>
+export type NonconformityStationReadQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Окно операции участка
+ */
+
+export function useNonconformityStationRead<TData = Awaited<ReturnType<typeof nonconformityStationRead>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ stepKey: MaybeRefOrGetter<string>,
+    params?: MaybeRefOrGetter<NonconformityStationReadParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof nonconformityStationRead>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getNonconformityStationReadQueryOptions(stepKey,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+
 export type processVersionListResponse200 = {
   data: ProcessVersionList
   status: 200
@@ -29808,6 +30060,129 @@ export const useAccessWorkplaceAdmit = <TError = globalThis.Error & { info?: Pro
       > => {
       return useMutation(getAccessWorkplaceAdmitMutationOptions(options), queryClient);
     }
+
+export type accessCandidateListResponse200 = {
+  data: WorkplaceCandidateList
+  status: 200
+}
+
+export type accessCandidateListResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type accessCandidateListResponseSuccess = (accessCandidateListResponse200) & {
+  headers: Headers;
+};
+export type accessCandidateListResponseError = (accessCandidateListResponseDefault) & {
+  headers: Headers;
+};
+
+export const getAccessCandidateListUrl = (workplaceId: string,
+    params?: AccessCandidateListParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/workplaces/${workplaceId}/candidates?${stringifiedParams}` : `/api/v1/workplaces/${workplaceId}/candidates`
+}
+
+/**
+ * FR-80, FR-81, PRD §11.18 (интерфейс 6, «Смена → Назначить на пост»): кого можно назначить на пост в смене — роль в области поста, вердикт квалификации на дату смены (ok, expiring, expired, missing) и почему; у контролёра — нужен документ согласования начальника ОТК. Мастеру и начальнику цеха в области цеха — без чтения всех сотрудников, ролей и квалификаций.
+ * @summary Кандидаты на пост
+ */
+export const accessCandidateList = async (workplaceId: string,
+    params?: AccessCandidateListParams, options?: RequestInit): Promise<accessCandidateListResponseSuccess> => {
+
+  const res = await fetch(getAccessCandidateListUrl(workplaceId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: accessCandidateListResponseError['data'], status?: number} = new globalThis.Error();
+    const data : accessCandidateListResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: accessCandidateListResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as accessCandidateListResponseSuccess
+}
+
+
+
+
+
+export const getAccessCandidateListQueryKey = (workplaceId: MaybeRefOrGetter<string>,
+    params?: MaybeRefOrGetter<AccessCandidateListParams>,) => {
+    return [
+    'api','v1','workplaces',workplaceId,'candidates', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getAccessCandidateListQueryOptions = <TData = Awaited<ReturnType<typeof accessCandidateList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(workplaceId: MaybeRefOrGetter<string>,
+    params?: MaybeRefOrGetter<AccessCandidateListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof accessCandidateList>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getAccessCandidateListQueryKey(workplaceId,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof accessCandidateList>>> = ({ signal }) => accessCandidateList(toValue(workplaceId),toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: computed(() => toValue(workplaceId) !== null && toValue(workplaceId) !== undefined), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof accessCandidateList>>, TError, TData>
+}
+
+export type AccessCandidateListQueryResult = NonNullable<Awaited<ReturnType<typeof accessCandidateList>>>
+export type AccessCandidateListQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Кандидаты на пост
+ */
+
+export function useAccessCandidateList<TData = Awaited<ReturnType<typeof accessCandidateList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ workplaceId: MaybeRefOrGetter<string>,
+    params?: MaybeRefOrGetter<AccessCandidateListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof accessCandidateList>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getAccessCandidateListQueryOptions(workplaceId,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
 
 export type accessOperatorReportDeviationResponse200 = {
   data: Receipt

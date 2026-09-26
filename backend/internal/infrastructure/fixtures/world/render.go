@@ -136,7 +136,7 @@ func tptr(t time.Time) *time.Time {
 var renderers = []func(c *Ctx) []loader.Response{
 	renderSecurity, renderWorkplaces,
 	renderItems, renderProcess, renderQuality, renderNonconformity, renderAnalysis, renderSuggestions,
-	renderAnalytics, renderNotifications, renderERP, renderJournal, renderMachinelogs,
+	renderAnalytics, renderNotifications, renderERP, renderJournal, renderMachinelogs, renderStation,
 	renderVision, renderIngest, renderOps, renderSimulation, renderMaterials, renderDocuments,
 	renderFederation,
 }
@@ -291,7 +291,8 @@ func renderSecurity(c *Ctx) []loader.Response {
 		}
 	}
 	st.ReportRef = Digest([]byte(fmt.Sprintf("verifier-report/%s/%s", st.Status, st.CheckedAt.Format(time.RFC3339))))
-	return []loader.Response{resp("security.integrity.read", st)}
+	// Стол Аудитора ИБ (интерфейс 6): отчёты верификатора, журнал CA, шина безопасности.
+	return append([]loader.Response{resp("security.integrity.read", st)}, renderAudit(c)...)
 }
 
 // renderWorkplaces — панель «Посты» (FR-6): кто назначен, на месте ли, текущее изделие.
@@ -330,5 +331,7 @@ func renderWorkplaces(c *Ctx) []loader.Response {
 		list.Items = append(list.Items, row)
 	}
 	out := []loader.Response{resp("access.workplace.list", list)}
-	return append(out, renderPostCards(c, list, dayShift)...)
+	out = append(out, renderPostCards(c, list, dayShift)...)
+	// Интерфейс 6: смены, план смен и кандидаты на посты (render_roster.go).
+	return append(out, renderRoster(c)...)
 }

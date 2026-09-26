@@ -38,10 +38,13 @@ func Register(api *httpapi.API, q app.Queries, c app.Commands) {
 			EventType string `query:"event_type" maxLength:"128" doc:"Тип записи или префикс семейства (item., quality.)."`
 			EntryKind string `query:"entry_kind" enum:"fact,reaction,decision,service" doc:"Вид записи (AD-2)."`
 			AfterSeq  int64  `query:"after_seq" minimum:"0" doc:"Записи после seq."`
+			EventID   string `query:"event_id" maxLength:"64" doc:"Одна запись по event_id: переход по causation_id, corrects, correlation_id (интерфейс 6)."`
+			Order     string `query:"order" enum:"asc,desc" doc:"asc (по умолчанию) — от старых, курсор — seq последней; desc — новые сверху, следующая страница — seq меньше курсора."`
 			httpapi.MomentQuery
 			httpapi.PageQuery
 		}, m platform.Moment) (app.JournalEntryList, error) {
-			return q.Entries(ctx, app.EntryFilter{ItemID: in.ItemID, Stream: in.Stream, EventType: in.EventType, AfterSeq: in.AfterSeq, EntryKind: in.EntryKind}, m, in.Page())
+			return q.Entries(ctx, app.EntryFilter{ItemID: in.ItemID, Stream: in.Stream, EventType: in.EventType, AfterSeq: in.AfterSeq, EntryKind: in.EntryKind,
+				EventID: in.EventID, Order: in.Order}, m, in.Page())
 		})
 
 	httpapi.Read(api, httpapi.Get("/journal/{seq}", "Запись журнала", "Одна запись по seq: открытые поля (AD-44), подписанты, статус подписи, содержимое."),
@@ -50,6 +53,17 @@ func Register(api *httpapi.API, q app.Queries, c app.Commands) {
 			Seq int64 `path:"seq" minimum:"1" doc:"Позиция записи в основной цепочке."`
 		}, _ platform.Moment) (app.JournalEntryView, error) {
 			return q.Entry(ctx, in.Seq)
+		})
+
+	httpapi.Read(api, httpapi.Get("/events/{event_id}", "Запись журнала по event_id",
+		"Интерфейс 6, Д-70: окно записи ?open=event:‹id› — доказательства ступеней области риска, доводы гипотез, отметки дорожек разбора. "+
+			"Запись словами (text, source_label), вид, позиция в журнале (journal_seq), материалы (evidence_refs) и числа режима (reading)."),
+		platform.Action{ID: "journal.event.read", Owner: owner, Subject: "item"},
+		func(ctx context.Context, in *struct {
+			EventID string `path:"event_id" maxLength:"64" doc:"event_id записи."`
+			httpapi.MomentQuery
+		}, m platform.Moment) (app.JournalEventView, error) {
+			return q.Event(ctx, in.EventID, m)
 		})
 
 	httpapi.Read(api, httpapi.Get("/journal/head", "Голова журнала", "Последний seq и доменное время записи (AD-37), последний номер CA, режим часов."),

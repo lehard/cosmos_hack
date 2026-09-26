@@ -4,6 +4,7 @@
  */
 import type { Axis } from './axis';
 import type { JournalEntryListEntryKind } from './journalEntryListEntryKind';
+import type { JournalEntryListOrder } from './journalEntryListOrder';
 
 export type JournalEntryListParams = {
 /**
@@ -30,6 +31,15 @@ entry_kind?: JournalEntryListEntryKind;
  * @minimum 0
  */
 after_seq?: number;
+/**
+ * Одна запись по event_id: переход по causation_id, corrects, correlation_id (интерфейс 6).
+ * @maxLength 64
+ */
+event_id?: string;
+/**
+ * asc (по умолчанию) — от старых, курсор — seq последней; desc — новые сверху, следующая страница — seq меньше курсора.
+ */
+order?: JournalEntryListOrder;
 /**
  * Ось момента: occurred — «как было» (по умолчанию), recorded — «что мы знали» (AD-37).
  */

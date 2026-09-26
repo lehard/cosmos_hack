@@ -3,11 +3,16 @@
  * Источник: contracts/openapi.yaml
  */
 import type { CriticalActionCaGroup } from './criticalActionCaGroup';
+import type { CriticalActionSigner } from './criticalActionSigner';
 import type { DrillRef } from './drillRef';
 
 export interface CriticalAction {
+  /** Название действия словами (перечень критических действий AD-28 или каталог типов). */
+  action_name?: string;
   /** Тип основной записи (семейство.сущность.действие). */
   action_type: string;
+  /** Кто — имя из справочника сотрудников (псевдоним кейса §4.6). */
+  actor_display?: string;
   /** Кто (псевдоним). */
   actor_id?: string;
   /** Стало. */
@@ -40,6 +45,8 @@ export interface CriticalAction {
   /** Ревизия политики. */
   policy_seq?: number;
   recorded_at: string;
+  /** Подписанты основной записи с классом ключа (AD-10, AD-14): кто подписал решение, которое записано в CA. */
+  signers?: CriticalActionSigner[];
   /** Цифровое клеймо (FR-145). */
   stamp_id?: string;
 }

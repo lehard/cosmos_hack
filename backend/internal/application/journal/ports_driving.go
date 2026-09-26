@@ -17,6 +17,8 @@ type Queries interface {
 	Entries(ctx context.Context, f EntryFilter, m platform.Moment, p platform.Page) (JournalEntryList, error)
 	// Entry — запись по seq (journal.entry.read).
 	Entry(ctx context.Context, seq int64) (JournalEntryView, error)
+	// Event — запись по event_id для окна записи (journal.event.read; интерфейс 6).
+	Event(ctx context.Context, eventID string, m platform.Moment) (JournalEventView, error)
 	// Head — голова журнала (journal.head.read).
 	Head(ctx context.Context, m platform.Moment) (JournalHead, error)
 	// Timeline — диапазон истории и метки таймлайна (journal.timeline.read, FR-4).
@@ -59,6 +61,10 @@ func (Unimplemented) Entries(context.Context, EntryFilter, platform.Moment, plat
 
 func (Unimplemented) Entry(context.Context, int64) (JournalEntryView, error) {
 	return JournalEntryView{}, platform.NotImplemented("journal.entry.read")
+}
+
+func (Unimplemented) Event(context.Context, string, platform.Moment) (JournalEventView, error) {
+	return JournalEventView{}, platform.NotImplemented("journal.event.read")
 }
 
 func (Unimplemented) Head(context.Context, platform.Moment) (JournalHead, error) {

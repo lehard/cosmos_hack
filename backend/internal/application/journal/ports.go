@@ -154,6 +154,8 @@ type ReadQuery struct {
 	Partition *int
 	// EventType — тип записи.
 	EventType string
+	// EventID — одна запись по event_id (чтение записи для окна ?open=event:‹id›, интерфейс 6).
+	EventID string
 	// AfterSeq — только записи с seq > AfterSeq.
 	AfterSeq int64
 	// Limit — предел числа записей (0 — 1000).
@@ -161,6 +163,9 @@ type ReadQuery struct {
 	// Backward — по убыванию seq (последние записи: «сейчас» сценария, головы).
 	// AfterSeq при этом не учитывается.
 	Backward bool
+	// BeforeSeq — вместе с Backward: только записи с seq < BeforeSeq (страницы
+	// журнала «новые сверху», интерфейс 6); 0 — с головы.
+	BeforeSeq int64
 	// Moment — ось и момент: recorded — «что мы знали» (префикс журнала по seq
 	// с recorded_at ≤ T), occurred — «как было» (occurred_at ≤ T по всему
 	// известному). AsOf пуст — всё записанное.

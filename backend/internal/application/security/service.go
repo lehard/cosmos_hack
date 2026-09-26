@@ -154,6 +154,9 @@ func toView(c caEntry, cancelledBy map[string]string) CriticalAction {
 		v.CancelReason = r.CancelReason.Text
 	}
 	v.RecordedAt, _ = dj.ParseTime(c.entry.RecordedAt)
+	if a, _, ok := dom.ActionFor(catalog.Type(r.ActionType)); ok {
+		v.ActionName = a.Name
+	}
 	v.Object = platform.DrillRef{Entity: platform.EntityIntegrity, ID: dom.Ref(no)}
 	if kind, id, ok := strings.Cut(r.ObjectRef, ":"); ok && id != "" {
 		for _, k := range platform.EntityKinds {
@@ -206,9 +209,46 @@ func (s *Service) CriticalActions(ctx context.Context, f CriticalActionFilter, m
 			out.NextCursor = strconv.FormatInt(out.Items[len(out.Items)-1].CANo, 10)
 			break
 		}
+		s.withSigners(ctx, &v)
 		out.Items = append(out.Items, v)
 	}
 	return out, nil
+}
+
+// withSigners — подписанты основной записи критического действия с классом
+// ключа (AD-10, Д-72): из конверта записи main_event_id в потоке объекта.
+// Запись не нашлась или не читается — подписантов нет (строка CA остаётся).
+func (s *Service) withSigners(ctx context.Context, v *CriticalAction) {
+	es, err := s.journal.Read(ctx, appjournal.ReadQuery{Stream: v.ObjectRef, EventType: v.ActionType})
+	if err != nil {
+		return
+	}
+	for _, e := range es {
+		if e.EventID != v.MainEventID {
+			continue
+		}
+		ev, err := open(ctx, s.journal, e)
+		if err != nil {
+			return
+		}
+		class := string(e.ProvenanceClass)
+		storage := ""
+		if ev.Command != nil {
+			storage = ev.Command.KeyStorage
+		}
+		for _, k := range ev.Integrity.Signers {
+			id, _, _ := strings.Cut(k, "@")
+			sg := CriticalActionSigner{SignerID: id, KeyClass: class, KeyID: k}
+			if class == string(jc.JournalEntryProvenanceClassPersonal) {
+				sg.KeyStorage = storage
+			}
+			v.Signers = append(v.Signers, sg)
+		}
+		if len(v.Signers) == 0 {
+			v.Signers = []CriticalActionSigner{{SignerID: e.SourceID, KeyClass: class}}
+		}
+		return
+	}
 }
 
 // CriticalAction — запись CA-‹n›.
@@ -228,7 +268,9 @@ func (s *Service) CriticalAction(ctx context.Context, caRef string) (CriticalAct
 	}
 	for _, c := range log {
 		if dom.Ref(int64(c.entry.Seq)) == caRef {
-			return toView(c, cancelled), nil
+			v := toView(c, cancelled)
+			s.withSigners(ctx, &v)
+			return v, nil
 		}
 	}
 	return CriticalAction{}, platform.Fail(errcodes.ApiNotFound)
@@ -250,6 +292,10 @@ func (s *Service) Events(ctx context.Context, eventType string, m platform.Momen
 		if err != nil {
 			return SecurityEventList{}, err
 		}
+		// Стартовая политика генезиса — не «смена прав»: на шине только выдачи после него.
+		es = slices.DeleteFunc(es, func(e jc.JournalEntry) bool {
+			return e.ProvenanceClass == jc.JournalEntryProvenanceClassGenesis
+		})
 		all = append(all, es...)
 	}
 	slices.SortFunc(all, func(a, b jc.JournalEntry) int { return b.Seq - a.Seq })
@@ -349,12 +395,31 @@ func ReportView(r Report) VerifierReport {
 			"genesis": p.SignatureClasses.Genesis, "server_attested": p.SignatureClasses.ServerAttested},
 	}
 	status := map[string]string{"intact": "intact", "rejected": "rejected", "not_verifiable": "unverifiable"}
+	headRejected := false
 	for _, c := range p.Checks {
 		row := VerifierCheckRow{Check: string(c.Check), Status: status[string(c.Status)], Count: c.Checked}
 		var details []string
 		for i, f := range c.Findings {
 			if i < 20 {
 				details = append(details, f.Detail)
+				vf := VerifierFinding{Code: f.Code, Detail: f.Detail, Status: map[string]string{"intact": "note"}[string(c.Status)]}
+				if vf.Status == "" {
+					vf.Status = row.Status
+				}
+				if f.Chain != nil {
+					vf.Chain = string(*f.Chain)
+				}
+				if f.Seq != nil {
+					vf.Seq = int64(*f.Seq)
+				}
+				if f.CaRef != nil {
+					vf.CARef = *f.CaRef
+				}
+				row.Findings = append(row.Findings, vf)
+				// Главная находка — первое нарушение, без нарушений — первая «не проверяемо».
+				if row.Status == "rejected" && !headRejected || v.Summary.Headline == "" && row.Status == "unverifiable" {
+					v.Summary.Headline, headRejected = f.Detail, row.Status == "rejected"
+				}
 			}
 			if row.CARef == "" && f.CaRef != nil {
 				row.CARef = *f.CaRef

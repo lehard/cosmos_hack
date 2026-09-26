@@ -2978,8 +2978,14 @@ components:
     CriticalAction:
       additionalProperties: false
       properties:
+        action_name:
+          description: Название действия словами (перечень критических действий AD-28 или каталог типов).
+          type: string
         action_type:
           description: Тип основной записи (семейство.сущность.действие).
+          type: string
+        actor_display:
+          description: Кто — имя из справочника сотрудников (псевдоним кейса §4.6).
           type: string
         actor_id:
           description: Кто (псевдоним).
@@ -3045,6 +3051,11 @@ components:
         recorded_at:
           format: date-time
           type: string
+        signers:
+          description: "Подписанты основной записи с классом ключа (AD-10, AD-14): кто подписал решение, которое записано в CA."
+          items:
+            $ref: "#/components/schemas/CriticalActionSigner"
+          type: array
         stamp_id:
           description: Цифровое клеймо (FR-145).
           type: string
@@ -3073,6 +3084,39 @@ components:
           type: string
       required:
         - items
+      type: object
+    CriticalActionSigner:
+      additionalProperties: false
+      properties:
+        display:
+          description: Подписант словами.
+          type: string
+        key_class:
+          description: "Класс подписи (AD-10): personal — ключ человека, server_attested — заверено сервером, paper — бумага с заверением, scenario — ключ сценария."
+          enum:
+            - personal
+            - device
+            - server_attested
+            - scenario
+            - paper
+            - partner
+            - genesis
+          type: string
+        key_id:
+          description: Ключ key_id@версия.
+          type: string
+        key_storage:
+          description: "Класс хранения ключа человека (AD-14, Д-72): физический ключ или ключ в браузере под PIN."
+          enum:
+            - hardware_token
+            - software_browser
+          type: string
+        signer_id:
+          description: "Подписант: псевдоним сотрудника или источник (ant — заверение сервером)."
+          type: string
+      required:
+        - signer_id
+        - key_class
       type: object
     CryptoProfile:
       additionalProperties: false
@@ -7949,6 +7993,132 @@ components:
         - causation_id
         - signers
         - signature_status
+      type: object
+    JournalEventReading:
+      additionalProperties: false
+      properties:
+        observed_max:
+          description: Наблюдённый максимум (у отклонения — значение).
+          format: int64
+          type: integer
+        observed_min:
+          description: Наблюдённый минимум (у отклонения — значение).
+          format: int64
+          type: integer
+        parameter:
+          description: Параметр у источника (current_a — ток сварки, …).
+          type: string
+        scale:
+          description: "Знаков после запятой: значение = число × 10^(−scale)."
+          format: int64
+          maximum: 12
+          minimum: 0
+          type: integer
+        setpoint_max:
+          description: "Уставка: верхняя граница."
+          format: int64
+          type: integer
+        setpoint_min:
+          description: "Уставка: нижняя граница."
+          format: int64
+          type: integer
+        setpoint_nominal:
+          description: "Уставка: номинал."
+          format: int64
+          type: integer
+        unit:
+          description: Единица, код UCUM (A, V, mm, …).
+          type: string
+      required:
+        - parameter
+        - unit
+        - scale
+      type: object
+    JournalEventView:
+      additionalProperties: false
+      properties:
+        author:
+          description: Автор решения (псевдоним).
+          type: string
+        event_id:
+          description: event_id записи.
+          type: string
+        event_title:
+          description: Тип записи словами (каталог типов).
+          type: string
+        event_type:
+          description: Тип записи каталога.
+          type: string
+        evidence_refs:
+          description: "Адреса материалов: кадры, протоколы (материалы — materials.material.read)."
+          items:
+            type: string
+          type: array
+        item_id:
+          description: Изделие записи.
+          type: string
+        journal_seq:
+          description: Позиция записи в основной цепочке — переход к журналу (journal.entry.read).
+          format: int64
+          minimum: 1
+          type: integer
+        kind:
+          description: "Вид записи (AD-2): исходный факт, вывод системы, решение человека, служебная."
+          enum:
+            - fact
+            - reaction
+            - decision
+            - service
+          type: string
+        late:
+          description: Запись пришла с опозданием (задержка записи).
+          type: boolean
+        occurred_at:
+          description: Время возникновения (AD-37).
+          format: date-time
+          type: string
+        params:
+          additionalProperties:
+            type: string
+          description: "Параметры записи: метод, параметр, значение, уставка, шаг…"
+          type: object
+        reading:
+          $ref: "#/components/schemas/JournalEventReading"
+          description: "Параметр режима числами: уставка и наблюдённые значения."
+        recorded_at:
+          description: Время записи в журнал; позже возникновения — запись опоздала.
+          format: date-time
+          type: string
+        signers:
+          description: key_id@версия подписантов.
+          items:
+            type: string
+          type: array
+        source_kind:
+          description: Вид источника факта (FR-140).
+          type: string
+        source_label:
+          description: "Источник словами: журнал оборудования, камера, человек."
+          type: string
+        stream:
+          description: Поток записи.
+          type: string
+        text:
+          description: "Запись словами для людей: что произошло, значение против уставки, источник."
+          type: string
+        variant:
+          description: "Уточнение внутри типа: outcome контроля, вид отклонения…"
+          type: string
+      required:
+        - event_id
+        - event_type
+        - occurred_at
+        - recorded_at
+        - kind
+        - journal_seq
+        - stream
+        - signers
+        - evidence_refs
       type: object
     JournalHead:
       additionalProperties: false
@@ -15124,12 +15294,18 @@ components:
         event_id:
           type: string
         event_type:
-          description: Тип записи семейства security.
+          description: "Тип записи шины безопасности: семейство security и выдача прав (policy.role.*, policy.authority.*)."
           type: string
         object:
           $ref: "#/components/schemas/DrillRef"
         occurred_at:
           format: date-time
+          type: string
+        person_display:
+          description: Сотрудник словами.
+          type: string
+        person_id:
+          description: Сотрудник, к которому относится событие (вход, отказ, допуск, присутствие, выдача прав).
           type: string
         seq:
           format: int64
@@ -15145,6 +15321,9 @@ components:
           type: string
         summary:
           description: Краткое описание по-русски.
+          type: string
+        workplace_id:
+          description: Пост (допуск, присутствие по СКУД).
           type: string
       required:
         - event_id
@@ -16219,6 +16398,177 @@ components:
         - event_ids
         - replayed
       type: object
+    StationAction:
+      additionalProperties: false
+      properties:
+        allowed:
+          description: Пройдёт гарды для вошедшего (остановка уже действует / не действует, полномочие снятия).
+          type: boolean
+        consequences:
+          description: "Что произойдёт: изделия, маршрут, точка чистоты, журнал."
+          items:
+            type: string
+          type: array
+        equipment_id:
+          description: Оборудование — поле команды set.
+          type: string
+        hold_id:
+          description: Остановка, которую снимает release (путь операции).
+          type: string
+        label:
+          description: Надпись кнопки.
+          type: string
+        level:
+          description: Уровень, с которым set остановит точку (поле команды).
+          enum:
+            - process_point_stop
+            - critical_stop
+          type: string
+        operation:
+          description: Операция API.
+          enum:
+            - nonconformity.process_hold.set
+            - nonconformity.process_hold.release
+          type: string
+        step_key:
+          description: Шаг — поле команды set.
+          type: string
+        why_available:
+          description: Почему доступно или почему нет — словами.
+          type: string
+      required:
+        - operation
+        - label
+        - allowed
+        - why_available
+        - consequences
+      type: object
+    StationCounters:
+      additionalProperties: false
+      properties:
+        defects:
+          description: Физические дефекты за период, не наблюдения (соглашение «Дефект»).
+          format: int64
+          minimum: 0
+          type: integer
+        in_progress:
+          description: В работе.
+          format: int64
+          minimum: 0
+          type: integer
+        nonconformities:
+          description: Открытые несоответствия шага.
+          format: int64
+          minimum: 0
+          type: integer
+        passed:
+          description: Прошли шаг.
+          format: int64
+          minimum: 0
+          type: integer
+        queue:
+          description: Ждут на шаге.
+          format: int64
+          minimum: 0
+          type: integer
+      required:
+        - queue
+        - in_progress
+        - passed
+        - defects
+        - nonconformities
+      type: object
+    StationHold:
+      additionalProperties: false
+      properties:
+        equipment_id:
+          description: Оборудование точки.
+          type: string
+        hold_id:
+          type: string
+        incident_id:
+          description: Инцидент, из-за которого остановка.
+          type: string
+        level:
+          description: Стоп точки процесса или критическая остановка.
+          enum:
+            - process_point_stop
+            - critical_stop
+          type: string
+        reason:
+          description: Почему остановлено — словами.
+          type: string
+        release_condition:
+          description: Условие снятия (что должно случиться).
+          type: string
+        set_event_id:
+          description: Запись остановки в журнале (переход к записи).
+          type: string
+        since:
+          description: С какого момента остановлено.
+          format: date-time
+          type: string
+      required:
+        - hold_id
+        - reason
+        - since
+        - level
+      type: object
+    StationSuggestion:
+      additionalProperties: false
+      properties:
+        outcome:
+          description: stop — остановить точку, release — снять остановку.
+          enum:
+            - stop
+            - release
+          type: string
+        why:
+          description: Почему система это предлагает — словами.
+          items:
+            type: string
+          type: array
+      required:
+        - outcome
+        - why
+      type: object
+    StationView:
+      additionalProperties: false
+      properties:
+        actions:
+          description: "Действия окна: только их показывает интерфейс."
+          items:
+            $ref: "#/components/schemas/StationAction"
+          type: array
+        active_holds:
+          description: Действующие остановки точки процесса (FR-49).
+          items:
+            $ref: "#/components/schemas/StationHold"
+          type: array
+        basis_seq:
+          description: seq, на котором построен ответ.
+          format: int64
+          type: integer
+        counters:
+          $ref: "#/components/schemas/StationCounters"
+          description: Счётчики шага; нет — источник счётчиков недоступен (карточка узла process.node.read).
+        equipment_id:
+          description: Оборудование шага, если известно.
+          type: string
+        step_key:
+          type: string
+        step_label:
+          description: Имя шага по описанию процесса.
+          type: string
+        suggestion:
+          $ref: "#/components/schemas/StationSuggestion"
+          description: "Предложение системы: остановить или снять — решает человек."
+      required:
+        - step_key
+        - active_holds
+        - actions
+        - basis_seq
+      type: object
     StoppedItem:
       additionalProperties: false
       properties:
@@ -16706,6 +17056,11 @@ components:
           type: integer
         details:
           type: string
+        findings:
+          description: "Находки проверки: где нарушение или оговорка (первые 20)."
+          items:
+            $ref: "#/components/schemas/VerifierFinding"
+          type: array
         status:
           description: цело / отвергнуто / не проверяемо.
           enum:
@@ -16717,6 +17072,43 @@ components:
         - check
         - status
         - count
+      type: object
+    VerifierFinding:
+      additionalProperties: false
+      properties:
+        ca_ref:
+          description: Критическое действие CA-‹n›.
+          type: string
+        chain:
+          description: Цепочка.
+          enum:
+            - main
+            - ca
+          type: string
+        code:
+          description: Код находки (chain_link_mismatch, checkpoint_mismatch.link, source_seq_gap.pending, …).
+          type: string
+        detail:
+          description: Что и где — по-русски.
+          type: string
+        event_id:
+          description: "Запись журнала (event_id), если известна ant: переход к записи."
+          type: string
+        seq:
+          description: Номер записи в цепочке.
+          format: int64
+          minimum: 0
+          type: integer
+        status:
+          description: rejected — нарушение, unverifiable — не проверяемо, note — пояснение при «цело».
+          enum:
+            - rejected
+            - unverifiable
+            - note
+          type: string
+      required:
+        - code
+        - detail
       type: object
     VerifierReport:
       additionalProperties: false
@@ -16794,6 +17186,9 @@ components:
           format: int64
           minimum: 0
           type: integer
+        headline:
+          description: "Главная находка словами: где нарушение (для строки списка)."
+          type: string
         report_digest:
           description: Отпечаток подписанного отчёта.
           type: string
@@ -17088,6 +17483,78 @@ components:
         - shift_id
         - assignee_role
         - qualification_ok
+      type: object
+    WorkplaceCandidate:
+      additionalProperties: false
+      properties:
+        allowed:
+          description: Назначение пройдёт гард access.assignment.set (контролёру — после документа согласования начальника ОТК).
+          type: boolean
+        assigned_elsewhere:
+          description: Уже назначен в этой смене на другой пост (workplace_id).
+          type: string
+        assigned_here:
+          description: Уже назначен на этот пост в этой смене.
+          type: boolean
+        display:
+          description: Сотрудник словами (псевдоним кейса §4.6).
+          type: string
+        needs_approval:
+          description: "Контролёр: назначение — по документу «запрос мастера → согласование начальника ОТК» (PRD §11.18)."
+          type: boolean
+        person_id:
+          type: string
+        qualification_id:
+          description: Квалификация, по которой вердикт.
+          type: string
+        qualification_verdict:
+          description: "Квалификация на дату смены: ok — действует, expiring — истекает в 30 дней, expired — истекла, missing — нет в области поста. Контролёру квалификация не нужна (ok) — нужен документ согласования."
+          enum:
+            - ok
+            - expiring
+            - expired
+            - missing
+          type: string
+        role:
+          description: Роль назначения (assignee_role команды access.assignment.set).
+          enum:
+            - performer
+            - quality_inspector
+          type: string
+        valid_until:
+          description: Срок квалификации.
+          format: date-time
+          type: string
+        why:
+          description: "Почему так — по-русски: срок, область, что нужно для назначения."
+          type: string
+      required:
+        - person_id
+        - display
+        - role
+        - qualification_verdict
+        - why
+        - allowed
+      type: object
+    WorkplaceCandidateList:
+      additionalProperties: false
+      properties:
+        basis_seq:
+          format: int64
+          type: integer
+        items:
+          items:
+            $ref: "#/components/schemas/WorkplaceCandidate"
+          type: array
+        shift_id:
+          description: Смена, на дату которой проверены квалификации; пусто — текущая.
+          type: string
+        workplace_id:
+          type: string
+      required:
+        - workplace_id
+        - items
+        - basis_seq
       type: object
     WorkplaceCard:
       additionalProperties: false
@@ -21208,6 +21675,73 @@ paths:
         id: quality.escape.list
         owner: quality
         subject: analyzer_passport
+  /api/v1/events/{event_id}:
+    get:
+      description: "Интерфейс 6, Д-70: окно записи ?open=event:‹id› — доказательства ступеней области риска, доводы гипотез, отметки дорожек разбора. Запись словами (text, source_label), вид, позиция в журнале (journal_seq), материалы (evidence_refs) и числа режима (reading)."
+      operationId: journal.event.read
+      parameters:
+        - description: event_id записи.
+          in: path
+          name: event_id
+          required: true
+          schema:
+            description: event_id записи.
+            maxLength: 64
+            type: string
+        - description: "Ось момента: occurred — «как было» (по умолчанию), recorded — «что мы знали» (AD-37)."
+          explode: false
+          in: query
+          name: axis
+          schema:
+            $ref: "#/components/schemas/Axis"
+            description: "Ось момента: occurred — «как было» (по умолчанию), recorded — «что мы знали» (AD-37)."
+        - description: "Момент (RFC 3339 UTC); пусто — «сейчас». Задан — воспроизведение: команды выключены (AD-21)."
+          explode: false
+          in: query
+          name: as_of
+          schema:
+            description: "Момент (RFC 3339 UTC); пусто — «сейчас». Задан — воспроизведение: команды выключены (AD-21)."
+            format: date-time
+            type: string
+        - description: "Прогон сценария: данные в его пространстве имён (AD-38)."
+          explode: false
+          in: query
+          name: run_id
+          schema:
+            description: "Прогон сценария: данные в его пространстве имён (AD-38)."
+            maxLength: 128
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JournalEventView"
+          description: OK
+          headers:
+            Ant-Backend:
+              schema:
+                $ref: "#/components/schemas/BackendMode"
+                description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Error
+      summary: Запись журнала по event_id
+      tags:
+        - journal
+      x-ant-action:
+        class: read
+        critical: false
+        id: journal.event.read
+        owner: journal
+        subject: item
   /api/v1/genealogy/trace:
     get:
       description: "FR-45: изделия, сделанные из партии или плавки или бывшие в садке, и все сборки, в которые они вошли (владелец генеалогии — межизделийная стадия, AD-42)."
@@ -24292,6 +24826,24 @@ paths:
             format: int64
             minimum: 0
             type: integer
+        - description: "Одна запись по event_id: переход по causation_id, corrects, correlation_id (интерфейс 6)."
+          explode: false
+          in: query
+          name: event_id
+          schema:
+            description: "Одна запись по event_id: переход по causation_id, corrects, correlation_id (интерфейс 6)."
+            maxLength: 64
+            type: string
+        - description: asc (по умолчанию) — от старых, курсор — seq последней; desc — новые сверху, следующая страница — seq меньше курсора.
+          explode: false
+          in: query
+          name: order
+          schema:
+            description: asc (по умолчанию) — от старых, курсор — seq последней; desc — новые сверху, следующая страница — seq меньше курсора.
+            enum:
+              - asc
+              - desc
+            type: string
         - description: "Ось момента: occurred — «как было» (по умолчанию), recorded — «что мы знали» (AD-37)."
           explode: false
           in: query
@@ -28162,6 +28714,81 @@ paths:
         owner: nonconformity
         signature_level: 2
         subject: equipment
+  /api/v1/process/steps/{step_key}/station-view:
+    get:
+      description: "FR-49, Д-70 (интерфейс 6, стол мастера и начальника цеха): шаг процесса, счётчики, действующие остановки точки процесса (причина, с какого момента, уровень, условие снятия), предложение системы «остановить / снять» и действия nonconformity.process_hold.set / release с доступностью для вошедшего, причиной и последствиями — по образцу nonconformity.presentation.read."
+      operationId: nonconformity.station.read
+      parameters:
+        - description: Шаг процесса (step_key).
+          in: path
+          name: step_key
+          required: true
+          schema:
+            description: Шаг процесса (step_key).
+            maxLength: 128
+            type: string
+        - description: "Оборудование поста (IS-2…): остановки этого оборудования — тоже, даже без шага в записи остановки."
+          explode: false
+          in: query
+          name: equipment_id
+          schema:
+            description: "Оборудование поста (IS-2…): остановки этого оборудования — тоже, даже без шага в записи остановки."
+            maxLength: 128
+            type: string
+        - description: "Ось момента: occurred — «как было» (по умолчанию), recorded — «что мы знали» (AD-37)."
+          explode: false
+          in: query
+          name: axis
+          schema:
+            $ref: "#/components/schemas/Axis"
+            description: "Ось момента: occurred — «как было» (по умолчанию), recorded — «что мы знали» (AD-37)."
+        - description: "Момент (RFC 3339 UTC); пусто — «сейчас». Задан — воспроизведение: команды выключены (AD-21)."
+          explode: false
+          in: query
+          name: as_of
+          schema:
+            description: "Момент (RFC 3339 UTC); пусто — «сейчас». Задан — воспроизведение: команды выключены (AD-21)."
+            format: date-time
+            type: string
+        - description: "Прогон сценария: данные в его пространстве имён (AD-38)."
+          explode: false
+          in: query
+          name: run_id
+          schema:
+            description: "Прогон сценария: данные в его пространстве имён (AD-38)."
+            maxLength: 128
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StationView"
+          description: OK
+          headers:
+            Ant-Backend:
+              schema:
+                $ref: "#/components/schemas/BackendMode"
+                description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Error
+      summary: Окно операции участка
+      tags:
+        - nonconformity
+      x-ant-action:
+        class: read
+        critical: false
+        id: nonconformity.station.read
+        owner: nonconformity
+        subject: equipment
   /api/v1/process/versions:
     get:
       description: "FR-22: черновик → на утверждении → действующая → выведена; кворум, изделия в работе по версии."
@@ -31764,6 +32391,81 @@ paths:
         id: access.workplace.admit
         owner: access
         signature_level: 2
+        subject: workplace
+  /api/v1/workplaces/{workplace_id}/candidates:
+    get:
+      description: "FR-80, FR-81, PRD §11.18 (интерфейс 6, «Смена → Назначить на пост»): кого можно назначить на пост в смене — роль в области поста, вердикт квалификации на дату смены (ok, expiring, expired, missing) и почему; у контролёра — нужен документ согласования начальника ОТК. Мастеру и начальнику цеха в области цеха — без чтения всех сотрудников, ролей и квалификаций."
+      operationId: access.candidate.list
+      parameters:
+        - description: Пост.
+          in: path
+          name: workplace_id
+          required: true
+          schema:
+            description: Пост.
+            maxLength: 128
+            type: string
+        - description: Смена (shift_id справочника смен, «SHIFT-1@2026-09-23»); пусто — текущая.
+          explode: false
+          in: query
+          name: shift_id
+          schema:
+            description: Смена (shift_id справочника смен, «SHIFT-1@2026-09-23»); пусто — текущая.
+            maxLength: 128
+            type: string
+        - description: "Ось момента: occurred — «как было» (по умолчанию), recorded — «что мы знали» (AD-37)."
+          explode: false
+          in: query
+          name: axis
+          schema:
+            $ref: "#/components/schemas/Axis"
+            description: "Ось момента: occurred — «как было» (по умолчанию), recorded — «что мы знали» (AD-37)."
+        - description: "Момент (RFC 3339 UTC); пусто — «сейчас». Задан — воспроизведение: команды выключены (AD-21)."
+          explode: false
+          in: query
+          name: as_of
+          schema:
+            description: "Момент (RFC 3339 UTC); пусто — «сейчас». Задан — воспроизведение: команды выключены (AD-21)."
+            format: date-time
+            type: string
+        - description: "Прогон сценария: данные в его пространстве имён (AD-38)."
+          explode: false
+          in: query
+          name: run_id
+          schema:
+            description: "Прогон сценария: данные в его пространстве имён (AD-38)."
+            maxLength: 128
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkplaceCandidateList"
+          description: OK
+          headers:
+            Ant-Backend:
+              schema:
+                $ref: "#/components/schemas/BackendMode"
+                description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Error
+      summary: Кандидаты на пост
+      tags:
+        - access
+      x-ant-action:
+        class: read
+        critical: false
+        id: access.candidate.list
+        owner: access
         subject: workplace
   /api/v1/workplaces/{workplace_id}/deviations:
     post:

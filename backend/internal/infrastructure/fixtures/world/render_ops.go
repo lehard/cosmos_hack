@@ -267,10 +267,45 @@ func (c *Ctx) entryView(e *Event) journalapp.JournalEntryView {
 	for k, p := range e.Params {
 		v.Data[k] = p
 	}
-	if e.Author != "" {
+	// Интерфейс 6: подписанты и статус подписи как у live — решение подписал
+	// человек, факт — ключ устройства источника, реакцию и служебную — сервер;
+	// подменённая в обход системы запись (S09) после обнаружения — «недействительна».
+	switch {
+	case e.Author != "":
 		v.Signers = []string{strings.ToLower(e.Author) + "@1"}
+	case e.Kind == "fact" && e.Source != "":
+		v.Signers = []string{e.Source + "@1"}
+	default:
+		v.Signers = []string{"ant@1"}
+	}
+	v.SignatureStatus = "valid"
+	if c.tampered(e) {
+		v.SignatureStatus = "invalid"
+	}
+	if ref := c.M.caOf()[e.ID]; ref != "" {
+		v.CARef = ptr(ref)
 	}
 	return v
+}
+
+// tampered — запись подменена в обход системы и нарушение уже обнаружено к часам шага (S09).
+func (c *Ctx) tampered(e *Event) bool {
+	for _, v := range c.M.Spec.Integrity.Violations {
+		if !v.At.Time().After(c.T) && c.M.lateRecord(v.Record) == e {
+			return true
+		}
+	}
+	return false
+}
+
+// violationStep — шаг, на котором запись e стала «подменённой» (для повторной выдачи записи).
+func (c *Ctx) violationStep(e *Event) bool {
+	for _, v := range c.M.Spec.Integrity.Violations {
+		if c.M.StepOf(v.At.Time()) == c.N && c.M.lateRecord(v.Record) == e {
+			return true
+		}
+	}
+	return false
 }
 
 func renderJournal(c *Ctx) []loader.Response {
@@ -284,11 +319,18 @@ func renderJournal(c *Ctx) []loader.Response {
 	// Журнал по изделию — в паспорте (item.passport.read); здесь — последние 50 записей
 	// и каждая запись по seq (переход к записи).
 	for _, e := range vis {
-		if e.Step == c.N {
+		if e.Step == c.N || c.violationStep(e) {
 			out = append(out, resp("journal.entry.read", c.entryView(e), "seq", fmt.Sprint(e.Seq)))
 		}
 	}
+	// Окно записи по event_id (интерфейс 6, render_event.go).
+	out = append(out, renderEvents(c)...)
 	head := journalapp.JournalHead{Seq: c.Seq(), ClockMode: "scenario", RecordedAt: tptr(c.T)}
+	for _, r := range c.M.criticalActions() {
+		if r.step <= c.N && !r.at.After(c.T) {
+			head.CASeq = r.v.CANo
+		}
+	}
 	out = append(out, resp("journal.head.read", head))
 	tl := journalapp.TimelineData{From: c.M.Steps[0], To: c.T, Marks: []journalapp.TimelineMark{}}
 	for _, e := range vis {

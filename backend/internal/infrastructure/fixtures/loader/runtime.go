@@ -173,6 +173,37 @@ func (r *Runtime) Respond(ctx context.Context, op string, params map[string]stri
 	return nil
 }
 
+// RespondAll — все ответы операции op на шаге курсора (или на момент as_of)
+// при любых параметрах: тело каждого — в each (с префиксом прогона). Нужен
+// спискам, которые адаптер собирает из ответов-записей (журнал событий
+// страницами: journal.entry.read по seq; интерфейс 6).
+func (r *Runtime) RespondAll(ctx context.Context, op string, m *platform.Moment, each func(body json.RawMessage) error) error {
+	st, sc, err := r.State(ctx)
+	if err != nil {
+		return err
+	}
+	n := st.Step
+	if m != nil && m.AsOf != nil {
+		n = sc.StepAt(*m.AsOf, st.Step)
+	}
+	for _, e := range sc.steps[n].byOp[op] {
+		if e.resp.Status >= 400 {
+			continue
+		}
+		body, err := sc.applyRun(e.body, st.RunID)
+		if err != nil {
+			return err
+		}
+		if body, err = r.lib.expandBlobs(body); err != nil {
+			return err
+		}
+		if err := each(body); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func notFound(op string, params map[string]string) error {
 	id := canonParams(params)
 	e := platform.Fail(errcodes.ApiNotFound, "object", op, "id", id)
