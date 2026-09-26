@@ -35,6 +35,8 @@ type Model struct {
 	ERP       []*ERPMsg
 	Events    []*Event
 	Tasks     []*Task
+	// Loop — контур улучшений: предложения генераторов и меры (эпик 42).
+	Loop Loop
 
 	// BPMN действующей версии: узлы по step_key и по порядку, отпечаток XML (AD-17).
 	Bpmn       map[string]*BpmnNode

@@ -133,7 +133,7 @@ func tptr(t time.Time) *time.Time {
 // renderers — рендеры всех модулей по шагу.
 var renderers = []func(c *Ctx) []loader.Response{
 	renderSecurity, renderWorkplaces,
-	renderItems, renderProcess, renderQuality, renderNonconformity, renderAnalysis,
+	renderItems, renderProcess, renderQuality, renderNonconformity, renderAnalysis, renderSuggestions,
 	renderAnalytics, renderNotifications, renderERP, renderJournal, renderMachinelogs,
 	renderVision, renderIngest, renderOps, renderSimulation,
 }

@@ -131,6 +131,7 @@ func (m *Model) buildEvents() {
 			m.ev("erp.posting.responded", "fact", a.At.Time(), sum, append(opts, withSource("onec", "external_system"), withParams("result", a.Result))...)
 		}
 	}
+	m.buildLoop()
 }
 
 func erpActionTitle(a string) string {
