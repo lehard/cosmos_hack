@@ -3,25 +3,41 @@
  * Источник: contracts/openapi.yaml
  */
 import type { DocumentApprovalStage } from './documentApprovalStage';
+import type { DocumentPaperMark } from './documentPaperMark';
+import type { DocumentRouteStage } from './documentRouteStage';
 import type { DocumentSignatureView } from './documentSignatureView';
 import type { DocumentSummaryField } from './documentSummaryField';
+import type { DocumentVersionRef } from './documentVersionRef';
+import type { DocumentViewClass } from './documentViewClass';
 import type { DocumentViewContent } from './documentViewContent';
 import type { DocumentViewStatus } from './documentViewStatus';
+import type { DocumentViewVerification } from './documentViewVerification';
 import type { DrillRef } from './drillRef';
 
 export interface DocumentView {
   basis_seq: number;
+  class?: DocumentViewClass;
   /** Канонические данные документа (JCS без rendering_hash). */
   content: DocumentViewContent;
   /** Отпечаток документа streebog256:…; в QR печатной рамки. */
   doc_digest: string;
   /** @minimum 1 */
   doc_format_version: number;
+  /** Вид документа. */
+  doc_type?: string;
   document_id: string;
+  /** Версия ещё не зафиксирована: показан текущий сбор из истории (номер — следующей версии). */
+  live?: boolean;
+  /** Бумажные экземпляры: напечатан, подписан, уничтожен (AD-12). */
+  paper?: DocumentPaperMark[];
   /** ant:doc:‹id›:‹отпечаток› — для печатной рамки. */
   qr: string;
   /** H(render(шаблон@версия, content)). */
   rendering_hash: string;
+  /** Маршрут с подписями по этапам: засчитана или нет и почему (AD-43). */
+  route?: DocumentRouteStage[];
+  /** Реакция document.route.closed версии. */
+  route_closed_event_id?: string;
   signatures: DocumentSignatureView[];
   /** События-источники документа. */
   source_event_ids: string[];
@@ -35,6 +51,10 @@ export interface DocumentView {
   supersedes_version?: number;
   template: string;
   title: string;
+  /** Как проверены подписи при закрытии маршрута; demo — без агента токена (Д-30). */
+  verification?: DocumentViewVerification;
   /** @minimum 1 */
   version: number;
+  /** Версии документа: у каждой свой отпечаток, подписи прежней остаются при ней (AD-12). */
+  versions?: DocumentVersionRef[];
 }

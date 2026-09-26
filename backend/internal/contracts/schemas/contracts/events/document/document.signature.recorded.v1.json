@@ -91,6 +91,16 @@
       },
       "description": "Сводка.",
       "maxItems": 7
+    },
+    "key_ref": {
+      "type": "string",
+      "maxLength": 128,
+      "description": "Ключ подписанта `key_id@версия` (агент токена); проверяет модуль signing (эпик 27)."
+    },
+    "signature": {
+      "type": "string",
+      "maxLength": 16384,
+      "description": "Подпись агента над отпечатком документа (base64, DSSE PAE класса document-signature); проверяет модуль signing (эпик 27). Пусто — демо без агента токена (Д-30)."
     }
   },
   "required": [

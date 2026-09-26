@@ -355,6 +355,15 @@ codes:
     ui_key: errors.generic
     refs: [AD-12]
 
+  # ── document: маршрут подписей документа (модуль documents, AD-12, AD-43) ──
+  document.stage_not_open:
+    status: 409
+    title: "Этап маршрута не ждёт подписи"
+    detail: "Документ {doc_id}, версия {version}, этап {stage}: {why}"
+    ui_key: errors.generic
+    guard: true
+    refs: [AD-13, AD-43]
+
   # ── nonconformity: гарды несоответствий и решений (модуль nonconformity, семейство decision) ──
   nonconformity.concession_required:
     status: 422

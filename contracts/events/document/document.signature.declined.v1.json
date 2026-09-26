@@ -1,0 +1,45 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/document/document.signature.declined.v1.json",
+  "title": "DocumentSignatureDeclinedV1",
+  "description": "Подписант не согласовал версию документа — вернул с замечанием; маршрут этой версии не закрывается, нужна новая версия или аннулирование (FR-136, AD-43).",
+  "type": "object",
+  "properties": {
+    "document_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Документ."
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100000,
+      "description": "Версия документа."
+    },
+    "doc_digest": {
+      "$ref": "../common/defs.v1.json#/definitions/digest",
+      "description": "Отпечаток версии, которую видел подписант."
+    },
+    "stage": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100,
+      "description": "Этап маршрута."
+    },
+    "signer_person_id": {
+      "$ref": "../common/defs.v1.json#/definitions/person_ref",
+      "description": "Кто не согласовал."
+    },
+    "comment": {
+      "$ref": "../common/defs.v1.json#/definitions/text",
+      "description": "Замечание — обязательно."
+    }
+  },
+  "required": [
+    "document_id",
+    "version",
+    "doc_digest",
+    "stage",
+    "signer_person_id",
+    "comment"
+  ]
+}

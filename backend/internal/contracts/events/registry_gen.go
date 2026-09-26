@@ -54,6 +54,7 @@ var dataTypes = [...]DataType{
 	{Type: "decision.signal.rejected", Version: 1, New: func() any { return new(DecisionSignalRejectedV1) }},
 	{Type: "document.paper.status_changed", Version: 1, New: func() any { return new(DocumentPaperStatusChangedV1) }},
 	{Type: "document.route.closed", Version: 1, New: func() any { return new(DocumentRouteClosedV1) }},
+	{Type: "document.signature.declined", Version: 1, New: func() any { return new(DocumentSignatureDeclinedV1) }},
 	{Type: "document.signature.recorded", Version: 1, New: func() any { return new(DocumentSignatureRecordedV1) }},
 	{Type: "document.version.annulled", Version: 1, New: func() any { return new(DocumentVersionAnnulledV1) }},
 	{Type: "document.version.drafted", Version: 1, New: func() any { return new(DocumentVersionDraftedV1) }},

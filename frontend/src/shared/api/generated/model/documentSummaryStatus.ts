@@ -3,6 +3,9 @@
  * Источник: contracts/openapi.yaml
  */
 
+/**
+ * live — сопроводительная карта собирается из истории, версия ещё не зафиксирована; returned — подписант вернул версию с замечанием.
+ */
 export type DocumentSummaryStatus = typeof DocumentSummaryStatus[keyof typeof DocumentSummaryStatus];
 
 
@@ -12,4 +15,6 @@ export const DocumentSummaryStatus = {
   signing: 'signing',
   route_closed: 'route_closed',
   annulled: 'annulled',
+  live: 'live',
+  returned: 'returned',
 } as const;

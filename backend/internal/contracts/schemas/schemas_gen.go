@@ -70,6 +70,7 @@ var Files = [...]string{
 	"contracts/events/decision/decision.signal.rejected.v1.json",
 	"contracts/events/document/document.paper.status_changed.v1.json",
 	"contracts/events/document/document.route.closed.v1.json",
+	"contracts/events/document/document.signature.declined.v1.json",
 	"contracts/events/document/document.signature.recorded.v1.json",
 	"contracts/events/document/document.version.annulled.v1.json",
 	"contracts/events/document/document.version.drafted.v1.json",

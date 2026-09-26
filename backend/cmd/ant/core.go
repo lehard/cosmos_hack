@@ -13,6 +13,7 @@ import (
 	engineapp "ant/internal/application/engine"
 	processapp "ant/internal/application/process"
 	referenceapp "ant/internal/application/reference"
+	domdocs "ant/internal/domain/documents"
 	dj "ant/internal/domain/journal"
 	"ant/internal/infrastructure/security/permissive"
 	enginestore "ant/internal/infrastructure/storage/engine"
@@ -54,6 +55,8 @@ type core struct {
 	// refSource — справочники из журнала (эпик 19, AD-31): срез для свёртки
 	// изделия, сроков и операций reference; один кэш на процесс.
 	refSource *referenceapp.JournalSource
+	// docsEnv — шаблоны документов и срез политики (эпик 28, documents.go).
+	docsEnv domdocs.Env
 }
 
 // coreHolder — ленивое создание ядра и его остановка после ролей.
@@ -123,6 +126,7 @@ func openCore(ctx context.Context, env *environment) (*core, error) {
 		versions: &processstore.Versions{Pool: pool},
 		holder:   fmt.Sprintf("%s:%d", host, os.Getpid()),
 		ttl:      ttl,
+		docsEnv:  documentsEnv(env),
 	}
 	c.bundles = &processapp.Bundles{Store: c.versions, Quorum: processapp.RecordedQuorum{}, Now: infra.Now}
 	c.codec = &engineapp.Codec{

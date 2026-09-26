@@ -257,6 +257,8 @@ channels:
         $ref: "#/components/messages/document.version.annulled.v1"
       document.paper.status_changed.v1:
         $ref: "#/components/messages/document.paper.status_changed.v1"
+      document.signature.declined.v1:
+        $ref: "#/components/messages/document.signature.declined.v1"
   policy:
     address: journal/policy
     title: "Журнал: семейство policy"
@@ -827,6 +829,7 @@ operations:
       - $ref: "#/channels/document/messages/document.route.closed.v1"
       - $ref: "#/channels/document/messages/document.version.annulled.v1"
       - $ref: "#/channels/document/messages/document.paper.status_changed.v1"
+      - $ref: "#/channels/document/messages/document.signature.declined.v1"
   journal.policy:
     action: send
     title: ant записывает записи семейства policy
@@ -3234,6 +3237,29 @@ components:
               data:
                 $ref: ./document/document.paper.status_changed.v1.json
       x-ant-kind: fact
+      x-ant-emitter: documents
+      x-ant-stream: document
+      x-ant-axis: none
+      x-ant-action-class: record
+      x-ant-critical: false
+      x-ant-current: true
+    document.signature.declined.v1:
+      name: document.signature.declined.v1
+      title: Подписант не согласовал документ
+      summary: Подписант не согласовал версию документа — вернул с замечанием; маршрут этой версии не закрывается, нужна новая версия или аннулирование (FR-136, AD-43).
+      contentType: application/json
+      payload:
+        allOf:
+          - $ref: ./common/envelope.v1.json
+          - type: object
+            properties:
+              event_type:
+                const: document.signature.declined
+              schema_version:
+                const: 1
+              data:
+                $ref: ./document/document.signature.declined.v1.json
+      x-ant-kind: decision
       x-ant-emitter: documents
       x-ant-stream: document
       x-ant-axis: none
