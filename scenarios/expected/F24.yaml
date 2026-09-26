@@ -1,0 +1,18 @@
+# Ожидания прогона сбоя F24 — отдельно от входных событий (кейс §5.1, AD-26).
+scenario: F24
+version: '1'
+title: 'Сбой: Воспроизведение сценария'
+run: F24
+source: эпик 32 по research/data-collection-sources-and-failures.md §6 (ожидаемое поведение системы)
+checkpoints:
+- at: end
+  label: конец прогона
+  assertions:
+  - id: F24-01
+    what: голова журнала прогона на месте (воспроизведение — ant rebuild)
+    check:
+      operation: journal.head.read
+      path: /
+      op: exists
+    mapping: manual
+    note: сверка state_hash после ant rebuild — make verify/rebuild, эпики 07, 29, 34

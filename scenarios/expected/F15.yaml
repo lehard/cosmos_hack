@@ -1,0 +1,31 @@
+# Ожидания прогона сбоя F15 — отдельно от входных событий (кейс §5.1, AD-26).
+scenario: F15
+version: '1'
+title: 'Сбой: Результат в режиме симуляции'
+run: F15
+source: эпик 32 по research/data-collection-sources-and-failures.md §6 (ожидаемое поведение системы)
+checkpoints:
+- at: end
+  label: конец прогона
+  assertions:
+  - id: F15-01
+    what: событие принято и записано
+    check:
+      operation: quality.inspection.list
+      params:
+        item_id: '{item:F-501}'
+      path: /items[step_key=welding.kt3_camera]/#
+      op: eq
+      value: 1
+    mapping: exact
+  - id: F15-02
+    what: симулированный результат не в показателях дефектов
+    check:
+      operation: quality.defect.list
+      path: /defect_count
+      op: eq
+      params:
+        item_id: '{item:F-501}'
+      value: 0
+    mapping: draft
+    note: поле is_simulated — предложение к контракту inspection.result.recorded (отчёт эпика 32)

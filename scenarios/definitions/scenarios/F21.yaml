@@ -1,0 +1,37 @@
+# F21 — строка таблицы сбоев «один к одному».
+id: F21
+version: '1'
+title: 'Сбой: Ввод задним числом'
+kind: failure
+goal: entry_mode = восстановлено, автор и основание; в показателях своевременности учитывается отдельно
+case:
+  other:
+  - 'таблица сбоев PRD §4.3: «Пачка ручных событий за прошлую смену»'
+  - 'проверка: Импорт «с бумаги»: события отмечены, показатели своевременности их не учитывают'
+run: F21
+source: research/data-collection-sources-and-failures.md §6, строка «Ввод задним числом»
+steps:
+- at: '2026-09-21T12:52:00+03:00'
+  label: F21/paper-1
+  fact: operator.step.confirmed
+  source: paper
+  item: F-501
+  deliver: '2026-09-22T08:30:00+03:00'
+  data:
+    operation_run_id: '{local:SV-501-1}'
+    operator_id: '{person:WLD-02}'
+    step_key: welding.weld
+    tp_step: Зачистка шва (восстановлено с бумаги)
+- at: '2026-09-21T13:55:00+03:00'
+  label: F21/paper-2
+  fact: operator.step.confirmed
+  source: paper
+  item: F-502
+  deliver: '2026-09-22T08:31:00+03:00'
+  data:
+    operation_run_id: '{local:SV-502-1}'
+    operator_id: '{person:WLD-02}'
+    step_key: welding.weld
+    tp_step: Зачистка шва (восстановлено с бумаги)
+outcome:
+- entry_mode = восстановлено, автор и основание; в показателях своевременности учитывается отдельно

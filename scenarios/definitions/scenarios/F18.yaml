@@ -1,0 +1,36 @@
+# F18 — строка таблицы сбоев «один к одному».
+id: F18
+version: '1'
+title: 'Сбой: Событие станции без детали'
+kind: failure
+goal: Привязка к оборудованию и операции; изделия в окне — с пометкой «косвенная связь»
+case:
+  other:
+  - 'таблица сбоев PRD §4.3: «Авария станка»'
+  - 'проверка: Авария во время операции: связь с оборудованием и operation_run_id, изделие — как «возможно затронуто»'
+run: F18
+source: research/data-collection-sources-and-failures.md §6, строка «Событие станции без детали»
+steps:
+- at: '2026-09-21T12:20:00+03:00'
+  label: F18/alarm
+  fact: equipment.deviation.detected
+  source: is-1
+  data:
+    equipment_id: '{equipment:WS-1}'
+    station_id: ST-WELD
+    deviation_kind: alarm
+    parameter: gas_flow
+    value:
+      value: 6
+      scale: 0
+      unit: L/min
+    setpoint:
+      lower:
+        value: 12
+        scale: 0
+        unit: L/min
+    started_at: '2026-09-21T12:20:00+03:00'
+    ended_at: '2026-09-21T12:23:00+03:00'
+    code: GAS_LOW
+outcome:
+- Привязка к оборудованию и операции; изделия в окне — с пометкой «косвенная связь»

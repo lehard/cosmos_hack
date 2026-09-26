@@ -1,0 +1,33 @@
+# Отдельный прогон «лимит переделок участка шва» — Ф-090 (process/scenarios-flange.md
+# §4 S10, часть Б). Предыстория прогона: сварка СВ-090-1 и три переделки участка У4
+# (СВ-090-2, -3, -4; вторая и третья — с согласия главного сварщика), затем шаги карточки.
+id: S10B
+version: "0.3"
+title: "Лимит переделок участка шва — Ф-090"
+kind: standalone
+description: "Жёсткий лимит переделок одного участка шва: пятое выполнение (четвёртая переделка) заблокировано; доступны только ремонт по разрешению на отклонение или списание."
+case_refs: ["кейс §4.3 повторная обработка", "FR-18", "FR-47", "критерий Т3"]
+world: flange
+seed: 20260924
+anchor: "2026-09-21T07:00:00+03:00"
+end: "2026-09-24T16:30:00+03:00"
+speed: 1000
+scenarios: [S10B]
+orders:
+  - {id: ORD-0917, at: "2026-09-21T07:00:00+03:00", external: ord-5c2b-0917, quantity: 1, due: "2026-10-09", items: "F-090",
+     lots: {blank: LOT-ZF-201, ring: LOT-R-116, cover: LOT-C-301, seal: LOT-SL-401, fastener: LOT-FS-501, valve: LOT-V-601}}
+lots:
+  - {id: LOT-ZF-201, component: FL-100.01.001, supplier: SUP-1, quantity: 42, certificate: С-201, heat: "5512", arrived: "2026-09-21T07:05:00+03:00"}
+  - {id: LOT-R-116,  component: FL-100.01.002, supplier: SUP-2, quantity: 33, certificate: С-116, arrived: "2026-09-21T07:10:00+03:00"}
+refs:
+  NC-F090: {operation: nonconformity.nonconformity.list, params: {item_id: "{item:F-090}", status: draft}, path: "/items/0/nc_id", note: "текущее несоответствие Ф-090 (черновик)"}
+  SIG-F090: {operation: quality.signal.list, params: {item_id: "{item:F-090}", state: open}, path: "/items/0/signal_id"}
+items:
+  - id: F-090
+    order: ORD-0917
+    launch: "2026-09-21T09:30:00+03:00"
+    machining: "2026-09-21T10:00:00+03:00"
+    weld: {at: "2026-09-21T15:00:00+03:00", station: WS-1, welder: WLD-02}
+    until: kt3
+    skip: [kt3]
+    note: "Сварка СВ-090-1; КТ-3 и переделки — карточка S10B"

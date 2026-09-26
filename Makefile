@@ -204,6 +204,19 @@ clean: ## Остановить систему и убрать висящие о�
 	-$(COMPOSE) down --remove-orphans
 	@$(MAKE) prune-dangling
 
+# ------------------------------------------------------------ симуляция ----
+
+SIM_PKGS = ./internal/domain/simulation/... ./internal/application/simulation/... \
+	./internal/infrastructure/storage/simulation/... ./internal/infrastructure/transport/simulation/... \
+	./internal/infrastructure/fixtures/simulation/...
+
+.PHONY: sim-check sim-streams
+sim-check: ## Симуляция без движка (эпик 32): генератор по seed, потоки JSONL по схемам контракта, ожидания, автосверка всех сценариев на заготовках приёма
+	$(GO_RUN) sh -c 'go test -count=1 $(SIM_PKGS) && go test -count=1 -run TestAutocheckOnFakes -v ./internal/infrastructure/storage/simulation/ | grep -E "табло|итого|строк"'
+
+sim-streams: ## Пересобрать потоки прогонов scenarios/definitions/streams из определений (после правки scenarios/definitions)
+	$(GO_RUN) sh -c 'ANT_UPDATE_STREAMS=1 go test -count=1 -run TestStreams ./internal/infrastructure/storage/simulation/'
+
 # ------------------------------------------ цели будущих эпиков (пока пусто) ----
 
 .PHONY: contract-demo tamper keys load verify rebuild token-agent

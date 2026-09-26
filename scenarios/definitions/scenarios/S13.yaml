@@ -1,0 +1,766 @@
+# S13 — process/scenarios-flange.md §4 S13 «один к одному».
+id: S13
+version: '0.3'
+title: «Специалист заснул» — очередь на ЗТ-3 без решения
+kind: demo
+goal: 'На закрывающей точке никто не принимает решения: детали копятся, живая карта показывает очередь и новое узкое место; система не пропускает детали сама — срабатывают сроки и эскалация
+  с ценой задержки; мастер перераспределяет работу.'
+case:
+  demo:
+  - «специалист заснул»
+  other:
+  - §2.4 ожидание и простой
+  - §1.2 мастер — задержки, руководитель — время обработки
+  - §5.2 изделия на ЗТ без подписи
+run: S13
+where: 'Отдельный прогон: Пт 25.09, смена А, 08:00–13:00. Сценарий ждёт людей на трёх шагах: выбор варианта (М-02), согласование назначения (НОТК-01), подписи на ЗТ-3 (ОТК-2, потом ОТК-1).'
+source: process/scenarios-flange.md §4 S13
+steps:
+- at: '2026-09-25T07:50:00+03:00'
+  decision: reference.shift.schedule
+  role: MASTER
+  actor: MST-02
+  body:
+    shift_id: '{local:SHIFT-A-0925}'
+    name: Смена А, Пт 25.09
+    location_id: WS-WC
+    starts_at: '2026-09-25T08:00:00+03:00'
+    ends_at: '2026-09-25T16:30:00+03:00'
+  note: Смена А пятницы (для назначения на пост)
+- at: '2026-09-25T08:00:00+03:00'
+  system: Начало смены; пост ЗТ-3 — ОТК-1; в очереди ЗТ-3 — 4 (Ф-024, Ф-030, Ф-031, Ф-032); цвет счётчика «внимание»
+- at: '2026-09-25T08:10:00+03:00'
+  decision: crossitem.lot.issue
+  role: STOREKEEPER
+  actor: STK-01
+  params:
+    lot_id: '{local:LOT-C-301}'
+  body:
+    quantity: 3
+    to_location_id: WS-AC
+  ref: Е-50
+  note: Комплекты на сборку по сменному заданию под Ф-024, Ф-030, Ф-031; изделий в сборке ещё нет
+- at: '2026-09-25T08:10:00+03:00'
+  decision: crossitem.lot.issue
+  role: STOREKEEPER
+  actor: STK-01
+  params:
+    lot_id: '{local:LOT-SL-401}'
+  body:
+    quantity: 3
+    to_location_id: WS-AC
+  ref: Е-50
+  note: Комплекты на сборку по сменному заданию под Ф-024, Ф-030, Ф-031; изделий в сборке ещё нет
+- at: '2026-09-25T08:10:00+03:00'
+  decision: crossitem.lot.issue
+  role: STOREKEEPER
+  actor: STK-01
+  params:
+    lot_id: '{local:LOT-FS-501}'
+  body:
+    quantity: 36
+    to_location_id: WS-AC
+  ref: Е-50
+  note: Комплекты на сборку по сменному заданию под Ф-024, Ф-030, Ф-031; изделий в сборке ещё нет
+- at: '2026-09-25T08:15:00+03:00'
+  decision: nonconformity.presentation.resolve
+  role: QC
+  actor: QC-01
+  item: F-024
+  params:
+    item_id: '{item:F-024}'
+  body:
+    closing_point: ZT-3
+    step_key: welding.zt3_acceptance
+    presentation_no: 1
+    resolution: accept
+    method_event_ids:
+    - '{event:F-024/kt3}'
+    - '{event:F-024/xray}'
+  ref: Е-47
+  label: S13/zt3-F-024
+  note: 'ЗТ-3: годно — Ф-024, первое предъявление; следующее решение на ЗТ-3 будет только в 11:00'
+- at: '2026-09-25T08:20:00+03:00'
+  ref: Е-30, Е-31
+  route: F-024:sent_to_assembly,received_assembly
+  note: Ф-024 передан в сборочный цех → 1С «перемещение СЦ → СИЦ»
+- at: '2026-09-25T08:30:00+03:00'
+  system: 'Срок ожидания на ЗТ (gate.wait_overdue), уровень «напоминание»: ждут 3; самое долгое ожидание — 30 мин; задача ОТК-1 «ЗТ-3 ждёт решения»'
+  ref: Нов.
+- at: '2026-09-25T09:00:00+03:00'
+  system: 'Уровень «мастер» → М-02; цена задержки: стоят 3 фланца; на карте ЗТ-3 — аномалия «ожидание выше срока»'
+  ref: Нов.
+- at: '2026-09-25T09:05:00+03:00'
+  decision: notifications.task.acknowledge
+  role: MASTER
+  actor: MST-02
+  params:
+    task_id: '{ref:TASK-ZT3-MASTER}'
+  body:
+    outcome: accepted
+    note: Ищу контролёра
+  ref: Нов.
+  note: 'Эскалация принята (escalation.acknowledged [П]): «ищу контролёра»; сроки не останавливаются'
+- at: '2026-09-25T09:20:00+03:00'
+  ref: Е-45
+  label: F-033/xray
+  note: 'Заключение рентгена РК-0925-01: дефектов нет'
+  fact: inspection.result.recorded
+  source: xray
+  item: F-033
+  data:
+    observation_id: '{local:RK-0925-01}'
+    method: radiography
+    phase: after_operation
+    step_key: welding.kt3_radiography
+    operation_run_id: '{local:SV-033-1}'
+    zone_ids:
+    - '{zone:U1}'
+    - '{zone:U2}'
+    - '{zone:U3}'
+    - '{zone:U4}'
+    - '{zone:U5}'
+    - '{zone:U6}'
+    - '{zone:U7}'
+    - '{zone:U8}'
+    outcome: no_defect_indicated
+    processing_state: completed
+    inspector_id: '{person:NDT-01}'
+    conclusion_ref: РК-0925-01
+- at: '2026-09-25T09:20:00+03:00'
+  ref: Е-45
+  label: F-034/xray
+  note: 'Заключение рентгена РК-0925-02: дефектов нет'
+  fact: inspection.result.recorded
+  source: xray
+  item: F-034
+  data:
+    observation_id: '{local:RK-0925-02}'
+    method: radiography
+    phase: after_operation
+    step_key: welding.kt3_radiography
+    operation_run_id: '{local:SV-034-1}'
+    zone_ids:
+    - '{zone:U1}'
+    - '{zone:U2}'
+    - '{zone:U3}'
+    - '{zone:U4}'
+    - '{zone:U5}'
+    - '{zone:U6}'
+    - '{zone:U7}'
+    - '{zone:U8}'
+    outcome: no_defect_indicated
+    processing_state: completed
+    inspector_id: '{person:NDT-01}'
+    conclusion_ref: РК-0925-02
+- at: '2026-09-25T09:20:00+03:00'
+  ref: Е-45
+  label: F-035/xray
+  note: 'Заключение рентгена РК-0925-03: дефектов нет'
+  fact: inspection.result.recorded
+  source: xray
+  item: F-035
+  data:
+    observation_id: '{local:RK-0925-03}'
+    method: radiography
+    phase: after_operation
+    step_key: welding.kt3_radiography
+    operation_run_id: '{local:SV-035-1}'
+    zone_ids:
+    - '{zone:U1}'
+    - '{zone:U2}'
+    - '{zone:U3}'
+    - '{zone:U4}'
+    - '{zone:U5}'
+    - '{zone:U6}'
+    - '{zone:U7}'
+    - '{zone:U8}'
+    outcome: no_defect_indicated
+    processing_state: completed
+    inspector_id: '{person:NDT-01}'
+    conclusion_ref: РК-0925-03
+- at: '2026-09-25T09:20:00+03:00'
+  route: F-028:assembly,zt4_presented,zt4,leak_test
+  note: Сборка Ф-028 закончена → ЗТ-4 (ОТК-2) → стенд 09:30–10:45; сборка берёт Ф-024
+- at: '2026-09-25T09:21:00+03:00'
+  decision: item.presentation.record
+  role: MASTER
+  actor: MST-02
+  item: F-033
+  params:
+    item_id: '{item:F-033}'
+  body:
+    presentation_no: 1
+    presented_to: qc
+    step_key: welding.zt3_acceptance
+  ref: Е-72
+  note: Предъявлен на ЗТ-3
+- at: '2026-09-25T09:21:00+03:00'
+  decision: item.presentation.record
+  role: MASTER
+  actor: MST-02
+  item: F-034
+  params:
+    item_id: '{item:F-034}'
+  body:
+    presentation_no: 1
+    presented_to: qc
+    step_key: welding.zt3_acceptance
+  ref: Е-72
+  note: Предъявлен на ЗТ-3
+- at: '2026-09-25T09:21:00+03:00'
+  decision: item.presentation.record
+  role: MASTER
+  actor: MST-02
+  item: F-035
+  params:
+    item_id: '{item:F-035}'
+  body:
+    presentation_no: 1
+    presented_to: qc
+    step_key: welding.zt3_acceptance
+  ref: Е-72
+  note: Предъявлен на ЗТ-3
+- at: '2026-09-25T09:21:00+03:00'
+  system: Очередь 6 → цвет «плохо»
+- at: '2026-09-25T09:30:00+03:00'
+  route: F-024:assembly_started,assembly
+  note: Ф-024 в сборке 09:20–10:30
+- at: '2026-09-25T10:00:00+03:00'
+  system: 'Уровень «начальник ОТК» → НОТК-01, копия М-02; цена задержки: просрочено на 1 ч; стоят 6, из них 3 сверх срока; сверх нормы — 5 фланце-часов; прогноз — сборка встанет в 10:30,
+    стенд — в 12:00'
+- at: '2026-09-25T10:20:00+03:00'
+  ref: Е-45
+  label: F-036/xray
+  note: 'Заключение рентгена РК-0925-04: дефектов нет'
+  fact: inspection.result.recorded
+  source: xray
+  item: F-036
+  data:
+    observation_id: '{local:RK-0925-04}'
+    method: radiography
+    phase: after_operation
+    step_key: welding.kt3_radiography
+    operation_run_id: '{local:SV-036-1}'
+    zone_ids:
+    - '{zone:U1}'
+    - '{zone:U2}'
+    - '{zone:U3}'
+    - '{zone:U4}'
+    - '{zone:U5}'
+    - '{zone:U6}'
+    - '{zone:U7}'
+    - '{zone:U8}'
+    outcome: no_defect_indicated
+    processing_state: completed
+    inspector_id: '{person:NDT-01}'
+    conclusion_ref: РК-0925-04
+- at: '2026-09-25T10:20:00+03:00'
+  ref: Е-45
+  label: F-223/xray
+  note: 'Заключение рентгена РК-0925-05: дефектов нет'
+  fact: inspection.result.recorded
+  source: xray
+  item: F-223
+  data:
+    observation_id: '{local:RK-0925-05}'
+    method: radiography
+    phase: after_operation
+    step_key: welding.kt3_radiography
+    operation_run_id: '{local:SV-223-1}'
+    zone_ids:
+    - '{zone:U1}'
+    - '{zone:U2}'
+    - '{zone:U3}'
+    - '{zone:U4}'
+    - '{zone:U5}'
+    - '{zone:U6}'
+    - '{zone:U7}'
+    - '{zone:U8}'
+    outcome: no_defect_indicated
+    processing_state: completed
+    inspector_id: '{person:NDT-01}'
+    conclusion_ref: РК-0925-05
+- at: '2026-09-25T10:20:00+03:00'
+  ref: Е-45
+  label: F-224/xray
+  note: 'Заключение рентгена РК-0925-06: дефектов нет'
+  fact: inspection.result.recorded
+  source: xray
+  item: F-224
+  data:
+    observation_id: '{local:RK-0925-06}'
+    method: radiography
+    phase: after_operation
+    step_key: welding.kt3_radiography
+    operation_run_id: '{local:SV-224-1}'
+    zone_ids:
+    - '{zone:U1}'
+    - '{zone:U2}'
+    - '{zone:U3}'
+    - '{zone:U4}'
+    - '{zone:U5}'
+    - '{zone:U6}'
+    - '{zone:U7}'
+    - '{zone:U8}'
+    outcome: no_defect_indicated
+    processing_state: completed
+    inspector_id: '{person:NDT-01}'
+    conclusion_ref: РК-0925-06
+- at: '2026-09-25T10:21:00+03:00'
+  decision: item.presentation.record
+  role: MASTER
+  actor: MST-02
+  item: F-036
+  params:
+    item_id: '{item:F-036}'
+  body:
+    presentation_no: 1
+    presented_to: qc
+    step_key: welding.zt3_acceptance
+  ref: Е-72
+  note: Предъявлен на ЗТ-3
+- at: '2026-09-25T10:21:00+03:00'
+  decision: item.presentation.record
+  role: MASTER
+  actor: MST-02
+  item: F-223
+  params:
+    item_id: '{item:F-223}'
+  body:
+    presentation_no: 1
+    presented_to: qc
+    step_key: welding.zt3_acceptance
+  ref: Е-72
+  note: Предъявлен на ЗТ-3
+- at: '2026-09-25T10:21:00+03:00'
+  decision: item.presentation.record
+  role: MASTER
+  actor: MST-02
+  item: F-224
+  params:
+    item_id: '{item:F-224}'
+  body:
+    presentation_no: 1
+    presented_to: qc
+    step_key: welding.zt3_acceptance
+  ref: Е-72
+  note: Предъявлен на ЗТ-3
+- at: '2026-09-25T10:21:00+03:00'
+  system: 'Очередь 9; лаборатория НК пуста → ограничение линии переходит с рентгена на ЗТ-3 (FR-5); цена задержки: 9 фланцев (7 — ЗП-0917, 2 — ЗП-0911), выпуск сдвигается минимум на
+    1 ч 50 мин'
+- at: '2026-09-25T10:30:00+03:00'
+  system: 'Пост сборки: нет детали — Ф-024 собран, следующего фланца нет'
+- at: '2026-09-25T10:35:00+03:00'
+  system: 'Варианты перераспределения (режим «предлагает — человек утверждает»): 1) второй контролёр ОТК-2 — очередь пуста к ≈ 12:15; 2) другая смена — ≈ 2,5 суток; 3) ждать ОТК-1 —
+    прогноза нет. Варианта «пропустить без подписи» нет'
+- at: '2026-09-25T10:40:00+03:00'
+  route: F-024:zt4_presented,zt4,leak_test
+  note: Ф-024 → ЗТ-4 (ОТК-2, 10:40) → стенд 10:45–12:00
+- at: '2026-09-25T10:40:00+03:00'
+  system: 'Запрос на назначение (post.assignment_requested [П]) — М-02: вариант 1, ОТК-2 на пост ЗТ-3 до конца очереди. Операции «запрос назначения» в контракте нет — согласование ниже'
+  ref: Нов.
+- at: '2026-09-25T10:45:00+03:00'
+  decision: access.assignment.set
+  role: QC_HEAD
+  actor: QC-HEAD-01
+  body:
+    assignee_role: quality_inspector
+    person_id: '{person:QC-02}'
+    shift_id: '{local:SHIFT-A-0925}'
+  ref: Нов.
+  label: S13/assign-QC-02
+  stop: true
+  note: 'Назначение на пост изменено (post.assignment_changed [П]): согласовано НОТК-01 — контролёры подчиняются ОТК; запись в журнал критических действий'
+- at: '2026-09-25T10:50:00+03:00'
+  system: Пост ЗТ-3 — ОТК-2 на месте
+- at: '2026-09-25T11:00:00+03:00'
+  decision: nonconformity.presentation.resolve
+  role: QC
+  actor: QC-02
+  item: F-030
+  params:
+    item_id: '{item:F-030}'
+  body:
+    closing_point: ZT-3
+    step_key: welding.zt3_acceptance
+    presentation_no: 1
+    resolution: accept
+    method_event_ids:
+    - '{event:F-030/kt3}'
+    - '{event:F-030/xray}'
+  ref: Е-47
+  label: S13/zt3-F-030
+  stop: true
+- at: '2026-09-25T11:05:00+03:00'
+  route: F-030:sent_to_assembly,received_assembly,assembly_started,assembly
+  note: Передача в сборочный цех по мере подписей; Ф-030 в сборке с 11:20 — пост сборки простоял 10:30–11:20
+- at: '2026-09-25T11:10:00+03:00'
+  decision: nonconformity.presentation.resolve
+  role: QC
+  actor: QC-02
+  item: F-031
+  params:
+    item_id: '{item:F-031}'
+  body:
+    closing_point: ZT-3
+    step_key: welding.zt3_acceptance
+    presentation_no: 1
+    resolution: accept
+    method_event_ids:
+    - '{event:F-031/kt3}'
+    - '{event:F-031/xray}'
+  ref: Е-47
+  label: S13/zt3-F-031
+  stop: false
+- at: '2026-09-25T11:15:00+03:00'
+  route: F-031:sent_to_assembly,received_assembly
+- at: '2026-09-25T11:20:00+03:00'
+  decision: nonconformity.presentation.resolve
+  role: QC
+  actor: QC-02
+  item: F-032
+  params:
+    item_id: '{item:F-032}'
+  body:
+    closing_point: ZT-3
+    step_key: welding.zt3_acceptance
+    presentation_no: 1
+    resolution: accept
+    method_event_ids:
+    - '{event:F-032/kt3}'
+    - '{event:F-032/xray}'
+  ref: Е-47
+  label: S13/zt3-F-032
+  stop: false
+- at: '2026-09-25T11:25:00+03:00'
+  route: F-032:sent_to_assembly,received_assembly
+- at: '2026-09-25T11:30:00+03:00'
+  decision: nonconformity.presentation.resolve
+  role: QC
+  actor: QC-02
+  item: F-033
+  params:
+    item_id: '{item:F-033}'
+  body:
+    closing_point: ZT-3
+    step_key: welding.zt3_acceptance
+    presentation_no: 1
+    resolution: accept
+    method_event_ids:
+    - '{event:F-033/kt3}'
+    - '{event:F-033/xray}'
+  ref: Е-47
+  label: S13/zt3-F-033
+  stop: false
+- at: '2026-09-25T11:30:00+03:00'
+  system: Пост ЗТ-3 — ОТК-1 снова на месте; почему её не было, система не спрашивает и не записывает
+- at: '2026-09-25T11:35:00+03:00'
+  decision: process.movement.send
+  role: MASTER
+  actor: MST-02
+  item: F-033
+  params:
+    item_id: '{item:F-033}'
+  body:
+    from_location_id: WS-WC
+    to_location_id: WS-AC
+    step_key: welding.send_to_assembly
+  ref: Е-30
+  note: → 1С «перемещение СЦ → СИЦ» после подписи
+- at: '2026-09-25T11:40:00+03:00'
+  decision: nonconformity.presentation.resolve
+  role: QC
+  actor: QC-02
+  item: F-034
+  params:
+    item_id: '{item:F-034}'
+  body:
+    closing_point: ZT-3
+    step_key: welding.zt3_acceptance
+    presentation_no: 1
+    resolution: accept
+    method_event_ids:
+    - '{event:F-034/kt3}'
+    - '{event:F-034/xray}'
+  ref: Е-47
+  label: S13/zt3-F-034
+  stop: false
+- at: '2026-09-25T11:41:00+03:00'
+  decision: nonconformity.presentation.resolve
+  role: QC
+  actor: QC-01
+  item: F-035
+  params:
+    item_id: '{item:F-035}'
+  body:
+    closing_point: ZT-3
+    step_key: welding.zt3_acceptance
+    presentation_no: 1
+    resolution: accept
+    method_event_ids:
+    - '{event:F-035/kt3}'
+    - '{event:F-035/xray}'
+  ref: Е-47
+  label: S13/zt3-F-035
+  stop: true
+- at: '2026-09-25T11:42:00+03:00'
+  decision: access.assignment.clear
+  role: MASTER
+  actor: MST-02
+  body:
+    person_id: '{person:QC-02}'
+    shift_id: '{local:SHIFT-A-0925}'
+    reason:
+      code: queue_cleared
+      text: ОТК-2 возвращается в сборочный цех (ЗТ-4 ч.1 по Ф-030 в 11:45)
+  ref: Нов.
+  note: Назначение закончено
+- at: '2026-09-25T11:45:00+03:00'
+  decision: process.movement.receive
+  role: MASTER
+  actor: MST-03
+  item: F-033
+  params:
+    item_id: '{item:F-033}'
+  body:
+    destination_kind: workshop
+    from_location_id: WS-WC
+    to_location_id: WS-AC
+    inspection_on_receipt: no_damage
+    step_key: assembly.receive
+  ref: Е-31
+- at: '2026-09-25T11:45:00+03:00'
+  decision: process.movement.send
+  role: MASTER
+  actor: MST-02
+  item: F-034
+  params:
+    item_id: '{item:F-034}'
+  body:
+    from_location_id: WS-WC
+    to_location_id: WS-AC
+    step_key: welding.send_to_assembly
+  ref: Е-30
+  note: → 1С «перемещение СЦ → СИЦ» после подписи
+- at: '2026-09-25T11:46:00+03:00'
+  decision: process.movement.send
+  role: MASTER
+  actor: MST-02
+  item: F-035
+  params:
+    item_id: '{item:F-035}'
+  body:
+    from_location_id: WS-WC
+    to_location_id: WS-AC
+    step_key: welding.send_to_assembly
+  ref: Е-30
+  note: → 1С «перемещение СЦ → СИЦ» после подписи
+- at: '2026-09-25T11:50:00+03:00'
+  decision: nonconformity.presentation.resolve
+  role: QC
+  actor: QC-01
+  item: F-036
+  params:
+    item_id: '{item:F-036}'
+  body:
+    closing_point: ZT-3
+    step_key: welding.zt3_acceptance
+    presentation_no: 1
+    resolution: accept
+    method_event_ids:
+    - '{event:F-036/kt3}'
+    - '{event:F-036/xray}'
+  ref: Е-47
+  label: S13/zt3-F-036
+  stop: false
+- at: '2026-09-25T11:55:00+03:00'
+  decision: process.movement.receive
+  role: MASTER
+  actor: MST-03
+  item: F-034
+  params:
+    item_id: '{item:F-034}'
+  body:
+    destination_kind: workshop
+    from_location_id: WS-WC
+    to_location_id: WS-AC
+    inspection_on_receipt: no_damage
+    step_key: assembly.receive
+  ref: Е-31
+- at: '2026-09-25T11:55:00+03:00'
+  decision: process.movement.send
+  role: MASTER
+  actor: MST-02
+  item: F-036
+  params:
+    item_id: '{item:F-036}'
+  body:
+    from_location_id: WS-WC
+    to_location_id: WS-AC
+    step_key: welding.send_to_assembly
+  ref: Е-30
+  note: → 1С «перемещение СЦ → СИЦ» после подписи
+- at: '2026-09-25T11:56:00+03:00'
+  decision: process.movement.receive
+  role: MASTER
+  actor: MST-03
+  item: F-035
+  params:
+    item_id: '{item:F-035}'
+  body:
+    destination_kind: workshop
+    from_location_id: WS-WC
+    to_location_id: WS-AC
+    inspection_on_receipt: no_damage
+    step_key: assembly.receive
+  ref: Е-31
+- at: '2026-09-25T12:00:00+03:00'
+  decision: nonconformity.presentation.resolve
+  role: QC
+  actor: QC-01
+  item: F-223
+  params:
+    item_id: '{item:F-223}'
+  body:
+    closing_point: ZT-3
+    step_key: welding.zt3_acceptance
+    presentation_no: 1
+    resolution: accept
+    method_event_ids:
+    - '{event:F-223/kt3}'
+    - '{event:F-223/xray}'
+  ref: Е-47
+  label: S13/zt3-F-223
+  stop: false
+- at: '2026-09-25T12:00:00+03:00'
+  ref: Е-14
+  label: S13/lt1-idle
+  note: 'Стенд СТ-1: простой, причина «нет детали» — Ф-024 испытан, следующего фланца нет'
+  fact: equipment.state.changed
+  schema_version: 2
+  source: leak-1
+  data:
+    equipment_id: '{equipment:LT-1}'
+    station_id: ST-LEAK
+    execution: idle
+    controller_mode: automatic
+    condition: normal
+    code: NO_PART
+- at: '2026-09-25T12:05:00+03:00'
+  decision: process.movement.receive
+  role: MASTER
+  actor: MST-03
+  item: F-036
+  params:
+    item_id: '{item:F-036}'
+  body:
+    destination_kind: workshop
+    from_location_id: WS-WC
+    to_location_id: WS-AC
+    inspection_on_receipt: no_damage
+    step_key: assembly.receive
+  ref: Е-31
+- at: '2026-09-25T12:05:00+03:00'
+  decision: process.movement.send
+  role: MASTER
+  actor: MST-02
+  item: F-223
+  params:
+    item_id: '{item:F-223}'
+  body:
+    from_location_id: WS-WC
+    to_location_id: WS-AC
+    step_key: welding.send_to_assembly
+  ref: Е-30
+  note: → 1С «перемещение СЦ → СИЦ» после подписи
+- at: '2026-09-25T12:10:00+03:00'
+  decision: nonconformity.presentation.resolve
+  role: QC
+  actor: QC-01
+  item: F-224
+  params:
+    item_id: '{item:F-224}'
+  body:
+    closing_point: ZT-3
+    step_key: welding.zt3_acceptance
+    presentation_no: 1
+    resolution: accept
+    method_event_ids:
+    - '{event:F-224/kt3}'
+    - '{event:F-224/xray}'
+  ref: Е-47
+  label: S13/zt3-F-224
+  stop: false
+- at: '2026-09-25T12:10:00+03:00'
+  system: 'Эскалация закрыта (escalation.closed [П]): «очередь разобрана»; 9 решений позже срока; самое долгое ожидание — 3 ч 20 мин (Ф-032); подсветка ЗТ-3 снята'
+  ref: Нов.
+- at: '2026-09-25T12:10:00+03:00'
+  system: 'По желанию: правило R-21 — уплотнение, выданное в 08:10 под Ф-031, 4 ч вне склада → блок к установке; задача Кл-01: выдать новое, прежнее — на склад для оценки'
+  ref: Е-84
+- at: '2026-09-25T12:15:00+03:00'
+  decision: process.movement.receive
+  role: MASTER
+  actor: MST-03
+  item: F-223
+  params:
+    item_id: '{item:F-223}'
+  body:
+    destination_kind: workshop
+    from_location_id: WS-WC
+    to_location_id: WS-AC
+    inspection_on_receipt: no_damage
+    step_key: assembly.receive
+  ref: Е-31
+- at: '2026-09-25T12:15:00+03:00'
+  decision: process.movement.send
+  role: MASTER
+  actor: MST-02
+  item: F-224
+  params:
+    item_id: '{item:F-224}'
+  body:
+    from_location_id: WS-WC
+    to_location_id: WS-AC
+    step_key: welding.send_to_assembly
+  ref: Е-30
+  note: → 1С «перемещение СЦ → СИЦ» после подписи
+- at: '2026-09-25T12:15:00+03:00'
+  decision: crossitem.lot.issue
+  role: STOREKEEPER
+  actor: STK-01
+  params:
+    lot_id: '{local:LOT-SL-401}'
+  body:
+    quantity: 1
+    to_location_id: WS-AC
+  ref: Е-50
+  note: Выдано новое уплотнение УП-401 под Ф-031
+- at: '2026-09-25T12:25:00+03:00'
+  decision: process.movement.receive
+  role: MASTER
+  actor: MST-03
+  item: F-224
+  params:
+    item_id: '{item:F-224}'
+  body:
+    destination_kind: workshop
+    from_location_id: WS-WC
+    to_location_id: WS-AC
+    inspection_on_receipt: no_damage
+    step_key: assembly.receive
+  ref: Е-31
+- at: '2026-09-25T12:45:00+03:00'
+  route: F-030:zt4_presented,zt4,leak_test
+  note: Испытание Ф-030 начато — простой стенда 12:00–12:45 закончился
+outcome:
+- 'Живая карта: счётчик ЗТ-3 4 → 3 → 6 → 9 → 0; аномалия «ожидание выше срока» с 09:00 до 12:10; с 10:20 ЗТ-3 — ограничение линии; детали не окрашиваются.'
+- 'Эскалация: три уровня (08:30, 09:00, 10:00); текст — о потоке, а не о человеке; подтверждение мастера сроки не останавливает.'
+- 'Перераспределение: варианты с прогнозом; выбирает М-02, согласует НОТК-01; назначение — в журнале критических действий.'
+- На ЗТ-3 — 10 решений, каждое по одному фланцу и с подписью (ОТК-1 — 5, ОТК-2 — 5); все «годно, первое предъявление»; в 1С — 10 «перемещений СЦ → СИЦ», каждое после своей подписи.
+- 'Показатели смены: 9 из 10 решений позже срока; медиана 135 мин; максимум 200 мин (Ф-032); простой стенда 45 мин и поста сборки 50 мин, причина «нет детали».'
+must_not:
+- Ни один фланец не проходит ЗТ-3 без подписи; нет «принято по истечении срока», «пропустить», «принять все».
+- Нет «рейтинга контролёра», «простоя контролёра», записей «нарушение»; О-10 не меняется.
+- '«Нет решения» не путают с «нет данных»: Е-82 нет, Н-5 не меняется; нет сигналов, несоответствий, гипотез.'
+- В 1С ничего не уходит из-за эскалации.

@@ -1,0 +1,29 @@
+# Ожидания прогона сбоя F06 — отдельно от входных событий (кейс §5.1, AD-26).
+scenario: F06
+version: '1'
+title: 'Сбой: Пропуск контроля'
+run: F06
+source: эпик 32 по research/data-collection-sources-and-failures.md §6 (ожидаемое поведение системы)
+checkpoints:
+- at: end
+  label: конец прогона
+  assertions:
+  - id: F06-01
+    what: Ф-502 не «годно» без контроля
+    check:
+      operation: item.passport.read
+      path: /status/quality
+      op: ne
+      params:
+        item_id: '{item:F-502}'
+      value: conforming
+    mapping: exact
+  - id: F06-02
+    what: пропуск контроля виден в покрытии методами
+    check:
+      operation: quality.coverage.read
+      path: /
+      op: exists
+      params:
+        item_id: '{item:F-502}'
+    mapping: draft

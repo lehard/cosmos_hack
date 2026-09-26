@@ -48,6 +48,8 @@ export interface Run {
      * @minimum 0
      */
   step: number;
+  /** Название текущего шага сценария. */
+  step_title?: string;
   /**
      * Всего шагов.
      * @minimum 0

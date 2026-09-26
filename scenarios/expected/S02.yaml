@@ -1,0 +1,346 @@
+# Ожидания S02 — отдельно от входных событий (кейс §5.1, AD-26): утверждения над теми же
+# operationId, что показывают столы; check.path — путь в ответе (board.go), значения — ID
+# процессной сессии (сверка переводит их сведением имён прогона). mapping: exact — поле
+# ответа контракта; draft — по смыслу, путь уточнит модуль-владелец; manual — видно на экране.
+scenario: S02
+version: 0.3-draft
+title: Входной брак — пора в металле кольца (партия П-117)
+run: MS-1
+source: 'process/scenarios-flange-expected.yaml процессной сессии, версия 0.3-draft: утверждения процессной сессии — в source без изменений, check — исполняемая форма эпика 32'
+checkpoints:
+- at: '2026-09-23T16:15:00+03:00'
+  label: после возврата партии
+  assertions:
+  - id: S02-01
+    what: 'НС-04 по Ф-019: зона — тело кольца'
+    check:
+      operation: nonconformity.card.read
+      params:
+        nc_id: '{ref:NC-04}'
+      path: /
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: nc/NC-04
+      field:
+        item: F-019
+        zone: RING-BODY
+        defect_type: base_metal_pore
+      op: eq
+      value: true
+  - id: S02-02
+    what: НС-04 подтверждено контролёром
+    check:
+      operation: nonconformity.card.read
+      params:
+        nc_id: '{ref:NC-04}'
+      path: /human_decisions/*/event_type
+      op: contains
+      value: &id001
+      - signal
+      - confirmed
+    mapping: draft
+    source:
+      subject: nc/NC-04
+      field: status_path
+      op: contains
+      value: *id001
+    note: путь статусов — по решениям в карточке
+  - id: S02-03
+    what: гипотеза — входной брак, затем причина подтверждена
+    check:
+      operation: nonconformity.card.read
+      params:
+        nc_id: '{ref:NC-04}'
+      path: /cause
+      op: eq
+      value: &id002
+        category: incoming
+        status: confirmed
+        lot: LOT-R-117
+        supplier: SUP-3
+    mapping: draft
+    source:
+      subject: nc/NC-04
+      field: cause
+      op: eq
+      value: *id002
+  - id: S02-04
+    what: сварщик не указан как кандидат
+    check:
+      operation: analysis.hypothesis.list
+      params:
+        nc_id: '{ref:NC-04}'
+      path: /operator_candidates
+      op: eq
+      value: &id003 []
+    mapping: draft
+    source:
+      subject: hypothesis/NC-04
+      field: operator_candidates
+      op: eq
+      value: *id003
+  - id: S02-05
+    what: 'область по партии RS-02: 3 изделия, итог 1 подтверждено, 2 исключено'
+    check:
+      operation: analysis.risk_scope.read
+      params:
+        incident_id: '{ref:RS-02}'
+      path: /final_groups
+      op: eq
+      value: &id004
+        confirmed:
+        - F-019
+        excluded:
+        - F-027
+        - F-029
+        suspected: []
+        unknown: []
+    mapping: draft
+    source:
+      subject: risk_scope/RS-02
+      field: final_groups
+      op: eq
+      value: *id004
+  - id: S02-06
+    what: исключение Ф-027 и Ф-029 — по заключениям рентгена
+    check:
+      operation: analysis.risk_scope.read
+      params:
+        incident_id: '{ref:RS-02}'
+      path: /exclusion_basis
+      op: contains
+      value: &id005
+      - xray:F-027
+      - xray:F-029
+    mapping: draft
+    source:
+      subject: risk_scope/RS-02
+      field: exclusion_basis
+      op: contains
+      value: *id005
+  - id: S02-07
+    what: второе кольцо с порой на складе — НС-05
+    check:
+      operation: nonconformity.card.read
+      params:
+        nc_id: '{ref:NC-05}'
+      path: /
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: nc/NC-05
+      field:
+        item: R-105
+        cause_category: incoming
+      op: eq
+      value: true
+  - id: S02-08
+    what: в 1С один возврат поставщику на 7 колец
+    check:
+      operation: erp.message.list
+      path: /items
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: erp/postings
+      field:
+        count: 1
+        qty: 7
+        lot: LOT-R-117
+      filter:
+        type: return_to_supplier
+      op: eq
+      value: true
+  - id: S02-09
+    what: возврат подтверждён после ошибки 422 и исправления ID
+    check:
+      operation: erp.message.list
+      path: /items
+      op: eq
+      value: &id006
+      - error_final
+      - acked
+    mapping: draft
+    source:
+      subject: erp/postings
+      field: ack_history
+      filter:
+        type: return_to_supplier
+      op: eq
+      value: *id006
+  - id: S02-10
+    what: пропуск на КТ-1 помечен «метод не видит этот класс»
+    check:
+      operation: nonconformity.card.read
+      params:
+        nc_id: '{ref:NC-04}'
+      path: /escape_classification
+      op: eq
+      value: method_blind_not_model_error
+    mapping: draft
+    source:
+      subject: nc/NC-04
+      field: escape_classification
+      op: eq
+      value: method_blind_not_model_error
+  - id: S02-11
+    what: 'Р-4: +1 несоответствующая партия у Поставщика-3'
+    check:
+      operation: analytics.metric.drilldown
+      params:
+        metric_id: R-4
+      path: /nonconforming_lots
+      op: delta
+      value: 1
+    mapping: draft
+    baseline: '2026-09-23T13:39:00+03:00'
+    source:
+      subject: metric/R-4
+      field: nonconforming_lots
+      filter:
+        supplier: SUP-3
+      op: delta
+      value: 1
+      baseline: '2026-09-23T13:39:00+03:00'
+    note: показатель R-4 каталога процессной сессии (analytics-catalog.md); сопоставление — эпик 25
+  - id: S02-12
+    what: 'О-6: входной брак — подтверждено +2'
+    check:
+      operation: analytics.metric.drilldown
+      params:
+        metric_id: O-6
+      path: /total/value
+      op: delta
+      value: 2
+    mapping: draft
+    baseline: '2026-09-23T13:39:00+03:00'
+    source:
+      subject: metric/O-6
+      field: count
+      filter:
+        row: incoming
+        column: confirmed
+      op: delta
+      value: 2
+      baseline: '2026-09-23T13:39:00+03:00'
+    note: показатель O-6 каталога процессной сессии (analytics-catalog.md); сопоставление — эпик 25
+  - id: S02-13
+    what: 'разбор причин (отдельный экземпляр по RS-02) → мера «улучшить обнаружение»: следующие партии колец Поставщика-3 — рентген до сварки [П]; у меры есть план проверки результативности;
+      «назначено» ≠ «результативно», расследование открыто'
+    check:
+      operation: analysis.hypothesis.list
+      params:
+        nc_id: '{ref:NC-04}'
+      path: /
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: capa/NC-04
+      field:
+        kind: improve_detection
+        owner: QC-HEAD-01
+        due: '2026-10-09'
+        effectiveness_plan_present: true
+        status: assigned
+        investigation: open
+      op: eq
+      value: true
+- at: '2026-09-23T16:15:00+03:00'
+  label: чего не должно случиться
+  must_not: true
+  assertions:
+  - id: S02-N1
+    what: входной брак не попадает в дефекты сварочного участка
+    check:
+      operation: analytics.metric.drilldown
+      params:
+        metric_id: O-4
+      path: /includes_nc
+      op: not_contains
+      value: &id007
+      - NC-04
+      - NC-05
+    mapping: draft
+    source:
+      subject: metric/O-4
+      field: includes_nc
+      filter:
+        station: welding
+        origin: station
+      op: not_contains
+      value: *id007
+    note: показатель O-4 каталога процессной сессии (analytics-catalog.md); сопоставление — эпик 25
+  - id: S02-N2
+    what: нет гипотезы «процедура» по С-03 для НС-04
+    check:
+      operation: analysis.hypothesis.list
+      params:
+        nc_id: '{ref:NC-04}'
+      path: /categories
+      op: not_contains
+      value: &id008
+      - operator_procedure
+    mapping: draft
+    source:
+      subject: hypothesis/NC-04
+      field: categories
+      op: not_contains
+      value: *id008
+  - id: S02-N3
+    what: О-10 не меняется
+    check:
+      operation: analytics.metric.drilldown
+      params:
+        metric_id: O-10
+      path: /all
+      op: unchanged
+    mapping: draft
+    baseline: '2026-09-23T13:39:00+03:00'
+    source:
+      subject: metric/O-10
+      field: all
+      op: unchanged
+      baseline: '2026-09-23T13:39:00+03:00'
+    note: показатель O-10 каталога процессной сессии (analytics-catalog.md); сопоставление — эпик 25
+  - id: S02-N4
+    what: Ф-019 целиком поставщику не возвращается
+    check:
+      operation: item.passport.read
+      params:
+        item_id: '{item:F-019}'
+      path: /status/summary
+      op: ne
+      value: returned
+    mapping: exact
+    source:
+      subject: item/F-019
+      field: status
+      op: ne
+      value: returned_to_supplier
+    note: статус процессной сессии «returned_to_supplier» → сводный статус контракта «returned»
+  - id: S02-N5
+    what: входной брак не записан на линию как место возникновения
+    check:
+      operation: analytics.metric.drilldown
+      params:
+        metric_id: O-4
+      path: /includes_nc
+      op: not_contains
+      value: &id009
+      - NC-04
+      - NC-05
+    mapping: draft
+    source:
+      subject: metric/O-4
+      field: includes_nc
+      filter:
+        cut: line
+        origin: line
+      op: not_contains
+      value: *id009
+    note: показатель O-4 каталога процессной сессии (analytics-catalog.md); сопоставление — эпик 25

@@ -1,0 +1,286 @@
+{
+ "run_id": "s10b-20260924",
+ "run": "S10B",
+ "seed": 20260924,
+ "start": "2026-09-21T04:00:00.000Z",
+ "end": "2026-09-24T13:30:00.000Z",
+ "truth": {
+  "items": [
+   {
+    "id": "F-090",
+    "order": "ORD-0917",
+    "line": "L-FL-1",
+    "stages": {
+     "cmm": "2026-09-21T08:28:00Z",
+     "edge_prep": "2026-09-21T11:15:00Z",
+     "kt2": "2026-09-21T07:58:00Z",
+     "kt3": "2026-09-21T12:50:00Z",
+     "launch": "2026-09-21T06:30:00Z",
+     "machining": "2026-09-21T07:00:00Z",
+     "received_welding": "2026-09-21T10:50:00Z",
+     "remark": "2026-09-21T07:54:00Z",
+     "ring": "2026-09-21T11:10:00Z",
+     "sent_to_welding": "2026-09-21T10:40:00Z",
+     "weld": "2026-09-21T12:00:00Z",
+     "zt2": "2026-09-21T08:48:00Z",
+     "zt2_presented": "2026-09-21T08:43:00Z"
+    },
+    "remarked_at": "2026-09-21T07:54:00Z",
+    "until": "kt3"
+   }
+  ],
+  "welds": [
+   {
+    "item": "F-090",
+    "run": "SV-090-1",
+    "station": "WS-1",
+    "welder": "WLD-02",
+    "shift": "A",
+    "start": "2026-09-21T12:00:00Z",
+    "end": "2026-09-21T12:45:00Z",
+    "current_min": 158,
+    "current_max": 163,
+    "arc_from": "2026-09-21T12:00:00Z",
+    "arc_to": "2026-09-21T12:45:00Z"
+   },
+   {
+    "item": "F-090",
+    "run": "SV-090-2",
+    "station": "WS-1",
+    "welder": "WLD-02",
+    "shift": "A",
+    "start": "2026-09-22T07:00:00Z",
+    "end": "2026-09-22T07:45:00Z",
+    "current_min": 158,
+    "current_max": 163,
+    "arc_from": "2026-09-22T07:00:00Z",
+    "arc_to": "2026-09-22T07:45:00Z",
+    "rework_of": "SV-090-1"
+   },
+   {
+    "item": "F-090",
+    "run": "SV-090-3",
+    "station": "WS-1",
+    "welder": "WLD-02",
+    "shift": "A",
+    "start": "2026-09-23T07:00:00Z",
+    "end": "2026-09-23T07:45:00Z",
+    "current_min": 158,
+    "current_max": 163,
+    "arc_from": "2026-09-23T07:00:00Z",
+    "arc_to": "2026-09-23T07:45:00Z",
+    "rework_of": "SV-090-2"
+   },
+   {
+    "item": "F-090",
+    "run": "SV-090-4",
+    "station": "WS-1",
+    "welder": "WLD-02",
+    "shift": "A",
+    "start": "2026-09-24T06:00:00Z",
+    "end": "2026-09-24T06:45:00Z",
+    "current_min": 158,
+    "current_max": 163,
+    "arc_from": "2026-09-24T06:00:00Z",
+    "arc_to": "2026-09-24T06:45:00Z",
+    "rework_of": "SV-090-3"
+   }
+  ],
+  "sources": [
+   {
+    "key": "cam-kt1",
+    "source_id": "s10b-20260924/edge-kt1",
+    "first_seq": 1,
+    "last_seq": 2,
+    "counters": {
+     "records": 2,
+     "deliveries": 2,
+     "unique": 2,
+     "duplicates": 0,
+     "conflicts": 0,
+     "lost": 0,
+     "late": 0,
+     "skewed": 0,
+     "reordered": 0,
+     "invalid": 0,
+     "quarantine": 0,
+     "decisions": 0
+    }
+   },
+   {
+    "key": "cam-kt2",
+    "source_id": "s10b-20260924/edge-kt2",
+    "first_seq": 1,
+    "last_seq": 1,
+    "counters": {
+     "records": 1,
+     "deliveries": 1,
+     "unique": 1,
+     "duplicates": 0,
+     "conflicts": 0,
+     "lost": 0,
+     "late": 0,
+     "skewed": 0,
+     "reordered": 0,
+     "invalid": 0,
+     "quarantine": 0,
+     "decisions": 0
+    }
+   },
+   {
+    "key": "cam-kt3-a",
+    "source_id": "s10b-20260924/edge-kt3",
+    "first_seq": 1,
+    "last_seq": 4,
+    "counters": {
+     "records": 4,
+     "deliveries": 4,
+     "unique": 4,
+     "duplicates": 0,
+     "conflicts": 0,
+     "lost": 0,
+     "late": 0,
+     "skewed": 0,
+     "reordered": 0,
+     "invalid": 0,
+     "quarantine": 0,
+     "decisions": 0
+    }
+   },
+   {
+    "key": "cmm-1",
+    "source_id": "s10b-20260924/gw-cmm",
+    "first_seq": 1,
+    "last_seq": 1,
+    "counters": {
+     "records": 1,
+     "deliveries": 1,
+     "unique": 1,
+     "duplicates": 0,
+     "conflicts": 0,
+     "lost": 0,
+     "late": 0,
+     "skewed": 0,
+     "reordered": 0,
+     "invalid": 0,
+     "quarantine": 0,
+     "decisions": 0
+    }
+   },
+   {
+    "key": "cnc-1",
+    "source_id": "s10b-20260924/edge-cnc-1",
+    "first_seq": 1,
+    "last_seq": 2,
+    "counters": {
+     "records": 2,
+     "deliveries": 2,
+     "unique": 2,
+     "duplicates": 0,
+     "conflicts": 0,
+     "lost": 0,
+     "late": 0,
+     "skewed": 0,
+     "reordered": 0,
+     "invalid": 0,
+     "quarantine": 0,
+     "decisions": 0
+    }
+   },
+   {
+    "key": "is-1",
+    "source_id": "s10b-20260924/edge-weld-1",
+    "first_seq": 1,
+    "last_seq": 180,
+    "counters": {
+     "records": 180,
+     "deliveries": 180,
+     "unique": 180,
+     "duplicates": 0,
+     "conflicts": 0,
+     "lost": 0,
+     "late": 0,
+     "skewed": 0,
+     "reordered": 0,
+     "invalid": 0,
+     "quarantine": 0,
+     "decisions": 0
+    }
+   },
+   {
+    "key": "marker",
+    "source_id": "s10b-20260924/edge-marker-1",
+    "first_seq": 1,
+    "last_seq": 1,
+    "counters": {
+     "records": 1,
+     "deliveries": 1,
+     "unique": 1,
+     "duplicates": 0,
+     "conflicts": 0,
+     "lost": 0,
+     "late": 0,
+     "skewed": 0,
+     "reordered": 0,
+     "invalid": 0,
+     "quarantine": 0,
+     "decisions": 0
+    }
+   },
+   {
+    "key": "onec",
+    "source_id": "s10b-20260924/onec-stand",
+    "first_seq": 1,
+    "last_seq": 3,
+    "counters": {
+     "records": 3,
+     "deliveries": 3,
+     "unique": 3,
+     "duplicates": 0,
+     "conflicts": 0,
+     "lost": 0,
+     "late": 0,
+     "skewed": 0,
+     "reordered": 0,
+     "invalid": 0,
+     "quarantine": 0,
+     "decisions": 0
+    }
+   },
+   {
+    "key": "term-vk",
+    "source_id": "s10b-20260924/term-vk-1",
+    "first_seq": 1,
+    "last_seq": 2,
+    "counters": {
+     "records": 2,
+     "deliveries": 2,
+     "unique": 2,
+     "duplicates": 0,
+     "conflicts": 0,
+     "lost": 0,
+     "late": 0,
+     "skewed": 0,
+     "reordered": 0,
+     "invalid": 0,
+     "quarantine": 0,
+     "decisions": 0
+    }
+   }
+  ],
+  "totals": {
+   "records": 196,
+   "deliveries": 196,
+   "unique": 196,
+   "duplicates": 0,
+   "conflicts": 0,
+   "lost": 0,
+   "late": 0,
+   "skewed": 0,
+   "reordered": 0,
+   "invalid": 0,
+   "quarantine": 0,
+   "decisions": 38
+  }
+ }
+}

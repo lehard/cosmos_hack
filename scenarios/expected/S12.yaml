@@ -1,0 +1,172 @@
+# Ожидания S12 — отдельно от входных событий (кейс §5.1, AD-26): утверждения над теми же
+# operationId, что показывают столы; check.path — путь в ответе (board.go), значения — ID
+# процессной сессии (сверка переводит их сведением имён прогона). mapping: exact — поле
+# ответа контракта; draft — по смыслу, путь уточнит модуль-владелец; manual — видно на экране.
+scenario: S12
+version: 0.3-draft
+title: Некорректные сообщения — карантин с кодами
+run: MS-1
+source: 'process/scenarios-flange-expected.yaml процессной сессии, версия 0.3-draft: утверждения процессной сессии — в source без изменений, check — исполняемая форма эпика 32'
+checkpoints:
+- at: '2026-09-22T14:35:00+03:00'
+  label: после разбора карантина
+  assertions:
+  - id: S12-01
+    what: в карантине 3 сообщения с кодами
+    check:
+      operation: ingest.quarantine.list
+      path: /items/*/problem_code
+      op: set_eq
+      value:
+      - ingest.unknown_schema_version
+      - ingest.unknown_enum_value_critical
+    mapping: exact
+    source:
+      subject: quarantine
+      field: codes
+      filter:
+        at_from: '2026-09-22T14:00:00+03:00'
+      op: set_eq
+      value:
+      - E_MISSING_FIELD
+      - E_UNSUPPORTED_VERSION
+      - E_UNKNOWN_ENUM
+    note: 'сведение с контрактом v1: сообщение без носителя изделия — не карантин, а очередь привязки (AD-41); в карантине 2 сообщения'
+  - id: S12-02
+    what: у каждого — поле или значение, источник, время
+    check:
+      operation: ingest.quarantine.list
+      path: /items
+      op: contains
+      value: &id001
+      - code: E_MISSING_FIELD
+        field: item_id
+      - code: E_UNSUPPORTED_VERSION
+        value: '9.0'
+      - code: E_UNKNOWN_ENUM
+        field: inspection_result
+        value: maybe
+    mapping: draft
+    source:
+      subject: quarantine
+      field: details
+      op: contains
+      value: *id001
+  - id: S12-03
+    what: новое необязательное поле принято и сохранено
+    check:
+      operation: ingest.metrics.read
+      path: /
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: ingest
+      field:
+        outcome: accepted
+        extra_field_kept: lens_temp_c
+      filter:
+        schema_version: '1.1'
+      op: eq
+      value: true
+  - id: S12-04
+    what: неизвестный класс дефекта в некритичном поле — принят с флагом
+    check:
+      operation: ingest.metrics.read
+      path: /
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: ingest
+      field:
+        outcome: accepted
+        value_stored_as: неизвестно (spatter_x)
+        flag: unknown_enum
+      filter:
+        defect_type: spatter_x
+      op: eq
+      value: true
+  - id: S12-05
+    what: исправленное сообщение из карантина принято ровно один раз
+    check:
+      operation: ingest.quarantine.list
+      path: /items
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: quarantine
+      field:
+        reprocessed_by: ADM-01
+        accepted_times: 1
+      filter:
+        code: E_MISSING_FIELD
+      op: eq
+      value: true
+  - id: S12-06
+    what: 'Н-5: в карантине +3'
+    check:
+      operation: ingest.metrics.read
+      path: /quarantined
+      op: delta
+      value: 2
+    mapping: exact
+    baseline: '2026-09-22T13:59:00+03:00'
+    source:
+      subject: metric/N-5
+      field: quarantined
+      op: delta
+      value: 3
+      baseline: '2026-09-22T13:59:00+03:00'
+    note: в карантине 2 (см. S12-01)
+- at: '2026-09-22T14:35:00+03:00'
+  label: чего не должно случиться
+  must_not: true
+  assertions:
+  - id: S12-N1
+    what: показатели качества не изменились от сообщений 1–3
+    check:
+      operation: analytics.metric.drilldown
+      params:
+        metric_id: all
+      path: /quality_metrics
+      op: unchanged
+    mapping: draft
+    baseline: '2026-09-22T13:59:00+03:00'
+    source:
+      subject: metric/*
+      field: quality_metrics
+      op: unchanged
+      baseline: '2026-09-22T13:59:00+03:00'
+    note: показатель all каталога процессной сессии (analytics-catalog.md); сопоставление — эпик 25
+  - id: S12-N2
+    what: «maybe» не превратилось в «признаков нет»
+    check:
+      operation: ingest.metrics.read
+      path: /stored_as_no_defect
+      op: eq
+      value: false
+    mapping: draft
+    source:
+      subject: ingest
+      field: stored_as_no_defect
+      filter:
+        inspection_result: maybe
+      op: eq
+      value: false
+  - id: S12-N3
+    what: номер изделия не угадан без человека
+    check:
+      operation: ingest.quarantine.list
+      path: /items
+      op: eq
+      value: false
+    mapping: draft
+    source:
+      subject: quarantine
+      field: auto_bound_item
+      filter:
+        code: E_MISSING_FIELD
+      op: eq
+      value: false

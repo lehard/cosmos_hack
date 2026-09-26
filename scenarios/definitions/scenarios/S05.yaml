@@ -1,0 +1,272 @@
+# S05 — process/scenarios-flange.md §4 S05 «один к одному». Главный кадр защиты:
+# круг подозреваемых 34 → 13 → 6 — выводы движка (system:), сужения — решения технолога.
+id: S05
+version: "0.3"
+title: "Событие оборудования — ток ИС-2 вне уставки и тающая область риска 34 → 13 → 6"
+kind: check
+goal: >-
+  Сбой источника может задеть много деталей: система сразу берёт круг широко и осторожно,
+  останавливает детали и источник; круг сужается только по доказательствам, у каждого шага —
+  «почему?». Решение — на уровне инцидента; «кто виноват» решается не спеша.
+case:
+  s4_2: ["отклонение оборудования"]
+  s5_1: ["Событие станка"]
+  demo: ["«станок сломался» (область риска)", "главная история «плохой день сварочного участка»"]
+  other: ["§2.3 обоснованность", "§5.2 сравнение сопоставимых работ, незавершённые операции", "FR-151 нарушение режима спецпроцесса"]
+run: MS-1
+where: "Главный поток, Ср 11:10 – 16:40. Кадры защиты 0:40–1:30, 2:50–3:45."
+source: "process/scenarios-flange.md §4 S05, §2.6"
+steps:
+  - {at: "2026-09-23T11:10:00+03:00", ref: "Е-110, Е-84", system: "Область риска RS-01, версия 1: 34 — факторы С-02, ИС-2, П-88, отсчёт после Ф-006 (Пн 14:55); придержано 33, задачи: 20 на участке — М-02, 8 в кладовой — Кл-01, 4 в сборке и 1 на стенде — М-03"}
+  - at: "2026-09-23T11:12:00+03:00"
+    ref: Е-114
+    label: S05/hold-WS2
+    note: "Остановка источника ИС-2: система предложила, М-02 поставил; причина — НС-01 и нет журнала; условие снятия — ремонт и проверка"
+    decision: nonconformity.process_hold.set
+    role: MASTER
+    actor: MST-02
+    body:
+      hold_id: "{local:HOLD-WS2}"
+      level: process_point_stop
+      equipment_id: "{equipment:WS-2}"
+      step_key: welding.weld
+      incident_id: "{ref:RS-01}"
+      reason: {code: nc_and_no_log, text: "НС-01 (прожог Ф-017) и нет журнала ИС-2 со Вт 09:50"}
+      release_condition: "Ремонт регулятора тока и проверка контрольным образцом"
+  - at: "2026-09-23T11:40:00+03:00"
+    label: S05/narrow-by-qc
+    note: "Попытка контролёра ОТК-1 сузить круг — отказ по правам (запись в журнале критических действий); сужать может только технолог"
+    decision: analysis.scope.narrow
+    role: QC
+    actor: QC-01
+    refusal: access.forbidden
+    params: {incident_id: "{ref:RS-01}"}
+    body:
+      item_ids: ["{item:F-007}"]
+      reason: {code: attempt, text: "Попытка сузить круг контролёром"}
+  - at: "2026-09-23T11:45:00+03:00"
+    ref: Е-112
+    label: S05/narrow-13
+    note: "Круг сужен до 13: исключены 21 сварка на ИС-1 — журнал ИС-1 непрерывный и в уставке; КТ-3 признаков нет при качестве ≥ 0,6; С-02 и П-88 на ИС-1 дефектов не дали → общий фактор — ИС-2"
+    decision: analysis.scope.narrow
+    role: TECHNOLOGIST
+    actor: TECH-01
+    stop: true
+    params: {incident_id: "{ref:RS-01}"}
+    body:
+      item_ids: ["{item:F-007}", "{item:F-009}", "{item:F-011}", "{item:F-013}", "{item:F-018}", "{item:F-020}", "{item:F-022}", "{item:F-024}",
+                 "{item:F-026}", "{item:F-027}", "{item:F-028}", "{item:F-029}", "{item:F-030}", "{item:F-031}", "{item:F-032}", "{item:F-033}",
+                 "{item:F-034}", "{item:F-035}", "{item:F-036}", "{item:F-223}", "{item:F-224}"]
+      evidence_event_ids: ["{event:F-007/kt3}", "{event:F-009/kt3}", "{event:F-011/kt3}", "{event:F-013/kt3}", "{event:F-018/kt3}", "{event:F-020/kt3}",
+                           "{event:F-022/kt3}", "{event:F-024/kt3}", "{event:F-026/kt3}", "{event:F-027/kt3}", "{event:F-028/kt3}", "{event:F-029/kt3}",
+                           "{event:F-030/kt3}", "{event:F-031/kt3}", "{event:F-032/kt3}", "{event:F-033/kt3}", "{event:F-034/kt3}", "{event:F-035/kt3}",
+                           "{event:F-036/kt3}", "{event:F-223/kt3}", "{event:F-224/kt3}"]
+      reason: {code: common_factor_ws2, text: "Журнал ИС-1 непрерывный и в уставке; КТ-3 признаков нет при качестве не ниже 0,6; тот же сварщик и проволока на ИС-1 дефектов не дали — общий фактор ИС-2"}
+      release_containment: true
+  - {at: "2026-09-23T12:05:00+03:00", system: "Пачка журнала ИС-2 (S07): ток выше уставки с Вт 10:20"}
+  - at: "2026-09-23T12:15:00+03:00"
+    ref: Е-112
+    label: S05/narrow-6
+    note: "Круг сужен до 6: «история пересчитана из-за позднего события EV-WS2-0412»; семь сварок ИС-2 до Вт 10:20 — в уставке, записи есть → исключены; у Ф-019 записей нет → серый"
+    decision: analysis.scope.narrow
+    role: TECHNOLOGIST
+    actor: TECH-01
+    stop: true
+    params: {incident_id: "{ref:RS-01}"}
+    body:
+      item_ids: ["{item:F-008}", "{item:F-010}", "{item:F-012}", "{item:F-014}", "{item:F-016}", "{item:F-221}", "{item:F-222}"]
+      evidence_event_ids: ["{event:EV-WS2-0412}"]
+      reason: {code: late_log_ws2, text: "Опоздавший журнал ИС-2: ток впервые вышел за уставку во Вт 10:20 (EV-WS2-0412); семь сварок до этого — в уставке"}
+      release_containment: true
+  - at: "2026-09-23T12:25:00+03:00"
+    ref: Е-11
+    note: "Задача «найти и придержать Ф-015 в сборке»: сборка приостановлена — крышка ещё не установлена; причина — блок по качеству"
+    decision: process.operation.pause
+    role: PERFORMER
+    actor: ASM-01
+    item: F-015
+    params: {run_id: "{local:AS-015-1}"}
+    body: {pause_reason: waiting, note: "Блок по качеству: Ф-015 в инциденте RS-01"}
+  - at: "2026-09-23T12:30:00+03:00"
+    ref: Е-92
+    note: "Перепроверка пяти фланцев: камера + рентген (Ф-015, Ф-019, Ф-021, Ф-023, Ф-025)"
+    decision: nonconformity.recheck.request
+    role: QC
+    actor: QC-01
+    item: F-015
+    params: {item_id: "{item:F-015}"}
+    body: &recheck {method: radiography, reason: {code: incident_recheck, text: "Перепроверка круга RS-01: камера КТ-3 и рентген"}}
+  - {at: "2026-09-23T12:30:10+03:00", decision: nonconformity.recheck.request, role: QC, actor: QC-01, item: F-019, params: {item_id: "{item:F-019}"}, body: *recheck}
+  - {at: "2026-09-23T12:30:20+03:00", decision: nonconformity.recheck.request, role: QC, actor: QC-01, item: F-021, params: {item_id: "{item:F-021}"}, body: *recheck}
+  - {at: "2026-09-23T12:30:30+03:00", decision: nonconformity.recheck.request, role: QC, actor: QC-01, item: F-023, params: {item_id: "{item:F-023}"}, body: *recheck}
+  - {at: "2026-09-23T12:30:40+03:00", decision: nonconformity.recheck.request, role: QC, actor: QC-01, item: F-025, params: {item_id: "{item:F-025}"}, body: *recheck}
+  - at: "2026-09-23T12:50:00+03:00"
+    ref: Е-45
+    label: F-021/xray
+    note: "Рентген Ф-021, РК-0923-08: одно заключение — два дефекта: прожог в корне шва У5 (снаружи не виден) и поры У6; сварщик С-03"
+    fact: inspection.result.recorded
+    source: xray
+    item: F-021
+    data:
+      observation_id: "{local:RK-0923-08}"
+      method: radiography
+      phase: after_operation
+      step_key: welding.kt3_radiography
+      operation_run_id: "{local:SV-021-1}"
+      zone_ids: ["{zone:U1}", "{zone:U2}", "{zone:U3}", "{zone:U4}", "{zone:U5}", "{zone:U6}", "{zone:U7}", "{zone:U8}"]
+      outcome: defect_indicated
+      processing_state: completed
+      inspector_id: "{person:NDT-01}"
+      conclusion_ref: "РК-0923-08"
+      defects:
+        - {defect_type_code: W-BURNTHRU, description: "Прожог в корне шва", zone_id: "{zone:U5}", location: "корень шва", severity: critical}
+        - {defect_type_code: W-PORE-I, description: "Поры", zone_id: "{zone:U6}", severity: major}
+  - {at: "2026-09-23T12:51:00+03:00", ref: Е-80, system: "Сигнал по Ф-021"}
+  - at: "2026-09-23T13:05:00+03:00"
+    ref: Е-90
+    label: S05/confirm-NC-02
+    note: "Подтверждено — НС-02 (Ф-021): два дефекта"
+    decision: nonconformity.nonconformity.confirm
+    role: QC
+    actor: QC-01
+    item: F-021
+    params: {nc_id: "{ref:NC-02}"}
+    body: {signal_ids: ["{ref:SIG-F021}"], severity: critical, defect_type_code: W-BURNTHRU, reason: {code: xray, text: "РК-0923-08: прожог в корне У5 и поры У6"}}
+  - at: "2026-09-23T13:10:00+03:00"
+    ref: Е-45
+    label: F-023/xray
+    note: "Рентген Ф-023: прожог в корне У3; сварщик С-02"
+    fact: inspection.result.recorded
+    source: xray
+    item: F-023
+    data:
+      observation_id: "{local:RK-0923-10}"
+      method: radiography
+      phase: after_operation
+      step_key: welding.kt3_radiography
+      operation_run_id: "{local:SV-023-1}"
+      zone_ids: ["{zone:U1}", "{zone:U2}", "{zone:U3}", "{zone:U4}", "{zone:U5}", "{zone:U6}", "{zone:U7}", "{zone:U8}"]
+      outcome: defect_indicated
+      processing_state: completed
+      inspector_id: "{person:NDT-01}"
+      conclusion_ref: "РК-0923-10"
+      defects:
+        - {defect_type_code: W-BURNTHRU, description: "Прожог в корне шва", zone_id: "{zone:U3}", location: "корень шва", severity: critical}
+  - at: "2026-09-23T13:20:00+03:00"
+    ref: Е-90
+    label: S05/confirm-NC-03
+    note: "Подтверждено — НС-03 (Ф-023)"
+    decision: nonconformity.nonconformity.confirm
+    role: QC
+    actor: QC-01
+    item: F-023
+    params: {nc_id: "{ref:NC-03}"}
+    body: {signal_ids: ["{ref:SIG-F023}"], severity: critical, defect_type_code: W-BURNTHRU, reason: {code: xray, text: "РК-0923-10: прожог в корне У3"}}
+  - {at: "2026-09-23T13:30:00+03:00", ref: Е-85, system: "Гипотезы v3: общие факторы Ф-017, Ф-021, Ф-023 — источник 3/3, ток вне уставки 3/3, сварщики разные → гипотеза про сварщика слабеет"}
+  - at: "2026-09-23T13:55:00+03:00"
+    ref: Е-113
+    label: F-015/kt3-recheck
+    note: "Ф-015: повторная камера чистая (прежний рентген Вт 13:30 — тоже)"
+    fact: inspection.result.recorded
+    source: cam-kt3-a
+    item: F-015
+    data:
+      observation_id: "{local:KT3-F-015-R}"
+      method: camera
+      phase: after_operation
+      step_key: welding.kt3_camera
+      inspection_point: KT-3
+      operation_run_id: "{local:SV-015-1}"
+      zone_ids: ["{zone:U1}", "{zone:U2}", "{zone:U3}", "{zone:U4}", "{zone:U5}", "{zone:U6}", "{zone:U7}", "{zone:U8}"]
+      outcome: no_defect_indicated
+      processing_state: completed
+      analyzer_confidence_bp: 9400
+      observation_quality_bp: 9000
+      versions: {analyzer_version: "vqc-weld 2.3.1", contract_version: "1.0", recipe_ref: "KT-3@5", camera_config: "angle-1", item_revision: "Б"}
+  - {at: "2026-09-23T15:29:00+03:00", decision: analysis.item.assess, role: COMMISSION, actor: TECH-01, item: F-015, note: "Е-113 «подтверждено»: сварено вне режима ТП",
+     params: {incident_id: "{ref:RS-01}"}, body: {assessment: confirmed, item_id: "{item:F-015}", evidence_event_ids: ["{event:EV-WS2-0412}"]}}
+  - {at: "2026-09-23T15:29:10+03:00", decision: analysis.item.assess, role: COMMISSION, actor: TECH-01, item: F-017,
+     params: {incident_id: "{ref:RS-01}"}, body: {assessment: confirmed, item_id: "{item:F-017}", evidence_event_ids: ["{event:F-017/kt3}"]}}
+  - {at: "2026-09-23T15:29:20+03:00", decision: analysis.item.assess, role: COMMISSION, actor: TECH-01, item: F-019, note: "у Ф-019 соответствие режиму не доказано",
+     params: {incident_id: "{ref:RS-01}"}, body: {assessment: confirmed, item_id: "{item:F-019}", evidence_event_ids: ["{event:F-019/kt3}"]}}
+  - {at: "2026-09-23T15:29:30+03:00", decision: analysis.item.assess, role: COMMISSION, actor: TECH-01, item: F-021,
+     params: {incident_id: "{ref:RS-01}"}, body: {assessment: confirmed, item_id: "{item:F-021}", evidence_event_ids: ["{event:F-021/xray}"]}}
+  - {at: "2026-09-23T15:29:40+03:00", decision: analysis.item.assess, role: COMMISSION, actor: TECH-01, item: F-023,
+     params: {incident_id: "{ref:RS-01}"}, body: {assessment: confirmed, item_id: "{item:F-023}", evidence_event_ids: ["{event:F-023/xray}"]}}
+  - {at: "2026-09-23T15:29:50+03:00", decision: analysis.item.assess, role: COMMISSION, actor: TECH-01, item: F-025,
+     params: {incident_id: "{ref:RS-01}"}, body: {assessment: confirmed, item_id: "{item:F-025}", evidence_event_ids: ["{event:EV-WS2-0412}"]}}
+  - at: "2026-09-23T15:30:00+03:00"
+    ref: Е-94
+    label: S05/rework-6
+    note: "Групповое несоответствие НС-И1 «сварка вне режима ТП» на 6 изделий; решение комиссии (Т-01, НОТК-01, ГС-01) — переделка ×6 (ЗТ-Р) → 1С «перевод в брак (переделка)», одно сообщение на 6 изделий; решение приходит каждому изделию"
+    decision: nonconformity.disposition.set
+    role: COMMISSION
+    actor: TECH-01
+    stop: true
+    params: {nc_id: "{ref:NC-G1}"}
+    body:
+      disposition: rework
+      reason: {code: special_process_violation, text: "Сварка вне режима ТП (ток ИС-2 выше уставки): переделка участков шва по ТП — Ф-015, Ф-017, Ф-019 (с заменой кольца), Ф-021, Ф-023, Ф-025"}
+  - {at: "2026-09-23T15:31:00+03:00", ref: Е-75, system: "1С подтвердила «перевод в брак (переделка)»: номер документа 1С"}
+  - at: "2026-09-23T15:35:00+03:00"
+    ref: Е-115
+    label: S05/close-scope
+    note: "Область закрыта: было 34; подтверждено 6; исключено 28 (расследование причин открыто)"
+    decision: analysis.incident.close
+    role: TECHNOLOGIST
+    actor: TECH-01
+    params: {incident_id: "{ref:RS-01}"}
+    body: {summary: "Область закрыта: было 34, подтверждено 6, исключено 28, сокращение 82 %. Расследование «почему не остановили во вторник» открыто."}
+  - at: "2026-09-23T15:50:00+03:00"
+    ref: Е-120
+    note: "Вскрытие Ф-015: уплотнение уже стояло — его снимают; крышку и крепёж не ставили (М-03 с согласия ОТК-2)"
+    decision: item.intervention.open
+    role: MASTER
+    actor: MST-03
+    item: F-015
+    params: {item_id: "{item:F-015}"}
+    body: {purpose: "Вскрытие перед возвратом в сварку: снять уплотнение", zone_ids: [S-1], removed_components: [S-1]}
+  - {at: "2026-09-23T16:00:00+03:00", ref: Е-30, decision: process.movement.send, role: MASTER, actor: MST-03, item: F-015, note: "Ф-015 возвращён в сварочный цех → 1С «перемещение СИЦ → СЦ»",
+     params: {item_id: "{item:F-015}"}, body: {from_location_id: WS-AC, to_location_id: WS-WC, step_key: nc.end_rework_or_repair}}
+  - {at: "2026-09-23T16:05:00+03:00", ref: Е-31, decision: process.movement.receive, role: MASTER, actor: MST-02, item: F-015,
+     params: {item_id: "{item:F-015}"}, body: {destination_kind: workshop, from_location_id: WS-AC, to_location_id: WS-WC, inspection_on_receipt: no_damage, step_key: welding.receive}}
+  - at: "2026-09-23T16:08:00+03:00"
+    label: KO-7/log
+    note: "Контрольный образец КО-7 на ИС-2 (ГС-01, М-02): уставка 160 А, по журналу 181 А; прожог повторился"
+    fact: equipment.cycle.summarized
+    source: is-2
+    data:
+      equipment_id: "{equipment:WS-2}"
+      station_id: ST-WELD
+      window_start: "2026-09-23T16:00:00+03:00"
+      window_end: "2026-09-23T16:08:00+03:00"
+      cycle_ref: "{local:KO-7}"
+      parameters:
+        - {parameter: current, mean: {value: 181, scale: 0, unit: A}, max: {value: 182, scale: 0, unit: A}, setpoint: {nominal: {value: 160, scale: 0, unit: A}, lower: {value: 150, scale: 0, unit: A}, upper: {value: 170, scale: 0, unit: A}}, out_of_setpoint_ms: 480000}
+  - at: "2026-09-23T16:20:00+03:00"
+    ref: П-04
+    label: S05/cause
+    note: "Причина подтверждена: «оборудование: ИС-2, дрейф регулятора тока» для НС-01, НС-02, НС-03, НС-И1; чем проверили — КО-7 и журнал"
+    decision: analysis.cause.conclude
+    role: TECHNOLOGIST
+    actor: TECH-01
+    stop: true
+    params: {incident_id: "{ref:RS-01}"}
+    body:
+      category: equipment
+      conclusion: confirmed
+      nc_ids: ["{ref:NC-01}", "{ref:NC-02}", "{ref:NC-03}", "{ref:NC-G1}"]
+      reason: {code: equipment_drift, text: "Оборудование: ИС-2, дрейф регулятора тока (176–182 А при уставке 160 ± 10 А)"}
+      verification: "Контрольный образец КО-7 (прожог повторился при 181 А) и журнал ИС-2"
+  - {at: "2026-09-23T16:40:00+03:00", system: "Статус инцидента: «Изделия: решение принято · Расследование: открыто» — почему сварку не остановили во вторник, когда пропал журнал"}
+outcome:
+  - "Область RS-01: версии 34 → 13 → 6, итог «6 подтверждено, 28 исключено», сокращение 82 %; у каждого сужения — основание, автор, время."
+  - "Событие ИС-2 привязано к источнику и к выполнениям СВ-015-1, СВ-021-1, СВ-023-1, СВ-025-1, СВ-017-1; для СВ-019-1 — «нет данных»."
+  - "ИС-2 остановлен с Ср 11:12: простой с причиной «остановка по качеству»; сборка Ф-015 — в незавершённых операциях."
+  - "Изделий с подтверждёнными несоответствиями — 6; подтверждённых дефектов сварки — 4 на 3 изделиях."
+  - "Причина «оборудование» подтверждена; у С-02 и С-03 подтверждённых ошибок — 0."
+  - "В 1С: «перевод в брак (переделка)» по 6 изделиям и «перемещение СИЦ → СЦ» для Ф-015; оба подтверждены."
+must_not:
+  - "Ни одна деталь не выходит из круга без основания; серая не становится зелёной; блок с исключённых снимает человек тем же шагом сужения."
+  - "«Под подозрением» не считается браком; сужать круг может только технолог."
+  - "Система сама не списывает и не назначает переделку; в 1С ничего не уходит при создании и сужении круга."

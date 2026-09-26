@@ -1,0 +1,60 @@
+# F17 — строка таблицы сбоев «один к одному».
+id: F17
+version: '1'
+title: 'Сбой: Перепутана деталь'
+kind: failure
+goal: Предупреждение о нарушении маршрута; перепривязка — новой записью
+case:
+  other:
+  - 'таблица сбоев PRD §4.3: «Тип изделия не соответствует операции»'
+  - 'проверка: Сигнал с item_id другого изделия: предупреждение, после исправления история верна'
+run: F17
+source: research/data-collection-sources-and-failures.md §6, строка «Перепутана деталь»
+steps:
+- at: '2026-09-21T12:50:00+03:00'
+  label: F-501/kt3
+  fact: inspection.result.recorded
+  source: cam-kt3-a
+  item: F-501
+  data:
+    observation_id: '{local:KT3-F-501-KT3}'
+    method: camera
+    phase: after_operation
+    step_key: welding.kt3_camera
+    inspection_point: KT-3
+    operation_run_id: '{local:SV-501-1}'
+    zone_ids:
+    - '{zone:U1}'
+    - '{zone:U2}'
+    - '{zone:U3}'
+    - '{zone:U4}'
+    - '{zone:U5}'
+    - '{zone:U6}'
+    - '{zone:U7}'
+    - '{zone:U8}'
+    outcome: no_defect_indicated
+    processing_state: completed
+    analyzer_confidence_bp: 9500
+    observation_quality_bp: 9200
+    versions:
+      analyzer_version: vqc-weld 2.3.1
+      contract_version: '1.0'
+      recipe_ref: KT-3@5
+      camera_config: angle-1
+      item_revision: Б
+  carrier: DM:F-502
+- at: '2026-09-21T13:05:00+03:00'
+  decision: crossitem.binding.assign
+  role: ADMIN
+  actor: ADM-01
+  item: F-501
+  body:
+    subject_event_id: '{event:F-501/kt3}'
+    item_id: '{item:F-501}'
+    previous_item_id: '{item:F-502}'
+    method: manual_entry
+    reason:
+      code: wrong_carrier
+      text: Отсканирован код соседнего фланца; сварка на посту — Ф-501
+outcome:
+- Предупреждение о нарушении маршрута; перепривязка — новой записью

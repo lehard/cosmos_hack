@@ -1324,6 +1324,11 @@ components:
           format: int64
           minimum: 0
           type: integer
+        not_reached:
+          description: Строк, до которых прогон не дошёл.
+          format: int64
+          minimum: 0
+          type: integer
         passed:
           format: int64
           minimum: 0
@@ -1356,14 +1361,37 @@ components:
             - "null"
         assertion_id:
           type: string
+        at:
+          description: Доменное время проверки.
+          format: date-time
+          type: string
+        checkpoint:
+          description: Момент проверки словами карточки.
+          type: string
+        detail:
+          description: "Пояснение: почему ожидает или не совпало."
+          type: string
         expected:
           description: Ожидаемое значение (JSON).
           type: string
+        mapping:
+          description: exact — поле ответа контракта; draft — по смыслу, путь уточняет модуль-владелец; manual — видно на экране.
+          enum:
+            - exact
+            - draft
+            - manual
+          type: string
+        must_not:
+          description: Утверждение «чего не должно случиться».
+          type: boolean
         operation_id:
           description: Операция API, которой проверяется утверждение (те же Queries).
           type: string
         path:
           description: JSON Pointer в ответе операции.
+          type: string
+        scenario_id:
+          description: Карточка сценария, которой принадлежит утверждение.
           type: string
         status:
           description: not_reached — сценарий не дошёл до шага.
@@ -10375,6 +10403,9 @@ components:
           format: int64
           minimum: 0
           type: integer
+        step_title:
+          description: Название текущего шага сценария.
+          type: string
         steps:
           description: Всего шагов.
           format: int64
@@ -10517,6 +10548,9 @@ components:
         role:
           description: Роль стола, где ждут решения.
           type: string
+        title:
+          description: "Что ждёт сценарий, по-русски: «подтвердить сигнал Ф-017»."
+          type: string
       required:
         - role
         - action
@@ -10550,6 +10584,12 @@ components:
           minimum: 0
           type: integer
         description:
+          type: string
+        kind:
+          description: situation — ситуация кейса §4.2; check — проверка §5.1; demo — демо-сценарий; failure — сбой каталога; extra — сверх кейса; run — прогон целиком.
+          type: string
+        run_def:
+          description: Определение прогона, который запускается (scenarios/definitions/runs).
           type: string
         scenario_id:
           description: Идентификатор сценария (S01…S13, демо, сбой).
@@ -11619,6 +11659,41 @@ components:
         - command_id
         - basis_seq
         - policy_seq
+      type: object
+    StartedRun:
+      additionalProperties: false
+      properties:
+        ca_ref:
+          description: Номер критического действия CA-‹n› (AD-28).
+          type: string
+        command_id:
+          description: id команды.
+          type: string
+        event_ids:
+          description: Записанные записи журнала.
+          items:
+            type: string
+          type: array
+        recorded_at:
+          description: Доменное время записи (AD-37).
+          format: date-time
+          type: string
+        replayed:
+          description: Повтор с тем же command_id — возвращён прежний ответ (AD-7).
+          type: boolean
+        run_id:
+          description: Новый прогон — отдельное пространство имён (AD-38).
+          type: string
+        seq:
+          description: Позиция записи-решения в журнале; для следующей команды по объекту — новый basis_seq.
+          format: int64
+          type: integer
+      required:
+        - run_id
+        - command_id
+        - seq
+        - event_ids
+        - replayed
       type: object
     StoppedItem:
       additionalProperties: false
@@ -22984,7 +23059,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Receipt"
+                $ref: "#/components/schemas/StartedRun"
           description: OK
           headers:
             Ant-Backend:

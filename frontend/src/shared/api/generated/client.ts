@@ -317,6 +317,7 @@ import type {
   SourceList,
   StartOperation,
   StartRun,
+  StartedRun,
   StoppedItemList,
   SubmitVersion,
   SwitchSource,
@@ -23528,7 +23529,7 @@ export function useSimulationScenarioList<TData = Awaited<ReturnType<typeof simu
 
 
 export type simulationRunStartResponse200 = {
-  data: Receipt
+  data: StartedRun
   status: 200
 }
 

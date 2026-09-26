@@ -1,0 +1,766 @@
+# Ожидания S14 — отдельно от входных событий (кейс §5.1, AD-26): утверждения над теми же
+# operationId, что показывают столы; check.path — путь в ответе (board.go), значения — ID
+# процессной сессии (сверка переводит их сведением имён прогона). mapping: exact — поле
+# ответа контракта; draft — по смыслу, путь уточнит модуль-владелец; manual — видно на экране.
+scenario: S14
+version: 0.3-draft
+title: 'Общий фактор — один сварщик: система не ставит «ошибку исполнителя» сама'
+run: S14
+source: 'process/scenarios-flange-expected.yaml процессной сессии, версия 0.3-draft: утверждения процессной сессии — в source без изменений, check — исполняемая форма эпика 32'
+checkpoints:
+- at: '2026-09-29T10:20:00+03:00'
+  label: первый подрез
+  assertions:
+  - id: S14-01
+    what: 'подрез У3 на Ф-304 (С-03, ИС-2): сигнал → удержание по правилу R-07 → НС-141 подтверждено ОТК-1 → изолировано; общего фактора ещё нет — решение на своей ЗТ'
+    check:
+      operation: nonconformity.card.read
+      params:
+        nc_id: '{ref:NC-141}'
+      path: /
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: nc/NC-141
+      field:
+        item: F-304
+        zone: U3
+        type: undercut
+        run: SV-304-1
+        status_path:
+        - signal
+        - confirmed
+        - isolated
+        incident: none
+      op: eq
+      value: true
+  - id: S14-02
+    what: 'гипотезы v1: техника выполнения — возможна; оборудование — слабая (журнал ИС-2 в уставке); подготовка кромок и материал — слабые; итог — «причина не установлена»'
+    check:
+      operation: analysis.hypothesis.list
+      params:
+        nc_id: '{ref:NC-141}'
+      path: /hypotheses
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: hypothesis/NC-141
+      field:
+        operator_procedure: possible
+        equipment: weak
+        edge_prep: weak
+        material: weak
+        overall: undetermined
+      filter:
+        version: 1
+      op: eq
+      value: true
+- at: '2026-09-29T11:10:00+03:00'
+  label: второй подрез — инцидент по общему фактору «сварщик»
+  assertions:
+  - id: S14-03
+    what: подрез У6 на Ф-306 (С-03, ИС-1) — НС-142
+    check:
+      operation: nonconformity.card.read
+      params:
+        nc_id: '{ref:NC-142}'
+      path: /
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: nc/NC-142
+      field:
+        item: F-306
+        zone: U6
+        type: undercut
+        run: SV-306-1
+      op: eq
+      value: true
+  - id: S14-04
+    what: 'инцидент RS-14 по общему фактору «сварщик С-03» (2 из 2, аппараты разные): круг — швы С-03 за смену (Ф-302, Ф-304, Ф-306 и дальше по мере сварки), чистые придержаны на месте'
+    check:
+      operation: analysis.risk_scope.read
+      params:
+        incident_id: '{ref:RS-14}'
+      path: /versions[scope_version=1]/0/versions
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: risk_scope/RS-14
+      field:
+        factor:
+          welder: WLD-03
+        basis:
+        - NC-141
+        - NC-142
+        items:
+        - F-302
+        - F-304
+        - F-306
+        future_welds_of_factor_join: true
+        holds:
+        - F-302
+      filter:
+        version: 1
+      op: eq
+      value: true
+  - id: S14-05
+    what: 'остановку поста система не предлагает (журналы ИС-1 и ИС-2 в уставке); подсказки проверок — «сначала аппараты»: журналы, сравнение с С-02, осмотр швов в круге, контрольный
+      образец'
+    check:
+      operation: analysis.risk_scope.read
+      params:
+        incident_id: '{ref:RS-14}'
+      path: /versions
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: risk_scope/RS-14
+      field:
+        stop_proposed: false
+        check_suggestions_order:
+        - source_logs
+        - comparison_with_other_welder
+        - visual_template_in_scope
+        - control_sample
+      op: eq
+      value: true
+  - id: S14-06
+    what: 'гипотезы v2: общий фактор — сварщик (2 из 2), аппараты разные; техника — возможна, оборудование — слабая'
+    check:
+      operation: analysis.hypothesis.list
+      params:
+        nc_id: '{ref:NC-141}'
+      path: /hypotheses
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: hypothesis/NC-141
+      field:
+        common_factors:
+          welder: 2/2
+          sources:
+          - WS-2
+          - WS-1
+        operator_procedure: possible
+        equipment: weak
+        revised_due_to: NC-142
+      filter:
+        version: 2
+      op: eq
+      value: true
+- at: '2026-09-29T12:15:00+03:00'
+  label: чистый шов С-03 исключён из круга
+  assertions:
+  - id: S14-07
+    what: Ф-302 проверен в круге (осмотр с шаблоном и рентген — чисто) и исключён технологом с основанием; удержание снято; ЗТ-3 — после исключения
+    check:
+      operation: analysis.risk_scope.read
+      params:
+        incident_id: '{ref:RS-14}'
+      path: /versions
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: risk_scope/RS-14
+      field:
+        result: excluded
+        by: TECH-01
+        basis:
+        - vt/F-302
+        - xr/F-302/RK-0929-02
+        hold_released: true
+        gate_ZT-3_after: true
+      filter:
+        item: F-302
+      op: eq
+      value: true
+- at: '2026-09-29T14:40:00+03:00'
+  label: третий подрез; все 12 швов сварены — таблица «что общего»
+  assertions:
+  - id: S14-08
+    what: подрез У2 на Ф-310 (С-03, ИС-1) — НС-143, основание в открытый RS-14 («3 из 3»)
+    check:
+      operation: nonconformity.card.read
+      params:
+        nc_id: '{ref:NC-143}'
+      path: /
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: nc/NC-143
+      field:
+        item: F-310
+        zone: U2
+        type: undercut
+        run: SV-310-1
+        incident: RS-14
+      op: eq
+      value: true
+  - id: S14-09
+    what: 'таблица «что общего»: сварщик 3 из 3, аппараты разные; программа, проволока и смена — общие у всех швов дня, в том числе у чистых; ток в уставке'
+    check:
+      operation: analysis.hypothesis.list
+      params:
+        nc_id: '{ref:NC-141}'
+      path: /common_factors
+      op: eq
+      value: &id001
+        welder:
+          WLD-03: 3/3
+        sources:
+          WS-1: 2
+          WS-2: 1
+        program: 3/3 (и 9/9 у чистых)
+        wire: 3/3 (и 9/9 у чистых)
+        shift: 3/3 (весь день — смена А)
+        current_in_setpoint: 3/3
+        manual_actions: 0/3
+    mapping: draft
+    source:
+      subject: hypothesis/NC-141
+      field: common_factors
+      filter:
+        version: 3
+      op: eq
+      value: *id001
+  - id: S14-10
+    what: у второго сварщика на тех же постах, той же программой и проволокой — 6 швов из 6 чистые
+    check:
+      operation: access.person.read
+      params:
+        person_id: '{person:WLD-02}'
+      path: /
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: people/WLD-02
+      field:
+        welds: 6
+        sources:
+        - WS-1
+        - WS-2
+        defects: 0
+      filter:
+        date: '2026-09-29'
+      op: eq
+      value: true
+  - id: S14-11
+    what: 'гипотезы v3: «отклонение от техники выполнения» — сильная; оборудование и материал — слабые; на экране подпись «гипотеза — не ошибка исполнителя»'
+    check:
+      operation: analysis.hypothesis.list
+      params:
+        nc_id: '{ref:NC-141}'
+      path: /hypotheses
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: hypothesis/NC-141
+      field:
+        operator_procedure: strong
+        equipment: weak
+        material: weak
+        label: гипотеза; «ошибку исполнителя» записывает только комиссия после объяснения работника
+      filter:
+        version: 3
+      op: eq
+      value: true
+- at: '2026-09-29T16:10:00+03:00'
+  label: решение по инциденту
+  assertions:
+  - id: S14-12
+    what: 9 чистых фланцев (6 у С-02, 3 у С-03) прошли ЗТ-3 с первого предъявления; чистые швы С-03 — после исключения из круга
+    check:
+      operation: nonconformity.queue.list
+      path: /items
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: gate/ZT-3
+      field:
+        accepted:
+        - F-301
+        - F-302
+        - F-303
+        - F-305
+        - F-307
+        - F-308
+        - F-309
+        - F-311
+        - F-312
+        first_pass: 9
+        after_exclusion:
+        - F-302
+        - F-308
+        - F-312
+      filter:
+        date: '2026-09-29'
+      op: eq
+      value: true
+    note: ЗТ ZT-3
+  - id: S14-13
+    what: рентген у трёх фланцев подтвердил тот же подрез, других дефектов нет
+    check:
+      operation: item.item.list
+      path: /items
+      op: eq
+      value: &id002
+      - undercut
+    mapping: draft
+    source:
+      subject: item/*
+      field: xray_defect_types
+      filter:
+        items:
+        - F-304
+        - F-306
+        - F-310
+      op: eq
+      value: *id002
+    note: 'проверка по списку изделий {"items": ["F-304", "F-306", "F-310"]}'
+  - id: S14-14
+    what: групповое несоответствие НС-14Г на 3 изделия и решение «переделка» (через Н) — подписала комиссия; в 1С одно «перевод в брак (переделка)» на 3 изделия
+    check:
+      operation: nonconformity.card.read
+      params:
+        nc_id: '{ref:NC-14G}'
+      path: /
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: nc/NC-14G
+      field:
+        items:
+        - F-304
+        - F-306
+        - F-310
+        disposition: rework
+        signers:
+        - TECH-01
+        - QC-HEAD-01
+        - CHW-01
+        erp_messages: 1
+      op: eq
+      value: true
+  - id: S14-15
+    what: 'круг RS-14 закрыт: было 6, подтверждено 3, исключено 3; «Изделия: решено · Расследование: открыто»'
+    check:
+      operation: analysis.risk_scope.read
+      params:
+        incident_id: '{ref:RS-14}'
+      path: /versions
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: risk_scope/RS-14
+      field:
+        final_confirmed: 3
+        final_excluded: 3
+        status: closed
+        incident_status:
+          items: decided
+          investigation: open
+      op: eq
+      value: true
+  - id: S14-16
+    what: журналы ИС-1 и ИС-2 весь день в уставке; источники не остановлены
+    check:
+      operation: ingest.source.list
+      path: /items
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: source/*
+      field:
+        current_in_setpoint: true
+        process_hold: none
+      filter:
+        items:
+        - WS-1
+        - WS-2
+        date: '2026-09-29'
+      op: eq
+      value: true
+    note: источник *
+- at: '2026-09-30T09:15:00+03:00'
+  label: проверка версии контрольными образцами
+  assertions:
+  - id: S14-17
+    what: 'разбор причин (отдельный экземпляр по RS-14): контрольные образцы под наблюдением ГС-01 — CS-141 «как обычно» — подрез, угол горелки ≈ 45° при 70–80° по карте [ПП]; CS-142
+      по карте — чисто'
+    check:
+      operation: machinelogs.run_profile.read
+      path: /results
+      op: eq
+      value: &id003
+        SV-CS141-1: defect_found
+        SV-CS142-1: no_defect_found
+    mapping: draft
+    source:
+      subject: run/*
+      field: results
+      filter:
+        runs:
+        - SV-CS141-1
+        - SV-CS142-1
+      op: eq
+      value: *id003
+    note: 'выборка выполнений {"runs": ["SV-CS141-1", "SV-CS142-1"]}'
+  - id: S14-18
+    what: 'попытка записать «ошибку исполнителя» до объяснения работника — отказ [П: E_EXPLANATION_REQUIRED]'
+    check:
+      operation: step
+      path: /refusal
+      op: eq
+      value: &id004
+        refused: true
+        code: E_EXPLANATION_REQUIRED
+    mapping: draft
+    source:
+      subject: api/decisions
+      field: result
+      filter:
+        type: cause_confirmed
+        operator_error: true
+        at: '2026-09-30T09:10:00+03:00'
+      op: eq
+      value: *id004
+    note: отказ API на шаге прогона
+- at: '2026-09-30T11:15:00+03:00'
+  label: объяснение работника и решение комиссии (узел CA4)
+  assertions:
+  - id: S14-19
+    what: письменное объяснение работника (cause.explanation_recorded [П]) записано до решения комиссии; автор — С-03, принял НОТК-01
+    check:
+      operation: analysis.hypothesis.list
+      path: /
+      op: eq
+      value: &id005
+        author: WLD-03
+        form: written
+        at: '2026-09-30T09:30:00+03:00'
+        received_by: QC-HEAD-01
+    mapping: draft
+    source:
+      subject: cause/RS-14
+      field: worker_explanation
+      op: eq
+      value: *id005
+  - id: S14-20
+    what: комиссия подтвердила причину «отклонение от техники выполнения» с ответом «чем проверили» и сопутствующим обстоятельством (новая горелка); «ошибка исполнителя» записана только
+      сейчас
+    check:
+      operation: analysis.hypothesis.list
+      path: /
+      op: eq
+      value: &id006
+        category: operator_procedure
+        status: confirmed
+        signers:
+        - TECH-01
+        - QC-HEAD-01
+        - CHW-01
+        verified_by_present: true
+        contributing_factors:
+        - новая горелка с другим держателем
+        operator_error:
+          confirmed: true
+          person: WLD-03
+          explanation_ref: S14/explanation
+    mapping: draft
+    source:
+      subject: cause/RS-14
+      field: cause
+      op: eq
+      value: *id006
+  - id: S14-21
+    what: 'О-10 после решения комиссии: у С-03 подтверждённые ошибки на 3 швах из 6 сопоставимых за Вт; у С-02 — 0'
+    check:
+      operation: analytics.metric.drilldown
+      params:
+        metric_id: O-10
+      path: /confirmed_errors
+      op: eq
+      value: &id007
+        WLD-03: 3
+        WLD-02: 0
+    mapping: draft
+    source:
+      subject: metric/O-10
+      field: confirmed_errors
+      filter:
+        date: '2026-09-29'
+      op: eq
+      value: *id007
+    note: показатель O-10 каталога процессной сессии (analytics-catalog.md); сопоставление — эпик 25
+  - id: S14-22
+    what: 'О-6: «исполнитель — подтверждено» +3 (НС-141…НС-143)'
+    check:
+      operation: analytics.metric.drilldown
+      params:
+        metric_id: O-6
+      path: /total/value
+      op: delta
+      value: 3
+    mapping: draft
+    baseline: '2026-09-30T10:59:00+03:00'
+    source:
+      subject: metric/O-6
+      field: count
+      filter:
+        row: operator_procedure
+        column: confirmed
+      op: delta
+      value: 3
+      baseline: '2026-09-30T10:59:00+03:00'
+    note: показатель O-6 каталога процессной сессии (analytics-catalog.md); сопоставление — эпик 25
+- at: '2026-09-30T13:05:00+03:00'
+  label: мера назначена и внедрена
+  assertions:
+  - id: S14-23
+    what: мера — внеочередная проверка навыка, инструктаж, проверка держателя горелки; план проверки результативности — первые 8 новых швов С-03; это не наказание
+    check:
+      operation: analysis.hypothesis.list
+      path: /
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: capa/RS-14
+      field:
+        actions:
+        - skill_check
+        - instruction
+        - torch_holder
+        effectiveness_plan:
+          window: первые 8 новых швов С-03 после меры
+          success: 0 подрезов
+        not_a_penalty: true
+      op: eq
+      value: true
+  - id: S14-24
+    what: 'мера внедрена (проверка навыка сдана: образец CS-143 чистый), окно наблюдения открыто — «внедрено» ≠ «результативно»'
+    check:
+      operation: analytics.metric.drilldown
+      params:
+        metric_id: N-3
+      path: /total
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: metric/N-3
+      field:
+        implemented: true
+        effectiveness: pending
+      filter:
+        capa: RS-14
+        at: '2026-09-30T13:05:00+03:00'
+      op: eq
+      value: true
+    note: показатель N-3 каталога процессной сессии (analytics-catalog.md); сопоставление — эпик 25
+- at: '2026-10-01T09:05:00+03:00'
+  label: переделка трёх участков после проверки навыка
+  assertions:
+  - id: S14-25
+    what: 'переделка по ТП у Ф-304, Ф-306, Ф-310: выборка по снимку → контроль выборки ОТК-1 → заварка участка (С-03, после проверки навыка) → рентген → ЗТ-3 второе предъявление; в 1С
+      «возврат из брака в производство» ×3 [П]'
+    check:
+      operation: item.item.list
+      path: /items
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: item/*
+      field:
+        rework_chain:
+        - WL1
+        - WL2
+        - WL3
+        welder: WLD-03
+        gate_ZT-3_presentation: 2
+        erp: rework_return_to_production
+      filter:
+        items:
+        - F-304
+        - F-306
+        - F-310
+      op: eq
+      value: true
+    note: 'проверка по списку изделий {"items": ["F-304", "F-306", "F-310"]}'
+- at: '2026-10-01T16:10:00+03:00'
+  label: окно наблюдения закрыто, разбор закрыт
+  assertions:
+  - id: S14-26
+    what: 'окно наблюдения: первые 8 новых швов С-03 после меры (Ф-313…Ф-320, оба поста) — без подреза по камере и рентгену; мера результативна (П-07)'
+    check:
+      operation: analysis.hypothesis.list
+      path: /
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: capa/RS-14
+      field:
+        window_items:
+        - F-313
+        - F-314
+        - F-315
+        - F-316
+        - F-317
+        - F-318
+        - F-319
+        - F-320
+        undercuts: 0
+        effectiveness: confirmed
+        at: '2026-10-01T16:00:00+03:00'
+      op: eq
+      value: true
+  - id: S14-27
+    what: 'разбор закрыт (cause.investigation_closed [П], узел CA9): «Расследование: закрыто»; Н-3 — мера результативна'
+    check:
+      operation: analysis.hypothesis.list
+      path: /
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: cause/RS-14
+      field:
+        status: closed
+        at: '2026-10-01T16:05:00+03:00'
+        metric_N-3: effective
+      op: eq
+      value: true
+- at: '2026-10-01T16:10:00+03:00'
+  label: чего не должно случиться
+  must_not: true
+  assertions:
+  - id: S14-N1
+    what: 'до решения комиссии «ошибки исполнителя» нет: О-10 у С-03 = 0 в Вт 16:10 и в Ср 10:59, хотя версия «техника» сильная'
+    check:
+      operation: analytics.metric.drilldown
+      params:
+        metric_id: O-10
+      path: /confirmed_errors.WLD-03
+      op: eq
+      value: 0
+    mapping: draft
+    source:
+      subject: metric/O-10
+      field: confirmed_errors.WLD-03
+      filter:
+        at:
+        - '2026-09-29T16:10:00+03:00'
+        - '2026-09-30T10:59:00+03:00'
+      op: eq
+      value: 0
+    note: показатель O-10 каталога процессной сессии (analytics-catalog.md); сопоставление — эпик 25
+  - id: S14-N2
+    what: система не предлагает взыскания, «рейтинг» и запись «нарушение»
+    check:
+      operation: access.person.read
+      params:
+        person_id: '{person:WLD-03}'
+      path: /
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: people/WLD-03
+      field:
+        penalty_suggested: false
+        rating: none
+        violation_records: 0
+      op: eq
+      value: true
+  - id: S14-N3
+    what: 'ИС-1 и ИС-2 не остановлены: журналы в норме, «сломался источник» не выдумывается'
+    check:
+      operation: security.critical_action.list
+      path: /items/#
+      op: eq
+      value: 0
+    mapping: draft
+    source:
+      subject: audit/critical_actions
+      field: count
+      filter:
+        action: process_hold.set
+        run: S14
+      op: eq
+      value: 0
+  - id: S14-N4
+    what: гипотеза про сварщика не попадает в показатели по людям до подтверждения
+    check:
+      operation: analytics.metric.drilldown
+      params:
+        metric_id: O-10
+      path: /counts_hypotheses
+      op: eq
+      value: false
+    mapping: draft
+    source:
+      subject: metric/O-10
+      field: counts_hypotheses
+      op: eq
+      value: false
+    note: показатель O-10 каталога процессной сессии (analytics-catalog.md); сопоставление — эпик 25
+  - id: S14-N5
+    what: в 1С не уходят гипотезы, причина, объяснение работника и мера
+    check:
+      operation: erp.message.list
+      path: /items/*/action
+      op: not_contains
+      value:
+      - hypothesis
+      - cause
+      - worker_explanation
+      - capa
+    mapping: draft
+    source:
+      subject: erp/postings
+      field: types
+      filter:
+        run: S14
+      op: not_contains
+      value:
+      - hypothesis
+      - cause
+      - worker_explanation
+      - capa
+    note: виды учётных сообщений процессной сессии → erp_action контракта
+  - id: S14-N6
+    what: чистые швы С-03 не прошли ЗТ-3, пока были в круге без проверки
+    check:
+      operation: nonconformity.queue.list
+      path: /items
+      op: eq
+      value: 0
+    mapping: draft
+    source:
+      subject: gate/ZT-3
+      field: passed_while_suspected
+      filter:
+        items:
+        - F-302
+        - F-308
+        - F-312
+      op: eq
+      value: 0
+    note: ЗТ ZT-3

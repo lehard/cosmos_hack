@@ -1,0 +1,362 @@
+# S10 часть Б — process/scenarios-flange.md §4 S10 «один к одному» (с предысторией прогона).
+id: S10B
+version: '0.3'
+title: Лимит переделок участка шва — отдельный прогон на Ф-090
+kind: extra
+goal: 'Четвёртой переделки одного участка шва нет: только ремонт по разрешению на отклонение или списание; система не назначает переделку сверх лимита.'
+case:
+  other:
+  - §4.3 повторная обработка
+  - FR-18 лимит доработок
+  - §3.2 CriticalActions — журнал критических действий
+run: S10B
+where: 'Отдельный прогон. У участка У4 уже три переделки по ТП: СВ-090-2, -3, -4 (вторая и третья — с согласия ГС-01).'
+source: process/scenarios-flange.md §4 S10, часть Б
+steps:
+- at: '2026-09-21T15:50:00+03:00'
+  ref: Е-44
+  label: F-090/kt3-1
+  fact: inspection.result.recorded
+  source: cam-kt3-a
+  item: F-090
+  data:
+    observation_id: '{local:KT3-F-090-1}'
+    method: camera
+    phase: after_operation
+    step_key: welding.kt3_camera
+    inspection_point: KT-3
+    operation_run_id: '{local:SV-090-1}'
+    zone_ids: &id001
+    - '{zone:U1}'
+    - '{zone:U2}'
+    - '{zone:U3}'
+    - '{zone:U4}'
+    - '{zone:U5}'
+    - '{zone:U6}'
+    - '{zone:U7}'
+    - '{zone:U8}'
+    processing_state: completed
+    analyzer_confidence_bp: 8700
+    observation_quality_bp: 9100
+    versions:
+      analyzer_version: vqc-weld 2.3.1
+      contract_version: '1.0'
+      recipe_ref: KT-3@5
+      camera_config: angle-1
+      item_revision: Б
+    outcome: defect_indicated
+    defects:
+    - defect_type_code: W-UNDERCUT
+      description: Подрез
+      zone_id: '{zone:U4}'
+      severity: major
+  note: 'КТ-3 после SV-090-1: подрез У4'
+- at: '2026-09-21T15:55:00+03:00'
+  system: Сигнал и черновик несоответствия по подрезу У4
+- at: '2026-09-21T15:58:00+03:00'
+  label: S10B/confirm-1
+  decision: nonconformity.nonconformity.confirm
+  role: QC
+  actor: QC-01
+  item: F-090
+  params:
+    nc_id: '{ref:NC-F090}'
+  body:
+    signal_ids:
+    - '{ref:SIG-F090}'
+    severity: major
+    defect_type_code: W-UNDERCUT
+    reason:
+      code: camera
+      text: Подрез У4 после SV-090-1
+  note: Е-90 · НС по подрезу У4
+- at: '2026-09-21T15:59:00+03:00'
+  label: S10B/rework-1
+  decision: nonconformity.disposition.set
+  role: TECHNOLOGIST
+  actor: TECH-01
+  item: F-090
+  params:
+    nc_id: '{ref:NC-F090}'
+  body:
+    disposition: rework
+    reason:
+      code: rework_per_tp
+      text: Переделка участка У4 по ТП (первая)
+  note: 'Предыстория: переделка У4 №1'
+- at: '2026-09-22T10:00:00+03:00'
+  note: 'Предыстория: переварка У4, новое выполнение SV-090-2 со ссылкой на SV-090-1'
+  weld:
+    item: F-090
+    run: SV-090-2
+    station: WS-1
+    welder: WLD-02
+    minutes: 45
+    rework_of: SV-090-1
+- at: '2026-09-22T10:50:00+03:00'
+  ref: Е-44
+  label: F-090/kt3-2
+  fact: inspection.result.recorded
+  source: cam-kt3-a
+  item: F-090
+  data:
+    observation_id: '{local:KT3-F-090-2}'
+    method: camera
+    phase: after_operation
+    step_key: welding.kt3_camera
+    inspection_point: KT-3
+    operation_run_id: '{local:SV-090-2}'
+    zone_ids: *id001
+    processing_state: completed
+    analyzer_confidence_bp: 8700
+    observation_quality_bp: 9100
+    versions:
+      analyzer_version: vqc-weld 2.3.1
+      contract_version: '1.0'
+      recipe_ref: KT-3@5
+      camera_config: angle-1
+      item_revision: Б
+    outcome: defect_indicated
+    defects:
+    - defect_type_code: W-UNDERCUT
+      description: Подрез
+      zone_id: '{zone:U4}'
+      severity: major
+  note: 'КТ-3 после SV-090-2: подрез У4'
+- at: '2026-09-22T10:55:00+03:00'
+  system: Сигнал и черновик несоответствия по подрезу У4
+- at: '2026-09-22T10:58:00+03:00'
+  label: S10B/confirm-2
+  decision: nonconformity.nonconformity.confirm
+  role: QC
+  actor: QC-01
+  item: F-090
+  params:
+    nc_id: '{ref:NC-F090}'
+  body:
+    signal_ids:
+    - '{ref:SIG-F090}'
+    severity: major
+    defect_type_code: W-UNDERCUT
+    reason:
+      code: camera
+      text: Подрез У4 после SV-090-2
+  note: Е-90 · НС по подрезу У4
+- at: '2026-09-22T10:59:00+03:00'
+  label: S10B/rework-2
+  decision: nonconformity.disposition.set
+  role: CHIEF_WELDER
+  actor: CHW-01
+  item: F-090
+  params:
+    nc_id: '{ref:NC-F090}'
+  body:
+    disposition: rework
+    reason:
+      code: rework_per_tp
+      text: Повторная переделка У4 — с согласия главного сварщика (вторая)
+  note: 'Предыстория: переделка У4 №2'
+- at: '2026-09-23T10:00:00+03:00'
+  note: 'Предыстория: переварка У4, новое выполнение SV-090-3 со ссылкой на SV-090-2'
+  weld:
+    item: F-090
+    run: SV-090-3
+    station: WS-1
+    welder: WLD-02
+    minutes: 45
+    rework_of: SV-090-2
+- at: '2026-09-23T10:50:00+03:00'
+  ref: Е-44
+  label: F-090/kt3-3
+  fact: inspection.result.recorded
+  source: cam-kt3-a
+  item: F-090
+  data:
+    observation_id: '{local:KT3-F-090-3}'
+    method: camera
+    phase: after_operation
+    step_key: welding.kt3_camera
+    inspection_point: KT-3
+    operation_run_id: '{local:SV-090-3}'
+    zone_ids: *id001
+    processing_state: completed
+    analyzer_confidence_bp: 8700
+    observation_quality_bp: 9100
+    versions:
+      analyzer_version: vqc-weld 2.3.1
+      contract_version: '1.0'
+      recipe_ref: KT-3@5
+      camera_config: angle-1
+      item_revision: Б
+    outcome: defect_indicated
+    defects:
+    - defect_type_code: W-UNDERCUT
+      description: Подрез
+      zone_id: '{zone:U4}'
+      severity: major
+  note: 'КТ-3 после SV-090-3: подрез У4'
+- at: '2026-09-23T10:55:00+03:00'
+  system: Сигнал и черновик несоответствия по подрезу У4
+- at: '2026-09-23T10:58:00+03:00'
+  label: S10B/confirm-3
+  decision: nonconformity.nonconformity.confirm
+  role: QC
+  actor: QC-01
+  item: F-090
+  params:
+    nc_id: '{ref:NC-F090}'
+  body:
+    signal_ids:
+    - '{ref:SIG-F090}'
+    severity: major
+    defect_type_code: W-UNDERCUT
+    reason:
+      code: camera
+      text: Подрез У4 после SV-090-3
+  note: Е-90 · НС по подрезу У4
+- at: '2026-09-23T10:59:00+03:00'
+  label: S10B/rework-3
+  decision: nonconformity.disposition.set
+  role: CHIEF_WELDER
+  actor: CHW-01
+  item: F-090
+  params:
+    nc_id: '{ref:NC-F090}'
+  body:
+    disposition: rework
+    reason:
+      code: rework_per_tp
+      text: Повторная переделка У4 — с согласия главного сварщика (третья)
+  note: 'Предыстория: переделка У4 №3'
+- at: '2026-09-24T09:00:00+03:00'
+  note: 'Предыстория: переварка У4, новое выполнение SV-090-4 со ссылкой на SV-090-3'
+  weld:
+    item: F-090
+    run: SV-090-4
+    station: WS-1
+    welder: WLD-02
+    minutes: 45
+    rework_of: SV-090-3
+- at: '2026-09-24T09:50:00+03:00'
+  ref: Е-44
+  label: F-090/kt3-4
+  fact: inspection.result.recorded
+  source: cam-kt3-a
+  item: F-090
+  data:
+    observation_id: '{local:KT3-F-090-4}'
+    method: camera
+    phase: after_operation
+    step_key: welding.kt3_camera
+    inspection_point: KT-3
+    operation_run_id: '{local:SV-090-4}'
+    zone_ids: *id001
+    processing_state: completed
+    analyzer_confidence_bp: 8700
+    observation_quality_bp: 9100
+    versions:
+      analyzer_version: vqc-weld 2.3.1
+      contract_version: '1.0'
+      recipe_ref: KT-3@5
+      camera_config: angle-1
+      item_revision: Б
+    outcome: defect_indicated
+    defects:
+    - defect_type_code: W-UNDERCUT
+      description: Подрез
+      zone_id: '{zone:U4}'
+      severity: major
+  note: 'КТ-3 после SV-090-4: подрез У4'
+- at: '2026-09-24T09:55:00+03:00'
+  system: Сигнал и черновик несоответствия по подрезу У4
+- at: '2026-09-24T09:58:00+03:00'
+  label: S10B/confirm-4
+  decision: nonconformity.nonconformity.confirm
+  role: QC
+  actor: QC-01
+  item: F-090
+  params:
+    nc_id: '{ref:NC-F090}'
+  body:
+    signal_ids:
+    - '{ref:SIG-F090}'
+    severity: major
+    defect_type_code: W-UNDERCUT
+    reason:
+      code: camera
+      text: Подрез У4 после SV-090-4
+  note: Е-90 · НС по подрезу У4 — НС-90
+- at: '2026-09-24T10:10:00+03:00'
+  ref: Е-40
+  label: S10B/start-5
+  note: 'Попытка начать СВ-090-5 на У4 — лимит переделок участка исчерпан (3 из 3): запуск заблокирован; запись в журнал критических действий; задача Т-01'
+  decision: process.operation.start
+  role: PERFORMER
+  actor: WLD-02
+  item: F-090
+  refusal: E_REWORK_LIMIT
+  params:
+    item_id: '{item:F-090}'
+  body:
+    operation_code: SV
+    operation_run_id: '{local:SV-090-5}'
+    rework_of: '{local:SV-090-4}'
+    step_key: welding.weld
+    equipment_id: '{equipment:WS-1}'
+    station_id: ST-WELD
+    program_ref: PS-4
+- at: '2026-09-24T10:10:01+03:00'
+  ref: Е-46, Е-13
+  system: 'Лимит переделок участка шва достигнут: У4 3 из 3 → запуск заблокирован (operation.precondition.failed, precondition = rework_limit)'
+- at: '2026-09-24T10:30:00+03:00'
+  label: S10B/rework-refused
+  note: 'Попытка решения «переделка» — отказ: «лимит исчерпан»'
+  decision: nonconformity.disposition.set
+  role: TECHNOLOGIST
+  actor: TECH-01
+  item: F-090
+  refusal: E_REWORK_LIMIT
+  params:
+    nc_id: '{ref:NC-F090}'
+  body:
+    disposition: rework
+    reason:
+      code: attempt
+      text: Попытка четвёртой переделки У4
+- at: '2026-09-24T10:35:00+03:00'
+  label: S10B/repair-refused
+  note: 'Попытка решения «ремонт» без разрешения на отклонение — отказ: «нужно разрешение на отклонение»'
+  decision: nonconformity.disposition.set
+  role: TECHNOLOGIST
+  actor: TECH-01
+  item: F-090
+  refusal: E_PERMIT_REQUIRED
+  params:
+    nc_id: '{ref:NC-F090}'
+  body:
+    disposition: repair
+    reason:
+      code: attempt
+      text: Ремонт У4 без разрешения на отклонение
+- at: '2026-09-24T11:00:00+03:00'
+  ref: Е-94
+  label: S10B/scrap
+  note: «Списать» (или ремонт по разрешению на отклонение со всеми подписями, включая ПЗ) → 1С «перевод в брак (списание)»
+  decision: nonconformity.disposition.set
+  role: CHIEF_WELDER
+  actor: CHW-01
+  stop: true
+  item: F-090
+  params:
+    nc_id: '{ref:NC-F090}'
+  body:
+    disposition: scrap
+    scrap_kind: writeoff
+    reason:
+      code: rework_limit
+      text: Лимит переделок У4 исчерпан; ремонт по разрешению на отклонение не назначаем
+outcome:
+- Запуск пятой сварки участка (четвёртой переделки) заблокирован; доступны только «ремонт по разрешению на отклонение» и «списать».
+- В 1С по Ф-090 «перевод в брак (переделка)» уходит один раз — при первом решении; итог — «перевод в брак (списание)».
+must_not:
+- Вторая переделка того же участка не назначается без главного сварщика; четвёртой переделки нет вообще.

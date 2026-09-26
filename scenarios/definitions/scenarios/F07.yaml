@@ -1,0 +1,61 @@
+# F07 — строка таблицы сбоев «один к одному».
+id: F07
+version: '1'
+title: 'Сбой: Разрыв в номерах источника'
+kind: failure
+goal: Событие «пропуск данных от источника X (42–43)», пометка неполноты за период
+case:
+  other:
+  - 'таблица сбоев PRD §4.3: «seq 41 → 44»'
+  - 'проверка: Эмулятор пропускает 2 номера: индикатор полноты источника < 100 %'
+run: F07
+source: research/data-collection-sources-and-failures.md §6, строка «Разрыв в номерах источника»
+steps:
+- at: '2026-09-21T13:30:00+03:00'
+  label: F07/wt-1
+  fact: equipment.state.changed
+  schema_version: 2
+  source: is-1
+  data:
+    equipment_id: '{equipment:WS-1}'
+    station_id: ST-WELD
+    execution: idle
+    controller_mode: automatic
+    condition: normal
+- at: '2026-09-21T13:31:00+03:00'
+  label: F07/wt-2
+  lost: true
+  fact: equipment.state.changed
+  schema_version: 2
+  source: is-1
+  data:
+    equipment_id: '{equipment:WS-1}'
+    station_id: ST-WELD
+    execution: running
+    controller_mode: automatic
+    condition: normal
+- at: '2026-09-21T13:32:00+03:00'
+  label: F07/wt-3
+  lost: true
+  fact: equipment.state.changed
+  schema_version: 2
+  source: is-1
+  data:
+    equipment_id: '{equipment:WS-1}'
+    station_id: ST-WELD
+    execution: idle
+    controller_mode: automatic
+    condition: normal
+- at: '2026-09-21T13:33:00+03:00'
+  label: F07/wt-4
+  fact: equipment.state.changed
+  schema_version: 2
+  source: is-1
+  data:
+    equipment_id: '{equipment:WS-1}'
+    station_id: ST-WELD
+    execution: running
+    controller_mode: automatic
+    condition: normal
+outcome:
+- Событие «пропуск данных от источника X (42–43)», пометка неполноты за период

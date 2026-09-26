@@ -1,0 +1,27 @@
+# Ожидания прогона сбоя F05 — отдельно от входных событий (кейс §5.1, AD-26).
+scenario: F05
+version: '1'
+title: 'Сбой: Рассинхрон часов'
+run: F05
+source: эпик 32 по research/data-collection-sources-and-failures.md §6 (ожидаемое поведение системы)
+checkpoints:
+- at: end
+  label: конец прогона
+  assertions:
+  - id: F05-01
+    what: смещение часов камеры КТ-3 оценено (≈ +5 мин)
+    check:
+      operation: ingest.source.list
+      path: /items[source_id={run}/edge-kt3]/0/clock_skew_ms
+      op: gte
+      value: 240000
+    mapping: exact
+  - id: F05-02
+    what: записи со сдвигом не в карантине
+    check:
+      operation: ingest.metrics.read
+      path: /quarantined
+      op: delta
+      value: 0
+    mapping: exact
+    baseline: '2026-09-21T10:30:00+03:00'
