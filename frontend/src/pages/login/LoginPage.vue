@@ -95,6 +95,7 @@ const groups = computed(() => {
   const map = new Map<string, { title: string; items: DemoPersona[] }>()
   for (const p of personas.data.value?.data.items ?? []) {
     const title = roleTitle(p)
+    if (featuredIds.value.has(p.id)) continue
     if (q && ![p.name, title, p.scope ?? ''].some((s) => s.toLocaleLowerCase('ru').includes(q))) continue
     const g = map.get(p.role.id) ?? { title, items: [] }
     g.items.push(p)
@@ -103,7 +104,19 @@ const groups = computed(() => {
   return [...map.entries()].map(([id, g]) => ({ id, ...g }))
 })
 
-const personaCount = computed(() => personas.data.value?.data.items.length ?? 0)
+/**
+ * Быстрый демо-вход — роли из ТЗ кейса, видны сразу (решение пользователя):
+ * контролёр, мастер, технолог, руководитель, администратор — первый сотрудник
+ * каждой роли в порядке политики. Остальные — под «Другие сотрудники».
+ */
+const FEATURED_ROLES = ['quality_inspector', 'site_foreman', 'technologist', 'production_manager', 'administrator'] as const
+const featured = computed(() => {
+  const items = personas.data.value?.data.items ?? []
+  return FEATURED_ROLES.map((r) => items.find((p) => p.role.id === r)).filter((p): p is DemoPersona => !!p)
+})
+const featuredIds = computed(() => new Set(featured.value.map((p) => p.id)))
+const others = computed(() => (personas.data.value?.data.items ?? []).filter((p) => !featuredIds.value.has(p.id)))
+const personaCount = computed(() => others.value.length)
 
 /** Инициалы для знака персоны: «Контролёр ОТК 1» → «КО». */
 const initials = (name: string) =>
@@ -206,10 +219,27 @@ function byPersona(p: DemoPersona): void {
         </template>
       </section>
 
-      <section v-if="demoAvailable" class="demo" :data-open="demoOpen || undefined" data-testid="demo-personas">
+      <!-- Быстрый демо-вход: роли из ТЗ — сразу, одним нажатием. -->
+      <section v-if="demoAvailable && featured.length" class="quick" data-testid="demo-quick">
+        <p class="quick-title ant-wrap">{{ t('shell.login.quickTitle') }}</p>
+        <ul class="quick-list">
+          <li v-for="p in featured" :key="p.id">
+            <button type="button" class="quick-persona" :data-persona="p.id" :disabled="login.isPending.value" :title="t('shell.login.enterAs', { name: p.name })" @click="byPersona(p)">
+              <span class="quick-role ant-wrap">{{ roleTitle(p) }}</span>
+              <span class="quick-name ant-ellipsis">{{ p.name }}</span>
+              <NSpin v-if="pendingPersona === p.id" :size="14" class="quick-spin" />
+            </button>
+          </li>
+        </ul>
+        <NAlert v-if="loginError && attempt === 'persona' && !demoOpen" type="error" :bordered="false">
+          <span class="ant-wrap">{{ loginError }}</span>
+        </NAlert>
+      </section>
+
+      <section v-if="demoAvailable && personaCount" class="demo" :data-open="demoOpen || undefined" data-testid="demo-personas">
         <button type="button" class="demo-toggle" :aria-expanded="demoOpen" aria-controls="demo-list" data-testid="demo-toggle" @click="demoOpen = !demoOpen">
           <NIcon :size="18" class="demo-icon"><Users /></NIcon>
-          <span class="demo-title ant-ellipsis">{{ t('shell.login.demoTitle') }}</span>
+          <span class="demo-title ant-ellipsis">{{ featured.length ? t('shell.login.demoOthers') : t('shell.login.demoTitle') }}</span>
           <span class="demo-count">{{ t('shell.login.demoCount', personaCount) }}</span>
           <NIcon :size="16" class="chevron"><ChevronDown /></NIcon>
         </button>
@@ -510,5 +540,70 @@ function byPersona(p: DemoPersona): void {
   color: var(--ant-text-3);
   font-size: var(--ant-fs-xs);
   text-align: center;
+}
+.quick {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ant-space-2);
+  width: 100%;
+}
+
+.quick-title {
+  margin: 0;
+  color: var(--ant-text-2);
+  font-size: var(--ant-fs-meta);
+  font-weight: var(--ant-fw-bold);
+  text-align: center;
+}
+
+.quick-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--ant-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.quick-persona {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  min-width: 0;
+  padding: var(--ant-space-3);
+  border: 1px solid var(--ant-border);
+  border-radius: var(--ant-radius-lg);
+  background: var(--ant-surface);
+  color: var(--ant-text);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.quick-persona:hover:not(:disabled) {
+  border-color: var(--ant-accent);
+  background: var(--ant-accent-soft);
+}
+
+.quick-persona:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.quick-role {
+  font-weight: var(--ant-fw-bold);
+}
+
+.quick-name {
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-meta);
+}
+
+.quick-spin {
+  position: absolute;
+  top: var(--ant-space-2);
+  right: var(--ant-space-2);
 }
 </style>
