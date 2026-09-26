@@ -3280,11 +3280,12 @@ components:
           description: Номер детали для людей.
           type: string
         kind:
-          description: Точка предъявления, сигнал на рассмотрение, изолированное изделие.
+          description: Точка предъявления, сигнал на рассмотрение, изолированное изделие, пересмотр решения, принятого до новых данных (AD-3).
           enum:
             - presentation
             - signal
             - isolated
+            - review
           type: string
         nc_id:
           type: string
@@ -3297,6 +3298,10 @@ components:
           description: Номер предъявления (повторное — уровнем выше).
           format: int64
           type: integer
+        review_since:
+          description: "Пересмотр: с какого момента решение помечено «принято до новых данных» (kind = review)."
+          format: date-time
+          type: string
         risk_rank:
           description: Порядок по риску (0 — наибольший); вычисляет сервер.
           format: int64
@@ -3308,6 +3313,9 @@ components:
             - major
             - minor
             - unknown
+          type: string
+        source_event_id:
+          description: Запись, из-за которой появилась строка (у пересмотра — пришедшая после решения запись); переход к записи журнала.
           type: string
         step_key:
           type: string
@@ -18384,6 +18392,7 @@ paths:
               - presentation
               - signal
               - isolated
+              - review
             type: string
         - description: "Сортировка: по риску (по умолчанию) или по сроку."
           explode: false
