@@ -285,6 +285,27 @@ function submit(): void {
       </template>
     </details>
 
+    <!-- Готовые сужения по данным: изделия и основание из журнала — человек решает одним щелчком (FR-61, AD-27). -->
+    <section v-if="model.narrow_options?.length && canNarrow" class="options" data-testid="narrow-options">
+      <p class="options-title">{{ t('widgets.analysis.riskScope.optionsTitle') }}</p>
+      <article v-for="(o, oi) in model.narrow_options" :key="oi" class="option" :data-option="oi">
+        <p class="option-label ant-wrap">{{ o.label }}</p>
+        <p class="option-reason ant-wrap">{{ t('riskScope.basis') }}: {{ o.reason_text }}</p>
+        <ul v-if="o.evidence.length" class="step-evidence">
+          <li v-for="r in o.evidence" :key="r.event_id" class="ant-wrap">{{ d(new Date(r.occurred_at), 'dateTime') }} · {{ recordText(r) }}</li>
+        </ul>
+        <ActionButton
+          overflow="wrap"
+          :size="naiveSizeOf(density)"
+          type="primary"
+          :disabled="busy || moment.isReplay || !o.item_ids.length || !o.evidence.length"
+          data-testid="narrow-option"
+          @click="emit('narrow', { item_ids: [...o.item_ids], reason: o.reason_text, evidence_event_ids: o.evidence.map((r) => r.event_id) })"
+          :label="t('widgets.analysis.riskScope.optionApply', { n: o.item_ids.length })"
+        />
+      </article>
+    </section>
+
     <footer class="actions">
       <ActionButton overflow="wrap" :size="naiveSizeOf(density)" type="primary" secondary :disabled="!canNarrow || busy || moment.isReplay" data-testid="narrow" @click="openForm('narrow')" :label="t('riskScope.narrow')" />
       <ActionButton overflow="wrap" :size="naiveSizeOf(density)" :disabled="!canExpand || busy || moment.isReplay" data-testid="expand" @click="openForm('expand')" :label="t('riskScope.expand')" />
@@ -649,6 +670,35 @@ summary.group-title {
 .step[data-change='expanded'] .delta,
 .step[data-change='expanded'] .step-title {
   color: var(--ant-status-danger-text);
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ant-space-2);
+}
+
+.options-title {
+  font-weight: var(--ant-fw-bold);
+}
+
+.option {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ant-space-1);
+  align-items: flex-start;
+  padding: var(--ant-space-3) var(--ant-space-4);
+  border: 1px solid var(--ant-accent);
+  border-radius: var(--ant-radius-md);
+  background: var(--ant-accent-soft);
+}
+
+.option-label {
+  font-weight: var(--ant-fw-bold);
+}
+
+.option-reason {
+  color: var(--ant-text-2);
 }
 
 .items summary {

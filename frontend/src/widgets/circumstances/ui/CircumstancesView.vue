@@ -70,7 +70,9 @@ const records = computed(() => sortByTime(props.model.records))
  * остальное — «Показать все записи».
  */
 const showAll = ref(props.initialShowAll)
-const isLate = (r: CircumstanceRecord) => String(r.params?.late ?? '') === 'true'
+/** Опоздание записи, мс: пришла позже, чем произошла (received_at), больше 5 минут; иначе — пометка параметра late. */
+const lateMs = (r: CircumstanceRecord) => (r.received_at ? Date.parse(r.received_at) - Date.parse(r.occurred_at) : 0)
+const isLate = (r: CircumstanceRecord) => lateMs(r) > 5 * 60_000 || String(r.params?.late ?? '') === 'true'
 function isKey(r: CircumstanceRecord): boolean {
   const w = props.model.window
   if (w && (r.event_id === w.lower_bound_event_id || r.event_id === w.upper_bound_event_id)) return true
@@ -270,7 +272,7 @@ const missingText = (code: string) => t(`widgets.analysis.missing.${codeToKey(co
             @click="toggle(m.r.event_id)"
           >
             <span class="shape" :data-shape="m.tone" aria-hidden="true" />
-            <span class="text">{{ m.text }}<template v-if="isLate(m.r)"> · <span class="late-mark" data-testid="late-mark">{{ t('widgets.analysis.circumstances.lateMark') }}</span></template></span>
+            <span class="text">{{ m.text }}<template v-if="isLate(m.r)"> · <span class="late-mark" data-testid="late-mark">{{ lateMs(m.r) > 5 * 60_000 ? t('widgets.analysis.circumstances.lateBy', { duration: duration(lateMs(m.r)) }) : t('widgets.analysis.circumstances.lateMark') }}</span></template></span>
           </button>
         </div>
       </template>

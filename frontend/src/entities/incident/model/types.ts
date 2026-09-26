@@ -38,6 +38,8 @@ export interface JournalRecordRef {
   text?: string | null
   /** Источник словами: «Сварочный источник ИС-2», «Камера КТ-3». */
   source_label?: string | null
+  /** Когда запись пришла в систему; позже occurred_at — данные опоздали. */
+  received_at?: string | null
 }
 
 /** Запись на дорожке разбора обстоятельств — строка проекции `analysis.circumstances`. */
@@ -327,6 +329,16 @@ export interface RiskScopeModel {
   /** Несоответствия инцидента и ведущее — вход гипотез и дорожек. */
   nc_ids?: string[]
   primary_nc_id?: string | null
+  /** Готовые сужения по данным (кнопка в один щелчок, FR-61): решение и подпись — человека. */
+  narrow_options?: NarrowOption[]
+}
+
+/** Готовое сужение области: какие изделия, на каких записях, с каким основанием. */
+export interface NarrowOption {
+  label: string
+  item_ids: string[]
+  evidence: JournalRecordRef[]
+  reason_text: string
 }
 
 /** Статус системного расследования — словарь `ncInvestigation`. */

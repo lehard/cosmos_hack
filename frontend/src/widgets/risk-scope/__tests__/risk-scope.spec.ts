@@ -87,6 +87,28 @@ describe('область риска', () => {
     expect(w.emitted('narrow')?.[0]).toEqual([{ item_ids: ['ANT:FL-0043'], reason: 'Доп. ВИК: признаки не обнаружены', evidence_event_ids: [first] }])
   })
 
+  it('готовое сужение по данным — один щелчок: изделия, записи-доказательства и основание уходят командой', async () => {
+    const m = weldScope()
+    m.narrow_options = [{
+      label: 'Исключить сваренные на ИС-1 — журнал в уставке',
+      item_ids: ['ANT:FL-0043', 'ANT:FL-0044'],
+      evidence: [{ event_id: 'e-is1', event_type: 'equipment.cycle.summarized', occurred_at: '2026-09-23T07:00:00Z', text: 'ИС-1: ток 158–163 А в уставке' }],
+      reason_text: 'Журнал ИС-1 непрерывный и в уставке',
+    }]
+    const w = mountView(m)
+    const opt = w.find('[data-testid="narrow-options"]')
+    expect(opt.text()).toContain('Исключить сваренные на ИС-1')
+    expect(opt.text()).toContain('ИС-1: ток 158–163 А в уставке')
+    await opt.find('[data-testid="narrow-option"]').trigger('click')
+    expect(w.emitted('narrow')?.[0]).toEqual([{ item_ids: ['ANT:FL-0043', 'ANT:FL-0044'], reason: 'Журнал ИС-1 непрерывный и в уставке', evidence_event_ids: ['e-is1'] }])
+  })
+
+  it('без права сужать готовых сужений не видно', () => {
+    const m = weldScope()
+    m.narrow_options = [{ label: 'x', item_ids: ['ANT:FL-0043'], evidence: [{ event_id: 'e', event_type: 't', occurred_at: '2026-09-23T07:00:00Z' }], reason_text: 'r' }]
+    expect(mountView(m, { canNarrow: false }).find('[data-testid="narrow-options"]').exists()).toBe(false)
+  })
+
   it('сослаться не на что — сузить нельзя, так и написано', async () => {
     const w = mountView()
     await w.find('[data-testid="narrow"]').trigger('click')

@@ -61,6 +61,14 @@ describe('разбор обстоятельств', () => {
     expect(w.findAll('button.mark').length).toBe(all)
   })
 
+  it('опоздание по времени получения — «пришло с опозданием на …»', () => {
+    const m = weldCircumstances()
+    const r0 = m.records.find((r) => r.lane === 'equipment')!
+    m.records = m.records.map((r) => (r === r0 ? { ...r, received_at: new Date(Date.parse(r.occurred_at) + 83 * 60_000).toISOString() } : r))
+    const w = mountView(m)
+    expect(w.find(`[data-event="${r0.event_id}"] [data-testid="late-mark"]`).text()).toBe('пришло с опозданием на 1\u00a0ч 23\u00a0мин')
+  })
+
   it('дорожки синхронны: одно время — одна позиция на всех дорожках', () => {
     const w = mountView()
     // 08:27 — ручная подача у исполнителя и ручное изменение режима у станка
