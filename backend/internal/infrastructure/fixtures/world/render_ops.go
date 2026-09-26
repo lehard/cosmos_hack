@@ -651,10 +651,13 @@ func (c *Ctx) integrations() opsapp.IntegrationList {
 	absent := func(sys string) opsapp.IntegrationEntry {
 		return opsapp.IntegrationEntry{System: sys, State: "disabled", Default: true}
 	}
+	// Эпик 37: СКУД — stand роли stands (журнал проходов skud.v1, кнопки проходов на /stand/skud/).
+	skud := stand("skud", "http://stands:8491/stand/skud/api/v1")
+	skud.Detail = ptr("Турникеты зон цехов: проходы сотрудников, присутствие на постах")
 	ca := stand("ca", "https://ca.stand/ocsp")
 	ca.Detail = ptr("Демо-УЦ: выпуск и отзыв сертификатов mTLS, OCSP")
 	return opsapp.IntegrationList{Profile: "fixtures", Items: []opsapp.IntegrationEntry{
-		onec, absent("galaktika"), absent("mes"), stand("kompas", "file:///var/lib/ant/exchange/kompas"), absent("skud"),
+		onec, absent("galaktika"), absent("mes"), stand("kompas", "file:///var/lib/ant/exchange/kompas"), skud,
 		ca, stand("visionqc", "http://stands:8090/visionqc"), stand("operatorvision", "http://stands:8090/operatorvision"), absent("partner"),
 	}}
 }

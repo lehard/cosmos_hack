@@ -301,6 +301,10 @@ func buildAPI(mux *http.ServeMux, o apiOptions) *httpapi.API {
 				if x.wplog != nil {
 					opts = append(opts, accessapp.WithWorkplaceLog(x.wplog))
 				}
+				// Эпик 37: присутствие по СКУД и ключу, допуск к рабочему месту.
+				if x.presence != nil {
+					opts = append(opts, accessapp.WithPresence(x.presence, x.pw, x.shifts))
+				}
 			}
 			if o.documents != nil && a.ModeFor("documents") == platform.ModeLive {
 				bridge := accessapp.DocumentsBridge{Docs: o.documents}

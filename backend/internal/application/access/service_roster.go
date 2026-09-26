@@ -18,7 +18,7 @@ import (
 // Посты, назначения, квалификации и факты исполнителя (FR-6, FR-80, FR-81,
 // FR-137, PRD §11.18; эпик 26 по просьбе дирижёра после эпика 13): живые
 // операции над той же проекцией политики. СКУД, ключ и допуск к рабочему
-// месту — эпик 37: присутствие без этих данных — «неизвестно», не «на месте».
+// месту — эпик 37 (service_presence.go): присутствие без этих данных — «неизвестно», не «на месте».
 
 // ControllerAssignmentTemplate — шаблон документа «Назначение контролёра на
 // пост»: запрос мастера → согласование начальника ОТК (PRD §11.18).
@@ -79,6 +79,10 @@ func (s *Service) Assignments(ctx context.Context, shiftID, workshop string, m p
 		return AccessAssignmentList{}, err
 	}
 	at := s.at(ctx, m)
+	pr, _, err := s.presenceNow(ctx)
+	if err != nil {
+		return AccessAssignmentList{}, err
+	}
 	out := AccessAssignmentList{Items: []AccessAssignment{}, BasisSeq: pol.Seq}
 	for _, a := range pol.PostsIn(shiftID) {
 		wp, _ := s.dir.Workplace(a.WorkplaceID)
@@ -90,14 +94,17 @@ func (s *Service) Assignments(ctx context.Context, shiftID, workshop string, m p
 		if a.AssigneeRole == accessdom.AssigneePerformer {
 			_, v.QualificationOK = pol.QualifiedAt(a.PersonID, wp.Scope, at)
 		}
+		if ss, ok := pr.Session(a.WorkplaceID); ok && ss.PersonID == a.PersonID {
+			v.Admitted = true
+		}
 		out.Items = append(out.Items, v)
 	}
 	return out, nil
 }
 
 // Workplaces — панель «Посты» (access.workplace.list, FR-6, FR-81): пост —
-// кто назначен — присутствие. Только в режиме live; присутствие без СКУД и
-// ключа (эпик 37) — «неизвестно»; текущее изделие поста — у модуля process.
+// кто назначен — присутствие по СКУД и ключу (эпик 37; без данных СКУД —
+// «неизвестно»). Только в режиме live; текущее изделие поста — у модуля process.
 func (s *Service) Workplaces(ctx context.Context, workshop string, m platform.Moment) (PostList, error) {
 	if !s.live || s.policy == nil || s.dir == nil || len(s.dir.Workplaces) == 0 {
 		return s.Queries.Workplaces(ctx, workshop, m)
@@ -107,6 +114,10 @@ func (s *Service) Workplaces(ctx context.Context, workshop string, m platform.Mo
 		return PostList{}, err
 	}
 	posts := pol.PostsIn("")
+	pr, havePresence, err := s.presenceNow(ctx)
+	if err != nil {
+		return PostList{}, err
+	}
 	out := PostList{Items: []PostRow{}}
 	for _, wp := range s.dir.Workplaces {
 		if workshop != "" && wp.Workshop != workshop {
@@ -125,7 +136,10 @@ func (s *Service) Workplaces(ctx context.Context, workshop string, m platform.Mo
 			if x, ok := pol.Person(pick.PersonID); ok && x.Name != "" {
 				name = x.Name
 			}
-			row.Assigned, row.Presence = &PostPerson{PersonID: pick.PersonID, Display: name}, "unknown"
+			row.Assigned, row.Presence = &PostPerson{PersonID: pick.PersonID, Display: name}, accessdom.PresenceUnknown
+			if havePresence {
+				row.Presence = pr.PostPresence(wp.ID, wp.Zone, pick.PersonID)
+			}
 		}
 		out.Items = append(out.Items, row)
 	}
@@ -234,6 +248,12 @@ func (s *Service) ClearAssignment(ctx context.Context, in ClearAssignment) (plat
 	rc, err := s.decisions.Write(ctx, Batch{Records: []Record{{Type: catalog.AccessAssignmentCleared, Stream: "workplace:" + in.WorkplaceID, Data: d}},
 		Meta: in.CommandMeta(), Actor: platform.PrincipalFrom(ctx).PersonID, OccurredAt: now})
 	s.refresh(ctx)
+	if err == nil {
+		// Эпик 37: снятое назначение снимает и допуск к этому рабочему месту.
+		s.revokeSessions(ctx, in.PersonID, "assignment_cleared", first(rc.EventIDs), now, func(_ accessdom.Policy, ss accessdom.WorkplaceSession) bool {
+			return ss.WorkplaceID == in.WorkplaceID
+		})
+	}
 	return rc, err
 }
 

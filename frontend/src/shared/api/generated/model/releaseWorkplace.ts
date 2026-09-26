@@ -24,5 +24,6 @@ export interface ReleaseWorkplace {
      * @maxLength 128
      */
   workplace_id?: string;
-  workplace_session_id: string;
+  /** Сеанс рабочего места; пусто — открытый сеанс сотрудника на этом месте (эпик 37). */
+  workplace_session_id?: string;
 }

@@ -164,8 +164,8 @@ func runOutbox(ctx context.Context, env *environment) error {
 		return err
 	}
 	mesOn := mesEnabled(env)
-	if l == nil && !mesOn {
-		env.log.Warn("outbox: обмен с учётной системой и MES выключен (integrations.enabled) — ожидаю остановки")
+	if l == nil && !mesOn && !skudEnabled(env) {
+		env.log.Warn("outbox: обмен с учётной системой, MES и СКУД выключен (integrations.enabled) — ожидаю остановки")
 		<-ctx.Done()
 		return nil
 	}
@@ -204,6 +204,14 @@ func runOutbox(ctx context.Context, env *environment) error {
 			return err
 		}
 		runs = append(runs, func(ctx context.Context) error { return c.leader(env, "outbox.mes").Run(ctx, mo.Run) })
+	}
+	// Эпик 37: опрос журнала проходов СКУД (access_skud.go).
+	if skudEnabled(env) {
+		run, err := skudRun(ctx, env, c)
+		if err != nil {
+			return err
+		}
+		runs = append(runs, run)
 	}
 	return runAll(ctx, runs)
 }

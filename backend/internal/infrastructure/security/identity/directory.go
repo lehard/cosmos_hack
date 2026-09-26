@@ -219,14 +219,16 @@ func loadWorkplaces(fsys fs.FS) ([]access.WorkplaceRef, error) {
 			Scope  string `yaml:"scope"`
 			Parent string `yaml:"parent"`
 			Name   string `yaml:"name"`
+			// Zone — зона доступа СКУД цеха (эпик 37, FR-82).
+			Zone string `yaml:"access_zone_id"`
 		} `yaml:"locations"`
 	}
 	if err := yaml.Unmarshal(b, &f); err != nil {
 		return nil, fmt.Errorf("%s: %w", LocationsFile, err)
 	}
-	kind, parent, name := map[string]string{}, map[string]string{}, map[string]string{}
+	kind, parent, name, zone := map[string]string{}, map[string]string{}, map[string]string{}, map[string]string{}
 	for _, l := range f.Locations {
-		kind[l.ID], parent[l.ID], name[l.ID] = l.Kind, l.Parent, l.Name
+		kind[l.ID], parent[l.ID], name[l.ID], zone[l.ID] = l.Kind, l.Parent, l.Name, l.Zone
 	}
 	var out []access.WorkplaceRef
 	for _, l := range f.Locations {
@@ -236,7 +238,7 @@ func loadWorkplaces(fsys fs.FS) ([]access.WorkplaceRef, error) {
 		w := access.WorkplaceRef{ID: l.ID, Name: l.Name, Scope: l.Scope}
 		for p, n := l.Parent, 0; p != "" && n < 10; p, n = parent[p], n+1 {
 			if kind[p] == "workshop" {
-				w.Workshop, w.WorkshopName = p, name[p]
+				w.Workshop, w.WorkshopName, w.Zone = p, name[p], zone[p]
 				break
 			}
 		}
@@ -310,4 +312,37 @@ func loadDesk(fsys fs.FS, name string) (access.Desk, error) {
 		return access.Desk{}, fmt.Errorf("%s: у стола нет вкладок", name)
 	}
 	return desk, nil
+}
+
+// ZoneRef — зона доступа СКУД (access_zone_id цеха справочника мест; FR-82, эпик 37).
+type ZoneRef struct {
+	ID    string
+	Name  string
+	Scope string
+}
+
+// LoadZones — зоны доступа СКУД из справочника мест: у каждого цеха своя
+// зона; нет справочника — пусто.
+func LoadZones(fsys fs.FS) ([]ZoneRef, error) {
+	b, err := fs.ReadFile(fsys, LocationsFile)
+	if err != nil {
+		return nil, nil
+	}
+	var f struct {
+		Locations []struct {
+			Scope string `yaml:"scope"`
+			Name  string `yaml:"name"`
+			Zone  string `yaml:"access_zone_id"`
+		} `yaml:"locations"`
+	}
+	if err := yaml.Unmarshal(b, &f); err != nil {
+		return nil, fmt.Errorf("%s: %w", LocationsFile, err)
+	}
+	var out []ZoneRef
+	for _, l := range f.Locations {
+		if l.Zone != "" {
+			out = append(out, ZoneRef{ID: l.Zone, Name: l.Name, Scope: l.Scope})
+		}
+	}
+	return out, nil
 }
