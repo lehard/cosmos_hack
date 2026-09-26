@@ -3,6 +3,7 @@ package process
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"ant/internal/contracts/errcodes"
 )
@@ -98,7 +99,7 @@ func TestMiniModel(t *testing.T) {
 	if got := d.SpecialSteps(); len(got) != 1 || got[0] != "welding.weld" {
 		t.Fatalf("специальные процессы: %v", got)
 	}
-	if n := d.Node("WT"); n.TimerDur.Hours() != 8 || n.AttachedTo != "W" || d.Node("W").Boundaries[0] != "WT" {
+	if n := d.Node("WT"); n.TimerDur != 8*time.Hour || n.AttachedTo != "W" || d.Node("W").Boundaries[0] != "WT" {
 		t.Fatalf("граничный таймер: %+v", n)
 	}
 	if d.Workshop(d.Node("W")) != "WS-WC" {
@@ -108,7 +109,7 @@ func TestMiniModel(t *testing.T) {
 
 func TestExpr(t *testing.T) {
 	vars := map[string]Value{VarDecision: Str("accept"), VarReworkCount: Int(2), VarToolsAccounted: Bool(true)}
-	for src, want := range map[string]bool{
+	cases := map[string]bool{
 		"decision == 'accept'": true,
 		"decision == 'accept' or decision == 'accept_with_concession'": true,
 		"not (decision == 'reject')":                                   true,
@@ -116,7 +117,9 @@ func TestExpr(t *testing.T) {
 		"rework.count >= 3":                                            false,
 		"tools.accounted == false":                                     false,
 		"nc.outcome == 'scrapped'":                                     false, // нет данных — не ветка
-	} {
+	}
+	for _, src := range sortedKeys(cases) {
+		want := cases[src]
 		e, err := ParseExpr(src, nil)
 		if err != nil {
 			t.Fatalf("%s: %v", src, err)
@@ -134,9 +137,11 @@ func TestExpr(t *testing.T) {
 }
 
 func TestISODuration(t *testing.T) {
-	for s, h := range map[string]float64{"PT8H": 8, "P1D": 24, "PT30M": 0.5, "P1DT2H": 26, "P1W": 168} {
+	cases := map[string]time.Duration{"PT8H": 8 * time.Hour, "P1D": 24 * time.Hour, "PT30M": 30 * time.Minute, "P1DT2H": 26 * time.Hour, "P1W": 168 * time.Hour}
+	for _, s := range sortedKeys(cases) {
+		h := cases[s]
 		d, err := ParseISODuration(s)
-		if err != nil || d.Hours() != h {
+		if err != nil || d != h {
 			t.Fatalf("%s → %v %v", s, d, err)
 		}
 	}

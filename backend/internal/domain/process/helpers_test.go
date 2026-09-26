@@ -102,7 +102,8 @@ const miniBPMN = `<?xml version="1.0" encoding="UTF-8"?>
 
 var t0 = time.Date(2026, 9, 22, 6, 0, 0, 0, time.UTC)
 
-func at(h float64) time.Time { return t0.Add(time.Duration(h * float64(time.Hour))) }
+// at — t0 + h десятых часа (6 мин): домен без float (AD-4).
+func at(h int) time.Time { return t0.Add(time.Duration(h) * 6 * time.Minute) }
 
 // world — изделие учебного процесса: копит записи входа и сворачивает их.
 type world struct {
@@ -123,7 +124,7 @@ func newWorld(t *testing.T) *world {
 }
 
 // add — запись входа (факт устройства или решение человека по каталогу).
-func (w *world) add(tp catalog.Type, h float64, data map[string]any) kernel.Record {
+func (w *world) add(tp catalog.Type, h int, data map[string]any) kernel.Record {
 	w.seq++
 	info, ok := catalog.Lookup(tp)
 	kind := catalog.KindFact
@@ -161,12 +162,12 @@ func (w *world) fold() (State, []kernel.Reaction) {
 	return s, out
 }
 
-func (w *world) register(h float64) {
+func (w *world) register(h int) {
 	w.add(catalog.ItemItemRegistered, h, map[string]any{"item_id": w.item, "item_type_id": "FL-100.00.000", "item_revision": "Б",
 		"process_version_hash": w.env.VersionHash, "normative_rev": "n1", "lot_ids": []string{"LOT-1"}})
 }
 
-func (w *world) start(run, step string, h float64, extra ...string) {
+func (w *world) start(run, step string, h int, extra ...string) {
 	d := map[string]any{"operation_run_id": run, "operation_code": "010", "step_key": step, "operator_id": "WLD-01"}
 	for i := 0; i+1 < len(extra); i += 2 {
 		d[extra[i]] = extra[i+1]
@@ -174,21 +175,21 @@ func (w *world) start(run, step string, h float64, extra ...string) {
 	w.add(catalog.OperationRunStarted, h, d)
 }
 
-func (w *world) finish(run string, h float64) {
+func (w *world) finish(run string, h int) {
 	w.add(catalog.OperationRunFinished, h, map[string]any{"operation_run_id": run, "completion": "completed"})
 }
 
-func (w *world) inspect(step string, h float64, outcome string, zones ...string) {
+func (w *world) inspect(step string, h int, outcome string, zones ...string) {
 	w.add(catalog.InspectionResultRecorded, h, map[string]any{"method": "camera", "phase": "after_operation", "step_key": step,
 		"outcome": outcome, "processing_state": "completed", "zone_ids": zones})
 }
 
-func (w *world) decide(step, resolution string, h float64) kernel.Record {
+func (w *world) decide(step, resolution string, h int) kernel.Record {
 	return w.add(catalog.DecisionPresentationResolved, h, map[string]any{"step_key": step, "closing_point": "ZT", "resolution": resolution,
 		"presentation_no": 1, "method_event_ids": []string{}})
 }
 
-func (w *world) dispose(disposition string, h float64) {
+func (w *world) dispose(disposition string, h int) {
 	w.add(catalog.DecisionDispositionSet, h, map[string]any{"nc_id": "NC-1", "disposition": disposition, "reason": map[string]string{"code": "x", "text": "x"}})
 }
 

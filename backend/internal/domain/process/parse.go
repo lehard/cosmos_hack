@@ -58,15 +58,6 @@ func (x *xel) attr(local string) string {
 	return ""
 }
 
-func (x *xel) has(local string) bool {
-	for _, a := range x.attrs {
-		if a.Name.Local == local {
-			return true
-		}
-	}
-	return false
-}
-
 func (x *xel) id() string { return x.attr("id") }
 
 func parseTree(b []byte) (*xel, error) {

@@ -33,11 +33,11 @@ func refusalCode(err error) errcodes.Code {
 // weldOnce — от запуска до ЗТ-3: подготовка кромок, сварка в окне, камера.
 func weldOnce(w *world) {
 	w.register(0)
-	w.start("P-1", "welding.edge_prep", 1)
-	w.finish("P-1", 2)
-	w.start("W-1", "welding.weld", 3)
-	w.finish("W-1", 4)
-	w.inspect("welding.kt3", 5, "defect_indicated", "U2")
+	w.start("P-1", "welding.edge_prep", 10)
+	w.finish("P-1", 20)
+	w.start("W-1", "welding.weld", 30)
+	w.finish("W-1", 40)
+	w.inspect("welding.kt3", 50, "defect_indicated", "U2")
 }
 
 func TestStartByMessageAndHappyPath(t *testing.T) {
@@ -45,12 +45,12 @@ func TestStartByMessageAndHappyPath(t *testing.T) {
 	weldOnce(w)
 	s, _ := w.fold()
 	wantSteps(t, s, "welding.zt3")
-	w.decide("welding.zt3", ResolutionAccept, 6)
-	w.add(catalog.InspectionResultRecorded, 6.5, map[string]any{"method": "visual_human", "phase": "before_zone_closure", "outcome": "no_defect_indicated",
+	w.decide("welding.zt3", ResolutionAccept, 60)
+	w.add(catalog.InspectionResultRecorded, 65, map[string]any{"method": "visual_human", "phase": "before_zone_closure", "outcome": "no_defect_indicated",
 		"processing_state": "completed", "zone_ids": []string{"Z9"}})
-	w.start("A-1", "assembly.cover", 7)
-	w.finish("A-1", 8)
-	w.decide("final.zt6", ResolutionAccept, 9)
+	w.start("A-1", "assembly.cover", 70)
+	w.finish("A-1", 80)
+	w.decide("final.zt6", ResolutionAccept, 90)
 	s, rs := w.fold()
 	if !s.Completed || s.Outcome != "released" || s.EndStep != "final.released" {
 		t.Fatalf("изделие не выпущено: %+v", s)
@@ -75,18 +75,18 @@ func TestStartByMessageAndHappyPath(t *testing.T) {
 func TestEdgeWindowExpiredSendsBackToPreparation(t *testing.T) {
 	w := newWorld(t)
 	w.register(0)
-	w.start("P-1", "welding.edge_prep", 1)
-	w.finish("P-1", 2) // окно 8 ч: до 10:00 от t0+2 ч
+	w.start("P-1", "welding.edge_prep", 10)
+	w.finish("P-1", 20) // окно 8 ч: до 10:00 от t0+2 ч
 	s, _ := w.fold()
 	wantSteps(t, s, "welding.weld")
-	if len(s.Timers) != 1 || !s.Timers[0].DueAt.Equal(at(10)) {
+	if len(s.Timers) != 1 || !s.Timers[0].DueAt.Equal(at(100)) {
 		t.Fatalf("окно не взведено: %+v", s.Timers)
 	}
 	if d := s.Deadlines(w.env); len(d) != 1 || d[0].Kind != DeadlineTimer || d[0].ObligationID != s.Timers[0].ObligationID {
 		t.Fatalf("срок окна для notifications: %+v", d)
 	}
 	// Сварщик начал через 9 ч после кромок: окно истекло в t0+10 ч.
-	w.start("W-1", "welding.weld", 11)
+	w.start("W-1", "welding.weld", 110)
 	s, rs := w.fold()
 	wantSteps(t, s, "welding.edge_prep")
 	if s.Visits["P"] != 2 {
@@ -102,13 +102,13 @@ func TestEdgeWindowExpiredSendsBackToPreparation(t *testing.T) {
 			left = &s.History[i]
 		}
 	}
-	if left == nil || left.Via != "timer" || !left.Left.Equal(at(10)) {
+	if left == nil || left.Via != "timer" || !left.Left.Equal(at(100)) {
 		t.Fatalf("сварка покинута не по таймеру в срок окна: %+v", left)
 	}
 	// Повторная подготовка и сварка в окне — дальше по маршруту.
-	w.start("P-2", "welding.edge_prep", 12)
-	w.finish("P-2", 13)
-	w.start("W-2", "welding.weld", 14)
+	w.start("P-2", "welding.edge_prep", 120)
+	w.finish("P-2", 130)
+	w.start("W-2", "welding.weld", 140)
 	s, _ = w.fold()
 	wantSteps(t, s, "welding.weld")
 	if len(s.Timers) != 0 {
@@ -123,10 +123,10 @@ func TestEdgeWindowExpiredSendsBackToPreparation(t *testing.T) {
 func TestTimerFiresByDueReached(t *testing.T) {
 	w := newWorld(t)
 	w.register(0)
-	w.start("P-1", "welding.edge_prep", 1)
-	w.finish("P-1", 2)
+	w.start("P-1", "welding.edge_prep", 10)
+	w.finish("P-1", 20)
 	s, _ := w.fold()
-	w.add(catalog.ObligationDueReached, 10, map[string]any{"obligation_id": s.Timers[0].ObligationID, "due_at": "2026-09-22T16:00:00.000Z"})
+	w.add(catalog.ObligationDueReached, 100, map[string]any{"obligation_id": s.Timers[0].ObligationID, "due_at": "2026-09-22T16:00:00.000Z"})
 	s, _ = w.fold()
 	wantSteps(t, s, "welding.edge_prep")
 }
@@ -135,20 +135,20 @@ func TestTimerFiresByDueReached(t *testing.T) {
 func TestNonconformitySubprocessReturnsToCallPoint(t *testing.T) {
 	w := newWorld(t)
 	weldOnce(w)
-	w.decide("welding.zt3", ResolutionReject, 6)
+	w.decide("welding.zt3", ResolutionReject, 60)
 	s, _ := w.fold()
 	wantSteps(t, s, "nc.isolation")
 	if tk := s.TokenAt("nc.isolation"); len(tk.Stack) != 1 || tk.Stack[0].Call != "NC1" {
 		t.Fatalf("нет кадра вызова NC1: %+v", tk)
 	}
-	w.add(catalog.DecisionItemIsolated, 6.2, map[string]any{"reason": map[string]string{"code": "nc", "text": "брак"}})
-	w.add(catalog.OperationMovementReceived, 6.3, map[string]any{"to_location_id": "ISO-1", "destination_kind": "isolator", "inspection_on_receipt": "no_damage", "received_by": "M-1"})
+	w.add(catalog.DecisionItemIsolated, 62, map[string]any{"reason": map[string]string{"code": "nc", "text": "брак"}})
+	w.add(catalog.OperationMovementReceived, 63, map[string]any{"to_location_id": "ISO-1", "destination_kind": "isolator", "inspection_on_receipt": "no_damage", "received_by": "M-1"})
 	s, _ = w.fold()
 	wantSteps(t, s, "nc.disposition")
 	if p, _ := s.Primary(w.env); p.Position != PosIsolated {
 		t.Fatalf("положение в подпроцессе брака: %s", p.Position)
 	}
-	w.dispose("rework", 7)
+	w.dispose("rework", 70)
 	s, _ = w.fold()
 	// Возврат в точку вызова NC1 → итог rework_or_repair → повторная подготовка кромок.
 	wantSteps(t, s, "welding.edge_prep")
@@ -156,29 +156,29 @@ func TestNonconformitySubprocessReturnsToCallPoint(t *testing.T) {
 		t.Fatalf("возврат без итога подпроцесса: %+v", tk)
 	}
 	// Второе место вызова — после ЗТ-6: возврат на установку крышки.
-	w.start("P-2", "welding.edge_prep", 8)
-	w.finish("P-2", 9)
-	w.start("W-2", "welding.weld", 10)
-	w.finish("W-2", 11)
-	w.inspect("welding.kt3", 12, "no_defect_indicated", "U1", "U2")
-	w.decide("welding.zt3", ResolutionAccept, 13)
-	w.inspect("assembly.cover", 13.5, "no_defect_indicated", "Z9")
+	w.start("P-2", "welding.edge_prep", 80)
+	w.finish("P-2", 90)
+	w.start("W-2", "welding.weld", 100)
+	w.finish("W-2", 110)
+	w.inspect("welding.kt3", 120, "no_defect_indicated", "U1", "U2")
+	w.decide("welding.zt3", ResolutionAccept, 130)
+	w.inspect("assembly.cover", 135, "no_defect_indicated", "Z9")
 	s, _ = w.fold()
 	wantSteps(t, s, "assembly.cover")
-	w.start("A-1", "assembly.cover", 14)
-	w.finish("A-1", 15)
-	w.decide("final.zt6", ResolutionReject, 16)
-	w.dispose("rework", 17) // изоляции нет в данных — догон до ЗТ-Р с пометкой «нет данных»
+	w.start("A-1", "assembly.cover", 140)
+	w.finish("A-1", 150)
+	w.decide("final.zt6", ResolutionReject, 160)
+	w.dispose("rework", 170) // изоляции нет в данных — догон до ЗТ-Р с пометкой «нет данных»
 	s, _ = w.fold()
 	wantSteps(t, s, "assembly.cover")
 	if !slices.ContainsFunc(s.Gaps, func(g Gap) bool { return g.StepKey == "nc.isolation" }) {
 		t.Fatalf("пропуск изоляции не помечен «нет данных»: %+v", s.Gaps)
 	}
 	// Списание во втором вызове — terminate завершает все токены (Д-4).
-	w.start("A-2", "assembly.cover", 18)
-	w.finish("A-2", 19)
-	w.decide("final.zt6", ResolutionReject, 20)
-	w.dispose("scrap", 21)
+	w.start("A-2", "assembly.cover", 180)
+	w.finish("A-2", 190)
+	w.decide("final.zt6", ResolutionReject, 200)
+	w.dispose("scrap", 210)
 	s, _ = w.fold()
 	if !s.Completed || s.Outcome != "terminated" || s.EndStep != "final.scrapped" || len(s.Tokens) != 0 {
 		t.Fatalf("списание не завершило изделие: %+v", s)
@@ -189,32 +189,32 @@ func TestNonconformitySubprocessReturnsToCallPoint(t *testing.T) {
 func TestFourthReworkOfZoneIsBlocked(t *testing.T) {
 	w := newWorld(t)
 	weldOnce(w) // первая сварка; дефект в зоне U2
-	h := 6.0
+	h := 60
 	for i := 1; i <= 3; i++ {
 		w.decide("welding.zt3", ResolutionReject, h)
-		w.dispose("repair", h+0.5)
-		w.start(runID("P", i+1), "welding.edge_prep", h+1)
-		w.finish(runID("P", i+1), h+1.5)
-		w.start(runID("W", i+1), "welding.weld", h+2)
-		w.finish(runID("W", i+1), h+2.5)
-		w.inspect("welding.kt3", h+3, "defect_indicated", "U2")
-		h += 4
+		w.dispose("repair", h+5)
+		w.start(runID("P", i+1), "welding.edge_prep", h+10)
+		w.finish(runID("P", i+1), h+15)
+		w.start(runID("W", i+1), "welding.weld", h+20)
+		w.finish(runID("W", i+1), h+25)
+		w.inspect("welding.kt3", h+30, "defect_indicated", "U2")
+		h += 40
 	}
 	// Три доработки зоны U2 выполнены; четвёртая — гард отказывает.
 	w.decide("welding.zt3", ResolutionReject, h)
-	w.dispose("repair", h+0.5)
-	w.start(runID("P", 5), "welding.edge_prep", h+1)
+	w.dispose("repair", h+5)
+	w.start(runID("P", 5), "welding.edge_prep", h+10)
 	s, _ := w.fold()
 	// Подготовка кромок — тоже петля с лимитом 3: пятое выполнение = 4-я доработка.
 	if tk := s.TokenAt("welding.edge_prep"); tk == nil || tk.Phase != PhaseBlocked || tk.Block != "rework_limit" {
 		t.Fatalf("4-я доработка петли кромок не заблокирована: %+v", tk)
 	}
-	w.add(catalog.DecisionReworkLimitWaived, h+1.2, map[string]any{"zone_id": "welding.edge_prep", "used": 4, "limit": 3, "extra_allowed": 1,
+	w.add(catalog.DecisionReworkLimitWaived, h+12, map[string]any{"zone_id": "welding.edge_prep", "used": 4, "limit": 3, "extra_allowed": 1,
 		"reason": map[string]string{"code": "waiver", "text": "разрешение"}})
-	w.finish(runID("P", 5), h+1.5)
+	w.finish(runID("P", 5), h+15)
 	s, _ = w.fold()
 	wantSteps(t, s, "welding.weld")
-	err := Guard(s, w.env, Upstream{}, kernel.Command{Action: "process.operation.start", OccurredAt: at(h + 2),
+	err := Guard(s, w.env, Upstream{}, kernel.Command{Action: "process.operation.start", OccurredAt: at(h + 20),
 		Payload: StartCommand{StepKey: "welding.weld", RunID: "W-5", OperatorID: "WLD-01"}})
 	if refusalCode(err) != errcodes.ProcessReworkLimitExceeded {
 		t.Fatalf("гард пропустил 4-ю доработку зоны: %v", err)
@@ -225,7 +225,7 @@ func TestFourthReworkOfZoneIsBlocked(t *testing.T) {
 		t.Fatalf("параметры отказа: %+v", r.Params)
 	}
 	// Внешний факт той же 4-й доработки принимается с реакцией-блоком (AD-30).
-	w.start("W-5", "welding.weld", h+2)
+	w.start("W-5", "welding.weld", h+20)
 	s, rs := w.fold()
 	if tk := s.TokenAt("welding.weld"); tk.Phase != PhaseBlocked {
 		t.Fatalf("сварка сверх лимита не заблокирована: %+v", tk)
@@ -241,9 +241,9 @@ func TestFourthReworkOfZoneIsBlocked(t *testing.T) {
 		t.Fatalf("нет реакции-блока rework_limit по зоне U2: %+v", s.Breaches)
 	}
 	// Разрешение уполномоченного снимает блок.
-	w.add(catalog.DecisionReworkLimitWaived, h+2.2, map[string]any{"zone_id": "U2", "used": 4, "limit": 3, "extra_allowed": 1,
+	w.add(catalog.DecisionReworkLimitWaived, h+22, map[string]any{"zone_id": "U2", "used": 4, "limit": 3, "extra_allowed": 1,
 		"reason": map[string]string{"code": "waiver", "text": "разрешение"}})
-	w.finish("W-5", h+3)
+	w.finish("W-5", h+30)
 	s, _ = w.fold()
 	wantSteps(t, s, "welding.kt3")
 }
@@ -255,11 +255,11 @@ func TestPresentationPointRequiresSignature(t *testing.T) {
 	w := newWorld(t)
 	weldOnce(w)
 	// Решение без подписи человека (запись сервера) — не пропускает.
-	r := w.decide("welding.zt3", ResolutionAccept, 6)
+	r := w.decide("welding.zt3", ResolutionAccept, 60)
 	w.in[len(w.in)-1].Provenance = "server_attested"
 	// Факты следующего шага не двигают изделие через точку.
-	w.start("A-1", "assembly.cover", 7)
-	w.finish("A-1", 8)
+	w.start("A-1", "assembly.cover", 70)
+	w.finish("A-1", 80)
 	s, _ := w.fold()
 	wantSteps(t, s, "welding.zt3")
 	if !slices.ContainsFunc(s.Refusals, func(x Refusal) bool {
@@ -267,7 +267,7 @@ func TestPresentationPointRequiresSignature(t *testing.T) {
 	}) {
 		t.Fatalf("отказ по решению без подписи не записан: %+v", s.Refusals)
 	}
-	err := Guard(s, w.env, Upstream{}, kernel.Command{Action: "process.operation.start", OccurredAt: at(7),
+	err := Guard(s, w.env, Upstream{}, kernel.Command{Action: "process.operation.start", OccurredAt: at(70),
 		Payload: StartCommand{StepKey: "assembly.cover", RunID: "A-2"}})
 	if refusalCode(err) != errcodes.NonconformityGateWithoutSignature {
 		t.Fatalf("гард пропустил операцию за точкой предъявления: %v", err)
@@ -277,7 +277,7 @@ func TestPresentationPointRequiresSignature(t *testing.T) {
 	wantSteps(t, s2, "welding.zt3")
 	// Подписанное решение — проходит; повтор тем же решением (намерение
 	// quality после продвижения самим process) ничего не меняет.
-	signed := w.decide("welding.zt3", ResolutionAccept, 9)
+	signed := w.decide("welding.zt3", ResolutionAccept, 90)
 	s, _ = w.fold()
 	wantSteps(t, s, "assembly.cover")
 	s3 := Apply(s, AdvancePresentation("quality", Presentation{StepKey: "welding.zt3", Resolution: ResolutionAccept, DecisionEventID: signed.EventID}))
@@ -291,8 +291,8 @@ func TestPresentationPointRequiresSignature(t *testing.T) {
 func TestRepeatedPresentationRequiresHigherAuthority(t *testing.T) {
 	w := newWorld(t)
 	weldOnce(w)
-	w.decide("welding.zt3", ResolutionInsufficientData, 6)
-	w.inspect("welding.kt3", 7, "no_defect_indicated", "U1", "U2")
+	w.decide("welding.zt3", ResolutionInsufficientData, 60)
+	w.inspect("welding.kt3", 70, "no_defect_indicated", "U1", "U2")
 	s, _ := w.fold()
 	wantSteps(t, s, "welding.zt3")
 	if g := s.Gates["welding.zt3"]; g.Count != 2 || g.Authority != "qc_acceptance_repeat" {
@@ -308,7 +308,7 @@ func TestAdvancePresentationIntent(t *testing.T) {
 	w := newWorld(t)
 	weldOnce(w)
 	s, _ := w.fold()
-	dec := w.decide("welding.zt3", ResolutionAccept, 6)
+	dec := w.decide("welding.zt3", ResolutionAccept, 60)
 	// Запись решения видна process (подпись), продвигает намерение.
 	s = Reduce(s, dec, w.env, Upstream{})
 	wantSteps(t, s, "assembly.cover") // process продвигает и сам — идемпотентно
@@ -320,14 +320,14 @@ func TestAdvancePresentationIntent(t *testing.T) {
 func TestHiddenWorkRequiresZoneCheck(t *testing.T) {
 	w := newWorld(t)
 	weldOnce(w)
-	w.decide("welding.zt3", ResolutionAccept, 6)
+	w.decide("welding.zt3", ResolutionAccept, 60)
 	s, _ := w.fold()
-	err := Guard(s, w.env, Upstream{}, kernel.Command{Action: "process.operation.start", OccurredAt: at(7), Payload: StartCommand{StepKey: "assembly.cover"}})
+	err := Guard(s, w.env, Upstream{}, kernel.Command{Action: "process.operation.start", OccurredAt: at(70), Payload: StartCommand{StepKey: "assembly.cover"}})
 	var r *kernel.Refusal
 	if !errors.As(err, &r) || r.Code != errcodes.ProcessZoneCheckRequired || r.Params["zone"] != "Z9" {
 		t.Fatalf("гард без проверки зоны: %v", err)
 	}
-	w.start("A-1", "assembly.cover", 7)
+	w.start("A-1", "assembly.cover", 70)
 	s, rs := w.fold()
 	if len(reactionsOf(rs, catalog.OperationPreconditionFailed)) != 1 || s.TokenAt("assembly.cover").Phase != PhaseBlocked {
 		t.Fatalf("факт скрытой работы без проверки зоны: %+v", s.Breaches)
@@ -338,12 +338,12 @@ func TestHiddenWorkRequiresZoneCheck(t *testing.T) {
 func TestInterventionBlocksAcceptance(t *testing.T) {
 	w := newWorld(t)
 	weldOnce(w)
-	w.decide("welding.zt3", ResolutionAccept, 6)
-	w.inspect("assembly.cover", 6.5, "no_defect_indicated", "Z9")
-	w.start("A-1", "assembly.cover", 7)
-	w.finish("A-1", 8)
-	w.add(catalog.ItemInterventionOpened, 8.5, map[string]any{"intervention_id": "IV-1", "zone_ids": []string{"Z9"}, "purpose": map[string]string{"code": "fod", "text": "поиск"}})
-	w.decide("final.zt6", ResolutionAccept, 9)
+	w.decide("welding.zt3", ResolutionAccept, 60)
+	w.inspect("assembly.cover", 65, "no_defect_indicated", "Z9")
+	w.start("A-1", "assembly.cover", 70)
+	w.finish("A-1", 80)
+	w.add(catalog.ItemInterventionOpened, 85, map[string]any{"intervention_id": "IV-1", "zone_ids": []string{"Z9"}, "purpose": map[string]string{"code": "fod", "text": "поиск"}})
+	w.decide("final.zt6", ResolutionAccept, 90)
 	s, _ := w.fold()
 	wantSteps(t, s, "final.zt6")
 	if s.Zones["Z9"].Outdated != true {
@@ -352,8 +352,8 @@ func TestInterventionBlocksAcceptance(t *testing.T) {
 	if refusalCode(PresentationGuard(s, w.env, "final.zt6", ResolutionAccept)) != errcodes.NonconformityInterventionOpen {
 		t.Fatal("гард приёмки при открытом вмешательстве")
 	}
-	w.add(catalog.ItemInterventionClosed, 9.5, map[string]any{"intervention_id": "IV-1", "recheck_event_ids": []string{}})
-	w.decide("final.zt6", ResolutionAccept, 10)
+	w.add(catalog.ItemInterventionClosed, 95, map[string]any{"intervention_id": "IV-1", "recheck_event_ids": []string{}})
+	w.decide("final.zt6", ResolutionAccept, 100)
 	s, _ = w.fold()
 	if !s.Completed {
 		t.Fatalf("после закрытия вмешательства приёмка не прошла: %+v", s.Tokens)
@@ -395,8 +395,8 @@ func TestModifiedVersionIsNotExecuted(t *testing.T) {
 func TestFoldDeterministic(t *testing.T) {
 	w := newWorld(t)
 	weldOnce(w)
-	w.decide("welding.zt3", ResolutionReject, 6)
-	w.dispose("rework", 7)
+	w.decide("welding.zt3", ResolutionReject, 60)
+	w.dispose("rework", 70)
 	s1, r1 := w.fold()
 	s2, r2 := w.fold()
 	if string(mustJSON(t, s1)) != string(mustJSON(t, s2)) || string(mustJSON(t, r1)) != string(mustJSON(t, r2)) {
@@ -408,7 +408,7 @@ func TestFoldDeterministic(t *testing.T) {
 func TestCatchUpMarksGaps(t *testing.T) {
 	w := newWorld(t)
 	w.register(0)
-	w.start("W-1", "welding.weld", 1) // кромки без данных
+	w.start("W-1", "welding.weld", 10) // кромки без данных
 	s, _ := w.fold()
 	wantSteps(t, s, "welding.weld")
 	if len(s.Gaps) != 1 || s.Gaps[0].StepKey != "welding.edge_prep" {
