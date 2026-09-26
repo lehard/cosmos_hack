@@ -111,3 +111,15 @@ func TestDemoOutsideDemoProfiles(t *testing.T) {
 		t.Fatalf("заголовок вне демо-профиля: %+v", got)
 	}
 }
+
+// Пост знает свой цех кодом и именем справочника мест (workshop_name, UI-16).
+func TestWorkplaceWorkshopName(t *testing.T) {
+	d := directory(t)
+	w, ok := d.Workplace("WP-WELD-1")
+	if !ok {
+		t.Fatal("нет поста WP-WELD-1")
+	}
+	if w.Workshop != "WS-WC" || w.WorkshopName != "Сварочный цех" {
+		t.Fatalf("цех поста: %q %q", w.Workshop, w.WorkshopName)
+	}
+}

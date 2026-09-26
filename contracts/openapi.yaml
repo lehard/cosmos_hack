@@ -10120,6 +10120,9 @@ components:
         workshop:
           description: Цех (FR-130).
           type: string
+        workshop_name:
+          description: Имя цеха из справочника мест; нет — показывать код workshop.
+          type: string
       required:
         - workplace_id
         - station
@@ -15969,6 +15972,9 @@ components:
           type: string
         workshop:
           description: Цех (FR-130).
+          type: string
+        workshop_name:
+          description: Имя цеха из справочника мест; нет — показывать код workshop.
           type: string
       required:
         - assignments

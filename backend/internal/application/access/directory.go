@@ -30,6 +30,8 @@ type WorkplaceRef struct {
 	Scope string
 	// Workshop — цех (location id WS-…), в котором пост.
 	Workshop string
+	// WorkshopName — имя цеха из справочника мест.
+	WorkshopName string
 }
 
 // Workplace — рабочее место по id.

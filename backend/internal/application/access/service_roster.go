@@ -112,7 +112,7 @@ func (s *Service) Workplaces(ctx context.Context, workshop string, m platform.Mo
 		if workshop != "" && wp.Workshop != workshop {
 			continue
 		}
-		row := PostRow{WorkplaceID: wp.ID, Station: wp.Name, Workshop: wp.Workshop, Presence: "not_assigned"}
+		row := PostRow{WorkplaceID: wp.ID, Station: wp.Name, Workshop: wp.Workshop, WorkshopName: wp.WorkshopName, Presence: "not_assigned"}
 		var pick *accessdom.PostAssignment
 		for i := range posts {
 			a := &posts[i]

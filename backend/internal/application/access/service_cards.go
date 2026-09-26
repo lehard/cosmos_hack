@@ -43,7 +43,7 @@ func (s *Service) WorkplaceCard(ctx context.Context, workplaceID string, m platf
 	if err != nil {
 		return WorkplaceCard{}, err
 	}
-	out := WorkplaceCard{PostRow: PostRow{WorkplaceID: wp.ID, Station: wp.Name, Workshop: wp.Workshop, Presence: "not_assigned"}, Scope: wp.Scope,
+	out := WorkplaceCard{PostRow: PostRow{WorkplaceID: wp.ID, Station: wp.Name, Workshop: wp.Workshop, WorkshopName: wp.WorkshopName, Presence: "not_assigned"}, Scope: wp.Scope,
 		Assignments: []WorkplaceAssignee{}}
 	for _, r := range posts.Items {
 		if r.WorkplaceID == wp.ID {

@@ -136,12 +136,14 @@ type PostItem struct {
 // назначен — на месте ли (СКУД, ключ вставлен) — текущее изделие. Данных нет —
 // «unknown», а не «на месте».
 type PostRow struct {
-	WorkplaceID string      `json:"workplace_id"`
-	Station     string      `json:"station" doc:"Участок (пост) — подпись."`
-	Workshop    string      `json:"workshop,omitempty" doc:"Цех (FR-130)."`
-	Assigned    *PostPerson `json:"assigned,omitempty" doc:"Нет — никто не назначен."`
-	Presence    string      `json:"presence" enum:"present,key_missing,owner_absent,absent,not_assigned,unknown" doc:"На месте; по СКУД на месте, но ключ не вставлен; ключ вставлен, а владельца нет в зоне; нет ни в зоне, ни ключа; никто не назначен; неизвестно."`
-	CurrentItem *PostItem   `json:"current_item,omitempty" doc:"Нет — на посту нет изделия."`
+	WorkplaceID string `json:"workplace_id"`
+	Station     string `json:"station" doc:"Участок (пост) — подпись."`
+	Workshop    string `json:"workshop,omitempty" doc:"Цех (FR-130)."`
+	// WorkshopName — имя цеха из справочника мест рядом с кодом (для людей).
+	WorkshopName string      `json:"workshop_name,omitempty" doc:"Имя цеха из справочника мест; нет — показывать код workshop."`
+	Assigned     *PostPerson `json:"assigned,omitempty" doc:"Нет — никто не назначен."`
+	Presence     string      `json:"presence" enum:"present,key_missing,owner_absent,absent,not_assigned,unknown" doc:"На месте; по СКУД на месте, но ключ не вставлен; ключ вставлен, а владельца нет в зоне; нет ни в зоне, ни ключа; никто не назначен; неизвестно."`
+	CurrentItem  *PostItem   `json:"current_item,omitempty" doc:"Нет — на посту нет изделия."`
 }
 
 // PostList — посты в области.

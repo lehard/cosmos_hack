@@ -18,4 +18,6 @@ export interface PostRow {
   workplace_id: string;
   /** Цех (FR-130). */
   workshop?: string;
+  /** Имя цеха из справочника мест; нет — показывать код workshop. */
+  workshop_name?: string;
 }
