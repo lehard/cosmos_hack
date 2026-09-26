@@ -127,6 +127,8 @@ const (
 	JournalAppendOnly Code = "journal.append_only"
 	// Лимит разрешения на отклонение исчерпан
 	JournalConcessionExhausted Code = "journal.concession_exhausted"
+	// Запись уже есть в журнале
+	JournalDuplicate Code = "journal.duplicate"
 	// Запись отвергнута: аренда партиции утрачена
 	JournalFenced Code = "journal.fenced"
 	// Политика доступа изменилась
@@ -279,6 +281,7 @@ var codes = [...]Info{
 	{Code: IngestUnknownSource, Status: 403, Title: "Источник не зарегистрирован", Detail: "Источник «{source_id}» не зарегистрирован — сообщение отклонено", UIKey: "errors.ingest.unknownSource", Quarantine: true, Severity: "error", Guard: false, Aliases: nil},
 	{Code: JournalAppendOnly, Status: 405, Title: "Журнал только на дописывание", Detail: "Изменение и удаление записей журнала невозможны — исправление только новой записью", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: JournalConcessionExhausted, Status: 409, Title: "Лимит разрешения на отклонение исчерпан", Detail: "Разрешение {concession_id}: остаток {remaining} из {limit}", UIKey: "errors.decision.concessionRequired", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
+	{Code: JournalDuplicate, Status: 409, Title: "Запись уже есть в журнале", Detail: "Запись с этим event_id уже записана — повтор не записывается", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: JournalFenced, Status: 503, Title: "Запись отвергнута: аренда партиции утрачена", Detail: "Эпоха аренды партиции {partition} устарела — копия больше не пишет", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: JournalStalePolicy, Status: 409, Title: "Политика доступа изменилась", Detail: "Политика изменилась после seq {policy_seq} — повторите действие", UIKey: "errors.staleState", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: JournalStaleState, Status: 409, Title: "Состояние изменилось после проверки", Detail: "В потоке {stream} после seq {basis_seq} есть новые записи — обновите и проверьте ещё раз", UIKey: "errors.staleState", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},

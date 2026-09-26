@@ -161,6 +161,12 @@ codes:
     ui_key: errors.decision.concessionRequired
     guard: true
     refs: [FR-54, AD-39]
+  journal.duplicate:
+    status: 409
+    title: "Запись уже есть в журнале"
+    detail: "Запись с этим event_id уже записана — повтор не записывается"
+    ui_key: errors.generic
+    refs: [AD-7, AD-44]
   journal.append_only:
     status: 405
     title: "Журнал только на дописывание"

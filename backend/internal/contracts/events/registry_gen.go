@@ -132,6 +132,7 @@ var dataTypes = [...]DataType{
 	{Type: "mes.hold.responded", Version: 1, New: func() any { return new(MesHoldRespondedV1) }},
 	{Type: "mes.job.received", Version: 1, New: func() any { return new(MesJobReceivedV1) }},
 	{Type: "normative.version.activated", Version: 1, New: func() any { return new(NormativeVersionActivatedV1) }},
+	{Type: "normative.version.drafted", Version: 1, New: func() any { return new(NormativeVersionDraftedV1) }},
 	{Type: "normative.version.loaded", Version: 1, New: func() any { return new(NormativeVersionLoadedV1) }},
 	{Type: "normative.version.retired", Version: 1, New: func() any { return new(NormativeVersionRetiredV1) }},
 	{Type: "normative.version.submitted", Version: 1, New: func() any { return new(NormativeVersionSubmittedV1) }},

@@ -176,11 +176,14 @@ check-generated: ## Сгенерированное не устарело: make g
 		echo "Сгенерированное расходится с закоммиченным — выполните make generate и закоммитьте:"; git status --short -- $$gen; exit 1; fi
 	@echo "check-generated: сгенерированное совпадает с источниками"
 
+# Уровни правил oasdiff — contracts/oasdiff-levels.txt: новое значение перечисления
+# в ответе — совместимое изменение (AD-20, FR-29, случай «неизвестное значение
+# перечисления»: клиент показывает UNKNOWN(значение)), как в compat-rules.mjs для событий.
 check-compat: ## Ломающие изменения контракта: oasdiff breaking (openapi.yaml) и @asyncapi/diff (asyncapi.yaml со схемами) против $(CONTRACT_BASE)
 	@rm -rf $(ROOT)/.dev/compat && mkdir -p $(ROOT)/.dev/compat/base
 	@git -C $(ROOT) archive $(CONTRACT_BASE) contracts/events contracts/openapi.yaml 2>/dev/null | tar -x -C $(ROOT)/.dev/compat/base 2>/dev/null || true
 	@echo "check-compat: база $(CONTRACT_BASE)"
-	$(GO_RUN) sh -c 'bin=$$(/src/deploy/scripts/go-tools.sh github.com/oasdiff/oasdiff); b=/src/.dev/compat/base/contracts/openapi.yaml; if [ -s $$b ]; then $$bin/oasdiff breaking $$b /src/contracts/openapi.yaml --fail-on ERR && echo "oasdiff: ломающих изменений HTTP API нет"; else echo "oasdiff: базовой openapi.yaml нет — пропуск"; fi'
+	$(GO_RUN) sh -c 'bin=$$(/src/deploy/scripts/go-tools.sh github.com/oasdiff/oasdiff); b=/src/.dev/compat/base/contracts/openapi.yaml; if [ -s $$b ]; then $$bin/oasdiff breaking $$b /src/contracts/openapi.yaml --severity-levels /src/contracts/oasdiff-levels.txt --fail-on ERR && echo "oasdiff: ломающих изменений HTTP API нет"; else echo "oasdiff: базовой openapi.yaml нет — пропуск"; fi'
 	$(NODE_RUN_CONTRACTS) sh -c 'test -d node_modules && test ! package-lock.json -nt node_modules/.package-lock.json || npm ci --prefer-offline --no-audit --no-fund --loglevel=error; node check-compat.mjs /src/.dev/compat/base/contracts/events/asyncapi.yaml'
 
 # ------------------------------------------------------------- лицензии ----

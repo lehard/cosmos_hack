@@ -470,7 +470,7 @@ func renderIngest(c *Ctx) []loader.Response {
 			continue
 		}
 		e := ingestapp.QuarantineEntry{QuarantineID: q.ID, SourceID: q.Source, Fingerprint: Digest([]byte("q/" + q.ID)), MaterialAddress: Digest([]byte("m/" + q.ID)), ProblemCode: q.Code,
-			Detail: ptr(fmt.Sprintf("Поле %s%s", q.Field, map[bool]string{true: ": «" + q.Value + "»"}[q.Value != ""])), QuarantinedAt: q.At.Time(), State: "open"}
+			Detail: ptr(fmt.Sprintf("Поле %s%s", q.Field, map[bool]string{true: ": «" + q.Value + "»"}[q.Value != ""])), QuarantinedAt: q.At.Time(), State: "open", BasisSeq: c.Seq()}
 		if !q.Fixed.IsZero() && !q.Fixed.Time().After(c.T) {
 			e.State = "accepted"
 		} else {
@@ -484,7 +484,7 @@ func renderIngest(c *Ctx) []loader.Response {
 	out = append(out, resp("ingest.quarantine.list", ql))
 	sources := ingestapp.SourceList{Items: []ingestapp.SourceView{}}
 	for _, id := range []string{"edge-cnc-1", "edge-kt2", "edge-kt3", "edge-leak-1", "edge-weld-1", "edge-weld-2", "gw-ndt", "onec"} {
-		sv := ingestapp.SourceView{SourceID: id, SourceKind: "machine", KeyRef: ptr(id + "@1"), State: "active", LastSeq: ptr(int64(4000 + len(id)*97)), LastReceivedAt: tptr(c.T)}
+		sv := ingestapp.SourceView{SourceID: id, SourceKind: "machine", KeyRef: ptr(id + "@1"), State: "active", LastSeq: ptr(int64(4000 + len(id)*97)), LastReceivedAt: tptr(c.T), BasisSeq: c.Seq()}
 		switch {
 		case strings.HasPrefix(id, "edge-kt"):
 			sv.SourceKind = "camera"

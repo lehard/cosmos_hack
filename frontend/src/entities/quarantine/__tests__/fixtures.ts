@@ -3,9 +3,9 @@
 import type { ErpChannel, IngestMetrics, QuarantineEntry, SourceView } from '@/shared/api/generated/model'
 
 export const sources = (): SourceView[] => [
-  { source_id: 'WS-2', source_kind: 'станок', state: 'active', key_ref: 'dev-ws2@1', last_received_at: '2026-09-23T09:06:00Z', last_seq: 1240, gap_count: 0, quarantined: 0, clock_skew_ms: 120 },
-  { source_id: 'GW-2', source_kind: 'шлюз', state: 'loss_suspected', key_ref: 'dev-gw2@1', last_received_at: '2026-09-22T06:50:00Z', last_seq: 312, gap_count: 35, quarantined: 1 },
-  { source_id: 'CAM-9', source_kind: 'камера', state: 'disabled', last_received_at: null, last_seq: null, gap_count: 0, quarantined: 0 },
+  { source_id: 'WS-2', source_kind: 'станок', state: 'active', key_ref: 'dev-ws2@1', last_received_at: '2026-09-23T09:06:00Z', last_seq: 1240, gap_count: 0, quarantined: 0, clock_skew_ms: 120, basis_seq: 5000 },
+  { source_id: 'GW-2', source_kind: 'шлюз', state: 'loss_suspected', key_ref: 'dev-gw2@1', last_received_at: '2026-09-22T06:50:00Z', last_seq: 312, gap_count: 35, quarantined: 1, basis_seq: 5000 },
+  { source_id: 'CAM-9', source_kind: 'камера', state: 'disabled', last_received_at: null, last_seq: null, gap_count: 0, quarantined: 0, basis_seq: 5000 },
 ]
 
 export const channels = (): ErpChannel[] => [
@@ -38,6 +38,7 @@ export const entry = (over: Partial<QuarantineEntry> = {}): QuarantineEntry => (
   fingerprint: 'sha256:abcd',
   material_address: 'cas://sha256/abcd',
   quarantined_at: '2026-09-22T11:00:00Z',
+  basis_seq: 5000,
   state: 'open',
   ...over,
 })

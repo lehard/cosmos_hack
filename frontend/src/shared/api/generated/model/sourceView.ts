@@ -5,6 +5,8 @@
 import type { SourceViewState } from './sourceViewState';
 
 export interface SourceView {
+  /** seq, на котором построен ответ (для basis_seq команд над источником, AD-39). */
+  basis_seq: number;
   /** Оценка расхождения часов источника (FR-33). */
   clock_skew_ms?: number;
   /**

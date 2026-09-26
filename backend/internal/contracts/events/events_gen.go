@@ -1387,6 +1387,13 @@ const DocumentVersionDraftedV1RequiredApprovalsElemQuorumOne DocumentVersionDraf
 // Запрошено оформление документа — человек запрашивает документ с маршрутом:
 // «Запросить решение», выдача прав, назначение контролёра (FR-136, AD-12).
 type DocumentVersionRequestedV1 struct {
+	// Комментарий автора запроса.
+	Comment *string `json:"comment,omitempty,omitzero"`
+
+	// Решение, которое оформляется документом «Запросить решение» (например,
+	// `disposition=scrap`; FR-146).
+	Decision *string `json:"decision,omitempty,omitzero"`
+
 	// Будущий документ.
 	DocumentID ObjectID `json:"document_id"`
 
@@ -3696,6 +3703,31 @@ type NormativeVersionActivatedV1 struct {
 	VersionID ObjectID `json:"version_id"`
 }
 
+// Черновик версии процесса сохранён — технолог сохранил BPMN из редактора;
+// загрузчик проверил его (FR-13); дальше — отправка на утверждение кворумом
+// `normative.version.submitted` (FR-22, FR-25). Черновик не действует до введения
+// в действие.
+type NormativeVersionDraftedV1 struct {
+	// Версия, от которой начат черновик (для читаемой разницы).
+	BaseVersionID *ObjectID `json:"base_version_id,omitempty,omitzero"`
+
+	// Отпечаток пакета нормативного слоя черновика, если собран.
+	BundleDigest *Digest `json:"bundle_digest,omitempty,omitzero"`
+
+	// Метка версии для людей.
+	Label string `json:"label"`
+
+	// Хеш BPMN XML черновика; им же XML адресуется в хранилище материалов (AD-17).
+	ProcessVersionHash Digest `json:"process_version_hash"`
+
+	// Номер сохранения черновика: каждое сохранение — новая запись с номером на
+	// единицу больше.
+	Revision *int `json:"revision,omitempty,omitzero"`
+
+	// Версия-черновик.
+	VersionID ObjectID `json:"version_id"`
+}
+
 // Стартовая версия нормативного слоя загружена — seed при первом запуске: BPMN как
 // загружен, карта реакций, классификатор, шаблоны, политика; подписи кворума —
 // ключами генезиса (FR-10, AD-33).
@@ -5297,7 +5329,7 @@ const SecurityPresenceDeviationV1DeviationTokenWithoutPresence SecurityPresenceD
 // неизвестный, отозванный, чужой ключ, понижение профиля, изменённый пакет (FR-26,
 // FR-68, AD-10).
 type SecuritySignatureInvalidV1 struct {
-	// Что не так.
+	// Что не так; `unsigned` — подписи нет там, где политика её требует.
 	Failure SecuritySignatureInvalidV1Failure `json:"failure"`
 
 	// Ключ из пакета.
@@ -5323,6 +5355,7 @@ const SecuritySignatureInvalidV1FailurePayloadTampered SecuritySignatureInvalidV
 const SecuritySignatureInvalidV1FailureProfileDowngrade SecuritySignatureInvalidV1Failure = "profile_downgrade"
 const SecuritySignatureInvalidV1FailureRevokedKey SecuritySignatureInvalidV1Failure = "revoked_key"
 const SecuritySignatureInvalidV1FailureUnknownKey SecuritySignatureInvalidV1Failure = "unknown_key"
+const SecuritySignatureInvalidV1FailureUnsigned SecuritySignatureInvalidV1Failure = "unsigned"
 
 // Позиция записи в основной цепочке журнала (порядок знания, AD-37).
 type Seq int
@@ -5458,19 +5491,26 @@ type SseEntityChangedV1 struct {
 type SseEntityChangedV1Entity string
 
 const SseEntityChangedV1EntityAnalyzerPassport SseEntityChangedV1Entity = "analyzer_passport"
+const SseEntityChangedV1EntityConcession SseEntityChangedV1Entity = "concession"
 const SseEntityChangedV1EntityDocument SseEntityChangedV1Entity = "document"
 const SseEntityChangedV1EntityEquipment SseEntityChangedV1Entity = "equipment"
 const SseEntityChangedV1EntityErpMessage SseEntityChangedV1Entity = "erp_message"
 const SseEntityChangedV1EntityIncident SseEntityChangedV1Entity = "incident"
 const SseEntityChangedV1EntityIntegrity SseEntityChangedV1Entity = "integrity"
 const SseEntityChangedV1EntityItem SseEntityChangedV1Entity = "item"
+const SseEntityChangedV1EntityKey SseEntityChangedV1Entity = "key"
 const SseEntityChangedV1EntityLiveMap SseEntityChangedV1Entity = "live_map"
 const SseEntityChangedV1EntityLot SseEntityChangedV1Entity = "lot"
+const SseEntityChangedV1EntityMaterial SseEntityChangedV1Entity = "material"
 const SseEntityChangedV1EntityNonconformity SseEntityChangedV1Entity = "nonconformity"
 const SseEntityChangedV1EntityNotification SseEntityChangedV1Entity = "notification"
+const SseEntityChangedV1EntityPartner SseEntityChangedV1Entity = "partner"
+const SseEntityChangedV1EntityPerson SseEntityChangedV1Entity = "person"
 const SseEntityChangedV1EntityPolicy SseEntityChangedV1Entity = "policy"
+const SseEntityChangedV1EntityProcessHold SseEntityChangedV1Entity = "process_hold"
 const SseEntityChangedV1EntityProcessVersion SseEntityChangedV1Entity = "process_version"
 const SseEntityChangedV1EntityQuarantine SseEntityChangedV1Entity = "quarantine"
+const SseEntityChangedV1EntityReference SseEntityChangedV1Entity = "reference"
 const SseEntityChangedV1EntityRun SseEntityChangedV1Entity = "run"
 const SseEntityChangedV1EntityTask SseEntityChangedV1Entity = "task"
 const SseEntityChangedV1EntityWorkplace SseEntityChangedV1Entity = "workplace"

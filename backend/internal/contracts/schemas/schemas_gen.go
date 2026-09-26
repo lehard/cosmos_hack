@@ -148,6 +148,7 @@ var Files = [...]string{
 	"contracts/events/mes/mes.hold.responded.v1.json",
 	"contracts/events/mes/mes.job.received.v1.json",
 	"contracts/events/normative/normative.version.activated.v1.json",
+	"contracts/events/normative/normative.version.drafted.v1.json",
 	"contracts/events/normative/normative.version.loaded.v1.json",
 	"contracts/events/normative/normative.version.retired.v1.json",
 	"contracts/events/normative/normative.version.submitted.v1.json",
