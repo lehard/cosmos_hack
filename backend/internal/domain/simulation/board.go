@@ -64,7 +64,10 @@ type Check struct {
 }
 
 // Ops — допустимые сравнения.
-var Ops = []string{"eq", "ne", "gte", "lte", "in", "set_eq", "contains", "not_contains", "exists", "not_exists", "delta", "unchanged", "before"}
+//
+// changed — значение изменилось относительно момента «до» (кнопки цифрового
+// стенда, эпик 36: «область риска изменилась»).
+var Ops = []string{"eq", "ne", "gte", "lte", "in", "set_eq", "contains", "not_contains", "exists", "not_exists", "delta", "unchanged", "changed", "before"}
 
 // Status — итог строки табло.
 type Status string
@@ -332,6 +335,14 @@ func compare(op string, actual any, found bool, want, baseline any) (bool, strin
 			return false, "нет значения «до»"
 		}
 		return match(baseline, actual), ""
+	case "changed":
+		if baseline == nil {
+			return false, "нет значения «до»"
+		}
+		if match(baseline, actual) && match(actual, baseline) {
+			return false, "значение не изменилось"
+		}
+		return true, ""
 	case "before":
 		return before(actual, want)
 	}

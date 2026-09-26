@@ -1,0 +1,29 @@
+# Кнопка цифрового стенда «Потерять кусок данных» (FR-152, эпик 36) — ожидаемый
+# видимый результат (кейс §5.1, AD-26). Строки — из сбоя F07 «Разрыв в номерах
+# источника» и S04. Плейсхолдеры — см. duplicate_event.yaml.
+scenario: F07
+version: '1'
+title: 'Кнопка стенда: потеря куска данных'
+run: stand
+source: эпик 36 по F07 и S04 (research/data-collection-sources-and-failures.md §6)
+checkpoints:
+- at: apply
+  label: после нажатия
+  assertions:
+  - id: STAND-LOSS-01
+    what: разрыв номеров источника учтён
+    check:
+      operation: ingest.source.list
+      path: /items[source_id={inj:source}]/0/gap_count
+      op: gte
+      value: '{inj:gaps}'
+    mapping: exact
+  - id: STAND-LOSS-02
+    what: полнота приёма ниже 100 %
+    check:
+      operation: ingest.metrics.read
+      path: /completeness_bp
+      op: lte
+      value: 9999
+    mapping: draft
+    note: полнота считается по всем источникам — путь уточнит эпик 06

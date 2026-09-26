@@ -1,0 +1,58 @@
+# Кнопка цифрового стенда «Прислать повтор события» (FR-152, эпик 36) — ожидаемый
+# видимый результат, отдельно от входа (кейс §5.1, AD-26). Строки — из сбоя F01
+# «Повторная доставка» и S06. Плейсхолдеры нажатия подставляет пульт:
+#   {inj:step} — итог шага кнопки (ответ приёма), {inj:target} — event_id цели,
+#   {inj:item} — изделие цели, {inj:event} — событие кнопки, {inj:source} —
+#   источник стенда, {inj:occurred} — время события кнопки, {inj:gaps} — число
+#   разрывов источника потери данных. Строка без нужного значения не ставится.
+# baseline: apply — значение «до» читается перед нажатием.
+scenario: F01
+version: '1'
+title: 'Кнопка стенда: повтор события'
+run: stand
+source: эпик 36 по F01 и S06 (research/data-collection-sources-and-failures.md §6, process/scenarios-flange.md S06)
+checkpoints:
+- at: apply
+  label: после нажатия
+  assertions:
+  - id: STAND-DUP-01
+    what: 'приём ответил «повтор»: новой записи нет'
+    check:
+      operation: step
+      params:
+        label: '{inj:step}'
+      path: /delivered/0
+      op: eq
+      value: duplicate
+    mapping: exact
+  - id: STAND-DUP-02
+    what: 'повтор учтён в метриках приёма: дублей +1'
+    check:
+      operation: ingest.metrics.read
+      path: /duplicates
+      op: delta
+      value: 1
+    mapping: exact
+    baseline: apply
+  - id: STAND-DUP-03
+    what: принятых событий не прибавилось
+    check:
+      operation: ingest.metrics.read
+      path: /accepted
+      op: unchanged
+    mapping: exact
+    baseline: apply
+- at: apply
+  label: после нажатия
+  must_not: true
+  assertions:
+  - id: STAND-DUP-04
+    what: 'в паспорте изделия событие не задвоилось: запись одна'
+    check:
+      operation: item.passport.read
+      params:
+        item_id: '{inj:item}'
+      path: /entries[event_id={inj:target}]/#
+      op: eq
+      value: 1
+    mapping: exact
