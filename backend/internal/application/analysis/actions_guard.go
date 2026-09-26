@@ -2,7 +2,6 @@ package analysis
 
 import (
 	"context"
-	"encoding/json"
 
 	dom "ant/internal/domain/analysis"
 )
@@ -14,12 +13,8 @@ import (
 
 // planOf — план проверки эффективности из тела команды: проверка полноты
 // (GuardPlan) и нормализованный вид для записи.
-func planOf(raw map[string]any) (map[string]any, error) {
-	var p dom.EffectivenessPlan
-	if raw != nil {
-		b, _ := json.Marshal(raw)
-		_ = json.Unmarshal(b, &p)
-	}
+func planOf(in EffectivenessPlanInput) (map[string]any, error) {
+	p := dom.EffectivenessPlan{Metric: in.Metric, Baseline: in.Baseline, WindowDays: in.WindowDays, SuccessCriterion: in.SuccessCriterion, EnhancedControl: in.EnhancedControl}
 	if err := dom.GuardPlan(p); err != nil {
 		return nil, err
 	}

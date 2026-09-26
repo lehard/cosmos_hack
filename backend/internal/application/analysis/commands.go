@@ -77,11 +77,11 @@ type CloseIncident struct {
 // AssignAction — назначить корректирующее действие (incident.action.assigned, FR-64).
 type AssignAction struct {
 	platform.CommandHeader
-	ActionType        string         `json:"action_type" enum:"correction,corrective_action,preventive_action"`
-	Direction         string         `json:"direction" enum:"prevent_occurrence,improve_detection"`
-	OwnerID           string         `json:"owner_id"`
-	DueAt             string         `json:"due_at,omitempty" format:"date-time"`
-	EffectivenessPlan map[string]any `json:"effectiveness_plan"`
+	ActionType        string                 `json:"action_type" enum:"correction,corrective_action,preventive_action"`
+	Direction         string                 `json:"direction" enum:"prevent_occurrence,improve_detection"`
+	OwnerID           string                 `json:"owner_id"`
+	DueAt             string                 `json:"due_at,omitempty" format:"date-time"`
+	EffectivenessPlan EffectivenessPlanInput `json:"effectiveness_plan" doc:"План проверки эффективности (FR-64): метрика, базовый уровень, окно, критерий успеха; без него мера не создаётся (422 incident.effectiveness_plan_required)."`
 	// Title — что делается словами (эпик 42, FR-138: организационная память).
 	Title string `json:"title,omitempty" maxLength:"256" doc:"Что делается словами — основа организационной памяти."`
 	// SuggestionID — предложение, из которого родилась мера (эпик 42, FR-63).
@@ -99,4 +99,19 @@ type EvaluateAction struct {
 	platform.CommandHeader
 	Result   string `json:"result" enum:"effective,failed"`
 	Evidence string `json:"evidence,omitempty" maxLength:"4000"`
+}
+
+// EffectivenessPlanInput — план проверки эффективности меры (FR-64), как
+// CorrectiveActionView.plan. Поля необязательны в схеме: неполный план
+// отклоняет гард кодом incident.effectiveness_plan_required со списком
+// недостающего (совместимо с прежним свободным объектом: лишние поля
+// принимаются и не учитываются).
+type EffectivenessPlanInput struct {
+	// Прочие поля плана (формулировки процессной сессии) принимаются, как у прежнего свободного объекта.
+	_                struct{} `additionalProperties:"true"`
+	Metric           string   `json:"metric,omitempty" maxLength:"500" doc:"Что измеряем."`
+	Baseline         string   `json:"baseline,omitempty" maxLength:"500" doc:"Базовый уровень до меры."`
+	WindowDays       int      `json:"window_days,omitempty" minimum:"0" maximum:"3650" doc:"Окно наблюдения, дней."`
+	SuccessCriterion string   `json:"success_criterion,omitempty" maxLength:"500" doc:"Критерий успеха."`
+	EnhancedControl  string   `json:"enhanced_control,omitempty" maxLength:"500" doc:"Усиленный контроль на время окна."`
 }

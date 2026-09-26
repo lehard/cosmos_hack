@@ -4,8 +4,8 @@
  */
 import type { AssignActionActionType } from './assignActionActionType';
 import type { AssignActionDirection } from './assignActionDirection';
-import type { AssignActionEffectivenessPlan } from './assignActionEffectivenessPlan';
 import type { DsseEnvelope } from './dsseEnvelope';
+import type { EffectivenessPlanInput } from './effectivenessPlanInput';
 
 export interface AssignAction {
   action_type: AssignActionActionType;
@@ -18,7 +18,8 @@ export interface AssignAction {
   command_id: string;
   direction: AssignActionDirection;
   due_at?: string;
-  effectiveness_plan: AssignActionEffectivenessPlan;
+  /** План проверки эффективности (FR-64): метрика, базовый уровень, окно, критерий успеха; без него мера не создаётся (422 incident.effectiveness_plan_required). */
+  effectiveness_plan: EffectivenessPlanInput;
   owner_id: string;
   /**
      * Версия политики, по которой показаны права (policy_seq сеанса); изменилась — 409 journal.stale_policy (AD-39).

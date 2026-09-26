@@ -175,16 +175,16 @@ func TestCorrectiveActionsOnFakes(t *testing.T) {
 		t.Fatalf("инциденты: %v", err)
 	}
 	inc := incs.Items[0].IncidentID
-	assign := func(plan map[string]any) (platform.Receipt, error) {
+	assign := func(plan appanalysis.EffectivenessPlanInput) (platform.Receipt, error) {
 		return svc.AssignAction(tec, inc, appanalysis.AssignAction{CommandHeader: platform.CommandHeader{CommandID: w.ID("command")},
 			ActionType: "corrective_action", Direction: "prevent_occurrence", OwnerID: "TEC-01", Title: "Проверка источника каждые 75 циклов",
 			EffectivenessPlan: plan})
 	}
-	if _, err := assign(map[string]any{"metric": "доля швов с трещиной"}); errCode(err) != errcodes.IncidentEffectivenessPlanRequired {
+	if _, err := assign(appanalysis.EffectivenessPlanInput{Metric: "доля швов с трещиной"}); errCode(err) != errcodes.IncidentEffectivenessPlanRequired {
 		t.Fatalf("мера без плана: %v", err)
 	}
-	if _, err := assign(map[string]any{"metric": "доля швов с трещиной", "baseline": "6 из 34", "window_days": 7,
-		"success_criterion": "0 трещин за 7 дней", "enhanced_control": "100 % визуальный контроль швов ИС-2"}); err != nil {
+	if _, err := assign(appanalysis.EffectivenessPlanInput{Metric: "доля швов с трещиной", Baseline: "6 из 34", WindowDays: 7,
+		SuccessCriterion: "0 трещин за 7 дней", EnhancedControl: "100 % визуальный контроль швов ИС-2"}); err != nil {
 		t.Fatal(err)
 	}
 	if err := w.Settle(ctx); err != nil {
