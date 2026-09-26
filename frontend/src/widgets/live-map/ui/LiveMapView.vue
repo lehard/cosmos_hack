@@ -8,7 +8,7 @@
  * Данные приходят свойствами — компонент не ходит на сервер; контейнер —
  * LiveMapWidget.vue.
  */
-import { computed, ref, shallowRef, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { NButton, NDatePicker, NIcon, NRadioButton, NRadioGroup, NSelect, NTooltip } from 'naive-ui'
 import { Certificate, Clock } from '@vicons/tabler'
@@ -59,6 +59,41 @@ const showTimeline = ref(false)
 const normsOn = ref(false)
 const norms = computed(() => parseNorms(props.data.bpmn_xml))
 const normSteps = computed<ReadonlySet<string>>(() => (normsOn.value ? new Set(norms.value.keys()) : new Set()))
+
+/**
+ * Высота схемы — вся свободная высота окна (UI-24): от верха схемы до низа окна
+ * минус нижние поля карточки и страницы. Считаем явно, а не цепочкой процентов:
+ * пересчёт — при смене размера окна, панели и строк над схемой.
+ */
+const mapEl = ref<HTMLElement | null>(null)
+const mapHeight = ref<number | null>(null)
+const MIN_MAP = 420
+const padBottom = (el: Element | null | undefined): number => (el ? parseFloat(getComputedStyle(el).paddingBottom) || 0 : 0)
+function fitHeight(): void {
+  const el = mapEl.value
+  if (!el || typeof window === 'undefined') return
+  const top = el.getBoundingClientRect().top
+  const card = el.closest('.n-card')
+  const reserve = padBottom(el.closest('.n-card__content')) + padBottom(el.closest('.shell-page')) + (card ? 2 : 0)
+  mapHeight.value = Math.max(MIN_MAP, Math.floor(window.innerHeight - top - reserve))
+}
+const refit = () => void nextTick(fitHeight)
+let headObserver: ResizeObserver | null = null
+onMounted(() => {
+  window.addEventListener('resize', refit)
+  // Всё над схемой (панель, лента времени, инцидент, нормы) меняет её верх.
+  if (typeof ResizeObserver !== 'undefined' && mapEl.value?.parentElement) {
+    headObserver = new ResizeObserver(refit)
+    for (const child of Array.from(mapEl.value.parentElement.children)) if (child !== mapEl.value) headObserver.observe(child)
+    headObserver.observe(mapEl.value.parentElement)
+  }
+  refit()
+})
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', refit)
+  headObserver?.disconnect()
+})
+watch([showTimeline, incidentOpen, normsOn, () => props.data.incident], refit)
 
 // Новая схема — прежний выбор узла может быть не из неё.
 watch(
@@ -231,7 +266,7 @@ function onReady(idx: DiagramIndex) {
         <p class="note">{{ t('liveMap.incident.colorNote') }}</p>
       </template>
     </section>
-    <div class="map">
+    <div ref="mapEl" class="map" :style="mapHeight ? { height: `${mapHeight}px`, flex: 'none' } : undefined">
       <div class="canvas-box">
         <p v-if="importError" class="import-error" role="alert">{{ t('errors.loadFailed') }}</p>
         <BpmnMapViewer
