@@ -129,7 +129,8 @@ async function submit(withAgent: boolean): Promise<void> {
     receipt.value = res.data as Receipt
     pending.value = null
   } catch (err) {
-    dialogError.value = err
+    // Отказ в окне подтверждения — не ошибка: окно решения остаётся открытым.
+    if ((err as { info?: { code?: string } } | null)?.info?.code !== 'signing.cancelled') dialogError.value = err
   } finally {
     signing.value = false
   }
