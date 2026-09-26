@@ -1,0 +1,26 @@
+# Конфигурация масштабирования ant для Kubernetes (эпик 35, AD-6, AD-25, FR-112).
+# Описание промышленного окружения, без локального запуска: kubectl apply -k deploy/k8s
+# (образ ant — тот же, что собирает make build; Postgres — внешний, см. README.md).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: ant
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: ant
+    includeSelectors: false
+resources:
+  - namespace.yaml
+  - migrate-job.yaml
+  - api.yaml
+  - worker.yaml
+  - leaders.yaml
+  - trust.yaml
+  - policies.yaml
+configMapGenerator:
+  - name: ant-config
+    files:
+      - ant.yaml=../config/ant.yaml
+images:
+  - name: ant
+    newName: registry.local/ant
+    newTag: "1.0.0"

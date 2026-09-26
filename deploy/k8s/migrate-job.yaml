@@ -1,0 +1,57 @@
+# Разовая роль migrate (AD-1, AD-25): роли БД и миграции модулей. Запускается
+# перед выкладкой новой версии (hook CI/CD или вручную); повтор безопасен.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ant-migrate
+spec:
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 3600
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: ant-migrate
+    spec:
+      restartPolicy: OnFailure
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: migrate
+          image: ant
+          args: ["-role=migrate", "-config=/etc/ant/ant.yaml"]
+          envFrom: [{configMapRef: {name: ant-env}}]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          resources:
+            requests: {cpu: 100m, memory: 64Mi}
+            limits: {memory: 128Mi}
+          volumeMounts:
+            - {name: config, mountPath: /etc/ant, readOnly: true}
+            - {name: db-secret, mountPath: /run/ant-secrets/ant, readOnly: true}
+            - {name: kek, mountPath: /var/lib/ant-kek, readOnly: true}
+      volumes:
+        - name: config
+          configMap: {name: ant-config}
+        - name: db-secret
+          secret: {secretName: ant-db, defaultMode: 0400}
+        - name: kek
+          secret: {secretName: ant-kek, defaultMode: 0400}
+---
+# Параметры процессов ant (ANT_* поверх ant.yaml): профиль prod — 64 партиции,
+# БД — внешний Postgres (primary для записи).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ant-env
+data:
+  ANT_PROFILE: prod
+  ANT_DB_HOST: ant-postgres-rw
+  ANT_DB_USER: ant_admin
+  ANT_DB_NAME: ant
+  ANT_DB_PASSWORD_FILE: /run/ant-secrets/ant/db_password
+  ANT_SECURITY_KEEPER_URL: https://ant-keeper:8444
+  ANT_LOG_LEVEL: info

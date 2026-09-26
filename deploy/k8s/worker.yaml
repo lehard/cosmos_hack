@@ -1,0 +1,87 @@
+# Роль worker ×N (AD-6, FR-107): партиции hash(item_id) mod P (P = engine.partitions,
+# 64 в prod/load) делятся между копиями арендами с эпохой в Postgres — семантика
+# consumer group Kafka с key = item_id. N ≤ P: лишние копии ждут в резерве.
+# Изменение N — перераспределение партиций (копия держит не больше ⌈P/N⌉),
+# упавшая копия отдаёт свои по истечении аренды (engine.lease_ttl).
+# Смысл обработки от N не зависит — проверки rebuild_hash и state_hash (make load).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ant-worker
+spec:
+  replicas: 4
+  selector:
+    matchLabels: {app.kubernetes.io/name: ant-worker}
+  strategy:
+    # Новая копия сначала появляется в аренде worker:‹держатель›, потом забирает
+    # партиции — без окна, когда партиция без обработчика дольше срока аренды.
+    rollingUpdate: {maxUnavailable: 1, maxSurge: 1}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: ant-worker}
+    spec:
+      # Срок аренды 10 с: копия, получившая SIGTERM, отдаёт аренды сразу.
+      terminationGracePeriodSeconds: 20
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: worker
+          image: ant
+          args: ["-role=worker", "-config=/etc/ant/ant.yaml"]
+          envFrom: [{configMapRef: {name: ant-env}}]
+          env:
+            - {name: ANT_DB_MAX_CONNS, value: "12"}
+            - {name: ANT_ENGINE_FOLD_PARALLELISM, value: "4"}
+          ports: [{name: http, containerPort: 8080}]
+          readinessProbe:
+            httpGet: {path: /readyz, port: http}
+            periodSeconds: 5
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          resources:
+            requests: {cpu: 500m, memory: 128Mi}
+            limits: {memory: 384Mi}
+          volumeMounts:
+            - {name: config, mountPath: /etc/ant, readOnly: true}
+            - {name: db-secret, mountPath: /run/ant-secrets/ant, readOnly: true}
+            - {name: kek, mountPath: /var/lib/ant-kek, readOnly: true}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - name: config
+          configMap: {name: ant-config}
+        - name: db-secret
+          secret: {secretName: ant-db, defaultMode: 0400}
+        - name: kek
+          secret: {secretName: ant-kek, defaultMode: 0400}
+        - name: tmp
+          emptyDir: {sizeLimit: 64Mi}
+---
+# Масштаб по CPU (свёртка) — не больше P копий; выше P копии ничего не получат.
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: ant-worker
+spec:
+  scaleTargetRef: {apiVersion: apps/v1, kind: Deployment, name: ant-worker}
+  minReplicas: 2
+  maxReplicas: 16
+  behavior:
+    # Каждое изменение N — перераспределение партиций: не дёргать чаще раза в минуту.
+    scaleDown: {stabilizationWindowSeconds: 300}
+    scaleUp: {stabilizationWindowSeconds: 60}
+  metrics:
+    - type: Resource
+      resource: {name: cpu, target: {type: Utilization, averageUtilization: 75}}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ant-worker
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels: {app.kubernetes.io/name: ant-worker}
