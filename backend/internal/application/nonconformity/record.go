@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"slices"
 	"strings"
 	"time"
 	"uuid"
@@ -59,8 +60,10 @@ func signer(person string) string {
 // journal.concession_exhausted. Повтор с тем же command_id (event_id решения
 // = command_id) возвращает прежнюю квитанцию (AD-7).
 //
-// Конверт — DSSE без подписей (демо без агента токена, Д-30): подпись
-// личным ключом собирает агент токена (эпики 27, 38); запись критического
+// Конверт записи — DSSE сервера без подписей; подпись человека (агент
+// токена, ключ в браузере, demo-signer, бумага) проверяет декоратор
+// (signing.CheckCommand, Д-59) и она хранится в блоке command рядом с
+// записью (platform.SignRecord); без подписи — демо (Д-30). Запись критического
 // действия (AD-28) — через CriticalActions (security.Execute, эпик 29).
 func (s *Service) write(ctx context.Context, d decision) (platform.Receipt, error) {
 	id := strings.ToLower(d.Meta.CommandID)
@@ -88,6 +91,12 @@ func (s *Service) write(ctx context.Context, d decision) (platform.Receipt, erro
 	if d.Meta.WorkplaceID != "" {
 		cmd["workplace_id"] = d.Meta.WorkplaceID
 	}
+	// Д-59: подпись команды, принятая декоратором (signing.CheckCommand), —
+	// конверт клиента и класс хранения ключа рядом с записью.
+	prov, err := platform.SignRecord(ctx, cmd, d.ItemID)
+	if err != nil {
+		return platform.Receipt{}, err
+	}
 	env := map[string]any{
 		"event_id": id, "event_type": string(d.Type), "schema_version": info.CurrentVersion, "source_id": SourceAPI,
 		"source_kind": "manual_entry", "occurred_at": occurred, "correlation_id": id, "causation_id": nil, "command": cmd,
@@ -114,6 +123,9 @@ func (s *Service) write(ctx context.Context, d decision) (platform.Receipt, erro
 		SchemaVersion: info.CurrentVersion, EventID: id, SourceID: SourceAPI, Stream: d.Stream,
 		OccurredAt: occurred, ReceivedAt: engineapp.FormatTime(s.d.Now()), CorrelationID: id,
 		ProvenanceClass: jc.JournalEntryProvenanceClassPersonal, DomainBuild: s.cfg.DomainBuild,
+	}
+	if prov != "" && slices.Contains(info.Provenance, prov) {
+		e.ProvenanceClass = jc.JournalEntryProvenanceClass(prov)
 	}
 	if s.cfg.ScenarioClock {
 		e.RecordedAt = occurred

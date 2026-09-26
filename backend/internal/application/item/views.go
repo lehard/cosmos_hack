@@ -50,6 +50,10 @@ type ItemSignature struct {
 	// номер бумажного оригинала в архиве ОТК и адрес скана в хранилище материалов.
 	PaperOriginalRef string `json:"paper_original_ref,omitempty" doc:"Учётный номер бумажного оригинала в архиве ОТК (AD-43)."`
 	ScanAddress      string `json:"scan_address,omitempty" doc:"Адрес скана в хранилище материалов: streebog256:… (AD-23, AD-43)."`
+	// Method, KeyStorage — подпись команды человека (Д-59): способ и класс
+	// хранения ключа по акту регистрации (AD-14, Д-72).
+	Method     string `json:"method,omitempty" enum:"token_agent,paper,demo_signer" doc:"Способ подписи решения: агент токена или ключ в браузере, бумага с заверением, демо-подписант (Д-59)."`
+	KeyStorage string `json:"key_storage,omitempty" enum:"hardware_token,software_browser" doc:"Класс хранения ключа подписанта (AD-14, Д-72): физический ключ или ключ в браузере."`
 }
 
 // PassportEntry — запись паспорта: факт, решение или реакция — раздельно (кейс §7.2, FR-42).

@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"slices"
 	"strings"
 	"time"
 	"uuid"
@@ -20,8 +21,9 @@ import (
 
 // Запись фактов и решений, принятых операциями API модулей item и crossitem
 // (AD-2, AD-39, AD-44): в журнал пишет только journal.Append; одна команда —
-// одна пачка с проверками потоков гарда. Конверт — DSSE без подписей (демо
-// без агента токена, Д-30); факт, введённый человеком через API, помечен
+// одна пачка с проверками потоков гарда. Конверт — DSSE сервера без подписей;
+// подпись человека, принятая декоратором (Д-59), — в блоке command первой
+// записи (platform.SignRecord), без подписи — демо (Д-30); факт, введённый человеком через API, помечен
 // source_kind = manual_entry (FR-140: ручная отметка не выдаётся за данные станка).
 
 // SourceAPI — source_id записей, принятых операциями API.
@@ -95,7 +97,13 @@ func (w JournalWriter) Write(ctx context.Context, owner kernel.Module, recs []Re
 			id = kernel.UUIDv5(cmdID, string(d.Type)+"\x1f"+d.Stream)
 		}
 		ids = append(ids, id)
-		pend, err := w.pending(d, info, id, cmdID, now(), appjournal.RunFrom(ctx))
+		// Д-59: подпись команды (декоратор, signing.CheckCommand) — рядом с
+		// первой записью пачки: её подписал человек.
+		sctx := ctx
+		if i > 0 {
+			sctx = context.Background()
+		}
+		pend, err := w.pending(sctx, d, info, id, cmdID, now(), appjournal.RunFrom(ctx))
 		if err != nil {
 			return platform.Receipt{}, err
 		}
@@ -128,7 +136,7 @@ func (w JournalWriter) Write(ctx context.Context, owner kernel.Module, recs []Re
 
 // pending — запись и конверт; run — прогон сценария из контекста команды
 // (AD-38: всё, что прогон меняет, — записи прогона с run_id; эпик 16).
-func (w JournalWriter) pending(d Record, info catalog.Info, id, cmdID string, received time.Time, run string) (appjournal.Pending, error) {
+func (w JournalWriter) pending(ctx context.Context, d Record, info catalog.Info, id, cmdID string, received time.Time, run string) (appjournal.Pending, error) {
 	data, err := json.Marshal(d.Data)
 	if err != nil {
 		return appjournal.Pending{}, err
@@ -144,17 +152,25 @@ func (w JournalWriter) pending(d Record, info catalog.Info, id, cmdID string, re
 		"integrity": map[string]any{"format_version": 1, "crypto_profile": "gost", "signers": []string{signer(d.Actor)}},
 		"data":      json.RawMessage(data),
 	}
+	cmd := map[string]any{"command_id": cmdID, "basis_seq": d.Meta.BasisSeq, "guard_streams": guard, "policy_seq": d.Meta.PolicySeq,
+		"signature_level": d.SignatureLevel}
+	if d.Meta.WorkplaceID != "" {
+		cmd["workplace_id"] = d.Meta.WorkplaceID
+	}
+	prov, err := platform.SignRecord(ctx, cmd, d.ItemID)
+	if err != nil {
+		return appjournal.Pending{}, err
+	}
 	kind := jc.JournalEntryEntryKindDecision
 	if info.Kind == catalog.KindFact {
-		// Факт, введённый человеком через API (FR-140).
+		// Факт, введённый человеком через API (FR-140); подписанный уровнем 1 —
+		// с блоком command, где лежит подпись.
 		kind = jc.JournalEntryEntryKindFact
 		env["source_kind"] = "manual_entry"
-	} else {
-		cmd := map[string]any{"command_id": cmdID, "basis_seq": d.Meta.BasisSeq, "guard_streams": guard, "policy_seq": d.Meta.PolicySeq,
-			"signature_level": d.SignatureLevel}
-		if d.Meta.WorkplaceID != "" {
-			cmd["workplace_id"] = d.Meta.WorkplaceID
+		if _, signed := cmd["signature"]; signed {
+			env["command"] = cmd
 		}
+	} else {
 		env["command"] = cmd
 	}
 	if d.ItemID != "" {
@@ -185,6 +201,9 @@ func (w JournalWriter) pending(d Record, info catalog.Info, id, cmdID string, re
 	if d.Meta.BasisSeq > 0 {
 		b := int(d.Meta.BasisSeq)
 		e.BasisSeq = &b
+	}
+	if prov != "" && slices.Contains(info.Provenance, prov) {
+		e.ProvenanceClass = jc.JournalEntryProvenanceClass(prov)
 	}
 	if run != "" {
 		e.RunID = &run

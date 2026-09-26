@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"slices"
 	"strings"
 	"time"
 	"uuid"
@@ -90,6 +91,12 @@ func (w JournalDecisions) Write(ctx context.Context, d Decision) (platform.Recei
 	if d.Meta.WorkplaceID != "" {
 		cmd["workplace_id"] = d.Meta.WorkplaceID
 	}
+	// Д-59: подпись команды, принятая декоратором (signing.CheckCommand), —
+	// конверт клиента и класс хранения ключа рядом с записью.
+	prov, err := platform.SignRecord(ctx, cmd, d.ItemID)
+	if err != nil {
+		return platform.Receipt{}, err
+	}
 	env := map[string]any{
 		"event_id": id, "event_type": string(d.Type), "schema_version": info.CurrentVersion, "source_id": SourceAPI,
 		"occurred_at": occurred, "correlation_id": id, "causation_id": nil, "command": cmd,
@@ -117,6 +124,9 @@ func (w JournalDecisions) Write(ctx context.Context, d Decision) (platform.Recei
 		SchemaVersion: info.CurrentVersion, EventID: id, SourceID: SourceAPI, Stream: d.Stream,
 		OccurredAt: occurred, ReceivedAt: engineapp.FormatTime(now()), CorrelationID: id,
 		ProvenanceClass: jc.JournalEntryProvenanceClassPersonal, DomainBuild: w.DomainBuild,
+	}
+	if prov != "" && slices.Contains(info.Provenance, prov) {
+		e.ProvenanceClass = jc.JournalEntryProvenanceClass(prov)
 	}
 	if d.ItemID != "" {
 		item := d.ItemID
