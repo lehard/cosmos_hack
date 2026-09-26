@@ -4,8 +4,8 @@ import (
 	"context"
 
 	analyticsapp "ant/internal/application/analytics"
-	"ant/internal/infrastructure/storage/journal/clock"
 	analyticsstore "ant/internal/infrastructure/storage/analytics"
+	"ant/internal/infrastructure/storage/journal/clock"
 )
 
 // analyticsLive — live-показатели (эпик 25, AD-45) на ядре процесса: строки

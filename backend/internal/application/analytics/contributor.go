@@ -54,7 +54,9 @@ func Register(r *engineapp.Registry) error {
 
 // liveMap — изменение показателей приходит клиенту как live_map (ключи кэша
 // аналитики — под live_map, эпик 15).
-func liveMap(string) (platform.EntityKind, string, bool) { return platform.EntityLiveMap, "global", true }
+func liveMap(string) (platform.EntityKind, string, bool) {
+	return platform.EntityLiveMap, "global", true
+}
 
 // step — (состояние JSON, запись) → состояние JSON над чистой свёрткой домена.
 func step[S any](f func(S, string, kernel.Record) S) func(string, json.RawMessage, kernel.Record) (json.RawMessage, error) {

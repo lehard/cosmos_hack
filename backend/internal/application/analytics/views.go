@@ -96,8 +96,8 @@ type MetricRow struct {
 	// оборудования, ошибки исполнителей, гипотезы — не складываются.
 	Account *string       `json:"account,omitempty" enum:"incoming,equipment,performer,hypotheses" doc:"Графа раздельного учёта FR-87: входной брак / оборудование / исполнители / гипотезы; нет — показатель вне раздельного учёта."`
 	Total   MetricValue   `json:"total"`
-	Unknown  bool          `json:"unknown"`
-	Slices   []MetricSlice `json:"slices"`
+	Unknown bool          `json:"unknown"`
+	Slices  []MetricSlice `json:"slices"`
 }
 
 // MetricSlice — значение показателя в срезе (участок, операция, оборудование,
@@ -158,10 +158,10 @@ type ControlChart struct {
 	Title string `json:"title" doc:"Название показателя карты («Доля результатов контроля с признаком дефекта», «Длительность операции»)."`
 	// ChartKind — вид карты Шухарта (ГОСТ Р ИСО 7870-2).
 	ChartKind *string             `json:"chart_kind,omitempty" enum:"p,xmr" doc:"Вид карты: p — доля дефектных по подгруппам; xmr — индивидуальные значения и скользящий размах."`
-	Center   MetricValue         `json:"center"`
-	Upper    MetricValue         `json:"upper"`
-	Lower    MetricValue         `json:"lower"`
-	Points   []ControlChartPoint `json:"points"`
+	Center    MetricValue         `json:"center"`
+	Upper     MetricValue         `json:"upper"`
+	Lower     MetricValue         `json:"lower"`
+	Points    []ControlChartPoint `json:"points"`
 }
 
 // PeriodQuery — параметры периода для порта.
