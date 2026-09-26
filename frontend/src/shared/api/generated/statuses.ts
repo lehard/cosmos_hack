@@ -1,5 +1,5 @@
 // СГЕНЕРИРОВАНО frontend/scripts/generate.mjs — руками не править (AD-20).
-// Источник: frontend/dev/statuses.draft.yaml (черновик до появления контракта)
+// Источник: contracts/statuses.yaml
 
 /** Палитра тонов: цвет — только для статуса и главного действия (NFR-UI-2). */
 export const statusPalette = {
@@ -257,6 +257,63 @@ export const statusDictionaries = {
       "quarantined": {
         "label": "В карантине — нужна переотправка",
         "tone": "danger"
+      }
+    }
+  },
+  "item_summary": {
+    "title": "Сводный статус изделия для списков и карты (словарь продукта «Статусы изделия»); вычисляется из шести осей, сам осью не является",
+    "values": {
+      "in_process": {
+        "label": "В работе",
+        "tone": "info"
+      },
+      "suspect": {
+        "label": "Под подозрением",
+        "tone": "attention"
+      },
+      "reinspection_required": {
+        "label": "Ожидает доп. контроля",
+        "tone": "attention"
+      },
+      "hold": {
+        "label": "Заблокировано",
+        "tone": "danger"
+      },
+      "pending_decision": {
+        "label": "Ожидает решения",
+        "tone": "attention"
+      },
+      "nonconforming": {
+        "label": "Несоответствие подтверждено",
+        "tone": "danger"
+      },
+      "cleared": {
+        "label": "Исключено из подозрения",
+        "tone": "success"
+      },
+      "released": {
+        "label": "Разрешено к движению",
+        "tone": "success"
+      },
+      "in_rework": {
+        "label": "На переделке",
+        "tone": "attention"
+      },
+      "in_repair": {
+        "label": "На ремонте",
+        "tone": "attention"
+      },
+      "accepted_with_concession": {
+        "label": "Годно по разрешению на отклонение",
+        "tone": "qualified"
+      },
+      "scrapped": {
+        "label": "Списано",
+        "tone": "critical"
+      },
+      "returned": {
+        "label": "Возвращено поставщику",
+        "tone": "critical"
       }
     }
   }

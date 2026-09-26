@@ -8,9 +8,9 @@
  */
 import type { QueryClient } from '@tanstack/vue-query'
 import { readonly, ref, type Ref } from 'vue'
-import { getJournalStreamSubscribeUrl } from '../generated/client'
 import { EntityKind, type EntityChanged } from '../generated/model'
 import { LIST, PERMISSIONS } from '../keys'
+import { SSE_ADDRESS } from '../generated/stream'
 
 /** Имя события SSE с изменением сущности. */
 export const ENTITY_CHANGED_EVENT = 'entity_changed'
@@ -62,9 +62,9 @@ export async function applyEntityChanged(queryClient: QueryClient, msg: EntityCh
 /**
  * Открыть канал живых обновлений.
  * @param queryClient — кэш, в котором инвалидируются ключи
- * @param url — адрес канала (по умолчанию — из сгенерированного клиента)
+ * @param url — адрес канала (по умолчанию — из contracts/events/asyncapi.yaml)
  */
-export function startLiveUpdates(queryClient: QueryClient, url: string = getJournalStreamSubscribeUrl()): LiveUpdates {
+export function startLiveUpdates(queryClient: QueryClient, url: string = SSE_ADDRESS): LiveUpdates {
   const status = ref<LiveStatus>('connecting')
   const lastSeq = ref<number | null>(null)
   const source = new EventSource(url, { withCredentials: true })

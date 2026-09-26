@@ -30,7 +30,6 @@ import type {
   AccessPermissionListParams,
   DemoPersonaList,
   Desk,
-  EntityChanged,
   IntegrityStatus,
   ItemItemLookupParams,
   ItemLookup,
@@ -1076,7 +1075,7 @@ export function useItemItemLookup<TData = Awaited<ReturnType<typeof itemItemLook
 
 
 export type journalStreamSubscribeResponse200 = {
-  data: EntityChanged
+  data: string
   status: 200
 }
 

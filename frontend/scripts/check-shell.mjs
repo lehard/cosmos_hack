@@ -9,6 +9,7 @@
 // 2. Столы ролей normative/desks/*.yaml (AD-21, NFR-EXT-1): схема desk.schema.json,
 //    имя файла = роль, id вкладок и слотов уникальны, каждый виджет есть в реестре
 //    («неизвестный виджет ловит make check»), ключи названий есть в текстах.
+//    Роли столов сверяются со стартовой политикой normative/policy/policy.v1.yaml.
 // 3. Тексты (NFR-UI-3, Д-12): ru.json и ru.shell.json — без повторяющихся ключей,
 //    ключи двух файлов не пересекаются.
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
@@ -150,6 +151,20 @@ function main() {
     errors.push(...checkDesk(f, desk, { validate, registry, messages }))
   }
   ok(`столы: ${files.map((f) => basename(f, '.yaml')).join(', ')}`)
+
+  // Столы ↔ роли стартовой политики: стол — только у существующей роли; у каждой
+  // базовой роли (без inherits) стол есть, наследники берут стол базовой (AD-15).
+  const policyFile = join(REPO, 'normative/policy/policy.v1.yaml')
+  if (existsSync(policyFile)) {
+    const roles = parse(readFileSync(policyFile, 'utf8')).roles ?? []
+    const ids = new Set(roles.map((r) => r.id))
+    const deskRoles = new Set(files.map((f) => basename(f, '.yaml')))
+    for (const r of deskRoles) if (!ids.has(r)) errors.push(`normative/desks/${r}.yaml: роли «${r}» нет в normative/policy/policy.v1.yaml`)
+    for (const r of roles) {
+      if (!(r.inherits ?? []).length && !deskRoles.has(r.id)) errors.push(`normative/desks: у базовой роли «${r.id}» нет стола`)
+    }
+    ok(`столы ↔ политика: ${ids.size} ролей, у базовых столы есть`)
+  }
 
   // Самопроверка: неизвестный виджет обязан краснеть.
   if (process.argv.includes('--selftest')) {

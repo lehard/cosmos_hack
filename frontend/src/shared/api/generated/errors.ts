@@ -1,5 +1,5 @@
 // СГЕНЕРИРОВАНО frontend/scripts/generate.mjs — руками не править (AD-20).
-// Источник: frontend/dev/errors.draft.yaml (черновик до появления контракта)
+// Источник: contracts/errors.yaml
 
 /** Каталог кодов ошибок: код → HTTP-статус, заголовок и ключ текста интерфейса. */
 export const errorCatalog = {

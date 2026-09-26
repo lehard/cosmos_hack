@@ -7,7 +7,8 @@
 // Что генерируется:
 //   client.ts + model/ — клиент orval + Vue Query (fetch) из OpenAPI;
 //   statuses.ts        — словарь статусов и палитра тонов (AD-30) из statuses.yaml;
-//   errors.ts          — код ошибки → ключ текста интерфейса из errors.yaml (FR-28).
+//   errors.ts          — код ошибки → ключ текста интерфейса из errors.yaml (FR-28);
+//   stream.ts          — адрес SSE-канала живых обновлений из events/asyncapi.yaml (AD-21).
 //
 // Источники — контракты в contracts/ (корень репозитория). openapi.yaml генерирует
 // эпик 02 из Go-описаний Huma; пока его нет, берётся черновик
@@ -37,6 +38,7 @@ const sources = {
   openapi: source('openapi.yaml', 'openapi.draft.yaml'),
   statuses: source('statuses.yaml'),
   errors: source('errors.yaml'),
+  asyncapi: source('events/asyncapi.yaml'),
 }
 
 const header = (src) =>
@@ -107,6 +109,16 @@ async function run(outDir) {
       `\n/** Каталог кодов ошибок: код → HTTP-статус, заголовок и ключ текста интерфейса. */\n` +
       `export const errorCatalog = ${JSON.stringify(codes, null, 2)} as const\n\n` +
       `/** Код ошибки из каталога. */\nexport type ErrorCode = keyof typeof errorCatalog\n`,
+  )
+  // Канал живых обновлений (AD-21): адрес — из AsyncAPI, а не из имени операции.
+  const aa = parse(readFileSync(sources.asyncapi.path, 'utf8'))
+  const address = aa.channels?.sse?.address
+  if (typeof address !== 'string') throw new Error(`${sources.asyncapi.rel}: нет канала sse с адресом`)
+  writeFileSync(
+    join(outDir, 'stream.ts'),
+    header(sources.asyncapi) +
+      `\n/** Адрес SSE-канала живых обновлений столов (канал \`sse\`). */\n` +
+      `export const SSE_ADDRESS = ${JSON.stringify(address)}\n`,
   )
   writeFileSync(join(outDir, '.gitattributes'), '* linguist-generated=true\n')
 }

@@ -4,6 +4,7 @@
  */
 
 export * from './accessPermissionListParams';
+export * from './actionClass';
 export * from './asOfParameter';
 export * from './axis';
 export * from './axisParameter';

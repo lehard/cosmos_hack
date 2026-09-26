@@ -2,7 +2,7 @@
 // собираются из реестра, SSE инвалидирует ключи, права выключают действия
 // в воспроизведении. Конфигурация сборки — общая с vite.config.ts.
 import { defineConfig, mergeConfig } from 'vitest/config'
-import viteConfig from './vite.config'
+import viteConfig from './vite.config.ts'
 
 export default mergeConfig(
   viteConfig,
