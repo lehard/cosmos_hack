@@ -205,3 +205,13 @@ func patternCovers(a, b string) bool {
 	}
 	return true
 }
+
+// Allows — в правах есть действие id (x-ant-action) в какой-либо области.
+func (r Rights) Allows(id string) bool {
+	for _, b := range r {
+		if b.Kind == RightAction && patternCovers(b.Value, id) {
+			return true
+		}
+	}
+	return false
+}

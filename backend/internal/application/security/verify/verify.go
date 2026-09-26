@@ -28,6 +28,7 @@ import (
 	appjournal "ant/internal/application/journal"
 	app "ant/internal/application/security"
 	"ant/internal/contracts/procs"
+	accessdom "ant/internal/domain/access"
 	"ant/internal/domain/engine"
 )
 
@@ -76,6 +77,10 @@ type Input struct {
 	Partitions int
 	// RunID — проверять только прогон (пусто — весь журнал).
 	RunID string
+	// Policy — стартовая политика нормативного слоя (затравка до генезиса) —
+	// начало свёртки политики для проверки прав подписантов (эпик 26); nil —
+	// только политика генезиса из журнала.
+	Policy *accessdom.Policy
 }
 
 // Report — итог проверки (без подписи: её ставит cmd/verifier).
@@ -165,6 +170,9 @@ func Run(ctx context.Context, in Input) (Report, error) {
 	v.sourceSeq()
 	v.lateWrite()
 	if err := v.items(ctx); err != nil {
+		return Report{}, err
+	}
+	if err := v.authority(ctx); err != nil {
 		return Report{}, err
 	}
 	v.pending()
