@@ -210,6 +210,7 @@ function submitInspection(): void {
             />
           </FormField>
           <NAlert v-if="itemsError" type="error" :bordered="false">{{ problemText(itemsError) }}</NAlert>
+          <p v-else-if="stepKey && !candidates.length" class="ant-muted ant-wrap" data-testid="no-candidates">{{ t('widgets.shopFloor.terminal.noQueue') }}</p>
           <FormField v-else :label="t('common.words.item')" :hint="t('terminal.inspectionFirst')">
             <NSelect
               v-model:value="startItem"
