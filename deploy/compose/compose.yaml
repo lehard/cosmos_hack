@@ -18,8 +18,10 @@
 #   остаток ~0,9 ГБ — воркерам и stand-ам.
 #
 # Переменные (необязательно): ANT_PROFILE (fixtures | demo | load | prod),
-# ANT_HTTP_PORT (порт на машине, по умолчанию 8480), ANT_HTTP_BIND
-# (по умолчанию 127.0.0.1 — закрытый контур), ANT_IMAGE, ANT_VERSION.
+# ANT_HTTP_PORT (порт на машине, по умолчанию 8480), ANT_STANDS_PORT (порт
+# stand-ов, по умолчанию 8491), ANT_HTTP_BIND (по умолчанию 127.0.0.1 —
+# закрытый контур), ANT_IMAGE, ANT_VERSION, ANT_ERP_LEDGER (onec | galaktika —
+# кто ведёт учётный обмен, эпик 43).
 
 x-ant-image: &ant-image
   image: ${ANT_IMAGE:-ant:local}
@@ -223,6 +225,9 @@ services:
     environment:
       <<: *ant-env
       ANT_SECURITY_EXPORT_FILE: /var/lib/ant-export/security-events.jsonl
+      # Эпик 43: кто ведёт учётный обмен, если установлены 1С и Галактика
+      # (erp.ledger): по умолчанию 1С; ANT_ERP_LEDGER=galaktika — Галактика.
+      ANT_ERP_LEDGER: ${ANT_ERP_LEDGER:-onec}
     depends_on:
       migrate:
         condition: service_completed_successfully
