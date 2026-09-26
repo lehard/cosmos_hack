@@ -74,6 +74,7 @@ templates:
           - {key: final.status, label: "Итоговая годность"}
           - {key: final.at,     label: "Дата"}
       - {kind: route, title: "Итоговая годность — подписи"}
+      - {kind: text, title: "Происхождение", key: origin}
   - {id: requisition,                  title: "Требование-накладная",                                         class: record}
   - {id: first-article-act,            title: "Акт первой детали",                                            class: record}
   - {id: cmm-protocol,                 title: "Протокол КИМ, карта измерений",                                class: input}

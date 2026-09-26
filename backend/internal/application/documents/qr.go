@@ -413,7 +413,8 @@ func QRSVG(text string) (string, error) {
 
 // PrintFrame — страница для печати: каноническая отрисовка в рамке с QR
 // `ant:doc:‹id›:‹отпечаток›`, датой печати и колонтитулом «получено из
-// системы» (AD-12: рамка в отрисовку и отпечаток не входит).
+// системы «Главный»» (Д-65: имя платформы для людей; техническое имя в QR —
+// `ant`). Рамка в отрисовку и отпечаток не входит (AD-12).
 func PrintFrame(rendering, qr, svg, printedAt string) string {
 	var b strings.Builder
 	b.WriteString("<!doctype html>\n<html lang=\"ru\"><head><meta charset=\"utf-8\"><title>" + html.EscapeString(qr) + "</title>")
@@ -424,7 +425,7 @@ func PrintFrame(rendering, qr, svg, printedAt string) string {
 	b.WriteString("<div class=\"ant-frame\"><div class=\"ant-frame-head\"><div>")
 	b.WriteString(rendering)
 	b.WriteString("</div><div class=\"ant-qr\">" + svg + "<p class=\"ant-foot\">" + html.EscapeString(qr) + "</p></div></div>\n")
-	b.WriteString("<p class=\"ant-foot\">Получено из системы ant · напечатано " + html.EscapeString(printedAt) +
+	b.WriteString("<p class=\"ant-foot\">Получено из системы «Главный» · напечатано " + html.EscapeString(printedAt) +
 		" · подлинность — по QR: отпечаток документа сверяется при загрузке скана (FR-139)</p></div>\n</body></html>\n")
 	return b.String()
 }

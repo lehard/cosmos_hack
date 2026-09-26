@@ -62,7 +62,8 @@ func goldenDocs(t *testing.T) []goldenEntry {
 			"rows_count": 2, "otk_count": 1, "nc_count": 1,
 			"nonconformities": []any{map[string]any{"nc_id": "0192f000-0000-7000-8000-000000000001", "number": "НС-0192F000", "status": "confirmed",
 				"disposition": "как есть", "concession": "CON-1"}},
-			"final": map[string]any{"status": "в работе", "at": ""},
+			"final":  map[string]any{"status": "в работе", "at": ""},
+			"origin": dom.Origin,
 		}},
 		{tpl: dom.TemplateNCStatement, id: "NCS-0192f000-0000-7000-8000-000000000001", subject: "nonconformity:0192f000-0000-7000-8000-000000000001", body: map[string]any{
 			"item": map[string]any{"item_id": "ENT01:FL-0007", "item_type_id": "FL-100.01.001"},

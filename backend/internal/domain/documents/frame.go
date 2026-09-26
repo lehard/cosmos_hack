@@ -90,6 +90,7 @@ func (s State) clone() State {
 	for i := range s.Rows {
 		r := &s.Rows[i]
 		r.Sigs, r.Params, r.Checks, r.Remarks, r.Sources = slices.Clone(r.Sigs), slices.Clone(r.Params), slices.Clone(r.Checks), slices.Clone(r.Remarks), slices.Clone(r.Sources)
+		r.Regime = slices.Clone(r.Regime)
 		if r.OTK != nil {
 			m := *r.OTK
 			r.OTK = &m
@@ -140,6 +141,7 @@ func Reduce(s State, r kernel.Record, env Env, up Upstream) State {
 	}
 	s.Requested = nil
 	s.reduceTraveler(r)
+	s.fromMachinelogs(up)
 	s.reduceNC(r, env, up)
 	s.reduceDocs(r, env, up)
 	// Карта фиксируется версией при сдаче изделия на склад и при завершении

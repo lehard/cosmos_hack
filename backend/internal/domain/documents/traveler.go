@@ -9,6 +9,7 @@ import (
 	"ant/internal/contracts/catalog"
 	ev "ant/internal/contracts/events"
 	"ant/internal/domain/kernel"
+	"ant/internal/domain/machinelogs"
 )
 
 // Сопроводительная карта изделия (FR-65, каталог документов: «ядро»): по
@@ -62,10 +63,13 @@ type Row struct {
 	Duration   string     `json:"duration,omitempty"`
 	Sigs       []RowSig   `json:"sigs,omitempty"`
 	Params     []string   `json:"params,omitempty"`
-	Checks     []Mark     `json:"checks,omitempty"`
-	OTK        *Mark      `json:"otk,omitempty"`
-	Remarks    []string   `json:"remarks,omitempty"`
-	Sources    []Ref      `json:"sources"`
+	// Regime — фактический режим оборудования за выполнение (сводки
+	// параметров machinelogs: среднее, минимум, максимум, уставка, FR-121).
+	Regime  []string `json:"regime,omitempty"`
+	Checks  []Mark   `json:"checks,omitempty"`
+	OTK     *Mark    `json:"otk,omitempty"`
+	Remarks []string `json:"remarks,omitempty"`
+	Sources []Ref    `json:"sources"`
 }
 
 // NCInfo — несоответствие изделия для карты, заявления и решения.
@@ -91,6 +95,10 @@ type NCInfo struct {
 	DocumentID  string   `json:"document_id,omitempty"`
 	Sources     []Ref    `json:"sources"`
 }
+
+// Origin — происхождение сопроводительной карты для людей (FR-65, Д-65:
+// платформа для людей — «Главный»).
+const Origin = "Сопроводительная карта собрана системой «Главный» из истории изделия (журнала) — вручную не заполнялась"
 
 // NCNumber — номер заявления о несоответствии для людей: тот же вид, что у
 // nonconformity.NCNumber («НС-» + первые 8 знаков id), без импорта позднего
@@ -333,6 +341,50 @@ func (s *State) reduceTraveler(r kernel.Record) {
 	}
 }
 
+// fromMachinelogs — фактический режим оборудования строк карты из профилей
+// выполнения machinelogs (раньше documents в композиции, AD-40).
+func (s *State) fromMachinelogs(up Upstream) {
+	if up.Machinelogs == nil {
+		return
+	}
+	for i := range s.Rows {
+		r := &s.Rows[i]
+		p, ok := up.Machinelogs.Profile(r.RunID)
+		if r.RunID == "" || !ok {
+			continue
+		}
+		var regime []string
+		for _, ps := range p.Parameters {
+			regime = append(regime, paramLine(ps))
+		}
+		if p.ToolID != "" {
+			regime = append(regime, "Инструмент: "+p.ToolID)
+		}
+		if p.ManualMode {
+			regime = append(regime, "Ручное изменение режима во время выполнения")
+		}
+		r.Regime = regime
+	}
+}
+
+// paramLine — сводка параметра режима для людей (целые с масштабом, AD-4).
+func paramLine(p machinelogs.ParamSummary) string {
+	m := func(x *machinelogs.Measure) string {
+		if x == nil {
+			return Empty
+		}
+		return measurement(&ev.Measurement{Value: int(x.Value), Scale: x.Scale, Unit: x.Unit})
+	}
+	l := p.Parameter + ": ср. " + m(p.Mean) + " (мин. " + m(p.Min) + ", макс. " + m(p.Max) + ")"
+	if p.Setpoint != nil {
+		l += ", уставка " + m(p.Setpoint.Lower) + " … " + m(p.Setpoint.Upper)
+	}
+	if in := p.InRange(); in != nil && !*in {
+		l += " — вне уставки"
+	}
+	return l
+}
+
 // Final — итоговая годность изделия.
 type Final struct {
 	Status string `json:"status"`
@@ -380,7 +432,7 @@ func (s *State) travelerBody(env Env) (map[string]any, []Ref) {
 		}
 		rows = append(rows, map[string]any{
 			"no": i + 1, "step_key": r.StepKey, "operation": env.StepTitle(r.StepKey), "operation_run_id": r.RunID,
-			"executor": r.Executor, "date": date, "signature": sigs, "params": nonNil(r.Params), "otk": mark, "otk_by": markBy,
+			"executor": r.Executor, "date": date, "signature": sigs, "params": nonNil(append(slices.Clone(r.Params), r.Regime...)), "otk": mark, "otk_by": markBy,
 			"completion": r.Completion, "remarks": nonNil(remarks),
 		})
 	}
@@ -404,6 +456,7 @@ func (s *State) travelerBody(env Env) (map[string]any, []Ref) {
 			"order_id": s.Header.OrderID, "lots": nonNil(s.Header.Lots), "process_version_hash": s.Header.ProcessHash,
 		},
 		"rows": rows, "rows_count": len(rows), "otk_count": otk, "nc_count": len(ncs), "nonconformities": ncs, "final": final,
+		"origin": Origin,
 	}
 	if body["item"].(map[string]any)["item_id"] == "" {
 		body["item"].(map[string]any)["item_id"] = s.ItemID
