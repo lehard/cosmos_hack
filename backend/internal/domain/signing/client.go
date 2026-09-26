@@ -62,3 +62,26 @@ func (c CommandEvent) Canonical() ([]byte, error) {
 	}
 	return CanonicalOf(ev)
 }
+
+// HeaderFields — поля заголовка команды (AD-7, AD-39): в подписываемое
+// содержимое запроса не входят — их ставит клиент в момент отправки, а
+// подпись — в поле signature.
+var HeaderFields = []string{"command_id", "basis_seq", "policy_seq", "workplace_id", "signature"}
+
+// RequestData — data события-команды по соглашению подписи запроса: операция,
+// параметры пути и тело без полей заголовка. Одно и то же вычисляют клиент
+// (агент токена, demo-signer) и сервер (Expect.Data) — подписанное совпадает
+// с исполняемым побайтно после JCS.
+func RequestData(operation string, params map[string]string, body map[string]any) (json.RawMessage, error) {
+	b := make(map[string]any, len(body))
+	for k, v := range body {
+		b[k] = v
+	}
+	for _, h := range HeaderFields {
+		delete(b, h)
+	}
+	if params == nil {
+		params = map[string]string{}
+	}
+	return CanonicalOf(map[string]any{"operation": operation, "params": params, "body": b})
+}

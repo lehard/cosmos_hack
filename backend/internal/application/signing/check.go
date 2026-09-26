@@ -378,3 +378,23 @@ func fail(code errcodes.Code, detail string, kv ...string) *platform.Error {
 
 // SignerKey — ключ ГОСТ человека по соглашению демо-набора: ‹псевдоним›@1 в нижнем регистре.
 func SignerKey(person string) string { return signerRef(person) }
+
+// ExpectRequest — ожидание подписи команды по соглашению «подписан запрос»
+// (domain/signing.RequestData): модуль-исполнитель передаёт operationId,
+// параметры пути, тело команды, тип записи-решения и уровень операции.
+func ExpectRequest(operation string, params map[string]string, body any, eventType, commandID, itemID, actor string, level int, critical bool) (Expect, error) {
+	raw, err := json.Marshal(body)
+	if err != nil {
+		return Expect{}, err
+	}
+	var m map[string]any
+	if err := json.Unmarshal(raw, &m); err != nil {
+		return Expect{}, err
+	}
+	data, err := dom.RequestData(operation, params, m)
+	if err != nil {
+		return Expect{}, err
+	}
+	return Expect{Class: dom.ClassEvent, EventType: eventType, CommandID: commandID, ItemID: itemID, Data: data, Actor: actor,
+		Level: level, Critical: critical}, nil
+}

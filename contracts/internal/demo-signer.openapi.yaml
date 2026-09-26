@@ -29,7 +29,7 @@ paths:
             application/json:
               schema: {$ref: '#/components/schemas/StepResult'}
         '409':
-          description: Запрос ant не совпал с шагом сценария — не подписано
+          description: Запрос ant не совпал с шагом сценария — не подписано (код signing.document_changed)
           content:
             application/problem+json:
               schema: {$ref: '../problem.schema.json'}
@@ -64,6 +64,25 @@ components:
         scenario_id: {type: string, maxLength: 128, description: Сценарий в scenarios/definitions}
         step_id: {type: string, maxLength: 128, description: Шаг сценария (например, attest_paper, qc_accept)}
         persona_id: {type: string, maxLength: 64, description: Демо-персона}
+        request:
+          type: object
+          additionalProperties: false
+          required: [operation]
+          description: |
+            Что ant просит подписать и отправить (предложение эпика 32, совместимое расширение): операция, параметры пути
+            и тело команды с подставленными значениями прогона. demo-signer сверяет их с шагом определения (та же операция,
+            персона после сведения имён, буквальные значения; плейсхолдеры принимают значения прогона), сам строит
+            событие-команду по соглашению «подписан запрос» (data = JCS {operation, params, body без полей заголовка}),
+            считает отпечаток, подписывает ключом персоны и вызывает операцию как обычный клиент. Нет поля — шаг пропущен.
+          properties:
+            operation: {type: string, maxLength: 128, description: operationId из contracts/openapi.yaml}
+            params:
+              type: object
+              description: Параметры пути и запроса.
+              additionalProperties: {type: string, maxLength: 256}
+            body:
+              type: object
+              description: Тело команды (заголовок command_id, basis_seq, policy_seq demo-signer дополняет сам, если их нет).
     StepResult:
       type: object
       additionalProperties: false

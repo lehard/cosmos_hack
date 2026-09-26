@@ -1279,6 +1279,17 @@ export const eventCatalog = {
     "caGroup": "admin_security",
     "currentVersion": 1
   },
+  "key.shift_report.recorded": {
+    "title": "Сменный рапорт записан",
+    "emitter": "signing",
+    "kind": "decision",
+    "stream": "key",
+    "axis": "none",
+    "actionClass": "record",
+    "critical": false,
+    "caGroup": null,
+    "currentVersion": 1
+  },
   "material.object.stored": {
     "title": "Материал помещён в хранилище",
     "emitter": "materials",

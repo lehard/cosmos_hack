@@ -1,0 +1,20 @@
+{
+  "name": "tampered-package",
+  "title": "Изменённый пакет: «годен» заменено на «брак» после подписи — отвергнуто",
+  "seq": 60,
+  "committed_at": "2026-09-21T09:00:00.000Z",
+  "envelope": {
+    "payloadType": "application/vnd.ant.event+json; v=1",
+    "payload": "eyJjYXVzYXRpb25faWQiOm51bGwsImNvbW1hbmQiOnsiYmFzaXNfc2VxIjowLCJjbGllbnRfc2lnbmVkX2F0IjoiMjAyNi0wOS0yMVQwOTowMDowMC4wMDBaIiwiY29tbWFuZF9pZCI6IjAxOTI5YTJiLTdjM2QtN2U0Zi04YTViLTAwMDAwMDAwMDA2MCIsImd1YXJkX3N0cmVhbXMiOltdLCJwb2xpY3lfc2VxIjowLCJzaWduYXR1cmVfbGV2ZWwiOjJ9LCJjb3JyZWxhdGlvbl9pZCI6IjAxOTI5YTJiLTdjM2QtN2U0Zi04YTViLTAwMDAwMDAwMDA2MCIsImRhdGEiOnsiaXRlbV9pZCI6IkVOVDAxOkYtMDAxIiwib3V0Y29tZSI6InJlamVjdCJ9LCJldmVudF9pZCI6IjAxOTI5YTJiLTdjM2QtN2U0Zi04YTViLTAwMDAwMDAwMDA2MCIsImV2ZW50X3R5cGUiOiJpbnNwZWN0aW9uLnJlc3VsdC5yZWNvcmRlZCIsImludGVncml0eSI6eyJjcnlwdG9fcHJvZmlsZSI6Imdvc3QiLCJmb3JtYXRfdmVyc2lvbiI6MSwic2lnbmVycyI6WyJpbnMtMDFAMSJdfSwiaXRlbV9pZCI6IkVOVDAxOkYtMDAxIiwib2NjdXJyZWRfYXQiOiIyMDI2LTA5LTIxVDA5OjAwOjAwLjAwMFoiLCJzY2hlbWFfdmVyc2lvbiI6MSwic291cmNlX2lkIjoiSU5TLTAxIiwic291cmNlX2tpbmQiOiJtYW51YWxfZW50cnkifQ==",
+    "signatures": [
+      {
+        "keyid": "ins-01@1",
+        "sig": "EfVbaPId8Ugja8wVioDyPyVZ316a2svAl2EPfNa/sIcH6c29kDoa9xP5MyS2QHzRsBJkTP2j3lOf80mOi3LHrQ=="
+      }
+    ]
+  },
+  "expected": {
+    "status": "rejected",
+    "reason": "signing.package_tampered"
+  }
+}
