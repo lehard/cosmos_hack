@@ -62,9 +62,10 @@ const (
 )
 
 // InteractivePersonas — демо-персоны для агента токена (жюри подписывает
-// интерактивно, AD-33): держатели пяти ролей кейса и подписанты актов.
+// интерактивно, AD-33): все люди стартовой политики — любой персоной можно
+// войти и подписать из расширения (редкие подписанты, исполнители, мастера).
 // Ключи — ‹псевдоним›-ta@1 и ‹псевдоним›-ta-pq@1, субъект demo_persona.
-var InteractivePersonas = []string{"INS-01", "FOR-WC", "TEC-01", "PM-01", "ADM-01", "HQC-01", "AUD-01"}
+var InteractivePersonas = []string{"INS-01", "INS-02", "HQC-01", "FOR-SK", "FOR-MC", "FOR-WC", "FOR-AC", "HWS-WC", "HWS-AC", "TEC-01", "CWL-01", "PM-01", "ADM-01", "AUD-01", "O17", "O18", "K16", "W21", "W22", "A31", "T41", "STK-51", "NDT-61", "CR-71", "DA-81", "MET-82"}
 
 // PersonaClasses — классы пакетов ключей демо-персон (как у demo-signer).
 var PersonaClasses = []string{dom.ClassEvent, dom.ClassDocumentSignature, dom.ClassPaperAttestation, dom.ClassShiftReport, dom.ClassKeyAct}
