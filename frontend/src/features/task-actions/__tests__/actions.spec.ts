@@ -23,6 +23,11 @@ describe('реестр действий задачи', () => {
     expect(a).toEqual({ kind: 'form', form: 'receive', verbKey: 'receiveAction.title', itemId: ITEM })
   })
 
+  it('«Отправить» — форма прямо в задаче (откуда — цех задачи), а не окно изделия без кнопки', () => {
+    const a = taskActionOf({ ...base, operation_id: 'process.movement.send', item_id: ITEM, location_id: 'WS-WC', step_key: 'welding.send_to_assembly' })
+    expect(a).toEqual({ kind: 'form', form: 'send', verbKey: 'taskActions.verb.send', itemId: ITEM })
+  })
+
   it('изделие — из ссылки задачи, если item_id нет', () => {
     const a = taskActionOf({ ...base, operation_id: 'process.movement.receive', ref: { entity: 'item', id: ITEM } })
     expect(a).toMatchObject({ kind: 'form', form: 'receive', itemId: ITEM })

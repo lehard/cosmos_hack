@@ -8,6 +8,7 @@ import { alertText, noticeText, OBLIGATION_BASES } from '@/entities/notification
 import { codeToKey, i18n } from '@/shared/i18n'
 import { ownWorkplaceTasks, sectionsOf, splitTasks } from '../model/slice'
 import TasksWidget from '../ui/TasksWidget.vue'
+import { NSelect } from 'naive-ui'
 
 afterEach(() => vi.unstubAllGlobals())
 /** Текст без неразрывных пробелов (единицы измерения в текстах — через NBSP). */
@@ -145,6 +146,47 @@ describe('задачи и уведомления', () => {
     const post = calls.find((c) => c.method === 'POST' && c.path === `/api/v1/items/${item}/movements/receive`)
     expect(post?.body).toMatchObject({ destination_kind: 'workshop', to_location_id: 'WS-WC', inspection_on_receipt: 'no_damage', basis_seq: 9100 })
     expect(task().find('[data-testid="receive-receipt"]').text()).toContain('запись № 150')
+  })
+
+  it('задача процесса «Отправить» после ЗТ-3: форма в задаче — откуда цех задачи, куда выбирает мастер', async () => {
+    const item = 'ENT01:show-is2-20260921-1/I-3CDF7159'
+    const send = {
+      task_id: 'TASK-SND-1',
+      kind: 'process_step',
+      title: 'Отправить Ф-001: передача в сборочный цех',
+      state: 'open',
+      assignee_role: 'site_foreman',
+      assignee_id: null,
+      created_at: at('09:12'),
+      due_at: null,
+      overdue: false,
+      ref: { entity: 'item', id: item },
+      operation_id: 'process.movement.send',
+      item_id: item,
+      item_label: 'Ф-001',
+      location_id: 'WS-WC',
+      step_key: 'welding.send_to_assembly',
+    }
+    const { routes } = world()
+    const calls = mockApi({
+      ...routes,
+      'GET /api/v1/tasks': { items: [send] },
+      'GET /api/v1/permissions': { policy_seq: 3, items: [{ action: 'process.movement.send', subject: 'item', action_class: 'record' }] },
+      [`POST /api/v1/items/${item}/movements`]: receipt(151),
+    })
+    const w = await mountWidget(TasksWidget, props)
+    const task = () => w.find('[data-task="TASK-SND-1"]')
+    expect(task().find('[data-testid="ack-done"]').exists()).toBe(false)
+    expect(task().find('[data-testid="send-from"]').text()).toContain('Сварочный цех')
+    // Куда — не выбрано: кнопка неактивна, пока мастер не выбрал цех.
+    expect(task().find('[data-action="confirm-send"]').attributes('disabled')).toBeDefined()
+    w.findComponent({ name: 'SendMoveForm' }).findComponent(NSelect).vm.$emit('update:value', 'WS-MC')
+    await settle()
+    await task().find('[data-action="confirm-send"]').trigger('click')
+    await settle()
+    const post = calls.find((c) => c.method === 'POST' && c.path === `/api/v1/items/${item}/movements`)
+    expect(post?.body).toMatchObject({ from_location_id: 'WS-WC', to_location_id: 'WS-MC', step_key: 'welding.send_to_assembly', basis_seq: 9100 })
+    expect(task().find('[data-testid="send-receipt"]').text()).toContain('запись № 151')
   })
 
   it('открытых задач нет — одной строкой, выполненные ниже; аномалия узла открывает окно операции (UI-44, UI-45)', async () => {
