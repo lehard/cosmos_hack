@@ -14,7 +14,9 @@ const SCHEMA = {
 };
 export function loadNormative() {
   const out = {};
-  for (const f of walk(N, (p) => p.endsWith('.yaml') && !p.endsWith('.steps.yaml'))) {
+  // Столы ролей normative/desks/*.yaml (эпик 03) проверяет frontend/scripts/check-shell.mjs
+  // по своей схеме normative/desks/desk.schema.json и реестру виджетов.
+  for (const f of walk(N, (p) => p.endsWith('.yaml') && !p.endsWith('.steps.yaml') && !p.includes(`${path.sep}desks${path.sep}`))) {
     const r = path.relative(N, f).replace(/\.v[0-9]+\.yaml$|\.yaml$/, '');
     out[r] = { file: f, data: readYaml(f) };
   }

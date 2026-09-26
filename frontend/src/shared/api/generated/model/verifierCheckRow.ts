@@ -1,0 +1,16 @@
+/**
+ * СГЕНЕРИРОВАНО orval (frontend/scripts/generate.mjs) — руками не править (AD-20).
+ * Источник: contracts/openapi.yaml
+ */
+import type { VerifierCheckRowStatus } from './verifierCheckRowStatus';
+
+export interface VerifierCheckRow {
+  ca_ref?: string;
+  /** Проверка: цепочки, подписи, момент подписи, права подписанта, реакции, source_seq, документы, задержка записи, сборка, проекции. */
+  check: string;
+  /** @minimum 0 */
+  count: number;
+  details?: string;
+  /** цело / отвергнуто / не проверяемо. */
+  status: VerifierCheckRowStatus;
+}

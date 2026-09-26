@@ -1,17 +1,34 @@
 package mes
 
-// Queries — ведущий порт чтения модуля mes (AD-36): операции чтения API
-// опираются только на него. Методы добавляются вместе с операциями контракта.
-type Queries interface{}
+import (
+	"context"
 
-// Commands — ведущий порт команд модуля mes (AD-36, AD-39): одна операция —
-// одна реализация команды в модуле-владельце.
-type Commands interface{}
+	"ant/internal/application/platform"
+)
+
+// Queries — ведущий порт чтения модуля mes (AD-36).
+type Queries interface {
+	// Jobs — задания MES (FR-92) (mes.order.list).
+	Jobs(ctx context.Context, m platform.Moment, p platform.Page) (MesJobList, error)
+	// Blocks — блокировки в MES (FR-93) (mes.block.list).
+	Blocks(ctx context.Context, m platform.Moment) (MesBlockList, error)
+}
+
+// Commands — ведущий порт команд модуля mes (AD-39).
+type Commands interface {
+}
 
 // Unimplemented — заглушка портов mes: каждая операция отвечает 501
-// api.not_implemented. Встраивается в реализации live и fixtures, чтобы новые
-// операции контракта не ломали сборку (реализация переопределяет метод).
+// api.not_implemented. Встраивается в реализации live и fixtures.
 type Unimplemented struct{}
+
+func (Unimplemented) Jobs(context.Context, platform.Moment, platform.Page) (MesJobList, error) {
+	return MesJobList{}, platform.NotImplemented("mes.order.list")
+}
+
+func (Unimplemented) Blocks(context.Context, platform.Moment) (MesBlockList, error) {
+	return MesBlockList{}, platform.NotImplemented("mes.block.list")
+}
 
 var (
 	_ Queries  = Unimplemented{}
