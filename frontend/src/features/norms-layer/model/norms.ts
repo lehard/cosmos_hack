@@ -7,9 +7,6 @@
  * формата, FR-10). Узлы — по step_key (`ant:properties/@stepKey`).
  */
 
-const ANT_NS = 'urn:ant:bpmn-ext:1'
-const BPMN_NS = 'http://www.omg.org/spec/BPMN/20100524/MODEL'
-
 /** Нормативная опора шага. */
 export interface NormAnchor {
   standard: string
@@ -28,7 +25,10 @@ export interface StepNorms {
   anchors: NormAnchor[]
 }
 
-const text = (el: Element, local: string): string => el.getElementsByTagNameNS(ANT_NS, local)[0]?.textContent?.trim() ?? ''
+// Элементы — по локальному имени (префиксы в файлах разные, а разбор XML в
+// среде тестов не везде знает пространства имён), как entities/live-map/model/steps.ts.
+const kids = (el: Element, local: string): Element[] => Array.from(el.children).filter((c) => c.localName === local)
+const text = (el: Element, local: string): string => kids(el, local)[0]?.textContent?.trim() ?? ''
 
 /**
  * Опоры по step_key из BPMN XML версии; узлы без опор в карту не попадают.
@@ -37,13 +37,17 @@ const text = (el: Element, local: string): string => el.getElementsByTagNameNS(A
 export function parseNorms(xml: string): Map<string, StepNorms> {
   const out = new Map<string, StepNorms>()
   if (!xml) return out
-  const doc = new DOMParser().parseFromString(xml, 'application/xml')
+  let doc: Document
+  try {
+    doc = new DOMParser().parseFromString(xml, 'application/xml')
+  } catch {
+    return out
+  }
   if (doc.getElementsByTagName('parsererror').length) return out
-  for (const ext of Array.from(doc.getElementsByTagNameNS(BPMN_NS, 'extensionElements'))) {
-    const refs = Array.from(ext.children).filter((c) => c.namespaceURI === ANT_NS && c.localName === 'normRef')
+  for (const ext of Array.from(doc.getElementsByTagName('*')).filter((e) => e.localName === 'extensionElements')) {
+    const refs = kids(ext, 'normRef')
     if (!refs.length) continue
-    const props = Array.from(ext.children).find((c) => c.namespaceURI === ANT_NS && c.localName === 'properties')
-    const stepKey = props?.getAttribute('stepKey')
+    const stepKey = kids(ext, 'properties')[0]?.getAttribute('stepKey')
     const node = ext.parentElement
     if (!stepKey || !node) continue
     out.set(stepKey, {

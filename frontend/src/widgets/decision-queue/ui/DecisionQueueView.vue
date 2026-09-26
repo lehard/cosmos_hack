@@ -3,7 +3,8 @@
  * Очередь «Ждут моего решения» (PRD §3a, FR-55, FR-57): точки предъявления,
  * сигналы на рассмотрение, изолированные изделия со сроком решения (обратный
  * отсчёт). Порядок — по риску или по сроку — считает сервер; здесь
- * переключатель и показ. Работа с клавиатуры: ↑/↓ — соседняя строка.
+ * переключатель и показ. Щелчок или Enter по строке — открыть запись в правом
+ * окне (Д-70). Работа с клавиатуры: ↑/↓ — соседняя строка.
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -49,10 +50,13 @@ function move(delta: number): void {
 
 <template>
   <div class="queue" :class="`density-${density}`" data-testid="decision-queue">
-    <NRadioGroup :value="sort" size="small" @update:value="(v: QueueSort) => emit('update:sort', v)">
-      <NRadioButton value="risk" data-testid="sort-risk">{{ t('widgets.decisionQueue.sort.risk') }}</NRadioButton>
-      <NRadioButton value="deadline" data-testid="sort-deadline">{{ t('widgets.decisionQueue.sort.deadline') }}</NRadioButton>
-    </NRadioGroup>
+    <div class="bar">
+      <NRadioGroup :value="sort" size="small" @update:value="(v: QueueSort) => emit('update:sort', v)">
+        <NRadioButton value="risk" data-testid="sort-risk">{{ t('widgets.decisionQueue.sort.risk') }}</NRadioButton>
+        <NRadioButton value="deadline" data-testid="sort-deadline">{{ t('widgets.decisionQueue.sort.deadline') }}</NRadioButton>
+      </NRadioGroup>
+      <span class="hint" data-testid="open-hint">{{ t('widgets.decisionQueue.openHint') }}</span>
+    </div>
     <ol class="rows" tabindex="0" :aria-label="t('desks.decisionQueue')" @keydown.down.prevent="move(1)" @keydown.up.prevent="move(-1)">
       <li
         v-for="{ row, key, overdue, due } in items"
@@ -63,7 +67,9 @@ function move(delta: number): void {
         :data-severity="row.severity"
         :data-overdue="overdue || undefined"
         :aria-selected="key === selected"
+        tabindex="-1"
         @click="emit('select', row)"
+        @keydown.enter.prevent="emit('select', row)"
       >
         <div class="line">
           <span class="kind">{{ codeText(QUEUE_KIND_TEXT, row.kind, t) }}</span>
@@ -90,6 +96,19 @@ function move(delta: number): void {
   font-size: var(--ant-fs-body);
 }
 
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  align-items: center;
+}
+
+.hint {
+  min-width: 0;
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-meta);
+}
+
 .density-large {
   font-size: var(--ant-fs-lg);
 }
@@ -105,10 +124,15 @@ function move(delta: number): void {
 }
 
 .row {
-  padding: 6px 8px;
+  padding: 8px 12px;
   border: 1px solid var(--ant-border);
   border-radius: var(--ant-radius-md);
   cursor: pointer;
+}
+
+.row:hover {
+  border-color: var(--ant-border-strong);
+  background: var(--ant-surface-hover);
 }
 
 .row[aria-selected='true'] {

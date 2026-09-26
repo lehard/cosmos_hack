@@ -14,8 +14,7 @@ import { backendModeOf } from '@/shared/api/response'
 import type { WidgetProps } from '@/shared/config/widget'
 import { useMomentStore } from '@/shared/model/moment'
 import { WidgetFrame } from '@/shared/ui'
-import { usePlayback, type PlaybackRange } from '../model/playback'
-import TimelineBar from './TimelineBar.vue'
+import { TimelineBar, usePlayback, type PlaybackRange } from '@/features/playback'
 
 const props = defineProps<WidgetProps>()
 const route = useRoute()

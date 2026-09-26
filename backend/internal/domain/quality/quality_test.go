@@ -280,6 +280,33 @@ func TestCompletenessMissingIsNotConforming(t *testing.T) {
 	}
 }
 
+// FR-35, FR-47: операция шага, стоящего в процессе после точки контроля, не
+// старит её результат (КТ-4d до крышки не «устаревает» от затяжки крепежа);
+// повтор операции до точки — старит.
+func TestLaterStepRunKeepsPointResult(t *testing.T) {
+	env := withPassport(testEnv(), 3)
+	env.Steps = append(env.Steps, StepSpec{StepKey: "welding.marking", Order: 14, Stage: "welding", StepKind: "operation"})
+	var b builder
+	b.run("RUN-W1", "welding.weld")
+	cam := b.camera(OutcomeNoDefect, 9000, 9000)
+	b.xray(OutcomeNoDefect)
+	b.run("RUN-M1", "welding.marking")
+	b.add(catalog.ItemPresentationRecorded, map[string]any{"step_key": "welding.zt3_acceptance", "presentation_no": 1, "presented_to": "qc", "presented_by": "K1"})
+	s, _ := fold(env, b.out)
+	if p := point(s, "welding.kt3_camera"); p.Status != "received" || p.EventID != cam.EventID || p.Window != "RUN-W1" {
+		t.Fatalf("операция после точки не старит результат: %+v", p)
+	}
+	if bl := PresentationBlockers(s, env, "welding.zt3_acceptance"); len(bl) != 0 {
+		t.Fatalf("блокирующие причины: %+v", bl)
+	}
+	// Повтор сварки (до точки) — результат снова ждут.
+	b.run("RUN-W2", "welding.weld")
+	s, _ = fold(env, b.out)
+	if p := point(s, "welding.kt3_camera"); p.Status == "received" || p.Window != "RUN-W2" {
+		t.Fatalf("повтор операции до точки старит результат: %+v", p)
+	}
+}
+
 // FR-48, AD-27, AD-29: уверенное «признаков нет» пропускается к следующему
 // контролю только анализатором с уровнем доверия 4; «годно» не ставится.
 func TestAutoPassOnlyAtTrustFour(t *testing.T) {

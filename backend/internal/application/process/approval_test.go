@@ -24,7 +24,9 @@ func (f *fakeApprovals) Request(_ context.Context, v app.VersionRecord, decision
 	return id, nil
 }
 
-func (f *fakeApprovals) Route(context.Context, string) (app.ApprovalRoute, error) { return f.route, nil }
+func (f *fakeApprovals) Route(context.Context, string) (app.ApprovalRoute, error) {
+	return f.route, nil
+}
 
 // UJ-4 (FR-22…FR-24): технолог добавляет точку предъявления после сварки,
 // отправляет на кворум (лист с читаемой разницей), кворум подписывает,

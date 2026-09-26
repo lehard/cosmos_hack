@@ -20,6 +20,9 @@ type Model struct {
 	Spec  *Spec
 	clk   clock
 	Steps []time.Time
+	// shifts — шаблоны смен справочника (период «смена» показателей, FR-81);
+	// пусто — смены по 8 ч с 00:00, как у live без графика.
+	shifts []shiftPattern
 
 	Items    []*Item
 	itemByID map[string]*Item

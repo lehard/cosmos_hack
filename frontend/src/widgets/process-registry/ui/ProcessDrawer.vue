@@ -10,21 +10,21 @@
  * Подписи кворума ставят подписанты в «Запросах решения» своих столов
  * (документ эпика 28); здесь — прогресс и ввод в действие.
  *
- * До слияния общего `RecordDrawer` (shared/ui, Д-70) окно собрано на NDrawer
- * с той же раскладкой: заголовок, вкладки, тело, нижняя панель действий.
+ * Окно — общий `RecordDrawer` (shared/ui, Д-70): заголовок, вкладки, тело,
+ * нижняя панель действий.
  */
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useAbility } from '@casl/vue'
-import { NButton, NDrawer, NDrawerContent, NInput, NSpin, useMessage } from 'naive-ui'
+import { NButton, NInput, NSpin, useMessage } from 'naive-ui'
 import { ProcessModeler } from '@/features/process-editor'
 import { toDiffEntry, type ProcessDiffEntry } from '@/entities/process-version'
 import { codeToKey } from '@/shared/i18n'
 import { useProblemText } from '@/shared/i18n/problem'
 import { problemOf } from '@/shared/api/problem'
 import { useMomentStore } from '@/shared/model/moment'
-import { DataTable, EmptyState, FormField, KeyValue, KeyValueList, SectionPanel } from '@/shared/ui'
+import { DataTable, EmptyState, FormField, KeyValue, KeyValueList, RecordDrawer, SectionPanel, type RecordDrawerTab } from '@/shared/ui'
 import { bpmnFileName, BpmnFileError, downloadText, readBpmnFile } from '../model/bpmn-file'
+import { useCanOnVersion } from '../model/access'
 import { actionsFor, nextLabel, type VersionAction } from '../model/lifecycle'
 import { fetchBpmn, useApprovalDocument, useBpmn, useDiff, useLifecycle, useVersions, type ProcessSummary } from '../model/source'
 
@@ -37,7 +37,7 @@ const props = defineProps<{
 const emit = defineEmits<{ close: []; 'select-version': [id: string | null] }>()
 
 const { t, d } = useI18n()
-const ability = useAbility()
+const canOnVersion = useCanOnVersion()
 const moment = useMomentStore()
 const message = useMessage()
 const problemText = useProblemText()
@@ -88,7 +88,7 @@ const xml = computed(() => bpmn.data.value?.data.bpmn_xml ?? '')
 const entries = computed<ProcessDiffEntry[]>(() => (diff.data.value?.data.entries ?? []).map(toDiffEntry).filter((e): e is ProcessDiffEntry => e !== null))
 const document = computed(() => doc.data.value?.data ?? null)
 const routeClosedId = computed(() => document.value?.route_closed_event_id ?? null)
-const can = (a: string) => !moment.isReplay && ability.can(a, 'process_version')
+const can = (a: string) => !moment.isReplay && canOnVersion(a)
 
 const buttons = computed(() =>
   version.value && !moment.isReplay
@@ -214,41 +214,31 @@ async function run(action: VersionAction): Promise<void> {
 }
 
 const primary = (a: VersionAction) => a === 'submit' || a === 'activate' || a === 'saveDraft'
-const TABS: Tab[] = ['scheme', 'diff', 'approval']
+const tabs = computed<RecordDrawerTab[]>(() =>
+  version.value ? (['scheme', 'diff', 'approval'] as Tab[]).map((id) => ({ id, label: t(`processEditor.tabs.${id}`) })) : [],
+)
 </script>
 
 <template>
-  <NDrawer
+  <RecordDrawer
     :show="Boolean(process)"
-    placement="right"
-    width="min(100vw, clamp(640px, 72vw, 1400px))"
-    :auto-focus="false"
-    close-on-esc
-    mask-closable
-    @update:show="(s: boolean) => !s && emit('close')"
+    :kind-label="version ? t('processEditor.drawerKind') : t('processEditor.registry.kind')"
+    :number="process ? (version ? `${process.name} · ${version.label}` : process.name) : ''"
+    :subtitle="process?.process_id ?? ''"
+    :tabs="tabs"
+    :tab="tab"
+    data-record="process"
+    @update:tab="(x: string) => (tab = x as Tab)"
+    @close="emit('close')"
   >
-    <NDrawerContent v-if="process" closable :native-scrollbar="false">
-      <template #header>
-        <div class="head ant-box" data-testid="process-drawer-head">
-          <div class="line ant-box">
-            <span class="kind">{{ t('processEditor.registry.kind') }}</span>
-            <strong class="ant-ellipsis" :title="process.name">{{ process.name }}</strong>
-            <span class="kind ant-mono">{{ process.process_id }}</span>
-          </div>
-          <div v-if="version" class="line ant-box">
-            <button type="button" class="back" data-testid="back" @click="emit('select-version', null)">← {{ t('processEditor.registry.backToVersions') }}</button>
-            <span class="kind">{{ t('processEditor.drawerKind') }}</span>
-            <strong>{{ version.label }}</strong>
-            <span class="status" :data-status="version.status">{{ statusText(version.status) }}</span>
-          </div>
-          <div v-if="version" class="tabs ant-box" role="tablist">
-            <button v-for="x in TABS" :key="x" type="button" role="tab" class="tab" :aria-selected="tab === x" :data-tab="x" @click="tab = x">
-              {{ t(`processEditor.tabs.${x}`) }}
-            </button>
-          </div>
-        </div>
-      </template>
+    <template v-if="version" #status>
+      <span class="status" :data-status="version.status">{{ statusText(version.status) }}</span>
+    </template>
+    <template v-if="version" #links>
+      <button type="button" class="back" data-testid="back" @click="emit('select-version', null)">← {{ t('processEditor.registry.backToVersions') }}</button>
+    </template>
 
+    <template v-if="process">
       <!-- Обзор процесса: версии -->
       <div v-if="!version" class="body ant-box" data-testid="process-overview">
         <KeyValueList>
@@ -333,72 +323,58 @@ const TABS: Tab[] = ['scheme', 'diff', 'approval']
           </SectionPanel>
         </template>
       </div>
+    </template>
 
-      <template #footer>
-        <div class="actions ant-box" data-testid="drawer-actions">
-          <SectionPanel v-if="details" variant="subtle" :title="t('processEditor.fileErrors.details')">
-            <ul class="diff">
-              <li v-for="(x, i) in details.split('; ')" :key="i" class="ant-wrap ant-mono">{{ x }}</li>
-            </ul>
-          </SectionPanel>
-          <template v-if="version">
-            <FormField v-if="editing || version.status === 'draft'" :label="t('processEditor.labelField')">
-              <NInput v-model:value="label" size="small" :placeholder="nextLabel(labels)" :maxlength="64" />
-            </FormField>
-            <FormField v-if="asking === 'submit'" :label="t('processEditor.noteField')">
-              <NInput v-model:value="note" type="textarea" size="small" :maxlength="1800" :autosize="{ minRows: 2, maxRows: 4 }" />
-            </FormField>
-            <FormField v-if="asking === 'retire'" :label="t('processEditor.reasonField')" required>
-              <NInput v-model:value="reason" size="small" :maxlength="1000" />
-            </FormField>
+    <template #actions>
+      <div class="actions ant-box" data-testid="drawer-actions">
+        <SectionPanel v-if="details" variant="subtle" :title="t('processEditor.fileErrors.details')">
+          <ul class="diff">
+            <li v-for="(x, i) in details.split('; ')" :key="i" class="ant-wrap ant-mono">{{ x }}</li>
+          </ul>
+        </SectionPanel>
+        <template v-if="version">
+          <FormField v-if="editing || version.status === 'draft'" :label="t('processEditor.labelField')">
+            <NInput v-model:value="label" size="small" :placeholder="nextLabel(labels)" :maxlength="64" />
+          </FormField>
+          <FormField v-if="asking === 'submit'" :label="t('processEditor.noteField')">
+            <NInput v-model:value="note" type="textarea" size="small" :maxlength="1800" :autosize="{ minRows: 2, maxRows: 4 }" />
+          </FormField>
+          <FormField v-if="asking === 'retire'" :label="t('processEditor.reasonField')" required>
+            <NInput v-model:value="reason" size="small" :maxlength="1000" />
+          </FormField>
+        </template>
+        <div class="buttons">
+          <template v-if="!version">
+            <input ref="fileInput" type="file" accept=".bpmn,.xml,application/xml,text/xml" class="ant-sr-only" data-testid="upload-version" @change="onFile" />
+            <NButton v-if="can('process.version.draft')" :disabled="cmd.isPending.value" data-action="uploadVersion" @click="fileInput?.click()">
+              {{ t('processEditor.actions.uploadVersion') }}
+            </NButton>
+            <NButton v-if="can('process.version.draft') && active" type="primary" data-action="newVersion" @click="newVersion">
+              {{ t('processEditor.actions.newVersion') }}
+            </NButton>
           </template>
-          <div class="buttons">
-            <template v-if="!version">
-              <input ref="fileInput" type="file" accept=".bpmn,.xml,application/xml,text/xml" class="ant-sr-only" data-testid="upload-version" @change="onFile" />
-              <NButton v-if="can('process.version.draft')" :disabled="cmd.isPending.value" data-action="uploadVersion" @click="fileInput?.click()">
-                {{ t('processEditor.actions.uploadVersion') }}
-              </NButton>
-              <NButton v-if="can('process.version.draft') && active" type="primary" data-action="newVersion" @click="newVersion">
-                {{ t('processEditor.actions.newVersion') }}
-              </NButton>
-            </template>
-            <template v-else>
-              <NButton data-action="download" @click="download">{{ t('processEditor.actions.download') }}</NButton>
-              <NButton v-if="asking" quaternary @click="asking = null">{{ t('processEditor.actions.cancel') }}</NButton>
-              <NButton
-                v-for="b in buttons"
-                :key="b.action"
-                :type="primary(b.action) ? 'primary' : 'default'"
-                :disabled="!b.enabled || cmd.isPending.value || (asking === 'retire' && b.action === 'retire' && !reason.trim())"
-                :loading="cmd.isPending.value && (asking === b.action || b.action === 'saveDraft' || b.action === 'activate')"
-                :data-action="b.action"
-                @click="run(b.action)"
-              >
-                {{ t(`processEditor.actions.${b.action}`) }}
-              </NButton>
-            </template>
-          </div>
+          <template v-else>
+            <NButton data-action="download" @click="download">{{ t('processEditor.actions.download') }}</NButton>
+            <NButton v-if="asking" quaternary @click="asking = null">{{ t('processEditor.actions.cancel') }}</NButton>
+            <NButton
+              v-for="b in buttons"
+              :key="b.action"
+              :type="primary(b.action) ? 'primary' : 'default'"
+              :disabled="!b.enabled || cmd.isPending.value || (asking === 'retire' && b.action === 'retire' && !reason.trim())"
+              :loading="cmd.isPending.value && (asking === b.action || b.action === 'saveDraft' || b.action === 'activate')"
+              :data-action="b.action"
+              @click="run(b.action)"
+            >
+              {{ t(`processEditor.actions.${b.action}`) }}
+            </NButton>
+          </template>
         </div>
-      </template>
-    </NDrawerContent>
-  </NDrawer>
+      </div>
+    </template>
+  </RecordDrawer>
 </template>
 
 <style scoped>
-.head {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ant-space-2);
-}
-
-.line {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--ant-space-1) var(--ant-space-3);
-  align-items: baseline;
-}
-
-.kind,
 .status,
 .note {
   color: var(--ant-text-3);
@@ -418,28 +394,6 @@ const TABS: Tab[] = ['scheme', 'diff', 'approval']
   font: inherit;
   font-size: var(--ant-fs-meta);
   cursor: pointer;
-}
-
-.tabs {
-  display: flex;
-  gap: var(--ant-space-1);
-  border-bottom: 1px solid var(--ant-border);
-}
-
-.tab {
-  padding: var(--ant-space-2) var(--ant-space-3);
-  border: 0;
-  border-bottom: 2px solid transparent;
-  background: none;
-  color: var(--ant-text-2);
-  font: inherit;
-  cursor: pointer;
-}
-
-.tab[aria-selected='true'] {
-  border-bottom-color: var(--ant-accent);
-  color: var(--ant-accent);
-  font-weight: var(--ant-fw-bold);
 }
 
 .body {

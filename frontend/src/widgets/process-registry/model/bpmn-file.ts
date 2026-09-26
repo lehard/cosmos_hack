@@ -98,17 +98,23 @@ export class BpmnFileError extends Error {
  * или «новая версия процесса …» до отправки.
  */
 export function readBpmnFile(xml: string): BpmnFileInfo {
-  const doc = new DOMParser().parseFromString(xml, 'application/xml')
-  if (doc.getElementsByTagName('parsererror').length) throw new BpmnFileError('notXml')
-  const root = doc.documentElement
-  if (root.localName !== 'definitions' || root.namespaceURI !== BPMN_NS) throw new BpmnFileError('notBpmn')
-  const called = new Set<string>()
-  for (const c of Array.from(doc.getElementsByTagNameNS(BPMN_NS, 'callActivity'))) called.add(c.getAttribute('calledElement') ?? '')
-  const processes = Array.from(doc.getElementsByTagNameNS(BPMN_NS, 'process'))
+  let doc: Document
+  try {
+    doc = new DOMParser().parseFromString(xml, 'application/xml')
+  } catch {
+    throw new BpmnFileError('notXml')
+  }
+  if (doc.getElementsByTagName('parsererror').length || !doc.documentElement) throw new BpmnFileError('notXml')
+  // По локальным именам: префиксы в файлах разные (bpmn:, bpmn2:, без префикса).
+  if (doc.documentElement.localName !== 'definitions') throw new BpmnFileError('notBpmn')
+  const all = Array.from(doc.getElementsByTagName('*'))
+  const called = new Set(all.filter((e) => e.localName === 'callActivity').map((c) => c.getAttribute('calledElement') ?? ''))
+  const processes = all.filter((e) => e.localName === 'process')
   const main = processes.find((p) => p.getAttribute('isExecutable') !== 'false' && !called.has(p.getAttribute('id') ?? '')) ?? processes[0]
   const id = main?.getAttribute('id')
   if (!main || !id) throw new BpmnFileError('noProcess')
-  return { processId: id, name: main.getAttribute('name') ?? id, hasAntExtension: doc.getElementsByTagNameNS(ANT_NS, 'properties').length > 0 }
+  const hasAnt = all.some((e) => e.localName === 'properties' && e.parentElement?.localName === 'extensionElements' && e.hasAttribute('stepKey'))
+  return { processId: id, name: main.getAttribute('name') ?? id, hasAntExtension: hasAnt }
 }
 
 /** Имя файла версии: `‹процесс›-‹метка›.bpmn`. */

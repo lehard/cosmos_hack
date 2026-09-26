@@ -8,6 +8,7 @@ import { createMemoryHistory, createRouter } from 'vue-router'
 import { workplaceKeys, type PostRow } from '@/entities/workplace'
 import type { Envelope } from '@/shared/api/response'
 import { i18n } from '@/shared/i18n'
+import { RECORD_DRAWER } from '@/shared/model/record'
 import PostsWidget from '../ui/PostsWidget.vue'
 
 /** Образец постов сварочного цеха — только для тестов. */
@@ -18,7 +19,8 @@ const rows = (): PostRow[] => [
   { workplace_id: 'WP-A1', station: 'Сборка 1', presence: 'not_assigned' },
 ]
 
-async function mountWidget(seed: PostRow[] | null) {
+/** `drawer` — оболочка поставила окно записи (Д-70) с окнами поста, сотрудника, изделия. */
+async function mountWidget(seed: PostRow[] | null, drawer = false) {
   const pinia = createPinia()
   setActivePinia(pinia)
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: Infinity } } })
@@ -33,7 +35,10 @@ async function mountWidget(seed: PostRow[] | null) {
   if (seed) queryClient.setQueryData<Envelope<PostRow[]>>(workplaceKeys.list('posts', {}, { axis: 'occurred' }), { data: seed, headers: new Headers({ 'Ant-Backend': 'live' }) })
   const w = mount(PostsWidget, {
     props: { widgetId: 'posts', titleKey: 'liveMap.posts.title', slotId: 'posts', slice: {}, density: 'comfortable' },
-    global: { plugins: [pinia, i18n, router, [VueQueryPlugin, { queryClient }]] },
+    global: {
+      plugins: [pinia, i18n, router, [VueQueryPlugin, { queryClient }]],
+      provide: drawer ? { [RECORD_DRAWER as symbol]: { kinds: new Set(['item', 'workplace', 'person']) } } : {},
+    },
   })
   await flushPromises()
   return { w, router }
@@ -72,6 +77,37 @@ describe('виджет «Посты»', () => {
     await w.find('[data-workplace="WP-W2"] .item').trigger('click')
     await flushPromises()
     expect(router.currentRoute.value.fullPath).toBe('/items/ENT:FL-0041')
+  })
+
+  it('окно записи: строка → окно поста, назначенный → окно сотрудника, изделие → окно изделия (Д-70)', async () => {
+    const { w, router } = await mountWidget(rows(), true)
+    const open = () => router.currentRoute.value.query.open
+
+    await w.find('[data-workplace="WP-W3"] td:nth-child(3)').trigger('click')
+    await flushPromises()
+    expect(open()).toBe('workplace:WP-W3')
+
+    await w.find('[data-workplace="WP-W2"] .post').trigger('click')
+    await flushPromises()
+    expect(open()).toBe('workplace:WP-W2')
+
+    await w.find('[data-workplace="WP-K3"] .person').trigger('click')
+    await flushPromises()
+    expect(open()).toBe('person:P-05')
+
+    await w.find('[data-workplace="WP-W2"] .item').trigger('click')
+    await flushPromises()
+    expect(open()).toBe('item:ENT:FL-0041')
+    expect(router.currentRoute.value.path).toBe('/desk')
+  })
+
+  it('без окна записи пост и сотрудник — просто текст', async () => {
+    const { w, router } = await mountWidget(rows())
+    expect(w.find('[data-workplace="WP-W2"] .post').exists()).toBe(false)
+    expect(w.find('[data-workplace="WP-W2"] .person').exists()).toBe(false)
+    await w.find('[data-workplace="WP-W2"]').trigger('click')
+    await flushPromises()
+    expect(router.currentRoute.value.fullPath).toBe('/desk')
   })
 
   it('нет данных присутствия — «оценка невозможна», а не «на месте» (NFR-UI-4)', async () => {

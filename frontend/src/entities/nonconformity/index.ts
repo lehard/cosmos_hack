@@ -31,7 +31,6 @@ export * from './model/types'
 export * from './model/texts'
 export * from './model/card'
 export * from './model/actions'
-export * from './model/focus'
 export * from './model/command-id'
 
 export const nonconformityKeys = entityKeys('nonconformity')

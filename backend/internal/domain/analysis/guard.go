@@ -73,10 +73,9 @@ func GuardAssess(v IncidentRecord, item string, evidence []string) error {
 // GuardConclude — вывод о причине (FR-59, AD-27: необратимое — только
 // уполномоченный человек): «чем проверено» обязательно; ошибка исполнителя —
 // только после письменного объяснения работника (incident.operator_error.confirmed).
+// Закрытие инцидента закрывает область риска, а не расследование: вывод о
+// причине после закрытия допустим (S05: область закрыта 15:35, причина — 16:20).
 func GuardConclude(v IncidentRecord, conclusion, category, verification string) error {
-	if err := GuardOpen(v); err != nil {
-		return err
-	}
 	if strings.TrimSpace(verification) == "" {
 		r := kernel.Refuse(errcodes.ApiValidationFailed, "field", "verification", "reason", "нужно указать, чем проверено")
 		return r

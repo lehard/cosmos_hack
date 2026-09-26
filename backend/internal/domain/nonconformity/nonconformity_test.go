@@ -300,6 +300,12 @@ func TestSpecialProcessRegistrationInFold(t *testing.T) {
 	if !found {
 		t.Fatalf("блок правилом не вычислен: %+v", rs)
 	}
+	// S04-03: без найденного дефекта изделие ждёт комиссию, «не годно» правило не ставит.
+	for _, it := range out.Intents {
+		if it.Name == "set_quality" {
+			t.Fatalf("ось качества от правила окна: %+v", it)
+		}
+	}
 }
 
 // FR-49: точка чистоты — первые N изделий после снятия остановки получают

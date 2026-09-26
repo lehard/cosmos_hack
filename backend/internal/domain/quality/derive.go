@@ -495,7 +495,8 @@ func counts(o Observation) bool { return !o.Analyzer || o.TrustLevel >= 1 }
 // points — полнота контроля по плану (FR-35): ожидаемый, но не пришедший
 // результат — «нет данных», когда изделие ушло дальше (предъявлено на
 // закрывающей точке своего участка) или проверку пропустили. Повтор операции
-// участка (FR-47) и запрос повторного контроля снова ждут результата.
+// участка до точки (FR-47) и запрос повторного контроля снова ждут результата;
+// операции шагов после точки её результат не старят.
 func (s *State) points(obs []Observation, env Env) []PointStatus {
 	out := []PointStatus{}
 	for _, st := range env.Steps {
@@ -504,6 +505,13 @@ func (s *State) points(obs []Observation, env Env) []PointStatus {
 				Stage: st.Stage, Order: st.Order, Required: st.IsInspection(), Status: "pending"}
 			from := 0
 			for _, r := range s.Runs {
+				// Операция шага, стоящего в процессе позже точки, её результат
+				// не старит: КТ-4d (до крышки) не «устаревает» от установки
+				// крышки, крепежа и затяжки (FR-35, FR-47 — повтор относится к
+				// операциям до точки).
+				if rs, ok := env.step(r.StepKey); ok && rs.Order > st.Order {
+					continue
+				}
 				if r.Stage == st.Stage && !r.Inspection && r.Pos > from {
 					from, p.Window = r.Pos, r.RunID
 				}

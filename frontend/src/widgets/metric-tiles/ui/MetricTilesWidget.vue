@@ -3,13 +3,17 @@
  * Виджет «Показатели» — контейнер: плитки `analytics.tile.list` за период из
  * фокуса аналитики. Нажатие на плитку выбирает число для раскрытия и ведёт на
  * вкладку «Аналитика» стола (FR-7: по показателю → исходные записи).
+ *
+ * Период уходит в запрос (`period`); если сервер вернул числа за другой
+ * период, чем выбран (`MetricTileList.period.kind`), об этом сказано словами
+ * рядом с переключателем — иначе кажется, что переключатель не работает.
  */
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import type { MetricTile } from '@/shared/api/generated/model'
 import { PeriodPicker, useMetricFocusStore, useMetricTiles } from '@/entities/metric'
 import { naiveSizeOf, type WidgetDataState, type WidgetProps } from '@/shared/config/widget'
-import { WidgetFrame } from '@/shared/ui'
+import { ToolBar, WidgetFrame } from '@/shared/ui'
 import MetricTilesView from './MetricTilesView.vue'
 
 /** Вкладка стола, где стоят раздел «Аналитика» и раскрытие. */
@@ -43,7 +47,9 @@ function open(tile: MetricTile): void {
     :data-widget="widgetId"
   >
     <div class="head">
-      <PeriodPicker :size="naiveSizeOf(density)" />
+      <ToolBar>
+        <PeriodPicker :size="naiveSizeOf(density)" />
+      </ToolBar>
     </div>
     <MetricTilesView :tiles="tiles" :density="density" @open="open" />
   </WidgetFrame>
@@ -51,6 +57,7 @@ function open(tile: MetricTile): void {
 
 <style scoped>
 .head {
-  margin-bottom: 8px;
+  margin-bottom: var(--ant-space-2);
 }
+
 </style>

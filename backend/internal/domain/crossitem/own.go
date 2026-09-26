@@ -142,7 +142,7 @@ func genealogyStep(g Genealogy, r kernel.Record) (Genealogy, []kernel.Addressed)
 	if r.ItemID != "" {
 		st.touch(r.ItemID)
 	}
-	if r.ItemID == "" && r.CarrierRef != "" && r.Kind == catalog.KindFact {
+	if r.ItemID == "" && r.Kind == catalog.KindFact && (r.CarrierRef != "" || awaitsItem(r)) {
 		// Событие изделия, которое приём не разрешил (AD-41): сначала привязка.
 		st.unbound()
 		return g, st.out
@@ -791,6 +791,24 @@ func (u Unbound) subject() *subjectCopy {
 	}
 	return &subjectCopy{EventType: u.Type, SchemaVersion: u.SchemaVersion, OccurredAt: u.OccurredAt.UTC().Format("2006-01-02T15:04:05.000Z"),
 		SourceID: u.SourceID, SourceKind: u.SourceKind, Data: data}
+}
+
+// awaitsItem — факт изделия без номера изделия и без носителя (AD-41, FR-34,
+// S12 №1): приём кладёт его в поток стадии (global), изделие назначит только
+// человек — событие ждёт в очереди ручной привязки. Факт партии (есть
+// lot_id: выборочный контроль колец на складе) изделия не ждёт.
+func awaitsItem(r kernel.Record) bool {
+	if r.Stream != "global" {
+		return false
+	}
+	if info, ok := catalog.Lookup(r.Type); !ok || info.Stream != "item" {
+		return false
+	}
+	var d struct {
+		LotID string `json:"lot_id"`
+	}
+	_ = json.Unmarshal(r.Data, &d)
+	return d.LotID == ""
 }
 
 // unbound — событие без изделия с носителем (AD-41): разрешение по реестру

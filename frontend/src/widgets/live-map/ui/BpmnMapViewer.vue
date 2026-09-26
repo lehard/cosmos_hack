@@ -70,7 +70,7 @@ interface ElementLike {
 interface Services {
   elementRegistry: { getAll(): ElementLike[] }
   overlays: { add(id: string, type: string, o: { position: Record<string, number>; html: HTMLElement }): string; clear(): void }
-  canvas: { addMarker(id: string, m: string): void; removeMarker(id: string, m: string): void; zoom(v: string): void }
+  canvas: { addMarker(id: string, m: string): void; removeMarker(id: string, m: string): void; zoom(v: string): void; resized(): void }
   eventBus: { on(e: string, cb: (ev: { element: ElementLike }) => void): void }
 }
 
@@ -153,13 +153,30 @@ async function load(xml: string): Promise<void> {
   index.value = markRaw(idx)
   nodeSlots.value = nodes
   laneSlots.value = lanes
+  userMoved = false
+  fit()
+  applyMarkers()
+  emit('ready', idx)
+}
+
+/** Пользователь уже двигал или масштабировал схему — сами не вписываем. */
+let userMoved = false
+
+/** Вписать схему в окно. */
+function fit(): void {
   try {
     svc('canvas').zoom('fit-viewport')
   } catch {
     // Холст без размеров (скрытая вкладка) — масштаб поставит пользователь.
   }
-  applyMarkers()
-  emit('ready', idx)
+}
+
+/** Место под схему изменилось (окно, раздел на всю высоту): холст — под новый размер. */
+let resizeObserver: ResizeObserver | null = null
+function onResize(): void {
+  if (!viewer || !index.value) return
+  svc('canvas').resized()
+  if (!userMoved) fit()
 }
 
 onMounted(() => {
@@ -168,10 +185,18 @@ onMounted(() => {
     const node = index.value?.byBpmnId.get(element.id)
     if (node) emit('select-node', node.stepKey)
   })
+  // Колесо и перетаскивание — пользователь выбрал свой масштаб и место.
+  container.value!.addEventListener('wheel', () => (userMoved = true), { passive: true })
+  container.value!.addEventListener('mousedown', () => (userMoved = true))
+  if (typeof ResizeObserver !== 'undefined') {
+    resizeObserver = new ResizeObserver(onResize)
+    resizeObserver.observe(container.value!)
+  }
   void load(props.xml)
 })
 
 onBeforeUnmount(() => {
+  resizeObserver?.disconnect()
   importSeq++
   viewer?.destroy()
   viewer = null
@@ -228,7 +253,6 @@ defineExpose({ index })
 .bpmn-map {
   position: relative;
   height: 100%;
-  min-height: 480px;
 }
 
 .canvas {

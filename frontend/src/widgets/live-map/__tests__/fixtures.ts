@@ -49,6 +49,8 @@ function scopeItems(statusOf: (n: number) => IncidentStatus | undefined): MapIte
 
 const base = (): Omit<LiveMapData, 'items' | 'incident' | 'counters'> => ({
   basis_seq: 4200,
+  process_id: 'Process_Flange',
+  process_name: 'Фланец люка гермокорпуса в сборе',
   process_version: { process_version_id: V1, label: '1', is_current: true, items: 40 },
   versions: [
     { process_version_id: V1, label: '1', is_current: true, items: 40 },

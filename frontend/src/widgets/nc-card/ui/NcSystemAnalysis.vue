@@ -29,38 +29,38 @@ const missing = (m: string) => {
 
 <template>
   <section class="why" data-testid="why-system">
-    <h4>{{ t('ncCard.whySystemSuggests.title') }}</h4>
-    <p class="note">{{ t('ncCard.whySystemSuggests.notAVerdict') }}</p>
+    <h4 class="ant-wrap">{{ t('ncCard.whySystemSuggests.title') }}</h4>
+    <p class="note ant-wrap">{{ t('ncCard.whySystemSuggests.notAVerdict') }}</p>
 
     <article v-if="versions.current" class="version" data-testid="conclusion-current" :data-version="versions.current.version">
       <p class="head">
-        <strong>{{ codeText(OUTCOME_TEXT, versions.current.outcome, t) }}</strong>
+        <strong class="ant-wrap">{{ codeText(OUTCOME_TEXT, versions.current.outcome, t) }}</strong>
         <span class="muted">{{ t('widgets.ncCard.conclusionVersion', { version: versions.current.version }) }} · {{ time(versions.current.recorded_at) }}</span>
       </p>
-      <p class="muted">{{ t('widgets.ncCard.rule', { ruleId: versions.current.rule_id }) }} · {{ t('decisions.automationMode.title') }}: {{ mode(versions.current) }}</p>
-      <p v-if="versions.current.revised_due_to" class="revised" data-testid="revised">
+      <p class="muted ant-wrap">{{ t('widgets.ncCard.rule', { ruleId: versions.current.rule_id }) }} · {{ t('decisions.automationMode.title') }}: {{ mode(versions.current) }}</p>
+      <p v-if="versions.current.revised_due_to" class="revised ant-wrap" data-testid="revised">
         {{ t('timeline.marks.revised', { eventId: versions.current.revised_due_to }) }}
       </p>
-      <h5>{{ t('ncCard.whySystemSuggests.basis') }}</h5>
+      <h5 class="ant-wrap">{{ t('ncCard.whySystemSuggests.basis') }}</h5>
       <ul class="list">
-        <li v-for="w in analysis.why" :key="w">{{ w }}</li>
+        <li v-for="w in analysis.why" :key="w" class="ant-wrap">{{ w }}</li>
         <li v-for="c in versions.current.causes" :key="c.event_id"><RecordLine :record="c" /></li>
       </ul>
     </article>
     <p v-else class="muted">{{ t('empty.noRecords') }}</p>
 
     <template v-if="analysis.alternatives.length">
-      <h5>{{ t('ncCard.whySystemSuggests.alternatives') }}</h5>
+      <h5 class="ant-wrap">{{ t('ncCard.whySystemSuggests.alternatives') }}</h5>
       <ul class="list" data-testid="alternatives">
-        <li v-for="a in analysis.alternatives" :key="a">{{ a }}</li>
+        <li v-for="a in analysis.alternatives" :key="a" class="ant-wrap">{{ a }}</li>
       </ul>
     </template>
     <template v-if="analysis.missing_information.length">
-      <h5>{{ t('ncCard.whySystemSuggests.missingData') }}</h5>
+      <h5 class="ant-wrap">{{ t('ncCard.whySystemSuggests.missingData') }}</h5>
       <ul class="list" data-testid="missing">
-        <li v-for="m in analysis.missing_information" :key="m">{{ missing(m) }}</li>
+        <li v-for="m in analysis.missing_information" :key="m" class="ant-wrap">{{ missing(m) }}</li>
       </ul>
-      <p class="muted">{{ t('ncCard.circumstances.noCategoricalConclusion') }}</p>
+      <p class="muted ant-wrap">{{ t('ncCard.circumstances.noCategoricalConclusion') }}</p>
     </template>
 
     <template v-if="versions.previous.length">
@@ -68,10 +68,10 @@ const missing = (m: string) => {
       <div v-if="showPrevious" class="previous" data-testid="conclusion-previous">
         <article v-for="v in versions.previous" :key="v.event_id" class="version old" :data-version="v.version">
           <p class="head">
-            <strong>{{ codeText(OUTCOME_TEXT, v.outcome, t) }}</strong>
+            <strong class="ant-wrap">{{ codeText(OUTCOME_TEXT, v.outcome, t) }}</strong>
             <span class="muted">{{ t('widgets.ncCard.conclusionVersion', { version: v.version }) }} · {{ time(v.recorded_at) }}</span>
           </p>
-          <p class="muted">{{ t('timeline.marks.oldConclusionKept') }}</p>
+          <p class="muted ant-wrap">{{ t('timeline.marks.oldConclusionKept') }}</p>
         </article>
       </div>
     </template>
@@ -82,8 +82,10 @@ const missing = (m: string) => {
 .why {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 8px 10px;
+  gap: var(--ant-space-2);
+  min-width: 0;
+  padding: var(--ant-space-3) var(--ant-space-4);
+  border-radius: 0 var(--ant-radius-md) var(--ant-radius-md) 0;
   border-left: 3px solid var(--ant-accent);
   background: var(--ant-surface-subtle);
 }
@@ -109,7 +111,7 @@ h5 {
 .head {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--ant-space-1) var(--ant-space-2);
   align-items: baseline;
 }
 
@@ -121,9 +123,17 @@ h5 {
 .list {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--ant-space-1);
   margin: 0;
-  padding-left: 16px;
+  padding-left: var(--ant-space-4);
+}
+
+.version,
+.previous {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ant-space-1);
+  min-width: 0;
 }
 
 .version.old {

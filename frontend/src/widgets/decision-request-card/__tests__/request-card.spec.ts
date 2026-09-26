@@ -33,6 +33,12 @@ describe('карточка «Требуется ваше решение»', () =
     expect(w.find('[data-testid="concession-note"]').text()).toBe('Итог: «годно по разрешению на отклонение» — это не «годно»')
   })
 
+  it('паспорт изделия — кнопкой из карточки (Д-70: правым окном, не панелью сбоку)', async () => {
+    const w = mountView()
+    await w.find('[data-testid="open-item"]').trigger('click')
+    expect(w.emitted('open-item')?.[0]).toEqual(['ENT:FL-0042'])
+  })
+
   it('доказательства: снимок и иллюстрация помечена явно', () => {
     const e = mountView().find('[data-testid="evidence"]')
     expect(e.text()).toContain('Результат контроля записан')

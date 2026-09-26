@@ -9,7 +9,7 @@ help_key: approver # раздел встроенной справки (эпик 
 tabs:
   - id: decision
     title_key: desks.decisionCard
-    layout: main-side
+    # Д-70: паспорт изделия открывается правым окном из карточки, не панелью сбоку.
+    layout: single
     slots:
       - {id: card, area: main, widget: decision-request-card}
-      - {id: passport, area: right, widget: item-passport, slice: {view: compact}}

@@ -8,13 +8,18 @@ import { describe, expect, it, vi } from 'vitest'
 import { createAppAbility } from '@/shared/lib/access'
 import { i18n } from '@/shared/i18n'
 import type { ProcessSummary } from '../model/source'
+import Widget from '../ui/ProcessRegistryWidget.vue'
+
+// Окно процесса тянет модельер bpmn-js — импорт под нагрузкой машины небыстрый.
+vi.setConfig({ testTimeout: 60_000 })
 
 const processes: ProcessSummary[] = [
   { process_id: 'Process_Flange', name: 'Фланец люка гермокорпуса в сборе', active_version: { version_id: 'flange-1', label: 'v1' }, versions: 2, status: 'active', is_default: true, items_in_work: 34 },
   { process_id: 'Process_Bracket', name: 'Кронштейн крепления приборной панели', versions: 1, status: 'draft', is_default: false, items_in_work: 0 },
 ]
 
-vi.mock('../model/source', () => ({
+vi.mock('../model/source', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../model/source')>()),
   useProcesses: () => ({
     query: { isLoading: ref(false), error: ref(null), refetch: vi.fn() },
     processes: computed(() => processes),
@@ -27,7 +32,6 @@ async function mountRegistry(actions: string[]) {
   await router.push('/')
   const ability = createAppAbility()
   ability.update(actions.map((action) => ({ action, subject: 'all' })))
-  const { default: Widget } = await import('../ui/ProcessRegistryWidget.vue')
   const w = mount(Widget, {
     props: { widgetId: 'process-registry', titleKey: 'processEditor.registry.title', slotId: 'processes', slice: {}, density: 'compact' },
     global: {

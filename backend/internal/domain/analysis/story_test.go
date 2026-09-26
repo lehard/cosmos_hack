@@ -186,7 +186,7 @@ func (j *journal) incident(id string) analysis.IncidentRecord {
 }
 
 // storyUntilNC01 — мир до подтверждения НС-01 включительно: сварки, выпуск
-// Ф-001 и Ф-006, находка и подтверждение прожога на Ф-017.
+// Ф-001, «годно» на ЗТ-3 у Ф-006, находка и подтверждение прожога на Ф-017.
 func storyUntilNC01() (*journal, kernel.Record) {
 	j := &journal{}
 	type ev struct {
@@ -198,8 +198,10 @@ func storyUntilNC01() (*journal, kernel.Record) {
 		evs = append(evs, ev{x.from, func() { j.weldRun(x) }})
 	}
 	evs = append(evs,
-		ev{at(22, 15, 0), func() {
-			j.fact(catalog.ItemReleaseRecorded, "ENT01:F-006", at(22, 15, 0), map[string]any{"received_by": "STK-51", "warehouse_id": "WH-FG", "after_rework": false})
+		ev{at(21, 16, 0), func() {
+			// Ф-006: шов принят на ЗТ-3, изделие ушло в сборку (не выпущено).
+			j.decision(catalog.DecisionPresentationResolved, "item:ENT01:F-006", "ENT01:F-006", "QC-02", at(21, 16, 0), map[string]any{
+				"step_key": "welding.zt3_acceptance", "closing_point": "ZT-3", "resolution": "accept", "presentation_no": 1, "method_event_ids": []string{}})
 		}},
 		ev{at(23, 10, 30), func() {
 			j.fact(catalog.ItemReleaseRecorded, "ENT01:F-001", at(23, 10, 30), map[string]any{"received_by": "STK-51", "warehouse_id": "WH-FG", "after_rework": false})

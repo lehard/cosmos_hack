@@ -1,8 +1,9 @@
 <script setup lang="ts">
 /**
- * Карточка узла живой карты (FR-154, FR-7): описание шага из `documentation`
- * элемента BPMN версии изделия, счётчики узла (FR-2) и переход к изделиям и
- * несоответствиям узла; по изделию — паспорт.
+ * Содержимое окна узла живой карты (FR-154, FR-7; Д-70 — правое окно записи):
+ * описание шага из `documentation` элемента BPMN версии изделия, счётчики узла
+ * (FR-2) и изделия в узле; по изделию — паспорт. Заголовок (шаг, цех, код) и
+ * кнопка «Изделия и несоответствия узла» — у окна (LiveMapView).
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -10,7 +11,6 @@ import { NEmpty } from 'naive-ui'
 import type { MapItem, NodeCounters } from '@/entities/live-map'
 import type { StepNode } from '../model/bpmn'
 import { dotLook, sortForDots } from '../model/overlays'
-import { ActionButton } from '@/shared/ui'
 
 const props = defineProps<{
   node: StepNode
@@ -19,10 +19,7 @@ const props = defineProps<{
   incidentMode: boolean
 }>()
 const emit = defineEmits<{
-  close: []
   'open-item': [itemId: string]
-  /** Изделия и несоответствия узла (FR-7). */
-  'open-node': [stepKey: string]
 }>()
 const { t } = useI18n()
 
@@ -45,18 +42,7 @@ const list = computed(() =>
 </script>
 
 <template>
-  <aside class="node-card" :data-step="node.stepKey">
-    <header class="head">
-      <div>
-        <h3 class="name">{{ node.name || node.stepKey }}</h3>
-        <div class="meta">
-          <span v-if="node.laneName">{{ t('liveMap.workshops.lane') }}: {{ node.laneName }}</span>
-          <code class="key">{{ node.stepKey }}</code>
-        </div>
-      </div>
-      <ActionButton overflow="wrap" size="tiny" quaternary @click="emit('close')" :label="t('common.actions.close')" />
-    </header>
-
+  <div class="node-card" :data-step="node.stepKey">
     <p v-if="node.documentation" class="doc" data-testid="node-doc">{{ node.documentation }}</p>
 
     <dl class="counters">
@@ -70,8 +56,6 @@ const list = computed(() =>
       </template>
     </dl>
 
-    <ActionButton overflow="wrap" size="small" secondary block data-action="open-node" @click="emit('open-node', node.stepKey)" :label="t('liveMap.drillDown.nodeItems')" />
-
     <h4 class="sub">{{ t('common.words.items') }}</h4>
     <NEmpty v-if="!list.length" size="small" :description="t('empty.noRecords')" />
     <ul v-else class="items">
@@ -83,43 +67,19 @@ const list = computed(() =>
         </button>
       </li>
     </ul>
-  </aside>
+  </div>
 </template>
 
 <style scoped>
 .node-card {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 12px;
-  border: 1px solid var(--ant-border);
-  border-radius: var(--ant-radius-md);
-  background: var(--ant-surface);
+  gap: var(--ant-space-3);
 }
 
-.head {
-  display: flex;
-  gap: 8px;
-  align-items: flex-start;
-  justify-content: space-between;
-}
 
-.name {
-  margin: 0;
-  font-size: var(--ant-fs-title);
-}
 
-.meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  color: var(--ant-text-3);
-  font-size: var(--ant-fs-meta);
-}
 
-.key {
-  font-family: var(--ant-font-mono);
-}
 
 .doc {
   margin: 0;
@@ -151,10 +111,8 @@ const list = computed(() =>
   display: flex;
   flex-direction: column;
   gap: 2px;
-  max-height: 240px;
   margin: 0;
   padding: 0;
-  overflow: auto;
   list-style: none;
 }
 

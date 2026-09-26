@@ -7,6 +7,7 @@ import { h } from 'vue'
 import { i18n } from '@/shared/i18n'
 import { useMomentStore } from '@/shared/model/moment'
 import WidgetFrame from '../WidgetFrame.vue'
+import { WIDGET_FRAME_CONTEXT } from '../frame'
 
 let pinia: ReturnType<typeof createPinia>
 beforeEach(() => {
@@ -40,11 +41,23 @@ describe('рамка виджета', () => {
     expect(w.text()).toContain('Не удалось выполнить действие')
   })
 
-  it('метка режима fixtures | live и момент «Сейчас»', () => {
+  it('режим fixtures | live — атрибутом; метки «Сейчас» и «Демо на заготовках» в заголовке нет (Д-70, UI-6)', () => {
     const w = mountFrame({ mode: 'fixtures' })
     expect(w.attributes('data-mode')).toBe('fixtures')
-    expect(w.text()).toContain('Демо на заготовках')
-    expect(w.text()).toContain('Сейчас')
+    expect(w.text()).not.toContain('Демо на заготовках')
+    expect(w.text()).not.toContain('Сейчас')
+    expect(w.find('h3.title').text()).toBe('Паспорт изделия')
+  })
+
+  it('заголовок уже показан выше — рамка его не повторяет; в окне записи — без обводки', () => {
+    const w = mount(WidgetFrame, {
+      props: { titleKey: 'desks.passport' },
+      slots: { default: () => 'данные' },
+      global: { plugins: [pinia, i18n], provide: { [WIDGET_FRAME_CONTEXT as symbol]: { hideTitle: true, plain: true } } },
+    })
+    expect(w.find('h3.title').exists()).toBe(false)
+    expect(w.classes()).toContain('widget-frame--plain')
+    expect(w.text()).toContain('данные')
   })
 
   it('в воспроизведении действия выключены', async () => {

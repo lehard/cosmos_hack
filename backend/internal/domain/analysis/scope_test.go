@@ -251,3 +251,15 @@ func TestIncomingDefectOpensLotIncident(t *testing.T) {
 		t.Fatalf("область партии: %v", got)
 	}
 }
+
+// S05-27/28: закрытие инцидента закрывает область риска, не расследование —
+// вывод о причине после закрытия принимается; сужение закрытой области — нет.
+func TestConcludeAfterClose(t *testing.T) {
+	v := analysis.IncidentRecord{IncidentID: "RS-1", Closed: true}
+	if err := analysis.GuardConclude(v, "confirmed", analysis.CatEquipment, "КО-7 и журнал ИС-2"); err != nil {
+		t.Fatalf("вывод о причине после закрытия: %v", err)
+	}
+	if err := analysis.GuardNarrow(v, nil, []string{"e"}, "x"); err == nil {
+		t.Fatal("сужение закрытой области принято")
+	}
+}

@@ -10,7 +10,7 @@ describe('файлы процесса', () => {
     const info = readBpmnFile(xml)
     expect(info).toEqual({ processId: 'Process_NEW', name: 'Корпус "датчика" <А>', hasAntExtension: true })
     const doc = new DOMParser().parseFromString(xml, 'application/xml')
-    expect(doc.getElementsByTagNameNS('urn:ant:bpmn-ext:1', 'properties')).toHaveLength(3)
+    expect(Array.from(doc.getElementsByTagName('*')).filter((e) => e.localName === 'properties')).toHaveLength(3)
   })
 
   it('главный процесс фланца — не вызываемый подпроцесс «Брак»', () => {
