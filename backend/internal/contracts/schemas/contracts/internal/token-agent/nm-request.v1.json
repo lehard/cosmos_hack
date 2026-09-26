@@ -143,6 +143,60 @@
           "type": "string",
           "description": "Ключ, которым просят подписать.",
           "pattern": "^[a-z0-9][a-z0-9._:-]{0,95}@[1-9][0-9]{0,5}$"
+        },
+        "command_request": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Запрос-команда по соглашению «подписан запрос» (domain/signing.RequestData): агент сам собирает событие-команду из операции, параметров пути и тела (payload_b64 — тело команды в JSON) тем же пакетом, что и сервер, и сам считает отпечаток и сводку (AD-14).",
+          "properties": {
+            "operation": {
+              "type": "string",
+              "description": "operationId команды.",
+              "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$",
+              "maxLength": 128
+            },
+            "params": {
+              "type": "object",
+              "description": "Параметры пути операции.",
+              "additionalProperties": {
+                "type": "string",
+                "maxLength": 256
+              },
+              "propertyNames": {
+                "pattern": "^[a-z][a-z0-9_]*$"
+              }
+            },
+            "item_id": {
+              "type": "string",
+              "description": "Изделие события-команды.",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$"
+            },
+            "run_id": {
+              "type": "string",
+              "description": "Прогон сценария, если команда в прогоне.",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$"
+            },
+            "seen_checkpoint": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991,
+              "description": "Последняя известная странице контрольная точка (агент берёт большую из своей и этой)."
+            },
+            "labels": {
+              "type": "object",
+              "description": "Подписи значений для сводки (например, название изделия); справочно — отпечаток по ним не считается.",
+              "additionalProperties": {
+                "type": "string",
+                "maxLength": 256
+              },
+              "propertyNames": {
+                "pattern": "^[a-z][a-z0-9_]*$"
+              }
+            }
+          },
+          "required": [
+            "operation"
+          ]
         }
       },
       "required": [

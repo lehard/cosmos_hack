@@ -78,6 +78,14 @@
                 "type": "string",
                 "description": "Субъект.",
                 "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$"
+              },
+              "key_storage": {
+                "type": "string",
+                "enum": [
+                  "hardware_token",
+                  "software_browser"
+                ],
+                "description": "Класс хранения ключа (AD-11, AD-14, Д-72): hardware_token — физический ключ через агент токена (эталон); software_browser — ключ в браузере, зашифрованный под PIN (умышленно сниженный порог)."
               }
             },
             "required": [
@@ -118,6 +126,32 @@
           "type": "string",
           "description": "Рабочее место из конфигурации агента.",
           "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$"
+        },
+        "key_storage": {
+          "type": "string",
+          "enum": [
+            "hardware_token",
+            "software_browser"
+          ],
+          "description": "Класс хранения ключа (AD-11, AD-14, Д-72): hardware_token — физический ключ через агент токена (эталон); software_browser — ключ в браузере, зашифрованный под PIN (умышленно сниженный порог)."
+        },
+        "storage_variant": {
+          "type": "string",
+          "enum": [
+            "extension",
+            "page"
+          ],
+          "description": "Разновидность хранения ключа в браузере: extension — в расширении (окно подтверждения — страница расширения); page — в хранилище страницы (планшет, телефон; сводку показывает код, отданный сервером, — доверенного отображения нет)."
+        },
+        "key_refs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "description": "Ключ.",
+            "pattern": "^[a-z0-9][a-z0-9._:-]{0,95}@[1-9][0-9]{0,5}$"
+          },
+          "description": "Ключи, загруженные в агент (без PIN — открытые сведения).",
+          "maxItems": 4
         }
       },
       "required": [
@@ -176,6 +210,14 @@
             "type": "string",
             "description": "Время подписи по часам клиента — справочно, в порядок не входит (AD-37).",
             "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$"
+          },
+          "key_storage": {
+            "type": "string",
+            "enum": [
+              "hardware_token",
+              "software_browser"
+            ],
+            "description": "Класс хранения ключа (AD-11, AD-14, Д-72): hardware_token — физический ключ через агент токена (эталон); software_browser — ключ в браузере, зашифрованный под PIN (умышленно сниженный порог)."
           }
         },
         "required": [

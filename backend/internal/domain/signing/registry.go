@@ -41,6 +41,34 @@ const (
 	ProvPaper          = "paper"
 )
 
+// Классы хранения ключа человека (AD-11, AD-14, Д-72) и разновидности
+// хранения ключа в браузере.
+const (
+	// StorageHardwareToken — физический ключ через агент токена (эталон).
+	StorageHardwareToken = "hardware_token"
+	// StorageSoftwareBrowser — ключ в браузере, зашифрованный под PIN
+	// (умышленно сниженный порог ради работы с любого устройства).
+	StorageSoftwareBrowser = "software_browser"
+	// VariantExtension — ключ в расширении браузера (окно подтверждения — страница расширения).
+	VariantExtension = "extension"
+	// VariantPage — ключ в хранилище страницы (планшет, телефон; доверенного отображения нет).
+	VariantPage = "page"
+)
+
+// KeyStorageText — класс хранения ключа словами для отчётов и аудита.
+func KeyStorageText(storage, variant string) string {
+	switch storage {
+	case StorageHardwareToken:
+		return "физический ключ"
+	case StorageSoftwareBrowser:
+		if variant == VariantPage {
+			return "ключ в браузере (хранилище страницы)"
+		}
+		return "ключ в браузере (расширение)"
+	}
+	return "класс хранения не указан"
+}
+
 // Подтверждение субъекта при регистрации (AD-11).
 const (
 	ConfirmRotation = "rotation_signature"
@@ -68,6 +96,11 @@ type Registration struct {
 	DocumentID          string
 	ValidFrom           time.Time
 	ValidUntil          *time.Time
+	// KeyStorage — класс хранения ключа человека (AD-11, AD-14, Д-72):
+	// hardware_token | software_browser; пусто — не указан (системные ключи,
+	// устройства, акты до эпика 38). StorageVariant — extension | page.
+	KeyStorage     string
+	StorageVariant string
 	// Provenance — класс доверия ключа (наследуется от регистрирующих подписей).
 	Provenance string
 	// EventID, Seq, CommittedAt — запись акта (AD-37: криптографический момент).

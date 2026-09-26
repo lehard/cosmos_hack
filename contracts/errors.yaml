@@ -368,6 +368,18 @@ codes:
     detail: "doc_format_version {version} агенту неизвестен — подпись не выполнена"
     ui_key: errors.generic
     refs: [AD-12]
+  signing.cancelled:
+    status: 409
+    title: "Подпись отменена"
+    detail: "Подписант отказался в окне подтверждения — ничего не подписано"
+    ui_key: errors.generic
+    refs: [FR-66, AD-14]
+  signing.rate_limited:
+    status: 429
+    title: "Слишком часто"
+    detail: "Агент ограничил частоту подписей уровня 1 — подождите {retry_after} с"
+    ui_key: errors.generic
+    refs: [AD-14, PRD §11.16]
 
   # ── document: маршрут подписей документа (модуль documents, AD-12, AD-43) ──
   document.stage_not_open:

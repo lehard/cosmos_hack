@@ -317,6 +317,9 @@ func provisionKeys(cfg ProvisionConfig, seed app.Seed, validFrom time.Time, log 
 							return nil, nil, "", err
 						}
 						reg(k, dom.SubjectDemoPersona, p, PersonaClasses...)
+						// Д-72: демо держится на ключе в браузере — файл
+						// загружается в расширение и хранится под PIN.
+						regs[len(regs)-1].KeyStorage, regs[len(regs)-1].StorageVariant = dom.StorageSoftwareBrowser, dom.VariantExtension
 					}
 				}
 			}

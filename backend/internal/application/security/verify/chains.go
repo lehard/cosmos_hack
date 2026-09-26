@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"strings"
 	"time"
 
 	appjournal "ant/internal/application/journal"
@@ -15,6 +16,7 @@ import (
 	"ant/internal/contracts/procs"
 	dj "ant/internal/domain/journal"
 	dom "ant/internal/domain/security"
+	sdom "ant/internal/domain/signing"
 )
 
 type jcEntry = jc.JournalEntry
@@ -57,6 +59,10 @@ type run struct {
 	losses  map[string][][2]int64
 	classes procs.VerifierReportV1SignatureClasses
 	virtual bool
+	// storage — класс хранения ключа по актам регистрации (key_ref → класс,
+	// разновидность); sigByKey — число подписанных записей по ключу (AD-14, Д-72).
+	storage  map[string][2]string
+	sigByKey map[string]int
 }
 
 func (v *run) lastSeq(chain string) int64 {
@@ -166,6 +172,10 @@ func (v *run) content(r rec, env []byte) (signed bool) {
 	for _, s := range d.Signatures {
 		if s.Sig != "" {
 			signed = true
+			if v.sigByKey == nil {
+				v.sigByKey = map[string]int{}
+			}
+			v.sigByKey[s.KeyID]++
 		}
 	}
 	if r.chain == "ca" {
@@ -176,6 +186,18 @@ func (v *run) content(r rec, env []byte) (signed bool) {
 		return signed
 	}
 	switch catalog.Type(r.eventType) {
+	case catalog.KeyRegistrationRecorded:
+		var k struct {
+			KeyRef         string `json:"key_ref"`
+			KeyStorage     string `json:"key_storage"`
+			StorageVariant string `json:"storage_variant"`
+		}
+		if json.Unmarshal(ev.Data, &k) == nil && k.KeyStorage != "" {
+			if v.storage == nil {
+				v.storage = map[string][2]string{}
+			}
+			v.storage[k.KeyRef] = [2]string{k.KeyStorage, k.StorageVariant}
+		}
 	case catalog.IngestMessageQuarantined:
 		var q struct {
 			SourceID  string `json:"source_id"`
@@ -396,12 +418,44 @@ func (v *run) signatures() {
 			}
 		}
 	}
+	if line := v.keyStorageLine(); line != "" {
+		c.add("intact", "signatures.key_storage", line, "", 0, "")
+	}
 	if unsigned > 0 {
 		c.unverifiable("signatures.unsigned", fmt.Sprintf("%d записей без подписи (демо без агента токена и ключей источников, Д-28, Д-30) — «подпись не проверялась»", unsigned))
 	}
 	if sig > 0 {
 		c.unverifiable("signatures.registry", fmt.Sprintf("%d подписанных записей: реестра ключей и профилей на момент подписи в журнале ещё нет (эпики 05, 27) — «ключ недоступен», не «валидно»", sig))
 	}
+}
+
+// keyStorageLine — подписи людей по классу хранения ключа (AD-11, AD-14,
+// Д-72): класс берётся из актов регистрации ключей в журнале, а не из
+// заявления клиента. Ключ в браузере — умышленно сниженный порог, поэтому
+// он называется в отчёте отдельно от физического ключа.
+func (v *run) keyStorageLine() string {
+	if len(v.storage) == 0 {
+		return ""
+	}
+	counts := map[string]int{}
+	for ref, n := range v.sigByKey {
+		if st, ok := v.storage[ref]; ok {
+			counts[sdom.KeyStorageText(st[0], st[1])] += n
+		}
+	}
+	names := make([]string, 0, len(counts))
+	for k := range counts {
+		names = append(names, k)
+	}
+	slices.Sort(names)
+	parts := make([]string, 0, len(names))
+	for _, k := range names {
+		parts = append(parts, fmt.Sprintf("%s — %d", k, counts[k]))
+	}
+	if len(parts) == 0 {
+		return fmt.Sprintf("класс хранения ключа указан в актах %d ключей людей; подписанных ими записей пока нет", len(v.storage))
+	}
+	return "подписи людей по классу хранения ключа (по актам регистрации): " + strings.Join(parts, "; ")
 }
 
 // sourceSeq — непрерывность source_seq (AD-9, AD-7): каждый номер источника

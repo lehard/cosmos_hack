@@ -11409,6 +11409,12 @@ components:
         key_ref:
           description: key_id@версия.
           type: string
+        key_storage:
+          description: "Класс хранения ключа человека (AD-11, AD-14, Д-72): физический ключ или ключ в браузере под PIN."
+          enum:
+            - hardware_token
+            - software_browser
+          type: string
         payload_classes:
           items:
             type: string
@@ -11443,6 +11449,12 @@ components:
         signature:
           $ref: "#/components/schemas/DsseEnvelope"
           description: "Подписанный пакет DSSE для операций с уровнем подписи ≥ 1 (AD-10, AD-13, AD-14): подписывает агент токена, сервер сверяет отпечаток."
+        storage_variant:
+          description: "Где лежит ключ в браузере: расширение или хранилище страницы."
+          enum:
+            - extension
+            - page
+          type: string
         subject_confirmation:
           enum:
             - rotation_signature

@@ -61,6 +61,11 @@ type Accepted struct {
 	// Provenance — класс происхождения подписи записи (AD-2): personal | paper | scenario.
 	Provenance     string
 	SignerPersonID string
+	// KeyStorage, StorageVariant — класс хранения ключа подписанта по акту
+	// регистрации (AD-11, AD-14, Д-72): hardware_token | software_browser.
+	// Берётся из реестра, а не из заявления клиента.
+	KeyStorage     string
+	StorageVariant string
 	// Бумага: заверитель, учётный номер оригинала в архиве ОТК, адрес скана.
 	AttestedBy      string
 	PaperOriginalNo string
@@ -175,6 +180,13 @@ func (s *Service) verify(ctx context.Context, raw, payload []byte, class, actor 
 			a.Method, a.Provenance = dom.MethodTokenAgent, dom.ProvPersonal
 			if k.SubjectKind == dom.SubjectDemoPersona || k.Provenance == dom.ProvScenario {
 				a.Method, a.Provenance = dom.MethodDemoSigner, dom.ProvScenario
+			}
+			// Ключ с классом хранения — подпись человека через порт подписи
+			// (агент токена или ключ в браузере, Д-72), даже если субъект —
+			// интерактивная демо-персона: класс доверия остаётся от акта.
+			if k.KeyStorage != "" {
+				a.Method = dom.MethodTokenAgent
+				a.KeyStorage, a.StorageVariant = k.KeyStorage, k.StorageVariant
 			}
 			continue
 		}
