@@ -134,7 +134,8 @@ export function alertText(x: AlertTexts, a: AlertEntry): string {
     case 'anomaly': {
       const key = a.anomaly ? `liveMap.anomalies.${codeToKey(a.anomaly)}` : ''
       const what = key && x.te(key) ? x.t(key, { threshold: DASH }) : `UNKNOWN(${a.anomaly ?? ''})`
-      return x.t('liveMap.alerts.anomaly', { node: a.node ?? DASH, what })
+      // Имя узла по описанию процесса, а не step_key (UI-38).
+      return x.t('liveMap.alerts.anomaly', { node: a.node_name ?? a.node ?? DASH, what })
     }
     case 'escalation':
       return `${x.t('common.notifications.escalation')}: ${costOfDelayText(x, a)}`

@@ -23,6 +23,17 @@ import PerformerTerminalView from '../ui/PerformerTerminalView.vue'
 import PerformerTerminalWidget from '../ui/PerformerTerminalWidget.vue'
 
 afterEach(() => vi.unstubAllGlobals())
+/** Правое окно формы выносится в body (NDrawer) — ищем в документе, последнее открытое. */
+const last = (sel: string) => {
+  const list = document.querySelectorAll(sel)
+  return list[list.length - 1] as HTMLElement | undefined
+}
+/** Ввести текст в поле NInput внутри окна. */
+function typeInto(sel: string, value: string): void {
+  const el = last(`${sel} textarea`) as HTMLTextAreaElement
+  el.value = value
+  el.dispatchEvent(new Event('input'))
+}
 /** Текст без неразрывных пробелов (единицы измерения в текстах — через NBSP). */
 const plain = (s: string) => s.replace(/\u00a0/g, ' ')
 
@@ -141,8 +152,13 @@ describe('терминал исполнителя', () => {
     expect(plain(run.text())).toContain('норма 40 мин–1 ч 30 мин')
     expect(plain(run.text())).toContain('выше нормы')
     // Начать новую, пока идёт текущая, нельзя.
-    expect(w.find('[data-testid="start-operation"]').attributes('disabled')).toBeDefined()
+    expect(w.find('[data-testid="open-start"]').attributes('disabled')).toBeDefined()
+    // Выше нормы — подсказка, что делать.
+    expect(run.find('[data-testid="over-hint"]').exists()).toBe(true)
+    // «Остановить» — большая кнопка; как завершилась — в правом окне, там же подтверждение.
     await w.find('[data-testid="stop"]').trigger('click')
+    await settle()
+    last('[data-testid="confirm-stop"]')!.click()
     await settle()
     const post = calls.find((c) => c.method === 'POST' && c.path === '/api/v1/operation-runs/RUN-15/finish')
     expect(post?.body).toMatchObject({ completion: 'completed', workplace_id: 'WP-WELD-2', policy_seq: 3 })
@@ -151,8 +167,13 @@ describe('терминал исполнителя', () => {
   it('сообщить об отклонении — с рабочего места сеанса', async () => {
     const calls = mockApi(world().routes)
     const w = await mountWidget(PerformerTerminalWidget, props)
-    await w.find('[data-testid="deviation-text"] textarea').setValue('Кромка с заусенцем после подготовки')
-    await w.find('[data-testid="deviation"] form').trigger('submit')
+    // Форма не висит развёрнутой: большая кнопка → правое окно (UI-41, Д-70).
+    expect(last('[data-testid="deviation-text"]')).toBeUndefined()
+    await w.find('[data-testid="open-deviation"]').trigger('click')
+    await settle()
+    typeInto('[data-testid="deviation-text"]', 'Кромка с заусенцем после подготовки')
+    await settle()
+    last('[data-testid="report-deviation"]')!.click()
     await settle()
     const post = calls.find((c) => c.method === 'POST' && c.path === '/api/v1/workplaces/WP-WELD-2/deviations')
     expect(post?.body).toMatchObject({ description: 'Кромка с заусенцем после подготовки', workplace_id: 'WP-WELD-2' })
@@ -163,8 +184,13 @@ describe('терминал исполнителя', () => {
     mockApi(world({ sessionOver: { workplace: undefined } }).routes)
     const w = await mountWidget(PerformerTerminalWidget, props)
     expect(w.find('[data-testid="workplace"]').text()).toContain('Рабочее место не выбрано')
-    expect(w.find('[data-testid="report-deviation"]').attributes('disabled')).toBeDefined()
-    expect(w.find('[data-testid="request-inspection"]').attributes('disabled')).toBeDefined()
+    // Прямо сказано, почему, и ничего чужого: ни оборудования, ни операций завода (UI-39, UI-40).
+    expect(w.find('[data-testid="no-post"]').text()).toContain('Вы не назначены на пост в эту смену')
+    expect(w.find('[data-testid="warnings"]').exists()).toBe(false)
+    expect(w.find('[data-testid="current-run"]').exists()).toBe(false)
+    expect(w.find('[data-testid="open-deviation"]').attributes('disabled')).toBeDefined()
+    expect(w.find('[data-testid="open-inspection"]').attributes('disabled')).toBeDefined()
+    expect(w.find('[data-testid="off-reason"]').text()).toContain('только с поста')
   })
 
   it('воспроизведение — действия выключены, расхождение видно', async () => {
@@ -175,6 +201,6 @@ describe('терминал исполнителя', () => {
     const w = await mountWidget(PerformerTerminalWidget, props, pinia)
     expect(w.find('[data-testid="not-moved"]').exists()).toBe(true)
     expect(w.find('[data-testid="confirm-isolator-move"]').attributes('disabled')).toBeDefined()
-    expect(w.find('[data-testid="request-inspection"]').attributes('disabled')).toBeDefined()
+    expect(w.find('[data-testid="open-inspection"]').attributes('disabled')).toBeDefined()
   })
 })

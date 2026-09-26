@@ -46,7 +46,8 @@ const notes = reactive<Record<string, string>>({})
 /** id команды на задачу — один на намерение (AD-7). */
 const commandIds = new Map<string, string>()
 const lastError = ref<{ task: string; error: unknown } | null>(null)
-const acked = reactive<Record<string, number>>({})
+/** Отмеченные в этом сеансе: исход и номер записи — кнопки у задачи прячутся, итог виден (UI-37). */
+const acked = reactive<Record<string, { outcome: AcknowledgeTaskOutcome; seq: number }>>({})
 
 const time = (iso: string | null | undefined) => (iso ? d(new Date(iso), 'dateTime') : '')
 
@@ -70,7 +71,7 @@ async function acknowledge(task: TaskEntry, outcome: AcknowledgeTaskOutcome): Pr
         ...(s?.workplace?.id ? { workplace_id: s.workplace.id } : {}),
       },
     })
-    acked[task.task_id] = res.data.seq
+    acked[task.task_id] = { outcome, seq: res.data.seq }
     declining.value = null
     commandIds.delete(key)
   } catch (error) {
@@ -105,13 +106,13 @@ const kindKey = (task: TaskEntry) => (taskNotificationKind(task.kind) === 'decis
           text
           type="primary"
           :size="size"
-          :label="`${task.ref.entity === 'item' ? t('common.actions.openPassport') : t('common.actions.open')} · ${task.ref.id}`"
+          :label="task.ref.entity === 'item' ? t('common.actions.openPassport') : t('common.actions.open')"
           data-testid="open-ref"
           @click="emit('open', task.ref)"
         />
       </div>
 
-      <template v-if="isOpenTask(task) && canAct">
+      <template v-if="isOpenTask(task) && canAct && !acked[task.task_id]">
         <template v-if="isIsolatorMoveTask(task)">
           <div v-if="moving !== task.task_id" class="line">
             <ActionButton :size="size" type="primary" secondary :label="t('decisions.containment.confirmIsolatorMove')" data-testid="open-isolator-move" @click="moving = task.task_id" />
@@ -156,7 +157,11 @@ const kindKey = (task: TaskEntry) => (taskNotificationKind(task.kind) === 'decis
           />
         </form>
       </template>
-      <p v-if="acked[task.task_id]" class="ok ant-wrap" data-testid="acked">{{ t('widgets.shopFloor.recorded', { seq: acked[task.task_id] }) }}</p>
+      <!-- Итог отметки виден сразу (UI-37): что вы отметили; номер записи — мелко. -->
+      <p v-if="acked[task.task_id]" class="ok ant-wrap" data-testid="acked">
+        {{ t('widgets.shopFloor.tasks.ackedAs', { outcome: t(`widgets.shopFloor.tasks.state.${acked[task.task_id]!.outcome}`) }) }}
+        <span class="ant-muted">· {{ t('widgets.shopFloor.recorded', { seq: acked[task.task_id]!.seq }) }}</span>
+      </p>
       <NAlert v-if="lastError?.task === task.task_id" type="error" :bordered="false" data-testid="ack-error">{{ problemText(lastError.error) }}</NAlert>
     </li>
   </ul>
@@ -203,6 +208,10 @@ const kindKey = (task: TaskEntry) => (taskNotificationKind(task.kind) === 'decis
 }
 
 .ok {
+  padding: var(--ant-space-2) var(--ant-space-3);
+  border-radius: var(--ant-radius-md);
+  background: var(--ant-status-success-soft);
   color: var(--ant-status-success-text);
+  font-weight: var(--ant-fw-bold);
 }
 </style>
