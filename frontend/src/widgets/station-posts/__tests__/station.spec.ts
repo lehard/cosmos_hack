@@ -123,17 +123,21 @@ describe('виджет «Участок»', () => {
     const item = 'ENT01:show-is2-20260921-1/I-3CDF7159'
     const task = {
       task_id: 'T-RCV',
-      kind: 'other',
-      title: 'Принять в цех Ф-001',
+      // Как в живом ответе /api/v1/tasks у FOR-WC: задача шага процесса.
+      kind: 'process_step',
+      title: 'Принять в цех DM:F-001',
+      location_id: 'WS-WC',
+      ref: { entity: 'item', id: item },
+      step_key: 'welding.receive',
       state: 'open',
       assignee_role: 'site_foreman',
       assignee_id: null,
       created_at: '2026-09-21T05:00:00Z',
       due_at: null,
       overdue: false,
-      operation: 'process.movement.receive',
+      operation_id: 'process.movement.receive',
       item_id: item,
-      item_label: 'Ф-001',
+      item_label: 'DM:F-001',
     }
     mockApi(
       routes({
@@ -146,7 +150,8 @@ describe('виджет «Участок»', () => {
     const order = w.findAll('[data-testid="incoming"], [data-testid="posts"], [data-testid="steps"]').map((e) => e.attributes('data-testid'))
     expect(order).toEqual(['incoming', 'posts', 'steps'])
     const row = w.find(`[data-incoming="${item}"]`)
-    expect(row.text()).toContain('Принять в цех Ф-001')
+    expect(row.text()).toContain('Принять в цех DM:F-001')
+    expect(w.find('[data-testid="nothing-incoming"]').exists()).toBe(false)
     expect(row.text()).not.toContain('I-3CDF7159')
     expect(row.find('[data-action="receive-item"]').exists()).toBe(true)
   })

@@ -24,7 +24,7 @@ import { resolveWorkshop, useLocations } from '@/entities/reference'
 import { useItemsAtStep } from '@/entities/operation'
 import { useSession } from '@/entities/session'
 import { useTasks } from '@/entities/task'
-import { taskActionOf, type ProcessTask } from '@/features/task-actions'
+import { taskActionOf } from '@/features/task-actions'
 import { usePosts } from '@/entities/workplace'
 import { useDrillDown } from '@/features/drill-down'
 import type { DrillRef } from '@/shared/model/drill'
@@ -76,7 +76,7 @@ const incoming = computed<IncomingTask[]>(() =>
   (tasksQ.data.value?.data.items ?? [])
     .filter((t) => t.state === 'open')
     .flatMap((t) => {
-      const a = taskActionOf(t as ProcessTask)
+      const a = taskActionOf(t)
       return a.kind === 'form' && a.form === 'receive' ? [{ taskId: t.task_id, itemId: a.itemId, title: t.title }] : []
     }),
 )

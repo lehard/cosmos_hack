@@ -1,7 +1,7 @@
 /**
  * Реестр действий задачи (процесс настоящий: роль входит и видит свою работу).
  * Задачу роли порождает бэкенд из шага процесса: объект — изделие (`item_id`,
- * `item_label`), действие — operationId (`operation`). По operationId решается,
+ * `item_label`), действие — operationId (`operation_id`). По operationId решается,
  * что показать в задаче:
  * - `form` — форма прямо в задаче («Принять в цех» → куда принято / осмотр);
  * - `window` — кнопка с глаголом действия, открывающая окно записи
@@ -13,24 +13,10 @@
 import type { DrillRef, TaskEntry } from '@/shared/api/generated/model'
 
 /**
- * Поля задачи процесса (ветка fix/process-tasks). Пока их нет в
- * сгенерированном клиенте — типизированы здесь, все необязательные.
+ * Задача процесса — сгенерированный `TaskEntry` контракта: `operation_id`
+ * (operationId действия шага), `item_id`, `item_label`, `step_key`.
  */
-export interface ProcessTaskFields {
-  /** operationId действия шага процесса. */
-  operation?: string | null
-  /** operationId в ответе notifications.task.list (имя поля контракта). */
-  operation_id?: string | null
-  /** Изделие — объект задачи. */
-  item_id?: string | null
-  /** Метка изделия для людей (Ф-001, DM-код), не внутренний id. */
-  item_label?: string | null
-  role?: string | null
-  scope?: string | null
-}
-
-/** Задача с полями процесса. */
-export type ProcessTask = TaskEntry & ProcessTaskFields
+export type ProcessTask = TaskEntry
 
 /** Форма прямо в задаче. */
 export type TaskForm = 'receive' | 'isolator_move'
@@ -102,7 +88,7 @@ const DECISION_KINDS = new Set(['decision_required', 'review_after_new_data', 'p
 export function taskActionOf(task: ProcessTask): TaskAction {
   const item = taskItemId(task)
   const ref = task.ref ?? (item ? ({ entity: 'item', id: item } as DrillRef) : null)
-  const op = task.operation ?? task.operation_id
+  const op = task.operation_id
   const def = op ? TASK_ACTIONS[op] : undefined
   // Задачу «в изолятор» закрывает приёмка в изоляторе (FR-55) — своя форма.
   if (task.kind === 'isolate_move' && item) return { kind: 'form', form: 'isolator_move', verbKey: 'decisions.containment.confirmIsolatorMove', itemId: item }
