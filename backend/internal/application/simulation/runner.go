@@ -103,9 +103,14 @@ func (s *Service) Step(ctx context.Context, runID string) error {
 		target = rp.plan.LiveFrom.Add(-time.Nanosecond)
 	}
 	afterAction := true
+	// caughtUp — прогон дошёл до target (следующее — позже него); при
+	// исчерпанном бюджете шага — нет, и поминутный тик на target не ставится:
+	// иначе следующие шаги и служебные записи ушли бы в прошлое головы журнала.
+	caughtUp := false
 	for budget := s.d.Batch; budget > 0; budget-- {
 		due := sim.NextDue(rp.plan, rp.points, st.Cursor)
 		if due.At.After(target) {
+			caughtUp = true
 			if catching {
 				if err := s.goLive(ctx, st, rp); err != nil {
 					return s.fail(ctx, st, err)
@@ -158,7 +163,7 @@ func (s *Service) Step(ctx context.Context, runID string) error {
 			t := s.now()
 			st.FinishedAt = &t
 			st.State = StateComplete
-			if _, err := s.record(ctx, st, "simulation.run.finished", rp.plan.End, map[string]any{"run_id": st.RunID, "outcome": "completed"}); err != nil {
+			if _, err := s.record(ctx, st, "simulation.run.finished", notBefore(rp.plan.End, st.LastTick), map[string]any{"run_id": st.RunID, "outcome": "completed"}); err != nil {
 				return s.fail(ctx, st, err)
 			}
 			return s.d.Store.Save(ctx, st)
@@ -166,7 +171,7 @@ func (s *Service) Step(ctx context.Context, runID string) error {
 	}
 	// в интерактиве доменное «сейчас» идёт и между событиями: тик раз в
 	// виртуальную минуту, чтобы столы видели время сценария (AD-37)
-	if !fast && !catching && target.Sub(st.LastTick) >= time.Minute && !target.After(rp.plan.End) {
+	if caughtUp && !fast && !catching && target.Sub(st.LastTick) >= time.Minute && !target.After(rp.plan.End) {
 		if err := s.tick(ctx, st, target.Truncate(time.Second)); err != nil {
 			return s.fail(ctx, st, err)
 		}
@@ -237,7 +242,7 @@ func (s *Service) action(ctx context.Context, st *RunState, rp *runPlan, i int) 
 		st.State = StateWaiting
 		st.Clock = st.Clock.Pause(s.now())
 		st.Steps[key] = StepResult{Operation: a.Operation, At: a.At, Status: "waiting"}
-		if _, err := s.record(ctx, st, "simulation.run.paused", a.At, map[string]any{"run_id": st.RunID, "reason": "waiting_for_decision"}); err != nil {
+		if _, err := s.record(ctx, st, "simulation.run.paused", notBefore(a.At, st.LastTick), map[string]any{"run_id": st.RunID, "reason": "waiting_for_decision"}); err != nil {
 			return err
 		}
 		return errStop
@@ -278,22 +283,40 @@ func (s *Service) waitDone(ctx context.Context, st *RunState) (bool, error) {
 	if seq < 0 {
 		return false, nil
 	}
-	st.Consumed = append(st.Consumed, seq)
 	rp, err := s.plan(ctx, st)
 	if err != nil {
 		return false, err
 	}
 	a := rp.plan.Actions[w.Action]
 	if a.Operation == opStart {
-		s.aliasRun(ctx, st, rp, a, seq)
+		// Фактический id выполнения не прочитан — остановка не снимается:
+		// иначе ток, КТ-3 и рентген уйдут на плановый id, ЗТ-3 не построится
+		// и следующие остановки не снимутся никогда. Повтор — на следующем тике.
+		if err := s.aliasRun(ctx, st, rp, a, seq); err != nil {
+			if s.d.Log != nil {
+				s.d.Log.Warn("прогон: «Начать» принято, фактический id выполнения не прочитан — жду", "run_id", st.RunID,
+					"step", stepKey(a), "seq", seq, "err", err)
+			}
+			return false, nil
+		}
 	}
+	st.Consumed = append(st.Consumed, seq)
 	st.Steps[stepKey(a)] = StepResult{Operation: a.Operation, At: a.At, Status: "done", Seq: seq, Detail: "решение принято на столе роли"}
 	st.Cursor.Actions = w.Action + 1
 	st.Waiting = nil
 	st.State = StateRunning
 	st.Clock = st.Clock.Resume(s.now())
-	_, err = s.record(ctx, st, "simulation.run.resumed", a.At, map[string]any{"run_id": st.RunID})
+	_, err = s.record(ctx, st, "simulation.run.resumed", notBefore(a.At, st.LastTick), map[string]any{"run_id": st.RunID})
 	return err == nil, err
+}
+
+// notBefore — время служебной записи прогона: не раньше последнего тика
+// (доменное время журнала не убывает, AD-37; шаг мог наступить раньше тика).
+func notBefore(at, last time.Time) time.Time {
+	if at.Before(last) {
+		return last
+	}
+	return at
 }
 
 // Операции выполнения, у которых id выполнения выдаёт стол исполнителя.
@@ -304,32 +327,41 @@ const (
 
 // aliasRun — «Начать» нажал человек: фактический operation_run_id записи
 // (терминал выдаёт свой) вместо планового для всех следующих событий и
-// решений прогона по этому выполнению.
-func (s *Service) aliasRun(ctx context.Context, st *RunState, rp *runPlan, a sim.Action, seq int64) {
+// решений прогона по этому выполнению. Ошибка — у шага есть плановый id, а
+// фактический не прочитан (запись ещё не видна, чтение не удалось, нет data):
+// остановку снимать нельзя. Без порта чтения подменять нечем — не ошибка.
+func (s *Service) aliasRun(ctx context.Context, st *RunState, rp *runPlan, a sim.Action, seq int64) error {
 	v, ok := a.Body["operation_run_id"]
 	if !ok || s.d.Probe == nil {
-		return
+		return nil
 	}
 	planned, err := s.expand(ctx, st, rp, fmt.Sprint(v))
-	if err != nil || planned == "" {
-		return
+	if err != nil {
+		return fmt.Errorf("плановый id выполнения: %w", err)
+	}
+	if planned == "" {
+		return errors.New("плановый id выполнения пуст")
 	}
 	doc, err := s.d.Probe.Read(ctx, "journal.entry.read", map[string]string{"seq": itoa(seq)}, st.RunID)
 	if err != nil {
-		return
+		return fmt.Errorf("journal.entry.read seq %d: %w", seq, err)
 	}
 	vals, err := sim.Extract(doc, "/data/operation_run_id")
 	if err != nil || len(vals) != 1 {
-		return
+		return fmt.Errorf("в записи seq %d нет data.operation_run_id", seq)
 	}
 	actual, _ := vals[0].(string)
-	if actual == "" || actual == planned {
-		return
+	if actual == "" {
+		return fmt.Errorf("в записи seq %d пустой data.operation_run_id", seq)
+	}
+	if actual == planned {
+		return nil
 	}
 	if st.Runs == nil {
 		st.Runs = map[string]string{}
 	}
 	st.Runs[planned] = actual
+	return nil
 }
 
 // actualRuns — события прогона с фактическими id выполнений вместо плановых.
@@ -382,7 +414,7 @@ func (s *Service) goLive(ctx context.Context, st *RunState, rp *runPlan) error {
 	st.Live = true
 	st.LiveSeq = st.BasisSeq
 	st.Clock = st.Clock.Rebase(s.now(), rp.plan.LiveFrom)
-	_, err := s.record(ctx, st, "simulation.run.resumed", rp.plan.LiveFrom, map[string]any{"run_id": st.RunID})
+	_, err := s.record(ctx, st, "simulation.run.resumed", notBefore(rp.plan.LiveFrom, st.LastTick), map[string]any{"run_id": st.RunID})
 	return err
 }
 

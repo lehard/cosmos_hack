@@ -68,6 +68,26 @@ func (d *desk) press(op, obj string) {
 	d.recs = append(d.recs, deskRec{op: op, obj: obj, seq: 1_000_000_000 + int64(len(d.recs))})
 }
 
+// deskProbe — чтение записи нажатия стола: «Начать» несёт id выполнения,
+// выданный терминалом (прогон подменяет им плановый, aliasRun).
+type deskProbe struct {
+	*simfake.Ingest
+	d *desk
+}
+
+func (p deskProbe) Read(ctx context.Context, op string, params map[string]string, runID string) (any, error) {
+	if op == "journal.entry.read" {
+		p.d.mu.Lock()
+		defer p.d.mu.Unlock()
+		for _, r := range p.d.recs {
+			if params["seq"] == fmt.Sprint(r.seq) && r.op == "process.operation.start" {
+				return map[string]any{"seq": r.seq, "data": map[string]any{"operation_run_id": fmt.Sprintf("0199aaaa-bbbb-7ccc-8ddd-%012d", r.seq-1_000_000_000)}}, nil
+			}
+		}
+	}
+	return p.Ingest.Read(ctx, op, params, runID)
+}
+
 // TestShowRunManual — сценарий показа «Партия фланцев: сбой ИС-2» (Д-85):
 // история проигрывается сразу, часы встают на Пн 08:00; дальше каждое
 // решение людей живой партии — остановка до нажатия (demo-signer делает
@@ -80,7 +100,7 @@ func TestShowRunManual(t *testing.T) {
 	clock := &simfake.Clock{T: time.Date(2026, 9, 26, 9, 0, 0, 0, time.UTC)}
 	d := &desk{a: &simfake.Actor{In: ing}}
 	store := NewMemoryRuns()
-	svc := app.NewServiceWith(app.Deps{Definitions: files, Gateway: ing, Probe: ing, Actor: d, Recorder: &simfake.Recorder{},
+	svc := app.NewServiceWith(app.Deps{Definitions: files, Gateway: ing, Probe: deskProbe{Ingest: ing, d: d}, Actor: d, Recorder: &simfake.Recorder{},
 		Store: store, Infra: clock, Profile: "demo"})
 	started, err := svc.StartRun(ctx, "SHOW-IS2", app.StartRun{Mode: app.ModeInteractive})
 	if err != nil {
@@ -191,5 +211,42 @@ func TestShowRunManual(t *testing.T) {
 		if !slices.Contains([]string{"access.operator.confirm_step", "item.presentation.record"}, op) {
 			t.Errorf("demo-signer сделал решение живой партии %s — только руками", op)
 		}
+	}
+}
+
+// TestShowSmallBatchTime — бюджет шага прогона меньше наступившего (часы
+// ушли далеко вперёд): поминутный тик не встаёт на target раньше, чем прогон
+// до него дошёл, а служебные записи (пауза на решении, продолжение) — не
+// раньше последнего тика: доменное время журнала не убывает (AD-37; фейковый
+// регистратор отвергает убывание, как журнал — journal.time_regression).
+func TestShowSmallBatchTime(t *testing.T) {
+	ctx := context.Background()
+	files := NewFiles(filepath.Join(repo, "scenarios"))
+	ing := simfake.NewIngest()
+	clock := &simfake.Clock{T: time.Date(2026, 9, 26, 9, 0, 0, 0, time.UTC)}
+	d := &desk{a: &simfake.Actor{In: ing}}
+	store := NewMemoryRuns()
+	svc := app.NewServiceWith(app.Deps{Definitions: files, Gateway: ing, Probe: deskProbe{Ingest: ing, d: d}, Actor: d, Recorder: &simfake.Recorder{},
+		Store: store, Infra: clock, Profile: "demo", Batch: 5})
+	started, err := svc.StartRun(ctx, "SHOW-IS2", app.StartRun{Mode: app.ModeInteractive})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var st *app.RunState
+	for i := 0; i < 20000; i++ {
+		clock.Advance(5 * time.Minute) // ×60 — 5 ч прогона на шаг: бюджета в 5 шагов не хватает
+		if err := svc.Step(ctx, started.RunID); err != nil {
+			t.Fatal(err)
+		}
+		st, _, _ = store.Load(ctx, started.RunID)
+		if st.State == app.StateComplete || st.State == app.StateFailed {
+			break
+		}
+		if st.State == app.StateWaiting && st.Waiting != nil && !d.pressed(st.Waiting.Op, st.Waiting.Object, st.Consumed) {
+			d.press(st.Waiting.Op, st.Waiting.Object)
+		}
+	}
+	if st.State != app.StateComplete {
+		t.Fatalf("прогон: %s %s", st.State, st.Error)
 	}
 }
