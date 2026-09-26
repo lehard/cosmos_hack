@@ -50,7 +50,7 @@ COPY --from=backend /out/ant /ant
 # Отдельные процессы по границам доверия (эпик 29, AD-8, AD-9, AD-28): хранитель,
 # верификатор и демо-инструмент подделки — в том же образе, свои службы compose.
 COPY --from=backend /out/keeper /out/verifier /out/tamper /
-COPY --from=backend --chown=65532:65532 /out/var/lib/ant /var/lib/ant
+COPY --from=backend --chown=65532:65532 /out/var/lib/ /var/lib/
 COPY deploy/config/ant.yaml /etc/ant/ant.yaml
 USER 65532:65532
 EXPOSE 8080
