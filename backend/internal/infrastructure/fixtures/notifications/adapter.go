@@ -3,10 +3,14 @@ package notifications
 import (
 	"context"
 	"slices"
+	"sync"
 
 	app "ant/internal/application/notifications"
 	"ant/internal/application/platform"
+	notif "ant/internal/domain/notifications"
 	"ant/internal/infrastructure/fixtures/loader"
+	"ant/internal/infrastructure/fixtures/world"
+	"ant/internal/infrastructure/security/identity"
 )
 
 // Adapter — реализация fixtures ведущих портов модуля notifications (AD-36):
@@ -79,8 +83,19 @@ func (Adapter) Alerts(ctx context.Context, m platform.Moment, _ platform.Page) (
 	return respond[app.AlertList](ctx, "notifications.alert.list", byRole(ctx), &m)
 }
 
+// places — справочник мест встроенного нормативного слоя (область задач,
+// app.InScope — как у live); не прочитался — задачи сужаются только адресностью.
+var places = sync.OnceValue(func() app.Places {
+	p, err := identity.LoadPlaces(world.Inputs())
+	if err != nil {
+		return nil
+	}
+	return p
+})
+
 // Tasks — задачи пользователя (notifications.task.list) с фильтром по
-// состоянию и месту: ответ мира, поверх — отметки сессии, затем адресность.
+// состоянию и месту: ответ мира, поверх — отметки сессии, затем адресность и
+// область сеанса (место задачи входит в область персоны, app.InScope).
 func (Adapter) Tasks(ctx context.Context, f app.TaskFilter, m platform.Moment, _ platform.Page) (app.TaskList, error) {
 	v, err := respond[app.TaskList](ctx, "notifications.task.list", byRole(ctx, "state", f.State, "location_id", f.LocationID), &m)
 	if err != nil {
@@ -98,7 +113,7 @@ func (Adapter) Tasks(ctx context.Context, f app.TaskFilter, m platform.Moment, _
 			x.State = o
 			x.Overdue = false
 		}
-		if !addressed(p, x) {
+		if !addressed(p, x) || x.LocationID != nil && !app.InScope(p, *x.LocationID, places()) {
 			continue
 		}
 		if f.State != "" && x.State != f.State {
@@ -149,11 +164,27 @@ func acknowledged(ctx context.Context, rt *loader.Runtime, m platform.Moment) ma
 
 // AcknowledgeTask — отметить задачу (notifications.task.acknowledge): квитанция
 // и отметка в сессии — задача получает состояние итога (выполнена, принята,
-// отклонена) и уходит из открытых; сводка шапки пересчитывается.
+// отклонена) и уходит из открытых; сводка шапки пересчитывается. Задача
+// процесса отметкой не закрывается — тот же гард, что у live
+// (notif.GuardProcessStep).
 func (Adapter) AcknowledgeTask(ctx context.Context, taskID string, in app.AcknowledgeTask) (platform.Receipt, error) {
 	rt, err := loader.Default()
 	if err != nil {
 		return platform.Receipt{}, err
+	}
+	if all, err := respond[app.TaskList](ctx, "notifications.task.list", map[string]string{}, nil); err == nil {
+		for _, x := range all.Items {
+			if rt.Local(ctx, x.TaskID) != rt.Local(ctx, taskID) {
+				continue
+			}
+			op := ""
+			if x.OperationID != nil {
+				op = *x.OperationID
+			}
+			if err := notif.GuardProcessStep(x.Kind, op); err != nil {
+				return platform.Receipt{}, err
+			}
+		}
 	}
 	return rt.Record(ctx, "notifications.task.acknowledge", loader.ObjectRef{Kind: string(platform.EntityTask), ID: taskID}, in.CommandMeta(), in,
 		loader.Change{Entity: string(platform.EntityTask), ID: "global"}, loader.Change{Entity: string(platform.EntityNotification), ID: "global"})

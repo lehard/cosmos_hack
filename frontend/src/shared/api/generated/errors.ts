@@ -513,6 +513,11 @@ export const errorCatalog = {
     "title": "Истёк срок статуса",
     "uiKey": "errors.decision.statusExpired"
   },
+  "process.task_closed_by_action": {
+    "status": 409,
+    "title": "Задача процесса закрывается действием",
+    "uiKey": "errors.generic"
+  },
   "incident.auto_exclude_forbidden": {
     "status": 403,
     "title": "Автоматически исключить нельзя",

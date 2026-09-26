@@ -230,8 +230,9 @@ func StepTask(v TaskRecord, r kernel.Record) TaskRecord {
 		if v.CreatedAt.IsZero() || v.State == TaskWithdrawn {
 			v.CreatedAt = r.OccurredAt
 		}
-		// Новая версия задачи (адресат сменился) не отменяет отметку человека.
-		if v.State == "" || v.State == TaskWithdrawn {
+		// Новая версия задачи (адресат сменился) не отменяет отметку человека;
+		// задача процесса отметкой не закрывается — поставлена, значит открыта.
+		if v.State == "" || v.State == TaskWithdrawn || v.Kind == KindProcessStep {
 			v.State = TaskOpen
 		}
 	case catalog.TaskTaskWithdrawn:
@@ -244,6 +245,12 @@ func StepTask(v TaskRecord, r kernel.Record) TaskRecord {
 		}
 	case catalog.TaskTaskAcknowledged:
 		var d AckData
+		// Задача процесса открыта, пока шаг не выполнен: отметка её не
+		// закрывает (отказ GuardProcessStep; старые отметки — без действия),
+		// снимает её только действие шага (task.task.withdrawn).
+		if v.Kind == KindProcessStep {
+			return v
+		}
 		if decode(r, &d) {
 			v.TaskID, v.State, v.ClosedAt, v.Note = d.TaskID, d.Outcome, r.OccurredAt, d.Note
 		}
@@ -332,9 +339,13 @@ func Cost(rows []ObligationRecord, waitsOn string) (items, operations int) {
 	return len(is), len(ops)
 }
 
-// GuardAcknowledge — гард отметки задачи (AD-39): задача открыта; итог —
-// из перечисления контракта. Ошибка — текст отказа.
+// GuardAcknowledge — гард отметки задачи (AD-39): задача процесса отметкой
+// не закрывается (GuardProcessStep, *kernel.Refusal); задача открыта; итог —
+// из перечисления контракта. Прочие ошибки — текст отказа.
 func GuardAcknowledge(t TaskRecord, outcome string) error {
+	if err := GuardProcessStep(t.Kind, t.Operation); err != nil {
+		return err
+	}
 	switch outcome {
 	case "done", "accepted", "declined":
 	default:

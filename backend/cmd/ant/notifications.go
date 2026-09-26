@@ -7,6 +7,8 @@ import (
 
 	appjournal "ant/internal/application/journal"
 	notificationsapp "ant/internal/application/notifications"
+	"ant/internal/infrastructure/fixtures/world"
+	"ant/internal/infrastructure/security/identity"
 	"ant/internal/infrastructure/storage/journal/feed"
 	notificationsstore "ant/internal/infrastructure/storage/notifications"
 )
@@ -28,9 +30,14 @@ const (
 
 // notificationsLive — live-реализация ведущих портов notifications для роли
 // api: чтение — проекции notifications.* на ядре процесса; отметка задачи —
-// решение в журнал ядра; доменное «сейчас» — часы журнала (AD-37).
+// решение в журнал ядра; доменное «сейчас» — часы журнала (AD-37); область
+// задач — справочник мест нормативного слоя (тот же, что у барьера 3 access).
 func notificationsLive(ctx context.Context, env *environment) (*notificationsapp.Service, error) {
 	c, err := env.core(ctx)
+	if err != nil {
+		return nil, err
+	}
+	places, err := identity.LoadPlaces(world.Inputs())
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +45,8 @@ func notificationsLive(ctx context.Context, env *environment) (*notificationsapp
 		Projections: notificationsstore.New(c.pool),
 		Decisions: notificationsapp.JournalDecisions{Journal: c.journal, DomainBuild: c.codec.DomainBuild,
 			Partitions: env.cfg.Engine.Partitions, Now: c.codec.Now},
-		Clock: c.domainClock(),
+		Clock:  c.domainClock(),
+		Places: places,
 	}), nil
 }
 

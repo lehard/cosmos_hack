@@ -19,6 +19,9 @@ type Config struct {
 	Decisions DecisionWriter
 	// Clock — доменное «сейчас» (AD-37): от него считается просрочка; nil — системное.
 	Clock appjournal.DomainClock
+	// Places — справочник мест для области задач (InScope); nil — задачи
+	// сужаются только адресностью.
+	Places Places
 }
 
 // Service — реализация live ведущих портов модуля notifications (AD-36):
