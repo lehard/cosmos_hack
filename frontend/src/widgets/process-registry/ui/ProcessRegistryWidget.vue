@@ -59,6 +59,8 @@ async function onCreated(pid: string): Promise<void> {
 }
 
 const canCreate = computed(() => !moment.isReplay && canOnVersion('process.version.draft'))
+/** Создавать нельзя — объясняем, кто создаёт и как версия вступает в силу (разделение ролей PRD, FR-22, FR-23). */
+const showCreateNote = computed(() => !moment.isReplay && !canCreate.value)
 </script>
 
 <template>
@@ -74,6 +76,7 @@ const canCreate = computed(() => !moment.isReplay && canOnVersion('process.versi
     <template v-if="canCreate" #actions>
       <NButton size="small" type="primary" data-action="create" @click="creating = true">{{ t('processEditor.actions.create') }}</NButton>
     </template>
+    <p v-if="showCreateNote" class="create-note ant-wrap" data-testid="create-note">{{ t('processEditor.registry.createNote') }}</p>
     <!-- Пусто — своё состояние: окно процесса и «Создать процесс» должны оставаться доступны. -->
     <EmptyState v-if="!rows.length" compact :title="t('empty.noRecords')" />
     <DataTable v-else :caption="t('processEditor.registry.title')">
@@ -114,6 +117,12 @@ const canCreate = computed(() => !moment.isReplay && canOnVersion('process.versi
 </template>
 
 <style scoped>
+.create-note {
+  margin: 0 0 var(--ant-space-3);
+  color: var(--ant-text-2);
+  font-size: var(--ant-fs-meta);
+}
+
 .row {
   cursor: pointer;
 }
