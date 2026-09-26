@@ -1,0 +1,54 @@
+<script setup lang="ts">
+/**
+ * Строка записи журнала в карточке: время, краткое содержание от сервера,
+ * вид записи, пометка источника (FR-140), автор. Клик — выбрать запись.
+ */
+import { useI18n } from 'vue-i18n'
+import { LAYER_TEXT, SourceMark, entryText } from '@/entities/item'
+import type { NCRecordRef } from '@/entities/nonconformity'
+
+defineProps<{ record: NCRecordRef; mark?: string | null }>()
+const { t, d } = useI18n()
+const time = (x: string) => d(new Date(x), 'dateTime')
+</script>
+
+<template>
+  <div class="record" :data-kind="record.kind" :data-event="record.event_type" :data-id="record.event_id">
+    <time class="time">{{ time(record.occurred_at) }}</time>
+    <span class="text">{{ entryText(record) }}</span>
+    <span class="kind">{{ t(LAYER_TEXT[record.kind]) }}</span>
+    <SourceMark :record="record" />
+    <span v-if="record.author" class="muted">{{ record.author }}</span>
+    <span v-if="record.seq != null" class="muted">{{ t('widgets.analysis.circumstances.journalRecord', { seq: record.seq }) }}</span>
+    <span v-if="mark" class="mark" data-testid="record-mark">{{ mark }}</span>
+  </div>
+</template>
+
+<style scoped>
+.record {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 8px;
+  align-items: baseline;
+  font-size: 12px;
+}
+
+.time {
+  color: #6b7280;
+  font-variant-numeric: tabular-nums;
+}
+
+.text {
+  font-weight: 600;
+}
+
+.kind,
+.muted {
+  color: #6b7280;
+  font-size: 11px;
+}
+
+.mark {
+  color: #b45309;
+}
+</style>
