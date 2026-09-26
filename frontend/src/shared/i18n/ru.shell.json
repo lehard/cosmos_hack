@@ -28,15 +28,6 @@
       "footer": "Доступ — только сотрудникам предприятия"
     },
     "header": {
-      "runClock": {
-        "title": "Часы прогона {run} (сценарий {scenario})",
-        "ticking": "Время прогона идёт: ×{speed} к реальному",
-        "stopped": "Доменное время стоит",
-        "waiting": "стоим: ждём решения",
-        "waitingRole": "стоим: ждём — {role}",
-        "waitingFor": "Ждём: {role} — {what}",
-        "paused": "пауза"
-      },
       "search": "@:common.actions.search",
       "logout": "@:common.actions.logout",
       "goLive": "Вернуться к текущему",

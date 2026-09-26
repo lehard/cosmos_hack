@@ -4,12 +4,13 @@
  * Своей роли — «Ждёт вас» и кнопка «Открыть» (окно объекта справа, `?open=`).
  * Смена прогона или шага — все запросы перечитываются в активном прогоне (shared/api/active-run).
  */
-import { computed, onBeforeUnmount, onMounted, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQueryClient } from '@tanstack/vue-query'
 import { NButton } from 'naive-ui'
 import { activeRun, refreshActiveRun } from '@/shared/api/active-run'
 import { useSession } from '@/entities/session'
+import { formatRunClock, runClockAt, type RunState } from '@/entities/run'
 
 const emit = defineEmits<{ 'run-changed': [runId: string | null] }>()
 const route = useRoute()
@@ -75,7 +76,17 @@ const openTarget = computed(() => {
 function open(): void {
   if (openTarget.value) void router.push({ query: { ...route.query, open: openTarget.value } })
 }
-const clock = computed(() => (activeRun.value?.clock_at ? new Date(activeRun.value.clock_at).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : ''))
+// Часы прогона идут между опросами по скорости (entities/run: runClockAt); в ожидании человека стоят.
+const observedAt = ref(Date.now())
+const now = ref(Date.now())
+watch(activeRun, () => (observedAt.value = now.value = Date.now()))
+const tick = setInterval(() => (now.value = Date.now()), 500)
+onBeforeUnmount(() => clearInterval(tick))
+const clock = computed(() => {
+  const r = activeRun.value
+  if (!r?.clock_at) return ''
+  return formatRunClock(runClockAt({ clock_at: r.clock_at, speed: r.speed ?? 1, state: r.state as RunState }, observedAt.value, now.value))
+})
 </script>
 
 <template>
