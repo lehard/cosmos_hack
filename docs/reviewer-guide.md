@@ -54,6 +54,9 @@
 | Камеры и ИИ: проект комплекса и контур допуска моделей | [vision-camera-project.md](vision-camera-project.md) |
 | Документы по этапам процесса | [document-catalog.md](document-catalog.md) |
 | Нормативные опоры: ГОСТ и отраслевые требования | [normative-anchors.md](normative-anchors.md) |
+| Методы обнаружения: какой дефект чем ловим | [process/detection-methods.md](process/detection-methods.md) |
+| Паспорт контрольной точки КТ-3 (шов после сварки) | [process/control-point-kt3.md](process/control-point-kt3.md) |
+| Находки сверх требований кейса | [process/differentiators.md](process/differentiators.md) |
 | Интеграции: 1С, Галактика:ERP, MES, КОМПАС-3D, СКУД | [integrations/README.md](integrations/README.md), кооперация заводов — [federation.md](federation.md) |
 
 **Безопасность**
@@ -157,7 +160,7 @@ docker run --rm -v "$PWD":/src -w /src/backend -e GOTOOLCHAIN=local golang:1.27.
 - Общий фактор «один сварщик» система показывает, но «ошибку исполнителя» сама не ставит.
 - Опоздавшие данные помечают уже принятое решение: «пересмотрите».
 
-**Где в коде.** `backend/internal/domain/quality/` (три исхода контроля, карта реакций), `backend/internal/domain/nonconformity/` (несоответствия и проверки допустимости решений), `backend/internal/domain/analysis/` (область риска, разбор обстоятельств), `backend/internal/domain/process/` (исполнитель схемы процесса). Разбор сценариев — [scenario-processing.md](scenario-processing.md).
+**Где в коде.** `backend/internal/domain/quality/` (три исхода контроля, карта реакций), `backend/internal/domain/nonconformity/` (несоответствия и проверки допустимости решений), `backend/internal/domain/analysis/` (область риска, разбор обстоятельств), `backend/internal/domain/process/` (исполнитель схемы процесса). Разбор сценариев — [scenario-processing.md](scenario-processing.md). Методы обнаружения — какой дефект фланца чем ловится (камера, журнал оборудования, рентген, измерения): [process/detection-methods.md](process/detection-methods.md).
 
 ## О3 / Т7. Модуль сбора и обработки данных (15 + 15)
 
@@ -175,7 +178,7 @@ docker run --rm -v "$PWD":/src -w /src/backend -e GOTOOLCHAIN=local golang:1.27.
 - Пять случаев изменения контракта источника разобраны по отдельности: карантин или приём с флагом.
 - `make sim-check`: «не совпало 0».
 
-**Где в коде.** `backend/internal/application/ingest/pipeline.go` (конвейер приёма), `backend/internal/domain/ingest/` (контракт, повторы, номера, часы, привязка к изделию), `backend/cmd/edge-agent/` (агент у источника), `backend/internal/domain/simulation/` (генератор, стенд, табло).
+**Где в коде.** `backend/internal/application/ingest/pipeline.go` (конвейер приёма), `backend/internal/domain/ingest/` (контракт, повторы, номера, часы, привязка к изделию), `backend/cmd/edge-agent/` (агент у источника), `backend/internal/domain/simulation/` (генератор, стенд, табло). Агент у источника в промышленном варианте (буфер, досылка, защищённый канал) — [process/edge-agent.md](process/edge-agent.md); какие сигналы и от каких камер принимаются — [vision-camera-project.md](vision-camera-project.md), [process/control-point-kt3.md](process/control-point-kt3.md).
 
 ## Т2. Архитектура и системные интеграции (12)
 
@@ -192,7 +195,7 @@ docker run --rm -v "$PWD":/src -w /src/backend -e GOTOOLCHAIN=local golang:1.27.
 - Наружу — только учётные последствия решений: «принято в работу», «смена склада», «перевод в брак», «выпуск».
 - Сбой 503 — повтор с тем же номером сообщения; ошибка 422 — сообщение в карантин исходящих, после исправления сопоставления проходит.
 
-**Где в коде.** `backend/internal/application/erp/` (порт учётной системы: 1С и Галактика за одним портом), `backend/internal/infrastructure/integration/` (адаптеры и эмуляторы всех систем), `contracts/integrations/` (контракты обмена). Описание — [integrations/README.md](integrations/README.md).
+**Где в коде.** `backend/internal/application/erp/` (порт учётной системы: 1С и Галактика за одним портом), `backend/internal/infrastructure/integration/` (адаптеры и эмуляторы: `erp/onec/`, `erp/galaktika/`, `mes/b2mml/`, `cad/kompas/`); сквозной тест обмена — `backend/cmd/ant/erp_e2e_test.go`, общий контрактный тест адаптеров учёта — `backend/internal/application/erp/ledgertest/`, `contracts/integrations/` (контракты обмена). Описание — [integrations/README.md](integrations/README.md).
 
 ## О1. Понимание производственных процессов и специфики отрасли (10)
 
@@ -209,7 +212,7 @@ docker run --rm -v "$PWD":/src -w /src/backend -e GOTOOLCHAIN=local golang:1.27.
 - Изготовитель не принимает своё изделие; разрешение на отклонение — не «годно».
 - Нарушение режима специального процесса — несоответствие на всё окно нарушения, даже без найденного дефекта.
 
-**Где в коде.** `normative/process/flange-process.bpmn` (схема процесса), `normative/policy/policy.v1.yaml` (роли, полномочия, клейма), `normative/reactions/reaction-map.v1.yaml` (реакции на дефекты), `backend/internal/domain/process/`. Опоры на ГОСТ с местами в коде — [в приложении](#нормативные-опоры), с цитатами — [normative-anchors.md](normative-anchors.md).
+**Где в коде.** `normative/process/flange-process.bpmn` (схема процесса), `normative/policy/policy.v1.yaml` (роли, полномочия, клейма), `normative/reactions/reaction-map.v1.yaml` (реакции на дефекты), `backend/internal/domain/process/`. Опоры на ГОСТ с местами в коде — [в приложении](#нормативные-опоры), с цитатами — [normative-anchors.md](normative-anchors.md). Пример погружения в операцию — паспорт контрольной точки КТ-3 «шов фланца после сварки»: камеры, карта контроля, профили съёмки, правила перепроверки — [process/control-point-kt3.md](process/control-point-kt3.md).
 
 ## Т1. Работоспособность и воспроизводимость (8)
 
@@ -232,7 +235,7 @@ docker run --rm -v "$PWD":/src -w /src/backend -e GOTOOLCHAIN=local golang:1.27.
 
 **Что должно получиться.** Верификатор находит каждую подмену с местом и типом нарушения, индикатор целостности в шапке у всех ролей становится красным. В журнале критических действий — кто, в какой роли, по какому полномочию, было → стало; отменить можно только новой записью. Чужая команда — отказ 403.
 
-**Где в коде.** `backend/internal/domain/journal/chain.go` (хеш-цепочка), `backend/cmd/keeper/`, `backend/cmd/verifier/` (хранитель и независимый верификатор), `backend/internal/infrastructure/security/casbin/` (права). Модель угроз — [threat-model.md](threat-model.md).
+**Где в коде.** `backend/internal/domain/journal/chain.go` (хеш-цепочка), `backend/cmd/keeper/`, `backend/cmd/verifier/` (хранитель и независимый верификатор), `backend/cmd/tamper/` (атаки в обход системы), `backend/internal/application/security/bus.go` (шина безопасности), `backend/internal/application/security/critical.go` (журнал критических действий), `backend/internal/infrastructure/security/casbin/` (права). Модель угроз — [threat-model.md](threat-model.md).
 
 ## О9. Долгосрочная криптографическая защита (5)
 
@@ -245,7 +248,7 @@ docker run --rm -v "$PWD":/src -w /src/backend -e GOTOOLCHAIN=local golang:1.27.
 
 **Что должно получиться.** Три криптопрофиля — ГОСТ, постквантовый и гибридный; смена профиля — только повышение и только актом. Старые подписи проверяются и после смены профиля. Ключи людей и устройств — вне сервера, с актами выпуска, ротации и отзыва.
 
-**Где в коде.** `backend/internal/domain/signing/` (профили, конверт подписи, реестр ключей), `backend/internal/infrastructure/security/hybrid/`, `extension/`. Подробно — [crypto.md](crypto.md).
+**Где в коде.** `backend/internal/domain/signing/` (профили, конверт подписи, реестр ключей), `backend/internal/infrastructure/security/hybrid/`, `extension/`. Подробно — [crypto.md](crypto.md); модель угроз — [threat-model.md](threat-model.md).
 
 ## О7. Спецификации и кодогенерация (5)
 
@@ -273,7 +276,7 @@ docker run --rm -v "$PWD":/src -w /src/backend -e GOTOOLCHAIN=local golang:1.27.
 
 **Как проверить.**
 1. [new-adapter.md](new-adapter.md) — Галактика подключена как новый адаптер без правки ядра.
-2. `deploy/config/ant.yaml` — адаптеры портов и число партиций; `deploy/k8s/` — манифесты с автомасштабированием.
+2. `deploy/config/ant.yaml` — адаптеры портов и число партиций; [`deploy/k8s/`](../deploy/k8s/README.md) — манифесты Kubernetes с автомасштабированием.
 3. `normative/desks/technologist.yaml` — стол роли собирается из виджетов конфигурацией.
 4. `make check-backend` — правила слоёв и детерминизм домена.
 
@@ -283,7 +286,7 @@ docker run --rm -v "$PWD":/src -w /src/backend -e GOTOOLCHAIN=local golang:1.27.
 
 ## О5. Дополнительные отраслевые улучшения (5)
 
-**Что проверяем.** Функции сверх базового задания с практической пользой. Где в коде — [в приложении](#о5--где-в-коде).
+**Что проверяем.** Функции сверх базового задания с практической пользой. Где в коде — [в приложении](#о5--где-в-коде). Все находки сверх кейса с пользой для заказчика — [process/differentiators.md](process/differentiators.md).
 
 | Улучшение | Где увидеть |
 |---|---|
