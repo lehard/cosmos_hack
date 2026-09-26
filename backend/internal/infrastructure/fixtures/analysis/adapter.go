@@ -92,6 +92,11 @@ func (Adapter) RequestMeasurement(ctx context.Context, ncID string, in app.Reque
 	return recordNC(ctx, "analysis.measurement.request", ncID, in.CommandMeta(), in)
 }
 
+// RecordMeasurement — результат измерения (analysis.measurement.record).
+func (Adapter) RecordMeasurement(ctx context.Context, ncID string, in app.RecordMeasurement) (platform.Receipt, error) {
+	return recordNC(ctx, "analysis.measurement.record", ncID, in.CommandMeta(), in)
+}
+
 // NarrowScope — сузить область риска (analysis.scope.narrow).
 func (Adapter) NarrowScope(ctx context.Context, incidentID string, in app.ChangeScope) (platform.Receipt, error) {
 	if err := checkScope(ctx, incidentID, true, in); err != nil {

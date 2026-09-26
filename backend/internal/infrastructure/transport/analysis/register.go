@@ -112,6 +112,16 @@ func Register(api *httpapi.API, q app.Queries, c app.Commands) {
 			return c.RequestMeasurement(ctx, in.NCID, in.Body)
 		})
 
+	httpapi.Do(api, httpapi.Post("/nonconformities/{nc_id}/measurements/result", "Записать результат измерения",
+		"FR-59: исполнитель измерения (лаборатория, дефектоскопист) записывает итог проверки гипотезы — incident.measurement.recorded; уверенность гипотезы пересчитывается, причину подтверждает человек."),
+		platform.Action{ID: "analysis.measurement.record", Class: platform.ClassRecord, Owner: owner, Subject: "nonconformity", Emits: emits(catalog.IncidentMeasurementRecorded)},
+		func(ctx context.Context, in *struct {
+			NCID string `path:"nc_id" maxLength:"128"`
+			Body app.RecordMeasurement
+		}) (platform.Receipt, error) {
+			return c.RecordMeasurement(ctx, in.NCID, in.Body)
+		})
+
 	type incidentCmd[B any] struct {
 		IncidentID string `path:"incident_id" maxLength:"128"`
 		Body       B

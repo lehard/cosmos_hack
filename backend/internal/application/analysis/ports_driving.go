@@ -30,6 +30,8 @@ type Commands interface {
 	ConcludeCause(ctx context.Context, incidentID string, in ConcludeCause) (platform.Receipt, error)
 	RejectHypothesis(ctx context.Context, ncID string, in RejectHypothesis) (platform.Receipt, error)
 	RequestMeasurement(ctx context.Context, ncID string, in RequestMeasurement) (platform.Receipt, error)
+	// RecordMeasurement — результат измерения (analysis.measurement.record).
+	RecordMeasurement(ctx context.Context, ncID string, in RecordMeasurement) (platform.Receipt, error)
 	NarrowScope(ctx context.Context, incidentID string, in ChangeScope) (platform.Receipt, error)
 	ExpandScope(ctx context.Context, incidentID string, in ChangeScope) (platform.Receipt, error)
 	AssessItem(ctx context.Context, incidentID string, in AssessItem) (platform.Receipt, error)
@@ -78,6 +80,9 @@ func (Unimplemented) RejectHypothesis(context.Context, string, RejectHypothesis)
 }
 func (Unimplemented) RequestMeasurement(context.Context, string, RequestMeasurement) (platform.Receipt, error) {
 	return platform.Receipt{}, ni("analysis.measurement.request")
+}
+func (Unimplemented) RecordMeasurement(context.Context, string, RecordMeasurement) (platform.Receipt, error) {
+	return platform.Receipt{}, ni("analysis.measurement.record")
 }
 func (Unimplemented) NarrowScope(context.Context, string, ChangeScope) (platform.Receipt, error) {
 	return platform.Receipt{}, ni("analysis.scope.narrow")

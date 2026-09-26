@@ -10,6 +10,7 @@ import (
 	"ant/internal/contracts/errcodes"
 	ev "ant/internal/contracts/events"
 	dom "ant/internal/domain/analysis"
+	"ant/internal/domain/kernel"
 )
 
 // Команды модуля analysis в режиме live (AD-39): гард — чистая доменная
@@ -166,6 +167,42 @@ func (s *Service) RequestMeasurement(ctx context.Context, ncID string, in Reques
 		data["assignee_id"] = in.AssigneeID
 	}
 	return s.decide(ctx, catalog.IncidentMeasurementRequested, v.IncidentID, in.CommandMeta(), 0, data)
+}
+
+// RecordMeasurement — результат измерения (incident.measurement.recorded,
+// FR-59): записывает исполнитель измерения; уверенность гипотезы в разборе
+// пересчитывается, вывод о причине остаётся решением человека.
+func (s *Service) RecordMeasurement(ctx context.Context, ncID string, in RecordMeasurement) (platform.Receipt, error) {
+	if !s.live() {
+		return s.Unimplemented.RecordMeasurement(ctx, ncID, in)
+	}
+	n, err := s.nc(ctx, ncID)
+	if err != nil {
+		return platform.Receipt{}, err
+	}
+	v, err := s.ncIncident(ctx, n)
+	if err != nil {
+		return platform.Receipt{}, err
+	}
+	if _, _, _, err := s.hypothesisOf(ctx, n, in.HypothesisID); err != nil {
+		return platform.Receipt{}, err
+	}
+	req := in.RequestEventID
+	for _, m := range v.Measurements {
+		if req == "" && m.HypothesisID == in.HypothesisID {
+			req = m.EventID
+		}
+	}
+	if req == "" {
+		return platform.Receipt{}, refusal(kernel.Refuse(errcodes.ApiValidationFailed, "field", "hypothesis_id",
+			"reason", "измерение по этой гипотезе не запрашивалось — сначала «Запросить проверку»"))
+	}
+	data := map[string]any{"incident_id": v.IncidentID, "nc_ids": []string{ncID}, "hypothesis_id": in.HypothesisID, "request_event_id": req,
+		"outcome": in.Outcome, "result": in.Result}
+	if len(in.EvidenceRefs) > 0 {
+		data["evidence_refs"] = in.EvidenceRefs
+	}
+	return s.decide(ctx, catalog.IncidentMeasurementRecorded, v.IncidentID, in.CommandMeta(), 0, data)
 }
 
 // ConcludeCause — вывод о причине (incident.cause.concluded, FR-59): только

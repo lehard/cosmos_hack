@@ -97,6 +97,17 @@ func (s *Service) Hypotheses(ctx context.Context, ncID string, m platform.Moment
 			Status: status(h.ID, h.Category, "proposed_by_system"), ConfidenceBP: h.ConfidenceBP,
 			Supporting: refs.of(h.Supporting), Contradicting: refs.of(h.Contradicting), MeasurementHint: strp(h.MeasurementHint),
 			History: hypothesisHistory(n, h.ID, h.Category), NextCheck: nextCheck(h, inc)}
+		// Результат измерения: уверенность пересчитана, проверка выполнена.
+		if r := measured(n, h.ID); r != nil {
+			prev := 0
+			if h.ConfidenceBP != nil {
+				prev = *h.ConfidenceBP
+			}
+			if bp, ok := resultConfidence(r.Outcome, prev); ok {
+				x.ConfidenceBP = &bp
+				x.NextCheck = nil
+			}
+		}
 		out.Hypotheses = append(out.Hypotheses, x)
 	}
 	for _, h := range n.Hypotheses {
