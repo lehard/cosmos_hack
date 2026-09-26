@@ -76,8 +76,13 @@ func TestShowIncidentScope(t *testing.T) {
 		if x.Start.After(confirmAt) || x.Rework != "" {
 			continue
 		}
-		later(catalog.OperationRunStarted, item(x.Item), "", x.Start, map[string]any{"operation_run_id": local(x.Run), "step_key": analysistest.StepWeld,
-			"operation_code": "030", "equipment_id": eq[x.Station], "operator_id": x.Welder, "program_ref": analysistest.Program})
+		started := map[string]any{"operation_run_id": local(x.Run), "step_key": analysistest.StepWeld,
+			"operation_code": "030", "equipment_id": eq[x.Station], "operator_id": x.Welder, "program_ref": analysistest.Program}
+		if strings.HasPrefix(x.Item, "F-00") {
+			// Живая партия: «Начать» с терминала — без программы и со своим id выполнения.
+			delete(started, "program_ref")
+		}
+		later(catalog.OperationRunStarted, item(x.Item), "", x.Start, started)
 		later(catalog.OperationRunFinished, item(x.Item), "", x.End, map[string]any{"operation_run_id": local(x.Run), "completion": "completed"})
 		switch x.Item {
 		case "F-201", "F-202":

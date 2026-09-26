@@ -500,6 +500,11 @@ func (s *State) reduceIncident(r kernel.Record, env Env) {
 		if level == string(statuses.ContainmentNone) {
 			return
 		}
+		// Блок области снят решением людей по изделию (releaseDecided): новая
+		// версия области его не возвращает — снова заблокировать может человек.
+		if slices.ContainsFunc(s.Containment, func(c ContainmentSource) bool { return c.Key == key && c.Released && c.ReleasedBy != "" }) {
+			return
+		}
 		s.Containment = append(s.Containment, ContainmentSource{Key: key, Level: level, By: ByRule, Rule: RuleIncidentScope,
 			At: r.OccurredAt, Reason: "Область риска инцидента " + d.IncidentID, Basis: level, BasisEventID: r.EventID})
 		return
@@ -535,10 +540,19 @@ func (s *State) executed(n NC, r kernel.Record) {
 // есть) выводит изделие из изоляции на исполнение решения (BPMN: подпроцесс
 // брака «изоляция → ЗТ-Р → итог», выход из него снимает изоляцию): снимаются
 // изоляция и сдерживание, основанное на решённых несоответствиях — этом и
-// подтверждённых до решения (Covered). Разрешающее действие — подписанное
-// решение людей (AD-27). Сдерживание по области инцидента и доп. проверки не
-// трогаются: их основания живут своим порядком.
+// подтверждённых до решения (Covered). Блок по области риска инцидента у
+// самого изделия тоже снимается: судьба изделия решена людьми (переделка,
+// ремонт, как есть) — оно выведено из области на исполнение решения, и
+// блок «подозреваемого» к нему больше не относится (SHOW-IS2: Ф-003 после
+// «Переделки» проходит ЗТ-3). Разрешающее действие — подписанное решение
+// людей (AD-27). Доп. проверки не трогаются: их основания живут своим порядком.
 func (s *State) releaseDecided(n NC, r kernel.Record) {
+	for i := range s.Containment {
+		c := &s.Containment[i]
+		if !c.Released && c.Rule == RuleIncidentScope {
+			c.Released, c.ReleasedBy = true, r.EventID
+		}
+	}
 	decided := map[string]bool{n.ID: true}
 	for _, o := range s.NCs {
 		if o.ID != n.ID && o.Status == StatusConfirmed && !s.confirmedAt(o).After(r.OccurredAt) {
