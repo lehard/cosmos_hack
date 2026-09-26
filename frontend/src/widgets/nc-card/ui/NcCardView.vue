@@ -36,6 +36,7 @@ import {
 } from '@/entities/nonconformity'
 import type { Density } from '@/shared/config/widget'
 import { formatMinutes } from '@/shared/lib/duration'
+import { NcDecisionTrace } from '@/features/decision-trace'
 import { ActionButton, KeyValue, KeyValueList, StatusTag, WIDGET_FRAME_CONTEXT } from '@/shared/ui'
 import type { InspectionCoverage } from '@/shared/api/generated/model'
 import CameraObservation from './CameraObservation.vue'
@@ -250,6 +251,8 @@ const inWindow = computed(() => !!frame.plain)
     <section class="zone" data-zone="what-to-decide">
       <h3 class="ant-wrap">{{ t('ncCard.sections.systemSuggests') }}</h3>
       <NcSystemAnalysis :analysis="card.system_analysis" :titled="false" :show-rule="false" />
+      <!-- Как машина пришла к выводу (Ф1): качество кадра → ответ → правило карты реакций → доверие версии. -->
+      <NcDecisionTrace :card="card" />
     </section>
 
     <!-- 5. Решения людей и итоговый статус -->
