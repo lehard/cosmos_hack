@@ -3,7 +3,7 @@
 // геометрия контрольной карты.
 import { describe, expect, it } from 'vitest'
 import { i18n } from '@/shared/i18n'
-import { accountOf, chartGeometry, deltaOf, formatValue, originOf, sumCheck, toOverviewModel } from '../index'
+import { accountOf, chartGeometry, deltaOf, formatValue, meaningOf, originOf, sumCheck, toOverviewModel } from '../index'
 import { chart, drilldown, overview } from './fixtures'
 
 const x = {
@@ -27,6 +27,14 @@ describe('значение показателя', () => {
     expect(originOf({ unit: 's', origin: 'mixed' })?.code).toBe('mixed')
     expect(originOf({ unit: 'min' })).toMatchObject({ code: 'missing', warn: true })
     expect(originOf({ unit: 'pcs' })).toBeNull()
+  })
+
+  it('смысл интервала длительности (эпик 25): активная обработка / время на участке / иной с пояснением', () => {
+    expect(x.t(meaningOf({ unit: 'min', meaning: 'active_processing' })!.key)).toBe('Активная работа')
+    expect(x.t(meaningOf({ unit: 'min', meaning: 'time_at_station' })!.key)).toBe('Время на участке')
+    expect(meaningOf({ unit: 'min', meaning: 'other', meaning_note: 'от запуска до выпуска' })).toMatchObject({ code: 'other', note: 'от запуска до выпуска' })
+    expect(meaningOf({ unit: 'min' })).toBeNull()
+    expect(meaningOf({ unit: 'pcs', meaning: 'other' })).toBeNull()
   })
 
   it('сравнение с прошлым периодом — только при одинаковых единицах', () => {
@@ -53,6 +61,18 @@ describe('раскладка раздела «Аналитика»', () => {
     expect(m.accounts.hypotheses).toEqual([])
     expect(ids(m.causes)).toEqual(['cause_established'])
     expect(accountOf({ metric_id: 'hypotheses_open', group: 'causes', slices: [] })).toBe('hypotheses')
+  })
+
+  it('графа и «что считается» — из полей контракта (эпик 25), а не из id', () => {
+    expect(accountOf({ metric_id: 'x', group: 'people', slices: [], account: 'performer' })).toBe('people')
+    expect(accountOf({ metric_id: 'hypotheses', group: 'causes', slices: [], account: 'hypotheses' })).toBe('hypotheses')
+    const row = (metric_id: string, counts: 'items' | 'defects' | 'operations') => ({
+      metric_id, title: metric_id, group: 'defects' as const, counts, total: { value: 1, scale: 0, unit: 'pcs' }, unknown: false, slices: [],
+    })
+    const mm = toOverviewModel([row('scrap_losses', 'items'), row('recurrence_rate', 'defects'), row('unfinished_operations', 'operations')])
+    expect(ids(mm.items)).toEqual(['scrap_losses'])
+    expect(ids(mm.defects)).toEqual(['recurrence_rate'])
+    expect(ids(mm.operations)).toEqual(['unfinished_operations'])
   })
 
   it('«оценка невозможна» — в проверках, отдельной строкой; ни одна строка не теряется', () => {

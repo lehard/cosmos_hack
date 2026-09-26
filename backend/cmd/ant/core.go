@@ -11,6 +11,7 @@ import (
 
 	"ant/cmd/internal/db"
 	engineapp "ant/internal/application/engine"
+	processapp "ant/internal/application/process"
 	dj "ant/internal/domain/journal"
 	"ant/internal/infrastructure/security/permissive"
 	enginestore "ant/internal/infrastructure/storage/engine"
@@ -18,6 +19,7 @@ import (
 	journalstore "ant/internal/infrastructure/storage/journal"
 	"ant/internal/infrastructure/storage/journal/clock"
 	"ant/internal/infrastructure/storage/journal/feed"
+	processstore "ant/internal/infrastructure/storage/process"
 )
 
 // engineKeyRef — ключ движка key_id@версия для записей воркера, стадии и
@@ -42,6 +44,12 @@ type core struct {
 	// holder — идентификатор копии для аренд (хост:pid).
 	holder string
 	ttl    time.Duration
+	// versions, bundles — версии процесса (схема process) и нормативный слой
+	// изделия по закреплённой версии (эпик 17, AD-17); seedOnce — загрузка
+	// стартовой версии (FR-10).
+	versions *processstore.Versions
+	bundles  *processapp.Bundles
+	seedOnce sync.Once
 }
 
 // coreHolder — ленивое создание ядра и его остановка после ролей.
@@ -107,9 +115,11 @@ func openCore(ctx context.Context, env *environment) (*core, error) {
 		listener: journalstore.NewListener(pool, env.log),
 		engine:   &enginestore.Store{Pool: pool},
 		registry: engineRegistry(),
+		versions: &processstore.Versions{Pool: pool},
 		holder:   fmt.Sprintf("%s:%d", host, os.Getpid()),
 		ttl:      ttl,
 	}
+	c.bundles = &processapp.Bundles{Store: c.versions, Quorum: processapp.RecordedQuorum{}, Now: infra.Now}
 	c.codec = &engineapp.Codec{
 		Store:  c.journal,
 		Sealer: engineapp.SignerSealer{Signer: permissive.Signer{}, KeyRef: engineKeyRef},

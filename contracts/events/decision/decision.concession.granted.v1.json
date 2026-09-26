@@ -1,0 +1,86 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/decision/decision.concession.granted.v1.json",
+  "title": "DecisionConcessionGrantedV1",
+  "description": "Разрешение на отклонение выдано (ГОСТ Р ИСО 9000 п. 3.12.5, FR-54): номер, пункт КД/ТУ, область действия, лимит количества, срок; лимит открывается атомарно с записью, расход — атомарно с решением (AD-39).",
+  "type": "object",
+  "properties": {
+    "concession_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Разрешение."
+    },
+    "number": {
+      "type": "string",
+      "maxLength": 64,
+      "description": "Номер разрешения по стандарту предприятия."
+    },
+    "title": {
+      "type": "string",
+      "maxLength": 256,
+      "description": "Краткое содержание отклонения."
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "repair",
+        "use_as_is"
+      ],
+      "description": "Для какого решения по несоответствию."
+    },
+    "requirement_ref": {
+      "type": "string",
+      "maxLength": 256,
+      "description": "Пункт КД/ТУ, от которого разрешено отклонение."
+    },
+    "scope_item_ids": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/item_id"
+      },
+      "uniqueItems": true,
+      "description": "Область действия — перечень изделий."
+    },
+    "scope_range_from": {
+      "type": "string",
+      "maxLength": 128,
+      "description": "Область действия — диапазон номеров: от (включительно)."
+    },
+    "scope_range_to": {
+      "type": "string",
+      "maxLength": 128,
+      "description": "Область действия — диапазон номеров: до (включительно)."
+    },
+    "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Лимит количества изделий."
+    },
+    "valid_until": {
+      "$ref": "../common/defs.v1.json#/definitions/timestamp",
+      "description": "Срок действия."
+    },
+    "document_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Документ разрешения с маршрутом подписей (режим 5 — внешние полномочия)."
+    },
+    "approvals_status": {
+      "type": "string",
+      "enum": [
+        "route_closed",
+        "pending",
+        "demo_stub"
+      ],
+      "description": "Подписи маршрута разрешения на момент записи; demo_stub — демо-профиль, подписи не проверялись."
+    },
+    "reason": {
+      "$ref": "../common/defs.v1.json#/definitions/reason",
+      "description": "Основание выдачи."
+    }
+  },
+  "required": [
+    "concession_id",
+    "kind",
+    "limit",
+    "reason"
+  ]
+}

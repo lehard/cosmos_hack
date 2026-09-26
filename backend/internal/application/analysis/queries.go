@@ -167,8 +167,9 @@ func (s *Service) Groups(ctx context.Context, m platform.Moment) (NcGroupList, e
 	for _, k := range keys {
 		g := by[k]
 		defect, op, eq := dom.SplitGroupKey(k)
-		row := NcGroup{GroupKey: k, DefectType: defect, Operation: op, Equipment: eq, NCCount: len(g), LastFoundAt: g[0].At}
+		row := NcGroup{GroupKey: k, DefectType: defect, Operation: op, Equipment: eq, NCCount: len(g), NCIDs: []string{}, LastFoundAt: g[0].At}
 		for _, p := range g {
+			row.NCIDs = append(row.NCIDs, p.NCID)
 			if p.At.After(row.LastFoundAt) {
 				row.LastFoundAt = p.At
 			}

@@ -1945,6 +1945,10 @@ components:
     Concession:
       additionalProperties: false
       properties:
+        basis_seq:
+          description: seq последней записи потока разрешения (basis_seq отзыва, AD-39).
+          format: int64
+          type: integer
         concession_id:
           type: string
         document_id:
@@ -1961,6 +1965,21 @@ components:
           format: int64
           minimum: 0
           type: integer
+        number:
+          description: Номер по стандарту предприятия.
+          type: string
+        requirement_ref:
+          description: Пункт КД/ТУ.
+          type: string
+        scope_item_ids:
+          description: Область действия — изделия.
+          items:
+            type: string
+          type: array
+        scope_range_from:
+          type: string
+        scope_range_to:
+          type: string
         status:
           enum:
             - active
@@ -2206,10 +2225,18 @@ components:
     ContributionRow:
       additionalProperties: false
       properties:
+        at:
+          description: Момент, к которому относится вклад (FR-3).
+          format: date-time
+          type: string
         item_id:
+          description: Изделие; для строк вне изделия (простой оборудования) — id объекта из ref.
           type: string
         label:
           type: string
+        ref:
+          $ref: "#/components/schemas/DrillRef"
+          description: Объект строки вне изделия — куда провалиться (FR-7).
         slice_key:
           type: string
         source_event_ids:
@@ -2218,7 +2245,7 @@ components:
             type: string
           type: array
         source_kinds:
-          description: "Происхождение: источник факта (FR-140)."
+          description: "Виды источника исходных записей (FR-140), а не виды записей: manual_entry, machine, sensor, camera, external_system, import — для фактов; manual_entry — решение человека; system — вывод системы."
           items:
             type: string
           type: array
@@ -2237,6 +2264,12 @@ components:
       properties:
         center:
           $ref: "#/components/schemas/MetricValue"
+        chart_kind:
+          description: "Вид карты: p — доля дефектных по подгруппам; xmr — индивидуальные значения и скользящий размах."
+          enum:
+            - p
+            - xmr
+          type: string
         lower:
           $ref: "#/components/schemas/MetricValue"
         metric_id:
@@ -2247,11 +2280,15 @@ components:
           type: array
         step_key:
           type: string
+        title:
+          description: Название показателя карты («Доля результатов контроля с признаком дефекта», «Длительность операции»).
+          type: string
         upper:
           $ref: "#/components/schemas/MetricValue"
       required:
         - step_key
         - metric_id
+        - title
         - center
         - upper
         - lower
@@ -2304,6 +2341,13 @@ components:
             - point_manual_mode
             - not_covered_by_method
             - unknown
+          type: string
+        outcome:
+          description: Действующий исход полученного результата; «оценка невозможна» — нужен повторный контроль (FR-36).
+          enum:
+            - defect_indicated
+            - no_defect_indicated
+            - unable_to_assess
           type: string
         required:
           type: boolean
@@ -2640,6 +2684,42 @@ components:
         - risk_rank
         - overdue
         - basis_seq
+      type: object
+    DefectTypeCoverage:
+      additionalProperties: false
+      properties:
+        code:
+          type: string
+        event_ids:
+          items:
+            type: string
+          type: array
+        methods:
+          items:
+            type: string
+          type: array
+        name:
+          type: string
+        severity:
+          enum:
+            - critical
+            - major
+            - minor
+            - unknown
+          type: string
+        status:
+          description: "not_checked — не проверено методом, способным выявить: не годность."
+          enum:
+            - defect
+            - no_defect
+            - unable
+            - not_checked
+          type: string
+      required:
+        - code
+        - name
+        - severity
+        - status
       type: object
     DefineCalendar:
       additionalProperties: false
@@ -3479,6 +3559,13 @@ components:
         - live_map
         - policy
         - quarantine
+        - concession
+        - process_hold
+        - person
+        - reference
+        - key
+        - material
+        - partner
       type: string
     EquipmentEventRow:
       additionalProperties: false
@@ -4075,6 +4162,84 @@ components:
         - ref
         - kind
         - label
+      type: object
+    GrantConcession:
+      additionalProperties: false
+      properties:
+        basis_seq:
+          description: "seq, на котором клиент видел объект (basis_seq из ответа чтения): после него в потоках гарда не должно быть новых записей guard_relevant, иначе 409 journal.stale_state (AD-39)."
+          format: int64
+          minimum: 0
+          type: integer
+        command_id:
+          description: UUIDv7 клиента; повтор с тем же id возвращает прежний ответ (AD-7). У подписанной команды — event_id пакета.
+          format: uuid
+          type: string
+        concession_id:
+          description: Пусто — присвоит сервер.
+          maxLength: 128
+          type: string
+        document_id:
+          description: Документ разрешения с маршрутом подписей.
+          maxLength: 128
+          type: string
+        kind:
+          enum:
+            - repair
+            - use_as_is
+          type: string
+        limit:
+          description: Лимит количества изделий.
+          format: int64
+          minimum: 1
+          type: integer
+        number:
+          maxLength: 64
+          type: string
+        policy_seq:
+          description: Версия политики, по которой показаны права (policy_seq сеанса); изменилась — 409 journal.stale_policy (AD-39).
+          format: int64
+          minimum: 0
+          type: integer
+        reason:
+          $ref: "#/components/schemas/NCReason"
+        requirement_ref:
+          description: Пункт КД/ТУ.
+          maxLength: 256
+          type: string
+        scope_item_ids:
+          description: Область действия — перечень изделий.
+          items:
+            type: string
+          type: array
+        scope_range_from:
+          maxLength: 128
+          type: string
+        scope_range_to:
+          maxLength: 128
+          type: string
+        signature:
+          $ref: "#/components/schemas/DsseEnvelope"
+          description: "Подписанный пакет DSSE для операций с уровнем подписи ≥ 1 (AD-10, AD-13, AD-14): подписывает агент токена, сервер сверяет отпечаток."
+        title:
+          maxLength: 256
+          minLength: 1
+          type: string
+        valid_until:
+          format: date-time
+          type: string
+        workplace_id:
+          description: Рабочее место сеанса (барьер 2, AD-15).
+          maxLength: 128
+          type: string
+      required:
+        - title
+        - kind
+        - limit
+        - reason
+        - command_id
+        - basis_seq
+        - policy_seq
       type: object
     GrantPolicy:
       additionalProperties: false
@@ -4707,6 +4872,20 @@ components:
           items:
             $ref: "#/components/schemas/CoveragePoint"
           type: array
+        quality_state:
+          description: Состояние качества изделия.
+          enum:
+            - not_inspected
+            - conforming
+            - accepted_with_concession
+            - unable_to_assess
+            - signal
+            - nonconforming
+          type: string
+        types:
+          items:
+            $ref: "#/components/schemas/DefectTypeCoverage"
+          type: array
       required:
         - item_id
         - complete
@@ -4736,9 +4915,39 @@ components:
       required:
         - severity
       type: object
+    InspectionMeasurement:
+      additionalProperties: false
+      properties:
+        characteristic:
+          type: string
+        source_verdict:
+          enum:
+            - within
+            - outside
+            - not_measured
+          type: string
+        tolerance:
+          type: string
+        value:
+          type: string
+        verdict:
+          description: Строже из оценки источника и расчёта системы.
+          enum:
+            - within
+            - outside
+            - not_measured
+          type: string
+      required:
+        - characteristic
+        - source_verdict
+        - verdict
+      type: object
     InspectionResult:
       additionalProperties: false
       properties:
+        analyzer:
+          description: Наблюдение анализатора (VisionQC).
+          type: boolean
         analyzer_confidence_bp:
           format: int64
           maximum: 10000
@@ -4759,6 +4968,11 @@ components:
         limitations:
           items:
             type: string
+          type: array
+        measurements:
+          description: Измерения «значение против допуска» (FR-36).
+          items:
+            $ref: "#/components/schemas/InspectionMeasurement"
           type: array
         method:
           enum:
@@ -4797,12 +5011,18 @@ components:
             - aborted
             - failed
           type: string
+        reinterpreted:
+          description: "Почему система изменила исход: processing_not_completed, poor_observation, measurement_outside, not_measured."
+          type: string
         reliability:
           enum:
             - high
             - medium
             - low
             - unknown
+          type: string
+        reported_outcome:
+          description: Исход, сообщённый источником.
           type: string
         seq:
           format: int64
@@ -4817,7 +5037,27 @@ components:
             - external_system
             - import
           type: string
+        stages:
+          description: Ступени анализатора (FR-38).
+          items:
+            $ref: "#/components/schemas/QualityAnalyzerStage"
+          type: array
         step_key:
+          type: string
+        superseded:
+          description: Наблюдение исправлено более поздней записью (FR-122).
+          type: boolean
+        trust_level:
+          description: Уровень доверия паспорта анализатора на момент наблюдения (AD-29).
+          format: int64
+          maximum: 4
+          minimum: 0
+          type: integer
+        trust_note:
+          description: admitted, no_qualified_analyzer, suspended:…, shadow, analyzer_version_mismatch.
+          type: string
+        unable_reason:
+          description: Код причины «оценка невозможна».
           type: string
       required:
         - event_id
@@ -6328,6 +6568,26 @@ components:
     MetricRow:
       additionalProperties: false
       properties:
+        account:
+          description: "Графа раздельного учёта FR-87: входной брак / оборудование / исполнители / гипотезы; нет — показатель вне раздельного учёта."
+          enum:
+            - incoming
+            - equipment
+            - performer
+            - hypotheses
+          type: string
+        counts:
+          description: "Что считается: изделия / физические дефекты / несоответствия / выполнения операций / наблюдения (результаты контроля) / предъявления / гипотезы / время. Для долей — чья это доля."
+          enum:
+            - items
+            - defects
+            - nonconformities
+            - operations
+            - observations
+            - presentations
+            - hypotheses
+            - time
+          type: string
         group:
           description: "Раздел: раздельный учёт кейса §2.4, §5.2."
           enum:
@@ -6363,6 +6623,7 @@ components:
       additionalProperties: false
       properties:
         dimension:
+          description: "Измерение среза; origin — откуда брак: входной / производственный или категория подтверждённой причины (входной брак, оборудование, исполнитель…)."
           enum:
             - location
             - step
@@ -6425,6 +6686,17 @@ components:
     MetricValue:
       additionalProperties: false
       properties:
+        meaning:
+          description: "Для длительностей: смысл интервала — активная обработка / полное время на участке / иной интервал (пояснение — meaning_note)."
+          enum:
+            - active_processing
+            - time_at_station
+            - other
+          type: string
+        meaning_note:
+          description: "Пояснение смысла интервала: от чего до чего считается время."
+          maxLength: 500
+          type: string
         origin:
           description: "Для длительностей: передано источником / вычислено системой."
           enum:
@@ -6482,12 +6754,27 @@ components:
     NCCard:
       additionalProperties: false
       properties:
+        approvals_status:
+          description: "Подписи маршрута решения (режим 4): pending — решение не исполняется; demo_stub — демо, подписи не проверялись."
+          enum:
+            - route_closed
+            - pending
+            - demo_stub
+          type: string
         axes:
           $ref: "#/components/schemas/NCItemAxes"
         basis_seq:
           description: seq, на котором построена карточка (для basis_seq команд, AD-39).
           format: int64
           type: integer
+        commission:
+          description: Решение принимает комиссия (специальный процесс, FR-151).
+          type: boolean
+        containment:
+          description: Действующие основания сдерживания.
+          items:
+            $ref: "#/components/schemas/NCContainmentSource"
+          type: array
         evidence:
           $ref: "#/components/schemas/NCEvidence"
         happened:
@@ -6497,6 +6784,15 @@ components:
           items:
             $ref: "#/components/schemas/NCRecordRef"
           type: array
+        investigation_status:
+          description: "Второй статус несоответствия — «системное расследование» (FR-51): закрытие по изделию его не закрывает."
+          enum:
+            - none
+            - open
+            - closed
+          type: string
+        isolation:
+          $ref: "#/components/schemas/NCIsolation"
         item_id:
           type: string
         item_label:
@@ -6505,6 +6801,26 @@ components:
           type: string
         number:
           description: Номер для людей.
+          type: string
+        origin:
+          description: Черновик по сигналу или регистрация окна нарушения специального процесса (FR-151).
+          enum:
+            - signal
+            - special_process
+          type: string
+        physically_not_moved:
+          description: «Изолировано в системе, физически не перемещено» (FR-55).
+          type: boolean
+        presentation:
+          $ref: "#/components/schemas/NCPresentationContext"
+          description: Контекст точки предъявления, если изделие ждёт решения на ней.
+        resolution:
+          description: Исход несоответствия, закрытого без решения по изделию.
+          enum:
+            - signal_rejected
+          type: string
+        rule_rev:
+          description: Ревизия правила, построившего черновик (карта реакций).
           type: string
         status:
           enum:
@@ -6564,6 +6880,9 @@ components:
             - "null"
         rule_id:
           type: string
+        rule_rev:
+          description: "Ревизия нормативного слоя правила (FR-50): карта реакций, версия."
+          type: string
         version:
           format: int64
           minimum: 1
@@ -6577,6 +6896,38 @@ components:
         - revised_due_to
         - recorded_at
         - causes
+      type: object
+    NCContainmentSource:
+      additionalProperties: false
+      properties:
+        basis_gone:
+          type: boolean
+        by:
+          enum:
+            - rule
+            - human
+          type: string
+        key:
+          description: Запись-основание — её указывают в released_event_ids при снятии.
+          type: string
+        level:
+          enum:
+            - none
+            - observe
+            - additional_check
+            - item_hold
+            - lot_hold
+          type: string
+        reason:
+          type: string
+        rule_id:
+          type: string
+      required:
+        - key
+        - level
+        - by
+        - reason
+        - basis_gone
       type: object
     NCEvidence:
       additionalProperties: false
@@ -6624,6 +6975,32 @@ components:
         - before
         - during
         - after
+      type: object
+    NCIsolation:
+      additionalProperties: false
+      properties:
+        decision_due_at:
+          format: date-time
+          type: string
+        event_id:
+          description: Решение «изолировать».
+          type: string
+        isolated_at:
+          format: date-time
+          type: string
+        isolator_location_id:
+          type: string
+        overdue:
+          description: Срок решения истёк.
+          type: boolean
+        physically_moved:
+          description: Перемещение в изолятор подтверждено приёмкой.
+          type: boolean
+      required:
+        - event_id
+        - isolated_at
+        - physically_moved
+        - overdue
       type: object
     NCItemAxes:
       additionalProperties: false
@@ -6727,6 +7104,33 @@ components:
         - operation_run_id
         - step_key
         - label
+      type: object
+    NCPresentationContext:
+      additionalProperties: false
+      properties:
+        closing_point:
+          description: Закрывающая точка (ЗТ).
+          type: string
+        event_id:
+          description: Запись предъявления (item.presentation.recorded).
+          type: string
+        method_event_ids:
+          description: Результаты методов контроля изделия (для method_event_ids решения).
+          items:
+            type: string
+          type: array
+        presentation_no:
+          description: Номер предъявления (повторное — больше 1).
+          format: int64
+          minimum: 1
+          type: integer
+        step_key:
+          type: string
+      required:
+        - step_key
+        - closing_point
+        - presentation_no
+        - event_id
       type: object
     NCReason:
       additionalProperties: false
@@ -6872,6 +7276,18 @@ components:
     NCSummary:
       additionalProperties: false
       properties:
+        commission:
+          description: Решение — комиссия (FR-151).
+          type: boolean
+        containment:
+          description: Сдерживание изделия.
+          enum:
+            - none
+            - observe
+            - additional_check
+            - item_hold
+            - lot_hold
+          type: string
         defect_type_code:
           type: string
         disposition:
@@ -6885,6 +7301,13 @@ components:
           type: string
         found_at:
           format: date-time
+          type: string
+        investigation_status:
+          description: Системное расследование (FR-51).
+          enum:
+            - none
+            - open
+            - closed
           type: string
         item_id:
           type: string
@@ -6931,8 +7354,21 @@ components:
             type: string
           type: array
         missing_information:
-          description: Нехватка сведений.
+          description: Нехватка сведений — коды (те же, что missing_information_codes).
           items:
+            type: string
+          type: array
+        missing_information_codes:
+          description: Нехватка сведений — перечисление (как missing_information в incident.hypothesis.computed).
+          items:
+            enum:
+              - tool_unknown
+              - cycle_end_time_unknown
+              - no_observation_after_operation
+              - no_observation_before_operation
+              - operator_unknown
+              - equipment_log_missing
+              - other
             type: string
           type: array
         versions:
@@ -6997,6 +7433,11 @@ components:
           format: int64
           minimum: 0
           type: integer
+        nc_ids:
+          description: Несоответствия группы — вход разбора обстоятельств и гипотез (эпик 12).
+          items:
+            type: string
+          type: array
         operation:
           type: string
       required:
@@ -7005,6 +7446,7 @@ components:
         - operation
         - equipment
         - nc_count
+        - nc_ids
         - investigation
         - last_found_at
       type: object
@@ -8144,6 +8586,12 @@ components:
           maximum: 10000
           minimum: 0
           type: integer
+        automation_mode:
+          description: Режим автоматизации, с которым исполнена реакция (FR-50).
+          format: int64
+          maximum: 5
+          minimum: 0
+          type: integer
         basis_kind:
           enum:
             - inspection_result
@@ -8158,6 +8606,12 @@ components:
           description: seq, на котором построен ответ (AD-39).
           format: int64
           type: integer
+        closed_by_event_id:
+          description: «Оценка невозможна» или пропуск проверки закрыты этим результатом повторного контроля (человек сигнал не рассматривал).
+          type: string
+        containment:
+          description: Предложенный уровень сдерживания (ось nonconformity).
+          type: string
         defect_id:
           type: string
         defect_type_code:
@@ -8173,15 +8627,28 @@ components:
           type: string
         item_label:
           type: string
+        limits:
+          description: "Почему реакция ограничена: mode_requires_human, trust_level_N, permissive_not_delegated, critical_hold."
+          items:
+            type: string
+          type: array
         observation_event_id:
           description: Исходный результат контроля.
           type: string
+        observation_ids:
+          description: "Все наблюдения сигнала: повторные наблюдения одного дефекта (FR-37)."
+          items:
+            type: string
+          type: array
         observation_quality_bp:
           description: Качество наблюдения, б. п.
           format: int64
           maximum: 10000
           minimum: 0
           type: integer
+        proposed_outcome:
+          description: Реакция карты до ограничений, если она ограничена (FR-144).
+          type: string
         raised_at:
           format: date-time
           type: string
@@ -8194,6 +8661,12 @@ components:
             - manual_review
             - isolate
             - question_to_technologist
+          type: string
+        requirement_ref:
+          description: Требование КД; нет — вопрос технологу, а не брак (FR-48).
+          type: string
+        rule_title:
+          description: Правило карты реакций.
           type: string
         severity:
           enum:
@@ -8223,6 +8696,12 @@ components:
           maximum: 4
           minimum: 0
           type: integer
+        unable_reason:
+          description: Код причины «оценка невозможна».
+          type: string
+        unable_to_assess:
+          description: Сигнал «оценка невозможна» — повторный контроль, а не признак дефекта (FR-36).
+          type: boolean
         versions:
           additionalProperties:
             type: string
@@ -8261,6 +8740,10 @@ components:
     QuarantineEntry:
       additionalProperties: false
       properties:
+        basis_seq:
+          description: seq, на котором построен ответ (для basis_seq команды переобработки, AD-39).
+          format: int64
+          type: integer
         content:
           description: Исходное содержимое (только в чтении одной записи и при правах).
           type: string
@@ -8304,6 +8787,7 @@ components:
         - problem_code
         - quarantined_at
         - state
+        - basis_seq
       type: object
     QuarantineList:
       additionalProperties: false
@@ -11502,6 +11986,10 @@ components:
     SourceView:
       additionalProperties: false
       properties:
+        basis_seq:
+          description: seq, на котором построен ответ (для basis_seq команд над источником, AD-39).
+          format: int64
+          type: integer
         clock_skew_ms:
           description: Оценка расхождения часов источника (FR-33).
           format: int64
@@ -11549,6 +12037,7 @@ components:
         - gap_count
         - last_received_at
         - quarantined
+        - basis_seq
       type: object
     StartOperation:
       additionalProperties: false
@@ -13742,6 +14231,46 @@ paths:
         critical: false
         id: nonconformity.concession.list
         owner: nonconformity
+        subject: nonconformity
+    post:
+      description: "FR-54, Д-24: номер, пункт КД/ТУ, область действия, лимит количества, срок; лимит открывается атомарно с записью (AD-39). Внешние полномочия (режим 5) — маршрут подписей документа разрешения."
+      operationId: nonconformity.concession.grant
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GrantConcession"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Receipt"
+          description: OK
+          headers:
+            Ant-Backend:
+              schema:
+                $ref: "#/components/schemas/BackendMode"
+                description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Error
+      summary: Выдать разрешение на отклонение
+      tags:
+        - nonconformity
+      x-ant-action:
+        ca_group: nc_decision
+        class: permissive
+        critical: true
+        emits:
+          - decision.concession.granted
+        id: nonconformity.concession.grant
+        owner: nonconformity
+        signature_level: 2
         subject: nonconformity
   /api/v1/concessions/{concession_id}/revoke:
     post:

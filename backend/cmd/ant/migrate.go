@@ -13,6 +13,7 @@ import (
 	ingeststore "ant/internal/infrastructure/storage/ingest"
 	journalstore "ant/internal/infrastructure/storage/journal"
 	"ant/internal/infrastructure/storage/journal/migrator"
+	processstore "ant/internal/infrastructure/storage/process"
 )
 
 // migrationSets — миграции модулей в порядке применения (AD-1: у каждого
@@ -23,6 +24,7 @@ var migrationSets = []migrator.Set{
 	{Module: "engine", FS: enginestore.Migrations, Dir: enginestore.MigrationsDir},
 	{Module: "ingest", FS: ingeststore.Migrations, Dir: ingeststore.MigrationsDir},
 	{Module: "fixtures", FS: storagefx.Migrations, Dir: "migrations"},
+	{Module: "process", FS: processstore.Migrations, Dir: processstore.MigrationsDir},
 	// Эпик 30: очередь исходящих и каналы обмена (erp), состояние stand-а 1С (stand_onec).
 	{Module: "erp", FS: erpstore.Migrations, Dir: erpstore.MigrationsDir},
 	{Module: "stand_onec", FS: onecstand.Migrations, Dir: onecstand.MigrationsDir},

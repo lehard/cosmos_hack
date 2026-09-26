@@ -25,6 +25,16 @@
       },
       "description": "События-источники.",
       "uniqueItems": true
+    },
+    "decision": {
+      "type": "string",
+      "maxLength": 128,
+      "description": "Решение, которое оформляется документом «Запросить решение» (например, `disposition=scrap`; FR-146)."
+    },
+    "comment": {
+      "type": "string",
+      "maxLength": 2000,
+      "description": "Комментарий автора запроса."
     }
   },
   "required": [

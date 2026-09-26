@@ -312,6 +312,8 @@ func Stage(s StageState, r kernel.Record) (StageState, []kernel.Addressed) {
 		}
 	case catalog.DecisionNonconformityConfirmed:
 		return s.onNonconformity(r)
+	case catalog.EquipmentViolationWindowResolved:
+		return s.onViolationWindow(r)
 	case catalog.ItemAssemblyRecorded:
 		return s.onAssembly(r)
 	case catalog.GenealogyLotIssued:

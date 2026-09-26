@@ -209,6 +209,10 @@ func (s *Service) Quarantine(ctx context.Context, f QuarantineFilter, p platform
 	if err := s.ready(); err != nil {
 		return QuarantineList{}, platform.NotImplemented("ingest.quarantine.list")
 	}
+	basis, err := s.basisSeq(ctx)
+	if err != nil {
+		return QuarantineList{}, err
+	}
 	off, lim := pageOffset(p)
 	vs, err := s.QuarantineRecords(ctx, QuarantineQuery{Status: QuarantineStatus(f.State), SourceID: f.SourceID,
 		Code: errcodes.Code(f.Code), Offset: off, Limit: lim + 1})
@@ -221,9 +225,22 @@ func (s *Service) Quarantine(ctx context.Context, f QuarantineFilter, p platform
 			out.NextCursor = strconv.Itoa(off + lim)
 			break
 		}
-		out.Items = append(out.Items, entryOf(v))
+		e := entryOf(v)
+		e.BasisSeq = basis
+		out.Items = append(out.Items, e)
 	}
 	return out, nil
+}
+
+// basisSeq — голова основной цепочки до чтения: seq, на котором построен ответ
+// (basis_seq команд над карантином и источниками, AD-39). Берётся раньше чтения
+// проекций, поэтому не больше того, что они отражают.
+func (s *Service) basisSeq(ctx context.Context) (int64, error) {
+	h, err := s.deps.Journal.Head(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return h.MainSeq, nil
 }
 
 // QuarantineEntry — сообщение в карантине с содержимым (ingest.quarantine.read).
@@ -231,11 +248,16 @@ func (s *Service) QuarantineEntry(ctx context.Context, id string) (QuarantineEnt
 	if err := s.ready(); err != nil {
 		return QuarantineEntry{}, platform.NotImplemented("ingest.quarantine.read")
 	}
+	basis, err := s.basisSeq(ctx)
+	if err != nil {
+		return QuarantineEntry{}, err
+	}
 	v, err := s.QuarantineItem(ctx, id)
 	if err != nil {
 		return QuarantineEntry{}, err
 	}
 	e := entryOf(v)
+	e.BasisSeq = basis
 	if rec, err := s.deps.Quarantine.Get(ctx, id); err == nil {
 		if raw, err := s.content(ctx, rec); err == nil {
 			c := string(raw)
@@ -250,6 +272,10 @@ func (s *Service) QuarantineEntry(ctx context.Context, id string) (QuarantineEnt
 func (s *Service) Sources(ctx context.Context, p platform.Page) (SourceList, error) {
 	if err := s.ready(); err != nil {
 		return SourceList{}, platform.NotImplemented("ingest.source.list")
+	}
+	basis, err := s.basisSeq(ctx)
+	if err != nil {
+		return SourceList{}, err
 	}
 	srcs, err := s.deps.Registry.Sources(ctx)
 	if err != nil {
@@ -270,7 +296,7 @@ func (s *Service) Sources(ctx context.Context, p platform.Page) (SourceList, err
 			break
 		}
 		v := SourceView{SourceID: st.SourceID, SourceKind: st.SourceKind, State: "active", GapCount: len(st.Gaps),
-			Quarantined: int(q[st.SourceID])}
+			Quarantined: int(q[st.SourceID]), BasisSeq: basis}
 		if v.SourceKind == "" {
 			v.SourceKind = "unknown"
 		}

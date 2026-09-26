@@ -112,8 +112,11 @@ type GlobalProjection struct {
 	Entity func(key string) (platform.EntityKind, string, bool)
 }
 
-// Contributor — строки вклада изделия в показатели по итогу свёртки (analytics, эпик 25).
-type Contributor func(itemID string, s engine.Snapshot) ([]Contribution, error)
+// Contributor — строки вклада изделия в показатели по итогу свёртки (analytics,
+// эпик 25): функция итога свёртки и входа изделия (тот же вход, что свернул
+// воркер, AD-5). Вход нужен, пока модули-владельцы (process, quality,
+// nonconformity) не выставили в Snapshot то, что читают показатели.
+type Contributor func(itemID string, s engine.Snapshot, input []kernel.Record) ([]Contribution, error)
 
 // Registry — реестр проекций: одно имя — один писатель (AD-2, AD-45).
 type Registry struct {
@@ -221,8 +224,8 @@ func (r *Registry) Globals() []GlobalProjection {
 }
 
 // ItemEffects — эффекты проекций изделия по итогу свёртки: значения всех
-// проекций изделия и замена вкладов целиком (AD-45).
-func (r *Registry) ItemEffects(itemID string, s engine.Snapshot, rs []kernel.Reaction) ([]appjournal.Effect, error) {
+// проекций изделия и замена вкладов целиком (AD-45); input — свёрнутый вход.
+func (r *Registry) ItemEffects(itemID string, s engine.Snapshot, rs []kernel.Reaction, input []kernel.Record) ([]appjournal.Effect, error) {
 	r.mu.RLock()
 	items, contributors := slices.Clone(r.items), slices.Clone(r.contributors)
 	r.mu.RUnlock()
@@ -244,7 +247,7 @@ func (r *Registry) ItemEffects(itemID string, s engine.Snapshot, rs []kernel.Rea
 	}
 	rows := []Contribution{}
 	for _, c := range contributors {
-		cs, err := c(itemID, s)
+		cs, err := c(itemID, s, input)
 		if err != nil {
 			return nil, fmt.Errorf("вклады изделия: %w", err)
 		}

@@ -3,6 +3,9 @@
  * Источник: contracts/openapi.yaml
  */
 
+/**
+ * Измерение среза; origin — откуда брак: входной / производственный или категория подтверждённой причины (входной брак, оборудование, исполнитель…).
+ */
 export type MetricSliceDimension = typeof MetricSliceDimension[keyof typeof MetricSliceDimension];
 
 

@@ -257,7 +257,10 @@ func (c *Ctx) groups() []ncGroup {
 		if allCause {
 			inv = "cause_confirmed"
 		}
-		g := ncGroup{row: analysisapp.NcGroup{GroupKey: strings.ReplaceAll(k, "|", "."), DefectType: a.defect, Operation: a.op, Equipment: a.eq, NCCount: len(a.ncs), Investigation: inv, LastFoundAt: last}}
+		g := ncGroup{row: analysisapp.NcGroup{GroupKey: strings.ReplaceAll(k, "|", "."), DefectType: a.defect, Operation: a.op, Equipment: a.eq, NCCount: len(a.ncs), NCIDs: []string{}, Investigation: inv, LastFoundAt: last}}
+		for _, n := range a.ncs {
+			g.row.NCIDs = append(g.row.NCIDs, n.ID)
+		}
 		g.factors = analysisapp.CommonFactors{GroupKey: g.row.GroupKey, GroupLabel: fmt.Sprintf("%s × %s × %s", defectTitle(a.defect), a.op, a.eq), NCCount: len(a.ncs), Rows: c.factorRows(a.ncs)}
 		out = append(out, g)
 	}

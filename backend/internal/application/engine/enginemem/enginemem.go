@@ -1,9 +1,12 @@
 // Пакет enginemem — фейки в памяти ведомых портов журнала и движка
 // (JournalStore, WorkFeed, Consumer, LeaseStore, ProjectionStore, ChangeLog,
 // Sealer) для тестов движка, воркера, стадии, проекций и живых обновлений,
-// пока адаптеры Postgres эпика 04 не готовы. Семантика — как в AD-6, AD-44,
-// AD-45: seq по порядку, проверка эпохи аренды (ErrFenced), эффекты и курсор
-// в одной «транзакции» Append, сигнал «есть новое» после записи.
+// пока адаптеры Postgres эпика 04 не готовы. Семантика — как в AD-6, AD-39,
+// AD-44, AD-45: seq по порядку, проверка эпохи аренды (ErrFenced), проверки
+// конкурентности команд AD-39 (journal.stale_state, journal.stale_policy,
+// journal.concession_exhausted) и повтор event_id (journal.duplicate) — как в
+// адаптере Postgres (infrastructure/storage/journal), эффекты и курсор в одной
+// «транзакции» Append, сигнал «есть новое» после записи.
 //
 // Слой: application (тестовая опора; без драйверов и сети). В сборку ролей
 // не входит.
@@ -16,6 +19,8 @@ import (
 	"fmt"
 	"maps"
 	"slices"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -23,6 +28,7 @@ import (
 	appjournal "ant/internal/application/journal"
 	"ant/internal/contracts/catalog"
 	jc "ant/internal/contracts/journal"
+	dj "ant/internal/domain/journal"
 )
 
 // Journal — журнал в памяти с проекциями, вкладами, курсорами, арендами и
@@ -39,7 +45,12 @@ type Journal struct {
 	projItem  map[string]map[string]string
 	contrib   map[string][]engineapp.Contribution
 	changes   []engineapp.Change
-	signal    chan struct{}
+	// ids — записанные event_id по цепочкам (UNIQUE (chain, event_id) адаптера).
+	ids map[string]bool
+	// ledger — леджер разрешений на отклонение: открытия (+лимит) и расходы
+	// (−количество) по concession_id (journal.concession_ledger адаптера).
+	ledger map[string][]int64
+	signal chan struct{}
 	// FailAppend — если задано, Append возвращает эту ошибку (проверка повторов).
 	FailAppend error
 	// Appends — число успешных Append.
@@ -59,7 +70,8 @@ func New(now func() time.Time) *Journal {
 	}
 	return &Journal{now: now, envelopes: map[int][]byte{}, cursors: map[string]int64{}, epochs: map[string]int64{},
 		leases: map[string]lease{}, proj: map[string]map[string]json.RawMessage{}, projItem: map[string]map[string]string{},
-		contrib: map[string][]engineapp.Contribution{}, signal: make(chan struct{})}
+		contrib: map[string][]engineapp.Contribution{}, ids: map[string]bool{}, ledger: map[string][]int64{},
+		signal: make(chan struct{})}
 }
 
 var (
@@ -91,6 +103,26 @@ func (j *Journal) Append(_ context.Context, rq appjournal.AppendRequest) (appjou
 			return appjournal.AppendResult{}, appjournal.ErrFenced
 		}
 	}
+	// Проверки конкурентности команды (AD-39) — до записи, как в адаптере:
+	// отказ — ни записей, ни расхода лимита.
+	for _, c := range rq.Checks {
+		if err := j.check(c); err != nil {
+			return appjournal.AppendResult{}, err
+		}
+	}
+	for _, g := range rq.ConcessionGrants {
+		if g.ConcessionID == "" || g.Limit <= 0 {
+			return appjournal.AppendResult{}, fmt.Errorf("%w: лимит разрешения %q = %d", appjournal.ErrInvalidEntry, g.ConcessionID, g.Limit)
+		}
+	}
+	seen := map[string]bool{}
+	for _, p := range rq.Batch {
+		k := idKey(p.Entry)
+		if j.ids[k] || seen[k] {
+			return appjournal.AppendResult{}, fmt.Errorf("%w: event_id %s", appjournal.ErrDuplicate, p.Entry.EventID)
+		}
+		seen[k] = true
+	}
 	now := j.now().UTC()
 	var res appjournal.AppendResult
 	for _, p := range rq.Batch {
@@ -99,6 +131,7 @@ func (j *Journal) Append(_ context.Context, rq appjournal.AppendRequest) (appjou
 		if e.Chain == "" {
 			e.Chain = jc.JournalEntryChainMain
 		}
+		j.ids[idKey(e)] = true
 		e.CommittedAt = engineapp.FormatTime(now)
 		e.RecordedAt = engineapp.FormatTime(now)
 		if e.ReceivedAt == "" {
@@ -108,6 +141,15 @@ func (j *Journal) Append(_ context.Context, rq appjournal.AppendRequest) (appjou
 		j.entries = append(j.entries, e)
 		j.envelopes[e.Seq] = p.Envelope
 		res.Seqs = append(res.Seqs, int64(e.Seq))
+	}
+	// Леджер разрешений: открытие и расход атомарно с записью решения (AD-39).
+	for _, g := range rq.ConcessionGrants {
+		j.ledger[g.ConcessionID] = append(j.ledger[g.ConcessionID], g.Limit)
+	}
+	for _, c := range rq.Checks {
+		if c.ConcessionID != "" && c.Consume > 0 {
+			j.ledger[c.ConcessionID] = append(j.ledger[c.ConcessionID], -c.Consume)
+		}
 	}
 	for _, ef := range rq.Effects {
 		switch x := ef.(type) {
@@ -143,6 +185,57 @@ func (j *Journal) Append(_ context.Context, rq appjournal.AppendRequest) (appjou
 	close(j.signal)
 	j.signal = make(chan struct{})
 	return res, nil
+}
+
+// idKey — ключ уникальности event_id в цепочке (пустая цепочка — main).
+func idKey(e jc.JournalEntry) string {
+	chain := e.Chain
+	if chain == "" {
+		chain = jc.JournalEntryChainMain
+	}
+	return string(chain) + "/" + e.EventID
+}
+
+// check — проверка AD-39 над записанным журналом; коды и параметры отказов —
+// как у адаптера Postgres (check в infrastructure/storage/journal).
+func (j *Journal) check(c appjournal.Check) error {
+	basis := strconv.FormatInt(c.BasisSeq, 10)
+	if c.Stream != "" {
+		for _, e := range j.entries {
+			if e.Chain == jc.JournalEntryChainMain && e.Stream == c.Stream && int64(e.Seq) > c.BasisSeq && dj.Classify(e).GuardRelevant {
+				return appjournal.Reject(appjournal.ErrStaleState, c.BasisSeq, "stream", c.Stream, "basis_seq", basis)
+			}
+		}
+	}
+	if c.ItemProcessed && strings.HasPrefix(c.Stream, "item:") {
+		for _, e := range j.entries {
+			if e.Chain == jc.JournalEntryChainMain && e.Stream == c.Stream && dj.Classify(e).Trigger &&
+				int64(e.Seq) > j.cursors[cursorKey(appjournal.WorkerConsumer, e.Partition)] {
+				return appjournal.Reject(appjournal.ErrStaleState, c.BasisSeq, "stream", c.Stream, "basis_seq", basis, "reason", "unprocessed_input")
+			}
+		}
+	}
+	if c.PolicyStream != "" {
+		for _, e := range j.entries {
+			if e.Chain == jc.JournalEntryChainMain && e.Stream == c.PolicyStream && int64(e.Seq) > c.PolicySeq {
+				return appjournal.Reject(appjournal.ErrStalePolicy, c.PolicySeq, "policy_seq", strconv.FormatInt(c.PolicySeq, 10))
+			}
+		}
+	}
+	if c.ConcessionID != "" && c.Consume > 0 {
+		var remaining, limit int64
+		for _, d := range j.ledger[c.ConcessionID] {
+			remaining += d
+			if d > 0 {
+				limit += d
+			}
+		}
+		if remaining < c.Consume {
+			return appjournal.Reject(appjournal.ErrConcessionExhausted, 0, "concession_id", c.ConcessionID,
+				"remaining", strconv.FormatInt(remaining, 10), "limit", strconv.FormatInt(limit, 10))
+		}
+	}
+	return nil
 }
 
 // Read — записи по фильтрам ReadQuery (цепочка, поток, изделие, партиция,

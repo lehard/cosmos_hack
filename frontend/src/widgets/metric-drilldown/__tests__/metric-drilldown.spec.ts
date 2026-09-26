@@ -59,6 +59,22 @@ describe('раскрытие показателя', () => {
     expect(recs[1]!.text()).toContain('запись № 140')
   })
 
+  it('строка вне изделия (оборудование): вывод системы — видом источника, записи — списком id', async () => {
+    const dd = drilldown()
+    dd.items = [{ item_id: 'IS-2', label: 'Сварочный источник IS-2', slice_key: 'equipment:IS-2', value: { value: 20, scale: 0, unit: 'min' },
+      source_event_ids: ['ev-7', 'ev-8'], source_kinds: ['machine', 'system'], ref: { entity: 'equipment', id: 'IS-2' } }]
+    const calls = mockApi({ 'GET /api/v1/analytics/metrics/equipment_downtime/contributions': dd })
+    const w = await mountWidget(MetricDrilldownWidget, props)
+    useMetricFocusStore().select({ metricId: 'equipment_downtime', title: 'Простой' })
+    await settle()
+    const kinds = w.findAll('li[data-item="IS-2"] [data-testid="source-kind"]').map((k) => k.text())
+    expect(kinds).toEqual(['Станок', 'Вывод системы'])
+    await w.find('li[data-item="IS-2"] [data-testid="toggle-records"]').trigger('click')
+    await settle()
+    expect(w.findAll('[data-testid="record-ids"] li').map((l) => l.text())).toEqual(['ev-7', 'ev-8'])
+    expect(calls.some((c) => c.path.includes('/passport'))).toBe(false)
+  })
+
   it('сумма вкладов не равна итогу — видно сразу', async () => {
     const dd = drilldown()
     dd.total = { ...dd.total, value: 3 }

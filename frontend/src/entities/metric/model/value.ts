@@ -9,10 +9,10 @@
  * Здесь ничего не пересчитывается по смыслу (AD-21, NFR-UI-4): только перевод
  * единиц в текст. «Оценка невозможна» (`unknown`) — не ноль и не «норма».
  */
-import type { MetricValue, MetricValueOrigin } from '@/shared/api/generated/model'
+import type { MetricValue, MetricValueMeaning, MetricValueOrigin } from '@/shared/api/generated/model'
 import { formatMinutes } from '@/shared/lib/duration'
 
-export type { MetricValue, MetricValueOrigin }
+export type { MetricValue, MetricValueMeaning, MetricValueOrigin }
 
 /** Функции текстов vue-i18n, которые нужны форматированию. */
 export interface MetricTexts {
@@ -105,4 +105,30 @@ export function originOf(v: Pick<MetricValue, 'origin' | 'unit'>): OriginInfo | 
 export function deltaOf(now: MetricValue, previous: MetricValue | undefined): number | null {
   if (!previous || previous.unit !== now.unit) return null
   return numeric(now) - numeric(previous)
+}
+
+const MEANING_TEXT: Record<MetricValueMeaning, string> = {
+  active_processing: 'analytics.durationLabels.activeWork',
+  time_at_station: 'analytics.durationLabels.timeAtStation',
+  other: 'widgets.analytics.meaning.other',
+}
+
+/** Смысл интервала длительности: ключ текста и пояснение сервера. */
+export interface MeaningInfo {
+  code: MetricValueMeaning
+  key: string
+  /** Пояснение «от чего до чего» (`meaning_note`), если сервер его дал. */
+  note: string | null
+}
+
+/**
+ * Смысл интервала длительности (соглашение «Длительности», FR-88): активная
+ * обработка / полное время на участке / иной интервал. null — не длительность
+ * или сервер смысл не передал.
+ * @param v — значение контракта
+ */
+export function meaningOf(v: Pick<MetricValue, 'meaning' | 'meaning_note' | 'unit'>): MeaningInfo | null {
+  if (!isDuration(v) || !v.meaning) return null
+  const key = MEANING_TEXT[v.meaning]
+  return key ? { code: v.meaning, key, note: v.meaning_note ?? null } : null
 }

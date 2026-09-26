@@ -93,6 +93,9 @@ type apiOptions struct {
 	// analysis — live-реализация analysis над проекциями и журналом
 	// (engine.go, эпик 22); nil — заглушка 501.
 	analysis *analysisapp.Service
+	// nonconformity — live-реализация nonconformity над журналом и свёрткой
+	// изделия (nonconformity.go, эпик 21); nil — заглушка 501.
+	nonconformity *nonconformityapp.Service
 	// erp — live-реализация erp над проекциями erp.*, каналами обмена и
 	// журналом (outbox.go, эпик 30); nil — заглушка 501.
 	erp *erpapp.Service
@@ -102,6 +105,16 @@ type apiOptions struct {
 	// эпика 08, identity.go); nil — разрешающая заглушка без сеансов.
 	identity  accessapp.IdentityProvider
 	directory *accessapp.Directory
+	// quality — живые операции quality над проекциями движка (quality.go); nil — 501.
+	quality *qualityapp.Service
+	// analytics — live-показатели над строками вклада ядра (analytics.go);
+	// nil — без хранилища (операции 501).
+	analytics *analyticsapp.Service
+	// notifications — live-реализация notifications над проекциями сроков,
+	// задач и уведомлений (notifications.go, эпик 24); nil — заглушка 501.
+	notifications *notificationsapp.Service
+	// process — живая карта, версии и команды исполнителя (process.go, эпик 17); nil — 501.
+	process *processapp.Service
 }
 
 // buildAPI собирает HTTP API: общий декоратор (Gate) над портами прав и входа,
@@ -151,7 +164,11 @@ func buildAPI(mux *http.ServeMux, o apiOptions) *httpapi.API {
 		referencehttp.Register(a, q, c)
 	}
 	{
-		q, c := pick[processapp.Queries, processapp.Commands](a.ModeFor("process"), processapp.NewService(), processfx.New())
+		live := o.process
+		if live == nil {
+			live = processapp.NewService()
+		}
+		q, c := pick[processapp.Queries, processapp.Commands](a.ModeFor("process"), live, processfx.New())
 		processhttp.Register(a, q, c)
 	}
 	{
@@ -159,11 +176,19 @@ func buildAPI(mux *http.ServeMux, o apiOptions) *httpapi.API {
 		itemhttp.Register(a, q, c)
 	}
 	{
-		q, c := pick[qualityapp.Queries, qualityapp.Commands](a.ModeFor("quality"), qualityapp.NewService(), qualityfx.New())
+		live := o.quality
+		if live == nil {
+			live = qualityapp.NewService()
+		}
+		q, c := pick[qualityapp.Queries, qualityapp.Commands](a.ModeFor("quality"), live, qualityfx.New())
 		qualityhttp.Register(a, q, c)
 	}
 	{
-		q, c := pick[nonconformityapp.Queries, nonconformityapp.Commands](a.ModeFor("nonconformity"), nonconformityapp.NewService(), nonconformityfx.New())
+		live := o.nonconformity
+		if live == nil {
+			live = nonconformityapp.NewService()
+		}
+		q, c := pick[nonconformityapp.Queries, nonconformityapp.Commands](a.ModeFor("nonconformity"), live, nonconformityfx.New())
 		nonconformityhttp.Register(a, q, c)
 	}
 	{
@@ -210,11 +235,19 @@ func buildAPI(mux *http.ServeMux, o apiOptions) *httpapi.API {
 		materialshttp.Register(a, q, c)
 	}
 	{
-		q, c := pick[notificationsapp.Queries, notificationsapp.Commands](a.ModeFor("notifications"), notificationsapp.NewService(), notificationsfx.New())
+		live := o.notifications
+		if live == nil {
+			live = notificationsapp.NewService()
+		}
+		q, c := pick[notificationsapp.Queries, notificationsapp.Commands](a.ModeFor("notifications"), live, notificationsfx.New())
 		notificationshttp.Register(a, q, c)
 	}
 	{
-		q, c := pick[analyticsapp.Queries, analyticsapp.Commands](a.ModeFor("analytics"), analyticsapp.NewService(), analyticsfx.New())
+		live := o.analytics
+		if live == nil {
+			live = analyticsapp.NewService()
+		}
+		q, c := pick[analyticsapp.Queries, analyticsapp.Commands](a.ModeFor("analytics"), live, analyticsfx.New())
 		analyticshttp.Register(a, q, c)
 	}
 	{
