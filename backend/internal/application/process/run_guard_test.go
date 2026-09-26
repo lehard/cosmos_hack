@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	app "ant/internal/application/process"
 	"ant/internal/application/platform"
+	app "ant/internal/application/process"
 	"ant/internal/contracts/catalog"
 	"ant/internal/contracts/errcodes"
 )
