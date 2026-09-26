@@ -198,12 +198,25 @@ func (c *Ctx) liveMap(cs map[string]*NodeCount, in *Incident) processapp.LiveMap
 }
 
 // renderProcess — живая карта, карточки узлов, версии процесса (FR-1…FR-5, FR-9, FR-22…FR-24, FR-154).
+//
+// Живая карта — по периоду переключателя (UI-15, FR-3): счётчики узлов за
+// окно period (как у плиток, periods.go); без period — смена, как у live;
+// custom — тоже смена. Ответы с incident_id заданы для каждого периода
+// (incident_id × period): иначе при равной точности загрузчик взял бы ответ
+// инцидента без периода и потерял period.
 func renderProcess(c *Ctx) []loader.Response {
-	cs := c.Counters()
-	out := []loader.Response{resp("process.live_map.read", c.liveMap(cs, c.openIncident()))}
-	for _, in := range c.M.Incidents {
-		if !in.Spec.Opened.Time().After(c.T) {
-			out = append(out, resp("process.live_map.read", c.liveMap(cs, in), "incident_id", in.Spec.ID))
+	var out []loader.Response
+	var cs map[string]*NodeCount
+	for _, kind := range periodKinds {
+		pcs := c.CountersFrom(c.window(kind).From)
+		if cs == nil {
+			cs = pcs // карточки узлов — за период по умолчанию
+		}
+		out = append(out, resp("process.live_map.read", c.liveMap(pcs, c.openIncident()), periodParams(kind)...))
+		for _, in := range c.M.Incidents {
+			if !in.Spec.Opened.Time().After(c.T) {
+				out = append(out, resp("process.live_map.read", c.liveMap(pcs, in), periodParams(kind, "incident_id", in.Spec.ID)...))
+			}
 		}
 	}
 	// Карточки узлов.

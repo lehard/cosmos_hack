@@ -6,6 +6,7 @@ import (
 	"time"
 
 	analyticsapp "ant/internal/application/analytics"
+	processapp "ant/internal/application/process"
 	"ant/internal/infrastructure/fixtures/loader"
 )
 
@@ -116,5 +117,68 @@ func TestPeriodResponses(t *testing.T) {
 	// Разгар (Ср 13:45): за смену и сутки проверенных впервые нет, за месяц — все 64.
 	if seen["month"] != 64 || seen["month"] == seen["shift"] {
 		t.Errorf("проверено изделий по периодам: %v", seen)
+	}
+}
+
+// TestLiveMapPeriods — живая карта заготовок по period (UI-15): счётчики
+// «прошло» и «дефекты» — за окно периода, как node_counters аналитики;
+// incident_id и process_id не теряют period и сами не теряются.
+func TestLiveMapPeriods(t *testing.T) {
+	ctx := context.Background()
+	lib, err := testLibrary()
+	if err != nil {
+		t.Fatal(err)
+	}
+	rt := loader.New(lib, loader.NewMemoryCursor())
+	get := func(out any, kv ...string) {
+		t.Helper()
+		p := map[string]string{}
+		for i := 0; i+1 < len(kv); i += 2 {
+			p[kv[i]] = kv[i+1]
+		}
+		if err := rt.Respond(ctx, "process.live_map.read", p, nil, out); err != nil {
+			t.Fatalf("%v: %v", p, err)
+		}
+	}
+	sum := func(lm processapp.LiveMap) (passed, defects int) {
+		for _, c := range lm.Counters {
+			passed += c.Passed
+			defects += c.Defects
+		}
+		return
+	}
+	passed := map[string]int{}
+	for _, kind := range []string{"", "shift", "day", "week", "month", "custom"} {
+		var lm, inc, fl processapp.LiveMap
+		var nc analyticsapp.NodeCounterSet
+		get(&lm, "period", kind)
+		get(&inc, "period", kind, "incident_id", "RS-01")
+		get(&fl, "period", kind, "process_id", FlangeProcessID)
+		if err := rt.Respond(ctx, "analytics.node_counters.read", map[string]string{"period": kind, "process_version_id": ProcessVersionID}, nil, &nc); err != nil {
+			t.Fatal(err)
+		}
+		p, d := sum(lm)
+		pi, di := sum(inc)
+		pf, _ := sum(fl)
+		var pn, dn int
+		for _, c := range nc.Counters {
+			pn += c.Passed
+			dn += c.Defects
+		}
+		if p != pi || d != di || p != pf || p != pn || d != dn {
+			t.Errorf("period=%q: карта %d/%d, с инцидентом %d/%d, с процессом %d, аналитика %d/%d", kind, p, d, pi, di, pf, pn, dn)
+		}
+		if inc.Incident == nil || inc.Incident.IncidentID != "RS-01" {
+			t.Errorf("period=%q: инцидент потерян", kind)
+		}
+		passed[kind] = p
+	}
+	if passed[""] != passed["shift"] || passed["custom"] != passed["shift"] || passed["month"] <= passed["shift"] {
+		t.Errorf("прошло по периодам: %v", passed)
+	}
+	var br processapp.LiveMap
+	get(&br, "period", "week", "process_id", BracketProcessID)
+	if br.ProcessID != BracketProcessID {
+		t.Errorf("карта кронштейна с period: %s", br.ProcessID)
 	}
 }
