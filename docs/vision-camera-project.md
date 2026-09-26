@@ -437,7 +437,7 @@ MachineLogs — не логгер, а **выделитель значимых с
 
 ### 10.2. Пример сигнала VisionQC
 
-Схема — `contracts/events/inspection/inspection.result.recorded.v1.json` (каталог — `contracts/events/catalog.yaml`, AD-40; эталонные сообщения внешнего контракта — `contracts/integrations/vision/visionqc/`). Имя типа результата не кодирует (`recorded`, а не `failed`). Пример показывает payload внутри подписанного конверта DSSE (AD-10); конверт подписывает edge-агент ключом устройства.
+Схема — `contracts/events/inspection/inspection.result.recorded.v1.json` (каталог — `contracts/events/catalog.yaml`, AD-40; эталонные сообщения внешнего контракта — `contracts/integrations/vision/visionqc/`). Имя типа результата не кодирует (`recorded`, а не `failed`). Пример ниже — состав сигнала в именах кейса §4.4 (проектный набросок): это не проводной формат VisionQC и не валидное событие нашего контракта — в нём нет `data` и `integrity`, поля названы по кейсу. Проводной формат системы — `contracts/integrations/vision/visionqc/result.v1.json`; адаптер переводит его в `inspection.result.recorded`, а edge-агент подписывает конверт DSSE ключом устройства (AD-10). Перевод поле за полем — [таблица после примера](#перевод-результата-visionqc-в-событие-контракта).
 
 ```json
 {
@@ -517,9 +517,44 @@ MachineLogs — не логгер, а **выделитель значимых с
 - Уверенность и пороги имеют смысл только вместе с версией анализатора и профиля порогов: одинаковые 0,81 у разных версий несравнимы.
 - Версия контракта (`schema_version`) ≠ версия анализатора ≠ версия приложения (кейс §4.7). Поведение при неизвестной версии, новом поле, отсутствии обязательного поля, неизвестном значении перечисления и несовместимом изменении — общее для всех событий (AD-20, [data-model.md](data-model.md)). Неизвестный вид дефекта — «неизвестный вид» с флагом (FR-125).
 
+#### Перевод результата VisionQC в событие контракта
+
+Кейс §5.3: внешний формат и внутренняя модель различимы, преобразование — на границе интеграции. Адаптер на краю (`backend/internal/infrastructure/integration/vision/visionqc/adapter.go`, `Translate`) разбирает результат по закрытой схеме `result.v1.json` (лишнее поле — отказ) и собирает наблюдение; событие `inspection.result.recorded` из него строит `backend/internal/application/vision/relay.go` (`inspection`, `envelope`). Производственные правила видят только событие контракта.
+
+| Поле примера выше (имя кейса §4.4) | Поле VisionQC `result.v1.json` | Поле контракта | Как переводится |
+|---|---|---|---|
+| `event_id` | `run_id`, `system_id`, `result_id` | `event_id` | UUIDv5 от `vision/visionqc/‹run_id›/‹observation_id›`: повтор того же результата — дубль (`EventID`) |
+| — | `system_id`, `result_id` | `data.observation_id` | `‹system_id›/‹result_id›` |
+| `source_id`, `source_seq` | `seq` | `source_id`, `source_seq` | ставит edge-агент (`backend/cmd/edge-agent/agent.go`, `Enqueue`); `seq` системы не переносится |
+| `source_kind` | — | `source_kind`, `reliability` | постоянные `camera` и `high` |
+| `occurred_at` | `creation_time` | `occurred_at` | RFC 3339 → UTC, три знака после секунд |
+| — | `run_id` | `run_id` конверта | пространство имён прогона сценария; это не `operation_run_id` |
+| `item_ref` | `part_id`, `part_id_kind` | `item_ref` конверта | `datamatrix` → `dpm_datamatrix`, `qr` → `tag_qr`, иначе `internal_id`; `identification_level` = `unique`. Нет `part_id` — нет `item_ref`, событие идёт в поток `global` (`ItemRef`) |
+| `item_type_id` | — | — | не передаётся: тип изделия — из `item.item.registered` по `item_id` |
+| `line_id`, `station_id` | — | — | в результате контроля их нет: выводятся через выполнение операции ([README событий, п. 3 под таблицей](../contracts/events/README.md#соответствие-полям-кейса-44)) |
+| `inspection_point_id` | `station` | `data.inspection_point` | из сообщения; пусто — из конфигурации установки по `camera_id` (`DefaultStations`) |
+| `phase` | — | `data.phase`, `data.step_key` | из конфигурации установки по `camera_id`. Камера не описана — `step_key` пуст, `phase` = `after_operation`, ограничение «камера … не описана в установке» |
+| `operation_run_id` | — | `data.operation_run_id` | адаптер не ставит; выполнение находит свёртка — последнее `operation.run.started` изделия до результата |
+| `operator_id` | — | (`data.inspector_id`) | не ставится: у камеры нет контролёра |
+| `equipment_id` | `camera_id` | `data.equipment_id` | камера — средство контроля |
+| `inspection_method` | — | `data.method` | постоянное `camera` |
+| `processing_state` | `result_state` | `data.processing_state` | 1 → `completed`; 2, 3 → `aborted`; прочее → `failed`; при 0 и 2 — ещё ограничение «состояние обработки у системы: N» (`interpret`) |
+| `inspection_result` | `verdict` | `data.outcome`, `data.unable_reason` | `defects` → `defect_indicated` (в примере — `defect_found`); `no_defects` → `no_defect_indicated`; `cannot_evaluate` или пусто → `unable_to_assess`; обработка не `completed` — всегда `unable_to_assess`. Причина: `failed` → `analyzer_failure`, `aborted` → `processing_aborted`, помехи `occluded` / `out_of_frame` → `zone_occluded`, иные помехи → `poor_image`, иначе `other` |
+| `observation_quality.score_bp` | `frame.quality_bp` | `data.observation_quality_bp` | как есть |
+| `observation_quality.reasons` | `frame.issues` | `data.limitations` | «помехи кадра: блик, смаз, …»; `retake_count` — поля нет |
+| `coverage.zones_inspected` | `zones` | `data.zone_ids` | как есть; `zones_not_inspected` — поля нет |
+| — | `confidence_bp` | `data.analyzer_confidence_bp` | ограничивается 0…10000 |
+| `stages[]`: `stage`, `analyzer_version`, `confidence_bp` | `stages[]`: `name`, `version`, `confidence_bp`, `output` | `data.stages[]`: `stage`, `version`, `confidence_bp`, `output_note` | по полям |
+| `defects[]` | `findings[]` | `data.defects[]` | `class` → `defect_type_code` (пусто — поля нет); `zone` → `zone_id`; `location` → `location`; `severity` → `severity` (пусто — `unknown`); `confidence_bp` → `stage_confidence_bp`; `note` → `description`. `component_id`, `size`, `comparison`, `evidence_idx` в протоколе нет |
+| `limitations` | — | `data.limitations` | собирает адаптер: неизвестная камера, помехи, состояние обработки, ссылка на снимок, `is_simulated` («режим симуляции»), неполный вектор версий, недоступная иллюстрация; каждая строка ≤ 256 символов |
+| `versions` | `product_revision`, `recipe` {`id`, `version`}, `configuration` {`camera_config`, `calibration`, `threshold_profile`}, `software` {`analyzer_version`, `app_version`, `contract_version`} | `data.versions` | `item_revision`; `recipe_ref` = `‹id›@‹version›`; остальное по именам; пустая составляющая — `unknown` и ограничение «вектор версий неполный» (`Versions`). `calibration_id` примера → `calibration`, `thresholds_profile` → `threshold_profile`; `lighting_profile`, `deployment_mode` в векторе нет. `contract_version` не 1.x — сообщение отвергается целиком (`CheckContract`) |
+| — | `recommendation` | `data.recommendation` | `pass` → `pass_to_next`, `review` → `manual_review`, `reject` → `isolate`, `none` → `none` (`recommendation`) |
+| `evidence_refs` | `images[]` | `data.limitations`, `data.evidence_refs` | снимки системы в ядро не передаются: URI первого — в ограничениях. В `evidence_refs` — только иллюстрация открытого набора, если хранилище материалов её приняло (`is_illustration = true`) |
+| — | `meas_id` | — | не переносится |
+
 ### 10.3. Сигнал OperatorVision
 
-Отдельный тип семейства `operator` (владелец схемы — `access`, AD-40), — `operator.action.observed` (`contracts/events/catalog.yaml`): вид действия, шаг техпроцесса (`step_key` из версии процесса), начало и конец, отклонение ∈ {пропущен шаг, нарушен порядок, лишний шаг, аномальная длительность, инструмент не обнаружен, нет}, `confidence_bp`, качество наблюдения, `operator_id` из допуска к рабочему месту, `evidence_refs` (по умолчанию ссылка на скелетную последовательность, а не на видео). Это **гипотеза о действии**: запись — факт источника с `source_kind` «камера», а не решение.
+Отдельный тип семейства `operator` (владелец схемы — `access`, AD-40), — `operator.action.observed` (`contracts/events/catalog.yaml`): вид действия, шаг техпроцесса (`step_key` из версии процесса), начало и конец, отклонение ∈ {пропущен шаг, нарушен порядок, лишний шаг, аномальная длительность, инструмент не обнаружен, нет}, уверенность `analyzer_confidence_bp`, качество наблюдения `observation_quality_bp`, рабочее место `workplace_id` (исполнителя в самом событии нет — кто работал, система выводит из допуска к рабочему месту), `evidence_refs` (по умолчанию ссылка на скелетную последовательность, а не на видео). Это **гипотеза о действии**: запись — факт источника с `source_kind` «камера», а не решение.
 
 ### 10.4. Записи контура допуска (семейство `analyzer`, модуль `vision`)
 
@@ -824,6 +859,7 @@ flowchart LR
 
 - Типы событий: `inspection.result.recorded` (результат контроля, три исхода), `operator.action.observed` (OperatorVision), семейство `analyzer.*` — §10.4; схемы — `contracts/events/`, каталог — `contracts/events/catalog.yaml`; внешние контракты анализаторов — `contracts/integrations/vision/`.
 - Код: модуль `vision` — `backend/internal/domain/vision/`, `backend/internal/application/vision/`; stand-ы — `backend/internal/infrastructure/integration/vision/visionqc/stand/`, `backend/internal/infrastructure/integration/vision/operatorvision/stand/`; край — `backend/cmd/edge-agent/vision.go`; качество — `backend/internal/domain/quality/`; оборудование — `backend/internal/domain/machinelogs/`.
+- Таблица перевода VisionQC → `inspection.result.recorded` (§10.2) сверена с `backend/internal/infrastructure/integration/vision/visionqc/adapter.go`, `protocol.go` и `backend/internal/application/vision/relay.go`; пример §10.2 — набросок в именах кейса, а не проводной формат.
 - Уровни доверия и допустимые действия — `contracts/analyzer-trust-levels.yaml`; паспорта демо — `normative/vision/analyzer-passports.v1.yaml`; карта реакций — `normative/reactions/reaction-map.v1.yaml`.
 - Иллюстрации TIG Aluminium 5083 — `normative/vision/illustrations.v1.yaml` (ссылка на набор Kaggle, лицензия CC BY-SA 4.0, автор, цитирование); файлы набора в репозиторий не кладутся.
 - Автооткат в демо — кнопка цифрового стенда «Сменить свет на камере» (`light_change`), отдельного сценария в `scenarios/definitions` нет.
