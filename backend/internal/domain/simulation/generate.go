@@ -40,6 +40,7 @@ type draft struct {
 	scenario string
 	order    int
 	lost     bool
+	seqReset bool
 	dups     []time.Time
 	conflict map[string]any
 	// background — событие маршрута фона: к нему применяется случайный шум.
@@ -290,6 +291,7 @@ func (g *gen) stepFact(scenario string, st *Step) {
 	if st.Conflict != nil {
 		d.conflict = shiftMap(st.Conflict, g.shift)
 	}
+	d.lost, d.seqReset = st.Lost, st.SeqReset
 	g.add(d)
 }
 
@@ -348,8 +350,13 @@ func (g *gen) number(plan *Plan) error {
 				return fmt.Errorf("источник %s: номер первой потерянной записи %d меньше числа записей до неё", key, anchor)
 			}
 		}
-		for i, d := range ds {
-			d.seq = base + int64(i)
+		next := base
+		for _, d := range ds {
+			if d.seqReset {
+				next = 1
+			}
+			d.seq = next
+			next++
 		}
 	}
 	lat := map[string]*Rand{}

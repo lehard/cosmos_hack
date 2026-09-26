@@ -1,0 +1,720 @@
+# S14 — process/scenarios-flange.md §4 S14 «один к одному».
+id: S14
+version: '0.3'
+title: 'Общий фактор — один сварщик: система не ставит «ошибку исполнителя» сама'
+kind: extra
+goal: Если виноват человек — система это признает, но «ошибку исполнителя» записывает только комиссия после разбора и письменного объяснения работника; мера — проверка навыка и инструктаж,
+  а не наказание.
+case:
+  other:
+  - §2.3 основания, альтернативы, чего не хватает
+  - §5.2 подтверждённые ошибки отдельно от гипотез, сравнение сопоставимых работ
+  - вопрос жюри В1
+run: S14
+where: 'Отдельный прогон, свой мир (seed 20260929): Вт 29.09 – Ср 30.09.'
+source: process/scenarios-flange.md §4 S14
+steps:
+- at: '2026-09-24T09:00:00+03:00'
+  ref: Е-01, Е-03…Е-09
+  route: order:ORD-0929
+  note: 'История 12 фланцев, как в главной истории: задание ЗП-0929, партии ЗФ-202 и П-118, мехобработка, ЗТ-2, передача в сварочный цех'
+- at: '2026-09-29T10:05:00+03:00'
+  ref: Е-44
+  label: F-304/kt3
+  fact: inspection.result.recorded
+  source: cam-kt3-a
+  item: F-304
+  note: 'Камера КТ-3 (angle-1): подрез U3'
+  data:
+    observation_id: '{local:KT3-F-304-A}'
+    method: camera
+    phase: after_operation
+    step_key: welding.kt3_camera
+    inspection_point: KT-3
+    operation_run_id: '{local:SV-304-1}'
+    zone_ids: &id001
+    - '{zone:U1}'
+    - '{zone:U2}'
+    - '{zone:U3}'
+    - '{zone:U4}'
+    - '{zone:U5}'
+    - '{zone:U6}'
+    - '{zone:U7}'
+    - '{zone:U8}'
+    outcome: defect_indicated
+    processing_state: completed
+    defects:
+    - defect_type_code: W-UNDERCUT
+      description: Подрез
+      zone_id: '{zone:U3}'
+      severity: major
+    analyzer_confidence_bp: 8400
+    observation_quality_bp: 9100
+    versions:
+      analyzer_version: vqc-weld 2.3.1
+      contract_version: '1.0'
+      recipe_ref: KT-3@5
+      camera_config: angle-1
+      item_revision: Б
+- at: '2026-09-29T10:05:10+03:00'
+  ref: Е-44
+  label: F-304/kt3-b
+  fact: inspection.result.recorded
+  source: cam-kt3-b
+  item: F-304
+  note: 'Камера КТ-3 (angle-2): подрез U3'
+  data:
+    observation_id: '{local:KT3-F-304-B}'
+    method: camera
+    phase: after_operation
+    step_key: welding.kt3_camera
+    inspection_point: KT-3
+    operation_run_id: '{local:SV-304-1}'
+    zone_ids: *id001
+    outcome: defect_indicated
+    processing_state: completed
+    defects:
+    - defect_type_code: W-UNDERCUT
+      description: Подрез
+      zone_id: '{zone:U3}'
+      severity: major
+    analyzer_confidence_bp: 8000
+    observation_quality_bp: 8900
+    versions:
+      analyzer_version: vqc-weld 2.3.1
+      contract_version: '1.0'
+      recipe_ref: KT-3@5
+      camera_config: angle-2
+      item_revision: Б
+- at: '2026-09-29T10:06:00+03:00'
+  system: Сигнал; карантин по R-07; черновик карточки; гипотезы
+  ref: Е-80, Е-84, Е-83, Е-85
+- at: '2026-09-29T10:12:00+03:00'
+  decision: nonconformity.nonconformity.confirm
+  role: QC
+  actor: QC-01
+  item: F-304
+  params:
+    nc_id: '{ref:NC-141}'
+  body:
+    signal_ids:
+    - '{ref:SIG-F304}'
+    severity: major
+    defect_type_code: W-UNDERCUT
+    reason:
+      code: camera_template
+      text: Подрез U3 подтверждён по двум ракурсам и осмотру с шаблоном
+  ref: Е-90
+  label: S14/confirm-NC-141
+  note: Подтверждено — НС-141
+- at: '2026-09-29T10:15:00+03:00'
+  decision: nonconformity.item.isolate
+  role: QC
+  actor: QC-01
+  item: F-304
+  params:
+    item_id: '{item:F-304}'
+  body:
+    isolator_location_id: ISO-WC
+    reason:
+      code: nc_confirmed
+      text: 'НС-141: подрез — изолировать до решения'
+  ref: Е-93
+- at: '2026-09-29T10:55:00+03:00'
+  ref: Е-44
+  label: F-306/kt3
+  fact: inspection.result.recorded
+  source: cam-kt3-a
+  item: F-306
+  note: 'Камера КТ-3 (angle-1): подрез U6'
+  data:
+    observation_id: '{local:KT3-F-306-A}'
+    method: camera
+    phase: after_operation
+    step_key: welding.kt3_camera
+    inspection_point: KT-3
+    operation_run_id: '{local:SV-306-1}'
+    zone_ids: *id001
+    outcome: defect_indicated
+    processing_state: completed
+    defects:
+    - defect_type_code: W-UNDERCUT
+      description: Подрез
+      zone_id: '{zone:U6}'
+      severity: major
+    analyzer_confidence_bp: 8400
+    observation_quality_bp: 9100
+    versions:
+      analyzer_version: vqc-weld 2.3.1
+      contract_version: '1.0'
+      recipe_ref: KT-3@5
+      camera_config: angle-1
+      item_revision: Б
+- at: '2026-09-29T10:55:10+03:00'
+  ref: Е-44
+  label: F-306/kt3-b
+  fact: inspection.result.recorded
+  source: cam-kt3-b
+  item: F-306
+  note: 'Камера КТ-3 (angle-2): подрез U6'
+  data:
+    observation_id: '{local:KT3-F-306-B}'
+    method: camera
+    phase: after_operation
+    step_key: welding.kt3_camera
+    inspection_point: KT-3
+    operation_run_id: '{local:SV-306-1}'
+    zone_ids: *id001
+    outcome: defect_indicated
+    processing_state: completed
+    defects:
+    - defect_type_code: W-UNDERCUT
+      description: Подрез
+      zone_id: '{zone:U6}'
+      severity: major
+    analyzer_confidence_bp: 8000
+    observation_quality_bp: 8900
+    versions:
+      analyzer_version: vqc-weld 2.3.1
+      contract_version: '1.0'
+      recipe_ref: KT-3@5
+      camera_config: angle-2
+      item_revision: Б
+- at: '2026-09-29T10:56:00+03:00'
+  system: Сигнал; карантин по R-07; черновик карточки; гипотезы
+  ref: Е-80, Е-84, Е-83, Е-85
+- at: '2026-09-29T11:03:00+03:00'
+  system: 'Гипотезы v2: сварщик 2 из 2 (С-03), аппараты разные'
+  ref: Е-85
+- at: '2026-09-29T11:05:00+03:00'
+  decision: nonconformity.nonconformity.confirm
+  role: QC
+  actor: QC-01
+  item: F-306
+  params:
+    nc_id: '{ref:NC-142}'
+  body:
+    signal_ids:
+    - '{ref:SIG-F306}'
+    severity: major
+    defect_type_code: W-UNDERCUT
+    reason:
+      code: camera_template
+      text: Подрез U6 подтверждён по двум ракурсам и осмотру с шаблоном
+  ref: Е-90
+  label: S14/confirm-NC-142
+  note: Подтверждено — НС-142
+- at: '2026-09-29T11:07:00+03:00'
+  decision: nonconformity.item.isolate
+  role: QC
+  actor: QC-01
+  item: F-306
+  params:
+    item_id: '{item:F-306}'
+  body:
+    isolator_location_id: ISO-WC
+    reason:
+      code: nc_confirmed
+      text: 'НС-142: подрез — изолировать до решения'
+  ref: Е-93
+- at: '2026-09-29T11:08:00+03:00'
+  decision: nonconformity.recheck.request
+  role: QC
+  actor: QC-01
+  item: F-302
+  params:
+    item_id: '{item:F-302}'
+  body:
+    method: visual_human
+    zone_ids: *id001
+    reason:
+      code: common_factor_check
+      text: 'Не держим без основания, но смотрим внимательнее: осмотр с шаблоном шва С-03'
+  ref: Е-92
+  note: Осмотр с шаблоном по чистому шву С-03 (система подсказала)
+- at: '2026-09-29T11:20:00+03:00'
+  label: F-302/template
+  note: 'Осмотр с шаблоном: признаков нет'
+  fact: inspection.result.recorded
+  source: term-weld-1
+  item: F-302
+  data:
+    observation_id: '{local:TPL-F-302}'
+    method: visual_human
+    phase: after_operation
+    step_key: welding.kt3_camera
+    operation_run_id: '{local:SV-302-1}'
+    zone_ids: *id001
+    outcome: no_defect_indicated
+    processing_state: completed
+    inspector_id: '{person:QC-01}'
+- at: '2026-09-29T11:40:00+03:00'
+  ref: Е-45, Е-47
+  route: F-301:xray,zt3_presented,zt3
+  note: Рентген и ЗТ-3 по чистому фланцу — с первого предъявления
+- at: '2026-09-29T12:00:00+03:00'
+  ref: Е-45, Е-47
+  route: F-302:xray,zt3_presented,zt3
+  note: Рентген и ЗТ-3 по чистому фланцу — с первого предъявления
+- at: '2026-09-29T12:10:00+03:00'
+  ref: Е-45, Е-47
+  route: F-303:xray,zt3_presented,zt3
+  note: Рентген и ЗТ-3 по чистому фланцу — с первого предъявления
+- at: '2026-09-29T12:15:00+03:00'
+  ref: Е-45
+  label: F-304/xray
+  note: 'Рентген: тот же подрез U3; других дефектов нет'
+  fact: inspection.result.recorded
+  source: xray
+  item: F-304
+  data:
+    observation_id: '{local:RK-0929-304}'
+    method: radiography
+    phase: after_operation
+    step_key: welding.kt3_radiography
+    operation_run_id: '{local:SV-304-1}'
+    zone_ids: *id001
+    outcome: defect_indicated
+    processing_state: completed
+    inspector_id: '{person:NDT-01}'
+    conclusion_ref: РК-0929-304
+    defects:
+    - defect_type_code: W-UNDERCUT
+      description: Подрез
+      zone_id: '{zone:U3}'
+      severity: major
+- at: '2026-09-29T12:40:00+03:00'
+  ref: Е-45, Е-47
+  route: F-305:xray,zt3_presented,zt3
+  note: Рентген и ЗТ-3 по чистому фланцу — с первого предъявления
+- at: '2026-09-29T12:45:00+03:00'
+  ref: Е-45
+  label: F-306/xray
+  note: 'Рентген: тот же подрез U6; других дефектов нет'
+  fact: inspection.result.recorded
+  source: xray
+  item: F-306
+  data:
+    observation_id: '{local:RK-0929-306}'
+    method: radiography
+    phase: after_operation
+    step_key: welding.kt3_radiography
+    operation_run_id: '{local:SV-306-1}'
+    zone_ids: *id001
+    outcome: defect_indicated
+    processing_state: completed
+    inspector_id: '{person:NDT-01}'
+    conclusion_ref: РК-0929-306
+    defects:
+    - defect_type_code: W-UNDERCUT
+      description: Подрез
+      zone_id: '{zone:U6}'
+      severity: major
+- at: '2026-09-29T13:10:00+03:00'
+  ref: Е-45, Е-47
+  route: F-307:xray,zt3_presented,zt3
+  note: Рентген и ЗТ-3 по чистому фланцу — с первого предъявления
+- at: '2026-09-29T13:45:00+03:00'
+  ref: Е-44
+  label: F-310/kt3
+  fact: inspection.result.recorded
+  source: cam-kt3-a
+  item: F-310
+  note: 'Камера КТ-3 (angle-1): подрез U2'
+  data:
+    observation_id: '{local:KT3-F-310-A}'
+    method: camera
+    phase: after_operation
+    step_key: welding.kt3_camera
+    inspection_point: KT-3
+    operation_run_id: '{local:SV-310-1}'
+    zone_ids: *id001
+    outcome: defect_indicated
+    processing_state: completed
+    defects:
+    - defect_type_code: W-UNDERCUT
+      description: Подрез
+      zone_id: '{zone:U2}'
+      severity: major
+    analyzer_confidence_bp: 8400
+    observation_quality_bp: 9100
+    versions:
+      analyzer_version: vqc-weld 2.3.1
+      contract_version: '1.0'
+      recipe_ref: KT-3@5
+      camera_config: angle-1
+      item_revision: Б
+- at: '2026-09-29T13:45:10+03:00'
+  ref: Е-44
+  label: F-310/kt3-b
+  fact: inspection.result.recorded
+  source: cam-kt3-b
+  item: F-310
+  note: 'Камера КТ-3 (angle-2): подрез U2'
+  data:
+    observation_id: '{local:KT3-F-310-B}'
+    method: camera
+    phase: after_operation
+    step_key: welding.kt3_camera
+    inspection_point: KT-3
+    operation_run_id: '{local:SV-310-1}'
+    zone_ids: *id001
+    outcome: defect_indicated
+    processing_state: completed
+    defects:
+    - defect_type_code: W-UNDERCUT
+      description: Подрез
+      zone_id: '{zone:U2}'
+      severity: major
+    analyzer_confidence_bp: 8000
+    observation_quality_bp: 8900
+    versions:
+      analyzer_version: vqc-weld 2.3.1
+      contract_version: '1.0'
+      recipe_ref: KT-3@5
+      camera_config: angle-2
+      item_revision: Б
+- at: '2026-09-29T13:46:00+03:00'
+  system: Сигнал; карантин по R-07; черновик карточки; гипотезы
+  ref: Е-80, Е-84, Е-83, Е-85
+- at: '2026-09-29T13:53:00+03:00'
+  system: 'Гипотезы v3: «отклонение от техники выполнения» — сильная, но это гипотеза; таблица «что общего»: сварщик 3 из 3, аппараты разные, у С-02 на тех же постах чисто'
+  ref: Е-85
+- at: '2026-09-29T13:55:00+03:00'
+  decision: nonconformity.nonconformity.confirm
+  role: QC
+  actor: QC-01
+  item: F-310
+  params:
+    nc_id: '{ref:NC-143}'
+  body:
+    signal_ids:
+    - '{ref:SIG-F310}'
+    severity: major
+    defect_type_code: W-UNDERCUT
+    reason:
+      code: camera_template
+      text: Подрез U2 подтверждён по двум ракурсам и осмотру с шаблоном
+  ref: Е-90
+  label: S14/confirm-NC-143
+  note: Подтверждено — НС-143
+- at: '2026-09-29T13:57:00+03:00'
+  decision: nonconformity.item.isolate
+  role: QC
+  actor: QC-01
+  item: F-310
+  params:
+    item_id: '{item:F-310}'
+  body:
+    isolator_location_id: ISO-WC
+    reason:
+      code: nc_confirmed
+      text: 'НС-143: подрез — изолировать до решения'
+  ref: Е-93
+- at: '2026-09-29T14:00:00+03:00'
+  decision: nonconformity.recheck.request
+  role: QC
+  actor: QC-01
+  item: F-308
+  params:
+    item_id: '{item:F-308}'
+  body:
+    method: visual_human
+    zone_ids: *id001
+    reason:
+      code: common_factor_check
+      text: 'Не держим без основания, но смотрим внимательнее: осмотр с шаблоном шва С-03'
+  ref: Е-92
+  note: Осмотр с шаблоном по чистому шву С-03 (система подсказала)
+- at: '2026-09-29T14:01:00+03:00'
+  decision: nonconformity.recheck.request
+  role: QC
+  actor: QC-01
+  item: F-312
+  params:
+    item_id: '{item:F-312}'
+  body:
+    method: visual_human
+    zone_ids: *id001
+    reason:
+      code: common_factor_check
+      text: 'Не держим без основания, но смотрим внимательнее: осмотр с шаблоном шва С-03'
+  ref: Е-92
+  note: Осмотр с шаблоном по чистому шву С-03 (система подсказала)
+- at: '2026-09-29T14:30:00+03:00'
+  label: F-308/template
+  note: 'Осмотр с шаблоном: признаков нет'
+  fact: inspection.result.recorded
+  source: term-weld-2
+  item: F-308
+  data:
+    observation_id: '{local:TPL-F-308}'
+    method: visual_human
+    phase: after_operation
+    step_key: welding.kt3_camera
+    operation_run_id: '{local:SV-308-1}'
+    zone_ids: *id001
+    outcome: no_defect_indicated
+    processing_state: completed
+    inspector_id: '{person:QC-01}'
+- at: '2026-09-29T14:45:00+03:00'
+  label: F-312/template
+  note: 'Осмотр с шаблоном: признаков нет'
+  fact: inspection.result.recorded
+  source: term-weld-2
+  item: F-312
+  data:
+    observation_id: '{local:TPL-F-312}'
+    method: visual_human
+    phase: after_operation
+    step_key: welding.kt3_camera
+    operation_run_id: '{local:SV-312-1}'
+    zone_ids: *id001
+    outcome: no_defect_indicated
+    processing_state: completed
+    inspector_id: '{person:QC-01}'
+- at: '2026-09-29T15:00:00+03:00'
+  ref: Е-45, Е-47
+  route: F-308:xray,zt3_presented,zt3
+  note: Рентген и ЗТ-3 по чистому фланцу — с первого предъявления
+- at: '2026-09-29T15:10:00+03:00'
+  ref: Е-45
+  label: F-310/xray
+  note: 'Рентген: тот же подрез U2; других дефектов нет'
+  fact: inspection.result.recorded
+  source: xray
+  item: F-310
+  data:
+    observation_id: '{local:RK-0929-310}'
+    method: radiography
+    phase: after_operation
+    step_key: welding.kt3_radiography
+    operation_run_id: '{local:SV-310-1}'
+    zone_ids: *id001
+    outcome: defect_indicated
+    processing_state: completed
+    inspector_id: '{person:NDT-01}'
+    conclusion_ref: РК-0929-310
+    defects:
+    - defect_type_code: W-UNDERCUT
+      description: Подрез
+      zone_id: '{zone:U2}'
+      severity: major
+- at: '2026-09-29T15:10:00+03:00'
+  ref: Е-45, Е-47
+  route: F-309:xray,zt3_presented,zt3
+  note: Рентген и ЗТ-3 по чистому фланцу — с первого предъявления
+- at: '2026-09-29T15:30:00+03:00'
+  ref: Е-45, Е-47
+  route: F-311:xray,zt3_presented,zt3
+  note: Рентген и ЗТ-3 по чистому фланцу — с первого предъявления
+- at: '2026-09-29T15:50:00+03:00'
+  ref: Е-45, Е-47
+  route: F-312:xray,zt3_presented,zt3
+  note: Рентген и ЗТ-3 по чистому фланцу — с первого предъявления
+- at: '2026-09-30T08:40:00+03:00'
+  label: KO-14-1/log
+  note: 'Контрольный образец KO-14-1 на ИС-1 (С-03 под наблюдением ГС-01): КО-14-1 «как обычно» — подрез повторился; угол горелки ≈ 45° при 70–80° по карте [ПП]'
+  fact: equipment.cycle.summarized
+  source: is-1
+  data:
+    equipment_id: '{equipment:WS-1}'
+    station_id: ST-WELD
+    window_start: '2026-09-30T08:30:00+03:00'
+    window_end: '2026-09-30T08:40:00+03:00'
+    cycle_ref: '{local:KO-14-1}'
+    parameters:
+    - parameter: current
+      mean:
+        value: 159
+        scale: 0
+        unit: A
+      max:
+        value: 161
+        scale: 0
+        unit: A
+      setpoint:
+        nominal:
+          value: 160
+          scale: 0
+          unit: A
+        lower:
+          value: 150
+          scale: 0
+          unit: A
+        upper:
+          value: 170
+          scale: 0
+          unit: A
+- at: '2026-09-30T09:05:00+03:00'
+  label: KO-14-2/log
+  note: 'Контрольный образец KO-14-2 на ИС-1 (С-03 под наблюдением ГС-01): КО-14-2 по карте — чисто'
+  fact: equipment.cycle.summarized
+  source: is-1
+  data:
+    equipment_id: '{equipment:WS-1}'
+    station_id: ST-WELD
+    window_start: '2026-09-30T08:55:00+03:00'
+    window_end: '2026-09-30T09:05:00+03:00'
+    cycle_ref: '{local:KO-14-2}'
+    parameters:
+    - parameter: current
+      mean:
+        value: 160
+        scale: 0
+        unit: A
+      max:
+        value: 162
+        scale: 0
+        unit: A
+      setpoint:
+        nominal:
+          value: 160
+          scale: 0
+          unit: A
+        lower:
+          value: 150
+          scale: 0
+          unit: A
+        upper:
+          value: 170
+          scale: 0
+          unit: A
+- at: '2026-09-30T09:10:00+03:00'
+  decision: analysis.cause.conclude
+  role: COMMISSION
+  actor: TECH-01
+  params:
+    incident_id: '{ref:INC-S14}'
+  body:
+    category: performer
+    conclusion: confirmed
+    nc_ids:
+    - '{ref:NC-141}'
+    - '{ref:NC-142}'
+    - '{ref:NC-143}'
+    reason:
+      code: attempt
+      text: Попытка записать «ошибку исполнителя» до объяснения работника
+    verification: КО-14-1, КО-14-2
+  refusal: E_EXPLANATION_REQUIRED
+  label: S14/operator-error-refused
+  note: Попытка записать «ошибку исполнителя» до объяснения — отказ (E_EXPLANATION_REQUIRED; пары в контракте нет — предложение incident.explanation_required)
+- at: '2026-09-30T09:30:00+03:00'
+  system: 'П-09 · Объяснение работника (С-03, письменно; принял НОТК-01): «С понедельника на постах новые горелки с другим держателем; держал горелку ниже, чем по карте; угол не проверял».
+    Операции «объяснение работника» в контракте нет — предложение эпика 32 (отчёт)'
+  ref: П-09
+- at: '2026-09-30T11:00:00+03:00'
+  decision: analysis.cause.conclude
+  role: COMMISSION
+  actor: TECH-01
+  params:
+    incident_id: '{ref:INC-S14}'
+  body:
+    category: performer
+    conclusion: confirmed
+    nc_ids:
+    - '{ref:NC-141}'
+    - '{ref:NC-142}'
+    - '{ref:NC-143}'
+    reason:
+      code: technique_deviation
+      text: 'Отклонение от техники выполнения: угол горелки; сопутствующее обстоятельство — новая горелка с другим держателем'
+    verification: КО-14-1 и КО-14-2, журналы в уставке, у С-02 6 из 6 чисто, письменное объяснение работника
+  stop: true
+  ref: П-04
+  label: S14/cause
+  note: Причина подтверждена комиссией (Т-01, НОТК-01, ГС-01); «ошибка исполнителя» записана только сейчас
+- at: '2026-09-30T11:10:00+03:00'
+  decision: nonconformity.disposition.set
+  role: TECHNOLOGIST
+  actor: TECH-01
+  item: F-304
+  params:
+    nc_id: '{ref:NC-141}'
+  body:
+    disposition: rework
+    reason:
+      code: rework_per_tp
+      text: Переделка участка шва по ТП
+  ref: Е-94
+  note: → 1С «перевод в брак (переделка)»
+- at: '2026-09-30T11:11:00+03:00'
+  decision: nonconformity.disposition.set
+  role: TECHNOLOGIST
+  actor: TECH-01
+  item: F-306
+  params:
+    nc_id: '{ref:NC-142}'
+  body:
+    disposition: rework
+    reason:
+      code: rework_per_tp
+      text: Переделка участка шва по ТП
+  ref: Е-94
+  note: → 1С «перевод в брак (переделка)»
+- at: '2026-09-30T11:12:00+03:00'
+  decision: nonconformity.disposition.set
+  role: TECHNOLOGIST
+  actor: TECH-01
+  item: F-310
+  params:
+    nc_id: '{ref:NC-143}'
+  body:
+    disposition: rework
+    reason:
+      code: rework_per_tp
+      text: Переделка участка шва по ТП
+  ref: Е-94
+  note: → 1С «перевод в брак (переделка)»
+- at: '2026-09-30T11:20:00+03:00'
+  decision: analysis.action.assign
+  role: QC_HEAD
+  actor: QC-HEAD-01
+  params:
+    incident_id: '{ref:INC-S14}'
+  body:
+    action_type: corrective_action
+    direction: prevent_occurrence
+    owner_id: '{person:CHW-01}'
+    due_at: '2026-10-14T16:30:00+03:00'
+    effectiveness_plan:
+      criterion: следующие 10 швов С-03 без подреза, не позже 14.10
+      measures:
+      - внеочередная проверка навыка
+      - инструктаж по технике
+      - проверить держатель горелки
+  ref: П-05
+  label: S14/action
+  note: 'Мера: внеочередная проверка навыка, инструктаж, проверка держателя горелки — не наказание'
+- at: '2026-09-30T12:45:00+03:00'
+  label: KO-14-3/log
+  note: 'Контрольный образец КО-14-3 (С-03 под наблюдением ГС-01): подреза нет — проверка навыка сдана'
+  fact: equipment.cycle.summarized
+  source: is-1
+  data:
+    equipment_id: '{equipment:WS-1}'
+    station_id: ST-WELD
+    window_start: '2026-09-30T12:30:00+03:00'
+    window_end: '2026-09-30T12:45:00+03:00'
+    cycle_ref: '{local:KO-14-3}'
+    parameters:
+    - parameter: current
+      mean:
+        value: 160
+        scale: 0
+        unit: A
+- at: '2026-09-30T13:00:00+03:00'
+  system: 'П-06 · Мера внедрена (ГС-01): инструктаж проведён, держатель на посту 1 заменён; результативность проверяется. Ссылка на меру (action_id) из ответа назначения в контракте
+    не возвращается — отметка внедрения analysis.action.implement ждёт запроса мер (отчёт)'
+  ref: П-06
+outcome:
+- 'Три несоответствия НС-141…НС-143: сигнал → подтверждение → изоляция; таблица «что общего»: сварщик 3 из 3, аппараты разные; у С-02 на тех же постах чисто.'
+- Версия «отклонение от техники выполнения» — сильная с 13:53, с подписью «гипотеза»; чистые швы С-03 не держат без основания.
+- До Ср 11:00 О-10 у С-03 — 0; попытка записать «ошибку» до объяснения — отказ; после решения комиссии О-10 у С-03 — 3 шва из 6 сопоставимых.
+- 'Мера: проверка навыка (сдана, КО-14-3), инструктаж, проверка держателя; в 1С — три «перевода в брак (переделка)».'
+must_not:
+- «Ошибка исполнителя» не появляется от одной статистики, даже «3 из 3».
+- Нет взысканий, рейтинга и записи «нарушение».
+- Источники не останавливают — журналы в норме.
+- В 1С не уходят гипотезы, причина, объяснение работника и мера.

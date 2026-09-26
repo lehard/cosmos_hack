@@ -125,7 +125,7 @@ type RunDef struct {
 	// Speed — скорость по умолчанию ×1…×1000.
 	Speed int `json:"speed,omitempty"`
 	// Scenarios — карточки, чьи шаги входят в прогон (порядок — как в карточке прогона).
-	Scenarios []string `json:"scenarios"`
+	Scenarios []string    `json:"scenarios"`
 	Orders    []OrderPlan `json:"orders,omitempty"`
 	Lots      []LotPlan   `json:"lots,omitempty"`
 	Items     []ItemPlan  `json:"items,omitempty"`
@@ -298,6 +298,10 @@ type Step struct {
 	Duplicates []string `json:"duplicates,omitempty"`
 	// Conflict — повтор с тем же event_id и другим содержимым (S06, вариант).
 	Conflict map[string]any `json:"conflict,omitempty"`
+	// Lost — запись потеряна у источника: номер получен, сообщение не доставлено.
+	Lost bool `json:"lost,omitempty"`
+	// SeqReset — источник перезапущен: нумерация source_seq начинается заново с 1.
+	SeqReset bool `json:"seq_reset,omitempty"`
 
 	// Решение человека (AD-26: интерактивно — стол роли, автосверка — demo-signer).
 	Decision string         `json:"decision,omitempty"` // operationId

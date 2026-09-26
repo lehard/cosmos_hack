@@ -1,0 +1,146 @@
+# Отдельный прогон S14 «общий фактор — один сварщик» (process/scenarios-flange.md §4 S14):
+# свой мир и seed; предыстория — задание, партии, мехобработка; дальше — шаги карточки.
+id: S14
+version: '0.3'
+title: Общий фактор — один сварщик
+kind: standalone
+description: 'Отдельный прогон в своём мире (seed 20260929), Вт 29.09 – Ср 30.09: три фланца с одинаковым подрезом сварил один сварщик на обоих постах; журналы источников в норме.'
+case_refs: ['кейс §2.3, §5.2 подтверждённые ошибки отдельно от гипотез', вопрос жюри В1]
+world: flange
+seed: 20260929
+anchor: '2026-09-24T08:00:00+03:00'
+end: '2026-09-30T13:30:00+03:00'
+speed: 1000
+scenarios: [S14]
+orders:
+- id: ORD-0929
+  at: '2026-09-24T09:00:00+03:00'
+  external: ord-5c2b-0929
+  quantity: 12
+  due: '2026-10-16'
+  items: F-301…F-312
+  lots: {blank: LOT-ZF-202, ring: LOT-R-118, cover: LOT-C-301, seal: LOT-SL-401, fastener: LOT-FS-501, valve: LOT-V-601}
+lots:
+- {id: LOT-ZF-202, component: FL-100.01.001, supplier: SUP-1, quantity: 12, certificate: С-202, arrived: '2026-09-24T10:00:00+03:00'}
+- {id: LOT-R-118, component: FL-100.01.002, supplier: SUP-2, quantity: 12, certificate: С-118, arrived: '2026-09-24T10:10:00+03:00'}
+- id: LOT-W-88
+  component: WIRE-SV-AMG6
+  supplier: SUP-7
+  quantity: 20
+  arrived: '2026-09-24T10:20:00+03:00'
+  issues:
+  - {at: '2026-09-29T08:00:00+03:00', to: ST-WELD, quantity: 20}
+refs:
+  NC-141:
+    operation: nonconformity.nonconformity.list
+    params: {item_id: '{item:F-304}'}
+    path: /items/0/nc_id
+  NC-142:
+    operation: nonconformity.nonconformity.list
+    params: {item_id: '{item:F-306}'}
+    path: /items/0/nc_id
+  NC-143:
+    operation: nonconformity.nonconformity.list
+    params: {item_id: '{item:F-310}'}
+    path: /items/0/nc_id
+  SIG-F304:
+    operation: quality.signal.list
+    params: {item_id: '{item:F-304}', state: open}
+    path: /items/0/signal_id
+  SIG-F306:
+    operation: quality.signal.list
+    params: {item_id: '{item:F-306}', state: open}
+    path: /items/0/signal_id
+  SIG-F310:
+    operation: quality.signal.list
+    params: {item_id: '{item:F-310}', state: open}
+    path: /items/0/signal_id
+  INC-S14: {operation: analysis.incident.list, path: /items/0/incident_id, note: разбор по общему фактору «сварщик»}
+items:
+- id: F-301
+  order: ORD-0929
+  launch: '2026-09-25T07:30:00+03:00'
+  machining: '2026-09-25T08:00:00+03:00'
+  weld: {at: '2026-09-29T08:30:00+03:00', station: WS-2, welder: WLD-02, minutes: 40}
+  until: zt3
+  at: {xray: '2026-09-29T11:30:00+03:00', zt3_presented: '2026-09-29T11:35:00+03:00', zt3: '2026-09-29T11:40:00+03:00'}
+- id: F-302
+  order: ORD-0929
+  launch: '2026-09-25T08:20:00+03:00'
+  machining: '2026-09-25T08:50:00+03:00'
+  weld: {at: '2026-09-29T08:30:00+03:00', station: WS-1, welder: WLD-03, minutes: 40}
+  until: zt3
+  at: {xray: '2026-09-29T11:45:00+03:00', zt3_presented: '2026-09-29T11:50:00+03:00', zt3: '2026-09-29T12:00:00+03:00'}
+- id: F-303
+  order: ORD-0929
+  launch: '2026-09-25T09:10:00+03:00'
+  machining: '2026-09-25T09:40:00+03:00'
+  weld: {at: '2026-09-29T09:20:00+03:00', station: WS-1, welder: WLD-02, minutes: 40}
+  until: zt3
+  at: {xray: '2026-09-29T12:00:00+03:00', zt3_presented: '2026-09-29T12:05:00+03:00', zt3: '2026-09-29T12:10:00+03:00'}
+- id: F-304
+  order: ORD-0929
+  launch: '2026-09-25T10:00:00+03:00'
+  machining: '2026-09-25T10:30:00+03:00'
+  weld: {at: '2026-09-29T09:20:00+03:00', station: WS-2, welder: WLD-03, minutes: 40}
+  until: kt3
+  skip: [kt3]
+  note: Подрез U3 — карточка S14
+- id: F-305
+  order: ORD-0929
+  launch: '2026-09-25T10:50:00+03:00'
+  machining: '2026-09-25T11:20:00+03:00'
+  weld: {at: '2026-09-29T10:10:00+03:00', station: WS-2, welder: WLD-02, minutes: 40}
+  until: zt3
+  at: {xray: '2026-09-29T12:30:00+03:00', zt3_presented: '2026-09-29T12:35:00+03:00', zt3: '2026-09-29T12:40:00+03:00'}
+- id: F-306
+  order: ORD-0929
+  launch: '2026-09-25T11:40:00+03:00'
+  machining: '2026-09-25T12:10:00+03:00'
+  weld: {at: '2026-09-29T10:10:00+03:00', station: WS-1, welder: WLD-03, minutes: 40}
+  until: kt3
+  skip: [kt3]
+  note: Подрез U6 — карточка S14
+- id: F-307
+  order: ORD-0929
+  launch: '2026-09-25T12:30:00+03:00'
+  machining: '2026-09-25T13:00:00+03:00'
+  weld: {at: '2026-09-29T11:00:00+03:00', station: WS-1, welder: WLD-02, minutes: 40}
+  until: zt3
+  at: {xray: '2026-09-29T13:00:00+03:00', zt3_presented: '2026-09-29T13:05:00+03:00', zt3: '2026-09-29T13:10:00+03:00'}
+- id: F-308
+  order: ORD-0929
+  launch: '2026-09-25T13:20:00+03:00'
+  machining: '2026-09-25T13:50:00+03:00'
+  weld: {at: '2026-09-29T11:00:00+03:00', station: WS-2, welder: WLD-03, minutes: 40}
+  until: zt3
+  at: {xray: '2026-09-29T14:50:00+03:00', zt3_presented: '2026-09-29T14:55:00+03:00', zt3: '2026-09-29T15:00:00+03:00'}
+- id: F-309
+  order: ORD-0929
+  launch: '2026-09-25T14:10:00+03:00'
+  machining: '2026-09-25T14:40:00+03:00'
+  weld: {at: '2026-09-29T13:00:00+03:00', station: WS-2, welder: WLD-02, minutes: 40}
+  until: zt3
+  at: {xray: '2026-09-29T15:00:00+03:00', zt3_presented: '2026-09-29T15:05:00+03:00', zt3: '2026-09-29T15:10:00+03:00'}
+- id: F-310
+  order: ORD-0929
+  launch: '2026-09-25T15:00:00+03:00'
+  machining: '2026-09-25T15:30:00+03:00'
+  weld: {at: '2026-09-29T13:00:00+03:00', station: WS-1, welder: WLD-03, minutes: 40}
+  until: kt3
+  skip: [kt3]
+  note: Подрез U2 — карточка S14
+- id: F-311
+  order: ORD-0929
+  launch: '2026-09-25T15:50:00+03:00'
+  machining: '2026-09-25T16:20:00+03:00'
+  weld: {at: '2026-09-29T13:50:00+03:00', station: WS-1, welder: WLD-02, minutes: 40}
+  until: zt3
+  at: {xray: '2026-09-29T15:20:00+03:00', zt3_presented: '2026-09-29T15:25:00+03:00', zt3: '2026-09-29T15:30:00+03:00'}
+- id: F-312
+  order: ORD-0929
+  launch: '2026-09-25T16:40:00+03:00'
+  machining: '2026-09-25T17:10:00+03:00'
+  weld: {at: '2026-09-29T13:50:00+03:00', station: WS-2, welder: WLD-03, minutes: 40}
+  until: zt3
+  at: {xray: '2026-09-29T15:40:00+03:00', zt3_presented: '2026-09-29T15:45:00+03:00', zt3: '2026-09-29T15:50:00+03:00'}

@@ -27,7 +27,6 @@ import (
 type Files struct {
 	// Root — каталог scenarios (в нём definitions/ и expected/).
 	Root string
-
 }
 
 // NewFiles — определения из каталога root.
