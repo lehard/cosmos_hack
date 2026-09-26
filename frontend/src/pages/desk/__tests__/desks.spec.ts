@@ -19,6 +19,8 @@ async function render(tab: Desk['tabs'][number], density: Desk['density']) {
   // Наполненные виджеты читают сервер через Vue Query и ведут в детали роутером.
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   const router = createRouter({ history: createMemoryHistory(), routes: [{ path: '/', component: { template: '<div />' } }] })
+  // Сервера нет: наполненные виджеты получают problem+json, а не обрыв соединения.
+  vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ type: 'urn:ant:problem:api.not_implemented', title: 'нет сервера', status: 501, code: 'api.not_implemented' }), { status: 501, headers: { 'Content-Type': 'application/problem+json' } })))
   const w = mount(DeskTabView, { props: { tab, density }, global: { plugins: [createPinia(), i18n, router, [VueQueryPlugin, { queryClient }]] } })
   await vi.dynamicImportSettled()
   await flushPromises()

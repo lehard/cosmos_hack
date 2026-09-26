@@ -60,7 +60,9 @@ const dataGaps = computed(() => new Set(props.data.data_gaps))
 const laneCounts = computed(() => (index.value ? itemsPerLane(byStep.value, index.value) : new Map<string, number>()))
 const otherVersions = computed(() => itemsOfOtherVersions(props.data.items, versionId.value))
 
-const incident = computed(() => props.data.incident)
+// Необязательные объекты контракта могут не прийти — читаем как «нет» (null).
+const incident = computed(() => props.data.incident ?? null)
+const bottleneck = computed(() => props.data.bottleneck ?? null)
 const reduction = computed(() => (incident.value ? scopeReduction(incident.value) : null))
 
 const versionOptions = computed(() =>
@@ -138,7 +140,7 @@ function onReady(idx: DiagramIndex) {
           :counters="counters"
           :items-by-step="byStep"
           :lane-counts="laneCounts"
-          :bottleneck="data.bottleneck"
+          :bottleneck="bottleneck"
           :anomalies="anomalies"
           :data-gaps="dataGaps"
           :incident-mode="!!incident"
