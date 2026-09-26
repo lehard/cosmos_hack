@@ -59,7 +59,7 @@ describe('экран входа', () => {
     const w = await mountLogin(personas())
     const card = w.get('[data-testid="login-card"]')
     expect(w.text()).toContain('Главный')
-    expect(w.text()).toContain('Платформа управления производством')
+    expect(w.text()).toContain('Платформа управления качеством производства')
     expect(card.find('input#login-name').exists()).toBe(true)
     expect(card.find('input#login-password').attributes('type')).toBe('password')
     expect(card.get('[data-testid="login-submit"]').text()).toBe('Войти')
