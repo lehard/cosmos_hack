@@ -252,6 +252,9 @@
   },
 
   "processHoldAction": {
+    "activeSince": "Остановлен с {since} · {level}",
+    "activeLocal": "Остановка {id} поставлена здесь",
+    "consequences": "Что произойдёт",
     "title": "Остановить пост",
     "release": "Снять остановку",
     "equipment": "Оборудование",
