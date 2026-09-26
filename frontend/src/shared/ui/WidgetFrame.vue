@@ -9,15 +9,21 @@
  * - слот действий, который выключен в воспроизведении (FR-4).
  *
  * Виджет сам решает, в каком состоянии его данные, — рамка только показывает.
+ *
+ * Плотность стола (AD-21) рамка раздаёт содержимому: класс `ant-density-‹…›`
+ * (CSS-переменные размеров) и вложенная тема Naive UI (высоты, шрифт).
+ * Заголовок — одна строка с многоточием и подсказкой (UI-2).
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NAlert, NCard, NEmpty, NSpin, NTag } from 'naive-ui'
+import { NAlert, NCard, NConfigProvider, NSpin } from 'naive-ui'
 import type { BackendMode } from '@/shared/api/generated/model'
 import { statusAxes, statusPalette, type StatusTone } from '@/shared/api/generated/statuses'
 import { naiveSizeOf, type Density, type WidgetDataState } from '@/shared/config/widget'
 import { useProblemText } from '@/shared/i18n/problem'
 import { useMomentStore } from '@/shared/model/moment'
+import EmptyState from './EmptyState.vue'
+import { densityClass, densityOverrides } from './theme'
 
 const props = withDefaults(
   defineProps<{
@@ -61,6 +67,9 @@ const momentLabel = computed(() => {
   return `${axis} · ${t('common.modes.atMoment', { time: d(new Date(moment.asOf), 'dateTime') })}`
 })
 
+const title = computed(() => t(props.titleKey))
+const overrides = computed(() => densityOverrides(props.density))
+
 const modeLabel = computed(() =>
   props.mode === 'fixtures' ? t('common.modes.backendFixtures') : props.mode === 'live' ? t('common.modes.backendLive') : null,
 )
@@ -69,34 +78,42 @@ const modeLabel = computed(() =>
 <template>
   <NCard
     class="widget-frame"
-    :class="`density-${density}`"
+    :class="densityClass(density)"
     :size="naiveSizeOf(density)"
     :style="{ '--accent': accent }"
     :data-state="effectiveState"
     :data-mode="mode ?? undefined"
-    :title="t(titleKey)"
     :segmented="{ content: true, footer: 'soft' }"
   >
+    <template #header>
+      <h3 class="title ant-ellipsis" :title="title">{{ title }}</h3>
+    </template>
     <template #header-extra>
-      <div class="meta">
-        <NTag v-if="effectiveState !== 'normal'" size="small" :bordered="false" :color="{ color: 'transparent', textColor: accent }">
-          {{ t(stateInfo.key) }}
-        </NTag>
-        <span class="moment" :data-replay="moment.isReplay || undefined">{{ momentLabel }}</span>
-        <NTag v-if="modeLabel" size="small" :bordered="true" class="mode">{{ modeLabel }}</NTag>
+      <div class="meta ant-box">
+        <span v-if="effectiveState !== 'normal'" class="state ant-ellipsis">{{ t(stateInfo.key) }}</span>
+        <span class="moment ant-ellipsis" :data-replay="moment.isReplay || undefined" :title="momentLabel">{{ momentLabel }}</span>
+        <span v-if="modeLabel" class="mode ant-ellipsis" :title="modeLabel">{{ modeLabel }}</span>
       </div>
     </template>
 
-    <NSpin v-if="loading" size="small" class="center" />
-    <NAlert v-else-if="error" type="error" :bordered="false" :show-icon="false">{{ problemText(error) }}</NAlert>
-    <NEmpty v-else-if="empty" :description="t(emptyKey)" class="center" />
-    <slot v-else />
+    <NConfigProvider abstract :theme-overrides="overrides">
+      <div class="frame-body ant-box">
+        <div v-if="loading" class="center ant-box"><NSpin size="small" /></div>
+        <NAlert v-else-if="error" type="error" :bordered="false" :show-icon="false">
+          <span class="ant-wrap">{{ problemText(error) }}</span>
+        </NAlert>
+        <EmptyState v-else-if="empty" :title="t(emptyKey)" compact />
+        <slot v-else />
+      </div>
+    </NConfigProvider>
 
     <template v-if="$slots.actions" #action>
-      <fieldset class="actions" :disabled="moment.isReplay" :data-disabled="moment.isReplay || undefined">
-        <slot name="actions" />
-      </fieldset>
-      <p v-if="moment.isReplay" class="replay-note">{{ t('shell.frame.actionsDisabled') }}</p>
+      <NConfigProvider abstract :theme-overrides="overrides">
+        <fieldset class="actions ant-box" :disabled="moment.isReplay" :data-disabled="moment.isReplay || undefined">
+          <slot name="actions" />
+        </fieldset>
+      </NConfigProvider>
+      <p v-if="moment.isReplay" class="replay-note ant-wrap">{{ t('shell.frame.actionsDisabled') }}</p>
     </template>
   </NCard>
 </template>
@@ -104,48 +121,88 @@ const modeLabel = computed(() =>
 <style scoped>
 .widget-frame {
   height: 100%;
-  border-left: 3px solid var(--accent);
+  min-width: 0;
+  box-shadow: var(--ant-shadow-sm), inset 3px 0 0 var(--accent);
+  font-size: var(--ant-fs-body);
+}
+
+.widget-frame :deep(.n-card-header) {
+  gap: var(--ant-space-3);
+  min-width: 0;
+}
+
+.widget-frame :deep(.n-card-header__main) {
+  min-width: 0;
+}
+
+.widget-frame :deep(.n-card-header__extra) {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.widget-frame :deep(.n-card__content) {
+  min-width: 0;
+}
+
+.title {
+  font-size: var(--ant-fs-title);
+  line-height: var(--ant-lh-tight);
 }
 
 .meta {
   display: flex;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 4px 10px;
   align-items: center;
-  color: #6b7280;
-  font-size: 12px;
+  justify-content: flex-end;
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-xs);
+}
+
+.meta > span {
+  max-width: 28ch;
+}
+
+.state {
+  color: var(--accent);
+  font-weight: var(--ant-fw-bold);
 }
 
 .moment[data-replay] {
-  color: #1f2937;
-  font-weight: 700;
+  color: var(--ant-text);
+  font-weight: var(--ant-fw-bold);
+}
+
+.mode {
+  padding: 0 6px;
+  border: 1px solid var(--ant-border-strong);
+  border-radius: var(--ant-radius-sm);
+  line-height: 18px;
+}
+
+.frame-body {
+  min-width: 0;
 }
 
 .center {
   display: flex;
   justify-content: center;
-  padding: 16px 0;
+  padding: var(--ant-space-4) 0;
 }
 
 .actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--ant-space-2);
+  min-width: 0;
   margin: 0;
   padding: 0;
   border: 0;
 }
 
 .replay-note {
-  margin: 8px 0 0;
-  color: #6b7280;
-  font-size: 12px;
-}
-
-.density-large {
-  font-size: 16px;
-}
-
-.density-compact {
-  font-size: 13px;
+  margin: var(--ant-space-2) 0 0;
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-xs);
 }
 </style>

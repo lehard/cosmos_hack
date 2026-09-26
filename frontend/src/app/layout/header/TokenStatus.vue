@@ -35,7 +35,7 @@ const text = computed(() =>
   display: inline-flex;
   gap: 4px;
   align-items: center;
-  font-size: 13px;
+  font-size: var(--ant-fs-sm);
   white-space: nowrap;
 }
 </style>

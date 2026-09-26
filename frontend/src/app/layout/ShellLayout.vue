@@ -26,7 +26,7 @@ onBeforeUnmount(() => updates.value?.stop())
     <NLayoutHeader bordered class="shell-header">
       <AppHeader :live="live" />
     </NLayoutHeader>
-    <NLayoutContent class="shell-content" content-style="padding: 16px 24px;">
+    <NLayoutContent class="shell-content" content-class="shell-page">
       <RouterView />
     </NLayoutContent>
   </NLayout>
@@ -37,7 +37,16 @@ onBeforeUnmount(() => updates.value?.stop())
   height: 100%;
 }
 
+.shell-header {
+  height: var(--ant-w-header);
+}
+
 .shell-content {
-  height: calc(100% - 57px);
+  height: calc(100% - var(--ant-w-header));
+}
+
+.shell-content :deep(.shell-page) {
+  min-width: 0;
+  padding: var(--ant-space-5) var(--ant-space-6) var(--ant-space-8);
 }
 </style>
