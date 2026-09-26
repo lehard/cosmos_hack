@@ -139,28 +139,58 @@ func (p *HTTPPort) Act(ctx context.Context, persona, operation string, params ma
 	return res, nil
 }
 
-// Decided — в журнале прогона после since есть запись, которую эмитит operation
-// (решение принято на столе роли, FR-129).
-func (p *HTTPPort) Decided(ctx context.Context, runID, operation string, since int64) (bool, int64, error) {
+// Decided — seq записей после since, которые эмитит operation над object
+// (решение принято на столе роли, FR-129), по возрастанию. Сначала журнал
+// прогона; при заданном object — и весь журнал: у решений без изделия
+// (допуск к посту, остановка поста) run_id нет, а объект сверяется всегда —
+// подходит только решение над тем объектом, которого ждёт прогон.
+func (p *HTTPPort) Decided(ctx context.Context, runID, operation, object string, since int64) ([]int64, error) {
 	p.once.Do(p.index)
-	for _, t := range p.emits[operation] {
-		doc, err := p.Read(ctx, "journal.entry.list", map[string]string{"event_type": t, "after_seq": fmt.Sprint(since)}, runID)
-		if err != nil {
-			return false, 0, err
-		}
-		m, _ := doc.(map[string]any)
-		items, _ := m["items"].([]any)
-		for _, it := range items {
-			e, _ := it.(map[string]any)
-			if n, ok := e["seq"].(json.Number); ok {
-				seq, _ := n.Int64()
-				if seq > since {
-					return true, seq, nil
+	runs := []string{runID}
+	if object != "" && runID != "" {
+		runs = append(runs, "")
+	}
+	seen := map[int64]bool{}
+	var out []int64
+	for _, run := range runs {
+		for _, t := range p.emits[operation] {
+			doc, err := p.Read(ctx, "journal.entry.list", map[string]string{"event_type": t, "after_seq": fmt.Sprint(since), "limit": "500"}, run)
+			if err != nil {
+				return nil, err
+			}
+			m, _ := doc.(map[string]any)
+			items, _ := m["items"].([]any)
+			for _, it := range items {
+				e, _ := it.(map[string]any)
+				n, ok := e["seq"].(json.Number)
+				if !ok {
+					continue
 				}
+				seq, _ := n.Int64()
+				if seq <= since || seen[seq] || !mentions(e, object) {
+					continue
+				}
+				seen[seq] = true
+				out = append(out, seq)
 			}
 		}
 	}
-	return false, 0, nil
+	slices.Sort(out)
+	return out, nil
+}
+
+// mentions — запись журнала касается объекта: он — изделие записи, её поток
+// или значение в данных (nc_id, incident_id, equipment_id, workplace_id…).
+func mentions(e map[string]any, object string) bool {
+	if object == "" {
+		return true
+	}
+	b, err := json.Marshal(e)
+	if err != nil {
+		return false
+	}
+	q, _ := json.Marshal(object)
+	return bytes.Contains(b, q) || strings.HasSuffix(fmt.Sprint(e["stream"]), ":"+object)
 }
 
 // do — запрос к обработчику API в процессе.

@@ -313,8 +313,8 @@ type actorProxy struct{ a *simfake.Actor }
 func (p actorProxy) Act(ctx context.Context, persona, op string, params map[string]string, body map[string]any) (app.ActResult, error) {
 	return p.a.Act(ctx, persona, op, params, body)
 }
-func (p actorProxy) Decided(ctx context.Context, run, op string, since int64) (bool, int64, error) {
-	return p.a.Decided(ctx, run, op, since)
+func (p actorProxy) Decided(ctx context.Context, run, op, object string, since int64) ([]int64, error) {
+	return p.a.Decided(ctx, run, op, object, since)
 }
 
 func mustBundle(t *testing.T, f *Files, run string) sim.Bundle {

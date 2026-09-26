@@ -338,6 +338,7 @@ import type {
   Run,
   RunControl,
   RunList,
+  RunPlan,
   RunProfile,
   ScanRead,
   ScanView,
@@ -369,6 +370,7 @@ import type {
   SimilarCaseList,
   SimulationBoardReadParams,
   SimulationRunListParams,
+  SimulationRunPlanParams,
   SimulationRunReadParams,
   SourceList,
   SplitItem,
@@ -26845,6 +26847,129 @@ export const useSimulationRunPause = <TError = globalThis.Error & { info?: Probl
       > => {
       return useMutation(getSimulationRunPauseMutationOptions(options), queryClient);
     }
+
+export type simulationRunPlanResponse200 = {
+  data: RunPlan
+  status: 200
+}
+
+export type simulationRunPlanResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type simulationRunPlanResponseSuccess = (simulationRunPlanResponse200) & {
+  headers: Headers;
+};
+export type simulationRunPlanResponseError = (simulationRunPlanResponseDefault) & {
+  headers: Headers;
+};
+
+export const getSimulationRunPlanUrl = (runId: string,
+    params?: SimulationRunPlanParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/runs/${runId}/plan?${stringifiedParams}` : `/api/v1/runs/${runId}/plan`
+}
+
+/**
+ * Д-85: чего ждёт прогон сейчас (роль, действие) и что будет дальше — решения людей с остановками, события машин и внешних систем, запланированные сбои — с доменным временем; часы прогона и скорость.
+ * @summary План прогона
+ */
+export const simulationRunPlan = async (runId: string,
+    params?: SimulationRunPlanParams, options?: RequestInit): Promise<simulationRunPlanResponseSuccess> => {
+
+  const res = await fetch(getSimulationRunPlanUrl(runId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: simulationRunPlanResponseError['data'], status?: number} = new globalThis.Error();
+    const data : simulationRunPlanResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: simulationRunPlanResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as simulationRunPlanResponseSuccess
+}
+
+
+
+
+
+export const getSimulationRunPlanQueryKey = (runId: MaybeRefOrGetter<string>,
+    params?: MaybeRefOrGetter<SimulationRunPlanParams>,) => {
+    return [
+    'api','v1','runs',runId,'plan', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getSimulationRunPlanQueryOptions = <TData = Awaited<ReturnType<typeof simulationRunPlan>>, TError = globalThis.Error & { info?: Problem; status?: number }>(runId: MaybeRefOrGetter<string>,
+    params?: MaybeRefOrGetter<SimulationRunPlanParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof simulationRunPlan>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getSimulationRunPlanQueryKey(runId,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof simulationRunPlan>>> = ({ signal }) => simulationRunPlan(toValue(runId),toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: computed(() => toValue(runId) !== null && toValue(runId) !== undefined), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof simulationRunPlan>>, TError, TData>
+}
+
+export type SimulationRunPlanQueryResult = NonNullable<Awaited<ReturnType<typeof simulationRunPlan>>>
+export type SimulationRunPlanQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary План прогона
+ */
+
+export function useSimulationRunPlan<TData = Awaited<ReturnType<typeof simulationRunPlan>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ runId: MaybeRefOrGetter<string>,
+    params?: MaybeRefOrGetter<SimulationRunPlanParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof simulationRunPlan>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getSimulationRunPlanQueryOptions(runId,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
 
 export type simulationRunResumeResponse200 = {
   data: Receipt

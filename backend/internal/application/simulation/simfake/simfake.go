@@ -19,6 +19,7 @@ import (
 	"slices"
 	"sort"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	app "ant/internal/application/simulation"
@@ -245,10 +246,17 @@ func (a Actor) Act(_ context.Context, persona, op string, params map[string]stri
 	return app.ActResult{}, app.ErrUnavailable
 }
 
-// Decided — решение на столе роли принято (OnDesk) или ещё нет.
-func (a Actor) Decided(context.Context, string, string, int64) (bool, int64, error) {
-	return a.OnDesk, 0, nil
+// Decided — решение на столе роли принято (OnDesk): каждый раз новая запись
+// (одна запись закрывает одну остановку) — или ещё нет.
+func (a Actor) Decided(context.Context, string, string, string, int64) ([]int64, error) {
+	if !a.OnDesk {
+		return nil, nil
+	}
+	return []int64{deskSeq.Add(1)}, nil
 }
+
+// deskSeq — номера записей решений «на столах» фейка.
+var deskSeq atomic.Int64
 
 // Deliveries — всего доставок, принято и повторов.
 func (g *Ingest) Deliveries() (received, accepted, duplicates int) {

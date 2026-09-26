@@ -7,8 +7,8 @@ import "ant/internal/application/platform"
 type StartRun struct {
 	platform.CommandHeader
 	Seed  *int64 `json:"seed,omitempty" minimum:"0" doc:"Seed генератора; пусто — из определения сценария."`
-	Speed int    `json:"speed,omitempty" minimum:"1" maximum:"1000" doc:"Ускорение ×1…×1000; пусто — ×1."`
-	Items int    `json:"items,omitempty" minimum:"0" maximum:"10000" doc:"Изделий сценария; пусто — по определению."`
+	Speed int    `json:"speed,omitempty" minimum:"1" maximum:"1000" doc:"Ускорение ×1…×1000; пусто — скорость определения прогона (показ SHOW-IS2 — ×60, MS-1 — ×1000), на заготовках — ×1."`
+	Items int    `json:"items,omitempty" minimum:"0" maximum:"10000" doc:"Не используется: изделия задаёт определение прогона (scenarios/definitions/runs); поле оставлено для совместимости и игнорируется."`
 	Mode  string `json:"mode" enum:"interactive,autocheck,load" doc:"interactive — решения на столах ролей; autocheck — demo-signer (AD-26)."`
 	// Start — откуда начинать прогон: с начала или с точки старта сценария
 	// (start_step заготовок).
