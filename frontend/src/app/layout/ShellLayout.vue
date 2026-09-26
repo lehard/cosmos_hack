@@ -1,8 +1,9 @@
 <script setup lang="ts">
 /**
- * Оболочка после входа: шапка + страница. Здесь же живут канал живых обновлений
- * (SSE, AD-21) и синхронизация прав @casl/vue с сервером (AD-15), и правое окно
- * записи (Д-70): любая страница открывает запись по `?open=‹тип›:‹id›`.
+ * Оболочка после входа: шапка, слева меню разделов стола (Д-73), страница.
+ * Здесь же живут канал живых обновлений (SSE, AD-21) и синхронизация прав
+ * @casl/vue с сервером (AD-15), и правое окно записи (Д-70): любая страница
+ * открывает запись по `?open=‹тип›:‹id›`.
  */
 import { computed, onBeforeUnmount, onMounted, provide, shallowRef } from 'vue'
 import { NLayout, NLayoutContent, NLayoutHeader } from 'naive-ui'
@@ -13,6 +14,7 @@ import { useAbilitySync } from '../providers/access'
 import { RECORD_KINDS } from '../record/registry'
 import RecordDrawerHost from '../record/RecordDrawerHost.vue'
 import AppHeader from './AppHeader.vue'
+import DeskNav from './DeskNav.vue'
 
 const queryClient = useQueryClient()
 useAbilitySync()
@@ -31,8 +33,11 @@ onBeforeUnmount(() => updates.value?.stop())
     <NLayoutHeader bordered class="shell-header">
       <AppHeader :live="live" />
     </NLayoutHeader>
-    <NLayoutContent class="shell-content" content-class="shell-page">
-      <RouterView />
+    <NLayoutContent class="shell-content" content-class="shell-body">
+      <DeskNav class="shell-nav" />
+      <main class="shell-page">
+        <RouterView />
+      </main>
     </NLayoutContent>
     <RecordDrawerHost />
   </NLayout>
@@ -51,8 +56,20 @@ onBeforeUnmount(() => updates.value?.stop())
   height: calc(100% - var(--ant-w-header));
 }
 
-.shell-content :deep(.shell-page) {
+.shell-content :deep(.shell-body) {
+  display: flex;
+  height: 100%;
+}
+
+/* Меню не прокручивается вместе со страницей — всегда на виду. */
+.shell-nav {
+  flex: none;
+}
+
+.shell-page {
+  flex: 1 1 auto;
   min-width: 0;
+  overflow: auto;
   padding: var(--ant-space-5) var(--ant-space-6) var(--ant-space-8);
 }
 </style>
