@@ -3,20 +3,32 @@
  * Индикатор целостности журнала «по данным сервера» (AD-46, FR-73). Первичный
  * вердикт — отчёт верификатора у хранителя; здесь — то, что сообщил ant, с явной
  * пометкой. Нет свежего отчёта дольше двух интервалов — желтеет сам.
+ * Потеря живых обновлений (SSE) — левой половиной той же точки (UI-25): одна
+ * точка, в подсказке обе строки.
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { NTooltip } from 'naive-ui'
 import { effectiveIntegrity, useIntegrity } from '@/entities/integrity'
 import { statusPalette, type StatusTone } from '@/shared/api/generated/statuses'
+import { useServerNow } from '@/shared/model/server-clock'
 
+const props = withDefaults(defineProps<{ liveOff?: boolean }>(), { liveOff: false })
 const { t, d } = useI18n()
 const integrity = useIntegrity()
+// Свежесть — от «сейчас» сервера (Ant-Now), не от часов браузера.
+const now = useServerNow()
 
 const report = computed(() => integrity.data.value?.data)
-const status = computed(() => (integrity.isError.value ? 'unknown' : effectiveIntegrity(report.value, Date.now())))
+const status = computed(() => (integrity.isError.value ? 'unknown' : effectiveIntegrity(report.value, now.value)))
 
 const TONE: Record<string, StatusTone> = { ok: 'success', violated: 'danger', stale: 'attention', unknown: 'neutral' }
+
+/** Точка: целостность; нет живых обновлений — левая половина «внимание». */
+const dotStyle = computed(() => {
+  const own = statusPalette[TONE[status.value] ?? 'neutral']
+  return props.liveOff ? { background: `linear-gradient(90deg, ${statusPalette.attention} 50%, ${own} 50%)` } : { background: own }
+})
 
 const text = computed(() => {
   switch (status.value) {
@@ -35,12 +47,13 @@ const text = computed(() => {
 <template>
   <NTooltip>
     <template #trigger>
-      <span class="integrity" :data-status="status" data-testid="integrity">
-        <span class="dot" :style="{ background: statusPalette[TONE[status] ?? 'neutral'] }" />
+      <span class="integrity" :data-status="status" :data-live-off="liveOff || undefined" data-testid="integrity">
+        <span class="dot" :style="dotStyle" />
         {{ t('common.header.integrity') }}
       </span>
     </template>
-    {{ text }} · {{ t('common.header.integrityServerSide') }}
+    <span class="ant-wrap">{{ text }} · {{ t('common.header.integrityServerSide') }}</span>
+    <template v-if="liveOff"><br /><span class="ant-wrap">{{ t('shell.header.liveOff') }}</span></template>
   </NTooltip>
 </template>
 

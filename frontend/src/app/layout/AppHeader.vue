@@ -57,13 +57,7 @@ async function onLogout() {
 
     <div class="right">
       <MomentIndicator />
-      <NTooltip v-if="live === 'closed'">
-        <template #trigger>
-          <span class="live-off" />
-        </template>
-        {{ t('shell.header.liveOff') }}
-      </NTooltip>
-      <IntegrityIndicator />
+      <IntegrityIndicator :live-off="live === 'closed'" />
       <TokenStatus />
       <span class="divider" aria-hidden="true" />
       <NotificationsBell />
@@ -214,12 +208,4 @@ async function onLogout() {
   font-size: var(--ant-fs-xs);
 }
 
-.live-off {
-  display: inline-block;
-  flex: none;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--ant-status-attention);
-}
 </style>
