@@ -34,22 +34,56 @@ checkpoints:
       operation: analysis.risk_scope.read
       params:
         incident_id: '{ref:RS-01}'
-      path: /items
-      op: eq
-      value: &id001
-        confirmed: 1
-        suspected: 33
-        excluded: 0
-        unknown: 0
-    mapping: draft
+      path: /items/*/known
+      op: set_eq
+      value:
+      - confirmed
+      - suspect
+      - suspect
+      - suspect
+      - suspect
+      - suspect
+      - suspect
+      - suspect
+      - suspect
+      - suspect
+      - suspect
+      - suspect
+      - suspect
+      - suspect
+      - suspect
+      - suspect
+      - suspect
+      - suspect
+      - suspect
+      - suspect
+      - suspect
+      - suspect
+      - suspect
+      - suspect
+      - suspect
+      - suspect
+      - suspect
+      - suspect
+      - suspect
+      - suspect
+      - suspect
+      - suspect
+      - suspect
+      - suspect
+    mapping: exact
+    note: 'сведение: цвета версии 1 по оси incident'
     source:
       subject: risk_scope/RS-01
       field: groups_count
       filter:
         version: 1
       op: eq
-      value: *id001
-    note: 'цвета — поле known у изделий области: confirmed / suspect / excluded / unknown'
+      value:
+        confirmed: 1
+        suspected: 33
+        excluded: 0
+        unknown: 0
   - id: S05-03
     what: где детали v1
     check:
@@ -58,7 +92,7 @@ checkpoints:
         incident_id: '{ref:RS-01}'
       path: /versions[scope_version=1]/0/locations_count
       op: eq
-      value: &id002
+      value: &id001
         welding_station: 21
         interdept_storage: 8
         assembly: 4
@@ -70,7 +104,7 @@ checkpoints:
       filter:
         version: 1
       op: eq
-      value: *id002
+      value: *id001
   - id: S05-04
     what: 'основание v1: общие факторы и отсчёт от Ф-006'
     check:
@@ -79,7 +113,7 @@ checkpoints:
         incident_id: '{ref:RS-01}'
       path: /versions[scope_version=1]/0/basis
       op: eq
-      value: &id003
+      value: &id002
         factors:
         - WLD-02
         - WS-2
@@ -94,7 +128,7 @@ checkpoints:
       filter:
         version: 1
       op: eq
-      value: *id003
+      value: *id002
   - id: S05-05
     what: детали фонового заказа тоже в круге
     check:
@@ -103,19 +137,23 @@ checkpoints:
         incident_id: '{ref:RS-01}'
       path: /items/*/item_id
       op: contains
-      value: &id004
+      value:
       - F-221
       - F-222
       - F-223
       - F-224
-    mapping: draft
+    mapping: exact
     source:
       subject: risk_scope/RS-01
       field: items
       filter:
         version: 1
       op: contains
-      value: *id004
+      value:
+      - F-221
+      - F-222
+      - F-223
+      - F-224
   - id: S05-06
     what: 33 изделия придержаны, задачи мастерам созданы
     check:
@@ -147,7 +185,7 @@ checkpoints:
       operation: ingest.source.list
       path: /items
       op: eq
-      value: &id005
+      value: &id003
         set_by: MST-02
         at: '2026-09-23T11:12:00+03:00'
         proposed_by: system
@@ -156,7 +194,7 @@ checkpoints:
       subject: source/WS-2
       field: process_hold
       op: eq
-      value: *id005
+      value: *id003
     note: источник WS-2
   - id: S05-38
     what: 'состояние линий: у линии 2 сварочный пост стоит (остановка ИС-2 по качеству), линия 1 работает; общие участки — у обеих'
@@ -207,10 +245,11 @@ checkpoints:
       operation: analysis.risk_scope.read
       params:
         incident_id: '{ref:RS-01}'
-      path: /versions[scope_version=2]/0/excluded_count
+      path: /items[known=excluded]/#
       op: eq
       value: 21
-    mapping: draft
+    mapping: exact
+    note: 'сведение: после сужения v2 исключена 21 сварка ИС-1'
     source:
       subject: risk_scope/RS-01
       field: excluded_count
@@ -226,7 +265,7 @@ checkpoints:
         incident_id: '{ref:RS-01}'
       path: /versions[scope_version=2]/0/basis_refs
       op: contains
-      value: &id006
+      value: &id004
       - журнал WS-1 непрерывный, в уставке
       - CP-WELD no_defect_found при качестве ≥ 0,6
       - WLD-02 и LOT-W-88 на WS-1 без отклонений
@@ -237,7 +276,7 @@ checkpoints:
       filter:
         version: 2
       op: contains
-      value: *id006
+      value: *id004
 - at: '2026-09-23T12:16:00+03:00'
   label: версия 3 после позднего журнала
   assertions:
@@ -264,45 +303,86 @@ checkpoints:
       operation: analysis.risk_scope.read
       params:
         incident_id: '{ref:RS-01}'
-      path: /items/*/item_id
+      path: /items[known!=excluded]/*/item_id
       op: set_eq
-      value: &id007
+      value:
       - F-015
       - F-017
       - F-019
       - F-021
       - F-023
       - F-025
-    mapping: draft
+    mapping: exact
+    note: 'сведение: состав текущей версии без исключённых'
     source:
       subject: risk_scope/RS-01
       field: items
       filter:
         version: 3
       op: set_eq
-      value: *id007
+      value:
+      - F-015
+      - F-017
+      - F-019
+      - F-021
+      - F-023
+      - F-025
   - id: S05-13
     what: цвета v3
     check:
       operation: analysis.risk_scope.read
       params:
         incident_id: '{ref:RS-01}'
-      path: /items
-      op: eq
-      value: &id008
-        confirmed: 1
-        suspected: 4
-        unknown: 1
-        excluded: 28
-    mapping: draft
+      path: /items/*/known
+      op: set_eq
+      value:
+      - confirmed
+      - suspect
+      - suspect
+      - suspect
+      - suspect
+      - unknown
+      - excluded
+      - excluded
+      - excluded
+      - excluded
+      - excluded
+      - excluded
+      - excluded
+      - excluded
+      - excluded
+      - excluded
+      - excluded
+      - excluded
+      - excluded
+      - excluded
+      - excluded
+      - excluded
+      - excluded
+      - excluded
+      - excluded
+      - excluded
+      - excluded
+      - excluded
+      - excluded
+      - excluded
+      - excluded
+      - excluded
+      - excluded
+      - excluded
+    mapping: exact
+    note: 'сведение: цвета версии 3 по оси incident'
     source:
       subject: risk_scope/RS-01
       field: groups_count
       filter:
         version: 3
       op: eq
-      value: *id008
-    note: 'цвета — поле known у изделий области: confirmed / suspect / excluded / unknown'
+      value:
+        confirmed: 1
+        suspected: 4
+        unknown: 1
+        excluded: 28
   - id: S05-14
     what: пометка о пересчёте из-за позднего события
     check:
@@ -326,9 +406,9 @@ checkpoints:
       operation: analysis.risk_scope.read
       params:
         incident_id: '{ref:RS-01}'
-      path: /versions[scope_version=3]/0/newly_excluded
-      op: set_eq
-      value: &id009
+      path: /items[known=excluded]/*/item_id
+      op: contains
+      value:
       - F-008
       - F-010
       - F-012
@@ -336,14 +416,22 @@ checkpoints:
       - F-016
       - F-221
       - F-222
-    mapping: draft
+    mapping: exact
+    note: 'сведение: семь сварок ИС-2 до Вт 10:20 исключены'
     source:
       subject: risk_scope/RS-01
       field: newly_excluded
       filter:
         version: 3
       op: set_eq
-      value: *id009
+      value:
+      - F-008
+      - F-010
+      - F-012
+      - F-014
+      - F-016
+      - F-221
+      - F-222
   - id: S05-16
     what: сборка Ф-015 приостановлена — незавершённая операция
     check:
@@ -352,7 +440,7 @@ checkpoints:
         metric_id: O-9
       path: /total/value
       op: contains
-      value: &id010
+      value: &id005
       - item: F-015
         operation: assembly
         reason: quality_block
@@ -361,7 +449,7 @@ checkpoints:
       subject: metric/O-9
       field: items
       op: contains
-      value: *id010
+      value: *id005
     note: показатель O-9 каталога процессной сессии (analytics-catalog.md); сопоставление — эпик 25
 - at: '2026-09-23T13:31:00+03:00'
   label: таблица общих факторов
@@ -374,7 +462,7 @@ checkpoints:
         nc_id: '{ref:NC-02}'
       path: /defects
       op: set_eq
-      value: &id011
+      value: &id006
       - zone: U5
         type: burn_through
         side: root
@@ -385,7 +473,7 @@ checkpoints:
       subject: nc/NC-02
       field: defects
       op: set_eq
-      value: *id011
+      value: *id006
   - id: S05-18
     what: 'НС-03 (Ф-023, С-02): прожог в корне У3'
     check:
@@ -394,7 +482,7 @@ checkpoints:
         nc_id: '{ref:NC-03}'
       path: /defects
       op: set_eq
-      value: &id012
+      value: &id007
       - zone: U3
         type: burn_through
         side: root
@@ -403,7 +491,7 @@ checkpoints:
       subject: nc/NC-03
       field: defects
       op: set_eq
-      value: *id012
+      value: *id007
   - id: S05-19
     what: 'общие факторы: источник 3/3, сварщики разные'
     check:
@@ -412,7 +500,7 @@ checkpoints:
         nc_id: '{ref:NC-01}'
       path: /common_factors
       op: eq
-      value: &id013
+      value: &id008
         source: 3/3
         program: 3/3
         current_out_of_setpoint: 3/3
@@ -427,7 +515,7 @@ checkpoints:
       filter:
         version: 3
       op: eq
-      value: *id013
+      value: *id008
   - id: S05-20
     what: гипотеза про сварщика слабеет, про источник — сильная
     check:
@@ -436,7 +524,7 @@ checkpoints:
         nc_id: '{ref:NC-01}'
       path: /strength_history
       op: eq
-      value: &id014
+      value: &id009
         equipment:
         - not_assessable
         - strong
@@ -450,7 +538,7 @@ checkpoints:
       subject: hypothesis/NC-01
       field: strength_history
       op: eq
-      value: *id014
+      value: *id009
   - id: S05-21
     what: каждая версия гипотез хранит причину пересмотра
     check:
@@ -459,7 +547,7 @@ checkpoints:
         nc_id: '{ref:NC-01}'
       path: /revised_due_to
       op: eq
-      value: &id015
+      value: &id010
         v2: EV-WS2-0412
         v3:
         - NC-02
@@ -469,7 +557,7 @@ checkpoints:
       subject: hypothesis/NC-01
       field: revised_due_to
       op: eq
-      value: *id015
+      value: *id010
 - at: '2026-09-23T16:45:00+03:00'
   label: решение по инциденту и причина
   assertions:
@@ -479,10 +567,45 @@ checkpoints:
       operation: analysis.risk_scope.read
       params:
         incident_id: '{ref:RS-01}'
-      path: /versions
-      op: eq
-      value: true
-    mapping: draft
+      path: /items/*/known
+      op: set_eq
+      value:
+      - confirmed
+      - confirmed
+      - confirmed
+      - confirmed
+      - confirmed
+      - confirmed
+      - excluded
+      - excluded
+      - excluded
+      - excluded
+      - excluded
+      - excluded
+      - excluded
+      - excluded
+      - excluded
+      - excluded
+      - excluded
+      - excluded
+      - excluded
+      - excluded
+      - excluded
+      - excluded
+      - excluded
+      - excluded
+      - excluded
+      - excluded
+      - excluded
+      - excluded
+      - excluded
+      - excluded
+      - excluded
+      - excluded
+      - excluded
+      - excluded
+    mapping: exact
+    note: 'сведение: итог круга: 6 подтверждено, 28 исключено'
     source:
       subject: risk_scope/RS-01
       field:
@@ -500,7 +623,7 @@ checkpoints:
         nc_id: '{ref:NC-G1}'
       path: /item_id
       op: set_eq
-      value: &id016
+      value: &id011
       - F-015
       - F-017
       - F-019
@@ -512,7 +635,7 @@ checkpoints:
       subject: nc/NC-G1
       field: items
       op: set_eq
-      value: *id016
+      value: *id011
     note: 'групповое несоответствие: состав изделий уточнит эпик 21'
   - id: S05-24
     what: 'решение — переделка ×6, подписала комиссия; решение пришло каждому из шести изделий: Ф-015 — в сборке (блок «Сборка» прерван, дальше возврат в сварку), пятерым — в сварке'
@@ -523,7 +646,7 @@ checkpoints:
       path: /axes/disposition
       op: eq
       value: rework
-    mapping: draft
+    mapping: exact
     source:
       subject: nc/NC-G1
       field: disposition
@@ -546,10 +669,13 @@ checkpoints:
     what: в 1С «перевод в брак (переделка)» по 6 изделиям, подтверждено
     check:
       operation: erp.message.list
-      path: /items
+      params:
+        limit: 500
+      path: /items[action=scrap_transfer_rework]/#
       op: eq
-      value: true
-    mapping: draft
+      value: 6
+    mapping: exact
+    note: 'сведение: «перевод в брак (переделка)» — scrap_transfer_rework'
     source:
       subject: erp/postings
       field:
@@ -582,12 +708,19 @@ checkpoints:
   - id: S05-27
     what: 'причина подтверждена: оборудование ИС-2, проверено образцом КО-7'
     check:
-      operation: nonconformity.card.read
+      operation: analysis.hypothesis.list
       params:
         nc_id: '{ref:NC-G1}'
-      path: /cause
+      path: /hypotheses[category=equipment]/0/status
       op: eq
-      value: &id017
+      value: confirmed
+    mapping: exact
+    note: 'сведение: причина «оборудование» подтверждена (analysis.cause.conclude)'
+    source:
+      subject: nc/NC-G1
+      field: cause
+      op: eq
+      value:
         category: equipment
         equipment: WS-2
         status: confirmed
@@ -595,22 +728,17 @@ checkpoints:
         signers:
         - TECH-01
         - CHW-01
-    mapping: draft
-    source:
-      subject: nc/NC-G1
-      field: cause
-      op: eq
-      value: *id017
   - id: S05-28
     what: та же причина у НС-01…03
     check:
-      operation: nonconformity.card.read
+      operation: analysis.hypothesis.list
       params:
         nc_id: '{ref:NC-01}'
-      path: /cause.category
+      path: /hypotheses[category=equipment]/0/status
       op: eq
-      value: equipment
-    mapping: draft
+      value: confirmed
+    mapping: exact
+    note: 'сведение: та же причина у НС-01'
     source:
       subject: nc/NC-01
       field: cause.category
@@ -621,11 +749,13 @@ checkpoints:
     check:
       operation: analytics.metric.drilldown
       params:
-        metric_id: O-2
+        metric_id: items_with_confirmed_nc
+        period: week
       path: /total/value
       op: eq
       value: 6
-    mapping: draft
+    mapping: exact
+    note: 'сведение: показатель items_with_confirmed_nc (О-2) за неделю главной истории'
     source:
       subject: metric/O-2
       field: items
@@ -633,7 +763,6 @@ checkpoints:
         incident: RS-01
       op: eq
       value: 6
-    note: показатель O-2 каталога процессной сессии (analytics-catalog.md); сопоставление — эпик 25
   - id: S05-30
     what: подтверждённых дефектов сварки — 4 на 3 изделиях
     check:
@@ -659,19 +788,20 @@ checkpoints:
     check:
       operation: analytics.metric.drilldown
       params:
-        metric_id: O-10
-      path: /confirmed_errors
+        metric_id: confirmed_performer_errors
+        period: week
+      path: /total/value
       op: eq
-      value: &id018
-        WLD-02: 0
-        WLD-03: 0
-    mapping: draft
+      value: 0
+    mapping: exact
+    note: 'сведение: показатель confirmed_performer_errors (О-10)'
     source:
       subject: metric/O-10
       field: confirmed_errors
       op: eq
-      value: *id018
-    note: показатель O-10 каталога процессной сессии (analytics-catalog.md); сопоставление — эпик 25
+      value:
+        WLD-02: 0
+        WLD-03: 0
   - id: S05-32
     what: сопоставимых сварок у каждого ≥ 10
     check:
@@ -680,7 +810,7 @@ checkpoints:
         metric_id: O-10
       path: /comparable_runs
       op: gte
-      value: &id019
+      value: &id012
         WLD-02: 10
         WLD-03: 10
     mapping: draft
@@ -688,7 +818,7 @@ checkpoints:
       subject: metric/O-10
       field: comparable_runs
       op: gte
-      value: *id019
+      value: *id012
     note: показатель O-10 каталога процессной сессии (analytics-catalog.md); сопоставление — эпик 25
   - id: S05-33
     what: простой ИС-2 с причиной «остановка по качеству»
@@ -716,7 +846,7 @@ checkpoints:
         metric_id: D-4
       path: /by_nc
       op: eq
-      value: &id020
+      value: &id013
         NC-01: 5 мин
         NC-03: ≈ 4 ч
         NC-02: ≈ 16 ч
@@ -725,7 +855,7 @@ checkpoints:
       subject: metric/D-4
       field: by_nc
       op: eq
-      value: *id020
+      value: *id013
     note: показатель D-4 каталога процессной сессии (analytics-catalog.md); сопоставление — эпик 25
   - id: S05-35
     what: 'статус инцидента: изделия решены, расследование открыто'
@@ -735,7 +865,7 @@ checkpoints:
         incident_id: '{ref:RS-01}'
       path: /incident_status
       op: eq
-      value: &id021
+      value: &id014
         items: decided
         investigation: open
     mapping: draft
@@ -743,7 +873,7 @@ checkpoints:
       subject: risk_scope/RS-01
       field: incident_status
       op: eq
-      value: *id021
+      value: *id014
   - id: S05-36
     what: 'акт о браке на 6 изделий собран из истории: состав, основание и подписи взяты из записей; ручного ввода 0'
     check:
@@ -909,12 +1039,14 @@ checkpoints:
     check:
       operation: analytics.metric.drilldown
       params:
-        metric_id: O-6
+        metric_id: confirmed_performer_errors
+        period: week
       path: /total/value
       op: delta
       value: 0
-    mapping: draft
-    baseline: '2026-09-23T11:04:00+03:00'
+    mapping: exact
+    baseline: '2026-09-23T11:00:00+03:00'
+    note: 'сведение: «ошибка исполнителя» — показатель confirmed_performer_errors'
     source:
       subject: metric/O-6
       field: count
@@ -924,4 +1056,3 @@ checkpoints:
       op: delta
       value: 0
       baseline: '2026-09-23T11:04:00+03:00'
-    note: показатель O-6 каталога процессной сессии (analytics-catalog.md); сопоставление — эпик 25

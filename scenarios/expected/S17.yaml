@@ -152,10 +152,11 @@ checkpoints:
       operation: item.passport.read
       params:
         item_id: '{item:F-006}'
-      path: /status
+      path: /nonconformities/#
       op: eq
-      value: true
-    mapping: draft
+      value: 0
+    mapping: exact
+    note: 'сведение: несоответствий по Ф-006 нет'
     source:
       subject: item/F-006
       field:

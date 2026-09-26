@@ -126,19 +126,20 @@ checkpoints:
     check:
       operation: analytics.metric.drilldown
       params:
-        metric_id: O-1
-      path: /unable_to_assess
+        metric_id: unable_to_assess
+        period: week
+      path: /total/value
       op: delta
       value: 1
-    mapping: draft
-    baseline: '2026-09-23T12:39:00+03:00'
+    mapping: exact
+    baseline: '2026-09-23T12:00:00+03:00'
+    note: 'сведение: показатель unable_to_assess (О-1, корзина «оценка невозможна») за неделю'
     source:
       subject: metric/O-1
       field: unable_to_assess
       op: delta
       value: 1
       baseline: '2026-09-23T12:39:00+03:00'
-    note: показатель O-1 каталога процессной сессии (analytics-catalog.md); сопоставление — эпик 25
 - at: '2026-09-23T12:16:00+03:00'
   label: 'Ф-019: серая'
   assertions:
@@ -148,10 +149,11 @@ checkpoints:
       operation: analysis.risk_scope.read
       params:
         incident_id: '{ref:RS-01}'
-      path: /versions[scope_version=3]/0/group_of/F-019
+      path: /items[item_id={item:F-019}]/0/known
       op: eq
       value: unknown
-    mapping: draft
+    mapping: exact
+    note: 'сведение: Ф-019 в версии 3 — «нет данных»'
     source:
       subject: risk_scope/RS-01
       field: group_of/F-019
@@ -219,10 +221,11 @@ checkpoints:
       operation: analysis.risk_scope.read
       params:
         incident_id: '{ref:RS-01}'
-      path: /excluded_without_basis
-      op: eq
-      value: false
-    mapping: draft
+      path: /items[item_id={item:F-019}]/0/known
+      op: ne
+      value: excluded
+    mapping: exact
+    note: 'сведение: Ф-019 не исключён сам'
     source:
       subject: risk_scope/RS-01
       field: excluded_without_basis

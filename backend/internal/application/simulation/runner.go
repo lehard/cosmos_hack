@@ -404,13 +404,9 @@ func (s *Service) stand(ctx context.Context, st *RunState, a sim.Action, key str
 		if a.Stand.Clear {
 			err = s.d.Stands.ClearFaults(ctx, a.Stand.Stand)
 		} else {
-			var until time.Time
-			if a.Stand.Until != "" {
-				if t, perr := sim.ParseTime(a.Stand.Until); perr == nil {
-					until = t
-				}
-			}
-			err = s.d.Stands.SetFault(ctx, a.Stand.Stand, *a.Stand, until)
+			// until определения — время прогона, а stand живёт по InfraClock:
+			// сбой снимает шаг «снять сбой» генератора в момент until
+			err = s.d.Stands.SetFault(ctx, a.Stand.Stand, *a.Stand, time.Time{})
 		}
 		if err != nil {
 			res.Status, res.Detail = "skipped", err.Error()

@@ -135,10 +135,11 @@ checkpoints:
       operation: analysis.hypothesis.list
       params:
         nc_id: '{ref:NC-01}'
-      path: /hypotheses
-      op: eq
-      value: true
-    mapping: draft
+      path: /version
+      op: changed
+    mapping: exact
+    baseline: '2026-09-23T12:00:00+03:00'
+    note: 'сведение: новая версия гипотез после пачки ИС-2 (прежние версии хранятся)'
     source:
       subject: hypothesis/NC-01
       field:
@@ -258,10 +259,11 @@ checkpoints:
       operation: nonconformity.card.read
       params:
         nc_id: '{ref:NC-01}'
-      path: /decisions[0].changed
-      op: eq
-      value: false
-    mapping: draft
+      path: /human_decisions[event_type=decision.nonconformity.confirmed]/0/event_id
+      op: unchanged
+    mapping: exact
+    baseline: '2026-09-23T12:00:00+03:00'
+    note: 'сведение: запись подтверждения НС-01 та же, что до пачки ИС-2'
     source:
       subject: nc/NC-01
       field: decisions[0].changed

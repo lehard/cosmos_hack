@@ -159,10 +159,11 @@ checkpoints:
     what: номер изделия не угадан без человека
     check:
       operation: ingest.quarantine.list
-      path: /items
+      path: /items[problem_code=ingest.missing_required_field]/#
       op: eq
-      value: false
-    mapping: draft
+      value: 0
+    mapping: exact
+    note: 'сведение: сообщение без номера изделия не в карантине и не привязано само — ждёт человека в очереди привязки'
     source:
       subject: quarantine
       field: auto_bound_item

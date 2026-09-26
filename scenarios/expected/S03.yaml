@@ -19,46 +19,50 @@ checkpoints:
         nc_id: '{ref:NC-01}'
       path: /human_decisions/*/event_type
       op: contains
-      value: &id001
-      - signal
-      - confirmed
-      - isolated
-    mapping: draft
+      value:
+      - decision.nonconformity.confirmed
+      - decision.item.isolated
+    mapping: exact
+    note: 'сведение: подтверждение и изоляция — решения людей'
     source:
       subject: nc/NC-01
       field: status_path
       op: contains
-      value: *id001
-    note: путь статусов — по решениям в карточке
+      value:
+      - signal
+      - confirmed
+      - isolated
   - id: S03-02
     what: подтверждение — отдельная запись с автором и причиной
     check:
       operation: nonconformity.card.read
       params:
         nc_id: '{ref:NC-01}'
-      path: /decisions[0]
+      path: /human_decisions[event_type=decision.nonconformity.confirmed]/0/author
       op: eq
-      value: &id002
-        type: signal_confirmed
-        author: QC-01
-        at: '2026-09-23T11:08:00+03:00'
-        reason_present: true
-    mapping: draft
+      value: QC-01
+    mapping: exact
+    note: 'сведение: подтверждение — отдельная запись решения с автором ОТК-1 (причина — в тексте записи)'
     source:
       subject: nc/NC-01
       field: decisions[0]
       op: eq
-      value: *id002
+      value:
+        type: signal_confirmed
+        author: QC-01
+        at: '2026-09-23T11:08:00+03:00'
+        reason_present: true
   - id: S03-03
     what: Ф-017 изолирован, физически перемещён
     check:
       operation: item.passport.read
       params:
         item_id: '{item:F-017}'
-      path: /status
+      path: /status/position
       op: eq
-      value: true
-    mapping: draft
+      value: isolated
+    mapping: exact
+    note: 'сведение: положение «в изоляции» — изделие физически в изоляторе (AD-30)'
     source:
       subject: item/F-017
       field:
@@ -72,10 +76,11 @@ checkpoints:
       operation: nonconformity.card.read
       params:
         nc_id: '{ref:NC-01}'
-      path: /disposition_due
+      path: /isolation/decision_due_at
       op: eq
-      value: '2026-09-28'
-    mapping: draft
+      value: '2026-09-28T16:30:00+03:00'
+    mapping: exact
+    note: 'сведение: срок решения по изделию'
     source:
       subject: nc/NC-01
       field: disposition_due
@@ -89,7 +94,7 @@ checkpoints:
         nc_id: '{ref:NC-01}'
       path: /last_clean_observation
       op: eq
-      value: &id003
+      value: &id001
         checkpoint: CP-MO
         zone: EDGE
         quality: 0.93
@@ -98,7 +103,7 @@ checkpoints:
       subject: nc/NC-01
       field: last_clean_observation
       op: eq
-      value: *id003
+      value: *id001
   - id: S03-06
     what: 'окно возникновения: сварка SV-017-1 и перемещение'
     check:
@@ -107,7 +112,7 @@ checkpoints:
         nc_id: '{ref:NC-01}'
       path: /origin_window_candidates
       op: set_eq
-      value: &id004
+      value: &id002
       - run:SV-017-1
       - move:MC->WC
     mapping: draft
@@ -115,17 +120,18 @@ checkpoints:
       subject: nc/NC-01
       field: origin_window_candidates
       op: set_eq
-      value: *id004
+      value: *id002
   - id: S03-07
     what: 'гипотезы v1: причина не установлена, оборудование не оценить'
     check:
       operation: analysis.hypothesis.list
       params:
         nc_id: '{ref:NC-01}'
-      path: /hypotheses
+      path: /hypotheses[status=confirmed]/#
       op: eq
-      value: true
-    mapping: draft
+      value: 0
+    mapping: exact
+    note: 'сведение: причина не установлена: подтверждённых гипотез нет'
     source:
       subject: hypothesis/NC-01
       field:
@@ -142,19 +148,21 @@ checkpoints:
       operation: analysis.hypothesis.list
       params:
         nc_id: '{ref:NC-01}'
-      path: /missing_info
+      path: /missing_information
       op: contains
-      value: &id005
-      - журнал параметров WS-2 10:40–11:00
-      - рентген F-017
-    mapping: draft
+      value:
+      - equipment_log_missing
+    mapping: exact
+    note: 'сведение: нет журнала ИС-2 (рентгена ещё нет — пункт «после операции» не обязателен)'
     source:
       subject: hypothesis/NC-01
       field: missing_info
       filter:
         version: 1
       op: contains
-      value: *id005
+      value:
+      - журнал параметров WS-2 10:40–11:00
+      - рентген F-017
   - id: S03-09
     what: ручное действие С-02 — в обстоятельствах с пометкой «не вина»
     check:
@@ -163,7 +171,7 @@ checkpoints:
         nc_id: '{ref:NC-01}'
       path: /circumstances
       op: contains
-      value: &id006
+      value: &id003
       - type: manual_override
         operator: WLD-02
         label: обстоятельство, не вина
@@ -172,7 +180,7 @@ checkpoints:
       subject: nc/NC-01
       field: circumstances
       op: contains
-      value: *id006
+      value: *id003
   - id: S03-10
     what: сравнение с эталоном Ф-001 доступно
     check:
@@ -211,19 +219,20 @@ checkpoints:
     check:
       operation: analytics.metric.drilldown
       params:
-        metric_id: O-2
+        metric_id: items_with_confirmed_nc
+        period: week
       path: /total/value
       op: delta
       value: 1
-    mapping: draft
-    baseline: '2026-09-23T11:04:00+03:00'
+    mapping: exact
+    baseline: '2026-09-23T11:00:00+03:00'
+    note: 'сведение: показатель items_with_confirmed_nc (О-2) за неделю'
     source:
       subject: metric/O-2
       field: items
       op: delta
       value: 1
       baseline: '2026-09-23T11:04:00+03:00'
-    note: показатель O-2 каталога процессной сессии (analytics-catalog.md); сопоставление — эпик 25
   - id: S03-13
     what: 'лесенка О-3: наблюдения +2, уникальные +1, подтверждённые +1'
     check:
@@ -232,7 +241,7 @@ checkpoints:
         metric_id: O-3
       path: /ladder
       op: delta
-      value: &id007
+      value: &id004
         observations: 2
         unique_defects: 1
         confirmed_defects: 1
@@ -243,7 +252,7 @@ checkpoints:
       subject: metric/O-3
       field: ladder
       op: delta
-      value: *id007
+      value: *id004
       baseline: '2026-09-23T11:04:00+03:00'
     note: показатель O-3 каталога процессной сессии (analytics-catalog.md); сопоставление — эпик 25
   - id: S03-14
@@ -254,7 +263,7 @@ checkpoints:
         nc_id: '{ref:NC-01}'
       path: /evidence_display
       op: in
-      value: &id008
+      value: &id005
       - illustration_labeled
       - material_not_provided
     mapping: draft
@@ -262,7 +271,7 @@ checkpoints:
       subject: nc/NC-01
       field: evidence_display
       op: in
-      value: *id008
+      value: *id005
 - at: '2026-09-23T11:25:00+03:00'
   label: чего не должно случиться
   must_not: true
@@ -270,20 +279,21 @@ checkpoints:
   - id: S03-N1
     what: нет «ошибки исполнителя»
     check:
-      operation: nonconformity.card.read
+      operation: analysis.hypothesis.list
       params:
         nc_id: '{ref:NC-01}'
-      path: /cause
-      op: ne
-      value: &id009
-        category: operator_procedure
-        status: confirmed
-    mapping: draft
+      path: /hypotheses[category=performer,status=confirmed]/#
+      op: eq
+      value: 0
+    mapping: exact
+    note: 'сведение: подтверждённой гипотезы об исполнителе нет'
     source:
       subject: nc/NC-01
       field: cause
       op: ne
-      value: *id009
+      value:
+        category: operator_procedure
+        status: confirmed
   - id: S03-N2
     what: О-10 не меняется
     check:
@@ -328,10 +338,11 @@ checkpoints:
       operation: nonconformity.card.read
       params:
         nc_id: '{ref:NC-01}'
-      path: /dispositions_by_system
+      path: /axes/disposition
       op: eq
-      value: 0
-    mapping: draft
+      value: none
+    mapping: exact
+    note: 'сведение: решения по изделию нет'
     source:
       subject: nc/NC-01
       field: dispositions_by_system

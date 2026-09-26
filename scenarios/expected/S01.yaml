@@ -214,17 +214,18 @@ checkpoints:
       - transfer
       - transfer
       - release_good
-    note: 'виды учётных сообщений процессной сессии → erp_action контракта; «результат контроля» (inspection_result, [П] кейс §3.3) — не учётное движение и в счёт шести не входит'
+    note: виды учётных сообщений процессной сессии → erp_action контракта; «результат контроля» (inspection_result, [П] кейс §3.3) — не учётное движение и в счёт шести не входит
   - id: S01-12
     what: все сообщения 1С подтверждены
     check:
       operation: erp.message.list
       params:
         item_id: '{item:F-001}'
-      path: /items/*/status
+      path: /items[status!=acknowledged]/#
       op: eq
-      value: acknowledged
-    mapping: draft
+      value: 0
+    mapping: exact
+    note: 'сведение: все сообщения по Ф-001 подтверждены'
     source:
       subject: erp/postings
       field: ack_status
@@ -293,9 +294,16 @@ checkpoints:
       operation: item.passport.read
       params:
         item_id: '{item:F-001}'
-      path: /carriers
+      path: /carriers[state=replaced]/*/value
       op: eq
-      value: &id008
+      value: '{carrier:TAG:F-001}'
+    mapping: exact
+    note: 'сведение: бирка TAG заменена кодом DM после станка; сверка на ЗТ-2 — в решении ЗТ-2 (поля в паспорте нет)'
+    source:
+      subject: item/F-001
+      field: marking_history
+      op: eq
+      value:
       - carrier: tag_qr
         value: TAG:F-001
       - carrier: dpm_datamatrix
@@ -303,12 +311,6 @@ checkpoints:
         reason: remark_after_machining
         verified_at_gate: ZT-2
         result: match
-    mapping: draft
-    source:
-      subject: item/F-001
-      field: marking_history
-      op: eq
-      value: *id008
   - id: S01-17
     what: на КИМ номер фланца выбран из списка ожидаемых изделий, а не введён руками
     check:
@@ -329,7 +331,7 @@ checkpoints:
       operation: crossitem.lot.list
       path: /items
       op: eq
-      value: &id009
+      value: &id007
         LOT-ZF-201:
           result: no_defect_found
           tests:
@@ -351,7 +353,7 @@ checkpoints:
         - LOT-ZF-201
         - LOT-R-116
       op: eq
-      value: *id009
+      value: *id007
   - id: S01-20
     what: 'при приёме цехом (Е-31) у Ф-001 — поле «повреждения: нет» (МЦ → СЦ и СЦ → СИЦ)'
     check:
@@ -360,7 +362,7 @@ checkpoints:
         item_id: '{item:F-001}'
       path: /receipts_damage
       op: eq
-      value: &id010
+      value: &id008
         MC->WC: none
         WC->AC: none
     mapping: draft
@@ -368,7 +370,7 @@ checkpoints:
       subject: item/F-001
       field: receipts_damage
       op: eq
-      value: *id010
+      value: *id008
   - id: S01-21
     what: 'в начале — состав и ревизия КД из КОМПАС (Е-02, узел OD): 6 позиций с клапаном, связи W-1, J-1, S-1, J-2, геометрии нет — сказано явно'
     check:
@@ -399,7 +401,7 @@ checkpoints:
         item_id: '{item:F-001}'
       path: /entries[event_type=decision.presentation.resolved]
       op: eq
-      value: &id011
+      value: &id009
         entered_cavity: 2
         returned: 2
     mapping: draft
@@ -407,7 +409,7 @@ checkpoints:
       subject: gate/ZT-SR/F-001
       field: tools_counted
       op: eq
-      value: *id011
+      value: *id009
     note: ЗТ ZT-SR
   - id: S01-18
     what: у каждой ЗТ Ф-001 подписант не выполнял операцию, которую принимает
