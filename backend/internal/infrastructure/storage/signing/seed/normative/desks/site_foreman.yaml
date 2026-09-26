@@ -1,0 +1,28 @@
+# Стол мастера участка (PRD §3a): участок, люди и оборудование, задачи, смена. Крупно.
+# Владелец после волны 1 — эпик 13.
+version: 1
+role: site_foreman
+title_key: desks.station
+density: large
+tabs:
+  - id: station
+    title_key: desks.station
+    layout: main-side
+    slots:
+      - {id: posts, area: main, widget: station-posts, slice: {scope: own_station}}
+      - {id: tasks, area: right, widget: tasks, slice: {kinds: [task, alarm, escalation]}}
+  - id: people
+    title_key: desks.peopleAndEquipment
+    layout: single
+    slots:
+      - {id: people, area: main, widget: people-equipment}
+  - id: tasks
+    title_key: desks.tasks
+    layout: single
+    slots:
+      - {id: tasks, area: main, widget: tasks}
+  - id: shift
+    title_key: desks.shift
+    layout: single
+    slots:
+      - {id: shift, area: main, widget: shift-assignments}
