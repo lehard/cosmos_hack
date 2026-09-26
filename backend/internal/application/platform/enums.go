@@ -64,6 +64,13 @@ const (
 	EntityLiveMap          EntityKind = "live_map"
 	EntityPolicy           EntityKind = "policy"
 	EntityQuarantine       EntityKind = "quarantine"
+	EntityConcession       EntityKind = "concession"
+	EntityProcessHold      EntityKind = "process_hold"
+	EntityPerson           EntityKind = "person"
+	EntityReference        EntityKind = "reference"
+	EntityKey              EntityKind = "key"
+	EntityMaterial         EntityKind = "material"
+	EntityPartner          EntityKind = "partner"
 )
 
 // EntityKinds — все виды в порядке контракта.
@@ -71,6 +78,7 @@ var EntityKinds = []EntityKind{
 	EntityItem, EntityLot, EntityNonconformity, EntityIncident, EntityDocument, EntityTask,
 	EntityNotification, EntityWorkplace, EntityEquipment, EntityProcessVersion, EntityAnalyzerPassport,
 	EntityErpMessage, EntityRun, EntityIntegrity, EntityLiveMap, EntityPolicy, EntityQuarantine,
+	EntityConcession, EntityProcessHold, EntityPerson, EntityReference, EntityKey, EntityMaterial, EntityPartner,
 }
 
 // Values — виды сущностей.

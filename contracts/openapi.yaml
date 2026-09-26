@@ -3451,6 +3451,13 @@ components:
         - live_map
         - policy
         - quarantine
+        - concession
+        - process_hold
+        - person
+        - reference
+        - key
+        - material
+        - partner
       type: string
     EquipmentEventRow:
       additionalProperties: false
