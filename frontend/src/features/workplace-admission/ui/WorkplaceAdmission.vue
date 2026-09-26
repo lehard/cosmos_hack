@@ -12,11 +12,10 @@ import { NAlert } from 'naive-ui'
 import { useSession } from '@/entities/session'
 import { PRESENCE_TEXT, useAdmission, usePosts } from '@/entities/workplace'
 import type { Density } from '@/shared/config/widget'
-import { naiveSizeOf } from '@/shared/config/widget'
 import { useProblemText } from '@/shared/i18n/problem'
 import { newCommandId } from '@/shared/lib/command-id'
 import { useTokenInfo, useTokenStatus } from '@/shared/lib/token-agent'
-import { ActionButton, EmptyState, SectionPanel } from '@/shared/ui'
+
 import { admissionKey, myPosts } from '../model/admission'
 
 const props = withDefaults(defineProps<{ runId?: string; canAct?: boolean; density?: Density }>(), {
@@ -27,7 +26,6 @@ const props = withDefaults(defineProps<{ runId?: string; canAct?: boolean; densi
 
 const { t } = useI18n()
 const problemText = useProblemText()
-const size = computed(() => naiveSizeOf(props.density))
 const session = useSession()
 const postsQ = usePosts(computed(() => (props.runId ? { run_id: props.runId } : {})))
 const status = useTokenStatus()
@@ -60,43 +58,117 @@ async function release(workplaceId: string): Promise<void> {
 </script>
 
 <template>
-  <SectionPanel :title="t('widgets.shopFloor.terminal.admission.title')" :subtitle="t('widgets.shopFloor.terminal.admission.hint')" variant="subtle" data-testid="admission">
-    <div v-if="workplace" class="line">
-      <strong class="ant-wrap">{{ t('widgets.shopFloor.terminal.admission.admitted', { workplace: workplace.title }) }}</strong>
-      <ActionButton
-        :size="size"
-        :disabled="!canAct || admission.isPending.value"
-        :label="t('widgets.shopFloor.terminal.admission.release')"
-        data-testid="admission-release"
-        @click="release(workplace.id)"
-      />
-    </div>
+  <!-- На посту — одна тихая строка; не на посту — крупно «встаньте на пост» и посты кнопками. -->
+  <section class="admission" data-testid="admission">
+    <p v-if="workplace" class="quiet line">
+      <span>{{ t('widgets.shopFloor.terminal.admission.admitted', { workplace: workplace.title }) }}</span>
+      <button type="button" class="link" :disabled="!canAct || admission.isPending.value" data-testid="admission-release" @click="release(workplace.id)">
+        {{ t('widgets.shopFloor.terminal.admission.release') }}
+      </button>
+    </p>
     <template v-else>
-      <NAlert v-if="!key" type="info" :bordered="false" data-testid="admission-key">{{ t('widgets.shopFloor.terminal.admission.keyMissing') }}</NAlert>
-      <EmptyState v-if="!posts.length" compact :title="t('widgets.shopFloor.terminal.admission.noPosts')" />
-      <div v-for="p in posts" :key="p.workplace_id" class="line" data-testid="admission-post">
-        <span class="ant-wrap">{{ p.station }}</span>
-        <span class="ant-muted">{{ t(PRESENCE_TEXT[p.presence]) }}</span>
-        <ActionButton
-          type="primary"
-          :size="size"
-          :disabled="!canAct || admission.isPending.value"
-          :label="t('widgets.shopFloor.terminal.admission.open')"
-          data-testid="admission-open"
-          @click="admit(p.workplace_id)"
-        />
-      </div>
+      <p class="head">Встаньте на пост</p>
+      <p v-if="!key" class="quiet" data-testid="admission-key">{{ t('widgets.shopFloor.terminal.admission.keyMissing') }}</p>
+      <p v-if="!posts.length" class="quiet">{{ t('widgets.shopFloor.terminal.admission.noPosts') }}</p>
+      <ul v-else class="cards">
+        <li v-for="p in posts" :key="p.workplace_id" class="card" data-testid="admission-post">
+          <p class="title">{{ p.station }}</p>
+          <p class="quiet">{{ t(PRESENCE_TEXT[p.presence]) }}</p>
+          <button type="button" class="go" :disabled="!canAct || admission.isPending.value" data-testid="admission-open" @click="admit(p.workplace_id)">
+            {{ t('widgets.shopFloor.terminal.admission.open') }} →
+          </button>
+        </li>
+      </ul>
+      <p class="quiet" :title="t('widgets.shopFloor.terminal.admission.hint')">Допуск — по назначению мастера на смену, СКУД и ключу</p>
     </template>
     <NAlert v-if="admission.error.value" type="error" :bordered="false" data-testid="admission-error">{{ problemText(admission.error.value) }}</NAlert>
-    <NAlert v-else-if="result" type="success" :bordered="false">{{ result }}</NAlert>
-  </SectionPanel>
+  </section>
 </template>
 
 <style scoped>
+.admission {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ant-space-3);
+  min-width: 0;
+}
+
+p {
+  margin: 0;
+}
+
+.head {
+  font-size: var(--ant-fs-title);
+}
+
+.quiet {
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-meta);
+}
+
 .line {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
+  gap: var(--ant-space-2);
+  align-items: baseline;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--ant-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ant-space-1);
+  padding: var(--ant-space-3) var(--ant-space-4);
+  border: 1px solid var(--ant-border);
+  border-left: 4px solid var(--ant-accent);
+  border-radius: var(--ant-radius-md);
+  background: var(--ant-surface);
+}
+
+.title {
+  font-size: var(--ant-fs-title);
+  font-weight: var(--ant-fw-bold);
+}
+
+.go,
+.link {
+  font: inherit;
+  cursor: pointer;
+}
+
+.go {
+  align-self: flex-start;
+  margin-top: var(--ant-space-2);
+  padding: var(--ant-space-1) var(--ant-space-3);
+  border: 1px solid var(--ant-accent);
+  border-radius: var(--ant-radius-md);
+  background: var(--ant-accent-soft);
+  color: var(--ant-accent);
+  font-weight: var(--ant-fw-bold);
+}
+
+.go:hover {
+  background: var(--ant-surface-hover);
+}
+
+.link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ant-accent);
+}
+
+.go:disabled,
+.link:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 </style>

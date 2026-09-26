@@ -140,33 +140,6 @@ function inject(item: Injection): void {
       <form v-if="scenario" class="config" data-testid="config" @submit.prevent="!cfgError && canAct && emit('start')">
         <h4>{{ t('widgets.scenarios.config.title') }}</h4>
         <p v-if="scenario.description" class="muted">{{ scenario.description }}</p>
-        <label>
-          <span>{{ t('testStand.config.items') }}</span>
-          <NInputNumber
-            :value="config.items"
-            :min="0"
-            :max="ITEMS_MAX"
-            :precision="0"
-            clearable
-            size="small"
-            :placeholder="t('widgets.scenarios.config.fromDefinition')"
-            data-testid="cfg-items"
-            @update:value="(v: number | null) => patch({ items: v })"
-          />
-        </label>
-        <label>
-          <span>{{ t('testStand.config.seed') }}</span>
-          <NInputNumber
-            :value="config.seed"
-            :min="0"
-            :precision="0"
-            clearable
-            size="small"
-            :placeholder="t('widgets.scenarios.config.fromDefinition')"
-            data-testid="cfg-seed"
-            @update:value="(v: number | null) => patch({ seed: v })"
-          />
-        </label>
         <div class="field">
           <span>{{ t('testStand.config.timeSpeed', { speed: config.speed }) }}</span>
           <div class="speeds">
@@ -184,9 +157,10 @@ function inject(item: Injection): void {
         <div class="field">
           <span>{{ t('widgets.scenarios.config.mode') }}</span>
           <NRadioGroup :value="config.mode" size="small" @update:value="(v: RunConfig['mode']) => patch({ mode: v })">
-            <NRadioButton value="interactive" data-testid="cfg-mode-interactive">{{ t('widgets.scenarios.mode.interactive') }}</NRadioButton>
-            <NRadioButton value="autocheck" data-testid="cfg-mode-autocheck">{{ t('widgets.scenarios.mode.autocheck') }}</NRadioButton>
+            <NRadioButton value="interactive" data-testid="cfg-mode-interactive">Интерактивно</NRadioButton>
+            <NRadioButton value="autocheck" data-testid="cfg-mode-autocheck">Автопроверка</NRadioButton>
           </NRadioGroup>
+          <span class="muted">{{ t(`widgets.scenarios.mode.${config.mode}`) }}</span>
         </div>
         <p v-if="cfgError" class="error" data-testid="cfg-error">{{ t(cfgError) }}</p>
         <ActionButton type="primary" attr-type="submit" :disabled="!canAct || busy || !!cfgError" data-testid="start" :label="t('testStand.controls.start')" />
@@ -218,9 +192,7 @@ function inject(item: Injection): void {
           <dd data-testid="run-speed">×{{ run.speed }}</dd>
           <template v-if="!idle">
             <dt>{{ t('widgets.scenarios.config.mode') }}</dt>
-            <dd>{{ t(`widgets.scenarios.mode.${run.mode}`) }}</dd>
-            <dt>{{ t('testStand.config.seed') }}</dt>
-            <dd>{{ run.seed }}</dd>
+            <dd>{{ run.mode === 'autocheck' ? 'Автопроверка' : 'Интерактивно' }}</dd>
             <dt>{{ t('widgets.scenarios.startedAt') }}</dt>
             <dd>{{ time(run.started_at) }}</dd>
             <template v-if="run.finished_at">
@@ -231,7 +203,6 @@ function inject(item: Injection): void {
           <dt>{{ t('desks.verificationBoard') }}</dt>
           <dd data-testid="run-board">{{ t('widgets.scenarios.boardScore', { passed: run.board_passed, total: run.board_total }) }}</dd>
         </dl>
-        <p v-if="!idle" class="muted">{{ t('testStand.runIsolated') }}</p>
 
         <NAlert v-if="run.state === 'paused' && !idle" type="info" :bordered="false" :show-icon="false" data-testid="paused">
           {{ t('testStand.pausedState', { time: time(run.clock_at) }) }}
@@ -308,10 +279,15 @@ function inject(item: Injection): void {
 </template>
 
 <style scoped>
+.field :deep(.n-radio-group) {
+  display: flex;
+  flex-wrap: wrap;
+}
+
 .console {
   display: grid;
-  grid-template-columns: minmax(240px, 1fr) minmax(280px, 1.2fr);
-  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 40px;
   font-size: var(--ant-fs-body);
 }
 
@@ -391,8 +367,8 @@ h4 {
 
 .facts {
   display: grid;
-  grid-template-columns: max-content 1fr;
-  gap: 2px 12px;
+  grid-template-columns: 9em 1fr;
+  gap: 6px 16px;
   margin: 0;
 }
 
