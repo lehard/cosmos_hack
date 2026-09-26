@@ -432,7 +432,12 @@ func (c *Ctx) presentationView(it *Item, r ncapp.DecisionQueueRow) ncapp.NCPrese
 		rv := &ncapp.NCPresentationReview{Decision: recRef(decision), KnownAtDecision: slices.Clone(v.MethodResults), NewFacts: []ncapp.NCRecordRef{}}
 		for _, x := range c.M.Spec.Reviews {
 			if e := c.M.lateRecord(x.LateEvent); x.Item == it.ID && e != nil && !e.Recorded.After(c.T) {
-				rv.NewFacts = append(rv.NewFacts, recRef(e))
+				// Новый факт словами по источнику, как в очереди контролёра; код записи — в event_id.
+				nf := recRef(e)
+				if v, sp := e.Params["value"], e.Params["setpoint"]; v != "" && sp != "" {
+					nf.Summary = fmt.Sprintf("%s: ток %s А при уставке %s — первое отклонение", c.M.sourceLabel(e), v, sp)
+				}
+				rv.NewFacts = append(rv.NewFacts, nf)
 				c.reviewBasis(it, x, decision, e, rv, &v)
 			}
 		}

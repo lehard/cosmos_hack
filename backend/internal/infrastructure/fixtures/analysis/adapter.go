@@ -32,7 +32,11 @@ func (Adapter) Circumstances(ctx context.Context, ncID string, m platform.Moment
 
 // Hypotheses — гипотезы по несоответствию (analysis.hypothesis.list).
 func (Adapter) Hypotheses(ctx context.Context, ncID string, m platform.Moment) (app.Hypotheses, error) {
-	return respond[app.Hypotheses](ctx, "analysis.hypothesis.list", nc(ncID), &m)
+	h, err := respond[app.Hypotheses](ctx, "analysis.hypothesis.list", nc(ncID), &m)
+	if err != nil {
+		return h, err
+	}
+	return withHypotheses(ctx, h, m), nil
 }
 
 // Similar — похожие случаи (analysis.similar.list).
@@ -52,42 +56,50 @@ func (Adapter) CommonFactors(ctx context.Context, groupKey string, m platform.Mo
 
 // Incidents — инциденты (analysis.incident.list); пагинации на заготовках нет.
 func (Adapter) Incidents(ctx context.Context, m platform.Moment, _ platform.Page) (app.IncidentList, error) {
-	return respond[app.IncidentList](ctx, "analysis.incident.list", nil, &m)
+	l, err := respond[app.IncidentList](ctx, "analysis.incident.list", nil, &m)
+	if err != nil {
+		return l, err
+	}
+	return withIncidents(ctx, l, m), nil
 }
 
 // RiskScope — область риска инцидента (analysis.risk_scope.read).
 func (Adapter) RiskScope(ctx context.Context, incidentID string, m platform.Moment) (app.RiskScope, error) {
-	return respond[app.RiskScope](ctx, "analysis.risk_scope.read", incident(incidentID), &m)
+	rs, err := respond[app.RiskScope](ctx, "analysis.risk_scope.read", incident(incidentID), &m)
+	if err != nil {
+		return rs, err
+	}
+	return withScope(ctx, rs, m), nil
 }
 
 // RecordHypothesis — записать гипотезу (analysis.hypothesis.record).
 func (Adapter) RecordHypothesis(ctx context.Context, ncID string, in app.RecordHypothesis) (platform.Receipt, error) {
-	return decide(ctx, "analysis.hypothesis.record", "nonconformity", ncID, in.CommandMeta())
+	return recordNC(ctx, "analysis.hypothesis.record", ncID, in.CommandMeta(), in)
 }
 
 // ConcludeCause — подтвердить причину (analysis.cause.conclude).
 func (Adapter) ConcludeCause(ctx context.Context, incidentID string, in app.ConcludeCause) (platform.Receipt, error) {
-	return decide(ctx, "analysis.cause.conclude", "incident", incidentID, in.CommandMeta())
+	return record(ctx, "analysis.cause.conclude", incidentID, in.CommandMeta(), in)
 }
 
 // RejectHypothesis — отклонить гипотезу (analysis.hypothesis.reject).
 func (Adapter) RejectHypothesis(ctx context.Context, ncID string, in app.RejectHypothesis) (platform.Receipt, error) {
-	return decide(ctx, "analysis.hypothesis.reject", "nonconformity", ncID, in.CommandMeta())
+	return recordNC(ctx, "analysis.hypothesis.reject", ncID, in.CommandMeta(), in)
 }
 
 // RequestMeasurement — запросить измерение (analysis.measurement.request).
 func (Adapter) RequestMeasurement(ctx context.Context, ncID string, in app.RequestMeasurement) (platform.Receipt, error) {
-	return decide(ctx, "analysis.measurement.request", "nonconformity", ncID, in.CommandMeta())
+	return recordNC(ctx, "analysis.measurement.request", ncID, in.CommandMeta(), in)
 }
 
 // NarrowScope — сузить область риска (analysis.scope.narrow).
 func (Adapter) NarrowScope(ctx context.Context, incidentID string, in app.ChangeScope) (platform.Receipt, error) {
-	return decide(ctx, "analysis.scope.narrow", "incident", incidentID, in.CommandMeta())
+	return record(ctx, "analysis.scope.narrow", incidentID, in.CommandMeta(), scopeChange{Narrow: true, In: in})
 }
 
 // ExpandScope — расширить область риска (analysis.scope.expand).
 func (Adapter) ExpandScope(ctx context.Context, incidentID string, in app.ChangeScope) (platform.Receipt, error) {
-	return decide(ctx, "analysis.scope.expand", "incident", incidentID, in.CommandMeta())
+	return record(ctx, "analysis.scope.expand", incidentID, in.CommandMeta(), scopeChange{In: in})
 }
 
 // AssessItem — оценить изделие в инциденте (analysis.item.assess).
@@ -119,12 +131,12 @@ func (Adapter) CloseIncident(ctx context.Context, incidentID string, in app.Clos
 			}
 		}
 	}
-	return decide(ctx, "analysis.incident.close", "incident", incidentID, in.CommandMeta())
+	return record(ctx, "analysis.incident.close", incidentID, in.CommandMeta(), in)
 }
 
 // AssignAction — назначить меру (analysis.action.assign).
 func (Adapter) AssignAction(ctx context.Context, incidentID string, in app.AssignAction) (platform.Receipt, error) {
-	return decide(ctx, "analysis.action.assign", "incident", incidentID, in.CommandMeta())
+	return record(ctx, "analysis.action.assign", incidentID, in.CommandMeta(), in)
 }
 
 // ImplementAction — мера выполнена (analysis.action.implement).

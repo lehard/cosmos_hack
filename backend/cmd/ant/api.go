@@ -12,10 +12,12 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"ant/cmd/internal/db"
+	materialsapp "ant/internal/application/materials"
 	opsapp "ant/internal/application/ops"
 	"ant/internal/application/platform"
 	"ant/internal/infrastructure/fixtures/loader"
 	storagefx "ant/internal/infrastructure/storage/fixtures"
+	materialsstore "ant/internal/infrastructure/storage/materials"
 	"ant/internal/infrastructure/transport/webui"
 )
 
@@ -136,6 +138,14 @@ func runAPI(ctx context.Context, env *environment) error {
 		// Эпик 31: импорт условной сборки КОМПАС через приём, проекция cad.assembly.
 		if opts.cad, err = cadLive(ctx, env, opts.ingest); err != nil {
 			return err
+		}
+	}
+	if modeOf(opts, "materials") == platform.ModeLive {
+		// Загрузка скана бумажной подписи (FR-139) и чтение материалов по адресу — том материалов.
+		if mat, err := materialsstore.NewVolume(env.cfg.Materials.Dir, materialsOptions(env.cfg)...); err == nil {
+			opts.materials = materialsapp.NewService(mat)
+		} else {
+			env.log.Warn("materials: хранилище материалов недоступно — загрузка отвечает 501", "err", err)
 		}
 	}
 	if modeOf(opts, "federation") == platform.ModeLive {
