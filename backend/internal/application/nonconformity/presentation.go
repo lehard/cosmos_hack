@@ -27,7 +27,7 @@ func (s *Service) Presentation(ctx context.Context, itemID string, m platform.Mo
 		return NCPresentationView{}, err
 	}
 	st := v.State()
-	out := NCPresentationView{ItemID: v.ItemID, ItemLabel: v.ItemID, MethodResults: []NCRecordRef{}, BasisSeq: v.BasisSeq}
+	out := NCPresentationView{ItemID: v.ItemID, ItemLabel: v.Label(), MethodResults: []NCRecordRef{}, BasisSeq: v.BasisSeq}
 	var p NCPresentationPoint
 	var open *review
 	var reviewed dom.PresentationResolvedData

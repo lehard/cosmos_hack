@@ -362,7 +362,7 @@ func (s *Service) RiskScope(ctx context.Context, incidentID string, m platform.M
 	if v.WindowStart != nil && v.WindowEnd != nil {
 		out.Window = &TimeWindow{Start: *v.WindowStart, End: *v.WindowEnd}
 		if v.KnownGoodItem != "" {
-			out.LastKnownGood = &KnownGood{Label: dom.LocalID(v.KnownGoodItem) + " — последняя подтверждённо годная деталь", At: *v.WindowStart}
+			out.LastKnownGood = &KnownGood{Label: s.itemLabel(ctx, v.KnownGoodItem) + " — последняя подтверждённо годная деталь", At: *v.WindowStart}
 		}
 	}
 	for _, x := range versionsAt(v, m) {
@@ -392,7 +392,7 @@ func (s *Service) RiskScope(ctx context.Context, incidentID string, m platform.M
 		if err != nil {
 			return RiskScope{}, err
 		}
-		out.Items = append(out.Items, ScopeItem{ItemID: id, Label: dom.LocalID(id), Known: mem.Status, Action: mem.Action,
+		out.Items = append(out.Items, ScopeItem{ItemID: id, Label: labelOf(iv), Known: mem.Status, Action: mem.Action,
 			Location: dom.Location(iv.State, v.StepKey)})
 		if mem.Status != dom.StatusExcluded && mem.Status != dom.StatusConfirmed {
 			views = append(views, iv)
@@ -471,6 +471,24 @@ func (s *Service) driftOption(ctx context.Context, v dom.IncidentRecord, views [
 	o.Label = fmt.Sprintf("Исключить выполненные на %s до выхода режима из уставки (%d) — журнал %s", name, len(o.ItemIDs), name)
 	o.ReasonText = fmt.Sprintf("Журнал %s: режим впервые вне уставки %s; выполнения на %s до этого — в уставке", name, at, name)
 	return []NarrowOption{o}
+}
+
+// labelOf — метка изделия из проекции разбора; нет — номер из id.
+func labelOf(iv ItemView) string {
+	if iv.Label != "" {
+		return iv.Label
+	}
+	return dom.LocalID(iv.ItemID)
+}
+
+// itemLabel — метка изделия по id (проекция разбора; нет — номер из id).
+func (s *Service) itemLabel(ctx context.Context, id string) string {
+	iv, err := s.item(ctx, id)
+	if err != nil {
+		return dom.LocalID(id)
+	}
+	iv.ItemID = id
+	return labelOf(iv)
 }
 
 // narrowOptions — сужение по оборудованию (FR-61): изделия области «под
