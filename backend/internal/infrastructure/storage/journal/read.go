@@ -19,7 +19,7 @@ import (
 // DefaultReadLimit — предел чтения без явного Limit.
 const DefaultReadLimit = 1000
 
-// Read — записи цепочки в порядке seq с фильтрами потока, партиции, типа,
+// Read — записи цепочки в порядке seq с фильтрами потока, изделия, партиции, типа,
 // прогона и момента (AD-22, AD-37):
 //   - ось recorded («что мы знали на T») — префикс журнала по seq: все записи
 //     до последней с recorded_at ≤ T (recorded_at не убывает по seq, поэтому
@@ -55,6 +55,9 @@ func (s *Store) Read(ctx context.Context, q app.ReadQuery) ([]jc.JournalEntry, e
 	}
 	if q.Stream != "" {
 		add("stream = $%d", q.Stream)
+	}
+	if q.ItemID != "" {
+		add("item_id = $%d", q.ItemID)
 	}
 	if q.Partition != nil {
 		add("partition = $%d", *q.Partition)

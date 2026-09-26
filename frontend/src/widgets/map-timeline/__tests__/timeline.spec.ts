@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { effectScope } from 'vue'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { liveMapKeys, type TimelineData } from '@/entities/live-map'
-import type { Envelope } from '@/shared/api/pending'
+import type { Envelope } from '@/shared/api/response'
 import { i18n } from '@/shared/i18n'
 import { useMomentStore } from '@/shared/model/moment'
 import { advance, toMoment, usePlayback } from '../model/playback'
@@ -34,9 +34,23 @@ beforeEach(() => {
   vi.useFakeTimers()
 })
 afterEach(() => {
+  vi.unstubAllGlobals()
   vi.useRealTimers()
   document.body.innerHTML = ''
 })
+
+
+/** Сервер отвечает problem+json с кодом (сгенерированный клиент бросает ошибку с info). */
+const serverFails = () =>
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () =>
+      new Response(JSON.stringify({ type: 'urn:ant:problem:api.not_implemented', title: 'Операция ещё не реализована', status: 501, code: 'api.not_implemented' }), {
+        status: 501,
+        headers: { 'Content-Type': 'application/problem+json' },
+      }),
+    ),
+  )
 
 describe('модель воспроизведения', () => {
   it('шаг времени и конец истории', () => {
@@ -96,6 +110,8 @@ describe('виджет «Таймлайн»', () => {
     const router = createRouter({ history: createMemoryHistory(), routes: [{ path: '/desk', component: { template: '<div />' } }] })
     await router.push(route)
     if (seed) {
+      // Смена оси — новый ключ и настоящий запрос: сервер отдаёт тот же таймлайн.
+      vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify(seed), { status: 200, headers: { 'Content-Type': 'application/json' } })))
       const params = router.currentRoute.value.query.run ? { run_id: String(router.currentRoute.value.query.run) } : {}
       queryClient.setQueryData<Envelope<TimelineData>>(liveMapKeys.list('timeline', params, { axis: 'occurred' }), { data: seed })
     }
@@ -142,7 +158,8 @@ describe('виджет «Таймлайн»', () => {
     expect(moment.asOf).toBe('2026-09-23T10:41:00.000Z')
   })
 
-  it('операции ещё нет — «ошибка входа», но «Сейчас» и переход к моменту остаются', async () => {
+  it('сервер ответил ошибкой — «ошибка входа», но «Сейчас» и переход к моменту остаются', async () => {
+    serverFails()
     const { w } = await mountWidget(null)
     await vi.waitFor(() => expect(w.find('.widget-frame').attributes('data-state')).toBe('input_error'))
     expect(w.find('[data-action="live"]').exists()).toBe(true)

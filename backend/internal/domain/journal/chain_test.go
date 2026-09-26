@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	jc "ant/internal/contracts/journal"
+	"ant/internal/domain/kernel"
 )
 
 func pending(n int) jc.JournalEntry {
@@ -13,7 +14,7 @@ func pending(n int) jc.JournalEntry {
 		Seq: n, Chain: jc.JournalEntryChainMain, EntryKind: jc.JournalEntryEntryKindFact,
 		EventType: "operation.run.started", SchemaVersion: 1,
 		EventID:  "01929a2b-7c3d-7e4f-8a5b-6c7d8e9f0a1b",
-		SourceID: "terminal-weld-2", ItemID: &item, Stream: ItemStream(item), Partition: Partition(item, 16),
+		SourceID: "terminal-weld-2", ItemID: &item, Stream: ItemStream(item), Partition: kernel.PartitionOf(item, 16),
 		OccurredAt: "2026-09-25T10:15:30.123Z", ReceivedAt: "2026-09-25T10:15:30.200Z",
 		RecordedAt: "2026-09-25T10:15:30.210Z", CommittedAt: "2026-09-25T10:15:30.210Z",
 		CorrelationID: "01929a2b-7c3d-7e4f-8a5b-000000000001", ProvenanceClass: jc.JournalEntryProvenanceClassPersonal,
@@ -64,15 +65,5 @@ func TestSealVerifyAndTamper(t *testing.T) {
 	e.Commit = chain[1].Link
 	if _, _, err := OpenPlain(e); err == nil {
 		t.Fatal("commit не сверен с конвертом")
-	}
-}
-
-func TestPartitionStable(t *testing.T) {
-	// Значение закреплено: смена хеша партиции — перераспределение всего журнала.
-	if got := Partition("ENT01:FL-0007", 16); got != Partition("ENT01:FL-0007", 16) || got < 0 || got >= 16 {
-		t.Fatalf("Partition = %d", got)
-	}
-	if Partition("x", 0) != 0 {
-		t.Fatal("P = 0")
 	}
 }

@@ -84,7 +84,16 @@ type Config struct {
 		Partitions int `yaml:"partitions"`
 		// FoldParallelism — параллелизм свёртки изделий внутри воркера.
 		FoldParallelism int `yaml:"fold_parallelism"`
+		// LeaseTTL — срок аренд партиций воркеров и ролей-лидеров (crossitem,
+		// projector) по InfraClock; продление — каждые TTL/3 (AD-6).
+		LeaseTTL time.Duration `yaml:"lease_ttl"`
 	} `yaml:"engine"`
+
+	Materials struct {
+		// Dir — каталог тома хранилища материалов по адресу содержимого
+		// (MaterialStore, ключ material_store: volume; AD-23).
+		Dir string `yaml:"dir"`
+	} `yaml:"materials"`
 
 	Journal struct {
 		// BatchMax — предельное число записей в пачке journal.Append (AD-44).
@@ -92,6 +101,17 @@ type Config struct {
 		// BatchWait — предельное ожидание добора пачки (AD-44: 50 мс).
 		BatchWait time.Duration `yaml:"batch_wait"`
 	} `yaml:"journal"`
+
+	Stands struct {
+		// Addr — адрес HTTP роли stands: протоколы stand-ов /stand/‹имя›/ и
+		// служебный порт сбоев /stand/_control/ (AD-18, эпик 06).
+		Addr string `yaml:"addr"`
+		// EdgeURL — локальный вход edge-агента для телеметрии stand-а
+		// оборудования; пусто — stand оборудования выключен.
+		EdgeURL string `yaml:"edge_url"`
+		// Interval — период телеметрии stand-а оборудования.
+		Interval time.Duration `yaml:"interval"`
+	} `yaml:"stands"`
 
 	Integrations struct {
 		// Enabled — включённые внешние системы (stand-ы или настоящие адаптеры).
@@ -178,6 +198,12 @@ func (c *Config) Validate() error {
 	}
 	if c.Engine.Partitions <= 0 {
 		errs = append(errs, errors.New("engine.partitions должно быть > 0"))
+	}
+	if c.Stands.Interval < 0 {
+		errs = append(errs, errors.New("stands.interval должно быть ≥ 0 (0 — 5 с)"))
+	}
+	if c.Engine.LeaseTTL < 0 {
+		errs = append(errs, errors.New("engine.lease_ttl должно быть ≥ 0 (0 — 10 с)"))
 	}
 	switch c.Log.Level {
 	case "debug", "info", "warn", "error":

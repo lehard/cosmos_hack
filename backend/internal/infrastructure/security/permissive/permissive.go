@@ -3,10 +3,11 @@
 // сеансов (субъект анонимный). Общий декоратор (application/access.Gate) уже
 // вызывается для каждой операции; эпик 08 заменяет адаптеры на Casbin и
 // локальных пользователей с демо-персонами — без правки операций (AD-15, AD-35).
+// Signer — конверт DSSE без подписи для записей движка до эпика 05.
 //
 // Слой: infrastructure/security — технический механизм (AD-1); реализует
-// порты application/access; ключ конфигурации access_control = permissive,
-// identity_provider = none.
+// порты application/access и application/signing.Signer; ключ конфигурации
+// access_control = permissive, identity_provider = none.
 package permissive
 
 import (

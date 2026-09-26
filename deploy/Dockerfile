@@ -31,6 +31,9 @@ COPY backend/ ./
 COPY --from=frontend /src/frontend/dist/ ./internal/infrastructure/transport/webui/dist/
 RUN --mount=type=cache,target=/root/.cache/go-build,id=ant-gobuild \
     go build -trimpath -ldflags "-s -w -X main.version=${VERSION}" -o /out/ant ./cmd/ant
+# Каталог тома материалов (materials.dir): именованный том при первом
+# подключении наследует владельца — пользователя исполнения 65532.
+RUN mkdir -p /out/var/lib/ant/materials
 
 # ------------------------------------------------------------ исполнение --
 FROM ${RUNTIME_IMAGE}
@@ -40,6 +43,7 @@ LABEL ant.project="ant" \
       org.opencontainers.image.description="Доверенная система контроля качества деталей" \
       org.opencontainers.image.version="${VERSION}"
 COPY --from=backend /out/ant /ant
+COPY --from=backend --chown=65532:65532 /out/var/lib/ant /var/lib/ant
 COPY deploy/config/ant.yaml /etc/ant/ant.yaml
 USER 65532:65532
 EXPOSE 8080

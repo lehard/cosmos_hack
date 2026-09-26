@@ -22,6 +22,16 @@ import (
 
 // Open создаёт пул; соединения устанавливаются лениво, при первом запросе.
 func Open(ctx context.Context, c config.DB, appName string) (*pgxpool.Pool, error) {
+	pc, err := Config(c, appName)
+	if err != nil {
+		return nil, err
+	}
+	return pgxpool.NewWithConfig(ctx, pc)
+}
+
+// Config — настройки пула по конфигурации (для пулов с особой настройкой
+// соединений, например storage/journal.NewAppPool — SET ROLE ant_app).
+func Config(c config.DB, appName string) (*pgxpool.Config, error) {
 	pc, err := pgxpool.ParseConfig("")
 	if err != nil {
 		return nil, err
@@ -52,7 +62,7 @@ func Open(ctx context.Context, c config.DB, appName string) (*pgxpool.Pool, erro
 	if c.MaxConns > 0 {
 		pc.MaxConns = int32(c.MaxConns)
 	}
-	return pgxpool.NewWithConfig(ctx, pc)
+	return pc, nil
 }
 
 // WaitReady ждёт, пока БД ответит на ping, но не дольше timeout.

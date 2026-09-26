@@ -14,6 +14,7 @@ import (
 	"ant/internal/application/platform"
 	jc "ant/internal/contracts/journal"
 	dj "ant/internal/domain/journal"
+	"ant/internal/domain/kernel"
 	store "ant/internal/infrastructure/storage/journal"
 	"ant/internal/infrastructure/storage/journal/clock"
 	jt "ant/internal/infrastructure/storage/journal/journaltest"
@@ -244,7 +245,7 @@ func TestConcurrencyChecks(t *testing.T) {
 	if _, err := s.Append(ctx, app.AppendRequest{Batch: []app.Pending{decision()}, Checks: []app.Check{{Stream: stream, BasisSeq: h.MainSeq, ItemProcessed: true}}}); !errors.Is(err, app.ErrStaleState) {
 		t.Fatalf("необработанный вход: %v", err)
 	}
-	part := dj.Partition(item, 4)
+	part := kernel.PartitionOf(item, 4)
 	if _, err := s.Append(ctx, app.AppendRequest{Consumer: &app.CursorAdvance{Name: app.WorkerConsumer, Partition: part, Seq: h.MainSeq}}); err != nil {
 		t.Fatal(err)
 	}
@@ -381,7 +382,7 @@ func TestReadMoment(t *testing.T) {
 		t.Fatalf("последняя запись: %v %v", last, err)
 	}
 	p := 0
-	if es, _ := s.Read(ctx, app.ReadQuery{Partition: &p}); dj.Partition(item, 4) != 0 && len(es) != 0 {
+	if es, _ := s.Read(ctx, app.ReadQuery{Partition: &p}); kernel.PartitionOf(item, 4) != 0 && len(es) != 0 {
 		t.Fatalf("фильтр партиции: %d записей", len(es))
 	}
 }

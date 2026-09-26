@@ -13,6 +13,7 @@ import (
 	"ant/internal/application/platform"
 	jc "ant/internal/contracts/journal"
 	dj "ant/internal/domain/journal"
+	"ant/internal/domain/kernel"
 	store "ant/internal/infrastructure/storage/journal"
 	"ant/internal/infrastructure/storage/journal/feed"
 	jt "ant/internal/infrastructure/storage/journal/journaltest"
@@ -188,8 +189,8 @@ func TestWorkFeed(t *testing.T) {
 	byPart := map[int]string{}
 	for i := 0; len(byPart) < P && i < 1000; i++ {
 		item := fmt.Sprintf("ENT01:W-%d", i)
-		if _, ok := byPart[dj.Partition(item, P)]; !ok {
-			byPart[dj.Partition(item, P)] = item
+		if _, ok := byPart[kernel.PartitionOf(item, P)]; !ok {
+			byPart[kernel.PartitionOf(item, P)] = item
 		}
 	}
 	part := p1[0]

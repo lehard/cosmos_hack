@@ -90,6 +90,11 @@ func RegisterStream(a *API, subscribe Subscribe) {
 			hctx.SetHeader("Cache-Control", "no-store")
 			hctx.SetHeader("Ant-Backend", string(mode))
 			w := hctx.BodyWriter()
+			// Заголовки — сразу: клиент видит открытый поток (EventSource
+			// «open») до первого изменения.
+			if f, ok := w.(http.Flusher); ok {
+				f.Flush()
+			}
 			for {
 				ev, err := next(hctx.Context())
 				if err != nil {

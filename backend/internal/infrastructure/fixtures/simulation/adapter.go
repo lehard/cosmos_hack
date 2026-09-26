@@ -1,11 +1,31 @@
 package simulation
 
-import app "ant/internal/application/simulation"
+import (
+	"context"
+	"fmt"
+	"strings"
+	"sync/atomic"
+	"time"
 
-// Adapter — реализация fixtures ведущих портов модуля simulation. В волне 1 —
-// заглушка: все операции отвечают 501 (app.Unimplemented).
+	"ant/internal/application/platform"
+	app "ant/internal/application/simulation"
+	"ant/internal/contracts/constants"
+	"ant/internal/contracts/errcodes"
+	"ant/internal/domain/kernel"
+	"ant/internal/infrastructure/fixtures/loader"
+)
+
+// Adapter — реализация fixtures ведущих портов модуля simulation — пульт
+// тестовых сценариев на мире заготовок (FR-129, AD-36, AD-38): сценарии —
+// сценарии библиотеки заготовок, прогон — курсор (шаг, доменные часы, пауза,
+// скорость, ожидание решения); старт даёт новый run_id — ID ответов получают
+// префикс прогона. Табло и кнопки стенда — из мира заготовок.
 type Adapter struct {
-	app.Unimplemented
+	// Runtime — мир заготовок; nil — loader.Default() (тесты подставляют свой).
+	Runtime *loader.Runtime
+	// Now — реальные часы (InfraClock); nil — time.Now.
+	Now func() time.Time
+	seq atomic.Int64
 }
 
 // New создаёт адаптер заготовок.
@@ -15,3 +35,228 @@ var (
 	_ app.Queries  = (*Adapter)(nil)
 	_ app.Commands = (*Adapter)(nil)
 )
+
+func (a *Adapter) rt() (*loader.Runtime, error) {
+	if a.Runtime != nil {
+		return a.Runtime, nil
+	}
+	return loader.Default()
+}
+
+func (a *Adapter) now() time.Time {
+	if a.Now != nil {
+		return a.Now()
+	}
+	return time.Now()
+}
+
+// Scenarios — сценарии пульта: сценарии библиотеки заготовок (simulation.scenario.list).
+func (a *Adapter) Scenarios(context.Context) (app.ScenarioList, error) {
+	rt, err := a.rt()
+	if err != nil {
+		return app.ScenarioList{}, err
+	}
+	lib := rt.Library()
+	out := app.ScenarioList{Items: []app.Scenario{}}
+	for _, id := range lib.Scenarios() {
+		sc, _ := lib.Scenario(id)
+		mf := sc.Manifest
+		decisions := 0
+		for _, h := range mf.Steps {
+			if h.Wait != nil {
+				decisions++
+			}
+		}
+		out.Items = append(out.Items, app.Scenario{
+			ScenarioID: mf.ID, Version: "fixtures-1", Title: mf.Title, Description: mf.Description,
+			CaseRefs: append([]string{}, mf.Case...), Decisions: decisions,
+		})
+	}
+	return out, nil
+}
+
+// Runs — прогоны: текущий прогон курсора; без прогона — сценарий по
+// умолчанию на паузе под своим id (simulation.run.list).
+func (a *Adapter) Runs(ctx context.Context, _ platform.Page) (app.RunList, error) {
+	rt, err := a.rt()
+	if err != nil {
+		return app.RunList{}, err
+	}
+	st, sc, err := rt.State(ctx)
+	if err != nil {
+		return app.RunList{}, err
+	}
+	return app.RunList{Items: []app.Run{a.view(ctx, rt, st, sc)}}, nil
+}
+
+// Run — состояние прогона (simulation.run.read): шаг, часы, пауза, скорость, ожидание.
+func (a *Adapter) Run(ctx context.Context, runID string, _ platform.Moment) (app.Run, error) {
+	rt, st, sc, err := a.current(ctx, runID)
+	if err != nil {
+		return app.Run{}, err
+	}
+	return a.view(ctx, rt, st, sc), nil
+}
+
+// Board — табло «ожидалось → получилось» (simulation.board.read, AD-26).
+func (a *Adapter) Board(ctx context.Context, runID string, m platform.Moment) (app.Board, error) {
+	v, err := a.respondBoard(ctx, runID, &m)
+	if err == nil && v.RunID == "" {
+		v.RunID = runID
+	}
+	return v, err
+}
+
+// Injections — кнопки цифрового стенда (simulation.injection.list, FR-152).
+func (a *Adapter) Injections(ctx context.Context, runID string) (app.InjectionList, error) {
+	rt, err := a.rt()
+	if err != nil {
+		return app.InjectionList{}, err
+	}
+	var out app.InjectionList
+	err = rt.Respond(ctx, "simulation.injection.list", map[string]string{"run_id": runID}, nil, &out)
+	return out, err
+}
+
+// StartRun — запуск прогона сценария с шага 0 (simulation.run.start): новый run_id.
+func (a *Adapter) StartRun(ctx context.Context, scenarioID string, in app.StartRun) (platform.Receipt, error) {
+	rt, err := a.rt()
+	if err != nil {
+		return platform.Receipt{}, err
+	}
+	var runID string
+	if in.CommandID != "" {
+		runID = "fx-" + strings.ReplaceAll(kernel.UUIDv5(constants.NsAnt, "fixtures/run/"+in.CommandID), "-", "")[:8]
+	} else {
+		runID = fmt.Sprintf("fx-%d", a.seq.Add(1))
+	}
+	var seed int64
+	if in.Seed != nil {
+		seed = *in.Seed
+	}
+	st, err := rt.Start(ctx, scenarioID, runID, in.Mode, seed, in.Speed, a.now())
+	if err != nil {
+		return platform.Receipt{}, err
+	}
+	return receipt("simulation.run.start", in.CommandMeta(), st), nil
+}
+
+// PauseRun — пауза прогона (simulation.run.pause): столы показывают шаг курсора.
+func (a *Adapter) PauseRun(ctx context.Context, runID string, in app.RunControl) (platform.Receipt, error) {
+	rt, _, _, err := a.current(ctx, runID)
+	if err != nil {
+		return platform.Receipt{}, err
+	}
+	st, err := rt.Pause(ctx)
+	return receipt("simulation.run.pause", in.CommandMeta(), st), err
+}
+
+// ResumeRun — продолжение прогона (simulation.run.resume).
+func (a *Adapter) ResumeRun(ctx context.Context, runID string, in app.RunControl) (platform.Receipt, error) {
+	rt, _, _, err := a.current(ctx, runID)
+	if err != nil {
+		return platform.Receipt{}, err
+	}
+	st, err := rt.Resume(ctx)
+	return receipt("simulation.run.resume", in.CommandMeta(), st), err
+}
+
+// StopRun — остановка прогона (simulation.run.stop): курсор возвращается к
+// сценарию по умолчанию без прогона.
+func (a *Adapter) StopRun(ctx context.Context, runID string, in app.RunControl) (platform.Receipt, error) {
+	rt, st, _, err := a.current(ctx, runID)
+	if err != nil {
+		return platform.Receipt{}, err
+	}
+	if err := rt.Stop(ctx, runID, a.now()); err != nil {
+		return platform.Receipt{}, err
+	}
+	return receipt("simulation.run.stop", in.CommandMeta(), st), nil
+}
+
+// SetSpeed — ускорение доменных часов (simulation.run.set_speed).
+func (a *Adapter) SetSpeed(ctx context.Context, runID string, in app.SetSpeed) (platform.Receipt, error) {
+	rt, _, _, err := a.current(ctx, runID)
+	if err != nil {
+		return platform.Receipt{}, err
+	}
+	st, err := rt.SetSpeed(ctx, in.Speed)
+	return receipt("simulation.run.set_speed", in.CommandMeta(), st), err
+}
+
+// ApplyInjection — кнопка цифрового стенда (simulation.injection.apply): мир
+// заготовок не меняется, кроме шага ожидания именно этого действия.
+func (a *Adapter) ApplyInjection(ctx context.Context, runID string, in app.ApplyInjection) (platform.Receipt, error) {
+	rt, err := a.rt()
+	if err != nil {
+		return platform.Receipt{}, err
+	}
+	return rt.Decide(ctx, "simulation.injection.apply", loader.ObjectRef{Kind: "run", ID: runID}, in.CommandMeta())
+}
+
+// current — мир и курсор, если runID — текущий прогон (или, без прогона, id
+// сценария по умолчанию); иначе simulation.run_not_found.
+func (a *Adapter) current(ctx context.Context, runID string) (*loader.Runtime, platform.CursorState, *loader.Scenario, error) {
+	rt, err := a.rt()
+	if err != nil {
+		return nil, platform.CursorState{}, nil, err
+	}
+	st, sc, err := rt.State(ctx)
+	if err != nil {
+		return nil, st, nil, err
+	}
+	if runID == st.RunID || (st.RunID == "" && runID == sc.Manifest.ID) {
+		return rt, st, sc, nil
+	}
+	return nil, st, nil, platform.Fail(errcodes.SimulationRunNotFound, "run_id", runID)
+}
+
+func (a *Adapter) respondBoard(ctx context.Context, runID string, m *platform.Moment) (app.Board, error) {
+	rt, err := a.rt()
+	if err != nil {
+		return app.Board{}, err
+	}
+	var out app.Board
+	err = rt.Respond(ctx, "simulation.board.read", map[string]string{"run_id": runID}, m, &out)
+	return out, err
+}
+
+// view — прогон пульта из положения курсора и сведений о прогоне.
+func (a *Adapter) view(ctx context.Context, rt *loader.Runtime, st platform.CursorState, sc *loader.Scenario) app.Run {
+	runID := st.RunID
+	state := rt.RunState(st, sc)
+	if runID == "" {
+		runID = sc.Manifest.ID
+		if state == "running" {
+			state = "paused"
+		}
+	}
+	speed := st.Speed
+	if speed < 1 {
+		speed = 1
+	}
+	r := app.Run{
+		RunID: runID, ScenarioID: sc.Manifest.ID, ScenarioVersion: "fixtures-1", Mode: "interactive",
+		State: state, Speed: speed, Step: st.Step, Steps: sc.Steps(), ClockAt: st.ClockAt,
+		StartedAt: sc.Header(0).Clock, BasisSeq: loader.StepSeq(st.Step),
+	}
+	if r.ClockAt.IsZero() {
+		r.ClockAt = sc.Header(st.Step).Clock
+	}
+	if ri := rt.Run(st.RunID); ri != nil {
+		r.Mode, r.Seed, r.StartedAt, r.FinishedAt = ri.Mode, ri.Seed, ri.StartedAt, ri.FinishedAt
+	}
+	if w := sc.Header(st.Step).Wait; w != nil && state == "waiting_for_decision" {
+		r.WaitingFor = &app.RunWait{Role: w.Role, Action: w.Action, ObjectID: sc.PrefixID(w.Object.ID, st.RunID)}
+	}
+	if b, err := a.respondBoard(ctx, runID, nil); err == nil {
+		r.BoardPassed, r.BoardTotal = b.Passed, len(b.Rows)
+	}
+	return r
+}
+
+// receipt — квитанция команды пульта (AD-7): seq шага курсора, id — UUIDv5.
+func receipt(op string, meta platform.CommandMeta, st platform.CursorState) platform.Receipt {
+	id := kernel.UUIDv5(constants.NsAnt, fmt.Sprintf("fixtures/%s/%s/%d/%s", op, st.RunID, st.Step, meta.CommandID))
+	return platform.Receipt{CommandID: meta.CommandID, Seq: loader.StepSeq(st.Step), EventIDs: []string{id}, RecordedAt: st.ClockAt}
+}

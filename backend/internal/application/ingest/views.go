@@ -17,6 +17,7 @@ import (
 type IngestBatch struct {
 	SourceID  string                `json:"source_id" maxLength:"128" doc:"Источник пачки (устройство, шлюз, терминал); в прогоне — ‹run_id›/‹источник› (AD-38)."`
 	Envelopes []crypto.DsseEnvelope `json:"envelopes" minItems:"1" maxItems:"1000" doc:"Подписанные конверты в порядке source_seq."`
+	SentAt    *time.Time            `json:"sent_at,omitempty" doc:"Время отправки пачки по часам источника: по нему приём оценивает расхождение часов источника (FR-33); задержка досылки буфера сдвигом часов не считается."`
 }
 
 // IngestOutcome — итог по одному конверту пачки (FR-29…FR-31).

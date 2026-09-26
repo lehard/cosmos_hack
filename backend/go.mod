@@ -6,6 +6,7 @@ require (
 	github.com/danielgtaylor/huma/v2 v2.39.1
 	github.com/jackc/pgx/v5 v5.11.0
 	github.com/pressly/goose/v3 v3.28.0
+	github.com/santhosh-tekuri/jsonschema/v6 v6.0.3
 	go.stargrave.org/gogost/v7 v7.0.0
 	go.yaml.in/yaml/v3 v3.0.5
 )
