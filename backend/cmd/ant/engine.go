@@ -1,6 +1,7 @@
 package main
 
 import (
+	accessapp "ant/internal/application/access"
 	"context"
 	"errors"
 	"time"
@@ -230,7 +231,7 @@ func machinelogsLive(ctx context.Context, env *environment) (*machinelogsapp.Ser
 // 22): чтение — проекции analysis.* на ядре процесса; команды — гард над
 // состоянием инцидента и решение в журнал ядра; доменное «сейчас» — часы
 // журнала (AD-37).
-func analysisLive(ctx context.Context, env *environment) (*analysisapp.Service, error) {
+func analysisLive(ctx context.Context, env *environment, dir *accessapp.Directory) (*analysisapp.Service, error) {
 	c, err := env.core(ctx)
 	if err != nil {
 		return nil, err
@@ -240,5 +241,7 @@ func analysisLive(ctx context.Context, env *environment) (*analysisapp.Service, 
 		Decisions: analysisapp.JournalDecisions{Journal: c.journal, DomainBuild: c.codec.DomainBuild,
 			Partitions: env.cfg.Engine.Partitions, Now: c.codec.Now},
 		Clock: c.domainClock(),
+		// Названия для стола технолога (author_name, *_label) — те же справочники, что у карточки НС.
+		Names: analysisNames{dir: dir, ref: c.refSource, bundles: c.bundleSource(), steps: &activeProcess{store: c.versions}},
 	}), nil
 }
