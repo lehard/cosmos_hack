@@ -301,7 +301,7 @@ func (s *Service) decide(ctx context.Context, st *RunState, rp *runPlan, a sim.A
 			res.Detail = "ожидался отказ " + a.Refusal
 		}
 	case out.Code != "":
-		res.Status, res.Refusal, res.Detail = "failed", out.Code, "команда отклонена"
+		res.Status, res.Refusal, res.Detail = "failed", out.Code, strings.TrimSpace("команда отклонена: "+out.Detail)
 	case a.Refusal != "":
 		res.Status, res.Detail = "failed", "ожидался отказ "+a.Refusal+", команда принята"
 	default:
