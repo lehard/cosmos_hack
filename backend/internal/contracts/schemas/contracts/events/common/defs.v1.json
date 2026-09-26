@@ -32,6 +32,12 @@
       "pattern": "^[a-z][a-z0-9_]*$",
       "maxLength": 64
     },
+    "class": {
+      "type": "string",
+      "description": "Класс подписанного пакета (contracts/crypto/payload-classes.yaml): как code, но допускает дефис — `event`, `document-signature`, `key-act` (Д-66).",
+      "pattern": "^[a-z][a-z0-9_-]*$",
+      "maxLength": 64
+    },
     "object_id": {
       "type": "string",
       "description": "Идентификатор объекта системы или справочника: ASCII, без пробелов.",

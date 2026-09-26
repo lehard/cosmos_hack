@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/integrations/erp/galaktika/gal.qc.v1/inbox.schema.json",
+  "title": "GalInbox",
+  "description": "Входящие пакеты Галактики у REST-фасада (`GET ‹фасад›/exchange/outbox`): задания, партии и каталог МЦ в JSON-форме `GalExchange`. Повторное чтение отдаёт те же пакеты с теми же номерами — дубля в журнале нет (AD-7). Каталог обмена отдаёт те же пакеты XML-файлами `in/‹номер›.xml`.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "packets": {
+      "type": "array",
+      "maxItems": 1000,
+      "items": {
+        "$ref": "exchange.schema.json"
+      },
+      "description": "Пакеты в порядке формирования."
+    }
+  },
+  "required": [
+    "packets"
+  ]
+}

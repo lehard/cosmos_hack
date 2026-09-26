@@ -47,7 +47,8 @@ func NewRegistry(j journal.JournalStore, boot []dom.Registration, base map[strin
 	r := &Registry{journal: j, keys: dom.NewRegistry(), book: dom.NewProfileBook(base), acts: map[string][]actRef{}}
 	for _, g := range boot {
 		if g.Provenance == "" {
-			g.Provenance = dom.ProvGenesis
+			// Д-67: исходный ключ — класс по назначению, не genesis.
+			g.Provenance = dom.NaturalProvenance(g.SubjectKind)
 		}
 		r.keys.ApplyRegistration(g)
 	}

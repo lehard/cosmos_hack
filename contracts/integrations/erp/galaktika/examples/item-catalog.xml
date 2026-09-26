@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GalExchange xmlns="urn:ant-qc:galaktika:v1" messageId="GAL-2026-09-25-000101" createdAt="2026-09-25T04:30:00.000Z" from="GAL-ERP-ZAVOD2" to="ant" contract="gal.qc.v1">
+  <ItemCatalog>
+    <Item designation="ФЛ-100.00.000 СБ" name="Фланец люка гермокорпуса в сборе" nrec="4611686018427388123" table="KatMC"></Item>
+    <Item designation="ФЛ-100.01.001" name="Фланец" nrec="4611686018427388124" table="KatMC"></Item>
+    <Item designation="ФЛ-100.01.002" name="Патрубок (кольцо)" nrec="4611686018427388130" table="KatMC"></Item>
+    <Item designation="ФЛ-100.00.004" name="Уплотнение кольцевое" nrec="4611686018427388131" table="KatMC"></Item>
+    <Item designation="ФЛ-099.00.000 СБ" name="Фланец прежней конструкции" nrec="4611686018427388001" table="KatMC" deleted="true"></Item>
+  </ItemCatalog>
+</GalExchange>

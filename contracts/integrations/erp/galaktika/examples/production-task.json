@@ -1,0 +1,23 @@
+{
+  "message_id": "GAL-2026-09-25-000117",
+  "created_at": "2026-09-25T05:00:00.000Z",
+  "from": "GAL-ERP-ZAVOD2",
+  "to": "ant",
+  "contract": "gal.qc.v1",
+  "production_task": {
+    "nrec": "4611686018427399001",
+    "table": "MnPlan",
+    "number": "СЗ-000812",
+    "date": "2026-09-25",
+    "due_date": "2026-10-02",
+    "quantity": 6,
+    "route_sheet": "МЛ-000812",
+    "kd_revision": "Б",
+    "item": {
+      "designation": "ФЛ-100.00.000 СБ",
+      "name": "Фланец люка гермокорпуса в сборе",
+      "nrec": "4611686018427388123",
+      "table": "KatMC"
+    }
+  }
+}

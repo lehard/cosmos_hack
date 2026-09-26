@@ -2,18 +2,13 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"time"
 
-	"ant/cmd/internal/config"
-	"ant/cmd/internal/db"
 	analyticsapp "ant/internal/application/analytics"
 	referenceapp "ant/internal/application/reference"
 	dom "ant/internal/domain/reference"
 	referencefx "ant/internal/infrastructure/fixtures/reference"
-	journalstore "ant/internal/infrastructure/storage/journal"
-	"ant/internal/infrastructure/storage/journal/clock"
 	referencestore "ant/internal/infrastructure/storage/reference"
 )
 
@@ -22,7 +17,7 @@ import (
 // нормативного слоя изделия (process.go: bundleSource) для предусловий
 // процесса и сроков notifications; календарь сроков nonconformity
 // (nonconformity.go); график смен analytics (analytics.go); живые операции
-// reference.*; стартовые справочники генезисом при migrate.
+// reference.*; стартовые справочники — записи блока генезиса (ant init, эпик 05).
 
 // referenceLive — live-реализация операций reference для роли api: чтение —
 // срез справочника из журнала ядра на момент (AD-22); команды — гард и
@@ -52,37 +47,6 @@ var referenceFixtures = sync.OnceValue(func() *referencefx.Adapter {
 	}
 	return referencefx.NewWithBook(b)
 })
-
-// seedReference — стартовые справочники демо-изделия (normative/reference/
-// flange: номенклатура, места, оборудование и поверки, производственный
-// календарь, шаблоны смен) записями генезиса (AD-33) во всех профилях,
-// кроме prod: там справочники приходят генезисом роли init (эпик 05) и
-// решениями администратора данных. Повторный migrate — дубли, новых записей нет.
-func seedReference(ctx context.Context, env *environment) error {
-	if env.cfg.Profile == config.ProfileProd {
-		return nil
-	}
-	recs, err := referencestore.SeedRecords()
-	if err != nil {
-		return fmt.Errorf("затравка справочников: %w", err)
-	}
-	pc, err := db.Config(env.cfg.DB, "ant-migrate-reference")
-	if err != nil {
-		return err
-	}
-	pool, err := journalstore.NewAppPool(ctx, pc)
-	if err != nil {
-		return err
-	}
-	defer pool.Close()
-	j := journalstore.NewStore(pool, clock.System{})
-	n, err := referenceapp.Seed(ctx, referenceapp.JournalWriter{Journal: j, DomainBuild: domainBuild(), Now: time.Now}, recs)
-	if err != nil {
-		return err
-	}
-	env.log.Info("затравка: справочники", "profile", env.cfg.Profile, "written", n, "in_seed", len(recs))
-	return nil
-}
 
 // referenceShifts — график смен справочника для analytics (FR-81): смена
 // на момент по срезу прогона; одна книга на запрос показателей.

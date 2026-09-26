@@ -504,6 +504,9 @@ func (v *run) pending() {
 		"rendering":      "повторная отрисовка документов (rendering_hash) и QR бумажных подписей — эпик 28",
 		"build":          "перечень допустимых сборок домена в нормативном слое ещё не ведётся (domain_build = H(версия бинарника))",
 	} {
+		if n == "genesis" && v.in.Genesis != nil {
+			continue // блок проверен по якорю (genesis)
+		}
 		v.checks[n].unverifiable(string(n)+".pending", why)
 	}
 }

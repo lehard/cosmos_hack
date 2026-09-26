@@ -13,20 +13,39 @@ import (
 	engineapp "ant/internal/application/engine"
 	processapp "ant/internal/application/process"
 	referenceapp "ant/internal/application/reference"
+	"ant/internal/application/signing"
 	domdocs "ant/internal/domain/documents"
 	dj "ant/internal/domain/journal"
 	"ant/internal/infrastructure/security/permissive"
+	"ant/internal/infrastructure/security/profiles"
 	enginestore "ant/internal/infrastructure/storage/engine"
 	erpstore "ant/internal/infrastructure/storage/erp"
 	journalstore "ant/internal/infrastructure/storage/journal"
 	"ant/internal/infrastructure/storage/journal/clock"
 	"ant/internal/infrastructure/storage/journal/feed"
 	processstore "ant/internal/infrastructure/storage/process"
+	storesigning "ant/internal/infrastructure/storage/signing"
 )
 
 // engineKeyRef — ключ движка key_id@версия для записей воркера, стадии и
-// проектора (AD-10). TODO(05): ключ из тома ключей и реестра доверия.
-const engineKeyRef = "engine@1"
+// проектора (AD-10): создаёт ant init в томе ant и регистрирует генезисом.
+const engineKeyRef = storesigning.EngineKeyRef
+
+// engineSigner — подпись записей движка ключом engine@1 из тома ant
+// (ANT_KEYS_DIR; эпик 05, AD-10, AD-11): верификатор проверяет её по реестру
+// ключей из генезиса. Ключа в томе нет (разработка и тесты без ant init) —
+// конверт без подписи (permissive), верификатор отметит «не проверено».
+func engineSigner(env *environment) signing.Signer {
+	dir := envOr("ANT_KEYS_DIR", "/var/lib/ant-keys")
+	ring, err := profiles.LoadDir(dir)
+	if err == nil {
+		if _, ok := ring.Key(engineKeyRef); ok {
+			return profiles.Signer{Keys: ring}
+		}
+	}
+	env.log.Warn("движок: ключа engine@1 в томе ant нет (ant init) — записи движка без подписи", "dir", dir, "err", err)
+	return permissive.Signer{}
+}
 
 // defaultLeaseTTL — срок аренд, если engine.lease_ttl не задан.
 const defaultLeaseTTL = 10 * time.Second
@@ -137,7 +156,7 @@ func openCore(ctx context.Context, env *environment) (*core, error) {
 	c.bundles = &processapp.Bundles{Store: c.versions, Quorum: processapp.RecordedQuorum{}, Now: infra.Now}
 	c.codec = &engineapp.Codec{
 		Store:  c.journal,
-		Sealer: engineapp.SignerSealer{Signer: permissive.Signer{}, KeyRef: engineKeyRef},
+		Sealer: engineapp.SignerSealer{Signer: engineSigner(env), KeyRef: engineKeyRef},
 		KeyRef: engineKeyRef, Profile: "gost",
 		DomainBuild: domainBuild(), Partitions: cfg.Engine.Partitions, Now: infra.Now,
 	}

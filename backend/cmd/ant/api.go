@@ -125,6 +125,18 @@ func runAPI(ctx context.Context, env *environment) error {
 			return err
 		}
 	}
+	if modeOf(opts, "mes") == platform.ModeLive {
+		// Эпик 31: блоки и задания MES — проекции mes.*.
+		if opts.mes, err = mesLive(ctx, env); err != nil {
+			return err
+		}
+	}
+	if modeOf(opts, "cad") == platform.ModeLive {
+		// Эпик 31: импорт условной сборки КОМПАС через приём, проекция cad.assembly.
+		if opts.cad, err = cadLive(ctx, env, opts.ingest); err != nil {
+			return err
+		}
+	}
 	if modeOf(opts, "analysis") == platform.ModeLive {
 		if opts.analysis, err = analysisLive(ctx, env); err != nil {
 			return err

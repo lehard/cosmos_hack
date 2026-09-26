@@ -133,6 +133,10 @@ type apiOptions struct {
 	// ops — состояние компонентов, остановленные изделия, настройки
 	// (ops.go, эпик 34); nil — заглушка 501.
 	ops *opsapp.Service
+	// mes, cad — блоки и задания MES, импорт сборки КОМПАС (mes.go, cad.go,
+	// эпик 31); nil — заглушка 501.
+	mes *mesapp.Service
+	cad *cadapp.Service
 }
 
 // buildAPI собирает HTTP API: общий декоратор (Gate) над портами прав и входа,
@@ -314,11 +318,19 @@ func buildAPI(mux *http.ServeMux, o apiOptions) *httpapi.API {
 		erphttp.Register(a, q, c)
 	}
 	{
-		q, c := pick[mesapp.Queries, mesapp.Commands](a.ModeFor("mes"), mesapp.NewService(), mesfx.New())
+		live := o.mes
+		if live == nil {
+			live = mesapp.NewService()
+		}
+		q, c := pick[mesapp.Queries, mesapp.Commands](a.ModeFor("mes"), live, mesfx.New())
 		meshttp.Register(a, q, c)
 	}
 	{
-		q, c := pick[cadapp.Queries, cadapp.Commands](a.ModeFor("cad"), cadapp.NewService(), cadfx.New())
+		live := o.cad
+		if live == nil {
+			live = cadapp.NewService()
+		}
+		q, c := pick[cadapp.Queries, cadapp.Commands](a.ModeFor("cad"), live, cadfx.New())
 		cadhttp.Register(a, q, c)
 	}
 	{

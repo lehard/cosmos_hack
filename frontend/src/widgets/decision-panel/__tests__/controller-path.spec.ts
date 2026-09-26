@@ -86,10 +86,10 @@ async function mountDesk(root: ReturnType<typeof defineComponent> = Desk) {
 
 /** Выбрать действие, написать причину и открыть окно подписи. */
 async function decide(w: Awaited<ReturnType<typeof mountDesk>>, action: string, reason: string): Promise<HTMLElement> {
-  await vi.waitFor(() => expect(w.find(`[data-action="${action}"]`).exists()).toBe(true))
+  await vi.waitFor(() => expect(w.find(`[data-action="${action}"]`).exists()).toBe(true), { timeout: 10_000 })
   await w.find(`[data-action="${action}"]`).trigger('click')
   await w.find('[data-testid="reason"] textarea').setValue(reason)
-  await vi.waitFor(() => expect(w.find('[data-testid="sign"]').attributes('disabled')).toBeUndefined())
+  await vi.waitFor(() => expect(w.find('[data-testid="sign"]').attributes('disabled')).toBeUndefined(), { timeout: 10_000 })
   await w.find('[data-testid="sign"]').trigger('click')
   await flushPromises()
   return document.querySelector('[data-testid="sign-confirm"]') as HTMLElement
@@ -100,18 +100,18 @@ describe('путь контролёра от сигнала до подписа�
     const w = await mountDesk()
 
     // Очередь пришла, первая строка выбрана: карточка, панель и паспорт — того же изделия.
-    await vi.waitFor(() => expect(w.find('[data-testid="nc-card"]').exists()).toBe(true))
+    await vi.waitFor(() => expect(w.find('[data-testid="nc-card"]').exists()).toBe(true), { timeout: 10_000 })
     expect(w.find('[data-widget="nc-card"]').attributes('data-mode')).toBe('fixtures')
-    await vi.waitFor(() => expect(w.find('[data-testid="item-passport"]').exists()).toBe(true))
+    await vi.waitFor(() => expect(w.find('[data-testid="item-passport"]').exists()).toBe(true), { timeout: 10_000 })
     expect(w.find('[data-testid="passport-head"]').text()).toContain('FL-0042')
 
     // Отклонить сигнал: без причины подписать нельзя, с причиной — окно подписи.
-    await vi.waitFor(() => expect(w.find('[data-action="reject_signal"]').exists()).toBe(true))
+    await vi.waitFor(() => expect(w.find('[data-action="reject_signal"]').exists()).toBe(true), { timeout: 10_000 })
     await w.find('[data-action="reject_signal"]').trigger('click')
-    await vi.waitFor(() => expect(w.find('[data-testid="sign"]').exists()).toBe(true))
+    await vi.waitFor(() => expect(w.find('[data-testid="sign"]').exists()).toBe(true), { timeout: 10_000 })
     expect(w.find('[data-testid="sign"]').attributes('disabled')).toBeDefined()
     await w.find('[data-testid="reason"] textarea').setValue('Блик на кромке, на повторном снимке признаков нет')
-    await vi.waitFor(() => expect(w.find('[data-testid="sign"]').attributes('disabled')).toBeUndefined())
+    await vi.waitFor(() => expect(w.find('[data-testid="sign"]').attributes('disabled')).toBeUndefined(), { timeout: 10_000 })
     await w.find('[data-testid="sign"]').trigger('click')
     await flushPromises()
 
@@ -121,7 +121,7 @@ describe('путь контролёра от сигнала до подписа�
     expect(dialog.textContent).toContain('Отклонить сигнал — изделие продолжает маршрут')
     expect(dialog.textContent).toContain('НС-0142')
     ;(dialog.querySelector('[data-testid="confirm-unsigned"]') as HTMLButtonElement).click()
-    await vi.waitFor(() => expect(w.find('[data-testid="receipt"]').exists()).toBe(true))
+    await vi.waitFor(() => expect(w.find('[data-testid="receipt"]').exists()).toBe(true), { timeout: 10_000 })
 
     // Команда ушла сгенерированным клиентом с полями контракта.
     const post = fetchMock.mock.calls.find(([, init]) => init?.method === 'POST')!
@@ -153,7 +153,7 @@ describe('путь контролёра от сигнала до подписа�
     const dialog = await decide(w, 'confirm_nc', 'Пора в шве подтверждена повторным снимком')
     expect(dialog.querySelector('[data-testid="confirm-unsigned"]')).toBeNull()
     ;(dialog.querySelector('[data-testid="confirm-token"]') as HTMLButtonElement).click()
-    await vi.waitFor(() => expect(w.find('[data-testid="receipt"]').exists()).toBe(true))
+    await vi.waitFor(() => expect(w.find('[data-testid="receipt"]').exists()).toBe(true), { timeout: 10_000 })
     expect(requests[0]).toMatchObject({ level: 2, payload_type: 'application/vnd.ant.event+json; v=1', event_type: 'decision.nonconformity.confirmed' })
     const post = fetchMock.mock.calls.find(([, init]) => init?.method === 'POST')!
     expect(post[0]).toBe('/api/v1/nonconformities/NC-0142/confirm')

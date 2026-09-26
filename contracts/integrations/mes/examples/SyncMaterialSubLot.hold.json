@@ -1,0 +1,32 @@
+{
+  "SyncMaterialSubLot": {
+    "releaseID": "7.01",
+    "versionID": "mes.isa95.v1",
+    "ApplicationArea": {
+      "Sender": {
+        "LogicalID": "ant",
+        "ConfirmationCode": "Always"
+      },
+      "CreationDateTime": "2026-09-25T10:42:17.305Z",
+      "BODID": "ca864e07-e236-5855-a32c-ae28ef14d9b0"
+    },
+    "DataArea": {
+      "Sync": {
+        "ActionCriteria": {
+          "ActionExpression": {
+            "actionCode": "Change"
+          }
+        }
+      },
+      "MaterialSubLot": [
+        {
+          "ID": "ENT01:F-007",
+          "Description": "Блок по сдерживанию: ожидается решение контролёра; Главный: ENT01:F-007; ключ ENT01:F-007/hold/1",
+          "Disposition": "Restricted",
+          "Status": "QC-HOLD",
+          "StorageLocation": "Изолятор ОТК"
+        }
+      ]
+    }
+  }
+}

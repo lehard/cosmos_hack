@@ -8,6 +8,7 @@ import (
 	"ant/cmd/internal/db"
 	analysisapp "ant/internal/application/analysis"
 	analyticsapp "ant/internal/application/analytics"
+	cadapp "ant/internal/application/cad"
 	crossitemapp "ant/internal/application/crossitem"
 	documentsapp "ant/internal/application/documents"
 	engineapp "ant/internal/application/engine"
@@ -15,6 +16,7 @@ import (
 	itemapp "ant/internal/application/item"
 	appjournal "ant/internal/application/journal"
 	machinelogsapp "ant/internal/application/machinelogs"
+	mesapp "ant/internal/application/mes"
 	nonconformityapp "ant/internal/application/nonconformity"
 	notificationsapp "ant/internal/application/notifications"
 	processapp "ant/internal/application/process"
@@ -61,6 +63,9 @@ func engineRegistry() *engineapp.Registry {
 	mustRegister(itemapp.Register(r)) // эпик 18: item.row, item.index
 	// documents (эпик 28): документы изделия и счётчик «документов собрано из истории».
 	mustRegister(documentsapp.RegisterProjections(r))
+	// cad, mes (эпик 31): сборки КОМПАС; блоки и задания MES.
+	cadapp.MustRegister(r)
+	mesapp.MustRegister(r)
 	return r
 }
 
@@ -123,16 +128,23 @@ func runProjector(ctx context.Context, env *environment) error {
 	if err != nil {
 		return err
 	}
+	// Эпик 31: реакция «блок передаётся в MES» — потребитель mes.holds (канал MES включён).
+	reactors := []interface{ Run(context.Context) error }{rx}
+	if hr := mesHoldReactor(env, c); hr != nil {
+		reactors = append(reactors, hr)
+	}
 	return c.leader(env, "projector").Run(ctx, func(ctx context.Context, fence appjournal.Fence) error {
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
-		errc := make(chan error, 1)
-		go func() {
-			if err := rx.Run(ctx); err != nil && ctx.Err() == nil {
-				errc <- err
-				cancel()
-			}
-		}()
+		errc := make(chan error, len(reactors))
+		for _, r := range reactors {
+			go func() {
+				if err := r.Run(ctx); err != nil && ctx.Err() == nil {
+					errc <- err
+					cancel()
+				}
+			}()
+		}
 		err := p.Run(ctx, fence)
 		cancel()
 		select {

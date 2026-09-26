@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Контракт обмена ant ↔ Галактика ERP 9.x, версия gal.qc.v1 (FR-92, AD-18; проектное предположение).
+  XML-пакет GalExchange в каталоге или таблице обмена; квитанция GalAck — встречный XML с тем же messageId;
+  GalAbout — версии контракта обработчика (сверка при старте). Та же модель в JSON-форме — gal.qc.v1/*.schema.json
+  (REST-фасад «под Галактика ESB»); исполняемая проверка адаптера — по JSON Schema, соответствие имён XSD
+  проверяет контрактный тест (backend/internal/infrastructure/integration/erp/galaktika).
+  Значения перечислений — те же, что в JSON-форме (snake_case). Состав полей модуля «Управление качеством
+  продукции» — уточнить у вендора.
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns="urn:ant-qc:galaktika:v1"
+           targetNamespace="urn:ant-qc:galaktika:v1"
+           elementFormDefault="qualified">
+
+  <xs:simpleType name="NRec">
+    <xs:annotation><xs:documentation>Суррогатный ключ записи Галактики: 64-битное целое строкой.</xs:documentation></xs:annotation>
+    <xs:restriction base="xs:string"><xs:pattern value="[0-9]{1,20}"/></xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="Timestamp">
+    <xs:restriction base="xs:string"><xs:pattern value="[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{3}Z"/></xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="Verdict">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="accepted"/>
+      <xs:enumeration value="accepted_with_concession"/>
+      <xs:enumeration value="accepted_partially"/>
+      <xs:enumeration value="rejected"/>
+      <xs:enumeration value="insufficient_data"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="PostingKind">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="accept_to_work"/>
+      <xs:enumeration value="internal_move"/>
+      <xs:enumeration value="defect_rework"/>
+      <xs:enumeration value="defect_writeoff"/>
+      <xs:enumeration value="defect_reprocess"/>
+      <xs:enumeration value="return_to_supplier"/>
+      <xs:enumeration value="return_from_defect"/>
+      <xs:enumeration value="release"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:complexType name="Ref">
+    <xs:attribute name="ref" type="xs:string" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="Source">
+    <xs:annotation><xs:documentation>Бизнес-ключ исходящего сообщения ant (AD-7) и основание.</xs:documentation></xs:annotation>
+    <xs:sequence>
+      <xs:element name="Basis" type="Ref" minOccurs="0" maxOccurs="64"/>
+    </xs:sequence>
+    <xs:attribute name="businessKey" type="xs:string" use="required"/>
+    <xs:attribute name="messageVersion" type="xs:positiveInteger" use="required"/>
+    <xs:attribute name="enterprise" type="xs:string" use="required"/>
+    <xs:attribute name="closingPoint" type="xs:string"/>
+    <xs:attribute name="stepKey" type="xs:string"/>
+    <xs:attribute name="correctsMessageId" type="xs:string"/>
+  </xs:complexType>
+
+  <xs:complexType name="Item">
+    <xs:attribute name="itemId" type="xs:string"/>
+    <xs:attribute name="serialNo" type="xs:string"/>
+    <xs:attribute name="designation" type="xs:string"/>
+    <xs:attribute name="name" type="xs:string"/>
+    <xs:attribute name="nrec" type="NRec"/>
+    <xs:attribute name="table" type="xs:string"/>
+    <xs:attribute name="deleted" type="xs:boolean"/>
+  </xs:complexType>
+
+  <xs:complexType name="Lot">
+    <xs:attribute name="lotId" type="xs:string"/>
+    <xs:attribute name="number" type="xs:string"/>
+    <xs:attribute name="quantity" type="xs:nonNegativeInteger"/>
+    <xs:attribute name="heatNo" type="xs:string"/>
+    <xs:attribute name="certificateNo" type="xs:string"/>
+    <xs:attribute name="expiryDate" type="xs:date"/>
+  </xs:complexType>
+
+  <xs:complexType name="Warehouse">
+    <xs:attribute name="code" type="xs:string" use="required"/>
+    <xs:attribute name="nrec" type="NRec"/>
+  </xs:complexType>
+
+  <xs:complexType name="ProductionOrder">
+    <xs:attribute name="orderId" type="xs:string"/>
+    <xs:attribute name="nrec" type="NRec"/>
+    <xs:attribute name="routeSheet" type="xs:string"/>
+  </xs:complexType>
+
+  <xs:complexType name="QualityLotResult">
+    <xs:annotation><xs:documentation>Результат контроля по закрывающей точке → «Управление качеством продукции».</xs:documentation></xs:annotation>
+    <xs:sequence>
+      <xs:element name="Source" type="Source"/>
+      <xs:element name="Item" type="Item" minOccurs="0"/>
+      <xs:element name="Lot" type="Lot" minOccurs="0"/>
+      <xs:element name="ProductionOrder" type="ProductionOrder" minOccurs="0"/>
+      <xs:element name="Nonconformity" type="Ref" minOccurs="0" maxOccurs="64"/>
+    </xs:sequence>
+    <xs:attribute name="presentation" type="xs:positiveInteger"/>
+    <xs:attribute name="verdict" type="Verdict" use="required"/>
+    <xs:attribute name="concession" type="xs:string"/>
+  </xs:complexType>
+
+  <xs:complexType name="Posting">
+    <xs:annotation><xs:documentation>Учётное действие на закрывающей точке.</xs:documentation></xs:annotation>
+    <xs:sequence>
+      <xs:element name="Source" type="Source"/>
+      <xs:element name="Item" type="Item" minOccurs="0"/>
+      <xs:element name="Lot" type="Lot" minOccurs="0"/>
+      <xs:element name="WarehouseFrom" type="Warehouse" minOccurs="0"/>
+      <xs:element name="WarehouseTo" type="Warehouse" minOccurs="0"/>
+      <xs:element name="ProductionOrder" type="ProductionOrder" minOccurs="0"/>
+      <xs:element name="ClaimBasis" type="xs:string" minOccurs="0"/>
+      <xs:element name="Nonconformity" type="Ref" minOccurs="0" maxOccurs="64"/>
+    </xs:sequence>
+    <xs:attribute name="kind" type="PostingKind" use="required"/>
+    <xs:attribute name="afterRework" type="xs:boolean"/>
+    <xs:attribute name="concession" type="xs:string"/>
+  </xs:complexType>
+
+  <xs:complexType name="ProductionTask">
+    <xs:annotation><xs:documentation>Сменное задание / маршрутный лист (Галактика → ant).</xs:documentation></xs:annotation>
+    <xs:sequence>
+      <xs:element name="Item" type="Item"/>
+    </xs:sequence>
+    <xs:attribute name="nrec" type="NRec" use="required"/>
+    <xs:attribute name="table" type="xs:string"/>
+    <xs:attribute name="number" type="xs:string" use="required"/>
+    <xs:attribute name="date" type="xs:date" use="required"/>
+    <xs:attribute name="dueDate" type="xs:date"/>
+    <xs:attribute name="quantity" type="xs:positiveInteger" use="required"/>
+    <xs:attribute name="routeSheet" type="xs:string"/>
+    <xs:attribute name="kdRevision" type="xs:string"/>
+  </xs:complexType>
+
+  <xs:complexType name="Supplier">
+    <xs:attribute name="nrec" type="NRec"/>
+    <xs:attribute name="code" type="xs:string" use="required"/>
+    <xs:attribute name="name" type="xs:string"/>
+  </xs:complexType>
+
+  <xs:complexType name="LotReceived">
+    <xs:annotation><xs:documentation>Приходная накладная с партией (Галактика → ant).</xs:documentation></xs:annotation>
+    <xs:sequence>
+      <xs:element name="Supplier" type="Supplier"/>
+      <xs:element name="Item" type="Item"/>
+      <xs:element name="Lot" type="Lot"/>
+    </xs:sequence>
+    <xs:attribute name="nrec" type="NRec" use="required"/>
+    <xs:attribute name="table" type="xs:string"/>
+    <xs:attribute name="number" type="xs:string" use="required"/>
+    <xs:attribute name="date" type="xs:date" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="ItemCatalog">
+    <xs:sequence>
+      <xs:element name="Item" type="Item" maxOccurs="1000"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:element name="GalExchange">
+    <xs:annotation><xs:documentation>Пакет обмена: заголовок и ровно одно сообщение.</xs:documentation></xs:annotation>
+    <xs:complexType>
+      <xs:choice>
+        <xs:element name="QualityLotResult" type="QualityLotResult"/>
+        <xs:element name="Posting" type="Posting"/>
+        <xs:element name="ProductionTask" type="ProductionTask"/>
+        <xs:element name="LotReceived" type="LotReceived"/>
+        <xs:element name="ItemCatalog" type="ItemCatalog"/>
+      </xs:choice>
+      <xs:attribute name="messageId" type="xs:string" use="required"/>
+      <xs:attribute name="createdAt" type="Timestamp" use="required"/>
+      <xs:attribute name="from" type="xs:string" use="required"/>
+      <xs:attribute name="to" type="xs:string" use="required"/>
+      <xs:attribute name="contract" type="xs:string" use="required"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="GalAck">
+    <xs:annotation><xs:documentation>Квитанция на пакет с тем же messageId.</xs:documentation></xs:annotation>
+    <xs:complexType>
+      <xs:attribute name="messageId" type="xs:string" use="required"/>
+      <xs:attribute name="status" use="required">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:enumeration value="ok"/>
+            <xs:enumeration value="error"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="duplicate" type="xs:boolean"/>
+      <xs:attribute name="nrecCreated" type="NRec"/>
+      <xs:attribute name="document" type="xs:string"/>
+      <xs:attribute name="code" type="xs:string"/>
+      <xs:attribute name="text" type="xs:string"/>
+      <xs:attribute name="receivedAt" type="Timestamp"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="GalAbout">
+    <xs:annotation><xs:documentation>Узел Галактики и версии контракта обработчика.</xs:documentation></xs:annotation>
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="Supported" type="xs:string" maxOccurs="unbounded"/>
+      </xs:sequence>
+      <xs:attribute name="node" type="xs:string" use="required"/>
+      <xs:attribute name="database" type="xs:string" use="required"/>
+      <xs:attribute name="contract" type="xs:string" use="required"/>
+      <xs:attribute name="platform" type="xs:string"/>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

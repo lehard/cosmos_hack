@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/integrations/mes/binding/outbox.schema.json",
+  "title": "MesBindingOutbox",
+  "description": "Сообщения MES для ant (`GET ‹канал›/outbox`, HTTP-привязка mes.isa95.v1): B2MML-JSON ProcessOperationsSchedule и NotifyOperationsEvent в порядке формирования; каждое проверяется своей схемой b2mml/‹сообщение›.schema.json. Повторное чтение отдаёт те же BODID — дубля в журнале нет (AD-7).",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "messages": {
+      "type": "array",
+      "description": "Сообщения B2MML-JSON (корень — имя сообщения).",
+      "items": {
+        "type": "object",
+        "description": "Сообщение B2MML-JSON."
+      },
+      "maxItems": 1000
+    }
+  },
+  "required": [
+    "messages"
+  ]
+}

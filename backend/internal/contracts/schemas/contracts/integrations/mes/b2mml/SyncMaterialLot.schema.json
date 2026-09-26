@@ -1,0 +1,140 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/integrations/mes/b2mml/SyncMaterialLot.schema.json",
+  "title": "B2mmlSyncMaterialLot",
+  "description": "Блок или снятие блока партии в MES (B2MML SyncMaterialLot, подмножество mes.isa95.v1): Disposition = Restricted — заблокированная партия не получает следующую операцию; UnRestricted — снятие по решению человека (FR-93, AD-27, AD-30). Подтверждение — ConfirmBOD (ConfirmationCode = Always).",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "SyncMaterialLot": {
+      "type": "object",
+      "description": "Сообщение SyncMaterialLot.",
+      "additionalProperties": false,
+      "properties": {
+        "releaseID": {
+          "$ref": "common.schema.json#/definitions/ReleaseID",
+          "description": "Релиз B2MML."
+        },
+        "versionID": {
+          "$ref": "common.schema.json#/definitions/VersionID",
+          "description": "Версия контракта mes.isa95."
+        },
+        "ApplicationArea": {
+          "$ref": "common.schema.json#/definitions/ApplicationArea",
+          "description": "Заголовок сообщения."
+        },
+        "DataArea": {
+          "type": "object",
+          "description": "Глагол и существительные.",
+          "additionalProperties": false,
+          "properties": {
+            "Sync": {
+              "type": "object",
+              "description": "Глагол Sync: действие над существительным.",
+              "additionalProperties": false,
+              "properties": {
+                "ActionCriteria": {
+                  "type": "object",
+                  "description": "Критерий действия.",
+                  "additionalProperties": false,
+                  "properties": {
+                    "ActionExpression": {
+                      "type": "object",
+                      "description": "Выражение действия.",
+                      "additionalProperties": false,
+                      "properties": {
+                        "actionCode": {
+                          "type": "string",
+                          "enum": [
+                            "Add",
+                            "Change",
+                            "Delete",
+                            "Replace"
+                          ],
+                          "description": "Код действия."
+                        }
+                      },
+                      "required": [
+                        "actionCode"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ActionExpression"
+                  ]
+                }
+              },
+              "required": [
+                "ActionCriteria"
+              ]
+            },
+            "MaterialLot": {
+              "type": "array",
+              "description": "Партии.",
+              "items": {
+                "type": "object",
+                "description": "Партия (MaterialLot).",
+                "additionalProperties": false,
+                "properties": {
+                  "ID": {
+                    "$ref": "common.schema.json#/definitions/Identifier",
+                    "description": "ID партии (наш или MES)."
+                  },
+                  "Description": {
+                    "type": "string",
+                    "description": "Пояснение: основание блока, наш ID, ожидаемое решение.",
+                    "maxLength": 512
+                  },
+                  "MaterialDefinitionID": {
+                    "$ref": "common.schema.json#/definitions/Identifier",
+                    "description": "Обозначение КД."
+                  },
+                  "Disposition": {
+                    "type": "string",
+                    "enum": [
+                      "Planned",
+                      "In-Process",
+                      "Restricted",
+                      "UnRestricted",
+                      "Closed",
+                      "Other"
+                    ],
+                    "description": "Состояние (Disposition, ISA-95): Restricted — не разрешено к нормальному использованию, ждёт решения по качеству; UnRestricted — разрешено; Closed — израсходовано или утилизировано."
+                  },
+                  "Status": {
+                    "type": "string",
+                    "description": "Статус MES (QC-HOLD, QC-RELEASED).",
+                    "maxLength": 32
+                  },
+                  "StorageLocation": {
+                    "type": "string",
+                    "description": "Место хранения (изолятор ОТК).",
+                    "maxLength": 128
+                  }
+                },
+                "required": [
+                  "ID",
+                  "Disposition"
+                ]
+              },
+              "minItems": 1,
+              "maxItems": 100
+            }
+          },
+          "required": [
+            "Sync",
+            "MaterialLot"
+          ]
+        }
+      },
+      "required": [
+        "releaseID",
+        "ApplicationArea",
+        "DataArea"
+      ]
+    }
+  },
+  "required": [
+    "SyncMaterialLot"
+  ]
+}

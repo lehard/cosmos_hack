@@ -1,0 +1,32 @@
+{
+  "message_id": "bc706d05-d7d6-5cde-9c48-ede1e6b80488",
+  "created_at": "2026-09-25T10:42:17.305Z",
+  "from": "ant",
+  "to": "GAL-ERP-ZAVOD2",
+  "contract": "gal.qc.v1",
+  "quality_lot_result": {
+    "presentation": 1,
+    "verdict": "rejected",
+    "source": {
+      "business_key": "LOT-B-0915/inspection_result/ZT-1",
+      "message_version": 1,
+      "enterprise": "ENT01",
+      "closing_point": "ZT-1"
+    },
+    "lot": {
+      "lot_id": "LOT-B-0915",
+      "quantity": 12
+    },
+    "production_order": {
+      "order_id": "ORD-0812"
+    },
+    "nonconformities": [
+      {
+        "ref": "NC-2026-0031"
+      },
+      {
+        "ref": "NC-2026-0032"
+      }
+    ]
+  }
+}

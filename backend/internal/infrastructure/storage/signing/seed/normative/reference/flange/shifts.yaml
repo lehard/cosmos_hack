@@ -1,0 +1,6 @@
+# Шаблоны смен (FR-81). Конкретные смены (reference.shift.scheduled) порождает сценарий или мастер. [ПП]
+version: 1
+time_zone: Europe/Moscow
+patterns:
+  - {id: SHIFT-1, name: "Первая смена", starts: "08:00", ends: "16:30", locations: [WS-SK, WS-MC, WS-WC, WS-AC, WS-QA, LAB-NDT]}
+  - {id: SHIFT-2, name: "Вторая смена", starts: "16:30", ends: "01:00", locations: [WS-MC, WS-WC, WS-AC]}

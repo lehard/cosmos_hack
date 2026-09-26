@@ -60,11 +60,13 @@
 
 ## 6. Контракт `mes.isa95.v1`
 
-- Форма — B2MML-JSON (имена элементов по XSD V7), `releaseID="7.01"`, `versionID="mes.isa95.v1"`.
-- Подмножество: `ProcessOperationsSchedule`, `AcknowledgeOperationsSchedule`, `NotifyOperationsEvent`, `SyncOperationsPerformance`, `SyncMaterialLot`, `SyncMaterialSubLot`, `ProcessTestResult`, `AcknowledgeTestResult`, `ConfirmBOD`.
-- Транспорт в MVP — HTTP (`POST` сообщения на адрес канала MES, входящие — на операцию приёма `ant`); брокер — сменный адаптер за портом `Publisher` (см. [observability-kafka-otel.md](../observability-kafka-otel.md)).
-- Схемы — `contracts/integrations/mes/b2mml/` (родные XSD MESA + JSON-схема подмножества), эталонные сообщения — `contracts/integrations/mes/examples/` (пути предварительные).
-- Исходящие проверяются по XSD в контрактных тестах; входящие разбираются терпимо (лишние элементы не ломают разбор) и проверяются JSON-схемой подмножества на приёме.
+- Форма — B2MML-JSON (имена элементов и атрибутов по XSD B2MML V7), `releaseID="7.01"`, `versionID="mes.isa95.v1"`.
+- **Реализовано в MVP (эпик 31):** `ProcessOperationsSchedule` и `NotifyOperationsEvent` (внутрь), `SyncMaterialSubLot` и `SyncMaterialLot` (блок и снятие блока наружу), `ConfirmBOD` (подтверждения). **Описание, следующий шаг:** `AcknowledgeOperationsSchedule`, `SyncOperationsPerformance`, `ProcessTestResult` / `AcknowledgeTestResult`, задание на доработку в MES.
+- `ProcessSegmentID` — код операции маршрута, тот же, что `ant:properties/@operationCode` шага BPMN (`010` — мехобработка, `030` — сварка…): по нему событие операции MES попадает на шаг процесса. `SegmentResponseID` связывает начало и конец одного выполнения (наш `operation_run_id` = `MES-‹SegmentResponseID›`).
+- Транспорт в MVP — HTTP-привязка: исходящие — `POST ‹канал›/SyncMaterialSubLot`, `POST ‹канал›/SyncMaterialLot` (ответ — `ConfirmBOD`); входящие шлюз Главного читает с `GET ‹канал›/outbox` и подаёт в обычный приём (источник `mes.b2mml`, вид «внешняя система»); сверка — `GET ‹канал›/about`. Брокер — сменный адаптер того же порта (см. [observability-kafka-otel.md](../observability-kafka-otel.md)).
+- Схемы — `contracts/integrations/mes/b2mml/*.schema.json` (JSON Schema подмножества; имена — как в стандарте) и `contracts/integrations/mes/binding/` (HTTP-привязка), эталоны — `contracts/integrations/mes/examples/`, описание — `contracts/integrations/mes/README.md`.
+- Каждое исходящее сообщение до отправки проверяется JSON Schema подмножества (FR-111); входящие разбираются терпимо (лишние элементы стандарта отбрасываются) и проверяются схемой подмножества. Родные XSD MESA в репозиторий не копируются — подмножество сверено с ними вручную.
+- `BODSuccessMessage/Duplicate` — наше расширение подтверждения: повтор того же `BODID` уже принят, второго блока нет (AD-7).
 
 ## 7. Примеры сообщений
 
@@ -114,7 +116,7 @@
         "MaterialLotID": "П-2026-0915",
         "Disposition": "Restricted",
         "Status": "QC-HOLD",
-        "Description": "Блок по сигналу контроля; ant: ENT01:FL-0007; ожидается решение контролёра",
+        "Description": "Блок по сигналу контроля; Главный: ENT01:FL-0007; ожидается решение контролёра",
         "StorageLocation": "Изолятор ОТК, сварочный цех"
       }]
     }
@@ -175,7 +177,7 @@
 - **В очереди** — stand MES за тем же протоколом (схема `stand_mes`): приём блоков с подтверждением, выдача заданий, сбои.
 - Stand не имитирует планирование и диспетчеризацию MES.
 
-**Где в коде:** `backend/internal/infrastructure/integration/mes/b2mml/` (клиент), `…/mes/b2mml/stand/` (stand, очередь).
+**Где в коде:** `backend/internal/infrastructure/integration/mes/b2mml/` (клиент, порт `application/mes.Channel`), `backend/internal/domain/mes/` (перевод входящих, план блока), `backend/internal/application/mes/` (шлюз, реакция, отправка, проекции); `…/mes/b2mml/stand/` — stand, эпик 43.
 
 ## 10. Путь к реальной MES
 
@@ -184,11 +186,12 @@
 3. Если MES сама фиксирует контроль, «прямой аналог» зоны `ant` (например, модуль 8D-управления качеством) становится соседней системой, а не MES: обмен результатами контроля и несоответствиями описывается отдельным контрактом.
 4. Порт MES, домен и контракт событий `ant` не меняются (кейс §3.1).
 
-## Уточнить после появления кода
+## В коде (эпик 31)
 
-- Состав подмножества B2MML в `contracts/integrations/mes/`, имена файлов схем и эталонов, имя контрактного теста.
-- Имена наших типов событий для фактов из MES и для квитанций (`contracts/events/catalog.yaml`).
-- Адрес операции приёма для входящих сообщений MES в `contracts/openapi.yaml`.
-- Коды ошибок `ErrorMessage`, которые stand/адаптер различают, и их связь с `contracts/errors.yaml`.
-- Ключи конфигурации канала MES в `deploy/config/ant.yaml`.
-- Объём и сроки stand-а MES (эпик 43).
+- **Типы событий:** задания — `mes.job.received`; события операций — те же `operation.run.started` / `paused` / `resumed` / `finished` изделия, что у терминала исполнителя (различается источник, FR-140); блок в MES — реакция `mes.hold.requested` (бизнес-ключ `‹изделие или партия›/hold|release/‹цикл›`, поток `erp_message:‹ключ›`), квитанция — `mes.hold.responded`.
+- **Когда уходит блок** (`domain/mes.PlanHold`): сдерживание `item_hold` / `lot_hold` правилом или человеком, изоляция изделия, распространение по генеалогии — «заблокировать», если ещё не заблокировано; снятие — когда человек снял все записи, державшие блок, понизил уровень или принял решение по партии (кроме «не годна»). Снятие основания правилом блок не снимает (AD-27).
+- **Сопоставление ID:** экземпляр, сотрудник, оборудование MES — только по `reference.external_id.mapped` (система `mes`); MES может вернуть наш ID изделия из блока. Нет соответствия или кода операции в BPMN — сообщение откладывается с причиной, факт не выдумывается (FR-123); неизвестный исполнитель — `null`.
+- **Коды ошибок:** код MES из `ErrorMessage/ErrorCode` пишется в `mes.hold.responded.error_code` как есть; недоступность — `mes.unavailable` (`contracts/errors.yaml`).
+- **Контрактный тест:** `go test ./internal/infrastructure/integration/mes/... ./internal/domain/mes/...` — эталоны по схемам, блок и снятие → эталонные сообщения, классы `ConfirmBOD`, шлюз входящих с BPMN фланца и схемами приёма, сквозной путь «сдерживание → `mes.hold.requested` → MES → `mes.hold.responded` → `mes.block.list`».
+- **Конфигурация** (подключено в `cmd/ant`: `mes.go`, роль `outbox` под арендой `outbox.mes`, реакция блоков — в `projector`): `integrations.enabled: [mes]`, `mes.b2mml.base_url`, `logical_id`, `user`, `password_file`, `stand`, `timeout`, `poll`, `recheck`, `pull_every`, `retry_max`. Без `mes` в `integrations.enabled` реакция блоков не пишет `mes.hold.requested` — блок без канала никуда не уйдёт.
+- **Stand MES** (приём блоков с подтверждением, выдача заданий, сбои, схема `stand_mes`) — эпик 43.

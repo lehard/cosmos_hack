@@ -22,6 +22,9 @@ PG_IMAGE   ?= postgres:18.6-alpine
 RUNTIME_IMAGE ?= gcr.io/distroless/static-debian12:nonroot
 export ANT_IMAGE   ?= ant:local
 export ANT_VERSION ?= $(shell git -C $(ROOT) describe --always --dirty 2>/dev/null || echo dev)
+# Владелец ключей интерактивных демо-персон в ./.demo-keys/token-agent/ (роль init, эпик 05).
+export ANT_HOST_UID ?= $(shell id -u)
+export ANT_HOST_GID ?= $(shell id -g)
 
 # Кэши модулей Go, сборки, npm — на машине, общие для всех рабочих копий.
 CACHE ?= $(HOME)/.cache/ant
@@ -232,8 +235,9 @@ tamper: ## Подделка в обход системы и её обнаруж�
 	@echo; echo "Независимая проверка (верификатор, отчёт — хранителю):"
 	@$(COMPOSE) run --rm --no-deps verifier -once || test $$? -eq 3
 	@echo; echo "Индикатор целостности на столах загорится, когда ant заберёт отчёт у хранителя (security.interval)."
-keys: ## Ключи и генезис доверия (эпик 05)
-	@echo "keys: пока пусто — эпик 05 (AD-33)"
+keys: ## Ключи и генезис доверия (эпик 05): ant init (повтор ничего не меняет); ключи интерактивных демо-персон — в ./.demo-keys/token-agent/
+	@mkdir -p $(ROOT)/.demo-keys/token-agent
+	$(COMPOSE_LOCKED) run --rm init
 load: ## Нагрузочный прогон 1 и N воркеров (эпик 35)
 	@echo "load: пока пусто — эпик 35 (FR-107)"
 verify: ## Независимый верификатор журнала: проверка по запросу, подписанный отчёт — хранителю (эпик 29, AD-9)

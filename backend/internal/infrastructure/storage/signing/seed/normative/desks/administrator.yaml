@@ -1,0 +1,30 @@
+# Стол администратора (PRD §3a): доступ и технические настройки, не производство.
+# Первая вкладка — тестовые сценарии: пульт демонстрации (демо-трек, эпик 14). Владелец после волны 1 — эпик 14.
+version: 1
+role: administrator
+title_key: desks.testScenarios
+density: comfortable
+help_key: administrator # раздел встроенной справки (эпик 47); наследники роли получают его вместе со столом
+tabs:
+  - id: scenarios
+    title_key: desks.testScenarios
+    layout: main-side
+    slots:
+      - {id: console, area: main, widget: scenario-console}
+      - {id: board, area: right, widget: verification-board}
+  - id: access
+    title_key: desks.access
+    layout: single
+    slots:
+      - {id: access, area: main, widget: access-admin}
+  - id: sources
+    title_key: desks.sources
+    layout: main-side
+    slots:
+      - {id: sources, area: main, widget: sources}
+      - {id: quarantine, area: right, widget: quarantine, slice: {view: summary}}
+  - id: components
+    title_key: desks.components
+    layout: single
+    slots:
+      - {id: health, area: main, widget: system-health}

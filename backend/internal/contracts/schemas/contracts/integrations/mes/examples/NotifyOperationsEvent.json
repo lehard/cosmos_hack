@@ -1,0 +1,26 @@
+{
+  "NotifyOperationsEvent": {
+    "releaseID": "7.01",
+    "versionID": "mes.isa95.v1",
+    "ApplicationArea": {
+      "Sender": {"LogicalID": "mes-ceh-2", "ConfirmationCode": "OnError"},
+      "CreationDateTime": "2026-09-25T09:41:02.000Z",
+      "BODID": "mes-2026-09-25-004502"
+    },
+    "DataArea": {
+      "Notify": {},
+      "OperationsEvent": [
+        {
+          "ID": "OE-77001", "Category": "Start", "EffectiveTimestamp": "2026-09-25T09:05:00.000Z",
+          "OperationsRequestID": "OR-000812", "SegmentResponseID": "SRSP-4471", "ProcessSegmentID": "030",
+          "MaterialSubLotID": "ФЛ-100.00.000#0007", "EquipmentID": "IS-1", "PersonnelID": "TAB-1142"
+        },
+        {
+          "ID": "OE-77002", "Category": "End", "EffectiveTimestamp": "2026-09-25T09:40:00.000Z",
+          "OperationsRequestID": "OR-000812", "SegmentResponseID": "SRSP-4471", "ProcessSegmentID": "030",
+          "MaterialSubLotID": "ФЛ-100.00.000#0007", "EquipmentID": "IS-1", "PersonnelID": "TAB-1142"
+        }
+      ]
+    }
+  }
+}

@@ -123,12 +123,21 @@ type Config struct {
 		Enabled []string `yaml:"enabled"`
 	} `yaml:"integrations"`
 
-	// ERP — каналы обмена с учётными системами (эпик 30; AD-18: включённые
-	// системы и адреса — конфигурация). Канал 1С работает, если "onec" есть в
-	// integrations.enabled.
+	// ERP — каналы обмена с учётными системами (эпики 30, 31; AD-18:
+	// включённые системы и адреса — конфигурация). Порт учёта обслуживает одну
+	// учётную систему на экземпляр: "galaktika" в integrations.enabled — канал
+	// Галактики, иначе "onec" — канал 1С (docs/new-adapter.md, §5).
 	ERP struct {
-		OneC OneC `yaml:"onec"`
+		OneC      OneC      `yaml:"onec"`
+		Galaktika Galaktika `yaml:"galaktika"`
 	} `yaml:"erp"`
+
+	// MES — канал MES (эпик 31, AD-18): работает, если "mes" есть в
+	// integrations.enabled; блоки и снятия — роль outbox, входящие задания и
+	// события операций — её шлюз.
+	MES struct {
+		B2MML B2MML `yaml:"b2mml"`
+	} `yaml:"mes"`
 
 	// Security — доверие (эпик 29): хранитель, верификатор, шифрование при
 	// хранении, шина безопасности (AD-8, AD-9, AD-23, AD-24, AD-46).
@@ -158,6 +167,61 @@ type OneC struct {
 	Recheck   time.Duration `yaml:"recheck"`
 	PullEvery time.Duration `yaml:"pull_every"`
 	// RetryMax — попыток при транспортных ошибках до карантина.
+	RetryMax int `yaml:"retry_max"`
+}
+
+// Galaktika — канал обмена с Галактикой ERP (эпик 31, контракт gal.qc.v1):
+// каталог обмена или REST-фасад, узлы обмена, учётные данные файлом,
+// повторы и опросы роли outbox (AD-7, AD-18, FR-96).
+type Galaktika struct {
+	// Transport — exchange-dir | rest-facade.
+	Transport string `yaml:"transport"`
+	// Dir — корень каталога обмена (out/ ack/ in/ in-ack/ about.xml).
+	Dir string `yaml:"dir"`
+	// BaseURL — адрес REST-фасада (`http(s)://‹хост›/galaktika/esb/v1`).
+	BaseURL string `yaml:"base_url"`
+	// Node — наш узел обмена; Peer — узел Галактики (пусто — из about).
+	Node string `yaml:"node"`
+	Peer string `yaml:"peer"`
+	// Database — база Галактики для внешних ID (пусто — из about).
+	Database string `yaml:"database"`
+	// Enterprise — код предприятия в источнике сообщений.
+	Enterprise string `yaml:"enterprise"`
+	// User, PasswordFile — HTTP Basic фасада (пароль — только файлом).
+	User         string `yaml:"user"`
+	PasswordFile string `yaml:"password_file"`
+	// Stand — на месте Галактики stand (эпик 43).
+	Stand bool `yaml:"stand"`
+	// Timeout — предел ответа фасада (дольше — транспортная ошибка, повтор).
+	Timeout time.Duration `yaml:"timeout"`
+	// Poll, Recheck, PullEvery — опрос очереди исходящих, сверка about при
+	// ok, опрос входящих пакетов.
+	Poll      time.Duration `yaml:"poll"`
+	Recheck   time.Duration `yaml:"recheck"`
+	PullEvery time.Duration `yaml:"pull_every"`
+	// RetryMax — попыток при транспортных ошибках до карантина.
+	RetryMax int `yaml:"retry_max"`
+}
+
+// B2MML — канал MES по подмножеству B2MML-JSON (эпик 31, mes.isa95.v1):
+// HTTP-привязка, учётные данные файлом, повторы и опросы роли outbox.
+type B2MML struct {
+	// BaseURL — адрес HTTP-привязки (`http(s)://‹хост›/b2mml`); пусто — канал не собирается.
+	BaseURL string `yaml:"base_url"`
+	// LogicalID — наш логический ID отправителя (пусто — ant).
+	LogicalID string `yaml:"logical_id"`
+	// User, PasswordFile — HTTP Basic (пароль — только файлом).
+	User         string `yaml:"user"`
+	PasswordFile string `yaml:"password_file"`
+	// Stand — на месте MES stand (эпик 43).
+	Stand bool `yaml:"stand"`
+	// Timeout — предел ответа MES.
+	Timeout time.Duration `yaml:"timeout"`
+	// Poll, Recheck, PullEvery — отправка блоков, сверка при ok, опрос входящих.
+	Poll      time.Duration `yaml:"poll"`
+	Recheck   time.Duration `yaml:"recheck"`
+	PullEvery time.Duration `yaml:"pull_every"`
+	// RetryMax — предел транспортных попыток на блок.
 	RetryMax int `yaml:"retry_max"`
 }
 

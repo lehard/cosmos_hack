@@ -1,0 +1,40 @@
+# Стол руководителя производства — «сердце» (PRD §3a, UJ-1). Владелец после волны 1 — эпик 10.
+# Формат — desk.schema.json; id виджетов — frontend/src/widgets/registry.ts.
+version: 1
+role: production_manager
+title_key: desks.dashboard
+density: comfortable
+help_key: production_manager # раздел встроенной справки (эпик 47); наследники роли получают его вместе со столом
+tabs:
+  - id: overview
+    title_key: desks.dashboard
+    layout: overview
+    slots:
+      - {id: attention, area: top, widget: attention}
+      - {id: map, area: main, widget: live-map, slice: {counters: [queue, in_progress, passed, defects], period: shift}}
+      - {id: tiles, area: right, widget: metric-tiles, slice: {set: production_manager}}
+      - {id: alerts, area: right, widget: alerts-feed}
+      - {id: timeline, area: bottom, widget: map-timeline}
+      - {id: posts, area: bottom, widget: posts}
+  - id: proposals
+    title_key: desks.proposals
+    layout: single
+    slots:
+      - {id: proposals, area: main, widget: proposals}
+  - id: analytics
+    title_key: desks.analytics
+    layout: main-side
+    slots:
+      - {id: analytics, area: main, widget: analytics-overview}
+      - {id: charts, area: main, widget: control-chart, slice: {step_key: welding.weld, metric_id: current_a}}
+      - {id: drilldown, area: right, widget: metric-drilldown}
+  - id: data-deficit
+    title_key: desks.dataDeficit
+    layout: single
+    slots:
+      - {id: deficit, area: main, widget: data-deficit-map}
+  - id: process
+    title_key: desks.process
+    layout: single
+    slots:
+      - {id: versions, area: main, widget: process-versions, slice: {mode: activation}}

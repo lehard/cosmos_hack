@@ -137,7 +137,7 @@
 ## Сборка в `cmd/ant` (для интегратора)
 
 ```go
-reg := signingapp.NewRegistry(c.journal, boot /* storesigning.LoadBootstrap(".../bootstrap.json") до генезиса 05 */, nil)
+reg := signingapp.NewRegistry(c.journal, nil, nil) // ключи и профили — из блока генезиса (эпик 05) и актов журнала
 svc := signingapp.NewService(
     signingapp.WithConfig(signingapp.Config{Profile: cfg.Profile, AllowUnsigned: signingapp.SignatureModeFor(cfg.Profile),
         Partitions: cfg.Engine.Partitions, DomainBuild: domainBuild()}),
@@ -146,13 +146,30 @@ svc := signingapp.NewService(
 svc.UseCrypto(profiles.Verifier{Keys: reg})
 svc.UseAlerts(signingapp.JournalKeyAlerts{Service: svc}) // до шины эпика 29
 
-// приём (эпик 06): проверка подписи, реестр ключей, ключ шлюза
-ring, _ := profiles.LoadDir(cfg.Keys.Dir)        // том ant
-_, _ = ring.Ensure(cfg.Keys.Dir, "gateway-ingest@1", "gost")
-deps.Verifier = profiles.Verifier{Keys: reg}
-deps.Keys = storesigning.IngestKeys{Registry: reg, Sources: []string{"ant-ingest"}}
-deps.ServerSigner = profiles.Signer{Keys: ring}
+// приём (эпик 06): проверка подписи, реестр ключей, ключ шлюза — собрано в
+// cmd/ant/init.go (genesisIngest → storesigning.IngestSigning): реестр из
+// журнала, ключ gateway-ingest@1 — из тома ant (ANT_KEYS_DIR), его создаёт ant init.
 ```
 
-`demo-signer` (контейнер профилей `fixtures`/`demo`/`load`): `demo-signer init` пишет ключи персон в свой том и открытые
-ключи — в общий файл затравки, который `ant` читает до генезиса эпика 05; `demo-signer serve` слушает `:8445`.
+`demo-signer` (контейнер профилей `fixtures`/`demo`/`load`): ключи персон создаёт в его томе и регистрирует блоком
+генезиса `ant init` (эпик 05); `demo-signer init` только проверяет, что они есть; `demo-signer serve` слушает `:8445`.
+
+## Генезис доверия (`ant init`, эпик 05, AD-33)
+
+- Разовая служба compose `init` (`deploy/compose/genesis.yaml`) после `migrate` и до `ant`: миграции, ключи в тома
+  (0400), сертификаты mTLS (демо-УЦ в томе хранителя), блок генезиса, `trust-anchors.json` в томе хранителя (копия — у
+  верификатора). Повтор ничего не меняет: генезис есть — журнал и ключи не трогаются. `make keys` — то же вручную;
+  ключи интерактивных демо-персон — в `./.demo-keys/token-agent/` (владелец — пользователь машины).
+- Блок — записи `seq` 1…k класса `genesis`, пакет каждой — класса `genesis`, подписан ключом-якорем `hybrid`
+  (`anchor-gost@1` + `anchor-pq@1`). seq 1 — `journal.genesis.recorded`: код предприятия, формат цепочки, открытые
+  ключи якоря и их отпечаток, размер блока, `block_digest` = H(H(p₂) ‖ … ‖ H(pₖ)); затем режим часов, реестр профилей,
+  ключи (движок, шлюзы, хранитель, верификатор, устройства, демо-персоны, интерактивные демо-персоны, корни партнёра),
+  стартовая политика, справочники, `normative.version.loaded` (отпечатки всех файлов `normative/`, подписи кворума —
+  держатели `quorum_signature`) и паспорта анализаторов (подписи держателей `analyzer_admission`); seq k —
+  `journal.anchor.destroyed`. Якорь создаётся в памяти `init` и на диск не пишется.
+- Проверка — `application/signing.VerifyGenesis` (правила — `domain/signing.CheckGenesisBlock`): блок целиком по
+  якорю, закреплённому в `trust-anchors` (`anchor_fingerprint`); отпечаток генезиса = H(payload заголовка) —
+  `genesis_digest` в `trust-anchors`. Второй `journal.genesis.recorded` — нарушение.
+- Ядро берёт из генезиса: реестр ключей и профилей (свёртка `key.*`), ключ шлюза приёма, отпечаток стартового
+  процесса (байты из встроенной копии `normative/` принимаются, только если отпечаток совпал), паспорта анализаторов,
+  режим часов. Раскладка томов хранителя и верификатора — как у `keeper -init` эпика 29 (файлы совместимы).

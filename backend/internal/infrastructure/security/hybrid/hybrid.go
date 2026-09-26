@@ -120,8 +120,11 @@ type Anchors struct {
 	FormatVersion int               `json:"format_version"`
 	Keys          []Anchor          `json:"keys"`
 	Profiles      map[string]string `json:"object_profiles"`
-	GenesisDigest string            `json:"genesis_digest,omitempty"`
-	Note          string            `json:"note,omitempty"`
+	// AnchorFingerprint — отпечаток ключей якоря генезиса (пишет ant init, эпик 05).
+	AnchorFingerprint string `json:"anchor_fingerprint,omitempty"`
+	// GenesisDigest — отпечаток генезиса: первая контрольная точка хранителя.
+	GenesisDigest string `json:"genesis_digest,omitempty"`
+	Note          string `json:"note,omitempty"`
 }
 
 // LoadAnchors читает trust-anchors и его отпечаток (streebog256 байтов файла).

@@ -278,12 +278,17 @@ func (s *Store) checkpoint(sub app.HeadsSubmission, heads map[string]app.Head, l
 		d := last.Digest
 		p.PreviousCheckpointDigest = &d
 	} else {
-		// Первая точка: отпечаток генезиса (AD-33). До эпика 05 генезиса нет —
-		// берётся звено первой записи основной цепочки, если она передана.
-		for _, l := range sub.Links {
-			if l.Chain == "main" && l.Seq == 1 {
-				g := l.Link
-				p.GenesisDigest = &g
+		// Первая точка: отпечаток генезиса (AD-33) из trust-anchors — его
+		// закрепил ant init (эпик 05). Без генезиса (keeper -init без ant init,
+		// разработка) — звено первой записи основной цепочки, если оно передано.
+		if g := s.anchors.GenesisDigest; g != "" {
+			p.GenesisDigest = &g
+		} else {
+			for _, l := range sub.Links {
+				if l.Chain == "main" && l.Seq == 1 {
+					g := l.Link
+					p.GenesisDigest = &g
+				}
 			}
 		}
 	}

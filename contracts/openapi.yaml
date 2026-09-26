@@ -1521,12 +1521,30 @@ components:
         assembly_designation:
           description: Например ФЛ-100.00.000 СБ.
           type: string
+        assembly_item_type_id:
+          type: string
+        assembly_name:
+          type: string
+        characteristics:
+          items:
+            $ref: "#/components/schemas/CadCharacteristic"
+          type: array
         components:
           items:
             $ref: "#/components/schemas/CadComponent"
           type: array
+        constraints:
+          items:
+            $ref: "#/components/schemas/CadConstraint"
+          type: array
+        discrepancies:
+          items:
+            $ref: "#/components/schemas/CadDiscrepancy"
+          type: array
         file_digest:
           description: Отпечаток файла (streebog256:…).
+          type: string
+        geometry_note:
           type: string
         geometry_present:
           description: "Геометрия не импортируется (geometry: null)."
@@ -1534,12 +1552,24 @@ components:
         imported_at:
           format: date-time
           type: string
+        lifecycle_letter:
+          type: string
         links:
           items:
             $ref: "#/components/schemas/CadLink"
           type: array
         revision:
           type: string
+        seq:
+          description: Позиция записи импорта в журнале.
+          format: int64
+          type: integer
+        source_system:
+          type: string
+        zones:
+          items:
+            $ref: "#/components/schemas/CadZone"
+          type: array
       required:
         - assembly_designation
         - revision
@@ -1559,24 +1589,136 @@ components:
       required:
         - items
       type: object
+    CadCharacteristic:
+      additionalProperties: false
+      properties:
+        characteristic_id:
+          type: string
+        methods:
+          items:
+            type: string
+          type: array
+        name:
+          type: string
+        note:
+          type: string
+      required:
+        - characteristic_id
+        - name
+      type: object
     CadComponent:
       additionalProperties: false
       properties:
         designation:
           type: string
+        item_type_id:
+          description: Наш тип изделия по обозначению КД (FR-95).
+          type: string
+        kind:
+          description: detail, subassembly, standard_part, fastener, purchased_equipment, other.
+          type: string
         lot_tracked:
           type: boolean
+        make_or_buy:
+          description: make или buy.
+          type: string
+        material:
+          type: string
+        name:
+          type: string
+        parent_item_type_id:
+          description: Родитель в дереве состава.
+          type: string
         position:
           type: string
         quantity:
           format: int64
           minimum: 1
           type: integer
+        shelf_life_tracked:
+          type: boolean
+        total_quantity:
+          description: Количество на одну сборку верхнего уровня.
+          format: int64
+          type: integer
+        tracking:
+          description: serial, lot или none.
+          type: string
       required:
         - position
         - designation
         - quantity
         - lot_tracked
+      type: object
+    CadConstraint:
+      additionalProperties: false
+      properties:
+        closes_zone_ids:
+          description: Зоны, к которым соединение закрывает доступ.
+          items:
+            type: string
+          type: array
+        constraint_id:
+          type: string
+        first_item_type_id:
+          type: string
+        kind:
+          description: rework_limit, closes_access, install_order, fastening, torque.
+          type: string
+        limit:
+          description: Лимит ремонтов зоны.
+          format: int64
+          type: integer
+        limit_source:
+          description: Файл сборки или шаг ТП нормативного слоя.
+          type: string
+        link_id:
+          type: string
+        note:
+          type: string
+        quantity:
+          format: int64
+          type: integer
+        step_key:
+          description: Шаг процесса, исполняющий ограничение.
+          type: string
+        then_item_type_id:
+          type: string
+        tolerance_pct:
+          format: int64
+          type: integer
+        unit:
+          type: string
+        value:
+          format: int64
+          type: integer
+        zone_id:
+          type: string
+      required:
+        - constraint_id
+        - kind
+        - link_id
+      type: object
+    CadDiscrepancy:
+      additionalProperties: false
+      properties:
+        designation:
+          type: string
+        item_type_id:
+          type: string
+        note:
+          type: string
+        reason:
+          description: not_in_erp — нет в номенклатуре; not_checked — сверка не выполнялась.
+          type: string
+        system:
+          description: onec, galaktika, other.
+          type: string
+      required:
+        - item_type_id
+        - designation
+        - system
+        - reason
       type: object
     CadLink:
       additionalProperties: false
@@ -1589,10 +1731,38 @@ components:
           type: string
         link_id:
           type: string
+        link_type:
+          description: Вид связи в файле, если шире kind.
+          type: string
+        note:
+          type: string
+        zone_id:
+          type: string
       required:
         - link_id
         - kind
         - components
+      type: object
+    CadZone:
+      additionalProperties: false
+      properties:
+        item_type_id:
+          description: Тип изделия, на котором лежит зона.
+          type: string
+        kind:
+          description: weld_section, joint, hole, surface, cavity, groove, other.
+          type: string
+        link_id:
+          type: string
+        name:
+          type: string
+        zone_id:
+          type: string
+      required:
+        - zone_id
+        - name
+        - kind
+        - link_id
       type: object
     CausalWindow:
       additionalProperties: false

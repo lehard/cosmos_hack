@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://ant.invalid/contracts/events/cad/cad.assembly.imported.v1.json",
   "title": "CadAssemblyImportedV1",
-  "description": "Условная сборка импортирована — структура сборки из файла КОМПАС (идентификатор, версия, компоненты, количество, связи; геометрии нет — явно); связи переводятся в зоны и ограничения нормативного слоя (FR-94, PRD §11.15). Схема файла — `contracts/integrations/cad/assembly.schema.json` (эпик 31).",
+  "description": "Условная сборка импортирована — структура сборки из файла КОМПАС (идентификатор, версия, компоненты, количество, связи; геометрии нет — явно); связи переводятся в зоны и ограничения нормативного слоя: шов — объект учёта лимита ремонтов, болтовое соединение «закрывает доступ к зоне», уплотнение — порядок установки (FR-94, PRD §11.15). Схема файла — `contracts/integrations/cad/assembly.schema.json` (эпик 31). Дерево компонентов — черновик справочника типов изделий: действующим его делает утверждение человеком (AD-31, FR-23); соответствия обозначений КД нашим типам — отдельные записи reference.external_id.mapped (FR-95).",
   "type": "object",
   "properties": {
     "assembly_designation": {
@@ -44,6 +44,68 @@
           "lot_tracked": {
             "type": "boolean",
             "description": "Учитывается партией."
+          },
+          "item_type_id": {
+            "$ref": "../common/defs.v1.json#/definitions/object_id",
+            "description": "Наш тип изделия позиции по обозначению КД."
+          },
+          "name": {
+            "type": "string",
+            "description": "Наименование позиции.",
+            "maxLength": 256
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "detail",
+              "subassembly",
+              "standard_part",
+              "fastener",
+              "purchased_equipment",
+              "other"
+            ],
+            "description": "Вид позиции: деталь, сборочная единица, стандартное изделие, крепёж, покупное оборудование."
+          },
+          "parent_item_type_id": {
+            "$ref": "../common/defs.v1.json#/definitions/object_id",
+            "description": "Родитель в дереве состава (тип изделия)."
+          },
+          "unit": {
+            "type": "string",
+            "description": "Единица измерения.",
+            "maxLength": 16
+          },
+          "total_quantity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100000,
+            "description": "Количество на одну сборку верхнего уровня (с учётом количеств родителей)."
+          },
+          "tracking": {
+            "type": "string",
+            "enum": [
+              "serial",
+              "lot",
+              "none"
+            ],
+            "description": "Учёт: по заводским номерам, по партиям, без индивидуального учёта."
+          },
+          "make_or_buy": {
+            "type": "string",
+            "enum": [
+              "make",
+              "buy"
+            ],
+            "description": "Изготавливаем или покупаем."
+          },
+          "shelf_life_tracked": {
+            "type": "boolean",
+            "description": "Учитывается срок хранения (предусловие «партия не просрочена», FR-17)."
+          },
+          "material": {
+            "type": "string",
+            "description": "Материал.",
+            "maxLength": 128
           }
         },
         "required": [
@@ -87,6 +149,20 @@
             },
             "description": "Связанные позиции.",
             "minItems": 1
+          },
+          "link_type": {
+            "type": "string",
+            "description": "Вид связи в файле, если он шире перечисления kind (например, threaded_joint → other).",
+            "maxLength": 32
+          },
+          "zone_id": {
+            "$ref": "../common/defs.v1.json#/definitions/object_id",
+            "description": "Зона изделия, которую даёт связь."
+          },
+          "note": {
+            "type": "string",
+            "description": "Примечание из файла.",
+            "maxLength": 512
           }
         },
         "required": [
@@ -101,6 +177,279 @@
     "geometry_present": {
       "type": "boolean",
       "description": "Геометрия в файле есть; в условной сборке — false (кейс §5.3)."
+    },
+    "assembly_item_type_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Наш тип изделия сборки по обозначению КД (FL-100.00.000)."
+    },
+    "assembly_name": {
+      "type": "string",
+      "description": "Наименование сборки.",
+      "maxLength": 256
+    },
+    "lifecycle_letter": {
+      "type": "string",
+      "description": "Литера КД (например, О1).",
+      "maxLength": 16
+    },
+    "format_version": {
+      "type": "string",
+      "description": "Версия формата файла условной сборки.",
+      "maxLength": 16
+    },
+    "source_system": {
+      "type": "string",
+      "description": "Система-источник состава (КОМПАС-3D, эмуляция файлом; COM API7; ЛОЦМАН:PLM).",
+      "maxLength": 128
+    },
+    "exported_at": {
+      "$ref": "../common/defs.v1.json#/definitions/timestamp",
+      "description": "Когда состав выгружен из САПР (по данным файла)."
+    },
+    "geometry_note": {
+      "type": "string",
+      "description": "Пояснение отсутствия геометрии из файла (кейс §5.3).",
+      "maxLength": 512
+    },
+    "mapping_rule": {
+      "type": "string",
+      "description": "Правило сопоставления ID с учётной системой из файла (для людей).",
+      "maxLength": 512
+    },
+    "zones": {
+      "type": "array",
+      "description": "Зоны изделия из связей сборки (FR-46): к ним привязываются контроль, доработки, скрытые работы и вмешательства.",
+      "items": {
+        "type": "object",
+        "title": "CadZone",
+        "description": "Зона изделия.",
+        "properties": {
+          "zone_id": {
+            "$ref": "../common/defs.v1.json#/definitions/object_id",
+            "description": "Зона (совпадает с идентификатором связи: W-1, J-1, S-1)."
+          },
+          "name": {
+            "type": "string",
+            "description": "Название зоны.",
+            "maxLength": 256
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "weld_section",
+              "joint",
+              "hole",
+              "surface",
+              "cavity",
+              "groove",
+              "other"
+            ],
+            "description": "Вид зоны (как в справочнике типов изделий)."
+          },
+          "link_id": {
+            "type": "string",
+            "description": "Связь сборки, из которой получена зона.",
+            "maxLength": 32
+          },
+          "item_type_id": {
+            "$ref": "../common/defs.v1.json#/definitions/object_id",
+            "description": "Тип изделия, на котором лежит зона."
+          }
+        },
+        "required": [
+          "zone_id",
+          "name",
+          "kind",
+          "link_id"
+        ]
+      }
+    },
+    "constraints": {
+      "type": "array",
+      "description": "Ограничения нормативного слоя из связей сборки: лимит ремонтов шва (FR-18), «закрывает доступ к зоне» (FR-20), порядок установки (FR-17), крепёж и момент затяжки.",
+      "items": {
+        "type": "object",
+        "title": "CadConstraint",
+        "description": "Ограничение нормативного слоя.",
+        "properties": {
+          "constraint_id": {
+            "type": "string",
+            "description": "Идентификатор ограничения (‹связь›/‹вид›).",
+            "maxLength": 64
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "rework_limit",
+              "closes_access",
+              "install_order",
+              "fastening",
+              "torque"
+            ],
+            "description": "Вид: лимит ремонтов зоны, закрывает доступ к зонам, порядок установки, крепёж, момент затяжки."
+          },
+          "link_id": {
+            "type": "string",
+            "description": "Связь сборки.",
+            "maxLength": 32
+          },
+          "zone_id": {
+            "$ref": "../common/defs.v1.json#/definitions/object_id",
+            "description": "Зона, к которой относится ограничение."
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1000,
+            "description": "Лимит ремонтов зоны (для rework_limit); отсутствует — лимит не задан ни файлом, ни ТП."
+          },
+          "limit_source": {
+            "type": "string",
+            "description": "Откуда лимит: файл сборки или шаг ТП в нормативном слое (step_key).",
+            "maxLength": 256
+          },
+          "closes_zone_ids": {
+            "type": "array",
+            "items": {
+              "$ref": "../common/defs.v1.json#/definitions/object_id",
+              "description": "Зона."
+            },
+            "description": "Зоны, к которым соединение закрывает доступ: их проверка — до закрытия (скрытые работы)."
+          },
+          "first_item_type_id": {
+            "$ref": "../common/defs.v1.json#/definitions/object_id",
+            "description": "Что устанавливается первым (для install_order)."
+          },
+          "then_item_type_id": {
+            "$ref": "../common/defs.v1.json#/definitions/object_id",
+            "description": "Что устанавливается после (для install_order)."
+          },
+          "step_key": {
+            "$ref": "../common/defs.v1.json#/definitions/step_key",
+            "description": "Шаг процесса, на котором ограничение исполняется (по нормативному слою), если найден."
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100000,
+            "description": "Число крепежа (для fastening)."
+          },
+          "value": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1000000,
+            "description": "Значение (для torque — момент, целое в единицах unit)."
+          },
+          "unit": {
+            "type": "string",
+            "description": "Единица значения (Н·м).",
+            "maxLength": 16
+          },
+          "tolerance_pct": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100,
+            "description": "Допуск, %."
+          },
+          "note": {
+            "type": "string",
+            "description": "Пояснение для людей.",
+            "maxLength": 512
+          }
+        },
+        "required": [
+          "constraint_id",
+          "kind",
+          "link_id"
+        ]
+      }
+    },
+    "characteristics": {
+      "type": "array",
+      "description": "Важные характеристики с методами контроля (FR-14).",
+      "items": {
+        "type": "object",
+        "title": "CadCharacteristic",
+        "description": "Важная характеристика.",
+        "properties": {
+          "characteristic_id": {
+            "type": "string",
+            "description": "Идентификатор (CC-1…).",
+            "maxLength": 32
+          },
+          "name": {
+            "type": "string",
+            "description": "Название.",
+            "maxLength": 256
+          },
+          "methods": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "Метод контроля.",
+              "maxLength": 128
+            },
+            "description": "Методы контроля."
+          },
+          "note": {
+            "type": "string",
+            "description": "Примечание.",
+            "maxLength": 512
+          }
+        },
+        "required": [
+          "characteristic_id",
+          "name"
+        ]
+      }
+    },
+    "discrepancies": {
+      "type": "array",
+      "description": "Расхождения с номенклатурой учётной системы: позиции без соответствия — отчёт администратору и технологу, без автосоздания (FR-95).",
+      "items": {
+        "type": "object",
+        "title": "CadDiscrepancy",
+        "description": "Расхождение.",
+        "properties": {
+          "item_type_id": {
+            "$ref": "../common/defs.v1.json#/definitions/object_id",
+            "description": "Наш тип изделия позиции."
+          },
+          "designation": {
+            "type": "string",
+            "description": "Обозначение КД.",
+            "maxLength": 128
+          },
+          "system": {
+            "type": "string",
+            "enum": [
+              "onec",
+              "galaktika",
+              "other"
+            ],
+            "description": "Учётная система."
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "not_in_erp",
+              "not_checked"
+            ],
+            "description": "Нет в номенклатуре / сверка не выполнялась (номенклатура ещё не получена)."
+          },
+          "note": {
+            "type": "string",
+            "description": "Пояснение.",
+            "maxLength": 512
+          }
+        },
+        "required": [
+          "item_type_id",
+          "designation",
+          "system",
+          "reason"
+        ]
+      }
     }
   },
   "required": [

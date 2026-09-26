@@ -7,4 +7,8 @@ export interface CadLink {
   components: string[];
   kind: string;
   link_id: string;
+  /** Вид связи в файле, если шире kind. */
+  link_type?: string;
+  note?: string;
+  zone_id?: string;
 }

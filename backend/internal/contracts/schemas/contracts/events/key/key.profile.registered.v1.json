@@ -17,7 +17,7 @@
     "object_classes": {
       "type": "array",
       "items": {
-        "$ref": "../common/defs.v1.json#/definitions/code"
+        "$ref": "../common/defs.v1.json#/definitions/class"
       },
       "description": "Классы пакетов, для которых профиль обязателен.",
       "minItems": 1,
