@@ -5,7 +5,6 @@ import (
 	"errors"
 	"net"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
@@ -23,20 +22,24 @@ func init() {
 // служебный порт сбоев /stand/_control/. Stand оборудования (сварочный
 // источник IS-1) включается, если задан адрес edge-агента.
 //
-// Переменные окружения (до секции stands в ant.yaml, эпик 02):
+// Настройки — секция stands в ant.yaml (переопределение переменными):
 //
-//	ANT_STANDS_ADDR       — адрес HTTP роли (по умолчанию :8491);
-//	ANT_STANDS_EDGE_URL   — локальный вход edge-агента для телеметрии (пусто — stand оборудования выключен);
-//	ANT_STANDS_INTERVAL   — период телеметрии (по умолчанию 5s).
+//	stands.addr     (ANT_STANDS_ADDR)     — адрес HTTP роли (по умолчанию :8491);
+//	stands.edge_url (ANT_STANDS_EDGE_URL) — локальный вход edge-агента для телеметрии (пусто — stand оборудования выключен);
+//	stands.interval (ANT_STANDS_INTERVAL) — период телеметрии (по умолчанию 5s).
 //
 // Stand-ы 1С, Галактики, MES и VisionQC (эпики 30–33, 43) добавляются в реестр здесь.
 func runStands(ctx context.Context, env *environment) error {
-	addr := envOr("ANT_STANDS_ADDR", ":8491")
+	sc := env.cfg.Stands
+	addr := sc.Addr
+	if addr == "" {
+		addr = ":8491"
+	}
 	reg := stands.NewRegistry()
-	if edge := strings.TrimSpace(os.Getenv("ANT_STANDS_EDGE_URL")); edge != "" {
-		iv, err := time.ParseDuration(envOr("ANT_STANDS_INTERVAL", "5s"))
-		if err != nil {
-			return err
+	if edge := strings.TrimSpace(sc.EdgeURL); edge != "" {
+		iv := sc.Interval
+		if iv <= 0 {
+			iv = 5 * time.Second
 		}
 		reg.Add(&stands.EquipmentStand{Name: "weld-is-1", EquipmentID: "IS-1", EdgeURL: edge, Interval: iv})
 	}

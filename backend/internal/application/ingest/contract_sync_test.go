@@ -12,7 +12,6 @@ import (
 	"testing"
 
 	dom "ant/internal/domain/ingest"
-	dj "ant/internal/domain/journal"
 )
 
 // Сверка доменных правил приёма с файлами contracts/ (в домене нет ввода-вывода,
@@ -107,17 +106,6 @@ func TestSafetyCriticalEnumsMatchContract(t *testing.T) {
 	for _, k := range slices.Sorted(maps.Keys(got)) {
 		if v := got[k]; !slices.Equal(v, dom.SafetyCriticalEnums[k]) {
 			t.Fatalf("%s: контракт %v, код %v", k, v, dom.SafetyCriticalEnums[k])
-		}
-	}
-}
-
-// Партиция приёма совпадает с партицией журнала и воркера (AD-6, AD-41).
-func TestPartitionMatchesJournal(t *testing.T) {
-	for _, id := range []string{"ENT01:FL-0007", "ENT01:FL-0008", "ENT01:r1/FL-0001", "X:y"} {
-		for _, p := range []int{1, 7, 16, 64} {
-			if dom.Partition(id, p) != dj.Partition(id, p) {
-				t.Fatalf("%s mod %d: приём %d, журнал %d", id, p, dom.Partition(id, p), dj.Partition(id, p))
-			}
 		}
 	}
 }

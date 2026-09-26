@@ -5,8 +5,9 @@
 //
 // Роль процесса задаётся флагом -role (несколько — через запятую). Все роли
 // спайна зарегистрированы заранее (эпик 02). Работают: api, migrate, worker,
-// crossitem, projector, rebuild (-item ‹id› — одно изделие); остальные —
-// заглушки до своих эпиков (scheduler — 24; outbox — 30; stands — 06; init — 05).
+// crossitem, projector, rebuild (-item ‹id› — одно изделие), stands (каркас
+// эпика 06, stands.go); остальные — заглушки до своих эпиков (scheduler — 24;
+// outbox — 30; init — 05).
 // Роли одного процесса делят ядро (пул ant_app, журнал, LISTEN) — core.go.
 //
 // Флаг -openapi ‹файл› — выгрузить спецификацию HTTP API (contracts/openapi.yaml)

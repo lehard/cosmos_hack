@@ -1,7 +1,6 @@
 package ingest
 
 import (
-	"hash/fnv"
 	"regexp"
 )
 
@@ -71,19 +70,4 @@ func Bind(itemID string, ref *ItemRef) Binding {
 		b.Unbound = true
 	}
 	return b
-}
-
-// Partition — партиция изделия: hash(item_id) mod p (AD-6, AD-41), FNV-1a 64
-// над байтами внутреннего ID — та же формула, что у журнала и воркера
-// (domain/journal.Partition). Партиция — только по внутреннему ID.
-//
-// TODO: kernel.PartitionOf — общая функция сводится интегратором ядра
-// (ветка integrate/core); приём переходит на неё, формула та же.
-func Partition(itemID string, p int) int {
-	if p <= 0 {
-		return 0
-	}
-	h := fnv.New64a()
-	h.Write([]byte(itemID))
-	return int(h.Sum64() % uint64(p))
 }
