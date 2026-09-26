@@ -12,7 +12,7 @@ const marks = [
 ] as never
 
 const mountBar = (props: Record<string, unknown>) =>
-  mount(TimelineBar, { props: { range, marks, asOf: null, axis: 'occurred', playing: false, speed: 60, ...props }, global: { plugins: [createPinia(), i18n] } })
+  mount(TimelineBar, { props: { range, marks, asOf: null, axis: 'occurred', playing: false, speed: 100, ...props }, global: { plugins: [createPinia(), i18n] } })
 
 describe('полоса времени', () => {
   it('в проигрывании — «к следующему событию»: переход к ближайшей отметке после текущего момента', async () => {

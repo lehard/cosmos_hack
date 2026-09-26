@@ -72,6 +72,10 @@ func (s *Service) SubmitManual(ctx context.Context, cmd Cmd[ManualInput]) (Resul
 	// контексте — факт принадлежит прогону (эпик 16).
 	if run := journal.RunFrom(ctx); run != "" {
 		ev["run_id"] = run
+	} else if run := runOfItem(in.ItemID); run != "" {
+		// Действие человека со стола по изделию прогона (команда без прогона
+		// в контексте): факт — того же прогона, что и изделие (AD-38).
+		ev["run_id"] = run
 	}
 	if in.CarrierType != "" {
 		ev["item_ref"] = map[string]any{"carrier_type": in.CarrierType, "value": in.CarrierValue, "identification_level": "probable"}
@@ -91,4 +95,18 @@ func (s *Service) SubmitManual(ctx context.Context, cmd Cmd[ManualInput]) (Resul
 		raw, mc = cmd.Meta.Signature, msgCtx{}
 	}
 	return s.process(ctx, raw, mc)
+}
+
+// runOfItem — прогон изделия по его id (‹ENT›:‹run_id›/‹локальный номер›,
+// AD-38); изделие вне прогона — пусто.
+func runOfItem(itemID string) string {
+	_, local, ok := strings.Cut(itemID, ":")
+	if !ok {
+		return ""
+	}
+	i := strings.LastIndexByte(local, '/')
+	if i <= 0 {
+		return ""
+	}
+	return local[:i]
 }

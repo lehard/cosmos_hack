@@ -74,6 +74,17 @@ func (v viewer) oversees(o notif.ObligationRecord) bool {
 // inRun — строка относится к прогону запроса (AD-38); без прогона — все.
 func inRun(m platform.Moment, runID string) bool { return m.RunID == "" || m.RunID == runID }
 
+// inRunItem — строка изделия относится к прогону запроса: по run_id записи
+// или, если его нет, по id изделия прогона (‹ENT›:‹run_id›/…, AD-38). Факт
+// человека со стола (команда без прогона в контексте) не несёт run_id, а
+// реакции на него — задачи, сроки — тоже; изделие же прогону принадлежит.
+func inRunItem(m platform.Moment, runID, itemID string) bool {
+	if inRun(m, runID) {
+		return true
+	}
+	return runID == "" && itemID != "" && strings.Contains(itemID, ":"+m.RunID+"/")
+}
+
 // Summary — сводка для шапки (notifications.summary.read, FR-57):
 // непрочитанные по видам — открытые задачи, запросы решения, тревоги и
 // информация за сутки.
@@ -92,7 +103,7 @@ func (s *Service) Summary(ctx context.Context, m platform.Moment) (NotificationS
 		return NotificationSummary{}, err
 	}
 	for _, t := range ts {
-		if t.State != notif.TaskOpen || !inRun(m, t.RunID) || t.CreatedAt.After(now) || !v.sees(t, s.cfg.Places) {
+		if t.State != notif.TaskOpen || !inRunItem(m, t.RunID, t.ItemID) || t.CreatedAt.After(now) || !v.sees(t, s.cfg.Places) {
 			continue
 		}
 		if decisionKind(t.Kind) {
@@ -111,7 +122,7 @@ func (s *Service) Summary(ctx context.Context, m platform.Moment) (NotificationS
 		return NotificationSummary{}, err
 	}
 	for _, n := range ns {
-		if n.State != notif.NoticeActive || !inRun(m, n.RunID) || n.At.After(now) || now.Sub(n.At) > 24*time.Hour || !v.addressed(n.Role, n.Person) {
+		if n.State != notif.NoticeActive || !inRunItem(m, n.RunID, n.ItemID) || n.At.After(now) || now.Sub(n.At) > 24*time.Hour || !v.addressed(n.Role, n.Person) {
 			continue
 		}
 		switch n.Severity {
@@ -150,7 +161,7 @@ func (s *Service) Attention(ctx context.Context, m platform.Moment) (AttentionLi
 	if err != nil {
 		return AttentionList{}, err
 	}
-	all = slices.DeleteFunc(all, func(o notif.ObligationRecord) bool { return !inRun(m, o.RunID) || o.SetAt.After(now) })
+	all = slices.DeleteFunc(all, func(o notif.ObligationRecord) bool { return !inRunItem(m, o.RunID, o.ItemID) || o.SetAt.After(now) })
 	type group struct {
 		minutes int
 		first   notif.ObligationRecord
@@ -243,7 +254,7 @@ func (s *Service) alerts(ctx context.Context, m platform.Moment, now time.Time, 
 	if err != nil {
 		return nil, err
 	}
-	all = slices.DeleteFunc(all, func(o notif.ObligationRecord) bool { return !inRun(m, o.RunID) || o.SetAt.After(now) })
+	all = slices.DeleteFunc(all, func(o notif.ObligationRecord) bool { return !inRunItem(m, o.RunID, o.ItemID) || o.SetAt.After(now) })
 	out := []AlertEntry{}
 	for _, o := range all {
 		if o.State != notif.ObligationOpen || len(o.Reached) == 0 || !v.oversees(o) {
@@ -311,7 +322,7 @@ func (s *Service) Tasks(ctx context.Context, f TaskFilter, m platform.Moment, p 
 	}
 	out := []TaskEntry{}
 	for _, t := range ts {
-		if !inRun(m, t.RunID) || t.CreatedAt.After(now) || !v.sees(t, s.cfg.Places) {
+		if !inRunItem(m, t.RunID, t.ItemID) || t.CreatedAt.After(now) || !v.sees(t, s.cfg.Places) {
 			continue
 		}
 		if f.State != "" && t.State != f.State {

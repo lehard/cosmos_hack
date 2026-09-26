@@ -2,9 +2,11 @@ package nonconformity
 
 import (
 	"slices"
+	"strconv"
 	"time"
 
 	"ant/internal/contracts/statuses"
+	"ant/internal/domain/process"
 )
 
 // Статусы несоответствия «по изделию» (FR-51; перечисление NCCard.status).
@@ -367,4 +369,37 @@ func (e Env) ClosingPoint(stepKey string) string {
 		m = DefaultClosingPoints
 	}
 	return m[stepKey]
+}
+
+// WithProcessGate — изделие стоит на точке предъявления процесса без записи
+// предъявления (показ SHOW-IS2: на ЗТ-3 изделие встаёт по результатам КТ-3 и
+// рентгена, мастер не предъявляет): ждущее предъявление выводится из токена
+// процесса — номер предъявления из счёта точки (process.Gate.Count), как у
+// записи «Предъявить ОТК». Решение контролёра на такой точке проходит тот же
+// гард (process.PresentationGuard: изделие на точке). Состояние свёртки не
+// меняется: вывод для чтения очереди, карточки и гарда команды.
+func WithProcessGate(s State, env Env, p process.State) State {
+	if s.PendingPresentation() != nil || env.Process.Def == nil {
+		return s
+	}
+	for _, t := range p.Tokens {
+		n := env.Process.Def.Node(t.Node)
+		if n == nil || !n.IsPresentationPoint() {
+			continue
+		}
+		step := n.StepKey()
+		no := p.Gates[step].Count
+		if no == 0 {
+			no = 1
+		}
+		if slices.ContainsFunc(s.Presentations, func(x Presentation) bool { return x.StepKey == step && x.PresentationNo == no }) {
+			continue
+		}
+		out := s
+		out.Presentations = append(slices.Clone(s.Presentations), Presentation{
+			EventID: "gate:" + s.ItemID + "/" + step + "#" + strconv.Itoa(no), StepKey: step, ClosingPoint: env.ClosingPoint(step),
+			PresentationNo: no, At: t.Since})
+		return out
+	}
+	return s
 }
