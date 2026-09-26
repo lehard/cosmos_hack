@@ -71,7 +71,8 @@ func (s *Service) Qualifications(ctx context.Context, personID string, m platfor
 // Assignments — назначения на посты в смене (access.assignment.list, FR-81):
 // смена пуста — последние назначения каждого поста; цех — location id WS-….
 func (s *Service) Assignments(ctx context.Context, shiftID, workshop string, m platform.Moment) (AccessAssignmentList, error) {
-	if s.policy == nil || s.dir == nil {
+	// Режим fixtures: план смены — у мира заготовок (интерфейс 6).
+	if !s.live || s.policy == nil || s.dir == nil {
 		return s.Queries.Assignments(ctx, shiftID, workshop, m)
 	}
 	pol, err := s.policy.Policy(ctx)
@@ -151,7 +152,7 @@ func (s *Service) Workplaces(ctx context.Context, workshop string, m platform.Mo
 // PRD §11.18): гард GuardAssignment; контролёр — по закрытому документу
 // «Назначение контролёра на пост» с подписью начальника ОТК.
 func (s *Service) SetAssignment(ctx context.Context, in SetAssignment) (platform.Receipt, error) {
-	if s.policy == nil || s.decisions == nil || s.now == nil || s.dir == nil {
+	if !s.live || s.policy == nil || s.decisions == nil || s.now == nil || s.dir == nil {
 		return s.Commands.SetAssignment(ctx, in)
 	}
 	pol, err := s.policy.Policy(ctx)
@@ -220,7 +221,7 @@ func (s *Service) controllerApproved(ctx context.Context, pol accessdom.Policy, 
 
 // ClearAssignment — снять с поста (access.assignment.clear).
 func (s *Service) ClearAssignment(ctx context.Context, in ClearAssignment) (platform.Receipt, error) {
-	if s.policy == nil || s.decisions == nil || s.now == nil {
+	if !s.live || s.policy == nil || s.decisions == nil || s.now == nil {
 		return s.Commands.ClearAssignment(ctx, in)
 	}
 	pol, err := s.policy.Policy(ctx)

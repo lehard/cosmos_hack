@@ -79,6 +79,14 @@ func registerAdmin(api *httpapi.API, q app.Queries, c app.Commands) {
 		}, m platform.Moment) (app.AccessAssignmentList, error) {
 			return q.Assignments(ctx, in.ShiftID, in.Workshop, m)
 		})
+	httpapi.Read(api, httpapi.Get("/workplaces/{workplace_id}/candidates", "Кандидаты на пост",
+		"FR-80, FR-81, PRD §11.18 (интерфейс 6, «Смена → Назначить на пост»): кого можно назначить на пост в смене — роль в области поста, "+
+			"вердикт квалификации на дату смены (ok, expiring, expired, missing) и почему; у контролёра — нужен документ согласования начальника ОТК. "+
+			"Мастеру и начальнику цеха в области цеха — без чтения всех сотрудников, ролей и квалификаций."),
+		platform.Action{ID: "access.candidate.list", Owner: owner, Subject: "workplace"},
+		func(ctx context.Context, in *workplaceCandidatesIn, m platform.Moment) (app.WorkplaceCandidateList, error) {
+			return q.Candidates(ctx, in.WorkplaceID, in.ShiftID, m)
+		})
 	httpapi.Read(api, httpapi.Get("/qualifications", "Квалификации", "FR-80: квалификации и аттестации со сроками; проверяются на дату операции."),
 		platform.Action{ID: "access.qualification.list", Owner: owner, Subject: "policy"},
 		func(ctx context.Context, in *struct {
@@ -199,5 +207,18 @@ type workplaceCmd[B any] struct {
 
 // Object — рабочее место команды (httpapi: права по объекту).
 func (w *workplaceCmd[B]) Object() platform.ObjectRef {
+	return platform.ObjectRef{Kind: "workplace", ID: w.WorkplaceID}
+}
+
+// workplaceCandidatesIn — вход access.candidate.list: пост — объект операции
+// (права в области поста, барьер 3: мастер цеха видит кандидатов своего цеха).
+type workplaceCandidatesIn struct {
+	WorkplaceID string `path:"workplace_id" maxLength:"128" doc:"Пост."`
+	ShiftID     string `query:"shift_id" maxLength:"128" doc:"Смена (shift_id справочника смен, «SHIFT-1@2026-09-23»); пусто — текущая."`
+	httpapi.MomentQuery
+}
+
+// Object — пост (права в области поста, барьер 3).
+func (w *workplaceCandidatesIn) Object() platform.ObjectRef {
 	return platform.ObjectRef{Kind: "workplace", ID: w.WorkplaceID}
 }

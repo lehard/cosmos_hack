@@ -29,6 +29,8 @@ unauthenticated_role: device_source
 # Окна «Пост» и «Сотрудник» раздела «Посты» (UI-16): карточки access.workplace.read, access.workplace.history,
 # access.person.card — руководителю производства, мастеру (и начальнику цеха по наследованию), начальнику ОТК;
 # администратору и Аудитору ИБ — через access.*.read. Учётные записи (access.person.read) и весь журнал им не нужны.
+# «Смена → Назначить на пост» (интерфейс 6): кандидаты на пост access.candidate.list — мастеру (и начальнику цеха) в области
+# цеха и руководителю производства, без чтения всех сотрудников, ролей и квалификаций (access.person.list и др.).
 # Операция чтения (класс read, AD-27) проверяется ещё и под именем `‹модуль›.*.read`: шаблон `quality.*.read`
 # разрешает все чтения модуля (`quality.signal.read`, `quality.signal.list`, …); `*` в других шаблонах — любой сегмент.
 roles:
@@ -36,10 +38,12 @@ roles:
   - id: employee
     title: "Сотрудник: сеанс, стол, уведомления"
     actions: ["access.session.read", "access.session.delete", "access.desk.read", "access.permission.list", "access.permission.explain", "notifications.*.read", "security.integrity.read", "journal.stream.subscribe", "item.item.lookup", "signing.*.read", "signing.paper.*", "signing.shift_report.submit"]
+  # Окно записи по event_id (journal.event.read, интерфейс 6) — всем работникам: доказательства, доводы и отметки
+  # на столах открываются одной записью; весь журнал (journal.entry.*) — по journal.*.read.
   - id: staff
     title: "Работник предприятия: просмотр производственных данных"
     inherits: [employee]
-    actions: ["item.*.read", "process.*.read", "quality.*.read", "nonconformity.*.read", "analysis.*.read", "analytics.*.read", "machinelogs.*.read", "crossitem.*.read", "documents.*.read", "reference.*.read", "vision.*.read", "materials.*.read", "erp.*.read", "mes.*.list", "cad.*.list", "signing.*.read", "simulation.*.read", "journal.timeline.read", "journal.head.read", "access.workplace.list", "federation.*.read"]
+    actions: ["item.*.read", "process.*.read", "quality.*.read", "nonconformity.*.read", "analysis.*.read", "analytics.*.read", "machinelogs.*.read", "crossitem.*.read", "documents.*.read", "reference.*.read", "vision.*.read", "materials.*.read", "erp.*.read", "mes.*.list", "cad.*.list", "signing.*.read", "simulation.*.read", "journal.timeline.read", "journal.head.read", "journal.event.read", "access.workplace.list", "federation.*.read"]
   - id: device_source
     title: "Источник фактов (устройство без сеанса)"
     actions: ["ingest.event.submit", "ingest.batch.submit", "materials.material.upload"]
@@ -54,7 +58,7 @@ roles:
     title: "Мастер участка"
     case_role: true
     inherits: [staff]
-    actions: ["process.movement.send", "process.movement.receive", "item.presentation.record", "item.carrier.apply", "item.carrier.remove", "item.intervention.open", "access.assignment.set", "access.assignment.clear", "access.assignment.list", "notifications.task.acknowledge", "nonconformity.process_hold.set", "reference.shift.schedule", "ingest.event.submit", "documents.document.sign", "documents.signature.*", "documents.version.request", "documents.paper.print", "documents.document.request", "documents.paper.attest", "item.*.read", "process.*.read", "quality.*.read", "analysis.suggestion.resolve", "access.workplace.read", "access.workplace.history", "access.person.card"]
+    actions: ["process.movement.send", "process.movement.receive", "item.presentation.record", "item.carrier.apply", "item.carrier.remove", "item.intervention.open", "access.assignment.set", "access.assignment.clear", "access.assignment.list", "access.candidate.list", "notifications.task.acknowledge", "nonconformity.process_hold.set", "reference.shift.schedule", "ingest.event.submit", "documents.document.sign", "documents.signature.*", "documents.version.request", "documents.paper.print", "documents.document.request", "documents.paper.attest", "item.*.read", "process.*.read", "quality.*.read", "analysis.suggestion.resolve", "access.workplace.read", "access.workplace.history", "access.person.card"]
   - id: technologist
     title: "Технолог"
     case_role: true
@@ -64,7 +68,7 @@ roles:
     title: "Руководитель производства"
     case_role: true
     inherits: [staff]
-    actions: ["process.version.activate", "process.version.retire", "nonconformity.process_hold.set", "nonconformity.process_hold.release", "documents.document.sign", "documents.signature.*", "documents.version.request", "documents.paper.print", "analytics.*.read", "item.*.read", "process.*.read", "analysis.*.read", "quality.*.read", "reference.*.read", "analysis.suggestion.generate", "analysis.suggestion.forward", "analysis.suggestion.resolve", "access.workplace.read", "access.workplace.history", "access.person.card"]
+    actions: ["process.version.activate", "process.version.retire", "nonconformity.process_hold.set", "nonconformity.process_hold.release", "documents.document.sign", "documents.signature.*", "documents.version.request", "documents.paper.print", "analytics.*.read", "item.*.read", "process.*.read", "analysis.*.read", "quality.*.read", "reference.*.read", "analysis.suggestion.generate", "analysis.suggestion.forward", "analysis.suggestion.resolve", "access.workplace.read", "access.workplace.history", "access.person.card", "access.candidate.list"]
   - id: administrator
     title: "Администратор (безопасности)"
     case_role: true

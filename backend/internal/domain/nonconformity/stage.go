@@ -18,17 +18,19 @@ import (
 
 // Hold — остановка точки процесса.
 type Hold struct {
-	ID          string    `json:"id"`
-	Level       string    `json:"level"`
-	EquipmentID string    `json:"equipment_id,omitempty"`
-	ToolID      string    `json:"tool_id,omitempty"`
-	ProgramRef  string    `json:"program_ref,omitempty"`
-	StepKey     string    `json:"step_key,omitempty"`
-	IncidentID  string    `json:"incident_id,omitempty"`
-	Reason      string    `json:"reason,omitempty"`
-	SetEventID  string    `json:"set_event_id"`
-	SetAt       time.Time `json:"set_at"`
-	Stream      string    `json:"stream"`
+	ID          string `json:"id"`
+	Level       string `json:"level"`
+	EquipmentID string `json:"equipment_id,omitempty"`
+	ToolID      string `json:"tool_id,omitempty"`
+	ProgramRef  string `json:"program_ref,omitempty"`
+	StepKey     string `json:"step_key,omitempty"`
+	IncidentID  string `json:"incident_id,omitempty"`
+	Reason      string `json:"reason,omitempty"`
+	// ReleaseCondition — условие снятия из записи остановки (окно операции участка, интерфейс 6).
+	ReleaseCondition string    `json:"release_condition,omitempty"`
+	SetEventID       string    `json:"set_event_id"`
+	SetAt            time.Time `json:"set_at"`
+	Stream           string    `json:"stream"`
 	// Released, ReleasedEventID — снятие; CleanPoint — N изделий точки
 	// чистоты, CleanRuns — выполнения, уже получившие усиленный контроль.
 	Released        bool     `json:"released,omitempty"`
@@ -55,7 +57,7 @@ func Stage(s StageState, r kernel.Record) (StageState, []kernel.Addressed) {
 		if decode(r, &d) && d.HoldID != "" {
 			s = s.clone()
 			s.Holds[d.HoldID] = Hold{ID: d.HoldID, Level: d.Level, EquipmentID: d.EquipmentID, ToolID: d.ToolID,
-				ProgramRef: d.ProgramRef, StepKey: d.StepKey, IncidentID: d.IncidentID, Reason: d.Reason.Text,
+				ProgramRef: d.ProgramRef, StepKey: d.StepKey, IncidentID: d.IncidentID, Reason: d.Reason.Text, ReleaseCondition: d.ReleaseCondition,
 				SetEventID: r.EventID, SetAt: r.OccurredAt, Stream: r.Stream}
 		}
 	case catalog.DecisionProcessHoldReleased:

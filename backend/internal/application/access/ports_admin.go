@@ -20,6 +20,9 @@ type AdminQueries interface {
 	Stamps(ctx context.Context, personID string, m platform.Moment) (AccessStampList, error)
 	// Assignments — назначения на посты в смене (FR-81) (access.assignment.list).
 	Assignments(ctx context.Context, shiftID, workshop string, m platform.Moment) (AccessAssignmentList, error)
+	// Candidates — кого можно назначить на пост в смене (FR-80, FR-81)
+	// (access.candidate.list): мастеру и начальнику цеха без чтения всех сотрудников.
+	Candidates(ctx context.Context, workplaceID, shiftID string, m platform.Moment) (WorkplaceCandidateList, error)
 	// Qualifications — квалификации (FR-80) (access.qualification.list).
 	Qualifications(ctx context.Context, personID string, m platform.Moment) (AccessQualificationList, error)
 	// Audit — параметры аудита policy.audit.* (access.audit.read).
@@ -82,6 +85,10 @@ func (Unimplemented) Stamps(context.Context, string, platform.Moment) (AccessSta
 
 func (Unimplemented) Assignments(context.Context, string, string, platform.Moment) (AccessAssignmentList, error) {
 	return AccessAssignmentList{}, platform.NotImplemented("access.assignment.list")
+}
+
+func (Unimplemented) Candidates(context.Context, string, string, platform.Moment) (WorkplaceCandidateList, error) {
+	return WorkplaceCandidateList{}, platform.NotImplemented("access.candidate.list")
 }
 
 func (Unimplemented) Qualifications(context.Context, string, platform.Moment) (AccessQualificationList, error) {

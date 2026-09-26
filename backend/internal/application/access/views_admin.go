@@ -116,6 +116,35 @@ type AccessAssignmentList struct {
 	BasisSeq int64              `json:"basis_seq"`
 }
 
+// WorkplaceCandidate — кандидат на пост в смене (FR-80, FR-81; интерфейс 6,
+// «Смена → Назначить на пост»): сотрудник с ролью исполнителя или контролёра в
+// области поста и вердикт квалификации на дату смены — те же условия, что
+// проверяет гард access.assignment.set (GuardAssignment).
+type WorkplaceCandidate struct {
+	PersonID string `json:"person_id"`
+	Display  string `json:"display" doc:"Сотрудник словами (псевдоним кейса §4.6)."`
+	Role     string `json:"role" enum:"performer,quality_inspector" doc:"Роль назначения (assignee_role команды access.assignment.set)."`
+	// QualificationVerdict — ok — действует; expiring — истекает в 30 дней; expired — истекла; missing — нет в области поста.
+	QualificationVerdict string     `json:"qualification_verdict" enum:"ok,expiring,expired,missing" doc:"Квалификация на дату смены: ok — действует, expiring — истекает в 30 дней, expired — истекла, missing — нет в области поста. Контролёру квалификация не нужна (ok) — нужен документ согласования."`
+	QualificationID      string     `json:"qualification_id,omitempty" doc:"Квалификация, по которой вердикт."`
+	ValidUntil           *time.Time `json:"valid_until,omitempty" doc:"Срок квалификации."`
+	Why                  string     `json:"why" doc:"Почему так — по-русски: срок, область, что нужно для назначения."`
+	// Allowed — гард назначения пропустит (исполнитель с действующей квалификацией; контролёр — после согласования).
+	Allowed       bool `json:"allowed" doc:"Назначение пройдёт гард access.assignment.set (контролёру — после документа согласования начальника ОТК)."`
+	NeedsApproval bool `json:"needs_approval,omitempty" doc:"Контролёр: назначение — по документу «запрос мастера → согласование начальника ОТК» (PRD §11.18)."`
+	AssignedHere  bool `json:"assigned_here,omitempty" doc:"Уже назначен на этот пост в этой смене."`
+	// AssignedElsewhere — пост, на который сотрудник уже назначен в этой смене.
+	AssignedElsewhere string `json:"assigned_elsewhere,omitempty" doc:"Уже назначен в этой смене на другой пост (workplace_id)."`
+}
+
+// WorkplaceCandidateList — кандидаты на пост в смене: сначала допустимые.
+type WorkplaceCandidateList struct {
+	WorkplaceID string               `json:"workplace_id"`
+	ShiftID     string               `json:"shift_id,omitempty" doc:"Смена, на дату которой проверены квалификации; пусто — текущая."`
+	Items       []WorkplaceCandidate `json:"items"`
+	BasisSeq    int64                `json:"basis_seq"`
+}
+
 // AccessQualification — квалификация или аттестация со сроком (FR-80).
 type AccessQualification struct {
 	PersonID        string     `json:"person_id"`

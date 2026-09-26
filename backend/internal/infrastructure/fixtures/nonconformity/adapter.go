@@ -2,6 +2,7 @@ package nonconformity
 
 import (
 	"context"
+	"slices"
 	"sort"
 
 	app "ant/internal/application/nonconformity"
@@ -59,6 +60,27 @@ func (Adapter) Queue(ctx context.Context, f app.QueueFilter, m platform.Moment, 
 func (Adapter) Presentation(ctx context.Context, itemID string, m platform.Moment) (app.NCPresentationView, error) {
 	return respond[app.NCPresentationView](ctx, "nonconformity.presentation.read", map[string]string{"item_id": itemID}, &m)
 }
+
+// Station — окно операции участка (nonconformity.station.read, FR-49): из
+// мира заготовок; доступность «Снять остановку» — по полномочию вошедшего.
+func (Adapter) Station(ctx context.Context, stepKey, equipmentID string, m platform.Moment) (app.StationView, error) {
+	v, err := respond[app.StationView](ctx, "nonconformity.station.read", map[string]string{"step_key": stepKey}, &m)
+	if err != nil {
+		return v, err
+	}
+	if equipmentID != "" && v.EquipmentID != "" && v.EquipmentID != equipmentID {
+		// Другое оборудование того же шага (линия 1 / линия 2): его остановок нет.
+		v.ActiveHolds, v.Suggestion, v.EquipmentID = []app.StationHold{}, nil, equipmentID
+	}
+	p := platform.PrincipalFrom(ctx)
+	can := p.Anonymous() || slices.Contains(processHoldHolders, p.PersonID)
+	v.Actions = app.StationActions(v.StepKey, v.StepLabel, v.EquipmentID, v.ActiveHolds, can)
+	return v, nil
+}
+
+// processHoldHolders — обладатели полномочия process_hold в затравке политики
+// (normative/policy grants.authorities): руководитель производства, начальник сварочного цеха.
+var processHoldHolders = []string{"PM-01", "HWS-WC"}
 
 // Card — карточка несоответствия (nonconformity.card.read, FR-51).
 func (Adapter) Card(ctx context.Context, ncID string, m platform.Moment) (app.NCCard, error) {

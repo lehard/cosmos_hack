@@ -32,6 +32,8 @@ type Queries interface {
 	Concessions(ctx context.Context, itemID string, m platform.Moment) (ConcessionList, error)
 	// Presentation — точка предъявления изделия для решения (nonconformity.presentation.read, FR-19).
 	Presentation(ctx context.Context, itemID string, m platform.Moment) (NCPresentationView, error)
+	// Station — окно операции участка: остановки точки процесса и действия (nonconformity.station.read, FR-49; интерфейс 6).
+	Station(ctx context.Context, stepKey, equipmentID string, m platform.Moment) (StationView, error)
 }
 
 // Commands — ведущий порт команд модуля nonconformity (AD-39): решения
@@ -121,6 +123,10 @@ func (Unimplemented) GrantConcession(context.Context, GrantConcession) (platform
 func (Unimplemented) WaiveReworkLimit(context.Context, string, WaiveReworkLimit) (platform.Receipt, error) {
 	return nr("nonconformity.rework_limit.waive")
 }
+func (Unimplemented) Station(context.Context, string, string, platform.Moment) (StationView, error) {
+	return StationView{}, platform.NotImplemented("nonconformity.station.read")
+}
+
 func (Unimplemented) SetProcessHold(context.Context, SetProcessHold) (platform.Receipt, error) {
 	return nr("nonconformity.process_hold.set")
 }
