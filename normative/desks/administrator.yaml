@@ -1,17 +1,17 @@
 # Стол администратора (PRD §3a): доступ и технические настройки, не производство.
-# Первая вкладка — тестовые сценарии: пульт демонстрации (демо-трек, эпик 14). Владелец после волны 1 — эпик 14.
+# Первая вкладка — «Надёжность данных»: можно ли сейчас доверять источникам, интеграциям и VisionQC
+# (решение пользователя 26.09); тестовые сценарии — последней вкладкой, пометкой «Демо-стенд».
 version: 1
 role: administrator
-title_key: desks.testScenarios
+title_key: dataReliability.title
 density: comfortable
 help_key: administrator # раздел встроенной справки (эпик 47); наследники роли получают его вместе со столом
 tabs:
-  - id: scenarios
-    title_key: desks.testScenarios
-    layout: main-side
+  - id: reliability
+    title_key: dataReliability.title
+    layout: single
     slots:
-      - {id: console, area: main, widget: scenario-console}
-      - {id: board, area: right, widget: verification-board}
+      - {id: reliability, area: main, widget: data-reliability}
   - id: access
     title_key: desks.access
     layout: single
@@ -57,3 +57,10 @@ tabs:
     layout: single
     slots:
       - {id: federation, area: main, widget: federation}
+  # Демо-стенд: пульт сценариев и табло «ожидалось → получилось» — инструмент подготовки показа, последним.
+  - id: scenarios
+    title_key: desks.demoStand
+    layout: main-side
+    slots:
+      - {id: console, area: main, widget: scenario-console}
+      - {id: board, area: right, widget: verification-board}

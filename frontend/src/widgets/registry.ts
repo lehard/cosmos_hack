@@ -87,6 +87,7 @@ export const widgetRegistry = {
   'vision-adaptation': { titleKey: 'widgets.visionAdaptation.title', epic: 40, load: () => import('./vision-adaptation') },
   // ── эпик 48: Управление интеграциями ──
   'integrations': { titleKey: 'widgets.integrations.title', epic: 48, load: () => import('./integrations') },
+  'data-reliability': { titleKey: 'dataReliability.title', epic: 48, load: () => import('./data-reliability') },
   // ── эпик 41: Федерация предприятий — партнёры и выписки паспорта ──
   'federation': { titleKey: 'widgets.federation.title', epic: 41, load: () => import('./federation') },
 } satisfies Record<string, WidgetDefinition>
