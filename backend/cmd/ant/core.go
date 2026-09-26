@@ -15,6 +15,7 @@ import (
 	dj "ant/internal/domain/journal"
 	"ant/internal/infrastructure/security/permissive"
 	enginestore "ant/internal/infrastructure/storage/engine"
+	erpstore "ant/internal/infrastructure/storage/erp"
 	journalstore "ant/internal/infrastructure/storage/journal"
 	"ant/internal/infrastructure/storage/journal/clock"
 	"ant/internal/infrastructure/storage/journal/feed"
@@ -105,8 +106,11 @@ func openCore(ctx context.Context, env *environment) (*core, error) {
 		batch = journalstore.DefaultBatchMax
 	}
 	c := &core{
-		pool:     pool,
-		journal:  journalstore.NewStore(pool, infra, journalstore.WithBatchMax(batch)),
+		pool: pool,
+		// Эффекты модулей со своими таблицами в транзакции Append (AD-45):
+		// очередь исходящих erp (эпик 30).
+		journal: journalstore.NewStore(pool, infra, journalstore.WithBatchMax(batch),
+			journalstore.WithEffects(erpstore.ApplyEffect)),
 		leases:   journalstore.NewLeases(pool, infra),
 		listener: journalstore.NewListener(pool, env.log),
 		engine:   &enginestore.Store{Pool: pool},

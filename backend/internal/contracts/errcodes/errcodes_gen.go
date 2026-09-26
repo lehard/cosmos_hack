@@ -73,10 +73,14 @@ const (
 	ApiReplayReadOnly Code = "api.replay_read_only"
 	// Запрос не соответствует контракту
 	ApiValidationFailed Code = "api.validation_failed"
+	// Канал обмена в режиме degraded
+	ErpChannelDegraded Code = "erp.channel_degraded"
 	// Несовместимое изменение контракта обмена
 	ErpContractIncompatible Code = "erp.contract_incompatible"
 	// Не найден договор с контрагентом
 	ErpContractNotFound Code = "erp.contract_not_found"
+	// Новая версия отправленного сообщения ждёт решения
+	ErpCorrectionPending Code = "erp.correction_pending"
 	// 1С вернула ошибку данных
 	ErpDataError Code = "erp.data_error"
 	// 1С уже провела документ
@@ -87,6 +91,8 @@ const (
 	ErpIdMappingMissing Code = "erp.id_mapping_missing"
 	// 1С не подтвердила приём
 	ErpNoAck Code = "erp.no_ack"
+	// Сообщение не ждёт решения
+	ErpNotQuarantined Code = "erp.not_quarantined"
 	// 1С недоступна
 	ErpUnavailable Code = "erp.unavailable"
 	// Выписка паспорта изменена
@@ -292,13 +298,16 @@ var codes = [...]Info{
 	{Code: ApiRateLimited, Status: 429, Title: "Слишком много запросов", Detail: "Повторите через {retry_after} с", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: ApiReplayReadOnly, Status: 403, Title: "В режиме воспроизведения действия недоступны", Detail: "Запрос на момент {as_of} только для чтения", UIKey: "errors.decision.replayReadOnly", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: ApiValidationFailed, Status: 400, Title: "Запрос не соответствует контракту", Detail: "Поле {field}: {reason}", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
+	{Code: ErpChannelDegraded, Status: 503, Title: "Канал обмена в режиме degraded", Detail: "Канал {system} в режиме degraded: {detail} — отправка остановлена до восстановления контракта", UIKey: "errors.integration.contractIncompatible", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: ErpContractIncompatible, Status: 422, Title: "Несовместимое изменение контракта обмена", Detail: "Метаданные {system} не совпали с версией контракта адаптера — канал degraded, результат не отправлен", UIKey: "errors.integration.contractIncompatible", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: ErpContractNotFound, Status: 422, Title: "Не найден договор с контрагентом", Detail: "Не найден договор с контрагентом {counterparty}", UIKey: "errors.integration.contractNotFound", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
+	{Code: ErpCorrectionPending, Status: 409, Title: "Новая версия отправленного сообщения ждёт решения", Detail: "Содержимое учётного сообщения {business_key} изменилось после подтверждения 1С — исправление (сторно + новое) только по решению человека", UIKey: "errors.integration.erpDataError", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: ErpDataError, Status: 422, Title: "1С вернула ошибку данных", Detail: "1С вернула ошибку данных {code}: {message}. Автоповтора нет — задача администратору", UIKey: "errors.integration.erpDataError", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: ErpDuplicateInErp, Status: 200, Title: "1С уже провела документ", Detail: "1С уже провела документ с этим номером сообщения — второй не создан", UIKey: "errors.integration.duplicateInErp", Quarantine: false, Severity: "warning", Guard: false, Aliases: nil},
 	{Code: ErpGalaktikaUnavailable, Status: 503, Title: "Галактика:ERP недоступна", Detail: "Галактика:ERP недоступна — повтор с тем же номером сообщения", UIKey: "errors.integration.galaktikaUnavailable", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: ErpIdMappingMissing, Status: 422, Title: "Нет соответствия идентификатора", Detail: "Нет соответствия идентификатора: {object} «{external_id}» — добавьте его в таблицу соответствий", UIKey: "errors.integration.idMappingMissing", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: ErpNoAck, Status: 504, Title: "1С не подтвердила приём", Detail: "1С не подтвердила приём за {time} — статус «учтено в 1С» не поставлен", UIKey: "errors.integration.noAck", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
+	{Code: ErpNotQuarantined, Status: 409, Title: "Сообщение не ждёт решения", Detail: "Учётное сообщение {business_key} в состоянии «{status}» — переотправка и исправление только из карантина", UIKey: "errors.integration.erpDataError", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: ErpUnavailable, Status: 503, Title: "1С недоступна", Detail: "1С недоступна — повтор с тем же номером сообщения через {delay}", UIKey: "errors.integration.erpUnavailable", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: FederationExtractTampered, Status: 422, Title: "Выписка паспорта изменена", Detail: "Выписка паспорта изменена — не принята", UIKey: "errors.federation.extractTampered", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: FederationExtractUnverifiable, Status: 202, Title: "Происхождение не подтверждено", Detail: "Подписи выписки проверить нельзя — принята с пометкой «происхождение не подтверждено»", UIKey: "errors.federation.extractUnverifiable", Quarantine: false, Severity: "warning", Guard: false, Aliases: nil},

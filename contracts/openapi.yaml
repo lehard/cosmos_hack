@@ -3893,7 +3893,9 @@ components:
           description: Ось «учёт в 1С» после квитанции (axis_erp_accounting).
           type: string
         action:
-          enum:
+          description: Учётное действие порта учёта; return_from_defect — «возврат из брака в производство» (Д-17).
+          type: string
+          x-extensible-enum:
             - accept_into_work
             - warehouse_transfer
             - scrap_transfer_rework
@@ -3902,7 +3904,7 @@ components:
             - return_to_supplier
             - release
             - inspection_result
-          type: string
+            - return_from_defect
         after_rework:
           type: boolean
         attempts:

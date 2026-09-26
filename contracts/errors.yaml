@@ -741,6 +741,24 @@ codes:
     detail: "Метаданные {system} не совпали с версией контракта адаптера — канал degraded, результат не отправлен"
     ui_key: errors.integration.contractIncompatible
     refs: [AD-18, FR-111]
+  erp.not_quarantined:
+    status: 409
+    title: "Сообщение не ждёт решения"
+    detail: "Учётное сообщение {business_key} в состоянии «{status}» — переотправка и исправление только из карантина"
+    ui_key: errors.integration.erpDataError
+    refs: [FR-96, AD-7]
+  erp.correction_pending:
+    status: 409
+    title: "Новая версия отправленного сообщения ждёт решения"
+    detail: "Содержимое учётного сообщения {business_key} изменилось после подтверждения 1С — исправление (сторно + новое) только по решению человека"
+    ui_key: errors.integration.erpDataError
+    refs: [AD-7, FR-96]
+  erp.channel_degraded:
+    status: 503
+    title: "Канал обмена в режиме degraded"
+    detail: "Канал {system} в режиме degraded: {detail} — отправка остановлена до восстановления контракта"
+    ui_key: errors.integration.contractIncompatible
+    refs: [AD-18, FR-111]
   erp.galaktika_unavailable:
     status: 503
     title: "Галактика:ERP недоступна"

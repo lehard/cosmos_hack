@@ -2,7 +2,6 @@
  * СГЕНЕРИРОВАНО orval (frontend/scripts/generate.mjs) — руками не править (AD-20).
  * Источник: contracts/openapi.yaml
  */
-import type { ErpMessageAction } from './erpMessageAction';
 import type { ErpMessageAttempt } from './erpMessageAttempt';
 import type { ErpMessageExternalSystem } from './erpMessageExternalSystem';
 import type { ErpMessageStatus } from './erpMessageStatus';
@@ -10,7 +9,8 @@ import type { ErpMessageStatus } from './erpMessageStatus';
 export interface ErpMessage {
   /** Ось «учёт в 1С» после квитанции (axis_erp_accounting). */
   accounting_state?: string;
-  action: ErpMessageAction;
+  /** Учётное действие порта учёта; return_from_defect — «возврат из брака в производство» (Д-17). */
+  action: string;
   after_rework: boolean;
   attempts: ErpMessageAttempt[];
   basis_seq: number;

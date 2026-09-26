@@ -6,7 +6,9 @@ import (
 	"time"
 
 	"ant/cmd/internal/db"
+	onecstand "ant/internal/infrastructure/integration/erp/onec/stand"
 	enginestore "ant/internal/infrastructure/storage/engine"
+	erpstore "ant/internal/infrastructure/storage/erp"
 	storagefx "ant/internal/infrastructure/storage/fixtures"
 	ingeststore "ant/internal/infrastructure/storage/ingest"
 	journalstore "ant/internal/infrastructure/storage/journal"
@@ -23,6 +25,9 @@ var migrationSets = []migrator.Set{
 	{Module: "ingest", FS: ingeststore.Migrations, Dir: ingeststore.MigrationsDir},
 	{Module: "fixtures", FS: storagefx.Migrations, Dir: "migrations"},
 	{Module: "process", FS: processstore.Migrations, Dir: processstore.MigrationsDir},
+	// Эпик 30: очередь исходящих и каналы обмена (erp), состояние stand-а 1С (stand_onec).
+	{Module: "erp", FS: erpstore.Migrations, Dir: erpstore.MigrationsDir},
+	{Module: "stand_onec", FS: onecstand.Migrations, Dir: onecstand.MigrationsDir},
 }
 
 // runMigrate — разовая роль migrate (AD-1, AD-25): ждёт БД, создаёт роли БД

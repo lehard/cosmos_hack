@@ -108,6 +108,12 @@ func runAPI(ctx context.Context, env *environment) error {
 			return err
 		}
 	}
+	if modeOf(opts, "erp") == platform.ModeLive {
+		// Эпик 30: операции erp.* над проекциями erp.* и каналами обмена.
+		if opts.erp, err = erpLive(ctx, env); err != nil {
+			return err
+		}
+	}
 	if modeOf(opts, "analysis") == platform.ModeLive {
 		if opts.analysis, err = analysisLive(ctx, env); err != nil {
 			return err

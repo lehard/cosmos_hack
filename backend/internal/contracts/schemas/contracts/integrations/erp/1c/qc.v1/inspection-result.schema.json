@@ -1,0 +1,83 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/integrations/erp/1c/qc.v1/inspection-result.schema.json",
+  "title": "QcInspectionResult",
+  "description": "Результат контроля по подписанной закрывающей точке — тело `POST /‹база›/hs/qc/v1/inspection-results` (кейс §3.3, Е-76): итог, номер предъявления, несоответствия. Движения не означает и изделие не держит.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "message_id": {
+      "$ref": "common.schema.json#/definitions/uuid",
+      "description": "Номер сообщения — ключ идемпотентности."
+    },
+    "contract": {
+      "type": "string",
+      "pattern": "^qc\\.v[1-9][0-9]*$",
+      "description": "Версия контракта (`qc.v1`); неподдерживаемая — `400 CONTRACT_VERSION`."
+    },
+    "occurred_at": {
+      "$ref": "common.schema.json#/definitions/timestamp",
+      "description": "Момент решения."
+    },
+    "source": {
+      "$ref": "common.schema.json#/definitions/source",
+      "description": "Источник и бизнес-ключ."
+    },
+    "item": {
+      "$ref": "common.schema.json#/definitions/item",
+      "description": "Изделие."
+    },
+    "lot": {
+      "$ref": "common.schema.json#/definitions/lot",
+      "description": "Партия."
+    },
+    "closing_point": {
+      "type": "string",
+      "maxLength": 48,
+      "description": "Закрывающая точка."
+    },
+    "presentation_no": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100,
+      "description": "Номер предъявления."
+    },
+    "result": {
+      "type": "string",
+      "enum": [
+        "conforming",
+        "conforming_with_concession",
+        "partially_conforming",
+        "nonconforming",
+        "insufficient_data"
+      ],
+      "description": "Итог: годно / годно по разрешению / годно частично / не годно / мало данных."
+    },
+    "concession_number": {
+      "type": "string",
+      "maxLength": 128,
+      "description": "Номер разрешения на отклонение."
+    },
+    "nonconformities": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 128,
+        "description": "Номер несоответствия."
+      },
+      "description": "Несоответствия при «не годно»."
+    },
+    "corrects_message_id": {
+      "$ref": "common.schema.json#/definitions/uuid",
+      "description": "Исправляемое сообщение."
+    }
+  },
+  "required": [
+    "message_id",
+    "contract",
+    "occurred_at",
+    "source",
+    "closing_point",
+    "result"
+  ]
+}
