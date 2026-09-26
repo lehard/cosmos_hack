@@ -114,8 +114,25 @@ func Generate(b Bundle, p Params) (*Plan, error) {
 		return nil, err
 	}
 	g.actions(plan)
+	g.live(plan)
 	g.truth(plan)
 	return plan, nil
+}
+
+// live — живая часть прогона (Д-85): каждое решение с From — только руками
+// (остановка до нажатия); история до From — demo-signer.
+func (g *gen) live(plan *Plan) {
+	lp := g.b.Run.Live
+	if lp == nil {
+		return
+	}
+	plan.LiveFrom = g.t(lp.From)
+	for i := range plan.Actions {
+		a := &plan.Actions[i]
+		if a.Kind == ActionDecision && !a.At.Before(plan.LiveFrom) && a.Refusal == "" {
+			a.Stop = true
+		}
+	}
 }
 
 func (g *gen) fail(format string, a ...any) { g.errs = append(g.errs, fmt.Sprintf(format, a...)) }
@@ -239,15 +256,21 @@ func (g *gen) stepWeld(scenario string, st *Step) {
 		body["rework_of"] = "{local:" + w.ReworkOf + "}"
 	}
 	actor := g.ids.Person(w.Welder)
-	g.act(Action{Kind: ActionDecision, At: start.Add(-2 * time.Minute), Scenario: scenario, Label: w.Run + "/confirm", Note: "Режим по карте сверен",
-		Operation: "access.operator.confirm_step", Role: "performer", Actor: actor, Item: w.Item, Params: map[string]any{"workplace_id": ln.Workplace},
-		Body: map[string]any{"step_key": "welding.weld", "item_id": "{item:" + w.Item + "}", "tp_step": "Режим по карте сверен"}})
-	g.act(Action{Kind: ActionDecision, At: start, Scenario: scenario, Label: w.Run + "/start", Note: st.Note, Operation: "process.operation.start",
+	if !w.NoConfirm {
+		g.act(Action{Kind: ActionDecision, At: start.Add(-2 * time.Minute), Scenario: scenario, Label: w.Run + "/confirm", Note: "Режим по карте сверен",
+			Operation: "access.operator.confirm_step", Role: "performer", Actor: actor, Item: w.Item, Params: map[string]any{"workplace_id": ln.Workplace},
+			Body: map[string]any{"step_key": "welding.weld", "item_id": "{item:" + w.Item + "}", "tp_step": "Режим по карте сверен"}})
+	}
+	note := st.Note
+	if note == "" {
+		note = "Сварка " + w.Run + " — «Начать»"
+	}
+	g.act(Action{Kind: ActionDecision, At: start, Scenario: scenario, Label: w.Run + "/start", Note: note, Operation: "process.operation.start",
 		Role: "performer", Actor: actor, Item: w.Item, Params: map[string]any{"item_id": "{item:" + w.Item + "}"}, Body: body})
 	for _, d := range g.weldCycles(wt, ln.WeldingSource, runID, NewRand(g.seed, "weld/"+w.Run), false) {
 		d.scenario = scenario
 	}
-	g.act(Action{Kind: ActionDecision, At: wt.End, Scenario: scenario, Label: w.Run + "/finish", Operation: "process.operation.finish",
+	g.act(Action{Kind: ActionDecision, At: wt.End, Scenario: scenario, Label: w.Run + "/finish", Note: "Сварка " + w.Run + " — «Выполнено»", Operation: "process.operation.finish",
 		Role: "performer", Actor: actor, Item: w.Item, Params: map[string]any{"run_id": runID}, Body: map[string]any{"completion": "completed"}})
 }
 

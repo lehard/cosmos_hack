@@ -10959,6 +10959,64 @@ components:
         - workplace_id
         - station
       type: object
+    PlanEntry:
+      additionalProperties: false
+      properties:
+        at:
+          description: Доменное время по плану. Часы прогона стоят, пока он ждёт человека, — время следующих строк от нажатия не «убегает».
+          format: date-time
+          type: string
+        done:
+          description: Уже произошло.
+          type: boolean
+        item_id:
+          description: Изделие прогона.
+          type: string
+        kind:
+          description: decision — решение человека; event — событие машины или внешней системы; alert — запланированный сбой (видно заранее); stand, tamper — служебное.
+          enum:
+            - decision
+            - event
+            - alert
+            - stand
+            - tamper
+          type: string
+        label:
+          description: Метка шага определения (строка карточки).
+          type: string
+        object_id:
+          description: Объект решения (изделие, пост, несоответствие…), если уже известен.
+          type: string
+        operation:
+          description: operationId решения (x-ant-action).
+          type: string
+        persona:
+          description: Персона (псевдоним) решения.
+          type: string
+        role:
+          description: Роль стола решения.
+          type: string
+        stop:
+          description: Прогон ждёт нажатия человека на его столе.
+          type: boolean
+        title:
+          description: Что произойдёт, по-русски.
+          type: string
+        until:
+          description: Конец группы однотипных событий (сводки тока по минутам).
+          format: date-time
+          type: string
+        waiting:
+          description: Прогон ждёт именно этого решения сейчас.
+          type: boolean
+      required:
+        - at
+        - kind
+        - title
+        - stop
+        - done
+        - waiting
+      type: object
     PortSetting:
       additionalProperties: false
       properties:
@@ -14667,6 +14725,48 @@ components:
       required:
         - items
       type: object
+    RunPlan:
+      additionalProperties: false
+      properties:
+        clock_at:
+          description: "Доменное «сейчас» прогона (AD-37): часы в шапке столов."
+          format: date-time
+          type: string
+        items:
+          items:
+            $ref: "#/components/schemas/PlanEntry"
+          type: array
+        live_from:
+          description: "Начало живой части прогона (сценарий показа): раньше — готовая история, её прогон проигрывает сразу."
+          format: date-time
+          type: string
+        run_id:
+          type: string
+        speed:
+          description: Ускорение доменных часов ×1…×1000.
+          format: int64
+          maximum: 1000
+          minimum: 1
+          type: integer
+        state:
+          enum:
+            - running
+            - paused
+            - waiting_for_decision
+            - completed
+            - stopped
+            - failed
+          type: string
+        waiting_for:
+          $ref: "#/components/schemas/RunWait"
+          description: Чьё решение ждёт прогон сейчас.
+      required:
+        - run_id
+        - state
+        - clock_at
+        - speed
+        - items
+      type: object
     RunProfile:
       additionalProperties: false
       properties:
@@ -16137,7 +16237,7 @@ components:
           minimum: 0
           type: integer
         items:
-          description: Изделий сценария; пусто — по определению.
+          description: "Не используется: изделия задаёт определение прогона (scenarios/definitions/runs); поле оставлено для совместимости и игнорируется."
           format: int64
           maximum: 10000
           minimum: 0
@@ -16163,7 +16263,7 @@ components:
           $ref: "#/components/schemas/DsseEnvelope"
           description: "Подписанный пакет DSSE для операций с уровнем подписи ≥ 1 (AD-10, AD-13, AD-14): подписывает агент токена, сервер сверяет отпечаток."
         speed:
-          description: Ускорение ×1…×1000; пусто — ×1.
+          description: Ускорение ×1…×1000; пусто — скорость определения прогона (показ SHOW-IS2 — ×60, MS-1 — ×1000), на заготовках — ×1.
           format: int64
           maximum: 1000
           minimum: 1
@@ -30187,6 +30287,67 @@ paths:
         emits:
           - simulation.run.paused
         id: simulation.run.pause
+        owner: simulation
+        subject: run
+  /api/v1/runs/{run_id}/plan:
+    get:
+      description: "Д-85: чего ждёт прогон сейчас (роль, действие) и что будет дальше — решения людей с остановками, события машин и внешних систем, запланированные сбои — с доменным временем; часы прогона и скорость."
+      operationId: simulation.run.plan
+      parameters:
+        - description: Прогон сценария.
+          in: path
+          name: run_id
+          required: true
+          schema:
+            description: Прогон сценария.
+            maxLength: 128
+            type: string
+        - description: Весь план (прошедшее — done); по умолчанию — от текущего места.
+          explode: false
+          in: query
+          name: all
+          schema:
+            description: Весь план (прошедшее — done); по умолчанию — от текущего места.
+            type: boolean
+        - description: Сколько строк (по умолчанию 50).
+          explode: false
+          in: query
+          name: limit
+          schema:
+            description: Сколько строк (по умолчанию 50).
+            format: int64
+            maximum: 1000
+            minimum: 0
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunPlan"
+          description: OK
+          headers:
+            Ant-Backend:
+              schema:
+                $ref: "#/components/schemas/BackendMode"
+                description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Error
+      summary: План прогона
+      tags:
+        - simulation
+      x-ant-action:
+        class: read
+        critical: false
+        id: simulation.run.plan
         owner: simulation
         subject: run
   /api/v1/runs/{run_id}/resume:

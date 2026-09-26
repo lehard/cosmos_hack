@@ -137,6 +137,9 @@ func (w JournalDecisions) Write(ctx context.Context, d Decision) (platform.Recei
 		b := int(d.Meta.BasisSeq)
 		e.BasisSeq = &b
 	}
+	if run := w.runOf(ctx, d.Stream); run != "" {
+		e.RunID = &run
+	}
 	rq := appjournal.AppendRequest{Batch: []appjournal.Pending{{Entry: e, Envelope: sealed}}}
 	if d.Meta.BasisSeq > 0 {
 		for _, s := range guard {
@@ -165,6 +168,24 @@ func (w JournalDecisions) Write(ctx context.Context, d Decision) (platform.Recei
 		rc.Seq = res.Seqs[0]
 	}
 	return rc, nil
+}
+
+// runOf — прогон решения (AD-38): прогон команды (demo-signer ставит его в
+// контекст), иначе прогон потока инцидента — последней записи в нём (инцидент
+// рождён записями изделий прогона). Решения людей на столах несут run_id, как у
+// других модулей: пульт прогона находит их (simulation, Actor.Decided).
+func (w JournalDecisions) runOf(ctx context.Context, stream string) string {
+	if run := appjournal.RunFrom(ctx); run != "" {
+		return run
+	}
+	if stream == "" {
+		return ""
+	}
+	es, err := w.Journal.Read(ctx, appjournal.ReadQuery{Stream: stream, Backward: true, Limit: 1})
+	if err != nil || len(es) == 0 || es[0].RunID == nil {
+		return ""
+	}
+	return *es[0].RunID
 }
 
 // replay — квитанция уже записанного решения (повтор команды, AD-7).

@@ -18,6 +18,8 @@ type Queries interface {
 	Board(ctx context.Context, runID string, m platform.Moment) (Board, error)
 	// Injections — кнопки цифрового стенда для прогона (simulation.injection.list, FR-152).
 	Injections(ctx context.Context, runID string) (InjectionList, error)
+	// Plan — план прогона: чего ждём сейчас и что будет дальше (simulation.run.plan, Д-85).
+	Plan(ctx context.Context, runID string, q PlanQuery) (RunPlan, error)
 }
 
 // Commands — ведущий порт команд модуля simulation.
@@ -51,6 +53,9 @@ func (Unimplemented) Board(context.Context, string, platform.Moment) (Board, err
 }
 func (Unimplemented) Injections(context.Context, string) (InjectionList, error) {
 	return InjectionList{}, ni("simulation.injection.list")
+}
+func (Unimplemented) Plan(context.Context, string, PlanQuery) (RunPlan, error) {
+	return RunPlan{}, ni("simulation.run.plan")
 }
 func (Unimplemented) StartRun(context.Context, string, StartRun) (StartedRun, error) {
 	return StartedRun{}, ni("simulation.run.start")

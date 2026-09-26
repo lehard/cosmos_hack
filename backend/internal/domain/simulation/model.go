@@ -138,6 +138,17 @@ type RunDef struct {
 	// Stops — решения, на которых интерактивный прогон ждёт стол роли
 	// (FR-129); остальные решения подписывает demo-signer и в интерактиве.
 	Stops []string `json:"stops,omitempty"`
+	// Live — живая часть прогона (сценарий показа, Д-85); nil — весь прогон
+	// идёт по часам, решения — по Stops и stop карточек.
+	Live *LivePart `json:"live,omitempty"`
+}
+
+// LivePart — живая часть прогона (сценарий показа, Д-85): до From — готовая
+// история (решения подписывает demo-signer, интерактивный прогон проигрывает
+// её сразу, без часов); с From — только руками: каждое решение человека —
+// остановка прогона до нажатия на столе роли, demo-signer не подписывает ничего.
+type LivePart struct {
+	From string `json:"from"`
 }
 
 // OrderPlan — задание 1С (Е-01): приходит через stand 1С.
@@ -369,6 +380,9 @@ type WeldStep struct {
 	Current  []int  `json:"current,omitempty"`
 	ReworkOf string `json:"rework_of,omitempty"` // прежнее выполнение (FR-47)
 	Program  string `json:"program,omitempty"`
+	// NoConfirm — без отдельного «режим по карте сверен» перед сваркой
+	// (сценарий показа: сварщик жмёт только «Начать» и «Выполнено»).
+	NoConfirm bool `json:"no_confirm,omitempty"`
 }
 
 // Stream — поток записей журнала оборудования за окно (S04, S06, S07):

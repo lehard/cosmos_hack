@@ -97,3 +97,20 @@ func (s memStore) List(context.Context) ([]*app.RunState, error) {
 	}
 	return out, nil
 }
+
+// TestDecidedObject — решение засчитывается остановке только над её объектом
+// (изделие записи, поток или значение в данных), а не любое решение этого типа.
+func TestDecidedObject(t *testing.T) {
+	e := map[string]any{"seq": 7, "item_id": "ENT01:run-1/F-003", "stream": "item:ENT01:run-1/F-003",
+		"data": map[string]any{"nc_id": "NC-9", "equipment_id": "IS-2"}}
+	for obj, want := range map[string]bool{"": true, "ENT01:run-1/F-003": true, "NC-9": true, "IS-2": true,
+		"ENT01:run-1/F-002": false, "IS-1": false, "NC-1": false} {
+		if got := mentions(e, obj); got != want {
+			t.Errorf("объект %q: %v, ждали %v", obj, got, want)
+		}
+	}
+	inc := map[string]any{"seq": 8, "stream": "incident:INC-1", "data": map[string]any{}}
+	if !mentions(inc, "INC-1") {
+		t.Error("поток инцидента")
+	}
+}

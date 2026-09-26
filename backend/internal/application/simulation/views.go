@@ -121,3 +121,47 @@ type Injection struct {
 type InjectionList struct {
 	Items []Injection `json:"items"`
 }
+
+// PlanQuery — параметры плана прогона.
+type PlanQuery struct {
+	// All — весь план (прошедшее помечено done); иначе — от текущего места.
+	All bool
+	// Limit — сколько строк (0 — 50).
+	Limit int
+}
+
+// RunPlan — план прогона для пульта и сценария скринкаста (simulation.run.plan,
+// Д-85): доменные часы и скорость, чего ждём сейчас, ближайшие события и
+// остановки с доменным временем.
+type RunPlan struct {
+	RunID string `json:"run_id"`
+	State string `json:"state" enum:"running,paused,waiting_for_decision,completed,stopped,failed"`
+	// ClockAt — доменное «сейчас» прогона (часы в шапке); Speed — ускорение.
+	ClockAt time.Time `json:"clock_at" doc:"Доменное «сейчас» прогона (AD-37): часы в шапке столов."`
+	Speed   int       `json:"speed" minimum:"1" maximum:"1000" doc:"Ускорение доменных часов ×1…×1000."`
+	// LiveFrom — начало живой части (сценарий показа): до него — история.
+	LiveFrom *time.Time `json:"live_from,omitempty" doc:"Начало живой части прогона (сценарий показа): раньше — готовая история, её прогон проигрывает сразу."`
+	// WaitingFor — «сейчас ждём: ‹роль› — ‹действие›».
+	WaitingFor *RunWait    `json:"waiting_for,omitempty" doc:"Чьё решение ждёт прогон сейчас."`
+	Items      []PlanEntry `json:"items"`
+}
+
+// PlanEntry — строка плана: решение человека, событие машины или внешней
+// системы, предупреждение (запланированный сбой).
+type PlanEntry struct {
+	At time.Time `json:"at" doc:"Доменное время по плану. Часы прогона стоят, пока он ждёт человека, — время следующих строк от нажатия не «убегает»."`
+	// Until — конец группы событий (журнал тока по минутам).
+	Until *time.Time `json:"until,omitempty" doc:"Конец группы однотипных событий (сводки тока по минутам)."`
+	Kind  string     `json:"kind" enum:"decision,event,alert,stand,tamper" doc:"decision — решение человека; event — событие машины или внешней системы; alert — запланированный сбой (видно заранее); stand, tamper — служебное."`
+	Title string     `json:"title" doc:"Что произойдёт, по-русски."`
+	// Stop — прогон остановится и будет ждать нажатия человека.
+	Stop      bool   `json:"stop" doc:"Прогон ждёт нажатия человека на его столе."`
+	Role      string `json:"role,omitempty" doc:"Роль стола решения."`
+	Persona   string `json:"persona,omitempty" doc:"Персона (псевдоним) решения."`
+	Operation string `json:"operation,omitempty" doc:"operationId решения (x-ant-action)."`
+	ItemID    string `json:"item_id,omitempty" doc:"Изделие прогона."`
+	ObjectID  string `json:"object_id,omitempty" doc:"Объект решения (изделие, пост, несоответствие…), если уже известен."`
+	Label     string `json:"label,omitempty" doc:"Метка шага определения (строка карточки)."`
+	Done      bool   `json:"done" doc:"Уже произошло."`
+	Waiting   bool   `json:"waiting" doc:"Прогон ждёт именно этого решения сейчас."`
+}

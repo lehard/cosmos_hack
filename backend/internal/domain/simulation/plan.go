@@ -17,6 +17,9 @@ type Plan struct {
 	Shift time.Duration
 	// Start, End — виртуальное время начала и конца прогона (уже со сдвигом).
 	Start, End time.Time
+	// LiveFrom — начало живой части (RunDef.Live, уже со сдвигом); нуль — нет:
+	// всё раньше — история, её интерактивный прогон проигрывает сразу.
+	LiveFrom time.Time
 	// Emissions — события источников в порядке доставки (DeliverAt, Order).
 	Emissions []Emission
 	// Actions — шаги людей и служебные шаги в порядке времени.
