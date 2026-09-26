@@ -29,7 +29,7 @@ func ingestLive(ctx context.Context, env *environment) (*ingestapp.Service, erro
 		return nil, err
 	}
 	cfg := env.cfg
-	mat, err := materialsstore.NewVolume(cfg.Materials.Dir)
+	mat, err := materialsstore.NewVolume(cfg.Materials.Dir, materialsOptions(cfg)...)
 	if err != nil {
 		return nil, err
 	}

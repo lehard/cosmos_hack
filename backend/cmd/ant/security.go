@@ -14,6 +14,7 @@ import (
 	"ant/internal/infrastructure/security/mtls"
 	"ant/internal/infrastructure/security/permissive"
 	journalstore "ant/internal/infrastructure/storage/journal"
+	materialsstore "ant/internal/infrastructure/storage/materials"
 	"ant/internal/infrastructure/storage/journal/feed"
 )
 
@@ -37,6 +38,14 @@ func trustOptions(cfg *config.Config, env *environment) []journalstore.Option {
 		env.log.Error("журнал: KEK не читается — блок записи хранится открыто", "err", err)
 	}
 	return opts
+}
+
+// materialsOptions — шифрование материалов при хранении тем же KEK (AD-23).
+func materialsOptions(cfg *config.Config) []materialsstore.Option {
+	if k, err := atrest.Load(cfg.Security.KEKFile); err == nil {
+		return []materialsstore.Option{materialsstore.WithSealer(k)}
+	}
+	return nil
 }
 
 // securityEncoder — сборка записей модуля security (эмитент security, AD-40).

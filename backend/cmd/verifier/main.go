@@ -82,8 +82,20 @@ func run(args []string, stdout, stderr io.Writer) int {
 	fs.BoolVar(&o.once, "once", false, "одна проверка и выход")
 	fs.BoolVar(&o.submit, "submit", true, "сдать подписанный отчёт хранителю")
 	fs.DurationVar(&o.interval, "interval", 0, "интервал проверок (по умолчанию security.verifier_interval)")
+	health := fs.Bool("healthcheck", false, "проверка живости контейнера: ключи и trust-anchors читаются")
 	if err := fs.Parse(args); err != nil {
 		return 2
+	}
+	if *health {
+		if _, err := hybrid.Load(filepath.Join(o.data, "keys"), "verifier"); err != nil {
+			_, _ = fmt.Fprintln(stderr, "verifier:", err)
+			return 1
+		}
+		if _, _, err := hybrid.LoadAnchors(filepath.Join(o.data, "trust-anchors.json")); err != nil {
+			_, _ = fmt.Fprintln(stderr, "verifier:", err)
+			return 1
+		}
+		return 0
 	}
 	cfg, err := config.Load(*cfgPath, os.LookupEnv)
 	if err != nil {

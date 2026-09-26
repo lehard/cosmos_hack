@@ -179,6 +179,14 @@ services:
       - ../config/ant.yaml:/etc/ant/ant.yaml:ro
       - verifier-data:/var/lib/verifier:ro
       - kek:/var/lib/ant-kek:ro
+    # Живость: ключи и trust-anchors читаются (HTTP у верификатора нет;
+    # отказ проверки виден в его журнале и в отчётах у хранителя).
+    healthcheck:
+      test: ["CMD", "/verifier", "-healthcheck"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 3s
     mem_limit: 256m
     restart: unless-stopped
 
@@ -190,6 +198,8 @@ services:
     entrypoint: ["/tamper"]
     command: []
     profiles: [tools]
+    healthcheck:
+      disable: true
     volumes:
       - secrets:/run/ant-secrets:ro
       - ../config/ant.yaml:/etc/ant/ant.yaml:ro

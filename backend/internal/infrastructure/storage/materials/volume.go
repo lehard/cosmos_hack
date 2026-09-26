@@ -23,18 +23,23 @@ import (
 // Повторная запись тех же байтов даёт тот же адрес и ничего не меняет;
 // при чтении адрес проверяется заново (подмена файла в томе обнаруживается).
 //
-// TODO(29): шифрование конвертной схемой (DEK на объект, KEK — том), AD-23.
-// В демо-треке байты лежат открыто.
+// С WithSealer байты шифруются конвертной схемой (DEK на объект, KEK — свой
+// том, AD-23, sealed.go); старые открытые файлы читаются как есть.
 type Volume struct {
-	root string
+	root   string
+	sealer Sealer
 }
 
 // NewVolume создаёт хранилище в каталоге root (создаётся при необходимости).
-func NewVolume(root string) (*Volume, error) {
+func NewVolume(root string, opts ...Option) (*Volume, error) {
 	if err := os.MkdirAll(root, 0o750); err != nil {
 		return nil, fmt.Errorf("хранилище материалов: %w", err)
 	}
-	return &Volume{root: root}, nil
+	v := &Volume{root: root}
+	for _, o := range opts {
+		o(v)
+	}
+	return v, nil
 }
 
 var _ app.MaterialStore = (*Volume)(nil)
@@ -83,6 +88,20 @@ func (v *Volume) Put(ctx context.Context, r io.Reader, meta app.Meta) (string, e
 	if err := os.WriteFile(metaPath, mb, 0o640); err != nil {
 		return "", err
 	}
+	if v.sealer != nil {
+		// AD-23: в томе — только шифротекст; адрес — H(открытых байтов).
+		plain, err := os.ReadFile(tmp.Name())
+		if err != nil {
+			return "", err
+		}
+		sealed, err := v.seal(plain, addr)
+		if err != nil {
+			return "", err
+		}
+		if err := os.WriteFile(tmp.Name(), sealed, 0o640); err != nil {
+			return "", err
+		}
+	}
 	if err := os.Rename(tmp.Name(), data); err != nil {
 		return "", err
 	}
@@ -101,6 +120,9 @@ func (v *Volume) Get(ctx context.Context, address string) (io.ReadCloser, app.Me
 		return nil, app.Meta{}, fmt.Errorf("%w: %s", ErrNotFound, address)
 	}
 	if err != nil {
+		return nil, app.Meta{}, err
+	}
+	if raw, err = v.open(raw, address); err != nil {
 		return nil, app.Meta{}, err
 	}
 	if dm.Address(raw) != address {
