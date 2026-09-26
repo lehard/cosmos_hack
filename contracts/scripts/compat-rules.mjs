@@ -12,9 +12,24 @@ import { diff } from '@asyncapi/diff';
 const TEXT = /\/(description|title|summary|x-parser-[a-z-]+)(\/|$)/;
 const STRICT = /\/(type|const|pattern|format|\$ref|additionalProperties)(\/\d+)?$/;
 
+/**
+ * Списки сообщений операций — в словари по имени сообщения: @asyncapi/diff
+ * сравнивает массивы по индексу, и новый тип в середине семейства (порядок
+ * каталога) выглядел бы как правка и удаление всех следующих сообщений.
+ * По имени новый тип — добавление, удалённый — удаление.
+ */
+function byMessageName(doc) {
+  const d = structuredClone(doc);
+  for (const op of Object.values(d.operations ?? {})) {
+    if (!Array.isArray(op?.messages)) continue;
+    op.messages = Object.fromEntries(op.messages.map((m, i) => [m?.name ?? m?.['x-parser-message-name'] ?? `#${i}`, m]));
+  }
+  return d;
+}
+
 /** Изменения, ломающие потребителей: библиотечные breaking + наши правила. */
 export function breakingChanges(baseDoc, nextDoc) {
-  const out = diff(baseDoc, nextDoc, { outputType: 'json' });
+  const out = diff(byMessageName(baseDoc), byMessageName(nextDoc), { outputType: 'json' });
   const lib = new Set(out.breaking());
   const all = [...out.breaking(), ...out.nonBreaking(), ...out.unclassified()];
   return all.filter((c) => {
