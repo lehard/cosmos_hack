@@ -120,7 +120,7 @@ describe('задачи и уведомления', () => {
       due_at: null,
       overdue: false,
       ref: { entity: 'item', id: item },
-      operation: 'process.movement.receive',
+      operation_id: 'process.movement.receive',
       item_id: item,
       item_label: 'Ф-001',
     }
