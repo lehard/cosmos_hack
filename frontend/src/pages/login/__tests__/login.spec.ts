@@ -1,5 +1,5 @@
 // Экран входа (FR-128, UI-1, UI-2): корпоративная карточка «логин — пароль»,
-// под ней — свёрнутый блок демо-персон (только если сервер их отдал), который
+// под ней — роли из ТЗ одной кнопкой и свёрнутый блок остальных демо-персон (только если сервер их отдал), который
 // разворачивается в список по ролям с поиском.
 import { flushPromises, mount } from '@vue/test-utils'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
@@ -20,6 +20,8 @@ const personas = (): DemoPersona[] => [
     role: { id: 'site_foreman', title: 'Мастер участка' },
     scope: 'Корпус 1 → Сборочно-испытательный цех',
   },
+  { id: 'P-SF-5', name: 'Мастер склада и ВК', role: { id: 'site_foreman', title: 'Мастер участка' }, scope: 'Корпус 1 → Склад' },
+  { id: 'P-AUD', name: 'Аудитор ИБ', role: { id: 'security_auditor', title: 'Аудитор ИБ' } },
 ]
 
 /** Сервер: демо-персон нет (профиль live) — access.persona.list отвечает 404. */
@@ -64,40 +66,49 @@ describe('экран входа', () => {
     expect(card.get('[data-testid="request-open"]').text()).toBe('Подать заявку на доступ')
   })
 
-  it('блок демо-персон свёрнут по умолчанию и разворачивается', async () => {
+  it('роли из ТЗ — сразу: первый сотрудник каждой роли одной кнопкой; вход по нажатию', async () => {
+    const w = await mountLogin(personas())
+    const quick = w.get('[data-testid="demo-quick"]')
+    expect(quick.text()).toContain('Демо-вход по ролям')
+    expect(quick.findAll('[data-persona]').map((b) => b.attributes('data-persona'))).toEqual(['P-QI-1', 'P-SF-4'])
+    const qi = quick.get('[data-persona="P-QI-1"]')
+    expect(qi.text()).toContain('Контролёр ОТК 1')
+    expect(qi.get('.quick-name').classes()).toContain('ant-ellipsis')
+  })
+
+  it('остальные — под «Другие сотрудники»: свёрнуто, по ролям, без тех, кто уже на виду', async () => {
     const w = await mountLogin(personas())
     const demo = w.get('[data-testid="demo-personas"]')
     const toggle = demo.get('[data-testid="demo-toggle"]')
-    expect(toggle.text()).toContain('Демо-вход: выберите сотрудника')
+    expect(toggle.text()).toContain('Другие сотрудники')
+    expect(toggle.text()).toContain('3 сотрудника')
     expect(toggle.attributes('aria-expanded')).toBe('false')
     expect(w.find('[data-testid="demo-list"]').exists()).toBe(false)
-    expect(w.findAll('[data-persona]')).toHaveLength(0)
 
     await toggle.trigger('click')
     expect(toggle.attributes('aria-expanded')).toBe('true')
     const list = w.get('[data-testid="demo-list"]')
-    // Сгруппировано по ролям, порядок политики сохранён.
-    expect(list.findAll('[data-role]').map((g) => g.attributes('data-role'))).toEqual(['quality_inspector', 'site_foreman'])
-    expect(list.findAll('[data-persona]').map((b) => b.attributes('data-persona'))).toEqual(['P-QI-1', 'P-QI-2', 'P-SF-4'])
-    // Длинная подпись — одна строка с многоточием и полным текстом в подсказке (UI-2).
-    const long = list.get('[data-persona="P-SF-4"]')
+    expect(list.findAll('[data-role]').map((g) => g.attributes('data-role'))).toEqual(['quality_inspector', 'site_foreman', 'security_auditor'])
+    expect(list.findAll('[data-persona]').map((b) => b.attributes('data-persona'))).toEqual(['P-QI-2', 'P-SF-5', 'P-AUD'])
+    const long = list.get('[data-persona="P-SF-5"]')
     expect(long.get('.persona-name').classes()).toContain('ant-ellipsis')
-    expect(long.attributes('title')).toContain('Мастер сборочно-испытательного цеха')
+    expect(long.attributes('title')).toContain('Мастер склада и ВК')
 
     await toggle.trigger('click')
     expect(w.find('[data-testid="demo-list"]').exists()).toBe(false)
   })
 
-  it('поиск по персонам: по имени, роли, области; «никого» — пустое состояние', async () => {
+  it('поиск по остальным: по имени, роли, области; «никого» — пустое состояние', async () => {
     const w = await mountLogin(personas())
     await w.get('[data-testid="demo-toggle"]').trigger('click')
+    const list = () => w.get('[data-testid="demo-list"]')
     const search = w.get('[data-testid="demo-search"] input')
-    await search.setValue('сборочно')
-    expect(w.findAll('[data-persona]').map((b) => b.attributes('data-persona'))).toEqual(['P-SF-4'])
+    await search.setValue('склад')
+    expect(list().findAll('[data-persona]').map((b) => b.attributes('data-persona'))).toEqual(['P-SF-5'])
     await search.setValue('контролёр качества')
-    expect(w.findAll('[data-persona]').map((b) => b.attributes('data-persona'))).toEqual(['P-QI-1', 'P-QI-2'])
+    expect(list().findAll('[data-persona]').map((b) => b.attributes('data-persona'))).toEqual(['P-QI-2'])
     await search.setValue('нет такого')
-    expect(w.findAll('[data-persona]')).toHaveLength(0)
+    expect(list().findAll('[data-persona]')).toHaveLength(0)
     expect(w.text()).toContain('Никого не нашли по запросу «нет такого»')
   })
 
@@ -105,6 +116,7 @@ describe('экран входа', () => {
     noDemoServer()
     const w = await mountLogin(null)
     expect(w.find('[data-testid="demo-personas"]').exists()).toBe(false)
+    expect(w.find('[data-testid="demo-quick"]').exists()).toBe(false)
     expect(w.find('[data-testid="login-form"]').exists()).toBe(true)
   })
 
