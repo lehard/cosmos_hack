@@ -2,6 +2,7 @@
  * СГЕНЕРИРОВАНО orval (frontend/scripts/generate.mjs) — руками не править (AD-20).
  * Источник: contracts/openapi.yaml
  */
+import type { NCParameterReading } from './nCParameterReading';
 import type { NCRecordRefKind } from './nCRecordRefKind';
 import type { NCRecordRefParams } from './nCRecordRefParams';
 import type { NCRecordRefSourceKind } from './nCRecordRefSourceKind';
@@ -16,6 +17,8 @@ export interface NCRecordRef {
   kind: NCRecordRefKind;
   occurred_at: string;
   params?: NCRecordRefParams;
+  /** Параметр режима числами: уставка и наблюдённые значения (отклонение режима, сводка цикла). */
+  reading?: NCParameterReading;
   /** Позиция в журнале — переход к записи. */
   seq?: number;
   /** Вид источника факта (FR-140). */

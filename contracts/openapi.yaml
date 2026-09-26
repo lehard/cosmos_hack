@@ -8917,6 +8917,46 @@ components:
         - step_key
         - label
       type: object
+    NCParameterReading:
+      additionalProperties: false
+      properties:
+        observed_max:
+          description: Наблюдённый максимум (у отклонения — значение).
+          format: int64
+          type: integer
+        observed_min:
+          description: Наблюдённый минимум (у отклонения — значение).
+          format: int64
+          type: integer
+        parameter:
+          description: Параметр у источника (current_a — ток сварки, …).
+          type: string
+        scale:
+          description: "Знаков после запятой: значение = число × 10^(−scale)."
+          format: int64
+          maximum: 12
+          minimum: 0
+          type: integer
+        setpoint_max:
+          description: "Уставка: верхняя граница."
+          format: int64
+          type: integer
+        setpoint_min:
+          description: "Уставка: нижняя граница."
+          format: int64
+          type: integer
+        setpoint_nominal:
+          description: "Уставка: номинал."
+          format: int64
+          type: integer
+        unit:
+          description: Единица, код UCUM (A, V, mm, …).
+          type: string
+      required:
+        - parameter
+        - unit
+        - scale
+      type: object
     NCPresentationContext:
       additionalProperties: false
       properties:
@@ -8984,6 +9024,9 @@ components:
           additionalProperties:
             type: string
           type: object
+        reading:
+          $ref: "#/components/schemas/NCParameterReading"
+          description: "Параметр режима числами: уставка и наблюдённые значения (отклонение режима, сводка цикла)."
         seq:
           description: Позиция в журнале — переход к записи.
           format: int64

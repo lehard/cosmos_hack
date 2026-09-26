@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	ncapp "ant/internal/application/nonconformity"
 	"ant/internal/contracts/constants"
 	"ant/internal/domain/kernel"
 	"ant/internal/infrastructure/fixtures/loader"
@@ -139,6 +140,8 @@ type Event struct {
 	Entity     loader.Change
 	// Materials — материалы наблюдения (иллюстрации, illustrations.go): адреса — в evidence_refs.
 	Materials []*illustration
+	// Reading — числа режима оборудования (сводка цикла, отклонение): в карточке НС.
+	Reading *ncapp.NCParameterReading
 }
 
 // Build разворачивает описание мира: разбирает времена, строит маршруты

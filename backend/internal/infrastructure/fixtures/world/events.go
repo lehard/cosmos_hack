@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"ant/internal/infrastructure/fixtures/loader"
+
+	ncapp "ant/internal/application/nonconformity"
 )
 
 // Записи журнала мира (AD-2, AD-44): факты источников, реакции движка, решения
@@ -299,9 +301,14 @@ func (m *Model) weldLog(it *Item, r *OpRun) {
 		opts = append(opts, recordedAt(recorded))
 	}
 	sum := fmt.Sprintf("Сводка цикла %s: ток %d–%d А (уставка 160 ± 10 А)", r.Label, lo, hi)
-	m.ev("equipment.cycle.summarized", "fact", r.To, sum, opts...)
+	// Числа режима (уставка ИС — equipment.yaml: 160, 150…170 А) — для карточки НС.
+	num := func(v int) *int64 { x := int64(v); return &x }
+	reading := func() *ncapp.NCParameterReading {
+		return &ncapp.NCParameterReading{Parameter: "current_a", Unit: "A", SetpointNominal: num(160), SetpointMin: num(150), SetpointMax: num(170), ObservedMin: num(lo), ObservedMax: num(hi)}
+	}
+	m.ev("equipment.cycle.summarized", "fact", r.To, sum, opts...).Reading = reading()
 	if out {
-		m.ev("equipment.deviation.detected", "fact", r.From.Add(minutes(2)), fmt.Sprintf("%s: ток вне уставки, до %d А (%s)", r.Equipment, hi, r.Label), opts...)
+		m.ev("equipment.deviation.detected", "fact", r.From.Add(minutes(2)), fmt.Sprintf("%s: ток вне уставки, до %d А (%s)", r.Equipment, hi, r.Label), opts...).Reading = reading()
 	}
 }
 

@@ -25,6 +25,7 @@ func recRef(e *Event) ncapp.NCRecordRef {
 	if len(e.Params) > 0 {
 		r.Params = e.Params
 	}
+	r.Reading = e.Reading
 	return r
 }
 
