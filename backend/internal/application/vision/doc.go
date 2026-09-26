@@ -1,11 +1,27 @@
-// Пакет vision — производственные сценарии модуля vision слоя application: VisionQC и OperatorVision: порты сигналов, карты контроля, паспорта допуска анализаторов, откат.
+// Пакет vision — производственные сценарии модуля vision слоя application:
+// VisionQC («Визуальный контроль») и OperatorVision («Контроль действий
+// оператора»): порт сигналов, паспорта допуска анализаторов.
 //
-// Слой: application (AD-1). Объявляет ведущие порты Queries и Commands
-// (реализации: live — Service здесь, fixtures — infrastructure/fixtures/vision,
-// AD-36) и ведомые порты модуля; вызывает domain/vision. HTTP-фреймворка и
-// драйверов БД здесь нет: операции регистрирует infrastructure/transport/vision,
-// хранение — infrastructure/storage/vision.
+// Что здесь (эпик 33):
+//   - ведомые порты (ports_driven.go): SignalAdapter — адаптер внешней системы
+//     видеофиксации на краю; IllustrationFiles и MaterialSink — иллюстрации
+//     открытого набора только через хранилище материалов; RouteGate — протокол
+//     допуска подписан;
+//   - Relay — наблюдения → события контракта (inspection.result.recorded,
+//     operator.action.observed) с вектором версий на каждом наблюдении (AD-29)
+//     для локального входа edge-агента; в журнал они попадают только обычным
+//     приёмом (AD-18);
+//   - SeedPassports — стартовые паспорта демо генезисом (роль migrate, профили
+//     demo и fixtures; AD-33);
+//   - Service — live ведущих портов (AD-36): реестр паспортов — свёртка
+//     записей analyzer.* журнала на момент (AD-22), команды допуска, возврата
+//     и вывода — гард и запись-решение с проверкой AD-39.
 //
-// Требования: FR-97…FR-103, FR-126, AD-18, AD-29.
-// Владелец после волны 1: эпик 33 (порты и эмуляторы), 40 (адаптация).
+// Слой: application (AD-1). Реализации ведущих портов: live — Service,
+// fixtures — infrastructure/fixtures/vision (AD-36). HTTP-фреймворка и
+// драйверов БД здесь нет: операции — infrastructure/transport/vision,
+// адаптеры и stand-ы — infrastructure/integration/vision.
+//
+// Требования: FR-38, FR-97…FR-103, FR-126, AD-18, AD-29.
+// Владелец: эпик 33 (порты и эмуляторы), 40 (допуск, откат, адаптация).
 package vision

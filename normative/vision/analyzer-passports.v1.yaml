@@ -1,0 +1,76 @@
+# Стартовые паспорта допуска анализаторов для демо (эпик 33; AD-29, AD-33; схема contracts/normative/analyzer-passports.schema.json).
+# Роль migrate в профилях demo и fixtures пишет по записи analyzer.passport.admitted на паспорт
+# (происхождение genesis, event_id — UUIDv5 от версии затравки и паспорта: повторный запуск — дубль).
+# Без паспорта камеры демо работают на уровне доверия 0 (только запись наблюдения).
+# Это НЕ допуск по экзамену: полный маршрут допуска, откат и возврат — эпик 40.
+# Карты контроля — как ant:inspection/@recipeRef в normative/process/flange-process.bpmn;
+# вектор версий — тот, что шлют stand-ы VisionQC и OperatorVision (infrastructure/integration/vision).
+version: 1
+profiles: [demo, fixtures]
+admitted_at: "2026-01-12T06:00:00.000Z"
+note: "Демо-затравка паспортов: допуск без экзамена и без подписанного протокола; не является промышленной валидацией анализатора."
+passports:
+  - passport_id: AP-KT1-CAMERA-1
+    analyzer_id: vqc-surface
+    analyzer_kind: visionqc
+    title: "Визуальный контроль поверхности заготовки (КТ-1)"
+    stage: active
+    trust_level: 3
+    recipe_ref: "kt1-camera@1"
+    document_id: DEMO-AP-KT1-CAMERA-1
+    versions: {item_revision: "Б", recipe_ref: "kt1-camera@1", camera_config: "CAM-KT1/свет-R2", calibration: "CAL-KT1-2026-01-10", analyzer_version: "vqc-surface 1.2.0", threshold_profile: "TP-KT1-2", contract_version: "1.0", app_version: "vqc-gw 1.2.0"}
+  - passport_id: AP-KT2-OBLIQUE-1
+    analyzer_id: vqc-edge
+    analyzer_kind: visionqc
+    title: "Визуальный контроль кромок после мехобработки (КТ-2)"
+    stage: active
+    trust_level: 3
+    recipe_ref: "kt2-oblique@1"
+    document_id: DEMO-AP-KT2-OBLIQUE-1
+    versions: {item_revision: "Б", recipe_ref: "kt2-oblique@1", camera_config: "CAM-KT2/свет-R2", calibration: "CAL-KT2-2026-01-10", analyzer_version: "vqc-edge 1.4.0", threshold_profile: "TP-KT2-3", contract_version: "1.0", app_version: "vqc-gw 1.2.0"}
+  - passport_id: AP-KT3-WELD-1
+    analyzer_id: vqc-weld
+    analyzer_kind: visionqc
+    title: "Визуальный контроль сварного шва (КТ-3)"
+    stage: active
+    trust_level: 3
+    recipe_ref: "kt3-weld@1"
+    document_id: DEMO-AP-KT3-WELD-1
+    versions: {item_revision: "Б", recipe_ref: "kt3-weld@1", camera_config: "CAM-KT3/свет-R2", calibration: "CAL-KT3-2026-01-10", analyzer_version: "vqc-weld 2.3.1", threshold_profile: "TP-KT3-5", contract_version: "1.0", app_version: "vqc-gw 1.2.0"}
+  - passport_id: AP-KT4D-UV-1
+    analyzer_id: vqc-uv
+    analyzer_kind: visionqc
+    title: "Контроль посторонних предметов перед закрытием зоны (КТ-4д)"
+    stage: active
+    trust_level: 3
+    recipe_ref: "kt4d-uv@1"
+    document_id: DEMO-AP-KT4D-UV-1
+    versions: {item_revision: "Б", recipe_ref: "kt4d-uv@1", camera_config: "CAM-KT4D/свет-R2", calibration: "CAL-KT4D-2026-01-10", analyzer_version: "vqc-uv 1.0.3", threshold_profile: "TP-KT4D-2", contract_version: "1.0", app_version: "vqc-gw 1.2.0"}
+  - passport_id: AP-KT4-ASSEMBLY-1
+    analyzer_id: vqc-asm
+    analyzer_kind: visionqc
+    title: "Визуальный контроль сборки (КТ-4)"
+    stage: active
+    trust_level: 3
+    recipe_ref: "kt4-assembly@1"
+    document_id: DEMO-AP-KT4-ASSEMBLY-1
+    versions: {item_revision: "Б", recipe_ref: "kt4-assembly@1", camera_config: "CAM-KT4/свет-R2", calibration: "CAL-KT4-2026-01-10", analyzer_version: "vqc-asm 3.0.2", threshold_profile: "TP-KT4-4", contract_version: "1.0", app_version: "vqc-gw 1.2.0"}
+  - passport_id: AP-KT5-FINAL-1
+    analyzer_id: vqc-final
+    analyzer_kind: visionqc
+    title: "Окончательный визуальный контроль (КТ-5)"
+    stage: active
+    trust_level: 3
+    recipe_ref: "kt5-final@1"
+    document_id: DEMO-AP-KT5-FINAL-1
+    versions: {item_revision: "Б", recipe_ref: "kt5-final@1", camera_config: "CAM-KT5/свет-R2", calibration: "CAL-KT5-2026-01-10", analyzer_version: "vqc-final 1.1.0", threshold_profile: "TP-KT5-2", contract_version: "1.0", app_version: "vqc-gw 1.2.0"}
+  # OperatorVision — только гипотеза о действии: уровень 1 (рекомендация контролёру), пилот (FR-126).
+  - passport_id: AP-OV-ASM-1
+    analyzer_id: ov-asm
+    analyzer_kind: operatorvision
+    title: "Контроль действий оператора на сборке"
+    stage: pilot
+    trust_level: 1
+    recipe_ref: "ov-asm@1"
+    document_id: DEMO-AP-OV-ASM-1
+    versions: {item_revision: "Б", recipe_ref: "ov-asm@1", camera_config: "CAM-OV-ASM/обзор", calibration: "CAL-OV-2026-01-10", analyzer_version: "ov-asm 0.9.4", threshold_profile: "TP-OV-1", contract_version: "1.0", app_version: "ov-gw 0.9.0"}

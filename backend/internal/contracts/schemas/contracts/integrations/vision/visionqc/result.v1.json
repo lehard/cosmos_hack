@@ -1,0 +1,335 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/integrations/vision/visionqc/result.v1.json",
+  "title": "VisionQCResultV1",
+  "description": "Результат внешней системы VisionQC (визуальный контроль) по образцу ResultDataType OPC UA for Machine Vision (OPC 40100-1): состояние обработки отдельно от вывода, ступени анализатора с версией и уверенностью, качество кадра отдельно от уверенности. Сообщение системы (или её stand-а) → edge-агент (POST /v1/vision/visionqc); адаптер infrastructure/integration/vision/visionqc переводит его в inspection.result.recorded (FR-38, FR-97, AD-18, AD-29). Закрытая схема.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "result_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+      "description": "Идентификатор результата, уникальный в системе (ResultId)."
+    },
+    "seq": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991,
+      "description": "Номер сообщения системы: разрыв номеров виден получателю как пропуск."
+    },
+    "system_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+      "description": "Экземпляр внешней системы (станция видеофиксации)."
+    },
+    "camera_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+      "description": "Камера."
+    },
+    "run_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,62}$",
+      "description": "Прогон сценария (AD-38), если система работает в прогоне."
+    },
+    "creation_time": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$",
+      "description": "Время результата по часам системы (CreationTime OPC UA MV), UTC."
+    },
+    "is_simulated": {
+      "type": "boolean",
+      "description": "Результат получен в режиме симуляции (IsSimulated OPC UA MV)."
+    },
+    "part_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+      "description": "Идентификатор детали, переданный системе линией (PartId OPC UA MV): внутренний ID или значение DataMatrix."
+    },
+    "part_id_kind": {
+      "type": "string",
+      "enum": [
+        "internal",
+        "datamatrix",
+        "qr"
+      ],
+      "description": "Чем является part_id: внутренний ID изделия или значение носителя."
+    },
+    "meas_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+      "description": "Идентификатор измерения, заданный клиентом (MeasId)."
+    },
+    "station": {
+      "type": "string",
+      "maxLength": 32,
+      "description": "Точка контроля, на которой стоит камера (например, KT-3)."
+    },
+    "result_state": {
+      "type": "integer",
+      "minimum": -100,
+      "maximum": 4,
+      "description": "Состояние обработки (ResultState OPC UA MV): 0 — не определено или ошибка, 1 — выполнено, 2 — в обработке, 3 — прервано, 4 — сбой; отрицательные — на усмотрение производителя."
+    },
+    "recipe": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Карта контроля (рецепт) системы.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 96,
+          "description": "Идентификатор карты контроля."
+        },
+        "version": {
+          "type": "string",
+          "maxLength": 24,
+          "description": "Версия карты контроля."
+        }
+      },
+      "required": [
+        "id",
+        "version"
+      ]
+    },
+    "configuration": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Конфигурация контура: камера и свет, калибровка, профиль порогов.",
+      "properties": {
+        "camera_config": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "Конфигурация камеры и света."
+        },
+        "calibration": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "Калибровка."
+        },
+        "threshold_profile": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "Профиль порогов."
+        }
+      }
+    },
+    "software": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Версии программ системы.",
+      "properties": {
+        "analyzer_version": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "Версия анализатора (модели)."
+        },
+        "app_version": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Версия приложения системы."
+        },
+        "contract_version": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Версия этого контракта у системы."
+        }
+      }
+    },
+    "product_revision": {
+      "type": "string",
+      "maxLength": 64,
+      "description": "Ревизия изделия (КД), которую система считает действующей."
+    },
+    "frame": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Качество кадра — отдельно от уверенности анализатора (FR-38).",
+      "properties": {
+        "quality_bp": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000,
+          "description": "Качество кадра, б. п. (10000 — идеальный)."
+        },
+        "issues": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": [
+              "glare",
+              "blur",
+              "out_of_frame",
+              "dirty_lens",
+              "underexposed",
+              "overexposed",
+              "occluded"
+            ],
+            "description": "Помеха."
+          },
+          "description": "Помехи наблюдения: блик, смаз, деталь вне кадра, грязный объектив, недо- и пересвет, зона закрыта."
+        }
+      },
+      "required": [
+        "quality_bp"
+      ]
+    },
+    "verdict": {
+      "type": "string",
+      "enum": [
+        "defects",
+        "no_defects",
+        "cannot_evaluate"
+      ],
+      "description": "Вывод системы: признаки дефектов, признаков нет, оценить нельзя."
+    },
+    "confidence_bp": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10000,
+      "description": "Уверенность анализатора в выводе, б. п. — не вероятность брака."
+    },
+    "stages": {
+      "type": "array",
+      "description": "Ступени анализатора по порядку (локализация → классификация).",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Ступень анализатора.",
+        "properties": {
+          "name": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]{0,31}$",
+            "description": "Ступень."
+          },
+          "version": {
+            "type": "string",
+            "maxLength": 128,
+            "description": "Версия ступени."
+          },
+          "confidence_bp": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10000,
+            "description": "Уверенность ступени, б. п."
+          },
+          "output": {
+            "type": "string",
+            "maxLength": 500,
+            "description": "Краткий вывод ступени."
+          }
+        },
+        "required": [
+          "name",
+          "version"
+        ]
+      }
+    },
+    "findings": {
+      "type": "array",
+      "description": "Найденные признаки дефектов.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Признак дефекта.",
+        "properties": {
+          "class": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,31}$",
+            "description": "Класс признака в словаре системы (для демо — код классификатора ant)."
+          },
+          "zone": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+            "description": "Зона изделия."
+          },
+          "location": {
+            "type": "string",
+            "maxLength": 256,
+            "description": "Место в зоне."
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "critical",
+              "major",
+              "minor",
+              "unknown"
+            ],
+            "description": "Тяжесть по мнению системы."
+          },
+          "confidence_bp": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10000,
+            "description": "Уверенность по признаку, б. п."
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 500,
+            "description": "Пояснение системы."
+          }
+        },
+        "required": [
+          "class",
+          "zone"
+        ]
+      }
+    },
+    "zones": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+        "description": "Зона."
+      },
+      "description": "Зоны, которые охватил кадр."
+    },
+    "recommendation": {
+      "type": "string",
+      "enum": [
+        "pass",
+        "review",
+        "reject",
+        "none"
+      ],
+      "description": "Совет системы — только совет, решает карта реакций (FR-48)."
+    },
+    "images": {
+      "type": "array",
+      "description": "Снимки у системы (часто только NG); могут теряться молча — отсутствие не ошибка.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Снимок у системы.",
+        "properties": {
+          "uri": {
+            "type": "string",
+            "maxLength": 512,
+            "description": "Где снимок у системы (FTP, файловый ресурс)."
+          },
+          "media_type": {
+            "type": "string",
+            "pattern": "^[a-z]+/[A-Za-z0-9.+-]+$",
+            "description": "MIME-тип."
+          }
+        },
+        "required": [
+          "uri"
+        ]
+      }
+    }
+  },
+  "required": [
+    "result_id",
+    "seq",
+    "system_id",
+    "camera_id",
+    "creation_time",
+    "result_state",
+    "recipe",
+    "software"
+  ]
+}

@@ -563,6 +563,16 @@ export const errorCatalog = {
     "title": "Действие сверх уровня доверия паспорта",
     "uiKey": "errors.generic"
   },
+  "analyzer.invalid_transition": {
+    "status": 409,
+    "title": "Действие с паспортом недоступно в его статусе",
+    "uiKey": "errors.generic"
+  },
+  "analyzer.admission_route_open": {
+    "status": 409,
+    "title": "Протокол допуска не подписан",
+    "uiKey": "errors.generic"
+  },
   "federation.extract_tampered": {
     "status": 422,
     "title": "Выписка паспорта изменена",

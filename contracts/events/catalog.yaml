@@ -3014,7 +3014,7 @@ types:
     ca_group: "control_change"
     guard_relevant: true
     publish_stage: false
-    provenance: ["personal", "paper", "scenario"]
+    provenance: ["personal", "paper", "scenario", "genesis"]
     versions: [1]
     current_version: 1
     refs: ["FR-98", "FR-101", "AD-29"]

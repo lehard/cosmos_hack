@@ -511,6 +511,12 @@ components:
         analyzer_id:
           maxLength: 128
           type: string
+        analyzer_kind:
+          description: Визуальный контроль или контроль действий оператора; по умолчанию visionqc.
+          enum:
+            - visionqc
+            - operatorvision
+          type: string
         basis_seq:
           description: "seq, на котором клиент видел объект (basis_seq из ответа чтения): после него в потоках гарда не должно быть новых записей guard_relevant, иначе 409 journal.stale_state (AD-39)."
           format: int64
@@ -543,6 +549,10 @@ components:
             - shadow
             - pilot
             - active
+          type: string
+        title:
+          description: Название анализатора.
+          maxLength: 256
           type: string
         trust_level:
           format: int64
@@ -763,6 +773,12 @@ components:
           type: array
         analyzer_id:
           type: string
+        analyzer_kind:
+          description: Визуальный контроль или контроль действий оператора.
+          enum:
+            - visionqc
+            - operatorvision
+          type: string
         basis_seq:
           description: seq, на котором построен ответ (AD-39).
           format: int64
@@ -773,6 +789,9 @@ components:
         passport_id:
           type: string
         previous_passport_id:
+          type: string
+        provenance:
+          description: "Происхождение записи допуска (AD-2): genesis — демо-затравка без экзамена (не промышленная валидация), personal — решение людей."
           type: string
         recipe_ref:
           description: Карта контроля.
@@ -791,6 +810,9 @@ components:
           type: string
         suspension:
           $ref: "#/components/schemas/AnalyzerSuspension"
+        title:
+          description: Название анализатора.
+          type: string
         trust_level:
           format: int64
           maximum: 4
@@ -839,6 +861,9 @@ components:
           type: string
         passport_id:
           description: Действующий паспорт допуска.
+          type: string
+        provenance:
+          description: "Происхождение записи допуска (AD-2): genesis — демо-затравка без экзамена (не промышленная валидация), personal — решение людей."
           type: string
         stage:
           description: "Стадия допуска: тень, пилот, работа."
