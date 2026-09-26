@@ -174,6 +174,13 @@ func (s *Service) StartRun(ctx context.Context, scenarioID string, in StartRun) 
 			return StartedRun{Receipt: platform.Receipt{CommandID: in.CommandID, Seq: prev.BasisSeq, Replayed: true, RecordedAt: prev.LastTick}, RunID: prev.RunID}, nil
 		}
 	}
+	if in.FromStep != nil || in.Start == "start_step" {
+		// Точка старта пока только у заготовок (loader.Manifest.StartStep):
+		// живой прогон идёт с начала определения.
+		e := platform.Fail(errcodes.ApiValidationFailed, "field", "start")
+		e.Detail = "живой прогон идёт с начала определения: точка старта (start=start_step, from_step) — только на заготовках"
+		return StartedRun{}, e
+	}
 	if active, ok := s.active(ctx); ok {
 		e := platform.Fail(errcodes.ApiValidationFailed, "run_id", active.RunID)
 		e.Detail = "уже идёт прогон " + active.RunID + " (" + active.State + "): остановите его — доменное время журнала не убывает (AD-37), прогоны идут по очереди (AD-38)"

@@ -4,6 +4,7 @@
  */
 import type { DsseEnvelope } from './dsseEnvelope';
 import type { StartRunMode } from './startRunMode';
+import type { StartRunStart } from './startRunStart';
 
 export interface StartRun {
   /**
@@ -13,6 +14,11 @@ export interface StartRun {
   basis_seq: number;
   /** UUIDv7 клиента; повтор с тем же id возвращает прежний ответ (AD-7). У подписанной команды — event_id пакета. */
   command_id: string;
+  /**
+     * Шаг старта на заготовках (профиль fixtures): курсор сразу на этом шаге, шаги до него пройдены; сильнее start. Живой прогон шагов не нумерует — отказ api.validation_failed.
+     * @minimum 0
+     */
+  from_step?: number;
   /**
      * Изделий сценария; пусто — по определению.
      * @minimum 0
@@ -39,6 +45,8 @@ export interface StartRun {
      * @maximum 1000
      */
   speed?: number;
+  /** Откуда начинать: beginning — с самого начала (по умолчанию); start_step — с точки старта сценария (start_step в simulation.scenario.list): история сразу «у катастрофы», шаги до точки считаются пройденными. Пока только заготовки (профиль fixtures). */
+  start?: StartRunStart;
   /**
      * Рабочее место сеанса (барьер 2, AD-15).
      * @maxLength 128

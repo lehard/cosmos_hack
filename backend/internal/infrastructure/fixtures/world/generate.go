@@ -206,7 +206,7 @@ func utc(t time.Time) string { return t.UTC().Format("2006-01-02T15:04:05Z") }
 func (m *Model) write(out map[string][]byte) error {
 	dir := m.Spec.ID + "/"
 	man := loader.Manifest{Format: loader.FormatVersion, ID: m.Spec.ID, Title: m.Spec.Title, Description: m.Spec.Description, Covers: m.Spec.Covers, Case: m.Spec.Case,
-		InitialStep: m.Spec.InitialStep, Enterprise: enterprise, LocalIDs: m.Spec.LocalIDs}
+		InitialStep: m.Spec.InitialStep, StartStep: m.Spec.StartStep, Enterprise: enterprise, LocalIDs: m.Spec.LocalIDs}
 	for i, s := range m.Spec.Steps {
 		h := loader.StepHeader{Step: i, Clock: m.Steps[i], Title: s.Title, Scenarios: s.Scenarios}
 		if s.Wait != nil {
@@ -216,8 +216,8 @@ func (m *Model) write(out map[string][]byte) error {
 	}
 	var b bytes.Buffer
 	fmt.Fprintf(&b, "# СГЕНЕРИРОВАНО из world.yaml генератором мира заготовок — руками не править (AD-36).\n")
-	fmt.Fprintf(&b, "format: %d\nid: %s\ntitle: %s\ndescription: %s\ncovers: %s\ncase: %s\ninitial_step: %d\nenterprise: %s\nlocal_ids: %s\nsteps:\n",
-		man.Format, man.ID, jsonLine(man.Title), jsonLine(man.Description), jsonLine(man.Covers), jsonLine(man.Case), man.InitialStep, man.Enterprise, jsonLine(man.LocalIDs))
+	fmt.Fprintf(&b, "format: %d\nid: %s\ntitle: %s\ndescription: %s\ncovers: %s\ncase: %s\ninitial_step: %d\nstart_step: %d\nenterprise: %s\nlocal_ids: %s\nsteps:\n",
+		man.Format, man.ID, jsonLine(man.Title), jsonLine(man.Description), jsonLine(man.Covers), jsonLine(man.Case), man.InitialStep, man.StartStep, man.Enterprise, jsonLine(man.LocalIDs))
 	for _, h := range man.Steps {
 		fmt.Fprintf(&b, "  - {step: %d, clock: %s, title: %s", h.Step, utc(h.Clock), jsonLine(h.Title))
 		if len(h.Scenarios) > 0 {
