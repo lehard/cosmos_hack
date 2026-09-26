@@ -68,6 +68,7 @@ type DecisionRecord struct {
 // CauseRecord — вывод о причине (решение человека, FR-59).
 type CauseRecord struct {
 	IncidentID   string       `json:"incident_id"`
+	Branch       string       `json:"branch,omitempty"`
 	Conclusion   string       `json:"conclusion"`
 	Category     string       `json:"category,omitempty"`
 	NCIDs        []string     `json:"nc_ids,omitempty"`
@@ -137,6 +138,12 @@ type IncidentRecord struct {
 	Hypotheses      []HumanHypothesis         `json:"hypotheses,omitempty"`
 	Measurements    []MeasurementRecord       `json:"measurements,omitempty"`
 	Actions         []ActionRecord            `json:"actions,omitempty"`
+	// Causes — выводы о причине по веткам why_made / why_missed (кейс §2.3).
+	Causes map[string]CauseRecord `json:"causes,omitempty"`
+	// InvestigationClosed — расследование закрыто (incident.incident.closed, scope=investigation).
+	InvestigationClosed bool `json:"investigation_closed,omitempty"`
+	// LastEventAt — время последней записи по инциденту (шапка расследования).
+	LastEventAt *time.Time `json:"last_event_at,omitempty"`
 	// BasisSeq — seq последней записи потока инцидента: basis_seq команд (AD-39).
 	BasisSeq int64 `json:"basis_seq"`
 }
@@ -182,6 +189,16 @@ type NCRecord struct {
 	Measurements []MeasurementRecord `json:"measurements,omitempty"`
 	Cause        *CauseRecord        `json:"cause,omitempty"`
 	IncidentIDs  []string            `json:"incident_ids,omitempty"`
+	// Computed — версии вывода разбора: уверенность по категориям (история гипотез).
+	Computed []ComputedVersion `json:"computed,omitempty"`
+}
+
+// ComputedVersion — версия вывода incident.hypothesis.computed: уверенность
+// гипотез по категориям — «что изменило уверенность» (стол технолога).
+type ComputedVersion struct {
+	At         time.Time      `json:"at"`
+	EventID    string         `json:"event_id"`
+	Confidence map[string]int `json:"confidence,omitempty"`
 }
 
 // ActorName — псевдоним автора решения из key_id@версия первого подписанта
@@ -217,6 +234,9 @@ func StepIncident(key string, v IncidentRecord, r kernel.Record) IncidentRecord 
 	}
 	if r.Stream == "incident:"+key && r.Seq > v.BasisSeq {
 		v.BasisSeq = r.Seq
+	}
+	if at := r.OccurredAt; !at.IsZero() && (v.LastEventAt == nil || at.After(*v.LastEventAt)) {
+		v.LastEventAt = &at
 	}
 	actor := ActorName(r.Actor)
 	switch r.Type {
@@ -290,10 +310,19 @@ func StepIncident(key string, v IncidentRecord, r kernel.Record) IncidentRecord 
 			Evidence: uuidStrings(d.EvidenceEventIds), Items: []string{string(d.ItemID)}, Assessment: string(d.Assessment)})
 	case catalog.IncidentIncidentClosed:
 		at := r.OccurredAt
-		v.Closed, v.ClosedAt = true, &at
+		if !v.Closed {
+			v.Closed, v.ClosedAt = true, &at
+		}
+		if d, _ := decodeAs[struct {
+			Scope string `json:"scope"`
+		}](r); d.Scope == CloseInvestigation {
+			v.InvestigationClosed = true
+		}
 	case catalog.IncidentCauseConcluded:
 		c := causeOf(r)
 		v.Cause = &c
+		v.Causes = cloneMap(v.Causes)
+		v.Causes[c.Branch] = c
 	case catalog.IncidentOperatorErrorConfirmed:
 		v.OperatorError = true
 	case catalog.IncidentAnalysisScoped:
@@ -378,7 +407,12 @@ func setAction(as []ActionRecord, id, status string) []ActionRecord {
 func causeOf(r kernel.Record) CauseRecord {
 	d, _ := kernel.Decode[ev.IncidentCauseConcludedV1](r)
 	c := CauseRecord{IncidentID: string(d.IncidentID), Conclusion: string(d.Conclusion), Reason: reasonOf(d.Reason),
-		Actor: ActorName(r.Actor), At: r.OccurredAt, EventID: r.EventID}
+		Actor: ActorName(r.Actor), At: r.OccurredAt, EventID: r.EventID, Branch: BranchWhyMade}
+	if b, _ := decodeAs[struct {
+		Branch string `json:"branch"`
+	}](r); b.Branch != "" {
+		c.Branch = b.Branch
+	}
 	if d.Category != nil {
 		c.Category = string(*d.Category)
 	}
@@ -466,6 +500,7 @@ func StepNC(key string, v NCRecord, r kernel.Record) NCRecord {
 	case catalog.IncidentHypothesisComputed:
 		// Каждая запись — новая версия слота вывода разбора (AD-3).
 		v.Versions++
+		v.Computed = append(slices.Clone(v.Computed), computedOf(r))
 		if v.ItemID == "" {
 			v.ItemID = r.ItemID
 		}
@@ -541,6 +576,23 @@ func cloneMap[V any](m map[string]V) map[string]V {
 	out := make(map[string]V, len(m)+1)
 	for _, k := range slices.Sorted(maps.Keys(m)) {
 		out[k] = m[k]
+	}
+	return out
+}
+
+// computedOf — уверенность гипотез версии вывода по категориям.
+func computedOf(r kernel.Record) ComputedVersion {
+	d, _ := decodeAs[struct {
+		Hypotheses []struct {
+			Category     string `json:"category"`
+			ConfidenceBP *int   `json:"confidence_bp"`
+		} `json:"hypotheses"`
+	}](r)
+	out := ComputedVersion{At: r.OccurredAt, EventID: r.EventID, Confidence: map[string]int{}}
+	for _, h := range d.Hypotheses {
+		if h.ConfidenceBP != nil {
+			out.Confidence[h.Category] = *h.ConfidenceBP
+		}
 	}
 	return out
 }

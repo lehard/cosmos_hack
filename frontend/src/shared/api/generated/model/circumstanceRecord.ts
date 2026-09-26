@@ -26,6 +26,10 @@ export interface CircumstanceRecord {
   related_event_ids?: string[];
   /** Вид источника факта (FR-140). */
   source_kind?: string;
+  /** Источник словами: «журнал «Сварочный источник ИС-2»», «камера КТ-3», псевдоним человека. */
+  source_label?: string;
+  /** Запись коротко словами для людей: что произошло, значение против уставки, источник. Нет — показать тип записи. */
+  text?: string;
   /** Уточнение внутри типа: outcome контроля, deviation_kind отклонения, cycle_started / cycle_finished, condition. */
   variant?: string;
 }

@@ -45,8 +45,16 @@ func Scenario(t *testing.T, w *World, store engineapp.ProjectionStore) {
 	if inc.Size != 34 || inc.InitialSize != 34 || inc.ScopeVersion != 1 || inc.CommonFactor == nil || inc.CommonFactor.Value != "IS-2" {
 		t.Fatalf("инцидент: %+v", inc)
 	}
+	// Стол технолога: связь с разбором и стадия расследования.
+	if inc.PrimaryNCID == nil || *inc.PrimaryNCID != "NC-01" || len(inc.NCIDs) != 1 || inc.GroupKey == nil || inc.Stage == "" ||
+		inc.Counts.Confirmed+inc.Counts.Suspect != 34 || inc.NextStep == nil || len(inc.CloseBlockers) == 0 {
+		t.Fatalf("расследование: %+v", inc)
+	}
 	rs, err := svc.RiskScope(ctx, inc.IncidentID, m)
 	must(err)
+	if rs.PrimaryNCID == nil || len(rs.Versions) != 1 || rs.Versions[0].Trigger == nil || rs.Versions[0].Trigger.Kind != "computed" || len(rs.Versions[0].ItemsAdded) != 34 {
+		t.Fatalf("область v1 для стола: %+v", rs.Versions)
+	}
 	if len(rs.Items) != 34 || rs.LastKnownGood == nil || !strings.HasPrefix(rs.LastKnownGood.Label, "F-006") || rs.Window == nil {
 		t.Fatalf("область v1: %d изделий, отсчёт %+v", len(rs.Items), rs.LastKnownGood)
 	}
@@ -101,6 +109,9 @@ func Scenario(t *testing.T, w *World, store engineapp.ProjectionStore) {
 	must(err)
 
 	var sizes []int
+	if v := rsV3.Versions[len(rsV3.Versions)-1]; len(v.ItemsRemoved) == 0 || v.Trigger == nil || v.Trigger.Kind != "human" || v.SignedBy == nil {
+		t.Fatalf("ступень сужения без разницы или повода: %+v", v)
+	}
 	for _, v := range rsV3.Versions {
 		sizes = append(sizes, v.Size)
 		if v.Reason == nil || v.Reason.Text == "" || len(v.EvidenceEventIDs) == 0 || v.RecordedAt.IsZero() {
@@ -178,6 +189,10 @@ func Scenario(t *testing.T, w *World, store engineapp.ProjectionStore) {
 		t.Fatalf("ошибка исполнителя без объяснения: %v", err)
 	}
 	must(conclude("equipment"))
+	// Расследование не закрыть без ветки «почему пропустили» (кейс §2.3).
+	if _, err := svc.CloseIncident(tec, inc.IncidentID, appanalysis.CloseIncident{CommandHeader: header(w, 0), Scope: "investigation"}); code(err) != errcodes.IncidentCauseBranchOpen {
+		t.Fatalf("закрытие расследования без второй причины: %v", err)
+	}
 	if _, err := svc.RequestMeasurement(tec, "NC-01", appanalysis.RequestMeasurement{CommandHeader: header(w, 0), HypothesisID: eqID, What: "Ток сварки на контрольном образце"}); err != nil {
 		t.Fatal(err)
 	}

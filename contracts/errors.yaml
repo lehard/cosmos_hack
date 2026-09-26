@@ -765,6 +765,27 @@ codes:
     ui_key: errors.generic
     guard: true
     refs: [FR-59]
+  incident.cause_branch_open:
+    status: 422
+    title: "Нет вывода по одной из двух причин"
+    detail: "Расследование {incident_id} не закрыть: нет вывода о причине по ветке «{branch_title}» ({branch}) — подтвердите причину или запишите «причина не установлена»"
+    ui_key: errors.generic
+    guard: true
+    refs: [FR-59, FR-64, кейс §2.3]
+  incident.effectiveness_unchecked:
+    status: 422
+    title: "Эффективность мер не проверена"
+    detail: "Расследование {incident_id} не закрыть: {why}"
+    ui_key: errors.generic
+    guard: true
+    refs: [FR-64]
+  incident.investigation_closed:
+    status: 409
+    title: "Расследование уже закрыто"
+    detail: "Расследование {incident_id} закрыто — выводы и меры больше не меняются"
+    ui_key: errors.generic
+    guard: true
+    refs: [FR-64]
 
   # ── erp / mes: внешние учётные системы (FR-91, FR-96) ──
   erp.unavailable:

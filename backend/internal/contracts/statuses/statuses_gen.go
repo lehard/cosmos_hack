@@ -199,6 +199,25 @@ const (
 	ErpMessageStatusQuarantined ErpMessageStatus = "quarantined"
 )
 
+// Стадия расследования инцидента (стол технолога): область → гипотезы → причина → меры → проверка эффективности → закрыто (словарь).
+type InvestigationStage string
+
+// Значения investigation_stage.
+const (
+	// Область определена
+	InvestigationStageScopeDefined InvestigationStage = "scope_defined"
+	// Проверка гипотез
+	InvestigationStageHypothesis InvestigationStage = "hypothesis"
+	// Причина установлена
+	InvestigationStageCauseConfirmed InvestigationStage = "cause_confirmed"
+	// Меры назначены
+	InvestigationStageActionAssigned InvestigationStage = "action_assigned"
+	// Проверка эффективности
+	InvestigationStageEffectivenessCheck InvestigationStage = "effectiveness_check"
+	// Расследование закрыто
+	InvestigationStageClosed InvestigationStage = "closed"
+)
+
 // Сводный статус изделия для списков и карты (словарь продукта «Статусы изделия»); вычисляется из шести осей, сам осью не является (словарь).
 type ItemSummary string
 
@@ -237,5 +256,6 @@ var Dictionaries = [...]Dictionary{
 	{Name: "incident_action", Title: "Что делать с изделием в инциденте (FR-62)", Owner: "", Values: []Value{{Code: "observe", Label: "Наблюдать", Tone: "info"}, {Code: "check", Label: "Проверить", Tone: "attention"}, {Code: "block", Label: "Заблокировать", Tone: "danger"}, {Code: "release", Label: "Выпустить", Tone: "success"}}},
 	{Name: "process_containment", Title: "Сдерживание процесса — отдельный объект от сдерживания изделий (FR-49)", Owner: "", Values: []Value{{Code: "process_point_stop", Label: "Стоп точки процесса", Tone: "danger"}, {Code: "critical_stop", Label: "Критическая остановка", Tone: "critical"}}},
 	{Name: "erp_message_status", Title: "Состояние исходящего учётного сообщения (не ось: ось меняет только квитанция)", Owner: "", Values: []Value{{Code: "queued", Label: "В очереди на отправку", Tone: "neutral"}, {Code: "sent", Label: "Отправлено — ждём подтверждения 1С", Tone: "attention"}, {Code: "acknowledged", Label: "Подтверждено 1С", Tone: "success"}, {Code: "rejected", Label: "Ошибка обмена", Tone: "danger"}, {Code: "quarantined", Label: "В карантине — нужна переотправка", Tone: "danger"}}},
+	{Name: "investigation_stage", Title: "Стадия расследования инцидента (стол технолога): область → гипотезы → причина → меры → проверка эффективности → закрыто", Owner: "", Values: []Value{{Code: "scope_defined", Label: "Область определена", Tone: "info"}, {Code: "hypothesis", Label: "Проверка гипотез", Tone: "attention"}, {Code: "cause_confirmed", Label: "Причина установлена", Tone: "info"}, {Code: "action_assigned", Label: "Меры назначены", Tone: "info"}, {Code: "effectiveness_check", Label: "Проверка эффективности", Tone: "attention"}, {Code: "closed", Label: "Расследование закрыто", Tone: "muted"}}},
 	{Name: "item_summary", Title: "Сводный статус изделия для списков и карты (словарь продукта «Статусы изделия»); вычисляется из шести осей, сам осью не является", Owner: "", Values: []Value{{Code: "in_process", Label: "В работе", Tone: "info"}, {Code: "suspect", Label: "Под подозрением", Tone: "attention"}, {Code: "reinspection_required", Label: "Ожидает доп. контроля", Tone: "attention"}, {Code: "hold", Label: "Заблокировано", Tone: "danger"}, {Code: "pending_decision", Label: "Ожидает решения", Tone: "attention"}, {Code: "nonconforming", Label: "Несоответствие подтверждено", Tone: "danger"}, {Code: "cleared", Label: "Исключено из подозрения", Tone: "success"}, {Code: "released", Label: "Разрешено к движению", Tone: "success"}, {Code: "in_rework", Label: "На переделке", Tone: "attention"}, {Code: "in_repair", Label: "На ремонте", Tone: "attention"}, {Code: "accepted_with_concession", Label: "Годно по разрешению на отклонение", Tone: "qualified"}, {Code: "scrapped", Label: "Списано", Tone: "critical"}, {Code: "returned", Label: "Возвращено поставщику", Tone: "critical"}}},
 }
