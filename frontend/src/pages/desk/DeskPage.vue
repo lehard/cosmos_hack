@@ -3,14 +3,16 @@
  * Стол роли (AD-21, NFR-EXT-1): всё, что на странице, пришло данными
  * normative/desks/‹роль›.yaml через access.desk.read. Кода под конкретную роль
  * здесь нет — новый стол собирается правкой yaml.
- * Вид — общие элементы shared/ui: заголовок — название раздела (AppPage);
- * разделы переключает левое меню оболочки (Д-73, app/layout/DeskNav).
+ * Разделы переключает левое меню оболочки (Д-73, app/layout/DeskNav); своего
+ * заголовка у раздела нет — название выделено в меню, заголовки несут рамки
+ * виджетов (Д-77, UI-13). Раздел с виджетом «на всю высоту» (живая карта) —
+ * страница без прокрутки.
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import { NAlert, NSpin } from 'naive-ui'
-import { AppPage, EmptyState } from '@/shared/ui'
+import { EmptyState } from '@/shared/ui'
 import { useDesk } from '@/entities/desk'
 import { isWidgetId, widgetRegistry } from '@/widgets/registry'
 import { useProblemText } from '@/shared/i18n/problem'
@@ -35,9 +37,7 @@ const active = computed(() => {
   <div v-if="desk.isPending.value" class="center"><NSpin /></div>
   <NAlert v-else-if="desk.isError.value" type="error" :bordered="false">{{ problemText(desk.error.value) }}</NAlert>
   <section v-else-if="d && active" class="desk" :class="{ 'desk--fill': fill }" :data-role="d.role" :data-density="d.density">
-    <AppPage :title="t(active.title_key)" :fill="fill" :data-tab="active.id">
-      <DeskTabView :key="active.id" :tab="active" :density="d.density" />
-    </AppPage>
+    <DeskTabView :key="active.id" :tab="active" :density="d.density" :data-tab="active.id" />
   </section>
   <EmptyState v-else :title="t('shell.desk.empty')" />
 </template>

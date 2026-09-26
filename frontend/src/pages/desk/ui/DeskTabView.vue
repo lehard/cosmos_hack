@@ -28,8 +28,6 @@ const tabDensity = computed<Density>(() => props.tab.density ?? props.density)
 const fills = (widget: string): boolean => props.tab.layout === 'single' && isWidgetId(widget) && widgetRegistry[widget].fill === true
 const fill = computed(() => props.tab.slots.some((s) => fills(s.widget)))
 
-/** Заголовок панели совпадает с заголовком страницы или вкладки — второй раз не пишем (UI-6). */
-const repeatsTitle = (widget: string): boolean => isWidgetId(widget) && widgetRegistry[widget].titleKey === props.tab.title_key
 </script>
 
 <template>
@@ -42,7 +40,7 @@ const repeatsTitle = (widget: string): boolean => isWidgetId(widget) && widgetRe
         :slot-id="slot.id"
         :slice="slot.slice ?? {}"
         :density="slot.density ?? tabDensity"
-        :frame="{ hideTitle: repeatsTitle(slot.widget), fill: fills(slot.widget) }"
+        :frame="{ fill: fills(slot.widget) }"
         :class="{ 'slot--fill': fills(slot.widget) }"
         :data-slot="slot.id"
       />
@@ -70,7 +68,9 @@ const repeatsTitle = (widget: string): boolean => isWidgetId(widget) && widgetRe
   grid-template: 'main' auto / minmax(0, 1fr);
 }
 
-/* Раздел на всю высоту: колонка без прокрутки страницы. */
+/* Раздел на всю высоту: колонка без прокрутки страницы. Виджет «на всю
+   высоту» забирает остаток, остальные (таймлайн) — по содержимому: их рамка
+   не растягивается на 100 % места. */
 .desk-grid--fill {
   display: flex;
   flex-direction: column;
@@ -83,12 +83,14 @@ const repeatsTitle = (widget: string): boolean => isWidgetId(widget) && widgetRe
   min-height: 0;
 }
 
-.desk-grid--fill .area > * {
+.desk-grid--fill .area > :not(.slot--fill) {
   flex: none;
+  height: auto;
 }
 
 .desk-grid--fill .area > .slot--fill {
-  flex: 1 1 auto;
+  flex: 1 1 0;
+  height: auto;
   min-height: 0;
 }
 
