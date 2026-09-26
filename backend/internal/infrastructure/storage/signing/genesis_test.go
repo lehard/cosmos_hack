@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -22,6 +23,7 @@ import (
 	"ant/internal/application/journal"
 	"ant/internal/application/platform"
 	processapp "ant/internal/application/process"
+	referenceapp "ant/internal/application/reference"
 	app "ant/internal/application/signing"
 	appvision "ant/internal/application/vision"
 	"ant/internal/contracts/catalog"
@@ -32,6 +34,7 @@ import (
 	journalstore "ant/internal/infrastructure/storage/journal"
 	"ant/internal/infrastructure/storage/journal/clock"
 	"ant/internal/infrastructure/storage/journal/journaltest"
+	referencestore "ant/internal/infrastructure/storage/reference"
 )
 
 // Встроенная копия затравки совпадает с normative/ репозитория (кроме README).
@@ -68,8 +71,16 @@ func volumes(t *testing.T) Volumes {
 }
 
 func provisionConfig(v Volumes) ProvisionConfig {
+	recs, err := referencestore.SeedRecords()
+	if err != nil {
+		panic(err)
+	}
+	var refs []app.GenesisRecord
+	for _, r := range recs {
+		refs = append(refs, app.GenesisRecord{Type: r.Type, Stream: r.Stream, Data: r.Data})
+	}
 	return ProvisionConfig{Volumes: v, Profile: "demo", ClockMode: app.ClockScenario, ProcessVersionID: processapp.SeedVersionID,
-		DomainBuild: dom.Digest([]byte("test")), Partitions: 16}
+		DomainBuild: dom.Digest([]byte("test")), Partitions: 16, References: refs}
 }
 
 // snapshot — отпечаток всех файлов томов: путь, права, содержимое.
@@ -205,6 +216,14 @@ func TestProvisionOnDB(t *testing.T) {
 	if err != nil || pp.TrustLevel != 3 || pp.Status != "active" || *pp.Provenance != "genesis" {
 		t.Fatalf("паспорт: %+v %v", pp, err)
 	}
+	// Справочники — из генезиса, проекцией модуля reference (эпик 19).
+	refBook, err := (&referenceapp.JournalSource{Journal: j, Codec: codec}).Book(ctx, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := refBook.LocationAt("WS-WC", time.Date(2026, 9, 23, 8, 0, 0, 0, time.UTC)); !ok {
+		t.Fatal("справочник мест из генезиса не виден на время прогона")
+	}
 	// Стартовая версия процесса — отпечаток из генезиса.
 	id, xml, err := GenesisProcess(ctx, j, nil)
 	if err != nil || id != processapp.SeedVersionID || dom.Digest(xml) != res.Header.NormativeVersionHash {
@@ -278,14 +297,18 @@ func TestProvisionRefusesNonEmptyJournal(t *testing.T) {
 
 func keep(ps []journal.Pending) []journal.Pending { return ps }
 
-// genesisOnMemory — блок генезиса в журнале в памяти и его пакеты.
-func genesisOnMemory(t *testing.T, mutate func(ps []journal.Pending) []journal.Pending) (*inmem.Journal, error) {
-	t.Helper()
-	ctx := context.Background()
+// memBlock — пакеты одного блока генезиса (ключи создаются один раз на прогон тестов).
+var memBlock = sync.OnceValues(func() ([]journal.Pending, error) {
 	src := inmem.NewJournal(time.Now)
-	cfg := provisionConfig(volumes(t))
-	if _, err := Provision(ctx, src, cfg); err != nil {
-		t.Fatal(err)
+	d, err := os.MkdirTemp("", "genesis-test-")
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = os.RemoveAll(d) }()
+	v := Volumes{AntKeys: filepath.Join(d, "a"), Keeper: filepath.Join(d, "k"), Verifier: filepath.Join(d, "v"), AntPKI: filepath.Join(d, "p"),
+		DemoSigner: filepath.Join(d, "d"), Devices: filepath.Join(d, "e"), Partner: filepath.Join(d, "r")}
+	if _, err := Provision(context.Background(), src, provisionConfig(v)); err != nil {
+		return nil, err
 	}
 	var ps []journal.Pending
 	for _, s := range src.Main() {
@@ -293,12 +316,35 @@ func genesisOnMemory(t *testing.T, mutate func(ps []journal.Pending) []journal.P
 		e.Seq, e.Commit, e.Link, e.CommittedAt, e.RecordedAt = 0, "", "", "", ""
 		ps = append(ps, journal.Pending{Entry: e, Envelope: s.Envelope})
 	}
+	return ps, nil
+})
+
+// genesisOnMemory — блок генезиса (после mutate) в новом журнале в памяти и итог его проверки.
+func genesisOnMemory(t *testing.T, full bool, mutate func(ps []journal.Pending) []journal.Pending) (*inmem.Journal, error) {
+	t.Helper()
+	ctx := context.Background()
+	orig, err := memBlock()
+	if err != nil {
+		t.Fatal(err)
+	}
+	ps := make([]journal.Pending, len(orig))
+	for i, p := range orig {
+		ps[i] = journal.Pending{Entry: p.Entry, Envelope: bytes.Clone(p.Envelope)}
+	}
 	ps = mutate(ps)
 	dst := inmem.NewJournal(time.Now)
 	if _, err := dst.Append(ctx, journal.AppendRequest{Batch: ps}); err != nil {
 		t.Fatal(err)
 	}
-	_, err := app.VerifyGenesis(ctx, dst, profiles.Verifier{}, "")
+	// Быстрая проверка (ядро) и полная (верификатор) дают один итог.
+	_, fast := app.VerifyGenesisDigest(ctx, dst, profiles.Verifier{}, "")
+	if !full {
+		return dst, fast
+	}
+	_, err = app.VerifyGenesis(ctx, dst, profiles.Verifier{}, "")
+	if (err == nil) != (fast == nil) {
+		t.Fatalf("быстрая и полная проверки расходятся: %v / %v", fast, err)
+	}
 	return dst, err
 }
 
@@ -306,7 +352,7 @@ func genesisOnMemory(t *testing.T, mutate func(ps []journal.Pending) []journal.P
 // под теми же подписями, снятая подпись ML-DSA (понижение hybrid), удалённая
 // запись блока, запись класса не genesis, второй генезис.
 func TestTamperedGenesisRejected(t *testing.T) {
-	if _, err := genesisOnMemory(t, keep); err != nil {
+	if _, err := genesisOnMemory(t, true, keep); err != nil {
 		t.Fatalf("неизменённый блок: %v", err)
 	}
 	edit := func(p *journal.Pending, f func(env *dom.Envelope, payload []byte) []byte) {
@@ -335,20 +381,21 @@ func TestTamperedGenesisRejected(t *testing.T) {
 	}
 	for name, mutate := range cases {
 		t.Run(name, func(t *testing.T) {
-			if _, err := genesisOnMemory(t, mutate); !errors.Is(err, dom.ErrGenesis) {
+			if _, err := genesisOnMemory(t, name == "содержимое", mutate); !errors.Is(err, dom.ErrGenesis) {
 				t.Fatalf("изменённый блок принят: %v", err)
 			}
 		})
 	}
 	t.Run("второй генезис", func(t *testing.T) {
-		j, err := genesisOnMemory(t, keep)
+		j, err := genesisOnMemory(t, false, keep)
 		if err != nil {
 			t.Fatal(err)
 		}
-		second, _ := genesisOnMemory(t, keep)
+		second, _ := genesisOnMemory(t, false, keep)
 		for _, s := range second.Main()[:1] {
 			e := s.Entry
 			e.Seq, e.Commit, e.Link, e.CommittedAt, e.RecordedAt = 0, "", "", "", ""
+			e.EventID = "01929a2b-7c3d-7e4f-8a5b-6c7d8e9f0a1b" // другой заголовок генезиса
 			if _, err := j.Append(context.Background(), journal.AppendRequest{Batch: []journal.Pending{{Entry: e, Envelope: s.Envelope}}}); err != nil {
 				t.Fatal(err)
 			}

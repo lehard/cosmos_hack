@@ -10,7 +10,8 @@ import (
 
 // AccessControl — ведомый порт решений о доступе (AD-15, AD-35; ключ
 // конфигурации access_control): Casbin — единственный вычислитель; в волне 1 —
-// разрешающая заглушка (infrastructure/security/permissive).
+// разрешающая заглушка (infrastructure/security/permissive), с эпика 08 —
+// infrastructure/security/casbin над проекцией политики (PolicySource).
 type AccessControl interface {
 	// Enforce — решение по запросу «кто — что — над чем — где — когда».
 	Enforce(ctx context.Context, rq Request) (Decision, error)
@@ -18,11 +19,14 @@ type AccessControl interface {
 	PolicySeq(ctx context.Context) (int64, error)
 }
 
-// Request — запрос решения о доступе.
+// Request — запрос решения о доступе «кто — что — над чем — где — когда».
 type Request struct {
 	Principal platform.Principal
 	Action    platform.Action
 	Object    platform.ObjectRef
+	// Scope — место операции: путь области рабочего места команды или сеанса
+	// (барьер 3, AD-15); пусто — место не определено, область не сужает.
+	Scope string
 	// At — доменное время запроса (сроки полномочий и клейм — по нему, AD-15, AD-37).
 	At time.Time
 }

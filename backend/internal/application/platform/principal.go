@@ -11,6 +11,10 @@ type Principal struct {
 	Name string
 	// Role — активная роль из политики (normative/policy).
 	Role string
+	// Roles — активная роль и все её базовые роли (наследование ролей — одна
+	// функция access, domain/access.Roles.Closure, AD-15); заполняет порт
+	// входа. Пусто — только Role.
+	Roles []string
 	// Scope — область роли: здание → цех → участок → рабочее место.
 	Scope string
 	// ShiftID, WorkplaceID, WorkplaceSessionID — смена и допуск к рабочему месту (барьер 2).
@@ -27,6 +31,28 @@ type Principal struct {
 
 // Anonymous — сеанса нет.
 func (p Principal) Anonymous() bool { return p.PersonID == "" }
+
+// EffectiveRoles — активная роль и её базовые роли (наследование — access, AD-15).
+func (p Principal) EffectiveRoles() []string {
+	if len(p.Roles) > 0 {
+		return p.Roles
+	}
+	if p.Role == "" {
+		return nil
+	}
+	return []string{p.Role}
+}
+
+// HasRole — субъект действует в роли role: это его активная роль или её
+// базовая роль (начальник ОТК — и контролёр).
+func (p Principal) HasRole(role string) bool {
+	for _, r := range p.EffectiveRoles() {
+		if r == role {
+			return true
+		}
+	}
+	return false
+}
 
 type principalKey struct{}
 

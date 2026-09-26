@@ -37,8 +37,8 @@ func (s *Store) PendingItems(ctx context.Context, partition int, afterSeq int64,
 	if limit <= 0 {
 		limit = DefaultReadLimit
 	}
-	rows, err := s.pool.Query(ctx, `SELECT item_id, seq, header, link, salt, envelope FROM (
-    SELECT DISTINCT ON (item_id) item_id, seq, header, link, salt, envelope
+	rows, err := s.pool.Query(ctx, `SELECT item_id, seq, `+rawColumns+` FROM (
+    SELECT DISTINCT ON (item_id) item_id, seq, `+rawColumns+`
     FROM journal.entries
     WHERE chain = 'main' AND partition = $1 AND seq > $2 AND is_trigger
     ORDER BY item_id, seq DESC
@@ -50,12 +50,11 @@ func (s *Store) PendingItems(ctx context.Context, partition int, afterSeq int64,
 	var out []PendingItem
 	for rows.Next() {
 		var p PendingItem
-		var header string
-		var link, salt, envelope []byte
-		if err := rows.Scan(&p.ItemID, &p.UpToSeq, &header, &link, &salt, &envelope); err != nil {
+		var r rawRow
+		if err := rows.Scan(append([]any{&p.ItemID, &p.UpToSeq}, r.dest()...)...); err != nil {
 			return nil, err
 		}
-		if p.Trigger, err = decode(header, link, salt, envelope); err != nil {
+		if p.Trigger, err = decode(r); err != nil {
 			return nil, err
 		}
 		out = append(out, p)

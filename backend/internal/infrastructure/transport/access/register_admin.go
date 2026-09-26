@@ -147,10 +147,6 @@ func registerAdmin(api *httpapi.API, q app.Queries, c app.Commands) {
 			return c.SetAuditParameters(ctx, in.Body)
 		})
 
-	type workplaceCmd[B any] struct {
-		WorkplaceID string `path:"workplace_id" maxLength:"128" doc:"Рабочее место."`
-		Body        B
-	}
 	httpapi.Do(api, httpapi.Post("/workplaces/{workplace_id}/admission", "Допуск к рабочему месту",
 		"Барьер 2 (AD-15, FR-83): СКУД в зоне ∧ роль в области места ∧ квалификация на дату ∧ назначение в смене ∧ токен и PIN."),
 		platform.Action{ID: "access.workplace.admit", Class: platform.ClassPermissive, Owner: owner, Subject: "workplace",
@@ -178,4 +174,16 @@ func registerAdmin(api *httpapi.API, q app.Queries, c app.Commands) {
 		func(ctx context.Context, in *workplaceCmd[app.RequestInspection]) (platform.Receipt, error) {
 			return c.RequestInspection(ctx, in.WorkplaceID, in.Body)
 		})
+}
+
+// workplaceCmd — команда у рабочего места: объект операции — рабочее место
+// (место операции для барьера 3, AD-15: исполнитель поста А не действует на посту Б).
+type workplaceCmd[B any] struct {
+	WorkplaceID string `path:"workplace_id" maxLength:"128" doc:"Рабочее место."`
+	Body        B
+}
+
+// Object — рабочее место команды (httpapi: права по объекту).
+func (w *workplaceCmd[B]) Object() platform.ObjectRef {
+	return platform.ObjectRef{Kind: "workplace", ID: w.WorkplaceID}
 }

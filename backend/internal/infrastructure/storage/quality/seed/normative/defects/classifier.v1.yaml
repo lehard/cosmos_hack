@@ -13,6 +13,7 @@ defect_types:
   - {code: M-BURR,       name: "Заусенец",                        severity: minor, measurable: false, methods: [camera, visual_human],             zone_kinds: [surface, hole, groove]}
   - {code: M-CHATTER,    name: "Вибрационная рябь",               severity: minor, measurable: false, methods: [camera, visual_human],             zone_kinds: [surface]}
   - {code: M-DIM,        name: "Размер вне допуска",              severity: major, measurable: true,  methods: [cmm],                              zone_kinds: [surface, hole, groove]}
+  - {code: I-BASE-PORE,  name: "Пора в основном металле (входной брак)", severity: major, measurable: true, methods: [radiography, ultrasonic], zone_kinds: [surface]}
   - {code: I-CERT,       name: "Нет или не соответствует сертификат поставщика", severity: major, measurable: false, methods: [supplier_documents], zone_kinds: [other]}
   # ── сварка (шов W-1, участки по 40 мм) ──
   - {code: W-UNDERCUT,   name: "Подрез",                          severity: major,    measurable: true,  methods: [camera, visual_human],          zone_kinds: [weld_section]}

@@ -16,7 +16,7 @@ import (
 	app "ant/internal/application/signing"
 	"ant/internal/contracts/catalog"
 	dom "ant/internal/domain/signing"
-	"ant/internal/infrastructure/security/pki"
+	"ant/internal/infrastructure/security/mtls"
 	"ant/internal/infrastructure/security/profiles"
 )
 
@@ -70,8 +70,10 @@ var InteractivePersonas = []string{"INS-01", "FOR-WC", "TEC-01", "PM-01", "ADM-0
 var PersonaClasses = []string{dom.ClassEvent, dom.ClassDocumentSignature, dom.ClassPaperAttestation, dom.ClassShiftReport, dom.ClassKeyAct}
 
 // DemoValidFrom — начало действия стартовой политики, справочников и ключей
-// в профилях затравки: прогоны сценариев идут в виртуальном времени 2026 года.
-var DemoValidFrom = time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+// в профилях затравки (и occurred_at записей блока): 1 января 2026 года,
+// 00:00 МСК — как у затравки справочников (эпик 19); прогоны сценариев идут в
+// виртуальном времени 2026 года.
+var DemoValidFrom = time.Date(2025, 12, 31, 21, 0, 0, 0, time.UTC)
 
 // ProvisionConfig — параметры ant init.
 type ProvisionConfig struct {
@@ -86,6 +88,9 @@ type ProvisionConfig struct {
 	Partitions       int
 	// Seed — затравка normative/; nil — встроенная копия.
 	Seed fs.FS
+	// References — стартовые справочники модуля reference (reference.*;
+	// сборка — cmd/ant из затравки normative/reference, эпик 19).
+	References []app.GenesisRecord
 	// KeeperHosts — имена хранителя в серверном сертификате.
 	KeeperHosts []string
 	// Now — InfraClock; nil — time.Now.
@@ -123,7 +128,7 @@ func Provision(ctx context.Context, j journal.JournalStore, cfg ProvisionConfig)
 		// AD-33: генезис есть — ничего не делаем; сверяем блок по якорю и
 		// дописываем trust-anchors, если прошлый запуск оборвался после записи.
 		pin, have := pinned(cfg.Keeper)
-		rep, err := app.VerifyGenesis(ctx, j, profiles.Verifier{}, pin)
+		rep, err := app.VerifyGenesisDigest(ctx, j, profiles.Verifier{}, pin)
 		if err != nil {
 			return Provisioned{}, err
 		}
@@ -175,12 +180,14 @@ func Provision(ctx context.Context, j journal.JournalStore, cfg ProvisionConfig)
 		anchor := []dom.AnchorKey{{KeyRef: anchorG.Ref, ProfileID: anchorG.Profile, PublicB64: anchorG.PublicB64()},
 			{KeyRef: anchorP.Ref, ProfileID: anchorP.Profile, PublicB64: anchorP.PublicB64()}}
 		spec, err := app.ComposeGenesis(app.GenesisInput{Profile: cfg.Profile, ClockMode: cfg.ClockMode,
-			ProcessVersionID: cfg.ProcessVersionID, Keys: keys, KeeperFingerprint: keeperFP, ValidFrom: validFrom, Anchor: anchor}, seed)
+			ProcessVersionID: cfg.ProcessVersionID, Keys: keys, KeeperFingerprint: keeperFP, ValidFrom: validFrom, Anchor: anchor,
+			References: cfg.References}, seed)
 		if err != nil {
 			return app.GenesisBlock{}, err
 		}
 		signer := profiles.Signer{Keys: profiles.NewKeyring(append(quorum, anchorG, anchorP)...)}
-		block, err = app.BuildGenesis(ctx, spec, signer, app.GenesisConfig{DomainBuild: cfg.DomainBuild, Partitions: cfg.Partitions, Now: now})
+		block, err = app.BuildGenesis(ctx, spec, signer, app.GenesisConfig{DomainBuild: cfg.DomainBuild, Partitions: cfg.Partitions, Now: now,
+			OccurredAt: validFrom})
 		return block, err
 	})
 	if err != nil {
@@ -364,23 +371,70 @@ func writeAnchors(cfg ProvisionConfig, h dom.GenesisHeader, digest string) error
 			return err
 		}
 	}
-	var parts []pki.Participant
-	if cfg.AntPKI != "" {
-		parts = append(parts, pki.Participant{Name: "ant", Dir: cfg.AntPKI})
-	}
-	if cfg.Verifier != "" {
-		parts = append(parts, pki.Participant{Name: "verifier", Dir: cfg.Verifier})
-	}
 	hosts := cfg.KeeperHosts
 	if len(hosts) == 0 {
 		hosts = []string{"keeper", "localhost"}
 	}
-	return pki.Init(cfg.Keeper, hosts, parts)
+	return issueMTLS(cfg, hosts)
 }
 
-// Genesis — блок генезиса журнала, проверенный по якорю (ядро при старте).
+// issueMTLS — сертификаты mTLS (AD-8): демо-УЦ и серверный сертификат
+// хранителя в его томе, клиентские — ant и verifier в их тома. Выпуск —
+// infrastructure/security/mtls (эпик 29, та же раскладка, что у keeper -init);
+// существующие файлы не трогаются, закрытый ключ участника у хранителя не остаётся.
+func issueMTLS(cfg ProvisionConfig, hosts []string) error {
+	pkiDir := filepath.Join(cfg.Keeper, "pki")
+	var parts [][2]string
+	for _, p := range [][2]string{{"ant", cfg.AntPKI}, {"verifier", cfg.Verifier}} {
+		if p[1] == "" {
+			continue
+		}
+		if _, err := os.Stat(filepath.Join(p[1], "pki", p[0]+".key")); err == nil {
+			continue // у участника уже есть ключ и сертификат
+		}
+		// Сертификат без ключа у хранителя бесполезен — выпуск заново.
+		if _, err := os.Stat(filepath.Join(pkiDir, p[0]+".key")); errors.Is(err, os.ErrNotExist) {
+			_ = os.Remove(filepath.Join(pkiDir, p[0]+".crt"))
+		}
+		parts = append(parts, p)
+	}
+	names := make([]string, 0, len(parts))
+	for _, p := range parts {
+		names = append(names, p[0])
+	}
+	if err := mtls.Init(pkiDir, hosts, names); err != nil {
+		return err
+	}
+	for _, p := range parts {
+		dst := filepath.Join(p[1], "pki")
+		if err := os.MkdirAll(dst, 0o700); err != nil {
+			return err
+		}
+		for _, f := range []string{"ca.crt", p[0] + ".crt", p[0] + ".key"} {
+			b, err := os.ReadFile(filepath.Join(pkiDir, f))
+			if err != nil {
+				return err
+			}
+			mode := os.FileMode(0o444)
+			if filepath.Ext(f) == ".key" {
+				mode = 0o400
+			}
+			_ = os.Remove(filepath.Join(dst, f))
+			if err := os.WriteFile(filepath.Join(dst, f), b, mode); err != nil {
+				return err
+			}
+		}
+		if err := os.Remove(filepath.Join(pkiDir, p[0]+".key")); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// Genesis — блок генезиса журнала, проверенный по якорю (ядро при старте:
+// быстрая проверка через block_digest; полная — у верификатора).
 func Genesis(ctx context.Context, j journal.JournalStore) (app.GenesisReport, error) {
-	return app.VerifyGenesis(ctx, j, profiles.Verifier{}, "")
+	return app.VerifyGenesisDigest(ctx, j, profiles.Verifier{}, "")
 }
 
 // ErrNoGenesis — в журнале нет генезиса (ant init не выполнялся).

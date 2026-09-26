@@ -47,6 +47,8 @@ import type {
   AccessStampList,
   AccessStampListParams,
   AccessWorkplaceListParams,
+  AccountRequest,
+  AccountRequestResult,
   AcknowledgeTask,
   ActivateAccount,
   ActivateVersion,
@@ -252,12 +254,16 @@ import type {
   RefExternalIDList,
   RefItemTypeList,
   RefLocationList,
+  RefLotList,
+  RefOrderList,
   RefShiftList,
   ReferenceCalendarReadParams,
   ReferenceEquipmentListParams,
   ReferenceExternalIdListParams,
   ReferenceItemTypeListParams,
   ReferenceLocationListParams,
+  ReferenceLotListParams,
+  ReferenceOrderListParams,
   ReferenceShiftListParams,
   RegisterItem,
   RegisterKey,
@@ -2633,6 +2639,126 @@ export function useAccessPersonaList<TData = Awaited<ReturnType<typeof accessPer
 
 
 
+export type accessAccountRequestResponse202 = {
+  data: AccountRequestResult
+  status: 202
+}
+
+export type accessAccountRequestResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 202>
+}
+
+export type accessAccountRequestResponseSuccess = (accessAccountRequestResponse202) & {
+  headers: Headers;
+};
+export type accessAccountRequestResponseError = (accessAccountRequestResponseDefault) & {
+  headers: Headers;
+};
+
+export const getAccessAccountRequestUrl = () => {
+
+
+
+
+  return `/api/v1/auth/registration`
+}
+
+/**
+ * FR-128: сотрудник сам подаёт заявку (логин, пароль, имя); учётная запись ждёт активации администратором с назначением роли (access.account.activate). Пароль хранится только хешем argon2id; частота заявок ограничена.
+ * @summary Заявка на регистрацию
+ */
+export const accessAccountRequest = async (accountRequest: AccountRequest, options?: RequestInit): Promise<accessAccountRequestResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getAccessAccountRequestUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(accountRequest)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: accessAccountRequestResponseError['data'], status?: number} = new globalThis.Error();
+    const data : accessAccountRequestResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: accessAccountRequestResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as accessAccountRequestResponseSuccess
+}
+
+
+
+
+
+export const getAccessAccountRequestMutationKey = () => ['accessAccountRequest'] as const;
+
+export const getAccessAccountRequestMutationOptions = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof accessAccountRequest>>, TError,AccessAccountRequestMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof accessAccountRequest>>, TError,AccessAccountRequestMutationVariables, TContext> => {
+
+const mutationKey = getAccessAccountRequestMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof accessAccountRequest>>, AccessAccountRequestMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  accessAccountRequest(data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AccessAccountRequestMutationResult = NonNullable<Awaited<ReturnType<typeof accessAccountRequest>>>
+    export type AccessAccountRequestMutationBody = AccountRequest
+    export type AccessAccountRequestMutationError = globalThis.Error & { info?: Problem; status?: number }
+    export type AccessAccountRequestMutationVariables = {data: AccountRequest}
+
+    /**
+ * @summary Заявка на регистрацию
+ */
+export const useAccessAccountRequest = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof accessAccountRequest>>, TError,AccessAccountRequestMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof accessAccountRequest>>,
+        TError,
+        AccessAccountRequestMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAccessAccountRequestMutationOptions(options), queryClient);
+    }
+
 export type accessSessionDeleteResponse204 = {
   data: void
   status: 204
@@ -2876,7 +3002,7 @@ export const getAccessSessionCreateUrl = () => {
 }
 
 /**
- * FR-128. Вход демо-персоной (persona_id, только профили fixtures и demo) или по логину. Пароль пока необязателен (демо-трек); после эпика 08 — обязателен для входа по логину (сеанс scs, argon2id). Ответ ставит cookie сеанса.
+ * FR-128. Вход по логину и паролю (argon2id, сеанс scs в Postgres, ограничение частоты, блокировка после N неудач; неудача — access.login_failed и событие security.auth.failed) или демо-персоной (persona_id, только профили fixtures и demo, без пароля). Ответ ставит cookie сеанса.
  * @summary Войти
  */
 export const accessSessionCreate = async (sessionCreate: SessionCreate, options?: RequestInit): Promise<accessSessionCreateResponseSuccess> => {
@@ -23071,6 +23197,242 @@ export const useReferenceLocationDefine = <TError = globalThis.Error & { info?: 
       return useMutation(getReferenceLocationDefineMutationOptions(options), queryClient);
     }
 
+export type referenceLotListResponse200 = {
+  data: RefLotList
+  status: 200
+}
+
+export type referenceLotListResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type referenceLotListResponseSuccess = (referenceLotListResponse200) & {
+  headers: Headers;
+};
+export type referenceLotListResponseError = (referenceLotListResponseDefault) & {
+  headers: Headers;
+};
+
+export const getReferenceLotListUrl = (params?: ReferenceLotListParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/reference/lots?${stringifiedParams}` : `/api/v1/reference/lots`
+}
+
+/**
+ * FR-17: поступившие партии (из учётной системы) со сроком годности на момент (AD-31).
+ * @summary Партии и сроки годности
+ */
+export const referenceLotList = async (params?: ReferenceLotListParams, options?: RequestInit): Promise<referenceLotListResponseSuccess> => {
+
+  const res = await fetch(getReferenceLotListUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: referenceLotListResponseError['data'], status?: number} = new globalThis.Error();
+    const data : referenceLotListResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: referenceLotListResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as referenceLotListResponseSuccess
+}
+
+
+
+
+
+export const getReferenceLotListQueryKey = (params?: MaybeRefOrGetter<ReferenceLotListParams>,) => {
+    return [
+    'api','v1','reference','lots', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getReferenceLotListQueryOptions = <TData = Awaited<ReturnType<typeof referenceLotList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(params?: MaybeRefOrGetter<ReferenceLotListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof referenceLotList>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getReferenceLotListQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof referenceLotList>>> = ({ signal }) => referenceLotList(toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof referenceLotList>>, TError, TData>
+}
+
+export type ReferenceLotListQueryResult = NonNullable<Awaited<ReturnType<typeof referenceLotList>>>
+export type ReferenceLotListQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Партии и сроки годности
+ */
+
+export function useReferenceLotList<TData = Awaited<ReturnType<typeof referenceLotList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ params?: MaybeRefOrGetter<ReferenceLotListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof referenceLotList>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getReferenceLotListQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+
+export type referenceOrderListResponse200 = {
+  data: RefOrderList
+  status: 200
+}
+
+export type referenceOrderListResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type referenceOrderListResponseSuccess = (referenceOrderListResponse200) & {
+  headers: Headers;
+};
+export type referenceOrderListResponseError = (referenceOrderListResponseDefault) & {
+  headers: Headers;
+};
+
+export const getReferenceOrderListUrl = (params?: ReferenceOrderListParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/reference/orders?${stringifiedParams}` : `/api/v1/reference/orders`
+}
+
+/**
+ * FR-91, FR-95: производственные задания из 1С и Галактики (через приём) на момент.
+ * @summary Задания учётной системы
+ */
+export const referenceOrderList = async (params?: ReferenceOrderListParams, options?: RequestInit): Promise<referenceOrderListResponseSuccess> => {
+
+  const res = await fetch(getReferenceOrderListUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: referenceOrderListResponseError['data'], status?: number} = new globalThis.Error();
+    const data : referenceOrderListResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: referenceOrderListResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as referenceOrderListResponseSuccess
+}
+
+
+
+
+
+export const getReferenceOrderListQueryKey = (params?: MaybeRefOrGetter<ReferenceOrderListParams>,) => {
+    return [
+    'api','v1','reference','orders', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getReferenceOrderListQueryOptions = <TData = Awaited<ReturnType<typeof referenceOrderList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(params?: MaybeRefOrGetter<ReferenceOrderListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof referenceOrderList>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getReferenceOrderListQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof referenceOrderList>>> = ({ signal }) => referenceOrderList(toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof referenceOrderList>>, TError, TData>
+}
+
+export type ReferenceOrderListQueryResult = NonNullable<Awaited<ReturnType<typeof referenceOrderList>>>
+export type ReferenceOrderListQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Задания учётной системы
+ */
+
+export function useReferenceOrderList<TData = Awaited<ReturnType<typeof referenceOrderList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ params?: MaybeRefOrGetter<ReferenceOrderListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof referenceOrderList>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getReferenceOrderListQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+
 export type referenceShiftListResponse200 = {
   data: RefShiftList
   status: 200
@@ -23104,7 +23466,7 @@ export const getReferenceShiftListUrl = (params?: ReferenceShiftListParams,) => 
 }
 
 /**
- * FR-81: график смен по местам.
+ * FR-81: график смен по местам — смены от полусуток до момента до полутора суток после.
  * @summary Смены
  */
 export const referenceShiftList = async (params?: ReferenceShiftListParams, options?: RequestInit): Promise<referenceShiftListResponseSuccess> => {
@@ -23215,7 +23577,7 @@ export const getReferenceShiftScheduleUrl = () => {
 }
 
 /**
- * FR-81.
+ * FR-81: смена или шаблон, повторяющийся каждый (рабочий) день до repeat_until.
  * @summary Запланировать смену
  */
 export const referenceShiftSchedule = async (scheduleShift: ScheduleShift, options?: RequestInit): Promise<referenceShiftScheduleResponseSuccess> => {

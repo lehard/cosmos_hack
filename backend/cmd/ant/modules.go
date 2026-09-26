@@ -1,7 +1,9 @@
 package main
 
 import (
+	"context"
 	"net/http"
+	"time"
 
 	accessapp "ant/internal/application/access"
 	analysisapp "ant/internal/application/analysis"
@@ -47,7 +49,6 @@ import (
 	opsfx "ant/internal/infrastructure/fixtures/ops"
 	processfx "ant/internal/infrastructure/fixtures/process"
 	qualityfx "ant/internal/infrastructure/fixtures/quality"
-	referencefx "ant/internal/infrastructure/fixtures/reference"
 	securityfx "ant/internal/infrastructure/fixtures/security"
 	signingfx "ant/internal/infrastructure/fixtures/signing"
 	simulationfx "ant/internal/infrastructure/fixtures/simulation"
@@ -101,10 +102,9 @@ type apiOptions struct {
 	erp *erpapp.Service
 	// ingest — live-приём над журналом ядра (ingest.go); nil — заглушка 501.
 	ingest *ingestapp.Service
-	// identity, directory — вход демо-персоной и каталог политики (демо-трек
-	// эпика 08, identity.go); nil — разрешающая заглушка без сеансов.
-	identity  accessapp.IdentityProvider
-	directory *accessapp.Directory
+	// access — вход, сеансы и права (эпик 08, identity.go); nil —
+	// разрешающая заглушка без сеансов (выгрузка OpenAPI, тесты).
+	access *accessBundle
 	// quality — живые операции quality над проекциями движка (quality.go); nil — 501.
 	quality *qualityapp.Service
 	// analytics — live-показатели над строками вклада ядра (analytics.go);
@@ -121,6 +121,10 @@ type apiOptions struct {
 	crossitem *crossitemapp.Service
 	// process — живая карта, версии и команды исполнителя (process.go, эпик 17); nil — 501.
 	process *processapp.Service
+	// security — журнал CA, шина безопасности, индикатор целостности (security.go, эпик 29); nil — 501.
+	security *securityapp.Service
+	// reference — справочники из журнала ядра (reference.go, эпик 19); nil — 501.
+	reference *referenceapp.Service
 }
 
 // buildAPI собирает HTTP API: общий декоратор (Gate) над портами прав и входа,
@@ -128,14 +132,21 @@ type apiOptions struct {
 // регистрация операций всех модулей. Все модули зарегистрированы заранее
 // (волна 1): эпики модулей меняют реализации портов, а не этот список.
 func buildAPI(mux *http.ServeMux, o apiOptions) *httpapi.API {
-	// Демо-трек эпика 08: субъект и роль — по сеансу (IdentityProvider), права
-	// — разрешающие (Casbin — эпик 08 во втором слое).
-	ac := permissive.AccessControl{}
+	// Эпик 08: субъект — по сеансу (IdentityProvider), права — Casbin над
+	// проекцией политики (access_control = casbin); без них — заглушки волны 1.
+	var ac accessapp.AccessControl = permissive.AccessControl{}
 	var idp accessapp.IdentityProvider = permissive.Identity{}
-	if o.identity != nil {
-		idp = o.identity
+	if x := o.access; x != nil {
+		idp = x.identity
+		if x.control != nil {
+			ac = x.control
+		}
 	}
 	gate := accessapp.NewGate(ac, nil, nil)
+	if x := o.access; x != nil {
+		gate.Places, gate.Events = x.places, x.events
+		gate.Now = func() time.Time { t, _ := x.now(context.Background()); return t }
+	}
 	a := httpapi.New(mux, httpapi.Config{Mode: o.mode, ModuleModes: o.moduleModes, Gate: gate, Identity: idp})
 	gate.SetCatalog(a.Actions)
 
@@ -170,7 +181,11 @@ func buildAPI(mux *http.ServeMux, o apiOptions) *httpapi.API {
 		ingesthttp.Register(a, q, c)
 	}
 	{
-		q, c := pick[referenceapp.Queries, referenceapp.Commands](a.ModeFor("reference"), referenceapp.NewService(), referencefx.New())
+		live := o.reference
+		if live == nil {
+			live = referenceapp.NewService()
+		}
+		q, c := pick[referenceapp.Queries, referenceapp.Commands](a.ModeFor("reference"), live, referenceFixtures())
 		referencehttp.Register(a, q, c)
 	}
 	{
@@ -238,14 +253,24 @@ func buildAPI(mux *http.ServeMux, o apiOptions) *httpapi.API {
 		signinghttp.Register(a, q, c)
 	}
 	{
-		// Вход, сеанс, стол роли и демо-персоны — живые в обоих режимах (демо-трек
-		// эпика 08); посты и администрирование — заготовки или 501 по режиму.
+		// Вход, сеанс, стол роли, демо-персоны, заявка на регистрацию, сотрудники,
+		// роли и активация учётной записи — живые в обоих режимах (эпик 08);
+		// посты, клейма, допуск — заготовки или 501 по режиму.
 		fq, fc := pick[accessapp.Queries, accessapp.Commands](a.ModeFor("access"), accessapp.Unimplemented{}, accessfx.New())
-		live := accessapp.NewService(accessapp.WithFallback(fq, fc), accessapp.WithIdentity(o.identity), accessapp.WithDirectory(o.directory))
+		opts := []accessapp.Option{accessapp.WithFallback(fq, fc)}
+		if x := o.access; x != nil {
+			opts = append(opts, accessapp.WithIdentity(x.identity), accessapp.WithDirectory(x.directory), accessapp.WithPolicy(x.policy),
+				accessapp.WithAccounts(x.creds, x.hasher), accessapp.WithDecisions(x.decisions, x.now))
+		}
+		live := accessapp.NewService(opts...)
 		accesshttp.Register(a, live, live, gate)
 	}
 	{
-		q, c := pick[securityapp.Queries, securityapp.Commands](a.ModeFor("security"), securityapp.NewService(), securityfx.New())
+		live := o.security
+		if live == nil {
+			live = securityapp.NewService()
+		}
+		q, c := pick[securityapp.Queries, securityapp.Commands](a.ModeFor("security"), live, securityfx.New())
 		securityhttp.Register(a, q, c)
 	}
 	{

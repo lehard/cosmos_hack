@@ -12,6 +12,7 @@ import (
 	"ant/cmd/internal/db"
 	engineapp "ant/internal/application/engine"
 	processapp "ant/internal/application/process"
+	referenceapp "ant/internal/application/reference"
 	dj "ant/internal/domain/journal"
 	"ant/internal/infrastructure/security/permissive"
 	enginestore "ant/internal/infrastructure/storage/engine"
@@ -50,6 +51,9 @@ type core struct {
 	versions *processstore.Versions
 	bundles  *processapp.Bundles
 	seedOnce sync.Once
+	// refSource — справочники из журнала (эпик 19, AD-31): срез для свёртки
+	// изделия, сроков и операций reference; один кэш на процесс.
+	refSource *referenceapp.JournalSource
 }
 
 // coreHolder — ленивое создание ядра и его остановка после ролей.
@@ -108,9 +112,10 @@ func openCore(ctx context.Context, env *environment) (*core, error) {
 	c := &core{
 		pool: pool,
 		// Эффекты модулей со своими таблицами в транзакции Append (AD-45):
-		// очередь исходящих erp (эпик 30).
-		journal: journalstore.NewStore(pool, infra, journalstore.WithBatchMax(batch),
-			journalstore.WithEffects(erpstore.ApplyEffect)),
+		// очередь исходящих erp (эпик 30); доверие (эпик 29): записи CA в той
+		// же транзакции и шифрование при хранении.
+		journal: journalstore.NewStore(pool, infra, append([]journalstore.Option{journalstore.WithBatchMax(batch),
+			journalstore.WithEffects(erpstore.ApplyEffect)}, trustOptions(cfg, env)...)...),
 		leases:   journalstore.NewLeases(pool, infra),
 		listener: journalstore.NewListener(pool, env.log),
 		engine:   &enginestore.Store{Pool: pool},
@@ -126,6 +131,7 @@ func openCore(ctx context.Context, env *environment) (*core, error) {
 		KeyRef: engineKeyRef, Profile: "gost",
 		DomainBuild: domainBuild(), Partitions: cfg.Engine.Partitions, Now: infra.Now,
 	}
+	c.refSource = &referenceapp.JournalSource{Journal: c.journal, Codec: c.codec}
 	env.coreH.bg.Go(func() {
 		if err := c.listener.Run(ctx); err != nil {
 			env.log.Error("журнал: LISTEN остановлен", "err", err)

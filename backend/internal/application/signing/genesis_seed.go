@@ -6,7 +6,6 @@ import (
 	"io/fs"
 	"path"
 	"slices"
-	"strconv"
 	"strings"
 	"time"
 
@@ -22,7 +21,7 @@ import (
 // режим часов, реестр профилей, ключи, стартовая политика (сотрудники, роли,
 // назначения, полномочия, клейма, квалификации, разделение обязанностей,
 // параметры аудита), справочники (места, номенклатура, оборудование и
-// поверка, календарь) и нормативный слой v1 (normative.version.loaded с
+// поверка, календарь, смены — составом модуля reference) и нормативный слой v1 (normative.version.loaded с
 // отпечатками файлов и паспорта допуска анализаторов) с подписями кворума
 // ключами демо-персон из этого же блока. Дальше части слоя меняются только
 // новыми записями через маршрут подписей модулей-владельцев.
@@ -76,6 +75,8 @@ type GenesisInput struct {
 	ValidFrom time.Time
 	// Anchor — открытые ключи якоря.
 	Anchor []dom.AnchorKey
+	// References — стартовые справочники (reference.* модуля reference).
+	References []GenesisRecord
 }
 
 // Seed — разобранная затравка.
@@ -262,53 +263,10 @@ func ComposeGenesis(in GenesisInput, s Seed) (GenesisSpec, error) {
 		audit["security_bus_subscribers"] = p.Audit.SecurityBusSubscribers
 	}
 	add(catalog.PolicyAuditParametersSet, policyStream, audit)
-	// Справочники (AD-31): места, номенклатура, оборудование и поверка, календарь.
-	for _, l := range s.Locations.Locations {
-		d := map[string]any{"location_id": l.ID, "kind": string(l.Kind), "scope": l.Scope, "name": l.Name, "valid_from": from}
-		setPtr(d, "parent_id", l.Parent)
-		setPtr(d, "warehouse_id", l.WarehouseID)
-		setPtr(d, "access_zone_id", l.AccessZoneID)
-		add(catalog.ReferenceLocationDefined, "reference:location:"+l.ID, d)
-	}
-	for _, it := range s.ItemTypes.ItemTypes {
-		d := map[string]any{"item_type_id": it.ID, "designation": it.Designation, "name": it.Name, "revision": it.Revision,
-			"marking": string(it.Marking), "valid_from": from}
-		if len(it.Zones) > 0 {
-			var zs []map[string]any
-			for _, z := range it.Zones {
-				zs = append(zs, map[string]any{"zone_id": z.ZoneID, "name": z.Name, "kind": string(z.Kind)})
-			}
-			d["zones"] = zs
-		}
-		if len(it.Components) > 0 {
-			var cs []map[string]any
-			for _, c := range it.Components {
-				cs = append(cs, map[string]any{"item_type_id": c.ItemTypeID, "quantity": c.Quantity, "lot_tracked": c.LotTracked})
-			}
-			d["components"] = cs
-		}
-		add(catalog.ReferenceItemTypeDefined, "reference:item_type:"+it.ID, d)
-	}
-	for _, e := range s.Equipment.Equipment {
-		d := map[string]any{"equipment_id": e.ID, "kind": string(e.Kind), "location_id": e.LocationID, "name": e.Name,
-			"is_measuring_instrument": e.Measuring, "valid_from": from}
-		setPtr(d, "source_id", e.SourceID)
-		add(catalog.ReferenceEquipmentDefined, "reference:equipment:"+e.ID, d)
-	}
-	for _, v := range s.Equipment.Verifications {
-		d := map[string]any{"equipment_id": v.EquipmentID, "kind": string(v.Kind), "result": string(v.Result), "valid_until": v.ValidUntil}
-		setPtr(d, "certificate_ref", v.CertificateRef)
-		add(catalog.ReferenceEquipmentVerified, "reference:equipment:"+v.EquipmentID, d)
-	}
-	for _, y := range s.Calendar.Years {
-		var off []string
-		for _, w := range y.WeeklyDaysOff {
-			off = append(off, string(w))
-		}
-		d := map[string]any{"calendar_id": s.Calendar.CalendarID, "year": y.Year, "non_working_days": nonNil(y.Holidays),
-			"shortened_days": nonNil(y.ShortenedDays), "weekly_days_off": nonNil(off)}
-		add(catalog.ReferenceCalendarDefined, "reference:calendar:"+s.Calendar.CalendarID+":"+strconv.Itoa(y.Year), d)
-	}
+	// Справочники (AD-31): записи модуля reference по затравке normative/reference
+	// (номенклатура, места, оборудование и поверки, календарь, смены) — тем же
+	// составом, что читает его проекция (эпик 19).
+	spec.Records = append(spec.Records, in.References...)
 	// Нормативный слой v1 с подписями кворума (FR-23, AD-17, AD-33).
 	comps, bundle, err := NormativeComponents(s.Files)
 	if err != nil {

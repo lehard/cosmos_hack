@@ -26,6 +26,8 @@ export interface DefineCalendar {
   /** Подписанный пакет DSSE для операций с уровнем подписи ≥ 1 (AD-10, AD-13, AD-14): подписывает агент токена, сервер сверяет отпечаток. */
   signature?: DsseEnvelope;
   weekly_days_off: DefineCalendarWeeklyDaysOffItem[];
+  /** Рабочие дни на еженедельных выходных (перенос), YYYY-MM-DD. */
+  working_days?: string[];
   /**
      * Рабочее место сеанса (барьер 2, AD-15).
      * @maxLength 128

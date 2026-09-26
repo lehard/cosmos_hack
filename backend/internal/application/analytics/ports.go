@@ -36,3 +36,24 @@ type DefaultNorms struct{}
 
 // Norm — domain.DefaultNorm.
 func (DefaultNorms) Norm(context.Context, string) domain.Norm { return domain.DefaultNorm }
+
+// Shifts — график смен (справочник reference, эпик 19; FR-81): границы
+// периода «смена» и срез «смена» (кейс §2.4: длительность операций по
+// исполнителю и смене). nil — смены по 8 ч с 00:00, 08:00, 16:00 местного времени.
+type Shifts interface {
+	// Schedule — график смен прогона run (AD-38) на момент запроса.
+	Schedule(ctx context.Context, run string) (ShiftLookup, error)
+}
+
+// ShiftLookup — смена на момент t: идущая или, если t вне смен, последняя
+// начавшаяся до t (Active=false). ok=false — смен до t не было.
+type ShiftLookup func(t time.Time) (s ShiftSpan, ok bool)
+
+// ShiftSpan — смена-экземпляр графика.
+type ShiftSpan struct {
+	ID     string
+	Label  string
+	From   time.Time
+	To     time.Time
+	Active bool
+}

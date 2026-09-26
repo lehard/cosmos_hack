@@ -60,7 +60,7 @@
               "description": "Дата.",
               "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
             },
-            "description": "Праздники.",
+            "description": "Нерабочие дни сверх еженедельных: праздники и перенесённые выходные.",
             "uniqueItems": true
           },
           "shortened_days": {
@@ -71,6 +71,16 @@
               "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
             },
             "description": "Сокращённые дни.",
+            "uniqueItems": true
+          },
+          "working_days": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "Дата.",
+              "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+            },
+            "description": "Рабочие дни, выпадающие на еженедельные выходные (перенос выходного).",
             "uniqueItems": true
           }
         },

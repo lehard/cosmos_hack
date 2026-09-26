@@ -11,6 +11,7 @@ import (
 	ingestapp "ant/internal/application/ingest"
 	"ant/internal/application/platform"
 	processapp "ant/internal/application/process"
+	referenceapp "ant/internal/application/reference"
 	"ant/internal/infrastructure/fixtures/world"
 	"ant/internal/infrastructure/storage/journal/clock"
 )
@@ -29,7 +30,9 @@ const processSeedFile = "normative/process/flange-process.bpmn"
 // изделия (эпик 17), слои quality (эпик 20), item (эпик 18) и notifications
 // (эпик 24: описание процесса для сроков окон BPMN и точек предъявления) поверх неё.
 func (c *core) bundleSource() engineapp.BundleSource {
-	return notificationsapp.Bundles{Next: c.itemBundles(c.qualityBundles(c.bundles))}
+	// Внешний слой — срез справочников на basis_seq изделия (эпик 19, AD-31):
+	// поверка и квалификации для предусловий, производственный календарь сроков.
+	return &referenceapp.Bundles{Next: notificationsapp.Bundles{Next: c.itemBundles(c.qualityBundles(c.bundles))}, Source: c.refSource}
 }
 
 // states — запросы состояния изделия на момент с тем же нормативным слоем (AD-22).

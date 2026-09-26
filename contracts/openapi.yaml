@@ -386,6 +386,46 @@ components:
       required:
         - items
       type: object
+    AccountRequest:
+      additionalProperties: false
+      properties:
+        display_name:
+          description: Отображаемое имя (условное).
+          maxLength: 128
+          minLength: 1
+          type: string
+        login:
+          description: "Логин: латиница в нижнем регистре, цифры, «.», «_», «-»."
+          pattern: ^[a-z0-9._-]{3,64}$
+          type: string
+        password:
+          description: Пароль (на сервере — только хеш argon2id).
+          maxLength: 256
+          minLength: 8
+          type: string
+      required:
+        - login
+        - password
+        - display_name
+      type: object
+    AccountRequestResult:
+      additionalProperties: false
+      properties:
+        login:
+          type: string
+        person_id:
+          description: Псевдоним, под которым администратор активирует учётную запись.
+          type: string
+        status:
+          description: Ждёт активации администратором.
+          enum:
+            - pending
+          type: string
+      required:
+        - login
+        - person_id
+        - status
+      type: object
     AcknowledgeTask:
       additionalProperties: false
       properties:
@@ -453,11 +493,19 @@ components:
           maxLength: 128
           minLength: 1
           type: string
+        password:
+          description: Начальный пароль, если учётную запись заводит администратор без заявки (хранится только хеш argon2id).
+          maxLength: 256
+          type: string
         policy_seq:
           description: Версия политики, по которой показаны права (policy_seq сеанса); изменилась — 409 journal.stale_policy (AD-39).
           format: int64
           minimum: 0
           type: integer
+        scope:
+          description: Область начальной роли (здание → цех → участок → рабочее место); пусто — всё предприятие.
+          maxLength: 256
+          type: string
         signature:
           $ref: "#/components/schemas/DsseEnvelope"
           description: "Подписанный пакет DSSE для операций с уровнем подписи ≥ 1 (AD-10, AD-13, AD-14): подписывает агент токена, сервер сверяет отпечаток."
@@ -2788,6 +2836,11 @@ components:
               - fri
               - sat
               - sun
+            type: string
+          type: array
+        working_days:
+          description: Рабочие дни на еженедельных выходных (перенос), YYYY-MM-DD.
+          items:
             type: string
           type: array
         workplace_id:
@@ -9607,6 +9660,11 @@ components:
               - sun
             type: string
           type: array
+        working_days:
+          description: Рабочие дни на еженедельных выходных (перенос), YYYY-MM-DD.
+          items:
+            type: string
+          type: array
         year:
           format: int64
           type: integer
@@ -9661,6 +9719,12 @@ components:
         source_id:
           description: Источник событий (edge-агент).
           type: string
+        unusable_reason:
+          description: unknown — нет в справочнике; not_verified — средство измерений без поверки; verification_invalid — непригодно; verification_expired — срок поверки истёк.
+          type: string
+        usable:
+          description: "FR-17: можно использовать на момент ответа (поверка действует)."
+          type: boolean
         verification_result:
           enum:
             - valid
@@ -9675,6 +9739,7 @@ components:
         - location_id
         - name
         - is_measuring_instrument
+        - usable
       type: object
     RefEquipmentList:
       additionalProperties: false
@@ -9691,6 +9756,9 @@ components:
       properties:
         conflict:
           description: Конфликт соответствий — сигнал, не перезапись.
+          type: boolean
+        effective:
+          description: Действующее соответствие ключа (первое по порядку записи); при конфликте остальные только видны.
           type: boolean
         external_id:
           type: string
@@ -9839,6 +9907,99 @@ components:
       required:
         - items
       type: object
+    RefLot:
+      additionalProperties: false
+      properties:
+        certificate_no:
+          type: string
+        expires_at:
+          description: Момент окончания годности (начало следующих местных суток).
+          format: date-time
+          type: string
+        expiry_date:
+          description: Срок годности YYYY-MM-DD (включительно, местная дата).
+          type: string
+        external_number:
+          type: string
+        external_system:
+          type: string
+        heat_no:
+          type: string
+        item_type_id:
+          type: string
+        lot_id:
+          type: string
+        quantity:
+          format: int64
+          type: integer
+        received_at:
+          format: date-time
+          type: string
+        supplier_id:
+          type: string
+        usable:
+          description: Срок годности не истёк на момент ответа.
+          type: boolean
+      required:
+        - lot_id
+        - item_type_id
+        - supplier_id
+        - quantity
+        - usable
+        - external_system
+        - external_number
+        - received_at
+      type: object
+    RefLotList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: "#/components/schemas/RefLot"
+          type: array
+      required:
+        - items
+      type: object
+    RefOrder:
+      additionalProperties: false
+      properties:
+        due_date:
+          description: Срок YYYY-MM-DD.
+          type: string
+        external_number:
+          type: string
+        external_system:
+          type: string
+        item_revision:
+          type: string
+        item_type_id:
+          type: string
+        order_id:
+          type: string
+        quantity:
+          format: int64
+          type: integer
+        received_at:
+          format: date-time
+          type: string
+      required:
+        - order_id
+        - external_system
+        - external_number
+        - item_type_id
+        - quantity
+        - received_at
+      type: object
+    RefOrderList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: "#/components/schemas/RefOrder"
+          type: array
+      required:
+        - items
+      type: object
     RefShift:
       additionalProperties: false
       properties:
@@ -9849,11 +10010,18 @@ components:
           type: string
         name:
           type: string
+        repeat_until:
+          description: "Шаблон: повторять каждый день, пока начало не позже этого момента."
+          format: date-time
+          type: string
         shift_id:
           type: string
         starts_at:
           format: date-time
           type: string
+        working_days_only:
+          description: "Шаблон: только рабочие дни производственного календаря."
+          type: boolean
       required:
         - shift_id
         - location_id
@@ -11600,6 +11768,10 @@ components:
           format: int64
           minimum: 0
           type: integer
+        repeat_until:
+          description: "Шаблон: повторять каждый день, пока начало не позже этого момента."
+          format: date-time
+          type: string
         shift_id:
           type: string
         signature:
@@ -11608,6 +11780,9 @@ components:
         starts_at:
           format: date-time
           type: string
+        working_days_only:
+          description: "Шаблон: только рабочие дни производственного календаря."
+          type: boolean
         workplace_id:
           description: Рабочее место сеанса (барьер 2, AD-15).
           maxLength: 128
@@ -14599,6 +14774,43 @@ paths:
         critical: false
         id: access.persona.list
         owner: access
+  /api/v1/auth/registration:
+    post:
+      description: "FR-128: сотрудник сам подаёт заявку (логин, пароль, имя); учётная запись ждёт активации администратором с назначением роли (access.account.activate). Пароль хранится только хешем argon2id; частота заявок ограничена."
+      operationId: access.account.request
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccountRequest"
+        required: true
+      responses:
+        "202":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountRequestResult"
+          description: Accepted
+          headers:
+            Ant-Backend:
+              schema:
+                $ref: "#/components/schemas/BackendMode"
+                description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Error
+      summary: Заявка на регистрацию
+      tags:
+        - access
+      x-ant-action:
+        class: record
+        critical: false
+        id: access.account.request
+        owner: access
+        subject: policy
   /api/v1/auth/session:
     delete:
       description: Закрыть сеанс веба (FR-128).
@@ -14662,7 +14874,7 @@ paths:
         id: access.session.read
         owner: access
     post:
-      description: FR-128. Вход демо-персоной (persona_id, только профили fixtures и demo) или по логину. Пароль пока необязателен (демо-трек); после эпика 08 — обязателен для входа по логину (сеанс scs, argon2id). Ответ ставит cookie сеанса.
+      description: FR-128. Вход по логину и паролю (argon2id, сеанс scs в Postgres, ограничение частоты, блокировка после N неудач; неудача — access.login_failed и событие security.auth.failed) или демо-персоной (persona_id, только профили fixtures и demo, без пароля). Ответ ставит cookie сеанса.
       operationId: access.session.create
       requestBody:
         content:
@@ -23987,9 +24199,117 @@ paths:
         id: reference.location.define
         owner: reference
         signature_level: 2
+  /api/v1/reference/lots:
+    get:
+      description: "FR-17: поступившие партии (из учётной системы) со сроком годности на момент (AD-31)."
+      operationId: reference.lot.list
+      parameters:
+        - description: "Ось момента: occurred — «как было» (по умолчанию), recorded — «что мы знали» (AD-37)."
+          explode: false
+          in: query
+          name: axis
+          schema:
+            $ref: "#/components/schemas/Axis"
+            description: "Ось момента: occurred — «как было» (по умолчанию), recorded — «что мы знали» (AD-37)."
+        - description: "Момент (RFC 3339 UTC); пусто — «сейчас». Задан — воспроизведение: команды выключены (AD-21)."
+          explode: false
+          in: query
+          name: as_of
+          schema:
+            description: "Момент (RFC 3339 UTC); пусто — «сейчас». Задан — воспроизведение: команды выключены (AD-21)."
+            format: date-time
+            type: string
+        - description: "Прогон сценария: данные в его пространстве имён (AD-38)."
+          explode: false
+          in: query
+          name: run_id
+          schema:
+            description: "Прогон сценария: данные в его пространстве имён (AD-38)."
+            maxLength: 128
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RefLotList"
+          description: OK
+          headers:
+            Ant-Backend:
+              schema:
+                $ref: "#/components/schemas/BackendMode"
+                description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Error
+      summary: Партии и сроки годности
+      tags:
+        - reference
+      x-ant-action:
+        class: read
+        critical: false
+        id: reference.lot.list
+        owner: reference
+  /api/v1/reference/orders:
+    get:
+      description: "FR-91, FR-95: производственные задания из 1С и Галактики (через приём) на момент."
+      operationId: reference.order.list
+      parameters:
+        - description: "Ось момента: occurred — «как было» (по умолчанию), recorded — «что мы знали» (AD-37)."
+          explode: false
+          in: query
+          name: axis
+          schema:
+            $ref: "#/components/schemas/Axis"
+            description: "Ось момента: occurred — «как было» (по умолчанию), recorded — «что мы знали» (AD-37)."
+        - description: "Момент (RFC 3339 UTC); пусто — «сейчас». Задан — воспроизведение: команды выключены (AD-21)."
+          explode: false
+          in: query
+          name: as_of
+          schema:
+            description: "Момент (RFC 3339 UTC); пусто — «сейчас». Задан — воспроизведение: команды выключены (AD-21)."
+            format: date-time
+            type: string
+        - description: "Прогон сценария: данные в его пространстве имён (AD-38)."
+          explode: false
+          in: query
+          name: run_id
+          schema:
+            description: "Прогон сценария: данные в его пространстве имён (AD-38)."
+            maxLength: 128
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RefOrderList"
+          description: OK
+          headers:
+            Ant-Backend:
+              schema:
+                $ref: "#/components/schemas/BackendMode"
+                description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Error
+      summary: Задания учётной системы
+      tags:
+        - reference
+      x-ant-action:
+        class: read
+        critical: false
+        id: reference.order.list
+        owner: reference
   /api/v1/reference/shifts:
     get:
-      description: "FR-81: график смен по местам."
+      description: "FR-81: график смен по местам — смены от полусуток до момента до полутора суток после."
       operationId: reference.shift.list
       parameters:
         - explode: false
@@ -24048,7 +24368,7 @@ paths:
         id: reference.shift.list
         owner: reference
     post:
-      description: FR-81.
+      description: "FR-81: смена или шаблон, повторяющийся каждый (рабочий) день до repeat_until."
       operationId: reference.shift.schedule
       requestBody:
         content:

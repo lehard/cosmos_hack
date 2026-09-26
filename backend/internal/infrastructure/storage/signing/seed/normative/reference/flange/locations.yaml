@@ -24,6 +24,9 @@ locations:
   - {id: ISO-QA,   kind: isolator,  scope: ent01/b1/qa/iso, parent: WS-QA, name: "Изолятор ОТК"}
   # линии и участки (посты)
   - {id: LINE-FL,  kind: line,      scope: ent01/b1/line-fl, parent: B1, name: "Линия фланца люка"}
+  # Две линии фланца (кейс §1.4, §2.4): расходятся только на сварке — у каждой свой пост и источник (мир заготовок, сценарии).
+  - {id: LINE-FL-1, kind: line,     scope: ent01/b1/line-fl/l1, parent: LINE-FL, name: "Линия ФЛ-100 № 1"}
+  - {id: LINE-FL-2, kind: line,     scope: ent01/b1/line-fl/l2, parent: LINE-FL, name: "Линия ФЛ-100 № 2"}
   - {id: ST-VK,    kind: station,   scope: ent01/b1/sk/vk,  parent: WS-SK, name: "Участок входного контроля"}
   - {id: ST-CNC,   kind: station,   scope: ent01/b1/mc/cnc, parent: WS-MC, name: "Участок ЧПУ"}
   - {id: ST-CMM,   kind: station,   scope: ent01/b1/mc/cmm, parent: WS-MC, name: "Участок КИМ"}

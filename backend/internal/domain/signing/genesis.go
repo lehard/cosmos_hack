@@ -115,6 +115,12 @@ type GenesisCheck struct {
 	Pinned string
 	// GenesisCount — сколько записей journal.genesis.recorded в журнале.
 	GenesisCount int
+	// DigestOnly — быстрая проверка (ядро при старте): криптографически
+	// проверены только заголовок, «якорь уничтожен» и записи с кворумом
+	// (Crypto остальных пусто); целостность остальных — через block_digest
+	// под подписью якоря в заголовке, наличие обеих подписей якоря — по
+	// Present. Полную проверку каждой подписи делает верификатор.
+	DigestOnly bool
 }
 
 // genesisEvent — поля события, которые сверяет правило блока.
@@ -206,7 +212,13 @@ func CheckGenesisBlock(c GenesisCheck) (GenesisHeader, error) {
 			}
 			payloads = append(payloads, e.Payload)
 		}
-		if err := checkGenesisSignatures(e, ev.Integrity); err != nil {
+		if c.DigestOnly && len(e.Crypto) == 0 {
+			for _, ref := range AnchorRefs {
+				if !slices.Contains(e.Present, ref) {
+					return fail("seq %d: нет подписи якоря %s (%s)", e.Seq, ref, ReasonDowngrade)
+				}
+			}
+		} else if err := checkGenesisSignatures(e, ev.Integrity); err != nil {
 			return GenesisHeader{}, err
 		}
 		if i == len(c.Block)-1 {

@@ -22,6 +22,8 @@ type Service struct {
 	store Store
 	clock Clock
 	norms Norms
+	// shifts — график смен (эпик 19); nil — смены по 8 ч.
+	shifts Shifts
 	// Location — часовой пояс границ смен и суток.
 	Location *time.Location
 }
@@ -45,6 +47,9 @@ func WithStore(st Store) Option { return func(s *Service) { s.store = st } }
 // WithClock — доменные часы (AD-37).
 func WithClock(c Clock) Option { return func(s *Service) { s.clock = c } }
 
+// WithShifts — график смен справочника (FR-81, эпик 19).
+func WithShifts(sh Shifts) Option { return func(s *Service) { s.shifts = sh } }
+
 // WithNorms — нормы узлов (FR-5, FR-12).
 func WithNorms(n Norms) Option { return func(s *Service) { s.norms = n } }
 
@@ -60,6 +65,8 @@ type data struct {
 	incidents []domain.Incident
 	now       time.Time
 	win       window
+	// shiftOf — смена строки для среза «смена»; nil — графика нет.
+	shiftOf ShiftLookup
 }
 
 // load читает строки и проекции и выбирает период на момент m (AD-22: «как
@@ -86,6 +93,14 @@ func (s *Service) load(ctx context.Context, op string, p PeriodQuery, m platform
 	if err != nil {
 		return nil, err
 	}
+	var shiftOf ShiftLookup
+	if s.shifts != nil {
+		// Смены — по графику справочника (FR-81); без графика — по 8 ч.
+		if shiftOf, err = s.shifts.Schedule(ctx, m.RunID); err != nil {
+			return nil, err
+		}
+		win = shiftWindow(win, p, now, shiftOf)
+	}
 	rows, err := s.store.Rows(ctx)
 	if err != nil {
 		return nil, err
@@ -98,7 +113,7 @@ func (s *Service) load(ctx context.Context, op string, p PeriodQuery, m platform
 	if err != nil {
 		return nil, err
 	}
-	d := &data{now: now, win: win}
+	d := &data{now: now, win: win, shiftOf: shiftOf}
 	for _, r := range rows {
 		if inRun(r.Dims.Run, m.RunID) {
 			d.rows = append(d.rows, r)
@@ -143,6 +158,9 @@ func (d *data) compute(def metricDef, from, to time.Time) MetricRow {
 		var dimension string
 		for _, e := range base {
 			dn, key, label := dimValue(dim, e.row)
+			if dim == "shift" {
+				dn, key, label = d.shiftDim(e.row)
+			}
 			if key == "" {
 				continue
 			}
@@ -300,7 +318,7 @@ func (s *Service) Drilldown(ctx context.Context, metricID, slice string, p Perio
 	}
 	var sel []entry
 	for _, e := range es {
-		if slice == "" || matches(def, e, slice) {
+		if slice == "" || d.matches(def, e, slice) {
 			sel = append(sel, e)
 		}
 	}
@@ -337,9 +355,12 @@ func cursorOf(c string) (int, error) {
 }
 
 // matches — вклад относится к срезу slice («измерение:значение»).
-func matches(def metricDef, e entry, slice string) bool {
+func (d *data) matches(def metricDef, e entry, slice string) bool {
 	for _, dim := range def.dims {
 		dn, key, _ := dimValue(dim, e.row)
+		if dim == "shift" {
+			dn, key, _ = d.shiftDim(e.row)
+		}
 		if key != "" && sliceKey(dn, key) == slice {
 			return true
 		}

@@ -9,6 +9,7 @@ equipment:
   - {id: CAM-KT3,  kind: camera,         location_id: ST-WELD,  name: "Камера на шов (КТ-3)",           measuring: false, source_id: edge-kt3}
   - {id: CAM-KT4D, kind: camera,         location_id: ST-ASM,   name: "Камера зоны с УФ (КТ-4d)",       measuring: false, source_id: edge-kt4d}
   - {id: CAM-KT4,  kind: camera,         location_id: ST-ASM,   name: "Камера сборки (КТ-4)",           measuring: false, source_id: edge-kt4}
+  - {id: OV-ASM,   kind: camera,         location_id: ST-ASM,   name: "Камера OperatorVision поста сборки", measuring: false, source_id: edge-ov-asm}
   - {id: CAM-KT5,  kind: camera,         location_id: ST-FINAL, name: "Камера окончательного контроля (КТ-5)", measuring: false, source_id: edge-kt5}
   - {id: CMM-1,    kind: cmm,            location_id: ST-CMM,   name: "Координатно-измерительная машина", measuring: true, source_id: gw-cmm}
   - {id: XRAY-LAB, kind: xray,           location_id: LAB-NDT,  name: "Рентгеновский контроль (лаборатория НК)", measuring: true, source_id: gw-ndt}

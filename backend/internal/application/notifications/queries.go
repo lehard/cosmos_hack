@@ -13,22 +13,9 @@ import (
 )
 
 // Чтение модуля notifications (FR-8, FR-57): адресно — только тем, у кого
-// есть действие: задачи — исполнителю (роль с наследованием или псевдоним),
+// есть действие: задачи — исполнителю (роль с наследованием — Principal.EffectiveRoles, или псевдоним),
 // тревоги и «требует вашего внимания» — владельцу срока и тем, кому он
 // эскалирован, плюс обзорным ролям. Без сеанса (анонимный запрос) — всё.
-
-// inherits — наследование ролей политики (normative/policy/policy.v1.yaml):
-// начальник ОТК видит задачи контролёра, начальник цеха — мастера. До
-// вычислителя прав (эпик 08, Casbin) — копия иерархии затравки политики.
-var inherits = map[string][]string{
-	"head_of_qc":       {"quality_inspector"},
-	"head_of_workshop": {"site_foreman"},
-	"chief_welder":     {"technologist"},
-	"storekeeper":      {"performer"},
-	"ndt_specialist":   {"performer"},
-	"metrologist":      {"approver"},
-	"design_authority": {"approver"},
-}
 
 // overview — роли, которым лента тревог и блок «требует вашего внимания»
 // видны целиком (руководитель производства, начальник ОТК).
@@ -46,7 +33,9 @@ func viewerOf(ctx context.Context) viewer {
 	if p.Anonymous() {
 		return viewer{all: true}
 	}
-	return viewer{roles: append([]string{p.Role}, inherits[p.Role]...), person: p.PersonID, all: false}
+	// Роль с наследованием (начальник ОТК видит задачи контролёра, начальник
+	// цеха — мастера) — из сеанса: одна функция наследования access (AD-15).
+	return viewer{roles: p.EffectiveRoles(), person: p.PersonID, all: false}
 }
 
 // addressed — задача или уведомление адресовано субъекту.

@@ -11,5 +11,7 @@ export interface RefCalendar {
   /** Даты YYYY-MM-DD. */
   shortened_days: string[];
   weekly_days_off: RefCalendarWeeklyDaysOffItem[];
+  /** Рабочие дни на еженедельных выходных (перенос), YYYY-MM-DD. */
+  working_days?: string[];
   year: number;
 }

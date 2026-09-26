@@ -3,7 +3,6 @@ package journal
 import (
 	"cmp"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -77,8 +76,8 @@ func (s *Store) Read(ctx context.Context, q app.ReadQuery) ([]jc.JournalEntry, e
 		}
 	}
 	args = append(args, limit)
-	sql := fmt.Sprintf("SELECT header, link, salt, envelope FROM journal.entries WHERE %s ORDER BY %s LIMIT $%d",
-		strings.Join(where, " AND "), order, len(args))
+	sql := fmt.Sprintf("SELECT %s FROM journal.entries WHERE %s ORDER BY %s LIMIT $%d",
+		rawColumns, strings.Join(where, " AND "), order, len(args))
 	rows, err := s.pool.Query(ctx, sql, args...)
 	if err != nil {
 		return nil, err
@@ -86,36 +85,20 @@ func (s *Store) Read(ctx context.Context, q app.ReadQuery) ([]jc.JournalEntry, e
 	defer rows.Close()
 	var out []jc.JournalEntry
 	for rows.Next() {
-		var header string
-		var link, salt, envelope []byte
-		if err := rows.Scan(&header, &link, &salt, &envelope); err != nil {
+		var r rawRow
+		if err := rows.Scan(r.dest()...); err != nil {
 			return nil, err
 		}
-		e, err := decode(header, link, salt, envelope)
+		e, err := decode(r)
 		if err != nil {
 			return nil, err
 		}
 		out = append(out, e)
 	}
-	return out, rows.Err()
-}
-
-// decode собирает запись из заголовка, звена и (демо-трек) открытого блока.
-func decode(header string, link, salt, envelope []byte) (jc.JournalEntry, error) {
-	var e jc.JournalEntry
-	if err := json.Unmarshal([]byte(header), &e); err != nil {
-		return e, fmt.Errorf("заголовок записи: %w", err)
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
-	l, err := dj.DigestFromBytes(link)
-	if err != nil {
-		return e, err
-	}
-	e.Link = l.String()
-	// TODO(29): sealed — AEAD(DEK, JCS(plain_block)); до эпика 29 — открыто.
-	if e.Sealed, err = dj.PlainSealed(salt, envelope); err != nil {
-		return e, err
-	}
-	return e, nil
+	return out, s.preloadDEKs(ctx, out)
 }
 
 // Head — головы обеих цепочек (seq и звено) для хранителя (AD-8).
@@ -148,29 +131,19 @@ WHERE chain IN ('main', 'ca') ORDER BY chain, seq DESC`)
 	return h, rows.Err()
 }
 
-// Open — конверт записи с проверкой commit (AD-23). Демо-трек: блок открыт.
-func (s *Store) Open(_ context.Context, e jc.JournalEntry) (app.Envelope, error) {
-	salt, env, err := dj.OpenPlain(e)
-	if errors.Is(err, dj.ErrSealed) {
-		return app.Envelope{}, app.ErrSealed
-	}
-	if err != nil {
-		return app.Envelope{}, err
-	}
-	return app.Envelope{Raw: env, Salt: salt}, nil
-}
-
 // Entry — одна запись по цепочке и seq (для хранителя, верификатора, ссылок).
 func (s *Store) Entry(ctx context.Context, chain string, seq int64) (jc.JournalEntry, error) {
-	var header string
-	var link, salt, envelope []byte
-	err := s.pool.QueryRow(ctx, "SELECT header, link, salt, envelope FROM journal.entries WHERE chain = $1 AND seq = $2", chain, seq).
-		Scan(&header, &link, &salt, &envelope)
+	var r rawRow
+	err := s.pool.QueryRow(ctx, "SELECT "+rawColumns+" FROM journal.entries WHERE chain = $1 AND seq = $2", chain, seq).Scan(r.dest()...)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return jc.JournalEntry{}, fmt.Errorf("запись %s/%d не найдена", chain, seq)
 	}
 	if err != nil {
 		return jc.JournalEntry{}, err
 	}
-	return decode(header, link, salt, envelope)
+	e, err := decode(r)
+	if err != nil {
+		return e, err
+	}
+	return e, s.preloadDEKs(ctx, []jc.JournalEntry{e})
 }

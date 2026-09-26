@@ -22,7 +22,7 @@ const FixturesDir = "scenarios/fixtures"
 
 // InputFiles — входы генератора от корня репозитория (кроме world.yaml сценариев):
 // их копия встроена в бинарник (input/), чтобы мир строился без каталога репозитория.
-var InputFiles = []string{"normative/policy/policy.v1.yaml", "normative/process/flange-process.bpmn"}
+var InputFiles = []string{"normative/policy/policy.v1.yaml", "normative/process/flange-process.bpmn", "normative/reference/flange/locations.yaml"}
 
 // InputGlobs — входы генератора по шаблону.
 var InputGlobs = []string{"normative/desks/*.yaml", FixturesDir + "/*/world.yaml"}

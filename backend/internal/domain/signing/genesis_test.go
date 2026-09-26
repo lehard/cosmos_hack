@@ -93,6 +93,25 @@ func TestCheckGenesisBlock(t *testing.T) {
 			t.Errorf("%s: принято (%v)", c.name, err)
 		}
 	}
+	// Быстрая проверка: подписи средних записей не проверены, но обе подписи
+	// якоря в конверте есть; без одной — понижение, изменённое содержимое —
+	// через block_digest.
+	fast := func(f func(b []GenesisEntry)) error {
+		b := block(t)
+		b[1].Crypto, b[1].Present = nil, append([]string{}, AnchorRefs...)
+		f(b)
+		_, err := CheckGenesisBlock(GenesisCheck{Block: b, GenesisCount: 1, DigestOnly: true})
+		return err
+	}
+	if err := fast(func([]GenesisEntry) {}); err != nil {
+		t.Fatalf("быстрая проверка целого блока: %v", err)
+	}
+	if err := fast(func(b []GenesisEntry) { b[1].Present = b[1].Present[:1] }); !errors.Is(err, ErrGenesis) {
+		t.Errorf("быстрая: понижение принято (%v)", err)
+	}
+	if err := fast(func(b []GenesisEntry) { b[1].Payload = append([]byte{}, b[1].Payload...); b[1].Payload[5] ^= 1 }); !errors.Is(err, ErrGenesis) {
+		t.Errorf("быстрая: изменённое содержимое принято (%v)", err)
+	}
 	if _, err := CheckGenesisBlock(GenesisCheck{Block: block(t), GenesisCount: 2}); !errors.Is(err, ErrSecondGenesis) {
 		t.Errorf("второй генезис: %v", err)
 	}

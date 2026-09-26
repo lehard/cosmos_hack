@@ -1,6 +1,7 @@
 package security
 
 import (
+	"encoding/json"
 	"time"
 
 	"ant/internal/application/platform"
@@ -60,6 +61,8 @@ type SecurityEvent struct {
 	Summary    string             `json:"summary" doc:"Краткое описание по-русски."`
 	Object     *platform.DrillRef `json:"object,omitempty"`
 	CARef      string             `json:"ca_ref,omitempty" doc:"Критическое действие, если событие его породило."`
+	// Data — data записи (для подписчиков шины; в API не выдаётся).
+	Data json.RawMessage `json:"-"`
 }
 
 // SecurityEventList — лента шины безопасности.

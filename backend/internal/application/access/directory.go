@@ -1,5 +1,7 @@
 package access
 
+import accessdom "ant/internal/domain/access"
+
 // Directory — каталог стартовой политики для входа и столов (демо-трек эпика
 // 08): роли с наследованием, демо-персоны (псевдонимы сотрудников с ролью и
 // областью, кейс §4.6) и столы ролей (normative/desks, AD-21). Источник —
@@ -34,23 +36,22 @@ func (d *Directory) Persona(id string) (DemoPersona, bool) {
 	return DemoPersona{}, false
 }
 
-// DeskFor — стол роли: свой файл или стол ближайшей базовой роли (обход
-// наследования в ширину, AD-21). Возвращается копия верхнего уровня.
+// Hierarchy — иерархия ролей затравки для accessdom.Roles.Closure.
+func (d *Directory) Hierarchy() accessdom.Roles {
+	h := make(accessdom.Roles, len(d.Roles))
+	for _, r := range d.Roles {
+		h[r.ID] = r.Inherits
+	}
+	return h
+}
+
+// DeskFor — стол роли: свой файл или стол ближайшей базовой роли (AD-21);
+// порядок базовых ролей — одна функция наследования accessdom.Roles.Closure.
+// Возвращается копия верхнего уровня.
 func (d *Directory) DeskFor(role string) (Desk, bool) {
-	seen := map[string]bool{}
-	queue := []string{role}
-	for len(queue) > 0 {
-		r := queue[0]
-		queue = queue[1:]
-		if seen[r] {
-			continue
-		}
-		seen[r] = true
+	for _, r := range d.Hierarchy().Closure(role) {
 		if desk, ok := d.Desks[r]; ok {
 			return desk, true
-		}
-		if rr, ok := d.Role(r); ok {
-			queue = append(queue, rr.Inherits...)
 		}
 	}
 	return Desk{}, false

@@ -27,6 +27,8 @@ type Commands interface {
 	OpenSession(ctx context.Context, rq SessionCreate) (Session, string, error)
 	// CloseSession — выход (access.session.delete).
 	CloseSession(ctx context.Context, token string) error
+	// RequestAccount — заявка на регистрацию (access.account.request, FR-128).
+	RequestAccount(ctx context.Context, rq AccountRequest) (AccountRequestResult, error)
 	AdminCommands
 }
 
@@ -57,6 +59,10 @@ func (Unimplemented) OpenSession(context.Context, SessionCreate) (Session, strin
 
 func (Unimplemented) CloseSession(context.Context, string) error {
 	return platform.NotImplemented("access.session.delete")
+}
+
+func (Unimplemented) RequestAccount(context.Context, AccountRequest) (AccountRequestResult, error) {
+	return AccountRequestResult{}, platform.NotImplemented("access.account.request")
 }
 
 var (

@@ -5,6 +5,7 @@ import (
 
 	"ant/cmd/internal/config"
 	nonconformityapp "ant/internal/application/nonconformity"
+	referenceapp "ant/internal/application/reference"
 	"ant/internal/infrastructure/storage/journal/clock"
 )
 
@@ -31,6 +32,8 @@ func nonconformityLive(ctx context.Context, env *environment) (*nonconformityapp
 		nonconformityapp.WithDeps(nonconformityapp.Deps{
 			Journal: c.journal, Codec: c.codec, Bundles: c.bundleSource(), // та же версия, что у воркера
 			DomainClock: clock.NewJournal(c.journal), Routes: routes, Now: c.codec.Now,
+			// Срок решения — по производственному календарю справочника (эпик 19, FR-55).
+			Calendar: referenceapp.WorkingCalendar{Source: c.refSource},
 		}),
 		nonconformityapp.WithConfig(nonconformityapp.Config{
 			DomainBuild: c.codec.DomainBuild, Partitions: env.cfg.Engine.Partitions,

@@ -3,15 +3,17 @@ package analytics
 import (
 	"time"
 
+	domain "ant/internal/domain/analytics"
+
 	"ant/internal/application/platform"
 	"ant/internal/contracts/errcodes"
 )
 
 // Периоды счётчиков и показателей (FR-3): смена, сутки, неделя, месяц,
 // произвольный интервал. Границы смен и суток — по местному времени
-// предприятия (Service.Location, по умолчанию МСК); смены — по 8 ч с 00:00,
-// 08:00, 16:00, пока производственный календарь и график смен (reference,
-// эпик 19) не дают своих границ.
+// предприятия (Service.Location, по умолчанию МСК); смены — по графику смен
+// справочника (reference, эпик 19: shiftWindow), без графика — по 8 ч с
+// 00:00, 08:00, 16:00.
 
 // Moscow — часовой пояс предприятия по умолчанию (UTC+3, без перехода).
 var Moscow = time.FixedZone("MSK", 3*3600)
@@ -83,4 +85,37 @@ func bucket(p Period) time.Duration {
 		return 2 * time.Hour
 	}
 	return 24 * time.Hour
+}
+
+// shiftWindow — период «смена» по графику смен (FR-81): от начала текущей
+// смены (вне смен — последней начавшейся) до now; прошлый период — такая же
+// по длительности часть предыдущей смены. Прочие периоды не меняются.
+func shiftWindow(w window, q PeriodQuery, now time.Time, shiftOf ShiftLookup) window {
+	if (q.Kind != "" && q.Kind != "shift") || shiftOf == nil {
+		return w
+	}
+	cur, ok := shiftOf(now)
+	if !ok {
+		return w
+	}
+	w.From = cur.From.UTC()
+	w.prevFrom, w.prevTo = w.From.Add(-8*time.Hour), w.From.Add(-8*time.Hour).Add(now.Sub(w.From))
+	if prev, ok := shiftOf(cur.From.Add(-time.Nanosecond)); ok {
+		w.prevFrom = prev.From.UTC()
+		w.prevTo = w.prevFrom.Add(now.Sub(w.From))
+	}
+	return w
+}
+
+// shiftDim — срез «смена» строки (кейс §2.4): смена графика в момент строки;
+// вне смен — «вне смены».
+func (d *data) shiftDim(r domain.Row) (string, string, string) {
+	if d.shiftOf == nil {
+		return "shift", "", ""
+	}
+	s, ok := d.shiftOf(r.At)
+	if !ok || !s.Active {
+		return "shift", "off_shift", "Вне смены"
+	}
+	return "shift", s.ID, s.Label
 }

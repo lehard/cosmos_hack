@@ -16,6 +16,7 @@ import (
 	appsigning "ant/internal/application/signing"
 	journalstore "ant/internal/infrastructure/storage/journal"
 	"ant/internal/infrastructure/storage/journal/clock"
+	referencestore "ant/internal/infrastructure/storage/reference"
 	storesigning "ant/internal/infrastructure/storage/signing"
 )
 
@@ -75,10 +76,13 @@ func runInit(ctx context.Context, env *environment) error {
 		return err
 	}
 	defer pool.Close()
-	// TODO(29): trustOptions(env.cfg, env) — записи CA и шифрование при
-	// хранении, как у ядра (после слияния эпика 29).
-	j := journalstore.NewStore(pool, clock.System{}, journalstore.WithBatchMax(genesisBatchMax))
-	res, err := storesigning.Provision(ctx, j, storesigning.ProvisionConfig{Volumes: initVolumes(), Profile: env.cfg.Profile,
+	// Записи CA и шифрование при хранении — как у ядра (эпик 29: KEK готовит trust-init).
+	j := journalstore.NewStore(pool, clock.System{}, append(trustOptions(env.cfg, env), journalstore.WithBatchMax(genesisBatchMax))...)
+	refs, err := genesisReferences()
+	if err != nil {
+		return err
+	}
+	res, err := storesigning.Provision(ctx, j, storesigning.ProvisionConfig{Volumes: initVolumes(), Profile: env.cfg.Profile, References: refs,
 		ClockMode: clockMode(env.cfg), ProcessVersionID: processapp.SeedVersionID, DomainBuild: domainBuild(),
 		Partitions: env.cfg.Engine.Partitions, KeeperHosts: strings.Split(envOr("ANT_KEEPER_HOSTS", "keeper,localhost"), ","), Log: env.log})
 	if err != nil {
@@ -99,6 +103,20 @@ func runInit(ctx context.Context, env *environment) error {
 	env.log.Info("init: готово", "genesis_written", res.Written, "block_size", res.Header.BlockSize,
 		"anchor", res.Header.AnchorFingerprint, "genesis_digest", res.Digest)
 	return nil
+}
+
+// genesisReferences — стартовые справочники для блока генезиса: записи
+// модуля reference по встроенной затравке normative/reference (эпик 19).
+func genesisReferences() ([]appsigning.GenesisRecord, error) {
+	recs, err := referencestore.SeedRecords()
+	if err != nil {
+		return nil, err
+	}
+	out := make([]appsigning.GenesisRecord, 0, len(recs))
+	for _, r := range recs {
+		out = append(out, appsigning.GenesisRecord{Type: r.Type, Stream: r.Stream, Data: r.Data})
+	}
+	return out, nil
 }
 
 // genesisIngest — порты подписи приёма из генезиса (FR-26, AD-11): реестр

@@ -58,8 +58,11 @@ type GenesisConfig struct {
 	DomainBuild string
 	// Partitions — P движка: записи вне изделия — в партиции P (как у приёма).
 	Partitions int
-	// Now — InfraClock (occurred_at и received_at записей блока); nil — time.Now.
+	// Now — InfraClock (received_at записей блока); nil — time.Now.
 	Now func() time.Time
+	// OccurredAt — occurred_at записей блока (доменное время начала действия
+	// стартовой политики и справочников); ноль — Now.
+	OccurredAt time.Time
 }
 
 // GenesisBlock — подписанный блок, готовый к записи.
@@ -90,7 +93,11 @@ func BuildGenesis(ctx context.Context, spec GenesisSpec, signer Signer, cfg Gene
 	if cfg.Now != nil {
 		now = cfg.Now
 	}
-	at := now().UTC().Truncate(time.Millisecond).Format(TimeLayout)
+	received := now().UTC().Truncate(time.Millisecond).Format(TimeLayout)
+	at := received
+	if !cfg.OccurredAt.IsZero() {
+		at = cfg.OccurredAt.UTC().Truncate(time.Millisecond).Format(TimeLayout)
+	}
 	fp := dom.AnchorFingerprint(spec.Anchor)
 	headerID := GenesisEventID(fp, 1)
 	type item struct {
@@ -130,7 +137,7 @@ func BuildGenesis(ctx context.Context, spec GenesisSpec, signer Signer, cfg Gene
 		info, _ := catalog.Lookup(it.rec.Type)
 		e := jc.JournalEntry{Chain: jc.JournalEntryChainMain, EntryKind: jc.JournalEntryEntryKind(info.Kind), EventType: string(it.rec.Type),
 			SchemaVersion: info.CurrentVersion, EventID: it.id, SourceID: dom.GenesisSource, Stream: streamOr(it.rec.Stream),
-			Partition: cfg.Partitions, OccurredAt: at, ReceivedAt: at, CorrelationID: headerID,
+			Partition: cfg.Partitions, OccurredAt: at, ReceivedAt: received, CorrelationID: headerID,
 			ProvenanceClass: jc.JournalEntryProvenanceClassGenesis, DomainBuild: cfg.DomainBuild}
 		if it.id != headerID {
 			c := headerID
@@ -261,6 +268,18 @@ type GenesisReport struct {
 // закреплённый якорь pinned (из trust-anchors; пусто — без сверки), один
 // генезис в журнале. Ключи кворума — только зарегистрированные в самом блоке.
 func VerifyGenesis(ctx context.Context, j journal.JournalStore, v RawVerifier, pinned string) (GenesisReport, error) {
+	return verifyGenesis(ctx, j, v, pinned, false)
+}
+
+// VerifyGenesisDigest — быстрая проверка блока (ядро при старте, повтор ant
+// init): подписи заголовка, «якоря уничтожен» и кворума проверяются
+// криптографически, остальные записи — через block_digest под подписью
+// якоря (dom.GenesisCheck.DigestOnly).
+func VerifyGenesisDigest(ctx context.Context, j journal.JournalStore, v RawVerifier, pinned string) (GenesisReport, error) {
+	return verifyGenesis(ctx, j, v, pinned, true)
+}
+
+func verifyGenesis(ctx context.Context, j journal.JournalStore, v RawVerifier, pinned string, digestOnly bool) (GenesisReport, error) {
 	st, err := FindGenesis(ctx, j)
 	if err != nil {
 		return GenesisReport{}, err
@@ -310,8 +329,13 @@ func VerifyGenesis(ctx context.Context, j journal.JournalStore, v RawVerifier, p
 		}
 		ge := dom.GenesisEntry{Seq: int64(e.Seq), EventType: e.EventType, Provenance: string(e.ProvenanceClass),
 			PayloadType: env.PayloadType, Payload: payload}
+		// Быстрая проверка: только заголовок, последняя запись и подписи сверх якоря (кворум).
+		skip := digestOnly && e.Seq != 1 && e.Seq != h.BlockSize && len(env.Signatures) <= len(dom.AnchorRefs)
 		for _, s := range env.Signatures {
 			ge.Present = append(ge.Present, s.KeyID)
+			if skip {
+				continue
+			}
 			c := dom.CryptoCheck{KeyRef: s.KeyID, Result: dom.CryptoUnavailable}
 			if k, ok := pubs[s.KeyID]; ok {
 				sig, _ := base64.StdEncoding.DecodeString(s.Sig)
@@ -332,7 +356,7 @@ func VerifyGenesis(ctx context.Context, j journal.JournalStore, v RawVerifier, p
 			}
 		}
 	}
-	h, err = dom.CheckGenesisBlock(dom.GenesisCheck{Block: block, Pinned: pinned, GenesisCount: st.Count})
+	h, err = dom.CheckGenesisBlock(dom.GenesisCheck{Block: block, Pinned: pinned, GenesisCount: st.Count, DigestOnly: digestOnly})
 	if err != nil {
 		return GenesisReport{}, err
 	}
