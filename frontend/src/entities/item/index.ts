@@ -46,7 +46,7 @@ function useReadParams(opts: MaybeRefOrGetter<ItemReadOptions>) {
 
 /**
  * Паспорт изделия на момент (FR-42, AD-22) — `item.passport.read`. Пустой id —
- * запрос не выполняется. Смена момента не мигает пустым паспортом.
+ * запрос не выполняется.
  */
 export function usePassport(itemId: MaybeRefOrGetter<string | null | undefined>, opts: MaybeRefOrGetter<ItemReadOptions> = {}) {
   const params = useReadParams(opts)
@@ -55,7 +55,9 @@ export function usePassport(itemId: MaybeRefOrGetter<string | null | undefined>,
     queryFn: ({ signal }) => itemPassportRead(toValue(itemId) ?? '', params.value, { signal }),
     enabled: computed(() => !!toValue(itemId)),
     retry: false,
-    placeholderData: (prev) => prev,
+    // Смена момента не мигает пустым паспортом; другое изделие — никогда не
+    // показывается паспортом прежнего (NFR-UI-4).
+    placeholderData: (prev, prevQuery) => (prevQuery?.queryKey[1] === toValue(itemId) ? prev : undefined),
   })
 }
 

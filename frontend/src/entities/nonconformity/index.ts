@@ -53,7 +53,8 @@ export function useNcCard(ncId: MaybeRefOrGetter<string | null | undefined>, run
     queryFn: ({ signal }) => nonconformityCardRead(toValue(ncId) ?? '', params.value, { signal }),
     enabled: computed(() => !!toValue(ncId)),
     retry: false,
-    placeholderData: (prev) => prev,
+    // Другое несоответствие — никогда не показывается карточкой прежнего.
+    placeholderData: (prev, prevQuery) => (prevQuery?.queryKey[1] === toValue(ncId) ? prev : undefined),
   })
 }
 
