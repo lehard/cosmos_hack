@@ -154,6 +154,8 @@ func (s *Service) loadItem(ctx context.Context, itemID string, m platform.Moment
 			}
 		}()
 		v.Snap, v.Computed = s.d.Fold(b, v.Input)
+		// Точка предъявления процесса без записи предъявления — ждёт решения.
+		v.Snap.Nonconformity = dom.WithProcessGate(v.Snap.Nonconformity, v.Env, v.Snap.Process)
 		return nil
 	}(); err != nil {
 		return nil, err
@@ -226,6 +228,26 @@ func (s *Service) indexItems(ctx context.Context, m platform.Moment) ([]string, 
 	for k, open := range pending {
 		if open {
 			set[k.item] = true
+		}
+	}
+	// Изделия, стоящие на точке предъявления процесса (срок ожидания решения
+	// ставит notifications по токену): без записи предъявления тоже ждут
+	// контролёра; ждёт ли — решает свёртка изделия (WithProcessGate).
+	if es, err := s.readAll(ctx, appjournal.ReadQuery{EventType: string(catalog.ObligationDueSet), RunID: m.RunID, Moment: m}); err == nil {
+		for _, e := range es {
+			if e.ItemID == nil || *e.ItemID == "" || set[*e.ItemID] {
+				continue
+			}
+			d, err := s.d.Codec.Decode(ctx, e)
+			if err != nil {
+				continue
+			}
+			var x struct {
+				Kind string `json:"kind"`
+			}
+			if json.Unmarshal(d.Record.Data, &x) == nil && x.Kind == "presentation_wait" {
+				set[*e.ItemID] = true
+			}
 		}
 	}
 	out := make([]string, 0, len(set))
