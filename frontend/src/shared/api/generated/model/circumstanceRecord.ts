@@ -22,6 +22,8 @@ export interface CircumstanceRecord {
   occurred_at: string;
   /** Параметры подписи: метод, параметр, значение, уставка, шаг… */
   params?: CircumstanceRecordParams;
+  /** Когда запись пришла в систему (ось «что мы знали»): больше occurred_at — данные опоздали («пришло с задержкой … ч»). */
+  received_at?: string;
   /** Связанные записи — подсвечиваются вместе с выбранной. */
   related_event_ids?: string[];
   /** Вид источника факта (FR-140). */

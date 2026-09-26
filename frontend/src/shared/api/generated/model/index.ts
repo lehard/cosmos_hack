@@ -553,6 +553,7 @@ export * from './metricValueOrigin';
 export * from './missedObservation';
 export * from './missedObservationVersions';
 export * from './moduleMode';
+export * from './narrowOption';
 export * from './nCAnalyzerStage';
 export * from './nCCard';
 export * from './nCCardApprovalsStatus';
