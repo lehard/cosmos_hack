@@ -45,7 +45,15 @@ const run = computed(() => (typeof props.slice.run_id === 'string' && props.slic
 const workplace = computed(() => session.data.value?.data.workplace ?? null)
 const workplaceId = computed(() => workplace.value?.id ?? null)
 
-const equipmentQ = useEquipmentStates(workplaceId)
+// Оборудование поста стоит на участке (IS-1/IS-2 → ST-WELD), а не на самом посту: читаем по участку,
+// иначе список пуст, «Выполнено» держится только на startedHere и пропадает после перезагрузки страницы.
+const stationId = computed(() => {
+  const wp = workplaceId.value
+  if (!wp) return null
+  const loc = (locationsQ.data.value?.data ?? []).find((l) => l.location_id === wp)
+  return loc?.parent_id ?? wp
+})
+const equipmentQ = useEquipmentStates(stationId)
 const registryQ = useEquipmentRegistry()
 const postsQ = usePosts(computed(() => (run.value ? { run_id: run.value } : {})))
 const mapQ = useLiveMap(computed(() => ({ period: 'shift' as const, ...(run.value ? { run_id: run.value } : {}) })))
@@ -62,7 +70,15 @@ const operations = computed(() => operationsOf(parsed.value, workshopId.value))
 
 // Без поста в сеансе оборудования «своего места» нет: чужие операции и
 // предупреждения не показываем (UI-40) — запрос без station_id вернул бы весь завод.
-const equipment = computed(() => (workplaceId.value ? (equipmentQ.data.value?.data ?? []) : []))
+// Своё оборудование: источник, привязанный к посту по номеру (WP-WELD-1 → IS-1), иначе всё оборудование участка.
+const equipment = computed(() => {
+  const wp = workplaceId.value
+  if (!wp) return []
+  const all = equipmentQ.data.value?.data ?? []
+  const n = /-(\d+)$/.exec(wp)?.[1]
+  const own = n ? all.filter((e) => new RegExp(`-${n}$`).test(e.equipment_id)) : []
+  return own.length ? own : all
+})
 /** Выполнение, начатое с этого терминала, — пока оборудование его не показало. */
 const startedHere = ref<{ runId: string; itemId: string } | null>(null)
 const runId = computed(() => currentRunId(equipment.value, startedHere.value?.runId ?? null))

@@ -34,9 +34,22 @@ const card = computed(() => cardQ.data.value?.data ?? null)
 
 const history = useWorkplaceHistory(() => props.id, runId)
 
-/** Оборудование этого поста (station_id — пост): остановка — по каждому (FR-49). */
+/**
+ * Оборудование этого поста: остановка — по каждому (FR-49). Источники стоят на участке
+ * (IS-2 → ST-WELD), а не на посту, поэтому берём и оборудование участка поста, из него —
+ * своё по номеру поста (WP-WELD-2 → IS-2); нет номера — всё оборудование участка.
+ */
 const equipmentQ = useEquipmentStates()
-const postEquipment = computed(() => (equipmentQ.data.value?.data ?? []).filter((e) => e.station_id === props.id))
+const postEquipment = computed(() => {
+  const all = equipmentQ.data.value?.data ?? []
+  const own = all.filter((e) => e.station_id === props.id)
+  if (own.length) return own
+  const station = card.value?.station_id ?? card.value?.parent_id ?? null
+  const atStation = all.filter((e) => e.station_id && (e.station_id === station || props.id.startsWith(String(e.station_id).replace(/^ST-/, 'WP-'))))
+  const n = /-(\d+)$/.exec(props.id)?.[1]
+  const byNo = n ? atStation.filter((e) => new RegExp(`-${n}$`).test(e.equipment_id)) : []
+  return byNo.length ? byNo : atStation
+})
 
 /** Основание события: код из словаря — по-русски, текст снятия — как есть. */
 function reasonText(reason: string): string {
