@@ -14,6 +14,7 @@
 | [specifications.md](specifications.md), [codegen.md](codegen.md) | Спецификации API, событий, BPMN; кодогенерация и проверки контрактов |
 | [scenario-processing.md](scenario-processing.md) | Как система отрабатывает сценарии кейса |
 | [integrations/README.md](integrations/README.md) | 1С, Галактика:ERP, MES, КОМПАС-3D, СКУД; stand-ы и экран «Интеграции» |
+| [sso.md](sso.md) | Единый вход (SSO) — перспектива: OIDC / SAML / LDAP адаптером порта `IdentityProvider` |
 | [threat-model.md](threat-model.md), [crypto.md](crypto.md) | Модель угроз, меры приказа ФСТЭК № 117; подписи, ключи, криптопрофили |
 | [scaling.md](scaling.md), [observability-kafka-otel.md](observability-kafka-otel.md), [backup-restore.md](backup-restore.md) | Масштабирование; OpenTelemetry и Kafka; резервирование и восстановление |
 | [vision-camera-project.md](vision-camera-project.md), [target-components.md](target-components.md), [federation.md](federation.md) | Комплекс «камеры + ИИ»; компоненты кейса §3.2; межзаводская кооперация |

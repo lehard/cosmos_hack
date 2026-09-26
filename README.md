@@ -70,6 +70,7 @@ make demo          # = ANT_PROFILE=demo COMPOSE_PROFILES=demo docker compose up 
     Go и TypeScript и клиент API; несовместимость ловят проверки — [AD-20](docs/architecture-spine.md#ad-20--один-источник-на-каждый-вид-контракта-цепочка-генерации-без-циклов).
 12. **Права — политика-данные, защита — шина поверх журнала.** «Кто — что — над чем — где» на Casbin; критические
     действия — в неизменяемом журнале — [AD-15](docs/architecture-spine.md#ad-15--права--политика-данные-кто--что--над-чем--где), [AD-24](docs/architecture-spine.md#ad-24--шина-безопасности-поверх-журнала).
+    В перспективе — единый вход (SSO: OpenID Connect, SAML, LDAP — Keycloak, ALD Pro, FreeIPA, AD FS) адаптером порта `IdentityProvider` — перспектива, в MVP не реализуется; роли и подписи остаются нашими ([docs/sso.md](docs/sso.md)).
 13. **Криптопрофили меняются.** ГОСТ Р 34.10/34.11-2012, постквантовый ML-DSA-65 и гибрид; смена профиля и ротация
     ключей — [AD-32](docs/architecture-spine.md#ad-32--смена-криптопрофиля-ротация-ключей-и-их-жизненный-цикл).
 
@@ -163,6 +164,7 @@ flowchart LR
 | [docs/data-model.md](docs/data-model.md) | Запись журнала, сущности, статусы, проекции |
 | [docs/specifications.md](docs/specifications.md), [docs/codegen.md](docs/codegen.md) | Спецификации API, событий, BPMN; что генерируется и как ловится рассинхронизация |
 | [docs/integrations/](docs/integrations/README.md) | 1С, Галактика:ERP, MES, КОМПАС-3D, СКУД: протоколы, ошибки, двусторонний обмен, stand-ы |
+| [docs/sso.md](docs/sso.md) | Единый вход (SSO) — перспектива: OIDC / SAML / LDAP за портом входа, права и подписи остаются в системе |
 | [docs/threat-model.md](docs/threat-model.md), [docs/crypto.md](docs/crypto.md) | Модель угроз и меры ФСТЭК № 117; подписи, ключи, криптопрофили, постквантовый сценарий |
 | [docs/scaling.md](docs/scaling.md), [docs/new-adapter.md](docs/new-adapter.md) | Партиции и масштабирование; как добавить адаптер без правки ядра |
 | [docs/observability-kafka-otel.md](docs/observability-kafka-otel.md), [docs/backup-restore.md](docs/backup-restore.md) | Метрики, OpenTelemetry и Kafka; резервирование и восстановление |
