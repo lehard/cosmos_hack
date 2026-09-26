@@ -65,7 +65,8 @@ func TestBuildCA(t *testing.T) {
 	if r, _ := BuildCA(fix, 10, Command{}); !strings.HasPrefix(r.After, CorrectionName) || len(r.BasisEventIDs) != 1 {
 		t.Fatalf("исправление: %+v", r)
 	}
-	if EventID(mainID) != EventID(mainID) || EventID(mainID) == EventID(fix.Corrects) {
+	again := EventID(mainID)
+	if again != EventID(mainID) || again == EventID(fix.Corrects) {
 		t.Fatal("event_id записи CA не детерминирован")
 	}
 }

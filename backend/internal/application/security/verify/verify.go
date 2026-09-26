@@ -88,7 +88,6 @@ type check struct {
 	rejected bool
 	unverif  bool
 	findings []procs.VerifierReportV1ChecksElemFindingsElem
-	note     string
 }
 
 // maxFindings — предел находок на проверку в отчёте.

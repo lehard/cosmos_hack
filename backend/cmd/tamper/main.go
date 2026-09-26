@@ -87,10 +87,10 @@ func parseChange(s string) map[string]any {
 	out := map[string]any{}
 	for kv := range strings.SplitSeq(s, ",") {
 		k, v, _ := strings.Cut(kv, "=")
-		switch {
-		case v == "true" || v == "false":
+		switch v {
+		case "true", "false":
 			out[k] = v == "true"
-		case v == "[]":
+		case "[]":
 			out[k] = []any{}
 		default:
 			if n, err := strconv.ParseInt(v, 10, 64); err == nil {
