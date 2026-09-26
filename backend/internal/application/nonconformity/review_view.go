@@ -385,6 +385,7 @@ func (s *Service) reviewActions(ctx context.Context, v *itemView, rv review, d d
 				ClosingPoint: d.ClosingPoint, PresentationNo: d.PresentationNo, Outcome: outcome, NewFactIDs: facts, Reason: dom.Reason{Text: "проверка доступности"}})
 		}
 		a.Allowed = err == nil
+		a.Consequences, a.TechnicalConsequences = SplitConsequences(cons)
 		a.WhyAvailable = ReviewWhyAllowed(outcome, gate)
 		if err != nil {
 			a.WhyAvailable = refusalText(err)
@@ -482,13 +483,39 @@ func (s *Service) resolveActions(ctx context.Context, v *itemView, p NCPresentat
 				GuardStreams: []string{stream}, OccurredAt: now, SignatureLevel: 2, Payload: data})
 		}
 		a.Allowed = err == nil
-		a.Label, a.WhyAvailable, a.Consequences = ResolveTexts(r, gate, next, concession, p.PresentationNo)
+		var cons []string
+		a.Label, a.WhyAvailable, cons = ResolveTexts(r, gate, next, concession, p.PresentationNo)
+		a.Consequences, a.TechnicalConsequences = SplitConsequences(cons)
 		if err != nil {
 			a.WhyAvailable = refusalText(err)
 		}
 		out = append(out, a)
 	}
 	return out
+}
+
+// SplitConsequences — последствия на деловые (изделие, маршрут, кому уйдёт
+// действие) и технические (строки «1С: …», «История: …», «Статус …»):
+// интерфейс показывает деловые первыми, технические — отдельно.
+func SplitConsequences(all []string) (business, technical []string) {
+	business, technical = []string{}, []string{}
+	for _, line := range all {
+		if technicalLine(line) {
+			technical = append(technical, line)
+		} else {
+			business = append(business, line)
+		}
+	}
+	return business, technical
+}
+
+func technicalLine(line string) bool {
+	for _, p := range []string{"1С:", "История:", "Статус несоответствия:"} {
+		if strings.HasPrefix(line, p) {
+			return true
+		}
+	}
+	return false
 }
 
 // ResolveTexts — надпись, «почему доступно» (когда гард пропускает) и
