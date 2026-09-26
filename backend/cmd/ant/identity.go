@@ -37,6 +37,11 @@ type accessBundle struct {
 	wplog accessapp.WorkplaceLog
 	// now — доменное «сейчас» (AD-37) для сроков полномочий и записей решений.
 	now func(ctx context.Context) (time.Time, error)
+	// presence, pw, shifts — присутствие по СКУД и ключу, запись фактов СКУД
+	// и отклонений, график смен (эпик 37, access_skud.go).
+	presence *accessapp.PresenceProjection
+	pw       accessapp.PresenceWriter
+	shifts   accessapp.ShiftSchedule
 }
 
 // seedFS — встроенная копия нормативного слоя (world.Inputs: normative/policy,
@@ -92,6 +97,7 @@ func accessLive(ctx context.Context, env *environment) (*accessBundle, error) {
 	b.decisions = accessapp.JournalDecisions{Journal: c.journal, DomainBuild: c.codec.DomainBuild, Now: c.codec.Now}
 	b.facts = c.itemWriter(env)
 	b.wplog = accessstore.WorkplaceLog{Journal: c.journal, Codec: c.codec}
+	b.withPresence(c)
 
 	switch cfg.Ports.Adapters["identity_provider"] {
 	case "demo":

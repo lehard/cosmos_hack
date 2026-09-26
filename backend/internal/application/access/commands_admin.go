@@ -129,6 +129,10 @@ type AdmitWorkplace struct {
 	platform.CommandHeader
 	ShiftID        string   `json:"shift_id,omitempty" maxLength:"128"`
 	ChecksEventIDs []string `json:"checks_event_ids,omitempty" doc:"Записи проверок допуска (проход СКУД, токен)."`
+	// KeyRef, PinVerified — ключ вставлен и открыт PIN-ом (порт подписи, AD-14);
+	// подписанный пакет команды подтверждает то и другое сам.
+	KeyRef      string `json:"key_ref,omitempty" maxLength:"128" doc:"Ключ сотрудника (‹псевдоним›@‹версия›), вставленный на рабочем месте; эпик 37."`
+	PinVerified bool   `json:"pin_verified,omitempty" doc:"PIN введён и ключ им открыт (порт подписи); эпик 37."`
 }
 
 // ReleaseWorkplace — снять допуск (access.workplace.released).

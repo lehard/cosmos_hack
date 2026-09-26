@@ -56,7 +56,16 @@ func ToSecurityEvent(e jc.JournalEntry, ev Event) SecurityEvent {
 			out.Severity = "alarm"
 		}
 	case catalog.SecurityPresenceDeviation:
-		out.Severity, out.Summary = "warning", "Отклонение присутствия"
+		// Эпик 37, FR-84: «ключ вставлен, владельца нет в зоне» — тревога
+		// администратору; «по графику должен быть, ключа нет» — мастеру.
+		switch str("deviation") {
+		case "token_without_presence":
+			out.Severity, out.Summary = "alarm", "Ключ вставлен, владельца нет в зоне"+suffix(": ", str("person_id"))+suffix(" — ", str("workplace_id"))
+		case "scheduled_without_token":
+			out.Severity, out.Summary = "warning", "По графику на посту, ключ не вставлен"+suffix(": ", str("person_id"))+suffix(" — ", str("workplace_id"))
+		default:
+			out.Severity, out.Summary = "warning", "Отклонение присутствия"
+		}
 	default:
 		out.Summary = e.EventType
 	}

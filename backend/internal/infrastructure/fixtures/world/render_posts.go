@@ -85,18 +85,35 @@ func renderPostCards(c *Ctx, list accessapp.PostList, dayShift bool) []loader.Re
 	return out
 }
 
-// postHistory — события поста за сутки до часов шага по расписанию смен, новые сверху.
-func (c *Ctx) postHistory(wp string) accessapp.WorkplaceHistory {
-	loc := c.M.clk.loc
-	from := c.T.Add(-historyWindow)
-	h := accessapp.WorkplaceHistory{WorkplaceID: wp, Items: []accessapp.WorkplaceEvent{}}
-	type ev struct {
-		at            time.Time
-		typ, kind     string
-		person, shift string
-		order         int
+// postEv — событие поста мира заготовок.
+type postEv struct {
+	at                    time.Time
+	typ, kind             string
+	person, shift, reason string
+	order                 int
+}
+
+// zoneOfWorkplace — зона СКУД поста: зона цеха (access_zone_id: WS-WC → Z-WC).
+func zoneOfWorkplace(wp string) string {
+	ws := workplaceWorkshop[wp]
+	if ws == "" {
+		return ""
 	}
-	var evs []ev
+	return "Z-" + strings.TrimPrefix(ws, "WS-")
+}
+
+// lunchStory — эпик 37 (FR-84): сварщик W21 в первую смену выходит из зоны
+// цеха на обед, оставив ключ на посту: «ключ вставлен, владельца нет в зоне» —
+// тревога администратору, допуск снят (zone_exit); вернулся — допуск снова.
+func lunchStory(p PersonRef, shift string) bool { return p.Person == "W21" && shift == "SHIFT-1" }
+
+// postEvents — события поста по расписанию смен, по возрастанию времени: проход
+// СКУД в зону цеха, назначение, ключ и допуск в начале смены, завершение, ключ
+// и выход из зоны — в конце (эпик 37: присутствие видно в истории поста).
+func (c *Ctx) postEvents(wp string) []postEv {
+	loc := c.M.clk.loc
+	zone := zoneOfWorkplace(wp)
+	var evs []postEv
 	t0 := c.M.Steps[0].In(loc)
 	for day := time.Date(t0.Year(), t0.Month(), t0.Day()-1, 0, 0, 0, 0, loc); !day.After(c.T); day = day.AddDate(0, 0, 1) {
 		for _, s := range postShifts {
@@ -105,16 +122,29 @@ func (c *Ctx) postHistory(wp string) accessapp.WorkplaceHistory {
 				if p.Workplace != wp || shiftOf(p) != s.id {
 					continue
 				}
+				zin := string(catalog.AccessZonePassed)
 				evs = append(evs,
-					ev{start.Add(-15 * time.Minute), string(catalog.AccessAssignmentSet), "assigned", p.Person, s.id, 0},
-					ev{start.Add(5 * time.Minute), string(catalog.AccessTokenPresenceChanged), "token_in", p.Person, s.id, 1},
-					ev{start.Add(5 * time.Minute), string(catalog.AccessWorkplaceAdmitted), "admitted", p.Person, s.id, 2},
-					ev{end.Add(-5 * time.Minute), string(catalog.AccessWorkplaceReleased), "released", p.Person, s.id, 3},
-					ev{end.Add(-5 * time.Minute), string(catalog.AccessTokenPresenceChanged), "token_out", p.Person, s.id, 4})
+					postEv{start.Add(-20 * time.Minute), zin, "zone_in", p.Person, s.id, zone, 0},
+					postEv{start.Add(-15 * time.Minute), string(catalog.AccessAssignmentSet), "assigned", p.Person, s.id, "", 1},
+					postEv{start.Add(5 * time.Minute), string(catalog.AccessTokenPresenceChanged), "token_in", p.Person, s.id, "", 2},
+					postEv{start.Add(5 * time.Minute), string(catalog.AccessWorkplaceAdmitted), "admitted", p.Person, s.id, "", 3})
+				if lunchStory(p, s.id) {
+					out, back := day.Add(12*time.Hour), day.Add(12*time.Hour+35*time.Minute)
+					evs = append(evs,
+						postEv{out, zin, "zone_out", p.Person, s.id, zone, 4},
+						postEv{out, string(catalog.SecurityPresenceDeviation), "presence_deviation", p.Person, s.id, "token_without_presence", 5},
+						postEv{out, string(catalog.AccessWorkplaceRevoked), "revoked", p.Person, s.id, "zone_exit", 6},
+						postEv{back, zin, "zone_in", p.Person, s.id, zone, 7},
+						postEv{back.Add(time.Minute), string(catalog.AccessWorkplaceAdmitted), "admitted", p.Person, s.id, "", 8})
+				}
+				evs = append(evs,
+					postEv{end.Add(-5 * time.Minute), string(catalog.AccessWorkplaceReleased), "released", p.Person, s.id, "", 9},
+					postEv{end.Add(-5 * time.Minute), string(catalog.AccessTokenPresenceChanged), "token_out", p.Person, s.id, "", 10},
+					postEv{end.Add(5 * time.Minute), zin, "zone_out", p.Person, s.id, zone, 11})
 			}
 		}
 	}
-	slices.SortStableFunc(evs, func(a, b ev) int {
+	slices.SortStableFunc(evs, func(a, b postEv) int {
 		if x := a.at.Compare(b.at); x != 0 {
 			return x
 		}
@@ -123,13 +153,49 @@ func (c *Ctx) postHistory(wp string) accessapp.WorkplaceHistory {
 		}
 		return a.order - b.order
 	})
+	return evs
+}
+
+// postPresence — присутствие сотрудника на посту к часам шага по событиям
+// поста (FR-6): в зоне и ключ вставлен — на месте; в зоне без ключа — ключ не
+// вставлен; ключ есть, владельца нет в зоне — владельца нет; иначе — нет на месте.
+func (c *Ctx) postPresence(wp, person string) string {
+	known, in, token := false, false, false
+	for _, e := range c.postEvents(wp) {
+		if e.at.After(c.T) || e.person != person {
+			continue
+		}
+		switch e.kind {
+		case "zone_in", "zone_out":
+			known, in = true, e.kind == "zone_in"
+		case "token_in", "token_out":
+			token = e.kind == "token_in"
+		}
+	}
+	switch {
+	case !known:
+		return "unknown"
+	case in && token:
+		return "present"
+	case in:
+		return "key_missing"
+	case token:
+		return "owner_absent"
+	}
+	return "absent"
+}
+
+// postHistory — события поста за сутки до часов шага по расписанию смен, новые сверху.
+func (c *Ctx) postHistory(wp string) accessapp.WorkplaceHistory {
+	from := c.T.Add(-historyWindow)
+	h := accessapp.WorkplaceHistory{WorkplaceID: wp, Items: []accessapp.WorkplaceEvent{}}
 	// seq — порядковый номер события поста в мире заготовок (журнала у заготовок нет).
-	for i, e := range evs {
+	for i, e := range c.postEvents(wp) {
 		if e.at.After(c.T) || e.at.Before(from) {
 			continue
 		}
 		h.Items = append(h.Items, accessapp.WorkplaceEvent{Seq: int64(i + 1), At: e.at.UTC(), EventType: e.typ, Kind: e.kind, PersonID: e.person,
-			PersonDisplay: c.M.personName(e.person), ShiftID: e.shift})
+			PersonDisplay: c.M.personName(e.person), ShiftID: e.shift, Reason: e.reason})
 	}
 	slices.Reverse(h.Items)
 	return h

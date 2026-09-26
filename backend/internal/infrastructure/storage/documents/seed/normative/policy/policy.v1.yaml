@@ -49,7 +49,7 @@ roles:
     case_role: true
     domain: qc
     inherits: [staff]
-    actions: ["quality.*.read", "nonconformity.signal.reject", "nonconformity.nonconformity.confirm", "nonconformity.recheck.request", "nonconformity.item.isolate", "nonconformity.presentation.resolve", "nonconformity.lot.resolve", "nonconformity.containment.set", "nonconformity.disposition.verify", "item.intervention.close", "item.identification.confirm", "analysis.item.assess", "documents.document.sign", "documents.signature.*", "documents.version.request", "documents.paper.print", "documents.document.request", "crossitem.binding.assign", "item.*.read", "analysis.*.read", "process.*.read"]
+    actions: ["quality.*.read", "nonconformity.signal.reject", "nonconformity.nonconformity.confirm", "nonconformity.recheck.request", "nonconformity.item.isolate", "nonconformity.presentation.resolve", "nonconformity.lot.resolve", "nonconformity.containment.set", "nonconformity.disposition.verify", "item.intervention.close", "item.identification.confirm", "analysis.item.assess", "documents.document.sign", "documents.signature.*", "documents.version.request", "documents.paper.print", "documents.document.request", "crossitem.binding.assign", "item.*.read", "analysis.*.read", "process.*.read", "access.workplace.admit", "access.workplace.release"]
   - id: site_foreman
     title: "Мастер участка"
     case_role: true
@@ -70,12 +70,12 @@ roles:
     case_role: true
     domain: admin
     inherits: [staff]
-    actions: ["access.person.register", "access.account.activate", "access.policy.grant", "access.policy.revoke", "documents.version.request", "documents.document.request", "documents.request.list", "signing.key.register", "signing.key.revoke", "ops.source.disable", "ops.source.enable", "ops.integration.set", "ops.integration.check", "ops.processing.retry", "ingest.message.reprocess", "ingest.import.submit", "erp.posting.resend", "crossitem.binding.assign", "simulation.*.*", "reference.*.define", "ops.*.read", "ingest.*.read", "access.*.read", "journal.*.read", "security.*.read"]
+    actions: ["access.person.register", "access.account.activate", "access.policy.grant", "access.policy.revoke", "access.qualification.grant", "access.qualification.revoke", "documents.version.request", "documents.document.request", "documents.request.list", "signing.key.register", "signing.key.revoke", "ops.source.disable", "ops.source.enable", "ops.integration.set", "ops.integration.check", "ops.processing.retry", "ingest.message.reprocess", "ingest.import.submit", "erp.posting.resend", "crossitem.binding.assign", "simulation.*.*", "reference.*.define", "ops.*.read", "ingest.*.read", "access.*.read", "journal.*.read", "security.*.read"]
   # ── дополнительные роли (PRD §2, AD-15) ──
   - id: performer
     title: "Исполнитель"
     inherits: [staff]
-    actions: ["process.operation.start", "process.operation.pause", "process.operation.resume", "process.operation.finish", "access.operator.confirm_step", "access.operator.report_deviation", "access.operator.request_inspection", "process.movement.receive", "notifications.task.acknowledge", "item.assembly.record", "item.intervention.open", "ingest.event.submit"]
+    actions: ["process.operation.start", "process.operation.pause", "process.operation.resume", "process.operation.finish", "access.operator.confirm_step", "access.operator.report_deviation", "access.operator.request_inspection", "process.movement.receive", "notifications.task.acknowledge", "item.assembly.record", "item.intervention.open", "ingest.event.submit", "access.workplace.admit", "access.workplace.release"]
   - id: storekeeper
     title: "Кладовщик"
     inherits: [performer]

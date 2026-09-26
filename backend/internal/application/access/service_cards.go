@@ -88,9 +88,52 @@ func (s *Service) WorkplaceHistory(ctx context.Context, workplaceID string, m pl
 			return WorkplaceHistory{}, err
 		}
 	}
+	recs, err = s.withZonePasses(ctx, workplaceID, recs, pol, m)
+	if err != nil {
+		return WorkplaceHistory{}, err
+	}
 	items := WorkplaceEvents(recs, func(id string) string { return displayOf(pol, id) })
 	page, next := PageOf(items, p)
 	return WorkplaceHistory{WorkplaceID: workplaceID, Items: page, NextCursor: next}, nil
+}
+
+// withZonePasses — записи потока поста и проходы СКУД через зону поста тех,
+// кто на пост назначался или назначен (эпик 37: присутствие видно в истории поста).
+func (s *Service) withZonePasses(ctx context.Context, workplaceID string, recs []accessdom.Record, pol accessdom.Policy, m platform.Moment) ([]accessdom.Record, error) {
+	zone := s.zoneOf(workplaceID)
+	if s.presence == nil || zone == "" {
+		return recs, nil
+	}
+	people := map[string]bool{}
+	for _, r := range recs {
+		var d struct {
+			PersonID string `json:"person_id"`
+		}
+		if json.Unmarshal(r.Data, &d) == nil && d.PersonID != "" {
+			people[d.PersonID] = true
+		}
+	}
+	for _, a := range pol.PostsIn("") {
+		if a.WorkplaceID == workplaceID {
+			people[a.PersonID] = true
+		}
+	}
+	passes, err := s.presence.Passes(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := slices.Clone(recs)
+	for _, r := range passes {
+		if m.AsOf != nil && r.OccurredAt.After(*m.AsOf) {
+			continue
+		}
+		var d ev.AccessZonePassedV1
+		if json.Unmarshal(r.Data, &d) != nil || string(d.ZoneID) != zone || !people[string(d.PersonID)] {
+			continue
+		}
+		out = append(out, r)
+	}
+	return out, nil
 }
 
 // WorkplaceEvents — события поста из записей его потока, новые сверху; записи
@@ -148,6 +191,15 @@ func WorkplaceEvents(recs []accessdom.Record, display func(personID string) stri
 				continue
 			}
 			e.Kind, e.PersonID, e.Reason = "revoked", sessions[string(d.WorkplaceSessionID)], string(d.Cause)
+		case catalog.AccessZonePassed:
+			var d ev.AccessZonePassedV1
+			if json.Unmarshal(r.Data, &d) != nil {
+				continue
+			}
+			e.Kind, e.PersonID, e.Reason = "zone_out", string(d.PersonID), string(d.ZoneID)
+			if d.Direction == ev.AccessZonePassedV1DirectionEnter {
+				e.Kind = "zone_in"
+			}
 		case catalog.SecurityPresenceDeviation:
 			var d ev.SecurityPresenceDeviationV1
 			if json.Unmarshal(r.Data, &d) != nil {

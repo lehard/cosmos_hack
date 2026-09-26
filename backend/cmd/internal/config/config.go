@@ -139,11 +139,32 @@ type Config struct {
 		B2MML B2MML `yaml:"b2mml"`
 	} `yaml:"mes"`
 
+	// Access — модуль access (эпик 37): СКУД за портом. Канал СКУД работает,
+	// если "skud" есть в integrations.enabled; опрос — роль outbox, stand —
+	// роль stands (/stand/skud/).
+	Access struct {
+		SKUD SKUD `yaml:"skud"`
+	} `yaml:"access"`
+
 	// Security — доверие (эпик 29): хранитель, верификатор, шифрование при
 	// хранении, шина безопасности (AD-8, AD-9, AD-23, AD-24, AD-46).
 	// Интервалы и порог — параметры аудита policy.audit.*: до записи
 	// policy.audit.parameters_set, подписанной Аудитором ИБ (эпик 26), — здесь.
 	Security Security `yaml:"security"`
+}
+
+// SKUD — журнал проходов СКУД по протоколу skud.v1 (FR-82, AD-18).
+type SKUD struct {
+	// BaseURL — адрес протокола: stand роли stands или реальная СКУД; пусто —
+	// stand этого хоста (http://127.0.0.1‹stands.addr›/stand/skud/api/v1).
+	BaseURL string `yaml:"base_url"`
+	// Stand — на месте СКУД stand (в prod запрещён гардом интеграций).
+	Stand bool `yaml:"stand"`
+	// Timeout — таймаут запроса; Poll — период опроса журнала проходов;
+	// Check — период проверки «по графику должен быть, ключа нет».
+	Timeout time.Duration `yaml:"timeout"`
+	Poll    time.Duration `yaml:"poll"`
+	Check   time.Duration `yaml:"check"`
 }
 
 // OneC — канал обмена с 1С: адрес публикации базы (stand или реальная 1С),

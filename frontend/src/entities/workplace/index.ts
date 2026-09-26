@@ -58,11 +58,20 @@ export const workplaceKeys = entityKeys('workplace')
 export type PostPresence = PostRowPresence
 export type { PostRow }
 
-/** Посты под картой на момент из useMomentStore — `access.workplace.list`. */
+/** Ключи сотрудника: проход СКУД пишется в поток сотрудника (эпик 37). */
+const personKeys = entityKeys('person')
+
+/**
+ * Посты под картой на момент из useMomentStore — `access.workplace.list`.
+ * Присутствие меняют и проходы СКУД (FR-6, эпик 37): они в потоке сотрудника,
+ * SSE инвалидирует `[person, LIST]` — метка `presence-tick` перечитывается и
+ * через ключ тянет за собой список постов (без опроса по таймеру).
+ */
 export function usePosts(params: MaybeRefOrGetter<{ workshop?: string; run_id?: string }>) {
   const moment = useMomentStore()
+  const tick = useQuery({ queryKey: personKeys.list('presence-tick'), queryFn: () => Date.now(), staleTime: Infinity })
   return useQuery({
-    queryKey: computed(() => workplaceKeys.list('posts', toValue(params), moment.params)),
+    queryKey: computed(() => workplaceKeys.list('posts', toValue(params), tick.data.value ?? 0, moment.params)),
     queryFn: async ({ signal }): Promise<Envelope<PostRow[]>> => {
       const res = await accessWorkplaceList({ ...toValue(params), ...moment.params }, { signal })
       return { data: res.data.items, headers: res.headers }

@@ -44,6 +44,11 @@ type Service struct {
 	facts itemapp.Writer
 	// wplog — история поста из журнала (access.workplace.history, UI-16).
 	wplog WorkplaceLog
+	// presence, pw, shifts — присутствие по СКУД и ключу, запись фактов СКУД
+	// и отклонений, график смен (эпик 37).
+	presence PresenceSource
+	pw       PresenceWriter
+	shifts   ShiftSchedule
 	// now — доменное «сейчас» (DomainClock, AD-37).
 	now func(ctx context.Context) (time.Time, error)
 }
@@ -188,13 +193,24 @@ func (s *Service) sessionOf(ctx context.Context, p platform.Principal) Session {
 	if !ok {
 		role = RoleRef{ID: p.Role, Title: p.Role}
 	}
-	return Session{
+	out := Session{
 		User:      SessionUser{ID: p.PersonID, Name: p.Name},
 		Role:      role,
 		Scope:     p.Scope,
 		PolicySeq: p.PolicySeq,
 		Demo:      p.Demo,
 	}
+	// Эпик 37: рабочее место сеанса — открытый допуск сотрудника (барьер 2).
+	if pr, ok, err := s.presenceNow(ctx); err == nil && ok {
+		if ss, ok := pr.SessionOf(p.PersonID); ok {
+			title := ss.WorkplaceID
+			if wp, ok := s.dir.Workplace(ss.WorkplaceID); ok && wp.Name != "" {
+				title = wp.Name
+			}
+			out.Workplace = &SessionWorkplace{ID: ss.WorkplaceID, Title: title}
+		}
+	}
+	return out
 }
 
 // loginPattern — логин учётной записи (схема access.account.activated).

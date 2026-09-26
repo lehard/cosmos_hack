@@ -102,6 +102,36 @@ func (Adapter) OpenSession(ctx context.Context, rq app.SessionCreate) (app.Sessi
 // CloseSession — выход (access.session.delete): на заготовках сеансов не хранится.
 func (Adapter) CloseSession(context.Context, string) error { return nil }
 
+// AdmitWorkplace — допуск к рабочему месту (access.workplace.admit, эпик 37):
+// на заготовках — квитанция шага курсора; присутствие поста — у мира заготовок.
+func (Adapter) AdmitWorkplace(ctx context.Context, workplaceID string, in app.AdmitWorkplace) (platform.Receipt, error) {
+	return decide(ctx, "access.workplace.admit", "workplace", workplaceID, in.CommandMeta())
+}
+
+// ReleaseWorkplace — снять допуск (access.workplace.release, эпик 37).
+func (Adapter) ReleaseWorkplace(ctx context.Context, workplaceID string, in app.ReleaseWorkplace) (platform.Receipt, error) {
+	return decide(ctx, "access.workplace.release", "workplace", workplaceID, in.CommandMeta())
+}
+
+// GrantQualification — выдать квалификацию (access.qualification.grant, эпик 37).
+func (Adapter) GrantQualification(ctx context.Context, personID string, in app.GrantQualification) (platform.Receipt, error) {
+	return decide(ctx, "access.qualification.grant", "person", personID, in.CommandMeta())
+}
+
+// RevokeQualification — отозвать квалификацию (access.qualification.revoke, эпик 37).
+func (Adapter) RevokeQualification(ctx context.Context, personID string, in app.RevokeQualification) (platform.Receipt, error) {
+	return decide(ctx, "access.qualification.revoke", "person", personID, in.CommandMeta())
+}
+
+// decide — команда на заготовках: квитанция шага курсора (loader.Runtime.Decide).
+func decide(ctx context.Context, op, kind, id string, meta platform.CommandMeta) (platform.Receipt, error) {
+	rt, err := runtime()
+	if err != nil {
+		return platform.Receipt{}, err
+	}
+	return rt.Decide(ctx, op, loader.ObjectRef{Kind: kind, ID: id}, meta)
+}
+
 // runtime — мир заготовок (тесты подставляют свой).
 var runtime = loader.Default
 

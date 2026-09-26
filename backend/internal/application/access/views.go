@@ -174,11 +174,11 @@ type WorkplaceEvent struct {
 	Seq           int64     `json:"seq" minimum:"0" doc:"seq записи журнала."`
 	At            time.Time `json:"at" doc:"Когда произошло (occurred_at)."`
 	EventType     string    `json:"event_type" doc:"Тип записи журнала."`
-	Kind          string    `json:"kind" enum:"assigned,cleared,token_in,token_out,admitted,released,revoked,presence_deviation" doc:"Вид события поста."`
+	Kind          string    `json:"kind" enum:"assigned,cleared,token_in,token_out,admitted,released,revoked,presence_deviation,zone_in,zone_out" doc:"Вид события поста; zone_in, zone_out — проход назначенного на пост через точку СКУД зоны поста (эпик 37)."`
 	PersonID      string    `json:"person_id,omitempty" doc:"Сотрудник, если известен."`
 	PersonDisplay string    `json:"person_display,omitempty" doc:"Отображаемое имя сотрудника."`
 	ShiftID       string    `json:"shift_id,omitempty"`
-	Reason        string    `json:"reason,omitempty" doc:"Основание: текст снятия назначения, причина снятия допуска, вид отклонения присутствия."`
+	Reason        string    `json:"reason,omitempty" doc:"Основание: текст снятия назначения, причина снятия допуска, вид отклонения присутствия, зона СКУД прохода."`
 }
 
 // WorkplaceHistory — история поста, новые сверху.

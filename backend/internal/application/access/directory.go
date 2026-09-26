@@ -30,6 +30,9 @@ type WorkplaceRef struct {
 	Scope string
 	// Workshop — цех (location id WS-…), в котором пост.
 	Workshop string
+	// Zone — зона СКУД поста: зона доступа цеха (access_zone_id справочника
+	// мест; FR-82, эпик 37); пусто — зоны нет, присутствие неизвестно.
+	Zone string
 }
 
 // Workplace — рабочее место по id.

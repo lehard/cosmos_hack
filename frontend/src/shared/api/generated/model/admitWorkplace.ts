@@ -15,6 +15,13 @@ export interface AdmitWorkplace {
   /** UUIDv7 клиента; повтор с тем же id возвращает прежний ответ (AD-7). У подписанной команды — event_id пакета. */
   command_id: string;
   /**
+     * Ключ сотрудника (‹псевдоним›@‹версия›), вставленный на рабочем месте; эпик 37.
+     * @maxLength 128
+     */
+  key_ref?: string;
+  /** PIN введён и ключ им открыт (порт подписи); эпик 37. */
+  pin_verified?: boolean;
+  /**
      * Версия политики, по которой показаны права (policy_seq сеанса); изменилась — 409 journal.stale_policy (AD-39).
      * @minimum 0
      */
