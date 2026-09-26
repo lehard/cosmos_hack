@@ -9,12 +9,13 @@
  *
  * Срез: цех — как у «Участка» (`resolveWorkshop`: `workshop`, `scope`); `run_id`.
  */
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useEquipmentRegistry, useEquipmentStates } from '@/entities/equipment'
 import { resolveWorkshop, useLocations } from '@/entities/reference'
 import { useSession } from '@/entities/session'
 import { useAssignments, usePosts, useQualifications } from '@/entities/workplace'
 import { useDrillDown } from '@/features/drill-down'
+import { AssignPostDrawer } from '@/features/post-assignment'
 import { backendModeOf } from '@/shared/api/response'
 import type { WidgetProps } from '@/shared/config/widget'
 import { WidgetFrame } from '@/shared/ui'
@@ -23,6 +24,7 @@ import PeopleEquipmentView from './PeopleEquipmentView.vue'
 
 const props = defineProps<WidgetProps>()
 const drill = useDrillDown()
+const assignTo = ref<{ id: string; title: string } | null>(null)
 const session = useSession()
 const locationsQ = useLocations()
 
@@ -72,12 +74,21 @@ const state = computed(() => (allFailed.value ? 'input_error' : peopleEquipmentS
     <PeopleEquipmentView
       @workplace="(id) => drill.open({ entity: 'workplace', id })"
       @person="(id) => drill.open({ entity: 'person', id })"
+      @assign="(id, title) => (assignTo = { id, title })"
       :workshop-name="workshop?.name ?? null"
       :people="people"
       :people-error="postsQ.error.value ?? undefined"
       :equipment="equipment"
       :equipment-error="equipmentError"
       :density="density"
+    />
+    <AssignPostDrawer
+      :show="!!assignTo"
+      :workplace-id="assignTo?.id ?? null"
+      :workplace-title="assignTo?.title ?? ''"
+      :shift-id="session.data.value?.data.shift?.id ?? null"
+      :shift-title="session.data.value?.data.shift?.title ?? null"
+      @close="assignTo = null"
     />
   </WidgetFrame>
 </template>

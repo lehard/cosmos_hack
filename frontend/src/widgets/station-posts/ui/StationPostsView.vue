@@ -7,18 +7,13 @@
  * назначенный и присутствие, текущая деталь, оборудование и текущее выполнение.
  * Элементы и токены дизайн-системы «Главный» (shared/ui/README.md).
  */
-import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NAlert, NTag } from 'naive-ui'
+import { NAlert } from 'naive-ui'
 import type { RefEquipment } from '@/entities/equipment'
-import { toolLifeOf } from '@/entities/equipment'
 import { normText, overNorm, type ProcessStep } from '@/entities/live-map'
 import { formatValue, MetricNumber, type MetricValue } from '@/entities/metric'
-import { PRESENCE_TEXT, presenceTagType } from '@/entities/workplace'
 import type { Density } from '@/shared/config/widget'
-import { naiveSizeOf } from '@/shared/config/widget'
 import { useProblemText } from '@/shared/i18n/problem'
-import { ActionButton, DataTable, EmptyState, SectionPanel } from '@/shared/ui'
 import { minutesOf } from '../model/norms'
 import { queueFacts, type EntryItem, type IncomingTask, type StationPost, type StationStep } from '../model/station'
 import { anomalyText, factText } from '../model/texts'
@@ -51,12 +46,9 @@ const props = withDefaults(
 const emit = defineEmits<{ item: [itemId: string]; node: [stepKey: string]; workplace: [workplaceId: string]; person: [personId: string] }>()
 const { t, te, n } = useI18n()
 const problemText = useProblemText()
-const size = computed(() => naiveSizeOf(props.density))
 
 const value = (v: MetricValue) => formatValue({ t, n: (x, f) => n(x, f) }, v)
 const durationOver = (s: StationStep) => overNorm(minutesOf(s.meanDuration), s.step.norm)
-/** Показатели операции, которые пришли: пустые строки «нет данных» не показываем. */
-const hasFacts = (s: StationStep) => !!(s.meanDuration || s.reworkRuns || s.unfinished)
 const factLine = (s: StationStep) => queueFacts(s, props.posts ?? [], props.registry).map((f) => factText(t, f, value))
 </script>
 
@@ -73,7 +65,7 @@ const factLine = (s: StationStep) => queueFacts(s, props.posts ?? [], props.regi
       <ul v-else class="lines">
         <li v-for="r in incoming" :key="r.taskId" class="line" :data-incoming="r.itemId">
           <button type="button" class="name" :title="t('common.actions.openPassport')" @click="emit('item', r.itemId)">{{ r.title.replace(/^Принять в цех\s*/, '') }}</button>
-          <span class="quiet">ждёт приёмки — в «Задачах»</span>
+          <span class="quiet">{{ t('stationDesk.waitsInTasks') }}</span>
         </li>
         <li v-for="i in entryItems" :key="i.item_id" class="line" data-testid="entry-items">
           <button type="button" class="name" :title="t('common.actions.openPassport')" @click="emit('item', i.item_id)">{{ i.label }}</button>
@@ -92,7 +84,7 @@ const factLine = (s: StationStep) => queueFacts(s, props.posts ?? [], props.regi
           <button type="button" class="name" data-testid="open-post" @click="emit('workplace', p.post.workplace_id)">{{ p.post.station }}</button>
           <span class="cols">
             <button v-if="p.post.assigned" type="button" class="link" data-testid="open-person" @click="emit('person', p.post.assigned.person_id)">{{ p.post.assigned.display }}</button>
-            <span v-else class="quiet">свободен</span>
+            <span v-else class="quiet">{{ t('stationDesk.postFree') }}</span>
             <button v-if="p.post.current_item" type="button" class="link" data-testid="current-item" @click="emit('item', p.post.current_item.item_id)">{{ p.post.current_item.label }}</button>
             <template v-for="e in p.equipment" :key="e.equipment_id">
               <span v-if="e.execution !== 'unknown'" class="state" :data-tone="e.condition" :data-equipment="e.equipment_id">{{ t(`widgets.shopFloor.execution.${e.execution}`) }}</span>
@@ -115,8 +107,8 @@ const factLine = (s: StationStep) => queueFacts(s, props.posts ?? [], props.regi
         <li v-for="s in steps" :key="s.step.stepKey" class="line step" :data-step="s.step.stepKey" :data-growing="s.growing || undefined">
           <button type="button" class="name" data-testid="open-operation" @click="emit('node', s.step.stepKey)">{{ s.step.name }}</button>
           <span class="cols" data-testid="counters">
-            <span v-if="s.counters" class="count" :data-tone="s.growing ? 'warn' : undefined" data-testid="queue">в очереди {{ s.counters.queue }}</span>
-            <span v-if="s.counters" class="count" data-testid="in-work">в работе {{ s.counters.in_progress }}</span>
+            <span v-if="s.counters" class="count" :data-tone="s.growing ? 'warn' : undefined" data-testid="queue">{{ t('stationDesk.inQueue', { n: s.counters.queue }) }}</span>
+            <span v-if="s.counters" class="count" data-testid="in-work">{{ t('stationDesk.inWork', { n: s.counters.in_progress }) }}</span>
             <span v-if="s.counters?.nonconformities" class="state" data-tone="fault">{{ t('plural.nonconformities', { n: s.counters.nonconformities }, s.counters.nonconformities) }}</span>
             <span v-if="s.bottleneck" class="state" data-tone="warning" data-testid="bottleneck">{{ t('liveMap.bottleneck') }}</span>
             <span v-for="a in s.anomalies" :key="a.kind" class="state" data-tone="warning" :data-anomaly="a.kind" :title="anomalyText(t, te, a)">{{ anomalyText(t, te, a) }}</span>
