@@ -12,7 +12,7 @@ import (
 )
 
 // Встроенная копия нормативного слоя совпадает с репозиторием; зоны и связи
-// фланца разобраны.
+// фланца разобраны (14 зон КД + 3 зоны процессной сессии, сведённые эпиком 19).
 func TestSeedMatchesRepo(t *testing.T) {
 	repo := os.DirFS("../../../../..")
 	for _, p := range []string{appitem.PathItemTypes, storage.PathProcess} {
@@ -33,7 +33,7 @@ func TestSeedMatchesRepo(t *testing.T) {
 		t.Fatal(err)
 	}
 	fl := env.Types["FL-100.00.000"]
-	if len(fl.Zones) != 14 || len(fl.Links) != 3 || fl.Links[1].ID != "J-1" || len(fl.Links[1].ClosesAccessTo) != 2 {
+	if len(fl.Zones) != 17 || len(fl.Links) != 3 || fl.Links[1].ID != "J-1" || len(fl.Links[1].ClosesAccessTo) != 2 {
 		t.Fatalf("номенклатура фланца: %+v", fl)
 	}
 	if v, err := storage.SeedProcessVersion(); err != nil || !strings.HasPrefix(v, "streebog256:") || len(v) != len("streebog256:")+64 {

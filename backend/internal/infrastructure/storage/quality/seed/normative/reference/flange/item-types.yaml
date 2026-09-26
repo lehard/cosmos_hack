@@ -29,6 +29,10 @@ item_types:
       - {zone_id: F-FACE, name: "Уплотнительная поверхность фланца", kind: surface}
       - {zone_id: F-HOLES, name: "Отверстия под крепёж",             kind: hole}
       - {zone_id: F-OUTER, name: "Наружная поверхность",             kind: surface}
+      # Зоны процессной сессии, сведённые эпиком 19 (сценарии эпика 32: EDGE, RING-BODY, VALVE) [ПП]
+      - {zone_id: W-1.EDGE,  name: "Кромка под сварку шва W-1",        kind: surface}
+      - {zone_id: PIPE-BODY, name: "Тело патрубка (основной металл)",  kind: surface}
+      - {zone_id: VALVE-J2,  name: "Клапан узла J2",                   kind: joint}
     links:
       - {link_id: W-1, kind: weld,         zones: [W-1.U1, W-1.U2, W-1.U3, W-1.U4, W-1.U5, W-1.U6, W-1.U7, W-1.U8], rework_limit_per_zone: 3}
       - {link_id: J-1, kind: bolted_joint, zones: [J-1], closes_access_to: [S-1, CAV]}
