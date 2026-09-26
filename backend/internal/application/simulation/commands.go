@@ -27,6 +27,6 @@ type SetSpeed struct {
 // ApplyInjection — нажать кнопку цифрового стенда (simulation.injection.applied, FR-152).
 type ApplyInjection struct {
 	platform.CommandHeader
-	Injection     string `json:"injection" enum:"duplicate_event,late_event,corrupt_frame,machine_fault,data_loss,tamper_outside"`
+	Injection     string `json:"injection" enum:"duplicate_event,late_event,corrupt_frame,machine_fault,data_loss,tamper_outside,light_change"`
 	TargetEventID string `json:"target_event_id,omitempty" format:"uuid" doc:"Целевое событие (повтор, опоздание)."`
 }

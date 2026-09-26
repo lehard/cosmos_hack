@@ -2,6 +2,7 @@ package quality
 
 import (
 	"context"
+	"slices"
 
 	engineapp "ant/internal/application/engine"
 	"ant/internal/domain/engine"
@@ -52,6 +53,14 @@ func (b Bundles) Bundle(ctx context.Context, itemID string, input []kernel.Recor
 		if err != nil {
 			return bd, rev, err
 		}
+		// Эпик 40: автооткат в прогоне сценария (AD-38) пишет приостановку с
+		// run_id прогона — она действует только на изделия этого прогона;
+		// записи без run_id (допуск, живая работа) — на всех.
+		run := ""
+		if len(input) > 0 {
+			run = input[0].RunID
+		}
+		recs = slices.DeleteFunc(slices.Clone(recs), func(r kernel.Record) bool { return r.RunID != "" && r.RunID != run })
 		bd.Quality.Passports = quality.PassportsFrom(recs)
 	}
 	if rev == "" {

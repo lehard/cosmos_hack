@@ -62,6 +62,13 @@ func Config(c config.DB, appName string) (*pgxpool.Config, error) {
 	if c.MaxConns > 0 {
 		pc.MaxConns = int32(c.MaxConns)
 	}
+	switch c.SynchronousCommit {
+	case "":
+	case "on", "off", "local", "remote_write", "remote_apply":
+		cc.RuntimeParams["synchronous_commit"] = c.SynchronousCommit
+	default:
+		return nil, fmt.Errorf("db.synchronous_commit=%q: ожидается on, off, local, remote_write или remote_apply", c.SynchronousCommit)
+	}
 	return pc, nil
 }
 

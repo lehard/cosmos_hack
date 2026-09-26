@@ -1,0 +1,40 @@
+# Закрытый контур (NFR-SEC): по умолчанию входящие запрещены; api открыт
+# ingress-контроллеру, хранитель — только ant (mTLS), воркеры и лидеры входящих
+# не принимают (кроме проверок готовности kubelet).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+spec:
+  podSelector: {}
+  policyTypes: [Ingress]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ant-api-ingress
+spec:
+  podSelector:
+    matchLabels: {app.kubernetes.io/name: ant-api}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: ingress}
+      ports: [{port: 8080}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ant-keeper-ingress
+spec:
+  podSelector:
+    matchLabels: {app.kubernetes.io/name: ant-keeper}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels: {app.kubernetes.io/name: ant-leaders}
+        - podSelector:
+            matchLabels: {app.kubernetes.io/name: ant-verifier}
+      ports: [{port: 8444}]

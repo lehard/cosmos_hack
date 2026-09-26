@@ -11,7 +11,9 @@ import (
 // инцидент), которые свёртка изделия не видит (FR-57, FR-59, FR-60):
 //   - incident.measurement.requested — задача «измерить» исполнителю из
 //     запроса, иначе контролёру ОТК (эпик 22: «задачу ставит notifications»);
-//   - incident.action.assigned — задача владельцу меры со сроком меры.
+//   - incident.action.assigned — задача владельцу меры со сроком меры;
+//   - analyzer.passport.suspended — задача начальнику ОТК «решить о возврате
+//     анализатора» после автоотката (эпик 40, FR-101).
 //
 // Чистая функция записи: слот — (правило, поток объекта, event_id решения),
 // версия одна — повтор даёт тот же reaction_id. Исполняет её роль scheduler
@@ -51,6 +53,20 @@ func ObjectReact(r kernel.Record) []kernel.Reaction {
 		if t, ok := ParseTime(m.DueAt); ok {
 			d.DueAt = FormatTime(t)
 		}
+	case catalog.AnalyzerPassportSuspended:
+		// Эпик 40 (FR-101): автооткат анализатора — задача начальнику ОТК:
+		// контроль стал строже, вернуть анализатор может только он.
+		var m struct {
+			PassportID string `json:"passport_id"`
+			Trigger    string `json:"trigger"`
+			Fallback   string `json:"fallback"`
+		}
+		if !decode(r, &m) || m.PassportID == "" {
+			return nil
+		}
+		d = TaskData{Kind: "decision_required", AssigneeRoleID: RoleHeadOfQC,
+			Title: truncate("Анализатор приостановлен автооткатом ("+rollbackTrigger(m.Trigger)+"): паспорт "+m.PassportID+
+				", сейчас "+rollbackFallback(m.Fallback)+". Вернуть в работу — только ваше решение", 256)}
 	default:
 		return nil
 	}
@@ -73,4 +89,27 @@ func actionTitle(t string) string {
 		return "предупреждающее действие"
 	}
 	return t
+}
+
+// rollbackTrigger — триггер автоотката по-русски.
+func rollbackTrigger(t string) string {
+	switch t {
+	case "drift":
+		return "дрейф"
+	case "reference_set_failed":
+		return "провал эталонного набора"
+	case "disagreement_growth":
+		return "рост расхождений с людьми"
+	case "escape_detected":
+		return "пропуск брака"
+	}
+	return t
+}
+
+// rollbackFallback — что действует вместо приостановленного паспорта.
+func rollbackFallback(f string) string {
+	if f == "previous_passport" {
+		return "действует предыдущая допущенная версия"
+	}
+	return "100 % ручной контроль"
 }

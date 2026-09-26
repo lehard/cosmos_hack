@@ -129,7 +129,9 @@ func runProjector(ctx context.Context, env *environment) error {
 		return err
 	}
 	// Эпик 31: реакция «блок передаётся в MES» — потребитель mes.holds (канал MES включён).
-	reactors := []interface{ Run(context.Context) error }{rx}
+	// Эпик 40: правило автоотката версии анализатора — глобальный потребитель
+	// роли projector со своим курсором vision.rollback (AD-45, FR-101).
+	reactors := []interface{ Run(context.Context) error }{rx, visionRollback(env, c)}
 	if hr := mesHoldReactor(env, c); hr != nil {
 		reactors = append(reactors, hr)
 	}

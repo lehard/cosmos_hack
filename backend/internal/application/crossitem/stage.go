@@ -1,6 +1,7 @@
 package crossitem
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -65,12 +66,31 @@ func (s *StageRunner) Run(ctx context.Context, fence appjournal.Fence) error {
 	if err != nil {
 		return err
 	}
+	// Эпик 35: состояние стадии — один ключ в сотни КБ; записи без изделия
+	// (тики часов прогона) — вход стадии, но состояние обычно не меняют.
+	// Неизменившееся состояние не переписывается: меньше записи в Postgres
+	// на каждую запись журнала, смысл тот же.
+	last, err := json.Marshal(st)
+	if err != nil {
+		return err
+	}
 	return s.Consumer.Consume(ctx, ConsumerStage, appjournal.Scope{Global: true}, func(ctx context.Context, batch []jc.JournalEntry) (appjournal.AppendRequest, error) {
 		next, rq, err := s.Apply(ctx, st, batch)
 		if err != nil {
 			return rq, err
 		}
 		st = next
+		rq.Effects = slices.DeleteFunc(rq.Effects, func(e appjournal.Effect) bool {
+			put, ok := e.(engineapp.ProjectionPut)
+			if !ok || put.Name != StateProjection || put.Key != stateKey {
+				return false
+			}
+			if bytes.Equal(put.Value, last) {
+				return true
+			}
+			last = put.Value
+			return false
+		})
 		rq.Fence = &fence
 		return rq, nil
 	})

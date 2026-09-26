@@ -5,6 +5,7 @@ import (
 
 	"ant/cmd/internal/config"
 	appvision "ant/internal/application/vision"
+	"ant/internal/infrastructure/storage/journal/feed"
 )
 
 // Сборка модуля vision (эпик 33): живые операции паспортов допуска над
@@ -25,7 +26,14 @@ func visionLive(ctx context.Context, env *environment) (*appvision.Service, erro
 		routes = appvision.DemoRoutes{}
 	}
 	return appvision.NewService(
-		appvision.WithDeps(appvision.Deps{Journal: c.journal, Codec: c.codec, DomainClock: c.domainClock(), Routes: routes, Now: c.codec.Now}),
+		appvision.WithDeps(appvision.Deps{Journal: c.journal, Codec: c.codec, DomainClock: c.domainClock(), Routes: routes, Now: c.codec.Now, Watch: c.engine}),
 		appvision.WithConfig(appvision.Config{DomainBuild: c.codec.DomainBuild, Partitions: env.cfg.Engine.Partitions}),
 	), nil
+}
+
+// visionRollback — правило автоотката версии анализатора (эпик 40, FR-101):
+// глобальный потребитель роли projector с курсором vision.rollback (AD-45).
+func visionRollback(env *environment, c *core) *appvision.Rollback {
+	return &appvision.Rollback{Consumer: feed.NewConsumer(c.journal, c.leases, c.listener, c.feedOptions(env, "projector")),
+		Codec: c.codec, Store: c.engine, Log: env.log.With("module", "vision")}
 }

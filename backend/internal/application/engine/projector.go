@@ -34,6 +34,9 @@ func (p *Projector) Run(ctx context.Context, fence appjournal.Fence) error {
 	if log == nil {
 		log = slog.New(slog.DiscardHandler)
 	}
+	if gc, ok := p.Consumer.(appjournal.GroupConsumer); ok {
+		return p.runGroup(ctx, fence, gc)
+	}
 	var (
 		wg   sync.WaitGroup
 		mu   sync.Mutex
@@ -58,14 +61,70 @@ func (p *Projector) Run(ctx context.Context, fence appjournal.Fence) error {
 	return errors.Join(errs...)
 }
 
+// runGroup — все глобальные проекции одним потребителем-группой (эпик 35):
+// пачка журнала читается и декодируется один раз, выход всех проекций и их
+// курсоры — одна транзакция Append. Раньше каждая проекция (их десятки)
+// читала, декодировала и фиксировала каждую запись сама — это было главной
+// нагрузкой на пул соединений и Postgres в прогоне MS-1. Смысл тот же: у
+// каждой проекции свой курсор, запись отдаётся проекции только после него.
+func (p *Projector) runGroup(ctx context.Context, fence appjournal.Fence, gc appjournal.GroupConsumer) error {
+	globals := p.Registry.Globals()
+	names := make([]string, len(globals))
+	for i, g := range globals {
+		names[i] = ConsumerName(g.Name)
+	}
+	return gc.ConsumeGroup(ctx, names, func(ctx context.Context, batch []jc.JournalEntry, from map[string]int64) (appjournal.AppendRequest, error) {
+		decoded := make([]decodedEntry, len(batch))
+		for i, e := range batch {
+			decoded[i].entry = e
+			decoded[i].d, decoded[i].err = p.Codec.Decode(ctx, e)
+		}
+		var rq appjournal.AppendRequest
+		for i, g := range globals {
+			after := from[names[i]]
+			k := 0
+			for k < len(decoded) && int64(decoded[k].entry.Seq) <= after {
+				k++
+			}
+			if k == len(decoded) {
+				continue
+			}
+			r, err := p.applyDecoded(ctx, g, decoded[k:])
+			if err != nil {
+				return rq, err
+			}
+			rq.Batch = append(rq.Batch, r.Batch...)
+			rq.Effects = append(rq.Effects, r.Effects...)
+		}
+		rq.Fence = &fence
+		return rq, nil
+	})
+}
+
+// decodedEntry — запись журнала и результат её декодирования (один раз на группу).
+type decodedEntry struct {
+	entry jc.JournalEntry
+	d     Decoded
+	err   error
+}
+
 // Apply — выход глобальной проекции на пачку записей: новые значения
 // затронутых ключей, изменения для SSE и сбои обработки (AD-45).
 func (p *Projector) Apply(ctx context.Context, g GlobalProjection, batch []jc.JournalEntry) (appjournal.AppendRequest, error) {
+	decoded := make([]decodedEntry, len(batch))
+	for i, e := range batch {
+		decoded[i].entry = e
+		decoded[i].d, decoded[i].err = p.Codec.Decode(ctx, e)
+	}
+	return p.applyDecoded(ctx, g, decoded)
+}
+
+func (p *Projector) applyDecoded(ctx context.Context, g GlobalProjection, batch []decodedEntry) (appjournal.AppendRequest, error) {
 	var rq appjournal.AppendRequest
 	cache := map[string]json.RawMessage{}
 	changed := map[string]Change{}
-	for _, e := range batch {
-		d, err := p.Codec.Decode(ctx, e)
+	for _, x := range batch {
+		e, d, err := x.entry, x.d, x.err
 		if err == nil {
 			err = p.step(ctx, g, d, cache, changed)
 		}

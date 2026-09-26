@@ -2,10 +2,12 @@
  * СГЕНЕРИРОВАНО orval (frontend/scripts/generate.mjs) — руками не править (AD-20).
  * Источник: contracts/openapi.yaml
  */
+import type { AnalyzerMonitor } from './analyzerMonitor';
 import type { AnalyzerPassportAnalyzerKind } from './analyzerPassportAnalyzerKind';
 import type { AnalyzerPassportStage } from './analyzerPassportStage';
 import type { AnalyzerPassportStatus } from './analyzerPassportStatus';
 import type { AnalyzerPassportVersions } from './analyzerPassportVersions';
+import type { AnalyzerStatus } from './analyzerStatus';
 import type { AnalyzerSuspension } from './analyzerSuspension';
 
 export interface AnalyzerPassport {
@@ -19,6 +21,10 @@ export interface AnalyzerPassport {
   basis_seq: number;
   /** Протокол допуска (закрытый маршрут подписей). */
   document_id: string;
+  /** Смены статуса: допуск, приостановка, возврат, вывод. */
+  history?: AnalyzerStatus[];
+  /** Контроль дрейфа правила автоотката (FR-101). */
+  monitor?: AnalyzerMonitor;
   passport_id: string;
   previous_passport_id?: string;
   /** Происхождение записи допуска (AD-2): genesis — демо-затравка без экзамена (не промышленная валидация), personal — решение людей. */

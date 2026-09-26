@@ -1,0 +1,100 @@
+# Границы доверия (AD-8, AD-9, AD-46): хранитель контрольных точек и независимый
+# верификатор — по одной копии, отдельные процессы со своими томами; не
+# масштабируются: хранитель принимает головы обеих цепочек раз в N секунд,
+# верификатор проверяет журнал по расписанию (роль БД ant_verifier, только чтение).
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: ant-keeper
+spec:
+  replicas: 1
+  serviceName: ant-keeper
+  selector:
+    matchLabels: {app.kubernetes.io/name: ant-keeper}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: ant-keeper}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        fsGroup: 65532
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: keeper
+          image: ant
+          command: ["/keeper"]
+          env:
+            - {name: ANT_KEEPER_INTERVAL, value: "10s"}
+          ports: [{name: mtls, containerPort: 8444}]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          resources:
+            requests: {cpu: 50m, memory: 32Mi}
+            limits: {memory: 64Mi}
+          volumeMounts:
+            - {name: keeper-data, mountPath: /var/lib/keeper}
+  volumeClaimTemplates:
+    - metadata:
+        name: keeper-data
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources:
+          requests: {storage: 1Gi}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ant-keeper
+spec:
+  selector: {app.kubernetes.io/name: ant-keeper}
+  ports: [{name: mtls, port: 8444, targetPort: mtls}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ant-verifier
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector:
+    matchLabels: {app.kubernetes.io/name: ant-verifier}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: ant-verifier}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: verifier
+          image: ant
+          command: ["/verifier"]
+          envFrom: [{configMapRef: {name: ant-env}}]
+          env:
+            # Верификатор читает реплику: проверка журнала не нагружает primary (AD-6).
+            - {name: ANT_DB_HOST, value: ant-postgres-ro}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          resources:
+            requests: {cpu: 100m, memory: 128Mi}
+            limits: {memory: 256Mi}
+          volumeMounts:
+            - {name: config, mountPath: /etc/ant, readOnly: true}
+            - {name: db-secret, mountPath: /run/ant-secrets/ant, readOnly: true}
+            - {name: kek, mountPath: /var/lib/ant-kek, readOnly: true}
+            - {name: verifier-data, mountPath: /var/lib/verifier, readOnly: true}
+      volumes:
+        - name: config
+          configMap: {name: ant-config}
+        - name: db-secret
+          secret: {secretName: ant-db, defaultMode: 0400}
+        - name: kek
+          secret: {secretName: ant-kek, defaultMode: 0400}
+        - name: verifier-data
+          secret: {secretName: ant-verifier, defaultMode: 0400}

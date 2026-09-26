@@ -50,3 +50,18 @@ func (Adapter) ReinstatePassport(ctx context.Context, passportID string, in app.
 func (Adapter) RetirePassport(ctx context.Context, passportID string, in app.RetirePassport) (platform.Receipt, error) {
 	return decide(ctx, "vision.passport.retire", "analyzer_passport", passportID, in.CommandMeta())
 }
+
+// Escapes — пропуски брака и перепроверка (vision.escape.list, эпик 40).
+func (Adapter) Escapes(ctx context.Context, m platform.Moment) (app.AdaptationEscapeList, error) {
+	return respond[app.AdaptationEscapeList](ctx, "vision.escape.list", nil, &m)
+}
+
+// Observation — «какими версиями и почему» (vision.observation.read, эпик 40).
+func (Adapter) Observation(ctx context.Context, eventID string, m platform.Moment) (app.ObservationAccount, error) {
+	return respond[app.ObservationAccount](ctx, "vision.observation.read", map[string]string{"event_id": eventID}, &m)
+}
+
+// Examples — размеченные примеры (vision.example.list, эпик 40).
+func (Adapter) Examples(ctx context.Context, m platform.Moment) (app.LabeledExampleList, error) {
+	return respond[app.LabeledExampleList](ctx, "vision.example.list", nil, &m)
+}

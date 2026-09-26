@@ -40,10 +40,13 @@ const (
 	InjectDataLoss InjectionKind = "data_loss"
 	// InjectTamper — «подделать запись в обход системы» (F25, S09): только cmd/tamper.
 	InjectTamper InjectionKind = "tamper_outside"
+	// InjectLightChange — «сменить свет на камере» (FR-101, эпик 40): кадры
+	// точки контроля становятся хуже, анализатор продолжает отвечать — дрейф.
+	InjectLightChange InjectionKind = "light_change"
 )
 
 // InjectionKinds — кнопки в порядке пульта.
-var InjectionKinds = []InjectionKind{InjectDuplicate, InjectLate, InjectCorruptFrame, InjectMachineFault, InjectDataLoss, InjectTamper}
+var InjectionKinds = []InjectionKind{InjectDuplicate, InjectLate, InjectCorruptFrame, InjectMachineFault, InjectDataLoss, InjectTamper, InjectLightChange}
 
 // Параметры заготовок — из карточек сбоев (scenarios/definitions/scenarios).
 const (
@@ -62,6 +65,14 @@ const (
 	DeviationOverTol = 6
 	// TamperQualityBP — подделанное качество наблюдения (F25: 9900).
 	TamperQualityBP = 9900
+	// LightFrames, LightQualityBP, LightConfidenceBP — смена света (эпик 40):
+	// три кадра подряд с качеством 0,55, анализатор по-прежнему уверен (0,91) —
+	// контроль дрейфа модуля vision откатывает версию анализатора (FR-101).
+	LightFrames       = 3
+	LightQualityBP    = 5500
+	LightConfidenceBP = 9100
+	// LightLimitation — ограничение наблюдения при смене света.
+	LightLimitation = "освещение изменилось: пересвет шва"
 )
 
 // Источники stand-а цифрового стенда: новые события кнопок идут от своих
@@ -72,6 +83,7 @@ const (
 	StandFrame   = "stand-frame"
 	StandMachine = "stand-machine"
 	StandLoss    = "stand-loss"
+	StandLight   = "stand-light"
 )
 
 // InjectionInput — вход кнопки.
@@ -152,6 +164,8 @@ func PlanInjection(in InjectionInput) (*Injection, error) {
 		err = in.loss(out)
 	case InjectTamper:
 		err = in.tamper(out)
+	case InjectLightChange:
+		err = in.light(out)
 	default:
 		return nil, refuse("неизвестная кнопка %q", in.Kind)
 	}
@@ -344,6 +358,44 @@ func (in InjectionInput) frame(out *Injection) error {
 	out.Target, out.Item = &e, e.Item
 	out.Emissions = []Emission{em}
 	out.Detail = fmt.Sprintf("испорченный кадр точки %v изделия %s: качество 0,30 (%s)", d["inspection_point"], e.Item, PoorLimitation)
+	return nil
+}
+
+// light — смена света на камере (FR-101, эпик 40): LightFrames кадров той же
+// точки контроля и версии анализатора, что и цель, с качеством 0,55 — анализатор
+// по-прежнему отвечает «признаков нет» с уверенностью 0,91. Контроль дрейфа
+// модуля vision видит дрейф и приостанавливает паспорт (откат в сторону строгости).
+func (in InjectionInput) light(out *Injection) error {
+	e, ev, err := in.target("результат контроля камерой (inspection.result.recorded, method = camera)", cameraResult)
+	if err != nil {
+		return err
+	}
+	at := in.At.Truncate(time.Second)
+	out.Target, out.Item = &e, e.Item
+	point := ""
+	for k := range LightFrames {
+		c := clone(ev)
+		d, _ := c["data"].(map[string]any)
+		suffixID(d, "observation_id", fmt.Sprintf("-light-%d-%d", in.N, k))
+		d["observation_quality_bp"] = LightQualityBP
+		d["analyzer_confidence_bp"] = LightConfidenceBP
+		d["outcome"] = "no_defect_indicated"
+		d["processing_state"] = "completed"
+		d["limitations"] = []any{LightLimitation}
+		for _, f := range []string{"defects", "unable_reason", "evidence_refs", "recommendation"} {
+			delete(d, f)
+		}
+		point = fmt.Sprint(d["inspection_point"])
+		occurred := at.Add(-time.Duration(LightFrames-1-k) * time.Second)
+		em, err := in.emission(out, k, StandLight, c, occurred, e.Item)
+		if err != nil {
+			return err
+		}
+		out.Emissions = append(out.Emissions, em)
+	}
+	out.Source = in.Plan.IDs.SourceID(StandLight)
+	out.Detail = fmt.Sprintf("свет на камере точки %s изменился: %d кадра подряд с качеством 0,55, анализатор отвечает «признаков нет» (изделие %s)",
+		point, LightFrames, e.Item)
 	return nil
 }
 

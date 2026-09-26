@@ -96,7 +96,7 @@ const targets = reactive<Record<string, string>>({})
  * Кнопки, которые принимают целевое событие, даже если оно необязательно
  * (FR-152, эпик 36): пусто — сервер берёт последнее подходящее событие прогона.
  */
-const TARGETABLE: ReadonlySet<Injection['injection']> = new Set(['duplicate_event', 'late_event', 'corrupt_frame', 'machine_fault', 'tamper_outside'])
+const TARGETABLE: ReadonlySet<Injection['injection']> = new Set(['duplicate_event', 'late_event', 'corrupt_frame', 'machine_fault', 'tamper_outside', 'light_change'])
 const hasTarget = (item: Injection) => item.needs_target || TARGETABLE.has(item.injection)
 watch(
   () => props.run?.run_id,

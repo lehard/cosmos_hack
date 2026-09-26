@@ -32,6 +32,9 @@ type Deps struct {
 	Routes RouteGate
 	// Now — InfraClock для received_at (AD-37); nil — time.Now.
 	Now func() time.Time
+	// Watch — проекции движка: состояние правила автоотката (vision.watch,
+	// контроль дрейфа на странице адаптации); nil — без контроля дрейфа.
+	Watch engineapp.ProjectionStore
 }
 
 // Config — параметры модуля.

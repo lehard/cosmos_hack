@@ -1,0 +1,22 @@
+# Стол начальника ОТК (PRD §3a): стол контролёра (очередь, карточка, паспорт) и
+# страница «Адаптация VisionQC» (эпик 40, FR-98…FR-101): вернуть анализатор после
+# автоотката может только начальник ОТК. Без своего файла роль получала стол контролёра.
+version: 1
+role: head_of_qc
+title_key: desks.decisionQueue
+density: comfortable
+help_key: quality_inspector # раздел встроенной справки роли-основы (эпик 47)
+tabs:
+  - id: queue
+    title_key: desks.decisionQueue
+    layout: queue-main-side
+    slots:
+      - {id: queue, area: left, widget: decision-queue, slice: {sort: [risk, deadline]}}
+      - {id: card, area: main, widget: nc-card, slice: {view: evidence}}
+      - {id: decision, area: main, widget: decision-panel}
+      - {id: passport, area: right, widget: item-passport, slice: {view: compact}}
+  - id: vision-adaptation
+    title_key: widgets.visionAdaptation.title
+    layout: single
+    slots:
+      - {id: adaptation, area: main, widget: vision-adaptation}

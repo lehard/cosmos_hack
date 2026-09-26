@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ant
+  labels:
+    # Закрытый контур: поды без привилегий (NFR-SEC).
+    pod-security.kubernetes.io/enforce: restricted

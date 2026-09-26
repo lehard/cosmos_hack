@@ -14,6 +14,12 @@ type Queries interface {
 	Passport(ctx context.Context, passportID string, m platform.Moment) (AnalyzerPassport, error)
 	// Checks — отчёты проверки анализатора (vision.check.list).
 	Checks(ctx context.Context, passportID string, m platform.Moment, p platform.Page) (AnalyzerCheckList, error)
+	// Escapes — пропуски брака и изделия на перепроверку (vision.escape.list, FR-100).
+	Escapes(ctx context.Context, m platform.Moment) (AdaptationEscapeList, error)
+	// Observation — «какими версиями и почему» по наблюдению (vision.observation.read, FR-98).
+	Observation(ctx context.Context, eventID string, m platform.Moment) (ObservationAccount, error)
+	// Examples — размеченные примеры из подтверждённых решений (vision.example.list, FR-99).
+	Examples(ctx context.Context, m platform.Moment) (LabeledExampleList, error)
 }
 
 // Commands — ведущий порт команд модуля vision (AD-39).
@@ -37,6 +43,15 @@ func (Unimplemented) Passport(context.Context, string, platform.Moment) (Analyze
 }
 func (Unimplemented) Checks(context.Context, string, platform.Moment, platform.Page) (AnalyzerCheckList, error) {
 	return AnalyzerCheckList{}, ni("vision.check.list")
+}
+func (Unimplemented) Escapes(context.Context, platform.Moment) (AdaptationEscapeList, error) {
+	return AdaptationEscapeList{}, ni("vision.escape.list")
+}
+func (Unimplemented) Observation(context.Context, string, platform.Moment) (ObservationAccount, error) {
+	return ObservationAccount{}, ni("vision.observation.read")
+}
+func (Unimplemented) Examples(context.Context, platform.Moment) (LabeledExampleList, error) {
+	return LabeledExampleList{}, ni("vision.example.list")
 }
 func (Unimplemented) AdmitPassport(context.Context, AdmitPassport) (platform.Receipt, error) {
 	return platform.Receipt{}, ni("vision.passport.admit")

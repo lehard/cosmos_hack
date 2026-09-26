@@ -1,0 +1,74 @@
+# Роли-лидеры (AD-6): crossitem (межизделийная стадия), projector (глобальные
+# проекции), scheduler (сроки), outbox (исходящие в 1С), security (хранитель,
+# шина безопасности) — одна активная копия по аренде с эпохой; вторая копия —
+# горячий резерв, забирает аренду по истечении срока. Это названные ограничения
+# масштаба (docs/scaling.md §8): порядок межизделийных расчётов и
+# единственность отправки важнее параллелизма.
+# stands и пульт сценариев в промышленном окружении не запускаются (профиль prod).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ant-leaders
+spec:
+  replicas: 2
+  selector:
+    matchLabels: {app.kubernetes.io/name: ant-leaders}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: ant-leaders}
+    spec:
+      terminationGracePeriodSeconds: 20
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchLabels: {app.kubernetes.io/name: ant-leaders}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: leaders
+          image: ant
+          args: ["-role=crossitem,projector,scheduler,outbox,security", "-config=/etc/ant/ant.yaml"]
+          envFrom: [{configMapRef: {name: ant-env}}]
+          env:
+            # Проектор держит по потребителю на глобальную проекцию (их десятки):
+            # пул больше, чем у api, иначе потребители ждут соединения (эпик 35).
+            - {name: ANT_DB_MAX_CONNS, value: "24"}
+          # HTTP (/healthz, /readyz) слушает только роль api: проб у копии нет,
+          # живость — сам процесс, готовность не нужна — входящего трафика нет.
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          resources:
+            requests: {cpu: 250m, memory: 128Mi}
+            limits: {memory: 384Mi}
+          volumeMounts:
+            - {name: config, mountPath: /etc/ant, readOnly: true}
+            - {name: db-secret, mountPath: /run/ant-secrets/ant, readOnly: true}
+            - {name: kek, mountPath: /var/lib/ant-kek, readOnly: true}
+            - {name: pki, mountPath: /var/lib/ant-pki, readOnly: true}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - name: config
+          configMap: {name: ant-config}
+        - name: db-secret
+          secret: {secretName: ant-db, defaultMode: 0400}
+        - name: kek
+          secret: {secretName: ant-kek, defaultMode: 0400}
+        - name: pki
+          secret: {secretName: ant-pki, defaultMode: 0400}
+        - name: tmp
+          emptyDir: {sizeLimit: 64Mi}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ant-leaders
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels: {app.kubernetes.io/name: ant-leaders}

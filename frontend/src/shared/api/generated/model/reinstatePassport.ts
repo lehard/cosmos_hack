@@ -19,6 +19,11 @@ export interface ReinstatePassport {
      */
   policy_seq: number;
   reason: AnalyzerReason;
+  /**
+     * Прогон сценария, в котором паспорт приостановлен автооткатом (AD-38); пусто — живая работа.
+     * @maxLength 128
+     */
+  run_id?: string;
   /** Подписанный пакет DSSE для операций с уровнем подписи ≥ 1 (AD-10, AD-13, AD-14): подписывает агент токена, сервер сверяет отпечаток. */
   signature?: DsseEnvelope;
   suspension_event_id: string;
