@@ -10,6 +10,7 @@ import (
 	"ant/cmd/internal/config"
 	appingest "ant/internal/application/ingest"
 	appjournal "ant/internal/application/journal"
+	appsigning "ant/internal/application/signing"
 	"ant/internal/contracts/catalog"
 	"ant/internal/contracts/constants"
 	jc "ant/internal/contracts/journal"
@@ -64,18 +65,22 @@ func (c *core) domainClock() journalClock {
 // дубль, AD-7).
 var clockModeEventID = kernel.UUIDv5(constants.NsAnt, "time.clock.mode_set|scenario")
 
-// clockModeSource — source_id записи режима часов (служебная запись ядра до генезиса).
+// clockModeSource — source_id записи режима часов (служебная запись ядра без генезиса).
 const clockModeSource = "ant-init"
 
 // ensureClockMode — запись time.clock.mode_set {mode: scenario} в профиле
-// demo, если режима в журнале ещё нет. TODO(05): режим часов пишет блок
-// генезиса `ant init`; до него — здесь, при первом старте ядра.
+// demo только при запуске без генезиса (разработка и тесты без ant init):
+// режим часов пишет блок генезиса `ant init` (эпик 05, AD-33), и после него
+// здесь ничего не пишется — даже если генезис закрепил другой режим.
 func (c *core) ensureClockMode(ctx context.Context, env *environment) {
 	if !scenarioClock(env.cfg) {
 		return
 	}
 	c.clockMu.Lock()
 	defer c.clockMu.Unlock()
+	if st, err := appsigning.FindGenesis(ctx, c.journal); err != nil || st.Present {
+		return
+	}
 	mode, err := c.clock.Mode(ctx)
 	if err != nil {
 		env.log.Warn("часы: режим журнала не прочитан — жду migrate", "err", err)
@@ -111,5 +116,5 @@ func (c *core) ensureClockMode(ctx context.Context, env *environment) {
 		env.log.Warn("часы: режим scenario не записан", "err", err)
 		return
 	}
-	env.log.Info("часы: журнал в режиме scenario (профиль demo, до генезиса эпика 05)")
+	env.log.Info("часы: журнал в режиме scenario (профиль demo, запуск без генезиса ant init)")
 }
