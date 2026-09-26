@@ -23,15 +23,16 @@
 | pgx v5 | v5.11.0 | MIT | драйвер PostgreSQL |
 | goose | v3.28.0 | MIT | миграции |
 | Casbin | v3.10.0 | Apache-2.0 | вычисление решений о доступе |
-| alexedwards/scs v2 | v2.9.0 | MIT | сеансы веба |
+| alexedwards/scs v2, scs/pgxstore | v2.9.0 / v0.0.0-20251002162104-209de6e426de | MIT | сеансы веба, хранение сеансов в PostgreSQL |
 | golang.org/x/crypto (argon2id) | v0.57.0 | BSD-3-Clause | хеширование паролей |
 | golang.org/x/time/rate | v0.16.0 | BSD-3-Clause | ограничение частоты |
 | **GoGOST** | 7.0.0 | **GPLv3** | ГОСТ Р 34.11-2012 (Стрибог-256), ГОСТ Р 34.10-2012; поставляется исходниками в `third_party/gogost`, происхождение и sha256 — `third_party/gogost/SOURCE` |
-| go-securesystemslib (dsse) | v0.11.1 | MIT | конверт DSSE |
 | santhosh-tekuri/jsonschema | v6.0.3 | Apache-2.0 | проверка тел событий схемами при приёме |
 | prometheus/client_golang | v1.24.1 | Apache-2.0 | метрики `/metrics` |
-| yeqown/go-qrcode | v2.3.0 | MIT | генерация QR |
-| makiuchi-d/gozxing | v0.1.1 | Apache-2.0 | чтение QR со сканов |
+| makiuchi-d/gozxing | v0.1.1 | MIT | чтение QR со сканов |
+| go.yaml.in/yaml/v3 | v3.0.5 | MIT / Apache-2.0 | чтение YAML: конфигурация, нормативный слой |
+
+Конверт DSSE (`backend/internal/domain/signing/envelope.go`) и кодировщик QR (`backend/internal/application/documents/qr.go`) — собственный код, без библиотек.
 
 ### 2.2. Фронтенд и расширение
 
@@ -44,10 +45,11 @@
 | @tanstack/vue-query | 5.103.2 | MIT | кэш серверных данных |
 | @casl/ability, @casl/vue | 7.0.1 / 3.0.1 | MIT | отображение допустимых действий |
 | **bpmn-js** | 18.30.1 | MIT **с условием**: водяной знак bpmn.io удалять нельзя | живая карта и редактор процесса; водяной знак виден (AD-21) |
-| bpmn-js-properties-panel, @bpmn-io/properties-panel, camunda-bpmn-js-behaviors | 5.65.1 / 3.55.0 / 1.18.0 | MIT | панель свойств редактора |
-| ECharts / vue-echarts | 6.1.0 / 8.3.0 | Apache-2.0 / MIT | графики и контрольные карты |
+| vue-i18n | 11.4.2 | MIT | тексты интерфейса |
+| @fontsource/pt-sans, @fontsource/pt-mono | 5.3.0 | OFL-1.1 | шрифты PT Sans и PT Mono |
+| @vicons/tabler | 0.13.0 | MIT | иконки |
 
-Шрифты и иконки — локальные файлы в сборке; внешних CDN нет (NFR-SEC-1).
+Шрифты и иконки — локальные файлы в сборке; внешних CDN нет (NFR-SEC-1). Панель свойств редактора процесса (`frontend/src/features/process-editor/ui/PropertiesPanel.vue`) и графики (контрольная карта — SVG, `frontend/src/widgets/control-chart/ui/ControlChartView.vue`) — собственный код, без библиотек.
 
 ## 3. Инструменты сборки (в систему не входят)
 
@@ -57,12 +59,14 @@
 | go-jsonschema | v0.24.1 | MIT | Go-типы из JSON Schema |
 | json-schema-to-typescript | 16.0.0 | MIT | TS-типы из JSON Schema |
 | orval | 8.37.0 | MIT | клиент фронтенда из OpenAPI |
-| @asyncapi/cli, @asyncapi/diff, @asyncapi/parser | 6.2.0 / 0.5.0 / 3.6.3 | Apache-2.0 | проверка и сравнение AsyncAPI |
+| @asyncapi/diff, @asyncapi/parser | 0.5.0 / 3.6.3 | Apache-2.0 | проверка и сравнение AsyncAPI |
+| ajv, ajv-formats, @readme/openapi-parser, jsdom, yaml | 8.20.0 / 3.0.1 / 9.0.0 / 26.1.0 / 2.9.1 | MIT (yaml — ISC) | проверки контрактов (`contracts/scripts`) |
 | oasdiff | v1.32.1 | Apache-2.0 | поиск ломающих изменений OpenAPI |
 | golangci-lint (depguard, forbidigo) | v2.14.0 | GPL-3.0 | линтеры, правила слоёв |
 | google/go-licenses | v2.0.1 | Apache-2.0 | перечень лицензий Go |
 | license-checker-rseidelsohn | 5.0.1 | BSD-3-Clause | перечень лицензий npm |
 | TypeScript, Vite, ESLint | 5.9.3 / 8.3.1 / 10.11.0 | Apache-2.0 / MIT / MIT | сборка фронтенда |
+| Vitest, happy-dom, vue-tsc, @vue/test-utils | 5.0.2 / 20.14.5 / 3.3.11 / 2.5.1 | MIT | тесты и проверка типов фронтенда |
 | Node.js (образ `node:24.21.0-slim`), образ `golang:1.27.1`, образ исполнения distroless static | — | MIT / BSD-3-Clause / Apache-2.0 | только стадии сборки и исполнения в контейнере |
 
 Версии генераторов закреплены в репозитории (отдельный `backend/tools/go.mod`, точные версии и lock-файл npm); подробности и команды — [codegen.md](codegen.md).
@@ -79,7 +83,7 @@
 - **GoGOST — GPLv3.** Библиотека встраивается в бинарник `ant`. В закрытом контуре без передачи бинарника третьим лицам вопрос распространения не возникает; при передаче системы другой организации это учитывается (исходники GoGOST поставляются в `third_party/gogost` вместе с `COPYING`). В промышленной эксплуатации криптография за портами `Signer` / `Verifier` / `Cipher` заменяется сертифицированным СКЗИ — зависимость от GoGOST в подписях и шифровании уходит; хеш цепочки Стрибог-256 остаётся за тем же пакетом или СКЗИ по решению заказчика.
 - **bpmn-js** — MIT с требованием сохранить водяной знак bpmn.io; водяной знак виден на карте и в редакторе.
 - **golangci-lint — GPL-3.0**, но это инструмент сборки: в систему не входит.
-- Все прочие зависимости — разрешительные лицензии (MIT, BSD, Apache-2.0, PostgreSQL). Лицензий AGPL и коммерческих в составе нет; варианты с ними (например, отдельные серверы идентичности и коммерческие UI-библиотеки) отвергнуты при выборе стека.
+- Все прочие зависимости — разрешительные лицензии (MIT, BSD, ISC, Apache-2.0, PostgreSQL); шрифты PT — OFL-1.1. Лицензий AGPL и коммерческих в составе нет; варианты с ними (например, отдельные серверы идентичности и коммерческие UI-библиотеки) отвергнуты при выборе стека.
 
 ## 6. Режимные требования
 
@@ -92,9 +96,10 @@
 | Происхождение заимствованного кода | GoGOST — архив автора с проверкой подписи и сверкой с зеркалом (`make gogost-verify`, `third_party/gogost/SOURCE`); остальное — точные версии в `go.sum` и lock-файле npm |
 | Внешняя CV-модель и датасет (кейс §7.2) | собственная CV-модель не обучается, внешняя не подключается; иллюстрации к сигналам — открытый набор TIG Aluminium 5083 (Kaggle, CC BY-SA 4.0) с пометкой «ИЛЛЮСТРАЦИЯ», источником, лицензией и автором (PRD §11.12, [vision-camera-project.md](vision-camera-project.md)) |
 
-## Уточнить после появления кода
+## Сверено с кодом
 
-- Сверить таблицы разделов 2–3 с `docs/licenses/go.csv` и `docs/licenses/npm.csv` после появления всех зависимостей (сейчас перечни неполные: подключена только часть библиотек).
-- Добавить транзитивные зависимости с нестандартными лицензиями, если `make licenses` их покажет.
-- Указать, какая лицензия у вспомогательных инструментов, добавленных эпиками после каркаса.
-- Добавить ссылку и автора набора иллюстраций, путь к иллюстрациям в репозитории.
+- Таблицы разделов 2–3 сверены с `backend/go.mod`, `backend/vendor/modules.txt` (33 модуля), `backend/tools/go.mod`, `frontend/package.json` и `contracts/scripts/package.json`: версии совпадают. Из спайна в код не попали go-securesystemslib, yeqown/go-qrcode, ECharts / vue-echarts, bpmn-js-properties-panel и @asyncapi/cli — их заменил собственный код (разделы 2.1, 2.2) или @asyncapi/parser и @asyncapi/diff (`contracts/scripts/check.sh`). Строки таблиц исправлены, добавлено пришедшее с кодом: scs/pgxstore, go.yaml.in/yaml/v3, vue-i18n, шрифты PT, @vicons/tabler.
+- `docs/licenses/npm.csv` (137 пакетов) соответствует `frontend/package.json`. `docs/licenses/go.csv` отстал от кода: в нём 8 пакетов, а `golang.org/x/sync` и `golang.org/x/text` указаны версий v0.17.0 и v0.29.0 при v0.23.0 и v0.42.0 в `backend/vendor/modules.txt`. Перечень пересобирается `make licenses`; до пересборки Go-часть сверена по `backend/vendor`.
+- Нестандартные лицензии среди транзитивных зависимостей. Go (`backend/vendor`): только MIT, BSD-3-Clause и Apache-2.0, кроме GoGOST (GPL-3.0); у go.yaml.in/yaml/v3 две лицензии, MIT и Apache-2.0. npm (`docs/licenses/npm.csv`): у bpmn-js `Custom: LICENSE` (MIT с водяным знаком, раздел 5), у шрифтов PT — OFL-1.1, у lightningcss — MPL-2.0, остальное MIT, ISC, BSD и Apache-2.0. lightningcss, vite, rolldown, esbuild и typescript попадают в перечень как необязательные peer-зависимости vue, vue-router и pinia (`frontend/package-lock.json`, пометка `devOptional`). Это инструменты сборки, в бандл интерфейса они не входят. Лицензий AGPL и коммерческих нет.
+- Инструменты, добавленные после каркаса. Go-инструменты закреплены директивой `tool` в `backend/tools/go.mod`: sqlc, go-jsonschema, golangci-lint, oasdiff, go-licenses, goose (версии и лицензии — раздел 3). Собственные генераторы и линтеры — `backend/tools/{archgen,contractgen,detcheck,emitcheck}`. npm-инструменты: Vitest, happy-dom, vue-tsc, @vue/test-utils, eslint-plugin-vue и typescript-eslint (MIT, `frontend/package.json`), а также ajv, ajv-formats, @readme/openapi-parser, jsdom и json-schema-to-typescript (MIT) и yaml (ISC) в `contracts/scripts/package.json`. Лицензии взяты из lock-файлов.
+- Набор иллюстраций описан в `normative/vision/illustrations.v1.yaml` (`id: tig-al5083`): «TIG Aluminium 5083», https://www.kaggle.com/datasets/danielbacioiu/tig-aluminium-5083, автор Daniel Bacioiu, CC BY-SA 4.0, ссылка на статью Bacioiu и др. (Journal of Manufacturing Processes, 2019), пометка «ИЛЛЮСТРАЦИЯ». Там же сопоставлены пять классов набора с кодами дефектов. Файлов набора в репозитории нет: их подключают на краю (`edge-agent -illustrations ‹каталог›`). Если файла или хранилища нет, иллюстрация не прикладывается, а в ограничениях наблюдения пишется «ИЛЛЮСТРАЦИЯ не приложена (…)» с набором, классом, ссылкой, лицензией и автором (`backend/internal/domain/vision/illustration.go`). Лицензию манифест требует сверить на странице набора перед сдачей материалов.

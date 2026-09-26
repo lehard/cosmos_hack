@@ -110,7 +110,7 @@ flowchart LR
 - в `domain` запрещены часы, случайность, пакет `os` и числа с плавающей точкой (`forbidigo` и свой анализатор, AD-4);
 - `application` объявляет порты и не знает про HTTP; операции регистрирует `transport`;
 - зоны `storage`, `transport`, `integration`, `fixtures` не импортируют друг друга, только порты `application`; сборка зависимостей — только в `backend/cmd/*`;
-- у каждого модуля своя схема Postgres, свои миграции и свои запросы sqlc; запрос к чужой схеме ловит `make check`.
+- у каждого модуля своя схема Postgres, свои миграции и свои запросы (pgx; шаг sqlc в `make generate` подготовлен шаблоном `sqlc.template.yaml`, конфигураций модулей пока нет); запрос к чужой схеме ловит `make check`.
 
 ## 4. Модули
 
@@ -346,7 +346,7 @@ sequenceDiagram
 
 ## 18. Стек
 
-Go 1.27.1 (Huma v2 — OpenAPI 3.1 из Go, pgx, sqlc, goose, Casbin, scs, GoGOST 7.0.0, go-securesystemslib/dsse, prometheus/client_golang), PostgreSQL 18.6, Vue 3.5 + Vite + Pinia + Vue Router + Naive UI + TanStack Vue Query + orval + CASL, bpmn-js, ECharts. Точные версии — в спайне (раздел Stack) и в файлах зависимостей; полный перечень зависимостей с лицензиями — `docs/licenses/` (`make licenses`); режимные оговорки — [third-party.md](third-party.md).
+Go 1.27.1 (Huma v2 — OpenAPI 3.1 из Go, pgx, goose, Casbin, scs, GoGOST 7.0.0, prometheus/client_golang; конверт DSSE — свой), PostgreSQL 18.6, Vue 3.5 + Vite + Pinia + Vue Router + Naive UI + TanStack Vue Query + orval + CASL, bpmn-js; графики — SVG. Точные версии — в спайне (раздел Stack) и в файлах зависимостей; полный перечень зависимостей с лицензиями — `docs/licenses/` (`make licenses`); режимные оговорки — [third-party.md](third-party.md).
 
 ## 19. Соответствие требованиям кейса
 
