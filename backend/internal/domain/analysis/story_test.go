@@ -9,7 +9,6 @@ import (
 	"ant/internal/contracts/catalog"
 	"ant/internal/contracts/constants"
 	"ant/internal/domain/analysis"
-	"ant/internal/domain/crossitem"
 	"ant/internal/domain/kernel"
 )
 
@@ -82,8 +81,9 @@ type journal struct {
 	seq     int64
 	n       int
 	records []kernel.Record
-	stage   crossitem.Stage
+	stage   analysis.StageState
 	out     []kernel.Record
+	emitted map[string]bool
 }
 
 func (j *journal) id(kind string) string {
@@ -106,25 +106,36 @@ func (j *journal) add(t catalog.Type, kind catalog.Kind, stream, item, actor str
 	return r
 }
 
-// fold — шаг стадии и запись её выхода следующими seq (AD-42).
+// fold — шаг функции analysis в стадии и запись её выхода следующими seq
+// (AD-42). Повтор адресованной записи подавляется, как в crossitem.Settle;
+// выход стадии (роль crossitem) на вход стадии не идёт (crossitem.IsStageInput).
+// Подключение к настоящей стадии (crossitem.Fold, StageRunner) проверяет
+// application/analysis.
 func (j *journal) fold(r kernel.Record) {
 	var out []kernel.Addressed
-	j.stage, out = crossitem.Fold(j.stage, r)
+	j.stage, out = analysis.Stage(j.stage, r)
 	for _, a := range out {
 		raw, err := json.Marshal(a.Data)
 		if err != nil {
 			panic(err)
 		}
+		id := kernel.UUIDv5(constants.NsAnt, "stage\x1f"+string(a.Module)+"\x1f"+string(a.Type)+"\x1f"+a.Stream+"\x1f"+a.Key)
+		if j.emitted[id] {
+			continue
+		}
+		if j.emitted == nil {
+			j.emitted = map[string]bool{}
+		}
+		j.emitted[id] = true
 		j.seq++
 		item := strings.TrimPrefix(a.Stream, "item:")
 		if item == a.Stream {
 			item = ""
 		}
-		rec := kernel.Record{Seq: j.seq, EventID: crossitem.AddressedID(a), Type: a.Type, Kind: catalog.KindReaction, Stream: a.Stream,
+		rec := kernel.Record{Seq: j.seq, EventID: id, Type: a.Type, Kind: catalog.KindReaction, Stream: a.Stream,
 			ItemID: item, OccurredAt: a.OccurredAt, ReceivedAt: a.OccurredAt, RecordedAt: a.OccurredAt, CausationID: r.EventID, Data: raw}
 		j.records = append(j.records, rec)
 		j.out = append(j.out, rec)
-		j.fold(rec)
 	}
 }
 

@@ -634,7 +634,7 @@ func (s StageState) onAssembly(r kernel.Record) (StageState, []kernel.Addressed)
 		via := ""
 		if m, in := inc.Members[comp]; comp != "" && in && m.Status != StatusExcluded {
 			via = comp
-		} else if !(inc.Factor == FactorMaterialBatch && lot != "" && inc.Value == lot) {
+		} else if inc.Factor != FactorMaterialBatch || lot == "" || inc.Value != lot {
 			continue
 		}
 		changed := inc.AutoAdd(d.AssemblyItemID, StatusSuspect, via)
