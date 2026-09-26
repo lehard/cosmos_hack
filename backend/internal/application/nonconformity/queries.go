@@ -9,6 +9,7 @@ import (
 
 	"ant/internal/application/platform"
 	"ant/internal/contracts/catalog"
+	ev "ant/internal/contracts/events"
 	"ant/internal/domain/kernel"
 	dom "ant/internal/domain/nonconformity"
 )
@@ -47,6 +48,7 @@ func (s *Service) Queue(ctx context.Context, f QueueFilter, m platform.Moment, p
 			continue
 		}
 		rows = append(rows, s.queueRows(v, s.at(ctx, m, v.RunID))...)
+		rows = append(rows, s.reviewRows(ctx, v)...)
 	}
 	sevRank := map[string]int{"critical": 0, "major": 1, "minor": 2, "unknown": 3}
 	due := func(r DecisionQueueRow) int64 {
@@ -121,12 +123,12 @@ func (s *Service) queueRows(v *itemView, now time.Time) []DecisionQueueRow {
 		switch n.Status {
 		case dom.StatusDraft:
 			rows = append(rows, DecisionQueueRow{Kind: "signal", ObjectID: n.ID, NCID: &id, ItemID: v.ItemID, ItemLabel: label,
-				StepKey: n.Draft.StepKey, Title: ncTitle(n), Severity: severity(n.Severity), DueAt: isoDue, Overdue: overdue, BasisSeq: v.BasisSeq})
+				StepKey: n.Draft.StepKey, Title: ncTitle(v, n), Severity: severity(n.Severity), DueAt: isoDue, Overdue: overdue, BasisSeq: v.BasisSeq})
 			waiting = true
 		case dom.StatusConfirmed:
 			// Подтверждено — ждёт решения по несоответствию (у спецпроцесса — комиссии).
 			rows = append(rows, DecisionQueueRow{Kind: "isolated", ObjectID: n.ID, NCID: &id, ItemID: v.ItemID, ItemLabel: label,
-				StepKey: n.Draft.StepKey, Title: ncTitle(n), Severity: severity(n.Severity), DueAt: isoDue, Overdue: overdue, BasisSeq: v.BasisSeq})
+				StepKey: n.Draft.StepKey, Title: ncTitle(v, n), Severity: severity(n.Severity), DueAt: isoDue, Overdue: overdue, BasisSeq: v.BasisSeq})
 			waiting = true
 		}
 	}
@@ -138,7 +140,10 @@ func (s *Service) queueRows(v *itemView, now time.Time) []DecisionQueueRow {
 		no := pr.PresentationNo
 		title := "Предъявление на " + pr.ClosingPoint
 		if pr.ClosingPoint == "" {
-			title = "Предъявление: " + pr.StepKey
+			title = "Предъявление"
+			if name := stepName(v, pr.StepKey); name != "" {
+				title += ": " + name
+			}
 		}
 		if no > 1 {
 			title += " (повторное)"
@@ -149,6 +154,70 @@ func (s *Service) queueRows(v *itemView, now time.Time) []DecisionQueueRow {
 	return rows
 }
 
+// reviewRows — строки «решение принято до новых данных — пересмотрите»
+// (AD-3; реакция движка task.task.created вида review_after_new_data): что
+// пришло после решения — словами (название вида записи и оборудования), id
+// пришедшей записи — source_event_id. Решение, принятое позже пришедших
+// данных, пересмотр закрывает.
+func (s *Service) reviewRows(ctx context.Context, v *itemView) []DecisionQueueRow {
+	var rows []DecisionQueueRow
+	for _, re := range v.Computed {
+		d, ok := re.Data.(ev.TaskTaskCreatedV1)
+		if re.Type != catalog.TaskTaskCreated || !ok || d.Kind != ev.TaskTaskCreatedV1KindReviewAfterNewData {
+			continue
+		}
+		dec, ok := v.Record(re.Slot.TriggerKey)
+		if !ok {
+			continue
+		}
+		var last *kernel.Record
+		for _, id := range re.Causes {
+			r, ok := v.Record(id)
+			if !ok || r.EventID == dec.EventID || (last != nil && r.Seq <= last.Seq) {
+				continue
+			}
+			rr := r
+			last = &rr
+		}
+		if last == nil || s.redecided(v, dec, *last) {
+			continue
+		}
+		var pd struct {
+			StepKey      string `json:"step_key"`
+			ClosingPoint string `json:"closing_point"`
+		}
+		_ = json.Unmarshal(dec.Data, &pd)
+		title := "Решение"
+		if pd.ClosingPoint != "" {
+			title += " " + pd.ClosingPoint
+		}
+		title += " принято до новых данных — пересмотрите: пришло «" + summaryOf(*last) + "»"
+		var eq struct {
+			EquipmentID string `json:"equipment_id"`
+		}
+		if json.Unmarshal(last.Data, &eq) == nil && eq.EquipmentID != "" && s.d.Equipment != nil {
+			if name, ok := s.d.Equipment.EquipmentName(ctx, eq.EquipmentID, last.OccurredAt); ok {
+				title += " от «" + name + "»"
+			}
+		}
+		src, since := last.EventID, re.OccurredAt
+		rows = append(rows, DecisionQueueRow{Kind: "review", ObjectID: dec.EventID, ItemID: v.ItemID, ItemLabel: v.ItemID, StepKey: pd.StepKey,
+			Title: title, Severity: "major", BasisSeq: v.BasisSeq, SourceEventID: &src, ReviewSince: &since})
+	}
+	return rows
+}
+
+// redecided — после пришедшей записи last по изделию принято новое решение
+// того же вида: пересмотр выполнен.
+func (s *Service) redecided(v *itemView, dec, last kernel.Record) bool {
+	for _, r := range v.Input {
+		if r.Kind == catalog.KindDecision && r.Type == dec.Type && r.EventID != dec.EventID && r.Seq > last.Seq {
+			return true
+		}
+	}
+	return false
+}
+
 func severity(s string) string {
 	switch s {
 	case "critical", "major", "minor":
@@ -157,22 +226,40 @@ func severity(s string) string {
 	return "unknown"
 }
 
-// ncTitle — заголовок несоответствия для людей.
-func ncTitle(n dom.NC) string {
+// ncTitle — заголовок несоответствия для людей, без кодов: вид дефекта и
+// зона — по справочникам (нет в справочнике — не называются), шаг — по
+// описанию процесса.
+func ncTitle(v *itemView, n dom.NC) string {
 	if n.Origin == dom.OriginSpecialProcess {
 		return "Нарушение режима специального процесса — решение комиссии"
 	}
 	what := "Признак дефекта"
-	if n.DefectTypeCode != "" {
-		what += " " + n.DefectTypeCode
+	if l := nameIn(v.Labels.defects, &n.DefectTypeCode); l != nil {
+		what += " «" + *l + "»"
+	} else if n.DefectTypeCode != "" {
+		what += " (вид не из классификатора)"
 	}
-	if n.Draft.StepKey != "" {
-		what += " после " + n.Draft.StepKey
+	zone := n.Draft.ZoneID
+	if l := nameIn(v.Labels.zones, &zone); l != nil {
+		what += " · " + *l
+	}
+	if name := stepName(v, n.Draft.StepKey); name != "" {
+		what += " — после шага «" + name + "»"
 	}
 	if n.Status == dom.StatusConfirmed {
 		return "Подтверждено: " + strings.TrimPrefix(what, "Признак ")
 	}
 	return what
+}
+
+// stepName — название шага по описанию процесса изделия; нет — "".
+func stepName(v *itemView, stepKey string) string {
+	if def := v.Env.Process.Def; def != nil && stepKey != "" {
+		if nd := def.ByStep(stepKey); nd != nil {
+			return nd.Name
+		}
+	}
+	return ""
 }
 
 // List — несоответствия (журнал регистрации) с фильтром по изделию и статусу.

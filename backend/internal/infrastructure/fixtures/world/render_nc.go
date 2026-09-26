@@ -97,8 +97,14 @@ func (c *Ctx) queue() ncapp.DecisionQueue {
 			continue
 		}
 		it := c.M.itemByID[rv.Item]
-		q.Items = append(q.Items, ncapp.DecisionQueueRow{Kind: "presentation", ObjectID: "REVIEW-" + rv.Gate + "-" + it.ID, ItemID: FullID(it.ID), ItemLabel: it.Label,
-			StepKey: "welding.zt3_acceptance", Title: "Решение ЗТ-3 принято до новых данных — пересмотрите (" + rv.LateEvent + ")", Severity: "major", PresentationN: ptr(1), BasisSeq: c.ItemSeq(it)})
+		// Пересмотр (AD-3): отдельный вид строки; что пришло — словами, id записи — полем.
+		row := ncapp.DecisionQueueRow{Kind: "review", ObjectID: "REVIEW-" + rv.Gate + "-" + it.ID, ItemID: FullID(it.ID), ItemLabel: it.Label,
+			StepKey: "welding.zt3_acceptance", Title: "Решение ЗТ-3 принято до новых данных — пересмотрите: " + c.M.lateArrival(rv.LateEvent), Severity: "major", PresentationN: ptr(1), BasisSeq: c.ItemSeq(it),
+			ReviewSince: tptr(rv.Flagged.Time())}
+		if rv.LateEvent != "" {
+			row.SourceEventID = ptr(rv.LateEvent)
+		}
+		q.Items = append(q.Items, row)
 	}
 	for _, n := range c.M.NCs {
 		if len(n.Spec.Items) > 0 || n.ConfirmedAt.After(c.T) || len(n.Items) == 0 {
@@ -276,6 +282,30 @@ func (c *Ctx) card(n *NC) ncapp.NCCard {
 		card.ToDecide.Decisions = []string{"nonconformity.disposition.verify"}
 	}
 	return card
+}
+
+// lateArrival — что пришло после решения, словами: журнал оборудования
+// (название — из справочника оборудования) и значение против уставки.
+func (m *Model) lateArrival(id string) string {
+	for _, le := range m.Spec.LateEvents {
+		if le.ID != id {
+			continue
+		}
+		what := "пришёл опоздавший журнал оборудования"
+		for _, s := range m.Spec.Sources {
+			if s.ID != le.Source {
+				continue
+			}
+			if name := nameOf(m.names.Equipment, s.Equipment); name != nil {
+				what = "пришёл журнал «" + *name + "»"
+			}
+		}
+		if le.CurrentA > 0 && le.Setpoint != "" {
+			what += fmt.Sprintf(": ток %d А при уставке %s", le.CurrentA, le.Setpoint)
+		}
+		return what
+	}
+	return "пришли новые данные"
 }
 
 var missingTitle = map[string]string{"equipment_log_missing": "Журнал параметров ИС-2 за время сварки не пришёл", "no_observation_after_operation": "Нет рентгена после сварки", "other": "Проверки других колец партии"}

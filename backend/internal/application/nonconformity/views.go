@@ -38,7 +38,7 @@ type NCRecordRef struct {
 
 // DecisionQueueRow — строка очереди «Ждут моего решения».
 type DecisionQueueRow struct {
-	Kind          string     `json:"kind" enum:"presentation,signal,isolated" doc:"Точка предъявления, сигнал на рассмотрение, изолированное изделие."`
+	Kind          string     `json:"kind" enum:"presentation,signal,isolated,review" doc:"Точка предъявления, сигнал на рассмотрение, изолированное изделие, пересмотр решения, принятого до новых данных (AD-3)."`
 	ObjectID      string     `json:"object_id" doc:"nc_id, signal_id или id предъявления."`
 	NCID          *string    `json:"nc_id,omitempty"`
 	ItemID        string     `json:"item_id"`
@@ -51,6 +51,9 @@ type DecisionQueueRow struct {
 	Overdue       bool       `json:"overdue"`
 	PresentationN *int       `json:"presentation_no,omitempty" doc:"Номер предъявления (повторное — уровнем выше)."`
 	BasisSeq      int64      `json:"basis_seq" doc:"seq, на котором построена строка (для basis_seq команды, AD-39)."`
+	// Совместимые дополнения (стол контролёра): код записи — не в тексте для людей.
+	SourceEventID *string    `json:"source_event_id,omitempty" doc:"Запись, из-за которой появилась строка (у пересмотра — пришедшая после решения запись); переход к записи журнала."`
+	ReviewSince   *time.Time `json:"review_since,omitempty" doc:"Пересмотр: с какого момента решение помечено «принято до новых данных» (kind = review)."`
 }
 
 // DecisionQueue — очередь «Ждут моего решения», сортировка по риску и сроку.

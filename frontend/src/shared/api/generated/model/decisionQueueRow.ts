@@ -13,7 +13,7 @@ export interface DecisionQueueRow {
   item_id: string;
   /** Номер детали для людей. */
   item_label: string;
-  /** Точка предъявления, сигнал на рассмотрение, изолированное изделие. */
+  /** Точка предъявления, сигнал на рассмотрение, изолированное изделие, пересмотр решения, принятого до новых данных (AD-3). */
   kind: DecisionQueueRowKind;
   nc_id?: string;
   /** nc_id, signal_id или id предъявления. */
@@ -21,12 +21,16 @@ export interface DecisionQueueRow {
   overdue: boolean;
   /** Номер предъявления (повторное — уровнем выше). */
   presentation_no?: number;
+  /** Пересмотр: с какого момента решение помечено «принято до новых данных» (kind = review). */
+  review_since?: string;
   /**
      * Порядок по риску (0 — наибольший); вычисляет сервер.
      * @minimum 0
      */
   risk_rank: number;
   severity: DecisionQueueRowSeverity;
+  /** Запись, из-за которой появилась строка (у пересмотра — пришедшая после решения запись); переход к записи журнала. */
+  source_event_id?: string;
   step_key: string;
   title: string;
 }
