@@ -2065,6 +2065,10 @@ components:
             type: string
           description: "Параметры подписи: метод, параметр, значение, уставка, шаг…"
           type: object
+        received_at:
+          description: "Когда запись пришла в систему (ось «что мы знали»): больше occurred_at — данные опоздали («пришло с задержкой … ч»)."
+          format: date-time
+          type: string
         related_event_ids:
           description: Связанные записи — подсвечиваются вместе с выбранной.
           items:
@@ -10339,6 +10343,31 @@ components:
         - decisions
         - concession_required
       type: object
+    NarrowOption:
+      additionalProperties: false
+      properties:
+        evidence:
+          description: Основание — записи журнала (evidence_event_ids команды), с текстом.
+          items:
+            $ref: "#/components/schemas/JournalRecordRef"
+          type: array
+        item_ids:
+          description: Изделия, которые будут исключены.
+          items:
+            type: string
+          type: array
+        label:
+          description: Что сделать словами.
+          type: string
+        reason_text:
+          description: Основание словами — reason.text команды.
+          type: string
+      required:
+        - label
+        - item_ids
+        - evidence
+        - reason_text
+      type: object
     NcGroup:
       additionalProperties: false
       properties:
@@ -14779,6 +14808,11 @@ components:
           type: array
         last_known_good:
           $ref: "#/components/schemas/KnownGood"
+        narrow_options:
+          description: "Готовые сужения области по данным (кнопка в один щелчок, FR-61): изделия и основание из журнала; решение и подпись — человека (incident.scope.narrow)."
+          items:
+            $ref: "#/components/schemas/NarrowOption"
+          type: array
         nc_ids:
           description: "Несоответствия инцидента: по ним — /nonconformities/{nc_id}/circumstances и /hypotheses."
           items:

@@ -9,7 +9,7 @@
    {
     "id": "F-001",
     "order": "ORD-0917",
-    "line": "LINE-FL-2",
+    "line": "LINE-FL-1",
     "reference": true,
     "stages": {
      "cmm": "2026-09-18T07:28:00Z",
@@ -57,6 +57,347 @@
     },
     "remarked_at": "2026-09-18T08:54:00Z",
     "until": "sent_to_welding"
+   },
+   {
+    "id": "F-101",
+    "order": "ORD-0914",
+    "line": "LINE-FL-1",
+    "stages": {
+     "kt3": "2026-09-16T05:50:00Z",
+     "launch": "2026-09-16T04:30:00Z",
+     "weld": "2026-09-16T05:00:00Z"
+    },
+    "until": "kt3"
+   },
+   {
+    "id": "F-102",
+    "order": "ORD-0914",
+    "line": "LINE-FL-1",
+    "stages": {
+     "kt3": "2026-09-16T06:50:00Z",
+     "launch": "2026-09-16T05:30:00Z",
+     "weld": "2026-09-16T06:00:00Z"
+    },
+    "until": "kt3"
+   },
+   {
+    "id": "F-103",
+    "order": "ORD-0914",
+    "line": "LINE-FL-1",
+    "stages": {
+     "kt3": "2026-09-16T07:50:00Z",
+     "launch": "2026-09-16T06:30:00Z",
+     "weld": "2026-09-16T07:00:00Z"
+    },
+    "until": "kt3"
+   },
+   {
+    "id": "F-104",
+    "order": "ORD-0914",
+    "line": "LINE-FL-1",
+    "stages": {
+     "kt3": "2026-09-16T08:50:00Z",
+     "launch": "2026-09-16T07:30:00Z",
+     "weld": "2026-09-16T08:00:00Z"
+    },
+    "until": "kt3"
+   },
+   {
+    "id": "F-105",
+    "order": "ORD-0914",
+    "line": "LINE-FL-1",
+    "stages": {
+     "kt3": "2026-09-16T10:50:00Z",
+     "launch": "2026-09-16T09:30:00Z",
+     "weld": "2026-09-16T10:00:00Z"
+    },
+    "until": "kt3"
+   },
+   {
+    "id": "F-106",
+    "order": "ORD-0914",
+    "line": "LINE-FL-1",
+    "stages": {
+     "kt3": "2026-09-16T11:50:00Z",
+     "launch": "2026-09-16T10:30:00Z",
+     "weld": "2026-09-16T11:00:00Z"
+    },
+    "until": "kt3"
+   },
+   {
+    "id": "F-107",
+    "order": "ORD-0914",
+    "line": "LINE-FL-1",
+    "stages": {
+     "kt3": "2026-09-16T12:50:00Z",
+     "launch": "2026-09-16T11:30:00Z",
+     "weld": "2026-09-16T12:00:00Z"
+    },
+    "until": "kt3"
+   },
+   {
+    "id": "F-108",
+    "order": "ORD-0914",
+    "line": "LINE-FL-1",
+    "stages": {
+     "kt3": "2026-09-17T05:50:00Z",
+     "launch": "2026-09-17T04:30:00Z",
+     "weld": "2026-09-17T05:00:00Z"
+    },
+    "until": "kt3"
+   },
+   {
+    "id": "F-109",
+    "order": "ORD-0914",
+    "line": "LINE-FL-1",
+    "stages": {
+     "kt3": "2026-09-17T06:50:00Z",
+     "launch": "2026-09-17T05:30:00Z",
+     "weld": "2026-09-17T06:00:00Z"
+    },
+    "until": "kt3"
+   },
+   {
+    "id": "F-110",
+    "order": "ORD-0914",
+    "line": "LINE-FL-1",
+    "stages": {
+     "kt3": "2026-09-17T07:50:00Z",
+     "launch": "2026-09-17T06:30:00Z",
+     "weld": "2026-09-17T07:00:00Z"
+    },
+    "until": "kt3"
+   },
+   {
+    "id": "F-111",
+    "order": "ORD-0914",
+    "line": "LINE-FL-1",
+    "stages": {
+     "kt3": "2026-09-17T08:50:00Z",
+     "launch": "2026-09-17T07:30:00Z",
+     "weld": "2026-09-17T08:00:00Z"
+    },
+    "until": "kt3"
+   },
+   {
+    "id": "F-112",
+    "order": "ORD-0914",
+    "line": "LINE-FL-1",
+    "stages": {
+     "kt3": "2026-09-17T10:50:00Z",
+     "launch": "2026-09-17T09:30:00Z",
+     "weld": "2026-09-17T10:00:00Z"
+    },
+    "until": "kt3"
+   },
+   {
+    "id": "F-113",
+    "order": "ORD-0914",
+    "line": "LINE-FL-1",
+    "stages": {
+     "kt3": "2026-09-17T11:50:00Z",
+     "launch": "2026-09-17T10:30:00Z",
+     "weld": "2026-09-17T11:00:00Z"
+    },
+    "until": "kt3"
+   },
+   {
+    "id": "F-114",
+    "order": "ORD-0914",
+    "line": "LINE-FL-1",
+    "stages": {
+     "kt3": "2026-09-17T12:50:00Z",
+     "launch": "2026-09-17T11:30:00Z",
+     "weld": "2026-09-17T12:00:00Z"
+    },
+    "until": "kt3"
+   },
+   {
+    "id": "F-115",
+    "order": "ORD-0914",
+    "line": "LINE-FL-1",
+    "stages": {
+     "kt3": "2026-09-18T05:50:00Z",
+     "launch": "2026-09-18T04:30:00Z",
+     "weld": "2026-09-18T05:00:00Z"
+    },
+    "until": "kt3"
+   },
+   {
+    "id": "F-116",
+    "order": "ORD-0914",
+    "line": "LINE-FL-1",
+    "stages": {
+     "kt3": "2026-09-18T06:50:00Z",
+     "launch": "2026-09-18T05:30:00Z",
+     "weld": "2026-09-18T06:00:00Z"
+    },
+    "until": "kt3"
+   },
+   {
+    "id": "F-117",
+    "order": "ORD-0914",
+    "line": "LINE-FL-1",
+    "stages": {
+     "kt3": "2026-09-18T07:50:00Z",
+     "launch": "2026-09-18T06:30:00Z",
+     "weld": "2026-09-18T07:00:00Z"
+    },
+    "until": "kt3"
+   },
+   {
+    "id": "F-118",
+    "order": "ORD-0914",
+    "line": "LINE-FL-1",
+    "stages": {
+     "kt3": "2026-09-18T08:50:00Z",
+     "launch": "2026-09-18T07:30:00Z",
+     "weld": "2026-09-18T08:00:00Z"
+    },
+    "until": "kt3"
+   },
+   {
+    "id": "F-119",
+    "order": "ORD-0914",
+    "line": "LINE-FL-1",
+    "stages": {
+     "kt3": "2026-09-18T10:50:00Z",
+     "launch": "2026-09-18T09:30:00Z",
+     "weld": "2026-09-18T10:00:00Z"
+    },
+    "until": "kt3"
+   },
+   {
+    "id": "F-120",
+    "order": "ORD-0914",
+    "line": "LINE-FL-1",
+    "stages": {
+     "kt3": "2026-09-18T11:50:00Z",
+     "launch": "2026-09-18T10:30:00Z",
+     "weld": "2026-09-18T11:00:00Z"
+    },
+    "until": "kt3"
+   },
+   {
+    "id": "F-121",
+    "order": "ORD-0914",
+    "line": "LINE-FL-2",
+    "stages": {
+     "kt3": "2026-09-16T06:20:00Z",
+     "launch": "2026-09-16T05:00:00Z",
+     "weld": "2026-09-16T05:30:00Z"
+    },
+    "until": "kt3"
+   },
+   {
+    "id": "F-122",
+    "order": "ORD-0914",
+    "line": "LINE-FL-2",
+    "stages": {
+     "kt3": "2026-09-16T09:20:00Z",
+     "launch": "2026-09-16T08:00:00Z",
+     "weld": "2026-09-16T08:30:00Z"
+    },
+    "until": "kt3"
+   },
+   {
+    "id": "F-123",
+    "order": "ORD-0914",
+    "line": "LINE-FL-2",
+    "stages": {
+     "kt3": "2026-09-16T12:20:00Z",
+     "launch": "2026-09-16T11:00:00Z",
+     "weld": "2026-09-16T11:30:00Z"
+    },
+    "until": "kt3"
+   },
+   {
+    "id": "F-124",
+    "order": "ORD-0914",
+    "line": "LINE-FL-2",
+    "stages": {
+     "kt3": "2026-09-17T06:20:00Z",
+     "launch": "2026-09-17T05:00:00Z",
+     "weld": "2026-09-17T05:30:00Z"
+    },
+    "until": "kt3"
+   },
+   {
+    "id": "F-125",
+    "order": "ORD-0914",
+    "line": "LINE-FL-2",
+    "stages": {
+     "kt3": "2026-09-17T09:20:00Z",
+     "launch": "2026-09-17T08:00:00Z",
+     "weld": "2026-09-17T08:30:00Z"
+    },
+    "until": "kt3"
+   },
+   {
+    "id": "F-126",
+    "order": "ORD-0914",
+    "line": "LINE-FL-2",
+    "stages": {
+     "kt3": "2026-09-17T12:20:00Z",
+     "launch": "2026-09-17T11:00:00Z",
+     "weld": "2026-09-17T11:30:00Z"
+    },
+    "until": "kt3"
+   },
+   {
+    "id": "F-127",
+    "order": "ORD-0914",
+    "line": "LINE-FL-2",
+    "stages": {
+     "kt3": "2026-09-18T08:20:00Z",
+     "launch": "2026-09-18T07:00:00Z",
+     "weld": "2026-09-18T07:30:00Z"
+    },
+    "until": "kt3"
+   },
+   {
+    "id": "F-128",
+    "order": "ORD-0914",
+    "line": "LINE-FL-2",
+    "stages": {
+     "kt3": "2026-09-18T16:20:00Z",
+     "launch": "2026-09-18T15:00:00Z",
+     "weld": "2026-09-18T15:30:00Z"
+    },
+    "until": "kt3"
+   },
+   {
+    "id": "F-129",
+    "order": "ORD-0914",
+    "line": "LINE-FL-2",
+    "stages": {
+     "kt3": "2026-09-18T17:20:00Z",
+     "launch": "2026-09-18T16:00:00Z",
+     "weld": "2026-09-18T16:30:00Z"
+    },
+    "until": "kt3"
+   },
+   {
+    "id": "F-130",
+    "order": "ORD-0914",
+    "line": "LINE-FL-2",
+    "stages": {
+     "kt3": "2026-09-21T03:50:00Z",
+     "launch": "2026-09-21T02:30:00Z",
+     "weld": "2026-09-21T03:00:00Z"
+    },
+    "until": "kt3"
+   },
+   {
+    "id": "F-131",
+    "order": "ORD-0914",
+    "line": "LINE-FL-2",
+    "stages": {
+     "kt3": "2026-09-21T04:40:00Z",
+     "launch": "2026-09-21T03:20:00Z",
+     "weld": "2026-09-21T03:50:00Z"
+    },
+    "until": "kt3"
    },
    {
     "id": "F-201",
@@ -163,9 +504,412 @@
     "arc_to": "2026-09-15T07:45:00Z"
    },
    {
+    "item": "F-101",
+    "run": "SV-101-1",
+    "station": "WS-1",
+    "welder": "WLD-02",
+    "shift": "A",
+    "start": "2026-09-16T05:00:00Z",
+    "end": "2026-09-16T05:45:00Z",
+    "current_min": 158,
+    "current_max": 163,
+    "arc_from": "2026-09-16T05:10:00Z",
+    "arc_to": "2026-09-16T05:11:00Z"
+   },
+   {
+    "item": "F-121",
+    "run": "SV-121-1",
+    "station": "WS-2",
+    "welder": "WLD-03",
+    "shift": "A",
+    "start": "2026-09-16T05:30:00Z",
+    "end": "2026-09-16T06:15:00Z",
+    "current_min": 158,
+    "current_max": 163,
+    "arc_from": "2026-09-16T05:40:00Z",
+    "arc_to": "2026-09-16T05:41:00Z"
+   },
+   {
+    "item": "F-102",
+    "run": "SV-102-1",
+    "station": "WS-1",
+    "welder": "WLD-03",
+    "shift": "A",
+    "start": "2026-09-16T06:00:00Z",
+    "end": "2026-09-16T06:45:00Z",
+    "current_min": 158,
+    "current_max": 163,
+    "arc_from": "2026-09-16T06:10:00Z",
+    "arc_to": "2026-09-16T06:11:00Z"
+   },
+   {
+    "item": "F-103",
+    "run": "SV-103-1",
+    "station": "WS-1",
+    "welder": "WLD-02",
+    "shift": "A",
+    "start": "2026-09-16T07:00:00Z",
+    "end": "2026-09-16T07:45:00Z",
+    "current_min": 158,
+    "current_max": 163,
+    "arc_from": "2026-09-16T07:10:00Z",
+    "arc_to": "2026-09-16T07:11:00Z"
+   },
+   {
+    "item": "F-104",
+    "run": "SV-104-1",
+    "station": "WS-1",
+    "welder": "WLD-03",
+    "shift": "A",
+    "start": "2026-09-16T08:00:00Z",
+    "end": "2026-09-16T08:45:00Z",
+    "current_min": 158,
+    "current_max": 163,
+    "arc_from": "2026-09-16T08:10:00Z",
+    "arc_to": "2026-09-16T08:11:00Z"
+   },
+   {
+    "item": "F-122",
+    "run": "SV-122-1",
+    "station": "WS-2",
+    "welder": "WLD-02",
+    "shift": "A",
+    "start": "2026-09-16T08:30:00Z",
+    "end": "2026-09-16T09:15:00Z",
+    "current_min": 158,
+    "current_max": 163,
+    "arc_from": "2026-09-16T08:40:00Z",
+    "arc_to": "2026-09-16T08:41:00Z"
+   },
+   {
+    "item": "F-105",
+    "run": "SV-105-1",
+    "station": "WS-1",
+    "welder": "WLD-02",
+    "shift": "A",
+    "start": "2026-09-16T10:00:00Z",
+    "end": "2026-09-16T10:45:00Z",
+    "current_min": 158,
+    "current_max": 163,
+    "arc_from": "2026-09-16T10:10:00Z",
+    "arc_to": "2026-09-16T10:11:00Z"
+   },
+   {
+    "item": "F-106",
+    "run": "SV-106-1",
+    "station": "WS-1",
+    "welder": "WLD-03",
+    "shift": "A",
+    "start": "2026-09-16T11:00:00Z",
+    "end": "2026-09-16T11:45:00Z",
+    "current_min": 158,
+    "current_max": 163,
+    "arc_from": "2026-09-16T11:10:00Z",
+    "arc_to": "2026-09-16T11:11:00Z"
+   },
+   {
+    "item": "F-123",
+    "run": "SV-123-1",
+    "station": "WS-2",
+    "welder": "WLD-03",
+    "shift": "A",
+    "start": "2026-09-16T11:30:00Z",
+    "end": "2026-09-16T12:15:00Z",
+    "current_min": 158,
+    "current_max": 163,
+    "arc_from": "2026-09-16T11:40:00Z",
+    "arc_to": "2026-09-16T11:41:00Z"
+   },
+   {
+    "item": "F-107",
+    "run": "SV-107-1",
+    "station": "WS-1",
+    "welder": "WLD-02",
+    "shift": "A",
+    "start": "2026-09-16T12:00:00Z",
+    "end": "2026-09-16T12:45:00Z",
+    "current_min": 158,
+    "current_max": 163,
+    "arc_from": "2026-09-16T12:10:00Z",
+    "arc_to": "2026-09-16T12:11:00Z"
+   },
+   {
+    "item": "F-108",
+    "run": "SV-108-1",
+    "station": "WS-1",
+    "welder": "WLD-03",
+    "shift": "A",
+    "start": "2026-09-17T05:00:00Z",
+    "end": "2026-09-17T05:45:00Z",
+    "current_min": 158,
+    "current_max": 163,
+    "arc_from": "2026-09-17T05:10:00Z",
+    "arc_to": "2026-09-17T05:11:00Z"
+   },
+   {
+    "item": "F-124",
+    "run": "SV-124-1",
+    "station": "WS-2",
+    "welder": "WLD-02",
+    "shift": "A",
+    "start": "2026-09-17T05:30:00Z",
+    "end": "2026-09-17T06:15:00Z",
+    "current_min": 158,
+    "current_max": 163,
+    "arc_from": "2026-09-17T05:40:00Z",
+    "arc_to": "2026-09-17T05:41:00Z"
+   },
+   {
+    "item": "F-109",
+    "run": "SV-109-1",
+    "station": "WS-1",
+    "welder": "WLD-02",
+    "shift": "A",
+    "start": "2026-09-17T06:00:00Z",
+    "end": "2026-09-17T06:45:00Z",
+    "current_min": 158,
+    "current_max": 163,
+    "arc_from": "2026-09-17T06:10:00Z",
+    "arc_to": "2026-09-17T06:11:00Z"
+   },
+   {
+    "item": "F-110",
+    "run": "SV-110-1",
+    "station": "WS-1",
+    "welder": "WLD-03",
+    "shift": "A",
+    "start": "2026-09-17T07:00:00Z",
+    "end": "2026-09-17T07:45:00Z",
+    "current_min": 158,
+    "current_max": 163,
+    "arc_from": "2026-09-17T07:10:00Z",
+    "arc_to": "2026-09-17T07:11:00Z"
+   },
+   {
+    "item": "F-111",
+    "run": "SV-111-1",
+    "station": "WS-1",
+    "welder": "WLD-02",
+    "shift": "A",
+    "start": "2026-09-17T08:00:00Z",
+    "end": "2026-09-17T08:45:00Z",
+    "current_min": 158,
+    "current_max": 163,
+    "arc_from": "2026-09-17T08:10:00Z",
+    "arc_to": "2026-09-17T08:11:00Z"
+   },
+   {
+    "item": "F-125",
+    "run": "SV-125-1",
+    "station": "WS-2",
+    "welder": "WLD-03",
+    "shift": "A",
+    "start": "2026-09-17T08:30:00Z",
+    "end": "2026-09-17T09:15:00Z",
+    "current_min": 158,
+    "current_max": 163,
+    "arc_from": "2026-09-17T08:40:00Z",
+    "arc_to": "2026-09-17T08:41:00Z"
+   },
+   {
+    "item": "F-112",
+    "run": "SV-112-1",
+    "station": "WS-1",
+    "welder": "WLD-03",
+    "shift": "A",
+    "start": "2026-09-17T10:00:00Z",
+    "end": "2026-09-17T10:45:00Z",
+    "current_min": 158,
+    "current_max": 163,
+    "arc_from": "2026-09-17T10:10:00Z",
+    "arc_to": "2026-09-17T10:11:00Z"
+   },
+   {
+    "item": "F-113",
+    "run": "SV-113-1",
+    "station": "WS-1",
+    "welder": "WLD-02",
+    "shift": "A",
+    "start": "2026-09-17T11:00:00Z",
+    "end": "2026-09-17T11:45:00Z",
+    "current_min": 158,
+    "current_max": 163,
+    "arc_from": "2026-09-17T11:10:00Z",
+    "arc_to": "2026-09-17T11:11:00Z"
+   },
+   {
+    "item": "F-126",
+    "run": "SV-126-1",
+    "station": "WS-2",
+    "welder": "WLD-02",
+    "shift": "A",
+    "start": "2026-09-17T11:30:00Z",
+    "end": "2026-09-17T12:15:00Z",
+    "current_min": 158,
+    "current_max": 163,
+    "arc_from": "2026-09-17T11:40:00Z",
+    "arc_to": "2026-09-17T11:41:00Z"
+   },
+   {
+    "item": "F-114",
+    "run": "SV-114-1",
+    "station": "WS-1",
+    "welder": "WLD-03",
+    "shift": "A",
+    "start": "2026-09-17T12:00:00Z",
+    "end": "2026-09-17T12:45:00Z",
+    "current_min": 158,
+    "current_max": 163,
+    "arc_from": "2026-09-17T12:10:00Z",
+    "arc_to": "2026-09-17T12:11:00Z"
+   },
+   {
+    "item": "F-115",
+    "run": "SV-115-1",
+    "station": "WS-1",
+    "welder": "WLD-02",
+    "shift": "A",
+    "start": "2026-09-18T05:00:00Z",
+    "end": "2026-09-18T05:45:00Z",
+    "current_min": 158,
+    "current_max": 163,
+    "arc_from": "2026-09-18T05:10:00Z",
+    "arc_to": "2026-09-18T05:11:00Z"
+   },
+   {
+    "item": "F-116",
+    "run": "SV-116-1",
+    "station": "WS-1",
+    "welder": "WLD-03",
+    "shift": "A",
+    "start": "2026-09-18T06:00:00Z",
+    "end": "2026-09-18T06:45:00Z",
+    "current_min": 158,
+    "current_max": 163,
+    "arc_from": "2026-09-18T06:10:00Z",
+    "arc_to": "2026-09-18T06:11:00Z"
+   },
+   {
+    "item": "F-117",
+    "run": "SV-117-1",
+    "station": "WS-1",
+    "welder": "WLD-02",
+    "shift": "A",
+    "start": "2026-09-18T07:00:00Z",
+    "end": "2026-09-18T07:45:00Z",
+    "current_min": 158,
+    "current_max": 163,
+    "arc_from": "2026-09-18T07:10:00Z",
+    "arc_to": "2026-09-18T07:11:00Z"
+   },
+   {
+    "item": "F-127",
+    "run": "SV-127-1",
+    "station": "WS-2",
+    "welder": "WLD-03",
+    "shift": "A",
+    "start": "2026-09-18T07:30:00Z",
+    "end": "2026-09-18T08:15:00Z",
+    "current_min": 158,
+    "current_max": 163,
+    "arc_from": "2026-09-18T07:40:00Z",
+    "arc_to": "2026-09-18T07:41:00Z"
+   },
+   {
+    "item": "F-118",
+    "run": "SV-118-1",
+    "station": "WS-1",
+    "welder": "WLD-03",
+    "shift": "A",
+    "start": "2026-09-18T08:00:00Z",
+    "end": "2026-09-18T08:45:00Z",
+    "current_min": 158,
+    "current_max": 163,
+    "arc_from": "2026-09-18T08:10:00Z",
+    "arc_to": "2026-09-18T08:11:00Z"
+   },
+   {
+    "item": "F-119",
+    "run": "SV-119-1",
+    "station": "WS-1",
+    "welder": "WLD-02",
+    "shift": "A",
+    "start": "2026-09-18T10:00:00Z",
+    "end": "2026-09-18T10:45:00Z",
+    "current_min": 158,
+    "current_max": 163,
+    "arc_from": "2026-09-18T10:10:00Z",
+    "arc_to": "2026-09-18T10:11:00Z"
+   },
+   {
+    "item": "F-120",
+    "run": "SV-120-1",
+    "station": "WS-1",
+    "welder": "WLD-03",
+    "shift": "A",
+    "start": "2026-09-18T11:00:00Z",
+    "end": "2026-09-18T11:45:00Z",
+    "current_min": 158,
+    "current_max": 163,
+    "arc_from": "2026-09-18T11:10:00Z",
+    "arc_to": "2026-09-18T11:11:00Z"
+   },
+   {
+    "item": "F-128",
+    "run": "SV-128-1",
+    "station": "WS-2",
+    "welder": "WLD-02",
+    "shift": "B",
+    "start": "2026-09-18T15:30:00Z",
+    "end": "2026-09-18T16:15:00Z",
+    "current_min": 176,
+    "current_max": 182,
+    "arc_from": "2026-09-18T15:40:00Z",
+    "arc_to": "2026-09-18T15:41:00Z"
+   },
+   {
+    "item": "F-129",
+    "run": "SV-129-1",
+    "station": "WS-2",
+    "welder": "WLD-03",
+    "shift": "B",
+    "start": "2026-09-18T16:30:00Z",
+    "end": "2026-09-18T17:15:00Z",
+    "current_min": 176,
+    "current_max": 182,
+    "arc_from": "2026-09-18T16:40:00Z",
+    "arc_to": "2026-09-18T16:41:00Z"
+   },
+   {
+    "item": "F-130",
+    "run": "SV-130-1",
+    "station": "WS-2",
+    "welder": "WLD-02",
+    "shift": "B",
+    "start": "2026-09-21T03:00:00Z",
+    "end": "2026-09-21T03:45:00Z",
+    "current_min": 176,
+    "current_max": 182,
+    "arc_from": "2026-09-21T03:10:00Z",
+    "arc_to": "2026-09-21T03:11:00Z"
+   },
+   {
+    "item": "F-131",
+    "run": "SV-131-1",
+    "station": "WS-2",
+    "welder": "WLD-03",
+    "shift": "B",
+    "start": "2026-09-21T03:50:00Z",
+    "end": "2026-09-21T04:35:00Z",
+    "current_min": 176,
+    "current_max": 182,
+    "arc_from": "2026-09-21T04:00:00Z",
+    "arc_to": "2026-09-21T04:01:00Z"
+   },
+   {
     "item": "F-001",
     "run": "SV-001-1",
-    "station": "WS-2",
+    "station": "WS-1",
     "welder": "WLD-02",
     "shift": "A",
     "start": "2026-09-21T05:15:00Z",
@@ -207,12 +951,12 @@
     "station": "WS-1",
     "welder": "WLD-02",
     "shift": "A",
-    "start": "2026-09-21T08:30:00Z",
-    "end": "2026-09-21T09:10:00Z",
+    "start": "2026-09-21T09:00:00Z",
+    "end": "2026-09-21T09:40:00Z",
     "current_min": 158,
     "current_max": 163,
-    "arc_from": "2026-09-21T08:30:00Z",
-    "arc_to": "2026-09-21T09:10:00Z",
+    "arc_from": "2026-09-21T09:00:00Z",
+    "arc_to": "2026-09-21T09:40:00Z",
     "rework_of": "SV-003-1"
    }
   ],
@@ -261,11 +1005,11 @@
     "key": "cam-kt3-a",
     "source_id": "show-is2-20260921/edge-kt3",
     "first_seq": 1,
-    "last_seq": 7,
+    "last_seq": 38,
     "counters": {
-     "records": 7,
-     "deliveries": 7,
-     "unique": 7,
+     "records": 38,
+     "deliveries": 38,
+     "unique": 38,
      "duplicates": 0,
      "conflicts": 0,
      "lost": 0,
@@ -401,11 +1145,11 @@
     "key": "is-1",
     "source_id": "show-is2-20260921/edge-weld-1",
     "first_seq": 1,
-    "last_seq": 85,
+    "last_seq": 185,
     "counters": {
-     "records": 85,
-     "deliveries": 85,
-     "unique": 85,
+     "records": 185,
+     "deliveries": 185,
+     "unique": 185,
      "duplicates": 0,
      "conflicts": 0,
      "lost": 0,
@@ -421,15 +1165,15 @@
     "key": "is-2",
     "source_id": "show-is2-20260921/edge-weld-2",
     "first_seq": 1,
-    "last_seq": 165,
+    "last_seq": 194,
     "counters": {
-     "records": 165,
-     "deliveries": 165,
-     "unique": 165,
+     "records": 194,
+     "deliveries": 194,
+     "unique": 194,
      "duplicates": 0,
      "conflicts": 0,
      "lost": 0,
-     "late": 0,
+     "late": 40,
      "skewed": 0,
      "reordered": 0,
      "invalid": 0,
@@ -481,11 +1225,11 @@
     "key": "onec",
     "source_id": "show-is2-20260921/onec-stand",
     "first_seq": 1,
-    "last_seq": 9,
+    "last_seq": 10,
     "counters": {
-     "records": 9,
-     "deliveries": 9,
-     "unique": 9,
+     "records": 10,
+     "deliveries": 10,
+     "unique": 10,
      "duplicates": 0,
      "conflicts": 0,
      "lost": 0,
@@ -579,18 +1323,18 @@
    }
   ],
   "totals": {
-   "records": 325,
-   "deliveries": 325,
-   "unique": 325,
+   "records": 486,
+   "deliveries": 486,
+   "unique": 486,
    "duplicates": 0,
    "conflicts": 0,
    "lost": 0,
-   "late": 0,
+   "late": 40,
    "skewed": 0,
    "reordered": 0,
    "invalid": 0,
    "quarantine": 0,
-   "decisions": 166
+   "decisions": 201
   }
  }
 }

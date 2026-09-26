@@ -232,7 +232,7 @@ func Analyze(s State, itemID, ncID string, eq []EquipmentEvent) (Analysis, bool)
 				continue
 			}
 			a.Records = append(a.Records, Mark{EventID: e.EventID, EventType: e.EventType, Variant: e.Variant, Lane: LaneEquipment,
-				OccurredAt: e.OccurredAt, EndedAt: e.EndedAt, Seq: e.Seq, SourceKind: e.SourceKind, Params: e.Params})
+				OccurredAt: e.OccurredAt, EndedAt: e.EndedAt, Seq: e.Seq, SourceKind: e.SourceKind, Params: e.Params, ReceivedAt: e.ReceivedAt})
 			if overlaps(e, run.Started, runEnd) {
 				found = true
 				if e.Deviation {

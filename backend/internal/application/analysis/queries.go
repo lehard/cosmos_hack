@@ -2,8 +2,11 @@ package analysis
 
 import (
 	"context"
+	"fmt"
+	"maps"
 	"slices"
 	"strings"
+	"time"
 
 	"ant/internal/application/platform"
 	dom "ant/internal/domain/analysis"
@@ -362,6 +365,7 @@ func (s *Service) RiskScope(ctx context.Context, incidentID string, m platform.M
 	if n := len(out.Versions); n > 0 {
 		current = out.Versions[n-1].ScopeVersion
 	}
+	var views []ItemView
 	ids := make([]string, 0, len(v.Members))
 	for id := range v.Members {
 		ids = append(ids, id)
@@ -378,8 +382,89 @@ func (s *Service) RiskScope(ctx context.Context, incidentID string, m platform.M
 		}
 		out.Items = append(out.Items, ScopeItem{ItemID: id, Label: dom.LocalID(id), Known: mem.Status, Action: mem.Action,
 			Location: dom.Location(iv.State, v.StepKey)})
+		if mem.Status != dom.StatusExcluded && mem.Status != dom.StatusConfirmed {
+			views = append(views, iv)
+		}
 	}
+	out.NarrowOptions = s.narrowOptions(ctx, v, views)
 	return out, nil
+}
+
+// narrowOptions — сужение по оборудованию (FR-61): изделия области «под
+// подозрением», выполненные на шаге инцидента другим оборудованием, чей
+// журнал за эти выполнения есть и весь в уставке, — «исключить сваренные на
+// ИС-1». Основание — те же записи журнала; без журнала или с отклонением
+// предложения нет (гард incident.basis_required).
+func (s *Service) narrowOptions(ctx context.Context, v dom.IncidentRecord, views []ItemView) []NarrowOption {
+	if v.Factor != dom.FactorMachine || v.FactorValue == "" {
+		return nil
+	}
+	type group struct {
+		items    []string
+		evidence []JournalRecordRef
+		seen     map[string]bool
+		bad      bool
+	}
+	groups := map[string]*group{}
+	for _, iv := range views {
+		var run *dom.Run
+		for i := range iv.State.Runs {
+			if r := &iv.State.Runs[i]; r.StepKey == v.StepKey && r.Equipment != "" {
+				run = r
+			}
+		}
+		if run == nil || run.Equipment == v.FactorValue {
+			continue
+		}
+		g := groups[run.Equipment]
+		if g == nil {
+			g = &group{seen: map[string]bool{}}
+			groups[run.Equipment] = g
+		}
+		g.items = append(g.items, iv.ItemID)
+		end := run.Started.Add(24 * time.Hour)
+		if run.Finished != nil {
+			end = *run.Finished
+		}
+		found := false
+		for _, e := range append(slices.Clone(iv.Equipment), iv.State.Equipment...) {
+			if e.EquipmentID != run.Equipment || e.OccurredAt.After(end) || (e.EndedAt != nil && e.EndedAt.Before(run.Started)) ||
+				(e.EndedAt == nil && e.OccurredAt.Before(run.Started)) {
+				continue
+			}
+			found = true
+			g.bad = g.bad || e.Deviation
+			if !g.seen[e.EventID] {
+				g.seen[e.EventID] = true
+				g.evidence = append(g.evidence, markRef(dom.Mark{EventID: e.EventID, EventType: e.EventType, Variant: e.Variant, OccurredAt: e.OccurredAt, Params: e.Params}))
+			}
+		}
+		g.bad = g.bad || !found
+	}
+	var out []NarrowOption
+	for _, eq := range slices.Sorted(maps.Keys(groups)) {
+		g := groups[eq]
+		if g.bad || len(g.items) == 0 {
+			continue
+		}
+		name, common := eq, v.FactorValue
+		if s.cfg.Names != nil {
+			if l, ok := s.cfg.Names.FactorLabel(ctx, dom.FactorMachine, eq); ok {
+				name = l
+			}
+			if l, ok := s.cfg.Names.FactorLabel(ctx, dom.FactorMachine, common); ok {
+				common = l
+			}
+		}
+		slices.SortFunc(g.evidence, func(a, b JournalRecordRef) int { return a.OccurredAt.Compare(b.OccurredAt) })
+		out = append(out, NarrowOption{
+			Label:      fmt.Sprintf("Исключить выполненные на %s (%d) — журнал в уставке", name, len(g.items)),
+			ItemIDs:    g.items,
+			Evidence:   g.evidence,
+			ReasonText: fmt.Sprintf("Журнал %s за выполнения этих изделий непрерывный и в уставке; общий фактор — %s", name, common),
+		})
+	}
+	return out
 }
 
 // versionsAt — версии области на момент: «что мы знали» — по времени записи версии.
@@ -426,7 +511,8 @@ func measureLabel(a dom.ActionRecord) string {
 // circumstanceRecord — строка дорожки разбора с переходом к записи журнала и
 // связанными записями (то же выполнение операции).
 func circumstanceRecord(mk dom.Mark, all []dom.Mark) CircumstanceRecord {
-	r := CircumstanceRecord{JournalRecordRef: markRef(mk), Lane: mk.Lane, EndedAt: mk.EndedAt, EvidenceRefs: mk.Evidence, SourceKind: strp(mk.SourceKind)}
+	r := CircumstanceRecord{JournalRecordRef: markRef(mk), Lane: mk.Lane, EndedAt: mk.EndedAt, EvidenceRefs: mk.Evidence, SourceKind: strp(mk.SourceKind),
+		ReceivedAt: mk.ReceivedAt}
 	if mk.Seq > 0 {
 		seq := mk.Seq
 		r.JournalSeq = &seq
