@@ -879,9 +879,13 @@ checkpoints:
     what: 'акт о браке на 6 изделий собран из истории: состав, основание и подписи взяты из записей; ручного ввода 0'
     check:
       operation: documents.document.list
-      path: /items
-      op: eq
-      value: true
+      params:
+        subject: nonconformity
+        id: '{ref:NC-G1}'
+      path: /items/*/template
+      op: contains
+      value:
+      - nc-disposition@1
     mapping: draft
     source:
       subject: document/defect_act@NC-G1
@@ -904,6 +908,7 @@ checkpoints:
         manual_input_fields: 0
       op: eq
       value: true
+    note: 'сведение: документы несоответствия NC-G1 (subject=nonconformity, id — обязательные параметры); акт — шаблон nc-disposition; «ручного ввода 0» — поле manual_entries ответа'
   - id: S05-37
     what: 'дефекты по линиям: все 4 подтверждённых дефекта сварки инцидента — на линии 2, на линии 1 — 0'
     check:
