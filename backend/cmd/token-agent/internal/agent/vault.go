@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
 	"encoding/base64"
@@ -200,22 +201,36 @@ func NewBundle(files [][]byte, person string) (Bundle, error) {
 
 // Seal — зашифровать набор ключей под PIN.
 func Seal(b Bundle, pin string, o SealOptions, rnd io.Reader) (Sealed, error) {
+	kdf, err := freshKDF(pin, o, rnd)
+	if err != nil {
+		return Sealed{}, err
+	}
+	return sealWith(b, deriveWith(kdf, pin), kdf, o, rnd)
+}
+
+// freshKDF — параметры argon2id с новой солью; PIN не короче MinPIN.
+func freshKDF(pin string, o SealOptions, rnd io.Reader) (KDF, error) {
 	if utf8.RuneCountInString(pin) < MinPIN {
-		return Sealed{}, fmt.Errorf("PIN — не короче %d символов", MinPIN)
+		return KDF{}, fmt.Errorf("PIN — не короче %d символов", MinPIN)
 	}
 	kdf := DefaultKDF()
 	if o.KDF != nil {
 		kdf = *o.KDF
 	}
 	salt := make([]byte, 16)
-	nonce := make([]byte, 12)
 	if _, err := io.ReadFull(rnd, salt); err != nil {
-		return Sealed{}, err
+		return KDF{}, err
 	}
+	kdf.SaltB64 = base64.StdEncoding.EncodeToString(salt)
+	return kdf, nil
+}
+
+// sealWith — зашифровать набор готовым ключом из PIN (AES-256-GCM, свой nonce).
+func sealWith(b Bundle, dk []byte, kdf KDF, o SealOptions, rnd io.Reader) (Sealed, error) {
+	nonce := make([]byte, 12)
 	if _, err := io.ReadFull(rnd, nonce); err != nil {
 		return Sealed{}, err
 	}
-	kdf.SaltB64 = base64.StdEncoding.EncodeToString(salt)
 	s := Sealed{FormatVersion: FormatVersion, PersonID: b.PersonID, KeyStorage: o.KeyStorage, StorageVariant: o.StorageVariant,
 		SealedAt: stamp(o.Now), KDF: kdf, NonceB64: base64.StdEncoding.EncodeToString(nonce)}
 	if o.PersonID != "" {
@@ -228,7 +243,7 @@ func Seal(b Bundle, pin string, o SealOptions, rnd io.Reader) (Sealed, error) {
 	if err != nil {
 		return Sealed{}, err
 	}
-	gcm, err := aead(DeriveKey(s, pin))
+	gcm, err := aead(dk)
 	if err != nil {
 		return Sealed{}, err
 	}
@@ -236,11 +251,126 @@ func Seal(b Bundle, pin string, o SealOptions, rnd io.Reader) (Sealed, error) {
 	return s, nil
 }
 
+// SealEach — каждый файл ключа в своё хранилище под одним PIN (Д-72, демо из
+// одного браузера: ключи всех персон рабочего места). argon2id считается один
+// раз — общая соль и параметры у всех хранилищ, — затем AES-256-GCM на каждый
+// ключ со своим nonce; владелец хранилища — по имени ключа (PersonOf).
+// existing — уже загруженное хранилище: новые ключи ложатся под тот же PIN
+// (его соль), неверный PIN — ErrPIN. Ответ — хранилища (повтор key_ref в
+// наборе — один раз) и ключ из PIN для памяти сеанса.
+func SealEach(files [][]byte, pin string, o SealOptions, existing *Sealed, rnd io.Reader) ([]Sealed, []byte, error) {
+	if len(files) == 0 {
+		return nil, nil, fmt.Errorf("%w: не выбран ни один файл ключа", ErrKeyFile)
+	}
+	var kdf KDF
+	var dk []byte
+	if existing != nil {
+		kdf, dk = existing.KDF, DeriveKey(*existing, pin)
+		if _, err := Open(*existing, dk); err != nil {
+			return nil, nil, err
+		}
+	} else {
+		var err error
+		if kdf, err = freshKDF(pin, o, rnd); err != nil {
+			return nil, nil, err
+		}
+		dk = deriveWith(kdf, pin)
+	}
+	o.PersonID = ""
+	seen := map[string]bool{}
+	out := make([]Sealed, 0, len(files))
+	for _, raw := range files {
+		f, _, err := ParseKeyFile(raw)
+		if err != nil {
+			return nil, nil, err
+		}
+		if seen[f.KeyRef] {
+			continue
+		}
+		seen[f.KeyRef] = true
+		s, err := sealWith(Bundle{PersonID: PersonOf(f.KeyRef), Keys: []KeyFile{f}}, dk, kdf, o, rnd)
+		if err != nil {
+			return nil, nil, err
+		}
+		out = append(out, s)
+	}
+	return out, dk, nil
+}
+
 // DeriveKey — ключ шифрования хранилища из PIN (argon2id). Результат можно
 // держать в памяти сеанса браузера вместо PIN (разблокировано до блокировки).
-func DeriveKey(s Sealed, pin string) []byte {
-	salt, _ := base64.StdEncoding.DecodeString(s.KDF.SaltB64)
-	return argon2.IDKey([]byte(pin), salt, s.KDF.Time, s.KDF.MemoryKiB, s.KDF.Threads, 32)
+func DeriveKey(s Sealed, pin string) []byte { return deriveWith(s.KDF, pin) }
+
+func deriveWith(kdf KDF, pin string) []byte {
+	salt, _ := base64.StdEncoding.DecodeString(kdf.SaltB64)
+	return argon2.IDKey([]byte(pin), salt, kdf.Time, kdf.MemoryKiB, kdf.Threads, 32)
+}
+
+// Set — хранилища ключей одного человека (по одному на профиль), открываемые
+// одним ключом из PIN: так расширение держит ключи многих персон и подписывает
+// ключом вошедшего (gost — один ключ, hybrid — ГОСТ и ML-DSA).
+type Set []Sealed
+
+// ParseSet — одно хранилище (объект JSON) или несколько (массив).
+func ParseSet(raw []byte) (Set, error) {
+	var set Set
+	raw = bytes.TrimSpace(raw)
+	if len(raw) > 0 && raw[0] == '[' {
+		if err := json.Unmarshal(raw, &set); err != nil {
+			return nil, err
+		}
+	} else {
+		var s Sealed
+		if err := json.Unmarshal(raw, &s); err != nil {
+			return nil, err
+		}
+		set = Set{s}
+	}
+	if len(set) == 0 {
+		return nil, refuse(CodeTokenMissing, "ключ не загружен")
+	}
+	seenProfile := map[string]bool{}
+	for _, s := range set {
+		if len(s.Keys) == 0 {
+			return nil, refuse(CodeTokenMissing, "ключ не загружен")
+		}
+		// Никакого «суперключа»: подпись — ключами одного человека.
+		if s.PersonID != set[0].PersonID {
+			return nil, refuse(CodeInvalid, "ключи разных людей (%s, %s) в одной подписи", set[0].PersonID, s.PersonID)
+		}
+		for _, k := range s.Keys {
+			if seenProfile[k.Profile] {
+				return nil, refuse(CodeInvalid, "два ключа профиля %s в одной подписи", k.Profile)
+			}
+			seenProfile[k.Profile] = true
+		}
+	}
+	return set, nil
+}
+
+// PersonID — владелец ключей набора.
+func (set Set) PersonID() string { return set[0].PersonID }
+
+// Keys — открытые сведения всех ключей набора.
+func (set Set) Keys() []KeyInfo {
+	var out []KeyInfo
+	for _, s := range set {
+		out = append(out, s.Keys...)
+	}
+	return out
+}
+
+// Open — расшифровать все хранилища набора одним ключом из PIN.
+func (set Set) Open(dk []byte) (Bundle, error) {
+	b := Bundle{PersonID: set.PersonID()}
+	for _, s := range set {
+		bi, err := Open(s, dk)
+		if err != nil {
+			return Bundle{}, err
+		}
+		b.Keys = append(b.Keys, bi.Keys...)
+	}
+	return b, nil
 }
 
 // Open — расшифровать хранилище ключом из DeriveKey; неверный PIN — ErrPIN.

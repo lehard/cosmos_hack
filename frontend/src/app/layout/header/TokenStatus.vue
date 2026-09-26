@@ -4,6 +4,7 @@
  * месте по расширению «Главный — подпись» — готов (PIN введён), загружен
  * (PIN спросит окно подписи), не загружен, расширения нет. В подсказке —
  * владелец ключа и класс хранения (физический ключ / ключ в браузере).
+ * Состояние — для вошедшего человека: в расширении могут быть ключи многих.
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -22,7 +23,7 @@ const text = computed(() => {
     case 'locked':
       return t('common.header.tokenLocked')
     case 'missing':
-      return t('common.header.tokenMissing')
+      return info.value?.person_id ? t('common.header.tokenMissingFor', { person: info.value.person_id }) : t('common.header.tokenMissing')
     default:
       return t('common.header.tokenAgentMissing')
   }
@@ -30,7 +31,7 @@ const text = computed(() => {
 
 const who = computed(() => {
   const i = info.value
-  if (!i?.person_id) return ''
+  if (!i?.person_id || status.value === 'missing') return ''
   const key = `common.header.tokenStorage.${i.key_storage ?? ''}`
   return t('common.header.tokenWho', { person: i.person_id, storage: te(key) ? t(key) : (i.key_storage ?? '—') })
 })

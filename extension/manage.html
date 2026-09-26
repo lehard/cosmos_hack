@@ -2,7 +2,7 @@
 <html lang="ru">
   <head>
     <meta charset="utf-8" />
-    <title>Главный — управление ключом</title>
+    <title>Главный — управление ключами</title>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
@@ -10,33 +10,43 @@
       <img src="icon128.png" alt="" />
       <div>
         <div class="name">Главный — подпись</div>
-        <div class="sub">Управление ключом подписи на этом рабочем месте</div>
+        <div class="sub">Управление ключами подписи на этом рабочем месте</div>
       </div>
     </header>
     <main>
       <section class="card">
-        <h2>Ключ</h2>
+        <h2>Ключи</h2>
         <div id="key-status" data-testid="key-status"></div>
+        <table id="keys-table" hidden>
+          <thead><tr><th>Владелец</th><th>Роль</th><th>Профиль</th><th>Класс</th><th>Ключ</th><th></th></tr></thead>
+          <tbody id="keys" data-testid="keys"></tbody>
+        </table>
+        <p class="muted">
+          Подпись — ключом того, кто вошёл в систему «Главный»: расширение выбирает его ключ само. Ключом другого человека
+          сервер подпись не примет.
+        </p>
         <div class="actions">
           <button id="lock" type="button">Заблокировать (PIN снова)</button>
-          <button id="remove" type="button" class="danger">Удалить ключ из браузера</button>
+          <button id="remove" type="button" class="danger">Удалить все ключи</button>
         </div>
       </section>
 
       <section class="card">
-        <h2>Загрузить ключ файлом</h2>
+        <h2>Загрузить ключи</h2>
         <p class="muted">
-          Файл ключа персоны — <code>‹псевдоним›-ta@1.key.json</code> (ГОСТ), для профиля hybrid ещё
-          <code>‹псевдоним›-ta-pq@1.key.json</code>. Демо-ключи создаёт генезис в <code>.demo-keys/token-agent/</code>. Ключ
-          хранится только зашифрованным под PIN (argon2id + AES-256-GCM); сам файл после загрузки можно удалить.
+          Выберите сразу все файлы ключей — например, все <code>*.key.json</code> из <code>demo-keys/</code> (7 персон × ГОСТ
+          <code>‹псевдоним›-ta@1</code> и ML-DSA <code>‹псевдоним›-ta-pq@1</code>). Все ключи шифруются под один PIN (argon2id +
+          AES-256-GCM, по хранилищу на ключ); сами файлы после загрузки браузеру не нужны.
         </p>
-        <label for="files">Файлы ключа</label>
+        <label for="files">Файлы ключей</label>
         <input id="files" type="file" accept=".json,application/json" multiple />
         <div id="files-info" class="muted"></div>
-        <label for="pin1">PIN (не короче 4 символов)</label>
+        <label for="pin1" id="pin1-label">PIN для всех ключей (не короче 4 символов)</label>
         <input id="pin1" type="password" autocomplete="new-password" />
-        <label for="pin2">PIN ещё раз</label>
-        <input id="pin2" type="password" autocomplete="new-password" />
+        <div id="pin2-box">
+          <label for="pin2">PIN ещё раз</label>
+          <input id="pin2" type="password" autocomplete="new-password" />
+        </div>
         <p class="warn">
           Ключ в браузере — умышленно сниженный порог безопасности (Д-72): класс хранения <b>software_browser</b> записан в
           акте регистрации ключа и виден в подписи, аудите и отчёте верификатора. Эталон — физический ключ.

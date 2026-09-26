@@ -4,12 +4,12 @@
 // показано: пакет подписи сверяет отпечаток с подтверждённым.
 'use strict'
 
-/* global glavnyStore, glavnyCall, glavnyError, glavnyReply, glavnyStorageText, glavnyErrorText, chrome */
+/* global glavnyStore, glavnyCall, glavnyError, glavnyReply, glavnyStorageText, glavnyErrorText, glavnyPersonText, chrome */
 
 const rid = new URLSearchParams(location.search).get('rid')
 const $ = (id) => document.getElementById(id)
+// Запрос подписи и хранилища ключей вошедшего человека — их выбрала фоновая служба.
 let pending = null
-let sealed = null
 
 function field(label, value) {
   const dt = document.createElement('dt')
@@ -29,8 +29,7 @@ async function finish(response) {
 
 async function init() {
   pending = (await glavnyStore.session('pending:' + rid))['pending:' + rid]
-  sealed = (await glavnyStore.local('sealed')).sealed
-  if (!pending || !sealed) {
+  if (!pending || !pending.set?.length) {
     $('error').textContent = 'Запрос подписи не найден или ключ не загружен — закройте окно.'
     $('sign').disabled = true
     return
@@ -42,7 +41,9 @@ async function init() {
     field('Изделия', prepared.map((p) => p.item_id || '—').join(', '))
   }
   for (const f of prepared[0].summary) field(f.label, f.value)
-  $('key').textContent = `${sealed.person_id} · ${prepared[0].signers.join(' + ')} · ${glavnyStorageText(sealed.key_storage, sealed.storage_variant)}`
+  const { names = {} } = await glavnyStore.local('names')
+  const e = pending.entries[0]
+  $('key').textContent = `${glavnyPersonText(pending.person, names)} · ${prepared[0].signers.join(' + ')} · ${glavnyStorageText(e.key_storage, e.storage_variant)}`
   const { dk_b64: dk } = await glavnyStore.session('dk_b64')
   $('pin-box').hidden = !!dk
   if (!dk) $('pin').focus()
@@ -58,7 +59,8 @@ async function sign() {
   try {
     let { dk_b64: dk } = await glavnyStore.session('dk_b64')
     if (!dk) {
-      const u = await glavnyCall('unlock', sealed, $('pin').value)
+      // Все ключи под одним PIN: разблокировка открывает их все.
+      const u = await glavnyCall('unlock', pending.set, $('pin').value)
       if (!u.ok) throw u
       dk = u.dk_b64
       await glavnyStore.setSession({ dk_b64: dk, unlocked_at: new Date().toISOString() })
@@ -68,7 +70,7 @@ async function sign() {
     for (let i = 0; i < pending.blocks.length; i++) {
       const r = await glavnyCall('sign', {
         block: pending.blocks[i],
-        sealed,
+        sealed: pending.set,
         dk_b64: dk,
         context: pending.ctx,
         confirmed_digest: pending.prepared[i].doc_digest,

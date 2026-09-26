@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"time"
 
 	"ant/internal/contracts/procs"
@@ -80,6 +81,9 @@ type SealRequest struct {
 	KeyStorage     string   `json:"key_storage"`
 	StorageVariant string   `json:"storage_variant"`
 	Now            string   `json:"now"`
+	// Existing — уже загруженное хранилище (для SealEach): новые ключи
+	// ложатся под тот же PIN, неверный PIN — signing.pin_wrong.
+	Existing json.RawMessage `json:"existing,omitempty"`
 }
 
 // APISeal — набор ключей из файлов под PIN.
@@ -106,14 +110,48 @@ func APISeal(reqJSON, pin string) Reply {
 	return okReply("sealed", s)
 }
 
-// APIUnlock — проверить PIN; ответ — ключ хранилища для памяти сеанса.
-func APIUnlock(sealedJSON, pin string) Reply {
-	var s Sealed
-	if err := json.Unmarshal([]byte(sealedJSON), &s); err != nil {
+// APISealEach — каждый файл ключа в своё хранилище под одним PIN (argon2id
+// один раз, см. SealEach); ответ — хранилища и ключ из PIN для памяти сеанса
+// (разблокировано сразу, второй argon2id не нужен).
+func APISealEach(reqJSON, pin string) Reply {
+	var rq SealRequest
+	if err := json.Unmarshal([]byte(reqJSON), &rq); err != nil {
 		return fail(refuse(CodeInvalid, "%v", err))
 	}
-	dk := DeriveKey(s, pin)
-	if _, err := Open(s, dk); err != nil {
+	files := make([][]byte, 0, len(rq.Files))
+	for _, f := range rq.Files {
+		files = append(files, []byte(f))
+	}
+	var existing *Sealed
+	if len(rq.Existing) > 0 && string(rq.Existing) != "null" {
+		existing = new(Sealed)
+		if err := json.Unmarshal(rq.Existing, existing); err != nil {
+			return fail(refuse(CodeInvalid, "existing: %v", err))
+		}
+	}
+	if rq.KeyStorage == "" {
+		rq.KeyStorage = dom.StorageSoftwareBrowser
+	}
+	o := SealOptions{KeyStorage: rq.KeyStorage, StorageVariant: rq.StorageVariant, Now: CallContext{Now: rq.Now}.context().Now}
+	list, dk, err := SealEach(files, pin, o, existing, rand.Reader)
+	if err != nil {
+		if errors.Is(err, ErrPIN) || errors.Is(err, ErrKeyFile) {
+			return fail(err)
+		}
+		return fail(refuse(CodeInvalid, "%v", err))
+	}
+	return okReply("sealed", list, "dk_b64", base64.StdEncoding.EncodeToString(dk))
+}
+
+// APIUnlock — проверить PIN; ответ — ключ хранилища для памяти сеанса.
+// sealedJSON — хранилище или набор хранилищ под одним PIN (Set).
+func APIUnlock(sealedJSON, pin string) Reply {
+	set, err := ParseSet([]byte(sealedJSON))
+	if err != nil {
+		return fail(err)
+	}
+	dk := DeriveKey(set[0], pin)
+	if _, err := set.Open(dk); err != nil {
 		return fail(err)
 	}
 	return okReply("dk_b64", base64.StdEncoding.EncodeToString(dk))
@@ -125,11 +163,11 @@ func APIPrepare(blockJSON, sealedJSON, ctxJSON string) Reply {
 	if err != nil {
 		return fail(err)
 	}
-	p, err := Prepare(b, s.PersonID, s.Keys, c.context())
+	p, err := Prepare(b, s.PersonID(), s.Keys(), c.context())
 	if err != nil {
 		return fail(err)
 	}
-	return okReply("prepared", p, "key_storage", s.KeyStorage, "storage_variant", s.StorageVariant)
+	return okReply("prepared", p, "key_storage", s[0].KeyStorage, "storage_variant", s[0].StorageVariant)
 }
 
 // SignCall — подпись: запрос, хранилище, ключ сеанса, подтверждённый
@@ -155,7 +193,7 @@ func APISign(callJSON string) Reply {
 		return fail(err)
 	}
 	ctx := sc.Context.context()
-	p, err := Prepare(b, s.PersonID, s.Keys, ctx)
+	p, err := Prepare(b, s.PersonID(), s.Keys(), ctx)
 	if err != nil {
 		return fail(err)
 	}
@@ -171,7 +209,7 @@ func APISign(callJSON string) Reply {
 	if err != nil || len(dk) == 0 {
 		return fail(refuse(CodePIN, "ключ заблокирован — введите PIN"))
 	}
-	bundle, err := Open(s, dk)
+	bundle, err := s.Open(dk)
 	if err != nil {
 		return fail(err)
 	}
@@ -180,8 +218,8 @@ func APISign(callJSON string) Reply {
 		return fail(refuse(CodeTampered, "%v", err))
 	}
 	j, e := Append(sc.Journal, p, env)
-	return okReply("envelope", env, "prepared", p, "entry", e, "journal", Trim(j), "key_storage", s.KeyStorage,
-		"storage_variant", s.StorageVariant)
+	return okReply("envelope", env, "prepared", p, "entry", e, "journal", Trim(j), "key_storage", s[0].KeyStorage,
+		"storage_variant", s[0].StorageVariant)
 }
 
 // APIShiftReport — сменный рапорт по локальному журналу (без подписи —
@@ -202,15 +240,20 @@ func APIShiftReport(journalJSON, baseJSON string) Reply {
 	return okReply("report", r)
 }
 
-func parseCall(blockJSON, sealedJSON, ctxJSON string) (procs.SignBlock, Sealed, CallContext, error) {
+// parseCall — запрос, хранилища (одно или набор ключей одного человека) и контекст.
+func parseCall(blockJSON, sealedJSON, ctxJSON string) (procs.SignBlock, Set, CallContext, error) {
 	var b procs.SignBlock
-	var s Sealed
 	var c CallContext
 	if err := json.Unmarshal([]byte(blockJSON), &b); err != nil {
-		return b, s, c, refuse(CodeInvalid, "запрос подписи: %v", err)
+		return b, nil, c, refuse(CodeInvalid, "запрос подписи: %v", err)
 	}
-	if err := json.Unmarshal([]byte(sealedJSON), &s); err != nil || len(s.Keys) == 0 {
-		return b, s, c, refuse(CodeTokenMissing, "ключ не загружен")
+	s, err := ParseSet([]byte(sealedJSON))
+	if err != nil {
+		var e *Error
+		if errors.As(err, &e) {
+			return b, nil, c, e
+		}
+		return b, nil, c, refuse(CodeTokenMissing, "ключ не загружен")
 	}
 	if ctxJSON != "" {
 		if err := json.Unmarshal([]byte(ctxJSON), &c); err != nil {

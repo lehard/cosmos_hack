@@ -12,7 +12,7 @@
 
 importScripts('wasm_exec.js', 'common.js')
 
-/* global GLAVNY, glavnyStore, glavnyCall, glavnyReply, glavnyError, glavnyBrowserStatus, glavnyNow, chrome */
+/* global GLAVNY, glavnyStore, glavnyCall, glavnyReply, glavnyError, glavnyBrowserStatus, glavnyNow, glavnyKeys, glavnyPick, glavnyPersonText, chrome */
 
 // ---------------------------------------------------------------- допуск ---
 
@@ -66,10 +66,10 @@ async function callContext() {
   return { now: glavnyNow(), workplace_id: s.workplace_id || '', seen_checkpoint: seen || 0, profile: s.profile || 'gost' }
 }
 
-/** Подписать в фоне (уровень 1 при разблокированном ключе — без окна). */
-async function signQuiet(rq, block, sealed, dk, ctx) {
+/** Подписать в фоне (уровень 1 при разблокированном ключе — без окна). set — хранилища ключей вошедшего. */
+async function signQuiet(rq, block, set, dk, ctx) {
   const { journal = [] } = await glavnyStore.local('journal')
-  const r = await glavnyCall('sign', { block, sealed, dk_b64: dk, context: ctx, confirmed_digest: '', journal })
+  const r = await glavnyCall('sign', { block, sealed: set, dk_b64: dk, context: ctx, confirmed_digest: '', journal })
   if (!r.ok) return glavnyError(rq.request_id, r.code, r.message)
   await glavnyStore.setLocal({ journal: r.journal })
   return glavnyReply(rq.request_id, 'signed', { signed: [signedElem(r)] })
@@ -86,8 +86,13 @@ function signedElem(r) {
   }
 }
 
+/** Открытые сведения ключа для окна подтверждения (без хранилища). */
+function keyEntryInfo(e) {
+  return { key_ref: e.key_ref, person_id: e.person_id, profile: e.profile, key_storage: e.key_storage, storage_variant: e.storage_variant }
+}
+
 /** Открыть окно подтверждения; результат окно пришлёт вкладке само. */
-async function openWindow(rq, blocks, prepared, ctx, tabId, origin) {
+async function openWindow(rq, blocks, prepared, ctx, tabId, origin, pick) {
   const rid = rq.request_id
   const w = await chrome.windows.create({
     url: chrome.runtime.getURL('confirm.html?rid=' + encodeURIComponent(rid)),
@@ -96,15 +101,27 @@ async function openWindow(rq, blocks, prepared, ctx, tabId, origin) {
     height: 720,
     focused: true,
   })
-  await glavnyStore.setSession({ ['pending:' + rid]: { rq, blocks, prepared, ctx, tabId, origin, windowId: w.id } })
+  await glavnyStore.setSession({
+    ['pending:' + rid]: { rq, blocks, prepared, ctx, tabId, origin, windowId: w.id, person: pick.person, set: pick.set, entries: pick.entries.map(keyEntryInfo) },
+  })
   return { pending: rid }
 }
 
-async function signBrowser(rq, tabId, origin) {
-  const { sealed } = await glavnyStore.local('sealed')
-  if (!sealed) return glavnyError(rq.request_id, 'signing.token_missing', 'Ключ не загружен: откройте «Главный — подпись» → «Управление ключом»')
+/**
+ * Подпись ключом в браузере. Ключ — того, кто вошёл в «Главный» (person со
+ * страницы), профиль — из настроек (gost по умолчанию), key_ref запроса — в
+ * приоритете. Нет ключа этого человека — отказ «Ключ ‹имя› не загружен».
+ */
+async function signBrowser(rq, tabId, origin, person) {
   const blocks = rq.type === 'sign_batch' ? rq.sign_batch || [] : rq.sign ? [rq.sign] : []
   if (!blocks.length) return glavnyError(rq.request_id, 'api.validation_failed', 'нет блока sign')
+  const { names = {} } = await glavnyStore.local('names')
+  const pick = glavnyPick(await glavnyKeys(), person?.id, blocks[0].key_ref)
+  if (pick.error) {
+    const msg = pick.missing ? `Ключ ${glavnyPersonText(pick.person, names)} не загружен — «Главный — подпись» → «Управление ключом» → «Загрузить ключи»` : pick.error
+    return glavnyError(rq.request_id, 'signing.token_missing', msg)
+  }
+  const set = pick.set
   const ctx = await callContext()
   for (const b of blocks) {
     const cp = b.command_request?.seen_checkpoint
@@ -117,22 +134,39 @@ async function signBrowser(rq, tabId, origin) {
   // отклоняет уровень 1 вне перечня — до всякого окна.
   const prepared = []
   for (const b of blocks) {
-    const r = await glavnyCall('prepare', b, sealed, ctx)
+    const r = await glavnyCall('prepare', b, set, ctx)
     if (!r.ok) return glavnyError(rq.request_id, r.code, r.message)
     prepared.push(r.prepared)
   }
   const { dk_b64: dk } = await glavnyStore.session('dk_b64')
-  if (blocks.length === 1 && blocks[0].level === 1 && dk) return signQuiet(rq, blocks[0], sealed, dk, ctx)
-  return openWindow(rq, blocks, prepared, ctx, tabId, origin)
+  if (blocks.length === 1 && blocks[0].level === 1 && dk) return signQuiet(rq, blocks[0], set, dk, ctx)
+  return openWindow(rq, blocks, prepared, ctx, tabId, origin, pick)
 }
 
 // ------------------------------------------------------------- запросы ---
 
-async function handlePage(rq, sender) {
+/** Вошедший в «Главный» человек из сообщения страницы: {id, name} или null. */
+function pagePerson(p) {
+  const id = typeof p?.id === 'string' ? p.id.trim().toUpperCase() : ''
+  if (!/^[A-Z0-9][A-Z0-9._-]{0,63}$/.test(id)) return null
+  const name = typeof p.name === 'string' ? p.name.slice(0, 128) : ''
+  return { id, name }
+}
+
+/** Запомнить имя человека со страницы — для списка ключей в «Управлении ключом». */
+async function rememberName(person) {
+  if (!person?.name) return
+  const { names = {} } = await glavnyStore.local('names')
+  if (names[person.id] !== person.name) await glavnyStore.setLocal({ names: { ...names, [person.id]: person.name } })
+}
+
+async function handlePage(rq, sender, rawPerson) {
   const origin = sender.origin || new URL(sender.url || 'about:blank').origin
   if (!(await originAllowed(origin))) return glavnyError(rq?.request_id, 'access.forbidden', 'адрес ' + origin + ' не разрешён в расширении')
   if (!rq || rq.protocol_version !== GLAVNY.PROTOCOL) return glavnyError(rq?.request_id, 'api.validation_failed', 'версия протокола')
   rq.origin = origin
+  const person = pagePerson(rawPerson)
+  await rememberName(person)
   const s = await glavnyStore.settings()
   if (s.adapter === 'agent') {
     const res = await askAgent(rq)
@@ -142,21 +176,21 @@ async function handlePage(rq, sender) {
   switch (rq.type) {
     case 'hello': {
       const v = await glavnyCall('version')
-      const st = await glavnyBrowserStatus()
+      const keys = Object.values(await glavnyKeys()).filter((e) => !person || e.person_id === person.id)
       return glavnyReply(rq.request_id, 'hello', {
         hello: {
           agent_version: v.agent_version,
           build_digest: 'streebog256:' + '0'.repeat(64),
           doc_format_versions: v.doc_format_versions,
-          keys: (st.key_refs || []).map((k) => ({ key_ref: k, person_id: st.person_id, profile: k.includes('-pq@') ? 'pq' : 'gost', key_storage: st.key_storage })),
+          keys: keys.map((e) => ({ key_ref: e.key_ref, person_id: e.person_id, profile: e.profile, key_storage: e.key_storage })),
         },
       })
     }
     case 'status':
-      return glavnyReply(rq.request_id, 'status', { status: { ...(await glavnyBrowserStatus()), adapter: 'browser' } })
+      return glavnyReply(rq.request_id, 'status', { status: { ...(await glavnyBrowserStatus(person?.id)), adapter: 'browser' } })
     case 'sign':
     case 'sign_batch':
-      return signBrowser(rq, sender.tab?.id, origin)
+      return signBrowser(rq, sender.tab?.id, origin, person)
     case 'local_journal': {
       const { journal = [] } = await glavnyStore.local('journal')
       const since = rq.local_journal?.since_seq || 0
@@ -169,7 +203,7 @@ async function handlePage(rq, sender) {
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg?.kind === 'page' && sender.tab) {
-    handlePage(msg.request, sender)
+    handlePage(msg.request, sender, msg.person)
       .then(sendResponse)
       .catch((e) => sendResponse(glavnyError(msg.request?.request_id, 'signing.agent_not_found', e.message)))
     return true
@@ -227,6 +261,9 @@ async function registerOrigins() {
   }
 }
 chrome.runtime.onInstalled.addListener(registerOrigins)
+// Прежняя версия держала один ключ (запись sealed) под своей солью — ключи
+// загружаются заново разом, под один PIN.
+chrome.runtime.onInstalled.addListener(() => chrome.storage.local.remove('sealed'))
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area === 'local' && changes.settings) registerOrigins()
 })
