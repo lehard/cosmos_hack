@@ -280,6 +280,9 @@ func (s *Service) Overview(ctx context.Context, p PeriodQuery, m platform.Moment
 // (analytics.metric.drilldown): строки группируются по изделию (объекту) и
 // срезу; для штучных показателей их сумма равна итогу.
 func (s *Service) Drilldown(ctx context.Context, metricID, slice string, p PeriodQuery, m platform.Moment, pg platform.Page) (MetricDrilldown, error) {
+	if s.store == nil {
+		return MetricDrilldown{}, platform.NotImplemented("analytics.metric.drilldown")
+	}
 	def, ok := lookup(metricID)
 	if !ok {
 		e := platform.Fail(errcodes.ApiNotFound, "object", "показатель", "id", metricID)
@@ -506,6 +509,9 @@ const (
 // defect_rate — карта p доли результатов контроля с признаком дефекта по
 // подгруппам времени; operation_duration — карта XmR длительности операций.
 func (s *Service) ControlChart(ctx context.Context, stepKey, metricID string, p PeriodQuery, m platform.Moment) (ControlChart, error) {
+	if s.store == nil {
+		return ControlChart{}, platform.NotImplemented("analytics.control_chart.read")
+	}
 	if metricID == "" {
 		metricID = ChartDefectRate
 	}

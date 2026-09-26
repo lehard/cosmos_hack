@@ -547,10 +547,8 @@ func originOf(incoming bool) string {
 // finish — строки по итогу входа: выполнения, дефекты, несоответствия,
 // «с первого раза», открытые ожидания.
 func (it *item) finish() {
-	reworked := false
 	for _, ru := range it.runList {
 		it.runRows(ru)
-		reworked = reworked || ru.reworkOf != ""
 	}
 	for _, p := range it.defList {
 		if p.state == defRejected {
@@ -602,25 +600,43 @@ func (it *item) finish() {
 	if it.firstV != nil {
 		dims := it.base()
 		it.emit(Row{Metric: RowInspectedItems, At: *it.firstV, Value: 1, Dims: dims, Sources: it.verdEvs})
-		pass := !reworked && firstNC == nil
+		// «С первого раза» (Д-11): строка на момент первого вердикта; Until —
+		// момент, когда стало известно, что не с первого раза (первый вердикт
+		// «не годно», повтор операции, подтверждённое несоответствие). Так
+		// ответ на момент T не знает о провале, случившемся позже T (AD-22).
+		var failAt *time.Time
 		var fpySrc []string
+		fail := func(t time.Time, ev string) {
+			if failAt == nil || t.Before(*failAt) {
+				tt := t
+				failAt = &tt
+			}
+			fpySrc = append(fpySrc, ev)
+		}
 		for _, s := range it.vSteps {
 			v := it.verdicts[s]
-			pass = pass && v.pass
 			fpySrc = append(fpySrc, v.ev)
 			sd := it.base()
 			if s != "?" {
 				sd.Step = s
 			}
-			it.emit(Row{Metric: RowFPYStepTotal, At: v.at, Value: 1, Dims: sd, Sources: []string{v.ev}})
-			if v.pass {
-				it.emit(Row{Metric: RowFPYStepPass, At: v.at, Value: 1, Dims: sd, Sources: []string{v.ev}})
+			row := Row{Metric: RowFPYStepTotal, At: v.at, Value: 1, Dims: sd, Sources: []string{v.ev}}
+			if !v.pass {
+				t := v.at
+				row.Until = &t
+				fail(v.at, v.ev)
+			}
+			it.emit(row)
+		}
+		for _, ru := range it.runList {
+			if ru.reworkOf != "" {
+				fail(ru.start, ru.events[0])
 			}
 		}
-		it.emit(Row{Metric: RowFPYTotal, At: *it.firstV, Value: 1, Dims: dims, Sources: fpySrc})
-		if pass {
-			it.emit(Row{Metric: RowFPYPass, At: *it.firstV, Value: 1, Dims: dims, Sources: fpySrc})
+		if firstNC != nil {
+			fail(firstNC.at, firstNC.events[0])
 		}
+		it.emit(Row{Metric: RowFPYTotal, At: *it.firstV, Until: failAt, Value: 1, Dims: dims, Sources: fpySrc})
 	}
 	// Незакрытые ожидания: предъявление без решения («специалист заснул») и
 	// приём на участке без начала операции — очередь узла сейчас (FR-5).

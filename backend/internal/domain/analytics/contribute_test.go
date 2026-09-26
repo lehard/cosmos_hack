@@ -64,7 +64,7 @@ func find(rows []domain.Row, metric string) []domain.Row {
 func TestNormalFlow(t *testing.T) {
 	rows := domain.Contribute(item, flange())
 	want := map[string]int64{
-		domain.RowInspectedItems: 1, domain.RowFPYTotal: 1, domain.RowFPYPass: 1, domain.RowPassed: 3,
+		domain.RowInspectedItems: 1, domain.RowFPYTotal: 1, domain.RowPassed: 3,
 		domain.RowInspections: 1, domain.RowDefectsDetected: 0, domain.RowItemsWithConfirmedNC: 0, domain.RowPresentations: 1,
 	}
 	for _, metric := range slices.Sorted(maps.Keys(want)) {
@@ -133,7 +133,7 @@ func TestLateEvent(t *testing.T) {
 	if got := count(b, domain.RowDefectsDetected) - count(base, domain.RowDefectsDetected); got != 1 {
 		t.Fatalf("позднее событие добавило %d дефектов, ожидался 1", got)
 	}
-	if count(b, domain.RowFPYPass) != 0 || count(base, domain.RowFPYPass) != 1 {
+	if fb, fa := find(b, domain.RowFPYTotal)[0], find(base, domain.RowFPYTotal)[0]; !fb.FailedBy(t0.Add(5*time.Hour)) || fb.FailedBy(t0.Add(43*time.Minute)) || fa.Until != nil {
 		t.Fatal("поздний дефект: «с первого раза» не пересчитано")
 	}
 	if count(b, domain.RowInspectedItems) != 1 {

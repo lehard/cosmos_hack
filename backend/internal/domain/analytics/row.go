@@ -51,13 +51,12 @@ const (
 	RowPresentations = "presentations"
 	// RowRepresentations — повторное предъявление (номер > 1).
 	RowRepresentations = "representations"
-	// RowFPYTotal, RowFPYPass — изделие с первым вердиктом и изделие, прошедшее
-	// контроль с первого раза (Д-11: «Прохождение контроля с первого раза»).
+	// RowFPYTotal — изделие с первым вердиктом контроля (Д-11: «Прохождение
+	// контроля с первого раза»); Until — когда стало известно «не с первого
+	// раза» (нет — прошло с первого раза).
 	RowFPYTotal = "fpy_total"
-	RowFPYPass  = "fpy_pass"
-	// RowFPYStepTotal, RowFPYStepPass — то же по узлу (изделие × узел).
+	// RowFPYStepTotal — то же по узлу (изделие × узел).
 	RowFPYStepTotal = "fpy_step_total"
-	RowFPYStepPass  = "fpy_step_pass"
 	// RowLeadTime — время детали в системе (запуск → сдача на склад), с.
 	RowLeadTime = "lead_time"
 	// RowDetectionDelay — задержка обнаружения: конец выполнения → первое
@@ -144,7 +143,8 @@ type Row struct {
 	// по нему строка попадает в период (FR-3) и в момент «как было» (AD-22).
 	At time.Time
 	// Interval — строка-состояние [At, Until): очередь, выполнение, открытое
-	// несоответствие; Until пусто — состояние длится.
+	// несоответствие; Until пусто — состояние длится. У точечной строки
+	// «с первого раза» Until — момент провала.
 	Interval bool
 	Until    *time.Time
 	// Value — целое значение в единице Unit (pcs или s), Scale — 0.
@@ -160,6 +160,9 @@ type Row struct {
 func (r Row) ActiveAt(t time.Time) bool {
 	return r.Interval && !r.At.After(t) && (r.Until == nil || r.Until.After(t))
 }
+
+// FailedBy — у строки «с первого раза» провал известен к моменту t.
+func (r Row) FailedBy(t time.Time) bool { return r.Until != nil && !r.Until.After(t) }
 
 // In — точечная строка попадает в период [from, to].
 func (r Row) In(from, to time.Time) bool {

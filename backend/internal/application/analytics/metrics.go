@@ -202,15 +202,11 @@ func (v *view) recurrence() []entry {
 
 // fpy — «Прохождение контроля с первого раза» (Д-11): доля изделий, у
 // которых первый вердикт каждого узла — «годно», без повторных выполнений и
-// подтверждённых несоответствий.
-func (v *view) fpy(total, pass string) []entry {
-	passed := map[string]bool{}
-	for _, e := range v.points(pass) {
-		passed[e.row.Item+"|"+e.row.Dims.Step] = true
-	}
+// подтверждённых несоответствий, известных к концу периода.
+func (v *view) fpy(total string) []entry {
 	var out []entry
 	for _, e := range v.points(total) {
-		e.num = passed[e.row.Item+"|"+e.row.Dims.Step]
+		e.num = !e.row.FailedBy(v.to)
 		out = append(out, e)
 	}
 	return out
@@ -274,8 +270,8 @@ var catalog = []metricDef{
 	{id: "inspected_items", title: "Проверено изделий", group: "inspection", counts: "items", agg: aggSum,
 		entries: points(domain.RowInspectedItems)},
 	{id: "first_pass_yield", title: "Прохождение контроля с первого раза", group: "inspection", counts: "items", agg: aggShare, dims: []string{"step"},
-		entries:      func(v *view) []entry { return v.fpy(domain.RowFPYTotal, domain.RowFPYPass) },
-		sliceEntries: func(v *view) []entry { return v.fpy(domain.RowFPYStepTotal, domain.RowFPYStepPass) }},
+		entries:      func(v *view) []entry { return v.fpy(domain.RowFPYTotal) },
+		sliceEntries: func(v *view) []entry { return v.fpy(domain.RowFPYStepTotal) }},
 	{id: "unable_to_assess", title: "Оценка невозможна (отдельная корзина)", group: "inspection", counts: "observations", agg: aggSum, dims: []string{"step"},
 		entries: points(domain.RowUnableToAssess)},
 	{id: "representations", title: "Повторные предъявления", group: "inspection", counts: "presentations", agg: aggSum, dims: []string{"step"},
