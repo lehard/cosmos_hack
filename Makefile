@@ -249,6 +249,9 @@ load: ## Нагрузочный прогон 1 и N воркеров: rebuild_ha
 	@if [[ "$(LOAD_BUILD)" == 1 ]] || ! $(DOCKER) image inspect $(LOAD_IMAGE) >/dev/null 2>&1; then \
 		$(MAKE) build ANT_IMAGE=$(LOAD_IMAGE); fi
 	ANT_IMAGE=$(LOAD_IMAGE) $(ROOT)/scenarios/load/load.sh
+normative-sync: ## Встроенные копии normative/ во всех seed/ и во входе мира заготовок + перегенерация заготовок (после любой правки normative/)
+	@$(ROOT)/deploy/scripts/sync-normative.sh
+	$(GO_RUN) go test ./internal/infrastructure/fixtures/world -update
 verify: ## Независимый верификатор журнала: проверка по запросу, подписанный отчёт — хранителю (эпик 29, AD-9)
 	@$(COMPOSE) run --rm --no-deps verifier -once || test $$? -eq 3
 rebuild: ## Пересборка проекций из журнала (ant rebuild; ITEM=‹item_id› — одно изделие: повтор после «обработка остановлена»)
