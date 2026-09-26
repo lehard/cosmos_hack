@@ -111,7 +111,7 @@ func page[T any](xs []T, p platform.Page) []T {
 func (s *Service) queueRows(v *itemView, now time.Time) []DecisionQueueRow {
 	st := v.State()
 	var rows []DecisionQueueRow
-	label := v.ItemID
+	label := v.Label()
 	var isoDue *time.Time
 	overdue := false
 	if st.Isolated() && st.Isolation.DecisionDueAt != nil {
@@ -183,7 +183,7 @@ func (s *Service) reviewRows(ctx context.Context, v *itemView) []DecisionQueueRo
 			}
 		}
 		src, since := last.EventID, rv.since
-		rows = append(rows, DecisionQueueRow{Kind: "review", ObjectID: dec.EventID, ItemID: v.ItemID, ItemLabel: v.ItemID, StepKey: pd.StepKey,
+		rows = append(rows, DecisionQueueRow{Kind: "review", ObjectID: dec.EventID, ItemID: v.ItemID, ItemLabel: v.Label(), StepKey: pd.StepKey,
 			Title: title, Severity: "major", BasisSeq: v.BasisSeq, SourceEventID: &src, ReviewSince: &since})
 	}
 	return rows
@@ -325,7 +325,7 @@ func (s *Service) List(ctx context.Context, f NCFilter, m platform.Moment, p pla
 			if f.Status != "" && n.Status != f.Status {
 				continue
 			}
-			sum := NCSummary{NCID: n.ID, Number: n.Number, Status: n.Status, ItemID: it, ItemLabel: it, Severity: severity(n.Severity),
+			sum := NCSummary{NCID: n.ID, Number: n.Number, Status: n.Status, ItemID: it, ItemLabel: v.Label(), Severity: severity(n.Severity),
 				StepKey: n.Draft.StepKey, Disposition: dispositionOf(n), FoundAt: n.FoundAt,
 				InvestigationStatus: n.Investigation, Containment: st.ContainmentLevel(), Commission: n.Commission}
 			if n.DefectTypeCode != "" {
@@ -469,7 +469,7 @@ func (s *Service) Card(ctx context.Context, ncID string, m platform.Moment) (NCC
 func (s *Service) card(v *itemView, n dom.NC, now time.Time) NCCard {
 	st := v.State()
 	c := NCCard{
-		NCID: n.ID, Number: n.Number, Status: n.Status, ItemID: v.ItemID, ItemLabel: v.ItemID,
+		NCID: n.ID, Number: n.Number, Status: n.Status, ItemID: v.ItemID, ItemLabel: v.Label(),
 		Axes: axes(st), BasisSeq: v.BasisSeq, InvestigationStatus: n.Investigation, Origin: n.Origin, Commission: n.Commission,
 		PhysicallyNotMoved: st.PhysicallyNotMoved(), HumanDecisions: []NCRecordRef{},
 	}

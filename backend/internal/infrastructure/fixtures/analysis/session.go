@@ -460,6 +460,10 @@ func withHypotheses(ctx context.Context, h app.Hypotheses, m platform.Moment) ap
 			if x := find(b.HypothesisID); x != nil {
 				x.History = append(x.History, app.HypothesisChange{At: f.At, EventID: &evt, Text: "Запрошено: " + b.What})
 			}
+		case app.RecordMeasurement:
+			if x := find(b.HypothesisID); x != nil {
+				x.History = append(x.History, app.HypothesisChange{At: f.At, EventID: &evt, Text: "Результат проверки: " + b.Result})
+			}
 		case app.ConcludeCause:
 			if x := find(b.HypothesisID); x != nil && b.Conclusion == "confirmed" {
 				x.Status = "confirmed"

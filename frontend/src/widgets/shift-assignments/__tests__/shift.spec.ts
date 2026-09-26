@@ -2,7 +2,6 @@
 // только допущенных по квалификации; контролёра — запрос мастера с
 // согласованием начальника ОТК, назначение — по закрытому маршруту документа.
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { NSelect } from 'naive-ui'
 import { mockApi, mountWidget, problem, settle } from '@/entities/run/__tests__/api'
 import { assignments, at, foremanSession, locations, posts, qualifications, shifts } from '@/entities/workplace/__tests__/fixtures'
 import type { AccessPerson, AccessRoleList } from '@/shared/api/generated/model'
@@ -48,6 +47,19 @@ function routes(over: Record<string, unknown> = {}) {
         { document_id: 'DOC-CA-1', subject: { entity: 'workplace', id: 'WP-QC-WC' }, template: 'controller-assignment@1', title: 'Назначение контролёра', status: 'route_closed', version: 1, closed_at: at('07:40') },
       ],
     },
+    'GET /api/v1/workplaces/WP-WELD-2/candidates': {
+      workplace_id: 'WP-WELD-2',
+      basis_seq: 9000,
+      items: [
+        { person_id: 'W22', display: 'Сварщик W22', role: 'performer', allowed: true, qualification_verdict: 'ok', why: 'Аттестация сварщика действует' },
+        { person_id: 'W23', display: 'Сварщик W23', role: 'performer', allowed: false, qualification_verdict: 'expired', why: 'Аттестация истекла 21.09' },
+      ],
+    },
+    'GET /api/v1/workplaces/WP-QC-WC/candidates': {
+      workplace_id: 'WP-QC-WC',
+      basis_seq: 9000,
+      items: [{ person_id: 'INS-01', display: 'Контролёр ОТК 1', role: 'quality_inspector', allowed: false, needs_approval: true, qualification_verdict: 'ok', why: 'Назначение — по согласованию начальника ОТК' }],
+    },
     'POST /api/v1/assignments': receipt(701),
     'POST /api/v1/assignments/clear': receipt(702),
     'POST /api/v1/documents/requests': receipt(703),
@@ -78,11 +90,14 @@ describe('виджет «Смена»', () => {
     expect(w2.text()).toContain('По графику на месте — ключ не вставлен')
     expect(w2.find('[data-testid="performers"]').text()).toContain('Сварщик W21')
     expect(w2.find('[data-testid="performers"]').text()).toContain('Нет допуска к рабочему месту')
-    const pick = w2.findAllComponents(NSelect).find((c: { attributes: (k: string) => string | undefined }) => c.attributes('data-testid') === 'performer-pick')!
-    const options = pick.props('options') as { value: string; label: string; disabled: boolean }[]
-    expect(options.find((o) => o.value === 'W23')).toMatchObject({ disabled: true, label: 'Сварщик W23 — аттестация истекла' })
-    expect(options.find((o) => o.value === 'W22')?.disabled).toBe(false)
-    expect(options.some((o) => o.value === 'O17')).toBe(false)
+    // Назначение — в правом окне: кандидаты с вердиктом квалификации от сервера (разбор стола мастера).
+    await w2.find('[data-testid="configure"]').trigger('click')
+    await settle()
+    const w23 = document.querySelector('[data-testid="cand-W23"]') as HTMLElement
+    expect(w23.textContent).toContain('Аттестация истекла 21.09')
+    expect((w23.querySelector('input') as HTMLInputElement).disabled).toBe(true)
+    expect((document.querySelector('[data-testid="cand-W22"] input') as HTMLInputElement).disabled).toBe(false)
+    w.unmount()
   })
 
   it('назначить исполнителя: access.assignment.set со сменой, basis_seq назначений и policy_seq сеанса', async () => {
@@ -141,8 +156,12 @@ describe('виджет «Смена»', () => {
     expect(qc.find('[data-document="DOC-CA-1"]').text()).toContain('Согласовано')
     expect(w.find('[data-workplace="WP-WELD-1"] [data-testid="approvals"]').exists()).toBe(false)
     await qc.find('[data-testid="use-approval"]').trigger('click')
-    expect(qc.find('[data-testid="assign-inspector"]').exists()).toBe(true)
-    await w.findComponent(ShiftAssignmentsView).vm.$emit('assign', 'WP-QC-WC', 'quality_inspector', 'INS-01', 'DOC-CA-1')
+    await settle()
+    const ins = document.querySelector('[data-record="post-assignment"] input[value="INS-01"]') as HTMLInputElement
+    ins.checked = true
+    ins.dispatchEvent(new Event('change'))
+    await settle()
+    ;(document.querySelector('[data-testid="assign-inspector"]') as HTMLElement).click()
     await settle()
     const post = calls.find((c) => c.method === 'POST' && c.path === '/api/v1/assignments')
     expect(post?.body).toMatchObject({ assignee_role: 'quality_inspector', person_id: 'INS-01', approval_document_id: 'DOC-CA-1' })

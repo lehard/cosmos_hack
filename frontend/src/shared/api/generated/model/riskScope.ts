@@ -4,6 +4,7 @@
  */
 import type { FactorRef } from './factorRef';
 import type { KnownGood } from './knownGood';
+import type { NarrowOption } from './narrowOption';
 import type { ScopeItem } from './scopeItem';
 import type { ScopeVersion } from './scopeVersion';
 import type { TimeWindow } from './timeWindow';
@@ -18,6 +19,8 @@ export interface RiskScope {
   /** Изделия текущей версии. */
   items: ScopeItem[];
   last_known_good?: KnownGood;
+  /** Готовые сужения области по данным (кнопка в один щелчок, FR-61): изделия и основание из журнала; решение и подпись — человека (incident.scope.narrow). */
+  narrow_options?: NarrowOption[];
   /** Несоответствия инцидента: по ним — /nonconformities/{nc_id}/circumstances и /hypotheses. */
   nc_ids: string[];
   /** Несоответствие с гипотезами — вход «Почему могло произойти». */

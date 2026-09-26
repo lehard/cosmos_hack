@@ -55,7 +55,7 @@ func Scenario(t *testing.T, w *World, store engineapp.ProjectionStore) {
 	if rs.PrimaryNCID == nil || len(rs.Versions) != 1 || rs.Versions[0].Trigger == nil || rs.Versions[0].Trigger.Kind != "computed" || len(rs.Versions[0].ItemsAdded) != 34 {
 		t.Fatalf("область v1 для стола: %+v", rs.Versions)
 	}
-	if len(rs.Items) != 34 || rs.LastKnownGood == nil || !strings.HasPrefix(rs.LastKnownGood.Label, "F-006") || rs.Window == nil {
+	if len(rs.Items) != 34 || rs.LastKnownGood == nil || !strings.HasPrefix(rs.LastKnownGood.Label, "Ф-006") || rs.Window == nil {
 		t.Fatalf("область v1: %d изделий, отсчёт %+v", len(rs.Items), rs.LastKnownGood)
 	}
 	src := map[string]Weld{}
@@ -130,7 +130,7 @@ func Scenario(t *testing.T, w *World, store engineapp.ProjectionStore) {
 			left = append(left, it.Label)
 		}
 	}
-	if !slices.Equal(left, []string{"F-015", "F-017", "F-019", "F-021", "F-023", "F-025"}) {
+	if !slices.Equal(left, []string{"Ф-015", "Ф-017", "Ф-019", "Ф-021", "Ф-023", "Ф-025"}) {
 		t.Fatalf("итог: %v", left)
 	}
 	if b := rsV3.Versions[2].Breakdown; b.InProduction+b.MovedOn+b.Assembled+b.Shipped != 6 {

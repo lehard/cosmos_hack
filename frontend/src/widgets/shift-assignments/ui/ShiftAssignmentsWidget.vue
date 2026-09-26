@@ -27,16 +27,17 @@ import {
   useQualifications,
   type AccessAssignment,
 } from '@/entities/workplace'
+import { AssignPostDrawer } from '@/features/post-assignment'
 import { backendModeOf } from '@/shared/api/response'
 import type { WidgetProps } from '@/shared/config/widget'
 import { newCommandId } from '@/shared/lib/command-id'
 import { useMomentStore } from '@/shared/model/moment'
 import { WidgetFrame } from '@/shared/ui'
-import { candidates, controllerDecision, rolesInheriting, shiftRows, type AssigneeRole } from '../model/shift'
+import { candidates, controllerDecision, shiftLabel, rolesInheriting, shiftRows, type AssigneeRole } from '../model/shift'
 import ShiftAssignmentsView from './ShiftAssignmentsView.vue'
 
 const props = defineProps<WidgetProps>()
-const { t } = useI18n()
+const { t, d } = useI18n()
 const moment = useMomentStore()
 const session = useSession()
 const locationsQ = useLocations()
@@ -84,6 +85,12 @@ function blocked(list: readonly unknown[]): string | null {
 }
 const personName = (id: string) => persons.value.find((p) => p.person_id === id)?.display_name ?? id
 
+const shiftTitle = computed(() => {
+  const s = shiftsQ.data.value?.data.find((x) => x.shift_id === shiftId.value)
+  return s ? shiftLabel(s, (iso) => d(new Date(iso), 'time')) : null
+})
+/** Пост, открытый в окне назначения (кандидаты с квалификацией, документ согласования). */
+const configureFor = ref<{ id: string; title: string; doc: string | null } | null>(null)
 const assignCmd = useAssignmentCommand()
 const requestCmd = useControllerAssignmentRequest()
 const result = ref<string | null>(null)
@@ -187,8 +194,19 @@ const allFailed = computed(() => !rows.value && !!postsQ.error.value && !!assign
       :result="result"
       :density="density"
       @assign="onAssign"
+      @configure="(id, title, doc) => (configureFor = { id, title, doc })"
       @clear="onClear"
       @request-controller="onRequestController"
+    />
+    <AssignPostDrawer
+      :show="!!configureFor"
+      :workplace-id="configureFor?.id ?? null"
+      :workplace-title="configureFor?.title ?? ''"
+      :shift-id="shiftId"
+      :shift-title="shiftTitle"
+      :approval-document-id="configureFor?.doc ?? null"
+      :can-act="!moment.isReplay"
+      @close="configureFor = null"
     />
   </WidgetFrame>
 </template>

@@ -97,6 +97,7 @@ var dataTypes = [...]DataType{
 	{Type: "incident.incident.closed", Version: 1, New: func() any { return new(IncidentIncidentClosedV1) }},
 	{Type: "incident.incident.opened", Version: 1, New: func() any { return new(IncidentIncidentOpenedV1) }},
 	{Type: "incident.item.assessed", Version: 1, New: func() any { return new(IncidentItemAssessedV1) }},
+	{Type: "incident.measurement.recorded", Version: 1, New: func() any { return new(IncidentMeasurementRecordedV1) }},
 	{Type: "incident.measurement.requested", Version: 1, New: func() any { return new(IncidentMeasurementRequestedV1) }},
 	{Type: "incident.membership.changed", Version: 1, New: func() any { return new(IncidentMembershipChangedV1) }},
 	{Type: "incident.operator_error.confirmed", Version: 1, New: func() any { return new(IncidentOperatorErrorConfirmedV1) }},

@@ -147,6 +147,9 @@ func (s *Service) facts(ctx context.Context, v dom.IncidentRecord, primary *stri
 					if h.ConfidenceBP != nil {
 						c = *h.ConfidenceBP
 					}
+					if r := measured(n, h.ID); r != nil && r.Outcome != dom.MeasurementInconclusive {
+						continue // проверка выполнена — дальше вывод о причине человеком
+					}
 					if h.MeasurementHint != "" && c > best {
 						best, f.NextCheck = c, h.MeasurementHint
 					}
@@ -221,10 +224,66 @@ func hypothesisHistory(n dom.NCRecord, id, category string) []HypothesisChange {
 			out = append(out, HypothesisChange{At: h.At, EventID: strp(h.EventID), Text: text})
 		}
 	}
+	// Проверка гипотезы измерением: запрос и результат (FR-59, FR-135).
+	for _, m := range n.Measurements {
+		if m.HypothesisID != id {
+			continue
+		}
+		out = append(out, HypothesisChange{At: m.At, EventID: strp(m.EventID), Text: "Запрошена проверка: " + m.What})
+		if r := m.Result; r != nil {
+			var c *int
+			if bp, ok := resultConfidence(r.Outcome, prev); ok {
+				c = &bp
+				prev = bp
+			}
+			out = append(out, HypothesisChange{At: r.At, ConfidenceBP: c, EventID: strp(r.EventID),
+				Text: "Результат проверки «" + m.What + "» — " + outcomeText(r.Outcome) + ": " + r.Text})
+		}
+	}
 	if c := n.Cause; c != nil && c.Conclusion == "confirmed" && c.Category == category {
 		out = append(out, HypothesisChange{At: c.At, EventID: strp(c.EventID), Text: "Причина подтверждена (" + c.Actor + "): " + c.Reason.Text})
 	}
+	slices.SortStableFunc(out, func(a, b HypothesisChange) int { return a.At.Compare(b.At) })
 	return out
+}
+
+// Уверенность гипотезы после результата измерения (базисные пункты):
+// подтверждение — сильная, опровержение — слабая; «оценить нельзя» не меняет.
+const (
+	confidenceMeasuredSupports = 9500
+	confidenceMeasuredRefutes  = 500
+)
+
+// resultConfidence — уверенность после результата измерения; ok=false — не меняется.
+func resultConfidence(outcome string, prev int) (int, bool) {
+	switch outcome {
+	case dom.MeasurementSupports:
+		return max(prev, confidenceMeasuredSupports), true
+	case dom.MeasurementRefutes:
+		return confidenceMeasuredRefutes, true
+	}
+	return 0, false
+}
+
+// measured — последний результат измерения по гипотезе (nil — нет).
+func measured(n dom.NCRecord, id string) *dom.MeasurementResult {
+	var out *dom.MeasurementResult
+	for _, m := range n.Measurements {
+		if m.HypothesisID == id && m.Result != nil {
+			out = m.Result
+		}
+	}
+	return out
+}
+
+func outcomeText(o string) string {
+	switch o {
+	case dom.MeasurementSupports:
+		return "подтверждает гипотезу"
+	case dom.MeasurementRefutes:
+		return "опровергает гипотезу"
+	}
+	return "оценить нельзя"
 }
 
 // bpText — базисные пункты долей словами: 8500 → «0,85».

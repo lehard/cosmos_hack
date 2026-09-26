@@ -13,57 +13,45 @@ const mountView = (model = weldScope(), props: Record<string, unknown> = {}) =>
   mount(RiskScopeView, { props: { model, ...props }, global: { plugins: [createPinia(), i18n] } })
 
 describe('область риска', () => {
-  it('итог крупно: сколько сейчас и путь 34 → 13 → 6', () => {
+  it('герой — путь 34 → 13 → 6 кнопками; открыта текущая ступень; изделие выходит только с доказательством', () => {
     const w = mountView()
-    expect(w.find('[data-testid="scope-now"]').text()).toBe('6')
-    expect(w.find('[data-testid="scope-path"]').findAll('li').map((s) => s.text())).toEqual(['34', '13', '6'])
     expect(w.findAll('[data-testid="size"]').map((s) => s.text())).toEqual(['34', '13', '6'])
+    expect(w.find('[data-testid="path-step"][aria-pressed="true"]').attributes('data-version')).toBe('3')
     expect(w.find('[data-testid="reduction"]').text()).toBe('Область сокращена: 34 → 6')
-    expect(w.text()).toContain('Сокращение на 82,4')
+    expect(w.find('[data-testid="not-defective"]').text()).toContain('«нет данных» — не «годно»')
   })
 
-  it('у каждой ступени — что произошло, основание сервера, автор, время, где изделия', () => {
-    const steps = mountView().findAll('[data-testid="version-line"]')
-    expect(steps[0]!.text()).toContain('Система собрала область')
-    expect(steps[0]!.text()).toContain('Правило системы')
-    expect(steps[1]!.find('.delta').text()).toBe('−21')
-    expect(steps[1]!.text()).toContain('Сужено человеком по основанию')
-    expect(steps[1]!.text()).toContain('Журнал станка: до 08:05 режим в норме')
-    expect(steps[1]!.text()).toContain('Технолог Т-03')
-    expect(steps[1]!.text()).toContain('доказательств: 2')
-    const named = weldScope()
-    named.versions[1]!.author = 'TEC-01'
-    named.versions[1]!.author_name = 'Е. Орлова'
-    expect(mountView(named).findAll('[data-testid="version-line"]')[1]!.text()).toContain('Е. Орлова')
-    expect(steps[2]!.find('.delta').text()).toBe('−7')
-    expect(steps[2]!.find('.step-where').text()).toContain('Ушли дальше 1')
-    expect(steps[2]!.find('.step-where').text()).not.toContain('Отгружены')
+  it('щелчок по числу — почему такой размер: что произошло, основание, автор, время, где изделия', async () => {
+    const w = mountView()
+    await w.find('[data-testid="path-step"][data-version="2"]').trigger('click')
+    const step = w.find('[data-testid="version-line"]')
+    expect(step.attributes('data-version')).toBe('2')
+    expect(step.find('.delta').text()).toBe('−21')
+    expect(step.text()).toContain('Сужено человеком по основанию')
+    expect(step.text()).toContain('Журнал станка: до 08:05 режим в норме')
+    expect(step.text()).toContain('Технолог Т-03')
+    expect(step.text()).toContain('доказательств: 2')
+    await w.find('[data-testid="path-step"][data-version="1"]').trigger('click')
+    expect(w.find('[data-testid="version-line"]').text()).toContain('Система собрала область')
+    expect(w.find('[data-testid="version-line"]').text()).toContain('Правило системы')
   })
 
   it('расширение новыми данными — отдельной ступенью, с приростом', () => {
     const m = weldScope()
     m.versions.push({ ...m.versions[2]!, scope_version: 4, change: 'expanded', size: 18, author: null, reason: { text: 'Поздний журнал: отклонение с 07:47' } })
-    const step = mountView(m).find('li[data-version="4"]')
+    const step = mountView(m).find('[data-testid="version-line"]')
+    expect(step.attributes('data-version')).toBe('4')
     expect(step.text()).toContain('Новые данные расширили область')
     expect(step.find('.delta').text()).toBe('+12')
   })
 
-  it('изделия группами по тому, что известно: серое (нет данных) — не зелёное; изделия в области — не брак', () => {
+  it('изделия — по раскрытию, группами: серое (нет данных) — не зелёное; щелчок — открыть изделие', async () => {
     const w = mountView()
-    const counts = w.find('[data-testid="known-counts"]')
-    expect(counts.findAll('li').map((l) => l.attributes('data-known'))).toEqual(['confirmed', 'suspect', 'unknown', 'excluded'])
-    expect(counts.find('[data-known="suspect"] .count-n').text()).toBe('4')
-    expect(counts.find('[data-known="unknown"]').text()).toContain('Нет данных')
-    const unknown = w.find('.group[data-known="unknown"]')
-    expect(unknown.text()).toContain('не исключено')
-    expect(unknown.find('[data-item="ANT:FL-0046"]').text()).toContain('Наблюдать')
-    expect(w.find('.group[data-known="confirmed"] [data-item="ANT:FL-0042"]').text()).toContain('Заблокировать')
-    expect(w.find('[data-testid="not-defective"]').text()).toContain('Это не брак')
-  })
-
-  it('щелчок по изделию — открыть изделие', async () => {
-    const w = mountView()
-    await w.find('[data-item="ANT:FL-0043"] button').trigger('click')
+    const items = w.find('[data-testid="items"]')
+    expect(items.element.tagName).toBe('DETAILS')
+    expect(items.find('.group[data-known="unknown"]').text()).toContain('не исключено')
+    expect(items.find('.group[data-known="confirmed"] [data-item="ANT:FL-0042"]').text()).toContain('Заблокировать')
+    await items.find('[data-item="ANT:FL-0043"] button').trigger('click')
     expect(w.emitted('open-item')?.[0]).toEqual(['ANT:FL-0043'])
   })
 
@@ -73,8 +61,8 @@ describe('область риска', () => {
     m.versions[2]!.evidence_event_ids = []
     const w = mountView(m)
     expect(w.find('[data-testid="issues"]').text()).toContain('Версия 3: изделия вышли из области без основания')
-    expect(w.find('li[data-version="3"]').attributes('data-basis')).toBe('missing')
-    expect(w.find('li[data-version="3"] .step-basis').text()).toContain('без основания')
+    expect(w.find('[data-testid="path-step"][data-version="3"]').attributes('data-basis')).toBe('missing')
+    expect(w.find('[data-testid="version-line"] .step-basis').text()).toContain('без основания')
   })
 
   it('без прав «сузить / расширить» выключены', () => {
@@ -99,10 +87,39 @@ describe('область риска', () => {
     expect(w.emitted('narrow')?.[0]).toEqual([{ item_ids: ['ANT:FL-0043'], reason: 'Доп. ВИК: признаки не обнаружены', evidence_event_ids: [first] }])
   })
 
+  it('готовое сужение по данным — один щелчок: изделия, записи-доказательства и основание уходят командой', async () => {
+    const m = weldScope()
+    m.narrow_options = [{
+      label: 'Исключить сваренные на ИС-1 — журнал в уставке',
+      item_ids: ['ANT:FL-0043', 'ANT:FL-0044'],
+      evidence: [{ event_id: 'e-is1', event_type: 'equipment.cycle.summarized', occurred_at: '2026-09-23T07:00:00Z', text: 'ИС-1: ток 158–163 А в уставке' }],
+      reason_text: 'Журнал ИС-1 непрерывный и в уставке',
+    }]
+    const w = mountView(m)
+    const opt = w.find('[data-testid="narrow-options"]')
+    expect(opt.text()).toContain('Исключить сваренные на ИС-1')
+    expect(opt.text()).toContain('ИС-1: ток 158–163 А в уставке')
+    await opt.find('[data-testid="narrow-option"]').trigger('click')
+    expect(w.emitted('narrow')?.[0]).toEqual([{ item_ids: ['ANT:FL-0043', 'ANT:FL-0044'], reason: 'Журнал ИС-1 непрерывный и в уставке', evidence_event_ids: ['e-is1'] }])
+  })
+
+  it('без права сужать готовых сужений не видно', () => {
+    const m = weldScope()
+    m.narrow_options = [{ label: 'x', item_ids: ['ANT:FL-0043'], evidence: [{ event_id: 'e', event_type: 't', occurred_at: '2026-09-23T07:00:00Z' }], reason_text: 'r' }]
+    expect(mountView(m, { canNarrow: false }).find('[data-testid="narrow-options"]').exists()).toBe(false)
+  })
+
   it('сослаться не на что — сузить нельзя, так и написано', async () => {
     const w = mountView()
     await w.find('[data-testid="narrow"]').trigger('click')
     expect(w.find('[data-testid="no-evidence"]').text()).toContain('Сузить область нельзя, пока нет данных')
+  })
+
+  it('автор ступени — по имени из ответа', async () => {
+    const m = weldScope()
+    m.versions[2]!.author = 'TEC-01'
+    m.versions[2]!.author_name = 'Е. Орлова'
+    expect(mountView(m).find('[data-testid="version-line"]').text()).toContain('Е. Орлова')
   })
 
   it('ступень: повод (опоздавшие данные), исключённые изделия и доказательства словами', () => {
@@ -113,7 +130,7 @@ describe('область риска', () => {
       items_removed: ['ANT:FL-0040'],
       evidence: [{ event_id: 'e1', event_type: 'equipment.deviation.detected', occurred_at: '2026-09-22T07:20:00Z', text: 'Ток 176 А вне уставки' }],
     }
-    const step = mountView(m).find('li[data-version="3"]')
+    const step = mountView(m).find('[data-testid="version-line"]')
     expect(step.find('[data-testid="step-trigger"]').text()).toBe('Пришли опоздавшие данные: пришёл журнал ИС-2: ток 176 А при уставке 160 ± 10 А')
     expect(step.find('[data-testid="step-items"]').text()).toContain('исключены')
     expect(step.find('[data-testid="step-items"]').text()).toContain('FL-0040')

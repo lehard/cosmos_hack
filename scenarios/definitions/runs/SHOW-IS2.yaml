@@ -40,12 +40,14 @@ live:
 orders:
   - {id: ORD-0911, at: "2026-09-11T08:00:00+03:00", external: ord-5c2b-0911, quantity: 2, due: "2026-09-25", items: "F-201…F-202",
      lots: {blank: LOT-ZF-201, ring: LOT-R-116, cover: LOT-C-301, seal: LOT-SL-401, fastener: LOT-FS-501, valve: LOT-V-601}}
+  - {id: ORD-0914, at: "2026-09-14T09:00:00+03:00", external: ord-5c2b-0914, quantity: 31, due: "2026-10-02", items: "F-101…F-131",
+     lots: {blank: LOT-ZF-201, ring: LOT-R-116, cover: LOT-C-301, seal: LOT-SL-401, fastener: LOT-FS-501, valve: LOT-V-601}}
   - {id: ORD-0917, at: "2026-09-16T09:00:00+03:00", external: ord-5c2b-0917, quantity: 3, due: "2026-10-09", items: "F-001…F-003",
      lots: {blank: LOT-ZF-201, ring: LOT-R-116, cover: LOT-C-301, seal: LOT-SL-401, fastener: LOT-FS-501, valve: LOT-V-601}}
 
 # Партии — общие для прошлой и живой партии фланцев (история короче: меньше приёмок).
 lots:
-  - {id: LOT-ZF-201, component: FL-100.01.001, supplier: SUP-1, quantity: 5, certificate: С-201, heat: "5512", arrived: "2026-09-11T08:30:00+03:00"}
+  - {id: LOT-ZF-201, component: FL-100.01.001, supplier: SUP-1, quantity: 40, certificate: С-201, heat: "5512", arrived: "2026-09-11T08:30:00+03:00"}
   - {id: LOT-R-116,  component: FL-100.01.002, supplier: SUP-2, quantity: 5, certificate: С-116, units: "R-001…R-005", arrived: "2026-09-11T08:40:00+03:00"}
   - {id: LOT-C-301,  component: FL-100.00.003, supplier: SUP-4, quantity: 5, units: "C-001…C-005", arrived: "2026-09-11T08:50:00+03:00"}
   - {id: LOT-SL-401, component: FL-100.00.004, supplier: SUP-5, quantity: 10, arrived: "2026-09-11T09:00:00+03:00"}
@@ -64,6 +66,7 @@ refs:
   NC-F003: {operation: nonconformity.nonconformity.list, params: {item_id: "{item:F-003}"}, path: "/items/0/nc_id", note: "прожог У2 на Ф-003"}
   SIG-F003: {operation: quality.signal.list, params: {item_id: "{item:F-003}", state: open}, path: "/items/0/signal_id"}
   INC-IS2: {operation: analysis.incident.list, path: "/items/0/incident_id", note: "инцидент по ИС-2"}
+  HYP-EQ: {operation: analysis.hypothesis.list, params: {nc_id: "{ref:NC-F003}"}, path: "/hypotheses[category=equipment]/0/hypothesis_id", note: "гипотеза «оборудование ИС-2» у НС Ф-003"}
 
 items:
   # История: прошлая партия (Пн 14.09 – Чт 17.09), проведена целиком.
@@ -85,6 +88,198 @@ items:
     ring: R-005
     cover: C-005
     valve: V-005
+  # История прошлой смены (Д-85, вариант «а» «Процесса»): 31 фланец сварен на ИС-1 и ИС-2
+  # (W21, W22) между последней годной Ф-202 (Вт 15.09) и Пн 08:00 и ещё не принят на ЗТ-3 —
+  # область v1 инцидента ИС-2 ≈ 34 (31 + Ф-001…Ф-003). ИС-2 уходит из уставки с Пт 18:20;
+  # журнал ИС-2 с Пт 18:00 до Пн 08:00 копит шлюз и досылает после сужения (карточка SHOW-IS2).
+  # Короткая история (entry: weld): регистрация сразу на сварочном участке — одно решение
+  # на изделие; сварка — факты источника поста, одна сводка тока на сварку; КТ-3 — факт камеры.
+  - id: F-101
+    order: ORD-0914
+    launch: "2026-09-16T07:30:00+03:00"
+    entry: weld
+    until: kt3
+    weld: {at: "2026-09-16T08:00:00+03:00", station: WS-1, welder: WLD-02, arc: ["2026-09-16T08:10:00+03:00", "2026-09-16T08:11:00+03:00"]}
+  - id: F-102
+    order: ORD-0914
+    launch: "2026-09-16T08:30:00+03:00"
+    entry: weld
+    until: kt3
+    weld: {at: "2026-09-16T09:00:00+03:00", station: WS-1, welder: WLD-03, arc: ["2026-09-16T09:10:00+03:00", "2026-09-16T09:11:00+03:00"]}
+  - id: F-103
+    order: ORD-0914
+    launch: "2026-09-16T09:30:00+03:00"
+    entry: weld
+    until: kt3
+    weld: {at: "2026-09-16T10:00:00+03:00", station: WS-1, welder: WLD-02, arc: ["2026-09-16T10:10:00+03:00", "2026-09-16T10:11:00+03:00"]}
+  - id: F-104
+    order: ORD-0914
+    launch: "2026-09-16T10:30:00+03:00"
+    entry: weld
+    until: kt3
+    weld: {at: "2026-09-16T11:00:00+03:00", station: WS-1, welder: WLD-03, arc: ["2026-09-16T11:10:00+03:00", "2026-09-16T11:11:00+03:00"]}
+  - id: F-105
+    order: ORD-0914
+    launch: "2026-09-16T12:30:00+03:00"
+    entry: weld
+    until: kt3
+    weld: {at: "2026-09-16T13:00:00+03:00", station: WS-1, welder: WLD-02, arc: ["2026-09-16T13:10:00+03:00", "2026-09-16T13:11:00+03:00"]}
+  - id: F-106
+    order: ORD-0914
+    launch: "2026-09-16T13:30:00+03:00"
+    entry: weld
+    until: kt3
+    weld: {at: "2026-09-16T14:00:00+03:00", station: WS-1, welder: WLD-03, arc: ["2026-09-16T14:10:00+03:00", "2026-09-16T14:11:00+03:00"]}
+  - id: F-107
+    order: ORD-0914
+    launch: "2026-09-16T14:30:00+03:00"
+    entry: weld
+    until: kt3
+    weld: {at: "2026-09-16T15:00:00+03:00", station: WS-1, welder: WLD-02, arc: ["2026-09-16T15:10:00+03:00", "2026-09-16T15:11:00+03:00"]}
+  - id: F-108
+    order: ORD-0914
+    launch: "2026-09-17T07:30:00+03:00"
+    entry: weld
+    until: kt3
+    weld: {at: "2026-09-17T08:00:00+03:00", station: WS-1, welder: WLD-03, arc: ["2026-09-17T08:10:00+03:00", "2026-09-17T08:11:00+03:00"]}
+  - id: F-109
+    order: ORD-0914
+    launch: "2026-09-17T08:30:00+03:00"
+    entry: weld
+    until: kt3
+    weld: {at: "2026-09-17T09:00:00+03:00", station: WS-1, welder: WLD-02, arc: ["2026-09-17T09:10:00+03:00", "2026-09-17T09:11:00+03:00"]}
+  - id: F-110
+    order: ORD-0914
+    launch: "2026-09-17T09:30:00+03:00"
+    entry: weld
+    until: kt3
+    weld: {at: "2026-09-17T10:00:00+03:00", station: WS-1, welder: WLD-03, arc: ["2026-09-17T10:10:00+03:00", "2026-09-17T10:11:00+03:00"]}
+  - id: F-111
+    order: ORD-0914
+    launch: "2026-09-17T10:30:00+03:00"
+    entry: weld
+    until: kt3
+    weld: {at: "2026-09-17T11:00:00+03:00", station: WS-1, welder: WLD-02, arc: ["2026-09-17T11:10:00+03:00", "2026-09-17T11:11:00+03:00"]}
+  - id: F-112
+    order: ORD-0914
+    launch: "2026-09-17T12:30:00+03:00"
+    entry: weld
+    until: kt3
+    weld: {at: "2026-09-17T13:00:00+03:00", station: WS-1, welder: WLD-03, arc: ["2026-09-17T13:10:00+03:00", "2026-09-17T13:11:00+03:00"]}
+  - id: F-113
+    order: ORD-0914
+    launch: "2026-09-17T13:30:00+03:00"
+    entry: weld
+    until: kt3
+    weld: {at: "2026-09-17T14:00:00+03:00", station: WS-1, welder: WLD-02, arc: ["2026-09-17T14:10:00+03:00", "2026-09-17T14:11:00+03:00"]}
+  - id: F-114
+    order: ORD-0914
+    launch: "2026-09-17T14:30:00+03:00"
+    entry: weld
+    until: kt3
+    weld: {at: "2026-09-17T15:00:00+03:00", station: WS-1, welder: WLD-03, arc: ["2026-09-17T15:10:00+03:00", "2026-09-17T15:11:00+03:00"]}
+  - id: F-115
+    order: ORD-0914
+    launch: "2026-09-18T07:30:00+03:00"
+    entry: weld
+    until: kt3
+    weld: {at: "2026-09-18T08:00:00+03:00", station: WS-1, welder: WLD-02, arc: ["2026-09-18T08:10:00+03:00", "2026-09-18T08:11:00+03:00"]}
+  - id: F-116
+    order: ORD-0914
+    launch: "2026-09-18T08:30:00+03:00"
+    entry: weld
+    until: kt3
+    weld: {at: "2026-09-18T09:00:00+03:00", station: WS-1, welder: WLD-03, arc: ["2026-09-18T09:10:00+03:00", "2026-09-18T09:11:00+03:00"]}
+  - id: F-117
+    order: ORD-0914
+    launch: "2026-09-18T09:30:00+03:00"
+    entry: weld
+    until: kt3
+    weld: {at: "2026-09-18T10:00:00+03:00", station: WS-1, welder: WLD-02, arc: ["2026-09-18T10:10:00+03:00", "2026-09-18T10:11:00+03:00"]}
+  - id: F-118
+    order: ORD-0914
+    launch: "2026-09-18T10:30:00+03:00"
+    entry: weld
+    until: kt3
+    weld: {at: "2026-09-18T11:00:00+03:00", station: WS-1, welder: WLD-03, arc: ["2026-09-18T11:10:00+03:00", "2026-09-18T11:11:00+03:00"]}
+  - id: F-119
+    order: ORD-0914
+    launch: "2026-09-18T12:30:00+03:00"
+    entry: weld
+    until: kt3
+    weld: {at: "2026-09-18T13:00:00+03:00", station: WS-1, welder: WLD-02, arc: ["2026-09-18T13:10:00+03:00", "2026-09-18T13:11:00+03:00"]}
+  - id: F-120
+    order: ORD-0914
+    launch: "2026-09-18T13:30:00+03:00"
+    entry: weld
+    until: kt3
+    weld: {at: "2026-09-18T14:00:00+03:00", station: WS-1, welder: WLD-03, arc: ["2026-09-18T14:10:00+03:00", "2026-09-18T14:11:00+03:00"]}
+  - id: F-121
+    order: ORD-0914
+    launch: "2026-09-16T08:00:00+03:00"
+    entry: weld
+    until: kt3
+    weld: {at: "2026-09-16T08:30:00+03:00", station: WS-2, welder: WLD-03, arc: ["2026-09-16T08:40:00+03:00", "2026-09-16T08:41:00+03:00"]}
+  - id: F-122
+    order: ORD-0914
+    launch: "2026-09-16T11:00:00+03:00"
+    entry: weld
+    until: kt3
+    weld: {at: "2026-09-16T11:30:00+03:00", station: WS-2, welder: WLD-02, arc: ["2026-09-16T11:40:00+03:00", "2026-09-16T11:41:00+03:00"]}
+  - id: F-123
+    order: ORD-0914
+    launch: "2026-09-16T14:00:00+03:00"
+    entry: weld
+    until: kt3
+    weld: {at: "2026-09-16T14:30:00+03:00", station: WS-2, welder: WLD-03, arc: ["2026-09-16T14:40:00+03:00", "2026-09-16T14:41:00+03:00"]}
+  - id: F-124
+    order: ORD-0914
+    launch: "2026-09-17T08:00:00+03:00"
+    entry: weld
+    until: kt3
+    weld: {at: "2026-09-17T08:30:00+03:00", station: WS-2, welder: WLD-02, arc: ["2026-09-17T08:40:00+03:00", "2026-09-17T08:41:00+03:00"]}
+  - id: F-125
+    order: ORD-0914
+    launch: "2026-09-17T11:00:00+03:00"
+    entry: weld
+    until: kt3
+    weld: {at: "2026-09-17T11:30:00+03:00", station: WS-2, welder: WLD-03, arc: ["2026-09-17T11:40:00+03:00", "2026-09-17T11:41:00+03:00"]}
+  - id: F-126
+    order: ORD-0914
+    launch: "2026-09-17T14:00:00+03:00"
+    entry: weld
+    until: kt3
+    weld: {at: "2026-09-17T14:30:00+03:00", station: WS-2, welder: WLD-02, arc: ["2026-09-17T14:40:00+03:00", "2026-09-17T14:41:00+03:00"]}
+  - id: F-127
+    order: ORD-0914
+    launch: "2026-09-18T10:00:00+03:00"
+    entry: weld
+    until: kt3
+    weld: {at: "2026-09-18T10:30:00+03:00", station: WS-2, welder: WLD-03, arc: ["2026-09-18T10:40:00+03:00", "2026-09-18T10:41:00+03:00"]}
+  - id: F-128
+    order: ORD-0914
+    launch: "2026-09-18T18:00:00+03:00"
+    entry: weld
+    until: kt3
+    weld: {at: "2026-09-18T18:30:00+03:00", station: WS-2, welder: WLD-02, arc: ["2026-09-18T18:40:00+03:00", "2026-09-18T18:41:00+03:00"], current: [176, 182]}
+  - id: F-129
+    order: ORD-0914
+    launch: "2026-09-18T19:00:00+03:00"
+    entry: weld
+    until: kt3
+    weld: {at: "2026-09-18T19:30:00+03:00", station: WS-2, welder: WLD-03, arc: ["2026-09-18T19:40:00+03:00", "2026-09-18T19:41:00+03:00"], current: [176, 182]}
+  - id: F-130
+    order: ORD-0914
+    launch: "2026-09-21T05:30:00+03:00"
+    entry: weld
+    until: kt3
+    weld: {at: "2026-09-21T06:00:00+03:00", station: WS-2, welder: WLD-02, arc: ["2026-09-21T06:10:00+03:00", "2026-09-21T06:11:00+03:00"], current: [176, 182]}
+  - id: F-131
+    order: ORD-0914
+    launch: "2026-09-21T06:20:00+03:00"
+    entry: weld
+    until: kt3
+    weld: {at: "2026-09-21T06:50:00+03:00", station: WS-2, welder: WLD-03, arc: ["2026-09-21T07:00:00+03:00", "2026-09-21T07:01:00+03:00"], current: [176, 182]}
   # Живая партия: история — мехобработка и ЗТ-2 (Пт 18.09), передача в сварочный цех
   # (Пн 07:50); дальше — карточка SHOW-IS2, руками.
   - id: F-001
@@ -93,7 +288,7 @@ items:
     machining: "2026-09-18T09:00:00+03:00"
     until: sent_to_welding
     at: {sent_to_welding: "2026-09-21T07:50:00+03:00"}
-    weld: {at: "2026-09-21T08:15:00+03:00", station: WS-2, welder: WLD-02}
+    weld: {at: "2026-09-21T08:15:00+03:00", station: WS-1, welder: WLD-02}
     ring: R-001
     reference: true
   - id: F-002

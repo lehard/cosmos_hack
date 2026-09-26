@@ -31,6 +31,9 @@ type Mark struct {
 	RunID      string            `json:"run_id,omitempty"`
 	Params     map[string]string `json:"params,omitempty"`
 	Evidence   []string          `json:"evidence,omitempty"`
+	// ReceivedAt — когда запись пришла в систему (ось «что мы знали»):
+	// опоздавший журнал оборудования виден по разнице с OccurredAt.
+	ReceivedAt *time.Time `json:"received_at,omitempty"`
 }
 
 // Run — выполнение операции изделия (FR-47, FR-148): шаг, оборудование,
@@ -315,6 +318,10 @@ func addMark(s State, r kernel.Record, lane, variant, runID string, params map[s
 	}
 	m := Mark{EventID: r.EventID, EventType: string(r.Type), Variant: variant, Lane: lane, OccurredAt: r.OccurredAt,
 		Seq: r.Seq, SourceKind: r.SourceKind, RunID: runID, Params: params, Evidence: ev}
+	if !r.ReceivedAt.IsZero() {
+		at := r.ReceivedAt.UTC()
+		m.ReceivedAt = &at
+	}
 	s.Marks = append(slices.Clone(s.Marks), m)
 	return s
 }
@@ -346,6 +353,8 @@ type EquipmentEvent struct {
 	// ToolID, FixtureID — для смены инструмента.
 	ToolID    string `json:"tool_id,omitempty"`
 	FixtureID string `json:"fixture_id,omitempty"`
+	// ReceivedAt — когда запись оборудования записана в журнал (опоздание).
+	ReceivedAt *time.Time `json:"received_at,omitempty"`
 }
 
 // EquipmentEventOf — событие оборудования из факта семейства equipment
@@ -421,6 +430,10 @@ func isDeviation(e machinelogs.Event) bool {
 func fromMachinelogs(e machinelogs.Event, deviation bool) EquipmentEvent {
 	x := EquipmentEvent{EventID: e.EventID, EventType: string(e.Type), EquipmentID: e.EquipmentID, OccurredAt: e.Start,
 		EndedAt: e.End, Seq: e.Seq, SourceKind: e.SourceKind, Deviation: deviation}
+	if !e.RecordedAt.IsZero() {
+		at := e.RecordedAt
+		x.ReceivedAt = &at
+	}
 	params := map[string]string{}
 	switch e.Type {
 	case catalog.EquipmentDeviationDetected:

@@ -161,7 +161,7 @@ func (s *Scheduler) ObjectTasks(ctx context.Context, batch []jc.JournalEntry) (a
 		}
 		for _, re := range notif.ObjectReact(d.Record) {
 			id := re.ID(1)
-			exists, err := s.written(ctx, re.Slot.Subject, id)
+			exists, err := s.written(ctx, re.Slot.Subject, string(re.Type), id)
 			if err != nil {
 				return rq, err
 			}
@@ -182,16 +182,17 @@ func (s *Scheduler) ObjectTasks(ctx context.Context, batch []jc.JournalEntry) (a
 
 func objectTrigger(t string) bool {
 	switch catalog.Type(t) {
-	case catalog.IncidentMeasurementRequested, catalog.IncidentActionAssigned, catalog.AnalyzerPassportSuspended,
+	case catalog.IncidentIncidentOpened, catalog.IncidentCauseConcluded, catalog.IncidentIncidentClosed, // «Разобрать инцидент»
+		catalog.IncidentMeasurementRequested, catalog.IncidentActionAssigned, catalog.AnalyzerPassportSuspended,
 		catalog.IncidentSuggestionForwarded: // эпик 42: задача ответственному за предложение
 		return true
 	}
 	return false
 }
 
-// written — задача с этим id уже есть в потоке.
-func (s *Scheduler) written(ctx context.Context, stream, id string) (bool, error) {
-	es, err := s.Codec.Store.Read(ctx, appjournal.ReadQuery{Stream: stream, EventType: string(catalog.TaskTaskCreated), Limit: 1000})
+// written — запись задачи (поставлена или снята) с этим id уже есть в потоке.
+func (s *Scheduler) written(ctx context.Context, stream, eventType, id string) (bool, error) {
+	es, err := s.Codec.Store.Read(ctx, appjournal.ReadQuery{Stream: stream, EventType: eventType, Limit: 1000})
 	if err != nil {
 		return false, err
 	}

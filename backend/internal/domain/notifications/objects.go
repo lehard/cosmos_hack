@@ -28,6 +28,34 @@ func ObjectReact(r kernel.Record) []kernel.Reaction {
 	slot := kernel.Slot{RuleID: RuleObjectTask, Subject: r.Stream, TriggerKey: r.EventID}
 	var d TaskData
 	switch r.Type {
+	case catalog.IncidentIncidentOpened:
+		// Инцидент открыт системой (эпик 22): технологу — «Разобрать
+		// инцидент»; снимается выводом о причине или закрытием инцидента.
+		var m struct {
+			IncidentID   string `json:"incident_id"`
+			CommonFactor string `json:"common_factor"`
+			FactorRef    string `json:"factor_ref"`
+		}
+		if !decode(r, &m) || m.IncidentID == "" {
+			return nil
+		}
+		title := "Разобрать инцидент"
+		if m.FactorRef != "" {
+			title += " " + m.FactorRef
+		}
+		title += ": область риска, причина и решение по несоответствиям"
+		d = TaskData{Kind: "decision_required", AssigneeRoleID: RoleTechnologist, Title: truncate(title, 256)}
+		slot.TriggerKey = investigateKey
+	case catalog.IncidentCauseConcluded, catalog.IncidentIncidentClosed:
+		open := kernel.Slot{RuleID: RuleObjectTask, Subject: r.Stream, TriggerKey: investigateKey}
+		slot.TriggerKey = investigateKey + "/done"
+		re, err := kernel.NewReaction(Module, catalog.TaskTaskWithdrawn, slot,
+			TaskWithdrawnData{TaskID: TaskID(open), Reason: &ReasonData{Code: "fulfilled", Text: "Причина инцидента установлена или инцидент закрыт"}}, r)
+		if err != nil {
+			panic(err)
+		}
+		re.AutomationMode = 1
+		return []kernel.Reaction{re}
 	case catalog.IncidentMeasurementRequested:
 		var m struct {
 			IncidentID string `json:"incident_id"`
@@ -102,6 +130,10 @@ func ObjectReact(r kernel.Record) []kernel.Reaction {
 	re.AutomationMode = 1
 	return []kernel.Reaction{re}
 }
+
+// investigateKey — ключ слота задачи «Разобрать инцидент» в потоке инцидента:
+// одна задача на инцидент, снятие — тем же task_id.
+const investigateKey = "investigate"
 
 func actionTitle(t string) string {
 	switch t {

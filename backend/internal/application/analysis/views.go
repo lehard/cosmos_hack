@@ -29,6 +29,7 @@ type CircumstanceRecord struct {
 	EvidenceRefs    []string   `json:"evidence_refs,omitempty" doc:"Адреса материалов: кадры, протоколы."`
 	RelatedEventIDs []string   `json:"related_event_ids,omitempty" doc:"Связанные записи — подсвечиваются вместе с выбранной."`
 	SourceKind      *string    `json:"source_kind,omitempty" doc:"Вид источника факта (FR-140)."`
+	ReceivedAt      *time.Time `json:"received_at,omitempty" doc:"Когда запись пришла в систему (ось «что мы знали»): больше occurred_at — данные опоздали («пришло с задержкой … ч»)."`
 }
 
 // CausalWindow — окно возможного возникновения (FR-58).
@@ -189,7 +190,18 @@ type RiskScope struct {
 	Items             []ScopeItem    `json:"items" doc:"Изделия текущей версии."`
 	ShippedToPartners *int           `json:"shipped_to_partners,omitempty"`
 	BasisSeq          int64          `json:"basis_seq"`
+	NarrowOptions     []NarrowOption `json:"narrow_options,omitempty" doc:"Готовые сужения области по данным (кнопка в один щелчок, FR-61): изделия и основание из журнала; решение и подпись — человека (incident.scope.narrow)."`
 	IncidentLink
+}
+
+// NarrowOption — предложение сужения области по данным: «исключить сваренные
+// на ИС-1 — журнал в уставке». Система только предлагает (AD-27: правило
+// системы область не сужает); сужает человек той же операцией.
+type NarrowOption struct {
+	Label      string             `json:"label" doc:"Что сделать словами."`
+	ItemIDs    []string           `json:"item_ids" doc:"Изделия, которые будут исключены."`
+	Evidence   []JournalRecordRef `json:"evidence" doc:"Основание — записи журнала (evidence_event_ids команды), с текстом."`
+	ReasonText string             `json:"reason_text" doc:"Основание словами — reason.text команды."`
 }
 
 // NcGroup — группа несоответствий: вид дефекта × операция × оборудование.

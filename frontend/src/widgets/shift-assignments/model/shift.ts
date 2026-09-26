@@ -81,4 +81,4 @@ export function shiftLabel(s: RefShift, time: (iso: string) => string): string {
 }
 
 /** Решение, которое оформляет документ запроса: кто и в какую смену (поле `decision`). */
-export const controllerDecision = (personId: string, shiftId: string): string => `quality_inspector:${personId}@${shiftId}`
+export { controllerDecision } from '@/entities/workplace'
