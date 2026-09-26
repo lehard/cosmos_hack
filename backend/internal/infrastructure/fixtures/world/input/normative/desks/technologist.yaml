@@ -29,6 +29,12 @@ tabs:
     layout: single
     slots:
       - {id: scope, area: main, widget: risk-scope}
+  # Эпик 42 (FR-64, FR-138): меры и их эффективность — тот же виджет, что у руководителя, плотный вид.
+  - id: actions
+    title_key: widgets.quality.tab
+    layout: single
+    slots:
+      - {id: actions, area: main, widget: corrective-actions}
   - id: process
     title_key: desks.process
     layout: single
