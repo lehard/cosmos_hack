@@ -39,7 +39,7 @@ DEV_DB_ENV := $(ROOT)/.dev/db.env
 GO_DOCKER_ARGS = run --rm -u $(UID):$(GID) \
 	-e HOME=/tmp -e GOTOOLCHAIN=local -e GOFLAGS=-buildvcs=false \
 	-e GOCACHE=/cache/go-build -e GOMODCACHE=/cache/gomod \
-	-e GOLANGCI_LINT_CACHE=/cache/golangci -e TOOLBIN=/cache/bin \
+	-e GOLANGCI_LINT_CACHE=/cache/golangci -e TOOLBIN=/cache/bin -e ANT_CHECK_FAST=$(ANT_CHECK_FAST) \
 	-v $(CACHE)/go:/cache -v $(ROOT):/src -w /src/backend \
 	$(if $(wildcard $(DEV_DB_ENV)),--network ant-dev --env-file $(DEV_DB_ENV) -v $(HOME)/.config/ant-dev:/run/ant-dev:ro) \
 	$(GO_EXTRA) $(GO_IMAGE)
@@ -120,6 +120,9 @@ generate: ## Перегенерировать производные файлы 
 .PHONY: check check-backend check-frontend check-contracts check-third-party gogost-verify
 check: check-backend check-frontend check-third-party check-contracts ## Все проверки: слои, детерминизм, линтеры, тесты, фронтенд, GoGOST, контракты
 	@echo; echo "make check: зелёный"
+
+check-fast: ## Быстрая проверка при слиянии пачек: как check, но тесты из кэша и без самопроверки линтеров (Д-18)
+	@$(MAKE) --no-print-directory check ANT_CHECK_FAST=1
 
 check-backend: ## Бэкенд: правила слоёв, gofmt, vet, golangci-lint, detcheck, тесты, самопроверка линтеров
 	$(GO_RUN) /src/deploy/scripts/check-backend.sh

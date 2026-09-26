@@ -34,9 +34,14 @@ else
 fi
 
 step "go test"
-go test -count=1 ./...
+# ANT_CHECK_FAST=1 — быстрый прогон при слиянии пачек (Д-18): тесты из кэша, без самопроверки линтеров.
+if [[ "${ANT_CHECK_FAST-}" == 1 ]]; then go test ./...; else go test -count=1 ./...; fi
 
 step "go build"
 CGO_ENABLED=0 go build -o /dev/null ./cmd/...
 
-/src/deploy/scripts/arch-selftest.sh "$bin"
+if [[ "${ANT_CHECK_FAST-}" == 1 ]]; then
+  echo "самопроверка линтеров пропущена (быстрый прогон)"
+else
+  /src/deploy/scripts/arch-selftest.sh "$bin"
+fi
