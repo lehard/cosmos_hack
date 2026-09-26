@@ -23,8 +23,9 @@ const Module kernel.Module = "quality"
 // их через Upstream.Quality и Requests). Поля экспортируемые и сериализуются в
 // JSON целиком — по ним считается хеш состояния (Д-22).
 type State struct {
-	// ItemID — изделие свёртки.
+	// ItemID — изделие свёртки; RunID — прогон сценария (AD-38).
 	ItemID string `json:"item_id,omitempty"`
+	RunID  string `json:"run_id,omitempty"`
 	// Pos — число свёрнутых записей (порядок входа, AD-5); Current — event_id
 	// последней свёрнутой записи.
 	Pos     int    `json:"pos"`
@@ -153,7 +154,7 @@ func Reduce(s State, r kernel.Record, env Env, up Upstream) State {
 	s.Pos++
 	s.Current = r.EventID
 	if s.ItemID == "" {
-		s.ItemID = r.ItemID
+		s.ItemID, s.RunID = r.ItemID, r.RunID
 	}
 	if !s.reduce(r, env) {
 		return s

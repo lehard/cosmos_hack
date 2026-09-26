@@ -263,23 +263,29 @@ func facts(o Observation, sg *DefectSign, env Env) Facts {
 
 // requirement — есть ли требование КД для признака (FR-48: «сигнал без
 // требования КД — вопрос технологу, а не брак»). Требование: допуск в самом
-// признаке; ant:requirement шага наблюдения; вид классификатора, описанный для
-// вида зоны. Неизвестный вид — требования нет. Пустой нормативный слой —
-// судить не по чему: требование считается заданным (к человеку ведёт правило
-// по умолчанию).
+// признаке; ant:requirement шага наблюдения для видов, которые покрывает его
+// контроль; вид классификатора (норма, утверждённая кворумом), описанный для
+// вида зоны. Неизвестный вид или вид в зоне, для которой он не описан, —
+// требования нет. Пустой классификатор — судить не по чему: требование
+// считается заданным (к человеку ведёт правило по умолчанию).
 func requirement(o Observation, sg DefectSign, env Env) (bool, string) {
 	if sg.Measurable {
 		return true, "допуск в результате контроля"
-	}
-	if st, ok := env.step(o.StepKey); ok && len(st.Requirements) > 0 {
-		return true, st.Requirements[0].Ref()
 	}
 	if len(env.Classifier.DefectTypes) == 0 {
 		return true, ""
 	}
 	t, ok := env.defectType(sg.TypeCode)
 	if !ok {
+		// Неизвестный вид не описан ни классификатором, ни требованием шага.
 		return false, ""
+	}
+	if st, ok := env.step(o.StepKey); ok && len(st.Requirements) > 0 {
+		for _, in := range st.Inspections {
+			if slices.Contains(in.Coverage, t.Code) {
+				return true, st.Requirements[0].Ref()
+			}
+		}
 	}
 	if kind := env.zoneKind(sg.Zone); kind != "" && len(t.ZoneKinds) > 0 && !has(t.ZoneKinds, kind) {
 		return false, ""
@@ -793,4 +799,10 @@ func axis(s State) (statuses.Quality, []string) {
 		return pick(statuses.QualityNotInspected, missing)
 	}
 	return pick(base, basis)
+}
+
+// PlanPoints — полнота контроля по плану для состояния s (FR-35): для
+// изделия без данных контроля все точки плана — «ждём».
+func PlanPoints(s State, env Env) []PointStatus {
+	return s.points(s.activeObservations(), env)
 }
