@@ -5,6 +5,19 @@ title_key: desks.integrityAudit
 density: compact
 help_key: security_auditor # раздел встроенной справки (эпик 47); наследники роли получают его вместе со столом
 tabs:
+  # Общий журнал (PRD §3a; AD-2, AD-44; FR-68, FR-140; кейс §7.2): полоса целостности (вердикт верификатора,
+  # отпечаток отчёта, голова журнала) и все записи — факты, выводы системы, решения людей, служебные — с источником
+  # и статусом подписи; щелчок — окно записи. «Журнал решений» — тот же виджет со срезом entry_kind: decision.
+  - id: journal
+    title_key: desks.journal
+    layout: single
+    slots:
+      - {id: journal, area: main, widget: journal}
+  - id: decisions-journal
+    title_key: desks.decisionsJournal
+    layout: single
+    slots:
+      - {id: decisions, area: main, widget: journal, slice: {entry_kind: decision}}
   - id: integrity
     title_key: desks.integrityAudit
     layout: single

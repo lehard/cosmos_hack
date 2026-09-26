@@ -29,3 +29,5 @@ export function effectiveIntegrity(s: IntegrityStatus | undefined, now: number):
 // Эпик 14: состояние компонентов и стол Аудитора ИБ.
 export * from './ops'
 export * from './audit'
+// Общий журнал: записи, голова (PRD §3a; стол Аудитора ИБ).
+export * from './journal'
