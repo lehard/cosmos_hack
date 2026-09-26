@@ -333,3 +333,33 @@ func TestFlangeEntryAfterSplitPassesJoin(t *testing.T) {
 	j.received("welding.receive", 4)
 	j.want("welding.edge_prep")
 }
+
+// FR-44, FR-91: сдача на склад готовой продукции (item.release.recorded,
+// Е-74 в описании узла) закрывает шаг выпуска — следом «выпуск годного» в 1С
+// и конец маршрута; после приёма на склад та же запись токен не двигает и
+// отказа не даёт.
+func TestFlangeReleaseRecordedClosesRelease(t *testing.T) {
+	for _, viaReceive := range []bool{false, true} {
+		j := newJourney(t)
+		j.add(catalog.ItemItemRegistered, 0, map[string]any{"item_id": j.item, "item_type_id": "FL-100.00.000", "item_revision": "Б",
+			"process_version_hash": j.hash, "normative_rev": "flange-1", "lot_ids": []string{"LOT-FL-1"}, "entry_step_key": "final.release_to_warehouse"})
+		j.want("final.release_to_warehouse")
+		if viaReceive {
+			j.received("final.release_to_warehouse", 1)
+		}
+		j.add(catalog.ItemReleaseRecorded, 1, map[string]any{"warehouse_id": "WH-FG", "after_rework": false, "received_by": "STK-51"})
+		s, _, _ := j.fold()
+		if !s.Process.Completed || len(s.Process.Refusals) > 0 {
+			t.Fatalf("приём=%v: завершено %v, шаги %v, отказы %+v", viaReceive, s.Process.Completed, s.Process.Steps(), s.Process.Refusals)
+		}
+		thrown := 0
+		for _, th := range s.Process.Thrown {
+			if th.ErpAction == "release" {
+				thrown++
+			}
+		}
+		if thrown != 1 {
+			t.Fatalf("приём=%v: «выпуск годного» в 1С %d раз", viaReceive, thrown)
+		}
+	}
+}
