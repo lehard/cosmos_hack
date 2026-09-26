@@ -135,12 +135,15 @@ generate-frontend: ## Клиент orval + Vue Query, словарь стату�
 
 # ------------------------------------------------------------- проверки ----
 
-.PHONY: check check-backend check-frontend check-contracts check-third-party gogost-verify check-generated check-compat
-check: check-backend check-frontend check-third-party check-contracts check-generated check-compat ## Все проверки: слои, детерминизм, линтеры, тесты, фронтенд, GoGOST, контракты
+.PHONY: check check-secrets check-backend check-frontend check-contracts check-third-party gogost-verify check-generated check-compat
+check: check-secrets check-backend check-frontend check-third-party check-contracts check-generated check-compat ## Все проверки: секреты, слои, детерминизм, линтеры, тесты, фронтенд, GoGOST, контракты
 	@echo; echo "make check: зелёный"
 
 check-fast: ## Быстрая проверка при слиянии пачек: как check, но тесты из кэша и без самопроверки линтеров (Д-18)
 	@$(MAKE) --no-print-directory check ANT_CHECK_FAST=1
+
+check-secrets: ## Секреты: в репозитории нет закрытых ключей и токенов (NFR-SEC-1; исключения — deploy/scripts/check-secrets.allow)
+	@bash $(ROOT)/deploy/scripts/check-secrets.sh
 
 check-backend: ## Бэкенд: правила слоёв, gofmt, vet, golangci-lint, detcheck, тесты, самопроверка линтеров
 	$(GO_RUN) /src/deploy/scripts/check-backend.sh
