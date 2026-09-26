@@ -161,7 +161,7 @@ check-third-party: ## GoGOST: sha256, подпись автора, побайт�
 gogost-verify: ## GoGOST полностью: + гибридная подпись (OpenSSH ≥ 10.4 в контейнере) и сверка с deckhouse/gogost v6.2.0
 	$(ROOT)/third_party/gogost/verify.sh --hybrid --deckhouse
 
-check-contracts: ## Контракты: contracts/scripts/check.sh (эпик 00), если он есть
+check-contracts: ## Контракты: схемы, каталог событий, ошибки, статусы, OpenAPI, BPMN, примеры (contracts/scripts/check.sh)
 	@if [[ -f $(ROOT)/contracts/scripts/check.sh ]]; then \
 		bash $(ROOT)/contracts/scripts/check.sh; \
 	else \

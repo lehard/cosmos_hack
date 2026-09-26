@@ -5,7 +5,7 @@
 исполнителей и состояние оборудования в единую подписанную историю каждого экземпляра изделия и не пускает изделие
 через закрывающую точку без подписанного решения уполномоченного человека. Имя — кодовое имя Главного конструктора;
 в коде система называется `ant`, репозиторий — `cosmo-controller`. Данные в демо условные, внешние системы (1С,
-Галактика ERP, MES, СКУД) эмулируются за их настоящими протоколами.
+Галактика ERP, MES, КОМПАС-3D, СКУД) эмулируются за их настоящими протоколами.
 
 Это не макет, а полноценная система: ≈ 156 тыс. строк серверного кода на Go в 26 доменных модулях, 623 автотеста,
 10 рабочих столов ролей, 256 операций API из единых контрактов, 47 архитектурных решений с обоснованием. Масштаб и
@@ -29,7 +29,12 @@
 | [docs/presentation.md](docs/presentation.md) | **Рассказ о решении:** проблема, идея, история показа, архитектура, масштаб и ключевые отличия — со ссылками на доказательства |
 | [docs/jury-answers.md](docs/jury-answers.md) | **Короткие ответы** на частые вопросы жюри |
 | [docs/architecture.md](docs/architecture.md), [docs/architecture-spine.md](docs/architecture-spine.md) | **Как устроено и почему:** схемы, модули, потоки; 47 архитектурных решений с обоснованием |
-| [docs/integrations/](docs/integrations/README.md) | **Обмен с внешними системами:** 1С, Галактика ERP, MES, СКУД и их эмуляторы |
+| [docs/integrations/](docs/integrations/README.md) | **Обмен с внешними системами:** 1С, Галактика ERP, MES, КОМПАС-3D (импорт сборки), СКУД и их эмуляторы |
+| [docs/process/](docs/process/README.md), [docs/scenario-processing.md](docs/scenario-processing.md) | **Производство и контроль качества:** схема процесса фланца (BPMN), методы обнаружения дефектов, паспорт контрольной точки КТ-3, находки сверх кейса, разбор сценариев |
+| [docs/specifications.md](docs/specifications.md), [docs/codegen.md](docs/codegen.md), [docs/data-model.md](docs/data-model.md), [contracts/](contracts/README.md) | **Единый источник истины:** OpenAPI, AsyncAPI, коды ошибок, статусы, расширение BPMN; что генерируется из контрактов и какие проверки ловят рассинхронизацию; модель данных |
+| [docs/threat-model.md](docs/threat-model.md), [docs/crypto.md](docs/crypto.md) | **Безопасность и криптография:** модель угроз, ключи и их жизненный цикл, профили ГОСТ, постквантовый и гибридный, смена профиля |
+| [docs/scaling.md](docs/scaling.md), [docs/new-adapter.md](docs/new-adapter.md), [deploy/k8s/](deploy/k8s/README.md) | **Масштаб и расширение:** партиции по изделию, манифесты Kubernetes с автомасштабированием, новый адаптер без правки ядра |
+| [docs/assumptions.md](docs/assumptions.md) | **Ограничения и допущения** |
 | [docs/guides/](docs/guides/README.md) | **Пользователям:** должностные инструкции ролей — они же «Справка для вашей роли» в интерфейсе |
 | [docs/README.md](docs/README.md) | **Карта всех документов** — за что отвечает каждый |
 
@@ -140,6 +145,9 @@ docker pull golang:1.27.1 node:24.21.0-slim postgres:18.6-alpine gcr.io/distrole
   обход кабинетов ролей и показ «Партия фланцев: сбой ИС-2».
 - **Презентация** — PDF на платформе хакатона; техническая версия со ссылками на доказательства —
   [docs/presentation.md](docs/presentation.md).
+- **Лицензии и заимствованный код** — [LICENSE](LICENSE); заимствования и зависимости — [docs/third-party.md](docs/third-party.md);
+  источники (нормы, данные, кадры камер) — [docs/sources.md](docs/sources.md). Собственной CV-модели нет; атрибуция
+  демо-кадров — [docs/images/vision-demo/ATTRIBUTION.md](docs/images/vision-demo/ATTRIBUTION.md).
 
 ## Разработка
 
