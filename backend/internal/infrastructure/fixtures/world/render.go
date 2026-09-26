@@ -133,7 +133,7 @@ func tptr(t time.Time) *time.Time {
 // renderers — рендеры всех модулей по шагу.
 var renderers = []func(c *Ctx) []loader.Response{
 	renderSecurity, renderWorkplaces,
-	renderItems, renderProcess, renderQuality, renderNonconformity, renderAnalysis,
+	renderItems, renderProcess, renderQuality, renderNonconformity, renderAnalysis, renderSuggestions,
 	renderAnalytics, renderNotifications, renderERP, renderJournal, renderMachinelogs,
 	renderVision, renderIngest, renderOps, renderSimulation, renderMaterials,
 }
@@ -240,6 +240,11 @@ var workplaceTitle = map[string]string{
 	"WP-ASM-1": "Пост сборки 1", "WP-LEAK-1": "Стенд герметичности", "WP-QC-AC": "Пост ОТК сборочно-испытательного цеха", "WP-FINAL-1": "Пост окончательного контроля",
 }
 
+// workshopName — имя цеха справочника мест (normative/reference/flange/locations.yaml).
+var workshopName = map[string]string{
+	"WS-SK": "Склад и входной контроль", "WS-MC": "Механический цех", "WS-WC": "Сварочный цех", "WS-AC": "Сборочно-испытательный цех", "WS-QA": "ОТК и выпуск",
+}
+
 var workplaceWorkshop = map[string]string{
 	"WP-VK-1": "WS-SK", "WP-CNC-1": "WS-MC", "WP-CMM-1": "WS-MC", "WP-QC-MC": "WS-MC", "WP-WELD-1": "WS-WC", "WP-WELD-2": "WS-WC",
 	"WP-QC-WC": "WS-WC", "WP-ASM-1": "WS-AC", "WP-LEAK-1": "WS-AC", "WP-QC-AC": "WS-AC", "WP-FINAL-1": "WS-QA",
@@ -287,7 +292,7 @@ func renderWorkplaces(c *Ctx) []loader.Response {
 	}
 	list := accessapp.PostList{Items: []accessapp.PostRow{}}
 	for _, wp := range sortedKeys(workplaceTitle) {
-		row := accessapp.PostRow{WorkplaceID: wp, Station: workplaceTitle[wp], Workshop: workplaceWorkshop[wp], Presence: "not_assigned"}
+		row := accessapp.PostRow{WorkplaceID: wp, Station: workplaceTitle[wp], Workshop: workplaceWorkshop[wp], WorkshopName: workshopName[workplaceWorkshop[wp]], Presence: "not_assigned"}
 		if p, ok := assigned[wp]; ok {
 			row.Assigned = &accessapp.PostPerson{PersonID: p, Display: c.M.personName(p)}
 			row.Presence = "present"

@@ -308,7 +308,7 @@ func (c *Ctx) analyticsMetrics() []aMetric {
 			}
 			if e.Type == "inspection.result.recorded" && e.Params["outcome"] == "unable_to_assess" {
 				ue := itemEntry(it)
-				ue.at, ue.events, ue.slices = e.Occurred, []*Event{e}, []aSlice{{dim: "step", key: e.StepKey, label: stepName(e.StepKey)}}
+				ue.at, ue.events, ue.slices = e.Occurred, []*Event{e}, []aSlice{{dim: "step", key: e.StepKey, label: c.M.stepTitleOf(e.StepKey)}}
 				unable.entries = append(unable.entries, ue)
 			}
 		}
@@ -335,7 +335,7 @@ func (c *Ctx) analyticsMetrics() []aMetric {
 				if n.Spec.Cause != nil && n.Spec.Cause.Category == "incoming" && !n.Spec.Cause.At.Time().After(c.T) {
 					origin = "incoming"
 				}
-				e.slices = []aSlice{{dim: "step", key: n.StepKey, label: stepName(n.StepKey)}, {dim: "origin", key: origin, label: originTitle(origin)}}
+				e.slices = []aSlice{{dim: "step", key: n.StepKey, label: c.M.stepTitleOf(n.StepKey)}, {dim: "origin", key: origin, label: originTitle(origin)}}
 			}
 			withNC.entries = append(withNC.entries, e)
 		}
@@ -349,7 +349,7 @@ func (c *Ctx) analyticsMetrics() []aMetric {
 				e.at = ncAt
 				e.events = c.eventsWhere(func(x *Event) bool { return x.Item == it && x.Type == "decision.nonconformity.confirmed" })
 			}
-			e.slices = []aSlice{{dim: "step", key: "welding.zt3_acceptance", label: stepName("welding.zt3_acceptance")}}
+			e.slices = []aSlice{{dim: "step", key: "welding.zt3_acceptance", label: c.M.stepTitleOf("welding.zt3_acceptance")}}
 			fpy.entries = append(fpy.entries, e)
 		}
 		for _, r := range it.Runs {
@@ -365,7 +365,7 @@ func (c *Ctx) analyticsMetrics() []aMetric {
 			if r.ReworkOf != "" {
 				e := itemEntry(it)
 				e.at, e.events = r.From, runEvs
-				e.slices = []aSlice{{dim: "step", key: r.StepKey, label: stepName(r.StepKey)}, {dim: "performer", key: r.Performer, label: c.M.personName(r.Performer)}}
+				e.slices = []aSlice{{dim: "step", key: r.StepKey, label: c.M.stepTitleOf(r.StepKey)}, {dim: "performer", key: r.Performer, label: c.M.personName(r.Performer)}}
 				rework.entries = append(rework.entries, e)
 			}
 			if r.Kind == "welding" {
@@ -394,7 +394,7 @@ func (c *Ctx) analyticsMetrics() []aMetric {
 		for _, ep := range c.queueEpisodes(it) {
 			e := itemEntry(it)
 			e.at, e.until, e.open, e.value = ep.since, ep.until, ep.open, int64(ep.until.Sub(ep.since).Minutes())
-			e.slices = []aSlice{{dim: "step", key: ep.step, label: stepName(ep.step)}}
+			e.slices = []aSlice{{dim: "step", key: ep.step, label: c.M.stepTitleOf(ep.step)}}
 			// Записи эпизода: записи узла за время ожидания; нет таких — последняя
 			// запись изделия до входа в очередь (перемещение, с которого ждёт).
 			var before []*Event
@@ -530,13 +530,6 @@ func lastEvents(evs []*Event, n int) []*Event {
 	return evs[len(evs)-n:]
 }
 
-func stepName(k string) string {
-	if n, ok := stepTitle[k]; ok {
-		return n
-	}
-	return k
-}
-
 func originTitle(o string) string {
 	return map[string]string{"incoming": "Входной брак", "production": "Производственные"}[o]
 }
@@ -621,7 +614,7 @@ func (c *Ctx) renderAnalyticsPeriod(all []aMetric, w aWindow) []loader.Response 
 		}
 	}
 	// Контрольная карта тока сварки по выполнениям за период (FR-5): центр 160 А, границы ±10 А.
-	cc := analyticsapp.ControlChart{StepKey: "welding.weld", MetricID: "current_a", Title: "Ток сварки (максимум за выполнение)", ChartKind: ptr("xmr"),
+	cc := analyticsapp.ControlChart{StepKey: "welding.weld", StepName: c.nodeName("welding.weld"), MetricID: "current_a", Title: "Ток сварки (максимум за выполнение)", ChartKind: ptr("xmr"),
 		Center: analyticsapp.MetricValue{Value: 160, Unit: "A"}, Upper: analyticsapp.MetricValue{Value: 170, Unit: "A"}, Lower: analyticsapp.MetricValue{Value: 150, Unit: "A"}, Points: []analyticsapp.ControlChartPoint{}}
 	var runs []*OpRun
 	for _, it := range c.M.Items {

@@ -152,8 +152,10 @@ type ControlChartPoint struct {
 // ControlChart — контрольная карта по узлу (FR-5): доля дефектов или
 // характеристика во времени, центральная линия и границы.
 type ControlChart struct {
-	StepKey  string `json:"step_key"`
-	MetricID string `json:"metric_id"`
+	StepKey string `json:"step_key"`
+	// StepName — имя узла BPMN действующей версии (UI-21); нет — показывать step_key.
+	StepName *string `json:"step_name,omitempty" doc:"Имя узла BPMN действующей версии процесса; нет — показывать step_key."`
+	MetricID string  `json:"metric_id"`
 	// Title — название показателя карты по словарю продукта.
 	Title string `json:"title" doc:"Название показателя карты («Доля результатов контроля с признаком дефекта», «Длительность операции»)."`
 	// ChartKind — вид карты Шухарта (ГОСТ Р ИСО 7870-2).

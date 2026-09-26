@@ -224,9 +224,9 @@ func loadWorkplaces(fsys fs.FS) ([]access.WorkplaceRef, error) {
 	if err := yaml.Unmarshal(b, &f); err != nil {
 		return nil, fmt.Errorf("%s: %w", LocationsFile, err)
 	}
-	kind, parent := map[string]string{}, map[string]string{}
+	kind, parent, name := map[string]string{}, map[string]string{}, map[string]string{}
 	for _, l := range f.Locations {
-		kind[l.ID], parent[l.ID] = l.Kind, l.Parent
+		kind[l.ID], parent[l.ID], name[l.ID] = l.Kind, l.Parent, l.Name
 	}
 	var out []access.WorkplaceRef
 	for _, l := range f.Locations {
@@ -236,7 +236,7 @@ func loadWorkplaces(fsys fs.FS) ([]access.WorkplaceRef, error) {
 		w := access.WorkplaceRef{ID: l.ID, Name: l.Name, Scope: l.Scope}
 		for p, n := l.Parent, 0; p != "" && n < 10; p, n = parent[p], n+1 {
 			if kind[p] == "workshop" {
-				w.Workshop = p
+				w.Workshop, w.WorkshopName = p, name[p]
 				break
 			}
 		}

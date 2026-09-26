@@ -2723,6 +2723,9 @@ components:
           type: array
         step_key:
           type: string
+        step_name:
+          description: Имя узла BPMN действующей версии процесса; нет — показывать step_key.
+          type: string
         title:
           description: Название показателя карты («Доля результатов контроля с признаком дефекта», «Длительность операции»).
           type: string
@@ -10362,6 +10365,9 @@ components:
         workshop:
           description: Цех (FR-130).
           type: string
+        workshop_name:
+          description: Имя цеха из справочника мест; нет — показывать код workshop.
+          type: string
       required:
         - workplace_id
         - station
@@ -16254,6 +16260,9 @@ components:
           type: string
         workshop:
           description: Цех (FR-130).
+          type: string
+        workshop_name:
+          description: Имя цеха из справочника мест; нет — показывать код workshop.
           type: string
       required:
         - assignments
