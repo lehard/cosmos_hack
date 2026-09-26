@@ -107,6 +107,9 @@ type Action struct {
 	Body   map[string]any `json:"body,omitempty"`
 	// Refusal — ожидаемый код отказа (шаг проверяет запрет).
 	Refusal string `json:"refusal,omitempty"`
+	// Auto — решение машины или лаборатории (Step.Auto): в живой части не
+	// останавливает прогон, подписывает demo-signer.
+	Auto bool `json:"auto,omitempty"`
 	// Binds — какое изделие определения рождает решение (регистрация):
 	// после исполнения прогон узнаёт его item_id из записи журнала.
 	Binds string `json:"binds,omitempty"`

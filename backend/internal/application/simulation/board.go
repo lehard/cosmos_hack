@@ -295,7 +295,13 @@ func (s *Service) resolveRef(ctx context.Context, st *RunState, rp *runPlan, nam
 	if err != nil {
 		return false
 	}
-	vals, err := sim.Extract(doc, ref.Path)
+	// Путь тоже может ссылаться на объекты прогона: инцидент — по его
+	// несоответствию (/items[primary_nc_id={ref:NC-F003}]/0/incident_id).
+	path, err := s.expand(ctx, st, rp, ref.Path)
+	if err != nil {
+		return false
+	}
+	vals, err := sim.Extract(doc, path)
 	if err != nil || len(vals) == 0 {
 		return false
 	}

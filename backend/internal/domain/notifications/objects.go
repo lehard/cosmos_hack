@@ -1,21 +1,27 @@
 package notifications
 
 import (
+	"strconv"
 	"strings"
 
 	"ant/internal/contracts/catalog"
 	"ant/internal/domain/kernel"
+	"ant/internal/domain/machinelogs"
 )
 
 // ObjectReact — задачи по решениям в потоках объектов вне изделия (AD-39:
 // инцидент), которые свёртка изделия не видит (FR-57, FR-59, FR-60):
 //   - incident.measurement.requested — задача «измерить» исполнителю из
 //     запроса, иначе контролёру ОТК (эпик 22: «задачу ставит notifications»);
+//     incident.measurement.recorded её снимает;
 //   - incident.action.assigned — задача владельцу меры со сроком меры;
 //   - analyzer.passport.suspended — задача начальнику ОТК «решить о возврате
 //     анализатора» после автоотката (эпик 40, FR-101);
 //   - incident.suggestion.forwarded — задача ответственному рассмотреть
-//     предложение (эпик 42, FR-63, UJ-1).
+//     предложение (эпик 42, FR-63, UJ-1);
+//   - equipment.deviation.detected «вне уставки» — тревога мастеру участка
+//     (решить по посту) и руководителю производства (FR-148, FR-151; показ
+//     SHOW-IS2, шаг 5).
 //
 // Чистая функция записи: слот — (правило, поток объекта, event_id решения),
 // версия одна — повтор даёт тот же reaction_id. Исполняет её роль scheduler
@@ -28,6 +34,8 @@ func ObjectReact(r kernel.Record) []kernel.Reaction {
 	slot := kernel.Slot{RuleID: RuleObjectTask, Subject: r.Stream, TriggerKey: r.EventID}
 	var d TaskData
 	switch r.Type {
+	case catalog.EquipmentDeviationDetected:
+		return deviationTasks(r, slot)
 	case catalog.IncidentIncidentOpened:
 		// Инцидент открыт системой (эпик 22): технологу — «Разобрать
 		// инцидент»; снимается выводом о причине или закрытием инцидента.
@@ -51,6 +59,22 @@ func ObjectReact(r kernel.Record) []kernel.Reaction {
 		slot.TriggerKey = investigateKey + "/done"
 		re, err := kernel.NewReaction(Module, catalog.TaskTaskWithdrawn, slot,
 			TaskWithdrawnData{TaskID: TaskID(open), Reason: &ReasonData{Code: "fulfilled", Text: "Причина инцидента установлена или инцидент закрыт"}}, r)
+		if err != nil {
+			panic(err)
+		}
+		re.AutomationMode = 1
+		return []kernel.Reaction{re}
+	case catalog.IncidentMeasurementRecorded:
+		// Результат измерения записан — задача «измерить» по запросу снята.
+		var m struct {
+			RequestEventID string `json:"request_event_id"`
+		}
+		if !decode(r, &m) || m.RequestEventID == "" {
+			return nil
+		}
+		open := kernel.Slot{RuleID: RuleObjectTask, Subject: r.Stream, TriggerKey: m.RequestEventID}
+		re, err := kernel.NewReaction(Module, catalog.TaskTaskWithdrawn, slot,
+			TaskWithdrawnData{TaskID: TaskID(open), Reason: &ReasonData{Code: "fulfilled", Text: "Результат измерения записан"}}, r)
 		if err != nil {
 			panic(err)
 		}
@@ -129,6 +153,79 @@ func ObjectReact(r kernel.Record) []kernel.Reaction {
 	}
 	re.AutomationMode = 1
 	return []kernel.Reaction{re}
+}
+
+// deviationTasks — отклонение режима «вне уставки» на оборудовании (FR-148,
+// FR-151): мастеру участка — решить по посту (остановить или перевести
+// работу), руководителю производства — тревога для сведения. Только
+// действующее отклонение (конца нет): закончившееся — например, из
+// опоздавшего журнала — разбирается окном нарушения и областью риска, пост
+// останавливать уже поздно. Задача не привязана к изделию: изделия окна
+// определит разбор.
+func deviationTasks(r kernel.Record, slot kernel.Slot) []kernel.Reaction {
+	ev, ok, err := machinelogs.ParseEvent(r)
+	if !ok || err != nil || ev.EquipmentID == "" || ev.End != nil || !machinelogs.ViolatesRegime(ev.DeviationKind) {
+		return nil
+	}
+	what := "Режим вне уставки на " + ev.EquipmentID
+	if ev.Parameter != "" {
+		what += ": " + paramText(ev.Parameter)
+		if ev.Value != nil {
+			what += " " + measureText(*ev.Value)
+		}
+		if sp := ev.Setpoint; sp != nil && sp.Lower != nil && sp.Upper != nil {
+			what += " при уставке " + measureText(*sp.Lower) + "…" + measureText(*sp.Upper)
+		}
+	}
+	var out []kernel.Reaction
+	for _, t := range []struct{ key, role, kind, title string }{
+		{"deviation/foreman", RoleForeman, "decision_required", what + ". Решить по посту: остановить или перевести работу"},
+		{"deviation/manager", RoleProductionManager, "other", "Тревога: " + what},
+	} {
+		s := slot
+		s.TriggerKey = r.EventID + "/" + t.key
+		d := TaskData{Kind: t.kind, AssigneeRoleID: t.role, Title: truncate(t.title, 256), TaskID: TaskID(s), SubjectRef: r.Stream,
+			LocationID: ev.StationID} // участок поста: задачу видит мастер своего участка
+		re, err := kernel.NewReaction(Module, catalog.TaskTaskCreated, s, d, r)
+		if err != nil {
+			panic(err)
+		}
+		re.AutomationMode = 1
+		out = append(out, re)
+	}
+	return out
+}
+
+// paramText — параметр режима словами (строчными, внутри фразы).
+func paramText(p string) string {
+	switch p {
+	case "current":
+		return "ток"
+	case "voltage":
+		return "напряжение"
+	case "wire_feed":
+		return "подача проволоки"
+	}
+	return p
+}
+
+// measureText — значение с масштабом и единицей: 1785, 1, A → «178,5 A».
+func measureText(m machinelogs.Measure) string {
+	v, sign := m.Value, ""
+	if v < 0 {
+		sign, v = "-", -v
+	}
+	s := strconv.FormatInt(v, 10)
+	if m.Scale > 0 {
+		for len(s) <= m.Scale {
+			s = "0" + s
+		}
+		s = s[:len(s)-m.Scale] + "," + s[len(s)-m.Scale:]
+	}
+	if m.Unit != "" {
+		s += " " + m.Unit
+	}
+	return sign + s
 }
 
 // investigateKey — ключ слота задачи «Разобрать инцидент» в потоке инцидента:

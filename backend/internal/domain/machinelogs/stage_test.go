@@ -160,6 +160,33 @@ func TestOpenWindowClosedByNormalCycle(t *testing.T) {
 	}
 }
 
+// Опоздавший журнал за прошлую смену (отклонение с концом раньше начала
+// открытого окна) — своё окно со своими несоответствиями; открытое текущее
+// окно (показ SHOW-IS2: ток ИС-2 вне уставки, пост остановлен) его не
+// поглощает и остаётся открытым.
+func TestLateDeviationNotMergedIntoOpenWindow(t *testing.T) {
+	j := &journal{}
+	j.started("RUN-OLD", "ENT01:FL-O", "welding.weld", "IS-2", at(30))
+	j.finished("RUN-OLD", "ENT01:FL-O", at(40))
+	j.started("RUN-NOW", "ENT01:FL-N", "welding.weld", "IS-2", at(200))
+	j.add("dev-now", catalog.EquipmentDeviationDetected, "", "", at(201), map[string]any{
+		"equipment_id": "IS-2", "deviation_kind": "out_of_setpoint", "parameter": "current", "started_at": stamp(at(200))})
+	j.deviation("dev-late", "IS-2", "out_of_setpoint", "current", measure(1800, 1, "A"), tol(1600, 1500, 1700, 1, "A"), at(32), at(40))
+	s, out := runStage(ml.StagePorts{Register: fakeRegistrar}, j.recs)
+	if w := s.Windows["dev-now"]; w.End != nil || !w.Start.Equal(at(200)) || len(w.DeviationIDs) != 1 {
+		t.Fatalf("текущее окно: %+v", w)
+	}
+	var nc []string
+	for _, a := range out {
+		if a.Type == catalog.DecisionNonconformityRegistered {
+			nc = append(nc, a.Stream)
+		}
+	}
+	if !slices.Equal(nc, []string{"item:ENT01:FL-O"}) {
+		t.Fatalf("несоответствия: %v", nc)
+	}
+}
+
 // Привязка: события оборудования в интервале выполнения и обстановка до
 // начала адресуются в поток изделия; поздние — при поступлении; повторов нет.
 func TestBindingToOperationRun(t *testing.T) {
