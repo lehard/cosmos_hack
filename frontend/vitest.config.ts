@@ -9,6 +9,9 @@ export default mergeConfig(
   defineConfig({
     test: {
       environment: 'happy-dom',
+      // Под нагрузкой машины сборки (много агентов) тест с живой картой идёт 4–5 с:
+      // стандартных 5 с не хватает — ложные падения по таймауту.
+      testTimeout: 20000,
       include: ['src/**/__tests__/*.spec.ts'],
     },
   }),

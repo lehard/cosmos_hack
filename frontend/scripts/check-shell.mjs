@@ -156,12 +156,18 @@ function main() {
   // базовой роли (без inherits) стол есть, наследники берут стол базовой (AD-15).
   const policyFile = join(REPO, 'normative/policy/policy.v1.yaml')
   if (existsSync(policyFile)) {
-    const roles = parse(readFileSync(policyFile, 'utf8')).roles ?? []
+    const policy = parse(readFileSync(policyFile, 'utf8'))
+    const roles = policy.roles ?? []
     const ids = new Set(roles.map((r) => r.id))
+    // Стол не нужен абстрактной базовой роли, которую наследуют другие роли
+    // (employee — общие действия сотрудника), и роли субъекта без сеанса
+    // (unauthenticated_role — источники-устройства): людей с такими ролями нет.
+    const inherited = new Set(roles.flatMap((r) => r.inherits ?? []))
+    const noDesk = (id) => inherited.has(id) || id === policy.unauthenticated_role
     const deskRoles = new Set(files.map((f) => basename(f, '.yaml')))
     for (const r of deskRoles) if (!ids.has(r)) errors.push(`normative/desks/${r}.yaml: роли «${r}» нет в normative/policy/policy.v1.yaml`)
     for (const r of roles) {
-      if (!(r.inherits ?? []).length && !deskRoles.has(r.id)) errors.push(`normative/desks: у базовой роли «${r.id}» нет стола`)
+      if (!(r.inherits ?? []).length && !noDesk(r.id) && !deskRoles.has(r.id)) errors.push(`normative/desks: у базовой роли «${r.id}» нет стола`)
     }
     ok(`столы ↔ политика: ${ids.size} ролей, у базовых столы есть`)
   }
