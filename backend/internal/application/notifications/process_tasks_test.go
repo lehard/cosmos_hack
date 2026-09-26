@@ -177,3 +177,33 @@ func TestProcessStepTasks(t *testing.T) {
 		}
 	}
 }
+
+// Короткая история (entry: weld, SHOW-IS2): изделие входит в процесс на
+// подготовке кромок, сварку записывают факты источника поста — начало и
+// конец выполнения без решения человека. Токен идёт так же, как от действия
+// человека: «Начать» и «Завершить» сварки сняты, открытых задач сварщика нет.
+func TestProcessStepTasksSourceFacts(t *testing.T) {
+	f := newFlow(t)
+	f.add(catalog.ItemItemRegistered, 0, map[string]any{"item_id": f.item, "item_type_id": "FL-100.00.000", "item_revision": "Б",
+		"process_version_hash": f.hash, "normative_rev": "flange-1", "lot_ids": []string{"LOT-FL-1"}, "entry_step_key": "welding.edge_prep"})
+	f.add(catalog.ItemCarrierApplied, 0.01, map[string]any{"carrier_type": "tag_qr", "value": "show-is2-20260921/TAG:F-101", "is_temporary": true})
+	start := f.only(dp.OpOperationStart)
+	if start.StepKey != "welding.weld" || start.ItemLabel != "Ф-101" {
+		t.Fatalf("вход на сварочном участке: %+v", start)
+	}
+	f.add(catalog.OperationRunStarted, 0.5, map[string]any{"operation_run_id": "SV-101-1", "operation_code": "SV", "step_key": "welding.weld",
+		"operator_id": "W21", "equipment_id": "IS-1", "operation_started_at": p0.Add(30 * time.Minute).Format(time.RFC3339)})
+	f.in[len(f.in)-1].Provenance = "device" // факт источника поста, не решение
+	fin := f.only(dp.OpOperationFinish)
+	f.add(catalog.OperationRunFinished, 0.7, map[string]any{"operation_run_id": "SV-101-1", "completion": "completed"})
+	f.in[len(f.in)-1].Provenance = "device" // факт источника поста, не решение
+	open, closed := f.tasks()
+	if !closed[start.TaskID] || !closed[fin.TaskID] {
+		t.Fatalf("сварка фактами поста — задачи не сняты: %+v", open)
+	}
+	for _, d := range open {
+		if d.AssigneeRoleID == "performer" {
+			t.Errorf("лишняя задача сварщика: %+v", d)
+		}
+	}
+}
