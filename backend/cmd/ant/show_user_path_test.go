@@ -975,6 +975,19 @@ func (s *showSystem) hold(st *showStop) string {
 			eqs = append(eqs, e)
 		}
 	}
+	if len(eqs) == 0 {
+		// Окно поста показывает оборудование с station_id == пост; у источников
+		// сварки station_id — участок (ST-WELD). Отмечаем разрыв и идём дальше
+		// с источником поста по участку (как правка «Процесса» для терминала).
+		var all []string
+		for _, e := range list(s.read(st.Persona, "machinelogs.equipment.list", nil), "items") {
+			all = append(all, str(e, "equipment_id")+"@"+str(e, "station_id"))
+			if str(e, "station_id") == "ST-WELD" && strings.HasSuffix(str(e, "equipment_id"), post[len(post)-1:]) {
+				eqs = append(eqs, e)
+			}
+		}
+		s.t.Errorf("%s: в окне поста %s нет оборудования (station_id == пост) — нет «Остановить пост»; оборудование: %v", st, post, all)
+	}
 	if len(eqs) != 1 {
 		s.t.Fatalf("%s: в окне поста %s оборудования %d: %v", st, post, len(eqs), eqs)
 	}
