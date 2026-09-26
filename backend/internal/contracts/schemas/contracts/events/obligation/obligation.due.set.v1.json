@@ -38,6 +38,29 @@
     "step_key": {
       "$ref": "../common/defs.v1.json#/definitions/step_key",
       "description": "Ключ шага процесса (`ant:properties/@stepKey`), к которому относится запись."
+    },
+    "level": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 10,
+      "description": "Уровень эскалации, к которому относится срок: 1 — исходный срок; после «наступил срок» notifications переустанавливает срок следующего уровня того же обязательства (лестница эскалации, FR-57)."
+    },
+    "first_due_at": {
+      "$ref": "../common/defs.v1.json#/definitions/timestamp",
+      "description": "Исходный срок обязательства (уровень 1): от него считается просрочка — цена задержки (FR-8, FR-57)."
+    },
+    "waits_on": {
+      "$ref": "../common/defs.v1.json#/definitions/stream_ref",
+      "description": "Чьего решения ждёт срок: изделие, несоответствие или инцидент; по нему сводится цена задержки — сколько изделий и операций стоят (FR-8)."
+    },
+    "basis": {
+      "$ref": "../common/defs.v1.json#/definitions/code",
+      "description": "Основание срока у модуля-владельца: isolation, isolation_move, nonconformity, presentation, incident_scope, recheck (FR-55, FR-57)."
+    },
+    "title": {
+      "type": "string",
+      "maxLength": 256,
+      "description": "Что ждёт решения — для ленты тревог и блока «требует вашего внимания» (FR-8)."
     }
   },
   "required": [

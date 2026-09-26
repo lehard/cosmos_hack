@@ -3805,11 +3805,24 @@ type ObligationDueReachedV1 struct {
 // Срок установлен — срок решения, точки предъявления, таймера BPMN: `due_at` — по
 // производственному календарю и графику смен; эмитит только notifications (AD-4).
 type ObligationDueSetV1 struct {
+	// Основание срока у модуля-владельца: isolation, isolation_move, nonconformity,
+	// presentation, incident_scope, recheck (FR-55, FR-57).
+	Basis *Code `json:"basis,omitempty,omitzero"`
+
 	// Срок.
 	DueAt Timestamp `json:"due_at"`
 
+	// Исходный срок обязательства (уровень 1): от него считается просрочка — цена
+	// задержки (FR-8, FR-57).
+	FirstDueAt *Timestamp `json:"first_due_at,omitempty,omitzero"`
+
 	// Вид срока.
 	Kind ObligationDueSetV1Kind `json:"kind"`
+
+	// Уровень эскалации, к которому относится срок: 1 — исходный срок; после
+	// «наступил срок» notifications переустанавливает срок следующего уровня того же
+	// обязательства (лестница эскалации, FR-57).
+	Level *int `json:"level,omitempty,omitzero"`
 
 	// Обязательство.
 	ObligationID ObjectID `json:"obligation_id"`
@@ -3822,6 +3835,13 @@ type ObligationDueSetV1 struct {
 
 	// Субъект срока.
 	SubjectRef StreamRef `json:"subject_ref"`
+
+	// Что ждёт решения — для ленты тревог и блока «требует вашего внимания» (FR-8).
+	Title *string `json:"title,omitempty,omitzero"`
+
+	// Чьего решения ждёт срок: изделие, несоответствие или инцидент; по нему сводится
+	// цена задержки — сколько изделий и операций стоят (FR-8).
+	WaitsOn *StreamRef `json:"waits_on,omitempty,omitzero"`
 }
 
 type ObligationDueSetV1Kind string
