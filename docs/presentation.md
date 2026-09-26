@@ -136,9 +136,5 @@
 
 ## 12. Как проверить без нас
 
-- Онлайн-демо — <https://main.coopenomics.world/>; у себя — `make demo` (нужен только Docker), вход «Администратор безопасности» → «Тестовые сценарии».
-- Показ «Партия фланцев: сбой ИС-2» (SHOW-IS2) и главная история MS-1 — [guides/demo_scenarios.md](guides/demo_scenarios.md).
-- Проверки: `make check`, `make sim-check`, `make tamper`, `make verify`, `make contract-demo`, `make check-compat`;
-  документация — `node docs/scripts/check-docs.mjs`; все цели — `make help`.
-- Видео: скринкасты — ссылки будут добавлены (раздел «Материалы защиты» в [README.md](../README.md#материалы-защиты)).
-- Ответы на частые вопросы жюри — [jury-answers.md](jury-answers.md); источники — [sources.md](sources.md).
+- Онлайн-демо — <https://main.coopenomics.world/>.
+- Как проверить каждый критерий — [reviewer-guide.md](reviewer-guide.md); скринкасты — [папка с роликами](https://drive.google.com/drive/folders/1KHaW8OrHoSdArqbAYhVbvDC0NDHx3q_L?usp=sharing).

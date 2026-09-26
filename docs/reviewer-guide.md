@@ -17,13 +17,15 @@
 
 ## Навигатор по решению
 
+Полный список документов решения. У каждого своя задача, повторов между ними нет: этот путеводитель — как проверить; [case-compliance.md](case-compliance.md) — статус каждого пункта кейса; [presentation.md](presentation.md) — рассказ о решении; [jury-answers.md](jury-answers.md) — короткие ответы; [architecture.md](architecture.md) — как устроено.
+
 **Посмотреть**
 
 | Что | Где |
 |---|---|
 | Онлайн-демо — работает без установки | <https://main.coopenomics.world/> |
 | Техническая презентация — 12 слайдов со ссылками на доказательства | [presentation.md](presentation.md) |
-| Скринкасты | [README — «Материалы защиты»](../README.md#материалы-защиты) |
+| Скринкасты | [папка с роликами на Google Диске](https://drive.google.com/drive/folders/1KHaW8OrHoSdArqbAYhVbvDC0NDHx3q_L?usp=sharing) |
 | Сценарии показа и главная история | [guides/demo_scenarios.md](guides/demo_scenarios.md) |
 
 **Как устроено**
@@ -32,9 +34,10 @@
 |---|---|
 | Архитектура: схемы, модули, потоки данных | [architecture.md](architecture.md) |
 | 47 архитектурных решений с обоснованием | [architecture-spine.md](architecture-spine.md) |
+| Требования к системе: роли, сценарии, FR-1…FR-158 | [prd.md](prd.md) |
 | Состав целевой системы (кейс §3.2) | [target-components.md](target-components.md) |
 | Модель данных | [data-model.md](data-model.md) |
-| Спецификации: API, события, процесс, интеграции | [specifications.md](specifications.md), контракты — [`contracts/`](../contracts/) |
+| Спецификации: API, события, процесс, интеграции | [specifications.md](specifications.md), контракты — [`contracts/`](../contracts/), свойства расширения BPMN — [bpmn-ext-properties.md](bpmn-ext-properties.md) |
 | Кодогенерация и проверка контрактов | [codegen.md](codegen.md) |
 | Масштабирование и расширение | [scaling.md](scaling.md), [new-adapter.md](new-adapter.md), [observability-kafka-otel.md](observability-kafka-otel.md) |
 
@@ -56,6 +59,7 @@
 | Модель угроз | [threat-model.md](threat-model.md) |
 | Подписи, ключи, криптопрофили | [crypto.md](crypto.md) |
 | Резервирование и восстановление | [backup-restore.md](backup-restore.md) |
+| Единый вход (SSO) — перспектива | [sso.md](sso.md) |
 
 **Пользователям и проверяющим**
 
@@ -66,8 +70,7 @@
 | Короткие ответы на вопросы жюри | [jury-answers.md](jury-answers.md) |
 | Ограничения и допущения | [assumptions.md](assumptions.md) |
 | Словарь терминов | [glossary.md](glossary.md) |
-| Лицензии, заимствованный код, источники | [third-party.md](third-party.md), [sources.md](sources.md) |
-| Все документы | [README.md](README.md) |
+| Лицензии, заимствованный код, источники | [third-party.md](third-party.md), [sources.md](sources.md), перечень зависимостей — `make licenses` |
 
 ![Архитектура «Главного»: контейнеры и границы доверия](images/architecture-containers.png)
 
@@ -131,14 +134,7 @@
 
 ## Запуск у себя
 
-Нужен только Docker (Engine ≥ 24, Compose ≥ 2.29.7). В корне репозитория:
-
-```sh
-make demo                  # в фоне, с ожиданием готовности и автоподписантом для «Автопроверки»
-docker compose up          # то же без автоподписанта: сценарии — в режиме «Интерактивно»
-```
-
-Первый запуск собирает образ (несколько минут), дальше — секунды. Интерфейс — `http://127.0.0.1:8480/` (то же, что онлайн-демо <https://main.coopenomics.world/>); `/readyz` отвечает 200 после самопроверки, `/metrics` — метрики Prometheus. Эмуляторы внешних систем на порту 8491: 1С — <http://127.0.0.1:8491/stand/1c/>, Галактика — <http://127.0.0.1:8491/stand/galaktika/>, MES — <http://127.0.0.1:8491/stand/mes/>, СКУД — <http://127.0.0.1:8491/stand/skud/>. Ключи и блок генезиса создаются при первом запуске; повторить — `make keys`.
+Нужен только Docker; одна команда — `make demo`. Команды, адреса интерфейса и эмуляторов внешних систем, требования к машине — в [README: «Быстрый старт»](../README.md#быстрый-старт) и [«Запуск подробно»](../README.md#запуск-подробно). Ниже — только то, что нужно для проверки.
 
 Файлы показа: сценарий — `scenarios/definitions/scenarios/SHOW-IS2.yaml`, прогон — `scenarios/definitions/runs/SHOW-IS2.yaml`, ожидания — `scenarios/expected/SHOW-IS2.yaml`; путь пользователя по шагам проверяет тест `TestShowIS2UserPath` (`backend/cmd/ant/show_user_path_test.go`).
 
