@@ -1,0 +1,13 @@
+# Терминал исполнителя (PRD §3a, FR-137): только своё рабочее место и текущие изделия на нём. Крупно.
+# Владелец после волны 1 — эпик 13.
+version: 1
+role: performer
+title_key: desks.terminal
+density: large
+tabs:
+  - id: terminal
+    title_key: desks.terminal
+    layout: main-side
+    slots:
+      - {id: terminal, area: main, widget: performer-terminal, slice: {scope: own_workplace}}
+      - {id: tasks, area: right, widget: tasks, slice: {scope: own_workplace}}
