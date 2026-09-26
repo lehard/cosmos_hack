@@ -171,7 +171,9 @@ func Reduce(s State, r kernel.Record, env Env, up Upstream) State {
 			s.NCs = append(s.NCs, n)
 			s.addSource(ContainmentSource{Key: r.EventID, Level: string(statuses.ContainmentItemHold), By: ByRule,
 				Rule: RuleSpecialProcess, NCID: d.NCID, At: r.OccurredAt, Reason: "Нарушение режима специального процесса (FR-151)"})
-			s.effect(Effect{Kind: "set_quality", Value: string(statuses.QualityNonconforming)}, r)
+			// Ось качества правило не трогает: дефект не найден, изделие «не
+			// годно и не брак — ждёт» решения комиссии (блок правилом выше;
+			// S04-03). «Не годно» ставят решения людей.
 		}
 	case catalog.DecisionNonconformityConfirmed:
 		var d ConfirmedData
