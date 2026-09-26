@@ -3,6 +3,8 @@
  * Источник: contracts/openapi.yaml
  */
 import type { CoveragePoint } from './coveragePoint';
+import type { DefectTypeCoverage } from './defectTypeCoverage';
+import type { InspectionCoverageQualityState } from './inspectionCoverageQualityState';
 
 export interface InspectionCoverage {
   basis_seq: number;
@@ -10,4 +12,7 @@ export interface InspectionCoverage {
   complete: boolean;
   item_id: string;
   points: CoveragePoint[];
+  /** Состояние качества изделия. */
+  quality_state?: InspectionCoverageQualityState;
+  types?: DefectTypeCoverage[];
 }

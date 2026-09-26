@@ -33,7 +33,7 @@ type QualitySignal struct {
 	ReactionOutcome      string                 `json:"reaction_outcome" enum:"pass_to_next,manual_review,isolate,question_to_technologist" doc:"Исход по карте реакций."`
 	ReactionMapRef       string                 `json:"reaction_map_ref"`
 	TrustLevel           *int                   `json:"trust_level,omitempty" minimum:"0" maximum:"4" doc:"Уровень доверия паспорта анализатора (AD-29)."`
-	State                string                 `json:"state" enum:"open,confirmed,rejected,resolved" doc:"Рассмотрен ли сигнал человеком; resolved — «оценка невозможна» или пропуск проверки закрыты повторным контролем."`
+	State                string                 `json:"state" enum:"open,confirmed,rejected" doc:"Рассмотрен ли сигнал человеком."`
 	RaisedAt             time.Time              `json:"raised_at"`
 	ObservationEventID   *string                `json:"observation_event_id,omitempty" doc:"Исходный результат контроля."`
 	Stages               []QualityAnalyzerStage `json:"stages"`
@@ -50,6 +50,7 @@ type QualitySignal struct {
 	Limits          []string `json:"limits,omitempty" doc:"Почему реакция ограничена: mode_requires_human, trust_level_N, permissive_not_delegated, critical_hold."`
 	Containment     string   `json:"containment,omitempty" doc:"Предложенный уровень сдерживания (ось nonconformity)."`
 	ObservationIDs  []string `json:"observation_ids,omitempty" doc:"Все наблюдения сигнала: повторные наблюдения одного дефекта (FR-37)."`
+	ClosedByEventID string   `json:"closed_by_event_id,omitempty" doc:"«Оценка невозможна» или пропуск проверки закрыты этим результатом повторного контроля (человек сигнал не рассматривал)."`
 }
 
 // QualitySignalList — сигналы.
@@ -120,9 +121,10 @@ type CoveragePoint struct {
 	InspectionPoint string  `json:"inspection_point"`
 	Method          string  `json:"method" enum:"camera,cmm,radiography,ultrasonic,penetrant,leak_test,torque,visual_human,supplier_documents,laboratory,other"`
 	Required        bool    `json:"required"`
-	Status          string  `json:"status" enum:"received,pending,missing,unable" doc:"Результат получен / ещё ждём / нет (quality.inspection.missing) / оценка невозможна — нужен повтор."`
+	Status          string  `json:"status" enum:"received,pending,missing" doc:"Результат получен / ещё ждём / нет (quality.inspection.missing)."`
 	MissingReason   *string `json:"missing_reason,omitempty" enum:"result_not_received,check_skipped,point_manual_mode,not_covered_by_method,unknown"`
 	EventID         *string `json:"event_id,omitempty" doc:"Результат или запись о пропуске."`
+	Outcome         string  `json:"outcome,omitempty" enum:"defect_indicated,no_defect_indicated,unable_to_assess" doc:"Действующий исход полученного результата; «оценка невозможна» — нужен повторный контроль (FR-36)."`
 }
 
 // InspectionCoverage — полнота контроля изделия (FR-35, FR-14).

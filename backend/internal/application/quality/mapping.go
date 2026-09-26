@@ -68,6 +68,10 @@ func signalView(rec ItemRecord, sg quality.Signal) QualitySignal {
 		AutomationMode: a.Mode, ProposedOutcome: a.Proposed, Limits: a.Limits, Containment: string(a.Containment),
 		ObservationIDs: sg.Observations,
 	}
+	if sg.State == quality.SignalResolved {
+		// Человек сигнал не рассматривал: закрыт повторным контролем.
+		v.State, v.ClosedByEventID = quality.SignalOpen, sg.ReviewedBy
+	}
 	if o, ok := observationOf(rec.State, sg.ObservationID); ok {
 		v.Stages = stagesView(o.Stages)
 		v.Versions = o.Versions

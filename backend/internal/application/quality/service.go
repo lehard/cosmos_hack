@@ -151,8 +151,11 @@ func (s *Service) Signals(ctx context.Context, f SignalFilter, m platform.Moment
 	all := []QualitySignal{}
 	for _, rec := range recs {
 		for _, sg := range rec.State.Signals {
-			if sg.Raised && (f.State == "" || sg.State == f.State) {
-				all = append(all, signalView(rec, sg))
+			if !sg.Raised {
+				continue
+			}
+			if v := signalView(rec, sg); f.State == "" || v.State == f.State {
+				all = append(all, v)
 			}
 		}
 	}
@@ -224,6 +227,13 @@ func (s *Service) Coverage(ctx context.Context, itemID string, m platform.Moment
 	for _, p := range points {
 		cp := CoveragePoint{StepKey: p.StepKey, InspectionPoint: firstNonEmpty(p.InspectionPoint, p.ClosingPoint), Method: p.Method,
 			Required: p.Required, Status: p.Status}
+		switch p.Status {
+		case "unable":
+			// Результат получен, но оценить нельзя — повторный контроль (FR-36).
+			cp.Status, cp.Outcome = "received", quality.OutcomeUnable
+		case "received":
+			cp.Outcome = pointOutcome(rec.State, p.EventID)
+		}
 		if p.MissingReason != "" {
 			r := p.MissingReason
 			cp.MissingReason = &r
@@ -232,7 +242,7 @@ func (s *Service) Coverage(ctx context.Context, itemID string, m platform.Moment
 			id := p.EventID
 			cp.EventID = &id
 		}
-		if p.Required && p.Status != "received" {
+		if p.Required && (cp.Status != "received" || cp.Outcome == quality.OutcomeUnable) {
 			out.Complete = false
 		}
 		out.Points = append(out.Points, cp)
@@ -312,4 +322,13 @@ func (s *Service) ReactionMap(ctx context.Context, m platform.Moment) (ReactionM
 		return s.Unimplemented.ReactionMap(ctx, m)
 	}
 	return reactionMapView(s.env), nil
+}
+
+// pointOutcome — действующий исход результата точки (решение на закрывающей
+// точке — без исхода наблюдения).
+func pointOutcome(st quality.State, eventID string) string {
+	if o, ok := observationOf(st, eventID); ok {
+		return o.Outcome
+	}
+	return ""
 }
