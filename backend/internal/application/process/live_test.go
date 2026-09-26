@@ -208,7 +208,7 @@ func TestLiveMapOverWorker(t *testing.T) {
 	}
 
 	// Версии (FR-22…FR-24).
-	vl, err := w.svc.Versions(ctx, platform.Moment{})
+	vl, err := w.svc.Versions(ctx, "", platform.Moment{})
 	if err != nil || len(vl.Items) != 1 || vl.Items[0].Quorum.Have != 3 || vl.Items[0].ItemsInWork != 2 || vl.Items[0].Status != dp.StatusActive {
 		t.Fatalf("версии: %+v %v", vl, err)
 	}
@@ -236,7 +236,7 @@ func TestLiveMapOverWorker(t *testing.T) {
 	if w.count(catalog.NormativeVersionDrafted) != 1 {
 		t.Fatal("normative.version.drafted не записан")
 	}
-	vl, _ = w.svc.Versions(ctx, platform.Moment{})
+	vl, _ = w.svc.Versions(ctx, "", platform.Moment{})
 	draftID := ""
 	for _, x := range vl.Items {
 		if x.Status == dp.StatusDraft {

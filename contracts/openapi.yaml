@@ -7373,6 +7373,12 @@ components:
           items:
             $ref: "#/components/schemas/MapItem"
           type: array
+        process_id:
+          description: Процесс показанной версии — id главного bpmn:process (UI-11).
+          type: string
+        process_name:
+          description: Название процесса.
+          type: string
         process_version:
           $ref: "#/components/schemas/MapVersionRef"
         versions:
@@ -7380,6 +7386,8 @@ components:
             $ref: "#/components/schemas/MapVersionRef"
           type: array
       required:
+        - process_id
+        - process_name
         - process_version
         - versions
         - bpmn_xml
@@ -9918,6 +9926,16 @@ components:
         - name
         - properties
       type: object
+    ProcessList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: "#/components/schemas/ProcessSummary"
+          type: array
+      required:
+        - items
+      type: object
     ProcessNodeCard:
       additionalProperties: false
       properties:
@@ -9982,6 +10000,46 @@ components:
         - counters
         - items
         - nonconformities
+      type: object
+    ProcessSummary:
+      additionalProperties: false
+      properties:
+        active_version:
+          $ref: "#/components/schemas/ProcessVersionRef"
+          description: Действующая версия; нет — ни одна версия не в действии.
+        is_default:
+          description: "Основной процесс: его показывают живая карта и список версий без параметра процесса."
+          type: boolean
+        items_in_work:
+          description: Изделий в работе по всем версиям процесса.
+          format: int64
+          minimum: 0
+          type: integer
+        name:
+          description: Название процесса (имя bpmn:process действующей версии).
+          type: string
+        process_id:
+          description: id главного bpmn:process; параметр process_id живой карты и списка версий.
+          type: string
+        status:
+          description: active — есть действующая версия; draft — ни одна версия ещё не введена; retired — все введённые выведены.
+          enum:
+            - active
+            - draft
+            - retired
+          type: string
+        versions:
+          description: Число версий процесса (все статусы).
+          format: int64
+          minimum: 0
+          type: integer
+      required:
+        - process_id
+        - name
+        - versions
+        - status
+        - is_default
+        - items_in_work
       type: object
     ProcessVersion:
       additionalProperties: false
@@ -10057,6 +10115,18 @@ components:
       required:
         - items
       type: object
+    ProcessVersionRef:
+      additionalProperties: false
+      properties:
+        label:
+          description: Номер версии для людей (v1, v2…).
+          type: string
+        version_id:
+          type: string
+      required:
+        - version_id
+        - label
+      type: object
     ProcessVersionSummary:
       additionalProperties: false
       properties:
@@ -10075,6 +10145,9 @@ components:
           minimum: 0
           type: integer
         label:
+          type: string
+        process_id:
+          description: Процесс версии (UI-11).
           type: string
         quorum:
           $ref: "#/components/schemas/VersionQuorum"
@@ -21934,12 +22007,20 @@ paths:
             description: Конец произвольного периода.
             format: date-time
             type: string
-        - description: Версия процесса; не задана — действующая.
+        - description: Процесс (process.process.list, UI-11); не задан — основной процесс.
+          explode: false
+          in: query
+          name: process_id
+          schema:
+            description: Процесс (process.process.list, UI-11); не задан — основной процесс.
+            maxLength: 128
+            type: string
+        - description: Версия процесса; не задана — действующая версия процесса.
           explode: false
           in: query
           name: process_version_id
           schema:
-            description: Версия процесса; не задана — действующая.
+            description: Версия процесса; не задана — действующая версия процесса.
             maxLength: 128
             type: string
         - description: Режим инцидента (FR-9).
@@ -24841,6 +24922,14 @@ paths:
       description: "FR-22: черновик → на утверждении → действующая → выведена; кворум, изделия в работе по версии."
       operationId: process.version.list
       parameters:
+        - description: Процесс (process.process.list, UI-11); не задан — основной процесс.
+          explode: false
+          in: query
+          name: process_id
+          schema:
+            description: Процесс (process.process.list, UI-11); не задан — основной процесс.
+            maxLength: 128
+            type: string
         - description: "Ось момента: occurred — «как было» (по умолчанию), recorded — «что мы знали» (AD-37)."
           explode: false
           in: query
@@ -25306,6 +25395,61 @@ paths:
         id: process.version.submit
         owner: process
         signature_level: 2
+        subject: process_version
+  /api/v1/processes:
+    get:
+      description: "UI-11, FR-22: процессы для выбора — версии, сгруппированные по главному bpmn:process: действующая версия, число версий, состояние, изделий в работе. Основной процесс — первым."
+      operationId: process.process.list
+      parameters:
+        - description: "Ось момента: occurred — «как было» (по умолчанию), recorded — «что мы знали» (AD-37)."
+          explode: false
+          in: query
+          name: axis
+          schema:
+            $ref: "#/components/schemas/Axis"
+            description: "Ось момента: occurred — «как было» (по умолчанию), recorded — «что мы знали» (AD-37)."
+        - description: "Момент (RFC 3339 UTC); пусто — «сейчас». Задан — воспроизведение: команды выключены (AD-21)."
+          explode: false
+          in: query
+          name: as_of
+          schema:
+            description: "Момент (RFC 3339 UTC); пусто — «сейчас». Задан — воспроизведение: команды выключены (AD-21)."
+            format: date-time
+            type: string
+        - description: "Прогон сценария: данные в его пространстве имён (AD-38)."
+          explode: false
+          in: query
+          name: run_id
+          schema:
+            description: "Прогон сценария: данные в его пространстве имён (AD-38)."
+            maxLength: 128
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProcessList"
+          description: OK
+          headers:
+            Ant-Backend:
+              schema:
+                $ref: "#/components/schemas/BackendMode"
+                description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Error
+      summary: Процессы
+      tags:
+        - process
+      x-ant-action:
+        class: read
+        critical: false
+        id: process.process.list
+        owner: process
         subject: process_version
   /api/v1/qualifications:
     get:

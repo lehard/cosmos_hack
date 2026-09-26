@@ -12,8 +12,11 @@ type Queries interface {
 	LiveMap(ctx context.Context, q LiveMapQuery, m platform.Moment) (LiveMap, error)
 	// Node — карточка узла (process.node.read, FR-154).
 	Node(ctx context.Context, versionID, stepKey string, m platform.Moment) (ProcessNodeCard, error)
-	// Versions — версии процесса (process.version.list, FR-22).
-	Versions(ctx context.Context, m platform.Moment) (ProcessVersionList, error)
+	// Processes — процессы для выбора (process.process.list, UI-11).
+	Processes(ctx context.Context, m platform.Moment) (ProcessList, error)
+	// Versions — версии процесса processID (пусто — основной процесс;
+	// process.version.list, FR-22).
+	Versions(ctx context.Context, processID string, m platform.Moment) (ProcessVersionList, error)
 	// Version — версия в читаемом виде (process.version.read, FR-24).
 	Version(ctx context.Context, versionID string, m platform.Moment) (ProcessVersion, error)
 	// Diff — разница версий (process.version.diff, FR-24).
@@ -48,7 +51,10 @@ func (Unimplemented) LiveMap(context.Context, LiveMapQuery, platform.Moment) (Li
 func (Unimplemented) Node(context.Context, string, string, platform.Moment) (ProcessNodeCard, error) {
 	return ProcessNodeCard{}, ni("process.node.read")
 }
-func (Unimplemented) Versions(context.Context, platform.Moment) (ProcessVersionList, error) {
+func (Unimplemented) Processes(context.Context, platform.Moment) (ProcessList, error) {
+	return ProcessList{}, ni("process.process.list")
+}
+func (Unimplemented) Versions(context.Context, string, platform.Moment) (ProcessVersionList, error) {
 	return ProcessVersionList{}, ni("process.version.list")
 }
 func (Unimplemented) Version(context.Context, string, platform.Moment) (ProcessVersion, error) {
