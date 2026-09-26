@@ -54,6 +54,7 @@ type Request struct {
 const (
 	roleInspector    = "quality_inspector"
 	roleTechnologist = "technologist"
+	roleForeman      = "site_foreman"
 )
 
 // requests — запросы по открытым сигналам, точкам без данных и рекомендациям
@@ -85,8 +86,12 @@ func requests(s State) []Request {
 		if a.Task != "" && sg.Basis != BasisSkipped {
 			// Пропуск проверки: задачу «нет данных» ставит точка полноты ниже.
 			role := roleInspector
-			if a.Outcome == ReactQuestion {
+			switch {
+			case a.Outcome == ReactQuestion:
 				role = roleTechnologist
+			case a.Task == "isolate_move":
+				// Перемещает в изолятор мастер участка, у которого изделие (FR-55).
+				role = roleForeman
 			}
 			out = append(out, Request{Key: "task/" + sg.SignalID, Kind: RequestTask, SignalID: sg.SignalID, DefectID: sg.DefectID,
 				StepKey: sg.StepKey, TaskKind: a.Task, RoleID: role, RuleRef: a.MapRef, AutomationMode: 1, Title: taskTitle(sg), Causes: sg.Causes})
