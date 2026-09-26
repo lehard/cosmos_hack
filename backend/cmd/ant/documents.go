@@ -27,6 +27,13 @@ func documentsEnv(env *environment) domdocs.Env {
 	if err != nil {
 		panic(err) // встроенная копия проверена тестом TestSeedMatchesRepo
 	}
+	// Политика для обязательных подписей (эпик 26, AD-43): стартовая политика
+	// нормативного слоя — детерминированный вход свёртки (сфера выдачи прав,
+	// кандидаты этапов). Политика на basis_seq из проекции — когда движок
+	// получит её входом (AD-45).
+	if _, seed, _, err := seedFS(); err == nil {
+		e.Policy = seed
+	}
 	return e
 }
 

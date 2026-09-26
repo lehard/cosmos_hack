@@ -102,7 +102,7 @@ type ApprovalStage struct {
 	Separation          []string `json:"separation,omitempty"`
 	// Candidates — кто может подписать этап по политике на basis (псевдонимы в
 	// порядке политики); пусто — политика не передана или подписантов нет.
-	Candidates []string `json:"candidates,omitempty"`
+	Candidates []string `json:"-"`
 }
 
 // Has — у этапа есть правило разделения обязанностей rule.

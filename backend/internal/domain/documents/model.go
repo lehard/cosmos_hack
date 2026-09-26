@@ -276,6 +276,11 @@ type Env struct {
 	People People
 	// Verification — full | demo (демо-профиль: подписи без агента токена, Д-30).
 	Verification string
+	// Policy — политика доступа на basis для обязательных подписей
+	// (access.RequiredApprovals, AD-43, эпик 26): сфера выдачи прав, кандидаты
+	// этапов. Пусто — этапы только по условиям маршрута. В каноническом JSON
+	// документа не участвует.
+	Policy access.Policy `json:"-"`
 }
 
 // Active — модуль документов включён (есть шаблоны).

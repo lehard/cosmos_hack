@@ -46,28 +46,28 @@ roles:
     case_role: true
     domain: qc
     inherits: [staff]
-    actions: ["quality.*.read", "nonconformity.signal.reject", "nonconformity.nonconformity.confirm", "nonconformity.recheck.request", "nonconformity.item.isolate", "nonconformity.presentation.resolve", "nonconformity.lot.resolve", "nonconformity.containment.set", "nonconformity.disposition.verify", "item.intervention.close", "item.identification.confirm", "analysis.item.assess", "documents.document.sign", "documents.document.request", "crossitem.binding.assign", "item.*.read", "analysis.*.read", "process.*.read"]
+    actions: ["quality.*.read", "nonconformity.signal.reject", "nonconformity.nonconformity.confirm", "nonconformity.recheck.request", "nonconformity.item.isolate", "nonconformity.presentation.resolve", "nonconformity.lot.resolve", "nonconformity.containment.set", "nonconformity.disposition.verify", "item.intervention.close", "item.identification.confirm", "analysis.item.assess", "documents.document.sign", "documents.signature.*", "documents.version.request", "documents.paper.print", "documents.document.request", "crossitem.binding.assign", "item.*.read", "analysis.*.read", "process.*.read"]
   - id: site_foreman
     title: "Мастер участка"
     case_role: true
     inherits: [staff]
-    actions: ["process.movement.send", "process.movement.receive", "item.presentation.record", "item.carrier.apply", "item.carrier.remove", "item.intervention.open", "access.assignment.set", "access.assignment.clear", "access.assignment.list", "notifications.task.acknowledge", "nonconformity.process_hold.set", "reference.shift.schedule", "ingest.event.submit", "documents.document.sign", "documents.document.request", "documents.paper.attest", "item.*.read", "process.*.read", "quality.*.read"]
+    actions: ["process.movement.send", "process.movement.receive", "item.presentation.record", "item.carrier.apply", "item.carrier.remove", "item.intervention.open", "access.assignment.set", "access.assignment.clear", "access.assignment.list", "notifications.task.acknowledge", "nonconformity.process_hold.set", "reference.shift.schedule", "ingest.event.submit", "documents.document.sign", "documents.signature.*", "documents.version.request", "documents.paper.print", "documents.document.request", "documents.paper.attest", "item.*.read", "process.*.read", "quality.*.read"]
   - id: technologist
     title: "Технолог"
     case_role: true
     inherits: [staff]
-    actions: ["analysis.hypothesis.record", "analysis.hypothesis.reject", "analysis.measurement.request", "analysis.cause.conclude", "analysis.scope.narrow", "analysis.scope.expand", "analysis.analysis.scope", "analysis.action.*", "analysis.item.assess", "analysis.incident.close", "nonconformity.disposition.set", "nonconformity.lot.resolve", "process.version.submit", "process.version.draft", "ingest.import.submit", "documents.document.sign", "documents.document.request", "analysis.*.read", "item.*.read", "process.*.read", "quality.*.read", "machinelogs.*.read"]
+    actions: ["analysis.hypothesis.record", "analysis.hypothesis.reject", "analysis.measurement.request", "analysis.cause.conclude", "analysis.scope.narrow", "analysis.scope.expand", "analysis.analysis.scope", "analysis.action.*", "analysis.item.assess", "analysis.incident.close", "nonconformity.disposition.set", "nonconformity.lot.resolve", "process.version.submit", "process.version.draft", "ingest.import.submit", "documents.document.sign", "documents.signature.*", "documents.version.request", "documents.paper.print", "documents.document.request", "analysis.*.read", "item.*.read", "process.*.read", "quality.*.read", "machinelogs.*.read"]
   - id: production_manager
     title: "Руководитель производства"
     case_role: true
     inherits: [staff]
-    actions: ["process.version.activate", "process.version.retire", "nonconformity.process_hold.set", "nonconformity.process_hold.release", "documents.document.sign", "analytics.*.read", "item.*.read", "process.*.read", "analysis.*.read", "quality.*.read", "reference.*.read"]
+    actions: ["process.version.activate", "process.version.retire", "nonconformity.process_hold.set", "nonconformity.process_hold.release", "documents.document.sign", "documents.signature.*", "documents.version.request", "documents.paper.print", "analytics.*.read", "item.*.read", "process.*.read", "analysis.*.read", "quality.*.read", "reference.*.read"]
   - id: administrator
     title: "Администратор (безопасности)"
     case_role: true
     domain: admin
     inherits: [staff]
-    actions: ["access.person.register", "access.account.activate", "access.policy.grant", "access.policy.revoke", "signing.key.register", "signing.key.revoke", "ops.source.disable", "ops.source.enable", "ops.processing.retry", "ingest.message.reprocess", "ingest.import.submit", "erp.posting.resend", "crossitem.binding.assign", "simulation.*.*", "reference.*.define", "ops.*.read", "ingest.*.read", "access.*.read", "journal.*.read", "security.*.read"]
+    actions: ["access.person.register", "access.account.activate", "access.policy.grant", "access.policy.revoke", "documents.version.request", "documents.document.request", "documents.request.list", "signing.key.register", "signing.key.revoke", "ops.source.disable", "ops.source.enable", "ops.processing.retry", "ingest.message.reprocess", "ingest.import.submit", "erp.posting.resend", "crossitem.binding.assign", "simulation.*.*", "reference.*.define", "ops.*.read", "ingest.*.read", "access.*.read", "journal.*.read", "security.*.read"]
   # ── дополнительные роли (PRD §2, AD-15) ──
   - id: performer
     title: "Исполнитель"
@@ -132,6 +132,8 @@ authorities:
   - {id: second_signature_audit,   title: "Вторая подпись: привилегии администраторов и аудита (AD-11)", domain: admin}
 
 # Виды контроля для цифровых клейм (FR-145): одно клеймо на вид контроля.
+# Номер клейма (stamp_id) — ASCII по defs.object_id (он пишется в policy.stamp.issued); в интерфейсе и печатных
+# формах номер показывается как есть.
 stamp_kinds: [incoming, dimensional, visual, weld, assembly, leak_test, final]
 
 persons:
@@ -204,15 +206,15 @@ grants:
     - {person: HWS-WC, authority: paper_attestation,    scope: ent01/b1/wc}
     - {person: HWS-AC, authority: paper_attestation,    scope: ent01/b1/ac}
   stamps:
-    - {person: INS-01, stamp_id: "ОТК-01-ВК",  kind: incoming,    scope: ent01/b1/sk, order_ref: "Приказ № 1-К [ПП]"}
-    - {person: INS-01, stamp_id: "ОТК-01-РК",  kind: dimensional, scope: ent01/b1/mc, order_ref: "Приказ № 1-К [ПП]"}
-    - {person: INS-01, stamp_id: "ОТК-01-ВИЗ", kind: visual,      scope: ent01/b1,    order_ref: "Приказ № 1-К [ПП]"}
-    - {person: INS-01, stamp_id: "ОТК-01-СВ",  kind: weld,        scope: ent01/b1/wc, order_ref: "Приказ № 1-К [ПП]"}
-    - {person: INS-02, stamp_id: "ОТК-02-СБ",  kind: assembly,    scope: ent01/b1/ac, order_ref: "Приказ № 1-К [ПП]"}
-    - {person: INS-02, stamp_id: "ОТК-02-ГЕ",  kind: leak_test,   scope: ent01/b1/ac, order_ref: "Приказ № 1-К [ПП]"}
-    - {person: INS-02, stamp_id: "ОТК-02-ОК",  kind: final,       scope: ent01/b1/qa, order_ref: "Приказ № 1-К [ПП]"}
-    - {person: INS-02, stamp_id: "ОТК-02-ВИЗ", kind: visual,      scope: ent01/b1,    order_ref: "Приказ № 1-К [ПП]"}
-    - {person: HQC-01, stamp_id: "ОТК-00-ОК",  kind: final,       scope: ent01,       order_ref: "Приказ № 1-К [ПП]"}
+    - {person: INS-01, stamp_id: "OTK-01-VK",  kind: incoming,    scope: ent01/b1/sk, order_ref: "Приказ № 1-К [ПП]"}
+    - {person: INS-01, stamp_id: "OTK-01-RK",  kind: dimensional, scope: ent01/b1/mc, order_ref: "Приказ № 1-К [ПП]"}
+    - {person: INS-01, stamp_id: "OTK-01-VIZ", kind: visual,      scope: ent01/b1,    order_ref: "Приказ № 1-К [ПП]"}
+    - {person: INS-01, stamp_id: "OTK-01-SV",  kind: weld,        scope: ent01/b1/wc, order_ref: "Приказ № 1-К [ПП]"}
+    - {person: INS-02, stamp_id: "OTK-02-SB",  kind: assembly,    scope: ent01/b1/ac, order_ref: "Приказ № 1-К [ПП]"}
+    - {person: INS-02, stamp_id: "OTK-02-GE",  kind: leak_test,   scope: ent01/b1/ac, order_ref: "Приказ № 1-К [ПП]"}
+    - {person: INS-02, stamp_id: "OTK-02-OK",  kind: final,       scope: ent01/b1/qa, order_ref: "Приказ № 1-К [ПП]"}
+    - {person: INS-02, stamp_id: "OTK-02-VIZ", kind: visual,      scope: ent01/b1,    order_ref: "Приказ № 1-К [ПП]"}
+    - {person: HQC-01, stamp_id: "OTK-00-OK",  kind: final,       scope: ent01,       order_ref: "Приказ № 1-К [ПП]"}
   qualifications:
     - {person: W21, qualification: welder_argon_arc_amg6, scope: ent01/b1/wc, valid_until: "2027-06-30T00:00:00.000Z", certificate_ref: "НАКС [ПП]"}
     - {person: W22, qualification: welder_argon_arc_amg6, scope: ent01/b1/wc, valid_until: "2026-12-31T00:00:00.000Z", certificate_ref: "НАКС [ПП]"}
@@ -230,7 +232,7 @@ separation_of_duties:
     conflicting_actions: ["process.operation.start", "nonconformity.presentation.resolve"]
   - id: SOD-2
     statement: "Заверитель бумажной подписи ≠ подписант (AD-43)"
-    conflicting_actions: ["documents.document.sign", "documents.paper.attest"]
+    conflicting_actions: ["documents.document.sign", "documents.signature.record", "documents.paper.attest"]
   - id: SOD-3
     statement: "Выдача прав себе — только со второй подписью независимой стороны (AD-11)"
     conflicting_actions: ["access.policy.grant", "access.policy.receive"]

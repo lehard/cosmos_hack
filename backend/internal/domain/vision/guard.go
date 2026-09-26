@@ -79,12 +79,16 @@ func GuardAdmit(reg Registry, a Admission) error {
 
 // GuardReinstate — гард возврата после отката (FR-101, AD-27): паспорт
 // приостановлен именно этой приостановкой; вернуть может только начальник ОТК.
-func GuardReinstate(reg Registry, passportID, suspensionEventID, actorRole string) (Passport, error) {
+// headOfQC — субъект действует в роли начальника ОТК с наследованием ролей
+// (Principal.HasRole: роль-наследник начальника ОТК тоже вправе; эпик 26 —
+// сравнение строки активной роли не учитывало наследование); actorRole — для
+// текста отказа.
+func GuardReinstate(reg Registry, passportID, suspensionEventID, actorRole string, headOfQC bool) (Passport, error) {
 	p, ok := reg.Passport(passportID)
 	if !ok {
 		return p, kernel.Refuse(errcodes.ApiNotFound, "object", "analyzer_passport", "id", passportID)
 	}
-	if actorRole != RoleHeadOfQC {
+	if !headOfQC {
 		return p, kernel.Refuse(errcodes.AnalyzerReinstateRequiresHeadOfQc, "role", actorRole)
 	}
 	s, suspended := p.LastSuspension()

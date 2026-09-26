@@ -359,7 +359,7 @@ func (s *State) draft(env Env, d *Doc, r kernel.Record, _ Upstream) {
 	if cur != nil {
 		no = cur.No + 1
 	}
-	stages := approvalsFor(t, d)
+	stages := approvalsFor(t, d, env)
 	b, err := Compose(t, d, no, body, stages)
 	if err != nil {
 		s.bad(r)

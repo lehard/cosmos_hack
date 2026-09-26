@@ -149,6 +149,9 @@ func buildAPI(mux *http.ServeMux, o apiOptions) *httpapi.API {
 	if x := o.access; x != nil {
 		gate.Places, gate.Events = x.places, x.events
 		gate.Now = func() time.Time { t, _ := x.now(context.Background()); return t }
+		// Эпик 26: политика — для проверки policy_seq команды в journal.Append
+		// (AD-39), редких подписантов и объяснения прав своим кодом.
+		gate.Policy = x.policy
 	}
 	a := httpapi.New(mux, httpapi.Config{Mode: o.mode, ModuleModes: o.moduleModes, Gate: gate, Identity: idp})
 	gate.SetCatalog(a.Actions)
@@ -268,6 +271,13 @@ func buildAPI(mux *http.ServeMux, o apiOptions) *httpapi.API {
 		if x := o.access; x != nil {
 			opts = append(opts, accessapp.WithIdentity(x.identity), accessapp.WithDirectory(x.directory), accessapp.WithPolicy(x.policy),
 				accessapp.WithAccounts(x.creds, x.hasher), accessapp.WithDecisions(x.decisions, x.now))
+			// Эпик 26: документ выдачи прав и карточки редких подписантов — по
+			// живому модулю documents (маршрут подписей, AD-43, FR-136).
+			if o.documents != nil && a.ModeFor("documents") == platform.ModeLive {
+				bridge := accessapp.DocumentsBridge{Docs: o.documents}
+				opts = append(opts, accessapp.WithGrantDocuments(bridge))
+				gate.Cards = bridge
+			}
 		}
 		live := accessapp.NewService(opts...)
 		accesshttp.Register(a, live, live, gate)
