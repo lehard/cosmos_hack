@@ -8,9 +8,11 @@ import (
 	"io/fs"
 	"path"
 	"regexp"
+	"runtime"
 	"slices"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"go.yaml.in/yaml/v3"
@@ -126,26 +128,19 @@ func loadScenario(fsys fs.FS, dir string) (*Scenario, error) {
 	if len(sc.Manifest.LocalIDs) > 0 {
 		sc.localIDs = regexp.MustCompile("^(?:" + strings.Join(sc.Manifest.LocalIDs, "|") + ")$")
 	}
+	files, err := readSteps(fsys, dir, sc.Manifest.Steps)
+	if err != nil {
+		return nil, err
+	}
 	prev := stepState{byKey: map[string]*entry{}, byOp: map[string][]*entry{}}
-	for i, h := range sc.Manifest.Steps {
-		var f StepFile
-		name := path.Join(dir, "steps", fmt.Sprintf("%02d.yaml", i))
-		if err := readYAML(fsys, name, &f); err != nil {
-			return nil, err
-		}
-		if f.Format != FormatVersion || f.Step != i || !f.Clock.Equal(h.Clock) {
-			return nil, fmt.Errorf("%s: формат, номер шага или часы не совпадают с scenario.yaml", name)
-		}
+	for _, pf := range files {
+		f := pf.file
 		cur := stepState{file: f, byKey: make(map[string]*entry, len(prev.byKey)+len(f.Responses))}
 		for k, e := range prev.byKey {
 			cur.byKey[k] = e
 		}
-		for _, r := range f.Responses {
-			e, err := newEntry(r)
-			if err != nil {
-				return nil, fmt.Errorf("%s: %w", name, err)
-			}
-			cur.byKey[r.Key()] = e
+		for j, r := range f.Responses {
+			cur.byKey[r.Key()] = pf.entries[j]
 		}
 		cur.byOp = make(map[string][]*entry)
 		for _, e := range cur.byKey {
@@ -155,6 +150,58 @@ func loadScenario(fsys fs.FS, dir string) (*Scenario, error) {
 		prev = cur
 	}
 	return sc, nil
+}
+
+// parsedStep — разобранный файл шага и ответы с телами JSON (по порядку Responses).
+type parsedStep struct {
+	file    StepFile
+	entries []*entry
+}
+
+// readSteps разбирает steps/NN.yaml параллельно (не больше GOMAXPROCS и не
+// больше 4 файлов сразу — память контейнера api ограничена): YAML в десятки
+// МБ — основная работа холодного старта после построения мира. Накопление
+// шагов идёт потом последовательно, так что итог не зависит от порядка разбора.
+func readSteps(fsys fs.FS, dir string, headers []StepHeader) ([]parsedStep, error) {
+	out := make([]parsedStep, len(headers))
+	errs := make([]error, len(headers))
+	sem := make(chan struct{}, max(1, min(4, runtime.GOMAXPROCS(0))))
+	var wg sync.WaitGroup
+	for i, h := range headers {
+		wg.Add(1)
+		sem <- struct{}{}
+		go func() {
+			defer func() { <-sem; wg.Done() }()
+			var f StepFile
+			name := path.Join(dir, "steps", fmt.Sprintf("%02d.yaml", i))
+			if err := readYAML(fsys, name, &f); err != nil {
+				errs[i] = err
+				return
+			}
+			if f.Format != FormatVersion || f.Step != i || !f.Clock.Equal(h.Clock) {
+				errs[i] = fmt.Errorf("%s: формат, номер шага или часы не совпадают с scenario.yaml", name)
+				return
+			}
+			entries := make([]*entry, len(f.Responses))
+			for j, r := range f.Responses {
+				e, err := newEntry(r)
+				if err != nil {
+					errs[i] = fmt.Errorf("%s: %w", name, err)
+					return
+				}
+				entries[j] = e
+			}
+			out[i] = parsedStep{file: f, entries: entries}
+		}()
+	}
+	wg.Wait()
+	// Первая ошибка по порядку шагов — как при последовательном разборе.
+	for _, err := range errs {
+		if err != nil {
+			return nil, err
+		}
+	}
+	return out, nil
 }
 
 func newEntry(r Response) (*entry, error) {

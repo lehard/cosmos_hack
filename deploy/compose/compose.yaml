@@ -253,12 +253,16 @@ services:
       - security-export:/var/lib/ant-export
     tmpfs:
       - /tmp:size=64m
+    # Холодный старт строит мир заготовок в памяти (~10–15 с на стенде, дольше
+    # на слабой машине): 120 с запаса, пока неудачи не считаются; в это время
+    # проверка каждые 2 с — `compose up --wait` отпускает сразу, как HTTP готов.
     healthcheck:
       test: ["CMD", "/ant", "-healthcheck"]
       interval: 5s
       timeout: 3s
       retries: 5
-      start_period: 5s
+      start_period: 120s
+      start_interval: 2s
     mem_limit: 384m
     restart: unless-stopped
 
