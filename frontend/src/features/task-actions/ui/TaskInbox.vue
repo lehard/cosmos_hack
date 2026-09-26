@@ -41,6 +41,8 @@ const problemText = useProblemText()
 const session = useSession()
 const ack = useAcknowledgeTask()
 const size = computed(() => naiveSizeOf(props.density))
+/** Исполнитель на посту (есть допуск в сеансе). */
+const onPost = computed(() => !!session.data.value?.data.workplace?.id)
 
 /** Раскрыто подтверждение перемещения у задачи. */
 const moving = ref<string | null>(null)
@@ -156,8 +158,10 @@ const kindKey = (task: TaskEntry) => (taskNotificationKind(task.kind) === 'decis
           <div v-else-if="a.kind === 'window' && canOpen(a.ref)" class="line">
             <ActionButton :size="size" type="primary" :label="t(a.verbKey)" data-testid="task-action" :data-action="opOf(task)" @click="emit('open', a.ref)" />
           </div>
+          <!-- Действие исполнителя доступно только с поста: без допуска кнопки нет, есть подсказка. -->
           <div v-else-if="a.kind === 'terminal'" class="line">
-            <ActionButton :size="size" type="primary" :label="t(a.verbKey)" data-testid="task-action" :data-action="opOf(task)" @click="goTerminal(a)" />
+            <ActionButton v-if="onPost" :size="size" type="primary" :label="t(a.verbKey)" data-testid="task-action" :data-action="opOf(task)" @click="goTerminal(a)" />
+            <span v-else class="ant-muted" data-testid="task-needs-post">Сначала встаньте на пост — откройте допуск в терминале</span>
           </div>
         </template>
       </template>
