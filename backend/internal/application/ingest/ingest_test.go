@@ -560,3 +560,23 @@ func TestSourceDisabled(t *testing.T) {
 		t.Fatalf("включённый источник: %+v %v", r, err)
 	}
 }
+
+// Действие человека со стола по изделию прогона (команда без прогона в
+// контексте): факт в журнале — с run_id прогона изделия (AD-38), иначе
+// machinelogs не привяжет к выполнению сводки тока прогона.
+func TestManualRunFromItem(t *testing.T) {
+	ctx := platform.WithPrincipal(context.Background(), platform.Principal{PersonID: "W21"})
+	c := demoCore(t)
+	occ := t0.Add(-time.Hour)
+	r, err := c.Service.SubmitManual(ctx, app.Cmd[app.ManualInput]{Meta: platform.CommandMeta{CommandID: uid(9)},
+		Body: app.ManualInput{SourceID: "terminal-weld-2", EventType: "operation.run.started", OccurredAt: &occ, ItemID: "ENT01:show-is2-20260921-1/I-9DE0BA5E",
+			Data: map[string]any{"operation_run_id": "01a0df29-0000-7000-8000-000000000001", "operation_code": "030", "step_key": "welding.weld", "operator_id": "W21"}}})
+	if err != nil || r.Outcome != app.OutcomeAccepted {
+		t.Fatalf("ручной ввод: %+v %v", r, err)
+	}
+	m := c.Journal.Main()
+	e := m[len(m)-1].Entry
+	if e.RunID == nil || *e.RunID != "show-is2-20260921-1" {
+		t.Fatalf("run_id факта со стола: %v", e.RunID)
+	}
+}

@@ -394,6 +394,26 @@ func (s StageState) updateRun(itemID, runID string, f func(*StageRun)) {
 	s.Items[itemID] = it
 }
 
+// programAt — программа (режим, WPS) поста на момент at, когда команда её не
+// назвала (терминал исполнителя шлёт «Начать» без program_ref): программа
+// последнего выполнения того же шага на том же оборудовании до at — смены
+// программы поста без записи не бывает. Нет таких выполнений — неизвестна.
+func (s StageState) programAt(equipment, step string, at time.Time) string {
+	if equipment == "" {
+		return ""
+	}
+	prog, last := "", time.Time{}
+	for _, it := range s.Items {
+		for _, k := range it.Runs {
+			if k.Equipment == equipment && k.StepKey == step && k.Program != "" && !k.Started.After(at) &&
+				(k.Started.After(last) || k.Started.Equal(last) && k.Program < prog) {
+				prog, last = k.Program, k.Started
+			}
+		}
+	}
+	return prog
+}
+
 // onRunStarted — выполнение в индекс; правило расширения: новое выполнение
 // той же операции на оборудовании открытого инцидента после начала окна —
 // изделие под подозрением (защитное, AD-27).
@@ -409,6 +429,9 @@ func (s StageState) onRunStarted(r kernel.Record) (StageState, []kernel.Addresse
 	run := StageRun{RunID: d.OperationRunID, StepKey: d.StepKey, Equipment: deref(d.EquipmentID), Operator: deref(d.OperatorID),
 		Program: deref(d.ProgramRef), Started: at, EventID: r.EventID}
 	run.Tool = s.ToolAt(run.Equipment, at)
+	if run.Program == "" {
+		run.Program = s.programAt(run.Equipment, run.StepKey, at)
+	}
 	it := s.Items[r.ItemID]
 	it.Runs = append(slices.Clone(it.Runs), run)
 	s.Items[r.ItemID] = it
