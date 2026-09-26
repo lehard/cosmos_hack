@@ -161,7 +161,7 @@ func (s *Service) Passport(ctx context.Context, itemID string, m platform.Moment
 		return ItemPassport{}, err
 	}
 	it := a.Snap.Item
-	p := ItemPassport{ItemID: itemID, Label: Label(itemID), ItemTypeID: it.ItemTypeID, ItemRevision: it.ItemRevision, ProcessVersion: it.ProcessVersion,
+	p := ItemPassport{ItemID: itemID, Label: it.DisplayLabel(itemID), ItemTypeID: it.ItemTypeID, ItemRevision: it.ItemRevision, ProcessVersion: it.ProcessVersion,
 		StepKey: it.StepKey, OrderID: it.OrderID, LotIDs: nonNil(it.LotIDs), Identification: it.Identification(), Status: StatusOf(a.Snap),
 		Documents: []ItemDocumentRef{}, Zones: []ItemZone{}, Carriers: []ItemCarrier{}, Incidents: []string{}, Nonconformities: []string{},
 		BasisSeq: a.Snap.BasisSeq, SplitFrom: it.SplitFrom}

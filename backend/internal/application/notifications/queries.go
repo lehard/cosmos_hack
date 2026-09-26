@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"ant/internal/application/platform"
+	itemdom "ant/internal/domain/item"
 	dom "ant/internal/domain/nonconformity"
 	notif "ant/internal/domain/notifications"
 )
@@ -320,6 +321,20 @@ func (s *Service) Tasks(ctx context.Context, f TaskFilter, m platform.Moment, p 
 		}
 		kind, id := refOf(t.Subject)
 		e.Ref = &platform.DrillRef{Entity: kind, ID: id}
+		if t.ItemID != "" && kind == platform.EntityItem {
+			e.ItemID = strp(t.ItemID)
+			label := t.ItemLabel
+			if label == "" {
+				label = itemdom.LocalLabel(t.ItemID)
+			}
+			e.ItemLabel = strp(label)
+		}
+		if t.Operation != "" {
+			e.OperationID = strp(t.Operation)
+		}
+		if t.StepKey != "" {
+			e.StepKey = strp(t.StepKey)
+		}
 		out = append(out, e)
 	}
 	slices.SortStableFunc(out, func(a, b TaskEntry) int {

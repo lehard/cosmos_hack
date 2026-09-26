@@ -147,6 +147,12 @@ type Task struct {
 	Causes     []Cause    `json:"causes"`
 	Open       bool       `json:"open"`
 	Closed     *Cause     `json:"closed,omitempty"`
+	// ItemLabel — метка изделия для людей (Ф-001, DM-код), не внутренний id.
+	ItemLabel string `json:"item_label,omitempty"`
+	// Operation, StepKey — задача процесса: какую операцию API нажать и на
+	// каком шаге стоит изделие (process.HumanSteps).
+	Operation string `json:"operation,omitempty"`
+	StepKey   string `json:"step_key,omitempty"`
 }
 
 // Where — где изделие физически и на какой операции: из фактов выполнения,

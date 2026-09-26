@@ -18,5 +18,6 @@ export const TaskEntryKind = {
   remove_temporary_carrier: 'remove_temporary_carrier',
   inspection_missing: 'inspection_missing',
   admin_resend: 'admin_resend',
+  process_step: 'process_step',
   other: 'other',
 } as const;

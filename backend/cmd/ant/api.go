@@ -18,6 +18,7 @@ import (
 	"ant/internal/infrastructure/fixtures/loader"
 	storagefx "ant/internal/infrastructure/storage/fixtures"
 	materialsstore "ant/internal/infrastructure/storage/materials"
+	"ant/internal/infrastructure/transport/httpapi"
 	"ant/internal/infrastructure/transport/webui"
 )
 
@@ -260,7 +261,8 @@ func runAPI(ctx context.Context, env *environment) error {
 	})
 	mux.Handle("/", webui.Handler())
 
-	var handler http.Handler = mux
+	// id прогонов с «/» во всех операциях изделия (и других объектов).
+	var handler http.Handler = httpapi.SlashedIDs(mux)
 	handler = http.MaxBytesHandler(handler, cfg.HTTP.MaxBodyBytes)
 	handler = http.NewCrossOriginProtection().Handler(handler)
 

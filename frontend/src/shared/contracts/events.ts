@@ -8659,7 +8659,7 @@ task_id: string
 /**
  * Вид задачи.
  */
-kind: ("physical_move" | "isolate_move" | "recheck" | "decision_required" | "review_after_new_data" | "protection_basis_changed" | "resign" | "remark_carrier" | "remove_temporary_carrier" | "inspection_missing" | "admin_resend" | "other")
+kind: ("physical_move" | "isolate_move" | "recheck" | "decision_required" | "review_after_new_data" | "protection_basis_changed" | "resign" | "remark_carrier" | "remove_temporary_carrier" | "inspection_missing" | "admin_resend" | "process_step" | "other")
 /**
  * Идентификатор объекта системы или справочника: ASCII, без пробелов.
  */
@@ -8684,6 +8684,22 @@ subject_ref: string
  * Что сделать.
  */
 title: string
+/**
+ * Внутренний идентификатор изделия: `код_предприятия:локальный_id` (AD-16). Из метки не выводится; в прогоне локальная часть несёт префикс прогона.
+ */
+item_id?: string
+/**
+ * Метка изделия для людей: номер с бирки (Ф-001), DM-код или номер из id.
+ */
+item_label?: string
+/**
+ * Задача процесса (kind process_step): операция API, которой исполнитель продвигает изделие (process.movement.receive, process.operation.start и т. п.).
+ */
+operation_id?: string
+/**
+ * Стабильный ключ шага процесса из расширения BPMN (`ant:properties/@stepKey`, AD-17).
+ */
+step_key?: string
 }
 /**
  * Задача снята — при пересвёртке реакция исчезла — задача снимается (AD-3).
