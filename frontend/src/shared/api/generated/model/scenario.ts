@@ -24,6 +24,10 @@ export interface Scenario {
   /** @minimum 0 */
   default_seed: number;
   description?: string;
+  /** situation — ситуация кейса §4.2; check — проверка §5.1; demo — демо-сценарий; failure — сбой каталога; extra — сверх кейса; run — прогон целиком. */
+  kind?: string;
+  /** Определение прогона, который запускается (scenarios/definitions/runs). */
+  run_def?: string;
   /** Идентификатор сценария (S01…S13, демо, сбой). */
   scenario_id: string;
   title: string;

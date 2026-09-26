@@ -1,0 +1,180 @@
+# Ожидания S08 — отдельно от входных событий (кейс §5.1, AD-26): утверждения над теми же
+# operationId, что показывают столы; check.path — путь в ответе (board.go), значения — ID
+# процессной сессии (сверка переводит их сведением имён прогона). mapping: exact — поле
+# ответа контракта; draft — по смыслу, путь уточнит модуль-владелец; manual — видно на экране.
+scenario: S08
+version: 0.3-draft
+title: Решение контролёра — ложное срабатывание отклонено (Ф-002)
+run: MS-1
+source: 'process/scenarios-flange-expected.yaml процессной сессии, версия 0.3-draft: утверждения процессной сессии — в source без изменений, check — исполняемая форма эпика 32'
+checkpoints:
+- at: '2026-09-22T11:45:00+03:00'
+  label: после отклонения
+  assertions:
+  - id: S08-01
+    what: исходный сигнал сохранён без изменений
+    check:
+      operation: item.passport.read
+      params:
+        item_id: '{item:F-002}'
+      path: /signals
+      op: contains
+      value: &id001
+      - checkpoint: CP-ASM
+        zone: BOLT-7
+        type: missing_torque_mark
+        confidence: 0.55
+        changed: false
+    mapping: draft
+    source:
+      subject: item/F-002
+      field: signals
+      op: contains
+      value: *id001
+  - id: S08-02
+    what: решение — отдельная запись с автором и причиной
+    check:
+      operation: item.passport.read
+      params:
+        item_id: '{item:F-002}'
+      path: /decisions
+      op: contains
+      value: &id002
+      - type: signal_rejected
+        author: QC-02
+        at: '2026-09-22T11:35:00+03:00'
+        reason: метка есть, закрыта тенью от шайбы; момент по ключу в норме
+    mapping: draft
+    source:
+      subject: item/F-002
+      field: decisions
+      op: contains
+      value: *id002
+  - id: S08-03
+    what: ЗТ-4 пройдена с первого предъявления
+    check:
+      operation: item.passport.read
+      params:
+        item_id: '{item:F-002}'
+      path: /entries[event_type=decision.presentation.resolved]
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: gate/ZT-4/F-002
+      field: first_pass
+      op: eq
+      value: true
+    note: ЗТ ZT-4
+  - id: S08-04
+    what: 'Н-4: ложных тревог КТ-4 +1'
+    check:
+      operation: analytics.metric.drilldown
+      params:
+        metric_id: N-4
+      path: /false_alarms
+      op: delta
+      value: 1
+    mapping: draft
+    baseline: '2026-09-22T11:19:00+03:00'
+    source:
+      subject: metric/N-4
+      field: false_alarms
+      filter:
+        checkpoint: CP-ASM
+      op: delta
+      value: 1
+      baseline: '2026-09-22T11:19:00+03:00'
+    note: показатель N-4 каталога процессной сессии (analytics-catalog.md); сопоставление — эпик 25
+  - id: S08-05
+    what: кадр помечен кандидатом для настройки модели
+    check:
+      operation: item.passport.read
+      params:
+        item_id: '{item:F-002}'
+      path: /model_tuning_candidate
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: item/F-002
+      field: model_tuning_candidate
+      op: eq
+      value: true
+  - id: S08-06
+    what: 'рядом с сигналом (Е-80) — удержание по правилу (Е-84): правило R-16 [П], уровень «доп. проверка»'
+    check:
+      operation: item.passport.read
+      params:
+        item_id: '{item:F-002}'
+      path: /holds
+      op: contains
+      value: &id003
+      - event: containment.hold_applied
+        rule: R-16
+        level: extra_check
+        at: '2026-09-22T11:21:00+03:00'
+    mapping: draft
+    source:
+      subject: item/F-002
+      field: holds
+      op: contains
+      value: *id003
+  - id: S08-07
+    what: 'отклонение контролёром снимает удержание тем же решением (Е-116): удержание снято в 11:35, автор ОТК-2'
+    check:
+      operation: item.passport.read
+      params:
+        item_id: '{item:F-002}'
+      path: /holds
+      op: contains
+      value: &id004
+      - event: containment.hold_released
+        by: QC-02
+        at: '2026-09-22T11:35:00+03:00'
+        with_decision: signal_rejected
+    mapping: draft
+    source:
+      subject: item/F-002
+      field: holds
+      op: contains
+      value: *id004
+- at: '2026-09-22T11:45:00+03:00'
+  label: чего не должно случиться
+  must_not: true
+  assertions:
+  - id: S08-N1
+    what: несоответствие не создано; О-2 не изменился
+    check:
+      operation: analytics.metric.drilldown
+      params:
+        metric_id: O-2
+      path: /total/value
+      op: delta
+      value: 0
+    mapping: draft
+    baseline: '2026-09-22T11:19:00+03:00'
+    source:
+      subject: metric/O-2
+      field: items
+      op: delta
+      value: 0
+      baseline: '2026-09-22T11:19:00+03:00'
+    note: показатель O-2 каталога процессной сессии (analytics-catalog.md); сопоставление — эпик 25
+  - id: S08-N2
+    what: отклонение без причины не принимается
+    check:
+      operation: step
+      path: /refusal
+      op: eq
+      value: refused
+    mapping: draft
+    source:
+      subject: api/decisions
+      field: result
+      filter:
+        type: signal_rejected
+        reason: ''
+      op: eq
+      value: refused
+    note: отказ API на шаге прогона

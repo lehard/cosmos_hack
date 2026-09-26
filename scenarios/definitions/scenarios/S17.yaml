@@ -1,0 +1,104 @@
+# S17 — process/scenarios-flange.md §4 S17 «один к одному».
+id: S17
+version: "0.3"
+title: "Исполнитель честно отметил пропуск обязательной проверки (Ф-006)"
+kind: extra
+goal: >-
+  Действия исполнителя в журнале критических действий (критерий Т3) и правило «честно
+  отметивший пропуск не хуже промолчавшего»: изделие ждёт на закрывающей точке, пока
+  проверку не сделают.
+case:
+  other: ["§4.3 пропуски проверки", "§3.2 CriticalActions", "критерий Т3", "ред-тим, строка 21"]
+run: MS-1
+where: "Главный поток, фон: Ср 23.09 08:10–08:30. В табло — да."
+source: "process/scenarios-flange.md §4 S17"
+steps:
+  - {at: "2026-09-23T07:55:00+03:00", route: "F-006:assembly_started", note: "Ф-006 в сборке: выдан комплект, начато выполнение АС-006-1"}
+  - at: "2026-09-23T08:10:00+03:00"
+    ref: Е-23
+    note: "Уплотнение установлено"
+    decision: access.operator.confirm_step
+    role: PERFORMER
+    actor: ASM-01
+    item: F-006
+    params: {workplace_id: WP-ASM-1}
+    body: {step_key: assembly.seal_install, item_id: "{item:F-006}", operation_run_id: "{local:AS-006-1}", tp_step: "Установка уплотнения"}
+  - at: "2026-09-23T08:11:00+03:00"
+    ref: Е-21
+    label: S17/check-skipped
+    note: "Проверка пропущена: «посадка уплотнения, щуп 0,05 мм» — обязательная; причина: щуп не найден на рабочем месте"
+    fact: operator.check.skipped
+    source: term-asm
+    item: F-006
+    data:
+      operation_run_id: "{local:AS-006-1}"
+      workplace_id: WP-ASM-1
+      operator_id: "{person:ASM-01}"
+      inspection_point: "seal_seating_check"
+      step_key: assembly.seal_install
+      reason: {code: tool_missing, text: "Щуп 0,05 мм не найден на рабочем месте"}
+  - {at: "2026-09-23T08:11:01+03:00", ref: Е-82, system: "Нет данных контроля по проверке посадки — «неизвестно», не «годно»; запись в журнале критических действий; задачи М-03 и ОТК-2; ЗТ-4 ч.1 закрыта"}
+  - at: "2026-09-23T08:15:00+03:00"
+    ref: Е-52
+    label: F-006/kt4d
+    note: "Камера зоны с УФ: канавка чистая; посадку щупом камера не заменяет"
+    fact: inspection.result.recorded
+    source: cam-kt4d
+    item: F-006
+    data:
+      observation_id: "{local:KT4D-F-006}"
+      method: camera
+      phase: before_zone_closure
+      step_key: assembly.kt4d_zone_camera
+      inspection_point: KT-4d
+      operation_run_id: "{local:AS-006-1}"
+      zone_ids: [S-1, CAV]
+      outcome: no_defect_indicated
+      processing_state: completed
+      analyzer_confidence_bp: 9500
+      observation_quality_bp: 9200
+      versions: {analyzer_version: "vqc-uv 1.0.3", contract_version: "1.0", recipe_ref: "KT-4d@2", item_revision: "Б"}
+  - at: "2026-09-23T08:22:00+03:00"
+    ref: Е-23
+    label: S17/check-done
+    note: "Проверка выполнена: посадка проверена щупом 0,05 мм — в норме; ссылка на отметку пропуска; щуп принёс М-03"
+    fact: inspection.result.recorded
+    source: term-asm
+    item: F-006
+    data:
+      observation_id: "{local:SEAL-F-006}"
+      method: visual_human
+      phase: before_zone_closure
+      step_key: assembly.seal_install
+      inspection_point: seal_seating_check
+      operation_run_id: "{local:AS-006-1}"
+      zone_ids: [S-1]
+      outcome: no_defect_indicated
+      processing_state: completed
+      inspector_id: "{person:ASM-01}"
+      conclusion_ref: "{event:S17/check-skipped}"
+      measurements: [{characteristic: "Посадка уплотнения, щуп 0,05 мм", tolerance: {}, verdict: within}]
+  - at: "2026-09-23T08:28:00+03:00"
+    decision: item.presentation.record
+    role: MASTER
+    actor: MST-03
+    item: F-006
+    params: {item_id: "{item:F-006}"}
+    body: {presentation_no: 1, presented_to: qc, step_key: assembly.zt4_zone_presentation}
+  - at: "2026-09-23T08:30:00+03:00"
+    ref: Е-55
+    note: "ЗТ-4 ч.1 — годно (после проверки)"
+    decision: nonconformity.presentation.resolve
+    role: QC
+    actor: QC-02
+    item: F-006
+    params: {item_id: "{item:F-006}"}
+    body: {closing_point: ZT-4, step_key: assembly.zt4_zone_presentation, presentation_no: 1, resolution: accept,
+           method_event_ids: ["{event:F-006/kt4d}", "{event:S17/check-done}"]}
+outcome:
+  - "В журнале критических действий — отметка пропуска: кто (Сб-01), какая проверка, причина."
+  - "По проверке — «нет данных», а не «годно»; задачи мастеру и ОТК; ЗТ-4 ч.1 закрыта до 08:22."
+  - "Проверка выполнена отдельной записью со ссылкой на отметку пропуска; ЗТ-4 ч.1 пройдена в 08:30; отметка пропуска осталась в истории."
+must_not:
+  - "Нет записи «нарушение», «ошибка исполнителя», рейтинга; О-10 не меняется; за отметку человеку ничего не начисляется."
+  - "Нет сигнала о дефекте и несоответствия; ЗТ-4 ч.1 не пройдена раньше проверки."

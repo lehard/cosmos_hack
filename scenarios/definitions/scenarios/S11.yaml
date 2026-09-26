@@ -1,0 +1,120 @@
+# S11 — process/scenarios-flange.md §4 S11 «один к одному».
+id: S11
+version: "0.3"
+title: "«Забыли прокладку» — шаг остановлен до брака (OperatorVision, Ф-003)"
+kind: extra
+goal: >-
+  Предупреждение до брака: при сборке крышку взяли раньше, чем поставили уплотнение, и
+  система остановила шаг. Это наблюдение за выполнением техпроцесса, а не слежка за человеком.
+case:
+  other: ["§4.3 действия: пропуск шага, подтверждения", "OperatorVision: действия + сопоставление с маршрутом"]
+run: MS-1
+where: "Главный поток, фон: Вт 22.09 11:45–12:10, Ф-003. В табло — да."
+source: "process/scenarios-flange.md §4 S11"
+steps:
+  - {at: "2026-09-22T11:35:00+03:00", route: "F-003:received_assembly,assembly_started", note: "Ф-003 в сборке: выдан комплект, начато выполнение АС-003-1"}
+  - at: "2026-09-22T11:45:00+03:00"
+    ref: Е-51
+    note: "Компоненты отсканированы до установки: КР-003"
+    decision: item.assembly.record
+    role: PERFORMER
+    actor: ASM-01
+    item: F-003
+    params: {item_id: "{item:F-003}"}
+    body: {binding_method: container_cell, component_lot_id: "{local:LOT-C-301}", component_type_id: FL-100.00.003, position: C-003, quantity: 1}
+  - at: "2026-09-22T11:45:20+03:00"
+    ref: Е-51
+    note: "Уплотнение УП-401"
+    decision: item.assembly.record
+    role: PERFORMER
+    actor: ASM-01
+    item: F-003
+    params: {item_id: "{item:F-003}"}
+    body: {binding_method: container_cell, component_lot_id: "{local:LOT-SL-401}", component_type_id: FL-100.00.004, position: S-1, quantity: 1}
+  - at: "2026-09-22T11:45:40+03:00"
+    ref: Е-51
+    note: "Крепёж КП-501"
+    decision: item.assembly.record
+    role: PERFORMER
+    actor: ASM-01
+    item: F-003
+    params: {item_id: "{item:F-003}"}
+    body: {binding_method: container_cell, component_lot_id: "{local:LOT-FS-501}", component_type_id: FL-100.00.005, position: J-1, quantity: 12}
+  - at: "2026-09-22T11:50:05+03:00"
+    ref: Е-24
+    label: S11/ov-step-missed
+    note: "OperatorVision: «крышка поднесена к фланцу; уплотнения в канавке не видно» — пропущен шаг «установка уплотнения»; уверенность 0,78; качество 0,85"
+    fact: operator.action.observed
+    source: ov-asm
+    item: F-003
+    data:
+      operation_run_id: "{local:AS-003-1}"
+      workplace_id: WP-ASM-1
+      tp_step: "Установка уплотнения"
+      observation: step_missed
+      analyzer_confidence_bp: 7800
+      observation_quality_bp: 8500
+      versions: {analyzer_version: "ov-asm 0.9.4", contract_version: "1.0", recipe_ref: "OV-ASM@1"}
+  - {at: "2026-09-22T11:50:06+03:00", ref: Е-13, system: "Нарушено условие шага: «установка крышки» заблокирована — нет подтверждения «установка уплотнения» и предъявления зоны ОТК"}
+  - at: "2026-09-22T11:52:00+03:00"
+    ref: Е-23
+    note: "Установка уплотнения; шаг подтверждён"
+    decision: access.operator.confirm_step
+    role: PERFORMER
+    actor: ASM-01
+    item: F-003
+    params: {workplace_id: WP-ASM-1}
+    body: {step_key: assembly.seal_install, item_id: "{item:F-003}", operation_run_id: "{local:AS-003-1}", tp_step: "Установка уплотнения"}
+  - at: "2026-09-22T11:55:00+03:00"
+    ref: Е-52
+    label: F-003/kt4d
+    note: "Камера зоны с УФ: канавка чистая, уплотнение на месте"
+    fact: inspection.result.recorded
+    source: cam-kt4d
+    item: F-003
+    data:
+      observation_id: "{local:KT4D-F-003}"
+      method: camera
+      phase: before_zone_closure
+      step_key: assembly.kt4d_zone_camera
+      inspection_point: KT-4d
+      operation_run_id: "{local:AS-003-1}"
+      zone_ids: [S-1, CAV]
+      outcome: no_defect_indicated
+      processing_state: completed
+      analyzer_confidence_bp: 9400
+      observation_quality_bp: 9100
+      versions: {analyzer_version: "vqc-uv 1.0.3", contract_version: "1.0", recipe_ref: "KT-4d@2", item_revision: "Б"}
+  - at: "2026-09-22T12:03:00+03:00"
+    note: "Зона предъявлена ОТК перед закрытием"
+    decision: item.presentation.record
+    role: MASTER
+    actor: MST-03
+    item: F-003
+    params: {item_id: "{item:F-003}"}
+    body: {presentation_no: 1, presented_to: qc, step_key: assembly.zt4_zone_presentation}
+  - at: "2026-09-22T12:05:00+03:00"
+    ref: "ЗТ-4, часть 1"
+    note: "Зона перед закрытием — годно"
+    decision: nonconformity.presentation.resolve
+    role: QC
+    actor: QC-02
+    item: F-003
+    params: {item_id: "{item:F-003}"}
+    body: {closing_point: ZT-4, step_key: assembly.zt4_zone_presentation, presentation_no: 1, resolution: accept, method_event_ids: ["{event:F-003/kt4d}"]}
+  - at: "2026-09-22T12:10:00+03:00"
+    note: "Крышка установлена; дальше по маршруту (Ф-003 позже — «герметично»)"
+    decision: access.operator.confirm_step
+    role: PERFORMER
+    actor: ASM-01
+    item: F-003
+    params: {workplace_id: WP-ASM-1}
+    body: {step_key: assembly.cover_install, item_id: "{item:F-003}", operation_run_id: "{local:AS-003-1}", tp_step: "Установка крышки"}
+outcome:
+  - "В истории Ф-003 — «шаг остановлен до брака: пропущен шаг «установка уплотнения»» с основаниями: замеченное действие (гипотеза, 0,78) и порядок шагов маршрута."
+  - "Нет сигнала о дефекте, нет несоответствия, изделие не изолируется: остановлен шаг, а не деталь."
+  - "Сборщик определён по терминалу (вход под своей учётной записью), а не по лицу; видео наружу не передаётся."
+  - "Если OperatorVision выключен, шаг всё равно блокируется по порядку шагов маршрута."
+must_not:
+  - "Нет записи «ошибка сборщика»; событие не идёт в показатели по людям (О-10) и в гипотезы о человеке."
+  - "Нет распознавания лиц и «рейтинга» операторов."

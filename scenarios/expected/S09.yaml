@@ -1,0 +1,298 @@
+# Ожидания S09 — отдельно от входных событий (кейс §5.1, AD-26): утверждения над теми же
+# operationId, что показывают столы; check.path — путь в ответе (board.go), значения — ID
+# процессной сессии (сверка переводит их сведением имён прогона). mapping: exact — поле
+# ответа контракта; draft — по смыслу, путь уточнит модуль-владелец; manual — видно на экране.
+scenario: S09
+version: 0.3-draft
+title: Подмена записи — обнаружена
+run: MS-1
+source: 'process/scenarios-flange-expected.yaml процессной сессии, версия 0.3-draft: утверждения процессной сессии — в source без изменений, check — исполняемая форма эпика 32'
+checkpoints:
+- at: '2026-09-23T16:40:00+03:00'
+  label: после проверки целостности
+  assertions:
+  - id: S09-01
+    what: нарушение найдено на этой записи
+    check:
+      operation: security.integrity.read
+      path: /status
+      op: eq
+      value: violated
+    mapping: exact
+    source:
+      subject: integrity
+      field: broken_at
+      op: eq
+      value:
+        event: EV-WS2-0412
+        source: WS-2
+        occurred_at: '2026-09-22T10:20:14+03:00'
+    note: место нарушения — запись EV-WS2-0412 (отчёт верификатора)
+  - id: S09-02
+    what: красная полоса на всех экранах
+    check:
+      operation: simulation.run.read
+      params:
+        run_id: '{run}'
+      path: /
+      op: contains
+      value: 'Нарушение целостности: запись EV-WS2-0412'
+    mapping: manual
+    source:
+      subject: ui/banner
+      field: text
+      op: contains
+      value: 'Нарушение целостности: запись EV-WS2-0412'
+    note: видно на экране (баннер), через API не проверяется
+  - id: S09-03
+    what: запись в журнале критических действий, уведомлены А-01 и НОТК-01
+    check:
+      operation: security.critical_action.list
+      path: /items
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: audit/critical_actions
+      field:
+        count: 1
+        notified:
+        - ADM-01
+        - QC-HEAD-01
+      filter:
+        type: integrity_violation
+      op: eq
+      value: true
+  - id: S09-04
+    what: исправление через программу — отказ, только новой записью
+    check:
+      operation: step
+      path: /refusal
+      op: eq
+      value: &id001
+        refused: true
+        hint: исправление — только новой записью (event.corrected)
+    mapping: draft
+    source:
+      subject: api/events/EV-WS2-0412
+      field: result
+      filter:
+        method: update
+      op: eq
+      value: *id001
+    note: отказ API на шаге прогона
+  - id: S09-05
+    what: зависимые выводы помечены «основание под вопросом» [П]
+    check:
+      operation: security.integrity.read
+      path: /
+      op: contains
+      value: &id002
+      - risk_scope/RS-01@v3
+      - hypothesis/NC-01@v2
+      - nc/NC-G1.cause
+    mapping: draft
+    source:
+      subject: integrity
+      field: flagged_dependents
+      op: contains
+      value: *id002
+- at: '2026-09-23T17:10:00+03:00'
+  label: после атак 2 и 3 (волна 2)
+  assertions:
+  - id: S09-06
+    what: 'атака 2 — «администратор БД» правит заключение РК Ф-019 (пора → «дефектов нет») и пересчитывает цепочку: звенья сходятся, но не сходятся подпись источника и контрольная отметка
+      вне базы → нарушение найдено'
+    check:
+      operation: security.integrity.read
+      path: /
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: integrity
+      field:
+        broken_at: xr/F-019/RK-0923-07
+        chain_links_consistent: true
+        detected_by:
+        - source_signature
+        - external_anchor
+      filter:
+        attack: TAMPER-RECHAIN-RK-0923-07
+      op: eq
+      value: true
+  - id: S09-07
+    what: 'атака 3 — правка представления «статус Ф-023» («в переделке» → «годно»): сверка с журналом нашла расхождение, представление пересобрано из журнала, журнал не тронут'
+    check:
+      operation: security.integrity.read
+      path: /
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: integrity
+      field:
+        projection: item_status
+        item: F-023
+        stored: accepted
+        rebuilt_from_journal: rework
+        restored: true
+        journal_changed: false
+      filter:
+        attack: TAMPER-PROJECTION-F-023
+      op: eq
+      value: true
+  - id: S09-08
+    what: в журнале критических действий три нарушения целостности, по каждому уведомлены А-01 и НОТК-01
+    check:
+      operation: security.critical_action.list
+      path: /items
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: audit/critical_actions
+      field:
+        count: 3
+        notified:
+        - ADM-01
+        - QC-HEAD-01
+      filter:
+        type: integrity_violation
+        at_to: '2026-09-23T17:10:00+03:00'
+      op: eq
+      value: true
+  - id: S09-09
+    what: 'выводы, которые опираются на заключение РК Ф-019, помечены «основание под вопросом»: НС-04, область RS-02, причина «входной брак», основание претензии'
+    check:
+      operation: security.integrity.read
+      path: /
+      op: contains
+      value: &id003
+      - nc/NC-04
+      - risk_scope/RS-02
+      - cause/NC-04
+      - claim/LOT-R-117
+    mapping: draft
+    source:
+      subject: integrity
+      field: flagged_dependents
+      filter:
+        attack: TAMPER-RECHAIN-RK-0923-07
+      op: contains
+      value: *id003
+- at: '2026-09-24T07:50:00+03:00'
+  label: разбор подмен
+  assertions:
+  - id: S09-10
+    what: 'разбор — новая запись НОТК-01 и А-01: подлинная версия та, с которой сходится подпись источника; метки «основание под вопросом» сняты'
+    check:
+      operation: security.integrity.read
+      path: /
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: integrity
+      field:
+        resolved_by:
+        - QC-HEAD-01
+        - ADM-01
+        resolved_at: '2026-09-24T07:45:00+03:00'
+        authentic:
+          EV-WS2-0412: 176
+          xr/F-019/RK-0923-07: base_metal_pore
+        dependents_flag_removed: true
+      op: eq
+      value: true
+- at: '2026-09-24T07:50:00+03:00'
+  label: чего не должно случиться
+  must_not: true
+  assertions:
+  - id: S09-N1
+    what: круг не пересчитан по подменённому значению
+    check:
+      operation: analysis.risk_scope.read
+      params:
+        incident_id: '{ref:RS-01}'
+      path: /size_after_tamper
+      op: eq
+      value: 6
+    mapping: draft
+    source:
+      subject: risk_scope/RS-01
+      field: size_after_tamper
+      op: eq
+      value: 6
+  - id: S09-N2
+    what: решения людей и подтверждённые сообщения 1С не отменены автоматически
+    check:
+      operation: erp.message.list
+      path: /items/#
+      op: eq
+      value: 0
+    mapping: draft
+    source:
+      subject: erp/postings
+      field: count
+      filter:
+        caused_by: integrity_violation
+      op: eq
+      value: 0
+  - id: S09-N3
+    what: 'Ф-023 не двинулся по подменённому статусу «годно»: ЗТ и передачи — только по журналу'
+    check:
+      operation: item.passport.read
+      params:
+        item_id: '{item:F-023}'
+      path: /status
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: item/F-023
+      field:
+        gates_passed: 0
+        moves: 0
+      filter:
+        between:
+        - '2026-09-23T17:00:00+03:00'
+        - '2026-09-24T07:59:00+03:00'
+      op: eq
+      value: true
+  - id: S09-N4
+    what: до разбора ни одна ЗТ по изделиям с затронутыми записями (Ф-015, Ф-019) не подписана
+    check:
+      operation: nonconformity.queue.list
+      path: /items
+      op: eq
+      value: 0
+    mapping: draft
+    source:
+      subject: gate/*
+      field: passed
+      filter:
+        items:
+        - F-015
+        - F-019
+        between:
+        - '2026-09-23T16:30:00+03:00'
+        - '2026-09-24T07:45:00+03:00'
+      op: eq
+      value: 0
+    note: ЗТ *
+  - id: S09-N5
+    what: претензия поставщику и «возврат поставщику» в 1С не отменены из-за подменённого заключения
+    check:
+      operation: erp.message.list
+      path: /items
+      op: eq
+      value: false
+    mapping: draft
+    source:
+      subject: erp/postings
+      field: cancelled
+      filter:
+        type: return_to_supplier
+      op: eq
+      value: false

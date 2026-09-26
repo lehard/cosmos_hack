@@ -1,0 +1,263 @@
+# Ожидания S04 — отдельно от входных событий (кейс §5.1, AD-26): утверждения над теми же
+# operationId, что показывают столы; check.path — путь в ответе (board.go), значения — ID
+# процессной сессии (сверка переводит их сведением имён прогона). mapping: exact — поле
+# ответа контракта; draft — по смыслу, путь уточнит модуль-владелец; manual — видно на экране.
+scenario: S04
+version: 0.3-draft
+title: Недостаток сведений — блик на Ф-025 и потерянные данные Ф-019
+run: MS-1
+source: 'process/scenarios-flange-expected.yaml процессной сессии, версия 0.3-draft: утверждения процессной сессии — в source без изменений, check — исполняемая форма эпика 32'
+checkpoints:
+- at: '2026-09-23T12:41:00+03:00'
+  label: 'Ф-025: кадр с бликом'
+  assertions:
+  - id: S04-01
+    what: исходный результат сохранён как есть
+    check:
+      operation: journal.entry.list
+      path: /items
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: event/CAM-WS-1@2026-09-23T12:40
+      field:
+        inspection_result: no_defect_found
+        confidence: 0.91
+        observation_quality: 0.34
+      op: eq
+      value: true
+    note: запись CAM-WS-1@2026-09-23T12:40
+  - id: S04-02
+    what: производный результат — оценка невозможна (качество ниже порога 0,6)
+    check:
+      operation: item.passport.read
+      params:
+        item_id: '{item:F-025}'
+      path: /derived_result_cp_weld
+      op: eq
+      value: &id001
+        result: unable_to_assess
+        zones:
+        - U6
+        - U7
+        reason: 'качество 0,34 < 0,6: блик, зона закрыта прижимом'
+    mapping: draft
+    source:
+      subject: item/F-025
+      field: derived_result_cp_weld
+      op: eq
+      value: *id001
+  - id: S04-03
+    what: Ф-025 не годен и не брак — ждёт
+    check:
+      operation: item.passport.read
+      params:
+        item_id: '{item:F-025}'
+      path: /status/summary
+      op: eq
+      value: hold
+    mapping: exact
+    source:
+      subject: item/F-025
+      field: status
+      op: eq
+      value: on_hold
+    note: статус процессной сессии «on_hold» → сводный статус контракта «hold»
+- at: '2026-09-23T13:00:00+03:00'
+  label: 'Ф-025: повторный кадр'
+  assertions:
+  - id: S04-04
+    what: назначена повторная съёмка
+    check:
+      operation: item.passport.read
+      params:
+        item_id: '{item:F-025}'
+      path: /decisions
+      op: contains
+      value: &id002
+      - type: recheck_requested
+        author: QC-01
+        method: camera_reshoot
+    mapping: draft
+    source:
+      subject: item/F-025
+      field: decisions
+      op: contains
+      value: *id002
+  - id: S04-05
+    what: повторный кадр хорошего качества, признаков нет → проверка камерой пройдена
+    check:
+      operation: item.passport.read
+      params:
+        item_id: '{item:F-025}'
+      path: /cp_weld_final
+      op: eq
+      value: &id003
+        result: no_defect_found
+        observation_quality: 0.88
+    mapping: draft
+    source:
+      subject: item/F-025
+      field: cp_weld_final
+      op: eq
+      value: *id003
+  - id: S04-06
+    what: отметка «с первого раза, но с доп. проверкой»
+    check:
+      operation: analytics.metric.drilldown
+      params:
+        metric_id: D-3
+      path: /bucket
+      op: eq
+      value: first_pass_with_recheck
+    mapping: draft
+    source:
+      subject: metric/D-3
+      field: bucket
+      filter:
+        item: F-025
+        checkpoint: CP-WELD
+      op: eq
+      value: first_pass_with_recheck
+    note: показатель D-3 каталога процессной сессии (analytics-catalog.md); сопоставление — эпик 25
+  - id: S04-07
+    what: корзина «оценка невозможна» +1
+    check:
+      operation: analytics.metric.drilldown
+      params:
+        metric_id: O-1
+      path: /unable_to_assess
+      op: delta
+      value: 1
+    mapping: draft
+    baseline: '2026-09-23T12:39:00+03:00'
+    source:
+      subject: metric/O-1
+      field: unable_to_assess
+      op: delta
+      value: 1
+      baseline: '2026-09-23T12:39:00+03:00'
+    note: показатель O-1 каталога процессной сессии (analytics-catalog.md); сопоставление — эпик 25
+- at: '2026-09-23T12:16:00+03:00'
+  label: 'Ф-019: серая'
+  assertions:
+  - id: S04-08
+    what: в круге RS-01 версии 3 Ф-019 — «нет данных»
+    check:
+      operation: analysis.risk_scope.read
+      params:
+        incident_id: '{ref:RS-01}'
+      path: /versions[scope_version=3]/0/group_of/F-019
+      op: eq
+      value: unknown
+    mapping: draft
+    source:
+      subject: risk_scope/RS-01
+      field: group_of/F-019
+      filter:
+        version: 3
+      op: eq
+      value: unknown
+  - id: S04-09
+    what: явно сказано, чего не хватает
+    check:
+      operation: machinelogs.run_profile.read
+      params:
+        run_id: '{local:SV-019-1}'
+      path: /missing_info
+      op: contains
+      value: &id004
+      - параметры WS-2 2026-09-22 16:40–17:15
+    mapping: draft
+    source:
+      subject: run/SV-019-1
+      field: missing_info
+      op: contains
+      value: *id004
+  - id: S04-10
+    what: потеря у источника учтена
+    check:
+      operation: ingest.source.list
+      path: /items[source_id={run}/edge-weld-2]/0/gap_count
+      op: gte
+      value: 1
+    mapping: exact
+    source:
+      subject: metric/N-5
+      field: lost_at_source
+      op: eq
+      value:
+        records: 35
+        window:
+        - '2026-09-22T16:40:00+03:00'
+        - '2026-09-22T17:15:00+03:00'
+        source: GW-2
+    note: разрыв номеров 4711–4745 (35 записей) у источника ИС-2
+- at: '2026-09-23T13:00:00+03:00'
+  label: чего не должно случиться
+  must_not: true
+  assertions:
+  - id: S04-N1
+    what: кадр с качеством 0,34 не даёт «годно»
+    check:
+      operation: item.passport.read
+      params:
+        item_id: '{item:F-025}'
+      path: /accepted_by_frame_quality_below_threshold
+      op: eq
+      value: false
+    mapping: draft
+    source:
+      subject: item/F-025
+      field: accepted_by_frame_quality_below_threshold
+      op: eq
+      value: false
+  - id: S04-N2
+    what: серая не становится зелёной сама
+    check:
+      operation: analysis.risk_scope.read
+      params:
+        incident_id: '{ref:RS-01}'
+      path: /excluded_without_basis
+      op: eq
+      value: false
+    mapping: draft
+    source:
+      subject: risk_scope/RS-01
+      field: excluded_without_basis
+      filter:
+        item: F-019
+      op: eq
+      value: false
+  - id: S04-N3
+    what: ток для Ф-019 не «дорисован»
+    check:
+      operation: machinelogs.run_profile.read
+      params:
+        run_id: '{local:SV-019-1}'
+      path: /interpolated_parameters
+      op: eq
+      value: false
+    mapping: draft
+    source:
+      subject: run/SV-019-1
+      field: interpolated_parameters
+      op: eq
+      value: false
+  - id: S04-N4
+    what: «оценка невозможна» не в годных и не в браке
+    check:
+      operation: analytics.metric.drilldown
+      params:
+        metric_id: O-1
+      path: /unable_counted_as_good_or_defect
+      op: eq
+      value: false
+    mapping: draft
+    source:
+      subject: metric/O-1
+      field: unable_counted_as_good_or_defect
+      op: eq
+      value: false
+    note: показатель O-1 каталога процессной сессии (analytics-catalog.md); сопоставление — эпик 25

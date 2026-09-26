@@ -1,0 +1,30 @@
+# Ожидания прогона сбоя F17 — отдельно от входных событий (кейс §5.1, AD-26).
+scenario: F17
+version: '1'
+title: 'Сбой: Перепутана деталь'
+run: F17
+source: эпик 32 по research/data-collection-sources-and-failures.md §6 (ожидаемое поведение системы)
+checkpoints:
+- at: end
+  label: конец прогона
+  assertions:
+  - id: F17-01
+    what: после перепривязки результат у Ф-501
+    check:
+      operation: quality.inspection.list
+      path: /items[step_key=welding.kt3_camera]/#
+      op: eq
+      params:
+        item_id: '{item:F-501}'
+      value: 1
+    mapping: exact
+  - id: F17-02
+    what: у Ф-502 результата КТ-3 нет
+    check:
+      operation: quality.inspection.list
+      path: /items[step_key=welding.kt3_camera]/#
+      op: eq
+      params:
+        item_id: '{item:F-502}'
+      value: 0
+    mapping: exact

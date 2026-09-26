@@ -1,0 +1,21 @@
+# Ожидания прогона сбоя F19 — отдельно от входных событий (кейс §5.1, AD-26).
+scenario: F19
+version: '1'
+title: 'Сбой: Групповая операция'
+run: F19
+source: эпик 32 по research/data-collection-sources-and-failures.md §6 (ожидаемое поведение системы)
+checkpoints:
+- at: end
+  label: конец прогона
+  assertions:
+  - id: F19-01
+    what: групповое событие — у каждого изделия садки
+    check:
+      operation: item.history.list
+      path: /items/#
+      op: gte
+      params:
+        item_id: '{item:F-503}'
+      value: 1
+    mapping: draft
+    note: групповые операции (genealogy.group.*) — эпик 18

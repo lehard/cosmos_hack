@@ -10,4 +10,6 @@ export interface RunWait {
   object_id: string;
   /** Роль стола, где ждут решения. */
   role: string;
+  /** Что ждёт сценарий, по-русски: «подтвердить сигнал Ф-017». */
+  title?: string;
 }

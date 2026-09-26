@@ -1,0 +1,20 @@
+# Ожидания прогона сбоя F16 — отдельно от входных событий (кейс §5.1, AD-26).
+scenario: F16
+version: '1'
+title: 'Сбой: Деталь не идентифицирована'
+run: F16
+source: эпик 32 по research/data-collection-sources-and-failures.md §6 (ожидаемое поведение системы)
+checkpoints:
+- at: end
+  label: конец прогона
+  assertions:
+  - id: F16-01
+    what: после ручной привязки результат в истории Ф-501
+    check:
+      operation: quality.inspection.list
+      path: /items[step_key=welding.kt3_camera]/#
+      op: eq
+      params:
+        item_id: '{item:F-501}'
+      value: 1
+    mapping: exact

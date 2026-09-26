@@ -1,0 +1,539 @@
+# Главная история демо «Плохой день сварочного участка (ИС-2)» — один прогон
+# имитатора, Пн 21.09 – Чт 24.09 с подготовкой партий и фоном прошлой недели
+# (process/scenarios-flange.md §3; PRD §11.19, демо-трек index.md).
+#
+# Даты — смещения от anchor: при старте прогон сдвигается на целое число недель
+# к доменному «сейчас» (AD-37, AD-38). Масштаб — десятки деталей: задание 1С на
+# 40 фланцев (Ф-001…Ф-040) и 24 фоновых фланца прошлого заказа (Ф-201…Ф-224);
+# у каждого сварщика, источника и смены — не меньше 10 сопоставимых сварок (FR-104).
+# Круг подозреваемых тает 34 → 13 → 6 (§2.6 — таблица сварок ниже).
+id: MS-1
+version: "0.3"
+title: "Плохой день сварочного участка (ИС-2)"
+kind: demo
+description: >-
+  Главная история защиты: эталонный фланец, прожог на Ф-017, круг подозреваемых
+  34 → 13 → 6, опоздавший журнал ИС-2 с повторами и потерями, блик, входной брак
+  кольца, подмена записи, переварка; фоном — ложный сигнал, «забыли прокладку»,
+  карантин, часы КИМ, неоднозначная привязка, отметка пропуска проверки, обмен с 1С.
+case_refs: ["кейс §1.5", "кейс §4.2 — 8 ситуаций", "кейс §5.1 — 9 проверок", "PRD FR-104…FR-108, FR-129, §11.19"]
+world: flange
+seed: 20260921
+anchor: "2026-09-10T08:00:00+03:00"
+end: "2026-09-24T16:30:00+03:00"
+speed: 1000
+scenarios: [S01, S16, S15, S07, S08, S11, S12, S17, S03, S05, S06, S04, S02, S09, S10A, I1]
+
+orders:
+  - {id: ORD-0911, at: "2026-09-10T08:00:00+03:00", external: ord-5c2b-0911, quantity: 24, due: "2026-09-25", items: "F-201…F-224",
+     lots: {blank: LOT-ZF-191, ring: LOT-R-115, cover: LOT-C-291, seal: LOT-SL-391, fastener: LOT-FS-491, valve: LOT-V-591}}
+  - {id: ORD-0917, at: "2026-09-14T09:00:00+03:00", external: ord-5c2b-0917, quantity: 40, due: "2026-10-09", items: "F-001…F-040",
+     lots: {blank: LOT-ZF-201, ring: LOT-R-116, cover: LOT-C-301, seal: LOT-SL-401, fastener: LOT-FS-501, valve: LOT-V-601}}
+
+# Партии (§2.3). Фоновые партии прошлого заказа — Чт 10.09.
+lots:
+  - {id: LOT-ZF-191, component: FL-100.01.001, supplier: SUP-1, quantity: 24, certificate: С-191, heat: "5431", arrived: "2026-09-10T08:30:00+03:00"}
+  - {id: LOT-R-115,  component: FL-100.01.002, supplier: SUP-2, quantity: 24, certificate: С-115, arrived: "2026-09-10T08:40:00+03:00"}
+  - {id: LOT-C-291,  component: FL-100.00.003, supplier: SUP-4, quantity: 24, arrived: "2026-09-10T08:50:00+03:00"}
+  - {id: LOT-SL-391, component: FL-100.00.004, supplier: SUP-5, quantity: 30, arrived: "2026-09-10T09:00:00+03:00"}
+  - {id: LOT-FS-491, component: FL-100.00.005, supplier: SUP-6, quantity: 300, arrived: "2026-09-10T09:10:00+03:00"}
+  - {id: LOT-V-591,  component: KVD-6, supplier: SUP-8, quantity: 24, arrived: "2026-09-10T09:20:00+03:00"}
+  - {id: LOT-W-87,   component: WIRE-SV-AMG6, supplier: SUP-7, quantity: 40, arrived: "2026-09-10T09:30:00+03:00",
+     issues: [{at: "2026-09-10T12:00:00+03:00", to: ST-WELD, quantity: 40}], note: "сварочная проволока до П-88"}
+  - {id: LOT-ZF-201, component: FL-100.01.001, supplier: SUP-1, quantity: 42, certificate: С-201, heat: "5512", arrived: "2026-09-17T08:00:00+03:00", note: "40 + 2 запаса"}
+  - {id: LOT-R-116,  component: FL-100.01.002, supplier: SUP-2, quantity: 33, certificate: С-116, units: "R-001…R-033", arrived: "2026-09-17T08:10:00+03:00"}
+  - {id: LOT-C-301,  component: FL-100.00.003, supplier: SUP-4, quantity: 40, units: "C-001…C-040", arrived: "2026-09-17T08:20:00+03:00"}
+  - {id: LOT-SL-401, component: FL-100.00.004, supplier: SUP-5, quantity: 50, arrived: "2026-09-17T08:30:00+03:00"}
+  - {id: LOT-FS-501, component: FL-100.00.005, supplier: SUP-6, quantity: 500, arrived: "2026-09-17T08:40:00+03:00", note: "болты М6×20 с шайбами"}
+  - {id: LOT-V-601,  component: KVD-6, supplier: SUP-8, quantity: 40, units: "V-001…V-040", arrived: "2026-09-17T08:50:00+03:00", note: "клапаны КВД (волна 2)"}
+  - {id: LOT-W-88,   component: WIRE-SV-AMG6, supplier: SUP-7, quantity: 40, arrived: "2026-09-18T10:00:00+03:00",
+     issues: [{at: "2026-09-21T08:00:00+03:00", to: ST-WELD, quantity: 40}], note: "сварочная проволока П-88: на участке с Пн 21.09 08:00"}
+  - {id: LOT-R-117,  component: FL-100.01.002, supplier: SUP-3, quantity: 10, certificate: С-117, units: "R-101…R-110",
+     arrived: "2026-09-22T08:00:00+03:00", accepted: "2026-09-22T11:00:00+03:00", note: "S02: внутренние поры камера не видит"}
+
+# Объекты, которые рождает система: находятся теми же операциями API во время
+# прогона. Пути — по форме ответов contracts/openapi.yaml; сверку уточняют
+# модули-владельцы (эпики 20–22), когда их ответы наполнятся.
+refs:
+  NC-01: {operation: nonconformity.nonconformity.list, params: {item_id: "{item:F-017}"}, path: "/items/0/nc_id", note: "первое несоответствие Ф-017 (прожог У2)"}
+  NC-02: {operation: nonconformity.nonconformity.list, params: {item_id: "{item:F-021}"}, path: "/items/0/nc_id"}
+  NC-03: {operation: nonconformity.nonconformity.list, params: {item_id: "{item:F-023}"}, path: "/items/0/nc_id"}
+  NC-04: {operation: nonconformity.nonconformity.list, params: {item_id: "{item:F-019}"}, path: "/items/0/nc_id", note: "пора в теле кольца"}
+  NC-06: {operation: nonconformity.nonconformity.list, params: {item_id: "{item:F-021}", status: draft}, path: "/items/0/nc_id", note: "новый дефект в новом шве (Чт)"}
+  NC-G1: {operation: nonconformity.nonconformity.list, params: {item_id: "{item:F-015}"}, path: "/items/0/nc_id", note: "групповое несоответствие по инциденту: у Ф-015 своего дефекта нет"}
+  RS-01: {operation: analysis.incident.list, path: "/items/0/incident_id", note: "первый инцидент прогона — ИС-2"}
+  RS-02: {operation: analysis.incident.list, path: "/items/1/incident_id", note: "второй — партия П-117"}
+  SIG-F002: {operation: quality.signal.list, params: {item_id: "{item:F-002}", state: open}, path: "/items/0/signal_id"}
+  SIG-F017: {operation: quality.signal.list, params: {item_id: "{item:F-017}", state: open}, path: "/items/0/signal_id"}
+  SIG-F019: {operation: quality.signal.list, params: {item_id: "{item:F-019}", state: open}, path: "/items/0/signal_id"}
+  SIG-F021: {operation: quality.signal.list, params: {item_id: "{item:F-021}", state: open}, path: "/items/0/signal_id"}
+  SIG-F023: {operation: quality.signal.list, params: {item_id: "{item:F-023}", state: open}, path: "/items/0/signal_id"}
+  ERP-RTS-KEY: {operation: erp.message.list, params: {status: rejected}, path: "/items[action=return_to_supplier]/0/business_key", note: "«возврат поставщику», отклонённый 1С (422)"}
+  ERP-RTS-REQ: {operation: erp.message.list, params: {status: rejected}, path: "/items[action=return_to_supplier]/0/request_event_id"}
+  SIG-F021-2: {operation: quality.signal.list, params: {item_id: "{item:F-021}", state: open}, path: "/items/0/signal_id", note: "новый дефект в новом шве Ф-021 (Чт)"}
+  Q-S12-1: {operation: ingest.quarantine.list, params: {code: ingest.missing_required_field, state: open}, path: "/items/0/quarantine_id"}
+
+# Фланцы: план (запуск, мехобработка, сварка — таблица §2.6) и докуда маршрут
+# строит генератор; дальше — шаги карточек. «В Ср 11:10»: 21 — на сварочном
+# участке, 8 — в межцеховой кладовой, 4 — в сборке, 1 — на стенде (S05).
+items:
+- id: F-001
+  order: ORD-0917
+  launch: '2026-09-18T08:30:00+03:00'
+  machining: '2026-09-18T09:00:00+03:00'
+  until: release
+  machining_min: 62
+  weld:
+    at: '2026-09-21T09:00:00+03:00'
+    station: WS-2
+    welder: WLD-02
+    current: [158, 163]
+  skip: [kt2, kt3, kt5]
+  at: {launch: '2026-09-18T08:30:00+03:00', xray: '2026-09-21T13:00:00+03:00', sent_to_assembly: '2026-09-21T15:55:00+03:00', received_assembly: '2026-09-21T16:00:00+03:00', assembly_started: '2026-09-22T09:00:00+03:00',
+    assembly: '2026-09-22T09:10:00+03:00', zt4_presented: '2026-09-22T10:25:00+03:00', zt4: '2026-09-22T10:30:00+03:00', leak_test: '2026-09-22T13:00:00+03:00', zt5_presented: '2026-09-22T14:20:00+03:00',
+    zt5: '2026-09-22T14:30:00+03:00', kt5: '2026-09-23T09:30:00+03:00', zt6_presented: '2026-09-23T10:10:00+03:00', zt6: '2026-09-23T10:15:00+03:00', release: '2026-09-23T10:30:00+03:00'}
+  reference: true
+  ring: R-001
+  cover: C-001
+  valve: V-001
+  note: 'Эталон (S01): весь маршрут, выпуск в Ср 10:30; камеры КТ-2, КТ-3, КТ-5 — карточка S01'
+- id: F-002
+  order: ORD-0917
+  launch: '2026-09-18T07:35:00+03:00'
+  machining: '2026-09-18T08:05:00+03:00'
+  until: zt4
+  weld: {at: '2026-09-21T10:00:00+03:00', station: WS-1, welder: WLD-02, minutes: 35}
+  skip: [assembly.kt4, zt4]
+  at: {assembly_started: '2026-09-22T10:40:00+03:00', assembly: '2026-09-22T10:48:00+03:00', zt4_presented: '2026-09-22T11:38:00+03:00', zt4: '2026-09-22T11:40:00+03:00'}
+  note: 'S08: камера КТ-4 и ЗТ-4 — карточка'
+- id: F-003
+  order: ORD-0917
+  launch: '2026-09-18T10:30:00+03:00'
+  machining: '2026-09-18T11:00:00+03:00'
+  until: assembly
+  weld: {at: '2026-09-21T10:45:00+03:00', station: WS-1, welder: WLD-02, minutes: 35}
+  skip: [assembly]
+  at: {assembly_started: '2026-09-22T11:35:00+03:00'}
+  note: 'S11: сборка Вт 11:45–12:10 — карточка'
+- id: F-004
+  order: ORD-0917
+  launch: '2026-09-18T12:25:00+03:00'
+  machining: '2026-09-18T12:55:00+03:00'
+  until: xray
+  weld: {at: '2026-09-21T11:30:00+03:00', station: WS-1, welder: WLD-02, minutes: 35}
+  skip: [machining]
+  note: 'S16: мехобработка и запись пульта 13:50:50 — карточка'
+- id: F-005
+  order: ORD-0917
+  launch: '2026-09-18T13:20:00+03:00'
+  machining: '2026-09-18T13:50:00+03:00'
+  until: xray
+  weld: {at: '2026-09-21T12:15:00+03:00', station: WS-1, welder: WLD-02, minutes: 35}
+  skip: [machining]
+  note: 'S16: мехобработка — карточка'
+- id: F-006
+  order: ORD-0917
+  launch: '2026-09-18T14:15:00+03:00'
+  machining: '2026-09-18T14:45:00+03:00'
+  until: assembly_started
+  weld: {at: '2026-09-21T14:10:00+03:00', station: WS-2, welder: WLD-02}
+  at: {assembly_started: '2026-09-23T07:55:00+03:00'}
+  note: 'Последняя подтверждённо годная сварка до круга (отсчёт §2.6); S17: сборка Ср 08:10 — карточка'
+- id: F-007
+  order: ORD-0917
+  launch: '2026-09-18T15:10:00+03:00'
+  machining: '2026-09-18T15:40:00+03:00'
+  until: received_assembly
+  weld: {at: '2026-09-21T15:00:00+03:00', station: WS-1, welder: WLD-02, minutes: 35}
+  skip: [cmm]
+  at: {zt2_presented: '2026-09-21T08:28:00+03:00', zt2: '2026-09-21T08:30:00+03:00', xray: '2026-09-22T08:20:00+03:00', zt3: '2026-09-22T09:20:00+03:00', sent_to_assembly: '2026-09-22T09:45:00+03:00', received_assembly: '2026-09-22T09:55:00+03:00'}
+  note: 'S15: протокол КИМ Пн 08:25 — карточка'
+- id: F-008
+  order: ORD-0917
+  launch: '2026-09-18T16:05:00+03:00'
+  machining: '2026-09-18T16:35:00+03:00'
+  until: received_assembly
+  weld: {at: '2026-09-21T15:40:00+03:00', station: WS-2, welder: WLD-02}
+  skip: [cmm]
+  at: {zt2_presented: '2026-09-21T08:53:00+03:00', zt2: '2026-09-21T08:55:00+03:00', xray: '2026-09-22T08:10:00+03:00', zt3: '2026-09-22T09:10:00+03:00', sent_to_assembly: '2026-09-22T09:40:00+03:00', received_assembly: '2026-09-22T09:50:00+03:00'}
+- id: F-009
+  order: ORD-0917
+  launch: '2026-09-18T17:00:00+03:00'
+  machining: '2026-09-18T17:30:00+03:00'
+  until: received_assembly
+  weld: {at: '2026-09-21T16:35:00+03:00', station: WS-1, welder: WLD-03, minutes: 35}
+  skip: [cmm]
+  at: {zt2_presented: '2026-09-21T09:18:00+03:00', zt2: '2026-09-21T09:20:00+03:00', xray: '2026-09-22T08:30:00+03:00', zt3: '2026-09-22T09:30:00+03:00', sent_to_assembly: '2026-09-22T10:00:00+03:00', received_assembly: '2026-09-22T10:10:00+03:00'}
+- id: F-010
+  order: ORD-0917
+  launch: '2026-09-18T17:55:00+03:00'
+  machining: '2026-09-18T18:25:00+03:00'
+  until: leak_test
+  weld: {at: '2026-09-21T17:30:00+03:00', station: WS-2, welder: WLD-03}
+  skip: [cmm]
+  at: {zt2_presented: '2026-09-21T09:43:00+03:00', zt2: '2026-09-21T09:45:00+03:00', xray: '2026-09-22T08:40:00+03:00', zt3: '2026-09-22T09:40:00+03:00', sent_to_assembly: '2026-09-22T10:05:00+03:00', received_assembly: '2026-09-22T10:15:00+03:00',
+    assembly_started: '2026-09-22T13:00:00+03:00', leak_test: '2026-09-23T10:30:00+03:00'}
+  note: В Ср 11:10 — на стенде герметичности
+- id: F-011
+  order: ORD-0917
+  launch: '2026-09-18T18:50:00+03:00'
+  machining: '2026-09-18T19:20:00+03:00'
+  until: sent_to_assembly
+  weld: {at: '2026-09-21T18:25:00+03:00', station: WS-1, welder: WLD-03, minutes: 35}
+  skip: [cmm]
+  at: {zt2_presented: '2026-09-21T10:08:00+03:00', zt2: '2026-09-21T10:10:00+03:00', xray: '2026-09-22T08:50:00+03:00', zt3: '2026-09-22T09:50:00+03:00', sent_to_assembly: '2026-09-22T10:20:00+03:00'}
+- id: F-012
+  order: ORD-0917
+  launch: '2026-09-18T11:30:00+03:00'
+  machining: '2026-09-18T12:00:00+03:00'
+  until: sent_to_assembly
+  weld: {at: '2026-09-21T22:10:00+03:00', station: WS-2, welder: WLD-03}
+  at: {xray: '2026-09-22T09:10:00+03:00', zt3: '2026-09-22T10:10:00+03:00', sent_to_assembly: '2026-09-22T10:40:00+03:00'}
+- id: F-013
+  order: ORD-0917
+  launch: '2026-09-18T19:45:00+03:00'
+  machining: '2026-09-18T20:15:00+03:00'
+  until: sent_to_assembly
+  weld: {at: '2026-09-21T20:45:00+03:00', station: WS-1, welder: WLD-03, minutes: 35}
+  at: {cmm: '2026-09-21T10:30:00+03:00', xray: '2026-09-22T09:00:00+03:00', zt3: '2026-09-22T10:00:00+03:00', sent_to_assembly: '2026-09-22T10:30:00+03:00'}
+  note: 'S15: протокол КИМ Пн 10:30 уже с верным временем'
+- id: F-014
+  order: ORD-0917
+  launch: '2026-09-21T07:30:00+03:00'
+  machining: '2026-09-21T08:00:00+03:00'
+  until: sent_to_assembly
+  weld: {at: '2026-09-22T08:20:00+03:00', station: WS-2, welder: WLD-02, minutes: 40}
+- id: F-015
+  order: ORD-0917
+  launch: '2026-09-21T09:20:00+03:00'
+  machining: '2026-09-21T09:50:00+03:00'
+  until: assembly_started
+  weld:
+    at: '2026-09-22T10:15:00+03:00'
+    station: WS-2
+    welder: WLD-02
+    current: [174, 178]
+    out_from: '2026-09-22T10:20:00+03:00'
+  skip: [zt3]
+  at: {xray: '2026-09-22T13:30:00+03:00', zt3_presented: '2026-09-22T15:00:00+03:00', zt3: '2026-09-22T15:30:00+03:00', sent_to_assembly: '2026-09-22T16:00:00+03:00', received_assembly: '2026-09-22T16:10:00+03:00',
+    assembly_started: '2026-09-23T10:30:00+03:00'}
+  note: 'S07: ЗТ-3 «годно при неполных данных» Вт 15:30 — карточка; S05: в сборке'
+- id: F-016
+  order: ORD-0917
+  launch: '2026-09-21T08:25:00+03:00'
+  machining: '2026-09-21T08:55:00+03:00'
+  until: sent_to_assembly
+  weld: {at: '2026-09-22T09:20:00+03:00', station: WS-2, welder: WLD-02}
+- id: F-017
+  order: ORD-0917
+  launch: '2026-09-18T09:35:00+03:00'
+  machining: '2026-09-18T10:05:00+03:00'
+  until: weld
+  weld:
+    at: '2026-09-23T10:40:00+03:00'
+    station: WS-2
+    welder: WLD-02
+    minutes: 20
+    current: [176, 182]
+    out_from: '2026-09-22T10:20:00+03:00'
+  skip: [kt2]
+  at: {kt2: '2026-09-18T11:20:00+03:00', sent_to_welding: '2026-09-21T07:40:00+03:00', received_welding: '2026-09-21T07:50:00+03:00', ring: '2026-09-23T08:40:00+03:00', edge_prep: '2026-09-23T08:50:00+03:00'}
+  note: 'S03: прожог У2 после сварки в Ср 11:05 — карточка'
+- id: F-018
+  order: ORD-0917
+  launch: '2026-09-18T20:40:00+03:00'
+  machining: '2026-09-18T21:10:00+03:00'
+  until: sent_to_assembly
+  weld: {at: '2026-09-21T23:05:00+03:00', station: WS-1, welder: WLD-03, minutes: 35}
+  at: {xray: '2026-09-22T09:20:00+03:00', zt3: '2026-09-22T10:20:00+03:00', sent_to_assembly: '2026-09-22T10:50:00+03:00'}
+- id: F-019
+  order: ORD-0917
+  launch: '2026-09-21T16:05:00+03:00'
+  machining: '2026-09-21T16:35:00+03:00'
+  until: kt3
+  weld:
+    at: '2026-09-22T16:35:00+03:00'
+    station: WS-2
+    welder: WLD-03
+    current: [177, 181]
+    out_from: '2026-09-22T10:20:00+03:00'
+    arc: ['2026-09-22T16:40:00+03:00', '2026-09-22T17:15:00+03:00']
+  at: {sent_to_welding: '2026-09-22T13:50:00+03:00', received_welding: '2026-09-22T14:00:00+03:00', ring: '2026-09-22T14:15:00+03:00'}
+  ring: R-101
+  ring_lot: LOT-R-117
+  note: 'S02/S04: кольцо К-101 партии П-117; записи ИС-2 16:40–17:15 потеряны'
+- id: F-020
+  order: ORD-0917
+  launch: '2026-09-21T10:15:00+03:00'
+  machining: '2026-09-21T10:45:00+03:00'
+  until: kt3
+  weld: {at: '2026-09-22T11:10:00+03:00', station: WS-1, welder: WLD-02, minutes: 35}
+- id: F-021
+  order: ORD-0917
+  launch: '2026-09-21T17:55:00+03:00'
+  machining: '2026-09-21T18:25:00+03:00'
+  until: kt3
+  weld:
+    at: '2026-09-22T19:40:00+03:00'
+    station: WS-2
+    welder: WLD-03
+    current: [178, 181]
+    out_from: '2026-09-22T10:20:00+03:00'
+- id: F-022
+  order: ORD-0917
+  launch: '2026-09-21T11:10:00+03:00'
+  machining: '2026-09-21T11:40:00+03:00'
+  until: kt3
+  weld: {at: '2026-09-22T11:55:00+03:00', station: WS-1, welder: WLD-02, minutes: 35}
+- id: F-023
+  order: ORD-0917
+  launch: '2026-09-21T21:35:00+03:00'
+  machining: '2026-09-21T22:05:00+03:00'
+  until: kt3
+  weld:
+    at: '2026-09-23T08:30:00+03:00'
+    station: WS-2
+    welder: WLD-02
+    current: [177, 180]
+    out_from: '2026-09-22T10:20:00+03:00'
+- id: F-024
+  order: ORD-0917
+  launch: '2026-09-21T12:05:00+03:00'
+  machining: '2026-09-21T12:35:00+03:00'
+  until: kt3
+  weld: {at: '2026-09-22T12:40:00+03:00', station: WS-1, welder: WLD-02, minutes: 35}
+- id: F-025
+  order: ORD-0917
+  launch: '2026-09-21T22:30:00+03:00'
+  machining: '2026-09-21T23:00:00+03:00'
+  until: kt3
+  weld:
+    at: '2026-09-23T09:35:00+03:00'
+    station: WS-2
+    welder: WLD-02
+    current: [176, 180]
+    out_from: '2026-09-22T10:20:00+03:00'
+- id: F-026
+  order: ORD-0917
+  launch: '2026-09-21T13:00:00+03:00'
+  machining: '2026-09-21T13:30:00+03:00'
+  until: kt3
+  weld: {at: '2026-09-22T13:25:00+03:00', station: WS-1, welder: WLD-02, minutes: 35}
+  skip: [kt3]
+  note: 'S12: результат КТ-3 без носителя изделия — карточка'
+- id: F-027
+  order: ORD-0917
+  launch: '2026-09-21T17:00:00+03:00'
+  machining: '2026-09-21T17:30:00+03:00'
+  until: kt3
+  weld: {at: '2026-09-22T18:00:00+03:00', station: WS-1, welder: WLD-03, minutes: 35}
+  at: {sent_to_welding: '2026-09-22T13:55:00+03:00', received_welding: '2026-09-22T14:05:00+03:00', ring: '2026-09-22T14:15:00+03:00'}
+  ring: R-102
+  ring_lot: LOT-R-117
+- id: F-028
+  order: ORD-0917
+  launch: '2026-09-21T13:55:00+03:00'
+  machining: '2026-09-21T14:25:00+03:00'
+  until: kt3
+  weld: {at: '2026-09-22T14:10:00+03:00', station: WS-1, welder: WLD-02, minutes: 35}
+- id: F-029
+  order: ORD-0917
+  launch: '2026-09-21T18:50:00+03:00'
+  machining: '2026-09-21T19:20:00+03:00'
+  until: kt3
+  weld: {at: '2026-09-22T21:30:00+03:00', station: WS-1, welder: WLD-03, minutes: 35}
+  at: {sent_to_welding: '2026-09-22T14:00:00+03:00', received_welding: '2026-09-22T14:10:00+03:00', ring: '2026-09-22T14:15:00+03:00'}
+  ring: R-103
+  ring_lot: LOT-R-117
+- id: F-030
+  order: ORD-0917
+  launch: '2026-09-21T19:45:00+03:00'
+  machining: '2026-09-21T20:15:00+03:00'
+  until: kt3
+  weld: {at: '2026-09-22T23:00:00+03:00', station: WS-1, welder: WLD-03, minutes: 35}
+- id: F-031
+  order: ORD-0917
+  launch: '2026-09-21T20:40:00+03:00'
+  machining: '2026-09-21T21:10:00+03:00'
+  until: kt3
+  weld: {at: '2026-09-22T23:45:00+03:00', station: WS-1, welder: WLD-03, minutes: 35}
+- id: F-032
+  order: ORD-0917
+  launch: '2026-09-18T21:35:00+03:00'
+  machining: '2026-09-18T22:05:00+03:00'
+  until: xray
+  weld: {at: '2026-09-21T23:50:00+03:00', station: WS-1, welder: WLD-03, minutes: 35}
+  at: {xray: '2026-09-22T11:00:00+03:00'}
+- id: F-033
+  order: ORD-0917
+  launch: '2026-09-21T14:50:00+03:00'
+  machining: '2026-09-21T15:20:00+03:00'
+  until: kt3
+  weld: {at: '2026-09-22T15:40:00+03:00', station: WS-1, welder: WLD-02, minutes: 35}
+- id: F-034
+  order: ORD-0917
+  launch: '2026-09-22T07:30:00+03:00'
+  machining: '2026-09-22T08:00:00+03:00'
+  until: kt3
+  weld: {at: '2026-09-23T08:00:00+03:00', station: WS-1, welder: WLD-02, minutes: 25}
+- id: F-035
+  order: ORD-0917
+  launch: '2026-09-22T08:25:00+03:00'
+  machining: '2026-09-22T08:55:00+03:00'
+  until: kt3
+  weld: {at: '2026-09-23T00:25:00+03:00', station: WS-1, welder: WLD-03, minutes: 35}
+- id: F-036
+  order: ORD-0917
+  launch: '2026-09-18T22:30:00+03:00'
+  machining: '2026-09-18T23:00:00+03:00'
+  until: kt3
+  weld: {at: '2026-09-22T00:30:00+03:00', station: WS-1, welder: WLD-03, minutes: 30}
+- {id: F-037, order: ORD-0917, launch: '2026-09-22T09:20:00+03:00', machining: '2026-09-22T09:50:00+03:00', until: zt2, note: машинная обработка; ждёт сварку}
+- {id: F-038, order: ORD-0917, launch: '2026-09-22T10:15:00+03:00', machining: '2026-09-22T10:45:00+03:00', until: zt2, note: машинная обработка; ждёт сварку}
+- {id: F-039, order: ORD-0917, launch: '2026-09-22T11:10:00+03:00', machining: '2026-09-22T11:40:00+03:00', until: zt2, note: машинная обработка; ждёт сварку}
+- {id: F-040, order: ORD-0917, launch: '2026-09-22T12:05:00+03:00', machining: '2026-09-22T12:35:00+03:00', until: zt2, note: машинная обработка; ждёт сварку}
+- id: F-201
+  order: ORD-0911
+  launch: '2026-09-10T08:00:00+03:00'
+  machining: '2026-09-10T08:30:00+03:00'
+  until: release
+  weld: {at: '2026-09-14T08:30:00+03:00', station: WS-1, welder: WLD-02}
+- id: F-202
+  order: ORD-0911
+  launch: '2026-09-10T08:50:00+03:00'
+  machining: '2026-09-10T09:20:00+03:00'
+  until: release
+  weld: {at: '2026-09-14T17:00:00+03:00', station: WS-2, welder: WLD-03}
+- id: F-203
+  order: ORD-0911
+  launch: '2026-09-10T09:40:00+03:00'
+  machining: '2026-09-10T10:10:00+03:00'
+  until: release
+  weld: {at: '2026-09-14T09:30:00+03:00', station: WS-2, welder: WLD-02}
+- id: F-204
+  order: ORD-0911
+  launch: '2026-09-10T10:30:00+03:00'
+  machining: '2026-09-10T11:00:00+03:00'
+  until: release
+  weld: {at: '2026-09-14T18:00:00+03:00', station: WS-1, welder: WLD-03}
+- id: F-205
+  order: ORD-0911
+  launch: '2026-09-10T11:20:00+03:00'
+  machining: '2026-09-10T11:50:00+03:00'
+  until: release
+  weld: {at: '2026-09-14T10:30:00+03:00', station: WS-1, welder: WLD-02}
+- id: F-206
+  order: ORD-0911
+  launch: '2026-09-10T12:10:00+03:00'
+  machining: '2026-09-10T12:40:00+03:00'
+  until: release
+  weld: {at: '2026-09-14T19:00:00+03:00', station: WS-2, welder: WLD-03}
+- id: F-207
+  order: ORD-0911
+  launch: '2026-09-10T13:00:00+03:00'
+  machining: '2026-09-10T13:30:00+03:00'
+  until: release
+  weld: {at: '2026-09-14T11:30:00+03:00', station: WS-2, welder: WLD-02}
+- id: F-208
+  order: ORD-0911
+  launch: '2026-09-10T13:50:00+03:00'
+  machining: '2026-09-10T14:20:00+03:00'
+  until: release
+  weld: {at: '2026-09-14T20:00:00+03:00', station: WS-1, welder: WLD-03}
+- id: F-209
+  order: ORD-0911
+  launch: '2026-09-10T14:40:00+03:00'
+  machining: '2026-09-10T15:10:00+03:00'
+  until: release
+  weld: {at: '2026-09-15T08:30:00+03:00', station: WS-1, welder: WLD-02}
+- id: F-210
+  order: ORD-0911
+  launch: '2026-09-10T15:30:00+03:00'
+  machining: '2026-09-10T16:00:00+03:00'
+  until: release
+  weld: {at: '2026-09-15T17:00:00+03:00', station: WS-2, welder: WLD-03}
+- id: F-211
+  order: ORD-0911
+  launch: '2026-09-10T16:20:00+03:00'
+  machining: '2026-09-10T16:50:00+03:00'
+  until: release
+  weld: {at: '2026-09-15T09:30:00+03:00', station: WS-2, welder: WLD-02}
+- id: F-212
+  order: ORD-0911
+  launch: '2026-09-10T17:10:00+03:00'
+  machining: '2026-09-10T17:40:00+03:00'
+  until: release
+  weld: {at: '2026-09-15T18:00:00+03:00', station: WS-1, welder: WLD-03}
+- id: F-213
+  order: ORD-0911
+  launch: '2026-09-10T18:00:00+03:00'
+  machining: '2026-09-10T18:30:00+03:00'
+  until: release
+  weld: {at: '2026-09-15T10:30:00+03:00', station: WS-1, welder: WLD-02}
+- id: F-214
+  order: ORD-0911
+  launch: '2026-09-10T18:50:00+03:00'
+  machining: '2026-09-10T19:20:00+03:00'
+  until: release
+  weld: {at: '2026-09-15T19:00:00+03:00', station: WS-2, welder: WLD-03}
+- id: F-215
+  order: ORD-0911
+  launch: '2026-09-10T19:40:00+03:00'
+  machining: '2026-09-10T20:10:00+03:00'
+  until: release
+  weld: {at: '2026-09-15T11:30:00+03:00', station: WS-2, welder: WLD-02}
+- id: F-216
+  order: ORD-0911
+  launch: '2026-09-10T20:30:00+03:00'
+  machining: '2026-09-10T21:00:00+03:00'
+  until: release
+  weld: {at: '2026-09-15T20:00:00+03:00', station: WS-1, welder: WLD-03}
+- id: F-217
+  order: ORD-0911
+  launch: '2026-09-10T21:20:00+03:00'
+  machining: '2026-09-10T21:50:00+03:00'
+  until: release
+  weld: {at: '2026-09-16T08:30:00+03:00', station: WS-1, welder: WLD-02}
+- id: F-218
+  order: ORD-0911
+  launch: '2026-09-10T22:10:00+03:00'
+  machining: '2026-09-10T22:40:00+03:00'
+  until: release
+  weld: {at: '2026-09-16T17:00:00+03:00', station: WS-2, welder: WLD-03}
+- id: F-219
+  order: ORD-0911
+  launch: '2026-09-10T23:00:00+03:00'
+  machining: '2026-09-10T23:30:00+03:00'
+  until: release
+  weld: {at: '2026-09-16T09:30:00+03:00', station: WS-2, welder: WLD-02}
+- id: F-220
+  order: ORD-0911
+  launch: '2026-09-10T23:50:00+03:00'
+  machining: '2026-09-11T00:20:00+03:00'
+  until: release
+  weld: {at: '2026-09-16T18:00:00+03:00', station: WS-1, welder: WLD-03}
+- id: F-221
+  order: ORD-0911
+  launch: '2026-09-17T07:30:00+03:00'
+  machining: '2026-09-17T08:00:00+03:00'
+  until: sent_to_assembly
+  weld: {at: '2026-09-21T19:50:00+03:00', station: WS-2, welder: WLD-03}
+  at: {xray: '2026-09-22T08:30:00+03:00', zt3: '2026-09-22T09:30:00+03:00', sent_to_assembly: '2026-09-22T10:00:00+03:00'}
+- id: F-222
+  order: ORD-0911
+  launch: '2026-09-17T08:25:00+03:00'
+  machining: '2026-09-17T08:55:00+03:00'
+  until: sent_to_assembly
+  weld: {at: '2026-09-22T09:10:00+03:00', station: WS-2, welder: WLD-02, minutes: 9}
+- id: F-223
+  order: ORD-0911
+  launch: '2026-09-17T09:20:00+03:00'
+  machining: '2026-09-17T09:50:00+03:00'
+  until: kt3
+  weld: {at: '2026-09-22T14:55:00+03:00', station: WS-1, welder: WLD-02, minutes: 35}
+- id: F-224
+  order: ORD-0911
+  launch: '2026-09-17T10:15:00+03:00'
+  machining: '2026-09-17T10:45:00+03:00'
+  until: kt3
+  weld: {at: '2026-09-22T22:15:00+03:00', station: WS-1, welder: WLD-03, minutes: 35}

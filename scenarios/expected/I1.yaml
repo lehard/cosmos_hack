@@ -1,0 +1,284 @@
+# Ожидания I1 — отдельно от входных событий (кейс §5.1, AD-26): утверждения над теми же
+# operationId, что показывают столы; check.path — путь в ответе (board.go), значения — ID
+# процессной сессии (сверка переводит их сведением имён прогона). mapping: exact — поле
+# ответа контракта; draft — по смыслу, путь уточнит модуль-владелец; manual — видно на экране.
+scenario: I1
+version: 0.3-draft
+title: 'Обмен с 1С: задание, результаты на ЗТ, подтверждения, ошибка и повтор, ID'
+run: MS-1
+source: 'process/scenarios-flange-expected.yaml процессной сессии, версия 0.3-draft: утверждения процессной сессии — в source без изменений, check — исполняемая форма эпика 32'
+checkpoints:
+- at: '2026-09-24T16:30:00+03:00'
+  label: конец главной истории
+  assertions:
+  - id: I1-01
+    what: задание из 1С принято, связано с внутренним ID
+    check:
+      operation: erp.order.list
+      path: /items
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: erp/inbound
+      field:
+        type: order_received
+        external: ord-5c2b-0917
+        internal: ORD-0917
+        qty: 40
+      filter:
+        message: 1c-in-000314
+      op: eq
+      value: true
+  - id: I1-02
+    what: 'выпуск годного Ф-001: 503 → повтор с тем же номером → подтверждено'
+    check:
+      operation: erp.message.list
+      params:
+        item_id: '{item:F-001}'
+      path: /items
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: erp/postings
+      field:
+        ack_history:
+        - error_retryable
+        - acked
+        same_message_id_on_retry: true
+      filter:
+        type: release_good
+        item: F-001
+      op: eq
+      value: true
+  - id: I1-03
+    what: 'возврат поставщику: 422 → без автоповтора → задача А-01 → соответствие добавлено → подтверждено'
+    check:
+      operation: erp.message.list
+      path: /items
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: erp/postings
+      field:
+        ack_history:
+        - error_final
+        - acked
+        auto_retry_after_4xx: false
+        fixed_by: ADM-01
+      filter:
+        type: return_to_supplier
+      op: eq
+      value: true
+  - id: I1-04
+    what: таблица соответствий пополнилась договором поставщика
+    check:
+      operation: reference.external_id.list
+      path: /items
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: erp/id_map
+      field: exists
+      filter:
+        entity: supplier_contract
+        internal: SUP-3
+      op: eq
+      value: true
+  - id: I1-05
+    what: 'итог для защиты: 6 в брак (переделка) и 1 возврат поставщику'
+    check:
+      operation: erp.message.list
+      path: /items
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: erp/postings
+      field:
+        scrap_transfer_rework_items: 6
+        return_to_supplier_docs: 1
+      filter:
+        date: '2026-09-23'
+      op: eq
+      value: true
+  - id: I1-06
+    what: все отправленные сообщения в итоге подтверждены
+    check:
+      operation: erp.message.list
+      path: /items
+      op: eq
+      value: 0
+    mapping: draft
+    source:
+      subject: erp/postings
+      field: not_acked
+      filter:
+        window: main_story
+      op: eq
+      value: 0
+  - id: I1-07
+    what: у каждого сообщения в 1С есть ответ (подтверждение или ошибка); «учтено в 1С» — только по подтверждению; отправка не держит изделие
+    check:
+      operation: erp.message.list
+      path: /items
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: erp/postings
+      field:
+        without_response: 0
+        accounted_before_ack: 0
+        item_held_by_sending: 0
+      filter:
+        window: main_story
+      op: eq
+      value: true
+  - id: I1-08
+    what: '[П] результат контроля уходит после каждой подписанной ЗТ по изделию: по Ф-001 — ЗТ-2…ЗТ-6, итог «годно»'
+    check:
+      operation: erp.message.list
+      params:
+        item_id: '{item:F-001}'
+      path: /items[action=inspection_result]
+      op: eq
+      value: true
+    mapping: draft
+    proposal: true
+    source:
+      subject: erp/control_results
+      field:
+        gates:
+        - ZT-2
+        - ZT-3
+        - ZT-4
+        - ZT-5
+        - ZT-6
+        result: accepted
+        line_id: L-FL-2
+      filter:
+        item: F-001
+      op: eq
+      value: true
+    note: предложение процессной сессии «результат контроля» (кейс §3.3)
+  - id: I1-09
+    what: '[П] результат контроля по решению ЗТ-Р: НС-И1, 6 изделий, «не годно», решение «переделка», подписи комиссии'
+    check:
+      operation: erp.message.list
+      path: /items[action=inspection_result]
+      op: eq
+      value: true
+    mapping: draft
+    proposal: true
+    source:
+      subject: erp/control_results
+      field:
+        items_count: 6
+        result: nonconforming
+        disposition: rework
+        signers:
+        - TECH-01
+        - QC-HEAD-01
+        - CHW-01
+      filter:
+        nc: NC-G1
+      op: eq
+      value: true
+    note: предложение процессной сессии «результат контроля» (кейс §3.3)
+- at: '2026-09-24T16:30:00+03:00'
+  label: чего не должно случиться
+  must_not: true
+  assertions:
+  - id: I1-N1
+    what: в 1С не уходят сигналы, наблюдения, журналы, гипотезы, движения внутри цеха
+    check:
+      operation: erp.message.list
+      path: /items/*/action
+      op: not_contains
+      value:
+      - signal
+      - inspection
+      - machine_log
+      - hypothesis
+      - internal_move
+      - risk_scope
+    mapping: draft
+    source:
+      subject: erp/postings
+      field: types
+      op: not_contains
+      value:
+      - signal
+      - inspection
+      - machine_log
+      - hypothesis
+      - internal_move
+      - risk_scope
+    note: виды учётных сообщений процессной сессии → erp_action контракта
+  - id: I1-N2
+    what: при воспроизведении истории в 1С ничего не отправляется
+    check:
+      operation: erp.message.list
+      path: /items/#
+      op: eq
+      value: 0
+    mapping: draft
+    source:
+      subject: erp/postings
+      field: count
+      filter:
+        caused_by: replay
+      op: eq
+      value: 0
+  - id: I1-N3
+    what: повтор не проводит документ дважды
+    check:
+      operation: erp.message.list
+      path: /items
+      op: eq
+      value: 0
+    mapping: draft
+    source:
+      subject: erp/documents
+      field: duplicates_by_message_id
+      op: eq
+      value: 0
+  - id: I1-N4
+    what: «выпуск годного» не уходит раньше подписанной ЗТ-6
+    check:
+      operation: erp.message.list
+      path: /items
+      op: eq
+      value: 0
+    mapping: draft
+    source:
+      subject: erp/postings
+      field: sent_before_gate_ZT-6
+      filter:
+        type: release_good
+      op: eq
+      value: 0
+  - id: I1-N5
+    what: '[П] в результат контроля не попадают сигналы, гипотезы, кадры, журналы и круг подозреваемых'
+    check:
+      operation: erp.message.list
+      path: /items[action=inspection_result]
+      op: not_contains
+      value: &id001
+      - signal
+      - hypothesis
+      - inspection_frame
+      - machine_log
+      - risk_scope
+    mapping: draft
+    proposal: true
+    source:
+      subject: erp/control_results
+      field: contains_types
+      op: not_contains
+      value: *id001
+    note: предложение процессной сессии «результат контроля» (кейс §3.3)

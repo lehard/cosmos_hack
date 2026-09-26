@@ -1,0 +1,158 @@
+# S03 — process/scenarios-flange.md §4 S03 «один к одному».
+id: S03
+version: "0.3"
+title: "Новый дефект после сварки — прожог на Ф-017"
+kind: check
+goal: >-
+  Система связывает дефект с прошлой чистой проверкой и с операцией, собирает обстоятельства
+  и честно пишет «причина не установлена», пока данных мало. Сварщик — среди обстоятельств,
+  но не виновник.
+case:
+  s4_2: ["дефект после операции"]
+  s5_1: ["Новый дефект", "Решение пользователя (подтверждение)"]
+  other: ["§2.3 обоснованность выводов", "§5.4 фото: отсутствие материала — честно"]
+run: MS-1
+where: "Главный поток, Ср 11:05 – 11:20. Кадр защиты 0:00–0:40 (крючок)."
+source: "process/scenarios-flange.md §4 S03"
+steps:
+  - at: "2026-09-18T11:20:00+03:00"
+    ref: Е-17
+    label: F-017/kt2
+    note: "Камера КТ-2 (до сварки): зона «кромка под сварку» — признаков нет; качество 0,93"
+    fact: inspection.result.recorded
+    source: cam-kt2
+    item: F-017
+    data:
+      observation_id: "{local:KT2-F-017}"
+      method: camera
+      phase: after_operation
+      step_key: machining.kt2_camera
+      inspection_point: KT-2
+      operation_run_id: "{local:MO-017-1}"
+      zone_ids: ["{zone:EDGE}"]
+      outcome: no_defect_indicated
+      processing_state: completed
+      analyzer_confidence_bp: 9500
+      observation_quality_bp: 9300
+      versions: {analyzer_version: "vqc-edge 1.4.0", contract_version: "1.0", recipe_ref: "KT-2@3", item_revision: "Б"}
+  - {at: "2026-09-21T07:50:00+03:00", ref: Е-31, route: "F-017:sent_to_welding,received_welding", note: "Принято сварочным цехом: повреждений нет"}
+  - {at: "2026-09-23T08:50:00+03:00", route: "F-017:ring,edge_prep", note: "Подготовка кромок: окно до сварки 1 ч 50 мин (норма)"}
+  - {at: "2026-09-23T10:40:00+03:00", ref: "Е-23, Е-40, Е-12", route: "F-017:weld", note: "Режим по карте сверен (10:38); сварка СВ-017-1 на ИС-2, ПС-4, П-88; завершена в 11:00 — 20 мин, «вычислено системой»"}
+  - at: "2026-09-23T10:50:00+03:00"
+    ref: Е-11
+    note: "Пауза сварки: деталь переставлена в приспособлении"
+    decision: process.operation.pause
+    role: PERFORMER
+    actor: WLD-02
+    item: F-017
+    params: {run_id: "{local:SV-017-1}"}
+    body: {pause_reason: other, note: "Деталь переставлена в приспособлении"}
+  - at: "2026-09-23T10:50:30+03:00"
+    ref: Е-22
+    label: S03/manual-override
+    note: "Ручное вмешательство: «деталь переставлена в приспособлении»; время рядом со сваркой участка У2"
+    fact: operator.override.performed
+    source: term-weld-2
+    item: F-017
+    data:
+      operation_run_id: "{local:SV-017-1}"
+      workplace_id: WP-WELD-2
+      operator_id: "{person:WLD-02}"
+      bypassed: other
+      reason: {code: fixture_repositioned, text: "Деталь переставлена в приспособлении"}
+  - at: "2026-09-23T10:52:00+03:00"
+    ref: Е-11
+    note: "Сварка продолжена"
+    decision: process.operation.resume
+    role: PERFORMER
+    actor: WLD-02
+    item: F-017
+    params: {run_id: "{local:SV-017-1}"}
+    body: {}
+  - at: "2026-09-23T11:05:00+03:00"
+    ref: Е-44
+    label: F-017/kt3
+    note: "Камера КТ-3, ракурс 1: прожог, У2; уверенность 0,86; качество 0,90; vqc-weld 2.3.1. Повтор того же сообщения в 11:05:40 — S06"
+    fact: inspection.result.recorded
+    source: cam-kt3-a
+    item: F-017
+    duplicates: ["2026-09-23T11:05:40+03:00"]
+    data: &burn
+      observation_id: "{local:KT3-F-017-A}"
+      method: camera
+      phase: after_operation
+      step_key: welding.kt3_camera
+      inspection_point: KT-3
+      operation_run_id: "{local:SV-017-1}"
+      zone_ids: ["{zone:U1}", "{zone:U2}", "{zone:U3}", "{zone:U4}", "{zone:U5}", "{zone:U6}", "{zone:U7}", "{zone:U8}"]
+      outcome: defect_indicated
+      processing_state: completed
+      comparison_before: appeared
+      defects:
+        - {defect_type_code: W-BURNTHRU, description: "Прожог", zone_id: "{zone:U2}", location: "участок У2, лицевая сторона", severity: critical}
+      analyzer_confidence_bp: 8600
+      observation_quality_bp: 9000
+      recommendation: isolate
+      versions: {analyzer_version: "vqc-weld 2.3.1", contract_version: "1.0", recipe_ref: "KT-3@5", camera_config: "angle-1", item_revision: "Б"}
+  - at: "2026-09-23T11:05:10+03:00"
+    ref: Е-44
+    label: F-017/kt3-b
+    note: "Камера КТ-3, ракурс 2: прожог, У2; уверенность 0,81; качество 0,88 → тот же дефект (Е-81, S06)"
+    fact: inspection.result.recorded
+    source: cam-kt3-b
+    item: F-017
+    data:
+      <<: *burn
+      observation_id: "{local:KT3-F-017-B}"
+      analyzer_confidence_bp: 8100
+      observation_quality_bp: 8800
+      versions: {analyzer_version: "vqc-weld 2.3.1", contract_version: "1.0", recipe_ref: "KT-3@5", camera_config: "angle-2", item_revision: "Б"}
+  - {at: "2026-09-23T11:06:00+03:00", ref: "Е-80, Е-84, Е-83, Е-85", system: "Сигнал; карантин по правилу R-07; черновик карточки; гипотезы v1: оборудование — не оценить (нет журнала ИС-2 со Вт 09:50); процедура — возможна; итог «причина не установлена»"}
+  - at: "2026-09-23T11:08:00+03:00"
+    ref: Е-90
+    label: S03/confirm-NC-01
+    note: "Сигнал подтверждён — НС-01: прожог У2; тяжесть «значительный»; причина решения записана"
+    decision: nonconformity.nonconformity.confirm
+    role: QC
+    actor: QC-01
+    stop: true
+    item: F-017
+    params: {nc_id: "{ref:NC-01}"}
+    body:
+      signal_ids: ["{ref:SIG-F017}"]
+      severity: major
+      defect_type_code: W-BURNTHRU
+      reason: {code: confirmed_by_views, text: "Прожог У2 подтверждён по двум ракурсам КТ-3 и осмотру"}
+  - at: "2026-09-23T11:20:00+03:00"
+    ref: Е-93
+    label: S03/isolate
+    note: "Изолировано; срок решения — 3 рабочих дня"
+    decision: nonconformity.item.isolate
+    role: QC
+    actor: QC-01
+    item: F-017
+    params: {item_id: "{item:F-017}"}
+    body:
+      isolator_location_id: ISO-WC
+      decision_due_at: "2026-09-28T16:30:00+03:00"
+      reason: {code: nc_confirmed, text: "НС-01: прожог У2 — изолировать до решения по изделию"}
+  - at: "2026-09-23T11:20:30+03:00"
+    ref: Е-93
+    note: "Перенесено в изолятор, физически перемещено"
+    decision: process.movement.receive
+    role: MASTER
+    actor: MST-02
+    item: F-017
+    params: {item_id: "{item:F-017}"}
+    body: {destination_kind: isolator, from_location_id: ST-WELD, to_location_id: ISO-WC, inspection_on_receipt: not_inspected}
+outcome:
+  - "Четыре статуса видны раздельно: сигнал (11:06) → НС-01 (11:08) → гипотезы v1 → подтверждённой причины нет."
+  - "Ф-017: изолировано, ждёт решения; срок — до Пн 28.09 (3 рабочих дня)."
+  - "«До и после»: последняя чистая проверка зоны — КТ-2 в Пт 18.09; первая дефектная — КТ-3 в Ср 11:05; окно возникновения — сварка СВ-017-1 и перемещение."
+  - "Сварщик С-02 в обстоятельствах с пометкой «обстоятельство, не вина»; его ручное действие — строка в разборе."
+  - "Фото изделия нет: иллюстрация с пометкой или «материал не предоставлен»."
+  - "Задержка обнаружения — 5 минут после операции."
+must_not:
+  - "Нет записи «ошибка исполнителя» и изменений в сравнении сварщиков (О-10)."
+  - "Нет решения по изделию без человека; нет «годно»; ничего не уходит в 1С."
+  - "Два наблюдения с двух ракурсов не дают двух дефектов."

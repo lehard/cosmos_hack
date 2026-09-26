@@ -1,0 +1,21 @@
+# Ожидания прогона сбоя F21 — отдельно от входных событий (кейс §5.1, AD-26).
+scenario: F21
+version: '1'
+title: 'Сбой: Ввод задним числом'
+run: F21
+source: эпик 32 по research/data-collection-sources-and-failures.md §6 (ожидаемое поведение системы)
+checkpoints:
+- at: end
+  label: конец прогона
+  assertions:
+  - id: F21-01
+    what: записи с бумаги приняты с пометкой источника «импорт»
+    check:
+      operation: item.history.list
+      path: /items/#
+      op: gte
+      params:
+        item_id: '{item:F-501}'
+      value: 1
+    mapping: draft
+    note: признак entry_mode — через source_kind = import; разрез показателей своевременности — эпик 25

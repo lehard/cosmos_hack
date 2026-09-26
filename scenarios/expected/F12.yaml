@@ -1,0 +1,18 @@
+# Ожидания прогона сбоя F12 — отдельно от входных событий (кейс §5.1, AD-26).
+scenario: F12
+version: '1'
+title: 'Сбой: Нет обязательного поля'
+run: F12
+source: эпик 32 по research/data-collection-sources-and-failures.md §6 (ожидаемое поведение системы)
+checkpoints:
+- at: end
+  label: конец прогона
+  assertions:
+  - id: F12-01
+    what: в карантине с кодом ingest.missing_required_field
+    check:
+      operation: ingest.quarantine.list
+      path: /items[problem_code=ingest.missing_required_field]/#
+      op: eq
+      value: 1
+    mapping: exact

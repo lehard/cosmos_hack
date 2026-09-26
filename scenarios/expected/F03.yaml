@@ -1,0 +1,28 @@
+# Ожидания прогона сбоя F03 — отдельно от входных событий (кейс §5.1, AD-26).
+scenario: F03
+version: '1'
+title: 'Сбой: Позднее событие'
+run: F03
+source: эпик 32 по research/data-collection-sources-and-failures.md §6 (ожидаемое поведение системы)
+checkpoints:
+- at: end
+  label: конец прогона
+  assertions:
+  - id: F03-01
+    what: результат встал на время события, а не получения
+    check:
+      operation: quality.inspection.list
+      path: /items[step_key=welding.kt3_camera]/0/occurred_at
+      op: eq
+      params:
+        item_id: '{item:F-501}'
+      value: '2026-09-21T12:50:00+03:00'
+    mapping: exact
+  - id: F03-02
+    what: приём пометил позднюю запись
+    check:
+      operation: ingest.source.list
+      path: /items[source_id={run}/edge-kt3]/0/last_received_at
+      op: exists
+    mapping: draft
+    note: флаг late_write — в ответе приёма; сводки по источнику уточнит эпик 06

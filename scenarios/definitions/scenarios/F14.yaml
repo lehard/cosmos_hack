@@ -1,0 +1,69 @@
+# F14 — строка таблицы сбоев «один к одному».
+id: F14
+version: '1'
+title: 'Сбой: Смена версии анализатора'
+kind: failure
+goal: Версия хранится в каждом наблюдении, показатели можно разбить по версиям; версия контракта не меняется
+case:
+  other:
+  - 'таблица сбоев PRD §4.3: «analyzer_version изменилась посреди смены»'
+  - 'проверка: Две серии событий с разными analyzer_version: в аналитике есть разрез по версиям'
+run: F14
+source: research/data-collection-sources-and-failures.md §6, строка «Смена версии анализатора»
+steps:
+- at: '2026-09-21T12:50:00+03:00'
+  label: F-501/kt3
+  fact: inspection.result.recorded
+  source: cam-kt3-a
+  item: F-501
+  data:
+    observation_id: '{local:KT3-F-501-KT3}'
+    method: camera
+    phase: after_operation
+    step_key: welding.kt3_camera
+    inspection_point: KT-3
+    operation_run_id: '{local:SV-501-1}'
+    zone_ids: &id001
+    - '{zone:U1}'
+    - '{zone:U2}'
+    - '{zone:U3}'
+    - '{zone:U4}'
+    - '{zone:U5}'
+    - '{zone:U6}'
+    - '{zone:U7}'
+    - '{zone:U8}'
+    outcome: no_defect_indicated
+    processing_state: completed
+    analyzer_confidence_bp: 9500
+    observation_quality_bp: 9200
+    versions:
+      analyzer_version: vqc-weld 2.3.1
+      contract_version: '1.0'
+      recipe_ref: KT-3@5
+      camera_config: angle-1
+      item_revision: Б
+- at: '2026-09-21T13:50:00+03:00'
+  label: F-502/kt3
+  fact: inspection.result.recorded
+  source: cam-kt3-a
+  item: F-502
+  data:
+    observation_id: '{local:KT3-F-502-KT3}'
+    method: camera
+    phase: after_operation
+    step_key: welding.kt3_camera
+    inspection_point: KT-3
+    operation_run_id: '{local:SV-502-1}'
+    zone_ids: *id001
+    outcome: no_defect_indicated
+    processing_state: completed
+    analyzer_confidence_bp: 9500
+    observation_quality_bp: 9200
+    versions:
+      analyzer_version: vqc-weld 2.4.0
+      contract_version: '1.0'
+      recipe_ref: KT-3@5
+      camera_config: angle-1
+      item_revision: Б
+outcome:
+- Версия хранится в каждом наблюдении, показатели можно разбить по версиям; версия контракта не меняется

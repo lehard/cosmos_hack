@@ -1,0 +1,279 @@
+{
+ "run_id": "f12-20261012",
+ "run": "F12",
+ "seed": 20261012,
+ "start": "2026-09-21T04:00:00.000Z",
+ "end": "2026-09-21T13:00:00.000Z",
+ "truth": {
+  "items": [
+   {
+    "id": "F-501",
+    "order": "ORD-0917",
+    "line": "L-FL-1",
+    "stages": {
+     "cmm": "2026-09-21T06:58:00Z",
+     "edge_prep": "2026-09-21T08:15:00Z",
+     "kt2": "2026-09-21T06:28:00Z",
+     "kt3": "2026-09-21T09:50:00Z",
+     "launch": "2026-09-21T05:00:00Z",
+     "machining": "2026-09-21T05:30:00Z",
+     "received_welding": "2026-09-21T07:50:00Z",
+     "remark": "2026-09-21T06:24:00Z",
+     "ring": "2026-09-21T08:10:00Z",
+     "sent_to_welding": "2026-09-21T07:40:00Z",
+     "weld": "2026-09-21T09:00:00Z",
+     "zt2": "2026-09-21T07:18:00Z",
+     "zt2_presented": "2026-09-21T07:13:00Z"
+    },
+    "remarked_at": "2026-09-21T06:24:00Z",
+    "until": "kt3"
+   },
+   {
+    "id": "F-502",
+    "order": "ORD-0917",
+    "line": "L-FL-1",
+    "stages": {
+     "cmm": "2026-09-21T07:53:00Z",
+     "edge_prep": "2026-09-21T09:15:00Z",
+     "kt2": "2026-09-21T07:23:00Z",
+     "kt3": "2026-09-21T10:50:00Z",
+     "launch": "2026-09-21T05:55:00Z",
+     "machining": "2026-09-21T06:25:00Z",
+     "received_welding": "2026-09-21T08:50:00Z",
+     "remark": "2026-09-21T07:19:00Z",
+     "ring": "2026-09-21T09:10:00Z",
+     "sent_to_welding": "2026-09-21T08:40:00Z",
+     "weld": "2026-09-21T10:00:00Z",
+     "zt2": "2026-09-21T08:13:00Z",
+     "zt2_presented": "2026-09-21T08:08:00Z"
+    },
+    "remarked_at": "2026-09-21T07:19:00Z",
+    "until": "kt3"
+   }
+  ],
+  "welds": [
+   {
+    "item": "F-501",
+    "run": "SV-501-1",
+    "station": "WS-1",
+    "welder": "WLD-02",
+    "shift": "A",
+    "start": "2026-09-21T09:00:00Z",
+    "end": "2026-09-21T09:45:00Z",
+    "current_min": 158,
+    "current_max": 163,
+    "arc_from": "2026-09-21T09:00:00Z",
+    "arc_to": "2026-09-21T09:45:00Z"
+   },
+   {
+    "item": "F-502",
+    "run": "SV-502-1",
+    "station": "WS-1",
+    "welder": "WLD-02",
+    "shift": "A",
+    "start": "2026-09-21T10:00:00Z",
+    "end": "2026-09-21T10:45:00Z",
+    "current_min": 158,
+    "current_max": 163,
+    "arc_from": "2026-09-21T10:00:00Z",
+    "arc_to": "2026-09-21T10:45:00Z"
+   }
+  ],
+  "sources": [
+   {
+    "key": "cam-kt1",
+    "source_id": "f12-20261012/edge-kt1",
+    "first_seq": 1,
+    "last_seq": 2,
+    "counters": {
+     "records": 2,
+     "deliveries": 2,
+     "unique": 2,
+     "duplicates": 0,
+     "conflicts": 0,
+     "lost": 0,
+     "late": 0,
+     "skewed": 0,
+     "reordered": 0,
+     "invalid": 0,
+     "quarantine": 0,
+     "decisions": 0
+    }
+   },
+   {
+    "key": "cam-kt2",
+    "source_id": "f12-20261012/edge-kt2",
+    "first_seq": 1,
+    "last_seq": 2,
+    "counters": {
+     "records": 2,
+     "deliveries": 2,
+     "unique": 2,
+     "duplicates": 0,
+     "conflicts": 0,
+     "lost": 0,
+     "late": 0,
+     "skewed": 0,
+     "reordered": 0,
+     "invalid": 0,
+     "quarantine": 0,
+     "decisions": 0
+    }
+   },
+   {
+    "key": "cam-kt3-a",
+    "source_id": "f12-20261012/edge-kt3",
+    "first_seq": 1,
+    "last_seq": 2,
+    "counters": {
+     "records": 2,
+     "deliveries": 2,
+     "unique": 2,
+     "duplicates": 0,
+     "conflicts": 0,
+     "lost": 0,
+     "late": 0,
+     "skewed": 0,
+     "reordered": 0,
+     "invalid": 1,
+     "quarantine": 1,
+     "decisions": 0
+    }
+   },
+   {
+    "key": "cmm-1",
+    "source_id": "f12-20261012/gw-cmm",
+    "first_seq": 1,
+    "last_seq": 2,
+    "counters": {
+     "records": 2,
+     "deliveries": 2,
+     "unique": 2,
+     "duplicates": 0,
+     "conflicts": 0,
+     "lost": 0,
+     "late": 0,
+     "skewed": 0,
+     "reordered": 0,
+     "invalid": 0,
+     "quarantine": 0,
+     "decisions": 0
+    }
+   },
+   {
+    "key": "cnc-1",
+    "source_id": "f12-20261012/edge-cnc-1",
+    "first_seq": 1,
+    "last_seq": 4,
+    "counters": {
+     "records": 4,
+     "deliveries": 4,
+     "unique": 4,
+     "duplicates": 0,
+     "conflicts": 0,
+     "lost": 0,
+     "late": 0,
+     "skewed": 0,
+     "reordered": 0,
+     "invalid": 0,
+     "quarantine": 0,
+     "decisions": 0
+    }
+   },
+   {
+    "key": "is-1",
+    "source_id": "f12-20261012/edge-weld-1",
+    "first_seq": 1,
+    "last_seq": 90,
+    "counters": {
+     "records": 90,
+     "deliveries": 90,
+     "unique": 90,
+     "duplicates": 0,
+     "conflicts": 0,
+     "lost": 0,
+     "late": 0,
+     "skewed": 0,
+     "reordered": 0,
+     "invalid": 0,
+     "quarantine": 0,
+     "decisions": 0
+    }
+   },
+   {
+    "key": "marker",
+    "source_id": "f12-20261012/edge-marker-1",
+    "first_seq": 1,
+    "last_seq": 2,
+    "counters": {
+     "records": 2,
+     "deliveries": 2,
+     "unique": 2,
+     "duplicates": 0,
+     "conflicts": 0,
+     "lost": 0,
+     "late": 0,
+     "skewed": 0,
+     "reordered": 0,
+     "invalid": 0,
+     "quarantine": 0,
+     "decisions": 0
+    }
+   },
+   {
+    "key": "onec",
+    "source_id": "f12-20261012/onec-stand",
+    "first_seq": 1,
+    "last_seq": 3,
+    "counters": {
+     "records": 3,
+     "deliveries": 3,
+     "unique": 3,
+     "duplicates": 0,
+     "conflicts": 0,
+     "lost": 0,
+     "late": 0,
+     "skewed": 0,
+     "reordered": 0,
+     "invalid": 0,
+     "quarantine": 0,
+     "decisions": 0
+    }
+   },
+   {
+    "key": "term-vk",
+    "source_id": "f12-20261012/term-vk-1",
+    "first_seq": 1,
+    "last_seq": 2,
+    "counters": {
+     "records": 2,
+     "deliveries": 2,
+     "unique": 2,
+     "duplicates": 0,
+     "conflicts": 0,
+     "lost": 0,
+     "late": 0,
+     "skewed": 0,
+     "reordered": 0,
+     "invalid": 0,
+     "quarantine": 0,
+     "decisions": 0
+    }
+   }
+  ],
+  "totals": {
+   "records": 109,
+   "deliveries": 109,
+   "unique": 109,
+   "duplicates": 0,
+   "conflicts": 0,
+   "lost": 0,
+   "late": 0,
+   "skewed": 0,
+   "reordered": 0,
+   "invalid": 1,
+   "quarantine": 1,
+   "decisions": 32
+  }
+ }
+}
