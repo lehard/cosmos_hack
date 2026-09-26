@@ -76,6 +76,38 @@ defaults:
       recheck: 5m     # сверка $metadata и версии qc при ok (при degraded — чаще)
       pull_every: 30s # опрос заданий, номенклатуры и партий
       retry_max: 8    # попыток при транспортных ошибках: 1 с, 5 с, 30 с, 2 мин, 10 мин, далее 30 мин; затем карантин
+    # Галактика ERP (эпик 31, gal.qc.v1): работает вместо 1С, если galaktika есть
+    # в integrations.enabled (одна учётная система на экземпляр, docs/new-adapter.md).
+    galaktika:
+      transport: exchange-dir # exchange-dir | rest-facade
+      dir: /var/lib/ant/exchange/galaktika # out/ ack/ in/ in-ack/ about.xml
+      base_url: ""    # для rest-facade: http(s)://‹хост›/galaktika/esb/v1
+      node: ant       # наш узел обмена
+      peer: ""        # узел Галактики; пусто — из about
+      database: ""    # база Галактики для внешних ID; пусто — из about
+      enterprise: ENT01
+      user: ""
+      password_file: "" # секрет — только файлом
+      stand: false    # stand Галактики — эпик 43
+      timeout: 10s
+      poll: 1s        # опрос очереди исходящих
+      recheck: 5m     # сверка about
+      pull_every: 30s # опрос входящих пакетов
+      retry_max: 8    # для exchange-dir: ожидание квитанции ≈ 70 мин, затем карантин
+  # Канал MES (эпик 31, B2MML-JSON mes.isa95.v1): работает, если mes есть в
+  # integrations.enabled и задан base_url; stand MES — эпик 43.
+  mes:
+    b2mml:
+      base_url: ""    # http(s)://‹хост›/b2mml
+      logical_id: ant
+      user: ""
+      password_file: ""
+      stand: false
+      timeout: 10s
+      poll: 1s        # отправка блоков
+      recheck: 5m     # сверка /about при ok
+      pull_every: 30s # опрос заданий и событий операций
+      retry_max: 8    # транспортных попыток на блок
   # Доверие (эпик 29): хранитель, верификатор, шифрование при хранении, шина
   # безопасности. Интервалы и порог — параметры аудита policy.audit.*: пока нет
   # записи policy.audit.parameters_set, подписанной Аудитором ИБ (эпик 26), — здесь.

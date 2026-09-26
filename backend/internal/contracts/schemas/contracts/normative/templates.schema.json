@@ -219,6 +219,19 @@
                     "customer_acceptance": {
                       "type": "boolean",
                       "description": "Этап нужен для продукции с приёмкой представителя заказчика (режим 5)."
+                    },
+                    "grant_domains": {
+                      "type": "array",
+                      "uniqueItems": true,
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "qc",
+                          "production",
+                          "admin"
+                        ]
+                      },
+                      "description": "Сфера выдачи прав (документ «Выдача ролей, полномочий, клейм», AD-11): этап второй подписи нужен, если сфера выдачи — одна из этих; её вычисляет access.Assess по эффективным правам."
                     }
                   }
                 }

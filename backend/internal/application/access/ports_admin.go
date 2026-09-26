@@ -24,6 +24,8 @@ type AdminQueries interface {
 	Qualifications(ctx context.Context, personID string, m platform.Moment) (AccessQualificationList, error)
 	// Audit — параметры аудита policy.audit.* (access.audit.read).
 	Audit(ctx context.Context, m platform.Moment) (AccessAuditParameters, error)
+	// AssessGrant — чья подпись нужна для выдачи (access.grant.assess, эпик 26).
+	AssessGrant(ctx context.Context, q GrantQuery) (GrantAssessment, error)
 }
 
 // AdminCommands — команды администрирования доступа и терминала исполнителя; входят в Commands.
@@ -88,6 +90,10 @@ func (Unimplemented) Qualifications(context.Context, string, platform.Moment) (A
 
 func (Unimplemented) Audit(context.Context, platform.Moment) (AccessAuditParameters, error) {
 	return AccessAuditParameters{}, platform.NotImplemented("access.audit.read")
+}
+
+func (Unimplemented) AssessGrant(context.Context, GrantQuery) (GrantAssessment, error) {
+	return GrantAssessment{}, platform.NotImplemented("access.grant.assess")
 }
 
 func (Unimplemented) RegisterPerson(context.Context, RegisterPerson) (platform.Receipt, error) {

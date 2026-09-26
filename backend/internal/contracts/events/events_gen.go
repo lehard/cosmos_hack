@@ -588,27 +588,111 @@ type Bp int
 
 // Условная сборка импортирована — структура сборки из файла КОМПАС (идентификатор,
 // версия, компоненты, количество, связи; геометрии нет — явно); связи переводятся
-// в зоны и ограничения нормативного слоя (FR-94, PRD §11.15). Схема файла —
-// `contracts/integrations/cad/assembly.schema.json` (эпик 31).
+// в зоны и ограничения нормативного слоя: шов — объект учёта лимита ремонтов,
+// болтовое соединение «закрывает доступ к зоне», уплотнение — порядок установки
+// (FR-94, PRD §11.15). Схема файла —
+// `contracts/integrations/cad/assembly.schema.json` (эпик 31). Дерево компонентов
+// — черновик справочника типов изделий: действующим его делает утверждение
+// человеком (AD-31, FR-23); соответствия обозначений КД нашим типам — отдельные
+// записи reference.external_id.mapped (FR-95).
 type CadAssemblyImportedV1 struct {
 	// Обозначение сборки (например, ФЛ-100.00.000 СБ).
 	AssemblyDesignation string `json:"assembly_designation"`
 
+	// Наш тип изделия сборки по обозначению КД (FL-100.00.000).
+	AssemblyItemTypeID *ObjectID `json:"assembly_item_type_id,omitempty,omitzero"`
+
+	// Наименование сборки.
+	AssemblyName *string `json:"assembly_name,omitempty,omitzero"`
+
+	// Важные характеристики с методами контроля (FR-14).
+	Characteristics []CadCharacteristic `json:"characteristics,omitempty,omitzero"`
+
 	// Компоненты.
 	Components []CadComponent `json:"components"`
+
+	// Ограничения нормативного слоя из связей сборки: лимит ремонтов шва (FR-18),
+	// «закрывает доступ к зоне» (FR-20), порядок установки (FR-17), крепёж и момент
+	// затяжки.
+	Constraints []CadConstraint `json:"constraints,omitempty,omitzero"`
+
+	// Расхождения с номенклатурой учётной системы: позиции без соответствия — отчёт
+	// администратору и технологу, без автосоздания (FR-95).
+	Discrepancies []CadDiscrepancy `json:"discrepancies,omitempty,omitzero"`
+
+	// Когда состав выгружен из САПР (по данным файла).
+	ExportedAt *Timestamp `json:"exported_at,omitempty,omitzero"`
 
 	// Отпечаток импортированного файла.
 	FileDigest Digest `json:"file_digest"`
 
+	// Версия формата файла условной сборки.
+	FormatVersion *string `json:"format_version,omitempty,omitzero"`
+
+	// Пояснение отсутствия геометрии из файла (кейс §5.3).
+	GeometryNote *string `json:"geometry_note,omitempty,omitzero"`
+
 	// Геометрия в файле есть; в условной сборке — false (кейс §5.3).
 	GeometryPresent bool `json:"geometry_present"`
+
+	// Литера КД (например, О1).
+	LifecycleLetter *string `json:"lifecycle_letter,omitempty,omitzero"`
 
 	// Связи.
 	Links []CadLink `json:"links,omitempty,omitzero"`
 
+	// Правило сопоставления ID с учётной системой из файла (для людей).
+	MappingRule *string `json:"mapping_rule,omitempty,omitzero"`
+
 	// Версия (литера).
 	Revision string `json:"revision"`
+
+	// Система-источник состава (КОМПАС-3D, эмуляция файлом; COM API7; ЛОЦМАН:PLM).
+	SourceSystem *string `json:"source_system,omitempty,omitzero"`
+
+	// Зоны изделия из связей сборки (FR-46): к ним привязываются контроль, доработки,
+	// скрытые работы и вмешательства.
+	Zones []CadZone `json:"zones,omitempty,omitzero"`
 }
+
+type CadAssemblyImportedV1ComponentsElemKind string
+
+const CadAssemblyImportedV1ComponentsElemKindDetail CadAssemblyImportedV1ComponentsElemKind = "detail"
+const CadAssemblyImportedV1ComponentsElemKindFastener CadAssemblyImportedV1ComponentsElemKind = "fastener"
+const CadAssemblyImportedV1ComponentsElemKindOther CadAssemblyImportedV1ComponentsElemKind = "other"
+const CadAssemblyImportedV1ComponentsElemKindPurchasedEquipment CadAssemblyImportedV1ComponentsElemKind = "purchased_equipment"
+const CadAssemblyImportedV1ComponentsElemKindStandardPart CadAssemblyImportedV1ComponentsElemKind = "standard_part"
+const CadAssemblyImportedV1ComponentsElemKindSubassembly CadAssemblyImportedV1ComponentsElemKind = "subassembly"
+
+type CadAssemblyImportedV1ComponentsElemMakeOrBuy string
+
+const CadAssemblyImportedV1ComponentsElemMakeOrBuyBuy CadAssemblyImportedV1ComponentsElemMakeOrBuy = "buy"
+const CadAssemblyImportedV1ComponentsElemMakeOrBuyMake CadAssemblyImportedV1ComponentsElemMakeOrBuy = "make"
+
+type CadAssemblyImportedV1ComponentsElemTracking string
+
+const CadAssemblyImportedV1ComponentsElemTrackingLot CadAssemblyImportedV1ComponentsElemTracking = "lot"
+const CadAssemblyImportedV1ComponentsElemTrackingNone CadAssemblyImportedV1ComponentsElemTracking = "none"
+const CadAssemblyImportedV1ComponentsElemTrackingSerial CadAssemblyImportedV1ComponentsElemTracking = "serial"
+
+type CadAssemblyImportedV1ConstraintsElemKind string
+
+const CadAssemblyImportedV1ConstraintsElemKindClosesAccess CadAssemblyImportedV1ConstraintsElemKind = "closes_access"
+const CadAssemblyImportedV1ConstraintsElemKindFastening CadAssemblyImportedV1ConstraintsElemKind = "fastening"
+const CadAssemblyImportedV1ConstraintsElemKindInstallOrder CadAssemblyImportedV1ConstraintsElemKind = "install_order"
+const CadAssemblyImportedV1ConstraintsElemKindReworkLimit CadAssemblyImportedV1ConstraintsElemKind = "rework_limit"
+const CadAssemblyImportedV1ConstraintsElemKindTorque CadAssemblyImportedV1ConstraintsElemKind = "torque"
+
+type CadAssemblyImportedV1DiscrepanciesElemReason string
+
+const CadAssemblyImportedV1DiscrepanciesElemReasonNotChecked CadAssemblyImportedV1DiscrepanciesElemReason = "not_checked"
+const CadAssemblyImportedV1DiscrepanciesElemReasonNotInErp CadAssemblyImportedV1DiscrepanciesElemReason = "not_in_erp"
+
+type CadAssemblyImportedV1DiscrepanciesElemSystem string
+
+const CadAssemblyImportedV1DiscrepanciesElemSystemGalaktika CadAssemblyImportedV1DiscrepanciesElemSystem = "galaktika"
+const CadAssemblyImportedV1DiscrepanciesElemSystemOnec CadAssemblyImportedV1DiscrepanciesElemSystem = "onec"
+const CadAssemblyImportedV1DiscrepanciesElemSystemOther CadAssemblyImportedV1DiscrepanciesElemSystem = "other"
 
 type CadAssemblyImportedV1LinksElemKind string
 
@@ -617,19 +701,145 @@ const CadAssemblyImportedV1LinksElemKindOther CadAssemblyImportedV1LinksElemKind
 const CadAssemblyImportedV1LinksElemKindSeal CadAssemblyImportedV1LinksElemKind = "seal"
 const CadAssemblyImportedV1LinksElemKindWeld CadAssemblyImportedV1LinksElemKind = "weld"
 
+type CadAssemblyImportedV1ZonesElemKind string
+
+const CadAssemblyImportedV1ZonesElemKindCavity CadAssemblyImportedV1ZonesElemKind = "cavity"
+const CadAssemblyImportedV1ZonesElemKindGroove CadAssemblyImportedV1ZonesElemKind = "groove"
+const CadAssemblyImportedV1ZonesElemKindHole CadAssemblyImportedV1ZonesElemKind = "hole"
+const CadAssemblyImportedV1ZonesElemKindJoint CadAssemblyImportedV1ZonesElemKind = "joint"
+const CadAssemblyImportedV1ZonesElemKindOther CadAssemblyImportedV1ZonesElemKind = "other"
+const CadAssemblyImportedV1ZonesElemKindSurface CadAssemblyImportedV1ZonesElemKind = "surface"
+const CadAssemblyImportedV1ZonesElemKindWeldSection CadAssemblyImportedV1ZonesElemKind = "weld_section"
+
+// Важная характеристика.
+type CadCharacteristic struct {
+	// Идентификатор (CC-1…).
+	CharacteristicID string `json:"characteristic_id"`
+
+	// Методы контроля.
+	Methods []string `json:"methods,omitempty,omitzero"`
+
+	// Название.
+	Name string `json:"name"`
+
+	// Примечание.
+	Note *string `json:"note,omitempty,omitzero"`
+}
+
 // Компонент.
 type CadComponent struct {
 	// Обозначение.
 	Designation string `json:"designation"`
 
+	// Наш тип изделия позиции по обозначению КД.
+	ItemTypeID *ObjectID `json:"item_type_id,omitempty,omitzero"`
+
+	// Вид позиции: деталь, сборочная единица, стандартное изделие, крепёж, покупное
+	// оборудование.
+	Kind *CadAssemblyImportedV1ComponentsElemKind `json:"kind,omitempty,omitzero"`
+
 	// Учитывается партией.
 	LotTracked bool `json:"lot_tracked"`
+
+	// Изготавливаем или покупаем.
+	MakeOrBuy *CadAssemblyImportedV1ComponentsElemMakeOrBuy `json:"make_or_buy,omitempty,omitzero"`
+
+	// Материал.
+	Material *string `json:"material,omitempty,omitzero"`
+
+	// Наименование позиции.
+	Name *string `json:"name,omitempty,omitzero"`
+
+	// Родитель в дереве состава (тип изделия).
+	ParentItemTypeID *ObjectID `json:"parent_item_type_id,omitempty,omitzero"`
 
 	// Позиция.
 	Position string `json:"position"`
 
 	// Количество.
 	Quantity int `json:"quantity"`
+
+	// Учитывается срок хранения (предусловие «партия не просрочена», FR-17).
+	ShelfLifeTracked *bool `json:"shelf_life_tracked,omitempty,omitzero"`
+
+	// Количество на одну сборку верхнего уровня (с учётом количеств родителей).
+	TotalQuantity *int `json:"total_quantity,omitempty,omitzero"`
+
+	// Учёт: по заводским номерам, по партиям, без индивидуального учёта.
+	Tracking *CadAssemblyImportedV1ComponentsElemTracking `json:"tracking,omitempty,omitzero"`
+
+	// Единица измерения.
+	Unit *string `json:"unit,omitempty,omitzero"`
+}
+
+// Ограничение нормативного слоя.
+type CadConstraint struct {
+	// Зоны, к которым соединение закрывает доступ: их проверка — до закрытия (скрытые
+	// работы).
+	ClosesZoneIds []ObjectID `json:"closes_zone_ids,omitempty,omitzero"`
+
+	// Идентификатор ограничения (‹связь›/‹вид›).
+	ConstraintID string `json:"constraint_id"`
+
+	// Что устанавливается первым (для install_order).
+	FirstItemTypeID *ObjectID `json:"first_item_type_id,omitempty,omitzero"`
+
+	// Вид: лимит ремонтов зоны, закрывает доступ к зонам, порядок установки, крепёж,
+	// момент затяжки.
+	Kind CadAssemblyImportedV1ConstraintsElemKind `json:"kind"`
+
+	// Лимит ремонтов зоны (для rework_limit); отсутствует — лимит не задан ни файлом,
+	// ни ТП.
+	Limit *int `json:"limit,omitempty,omitzero"`
+
+	// Откуда лимит: файл сборки или шаг ТП в нормативном слое (step_key).
+	LimitSource *string `json:"limit_source,omitempty,omitzero"`
+
+	// Связь сборки.
+	LinkID string `json:"link_id"`
+
+	// Пояснение для людей.
+	Note *string `json:"note,omitempty,omitzero"`
+
+	// Число крепежа (для fastening).
+	Quantity *int `json:"quantity,omitempty,omitzero"`
+
+	// Шаг процесса, на котором ограничение исполняется (по нормативному слою), если
+	// найден.
+	StepKey *StepKey `json:"step_key,omitempty,omitzero"`
+
+	// Что устанавливается после (для install_order).
+	ThenItemTypeID *ObjectID `json:"then_item_type_id,omitempty,omitzero"`
+
+	// Допуск, %.
+	TolerancePct *int `json:"tolerance_pct,omitempty,omitzero"`
+
+	// Единица значения (Н·м).
+	Unit *string `json:"unit,omitempty,omitzero"`
+
+	// Значение (для torque — момент, целое в единицах unit).
+	Value *int `json:"value,omitempty,omitzero"`
+
+	// Зона, к которой относится ограничение.
+	ZoneID *ObjectID `json:"zone_id,omitempty,omitzero"`
+}
+
+// Расхождение.
+type CadDiscrepancy struct {
+	// Обозначение КД.
+	Designation string `json:"designation"`
+
+	// Наш тип изделия позиции.
+	ItemTypeID ObjectID `json:"item_type_id"`
+
+	// Пояснение.
+	Note *string `json:"note,omitempty,omitzero"`
+
+	// Нет в номенклатуре / сверка не выполнялась (номенклатура ещё не получена).
+	Reason CadAssemblyImportedV1DiscrepanciesElemReason `json:"reason"`
+
+	// Учётная система.
+	System CadAssemblyImportedV1DiscrepanciesElemSystem `json:"system"`
 }
 
 // Связь сборки.
@@ -642,6 +852,34 @@ type CadLink struct {
 
 	// Идентификатор связи (W-1, J-1, S-1).
 	LinkID string `json:"link_id"`
+
+	// Вид связи в файле, если он шире перечисления kind (например, threaded_joint →
+	// other).
+	LinkType *string `json:"link_type,omitempty,omitzero"`
+
+	// Примечание из файла.
+	Note *string `json:"note,omitempty,omitzero"`
+
+	// Зона изделия, которую даёт связь.
+	ZoneID *ObjectID `json:"zone_id,omitempty,omitzero"`
+}
+
+// Зона изделия.
+type CadZone struct {
+	// Тип изделия, на котором лежит зона.
+	ItemTypeID *ObjectID `json:"item_type_id,omitempty,omitzero"`
+
+	// Вид зоны (как в справочнике типов изделий).
+	Kind CadAssemblyImportedV1ZonesElemKind `json:"kind"`
+
+	// Связь сборки, из которой получена зона.
+	LinkID string `json:"link_id"`
+
+	// Название зоны.
+	Name string `json:"name"`
+
+	// Зона (совпадает с идентификатором связи: W-1, J-1, S-1).
+	ZoneID ObjectID `json:"zone_id"`
 }
 
 type CarrierType string
@@ -653,6 +891,10 @@ const CarrierTypeManualEntry CarrierType = "manual_entry"
 const CarrierTypePostContext CarrierType = "post_context"
 const CarrierTypeRouteCard CarrierType = "route_card"
 const CarrierTypeTagQr CarrierType = "tag_qr"
+
+// Класс подписанного пакета (contracts/crypto/payload-classes.yaml): как code, но
+// допускает дефис — `event`, `document-signature`, `key-act` (Д-66).
+type Class string
 
 // Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
 type Code string
@@ -2592,6 +2834,17 @@ const GenealogyWitnessPropagatedV1GroupKindCharge GenealogyWitnessPropagatedV1Gr
 const GenealogyWitnessPropagatedV1GroupKindOther GenealogyWitnessPropagatedV1GroupKind = "other"
 const GenealogyWitnessPropagatedV1GroupKindTransport GenealogyWitnessPropagatedV1GroupKind = "transport"
 
+type GenesisAnchorKey struct {
+	// KeyRef corresponds to the JSON schema field "key_ref".
+	KeyRef KeyRef `json:"key_ref"`
+
+	// Профиль ключа.
+	ProfileID JournalGenesisRecordedV1AnchorKeysElemProfileID `json:"profile_id"`
+
+	// Открытый ключ в base64 (кодирование — contracts/crypto/README.md).
+	PublicKeyB64 string `json:"public_key_b64"`
+}
+
 // Гипотеза причины — только предположение (третий статус кейса §2.3).
 type Hypothesis struct {
 	// Категория причины.
@@ -3695,6 +3948,16 @@ type JournalGenesisRecordedV1 struct {
 	// Отпечаток ключа-якоря.
 	AnchorFingerprint Digest `json:"anchor_fingerprint"`
 
+	// Открытые ключи якоря (`hybrid`: ГОСТ и ML-DSA-65) — ими проверяются подписи
+	// всех записей блока; их общий отпечаток — `anchor_fingerprint`, закреплённый в
+	// `trust-anchors` вне системы (AD-33). Закрытый ключ-якорь уничтожен
+	// (`journal.anchor.destroyed`).
+	AnchorKeys []GenesisAnchorKey `json:"anchor_keys,omitempty,omitzero"`
+
+	// Отпечаток остальной части блока: H(H(payload₂) ‖ … ‖ H(payloadₖ)) по порядку
+	// seq — подмена, удаление или перестановка записи блока меняет его (AD-33).
+	BlockDigest *Digest `json:"block_digest,omitempty,omitzero"`
+
 	// Число записей блока генезиса.
 	BlockSize int `json:"block_size"`
 
@@ -3707,6 +3970,11 @@ type JournalGenesisRecordedV1 struct {
 	// Хеш стартовой версии процесса.
 	NormativeVersionHash *Digest `json:"normative_version_hash,omitempty,omitzero"`
 }
+
+type JournalGenesisRecordedV1AnchorKeysElemProfileID string
+
+const JournalGenesisRecordedV1AnchorKeysElemProfileIDGost JournalGenesisRecordedV1AnchorKeysElemProfileID = "gost"
+const JournalGenesisRecordedV1AnchorKeysElemProfileIDPq JournalGenesisRecordedV1AnchorKeysElemProfileID = "pq"
 
 // Акт восстановления — журнал из копии старше контрольной точки принимается только
 // при подписанном акте (администратор безопасности + Аудитор ИБ) с диапазоном
@@ -3745,7 +4013,7 @@ type KeyProfileRegisteredV1 struct {
 	EffectiveFromSeq *Seq `json:"effective_from_seq,omitempty,omitzero"`
 
 	// Классы пакетов, для которых профиль обязателен.
-	ObjectClasses []Code `json:"object_classes"`
+	ObjectClasses []Class `json:"object_classes"`
 
 	// Профиль.
 	ProfileID KeyProfileRegisteredV1ProfileID `json:"profile_id"`
@@ -3778,7 +4046,7 @@ type KeyRegistrationRecordedV1 struct {
 	KeyRef KeyRef `json:"key_ref"`
 
 	// Допустимые классы пакетов для ключа.
-	PayloadClasses []Code `json:"payload_classes"`
+	PayloadClasses []Class `json:"payload_classes"`
 
 	// Профиль ключа.
 	ProfileID KeyRegistrationRecordedV1ProfileID `json:"profile_id"`
@@ -4818,6 +5086,10 @@ type PolicyAuthorityGrantedV1 struct {
 	// Кто делегировал, если это делегирование.
 	DelegatedBy *PersonRef `json:"delegated_by,omitempty,omitzero"`
 
+	// Документ «Выдача ролей, полномочий, клейм» с закрытым маршрутом подписей
+	// (AD-13, AD-43); отсутствует — обычная выдача одной подписью.
+	DocumentID *ObjectID `json:"document_id,omitempty,omitzero"`
+
 	// Рамки полномочия.
 	Limits *AuthorityLimits `json:"limits,omitempty,omitzero"`
 
@@ -4830,6 +5102,10 @@ type PolicyAuthorityGrantedV1 struct {
 	// Область действия: путь `здание/цех/участок/рабочее место` (иерархия областей,
 	// AD-15).
 	Scope string `json:"scope"`
+
+	// Вторая подпись независимой стороны (AD-11, PRD §11.16): начальник ОТК,
+	// руководитель производства или Аудитор ИБ; не инициатор и не получатель.
+	SecondSignatureBy *PersonRef `json:"second_signature_by,omitempty,omitzero"`
 
 	// Начало действия (доменное время).
 	ValidFrom Timestamp `json:"valid_from"`
@@ -4861,6 +5137,10 @@ type PolicyAuthorityRevokedV1 struct {
 // («исполнитель — пост сварки 2»); привилегированные выдачи — со второй подписью
 // независимой стороны (AD-11, PRD §11.16).
 type PolicyRoleAssignedV1 struct {
+	// Документ «Выдача ролей, полномочий, клейм» с закрытым маршрутом подписей
+	// (AD-13, AD-43); отсутствует — обычная выдача одной подписью.
+	DocumentID *ObjectID `json:"document_id,omitempty,omitzero"`
+
 	// Сотрудник.
 	PersonID PersonRef `json:"person_id"`
 
@@ -4870,6 +5150,10 @@ type PolicyRoleAssignedV1 struct {
 	// Область действия: путь `здание/цех/участок/рабочее место` (иерархия областей,
 	// AD-15).
 	Scope string `json:"scope"`
+
+	// Вторая подпись независимой стороны (AD-11, PRD §11.16): начальник ОТК,
+	// руководитель производства или Аудитор ИБ; не инициатор и не получатель.
+	SecondSignatureBy *PersonRef `json:"second_signature_by,omitempty,omitzero"`
 
 	// Начало действия (доменное время).
 	ValidFrom Timestamp `json:"valid_from"`
@@ -4933,6 +5217,10 @@ type PolicySodRuleSetV1 struct {
 // Цифровое клеймо выдано — цифровое клеймо контролёра: по приказу, одно на вид
 // контроля, с областью и сроком (FR-145); выдачу согласует начальник ОТК (AD-11).
 type PolicyStampIssuedV1 struct {
+	// Документ «Выдача ролей, полномочий, клейм» с закрытым маршрутом подписей
+	// (AD-13, AD-43); отсутствует — обычная выдача одной подписью.
+	DocumentID *ObjectID `json:"document_id,omitempty,omitzero"`
+
 	// Вид контроля.
 	InspectionKind Code `json:"inspection_kind"`
 
@@ -4945,6 +5233,10 @@ type PolicyStampIssuedV1 struct {
 	// Область действия: путь `здание/цех/участок/рабочее место` (иерархия областей,
 	// AD-15).
 	Scope string `json:"scope"`
+
+	// Вторая подпись независимой стороны (AD-11, PRD §11.16): начальник ОТК,
+	// руководитель производства или Аудитор ИБ; не инициатор и не получатель.
+	SecondSignatureBy *PersonRef `json:"second_signature_by,omitempty,omitzero"`
 
 	// Клеймо (номер).
 	StampID ObjectID `json:"stamp_id"`

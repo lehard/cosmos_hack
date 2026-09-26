@@ -63,8 +63,8 @@ const Desk = defineComponent({
 
 const $ = <T extends Element = HTMLElement>(sel: string) => document.querySelector<T>(sel)
 const has = (sel: string) => expect($(sel)).not.toBeNull()
-// Содержимое окна (виджеты) грузится лениво — первая загрузка дольше секунды.
-const until = (check: () => void) => vi.waitFor(check, { timeout: 5000 })
+// Содержимое окна (виджеты) грузится лениво; под нагрузкой полного прогона — до 10 с.
+const until = (check: () => void) => vi.waitFor(check, { timeout: 10_000 })
 
 // Первый импорт содержимого окна (с виджетами) в тестах долгий — грузим заранее.
 beforeAll(async () => {

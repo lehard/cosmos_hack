@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	appjournal "ant/internal/application/journal"
 	"ant/internal/application/platform"
 	"ant/internal/contracts/errcodes"
 )
@@ -39,6 +40,13 @@ type Gate struct {
 	Events SecurityEvents
 	// OnEventError — ошибка записи события безопасности (отказ остаётся отказом).
 	OnEventError func(error)
+	// Policy — действующая политика (эпик 26): потоки политики субъекта для
+	// проверки policy_seq команды (AD-39), редкие подписанты (FR-136),
+	// объяснение прав своим кодом. nil — только решение вычислителя.
+	Policy PolicySource
+	// Cards — карточки решения редких подписантов: объект виден, только если
+	// он из адресованной сотруднику карточки (FR-136); nil — не сужает.
+	Cards Cards
 }
 
 // NewGate — декоратор над портом прав ac; guards может быть nil; actions —
@@ -93,7 +101,7 @@ func (g *Gate) Authorize(ctx context.Context, p platform.Principal, act platform
 		return platform.Fail(errcodes.AccessUnauthenticated)
 	}
 	rq := Request{Principal: p, Action: act, Object: obj, Scope: g.Place(p, obj, meta), At: g.now()}
-	d, err := g.ac.Enforce(ctx, rq)
+	d, err := g.decide(ctx, rq)
 	if err != nil {
 		return err
 	}
@@ -108,6 +116,67 @@ func (g *Gate) Authorize(ctx context.Context, p platform.Principal, act platform
 		}
 	}
 	return nil
+}
+
+// Admit — Authorize и контекст команды с проверками политики субъекта
+// (AD-39, AD-15): решение принято по политике версии S (вычислитель); если в
+// потоках политики субъекта (корень и области его назначений, полномочий,
+// клейм) после min(S, policy_seq клиента) появилась запись — journal.Append
+// любой копии api отвергнет запись команды с 409 journal.stale_policy, и
+// запись CA не делается. Так отзыв роли доходит и до копии, чья проекция ещё
+// не перечитала журнал. Политика только из затравки (S = 0) — не проверяется.
+func (g *Gate) Admit(ctx context.Context, p platform.Principal, act platform.Action, obj platform.ObjectRef, meta *platform.CommandMeta) (context.Context, error) {
+	if err := g.Authorize(ctx, p, act, obj, meta); err != nil {
+		return ctx, err
+	}
+	if act.Anonymous || !act.IsCommand() || p.Anonymous() || g.Policy == nil {
+		return ctx, nil
+	}
+	seq, err := g.ac.PolicySeq(ctx)
+	if err != nil {
+		return ctx, err
+	}
+	if seq <= 0 {
+		return ctx, nil
+	}
+	if meta != nil && meta.PolicySeq > 0 && meta.PolicySeq < seq {
+		seq = meta.PolicySeq
+	}
+	pol, err := g.Policy.Policy(ctx)
+	if err != nil {
+		return ctx, err
+	}
+	var checks []appjournal.Check
+	for _, s := range pol.SubjectStreams(p.PersonID, g.now()) {
+		checks = append(checks, appjournal.Check{PolicyStream: s, PolicySeq: seq})
+	}
+	return appjournal.WithPolicyChecks(ctx, checks...), nil
+}
+
+// decide — решение вычислителя (Casbin, по ролям) и сужение для редких
+// подписантов (FR-136): у сотрудника «только карточка» объект операции
+// должен быть из адресованной ему карточки решения.
+func (g *Gate) decide(ctx context.Context, rq Request) (Decision, error) {
+	d, err := g.ac.Enforce(ctx, rq)
+	if err != nil || !d.Allowed || g.Cards == nil || g.Policy == nil || rq.Object.ID == "" || rq.Principal.Anonymous() {
+		return d, err
+	}
+	pol, err := g.Policy.Policy(ctx)
+	if err != nil {
+		return Decision{}, err
+	}
+	if !pol.CardOnly(rq.Principal.PersonID, rq.At) {
+		return d, nil
+	}
+	ok, err := g.Cards.Visible(ctx, rq.Principal.PersonID, rq.Object)
+	if err != nil {
+		return Decision{}, err
+	}
+	if !ok {
+		return Decision{Code: errcodes.AccessForbidden, Reason: "Редкий подписант видит только адресованные ему карточки решения (FR-136): " +
+			rq.Object.Kind + " " + rq.Object.ID + " не из вашей карточки", AllowedActions: []string{}}, nil
+	}
+	return d, nil
 }
 
 // refusal — отказ с кодом: без сеанса — нужен вход; роль разрешает действие,
@@ -207,7 +276,7 @@ func (g *Gate) Permissions(ctx context.Context, p platform.Principal, obj *platf
 			}
 			o = *obj
 		}
-		d, err := g.ac.Enforce(ctx, Request{Principal: p, Action: act, Object: o, Scope: g.Place(p, o, nil), At: at})
+		d, err := g.decide(ctx, Request{Principal: p, Action: act, Object: o, Scope: g.Place(p, o, nil), At: at})
 		if err != nil {
 			return PermissionList{}, err
 		}
@@ -217,40 +286,4 @@ func (g *Gate) Permissions(ctx context.Context, p platform.Principal, obj *platf
 	}
 	slices.SortFunc(out.Items, func(a, b Permission) int { return strings.Compare(a.Action, b.Action) })
 	return out, nil
-}
-
-// Explanation — «почему вы можете / не можете» (FR-136, FR-146): решение по
-// действию над объектом и что можно сделать вместо.
-type Explanation struct {
-	Action         string   `json:"action" doc:"x-ant-action id."`
-	Allowed        bool     `json:"allowed"`
-	Code           string   `json:"code,omitempty" doc:"Код отказа из contracts/errors.yaml."`
-	Reason         string   `json:"reason,omitempty" doc:"Объяснение по-русски: роль, область, полномочие, клеймо, разделение обязанностей."`
-	AllowedActions []string `json:"allowed_actions" doc:"Что можно сделать вместо (например, «Запросить решение»)."`
-}
-
-// Explain — объяснение прав по действию над объектом.
-func (g *Gate) Explain(ctx context.Context, p platform.Principal, actionID string, obj platform.ObjectRef) (Explanation, error) {
-	if g.actions != nil {
-		for _, act := range g.actions() {
-			if act.ID != actionID {
-				continue
-			}
-			rq := Request{Principal: p, Action: act, Object: obj, Scope: g.Place(p, obj, nil), At: g.now()}
-			d, err := g.ac.Enforce(ctx, rq)
-			if err != nil {
-				return Explanation{}, err
-			}
-			ex := Explanation{Action: actionID, Allowed: d.Allowed, Code: string(d.Code), Reason: d.Reason, AllowedActions: d.AllowedActions}
-			if !d.Allowed {
-				e := g.refusal(ctx, rq, d)
-				ex.Code, ex.Reason = string(e.Code), e.Detail
-			}
-			if ex.AllowedActions == nil {
-				ex.AllowedActions = []string{}
-			}
-			return ex, nil
-		}
-	}
-	return Explanation{}, platform.Fail(errcodes.ApiNotFound, "object", "операция", "id", actionID)
 }

@@ -69,7 +69,8 @@ func RegisterStream(a *API, subscribe Subscribe) {
 		},
 	}
 	huma.Register(a.huma, op, func(ctx context.Context, in *streamIn) (*streamOut, error) {
-		if err := a.before(ctx, act, in); err != nil {
+		ctx, err := a.before(ctx, act, in)
+		if err != nil {
 			return nil, err
 		}
 		if subscribe == nil {

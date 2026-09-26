@@ -58,6 +58,8 @@ func TestExtractEvaluate(t *testing.T) {
 	}{
 		{"/versions[scope_version=3]/0/size", "eq", json.Number("6"), true},
 		{"/items[known=suspect]/#", "eq", json.Number("2"), true},
+		{"/items[known!=suspect]/*/item_id", "eq", "B", true},
+		{"/items[known!=suspect,item_id!=B]/#", "eq", json.Number("0"), true},
 		{"/items/*/item_id", "set_eq", []any{"C", "A", "B"}, true},
 		{"/items/*/item_id", "contains", []any{"B"}, true},
 		{"/items/*/item_id", "not_contains", []any{"Z"}, true},

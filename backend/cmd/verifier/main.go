@@ -41,6 +41,7 @@ import (
 	appjournal "ant/internal/application/journal"
 	app "ant/internal/application/security"
 	"ant/internal/application/security/verify"
+	appsigning "ant/internal/application/signing"
 	jc "ant/internal/contracts/journal"
 	domdocs "ant/internal/domain/documents"
 	dj "ant/internal/domain/journal"
@@ -49,6 +50,7 @@ import (
 	"ant/internal/infrastructure/security/atrest"
 	"ant/internal/infrastructure/security/hybrid"
 	"ant/internal/infrastructure/security/mtls"
+	"ant/internal/infrastructure/security/profiles"
 	journalstore "ant/internal/infrastructure/storage/journal"
 	"ant/internal/infrastructure/storage/journal/clock"
 )
@@ -270,6 +272,7 @@ func (v *verifier) check(ctx context.Context, stdout io.Writer) (verify.Report, 
 	} else {
 		in.Checkpoints, in.KeeperLinks, in.CheckpointsErr = v.fromKeeper(ctx)
 	}
+	in.Genesis = v.genesis(ctx)
 	r, err := verify.Run(ctx, in)
 	if err != nil {
 		return r, err
@@ -305,6 +308,21 @@ func (v *verifier) check(ctx context.Context, stdout io.Writer) (verify.Report, 
 	}
 	v.log.Info("проверка", "verdict", r.Verdict, "main_to_seq", r.Range.MainToSeq, "report_digest", digest, "took", time.Since(started).String())
 	return r, nil
+}
+
+// genesis — блок генезиса целиком по якорю (AD-33, эпик 05): подписи якоря
+// и кворума каждой записи, отпечаток блока, якорь — anchor_fingerprint из
+// trust-anchors своего тома (вне БД и вне ant), отпечаток генезиса — как
+// закреплён там же. Генезиса нет и якорь не закреплён — nil («не проверяемо»).
+func (v *verifier) genesis(ctx context.Context) *verify.GenesisResult {
+	if st, err := appsigning.FindGenesis(ctx, v.store); err == nil && !st.Present && v.anchors.AnchorFingerprint == "" {
+		return nil
+	}
+	rep, err := appsigning.VerifyGenesis(ctx, v.store, profiles.Verifier{}, v.anchors.AnchorFingerprint)
+	if err == nil && v.anchors.GenesisDigest != "" && rep.Digest != v.anchors.GenesisDigest {
+		err = fmt.Errorf("trust-anchors закрепляет генезис %s, в журнале — %s", v.anchors.GenesisDigest, rep.Digest)
+	}
+	return &verify.GenesisResult{Records: len(rep.Entries), Digest: rep.Digest, Err: err}
 }
 
 // fromKeeper — контрольные точки (подпись hybrid проверяется по

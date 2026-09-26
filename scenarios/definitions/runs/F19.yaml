@@ -21,22 +21,24 @@ orders:
 lots:
 - {id: LOT-ZF-201, component: FL-100.01.001, supplier: SUP-1, quantity: 42, arrived: '2026-09-21T07:05:00+03:00', accepted: '2026-09-21T07:50:00+03:00'}
 - {id: LOT-R-116, component: FL-100.01.002, supplier: SUP-2, quantity: 33, arrived: '2026-09-21T07:10:00+03:00', accepted: '2026-09-21T07:55:00+03:00'}
+# Изделия садки ждут операции на шаге machining.cnc (после выдачи заготовки):
+# групповая операция начинается на шаге, где стоит каждое изделие (FR-44).
 items:
 - id: F-501
   order: ORD-0917
   launch: '2026-09-21T08:00:00+03:00'
   machining: '2026-09-21T08:30:00+03:00'
   weld: {at: '2026-09-21T12:00:00+03:00', station: WS-1, welder: WLD-02}
-  until: kt3
+  until: launch
 - id: F-502
   order: ORD-0917
   launch: '2026-09-21T08:55:00+03:00'
   machining: '2026-09-21T09:25:00+03:00'
   weld: {at: '2026-09-21T13:00:00+03:00', station: WS-1, welder: WLD-02}
-  until: kt3
+  until: launch
 - id: F-503
   order: ORD-0917
   launch: '2026-09-21T09:50:00+03:00'
   machining: '2026-09-21T10:20:00+03:00'
   weld: {at: '2026-09-21T14:00:00+03:00', station: WS-1, welder: WLD-02}
-  until: kt3
+  until: launch

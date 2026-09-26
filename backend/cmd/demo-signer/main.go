@@ -12,9 +12,9 @@
 //
 // Подкоманды:
 //
-//	demo-signer init   — ключи демо-персон (ГОСТ и ML-DSA-65) в -keys (0600) и
-//	                     открытые ключи в файл затравки реестра -bootstrap
-//	                     (до генезиса эпика 05; закрытых ключей там нет);
+//	demo-signer init   — проверка, что ключи демо-персон есть в -keys: их
+//	                     создаёт (0400) и регистрирует блоком генезиса
+//	                     ant init (эпик 05, AD-33);
 //	demo-signer serve  — API шагов: POST /v1/steps, GET /v1/personas, GET /healthz;
 //	demo-signer step   — один шаг из командной строки (отладка, make-цели).
 package main
@@ -54,7 +54,6 @@ func run(args []string, stdout, stderr io.Writer) int {
 	fs.SetOutput(stderr)
 	profile := fs.String("profile", env("ANT_PROFILE", "demo"), "профиль окружения: fixtures | demo | load (prod — отказ, AD-26)")
 	keys := fs.String("keys", env("DEMO_SIGNER_KEYS", "/var/lib/demo-signer/keys"), "том ключей демо-персон (0600)")
-	boot := fs.String("bootstrap", env("DEMO_SIGNER_BOOTSTRAP", "/var/lib/ant-keys/bootstrap.json"), "файл открытых ключей затравки реестра ant")
 	policy := fs.String("policy", env("DEMO_SIGNER_POLICY", "/normative/policy/policy.v1.yaml"), "стартовая политика: перечень персон")
 	scen := fs.String("scenarios", env("DEMO_SIGNER_SCENARIOS", "/scenarios"), "каталог scenarios (только чтение)")
 	ant := fs.String("ant", env("DEMO_SIGNER_ANT", "http://ant:8080"), "адрес ant")
@@ -75,16 +74,11 @@ func run(args []string, stdout, stderr io.Writer) int {
 			log.Error("персоны", "err", err)
 			return 1
 		}
-		set, err := EnsureKeys(*keys, ps)
-		if err != nil {
+		if _, err := LoadKeys(*keys, ps); err != nil {
 			log.Error("ключи", "err", err)
 			return 1
 		}
-		if err := WriteBootstrap(*boot, set); err != nil {
-			log.Error("затравка реестра", "err", err)
-			return 1
-		}
-		_, _ = fmt.Fprintf(stdout, "demo-signer: ключи %d персон в %s; открытые ключи — %s\n", len(ps), *keys, *boot)
+		_, _ = fmt.Fprintf(stdout, "demo-signer: ключи %d персон в %s зарегистрированы генезисом (ant init)\n", len(ps), *keys)
 		return 0
 	case "serve", "step":
 	default:
@@ -96,7 +90,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 		log.Error("персоны", "err", err)
 		return 1
 	}
-	set, err := EnsureKeys(*keys, ps)
+	set, err := LoadKeys(*keys, ps)
 	if err != nil {
 		log.Error("ключи", "err", err)
 		return 1

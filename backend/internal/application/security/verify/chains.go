@@ -499,11 +499,13 @@ func (v *run) pending() {
 	for n, why := range map[procs.VerifierReportV1ChecksElemCheck]string{
 		"genesis":        "блока генезиса в журнале нет — эпик 05 (ant init); доверие ключам хранителя и верификатора — из trust-anchors",
 		"signing_moment": "момент подписи (seen_checkpoint) — вместе с реестром ключей, эпик 27",
-		"authority":      "права, клеймо и сеанс подписанта на момент — политика из журнала, эпики 08, 26",
 		"bpmn_quorum":    "кворум подписей версии процесса — записи подписей версии, эпики 17, 27",
 		"rendering":      "повторная отрисовка документов (rendering_hash) и QR бумажных подписей — эпик 28",
 		"build":          "перечень допустимых сборок домена в нормативном слое ещё не ведётся (domain_build = H(версия бинарника))",
 	} {
+		if n == "genesis" && v.in.Genesis != nil {
+			continue // блок проверен по якорю (genesis)
+		}
 		v.checks[n].unverifiable(string(n)+".pending", why)
 	}
 }

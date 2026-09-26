@@ -196,9 +196,11 @@ func (g *gen) times(p *ItemPlan) map[string]time.Time {
 		case "assembly_started":
 			t = prev.Add(40 * time.Minute)
 		case "assembly":
-			t = prev.Add(min(r.AssemblyMin))
+			// сканы компонентов — сразу после начала выполнения AS (assembly_started + 10 мин)
+			t = prev.Add(12 * time.Minute)
 		case "zt4_presented":
-			t = prev.Add(5 * time.Minute)
+			// сборка по шагам процесса (assemblyEvents) занимает 45 мин: предъявление — после КТ-4
+			t = prev.Add(min(max(r.AssemblyMin, 50)))
 		case "zt4":
 			t = prev.Add(15 * time.Minute)
 		case "leak_test":
@@ -440,8 +442,8 @@ func (g *gen) item(p *ItemPlan) {
 				map[string]any{"presentation_no": 1, "presented_to": "qc", "step_key": "assembly.zt4_acceptance"})
 		case "zt4":
 			decide(s, t, "nonconformity.presentation.resolve", "quality_inspector", r.QCAssembly, itemParam, map[string]any{
-				"closing_point": "ZT-4", "step_key": "assembly.zt4_acceptance", "presentation_no": 1, "resolution": "accept",
-				"method_event_ids": methodEvents(p, "kt4d", "torque", "kt4")})
+				"closing_point": "ZT-4.2", "step_key": "assembly.zt4_acceptance", "presentation_no": 1, "resolution": "accept",
+				"method_event_ids": methodEvents(p, "kt4d", "torque", "tools", "kt4")})
 		case "leak_test":
 			decide(s+"/start", t, "process.operation.start", "performer", r.Tester, itemParam, map[string]any{
 				"operation_code": "LT", "operation_run_id": run("LT"), "step_key": "testing.leak_test", "equipment_id": g.ids.Equipment("LT-1"),
@@ -471,6 +473,13 @@ func (g *gen) item(p *ItemPlan) {
 				"closing_point": "ZT-6", "step_key": "final.zt6_acceptance", "presentation_no": 1, "resolution": "accept",
 				"method_event_ids": methodEvents(p, "kt5")})
 		case "release":
+			// Сдача на склад готовой продукции — шаг-перемещение процесса
+			// (final.release_to_warehouse, stepKind movement): приём на склад
+			// завершает его, и процесс отправляет в 1С «выпуск годного» (E5);
+			// запись выпуска изделия — следом.
+			decide(s+"/receive", t, "process.movement.receive", "storekeeper", r.Storekeeper, itemParam, map[string]any{
+				"destination_kind": "warehouse", "from_location_id": "ST-FINAL", "to_location_id": "WH-FG", "inspection_on_receipt": "no_damage",
+				"step_key": "final.release_to_warehouse"})
 			decide(s, t, "item.release.record", "storekeeper", r.Storekeeper, itemParam,
 				map[string]any{"after_rework": false, "warehouse_id": "WH-FG"})
 		}
@@ -598,8 +607,20 @@ func (g *gen) cycleData(w WeldTruth, m time.Time, runID string, rnd *Rand) map[s
 		"parameters": []any{param, map[string]any{"parameter": "voltage", "mean": measurement(int64(rnd.Between(215, 232)), 1, "V")}}}
 }
 
-// assemblyEvents — сборка: сканы компонентов, уплотнение, камера зоны, затяжка,
-// установка оборудования (клапан КВД, кейс §1.1), камера сборки.
+// assemblyEvents — сборка по нормативному слою (flange-process.bpmn, эпик
+// «сведение табло»): операции и точки строго в порядке узлов процесса, у
+// каждой операции (stepKind operation) — своё выполнение с началом и концом:
+//
+//	040 assembly.seal_install      — выполнение AS (сканы компонентов до установки)
+//	    assembly.kt4d_zone_camera  — камера зоны (УФ), результат завершает шаг
+//	    assembly.zt4_zone_presentation — ЗТ-4 ч.1 (ZT-4.1): без подписи крышка блокируется
+//	050 assembly.cover_install     — выполнение CV
+//	060 assembly.fasteners_install — выполнение FS: крепёж J-1 и клапан КВД (установка
+//	                                 оборудования, кейс §1.1 — своего узла в процессе нет)
+//	070 assembly.torque            — выполнение TQ ключом TW-1: затяжка J-1 (12 болтов)
+//	                                 и J-2 клапана — результаты контроля внутри операции
+//	    assembly.tool_accounting   — учёт инструмента (FOD): результат человека
+//	    assembly.kt4_camera        — камера сборки; дальше ЗТ-4 ч.2 (этап zt4)
 func (g *gen) assemblyEvents(p *ItemPlan, t time.Time, run func(string) string, itemParam map[string]any, rnd *Rand,
 	camera func(recipe, analyzer string, conf, quality int) map[string]any, lots map[string]string) {
 	r := g.b.World.Route
@@ -611,71 +632,93 @@ func (g *gen) assemblyEvents(p *ItemPlan, t time.Time, run func(string) string, 
 	if valve == "" {
 		valve = "V-" + n
 	}
+	min := func(k int) time.Time { return t.Add(time.Duration(k) * time.Minute) }
 	decide := func(label string, at time.Time, op, actor string, params, body map[string]any) {
 		g.act(Action{Kind: ActionDecision, At: at, Scenario: "route", Label: p.ID + "/assembly/" + label, Operation: op,
 			Role: "performer", Actor: g.ids.Person(actor), Params: params, Body: body, Item: p.ID})
 	}
+	skipped := func(label string) bool { return slices.Contains(p.Skip, "assembly."+label) }
 	fact := func(label string, at time.Time, source, typ string, data map[string]any) {
-		if slices.Contains(p.Skip, "assembly."+label) {
+		if skipped(label) {
 			return
 		}
 		g.add(&draft{at: at, source: source, typ: typ, item: p.ID, data: data, label: p.ID + "/" + label, scenario: "route", background: true})
+	}
+	// operation — выполнение операции шага (начало и конец решениями исполнителя).
+	operation := func(label, code, step string, from, to int, extra map[string]any) {
+		body := map[string]any{"operation_code": code, "operation_run_id": run(code), "step_key": step, "station_id": "ST-ASM"}
+		for _, k := range sortedKeys(extra) {
+			body[k] = extra[k]
+		}
+		decide(label+"-start", min(from), "process.operation.start", r.Assembler, itemParam, body)
+		decide(label+"-finish", min(to), "process.operation.finish", r.Assembler, map[string]any{"run_id": run(code)},
+			map[string]any{"completion": "completed"})
 	}
 	scan := func(k int, lot, typ, pos string, qty int) {
 		decide("scan-"+pos, t.Add(time.Duration(k)*time.Minute), "item.assembly.record", r.Assembler, itemParam, map[string]any{
 			"binding_method": "container_cell", "component_lot_id": "{local:" + lot + "}", "component_type_id": typ, "position": pos, "quantity": qty})
 	}
+	torque := func(characteristic string, value int) map[string]any {
+		return map[string]any{"characteristic": characteristic, "value": measurement(int64(value), 1, "N.m"), "tolerance": map[string]any{
+			"nominal": measurement(120, 1, "N.m"), "lower": measurement(108, 1, "N.m"), "upper": measurement(132, 1, "N.m")}, "verdict": "within"}
+	}
+	// 040 — установка уплотнения (выполнение AS начато на этапе assembly_started).
 	scan(0, lots["cover"], "FL-100.00.003", cover, 1)
 	scan(1, lots["seal"], "FL-100.00.004", "S-1", 1)
 	scan(2, lots["fastener"], "FL-100.00.005", "J-1", 12)
 	scan(3, lots["valve"], "KVD-6", valve, 1)
-	decide("seal", t.Add(8*time.Minute), "access.operator.confirm_step", r.Assembler, map[string]any{"workplace_id": "WP-ASM-1"},
+	decide("seal", min(8), "access.operator.confirm_step", r.Assembler, map[string]any{"workplace_id": "WP-ASM-1"},
 		map[string]any{"step_key": "assembly.seal_install", "item_id": "{item:" + p.ID + "}", "tp_step": "Установка уплотнения"})
-	fact("kt4d", t.Add(12*time.Minute), "cam-kt4d", "inspection.result.recorded", withCamera(map[string]any{
+	decide("seal-finish", min(10), "process.operation.finish", r.Assembler, map[string]any{"run_id": run("AS")},
+		map[string]any{"completion": "completed"})
+	fact("kt4d", min(12), "cam-kt4d", "inspection.result.recorded", withCamera(map[string]any{
 		"observation_id": "{local:KT4D-" + p.ID + "}", "method": "camera", "phase": "before_zone_closure", "step_key": "assembly.kt4d_zone_camera",
 		"inspection_point": "KT-4d", "operation_run_id": run("AS"), "zone_ids": []any{"S-1", "CAV"}, "outcome": "no_defect_indicated",
 		"processing_state": "completed"}, camera("kt4d-uv@1", "vqc-uv 1.0.3", rnd.Between(9200, 9700), rnd.Between(8800, 9400))))
-	// ЗТ-4 ч.1 — предъявление зоны ОТК до установки крышки (нормативный слой:
-	// assembly.zt4_zone_presentation, closingPoint ZT-4.1; эпик 16): без
-	// подписи установка крышки и крепежа блокируется.
-	if !slices.Contains(p.Skip, "assembly.kt4d") {
-		decide("zt4_1_presented", t.Add(13*time.Minute), "item.presentation.record", r.MasterAC, itemParam,
+	// ЗТ-4 ч.1 — предъявление зоны ОТК до установки крышки (closingPoint
+	// ZT-4.1): без подписи установка крышки и крепежа блокируется.
+	if !skipped("kt4d") {
+		decide("zt4_1_presented", min(13), "item.presentation.record", r.MasterAC, itemParam,
 			map[string]any{"presentation_no": 1, "presented_to": "qc", "step_key": "assembly.zt4_zone_presentation"})
-		decide("zt4_1", t.Add(15*time.Minute), "nonconformity.presentation.resolve", r.QCAssembly, itemParam, map[string]any{
+		decide("zt4_1", min(15), "nonconformity.presentation.resolve", r.QCAssembly, itemParam, map[string]any{
 			"closing_point": "ZT-4.1", "step_key": "assembly.zt4_zone_presentation", "presentation_no": 1, "resolution": "accept",
 			"method_event_ids": methodEvents(p, "kt4d")})
 	}
+	// 050, 060 — крышка; крепёж и клапан КВД (установка оборудования, кейс §1.1).
+	operation("cover", "CV", "assembly.cover_install", 16, 20, nil)
+	operation("fasteners", "FS", "assembly.fasteners_install", 21, 28, nil)
+	// 070 — затяжка по схеме ключом TW-1 (предусловие: поверка ключа).
+	operation("torque", "TQ", "assembly.torque", 29, 38, map[string]any{"equipment_id": g.ids.Equipment("TW-1")})
 	var torques []any
 	for b := 1; b <= 12; b++ {
-		torques = append(torques, map[string]any{"characteristic": fmt.Sprintf("Момент затяжки болта %d, Н·м", b),
-			"value": measurement(int64(rnd.Between(118, 124)), 1, "N.m"), "tolerance": map[string]any{
-				"nominal": measurement(120, 1, "N.m"), "lower": measurement(108, 1, "N.m"), "upper": measurement(132, 1, "N.m")}, "verdict": "within"})
+		torques = append(torques, torque(fmt.Sprintf("Момент затяжки болта %d, Н·м", b), rnd.Between(118, 124)))
 	}
-	fact("torque", t.Add(30*time.Minute), "tw-1", "inspection.result.recorded", map[string]any{
+	fact("torque", min(34), "tw-1", "inspection.result.recorded", map[string]any{
 		"observation_id": "{local:TW-" + p.ID + "}", "method": "torque", "phase": "assembly", "step_key": "assembly.torque",
-		"operation_run_id": run("AS"), "zone_ids": []any{"J-1"}, "outcome": "no_defect_indicated", "processing_state": "completed",
+		"operation_run_id": run("TQ"), "zone_ids": []any{"J-1"}, "outcome": "no_defect_indicated", "processing_state": "completed",
 		"equipment_id": g.ids.Equipment("TW-1"), "measurements": torques})
-	eq := "{local:EQ-" + n + "-1}"
-	decide("eq-start", t.Add(32*time.Minute), "process.operation.start", r.Assembler, itemParam, map[string]any{
-		"operation_code": "EQ", "operation_run_id": eq, "step_key": "assembly.fasteners_install", "station_id": "ST-ASM"})
-	fact("eq-torque", t.Add(35*time.Minute), "tw-1", "inspection.result.recorded", map[string]any{
-		"observation_id": "{local:TW-J2-" + p.ID + "}", "method": "torque", "phase": "assembly", "step_key": "assembly.fasteners_install",
-		"operation_run_id": eq, "outcome": "no_defect_indicated", "processing_state": "completed", "equipment_id": g.ids.Equipment("TW-1"),
-		"measurements": []any{map[string]any{"characteristic": "Момент затяжки J-2 (клапан КВД), Н·м", "value": measurement(int64(rnd.Between(118, 124)), 1, "N.m"),
-			"tolerance": map[string]any{"nominal": measurement(120, 1, "N.m"), "lower": measurement(108, 1, "N.m"), "upper": measurement(132, 1, "N.m")}, "verdict": "within"}}})
-	decide("eq-finish", t.Add(37*time.Minute), "process.operation.finish", r.Assembler, map[string]any{"run_id": eq},
-		map[string]any{"completion": "completed"})
-	fact("kt4", t.Add(45*time.Minute), "cam-kt4", "inspection.result.recorded", withCamera(map[string]any{
+	fact("eq-torque", min(36), "tw-1", "inspection.result.recorded", map[string]any{
+		"observation_id": "{local:TW-J2-" + p.ID + "}", "method": "torque", "phase": "assembly", "step_key": "assembly.torque",
+		"operation_run_id": run("TQ"), "zone_ids": []any{g.ids.Zone("VALVE")}, "outcome": "no_defect_indicated", "processing_state": "completed",
+		"equipment_id": g.ids.Equipment("TW-1"),
+		"measurements": []any{torque("Момент затяжки J-2 (клапан КВД), Н·м", rnd.Between(118, 124))}})
+	// Учёт инструмента (FOD, human_inspection): контролёр сборки считает
+	// инструмент, заходивший в полость; без результата шаг не закрывается.
+	fact("tools", min(40), "term-asm", "inspection.result.recorded", map[string]any{
+		"observation_id": "{local:TOOLS-" + p.ID + "}", "method": "visual_human", "phase": "before_zone_closure", "step_key": "assembly.tool_accounting",
+		"zone_ids": []any{"CAV"}, "outcome": "no_defect_indicated", "processing_state": "completed", "inspector_id": g.ids.Person(r.QCAssembly),
+		"measurements": []any{
+			map[string]any{"characteristic": "Инструмент, зашедший в полость, шт.", "value": measurement(2, 0, "1"), "tolerance": map[string]any{}, "verdict": "within"},
+			map[string]any{"characteristic": "Инструмент, вышедший из полости, шт.", "value": measurement(2, 0, "1"), "tolerance": map[string]any{}, "verdict": "within"}}})
+	fact("kt4", min(45), "cam-kt4", "inspection.result.recorded", withCamera(map[string]any{
 		"observation_id": "{local:KT4-" + p.ID + "}", "method": "camera", "phase": "assembly", "step_key": "assembly.kt4_camera",
-		"inspection_point": "KT-4", "operation_run_id": run("AS"), "zone_ids": []any{"J-1"}, "outcome": "no_defect_indicated",
+		"inspection_point": "KT-4", "operation_run_id": run("TQ"), "zone_ids": []any{"J-1"}, "outcome": "no_defect_indicated",
 		"processing_state": "completed"}, camera("kt4-assembly@1", "vqc-asm 3.0.2", rnd.Between(9200, 9700), rnd.Between(8500, 9300))))
-	decide("finish", t.Add(55*time.Minute), "process.operation.finish", r.Assembler, map[string]any{"run_id": run("AS")},
-		map[string]any{"completion": "completed"})
 }
 
 // AssemblySteps — события внутри этапа сборки, которые карточка может взять на
 // себя (ItemPlan.Skip: «assembly.kt4»).
-var AssemblySteps = []string{"kt4d", "torque", "eq-torque", "kt4"}
+var AssemblySteps = []string{"kt4d", "torque", "eq-torque", "tools", "kt4"}
 
 func withCamera(d, cam map[string]any) map[string]any {
 	for _, k := range sortedKeys(cam) {

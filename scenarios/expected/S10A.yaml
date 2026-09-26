@@ -8,6 +8,31 @@ title: Переделка шва — новое выполнение опера�
 run: MS-1
 source: 'process/scenarios-flange-expected.yaml процессной сессии, версия 0.3-draft: утверждения процессной сессии — в source без изменений, check — исполняемая форма эпика 32'
 checkpoints:
+- at: '2026-09-24T15:29:00+03:00'
+  label: до нового решения по Ф-021
+  assertions:
+  - id: S10A-10
+    what: 'блокировка Ф-021 и новый дефект НС-06 в 1С НЕ уходят: до нового решения по Ф-021 в 1С ничего'
+    check:
+      operation: erp.message.list
+      params:
+        item_id: '{item:F-021}'
+      path: /items/#
+      op: delta
+      value: 0
+    baseline: '2026-09-24T14:35:00+03:00'
+    mapping: exact
+    note: 'сведение: между подтверждением НС-06 (14:35) и новым решением (15:30) число сообщений по Ф-021 не изменилось'
+    source:
+      subject: erp/postings
+      field: count
+      filter:
+        item: F-021
+        between:
+        - '2026-09-24T14:35:00+03:00'
+        - '2026-09-24T15:29:00+03:00'
+      op: eq
+      value: 0
 - at: '2026-09-24T16:30:00+03:00'
   label: конец главной истории
   assertions:
@@ -181,10 +206,13 @@ checkpoints:
     what: в 1С «возврат из брака в производство» ×4 — на повторной ЗТ-3, каждое после своей подписи, подтверждено [П]
     check:
       operation: erp.message.list
-      path: /items
+      params:
+        limit: 500
+      path: /items[action=return_from_defect]/#
       op: eq
-      value: true
-    mapping: draft
+      value: 4
+    mapping: exact
+    note: 'сведение: «возврат из брака в производство» — return_from_defect'
     source:
       subject: erp/postings
       field:
@@ -201,36 +229,17 @@ checkpoints:
         type: rework_return_to_production
       op: eq
       value: true
-  - id: S10A-10
-    what: 'блокировка Ф-021 и новый дефект НС-06 в 1С НЕ уходят: до нового решения по Ф-021 в 1С ничего'
-    check:
-      operation: erp.message.list
-      params:
-        item_id: '{item:F-021}'
-      path: /items/#
-      op: eq
-      value: 0
-    mapping: exact
-    source:
-      subject: erp/postings
-      field: count
-      filter:
-        item: F-021
-        between:
-        - '2026-09-24T14:35:00+03:00'
-        - '2026-09-24T15:29:00+03:00'
-      op: eq
-      value: 0
   - id: S10A-11
     what: в 1С «перевод в брак (списание)» по Ф-021, подтверждено
     check:
       operation: erp.message.list
       params:
         item_id: '{item:F-021}'
-      path: /items/*/status
+      path: /items[action=scrap_transfer_writeoff]/0/status
       op: eq
       value: acknowledged
-    mapping: draft
+    mapping: exact
+    note: 'сведение: «перевод в брак (списание)» — scrap_transfer_writeoff'
     source:
       subject: erp/postings
       field: ack_status
@@ -244,12 +253,14 @@ checkpoints:
     check:
       operation: analytics.metric.drilldown
       params:
-        metric_id: O-8
-      path: /total
+        metric_id: rework_runs
+        period: week
+      path: /total/value
       op: delta
-      value: true
-    mapping: draft
-    baseline: '2026-09-24T07:59:00+03:00'
+      value: 5
+    mapping: exact
+    baseline: '2026-09-24T07:55:00+03:00'
+    note: 'сведение: показатель rework_runs (О-8): пять переварок'
     source:
       subject: metric/O-8
       field:
@@ -258,7 +269,6 @@ checkpoints:
       op: delta
       value: true
       baseline: '2026-09-24T07:59:00+03:00'
-    note: показатель O-8 каталога процессной сессии (analytics-catalog.md); сопоставление — эпик 25
   - id: S10A-13
     what: ЗТ-3 не с первого предъявления у 5 изделий; Р-5 +5
     check:
@@ -305,7 +315,7 @@ checkpoints:
       operation: item.item.list
       path: /items
       op: eq
-      value: L-FL-1
+      value: LINE-FL-1
     mapping: draft
     source:
       subject: item/*
@@ -329,9 +339,9 @@ checkpoints:
         metric_id: O-4
       path: /confirmed_defects_by_line
       op: eq
-      value: &id006
-        L-FL-1: 1
-        L-FL-2: 4
+      value:
+        LINE-FL-1: 1
+        LINE-FL-2: 4
     mapping: draft
     source:
       subject: metric/O-4
@@ -341,7 +351,9 @@ checkpoints:
         station: welding
         window: main_story
       op: eq
-      value: *id006
+      value:
+        L-FL-1: 1
+        L-FL-2: 4
     note: показатель O-4 каталога процессной сессии (analytics-catalog.md); сопоставление — эпик 25
   - id: S10A-17
     what: перед каждой переваркой — выборка (удаление шва, новое выполнение WL-…, С-03 в среду вечером) и контроль выборки ОТК-1 до заварки (узлы WL1 → WL2 → WLG → WL3)
@@ -349,7 +361,7 @@ checkpoints:
       operation: machinelogs.run_profile.read
       path: /preceded_by
       op: eq
-      value: &id007
+      value: &id006
         excavation: WL1
         excavation_check:
           by: QC-01
@@ -367,7 +379,7 @@ checkpoints:
         - SV-015-2
         - SV-021-2
       op: eq
-      value: *id007
+      value: *id006
     note: 'выборка выполнений {"runs": ["SV-017-2", "SV-023-2", "SV-025-2", "SV-015-2", "SV-021-2"]}'
 - at: '2026-09-24T16:30:00+03:00'
   label: чего не должно случиться
@@ -378,11 +390,13 @@ checkpoints:
     check:
       operation: analytics.metric.drilldown
       params:
-        metric_id: O-2
+        metric_id: items_with_confirmed_nc
+        period: week
       path: /total/value
       op: eq
       value: 6
-    mapping: draft
+    mapping: exact
+    note: 'сведение: показатель items_with_confirmed_nc (О-2) за неделю'
     source:
       subject: metric/O-2
       field: items
@@ -390,7 +404,6 @@ checkpoints:
         incident: RS-01
       op: eq
       value: 6
-    note: показатель O-2 каталога процессной сессии (analytics-catalog.md); сопоставление — эпик 25
   - id: S10A-N2
     what: «возврат из брака в производство» не раньше чистого рентгена и подписи повторной ЗТ-3
     check:
@@ -412,10 +425,13 @@ checkpoints:
     what: нет второго «перевода в брак (переделка)» по тем же изделиям
     check:
       operation: erp.message.list
-      path: /items/#
+      params:
+        limit: 500
+      path: /items[action=scrap_transfer_rework]/#
       op: eq
-      value: 1
-    mapping: draft
+      value: 6
+    mapping: exact
+    note: 'сведение: по одному «переводу в брак (переделка)» на изделие'
     source:
       subject: erp/postings
       field: count
@@ -427,10 +443,18 @@ checkpoints:
     what: '«выпуск годного» по фланцам инцидента в главной истории не уходит: до ЗТ-6 (сборка, испытание, окончательный контроль) они не дошли'
     check:
       operation: erp.message.list
-      path: /items/#
-      op: eq
-      value: 0
-    mapping: draft
+      params:
+        limit: 500
+      path: /items[action=release]/*/item_id
+      op: not_contains
+      value:
+      - F-015
+      - F-017
+      - F-019
+      - F-021
+      - F-023
+      - F-025
+    mapping: exact
     source:
       subject: erp/postings
       field: count

@@ -30,34 +30,46 @@ checkpoints:
   - id: S01-02
     what: пройдены 6 ЗТ, все с первого предъявления
     check:
-      operation: item.passport.read
+      operation: journal.entry.list
       params:
+        event_type: decision.presentation.resolved
+        limit: 500
         item_id: '{item:F-001}'
-      path: /gates_passed_first_time
+      path: /items/*/data/presentation_no
       op: set_eq
-      value: &id001
+      value:
+      - 1
+      - 1
+      - 1
+      - 1
+      - 1
+      - 1
+    mapping: exact
+    note: 'сведение: шесть решений на точках изделия (ЗТ-2, ЗТ-3, ЗТ-4 ч.1, ЗТ-4 ч.2, ЗТ-5, ЗТ-6), все — первое предъявление; ЗТ-1 — решение по партии'
+    source:
+      subject: item/F-001
+      field: gates_passed_first_time
+      op: set_eq
+      value:
       - ZT-1
       - ZT-2
       - ZT-3
       - ZT-4
       - ZT-5
       - ZT-6
-    mapping: draft
-    source:
-      subject: item/F-001
-      field: gates_passed_first_time
-      op: set_eq
-      value: *id001
   - id: S01-03
     what: у каждой ЗТ есть подпись человека (агент токена или бумага с QR, заверенная вторым сотрудником, FR-139)
     check:
-      operation: item.passport.read
+      operation: journal.entry.list
       params:
+        event_type: decision.presentation.resolved
+        limit: 500
         item_id: '{item:F-001}'
-      path: /gates_without_signer
+      path: /items[provenance_class=server_attested]/#
       op: eq
       value: 0
-    mapping: draft
+    mapping: exact
+    note: 'сведение: ни одного решения на точке без подписи человека (класс происхождения не server_attested)'
     source:
       subject: item/F-001
       field: gates_without_signer
@@ -86,7 +98,7 @@ checkpoints:
         item_id: '{item:F-001}'
       path: /nodes/*/label
       op: set_eq
-      value: &id002
+      value: &id001
       - flange_from:LOT-ZF-201
       - R-001
       - C-001
@@ -98,7 +110,7 @@ checkpoints:
       subject: item/F-001
       field: components
       op: set_eq
-      value: *id002
+      value: *id001
     note: состав генеалогии — метки узлов; сопоставление ID уточнит эпик 18
   - id: S01-06
     what: журнал ИС-2 при сварке в уставке
@@ -108,7 +120,7 @@ checkpoints:
         run_id: '{local:SV-001-1}'
       path: /current_a_range
       op: eq
-      value: &id003
+      value: &id002
       - 158
       - 163
     mapping: draft
@@ -116,7 +128,7 @@ checkpoints:
       subject: run/SV-001-1
       field: current_a_range
       op: eq
-      value: *id003
+      value: *id002
   - id: S01-07
     what: 'камера КТ-3: признаков нет при хорошем качестве'
     check:
@@ -125,7 +137,7 @@ checkpoints:
         run_id: '{local:SV-001-1}'
       path: /cp_weld_result
       op: eq
-      value: &id004
+      value: &id003
         inspection_result: no_defect_found
         observation_quality_min: 0.93
     mapping: draft
@@ -133,7 +145,7 @@ checkpoints:
       subject: run/SV-001-1
       field: cp_weld_result
       op: eq
-      value: *id004
+      value: *id003
   - id: S01-08
     what: все шаги оператора подтверждены
     check:
@@ -157,7 +169,7 @@ checkpoints:
         run_id: '{local:MO-001-1}'
       path: /duration
       op: eq
-      value: &id005
+      value: &id004
         value_min: 62
         source: reported
         meaning: active
@@ -166,7 +178,7 @@ checkpoints:
       subject: run/MO-001-1
       field: duration
       op: eq
-      value: *id005
+      value: *id004
   - id: S01-10
     what: 'сварка: длительность вычислена системой'
     check:
@@ -175,7 +187,7 @@ checkpoints:
         run_id: '{local:SV-001-1}'
       path: /duration
       op: eq
-      value: &id006
+      value: &id005
         value_min: 45
         source: computed
         meaning: active
@@ -184,14 +196,14 @@ checkpoints:
       subject: run/SV-001-1
       field: duration
       op: eq
-      value: *id006
+      value: *id005
   - id: S01-11
     what: в 1С ушло 6 учётных событий по Ф-001
     check:
       operation: erp.message.list
       params:
         item_id: '{item:F-001}'
-      path: /items/*/action
+      path: /items[action!=inspection_result]/*/action
       op: set_eq
       value:
       - accept_into_work
@@ -214,17 +226,18 @@ checkpoints:
       - transfer
       - transfer
       - release_good
-    note: виды учётных сообщений процессной сессии → erp_action контракта
+    note: виды учётных сообщений процессной сессии → erp_action контракта; «результат контроля» (inspection_result, [П] кейс §3.3) — не учётное движение и в счёт шести не входит
   - id: S01-12
     what: все сообщения 1С подтверждены
     check:
       operation: erp.message.list
       params:
         item_id: '{item:F-001}'
-      path: /items/*/status
+      path: /items[status!=acknowledged]/#
       op: eq
-      value: acknowledged
-    mapping: draft
+      value: 0
+    mapping: exact
+    note: 'сведение: все сообщения по Ф-001 подтверждены'
     source:
       subject: erp/postings
       field: ack_status
@@ -248,28 +261,29 @@ checkpoints:
       op: eq
       value: true
   - id: S01-14
-    what: 'Ф-001 идёт по линии 2 (сварен на посту 2): у всех его событий после запуска — линия L-FL-2'
+    what: 'Ф-001 идёт по линии 2 (сварен на посту 2): у всех его событий после запуска — линия LINE-FL-2'
     check:
       operation: item.passport.read
       params:
         item_id: '{item:F-001}'
       path: /events_line_ids
       op: set_eq
-      value: &id007
-      - L-FL-2
+      value:
+      - LINE-FL-2
     mapping: draft
     source:
       subject: item/F-001
       field: events_line_ids
       op: set_eq
-      value: *id007
+      value:
+      - L-FL-2
   - id: S01-15
     what: 'установка оборудования (кейс §1.1, узел AO) — отдельное выполнение EQ-001-1 после затяжки крепежа: клапан V-001 отсканирован до установки, затяжка J-2 в норме (12 Н·м ± 10
       %), контровка подтверждена; основание ЗТ-4 включает журнал ключа по J-2'
     check:
       operation: machinelogs.run_profile.read
       params:
-        run_id: '{local:EQ-001-1}'
+        run_id: '{local:TQ-001-1}'
       path: /
       op: eq
       value: true
@@ -286,15 +300,24 @@ checkpoints:
         gate_basis: ZT-4
       op: eq
       value: true
+    note: 'сведение: узла «установка оборудования» в flange-process.bpmn нет — клапан КВД ставится в 060 (fasteners_install), затяжка J-2 — внутри 070 (torque, выполнение TQ-001-1);
+      отдельное выполнение EQ — вопрос к процессной сессии (нормативный слой)'
   - id: S01-16
     what: 'перемаркировка (узел MK): до мехобработки — бирка с QR на таре TAG:F-001, после станка — код DM:F-001 на нерабочей поверхности; ОТК сверил на ЗТ-2 (номер совпал, код читается)'
     check:
       operation: item.passport.read
       params:
         item_id: '{item:F-001}'
-      path: /carriers
+      path: /carriers[state=replaced]/*/value
       op: eq
-      value: &id008
+      value: '{carrier:TAG:F-001}'
+    mapping: exact
+    note: 'сведение: бирка TAG заменена кодом DM после станка; сверка на ЗТ-2 — в решении ЗТ-2 (поля в паспорте нет)'
+    source:
+      subject: item/F-001
+      field: marking_history
+      op: eq
+      value:
       - carrier: tag_qr
         value: TAG:F-001
       - carrier: dpm_datamatrix
@@ -302,12 +325,6 @@ checkpoints:
         reason: remark_after_machining
         verified_at_gate: ZT-2
         result: match
-    mapping: draft
-    source:
-      subject: item/F-001
-      field: marking_history
-      op: eq
-      value: *id008
   - id: S01-17
     what: на КИМ номер фланца выбран из списка ожидаемых изделий, а не введён руками
     check:
@@ -328,7 +345,7 @@ checkpoints:
       operation: crossitem.lot.list
       path: /items
       op: eq
-      value: &id009
+      value: &id006
         LOT-ZF-201:
           result: no_defect_found
           tests:
@@ -350,7 +367,7 @@ checkpoints:
         - LOT-ZF-201
         - LOT-R-116
       op: eq
-      value: *id009
+      value: *id006
   - id: S01-20
     what: 'при приёме цехом (Е-31) у Ф-001 — поле «повреждения: нет» (МЦ → СЦ и СЦ → СИЦ)'
     check:
@@ -359,7 +376,7 @@ checkpoints:
         item_id: '{item:F-001}'
       path: /receipts_damage
       op: eq
-      value: &id010
+      value: &id007
         MC->WC: none
         WC->AC: none
     mapping: draft
@@ -367,7 +384,7 @@ checkpoints:
       subject: item/F-001
       field: receipts_damage
       op: eq
-      value: *id010
+      value: *id007
   - id: S01-21
     what: 'в начале — состав и ревизия КД из КОМПАС (Е-02, узел OD): 6 позиций с клапаном, связи W-1, J-1, S-1, J-2, геометрии нет — сказано явно'
     check:
@@ -398,7 +415,7 @@ checkpoints:
         item_id: '{item:F-001}'
       path: /entries[event_type=decision.presentation.resolved]
       op: eq
-      value: &id011
+      value: &id008
         entered_cavity: 2
         returned: 2
     mapping: draft
@@ -406,7 +423,7 @@ checkpoints:
       subject: gate/ZT-SR/F-001
       field: tools_counted
       op: eq
-      value: *id011
+      value: *id008
     note: ЗТ ZT-SR
   - id: S01-18
     what: у каждой ЗТ Ф-001 подписант не выполнял операцию, которую принимает

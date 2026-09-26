@@ -93,7 +93,7 @@ steps:
     actor: QC-02
     item: F-006
     params: {item_id: "{item:F-006}"}
-    body: {closing_point: ZT-4, step_key: assembly.zt4_zone_presentation, presentation_no: 1, resolution: accept,
+    body: {closing_point: ZT-4.1, step_key: assembly.zt4_zone_presentation, presentation_no: 1, resolution: accept,
            method_event_ids: ["{event:F-006/kt4d}", "{event:S17/check-done}"]}
 outcome:
   - "В журнале критических действий — отметка пропуска: кто (Сб-01), какая проверка, причина."

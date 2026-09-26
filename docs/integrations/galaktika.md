@@ -61,40 +61,40 @@
 ## 6. Контракт `gal.qc.v1`
 
 - Корневой элемент `GalExchange` в пространстве имён `urn:ant-qc:galaktika:v1`, атрибуты `messageId` (ключ идемпотентности, выведен из бизнес-ключа), `createdAt`, `from`, `to`, `contract`.
-- Внутри — одно сообщение порта учёта: `QualityLotResult` (результат контроля), `Posting` (учётное действие), входящие `ProductionTask`, `LotReceived`, `ItemCatalog`.
-- Квитанция — `GalAck` с `status="OK|ERROR"`, `code`, `text`, `nrecCreated`.
-- REST-фасад (проектное предположение): `POST /galaktika/esb/v1/quality/lot-results`, `POST /galaktika/esb/v1/production/postings`, `GET /galaktika/esb/v1/nsi/items?changedSince=…`.
-- Схема — `contracts/integrations/erp/galaktika/gal.qc.v1.xsd`; эталонные сообщения — `contracts/integrations/erp/galaktika/examples/` (пути предварительные).
-- Какие поля реально нужны модулю «Управление качеством продукции» (показатели, нормативный документ, номер удостоверения качества) — не проверено; в схеме отмечены как «уточнить у вендора».
+- Внутри — ровно одно сообщение порта учёта: исходящие `QualityLotResult` (результат контроля) и `Posting` (учётное действие, `kind`: `accept_to_work`, `internal_move`, `defect_rework`, `defect_writeoff`, `defect_reprocess`, `return_to_supplier`, `return_from_defect`, `release`), входящие `ProductionTask`, `LotReceived`, `ItemCatalog`. Бизнес-ключ и основание — вложенный `Source`.
+- Квитанция — `GalAck` с `status="ok|error"`, `duplicate`, `code`, `text`, `nrecCreated`, `document`; описание ответной стороны — `GalAbout` (узел, база, поддерживаемые версии контракта).
+- Значения перечислений в XML и JSON одинаковые, в нижнем регистре (`verdict="rejected"`, `status="ok"`); коды ошибок Галактики — прописными (`LOT_NOT_FOUND`).
+- REST-фасад (проектное предположение): `POST /galaktika/esb/v1/quality/lot-results`, `POST /galaktika/esb/v1/production/postings` (JSON-форма пакета, заголовки `X-Message-Id`, `X-Contract-Version`), `GET /galaktika/esb/v1/exchange/outbox` (входящие пакеты), `GET /galaktika/esb/v1/about`.
+- Каталог обмена: `out/‹номер›.xml` — пакеты Главного, `ack/‹номер›.xml` — квитанции Галактики, `in/*.xml` — пакеты Галактики, `in-ack/‹номер›.xml` — квитанции Главного, `about.xml` — версии контракта обработчика.
+- Схемы — `contracts/integrations/erp/galaktika/gal.qc.v1.xsd` (XML, для обработчика на стороне Галактики) и `contracts/integrations/erp/galaktika/gal.qc.v1/*.schema.json` (JSON-форма; ею адаптер проверяет каждое исходящее сообщение до отправки на обоих транспортах); эталонные сообщения — `contracts/integrations/erp/galaktika/examples/`; словарь имён XML ↔ JSON — `contracts/integrations/erp/galaktika/README.md`.
+- Какие поля реально нужны модулю «Управление качеством продукции» (показатели, нормативный документ, номер удостоверения качества) — не проверено; уточнить у вендора.
 
 ## 7. Примеры сообщений
 
-**1. Входящее сменное задание (каталог обмена → `ant`):**
+Полный набор — `contracts/integrations/erp/galaktika/examples/` (контрактный тест сверяет с ним вывод адаптера).
+
+**1. Входящее сменное задание (каталог обмена → Главный):**
 
 ```xml
-<GalExchange xmlns="urn:ant-qc:galaktika:v1" messageId="GAL-2026-09-25-000117"
-             createdAt="2026-09-25T05:00:00.000Z" from="GAL-ERP-ZAVOD2" to="ant" contract="gal.qc.v1">
-  <ProductionTask nrec="4611686018427399001" table="MnPlan" number="СЗ-000812" date="2026-09-25">
-    <Item nrec="4611686018427388123" table="KatMC" designation="ФЛ-100.00.000" name="Фланец люка в сборе"/>
-    <Quantity value="6" unit="шт"/>
-    <RouteSheet number="МЛ-000812"/>
-    <KdRevision value="Б"/>
+<GalExchange xmlns="urn:ant-qc:galaktika:v1" messageId="GAL-2026-09-25-000117" createdAt="2026-09-25T05:00:00.000Z" from="GAL-ERP-ZAVOD2" to="ant" contract="gal.qc.v1">
+  <ProductionTask nrec="4611686018427399001" table="MnPlan" number="СЗ-000812" date="2026-09-25" dueDate="2026-10-02" quantity="6" routeSheet="МЛ-000812" kdRevision="Б">
+    <Item designation="ФЛ-100.00.000 СБ" name="Фланец люка гермокорпуса в сборе" nrec="4611686018427388123" table="KatMC"></Item>
   </ProductionTask>
 </GalExchange>
 ```
 
-**2. Исходящий результат контроля партии (`ant` → «Управление качеством продукции»):**
+Главный получает из него `erp.order.received` (задание `ORD-SZ-000812`, тип изделия `FL-100.00.000`, 6 шт., версия КД «Б») и соответствия `galaktika:zavod2:MnPlan:4611686018427399001 → ORD-SZ-000812`, `galaktika:zavod2:KatMC:4611686018427388123 → FL-100.00.000`.
+
+**2. Исходящий результат контроля партии (Главный → «Управление качеством продукции»):**
 
 ```xml
-<GalExchange xmlns="urn:ant-qc:galaktika:v1" messageId="b3d1f0a2-5c6e-5a7b-9c8d-0e1f2a3b4c5d"
-             createdAt="2026-09-25T10:42:17.305Z" from="ant" to="GAL-ERP-ZAVOD2" contract="gal.qc.v1">
-  <QualityLotResult closingPoint="ЗТ-1" presentation="1">
-    <Item nrec="4611686018427388124" table="KatMC" designation="ФЛ-100.00.010" itemId="ENT01:LOT-B-0915"/>
-    <Lot number="П-2026-0915" serials="0411-0422"/>
-    <ProductionOrder nrec="4611686018427399001" routeSheet="МЛ-000812"/>
-    <Result verdict="REJECTED" accepted="10" rejected="2" nonconformities="НС-2026-0031 НС-2026-0032"/>
-    <Disposition kind="RETURN_TO_SUPPLIER" decisionDoc="РШ-2026-0077" digest="streebog256:4c2e…"/>
-    <SignedBy person="К-0042" role="контролёр качества" at="2026-09-25T10:41:58.004Z"/>
+<GalExchange xmlns="urn:ant-qc:galaktika:v1" messageId="bc706d05-d7d6-5cde-9c48-ede1e6b80488" createdAt="2026-09-25T10:42:17.305Z" from="ant" to="GAL-ERP-ZAVOD2" contract="gal.qc.v1">
+  <QualityLotResult presentation="1" verdict="rejected">
+    <Source businessKey="LOT-B-0915/inspection_result/ZT-1" messageVersion="1" enterprise="ENT01" closingPoint="ZT-1"></Source>
+    <Lot lotId="LOT-B-0915" quantity="12"></Lot>
+    <ProductionOrder orderId="ORD-0812"></ProductionOrder>
+    <Nonconformity ref="NC-2026-0031"></Nonconformity>
+    <Nonconformity ref="NC-2026-0032"></Nonconformity>
   </QualityLotResult>
 </GalExchange>
 ```
@@ -102,14 +102,13 @@
 **3. Квитанция:**
 
 ```xml
-<GalAck xmlns="urn:ant-qc:galaktika:v1" messageId="b3d1f0a2-5c6e-5a7b-9c8d-0e1f2a3b4c5d" status="OK" nrecCreated="4611686018427400555"/>
+<GalAck xmlns="urn:ant-qc:galaktika:v1" messageId="3c6f1d0e-8a1b-5c9e-9f0a-1b2c3d4e5f60" status="ok" nrecCreated="4611686018427400555" document="АКТК-000077" receivedAt="2026-09-25T10:42:18.120Z"></GalAck>
 ```
 
 **4. Ошибка:**
 
 ```xml
-<GalAck xmlns="urn:ant-qc:galaktika:v1" messageId="b3d1f0a2-5c6e-5a7b-9c8d-0e1f2a3b4c5d" status="ERROR"
-        code="LOT_NOT_FOUND" text="Партия П-2026-0915 не найдена в каталоге партий"/>
+<GalAck xmlns="urn:ant-qc:galaktika:v1" messageId="3c6f1d0e-8a1b-5c9e-9f0a-1b2c3d4e5f60" status="error" code="LOT_NOT_FOUND" text="Партия П-2026-0915 не найдена в каталоге партий"></GalAck>
 ```
 
 ## 8. Подтверждения и обработка ошибок
@@ -141,10 +140,11 @@
 3. После появления REST в Галактика ESB — переключить транспорт на `rest-facade` конфигурацией.
 4. Порт учёта, домен и контракт событий `ant` не меняются.
 
-## Уточнить после появления кода
+## В коде (эпик 31)
 
-- Путь и имя XSD `gal.qc.v1`, перечень элементов входящих сообщений (`ProductionTask`, `LotReceived`, `ItemCatalog`) и исходящих.
-- Эталонные сообщения в `contracts/integrations/erp/galaktika/examples/` и имя контрактного теста.
-- Коды ошибок `GalAck` и их связь с `contracts/errors.yaml`.
-- Ключи конфигурации канала Галактики в `deploy/config/ant.yaml` (каталог обмена, транспорт, таймауты).
-- Сроки и объём stand-а Галактики (эпик 43).
+- **Адаптер:** `backend/internal/infrastructure/integration/erp/galaktika` — реализация порта учёта `application/erp.Ledger` на двух транспортах (`exchange-dir`, `rest-facade`); ядро, домен `erp` и роль `outbox` не менялись. Как подключить — [new-adapter.md](../new-adapter.md).
+- **Контрактные тесты:** `go test ./internal/infrastructure/integration/erp/...` — эталоны по схемам и XSD, внутренний сигнал порта → эталонные пакеты, общий тест порта учёта `application/erp/ledgertest` на обоих транспортах Галактики и на stand-е 1С, классы ответа, входящие факты.
+- **Коды ошибок `GalAck` → `contracts/errors.yaml`:** `LOT_NOT_FOUND`, `ITEM_NOT_MAPPED`, `ITEM_NOT_FOUND`, `WAREHOUSE_NOT_FOUND`, `ORDER_NOT_FOUND` → `erp.id_mapping_missing`; `CONTRACT_NOT_FOUND` → `erp.contract_not_found`; прочие → `erp.data_error`; `CONTRACT_VERSION`, `SCHEMA_VIOLATION` — несовместимость (канал `degraded`).
+- **Внешние ID:** `galaktika:‹база›:‹таблица›:‹NRec›`; наши ID: задание `ORD-‹номер латиницей›`, партия `LOT-‹номер партии›`, поставщик — код латиницей, тип изделия — обозначение КД по правилу `domain/cad.ItemTypeID` (то же, что у 1С и КОМПАС). Источник входящих — `erp.galaktika`.
+- **Конфигурация:** ключи `erp.galaktika.*` (транспорт, каталог, адрес фасада, узлы, база, таймауты, повторы) и фабрика порта в `cmd/ant` — [new-adapter.md](../new-adapter.md), шаги 4–5. В MVP порт учёта обслуживает одну учётную систему на экземпляр (`integrations.enabled`); одновременная отправка в 1С и Галактику требует ключа сообщения с системой — описано там же, §5.
+- **Stand Галактики** (каталог обмена со своим состоянием в `stand_galaktika`, REST-фасад, сбои) — эпик 43.

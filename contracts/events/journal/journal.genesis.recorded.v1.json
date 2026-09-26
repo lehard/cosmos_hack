@@ -29,6 +29,43 @@
     "normative_version_hash": {
       "$ref": "../common/defs.v1.json#/definitions/digest",
       "description": "Хеш стартовой версии процесса."
+    },
+    "anchor_keys": {
+      "type": "array",
+      "description": "Открытые ключи якоря (`hybrid`: ГОСТ и ML-DSA-65) — ими проверяются подписи всех записей блока; их общий отпечаток — `anchor_fingerprint`, закреплённый в `trust-anchors` вне системы (AD-33). Закрытый ключ-якорь уничтожен (`journal.anchor.destroyed`).",
+      "items": {
+        "type": "object",
+        "title": "GenesisAnchorKey",
+        "properties": {
+          "key_ref": {
+            "$ref": "../common/defs.v1.json#/definitions/key_ref"
+          },
+          "profile_id": {
+            "type": "string",
+            "enum": [
+              "gost",
+              "pq"
+            ],
+            "description": "Профиль ключа."
+          },
+          "public_key_b64": {
+            "type": "string",
+            "maxLength": 4096,
+            "description": "Открытый ключ в base64 (кодирование — contracts/crypto/README.md)."
+          }
+        },
+        "required": [
+          "key_ref",
+          "profile_id",
+          "public_key_b64"
+        ]
+      },
+      "minItems": 1,
+      "maxItems": 4
+    },
+    "block_digest": {
+      "$ref": "../common/defs.v1.json#/definitions/digest",
+      "description": "Отпечаток остальной части блока: H(H(payload₂) ‖ … ‖ H(payloadₖ)) по порядку seq — подмена, удаление или перестановка записи блока меняет его (AD-33)."
     }
   },
   "required": [

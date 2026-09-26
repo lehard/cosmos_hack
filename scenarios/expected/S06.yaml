@@ -146,19 +146,20 @@ checkpoints:
     check:
       operation: analytics.metric.drilldown
       params:
-        metric_id: O-8
-      path: /repeated_runs
+        metric_id: rework_runs
+        period: week
+      path: /total/value
       op: delta
       value: 0
-    mapping: draft
-    baseline: до повторной отправки
+    mapping: exact
+    baseline: '2026-09-23T12:00:00+03:00'
+    note: 'сведение: показатель rework_runs (О-8)'
     source:
       subject: metric/O-8
       field: repeated_runs
       op: delta
       value: 0
       baseline: до повторной отправки
-    note: показатель O-8 каталога процессной сессии (analytics-catalog.md); сопоставление — эпик 25
   - id: S06-N3
     what: нет второго сигнала по Ф-017
     check:

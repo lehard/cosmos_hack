@@ -126,15 +126,15 @@ func TestGuards(t *testing.T) {
 	a2.Versions.AnalyzerVersion = Unknown
 	refusal(t, GuardAdmit(reg, a2), errcodes.ApiValidationFailed)
 
-	_, err := GuardReinstate(reg, "AP-1", "x", RoleHeadOfQC)
+	_, err := GuardReinstate(reg, "AP-1", "x", RoleHeadOfQC, true)
 	refusal(t, err, errcodes.AnalyzerInvalidTransition)
 	s := b.add(catalog.AnalyzerPassportSuspended, map[string]any{"passport_id": "AP-1", "trigger": "escape_detected", "fallback": "manual_control", "basis": []string{}})
 	reg = Fold(b.out)
-	_, err = GuardReinstate(reg, "AP-1", s.EventID, "quality_inspector")
+	_, err = GuardReinstate(reg, "AP-1", s.EventID, "quality_inspector", false)
 	refusal(t, err, errcodes.AnalyzerReinstateRequiresHeadOfQc)
-	_, err = GuardReinstate(reg, "AP-1", "other", RoleHeadOfQC)
+	_, err = GuardReinstate(reg, "AP-1", "other", RoleHeadOfQC, true)
 	refusal(t, err, errcodes.ApiValidationFailed)
-	if _, err := GuardReinstate(reg, "AP-1", s.EventID, RoleHeadOfQC); err != nil {
+	if _, err := GuardReinstate(reg, "AP-1", s.EventID, RoleHeadOfQC, true); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := GuardRetire(reg, "AP-1"); err != nil {

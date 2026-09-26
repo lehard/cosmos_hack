@@ -1,0 +1,248 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/normative/desks/desk.schema.json",
+  "title": "Desk",
+  "description": "Стол роли (AD-21, NFR-EXT-1): раскладка → вкладки → слоты → id виджетов → срез и плотность. Файл normative/desks/‹роль›.yaml, имя = id роли из политики. Сервер отдаёт его операцией access.desk.read (access.Queries.Desks); make check сверяет id виджетов с frontend/src/widgets/registry.ts (frontend/scripts/check-shell.mjs).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "role",
+    "title_key",
+    "density",
+    "tabs"
+  ],
+  "properties": {
+    "version": {
+      "const": 1,
+      "description": "Версия формата стола."
+    },
+    "role": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "description": "id роли из политики; совпадает с именем файла."
+    },
+    "title_key": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9.]+$",
+      "description": "Ключ текста названия стола (frontend/src/shared/i18n)."
+    },
+    "density": {
+      "$ref": "#/definitions/density"
+    },
+    "help_key": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "description": "Раздел встроенной справки (по умолчанию — роль)."
+    },
+    "tabs": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Вкладки стола; одна вкладка — без переключателя.",
+      "items": {
+        "$ref": "#/definitions/tab"
+      }
+    }
+  },
+  "definitions": {
+    "density": {
+      "type": "string",
+      "enum": [
+        "large",
+        "comfortable",
+        "compact"
+      ],
+      "description": "Плотность: мастеру и исполнителю — large, технологу — compact (плотный инженерный вид)."
+    },
+    "tab": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "title_key",
+        "layout",
+        "slots"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$"
+        },
+        "title_key": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9.]+$"
+        },
+        "layout": {
+          "type": "string",
+          "enum": [
+            "single",
+            "main-side",
+            "queue-main-side",
+            "overview"
+          ],
+          "description": "single — main; main-side — main + right; queue-main-side — left + main + right; overview — top + main + right + bottom."
+        },
+        "density": {
+          "$ref": "#/definitions/density"
+        },
+        "slots": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/slot"
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "layout": {
+                "const": "single"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "slots": {
+                "items": {
+                  "properties": {
+                    "area": {
+                      "enum": [
+                        "main"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "layout": {
+                "const": "main-side"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "slots": {
+                "items": {
+                  "properties": {
+                    "area": {
+                      "enum": [
+                        "main",
+                        "right"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "layout": {
+                "const": "queue-main-side"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "slots": {
+                "items": {
+                  "properties": {
+                    "area": {
+                      "enum": [
+                        "left",
+                        "main",
+                        "right"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "layout": {
+                "const": "overview"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "slots": {
+                "items": {
+                  "properties": {
+                    "area": {
+                      "enum": [
+                        "top",
+                        "main",
+                        "right",
+                        "bottom"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "description": "Вкладка стола. Области слотов ограничены раскладкой (allOf ниже; та же таблица — LAYOUT_AREAS в frontend/src/entities/desk)."
+    },
+    "slot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "area",
+        "widget"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$"
+        },
+        "area": {
+          "type": "string",
+          "enum": [
+            "top",
+            "left",
+            "main",
+            "right",
+            "bottom"
+          ]
+        },
+        "widget": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$",
+          "description": "id виджета из frontend/src/widgets/registry.ts."
+        },
+        "density": {
+          "$ref": "#/definitions/density"
+        },
+        "slice": {
+          "type": "object",
+          "description": "Параметры среза — «одна правда, разные взгляды»: один виджет, разный срез.",
+          "additionalProperties": {
+            "type": [
+              "string",
+              "integer",
+              "boolean",
+              "array"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

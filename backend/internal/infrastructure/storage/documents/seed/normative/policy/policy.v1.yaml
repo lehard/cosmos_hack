@@ -4,6 +4,16 @@
 # Действия — идентификаторы операций `‹модуль›.‹объект›.‹действие›` (x-ant-action, AD-40); `*` — любой сегмент.
 # Каталог операций объявляет эпик 02; при расхождении имён правится эта затравка (эпик 26 — владелец политики).
 # Сотрудники — только условные псевдонимы (кейс §4.6); демо-персоны сценариев — те же псевдонимы, ключи класса scenario (AD-33).
+#
+# Три административных домена (AD-15), эпик 26:
+#   1) администратор системы — ОС, Postgres, контейнеры ant; прав в приложении у него НЕТ (роли в этой политике нет);
+#   2) администратор безопасности — роль administrator (роль кейса «Администратор»): обычная роль — одной подписью,
+#      привилегированные выдачи и ключи — со второй подписью независимой стороны (AD-11, маршрут grant_route ниже);
+#   3) Аудитор ИБ — роль security_auditor: только чтение (верификатор, журнал CA, шина безопасности, история выдачи
+#      прав), параметры аудита policy.audit.* и вторая подпись под привилегиями администраторов и аудита.
+# Свойства ролей: domain — сфера для второй подписи (admin — привилегии администраторов и аудита, qc — ОТК;
+# наследники берут сферу базовой роли); card_only — редкий подписант (FR-136): видит только адресованные ему
+# карточки решения и их предметы, без остальных экранов.
 version: 1
 enterprise_code: ENT01
 
@@ -22,7 +32,7 @@ roles:
   # ── общие роли: их наследуют роли ниже (права — данные политики, а не код, AD-15) ──
   - id: employee
     title: "Сотрудник: сеанс, стол, уведомления"
-    actions: ["access.session.read", "access.session.delete", "access.desk.read", "access.permission.list", "access.permission.explain", "notifications.*.read", "security.integrity.read", "journal.stream.subscribe", "item.item.lookup"]
+    actions: ["access.session.read", "access.session.delete", "access.desk.read", "access.permission.list", "access.permission.explain", "notifications.*.read", "security.integrity.read", "journal.stream.subscribe", "item.item.lookup", "signing.*.read", "signing.paper.*", "signing.shift_report.submit"]
   - id: staff
     title: "Работник предприятия: просмотр производственных данных"
     inherits: [employee]
@@ -34,28 +44,30 @@ roles:
   - id: quality_inspector
     title: "Контролёр качества"
     case_role: true
+    domain: qc
     inherits: [staff]
-    actions: ["quality.*.read", "nonconformity.signal.reject", "nonconformity.nonconformity.confirm", "nonconformity.recheck.request", "nonconformity.item.isolate", "nonconformity.presentation.resolve", "nonconformity.lot.resolve", "nonconformity.containment.set", "nonconformity.disposition.verify", "item.intervention.close", "item.identification.confirm", "analysis.item.assess", "documents.document.sign", "documents.document.request", "crossitem.binding.assign", "item.*.read", "analysis.*.read", "process.*.read"]
+    actions: ["quality.*.read", "nonconformity.signal.reject", "nonconformity.nonconformity.confirm", "nonconformity.recheck.request", "nonconformity.item.isolate", "nonconformity.presentation.resolve", "nonconformity.lot.resolve", "nonconformity.containment.set", "nonconformity.disposition.verify", "item.intervention.close", "item.identification.confirm", "analysis.item.assess", "documents.document.sign", "documents.signature.*", "documents.version.request", "documents.paper.print", "documents.document.request", "crossitem.binding.assign", "item.*.read", "analysis.*.read", "process.*.read"]
   - id: site_foreman
     title: "Мастер участка"
     case_role: true
     inherits: [staff]
-    actions: ["process.movement.send", "process.movement.receive", "item.presentation.record", "item.carrier.apply", "item.carrier.remove", "item.intervention.open", "access.assignment.set", "access.assignment.clear", "access.assignment.list", "notifications.task.acknowledge", "nonconformity.process_hold.set", "reference.shift.schedule", "ingest.event.submit", "documents.document.sign", "documents.document.request", "item.*.read", "process.*.read", "quality.*.read"]
+    actions: ["process.movement.send", "process.movement.receive", "item.presentation.record", "item.carrier.apply", "item.carrier.remove", "item.intervention.open", "access.assignment.set", "access.assignment.clear", "access.assignment.list", "notifications.task.acknowledge", "nonconformity.process_hold.set", "reference.shift.schedule", "ingest.event.submit", "documents.document.sign", "documents.signature.*", "documents.version.request", "documents.paper.print", "documents.document.request", "documents.paper.attest", "item.*.read", "process.*.read", "quality.*.read"]
   - id: technologist
     title: "Технолог"
     case_role: true
     inherits: [staff]
-    actions: ["analysis.hypothesis.record", "analysis.hypothesis.reject", "analysis.measurement.request", "analysis.cause.conclude", "analysis.scope.narrow", "analysis.scope.expand", "analysis.analysis.scope", "analysis.action.*", "analysis.item.assess", "analysis.incident.close", "nonconformity.disposition.set", "nonconformity.lot.resolve", "process.version.submit", "process.version.draft", "ingest.import.submit", "documents.document.sign", "documents.document.request", "analysis.*.read", "item.*.read", "process.*.read", "quality.*.read", "machinelogs.*.read"]
+    actions: ["analysis.hypothesis.record", "analysis.hypothesis.reject", "analysis.measurement.request", "analysis.cause.conclude", "analysis.scope.narrow", "analysis.scope.expand", "analysis.analysis.scope", "analysis.action.*", "analysis.item.assess", "analysis.incident.close", "nonconformity.disposition.set", "nonconformity.lot.resolve", "process.version.submit", "process.version.draft", "ingest.import.submit", "documents.document.sign", "documents.signature.*", "documents.version.request", "documents.paper.print", "documents.document.request", "analysis.*.read", "item.*.read", "process.*.read", "quality.*.read", "machinelogs.*.read"]
   - id: production_manager
     title: "Руководитель производства"
     case_role: true
     inherits: [staff]
-    actions: ["process.version.activate", "process.version.retire", "nonconformity.process_hold.set", "nonconformity.process_hold.release", "documents.document.sign", "analytics.*.read", "item.*.read", "process.*.read", "analysis.*.read", "quality.*.read", "reference.*.read"]
+    actions: ["process.version.activate", "process.version.retire", "nonconformity.process_hold.set", "nonconformity.process_hold.release", "documents.document.sign", "documents.signature.*", "documents.version.request", "documents.paper.print", "analytics.*.read", "item.*.read", "process.*.read", "analysis.*.read", "quality.*.read", "reference.*.read"]
   - id: administrator
     title: "Администратор (безопасности)"
     case_role: true
+    domain: admin
     inherits: [staff]
-    actions: ["access.person.register", "access.account.activate", "access.policy.grant", "access.policy.revoke", "signing.key.register", "signing.key.revoke", "ops.source.disable", "ops.source.enable", "ops.processing.retry", "ingest.message.reprocess", "ingest.import.submit", "erp.posting.resend", "crossitem.binding.assign", "simulation.*.*", "reference.*.define", "ops.*.read", "ingest.*.read", "access.*.read", "journal.*.read", "security.*.read"]
+    actions: ["access.person.register", "access.account.activate", "access.policy.grant", "access.policy.revoke", "documents.version.request", "documents.document.request", "documents.request.list", "signing.key.register", "signing.key.revoke", "ops.source.disable", "ops.source.enable", "ops.processing.retry", "ingest.message.reprocess", "ingest.import.submit", "erp.posting.resend", "crossitem.binding.assign", "simulation.*.*", "reference.*.define", "ops.*.read", "ingest.*.read", "access.*.read", "journal.*.read", "security.*.read"]
   # ── дополнительные роли (PRD §2, AD-15) ──
   - id: performer
     title: "Исполнитель"
@@ -65,52 +77,63 @@ roles:
     title: "Кладовщик"
     inherits: [performer]
     actions: ["crossitem.lot.register", "crossitem.lot.issue", "item.item.register", "item.carrier.apply", "item.release.record", "process.movement.send"]
+  # Редкие подписанты (FR-136): только карточка «требуется ваше решение» — документ, где он в маршруте, и его
+  # предмет (паспорт, история, генеалогия изделия) как доказательства; прочие экраны закрыты.
   - id: customer_representative
     title: "Представитель заказчика (ВП / ПЗ)"
+    card_only: true
     inherits: [employee]
-    actions: ["documents.document.sign", "documents.*.read", "item.*.read", "nonconformity.card.read"]
+    actions: ["documents.request.list", "documents.decision_card.read", "documents.document.read", "documents.document.render", "documents.document.sign", "documents.signature.*", "documents.paper.print", "documents.paper.print_view", "item.passport.read", "item.history.list", "item.genealogy.read"]
   - id: approver
     title: "Согласующий (держатель КД, метролог, член комиссии)"
-    inherits: [staff]
-    actions: ["documents.document.sign", "documents.decision_card.read"]
+    card_only: true
+    inherits: [employee]
+    actions: ["documents.request.list", "documents.decision_card.read", "documents.document.read", "documents.document.render", "documents.document.sign", "documents.signature.*", "documents.paper.print", "documents.paper.print_view", "item.passport.read", "item.history.list", "item.genealogy.read"]
+  # Аудитор ИБ — только чтение, параметры аудита и вторая подпись под привилегиями администраторов и аудита
+  # (документ выдачи — через маршрут подписей, а не своей выдачей прав).
   - id: security_auditor
     title: "Аудитор ИБ"
+    domain: admin
     inherits: [staff]
-    actions: ["security.*.read", "access.*.read", "journal.*.read", "access.audit.set_parameters", "signing.key.register", "access.policy.grant"]
+    actions: ["security.*.read", "access.*.read", "journal.*.read", "access.audit.set_parameters", "signing.key.register", "signing.profile.register", "documents.request.list", "documents.decision_card.read", "documents.document.sign", "documents.signature.*"]
   # ── руководящие подписанты — наследники базовых ролей ──
-  - {id: head_of_qc,       title: "Начальник ОТК",           inherits: [quality_inspector], actions: ["vision.passport.reinstate", "vision.passport.admit", "vision.passport.retire", "nonconformity.containment.release", "nonconformity.concession.revoke", "access.assignment.set", "analysis.action.assign", "access.policy.grant", "signing.key.register"]}
+  - {id: head_of_qc,       title: "Начальник ОТК",           inherits: [quality_inspector], actions: ["vision.passport.reinstate", "vision.passport.admit", "vision.passport.retire", "nonconformity.containment.release", "nonconformity.concession.revoke", "access.assignment.set", "analysis.action.assign", "signing.key.register", "documents.paper.attest"]}
   - {id: head_of_workshop, title: "Начальник цеха",          inherits: [site_foreman],      actions: ["nonconformity.containment.release"]}
   - {id: chief_welder,     title: "Главный сварщик",         inherits: [technologist],      actions: []}
-  - {id: metrologist,      title: "Метролог",                inherits: [approver],          actions: ["reference.equipment.verify"]}
-  - {id: design_authority, title: "Держатель КД (конструктор)", inherits: [approver],       actions: []}
+  - {id: metrologist,      title: "Метролог",                inherits: [approver, staff],   actions: ["reference.equipment.verify"]}
+  - {id: design_authority, title: "Держатель КД (конструктор)", inherits: [approver],       actions: [], card_only: true}
   - {id: ndt_specialist,   title: "Дефектоскопист",          inherits: [performer],         actions: []}
 
 # Полномочия — особые права поверх роли с рамками и сроком (FR-50, FR-78). Цифровые клейма — ниже.
+# domain — сфера выдачи (AD-11): qc — вторая подпись начальника ОТК, production — руководителя производства,
+# admin — Аудитора ИБ. Отнесение полномочий к сферам — проектное допущение [ПП].
 authorities:
-  - {id: qc_acceptance,            title: "Приёмка на точке предъявления ОТК"}
-  - {id: qc_acceptance_repeat,     title: "Приёмка при повторном предъявлении (уровнем выше)"}
-  - {id: customer_acceptance,      title: "Приёмка представителем заказчика по перечню"}
-  - {id: first_article,            title: "Акт первой детали"}
-  - {id: quorum_signature,         title: "Подпись в кворуме версии процесса"}
-  - {id: nc_disposition,           title: "Решение по несоответствию (рамки по тяжести)"}
-  - {id: concession_approval,      title: "Подпись разрешения на отклонение"}
-  - {id: scrap_approval,           title: "Утверждение акта о браке"}
-  - {id: weld_repair_approval,     title: "Согласие на повторный ремонт шва"}
-  - {id: rework_limit_waiver,      title: "Разрешение сверх лимита доработок (FR-18)"}
-  - {id: cause_confirmation,       title: "Подтверждение причины"}
-  - {id: operator_error_confirmation, title: "Подтверждение ошибки исполнителя (после объяснения работника)"}
-  - {id: risk_scope_narrowing,     title: "Сужение области риска"}
-  - {id: containment_release,      title: "Снятие блока"}
-  - {id: process_hold,             title: "Остановка и снятие остановки точки процесса"}
-  - {id: analyzer_admission,       title: "Допуск версии анализатора"}
-  - {id: analyzer_reinstate,       title: "Возврат анализатора после отката"}
-  - {id: controller_assignment_approval, title: "Согласование назначения контролёра на пост (PRD §11.18)"}
-  - {id: paper_attestation,        title: "Заверение бумажной подписи (AD-43)"}
-  - {id: second_signature_qc,      title: "Вторая подпись: полномочия ОТК, клейма, ключи контролёров (AD-11)"}
-  - {id: second_signature_production, title: "Вторая подпись: полномочия и ключи производства (AD-11)"}
-  - {id: second_signature_audit,   title: "Вторая подпись: привилегии администраторов и аудита (AD-11)"}
+  - {id: qc_acceptance,            title: "Приёмка на точке предъявления ОТК", domain: qc}
+  - {id: qc_acceptance_repeat,     title: "Приёмка при повторном предъявлении (уровнем выше)", domain: qc}
+  - {id: customer_acceptance,      title: "Приёмка представителем заказчика по перечню", domain: qc}
+  - {id: first_article,            title: "Акт первой детали", domain: qc}
+  - {id: quorum_signature,         title: "Подпись в кворуме версии процесса", domain: production}
+  - {id: nc_disposition,           title: "Решение по несоответствию (рамки по тяжести)", domain: qc}
+  - {id: concession_approval,      title: "Подпись разрешения на отклонение", domain: qc}
+  - {id: scrap_approval,           title: "Утверждение акта о браке", domain: production}
+  - {id: weld_repair_approval,     title: "Согласие на повторный ремонт шва", domain: production}
+  - {id: rework_limit_waiver,      title: "Разрешение сверх лимита доработок (FR-18)", domain: production}
+  - {id: cause_confirmation,       title: "Подтверждение причины", domain: production}
+  - {id: operator_error_confirmation, title: "Подтверждение ошибки исполнителя (после объяснения работника)", domain: production}
+  - {id: risk_scope_narrowing,     title: "Сужение области риска", domain: qc}
+  - {id: containment_release,      title: "Снятие блока", domain: qc}
+  - {id: process_hold,             title: "Остановка и снятие остановки точки процесса", domain: production}
+  - {id: analyzer_admission,       title: "Допуск версии анализатора", domain: qc}
+  - {id: analyzer_reinstate,       title: "Возврат анализатора после отката", domain: qc}
+  - {id: controller_assignment_approval, title: "Согласование назначения контролёра на пост (PRD §11.18)", domain: qc}
+  - {id: paper_attestation,        title: "Заверение бумажной подписи (AD-43)", domain: production}
+  - {id: second_signature_qc,      title: "Вторая подпись: полномочия ОТК, клейма, ключи контролёров (AD-11)", domain: qc}
+  - {id: second_signature_production, title: "Вторая подпись: полномочия и ключи производства (AD-11)", domain: production}
+  - {id: second_signature_audit,   title: "Вторая подпись: привилегии администраторов и аудита (AD-11)", domain: admin}
 
 # Виды контроля для цифровых клейм (FR-145): одно клеймо на вид контроля.
+# Номер клейма (stamp_id) — ASCII по defs.object_id (он пишется в policy.stamp.issued); в интерфейсе и печатных
+# формах номер показывается как есть.
 stamp_kinds: [incoming, dimensional, visual, weld, assembly, leak_test, final]
 
 persons:
@@ -183,15 +206,15 @@ grants:
     - {person: HWS-WC, authority: paper_attestation,    scope: ent01/b1/wc}
     - {person: HWS-AC, authority: paper_attestation,    scope: ent01/b1/ac}
   stamps:
-    - {person: INS-01, stamp_id: "ОТК-01-ВК",  kind: incoming,    scope: ent01/b1/sk, order_ref: "Приказ № 1-К [ПП]"}
-    - {person: INS-01, stamp_id: "ОТК-01-РК",  kind: dimensional, scope: ent01/b1/mc, order_ref: "Приказ № 1-К [ПП]"}
-    - {person: INS-01, stamp_id: "ОТК-01-ВИЗ", kind: visual,      scope: ent01/b1,    order_ref: "Приказ № 1-К [ПП]"}
-    - {person: INS-01, stamp_id: "ОТК-01-СВ",  kind: weld,        scope: ent01/b1/wc, order_ref: "Приказ № 1-К [ПП]"}
-    - {person: INS-02, stamp_id: "ОТК-02-СБ",  kind: assembly,    scope: ent01/b1/ac, order_ref: "Приказ № 1-К [ПП]"}
-    - {person: INS-02, stamp_id: "ОТК-02-ГЕ",  kind: leak_test,   scope: ent01/b1/ac, order_ref: "Приказ № 1-К [ПП]"}
-    - {person: INS-02, stamp_id: "ОТК-02-ОК",  kind: final,       scope: ent01/b1/qa, order_ref: "Приказ № 1-К [ПП]"}
-    - {person: INS-02, stamp_id: "ОТК-02-ВИЗ", kind: visual,      scope: ent01/b1,    order_ref: "Приказ № 1-К [ПП]"}
-    - {person: HQC-01, stamp_id: "ОТК-00-ОК",  kind: final,       scope: ent01,       order_ref: "Приказ № 1-К [ПП]"}
+    - {person: INS-01, stamp_id: "OTK-01-VK",  kind: incoming,    scope: ent01/b1/sk, order_ref: "Приказ № 1-К [ПП]"}
+    - {person: INS-01, stamp_id: "OTK-01-RK",  kind: dimensional, scope: ent01/b1/mc, order_ref: "Приказ № 1-К [ПП]"}
+    - {person: INS-01, stamp_id: "OTK-01-VIZ", kind: visual,      scope: ent01/b1,    order_ref: "Приказ № 1-К [ПП]"}
+    - {person: INS-01, stamp_id: "OTK-01-SV",  kind: weld,        scope: ent01/b1/wc, order_ref: "Приказ № 1-К [ПП]"}
+    - {person: INS-02, stamp_id: "OTK-02-SB",  kind: assembly,    scope: ent01/b1/ac, order_ref: "Приказ № 1-К [ПП]"}
+    - {person: INS-02, stamp_id: "OTK-02-GE",  kind: leak_test,   scope: ent01/b1/ac, order_ref: "Приказ № 1-К [ПП]"}
+    - {person: INS-02, stamp_id: "OTK-02-OK",  kind: final,       scope: ent01/b1/qa, order_ref: "Приказ № 1-К [ПП]"}
+    - {person: INS-02, stamp_id: "OTK-02-VIZ", kind: visual,      scope: ent01/b1,    order_ref: "Приказ № 1-К [ПП]"}
+    - {person: HQC-01, stamp_id: "OTK-00-OK",  kind: final,       scope: ent01,       order_ref: "Приказ № 1-К [ПП]"}
   qualifications:
     - {person: W21, qualification: welder_argon_arc_amg6, scope: ent01/b1/wc, valid_until: "2027-06-30T00:00:00.000Z", certificate_ref: "НАКС [ПП]"}
     - {person: W22, qualification: welder_argon_arc_amg6, scope: ent01/b1/wc, valid_until: "2026-12-31T00:00:00.000Z", certificate_ref: "НАКС [ПП]"}
@@ -209,7 +232,7 @@ separation_of_duties:
     conflicting_actions: ["process.operation.start", "nonconformity.presentation.resolve"]
   - id: SOD-2
     statement: "Заверитель бумажной подписи ≠ подписант (AD-43)"
-    conflicting_actions: ["documents.document.sign", "documents.paper.attest"]
+    conflicting_actions: ["documents.document.sign", "documents.signature.record", "documents.paper.attest"]
   - id: SOD-3
     statement: "Выдача прав себе — только со второй подписью независимой стороны (AD-11)"
     conflicting_actions: ["access.policy.grant", "access.policy.receive"]
@@ -219,6 +242,20 @@ second_signature:
   qc_authorities_stamps_keys: second_signature_qc
   production_authorities_keys: second_signature_production
   admin_and_audit_privileges: second_signature_audit
+
+# Документ «Выдача ролей, полномочий, клейм» (каталог документов спайна, AD-13, AD-43): маршрут подписей шаблона.
+# Этап второй подписи выбирает сфера выдачи (domain.access.Assess по эффективным правам): обычная роль — без второй
+# подписи; «выдача себе» и расширение прав администратора — привилегированная выдача, кто бы её ни делал (AD-11).
+# Подписант второй подписи ≠ инициатор ≠ получатель. Этапы вычисляет одна функция access.RequiredApprovals.
+# Подпись инициатора (администратора безопасности) — подпись самой команды access.policy.grant (уровень 2);
+# документ несёт вторую подпись. Тот же маршрут — у шаблона policy-grant в normative/documents (проверяет тест).
+grant_route:
+  template: policy-grant@1
+  title: "Выдача ролей, полномочий, клейм"
+  route:
+    - {stage: 1, title: "Начальник ОТК — вторая подпись", authority_id: second_signature_qc, quorum: one, signature_level: 2, paper_allowed: false, separation: [distinct_signers], when: {grant_domains: [qc]}}
+    - {stage: 2, title: "Руководитель производства — вторая подпись", authority_id: second_signature_production, quorum: one, signature_level: 2, paper_allowed: false, separation: [distinct_signers], when: {grant_domains: [production]}}
+    - {stage: 3, title: "Аудитор ИБ — вторая подпись", authority_id: second_signature_audit, quorum: one, signature_level: 2, paper_allowed: false, separation: [distinct_signers], when: {grant_domains: [admin]}}
 
 # Параметры аудита — принадлежат Аудитору ИБ (AD-8, AD-15); в генезисе — policy.audit.parameters_set.
 audit:

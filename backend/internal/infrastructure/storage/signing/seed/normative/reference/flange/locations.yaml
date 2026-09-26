@@ -1,0 +1,48 @@
+# Места: здание → цех → участок → рабочее место; склады и изоляторы (AD-15, AD-31, FR-130).
+# Цех = дорожка BPMN со своим складом (lane_id — дорожка в normative/process/flange-process.bpmn). [ПП]
+version: 1
+enterprise: {code: ENT01, name: "Предприятие-изготовитель (условное)"}
+locations:
+  - {id: B1,       kind: building,  scope: ent01/b1,       name: "Корпус 1"}
+  - {id: WS-SK,    kind: workshop,  scope: ent01/b1/sk,    parent: B1, name: "Склад и входной контроль", lane_id: Lane_SK, warehouse_id: WH-SK, access_zone_id: Z-SK}
+  - {id: WS-MC,    kind: workshop,  scope: ent01/b1/mc,    parent: B1, name: "Механический цех",         lane_id: Lane_MC, warehouse_id: WH-MC, access_zone_id: Z-MC}
+  - {id: WS-WC,    kind: workshop,  scope: ent01/b1/wc,    parent: B1, name: "Сварочный цех",            lane_id: Lane_WC, warehouse_id: WH-WC, access_zone_id: Z-WC}
+  - {id: WS-AC,    kind: workshop,  scope: ent01/b1/ac,    parent: B1, name: "Сборочно-испытательный цех", lane_id: Lane_AC, warehouse_id: WH-AC, access_zone_id: Z-AC}
+  - {id: WS-QA,    kind: workshop,  scope: ent01/b1/qa,    parent: B1, name: "ОТК и выпуск",             lane_id: Lane_QA, warehouse_id: WH-FG, access_zone_id: Z-QA}
+  - {id: LAB-NDT,  kind: station,   scope: ent01/b1/ndt,   parent: B1, name: "Лаборатория неразрушающего контроля"}
+  # склады
+  - {id: WH-SK,    kind: warehouse, scope: ent01/b1/sk/wh,  parent: WS-SK, name: "Склад покупных и заготовок"}
+  - {id: WH-MC,    kind: warehouse, scope: ent01/b1/mc/wh,  parent: WS-MC, name: "Кладовая механического цеха"}
+  - {id: WH-WC,    kind: warehouse, scope: ent01/b1/wc/wh,  parent: WS-WC, name: "Кладовая сварочного цеха"}
+  - {id: WH-AC,    kind: warehouse, scope: ent01/b1/ac/wh,  parent: WS-AC, name: "Кладовая сборочно-испытательного цеха"}
+  - {id: WH-FG,    kind: warehouse, scope: ent01/b1/qa/wh,  parent: WS-QA, name: "Склад готовой продукции"}
+  # изоляторы брака — место в цехе, не склад 1С (допущение процессной сессии, вопрос 2)
+  - {id: ISO-SK,   kind: isolator,  scope: ent01/b1/sk/iso, parent: WS-SK, name: "Изолятор входного контроля"}
+  - {id: ISO-MC,   kind: isolator,  scope: ent01/b1/mc/iso, parent: WS-MC, name: "Изолятор механического цеха"}
+  - {id: ISO-WC,   kind: isolator,  scope: ent01/b1/wc/iso, parent: WS-WC, name: "Изолятор сварочного цеха"}
+  - {id: ISO-AC,   kind: isolator,  scope: ent01/b1/ac/iso, parent: WS-AC, name: "Изолятор сборочно-испытательного цеха"}
+  - {id: ISO-QA,   kind: isolator,  scope: ent01/b1/qa/iso, parent: WS-QA, name: "Изолятор ОТК"}
+  # линии и участки (посты)
+  - {id: LINE-FL,  kind: line,      scope: ent01/b1/line-fl, parent: B1, name: "Линия фланца люка"}
+  # Две линии фланца (кейс §1.4, §2.4): расходятся только на сварке — у каждой свой пост и источник (мир заготовок, сценарии).
+  - {id: LINE-FL-1, kind: line,     scope: ent01/b1/line-fl/l1, parent: LINE-FL, name: "Линия ФЛ-100 № 1"}
+  - {id: LINE-FL-2, kind: line,     scope: ent01/b1/line-fl/l2, parent: LINE-FL, name: "Линия ФЛ-100 № 2"}
+  - {id: ST-VK,    kind: station,   scope: ent01/b1/sk/vk,  parent: WS-SK, name: "Участок входного контроля"}
+  - {id: ST-CNC,   kind: station,   scope: ent01/b1/mc/cnc, parent: WS-MC, name: "Участок ЧПУ"}
+  - {id: ST-CMM,   kind: station,   scope: ent01/b1/mc/cmm, parent: WS-MC, name: "Участок КИМ"}
+  - {id: ST-WELD,  kind: station,   scope: ent01/b1/wc/weld, parent: WS-WC, name: "Участок сварки"}
+  - {id: ST-ASM,   kind: station,   scope: ent01/b1/ac/asm, parent: WS-AC, name: "Участок сборки"}
+  - {id: ST-LEAK,  kind: station,   scope: ent01/b1/ac/leak, parent: WS-AC, name: "Участок испытаний на герметичность"}
+  - {id: ST-FINAL, kind: station,   scope: ent01/b1/qa/final, parent: WS-QA, name: "Участок окончательного контроля"}
+  # рабочие места (посты)
+  - {id: WP-VK-1,    kind: workplace, scope: ent01/b1/sk/vk/wp1,   parent: ST-VK,    name: "Пост входного контроля 1"}
+  - {id: WP-CNC-1,   kind: workplace, scope: ent01/b1/mc/cnc/wp1,  parent: ST-CNC,   name: "Пост ЧПУ 1"}
+  - {id: WP-CMM-1,   kind: workplace, scope: ent01/b1/mc/cmm/wp1,  parent: ST-CMM,   name: "Пост КИМ 1"}
+  - {id: WP-QC-MC,   kind: workplace, scope: ent01/b1/mc/qc,       parent: WS-MC,    name: "Пост ОТК механического цеха"}
+  - {id: WP-WELD-1,  kind: workplace, scope: ent01/b1/wc/weld/wp1, parent: ST-WELD,  name: "Пост сварки 1 (источник ИС-1)"}
+  - {id: WP-WELD-2,  kind: workplace, scope: ent01/b1/wc/weld/wp2, parent: ST-WELD,  name: "Пост сварки 2 (источник ИС-2)"}
+  - {id: WP-QC-WC,   kind: workplace, scope: ent01/b1/wc/qc,       parent: WS-WC,    name: "Пост ОТК сварочного цеха"}
+  - {id: WP-ASM-1,   kind: workplace, scope: ent01/b1/ac/asm/wp1,  parent: ST-ASM,   name: "Пост сборки 1"}
+  - {id: WP-LEAK-1,  kind: workplace, scope: ent01/b1/ac/leak/wp1, parent: ST-LEAK,  name: "Стенд герметичности"}
+  - {id: WP-QC-AC,   kind: workplace, scope: ent01/b1/ac/qc,       parent: WS-AC,    name: "Пост ОТК сборочно-испытательного цеха"}
+  - {id: WP-FINAL-1, kind: workplace, scope: ent01/b1/qa/final/wp1, parent: ST-FINAL, name: "Пост окончательного контроля"}

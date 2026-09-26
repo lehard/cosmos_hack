@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GalExchange xmlns="urn:ant-qc:galaktika:v1" messageId="bc706d05-d7d6-5cde-9c48-ede1e6b80488" createdAt="2026-09-25T10:42:17.305Z" from="ant" to="GAL-ERP-ZAVOD2" contract="gal.qc.v1">
+  <QualityLotResult presentation="1" verdict="rejected">
+    <Source businessKey="LOT-B-0915/inspection_result/ZT-1" messageVersion="1" enterprise="ENT01" closingPoint="ZT-1"></Source>
+    <Lot lotId="LOT-B-0915" quantity="12"></Lot>
+    <ProductionOrder orderId="ORD-0812"></ProductionOrder>
+    <Nonconformity ref="NC-2026-0031"></Nonconformity>
+    <Nonconformity ref="NC-2026-0032"></Nonconformity>
+  </QualityLotResult>
+</GalExchange>

@@ -1,6 +1,7 @@
 package verify
 
 import (
+	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -43,5 +44,28 @@ func TestSourceSeqGaps(t *testing.T) {
 	}
 	if len(pending) != 2 || !c.rejected {
 		t.Fatalf("оговорки: %v", pending)
+	}
+}
+
+// AD-33, эпик 05: блок генезиса, проверенный по якорю, снимает оговорку
+// «генезиса нет»; ошибка проверки и чужой отпечаток у хранителя — нарушение.
+func TestGenesisCheck(t *testing.T) {
+	mk := func(g *GenesisResult) *run {
+		v := &run{in: Input{Genesis: g}, checks: map[procs.VerifierReportV1ChecksElemCheck]*check{}}
+		for _, n := range []procs.VerifierReportV1ChecksElemCheck{"genesis", "signing_moment", "authority", "bpmn_quorum", "rendering", "build"} {
+			v.checks[n] = &check{name: n}
+		}
+		v.genesis()
+		v.pending()
+		return v
+	}
+	if c := mk(nil).checks["genesis"]; !c.unverif || c.rejected {
+		t.Fatalf("без генезиса — оговорка: %+v", c)
+	}
+	if c := mk(&GenesisResult{Records: 40, Digest: "d"}).checks["genesis"]; c.unverif || c.rejected || c.checked != 40 {
+		t.Fatalf("генезис цел: %+v", c)
+	}
+	if c := mk(&GenesisResult{Err: errors.New("чужой якорь")}).checks["genesis"]; !c.rejected {
+		t.Fatalf("ошибка генезиса — нарушение: %+v", c)
 	}
 }

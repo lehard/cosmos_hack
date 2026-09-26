@@ -232,7 +232,7 @@ func (m *IDMap) Translate(v any) any {
 }
 
 // reLocal — локальные ID прогона в словаре процессной сессии: партии, задания,
-// выполнения операций (SV-017-1, MO-004-1, EQ-001-1), кольца, крышки, клапаны.
-var reLocal = regexp.MustCompile(`^(LOT-[A-Z0-9-]+|ORD-\d+|(SV|MO|EQ|AS|LT|CS)-\d{3}-\d+|R-\d{3}|C-\d{3}|V-\d{3})$`)
+// выполнения операций (SV-017-1, MO-004-1, TQ-001-1), кольца, крышки, клапаны.
+var reLocal = regexp.MustCompile(`^(LOT-[A-Z0-9-]+|ORD-\d+|(SV|MO|EQ|AS|CV|FS|TQ|LT|CS)-\d{3}-\d+|R-\d{3}|C-\d{3}|V-\d{3})$`)
 
 func isLocalID(s string) bool { return reLocal.MatchString(s) }

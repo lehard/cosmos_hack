@@ -133,6 +133,10 @@ type apiOptions struct {
 	// ops — состояние компонентов, остановленные изделия, настройки
 	// (ops.go, эпик 34); nil — заглушка 501.
 	ops *opsapp.Service
+	// mes, cad — блоки и задания MES, импорт сборки КОМПАС (mes.go, cad.go,
+	// эпик 31); nil — заглушка 501.
+	mes *mesapp.Service
+	cad *cadapp.Service
 }
 
 // buildAPI собирает HTTP API: общий декоратор (Gate) над портами прав и входа,
@@ -154,6 +158,9 @@ func buildAPI(mux *http.ServeMux, o apiOptions) *httpapi.API {
 	if x := o.access; x != nil {
 		gate.Places, gate.Events = x.places, x.events
 		gate.Now = func() time.Time { t, _ := x.now(context.Background()); return t }
+		// Эпик 26: политика — для проверки policy_seq команды в journal.Append
+		// (AD-39), редких подписантов и объяснения прав своим кодом.
+		gate.Policy = x.policy
 	}
 	a := httpapi.New(mux, httpapi.Config{Mode: o.mode, ModuleModes: o.moduleModes, Gate: gate, Identity: idp})
 	gate.SetCatalog(a.Actions)
@@ -273,6 +280,18 @@ func buildAPI(mux *http.ServeMux, o apiOptions) *httpapi.API {
 		if x := o.access; x != nil {
 			opts = append(opts, accessapp.WithIdentity(x.identity), accessapp.WithDirectory(x.directory), accessapp.WithPolicy(x.policy),
 				accessapp.WithAccounts(x.creds, x.hasher), accessapp.WithDecisions(x.decisions, x.now))
+			// Эпик 26: документ выдачи прав и карточки редких подписантов — по
+			// живому модулю documents (маршрут подписей, AD-43, FR-136).
+			// Посты, назначения и факты исполнителя — живые в режиме live модуля
+			// access (в режиме fixtures панель «Посты» — у заготовок).
+			if a.ModeFor("access") == platform.ModeLive {
+				opts = append(opts, accessapp.WithLiveRoster(x.facts))
+			}
+			if o.documents != nil && a.ModeFor("documents") == platform.ModeLive {
+				bridge := accessapp.DocumentsBridge{Docs: o.documents}
+				opts = append(opts, accessapp.WithGrantDocuments(bridge))
+				gate.Cards = bridge
+			}
 		}
 		live := accessapp.NewService(opts...)
 		accesshttp.Register(a, live, live, gate)
@@ -314,11 +333,19 @@ func buildAPI(mux *http.ServeMux, o apiOptions) *httpapi.API {
 		erphttp.Register(a, q, c)
 	}
 	{
-		q, c := pick[mesapp.Queries, mesapp.Commands](a.ModeFor("mes"), mesapp.NewService(), mesfx.New())
+		live := o.mes
+		if live == nil {
+			live = mesapp.NewService()
+		}
+		q, c := pick[mesapp.Queries, mesapp.Commands](a.ModeFor("mes"), live, mesfx.New())
 		meshttp.Register(a, q, c)
 	}
 	{
-		q, c := pick[cadapp.Queries, cadapp.Commands](a.ModeFor("cad"), cadapp.NewService(), cadfx.New())
+		live := o.cad
+		if live == nil {
+			live = cadapp.NewService()
+		}
+		q, c := pick[cadapp.Queries, cadapp.Commands](a.ModeFor("cad"), live, cadfx.New())
 		cadhttp.Register(a, q, c)
 	}
 	{

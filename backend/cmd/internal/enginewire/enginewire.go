@@ -15,11 +15,13 @@ import (
 
 	analysisapp "ant/internal/application/analysis"
 	analyticsapp "ant/internal/application/analytics"
+	cadapp "ant/internal/application/cad"
 	documentsapp "ant/internal/application/documents"
 	engineapp "ant/internal/application/engine"
 	erpapp "ant/internal/application/erp"
 	itemapp "ant/internal/application/item"
 	machinelogsapp "ant/internal/application/machinelogs"
+	mesapp "ant/internal/application/mes"
 	nonconformityapp "ant/internal/application/nonconformity"
 	notificationsapp "ant/internal/application/notifications"
 	processapp "ant/internal/application/process"
@@ -47,6 +49,8 @@ func Registry() *engineapp.Registry {
 	must(notificationsapp.Register(r))
 	must(itemapp.Register(r))
 	must(documentsapp.RegisterProjections(r))
+	cadapp.MustRegister(r)
+	mesapp.MustRegister(r)
 	return r
 }
 

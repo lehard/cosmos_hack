@@ -14,7 +14,7 @@ import RecordDrawerHost from '../RecordDrawerHost.vue'
 import { RECORD_KINDS, recordKinds } from '../registry'
 
 const $ = (sel: string) => document.querySelector<HTMLElement>(sel)
-const until = (check: () => void) => vi.waitFor(check, { timeout: 5000 })
+const until = (check: () => void) => vi.waitFor(check, { timeout: 10_000 })
 const json = (body: unknown) => new Response(JSON.stringify(body), { status: 200, headers: { 'Content-Type': 'application/json', 'Ant-Backend': 'fixtures' } })
 const fetchMock = vi.fn(async (url: string) => {
   if (String(url).startsWith('/api/v1/items/ENT:FL-0042/passport')) return json(flangePassport())

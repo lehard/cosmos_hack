@@ -210,7 +210,7 @@ func (s *State) Preview(env Env, d *Doc) (v Version, built Built, changed bool, 
 	if cur != nil {
 		no = cur.No + 1
 	}
-	stages := approvalsFor(t, d)
+	stages := approvalsFor(t, d, env)
 	built, err = Compose(t, d, no, body, stages)
 	v = Version{No: no, Content: built.Content, BodyHash: Hash(raw), RenderingHash: built.RenderingHash, Digest: built.Digest, Stages: stages}
 	if cur != nil {
@@ -501,7 +501,10 @@ func Apply(s State, in kernel.Intent) State {
 func RawData(r kernel.Reaction) (json.RawMessage, error) { return Canonical(r.Data) }
 
 // approvalsFor — обязательные подписи документа d по маршруту шаблона t
-// (AD-43: одна функция access.RequiredApprovals).
-func approvalsFor(t Template, d *Doc) []access.ApprovalStage {
-	return access.RequiredApprovals(t.Route, access.ApprovalContext{Decision: d.Context.Decision, CustomerAcceptance: d.Context.CustomerAcceptance}, access.Policy{})
+// (AD-43: одна функция access.RequiredApprovals) на политике env.Policy;
+// инициатор — кто запросил документ (для документа выдачи прав он не ставит
+// вторую подпись, AD-11).
+func approvalsFor(t Template, d *Doc, env Env) []access.ApprovalStage {
+	c := access.ApprovalContext{Decision: d.Context.Decision, CustomerAcceptance: d.Context.CustomerAcceptance, Initiator: d.Context.Author}
+	return access.RequiredApprovals(t.Route, c, env.Policy)
 }

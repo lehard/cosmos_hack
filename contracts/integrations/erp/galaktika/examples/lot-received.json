@@ -1,0 +1,30 @@
+{
+  "message_id": "GAL-2026-09-25-000118",
+  "created_at": "2026-09-25T05:20:00.000Z",
+  "from": "GAL-ERP-ZAVOD2",
+  "to": "ant",
+  "contract": "gal.qc.v1",
+  "lot_received": {
+    "nrec": "4611686018427402210",
+    "table": "KatSopr",
+    "number": "ПН-000431",
+    "date": "2026-09-24",
+    "supplier": {
+      "nrec": "4611686018427377001",
+      "code": "ПОСТ-003",
+      "name": "АО «Уралкольцо»"
+    },
+    "item": {
+      "designation": "ФЛ-100.01.002",
+      "name": "Патрубок (кольцо)",
+      "nrec": "4611686018427388130",
+      "table": "KatMC"
+    },
+    "lot": {
+      "number": "П-2026-0915",
+      "quantity": 12,
+      "heat_no": "Пл-4471",
+      "certificate_no": "СК-2026-1190"
+    }
+  }
+}

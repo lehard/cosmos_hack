@@ -1,0 +1,141 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/integrations/mes/b2mml/ConfirmBOD.schema.json",
+  "title": "B2mmlConfirmBOD",
+  "description": "Подтверждение MES (B2MML ConfirmBOD, подмножество mes.isa95.v1): успех — квитанция блока (mes.hold.responded accepted, повтор — duplicate); ErrorType = Data — ошибка данных без автоповтора, тревога мастеру «блок в MES не доставлен»; Contract — несовместимость, канал degraded.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "ConfirmBOD": {
+      "type": "object",
+      "description": "Сообщение ConfirmBOD.",
+      "additionalProperties": false,
+      "properties": {
+        "releaseID": {
+          "$ref": "common.schema.json#/definitions/ReleaseID",
+          "description": "Релиз B2MML."
+        },
+        "ApplicationArea": {
+          "$ref": "common.schema.json#/definitions/ApplicationArea",
+          "description": "Заголовок подтверждения."
+        },
+        "DataArea": {
+          "type": "object",
+          "description": "Глагол Confirm и подтверждения.",
+          "additionalProperties": false,
+          "properties": {
+            "Confirm": {
+              "$ref": "common.schema.json#/definitions/EmptyVerb",
+              "description": "Глагол Confirm."
+            },
+            "BOD": {
+              "type": "array",
+              "description": "Подтверждения.",
+              "items": {
+                "type": "object",
+                "description": "Подтверждение по одному BOD.",
+                "additionalProperties": false,
+                "properties": {
+                  "OriginalApplicationArea": {
+                    "type": "object",
+                    "description": "Заголовок подтверждаемого сообщения.",
+                    "additionalProperties": false,
+                    "properties": {
+                      "BODID": {
+                        "type": "string",
+                        "description": "BODID исходного сообщения.",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$"
+                      },
+                      "CreationDateTime": {
+                        "$ref": "common.schema.json#/definitions/DateTime",
+                        "description": "Время исходного сообщения."
+                      }
+                    },
+                    "required": [
+                      "BODID"
+                    ]
+                  },
+                  "BODSuccessMessage": {
+                    "type": "object",
+                    "description": "Успех; Duplicate — повтор того же BODID уже принят (AD-7).",
+                    "additionalProperties": false,
+                    "properties": {
+                      "Duplicate": {
+                        "type": "boolean",
+                        "description": "Повтор уже принятого сообщения: прежнее подтверждение."
+                      }
+                    }
+                  },
+                  "BODFailureMessage": {
+                    "type": "object",
+                    "description": "Ошибка.",
+                    "additionalProperties": false,
+                    "properties": {
+                      "ErrorMessage": {
+                        "type": "array",
+                        "description": "Ошибки.",
+                        "items": {
+                          "type": "object",
+                          "description": "Ошибка обработки (ErrorMessage).",
+                          "additionalProperties": false,
+                          "properties": {
+                            "ErrorCode": {
+                              "type": "string",
+                              "description": "Код ошибки MES.",
+                              "maxLength": 64
+                            },
+                            "ErrorType": {
+                              "type": "string",
+                              "enum": [
+                                "Data",
+                                "Transport",
+                                "Security",
+                                "Contract",
+                                "Other"
+                              ],
+                              "description": "Вид ошибки."
+                            },
+                            "ErrorDescription": {
+                              "type": "string",
+                              "description": "Пояснение.",
+                              "maxLength": 1024
+                            }
+                          },
+                          "required": [
+                            "ErrorCode"
+                          ]
+                        },
+                        "minItems": 1,
+                        "maxItems": 20
+                      }
+                    },
+                    "required": [
+                      "ErrorMessage"
+                    ]
+                  }
+                },
+                "required": [
+                  "OriginalApplicationArea"
+                ]
+              },
+              "minItems": 1,
+              "maxItems": 100
+            }
+          },
+          "required": [
+            "Confirm",
+            "BOD"
+          ]
+        }
+      },
+      "required": [
+        "releaseID",
+        "ApplicationArea",
+        "DataArea"
+      ]
+    }
+  },
+  "required": [
+    "ConfirmBOD"
+  ]
+}

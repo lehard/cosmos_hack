@@ -373,7 +373,18 @@ type DocumentTemplatesSeedTemplatesElemRouteElemWhen struct {
 
 	// Решения, при которых этап нужен (например, repair, use_as_is — режим 4).
 	Decisions []string `json:"decisions,omitempty,omitzero"`
+
+	// Сфера выдачи прав (документ «Выдача ролей, полномочий, клейм», AD-11): этап
+	// второй подписи нужен, если сфера выдачи — одна из этих; её вычисляет
+	// access.Assess по эффективным правам.
+	GrantDomains []DocumentTemplatesSeedTemplatesElemRouteElemWhenGrantDomainsElem `json:"grant_domains,omitempty,omitzero"`
 }
+
+type DocumentTemplatesSeedTemplatesElemRouteElemWhenGrantDomainsElem string
+
+const DocumentTemplatesSeedTemplatesElemRouteElemWhenGrantDomainsElemAdmin DocumentTemplatesSeedTemplatesElemRouteElemWhenGrantDomainsElem = "admin"
+const DocumentTemplatesSeedTemplatesElemRouteElemWhenGrantDomainsElemProduction DocumentTemplatesSeedTemplatesElemRouteElemWhenGrantDomainsElem = "production"
+const DocumentTemplatesSeedTemplatesElemRouteElemWhenGrantDomainsElemQc DocumentTemplatesSeedTemplatesElemRouteElemWhenGrantDomainsElem = "qc"
 
 type DocumentTemplatesSeedTemplatesElemSubject string
 
@@ -772,6 +783,11 @@ type PolicySeed struct {
 	// Код предприятия.
 	EnterpriseCode string `json:"enterprise_code"`
 
+	// Маршрут подписей документа «Выдача ролей, полномочий, клейм» (каталог
+	// документов спайна, AD-13, AD-43); тот же маршрут — у шаблона в
+	// normative/documents (проверяет тест).
+	GrantRoute *PolicySeedGrantRoute `json:"grant_route,omitempty,omitzero"`
+
 	// Выдачи.
 	Grants PolicySeedGrants `json:"grants"`
 
@@ -810,18 +826,130 @@ type PolicySeedAudit struct {
 	// Предельный разрыв, с.
 	CheckpointMaxGapS int `json:"checkpoint_max_gap_s"`
 
+	// Дополнительно критические типы.
+	CriticalTypes []string `json:"critical_types,omitempty,omitzero"`
+
+	// Отпечаток ключа хранителя.
+	KeeperKeyFingerprint *string `json:"keeper_key_fingerprint,omitempty,omitzero"`
+
 	// Подписчики.
 	SecurityBusSubscribers []string `json:"security_bus_subscribers,omitempty,omitzero"`
 }
 
 // Полномочие.
 type PolicySeedAuthoritiesElem struct {
+	// Сфера полномочия (AD-11): чья вторая подпись нужна при выдаче.
+	Domain *PolicySeedAuthoritiesElemDomain `json:"domain,omitempty,omitzero"`
+
 	// Идентификатор.
 	ID string `json:"id"`
 
 	// Название.
 	Title string `json:"title"`
 }
+
+type PolicySeedAuthoritiesElemDomain string
+
+const PolicySeedAuthoritiesElemDomainAdmin PolicySeedAuthoritiesElemDomain = "admin"
+const PolicySeedAuthoritiesElemDomainProduction PolicySeedAuthoritiesElemDomain = "production"
+const PolicySeedAuthoritiesElemDomainQc PolicySeedAuthoritiesElemDomain = "qc"
+
+// Маршрут подписей документа «Выдача ролей, полномочий, клейм» (каталог документов
+// спайна, AD-13, AD-43); тот же маршрут — у шаблона в normative/documents
+// (проверяет тест).
+type PolicySeedGrantRoute struct {
+	// Маршрут подписей (AD-13, AD-43).
+	Route []PolicySeedGrantRouteRouteElem `json:"route"`
+
+	// Шаблон документа выдачи: ‹id›@‹версия›.
+	Template string `json:"template"`
+
+	// Название документа.
+	Title *string `json:"title,omitempty,omitzero"`
+}
+
+// Этап маршрута подписей (AD-13); обязательные подписи вычисляет
+// access.RequiredApprovals (AD-43).
+type PolicySeedGrantRouteRouteElem struct {
+	// Полномочие заверителя бумажной подписи; нет — бумага на этапе запрещена.
+	AttesterAuthorityID *string `json:"attester_authority_id,omitempty,omitzero"`
+
+	// Полномочие этапа (normative/policy) или роль, если отдельного полномочия нет.
+	AuthorityID string `json:"authority_id"`
+
+	// Этап закрывает само решение-источник документа.
+	BySource *bool `json:"by_source,omitempty,omitzero"`
+
+	// Внешняя сторона.
+	ExternalParty *PolicySeedGrantRouteRouteElemExternalParty `json:"external_party,omitempty,omitzero"`
+
+	// k для k из n и число подписей для «все».
+	K *int `json:"k,omitempty,omitzero"`
+
+	// Бумага с заверением допустима (AD-43).
+	PaperAllowed bool `json:"paper_allowed"`
+
+	// Сколько подписей: 1 | все | k из n.
+	Quorum PolicySeedGrantRouteRouteElemQuorum `json:"quorum"`
+
+	// Роль подписанта по политике (с наследованием).
+	Role *string `json:"role,omitempty,omitzero"`
+
+	// Разделение обязанностей (FR-56, AD-43).
+	Separation []PolicySeedGrantRouteRouteElemSeparationElem `json:"separation,omitempty,omitzero"`
+
+	// Уровень подписи (AD-13).
+	SignatureLevel int `json:"signature_level"`
+
+	// Номер этапа по порядку.
+	Stage int `json:"stage"`
+
+	// Вид цифрового клейма для действий контроля (FR-145).
+	StampKind *string `json:"stamp_kind,omitempty,omitzero"`
+
+	// Кто подписывает — для людей.
+	Title string `json:"title"`
+
+	// Этап нужен только при условии (режим автоматизации, решение).
+	When *PolicySeedGrantRouteRouteElemWhen `json:"when,omitempty,omitzero"`
+}
+
+type PolicySeedGrantRouteRouteElemExternalParty string
+
+const PolicySeedGrantRouteRouteElemExternalPartyCustomerRepresentative PolicySeedGrantRouteRouteElemExternalParty = "customer_representative"
+const PolicySeedGrantRouteRouteElemExternalPartyNone PolicySeedGrantRouteRouteElemExternalParty = "none"
+const PolicySeedGrantRouteRouteElemExternalPartyPartner PolicySeedGrantRouteRouteElemExternalParty = "partner"
+
+type PolicySeedGrantRouteRouteElemQuorum string
+
+const PolicySeedGrantRouteRouteElemQuorumAll PolicySeedGrantRouteRouteElemQuorum = "all"
+const PolicySeedGrantRouteRouteElemQuorumKOfN PolicySeedGrantRouteRouteElemQuorum = "k_of_n"
+const PolicySeedGrantRouteRouteElemQuorumOne PolicySeedGrantRouteRouteElemQuorum = "one"
+
+type PolicySeedGrantRouteRouteElemSeparationElem string
+
+const PolicySeedGrantRouteRouteElemSeparationElemDistinctSigners PolicySeedGrantRouteRouteElemSeparationElem = "distinct_signers"
+const PolicySeedGrantRouteRouteElemSeparationElemNotItemParticipant PolicySeedGrantRouteRouteElemSeparationElem = "not_item_participant"
+
+// Этап нужен только при условии (режим автоматизации, решение).
+type PolicySeedGrantRouteRouteElemWhen struct {
+	// Этап нужен для продукции с приёмкой представителя заказчика (режим 5).
+	CustomerAcceptance *bool `json:"customer_acceptance,omitempty,omitzero"`
+
+	// Решения, при которых этап нужен (например, repair, use_as_is — режим 4).
+	Decisions []string `json:"decisions,omitempty,omitzero"`
+
+	// Сфера выдачи прав (документ «Выдача ролей, полномочий, клейм», AD-11): этап
+	// второй подписи нужен, если сфера выдачи — одна из этих; её вычисляет
+	// access.Assess по эффективным правам.
+	GrantDomains []PolicySeedGrantRouteRouteElemWhenGrantDomainsElem `json:"grant_domains,omitempty,omitzero"`
+}
+
+type PolicySeedGrantRouteRouteElemWhenGrantDomainsElem string
+
+const PolicySeedGrantRouteRouteElemWhenGrantDomainsElemAdmin PolicySeedGrantRouteRouteElemWhenGrantDomainsElem = "admin"
+const PolicySeedGrantRouteRouteElemWhenGrantDomainsElemProduction PolicySeedGrantRouteRouteElemWhenGrantDomainsElem = "production"
+const PolicySeedGrantRouteRouteElemWhenGrantDomainsElemQc PolicySeedGrantRouteRouteElemWhenGrantDomainsElem = "qc"
 
 // Выдачи.
 type PolicySeedGrants struct {
@@ -927,8 +1055,16 @@ type PolicySeedRolesElem struct {
 	// Действия.
 	Actions []string `json:"actions"`
 
+	// Редкий подписант (FR-136): только адресованные ему карточки решения и их
+	// предметы.
+	CardOnly *bool `json:"card_only,omitempty,omitzero"`
+
 	// Одна из пяти ролей кейса.
 	CaseRole *bool `json:"case_role,omitempty,omitzero"`
+
+	// Сфера роли для второй подписи (AD-11): admin — привилегии администраторов и
+	// аудита, qc — ОТК; наследники берут сферу базовой роли.
+	Domain *PolicySeedRolesElemDomain `json:"domain,omitempty,omitzero"`
 
 	// Идентификатор роли.
 	ID string `json:"id"`
@@ -939,6 +1075,12 @@ type PolicySeedRolesElem struct {
 	// Название.
 	Title string `json:"title"`
 }
+
+type PolicySeedRolesElemDomain string
+
+const PolicySeedRolesElemDomainAdmin PolicySeedRolesElemDomain = "admin"
+const PolicySeedRolesElemDomainProduction PolicySeedRolesElemDomain = "production"
+const PolicySeedRolesElemDomainQc PolicySeedRolesElemDomain = "qc"
 
 // Области.
 type PolicySeedScopes struct {

@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GalAbout xmlns="urn:ant-qc:galaktika:v1" node="GAL-ERP-ZAVOD2" database="zavod2" contract="gal.qc.v1" platform="Галактика ERP 9.1, Атлантис; обработчик каталога обмена ant-qc">
+  <Supported>gal.qc.v1</Supported>
+</GalAbout>

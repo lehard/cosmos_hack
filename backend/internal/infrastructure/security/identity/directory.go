@@ -24,6 +24,7 @@ import (
 	"path"
 	"sort"
 	"strings"
+	"time"
 
 	"go.yaml.in/yaml/v3"
 
@@ -48,9 +49,28 @@ type policyFile struct {
 		ID       string   `yaml:"id"`
 		Title    string   `yaml:"title"`
 		CaseRole bool     `yaml:"case_role"`
+		Domain   string   `yaml:"domain"`
+		CardOnly bool     `yaml:"card_only"`
 		Inherits []string `yaml:"inherits"`
 		Actions  []string `yaml:"actions"`
 	} `yaml:"roles"`
+	Authorities []struct {
+		ID     string `yaml:"id"`
+		Title  string `yaml:"title"`
+		Domain string `yaml:"domain"`
+	} `yaml:"authorities"`
+	StampKinds []string `yaml:"stamp_kinds"`
+	GrantRoute struct {
+		Template string                 `yaml:"template"`
+		Route    []accessdom.RouteStage `yaml:"route"`
+	} `yaml:"grant_route"`
+	Audit struct {
+		CheckpointIntervalS    int      `yaml:"checkpoint_interval_s"`
+		CheckpointMaxGapS      int      `yaml:"checkpoint_max_gap_s"`
+		KeeperKeyFingerprint   string   `yaml:"keeper_key_fingerprint"`
+		CriticalTypes          []string `yaml:"critical_types"`
+		SecurityBusSubscribers []string `yaml:"security_bus_subscribers"`
+	} `yaml:"audit"`
 	Persons []struct {
 		ID    string `yaml:"id"`
 		Name  string `yaml:"name"`
@@ -72,6 +92,13 @@ type policyFile struct {
 			Scope    string `yaml:"scope"`
 			OrderRef string `yaml:"order_ref"`
 		} `yaml:"stamps"`
+		Qualifications []struct {
+			Person         string    `yaml:"person"`
+			Qualification  string    `yaml:"qualification"`
+			Scope          string    `yaml:"scope"`
+			ValidUntil     time.Time `yaml:"valid_until"`
+			CertificateRef string    `yaml:"certificate_ref"`
+		} `yaml:"qualifications"`
 	} `yaml:"grants"`
 }
 
@@ -96,10 +123,20 @@ func LoadSeed(fsys fs.FS) (accessdom.Seed, error) {
 		return accessdom.Seed{}, err
 	}
 	s := accessdom.Seed{Root: pf.Scopes.Root, Unauthenticated: pf.UnauthenticatedRole}
+	// Справочная часть (эпик 26): сферы ролей и полномочий, «только карточка»,
+	// маршрут документа выдачи, параметры аудита по умолчанию.
+	s.Catalog = accessdom.Catalog{Roles: map[string]accessdom.RoleTraits{}, StampKinds: pf.StampKinds,
+		GrantTemplate: pf.GrantRoute.Template, GrantRoute: pf.GrantRoute.Route,
+		Audit: accessdom.AuditParameters{CheckpointIntervalS: pf.Audit.CheckpointIntervalS, CheckpointMaxGapS: pf.Audit.CheckpointMaxGapS,
+			KeeperKeyFingerprint: pf.Audit.KeeperKeyFingerprint, CriticalTypes: pf.Audit.CriticalTypes, SecurityBusSubscribers: pf.Audit.SecurityBusSubscribers}}
+	for _, a := range pf.Authorities {
+		s.Catalog.Authorities = append(s.Catalog.Authorities, accessdom.AuthorityDef{ID: a.ID, Title: a.Title, Domain: a.Domain})
+	}
 	known := map[string]bool{}
 	for _, r := range pf.Roles {
 		known[r.ID] = true
 		s.Roles = append(s.Roles, accessdom.Role{ID: r.ID, Title: r.Title, CaseRole: r.CaseRole, Inherits: r.Inherits, Actions: r.Actions})
+		s.Catalog.Roles[r.ID] = accessdom.RoleTraits{Domain: r.Domain, CardOnly: r.CardOnly}
 	}
 	for _, r := range pf.Roles {
 		for _, b := range r.Inherits {
@@ -126,6 +163,10 @@ func LoadSeed(fsys fs.FS) (accessdom.Seed, error) {
 	}
 	for _, st := range pf.Grants.Stamps {
 		s.Stamps = append(s.Stamps, accessdom.Stamp{StampID: st.StampID, PersonID: st.Person, Kind: st.Kind, Scope: st.Scope, OrderRef: st.OrderRef})
+	}
+	for _, q := range pf.Grants.Qualifications {
+		s.Qualifications = append(s.Qualifications, accessdom.Qualification{PersonID: q.Person, QualificationID: q.Qualification, Scope: q.Scope,
+			CertificateRef: q.CertificateRef, ValidUntil: q.ValidUntil})
 	}
 	return s, nil
 }
@@ -164,6 +205,46 @@ func LoadPlaces(fsys fs.FS) (Places, error) {
 	return out, nil
 }
 
+// loadWorkplaces — рабочие места справочника мест с цехом (первый предок
+// вида workshop); нет справочника — пусто.
+func loadWorkplaces(fsys fs.FS) ([]access.WorkplaceRef, error) {
+	b, err := fs.ReadFile(fsys, LocationsFile)
+	if err != nil {
+		return nil, nil
+	}
+	var f struct {
+		Locations []struct {
+			ID     string `yaml:"id"`
+			Kind   string `yaml:"kind"`
+			Scope  string `yaml:"scope"`
+			Parent string `yaml:"parent"`
+			Name   string `yaml:"name"`
+		} `yaml:"locations"`
+	}
+	if err := yaml.Unmarshal(b, &f); err != nil {
+		return nil, fmt.Errorf("%s: %w", LocationsFile, err)
+	}
+	kind, parent := map[string]string{}, map[string]string{}
+	for _, l := range f.Locations {
+		kind[l.ID], parent[l.ID] = l.Kind, l.Parent
+	}
+	var out []access.WorkplaceRef
+	for _, l := range f.Locations {
+		if l.Kind != "workplace" {
+			continue
+		}
+		w := access.WorkplaceRef{ID: l.ID, Name: l.Name, Scope: l.Scope}
+		for p, n := l.Parent, 0; p != "" && n < 10; p, n = parent[p], n+1 {
+			if kind[p] == "workshop" {
+				w.Workshop = p
+				break
+			}
+		}
+		out = append(out, w)
+	}
+	return out, nil
+}
+
 // LoadDirectory читает стартовую политику и столы ролей из fsys (корень
 // репозитория или встроенная копия нормативного слоя).
 func LoadDirectory(fsys fs.FS) (*access.Directory, error) {
@@ -187,6 +268,9 @@ func LoadDirectory(fsys fs.FS) (*access.Directory, error) {
 			return nil, fmt.Errorf("%s: у сотрудника %s неизвестная роль %q", PolicyFile, p.ID, p.Roles[0].Role)
 		}
 		d.Personas = append(d.Personas, access.DemoPersona{ID: p.ID, Name: p.Name, Role: role, Scope: p.Roles[0].Scope})
+	}
+	if d.Workplaces, err = loadWorkplaces(fsys); err != nil {
+		return nil, err
 	}
 	names, err := fs.Glob(fsys, DesksGlob)
 	if err != nil {

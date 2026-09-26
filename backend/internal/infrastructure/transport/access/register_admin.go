@@ -48,6 +48,20 @@ func registerAdmin(api *httpapi.API, q app.Queries, c app.Commands) {
 		}, m platform.Moment) (app.AccessGrantHistory, error) {
 			return q.Grants(ctx, in.PersonID, m, in.Page())
 		})
+	httpapi.Read(api, httpapi.Get("/grants/assessment", "Чья подпись нужна для выдачи",
+		"AD-11, AD-43, FR-146 (эпик 26): оценка выдачи по эффективным правам — обычная (одной подписью) или привилегированная (сфера ОТК, "+
+			"производства, администраторов и аудита; выдача себе; расширение прав администратора) — и этапы документа «Выдача ролей, полномочий, клейм» "+
+			"с кандидатами на вторую подпись: данные для кнопки «Запросить решение»."),
+		platform.Action{ID: "access.grant.assess", Owner: owner, Subject: "policy"},
+		func(ctx context.Context, in *struct {
+			PersonID       string `query:"person_id" required:"true" maxLength:"64" doc:"Кому выдаётся."`
+			Kind           string `query:"kind" required:"true" enum:"role,authority,stamp"`
+			SubjectID      string `query:"subject_id" required:"true" maxLength:"64" doc:"Роль, полномочие или id клейма."`
+			InspectionKind string `query:"inspection_kind" maxLength:"64" doc:"Вид контроля клейма."`
+			Scope          string `query:"scope" maxLength:"256" doc:"Область; пусто — всё предприятие."`
+		}, _ platform.Moment) (app.GrantAssessment, error) {
+			return q.AssessGrant(ctx, app.GrantQuery{PersonID: in.PersonID, Kind: in.Kind, SubjectID: in.SubjectID, InspectionKind: in.InspectionKind, Scope: in.Scope})
+		})
 	httpapi.Read(api, httpapi.Get("/stamps", "Цифровые клейма", "FR-145: клейма контролёров — вид контроля, область, приказ, срок."),
 		platform.Action{ID: "access.stamp.list", Owner: owner, Subject: "policy"},
 		func(ctx context.Context, in *struct {

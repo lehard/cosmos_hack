@@ -79,6 +79,16 @@ type Policy struct {
 	Stamps      []Stamp
 	// Unauthenticated — роль субъекта без сеанса (AnonymousSubject); пусто — без сеанса ничего нельзя.
 	Unauthenticated string
+	// Catalog — справочная часть из нормативного слоя (сферы, маршрут выдачи):
+	// переходит и в политику генезиса, как Root.
+	Catalog Catalog
+	// Audit — действующие параметры аудита policy.audit.* (затравка или
+	// последняя запись policy.audit.parameters_set Аудитора ИБ).
+	Audit AuditParameters
+	// Qualifications — квалификации со сроками (FR-80); Posts — действующие
+	// назначения на посты в сменах (FR-81).
+	Qualifications []Qualification
+	Posts          []PostAssignment
 }
 
 // Clone — глубокая копия для применения новых записей.
@@ -94,6 +104,10 @@ func (p Policy) Clone() Policy {
 	c.Assignments = slices.Clone(p.Assignments)
 	c.Authorities = slices.Clone(p.Authorities)
 	c.Stamps = slices.Clone(p.Stamps)
+	c.Qualifications = slices.Clone(p.Qualifications)
+	c.Posts = slices.Clone(p.Posts)
+	c.Audit.CriticalTypes = slices.Clone(p.Audit.CriticalTypes)
+	c.Audit.SecurityBusSubscribers = slices.Clone(p.Audit.SecurityBusSubscribers)
 	return c
 }
 

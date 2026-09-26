@@ -184,6 +184,17 @@ func (g *gen) scenario(sc *ScenarioDef) {
 		case st.Stand != nil:
 			a := Action{Kind: ActionStand, At: g.t(st.At), Scenario: sc.ID, Label: st.Label, Note: st.Note, Stand: st.Stand}
 			g.act(a)
+			// «до какого момента» — по часам прогона: сбой снимает отдельный
+			// шаг в этот момент (часы stand-а — InfraClock, виртуального
+			// времени прогона они не знают)
+			if st.Stand.Until != "" && !st.Stand.Clear {
+				label := ""
+				if st.Label != "" {
+					label = st.Label + "/clear"
+				}
+				g.act(Action{Kind: ActionStand, At: g.t(st.Stand.Until), Scenario: sc.ID, Label: label, Note: "снять сбой: " + st.Stand.Fault,
+					Stand: &StandAction{Stand: st.Stand.Stand, Clear: true}})
+			}
 		case st.Tamper != nil:
 			g.act(Action{Kind: ActionTamper, At: g.t(st.At), Scenario: sc.ID, Label: st.Label, Note: st.Note, Tamper: st.Tamper})
 		case st.Route != "":
