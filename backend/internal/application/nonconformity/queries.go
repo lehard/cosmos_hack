@@ -603,6 +603,7 @@ func ref(r kernel.Record, summary string) NCRecordRef {
 	if a := strings.SplitN(r.Actor, "@", 2)[0]; a != "" {
 		x.Author = &a
 	}
+	x.Reading = readingOf(r)
 	return x
 }
 

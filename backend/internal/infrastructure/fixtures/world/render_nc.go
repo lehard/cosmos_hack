@@ -2,6 +2,7 @@ package world
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -25,6 +26,7 @@ func recRef(e *Event) ncapp.NCRecordRef {
 	if len(e.Params) > 0 {
 		r.Params = e.Params
 	}
+	r.Reading = e.Reading
 	return r
 }
 
@@ -45,7 +47,8 @@ func renderNonconformity(c *Ctx) []loader.Response {
 			continue
 		}
 		id, label := ncItem(n)
-		s := ncapp.NCSummary{NCID: n.ID, Number: n.Number, Status: n.Status(c.M, c.T), ItemID: id, ItemLabel: label, Severity: "major", StepKey: n.StepKey, Disposition: "none", FoundAt: n.SignalAt}
+		s := ncapp.NCSummary{NCID: n.ID, Number: n.Number, Status: n.Status(c.M, c.T), ItemID: id, ItemLabel: label, Severity: "major", StepKey: n.StepKey, Disposition: "none", FoundAt: n.SignalAt,
+			InvestigationStatus: c.investigation(n)}
 		if len(n.Spec.Defects) > 0 {
 			s.DefectTypeCode = ptr(n.Spec.Defects[0].Kind)
 			s.DefectTypeLabel = defectLabel(n.Spec.Defects[0].Kind)
@@ -171,7 +174,8 @@ func (c *Ctx) card(n *NC) ncapp.NCCard {
 		Happened:       ncapp.NCHappened{Before: []ncapp.NCRecordRef{}, During: []ncapp.NCRecordRef{}, After: []ncapp.NCRecordRef{}},
 		Evidence:       ncapp.NCEvidence{Signals: []ncapp.NCSourceSignal{}, ZoneHistory: []ncapp.NCRecordRef{}},
 		SystemAnalysis: ncapp.NCSystemAnalysis{Versions: []ncapp.NCConclusionVersion{}, Why: []string{}, Alternatives: []string{}, MissingInformation: []string{}},
-		HumanDecisions: []ncapp.NCRecordRef{}, ToDecide: ncapp.NCToDecide{Decisions: []string{}}, BasisSeq: c.EntitySeq(n.ID, n.Items...)}
+		HumanDecisions: []ncapp.NCRecordRef{}, ToDecide: ncapp.NCToDecide{Decisions: []string{}}, BasisSeq: c.EntitySeq(n.ID, n.Items...),
+		InvestigationStatus: c.investigation(n)}
 	if len(n.Items) > 0 {
 		card.Axes = c.axes(n.Items[0])
 	} else {
@@ -312,6 +316,29 @@ func (m *Model) ncEssence(n *NC) *string {
 	}
 	s := strings.Join(parts, "; ")
 	return &s
+}
+
+// investigation — второй статус несоответствия «системное расследование»
+// (FR-51) по области риска (инциденту) модуля analysis: инцидент, начатый
+// этим несоответствием или с его причиной среди общих факторов; до открытия
+// инцидента — none, открыт — open, закрыт (incident.incident.closed, как у
+// live) — closed; инцидента нет — none.
+func (c *Ctx) investigation(n *NC) string {
+	for _, in := range c.M.Spec.Incidents {
+		linked := in.Trigger == n.ID
+		if n.Spec.Cause != nil && n.Spec.Cause.Ref != "" && slices.Contains(in.Factors, n.Spec.Cause.Ref) {
+			linked = true
+		}
+		switch {
+		case !linked || in.Opened.Time().After(c.T):
+			continue
+		case !in.Closed.IsZero() && !in.Closed.Time().After(c.T):
+			return "closed"
+		default:
+			return "open"
+		}
+	}
+	return "none"
 }
 
 // lateArrival — что пришло после решения, словами: журнал оборудования
