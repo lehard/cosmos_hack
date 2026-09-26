@@ -26,6 +26,8 @@ const props = defineProps<{
   basisSeq: number
   /** Куда принимать — по процессу (место шага из задачи); задано — выбора нет. */
   toLocationId?: string | null
+  /** Шаг процесса из задачи (например, welding.receive) — приёмка относится к нему. */
+  stepKey?: string | null
 }>()
 
 const OPERATION = 'process.movement.receive'
@@ -89,6 +91,7 @@ async function confirm(): Promise<void> {
     item_id: props.itemId,
     body: {
       to_location_id: toLocation.value,
+      ...(props.stepKey ? { step_key: props.stepKey } : {}),
       destination_kind: destinationKind.value,
       inspection_on_receipt: inspection.value,
       command_id: commandId.value,
