@@ -421,9 +421,11 @@ func LocalLabel(id string) string {
 	if i := strings.LastIndexByte(local, '/'); i >= 0 {
 		local = local[i+1:]
 	}
+	// DM-код с номером детали (DM:F-001) — людям номер «Ф-001»; прочий DM-код — как есть.
+	num := strings.TrimPrefix(local, "DM:")
 	for _, r := range [][2]string{{"F-", "Ф-"}, {"R-", "К-"}, {"C-", "КР-"}} {
-		if strings.HasPrefix(local, r[0]) {
-			return r[1] + local[len(r[0]):]
+		if strings.HasPrefix(num, r[0]) {
+			return r[1] + num[len(r[0]):]
 		}
 	}
 	return local
@@ -431,7 +433,7 @@ func LocalLabel(id string) string {
 
 // DisplayLabel — метка изделия для задач, очередей и окон (кейс §4.6: люди
 // видят номер детали, а не внутренний id): номер с бирки (Ф-001), иначе
-// DM-код, иначе номер из id. Префикс прогона у значения носителя снимается.
+// номер из DM-кода (DM:F-001 → Ф-001) или сам DM-код, иначе номер из id. Префикс прогона у значения носителя снимается.
 func (s State) DisplayLabel(itemID string) string {
 	for _, typ := range []string{"tag_qr", "dpm_datamatrix", "route_card"} {
 		for _, c := range s.Carriers {
@@ -444,6 +446,10 @@ func (s State) DisplayLabel(itemID string) string {
 			}
 			v = strings.TrimPrefix(v, "TAG:")
 			if typ == "dpm_datamatrix" {
+				// номер детали в DM-коде — номером (Ф-001), прочий код — как есть
+				if n := LocalLabel(v); n != strings.TrimPrefix(v, "DM:") {
+					return n
+				}
 				return v
 			}
 			return LocalLabel(v)
