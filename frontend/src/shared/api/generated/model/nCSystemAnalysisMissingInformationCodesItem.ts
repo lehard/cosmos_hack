@@ -3,10 +3,10 @@
  * Источник: contracts/openapi.yaml
  */
 
-export type NCSystemAnalysisMissingInformationItem = typeof NCSystemAnalysisMissingInformationItem[keyof typeof NCSystemAnalysisMissingInformationItem];
+export type NCSystemAnalysisMissingInformationCodesItem = typeof NCSystemAnalysisMissingInformationCodesItem[keyof typeof NCSystemAnalysisMissingInformationCodesItem];
 
 
-export const NCSystemAnalysisMissingInformationItem = {
+export const NCSystemAnalysisMissingInformationCodesItem = {
   tool_unknown: 'tool_unknown',
   cycle_end_time_unknown: 'cycle_end_time_unknown',
   no_observation_after_operation: 'no_observation_after_operation',

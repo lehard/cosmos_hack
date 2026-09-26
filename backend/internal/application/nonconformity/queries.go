@@ -834,6 +834,7 @@ func analysis(v *itemView, n dom.NC, h NCHappened) NCSystemAnalysis {
 	}
 	slices.Sort(miss)
 	a.MissingInformation = append(a.MissingInformation, slices.Compact(miss)...)
+	a.MissingInformationCodes = slices.Clone(a.MissingInformation)
 	return a
 }
 

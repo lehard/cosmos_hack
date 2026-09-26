@@ -7295,6 +7295,11 @@ components:
             type: string
           type: array
         missing_information:
+          description: Нехватка сведений — коды (те же, что missing_information_codes).
+          items:
+            type: string
+          type: array
+        missing_information_codes:
           description: Нехватка сведений — перечисление (как missing_information в incident.hypothesis.computed).
           items:
             enum:

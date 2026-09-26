@@ -463,7 +463,7 @@ export * from './nCSummaryInvestigationStatus';
 export * from './nCSummarySeverity';
 export * from './nCSummaryStatus';
 export * from './nCSystemAnalysis';
-export * from './nCSystemAnalysisMissingInformationItem';
+export * from './nCSystemAnalysisMissingInformationCodesItem';
 export * from './nCToDecide';
 export * from './nodeAnomaly';
 export * from './nodeAnomalyKind';

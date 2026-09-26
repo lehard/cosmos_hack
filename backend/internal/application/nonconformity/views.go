@@ -139,7 +139,10 @@ type NCSystemAnalysis struct {
 	Versions           []NCConclusionVersion `json:"versions" doc:"По возрастанию версии."`
 	Why                []string              `json:"why" doc:"Почему система это предлагает — основания по-русски."`
 	Alternatives       []string              `json:"alternatives" doc:"Альтернативные объяснения."`
-	MissingInformation []string              `json:"missing_information" enum:"tool_unknown,cycle_end_time_unknown,no_observation_after_operation,no_observation_before_operation,operator_unknown,equipment_log_missing,other" doc:"Нехватка сведений — перечисление (как missing_information в incident.hypothesis.computed)."`
+	MissingInformation []string              `json:"missing_information" doc:"Нехватка сведений — коды (те же, что missing_information_codes)."`
+	// MissingInformationCodes — то же перечислением (совместимое дополнение
+	// эпика 21: у missing_information перечисление добавить нельзя — oasdiff).
+	MissingInformationCodes []string `json:"missing_information_codes,omitempty" enum:"tool_unknown,cycle_end_time_unknown,no_observation_after_operation,no_observation_before_operation,operator_unknown,equipment_log_missing,other" doc:"Нехватка сведений — перечисление (как missing_information в incident.hypothesis.computed)."`
 }
 
 // NCToDecide — зона «что решить»: допустимые решения и срок.

@@ -1027,22 +1027,6 @@ types:
     versions: [1]
     current_version: 1
     refs: ["FR-19", "Е-08 decision.gate_passed (ЗТ-1)"]
-  decision.concession.granted:
-    title: "Разрешение на отклонение выдано"
-    emitter: "nonconformity"
-    role: "api"
-    kind: "decision"
-    stream: "concession"
-    axis: "none"
-    action_class: "permissive"
-    critical: true
-    ca_group: "nc_decision"
-    guard_relevant: true
-    publish_stage: false
-    provenance: ["personal", "paper", "scenario"]
-    versions: [1]
-    current_version: 1
-    refs: ["FR-54", "AD-39", "решение дирижёра Д-24"]
   decision.concession.revoked:
     title: "Разрешение на отклонение отозвано"
     emitter: "nonconformity"
@@ -1123,6 +1107,22 @@ types:
     versions: [1]
     current_version: 1
     refs: ["FR-49", "AD-42"]
+  decision.concession.granted:
+    title: "Разрешение на отклонение выдано"
+    emitter: "nonconformity"
+    role: "api"
+    kind: "decision"
+    stream: "concession"
+    axis: "none"
+    action_class: "permissive"
+    critical: true
+    ca_group: "nc_decision"
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-54", "AD-39", "решение дирижёра Д-24"]
 
   # ── erp (владелец схемы: erp) ──
   erp.order.received:
