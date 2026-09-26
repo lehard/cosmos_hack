@@ -8,6 +8,7 @@
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { codeToKey } from '@/shared/i18n'
 import { NButton, NCheckbox, NInput, NInputNumber, NSelect } from 'naive-ui'
 import { EmptyState, FormField, SectionPanel } from '@/shared/ui'
 import type { EditorElement, ElementEditor } from '../model/editor'
@@ -20,7 +21,31 @@ const props = defineProps<{
   /** Счётчик изменений модельера — перечитать значения. */
   revision: number
 }>()
-const { t } = useI18n()
+const emit = defineEmits<{ close: [] }>()
+const { t, te } = useI18n()
+
+/** Вид элемента BPMN словами: bpmn:Task → «Операция»; нет перевода — тип как есть. */
+const typeText = computed(() => {
+  const type = props.element?.type ?? ''
+  const key = `processEditor.panel.types.${type.replace(/^bpmn:/, '')}`
+  return te(key) ? t(key) : type
+})
+
+/** Значения списков — словами из словарей версии процесса и контроля (UI-17); нет перевода — код. */
+const VALUE_DICT: Record<string, string> = {
+  stepKind: 'process.values.stepKind',
+  reworkLimitScope: 'process.values.reworkLimitScope',
+  erpAction: 'process.values.erpAction',
+  timerScope: 'process.values.timerScope',
+  outcome: 'process.values.outcome',
+  method: 'inspection.method',
+  phase: 'inspection.phase',
+}
+function optionText(field: string, code: string): string {
+  const dict = VALUE_DICT[field]
+  const key = dict ? `${dict}.${codeToKey(code)}` : ''
+  return key && te(key) ? t(key) : code
+}
 
 const bo = computed(() => {
   void props.revision
@@ -36,7 +61,7 @@ const groups = computed(() => {
   return PANEL_GROUPS.map((g) => ({ g, entries: entriesOf(b, g.type) })).filter((x) => !readonly.value || x.entries.length > 0)
 })
 
-const optionsOf = (f: PanelField) => (f.options ?? []).map((v) => ({ value: v, label: v }))
+const optionsOf = (f: PanelField) => (f.options ?? []).map((v) => ({ value: v, label: optionText(f.name, v) }))
 
 function set(g: PanelGroup, index: number, f: PanelField, raw: FieldValue): void {
   if (!props.editor || !props.element) return
@@ -49,8 +74,11 @@ function set(g: PanelGroup, index: number, f: PanelField, raw: FieldValue): void
     <EmptyState v-if="!element || !bo" compact :title="t('processEditor.panel.noSelection')" />
     <template v-else>
       <p v-if="readonly" class="note">{{ t('processEditor.panel.readonly') }}</p>
+      <header class="head">
+        <p class="type ant-wrap" :title="`${element.type} · ${element.id}`" data-testid="element-type">{{ typeText }}</p>
+        <button type="button" class="close" :aria-label="t('common.actions.close')" data-testid="panel-close" @click="emit('close')">×</button>
+      </header>
       <SectionPanel variant="plain" :title="t('processEditor.panel.element')">
-        <p class="meta ant-wrap">{{ element.type }} · {{ element.id }}</p>
         <FormField :label="t('processEditor.panel.name')">
           <NInput
             :value="(bo.name as string | undefined) ?? ''"
@@ -132,6 +160,36 @@ function set(g: PanelGroup, index: number, f: PanelField, raw: FieldValue): void
   flex-direction: column;
   gap: var(--ant-space-3);
   min-width: 0;
+}
+
+.head {
+  display: flex;
+  gap: var(--ant-space-2);
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.type {
+  margin: 0;
+  font-size: var(--ant-fs-title);
+  font-weight: var(--ant-fw-bold);
+}
+
+.close {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: var(--ant-radius-sm);
+  background: none;
+  color: var(--ant-text-2);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.close:hover {
+  background: var(--ant-surface-hover);
 }
 
 .note,

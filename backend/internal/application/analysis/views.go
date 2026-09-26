@@ -14,6 +14,10 @@ type JournalRecordRef struct {
 	Variant    *string           `json:"variant,omitempty" doc:"Уточнение внутри типа: outcome контроля, deviation_kind отклонения, cycle_started / cycle_finished, condition."`
 	OccurredAt time.Time         `json:"occurred_at" doc:"Время возникновения (AD-37)."`
 	Params     map[string]string `json:"params,omitempty" doc:"Параметры подписи: метод, параметр, значение, уставка, шаг…"`
+	// Text — запись словами для людей (как текст записи в карточке НС, Д-79).
+	Text *string `json:"text,omitempty" doc:"Запись коротко словами для людей: что произошло, значение против уставки, источник. Нет — показать тип записи."`
+	// SourceLabel — источник записи словами (журнал оборудования, камера, человек).
+	SourceLabel *string `json:"source_label,omitempty" doc:"Источник словами: «журнал «Сварочный источник ИС-2»», «камера КТ-3», псевдоним человека."`
 }
 
 // CircumstanceRecord — строка проекции analysis.circumstances на дорожке разбора (FR-153).
@@ -53,6 +57,8 @@ type Circumstances struct {
 	MissingInformation      []string             `json:"missing_information" enum:"tool_unknown,cycle_end_time_unknown,no_observation_after_operation,no_observation_before_operation,operator_unknown,equipment_log_missing,other"`
 	ConclusionIsCategorical bool                 `json:"conclusion_is_categorical"`
 	BasisSeq                int64                `json:"basis_seq" doc:"seq, на котором построен ответ (для basis_seq команд, AD-39)."`
+	// Lanes — качество данных дорожек (опоздания, пропуски).
+	Lanes *LaneQualities `json:"lanes,omitempty" doc:"Качество данных дорожек: опоздавшие записи и пропуски. Пропуск — «исключать нельзя»."`
 }
 
 // CommonFactorRow — строка таблицы общих факторов «сколько из N» (FR-135).
@@ -61,6 +67,8 @@ type CommonFactorRow struct {
 	Value          *string `nullable:"true" json:"value" doc:"Самое частое значение; null — неизвестно."`
 	Matches        int     `json:"matches" minimum:"0"`
 	DistinctValues int     `json:"distinct_values" minimum:"0"`
+	// ValueLabel — значение словами из справочника по виду фактора.
+	ValueLabel *string `json:"value_label,omitempty" doc:"Значение словами: оборудование — справочник оборудования, исполнитель — справочник людей, партия — справочник партий. Нет — показать value."`
 }
 
 // CommonFactors — общие факторы по группе несоответствий.
@@ -81,7 +89,11 @@ type Hypothesis struct {
 	ConfidenceBP    *int               `json:"confidence_bp,omitempty" minimum:"0" maximum:"10000" doc:"Уверенность вывода в базисных пунктах — не вероятность вины."`
 	Supporting      []JournalRecordRef `json:"supporting"`
 	Contradicting   []JournalRecordRef `json:"contradicting"`
-	MeasurementHint *string            `json:"measurement_hint,omitempty" doc:"Что измерить, чтобы проверить гипотезу."`
+	MeasurementHint *string            `json:"measurement_hint,omitempty" doc:"Что измерить, чтобы проверить гипотезу (устарело: next_check)."`
+	// History — что меняло уверенность гипотезы (эпик 12, стол технолога).
+	History []HypothesisChange `json:"history" doc:"Что меняло уверенность: версии вывода и решения людей по возрастанию времени."`
+	// NextCheck — «что проверить следующим» со смыслом проверки.
+	NextCheck *NextCheck `json:"next_check,omitempty" doc:"Что проверить следующим: проверка, что она разблокирует, сколько изделий может исключить."`
 }
 
 // SimilarCase — похожий прошлый случай (FR-60).
@@ -134,6 +146,7 @@ type ScopeVersion struct {
 	Reason           *Reason        `json:"reason,omitempty"`
 	EvidenceEventIDs []string       `json:"evidence_event_ids"`
 	Breakdown        ScopeBreakdown `json:"breakdown"`
+	ScopeVersionDiff
 }
 
 // ScopeItem — изделие в области риска: две оси статуса и место (FR-62).
@@ -149,6 +162,8 @@ type ScopeItem struct {
 type FactorRef struct {
 	Factor string `json:"factor" enum:"machine,tool,fixture,program,performer,material_batch"`
 	Value  string `json:"value"`
+	// Label — значение для людей из справочника по виду фактора.
+	Label *string `json:"label,omitempty" doc:"Значение словами из справочника по виду фактора: «Сварочный источник ИС-2», «Партия П-117», имя исполнителя. Нет — показать value."`
 }
 
 // TimeWindow — окно времени.
@@ -174,6 +189,7 @@ type RiskScope struct {
 	Items             []ScopeItem    `json:"items" doc:"Изделия текущей версии."`
 	ShippedToPartners *int           `json:"shipped_to_partners,omitempty"`
 	BasisSeq          int64          `json:"basis_seq"`
+	IncidentLink
 }
 
 // NcGroup — группа несоответствий: вид дефекта × операция × оборудование.
@@ -186,6 +202,11 @@ type NcGroup struct {
 	NCIDs         []string  `json:"nc_ids" doc:"Несоответствия группы — вход разбора обстоятельств и гипотез (эпик 12)."`
 	Investigation string    `json:"investigation" enum:"not_required,not_started,in_progress,hypothesis_only,cause_confirmed,cause_not_established,measures_assigned,effectiveness_check,closed"`
 	LastFoundAt   time.Time `json:"last_found_at"`
+	// Названия для людей и связь с расследованием (стол технолога).
+	DefectTypeLabel *string `json:"defect_type_label,omitempty" doc:"Вид дефекта по-русски — классификатор видов дефектов."`
+	OperationLabel  *string `json:"operation_label,omitempty" doc:"Имя шага BPMN действующей версии процесса."`
+	EquipmentLabel  *string `json:"equipment_label,omitempty" doc:"Оборудование (или партия для входного брака) словами из справочника."`
+	IncidentID      *string `json:"incident_id,omitempty" doc:"Расследование (инцидент) группы; нет — группа без расследования."`
 }
 
 // NcGroupList — группы несоответствий («Разбор причин», стол технолога).
@@ -201,8 +222,10 @@ type IncidentSummary struct {
 	Size         int        `json:"size" minimum:"0"`
 	InitialSize  int        `json:"initial_size" minimum:"0"`
 	ScopeVersion int        `json:"scope_version" minimum:"0"`
-	Status       string     `json:"status" enum:"open,closed"`
+	Status       string     `json:"status" enum:"open,closed" doc:"Область риска: open — идёт, closed — решение по изделиям принято (расследование — stage)."`
 	OpenedAt     time.Time  `json:"opened_at"`
+	IncidentLink
+	InvestigationState
 }
 
 // IncidentList — инциденты.

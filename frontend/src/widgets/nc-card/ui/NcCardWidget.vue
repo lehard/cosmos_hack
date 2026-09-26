@@ -4,15 +4,16 @@
  * entities/nonconformity (`nonconformity.card.read`) на момент из
  * useMomentStore, рамка WidgetFrame. Несоответствие — из среза (`nc_id`):
  * страница карточки или окно записи (Д-70), куда его открывает очередь.
- * Срок решения считается от доменного «сейчас»: в воспроизведении — от момента.
+ * Срок решения считается от «сейчас» сервера (Ant-Now): в воспроизведении — от момента.
  */
-import { computed, onBeforeUnmount, ref } from 'vue'
+import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { ncCardState, useNcCard } from '@/entities/nonconformity'
 import { useDrillDown } from '@/features/drill-down'
 import { backendModeOf } from '@/shared/api/response'
 import type { WidgetProps } from '@/shared/config/widget'
 import { useMomentStore } from '@/shared/model/moment'
+import { useServerNow } from '@/shared/model/server-clock'
 import { WidgetFrame } from '@/shared/ui'
 import NcCardView from './NcCardView.vue'
 
@@ -31,10 +32,9 @@ const card = computed(() => query.data.value?.data ?? null)
 const state = computed(() => (card.value ? ncCardState(card.value) : 'normal'))
 
 // Обратный отсчёт срока (FR-55): раз в 30 с; в воспроизведении — момент воспроизведения.
-const tick = ref(Date.now())
-const timer = setInterval(() => (tick.value = Date.now()), 30_000)
-onBeforeUnmount(() => clearInterval(timer))
-const now = computed(() => (moment.asOf ? Date.parse(moment.asOf) : tick.value))
+// «Сейчас» — по часам сервера (Ant-Now); в воспроизведении — момент воспроизведения.
+const serverNow = useServerNow()
+const now = computed(() => (moment.asOf ? Date.parse(moment.asOf) : serverNow.value))
 </script>
 
 <template>

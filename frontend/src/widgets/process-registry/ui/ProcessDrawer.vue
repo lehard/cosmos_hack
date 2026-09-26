@@ -16,7 +16,7 @@
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { NButton, NInput, NSpin, useMessage } from 'naive-ui'
-import { ProcessModeler } from '@/features/process-editor'
+import { ProcessModeler, ProcessWorkspace } from '@/features/process-editor'
 import { toDiffEntry, type ProcessDiffEntry } from '@/entities/process-version'
 import { codeToKey } from '@/shared/i18n'
 import { useProblemText } from '@/shared/i18n/problem'
@@ -51,7 +51,8 @@ const note = ref('')
 const reason = ref('')
 const asking = ref<VersionAction | null>(null)
 const details = ref<string | null>(null)
-const modeler = ref<InstanceType<typeof ProcessModeler> | null>(null)
+/** Рабочее место схемы на весь экран (UI-34): просмотр или правка нового черновика. */
+const workspace = ref<'view' | 'edit' | null>(null)
 const fileInput = ref<HTMLInputElement | null>(null)
 
 const processId = computed(() => props.process?.process_id ?? null)
@@ -78,12 +79,12 @@ watch(
     details.value = null
     note.value = ''
     reason.value = ''
-    if (!pendingEdit) editing.value = false
-    pendingEdit = false
+    editing.value = false
     label.value = version.value?.status === 'draft' ? version.value.label : nextLabel(labels.value)
+    workspace.value = pendingEdit && version.value ? 'edit' : null
+    pendingEdit = false
   },
 )
-const editable = computed(() => !moment.isReplay && (version.value?.status === 'draft' || editing.value))
 const xml = computed(() => bpmn.data.value?.data.bpmn_xml ?? '')
 const entries = computed<ProcessDiffEntry[]>(() => (diff.data.value?.data.entries ?? []).map(toDiffEntry).filter((e): e is ProcessDiffEntry => e !== null))
 const document = computed(() => doc.data.value?.data ?? null)
@@ -134,7 +135,17 @@ async function saveDraft(body: string, lbl: string): Promise<void> {
   editing.value = false
   dirty.value = false
   details.value = null
+  workspace.value = null
   await openNewestDraft()
+}
+
+/** Сохранить из рабочего места: ошибка — сообщением, рабочее место остаётся открытым. */
+async function saveFromWorkspace(body: string, lbl: string): Promise<void> {
+  try {
+    await saveDraft(body, lbl.trim() || nextLabel(labels.value))
+  } catch (e) {
+    fail(e)
+  }
 }
 
 function newVersion(): void {
@@ -178,13 +189,17 @@ async function run(action: VersionAction): Promise<void> {
   try {
     switch (action) {
       case 'newDraft':
-        editing.value = true
-        dirty.value = false
         label.value = nextLabel(labels.value)
         tab.value = 'scheme'
+        workspace.value = 'edit'
+        return
+      case 'edit':
+        tab.value = 'scheme'
+        workspace.value = 'edit'
         return
       case 'saveDraft':
-        await saveDraft(await modeler.value!.saveXML(), label.value.trim() || nextLabel(labels.value))
+        // Сохранение — из рабочего места схемы (UI-34).
+        workspace.value = 'edit'
         return
       case 'submit':
       case 'retire':
@@ -213,7 +228,7 @@ async function run(action: VersionAction): Promise<void> {
   }
 }
 
-const primary = (a: VersionAction) => a === 'submit' || a === 'activate' || a === 'saveDraft'
+const primary = (a: VersionAction) => a === 'submit' || a === 'activate' || a === 'saveDraft' || a === 'edit'
 const tabs = computed<RecordDrawerTab[]>(() =>
   version.value ? (['scheme', 'diff', 'approval'] as Tab[]).map((id) => ({ id, label: t(`processEditor.tabs.${id}`) })) : [],
 )
@@ -286,11 +301,18 @@ const tabs = computed<RecordDrawerTab[]>(() =>
           <KeyValueList>
             <KeyValue :label="t('processEditor.columns.created')" :value="when(version.created_at)" />
             <KeyValue :label="t('processEditor.columns.effective')" :value="when(version.effective_from)" />
-            <KeyValue :label="t('processEditor.hash')" :value="version.hash || '—'" mono />
           </KeyValueList>
-          <p v-if="editing" class="note">{{ t('processEditor.newDraftHint') }}</p>
           <div v-if="bpmn.isLoading.value" class="center"><NSpin size="small" /></div>
-          <ProcessModeler v-else-if="xml" ref="modeler" :xml="xml" :editable="editable" @dirty="dirty = editable" />
+          <template v-else-if="xml">
+            <ProcessModeler :xml="xml" view="preview" @expand="workspace = 'view'" />
+            <NButton secondary data-action="openFull" @click="workspace = 'view'">{{ t('processEditor.workspace.openFull') }}</NButton>
+          </template>
+          <details class="audit">
+            <summary>{{ t('processEditor.auditDetails') }}</summary>
+            <KeyValueList>
+              <KeyValue :label="t('processEditor.hash')" :value="version.hash || '—'" mono />
+            </KeyValueList>
+          </details>
         </template>
 
         <SectionPanel
@@ -333,9 +355,6 @@ const tabs = computed<RecordDrawerTab[]>(() =>
           </ul>
         </SectionPanel>
         <template v-if="version">
-          <FormField v-if="editing || version.status === 'draft'" :label="t('processEditor.labelField')">
-            <NInput v-model:value="label" size="small" :placeholder="nextLabel(labels)" :maxlength="64" />
-          </FormField>
           <FormField v-if="asking === 'submit'" :label="t('processEditor.noteField')">
             <NInput v-model:value="note" type="textarea" size="small" :maxlength="1800" :autosize="{ minRows: 2, maxRows: 4 }" />
           </FormField>
@@ -372,6 +391,22 @@ const tabs = computed<RecordDrawerTab[]>(() =>
       </div>
     </template>
   </RecordDrawer>
+
+  <ProcessWorkspace
+    v-if="process && version && xml"
+    :show="workspace !== null"
+    :xml="xml"
+    :title="process.name"
+    :version-label="version.label"
+    :status-text="statusText(version.status)"
+    :editable="workspace === 'edit' && !moment.isReplay && can('process.version.draft')"
+    :label="label"
+    :saving="cmd.isPending.value"
+    @update:label="(v: string) => (label = v)"
+    @save="saveFromWorkspace"
+    @download="download"
+    @close="workspace = null"
+  />
 </template>
 
 <style scoped>
@@ -410,6 +445,12 @@ const tabs = computed<RecordDrawerTab[]>(() =>
 }
 
 .row {
+  cursor: pointer;
+}
+
+.audit summary {
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-meta);
   cursor: pointer;
 }
 

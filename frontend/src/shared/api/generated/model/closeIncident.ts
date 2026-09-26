@@ -2,6 +2,7 @@
  * СГЕНЕРИРОВАНО orval (frontend/scripts/generate.mjs) — руками не править (AD-20).
  * Источник: contracts/openapi.yaml
  */
+import type { CloseIncidentScope } from './closeIncidentScope';
 import type { DsseEnvelope } from './dsseEnvelope';
 
 export interface CloseIncident {
@@ -17,6 +18,8 @@ export interface CloseIncident {
      * @minimum 0
      */
   policy_seq: number;
+  /** risk_scope — закрыть область риска (по умолчанию); investigation — закрыть расследование: 422 incident.cause_branch_open, если нет вывода по одной из двух причин, 422 incident.effectiveness_unchecked, если эффективность мер не проверена. */
+  scope?: CloseIncidentScope;
   /** Подписанный пакет DSSE для операций с уровнем подписи ≥ 1 (AD-10, AD-13, AD-14): подписывает агент токена, сервер сверяет отпечаток. */
   signature?: DsseEnvelope;
   /** @maxLength 4000 */

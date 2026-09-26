@@ -39,6 +39,7 @@ func (s *Service) Circumstances(ctx context.Context, ncID string, m platform.Mom
 	for _, mk := range a.Records {
 		out.Records = append(out.Records, circumstanceRecord(mk, a.Records))
 	}
+	out.Lanes = laneQualities(a)
 	return out, nil
 }
 
@@ -79,11 +80,19 @@ func (s *Service) Hypotheses(ctx context.Context, ncID string, m platform.Moment
 		}
 		return def
 	}
+	var inc *dom.IncidentRecord
+	for _, id := range n.IncidentIDs {
+		if v, err := s.incident(ctx, id); err == nil {
+			inc = &v
+			break
+		}
+	}
 	branch := "why_made"
 	for _, h := range a.Hypotheses {
 		x := Hypothesis{HypothesisID: h.ID, Category: h.Category, Branch: &branch, Statement: strp(h.Statement),
 			Status: status(h.ID, h.Category, "proposed_by_system"), ConfidenceBP: h.ConfidenceBP,
-			Supporting: refs.of(h.Supporting), Contradicting: refs.of(h.Contradicting), MeasurementHint: strp(h.MeasurementHint)}
+			Supporting: refs.of(h.Supporting), Contradicting: refs.of(h.Contradicting), MeasurementHint: strp(h.MeasurementHint),
+			History: hypothesisHistory(n, h.ID, h.Category), NextCheck: nextCheck(h, inc)}
 		out.Hypotheses = append(out.Hypotheses, x)
 	}
 	for _, h := range n.Hypotheses {
@@ -92,7 +101,8 @@ func (s *Service) Hypotheses(ctx context.Context, ncID string, m platform.Moment
 		}
 		b := h.Branch
 		x := Hypothesis{HypothesisID: h.HypothesisID, Category: h.Category, Branch: strp(b), Statement: strp(h.Statement),
-			Status: status(h.HypothesisID, h.Category, "recorded"), Supporting: refs.of(h.Supporting), Contradicting: []JournalRecordRef{}}
+			Status: status(h.HypothesisID, h.Category, "recorded"), Supporting: refs.of(h.Supporting), Contradicting: []JournalRecordRef{},
+			History: []HypothesisChange{{At: h.At, EventID: strp(h.EventID), Text: "Записана человеком (" + h.Actor + ")"}}}
 		out.Hypotheses = append(out.Hypotheses, x)
 	}
 	return out, nil
@@ -178,9 +188,40 @@ func (s *Service) Groups(ctx context.Context, m platform.Moment) (NcGroupList, e
 		if err != nil {
 			return NcGroupList{}, err
 		}
+		row.DefectTypeLabel = s.name(func(n Names) (string, bool) { return n.DefectLabel(ctx, defect) })
+		row.OperationLabel = s.name(func(n Names) (string, bool) { return n.StepName(ctx, op) })
+		row.EquipmentLabel = s.name(func(n Names) (string, bool) { return n.FactorLabel(ctx, dom.FactorMachine, eq) })
+		row.IncidentID = s.groupIncident(ctx, g, ncs)
 		out.Items = append(out.Items, row)
 	}
 	return out, nil
+}
+
+// groupIncident — расследование группы: инцидент, к которому решениями людей
+// отнесено несоответствие группы, иначе инцидент, в область которого входит
+// изделие несоответствия.
+func (s *Service) groupIncident(ctx context.Context, g []dom.Profile, ncs map[string]dom.NCRecord) *string {
+	for _, p := range g {
+		if ids := ncs[p.NCID].IncidentIDs; len(ids) > 0 {
+			return strp(ids[0])
+		}
+	}
+	ids, err := s.list(ctx, ProjectionIncident)
+	if err != nil {
+		return nil
+	}
+	for _, id := range ids {
+		v, err := s.incident(ctx, id)
+		if err != nil {
+			continue
+		}
+		for _, p := range g {
+			if _, ok := v.Members[ncs[p.NCID].ItemID]; ok && p.ItemID != "" {
+				return strp(id)
+			}
+		}
+	}
+	return nil
 }
 
 // investigation — статус расследования группы: от мер к гипотезам.
@@ -243,7 +284,9 @@ func (s *Service) CommonFactors(ctx context.Context, groupKey string, m platform
 	defect, op, eq := dom.SplitGroupKey(groupKey)
 	out := CommonFactors{GroupKey: groupKey, GroupLabel: defect + " × " + op + " × " + eq, NCCount: len(g), Rows: []CommonFactorRow{}}
 	for _, r := range dom.CommonFactors(g) {
-		out.Rows = append(out.Rows, CommonFactorRow{Factor: r.Factor, Value: strp(r.Value), Matches: r.Matches, DistinctValues: r.Distinct})
+		f, v := r.Factor, r.Value
+		out.Rows = append(out.Rows, CommonFactorRow{Factor: f, Value: strp(v), Matches: r.Matches, DistinctValues: r.Distinct,
+			ValueLabel: s.name(func(n Names) (string, bool) { return n.FactorLabel(ctx, f, v) })})
 	}
 	return out, nil
 }
@@ -258,6 +301,10 @@ func (s *Service) Incidents(ctx context.Context, m platform.Moment, p platform.P
 		return IncidentList{}, err
 	}
 	out := IncidentList{Items: []IncidentSummary{}}
+	idx, err := s.ncIndex(ctx)
+	if err != nil {
+		return IncidentList{}, err
+	}
 	for _, id := range ids {
 		v, err := s.incident(ctx, id)
 		if err != nil {
@@ -267,13 +314,15 @@ func (s *Service) Incidents(ctx context.Context, m platform.Moment, p platform.P
 			continue
 		}
 		versions := versionsAt(v, m)
-		x := IncidentSummary{IncidentID: id, Label: v.Label, CommonFactor: factorRef(v), InitialSize: v.InitialSize, Status: "open", OpenedAt: v.OpenedAt}
+		x := IncidentSummary{IncidentID: id, Label: v.Label, CommonFactor: s.labeled(ctx, factorRef(v)), InitialSize: v.InitialSize, Status: "open", OpenedAt: v.OpenedAt}
 		if n := len(versions); n > 0 {
 			x.Size, x.ScopeVersion = versions[n-1].Size, versions[n-1].Version
 		}
 		if v.Closed && (m.AsOf == nil || v.ClosedAt == nil || !v.ClosedAt.After(*m.AsOf)) {
 			x.Status = "closed"
 		}
+		x.IncidentLink = idx.link(v)
+		x.InvestigationState = investigationState(v, s.facts(ctx, v, x.PrimaryNCID))
 		out.Items = append(out.Items, x)
 	}
 	return out, nil
@@ -289,7 +338,12 @@ func (s *Service) RiskScope(ctx context.Context, incidentID string, m platform.M
 	if err != nil {
 		return RiskScope{}, err
 	}
-	out := RiskScope{IncidentID: incidentID, IncidentLabel: v.Label, CommonFactor: factorRef(v), Versions: []ScopeVersion{}, Items: []ScopeItem{}, BasisSeq: v.BasisSeq}
+	out := RiskScope{IncidentID: incidentID, IncidentLabel: v.Label, CommonFactor: s.labeled(ctx, factorRef(v)), Versions: []ScopeVersion{}, Items: []ScopeItem{}, BasisSeq: v.BasisSeq}
+	idx, err := s.ncIndex(ctx)
+	if err != nil {
+		return RiskScope{}, err
+	}
+	out.IncidentLink = idx.link(v)
 	if v.WindowStart != nil && v.WindowEnd != nil {
 		out.Window = &TimeWindow{Start: *v.WindowStart, End: *v.WindowEnd}
 		if v.KnownGoodItem != "" {
@@ -298,7 +352,7 @@ func (s *Service) RiskScope(ctx context.Context, incidentID string, m platform.M
 	}
 	for _, x := range versionsAt(v, m) {
 		sv := ScopeVersion{ScopeVersion: x.Version, Change: x.Change, Size: x.Size, RecordedAt: x.RecordedAt, Author: strp(x.Author),
-			EvidenceEventIDs: append([]string{}, x.Evidence...), Breakdown: ScopeBreakdown(x.Breakdown)}
+			EvidenceEventIDs: append([]string{}, x.Evidence...), Breakdown: ScopeBreakdown(x.Breakdown), ScopeVersionDiff: s.versionDiff(ctx, v, x)}
 		if x.Reason != nil {
 			sv.Reason = &Reason{Code: strp(x.Reason.Code), Text: x.Reason.Text}
 		}
@@ -388,7 +442,7 @@ func circumstanceRecord(mk dom.Mark, all []dom.Mark) CircumstanceRecord {
 }
 
 func markRef(mk dom.Mark) JournalRecordRef {
-	return JournalRecordRef{EventID: mk.EventID, EventType: mk.EventType, Variant: strp(mk.Variant), OccurredAt: mk.OccurredAt, Params: mk.Params}
+	return JournalRecordRef{EventID: mk.EventID, EventType: mk.EventType, Variant: strp(mk.Variant), OccurredAt: mk.OccurredAt, Params: mk.Params, Text: strp(markText(mk))}
 }
 
 // refs — ссылки на записи журнала для доводов гипотез.
@@ -400,13 +454,13 @@ func refIndex(st dom.State, a dom.Analysis) refs {
 		out[mk.EventID] = markRef(mk)
 	}
 	for _, e := range st.Equipment {
-		out[e.EventID] = JournalRecordRef{EventID: e.EventID, EventType: e.EventType, Variant: strp(e.Variant), OccurredAt: e.OccurredAt, Params: e.Params}
+		out[e.EventID] = markRef(dom.Mark{EventID: e.EventID, EventType: e.EventType, Variant: e.Variant, OccurredAt: e.OccurredAt, Params: e.Params})
 	}
 	for _, mk := range a.Records {
 		out[mk.EventID] = markRef(mk)
 	}
 	for _, c := range st.Cases {
-		out[c.EventID] = JournalRecordRef{EventID: c.EventID, EventType: "decision.nonconformity.confirmed", OccurredAt: c.At}
+		out[c.EventID] = JournalRecordRef{EventID: c.EventID, EventType: "decision.nonconformity.confirmed", OccurredAt: c.At, Text: strp("Несоответствие подтверждено контролёром")}
 	}
 	return out
 }

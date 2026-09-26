@@ -17,6 +17,7 @@ import (
 	dom "ant/internal/domain/erp"
 	"ant/internal/infrastructure/fixtures/world"
 	"ant/internal/infrastructure/integration/erp/galaktika"
+	galstand "ant/internal/infrastructure/integration/erp/galaktika/stand"
 	"ant/internal/infrastructure/integration/erp/onec"
 	erpstore "ant/internal/infrastructure/storage/erp"
 	"ant/internal/infrastructure/storage/journal/clock"
@@ -38,10 +39,14 @@ func onecEnabled(env *environment) bool {
 	return slices.Contains(env.cfg.Integrations.Enabled, "onec")
 }
 
-// ledgerSystem — учётная система порта учёта (эпики 30, 31): galaktika, если
-// она в integrations.enabled, иначе onec; "" — обмен с учётом выключен. Одна
-// учётная система на экземпляр (docs/new-adapter.md, §5).
+// ledgerSystem — учётная система порта учёта (эпики 30, 31): erp.ledger, если
+// она в integrations.enabled (эпик 43: в demo установлены обе); иначе
+// galaktika, если она в integrations.enabled, иначе onec; "" — обмен с учётом
+// выключен. Одна учётная система на экземпляр (docs/new-adapter.md, §5).
 func ledgerSystem(env *environment) string {
+	if l := env.cfg.ERP.Ledger; l != "" && slices.Contains(env.cfg.Integrations.Enabled, l) {
+		return l
+	}
 	switch {
 	case slices.Contains(env.cfg.Integrations.Enabled, "galaktika"):
 		return "galaktika"
@@ -85,6 +90,10 @@ func galaktikaClient(env *environment) (*galaktika.Client, error) {
 	pw, err := secretFile("erp.galaktika.password_file", c.PasswordFile)
 	if err != nil {
 		return nil, err
+	}
+	if c.BaseURL == "" && c.Stand {
+		// Эпик 43: фасад stand-а Галактики роли stands этого хоста (для rest-facade).
+		c.BaseURL = standURL(env, galstand.Name+galstand.Facade)
 	}
 	return galaktika.New(galaktika.Config{Transport: c.Transport, Dir: c.Dir, BaseURL: c.BaseURL, Node: c.Node,
 		Peer: c.Peer, Database: c.Database, Enterprise: c.Enterprise, User: c.User, Password: pw,

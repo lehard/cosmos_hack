@@ -2,6 +2,7 @@
  * СГЕНЕРИРОВАНО orval (frontend/scripts/generate.mjs) — руками не править (AD-20).
  * Источник: contracts/openapi.yaml
  */
+import type { ConcludeCauseBranch } from './concludeCauseBranch';
 import type { ConcludeCauseCategory } from './concludeCauseCategory';
 import type { ConcludeCauseConclusion } from './concludeCauseConclusion';
 import type { DsseEnvelope } from './dsseEnvelope';
@@ -13,6 +14,8 @@ export interface ConcludeCause {
      * @minimum 0
      */
   basis_seq: number;
+  /** Ветка причины: why_made — почему возник (по умолчанию), why_missed — почему не обнаружили раньше. */
+  branch?: ConcludeCauseBranch;
   category?: ConcludeCauseCategory;
   /** UUIDv7 клиента; повтор с тем же id возвращает прежний ответ (AD-7). У подписанной команды — event_id пакета. */
   command_id: string;

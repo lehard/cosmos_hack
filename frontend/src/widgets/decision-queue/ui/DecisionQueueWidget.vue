@@ -7,13 +7,14 @@
  * точка предъявления без несоответствия — окно изделия. Выделена строка,
  * открытая сейчас. Срез: `sort: [risk, deadline]`.
  */
-import { computed, onBeforeUnmount, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { queueSortOf, rowKey, useDecisionQueue, type DecisionQueueRow, type QueueSort } from '@/entities/nonconformity'
 import { useDrillDown } from '@/features/drill-down'
 import { backendModeOf } from '@/shared/api/response'
 import type { WidgetProps } from '@/shared/config/widget'
 import { useMomentStore } from '@/shared/model/moment'
+import { useServerNow } from '@/shared/model/server-clock'
 import { useRecordLink } from '@/shared/model/record'
 import { WidgetFrame } from '@/shared/ui'
 import DecisionQueueView from './DecisionQueueView.vue'
@@ -44,10 +45,9 @@ const selected = computed(() => {
   return row ? rowKey(row) : null
 })
 
-const tick = ref(Date.now())
-const timer = setInterval(() => (tick.value = Date.now()), 30_000)
-onBeforeUnmount(() => clearInterval(timer))
-const now = computed(() => (moment.asOf ? Date.parse(moment.asOf) : tick.value))
+// «Сейчас» — по часам сервера (Ant-Now); в воспроизведении — момент воспроизведения.
+const serverNow = useServerNow()
+const now = computed(() => (moment.asOf ? Date.parse(moment.asOf) : serverNow.value))
 </script>
 
 <template>

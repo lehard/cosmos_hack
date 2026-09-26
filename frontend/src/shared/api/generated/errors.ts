@@ -553,6 +553,21 @@ export const errorCatalog = {
     "title": "Нужно письменное объяснение работника",
     "uiKey": "errors.generic"
   },
+  "incident.cause_branch_open": {
+    "status": 422,
+    "title": "Нет вывода по одной из двух причин",
+    "uiKey": "errors.generic"
+  },
+  "incident.effectiveness_unchecked": {
+    "status": 422,
+    "title": "Эффективность мер не проверена",
+    "uiKey": "errors.generic"
+  },
+  "incident.investigation_closed": {
+    "status": 409,
+    "title": "Расследование уже закрыто",
+    "uiKey": "errors.generic"
+  },
   "erp.unavailable": {
     "status": 503,
     "title": "1С недоступна",

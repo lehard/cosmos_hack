@@ -2073,6 +2073,12 @@ components:
         source_kind:
           description: Вид источника факта (FR-140).
           type: string
+        source_label:
+          description: "Источник словами: «журнал «Сварочный источник ИС-2»», «камера КТ-3», псевдоним человека."
+          type: string
+        text:
+          description: "Запись коротко словами для людей: что произошло, значение против уставки, источник. Нет — показать тип записи."
+          type: string
         variant:
           description: "Уточнение внутри типа: outcome контроля, deviation_kind отклонения, cycle_started / cycle_finished, condition."
           type: string
@@ -2091,6 +2097,9 @@ components:
           type: integer
         conclusion_is_categorical:
           type: boolean
+        lanes:
+          $ref: "#/components/schemas/LaneQualities"
+          description: "Качество данных дорожек: опоздавшие записи и пропуски. Пропуск — «исключать нельзя»."
         missing_information:
           items:
             enum:
@@ -2161,6 +2170,19 @@ components:
         - basis_seq
         - policy_seq
       type: object
+    CloseBlocker:
+      additionalProperties: false
+      properties:
+        code:
+          description: "Код отказа contracts/errors.yaml: incident.cause_branch_open, incident.effectiveness_unchecked, incident.investigation_closed."
+          type: string
+        text:
+          description: Почему словами.
+          type: string
+      required:
+        - code
+        - text
+      type: object
     CloseIncident:
       additionalProperties: false
       properties:
@@ -2178,6 +2200,12 @@ components:
           format: int64
           minimum: 0
           type: integer
+        scope:
+          description: "risk_scope — закрыть область риска (по умолчанию); investigation — закрыть расследование: 422 incident.cause_branch_open, если нет вывода по одной из двух причин, 422 incident.effectiveness_unchecked, если эффективность мер не проверена."
+          enum:
+            - risk_scope
+            - investigation
+          type: string
         signature:
           $ref: "#/components/schemas/DsseEnvelope"
           description: "Подписанный пакет DSSE для операций с уровнем подписи ≥ 1 (AD-10, AD-13, AD-14): подписывает агент токена, сервер сверяет отпечаток."
@@ -2288,6 +2316,9 @@ components:
           type:
             - string
             - "null"
+        value_label:
+          description: "Значение словами: оборудование — справочник оборудования, исполнитель — справочник людей, партия — справочник партий. Нет — показать value."
+          type: string
       required:
         - factor
         - value
@@ -2475,6 +2506,12 @@ components:
           format: int64
           minimum: 0
           type: integer
+        branch:
+          description: "Ветка причины: why_made — почему возник (по умолчанию), why_missed — почему не обнаружили раньше."
+          enum:
+            - why_made
+            - why_missed
+          type: string
         category:
           enum:
             - incoming
@@ -3137,6 +3174,27 @@ components:
         - investigations
         - rows
         - basis_seq
+      type: object
+    DataGap:
+      additionalProperties: false
+      properties:
+        from:
+          format: date-time
+          type: string
+        source:
+          description: Источник (id).
+          type: string
+        text:
+          description: Что пропало словами; пропуск — «исключать нельзя».
+          type: string
+        to:
+          format: date-time
+          type: string
+      required:
+        - from
+        - to
+        - source
+        - text
       type: object
     DecisionCard:
       additionalProperties: false
@@ -5458,6 +5516,9 @@ components:
             - performer
             - material_batch
           type: string
+        label:
+          description: "Значение словами из справочника по виду фактора: «Сварочный источник ИС-2», «Партия П-117», имя исполнителя. Нет — показать value."
+          type: string
         value:
           type: string
       required:
@@ -6072,11 +6133,19 @@ components:
           items:
             $ref: "#/components/schemas/JournalRecordRef"
           type: array
+        history:
+          description: "Что меняло уверенность: версии вывода и решения людей по возрастанию времени."
+          items:
+            $ref: "#/components/schemas/HypothesisChange"
+          type: array
         hypothesis_id:
           type: string
         measurement_hint:
-          description: Что измерить, чтобы проверить гипотезу.
+          description: "Что измерить, чтобы проверить гипотезу (устарело: next_check)."
           type: string
+        next_check:
+          $ref: "#/components/schemas/NextCheck"
+          description: "Что проверить следующим: проверка, что она разблокирует, сколько изделий может исключить."
         statement:
           type: string
         status:
@@ -6096,6 +6165,30 @@ components:
         - status
         - supporting
         - contradicting
+        - history
+      type: object
+    HypothesisChange:
+      additionalProperties: false
+      properties:
+        at:
+          description: Когда.
+          format: date-time
+          type: string
+        confidence_bp:
+          description: Уверенность после изменения; нет — не оценить.
+          format: int64
+          maximum: 10000
+          minimum: 0
+          type: integer
+        event_id:
+          description: Запись, изменившая уверенность.
+          type: string
+        text:
+          description: Что изменилось словами.
+          type: string
+      required:
+        - at
+        - text
       type: object
     IdentificationQuestion:
       additionalProperties: false
@@ -6284,8 +6377,19 @@ components:
     IncidentSummary:
       additionalProperties: false
       properties:
+        close_blockers:
+          description: "Почему расследование нельзя закрыть: те же коды, что вернёт POST /incidents/{id}/close со scope=investigation (422). Пусто — можно."
+          items:
+            $ref: "#/components/schemas/CloseBlocker"
+          type: array
         common_factor:
           $ref: "#/components/schemas/FactorRef"
+        counts:
+          $ref: "#/components/schemas/KnownCountsView"
+          description: Изделия текущей версии области по оси «что известно».
+        group_key:
+          description: Ключ группы /analysis/groups (вид дефекта × операция × оборудование) ведущего несоответствия.
+          type: string
         incident_id:
           type: string
         initial_size:
@@ -6294,8 +6398,25 @@ components:
           type: integer
         label:
           type: string
+        last_event_at:
+          description: Время последней записи по инциденту (версия области, гипотеза, причина, мера).
+          format: date-time
+          type: string
+        nc_ids:
+          description: "Несоответствия инцидента: по ним — /nonconformities/{nc_id}/circumstances и /hypotheses."
+          items:
+            type: string
+          type: array
+        next_step:
+          description: Что сделать следующим — текст сервера; null — делать нечего.
+          type:
+            - string
+            - "null"
         opened_at:
           format: date-time
+          type: string
+        primary_nc_id:
+          description: Несоответствие с гипотезами — вход «Почему могло произойти».
           type: string
         scope_version:
           format: int64
@@ -6305,7 +6426,18 @@ components:
           format: int64
           minimum: 0
           type: integer
+        stage:
+          description: "Стадия расследования: словарь investigation_stage (contracts/statuses.yaml)."
+          enum:
+            - scope_defined
+            - hypothesis
+            - cause_confirmed
+            - action_assigned
+            - effectiveness_check
+            - closed
+          type: string
         status:
+          description: "Область риска: open — идёт, closed — решение по изделиям принято (расследование — stage)."
           enum:
             - open
             - closed
@@ -6318,6 +6450,11 @@ components:
         - scope_version
         - status
         - opened_at
+        - nc_ids
+        - stage
+        - counts
+        - next_step
+        - close_blockers
       type: object
     IngestBatch:
       additionalProperties: false
@@ -7835,6 +7972,12 @@ components:
             type: string
           description: "Параметры подписи: метод, параметр, значение, уставка, шаг…"
           type: object
+        source_label:
+          description: "Источник словами: «журнал «Сварочный источник ИС-2»», «камера КТ-3», псевдоним человека."
+          type: string
+        text:
+          description: "Запись коротко словами для людей: что произошло, значение против уставки, источник. Нет — показать тип записи."
+          type: string
         variant:
           description: "Уточнение внутри типа: outcome контроля, deviation_kind отклонения, cycle_started / cycle_finished, condition."
           type: string
@@ -7992,6 +8135,35 @@ components:
         - valid_from
         - registration_event_id
       type: object
+    KnownCountsView:
+      additionalProperties: false
+      properties:
+        confirmed:
+          description: Подтверждено.
+          format: int64
+          minimum: 0
+          type: integer
+        excluded:
+          description: Исключено с основанием.
+          format: int64
+          minimum: 0
+          type: integer
+        suspect:
+          description: Под подозрением.
+          format: int64
+          minimum: 0
+          type: integer
+        unknown:
+          description: Нет данных — исключать нельзя.
+          format: int64
+          minimum: 0
+          type: integer
+      required:
+        - confirmed
+        - suspect
+        - unknown
+        - excluded
+      type: object
     KnownGood:
       additionalProperties: false
       properties:
@@ -8060,6 +8232,43 @@ components:
           type: array
       required:
         - items
+      type: object
+    LaneQualities:
+      additionalProperties: false
+      properties:
+        equipment:
+          $ref: "#/components/schemas/LaneQuality"
+        item:
+          $ref: "#/components/schemas/LaneQuality"
+        person:
+          $ref: "#/components/schemas/LaneQuality"
+      required:
+        - item
+        - person
+        - equipment
+      type: object
+    LaneQuality:
+      additionalProperties: false
+      properties:
+        gaps:
+          description: Пропуски данных.
+          items:
+            $ref: "#/components/schemas/DataGap"
+          type: array
+        late_count:
+          description: Записей, пришедших позже, чем произошли (опоздания).
+          format: int64
+          minimum: 0
+          type: integer
+        max_delay_min:
+          description: Наибольшее опоздание, минут.
+          format: int64
+          minimum: 0
+          type: integer
+      required:
+        - late_count
+        - max_delay_min
+        - gaps
       type: object
     LiveMap:
       additionalProperties: false
@@ -9730,9 +9939,18 @@ components:
       properties:
         defect_type:
           type: string
+        defect_type_label:
+          description: Вид дефекта по-русски — классификатор видов дефектов.
+          type: string
         equipment:
           type: string
+        equipment_label:
+          description: Оборудование (или партия для входного брака) словами из справочника.
+          type: string
         group_key:
+          type: string
+        incident_id:
+          description: Расследование (инцидент) группы; нет — группа без расследования.
           type: string
         investigation:
           enum:
@@ -9760,6 +9978,9 @@ components:
           type: array
         operation:
           type: string
+        operation_label:
+          description: Имя шага BPMN действующей версии процесса.
+          type: string
       required:
         - group_key
         - defect_type
@@ -9779,6 +10000,44 @@ components:
           type: array
       required:
         - items
+      type: object
+    NextCheck:
+      additionalProperties: false
+      properties:
+        could_exclude:
+          description: Сколько изделий области проверка может исключить (оценка).
+          format: int64
+          minimum: 0
+          type: integer
+        measurement_kind:
+          description: Вид проверки — для кнопки «Запросить измерение».
+          enum:
+            - control_sample
+            - radiography
+            - camera_reshoot
+            - equipment_log
+            - sample_inspection
+            - document_check
+            - explanation
+            - other
+          type: string
+        scope_size:
+          description: Размер текущей области риска.
+          format: int64
+          minimum: 0
+          type: integer
+        text:
+          description: Проверка словами.
+          type: string
+        unlocks_text:
+          description: "Что проверка разблокирует: подтверждение причины, сужение области."
+          type: string
+      required:
+        - text
+        - measurement_kind
+        - unlocks_text
+        - could_exclude
+        - scope_size
       type: object
     NodeAnomaly:
       additionalProperties: false
@@ -13936,6 +14195,9 @@ components:
           type: integer
         common_factor:
           $ref: "#/components/schemas/FactorRef"
+        group_key:
+          description: Ключ группы /analysis/groups (вид дефекта × операция × оборудование) ведущего несоответствия.
+          type: string
         incident_id:
           type: string
         incident_label:
@@ -13947,6 +14209,14 @@ components:
           type: array
         last_known_good:
           $ref: "#/components/schemas/KnownGood"
+        nc_ids:
+          description: "Несоответствия инцидента: по ним — /nonconformities/{nc_id}/circumstances и /hypotheses."
+          items:
+            type: string
+          type: array
+        primary_nc_id:
+          description: Несоответствие с гипотезами — вход «Почему могло произойти».
+          type: string
         shipped_to_partners:
           format: int64
           type: integer
@@ -13963,6 +14233,7 @@ components:
         - versions
         - items
         - basis_seq
+        - nc_ids
       type: object
     RoleRef:
       additionalProperties: false
@@ -14507,6 +14778,35 @@ components:
         - action
         - location
       type: object
+    ScopeTrigger:
+      additionalProperties: false
+      properties:
+        event_id:
+          description: Запись-повод (для окна записи).
+          type: string
+        kind:
+          description: Опоздавшие данные, окно нарушения режима, решение человека, правило системы.
+          enum:
+            - late_event
+            - violation_window
+            - human
+            - computed
+          type: string
+        label:
+          description: "Повод словами: «пришёл журнал «Сварочный источник ИС-2»: ток 176 А при уставке 160 ± 10 А»."
+          type: string
+        occurred_at:
+          description: Когда это произошло (ось «как было»).
+          format: date-time
+          type: string
+        received_at:
+          description: Когда данные пришли (ось «что мы знали»).
+          format: date-time
+          type: string
+      required:
+        - kind
+        - label
+      type: object
     ScopeVersion:
       additionalProperties: false
       properties:
@@ -14515,6 +14815,9 @@ components:
           type:
             - string
             - "null"
+        author_name:
+          description: Имя автора версии из справочника людей; нет — правило системы или справочник недоступен.
+          type: string
         breakdown:
           $ref: "#/components/schemas/ScopeBreakdown"
         change:
@@ -14524,10 +14827,33 @@ components:
             - expanded
             - narrowed
           type: string
+        evidence:
+          description: Доказательства версии словами (те же записи, что evidence_event_ids).
+          items:
+            $ref: "#/components/schemas/JournalRecordRef"
+          type: array
         evidence_event_ids:
           items:
             type: string
           type: array
+        items_added:
+          description: Изделия, вошедшие в область этой версией (item_id); у первой версии — все.
+          items:
+            type: string
+          type: array
+        items_removed:
+          description: Изделия, исключённые этой версией (item_id).
+          items:
+            type: string
+          type: array
+        key_class:
+          description: Класс ключа подписи сужения (AD-10).
+          enum:
+            - personal
+            - device
+            - server_attested
+            - scenario
+          type: string
         reason:
           $ref: "#/components/schemas/Reason"
         recorded_at:
@@ -14537,10 +14863,16 @@ components:
           format: int64
           minimum: 1
           type: integer
+        signed_by:
+          description: Кто подписал сужение (псевдоним).
+          type: string
         size:
           format: int64
           minimum: 0
           type: integer
+        trigger:
+          $ref: "#/components/schemas/ScopeTrigger"
+          description: Повод ступени — вместо разбора reason.code.
       required:
         - scope_version
         - change
@@ -14549,6 +14881,9 @@ components:
         - author
         - evidence_event_ids
         - breakdown
+        - items_added
+        - items_removed
+        - evidence
       type: object
     SecurityEvent:
       additionalProperties: false
@@ -24673,7 +25008,7 @@ paths:
         owner: materials
   /api/v1/materials/{address}/content:
     get:
-      description: "AD-23: байты материала; адрес проверяется после расшифрования и чтения."
+      description: "AD-23: байты материала (кадр, иллюстрация, скан, протокол) как есть, тип — заголовок Content-Type; адрес проверяется после расшифрования и чтения."
       operationId: materials.material.content
       parameters:
         - description: Адрес содержимого streebog256:….
@@ -24687,11 +25022,22 @@ paths:
       responses:
         "200":
           content:
-            application/json:
+            "*/*":
               schema:
-                contentEncoding: base64
+                contentMediaType: application/octet-stream
+                format: binary
                 type: string
-          description: OK
+            application/pdf:
+              schema:
+                contentMediaType: application/octet-stream
+                format: binary
+                type: string
+            image/*:
+              schema:
+                contentMediaType: application/octet-stream
+                format: binary
+                type: string
+          description: Байты содержимого
           headers:
             Ant-Backend:
               schema:

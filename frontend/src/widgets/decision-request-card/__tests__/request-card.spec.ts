@@ -32,8 +32,20 @@ describe('карточка «Требуется ваше решение»', () =
     const w = mountView()
     expect(w.find('[data-testid="proposal"]').text()).toBe('Принять FL-0042 «как есть» по разрешению РО-12/26')
     expect(w.text()).toContain('Почему это пришло к вам')
-    expect(w.text()).toContain('Внешние полномочия')
+    // Режим и правило — во втором слое «Подробности», коды людям на первом уровне не показываются (UI-35).
+    expect(w.find('[data-testid="details"]').exists()).toBe(false)
     expect(w.find('[data-testid="concession-note"]').text()).toBe('Итог: «годно по разрешению на отклонение» — это не «годно»')
+  })
+
+  it('что от вас нужно — сверху: ваш этап, что будет после подписи; подробности по кнопке', async () => {
+    const w = mountView()
+    const task = w.find('[data-testid="task"]')
+    expect(task.text()).toContain('От вас нужно')
+    expect(task.find('[data-testid="my-stage"]').text()).toContain('Подпись этапа 2')
+    expect(task.find('[data-testid="after-sign"]').text()).toBe('Ваша подпись — последняя в маршруте')
+    expect(task.find('[data-testid="sign"]').exists()).toBe(true)
+    await w.find('[data-testid="toggle-details"]').trigger('click')
+    expect(w.find('[data-testid="details"]').text()).toContain('Внешние полномочия')
   })
 
   it('паспорт изделия — кнопкой из карточки (Д-70: правым окном, не панелью сбоку)', async () => {

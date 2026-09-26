@@ -9,6 +9,7 @@
 import { computed, ref, watch } from 'vue'
 import { effectiveIntegrity, useIntegrity, useVerifierReport, useVerifierReports } from '@/entities/integrity'
 import { backendModeOf } from '@/shared/api/response'
+import { useServerNow } from '@/shared/model/server-clock'
 import type { WidgetProps } from '@/shared/config/widget'
 import { WidgetFrame } from '@/shared/ui'
 import IntegrityReportsView from './IntegrityReportsView.vue'
@@ -17,7 +18,9 @@ defineProps<WidgetProps>()
 
 const integrityQ = useIntegrity()
 const integrity = computed(() => integrityQ.data.value?.data)
-const status = computed(() => (integrity.value ? effectiveIntegrity(integrity.value, Date.now()) : null))
+// Свежесть — по часам сервера (Ant-Now), а не браузера.
+const serverNow = useServerNow()
+const status = computed(() => (integrity.value ? effectiveIntegrity(integrity.value, serverNow.value) : null))
 
 const reportsQ = useVerifierReports()
 const reports = computed(() => reportsQ.data.value?.data?.items ?? null)
