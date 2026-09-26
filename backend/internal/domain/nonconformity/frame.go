@@ -337,7 +337,29 @@ func Reduce(s State, r kernel.Record, env Env, up Upstream) State {
 		}
 	}
 	s.fromQuality(up, r)
+	s.fromDocuments(up, r)
 	return s
+}
+
+// fromDocuments — решения режима 4–5 с подписями «ожидаются» исполняются,
+// когда модуль documents закрыл маршрут подписей документа решения (AD-43,
+// AD-40: documents стоит в композиции раньше; закрытие вычисляется в свёртке
+// заново по подписям — documents.RouteClosed, эпик 28). Подписи
+// nonconformity сам не считает.
+func (s *State) fromDocuments(up Upstream, r kernel.Record) {
+	if up.Documents == nil {
+		return
+	}
+	for i := range s.NCs {
+		n := &s.NCs[i]
+		if n.Disposition == "" || n.Executed || n.ApprovalsStatus != ApprovalsPending || n.DocumentID == "" {
+			continue
+		}
+		if documents.RouteClosed(*up.Documents, n.DocumentID) {
+			n.Executed, n.ApprovalsStatus = true, ApprovalsRouteClosed
+			s.executed(*n, r)
+		}
+	}
 }
 
 // fromQuality — намерения quality, выраженные данными его состояния

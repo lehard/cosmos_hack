@@ -125,6 +125,9 @@ type apiOptions struct {
 	security *securityapp.Service
 	// reference — справочники из журнала ядра (reference.go, эпик 19); nil — 501.
 	reference *referenceapp.Service
+	// documents — документы-проекции, маршруты подписей, печать с QR
+	// (documents.go, эпик 28); nil — заглушка 501.
+	documents *documentsapp.Service
 }
 
 // buildAPI собирает HTTP API: общий декоратор (Gate) над портами прав и входа,
@@ -245,7 +248,11 @@ func buildAPI(mux *http.ServeMux, o apiOptions) *httpapi.API {
 		visionhttp.Register(a, q, c)
 	}
 	{
-		q, c := pick[documentsapp.Queries, documentsapp.Commands](a.ModeFor("documents"), documentsapp.NewService(), documentsfx.New())
+		live := o.documents
+		if live == nil {
+			live = documentsapp.NewService()
+		}
+		q, c := pick[documentsapp.Queries, documentsapp.Commands](a.ModeFor("documents"), live, documentsfx.New())
 		documentshttp.Register(a, q, c)
 	}
 	{

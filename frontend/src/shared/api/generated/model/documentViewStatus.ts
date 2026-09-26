@@ -12,4 +12,6 @@ export const DocumentViewStatus = {
   signing: 'signing',
   route_closed: 'route_closed',
   annulled: 'annulled',
+  live: 'live',
+  returned: 'returned',
 } as const;
