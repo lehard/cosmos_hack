@@ -113,6 +113,10 @@ func Generate(fsys fs.FS) (map[string][]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	templates, err := LoadTemplates(fsys)
+	if err != nil {
+		return nil, err
+	}
 	out := map[string][]byte{"common/blobs/" + BpmnBlob: bpmn, "common/blobs/" + BracketBpmnBlob: BracketBpmn}
 	var people []PersonRef
 	seen := map[string]bool{}
@@ -128,6 +132,7 @@ func Generate(fsys fs.FS) (map[string][]byte, error) {
 			return nil, err
 		}
 		m.shifts = shifts
+		m.templates = templates
 		if err := m.write(out); err != nil {
 			return nil, err
 		}

@@ -25,6 +25,8 @@ type Ctx struct {
 	states map[*Item]ItemState
 	seqIt  map[*Item]int64
 	seqEnt map[string]int64
+	// docs — документы на часах шага (render_documents.go).
+	docs []docAt
 }
 
 func (m *Model) ctx(n int) *Ctx {
@@ -135,7 +137,7 @@ var renderers = []func(c *Ctx) []loader.Response{
 	renderSecurity, renderWorkplaces,
 	renderItems, renderProcess, renderQuality, renderNonconformity, renderAnalysis,
 	renderAnalytics, renderNotifications, renderERP, renderJournal, renderMachinelogs,
-	renderVision, renderIngest, renderOps, renderSimulation,
+	renderVision, renderIngest, renderOps, renderSimulation, renderDocuments,
 }
 
 // Render — все ответы шага n.

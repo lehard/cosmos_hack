@@ -1320,6 +1320,156 @@
       "movedToIsolator": "Изделие {item} перемещено в изолятор — можно принимать решение: {title}, срок {due_at}"
     }
   },
+  "docRegistry": {
+    "title": "Документы",
+    "tab": "Документы",
+    "kind": "Документ",
+    "total": "Показано: {n}",
+    "empty": "Документов пока нет",
+    "emptyFiltered": "Под отбор не попал ни один документ",
+    "unavailable": "Документ недоступен",
+    "version": "версия {n}",
+    "progress": "этапов {done} из {total}",
+    "live": "собирается из истории",
+    "liveHint": "Сопроводительная карта собирается из журнала изделия; версия зафиксируется печатью или завершением процесса, тогда откроется маршрут подписей.",
+    "stage": "Этап {n}",
+    "whoCan": "Может подписать: {who}",
+    "paperAllowed": "Допустима подпись на бумаге с заверением скана вторым человеком",
+    "attestedBy": "заверил {who}",
+    "paperNo": "оригинал № {no}",
+    "level": "уровень {n}",
+    "notCounted": "не засчитана",
+    "declinedAt": "вернул с замечанием {at}",
+    "summary": "Сводка для подписи",
+    "digest": "Отпечаток",
+    "template": "Шаблон",
+    "versions": "Версии",
+    "noVersions": "Версия ещё не зафиксирована",
+    "signatures": "подписей: {n}",
+    "paper": "Бумажные экземпляры",
+    "noPaper": "Не печатался",
+    "copy": "экз. {n}",
+    "declineComment": "Замечание — почему не согласовано (обязательно)",
+    "columns": {
+      "document": "Документ",
+      "number": "Номер",
+      "subject": "Объект",
+      "state": "Состояние",
+      "awaiting": "Ждёт подписи",
+      "date": "Дата"
+    },
+    "filters": {
+      "state": "Состояние",
+      "allStates": "Все",
+      "process": "Процесс",
+      "item": "Изделие",
+      "kind": "Вид документа",
+      "search": "Поиск: номер, название, объект",
+      "reset": "Сбросить"
+    },
+    "states": {
+      "draft": "Черновик",
+      "signing": "На подписи",
+      "paper": "На бумаге",
+      "returned": "Возвращён",
+      "signed": "Подписан",
+      "annulled": "Аннулирован"
+    },
+    "stageState": {
+      "done": "подписан",
+      "declined": "отказ",
+      "next": "ждёт подписи",
+      "waiting": "в очереди"
+    },
+    "versionStatus": {
+      "drafted": "черновик",
+      "signing": "на подписи",
+      "route_closed": "подписана",
+      "annulled": "аннулирована",
+      "returned": "возвращена"
+    },
+    "paperStatus": {
+      "printed": "Напечатан",
+      "signed": "Подписан на бумаге",
+      "destroyed": "Уничтожен"
+    },
+    "method": {
+      "paper": "на бумаге",
+      "source": "решение-источник",
+      "demo": "демо-подпись без ключа",
+      "key": "ключом"
+    },
+    "key": {
+      "hardwareToken": "физический ключ",
+      "softwareBrowser": "ключ в браузере"
+    },
+    "tabs": {
+      "route": "Маршрут подписей",
+      "content": "Содержимое",
+      "versions": "Версии и бумага"
+    },
+    "actions": {
+      "sign": "Подписать",
+      "signDemo": "Подписать без ключа (демо)",
+      "decline": "Отказать",
+      "declineSend": "Отказать с замечанием",
+      "cancel": "Отмена",
+      "print": "Печать с QR",
+      "download": "Скачать"
+    },
+    "done": {
+      "signed": "Подпись записана",
+      "declined": "Отказ с замечанием записан"
+    },
+    "subjects": {
+      "item": "Изделие",
+      "nonconformity": "Несоответствие",
+      "lot": "Партия",
+      "process_version": "Версия процесса",
+      "workplace": "Пост и смена",
+      "policy": "Права",
+      "concession": "Разрешение"
+    },
+    "kinds": {
+      "incomingRegister": "Журнал входного контроля",
+      "incomingInspectionProtocol": "Протокол входного контроля",
+      "incomingInspectionAct": "Акт входного контроля",
+      "incomingResultsRegister": "Журнал результатов ВК",
+      "lotConformityLabel": "Ярлык партии",
+      "itemTag": "Бирка изделия",
+      "traveler": "Сопроводительная карта",
+      "requisition": "Требование-накладная",
+      "firstArticleAct": "Акт первой детали",
+      "cmmProtocol": "Протокол КИМ",
+      "presentationLog": "Журнал предъявления ОТК",
+      "routeSheet": "Маршрутный лист",
+      "interworkshopTransfer": "Накладная на передачу",
+      "weldingLog": "Журнал сварочных работ",
+      "specialProcessLog": "Журнал спецпроцесса",
+      "ndtConclusion": "Заключение НК",
+      "assemblyCard": "Карта сборки",
+      "torqueLog": "Журнал затяжек",
+      "interventionRecord": "Запись вмешательства",
+      "testProgram": "Программа испытаний",
+      "testProtocol": "Протокол испытаний",
+      "customerPresentationNotice": "Извещение о предъявлении ВП",
+      "customerConclusion": "Заключение ВП",
+      "acceptanceCertificate": "Свидетельство о приёмке",
+      "passport": "Паспорт изделия",
+      "isolatorLog": "Журнал изолятора",
+      "ncLabel": "Ярлык «Брак»",
+      "ncStatement": "Заявление о несоответствии",
+      "ncDisposition": "Решение по НП",
+      "scrapAct": "Акт о браке",
+      "concession": "Разрешение на отклонение",
+      "processVersionApproval": "Лист утверждения версии процесса",
+      "decisionRequest": "Запрос решения",
+      "policyGrant": "Выдача прав",
+      "controllerAssignment": "Назначение контролёра",
+      "passportExtract": "Выписка паспорта",
+      "serviceAct": "Служебный акт"
+    }
+  },
   "processEditor": {
     "title": "Редактор процесса",
     "versions": "Версии процесса",

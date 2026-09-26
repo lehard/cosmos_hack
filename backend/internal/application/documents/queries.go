@@ -241,6 +241,10 @@ func (s *Service) Document(ctx context.Context, documentID string, version int, 
 	for _, p := range d.Paper {
 		out.Paper = append(out.Paper, DocumentPaperMark{EventID: p.EventID, Version: p.Version, Status: p.Status, CopyNo: p.CopyNo, At: p.At})
 	}
+	out.SubjectLabel = out.Subject.ID
+	for _, dc := range ver.Declines {
+		out.Declines = append(out.Declines, DocumentDecline{EventID: dc.EventID, Version: ver.No, Stage: dc.Stage, SignerID: dc.Person, Comment: dc.Comment, At: dc.At})
+	}
 	if ver.Closed {
 		for _, r := range v.Reactions {
 			if r.Type == catalog.DocumentRouteClosed && r.Slot == dom.Slot(dom.RuleRoute, d.ID, ver.No) {
@@ -398,7 +402,8 @@ func stageSig(sg dom.Signature, counted, prev bool, why string, v *view) Documen
 		method = dom.MethodDemo
 	}
 	return DocumentStageSignature{EventID: sg.EventID, SignerID: who, Class: class, Level: sg.Level, Check: "unchecked", AttestedBy: sg.AttestedBy,
-		PaperOriginalRef: sg.PaperNo, ScanAddress: sg.ScanAddress, Method: method, SignedAt: sg.At, Counted: counted, PreviousVersion: prev, Why: why}
+		PaperOriginalRef: sg.PaperNo, ScanAddress: sg.ScanAddress, Method: method, SignedAt: sg.At, Counted: counted, PreviousVersion: prev, Why: why,
+		KeyRef: sg.KeyRef}
 }
 
 // Render — каноническая отрисовка HTML (documents.document.render, AD-12).

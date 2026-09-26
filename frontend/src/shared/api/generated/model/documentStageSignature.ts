@@ -4,6 +4,7 @@
  */
 import type { DocumentStageSignatureCheck } from './documentStageSignatureCheck';
 import type { DocumentStageSignatureClass } from './documentStageSignatureClass';
+import type { DocumentStageSignatureKeyStorage } from './documentStageSignatureKeyStorage';
 import type { DocumentStageSignatureMethod } from './documentStageSignatureMethod';
 
 export interface DocumentStageSignature {
@@ -17,6 +18,10 @@ export interface DocumentStageSignature {
   counted: boolean;
   /** Запись document.signature.recorded или решение-источник (by_source). */
   event_id: string;
+  /** Ключ подписанта key_id@версия. */
+  key_ref?: string;
+  /** Класс хранения ключа (Д-72): hardware_token — физический ключ, software_browser — ключ в браузере под PIN. */
+  key_storage?: DocumentStageSignatureKeyStorage;
   /**
      * Уровень подписи (AD-13).
      * @minimum 0

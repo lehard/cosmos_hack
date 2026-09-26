@@ -10,6 +10,10 @@ import (
 type Queries interface {
 	// Documents — документы объекта (documents.document.list, FR-65).
 	Documents(ctx context.Context, subject platform.DrillRef, m platform.Moment, p platform.Page) (DocumentList, error)
+	// Registry — реестр документов: все документы с отбором по объекту,
+	// изделию, процессу, виду, состоянию и поиску (documents.document.list
+	// без объекта или с фильтрами; раздел «Документы» столов).
+	Registry(ctx context.Context, f DocumentFilter, m platform.Moment, p platform.Page) (DocumentList, error)
 	// Document — документ для подписи (documents.document.read, AD-12, AD-43).
 	Document(ctx context.Context, documentID string, version int, m platform.Moment) (DocumentView, error)
 	// Render — каноническая отрисовка HTML (documents.document.render, AD-12).
@@ -47,6 +51,9 @@ type Unimplemented struct{}
 func ni(op string) error { return platform.NotImplemented(op) }
 
 func (Unimplemented) Documents(context.Context, platform.DrillRef, platform.Moment, platform.Page) (DocumentList, error) {
+	return DocumentList{}, ni("documents.document.list")
+}
+func (Unimplemented) Registry(context.Context, DocumentFilter, platform.Moment, platform.Page) (DocumentList, error) {
 	return DocumentList{}, ni("documents.document.list")
 }
 func (Unimplemented) Document(context.Context, string, int, platform.Moment) (DocumentView, error) {

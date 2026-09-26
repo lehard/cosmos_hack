@@ -1,6 +1,7 @@
 package world
 
 import (
+	dom "ant/internal/domain/documents"
 	"fmt"
 	"reflect"
 	"slices"
@@ -44,6 +45,11 @@ type Model struct {
 	anchor *Item
 	nextEv int
 	nextER int
+
+	// templates — шаблоны документов нормативного слоя; docs — документы мира
+	// (render_documents.go, строятся один раз).
+	templates dom.Templates
+	docs      []*wdoc
 }
 
 // Item — изделие сценария.
