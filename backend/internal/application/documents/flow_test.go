@@ -306,17 +306,32 @@ func TestSpineFlow(t *testing.T) {
 	if _, err := w.docs.RecordSignature(as("W22", "performer"), trvID, app.RecordSignature{CommandHeader: hdr(), Version: 2, Stage: 1}); codeOf(err) == "" {
 		t.Fatal("исполнитель подписал итоговую годность")
 	}
-	for _, s := range []struct {
-		who, role string
-		stage     int
-	}{{"INS-02", "quality_inspector", 1}, {"FOR-WC", "site_foreman", 2}} {
-		if _, err := w.docs.RecordSignature(as(s.who, s.role), trvID, app.RecordSignature{CommandHeader: hdr(), Version: 2, Stage: s.stage}); err != nil {
-			t.Fatalf("%s: %v", s.who, err)
-		}
+	if _, err := w.docs.RecordSignature(as("INS-02", "quality_inspector"), trvID, app.RecordSignature{CommandHeader: hdr(), Version: 2, Stage: 1}); err != nil {
+		t.Fatal(err)
 	}
 	w.settle()
-	if v := w.doc(trvID, 2); v.Status != dom.StatusRouteClosed {
-		t.Fatalf("карта v2: %s", v.Status)
+	// Этап 2 — на бумаге с заверением (FR-139, AD-43): мастер подписал
+	// распечатку с QR, скан заверяет начальник цеха; заверитель ≠ подписант;
+	// чужой QR не принимается.
+	qr := dom.QR(trvID, v2.DocDigest)
+	scan := "streebog256:" + strings.Repeat("ab", 32)
+	attest := func(ctx context.Context, signer, qrText string) error {
+		_, err := w.docs.AttestPaper(ctx, trvID, app.AttestPaper{CommandHeader: hdr(), Version: 2, Stage: 2, DocDigest: qrText,
+			SignerPersonID: signer, ScanAddress: scan, PaperOriginalNo: "ОТК-АРХ-17"})
+		return err
+	}
+	if err := attest(as("FOR-WC", "site_foreman"), "FOR-WC", qr); codeOf(err) != errcodes.SigningAttesterIsSigner {
+		t.Fatalf("заверитель = подписант: %v", err)
+	}
+	if err := attest(as("HWS-WC", "head_of_workshop"), "FOR-WC", dom.QR(trvID, v1.DocDigest)); codeOf(err) != errcodes.SigningQrMismatch {
+		t.Fatalf("QR прежней версии: %v", err)
+	}
+	if err := attest(as("HWS-WC", "head_of_workshop"), "FOR-WC", qr); err != nil {
+		t.Fatal(err)
+	}
+	w.settle()
+	if v := w.doc(trvID, 2); v.Status != dom.StatusRouteClosed || v.Route[1].Signatures[0].Class != "paper" || v.Route[1].Signatures[0].AttestedBy != "HWS-WC" {
+		t.Fatalf("карта v2: %s %+v", v.Status, v.Route[1].Signatures)
 	}
 
 	// Счётчик FR-65 и паспортная проекция.

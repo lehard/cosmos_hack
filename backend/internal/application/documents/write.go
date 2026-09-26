@@ -38,6 +38,9 @@ const SourceAPI = "ant-api"
 // objectID — шаблон object_id контракта (contracts/events/common/defs.v1.json).
 var objectID = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$`)
 
+// digestRe — шаблон digest контракта: адрес материала (скан бумажной подписи).
+var digestRe = regexp.MustCompile(`^streebog256:[0-9a-f]{64}$`)
+
 // out — запись к Append.
 type out struct {
 	Type       catalog.Type
@@ -285,6 +288,9 @@ func (s *Service) Sign(ctx context.Context, documentID string, in SignDocument) 
 func (s *Service) AttestPaper(ctx context.Context, documentID string, in AttestPaper) (platform.Receipt, error) {
 	if !s.live() {
 		return s.Unimplemented.AttestPaper(ctx, documentID, in)
+	}
+	if in.ScanAddress != "" && !digestRe.MatchString(in.ScanAddress) {
+		return platform.Receipt{}, platform.Fail(errcodes.ApiValidationFailed, "field", "scan_address", "reason", "адрес скана — streebog256:‹64 hex› (materials.material.upload)")
 	}
 	digest := in.DocDigest
 	if id, dg, ok := dom.ParseQR(in.DocDigest); ok {
