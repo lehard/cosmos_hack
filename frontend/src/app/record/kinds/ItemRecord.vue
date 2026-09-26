@@ -8,6 +8,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import { SummaryTag, usePassport } from '@/entities/item'
+import { ContainmentAction } from '@/features/containment'
 import { useDrillDown } from '@/features/drill-down'
 import { ActionButton, RecordDrawer } from '@/shared/ui'
 import WidgetHost from '@/widgets/WidgetHost.vue'
@@ -48,5 +49,8 @@ const openPage = () => drill.openPage({ entity: 'item', id: props.id })
       :slice="{ item_id: id, view: 'full', ...opts }"
       :frame="{ hideTitle: true, plain: true }"
     />
-  </RecordDrawer>
+    <template v-if="passport" #actions>
+      <ContainmentAction :item-id="id" :item-label="passport.label ?? id" :basis-seq="passport.basis_seq" />
+    </template>
+</RecordDrawer>
 </template>
