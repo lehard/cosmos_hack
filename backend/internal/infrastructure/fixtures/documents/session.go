@@ -304,9 +304,9 @@ func newRequest(ctx context.Context, in app.RequestVersion, now time.Time) (app.
 		RenderingHash: digest, DocDigest: digest, SummaryFields: []app.DocumentSummaryField{
 			{Key: "action", Label: "Действие", Value: action}, {Key: "decision", Label: "Решение", Value: in.Decision}, {Key: "comment", Label: "Комментарий", Value: in.Comment}},
 		SourceEventIDs: append([]string{}, in.SourceEventIDs...),
-		Stages: []app.DocumentApprovalStage{{Stage: 1, Authority: action, Quorum: "one", Required: 1, Level: 2, Candidates: cands, SignedBy: []string{}, Status: "pending"}},
-		Signatures: []app.DocumentSignatureView{}, QR: dom.QR(id, digest), DocType: dom.DocGeneric, Class: "decision",
-		Route: []app.DocumentRouteStage{{Stage: 1, AuthorityID: action, AuthorityLabel: label, Quorum: "one", Required: 1, SignatureLevel: 2, Signatures: []app.DocumentStageSignature{}}},
+		Stages:         []app.DocumentApprovalStage{{Stage: 1, Authority: action, Quorum: "one", Required: 1, Level: 2, Candidates: cands, SignedBy: []string{}, Status: "pending"}},
+		Signatures:     []app.DocumentSignatureView{}, QR: dom.QR(id, digest), DocType: dom.DocGeneric, Class: "decision",
+		Route:    []app.DocumentRouteStage{{Stage: 1, AuthorityID: action, AuthorityLabel: label, Quorum: "one", Required: 1, SignatureLevel: 2, Signatures: []app.DocumentStageSignature{}}},
 		Versions: []app.DocumentVersionRef{{Version: 1, DocDigest: digest, Status: dom.StatusDrafted, DraftedAt: now}}, SubjectLabel: subjectID}
 	return v, items, nil
 }

@@ -1,7 +1,6 @@
 package world
 
 import (
-	"sync"
 	"bytes"
 	"embed"
 	"encoding/json"
@@ -10,6 +9,7 @@ import (
 	"path"
 	"sort"
 	"strings"
+	"sync"
 	"testing/fstest"
 	"time"
 
