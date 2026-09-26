@@ -407,3 +407,32 @@ func TestGroupDispositionCoversEarlierNC(t *testing.T) {
 		t.Fatalf("новое несоответствие не держит приёмку: %v", err)
 	}
 }
+
+// SHOW-IS2: Ф-003 в области риска инцидента ИС-2 (блок правилом) с
+// подтверждённым прожогом; «Переделка» — изделие выведено из области на
+// исполнение решения: блок области снят, приёмку на ЗТ-3 после переварки он
+// не держит; следующая версия области блок сама не возвращает.
+func TestReworkReleasesIncidentScopeHold(t *testing.T) {
+	var j journal
+	j.add(catalog.OperationRunStarted, map[string]any{"operation_run_id": "RUN-1", "operation_code": "030", "step_key": "welding.weld", "operator_id": "op-7"}, "")
+	insp := j.add(catalog.InspectionResultRecorded, map[string]any{"step_key": "welding.kt3_camera", "outcome": "defect_indicated"}, "")
+	id := nc.DraftNCID(item, []string{"SIG-1"})
+	j.add(catalog.DecisionNonconformityConfirmed, nc.ConfirmedData{NCID: id, SignalIDs: []string{"SIG-1"}, Severity: "critical", Reason: nc.Reason{Text: "прожог У2"}}, "qc-1")
+	j.add(catalog.IncidentMembershipChanged, map[string]any{"incident_id": "INC-IS2", "scope_version": 1, "status": "confirmed", "action": "block"}, "")
+	intents := map[string][]kernel.Intent{insp.EventID: {draftIntent(insp, "isolate", "SIG-1")}}
+	s, _ := fold(nc.Env{}, j.recs, intents)
+	if !s.Blocked() {
+		t.Fatalf("до решения блок области: %+v", s.Containment)
+	}
+	j.add(catalog.DecisionDispositionSet, nc.DispositionSetData{NCID: id, Disposition: "rework", Reason: nc.Reason{Text: "переварка У2"}}, "tech-1")
+	j.add(catalog.IncidentMembershipChanged, map[string]any{"incident_id": "INC-IS2", "scope_version": 3, "status": "confirmed", "action": "block"}, "")
+	s, _ = fold(nc.Env{}, j.recs, intents)
+	if s.Blocked() {
+		t.Fatalf("после «Переделки» блок области держит: %+v", s.Containment)
+	}
+	accept := kernel.Command{Action: nc.ActPresentation, Payload: nc.PresentationResolvedData{StepKey: "welding.zt3_acceptance", ClosingPoint: "ZT-3",
+		Resolution: "accept", PresentationNo: 2}}
+	if err := nc.Guard(s, nc.Env{}, nc.Upstream{}, accept); err != nil {
+		t.Fatalf("ЗТ-3 после переварки: %v", err)
+	}
+}

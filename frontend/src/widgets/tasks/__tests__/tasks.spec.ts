@@ -159,7 +159,8 @@ describe('задачи и уведомления', () => {
     expect(sectionsOf({ kinds: ['task'] })).toEqual(['task'])
     expect(sectionsOf({ kinds: ['nonsense'] })).toEqual(['task', 'alarm', 'escalation'])
     const list = tasks()
-    expect(ownWorkplaceTasks(list, 'WP-WELD-2').map((t) => t.task_id)).toEqual(['TASK-004', 'TASK-001'])
+    // Своё место — задачи поста и задачи цеха (без привязки к другому посту): TASK-003 на WS-WC тоже своя.
+    expect(ownWorkplaceTasks(list, 'WP-WELD-2').map((t) => t.task_id)).toEqual(['TASK-003', 'TASK-004', 'TASK-001'])
     expect(splitTasks(list).open.map((t) => t.task_id)).toEqual(['TASK-003', 'TASK-004'])
   })
 

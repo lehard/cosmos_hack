@@ -98,6 +98,13 @@ func TestShowHumanRunID(t *testing.T) {
 			d.mu.Lock()
 			seq := d.recs[len(d.recs)-1].seq
 			d.mu.Unlock()
+			// Запись нажатия ещё не читается — остановка не снимается (иначе
+			// ток, КТ-3 и рентген ушли бы на плановый id выполнения).
+			for k := 0; k < 3; k++ {
+				if st = step(2 * time.Second); st.Waiting == nil || st.Waiting.Op != w.Op || st.Waiting.Object != w.Object || len(st.Runs) != 0 {
+					t.Fatalf("«Начать» снято без фактического id выполнения: %s %+v %v", st.State, st.Waiting, st.Runs)
+				}
+			}
 			ing.mu.Lock()
 			ing.runs[seq] = human
 			ing.mu.Unlock()
