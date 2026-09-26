@@ -19,6 +19,8 @@ import { newCommandId } from '@/shared/lib/command-id'
 import { ActionButton, EmptyState } from '@/shared/ui'
 import { taskActionOf, taskItemLabel, type TaskAction } from '../model/actions'
 import IsolatorMoveConfirm from './IsolatorMoveConfirm.vue'
+import RecheckRequestForm from './RecheckRequestForm.vue'
+import SendMoveForm from './SendMoveForm.vue'
 
 const props = withDefaults(
   defineProps<{
@@ -39,6 +41,8 @@ const problemText = useProblemText()
 const session = useSession()
 const ack = useAcknowledgeTask()
 const size = computed(() => naiveSizeOf(props.density))
+/** Исполнитель на посту (есть допуск в сеансе). */
+const onPost = computed(() => !!session.data.value?.data.workplace?.id)
 
 /** Раскрыто подтверждение перемещения у задачи. */
 const moving = ref<string | null>(null)
@@ -56,19 +60,6 @@ const actions = computed(() => new Map<string, TaskAction>(props.tasks.map((task
 const actionOf = (task: TaskEntry): TaskAction => actions.value.get(task.task_id) ?? { kind: 'ack', ref: task.ref ?? null }
 const itemLabel = (task: TaskEntry) => taskItemLabel(task)
 const opOf = (task: TaskEntry) => task.operation_id ?? task.kind
-
-/**
- * Действие исполнителя — на его терминале: если терминал на этом столе, кнопка
- * ведёт к нему; иначе открывается окно изделия.
- */
-function goTerminal(a: Extract<TaskAction, { kind: 'terminal' }>): void {
-  const el = typeof document !== 'undefined' ? document.querySelector<HTMLElement>('[data-widget="performer-terminal"]') : null
-  if (el) {
-    el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    return
-  }
-  if (a.ref) emit('open', a.ref)
-}
 
 const time = (iso: string | null | undefined) => (iso ? d(new Date(iso), 'dateTime') : '')
 
@@ -130,6 +121,21 @@ const kindKey = (task: TaskEntry) => (taskNotificationKind(task.kind) === 'decis
       <template v-if="isOpenTask(task) && canAct && !acked[task.task_id] && actionOf(task).kind !== 'ack'">
         <template v-for="a in [actionOf(task)]" :key="a.kind">
           <ReceiveAction v-if="a.kind === 'form' && a.form === 'receive'" :item-id="a.itemId" :basis-seq="basisSeq" :to-location-id="(task as unknown as { location_id?: string | null }).location_id ?? null" :step-key="task.step_key ?? null" data-testid="task-receive" />
+          <SendMoveForm
+            v-else-if="a.kind === 'form' && a.form === 'send'"
+            :item-id="a.itemId"
+            :basis-seq="basisSeq"
+            :from-location-id="task.location_id ?? null"
+            :step-key="task.step_key ?? null"
+            :density="density"
+          />
+          <RecheckRequestForm
+            v-else-if="a.kind === 'form' && a.form === 'recheck'"
+            :item-id="a.itemId"
+            :basis-seq="basisSeq"
+            :reason="task.title"
+            :density="density"
+          />
           <template v-else-if="a.kind === 'form' && a.form === 'isolator_move'">
             <div v-if="moving !== task.task_id" class="line">
               <ActionButton :size="size" type="primary" secondary :label="t(a.verbKey)" data-testid="open-isolator-move" @click="moving = task.task_id" />
@@ -139,8 +145,11 @@ const kindKey = (task: TaskEntry) => (taskNotificationKind(task.kind) === 'decis
           <div v-else-if="a.kind === 'window' && canOpen(a.ref)" class="line">
             <ActionButton :size="size" type="primary" :label="t(a.verbKey)" data-testid="task-action" :data-action="opOf(task)" @click="emit('open', a.ref)" />
           </div>
+          <!-- Действие исполнителя доступно только с поста: без допуска кнопки нет, есть подсказка. -->
           <div v-else-if="a.kind === 'terminal'" class="line">
-            <ActionButton :size="size" type="primary" :label="t(a.verbKey)" data-testid="task-action" :data-action="opOf(task)" @click="goTerminal(a)" />
+            <!-- Кнопка здесь ничего не делала (только прокрутка к терминалу) — действие живёт в очереди терминала. -->
+            <span v-if="onPost" class="ant-muted" data-testid="task-in-terminal">В очереди терминала — «Начать операцию» там</span>
+            <span v-else class="ant-muted" data-testid="task-needs-post">Сначала встаньте на пост — откройте допуск в терминале</span>
           </div>
         </template>
       </template>

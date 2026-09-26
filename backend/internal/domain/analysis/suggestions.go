@@ -451,6 +451,9 @@ func decisionTypeText(t string) string {
 	return t
 }
 
+// CategoryTitle — категория причины словами («оборудование»).
+func CategoryTitle(c string) string { return categoryText(c) }
+
 func categoryText(c string) string {
 	switch c {
 	case CatIncoming:

@@ -43,14 +43,27 @@ func (s *Service) Queue(ctx context.Context, f QueueFilter, m platform.Moment, p
 		return DecisionQueue{}, err
 	}
 	rows := []DecisionQueueRow{}
+	// Последнее событие изделия: изделия, с которыми работают сейчас (живая
+	// партия), — выше давних (история прогона, прошлые смены).
+	last := map[string]time.Time{}
+	var newest time.Time
 	for _, it := range items {
 		v, err := s.loadItem(ctx, it, m)
 		if err != nil {
 			continue
 		}
+		for _, r := range v.Input {
+			if r.OccurredAt.After(last[it]) {
+				last[it] = r.OccurredAt
+			}
+		}
+		if last[it].After(newest) {
+			newest = last[it]
+		}
 		rows = append(rows, s.queueRows(v, s.at(ctx, m, v.RunID))...)
 		rows = append(rows, s.reviewRows(ctx, v)...)
 	}
+	current := func(r DecisionQueueRow) bool { return !last[r.ItemID].Before(newest.Add(-queueCurrentWindow)) }
 	sevRank := map[string]int{"critical": 0, "major": 1, "minor": 2, "unknown": 3}
 	due := func(r DecisionQueueRow) int64 {
 		if r.DueAt == nil {
@@ -59,6 +72,12 @@ func (s *Service) Queue(ctx context.Context, f QueueFilter, m platform.Moment, p
 		return r.DueAt.Unix()
 	}
 	slices.SortStableFunc(rows, func(a, b DecisionQueueRow) int {
+		if ca, cb := current(a), current(b); ca != cb {
+			if ca {
+				return -1
+			}
+			return 1
+		}
 		if a.Overdue != b.Overdue {
 			if a.Overdue {
 				return -1
@@ -81,6 +100,12 @@ func (s *Service) Queue(ctx context.Context, f QueueFilter, m platform.Moment, p
 	}
 	if f.Sort == "deadline" {
 		slices.SortStableFunc(rows, func(a, b DecisionQueueRow) int {
+			if ca, cb := current(a), current(b); ca != cb {
+				if ca {
+					return -1
+				}
+				return 1
+			}
 			da, db := due(a), due(b)
 			switch {
 			case da < db:
@@ -106,6 +131,10 @@ func page[T any](xs []T, p platform.Page) []T {
 	}
 	return xs
 }
+
+// queueCurrentWindow — изделия, по которым что-то происходило за это время до
+// самого свежего события очереди, идут первыми (живая партия над историей).
+const queueCurrentWindow = 12 * time.Hour
 
 // queueRows — строки очереди изделия.
 func (s *Service) queueRows(v *itemView, now time.Time) []DecisionQueueRow {

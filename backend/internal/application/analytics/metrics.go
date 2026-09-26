@@ -40,7 +40,7 @@ type metricDef struct {
 	id, title, group, counts, account string
 	agg                               agg
 	// dims — измерения срезов: step, location, equipment, performer,
-	// defect_type, origin, cause_category, comparable.
+	// defect_type, origin, cause_category, comparable, line.
 	dims []string
 	// entries — вклады за период.
 	entries func(v *view) []entry
@@ -244,6 +244,33 @@ func (v *view) performerErrors() []entry {
 	return out
 }
 
+// performerErrorRate — доля подтверждённых ошибок исполнителя на сопоставимых
+// работах (кейс §2.4, I6): знаменатель — выполнения группы «тип операции ×
+// тип изделия × исполнитель», числитель — те из них, по изделию и операции
+// которых уполномоченный подтвердил ошибку этого исполнителя (ТК РФ ст. 247).
+// Сравнивать группы можно только рядом с числом выполнений (comparable_runs):
+// на малой выборке доля не говорит ничего.
+func (v *view) performerErrorRate() []entry {
+	errs := map[string]string{}
+	for _, r := range v.rows {
+		if r.Metric != domain.RowNCConfirmed || r.At.After(v.to) {
+			continue
+		}
+		if er, ok := v.errs[r.Dims.NC]; ok && er.Operator != "" {
+			errs[r.Item+"|"+r.Dims.Operation+"|"+er.Operator] = er.EventID
+		}
+	}
+	out := v.points(domain.RowComparableRuns)
+	for i := range out {
+		d := out[i].row.Dims
+		if ev, ok := errs[out[i].row.Item+"|"+d.Operation+"|"+d.Performer]; ok {
+			out[i].num = true
+			out[i].extra = append(out[i].extra, ev)
+		}
+	}
+	return out
+}
+
 // downtime — простой оборудования в периоде (FR-89).
 func (v *view) downtime() []entry {
 	out := overlap(v.down, domain.RowEquipmentDowntime, v.from, v.to)
@@ -289,6 +316,11 @@ var catalog = []metricDef{
 		entries: func(v *view) []entry {
 			return v.withOrigin(v.points(domain.RowConfirmedDefects), domain.DefectProduction)
 		}},
+	{id: "defects_by_line", title: "Подтверждённые дефекты по линиям (линия, а где её нет в событии — оборудование линии)", group: "defects", counts: "defects", agg: aggSum,
+		dims: []string{"line"},
+		entries: func(v *view) []entry {
+			return v.withOrigin(v.points(domain.RowConfirmedDefects), domain.DefectProduction)
+		}},
 	{id: "recurrence_rate", title: "Повторяемость проблем: повторы вида дефекта на операции", group: "defects", counts: "defects", agg: aggSum,
 		dims: []string{"defect_type", "step"}, entries: func(v *view) []entry { return v.recurrence() }},
 	{id: "rework_runs", title: "Повторные выполнения операций", group: "defects", counts: "operations", agg: aggSum, dims: []string{"step", "performer"},
@@ -323,6 +355,8 @@ var catalog = []metricDef{
 		dims: []string{"comparable", "equipment"}, entries: points(domain.RowComparableRuns)},
 	{id: "confirmed_performer_errors", title: "Подтверждённые ошибки исполнителей", group: "people", counts: "nonconformities", account: "performer", agg: aggSum,
 		dims: []string{"comparable"}, entries: func(v *view) []entry { return v.performerErrors() }},
+	{id: "performer_error_rate", title: "Доля подтверждённых ошибок исполнителя на сопоставимых работах", group: "people", counts: "operations", account: "performer", agg: aggShare,
+		dims: []string{"comparable"}, entries: func(v *view) []entry { return v.performerErrorRate() }},
 	{id: "operation_duration", title: "Длительность операций", group: "time", counts: "time", agg: aggMean,
 		dims: []string{"step", "location", "performer", "equipment", "shift"}, entries: points(domain.RowOperationDuration)},
 	{id: "waiting_time", title: "Ожидание изделий в очередях", group: "time", counts: "time", agg: aggTime, dims: []string{"step"},
@@ -372,6 +406,18 @@ func dimValue(dim string, r domain.Row) (string, string, string) {
 			return "location", d.Station, d.Station
 		}
 		return "location", d.Line, d.Line
+	case "line":
+		// Линия (кейс §2.4 «дефекты по линиям»): из события выполнения; линии
+		// фланца расходятся только на сварке — там у каждой свой пост и источник,
+		// поэтому без line_id линию представляет оборудование выполнения.
+		// Измерение контракта одно — location, иначе раскрытие среза разойдётся.
+		if d.Line != "" {
+			return "location", "line/" + d.Line, d.Line
+		}
+		if d.Equipment != "" {
+			return "location", "eq/" + d.Equipment, "Линия с оборудованием " + d.Equipment
+		}
+		return "location", "", ""
 	case "equipment":
 		return "equipment", d.Equipment, d.Equipment
 	case "performer":

@@ -126,7 +126,7 @@ func (s *State) wanted(env Env, up Upstream, cur Cause) ([]Obligation, []Task) {
 				if d.DueAt == nil {
 					continue
 				}
-				o := obl(BasisBPMNTimer, "bpmn_timer", d.ObligationID, RoleForeman, "Окно "+d.StepKey+": "+s.ItemID, *d.DueAt, c)
+				o := obl(BasisBPMNTimer, "bpmn_timer", d.ObligationID, RoleForeman, "Окно "+d.StepKey+": "+label, *d.DueAt, c)
 				o.ID, o.StepKey, o.WaitsOn = d.ObligationID, d.StepKey, "item:"+s.ItemID
 				os = append(os, o)
 			case process.DeadlinePresentation:
@@ -135,7 +135,7 @@ func (s *State) wanted(env Env, up Upstream, cur Cause) ([]Obligation, []Task) {
 					due = env.Calendar.AddWorkingDays(d.From, d.WorkDays)
 				}
 				o := obl(BasisPresentation, "presentation_wait", d.ObligationID, first(d.OwnerRole, RoleInspector),
-					"Решение на точке предъявления "+d.StepKey+": "+s.ItemID, due, c)
+					"Решение на точке предъявления "+d.StepKey+": "+label, due, c)
 				o.ID, o.StepKey, o.WaitsOn = d.ObligationID, d.StepKey, "item:"+s.ItemID
 				os = append(os, o)
 				gates[d.StepKey] = true
@@ -169,7 +169,7 @@ func (s *State) wanted(env Env, up Upstream, cur Cause) ([]Obligation, []Task) {
 				if iso.DecisionDueAt != nil {
 					due = *iso.DecisionDueAt
 				}
-				o := obl(BasisIsolation, "nc_disposition", iso.EventID, RoleTechnologist, "Решение по изолированному изделию "+s.ItemID, due, c)
+				o := obl(BasisIsolation, "nc_disposition", iso.EventID, RoleTechnologist, "Решение по изолированному изделию "+label, due, c)
 				o.WaitsOn = group
 				os = append(os, o)
 				ts = append(ts, task("decide/"+iso.EventID, "decision_required", RoleTechnologist, o.Title, &o.FirstDue, c))
@@ -178,7 +178,7 @@ func (s *State) wanted(env Env, up Upstream, cur Cause) ([]Obligation, []Task) {
 			// задача с подтверждением тому, у кого изделие, и срок.
 			if !iso.PhysicallyMoved {
 				due := iso.At.Add(time.Duration(env.MoveWithinMin) * time.Minute)
-				title := "Переместить в изолятор: " + s.ItemID
+				title := "Переместить в изолятор: " + label
 				if iso.IsolatorLocationID != "" {
 					title += " → " + iso.IsolatorLocationID
 				}
@@ -195,7 +195,7 @@ func (s *State) wanted(env Env, up Upstream, cur Cause) ([]Obligation, []Task) {
 					continue
 				}
 				c := Cause{EventID: first(n.ConfirmedEventID, firstCause(n.Causes)), At: decisionAt(*nc, n.ConfirmedEventID, n.FoundAt)}
-				o := obl(BasisNC, "nc_disposition", n.ID, RoleTechnologist, "Решение по несоответствию "+n.Number+" ("+s.ItemID+")",
+				o := obl(BasisNC, "nc_disposition", n.ID, RoleTechnologist, "Решение по несоответствию "+n.Number+" ("+label+")",
 					env.Calendar.AddWorkingDays(c.At, env.DecisionWorkingDays), c)
 				o.WaitsOn = group
 				os = append(os, o)
@@ -205,7 +205,7 @@ func (s *State) wanted(env Env, up Upstream, cur Cause) ([]Obligation, []Task) {
 		// Сроки на точках предъявления (FR-8, FR-19): изделие ждёт контролёра.
 		if p := nc.PendingPresentation(); p != nil && !gates[p.StepKey] {
 			gate := first(p.ClosingPoint, p.StepKey)
-			o := obl(BasisPresentation, "presentation_wait", p.EventID, RoleInspector, "Решение на точке предъявления "+gate+": "+s.ItemID,
+			o := obl(BasisPresentation, "presentation_wait", p.EventID, RoleInspector, "Решение на точке предъявления "+gate+": "+label,
 				p.At.Add(time.Duration(env.PresentationWaitMin)*time.Minute), Cause{EventID: p.EventID, At: p.At})
 			o.StepKey, o.WaitsOn = p.StepKey, "item:"+s.ItemID
 			os = append(os, o)
@@ -215,6 +215,13 @@ func (s *State) wanted(env Env, up Upstream, cur Cause) ([]Obligation, []Task) {
 		// физически находится (место — по фактам перемещения и выполнения).
 		for _, c := range nc.Containment {
 			if c.Rule != nonconformity.RuleIncidentScope || c.Released {
+				continue
+			}
+			// Решение по области для изделия уже принято: исключено с основанием
+			// (основание — «наблюдать» или «снять») или решено несоответствие
+			// изделия — срока «решение по области» и задачи нет; сам блок, если
+			// остался, снимает человек (AD-27).
+			if b := statuses.Containment(c.Basis); b == statuses.ContainmentObserve || b == statuses.ContainmentNone || decided(*nc) {
 				continue
 			}
 			incident := strings.TrimPrefix(c.Key, "incident:")
@@ -231,11 +238,11 @@ func (s *State) wanted(env Env, up Upstream, cur Cause) ([]Obligation, []Task) {
 			if c.BasisEventID != "" {
 				cause = Cause{EventID: c.BasisEventID, At: c.At}
 			}
-			o := obl(BasisIncidentScope, "containment_review", c.Key, RoleHeadOfQC, "Решение по области риска "+incident+": "+s.ItemID,
+			o := obl(BasisIncidentScope, "containment_review", c.Key, RoleHeadOfQC, "Решение по области риска "+incident+": "+label,
 				env.Calendar.AddWorkingDays(c.At, env.DecisionWorkingDays), cause)
 			o.WaitsOn = c.Key
 			os = append(os, o)
-			ts = append(ts, task("incident/"+c.Key+"/"+kind, kind, RoleForeman, "Изделие "+s.ItemID+" в области риска "+incident+": "+what, nil, cause))
+			ts = append(ts, task("incident/"+c.Key+"/"+kind, kind, RoleForeman, "Изделие "+label+" в области риска "+incident+": "+what, nil, cause))
 		}
 		// Д-81: приёмка отозвана пересмотром — пока блок человека по отзыву не
 		// снят, задача тому, у кого изделие: остановить и отложить до решения.
@@ -247,7 +254,7 @@ func (s *State) wanted(env Env, up Upstream, cur Cause) ([]Obligation, []Task) {
 			}
 			c := Cause{EventID: p.ReviewEventID, At: decisionAt(*nc, p.ReviewEventID, cur.At)}
 			ts = append(ts, task("revoked/"+p.ReviewEventID, "physical_move", RoleForeman,
-				"Приёмка "+first(p.ClosingPoint, p.StepKey)+" отозвана: остановить и отложить "+s.ItemID+" до решения", nil, c))
+				"Приёмка "+first(p.ClosingPoint, p.StepKey)+" отозвана: остановить и отложить "+label+" до решения", nil, c))
 		}
 		// FR-52: назначенная доп. проверка — срок, пока нет нового результата контроля.
 		for _, rc := range nc.Rechecks {
@@ -259,7 +266,7 @@ func (s *State) wanted(env Env, up Upstream, cur Cause) ([]Obligation, []Task) {
 			if !ok {
 				due = env.Calendar.AddWorkingDays(at, env.RecheckWorkingDays)
 			}
-			o := obl(BasisRecheck, "recheck", rc.EventID, RoleInspector, "Доп. проверка ("+rc.Method+"): "+s.ItemID, due, Cause{EventID: rc.EventID, At: at})
+			o := obl(BasisRecheck, "recheck", rc.EventID, RoleInspector, "Доп. проверка ("+rc.Method+"): "+label, due, Cause{EventID: rc.EventID, At: at})
 			o.WaitsOn = "item:" + s.ItemID
 			os = append(os, o)
 		}
@@ -277,11 +284,24 @@ func (s *State) wanted(env Env, up Upstream, cur Cause) ([]Obligation, []Task) {
 				cs = append(cs, Cause{EventID: id, At: s.At})
 			}
 			t := task("quality/"+rq.Key, taskKind(rq.TaskKind), rq.RoleID, rq.Title, nil, cs...)
+			if rq.TaskKind == "recheck" {
+				// Доп. проверка по изделию (R-01, R-02: «оценка невозможна»):
+				// кнопка — назначить её по изделию, без несоответствия; назначенная
+				// доп. проверка задачу снимает (дальше — срок доп. проверки).
+				if up.Nonconformity != nil && slices.ContainsFunc(up.Nonconformity.Rechecks, func(rc nonconformity.Recheck) bool { return !rc.Done }) {
+					continue
+				}
+				t.Operation, t.StepKey = OpRecheckRequest, rq.StepKey
+				t.Title = "Доп. проверка " + label + ": " + rq.Title
+			}
 			ts = append(ts, t)
 		}
 	}
 	return os, ts
 }
+
+// OpRecheckRequest — операция «Назначить доп. проверку» по изделию.
+const OpRecheckRequest = "nonconformity.recheck.request"
 
 // KindProcessStep — вид задачи «шаг процесса ждёт действия человека».
 const KindProcessStep = "process_step"

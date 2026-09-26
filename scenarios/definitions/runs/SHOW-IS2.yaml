@@ -2,6 +2,11 @@
 # ~/ant/_bmad-output/implementation-artifacts/demo-show-scenario.md): короткий прогон
 # профиля demo, который люди проводят руками.
 #
+# ПОЗАПРОШЛАЯ НЕДЕЛЯ (Пн 07.09 – Чт 10.09) — завершённое расследование ИС-2 для стола
+# технолога: Ф-301…Ф-303 на ИС-2, прожог корня Ф-302 (рентген), область 3 → 2 → 1, гипотезы
+# обеих веток с проверкой контрольным образцом, причины, НС закрыто, область закрыта, меры
+# (одна внедрена — идёт проверка эффективности). Всё до Ф-201/Ф-202: последней
+# подтверждённо годной на ИС-2 для живого инцидента остаётся Ф-202 (34 → 13 → 6).
 # ПРОШЛОЕ (до live.from) — готовая история: прошлая партия Ф-201, Ф-202 проведена
 # целиком (история короткая: интерактивный прогон проигрывает её до первой
 # остановки за 1–2 минуты реального времени на живом движке) (приёмка партий, мехобработка, сварка, ЗТ-2…ЗТ-6, выпуск), живая партия
@@ -30,7 +35,7 @@ description: >-
 case_refs: ["кейс §1.5", "кейс §4.2 станок сломался", "Д-85 сценарий показа"]
 world: flange
 seed: 20260921
-anchor: "2026-09-11T08:00:00+03:00"
+anchor: "2026-09-04T08:00:00+03:00"
 end: "2026-09-21T14:00:00+03:00"
 speed: 60
 scenarios: [SHOW-IS2]
@@ -38,6 +43,9 @@ live:
   from: "2026-09-21T08:00:00+03:00"
 
 orders:
+  # Позапрошлая неделя: партия Ф-301…Ф-303 — завершённое расследование ИС-2 (карточка SHOW-IS2, история).
+  - {id: ORD-0907, at: "2026-09-04T09:00:00+03:00", external: ord-5c2b-0907, quantity: 3, due: "2026-09-18", items: "F-301…F-303",
+     lots: {blank: LOT-ZF-201, ring: LOT-R-116, cover: LOT-C-301, seal: LOT-SL-401, fastener: LOT-FS-501, valve: LOT-V-601}}
   - {id: ORD-0911, at: "2026-09-11T08:00:00+03:00", external: ord-5c2b-0911, quantity: 2, due: "2026-09-25", items: "F-201…F-202",
      lots: {blank: LOT-ZF-201, ring: LOT-R-116, cover: LOT-C-301, seal: LOT-SL-401, fastener: LOT-FS-501, valve: LOT-V-601}}
   - {id: ORD-0914, at: "2026-09-14T09:00:00+03:00", external: ord-5c2b-0914, quantity: 31, due: "2026-10-02", items: "F-101…F-131",
@@ -47,7 +55,7 @@ orders:
 
 # Партии — общие для прошлой и живой партии фланцев (история короче: меньше приёмок).
 lots:
-  - {id: LOT-ZF-201, component: FL-100.01.001, supplier: SUP-1, quantity: 40, certificate: С-201, heat: "5512", arrived: "2026-09-11T08:30:00+03:00"}
+  - {id: LOT-ZF-201, component: FL-100.01.001, supplier: SUP-1, quantity: 40, certificate: С-201, heat: "5512", arrived: "2026-09-04T08:30:00+03:00"}
   - {id: LOT-R-116,  component: FL-100.01.002, supplier: SUP-2, quantity: 5, certificate: С-116, units: "R-001…R-005", arrived: "2026-09-11T08:40:00+03:00"}
   - {id: LOT-C-301,  component: FL-100.00.003, supplier: SUP-4, quantity: 5, units: "C-001…C-005", arrived: "2026-09-11T08:50:00+03:00"}
   - {id: LOT-SL-401, component: FL-100.00.004, supplier: SUP-5, quantity: 10, arrived: "2026-09-11T09:00:00+03:00"}
@@ -63,12 +71,41 @@ lots:
 
 # Объекты, которые рождает система во время показа (читаются теми же операциями API).
 refs:
+  # Завершённое расследование позапрошлой недели (Ф-302).
+  NC-F302: {operation: nonconformity.nonconformity.list, params: {item_id: "{item:F-302}"}, path: "/items/0/nc_id", note: "прожог корня У2 на Ф-302"}
+  SIG-F302: {operation: quality.signal.list, params: {item_id: "{item:F-302}", state: open}, path: "/items/0/signal_id"}
+  INC-F302: {operation: analysis.incident.list, path: "/items[primary_nc_id={ref:NC-F302}]/0/incident_id", note: "инцидент ИС-2 позапрошлой недели"}
+  HYP-F302-EQ: {operation: analysis.hypothesis.list, params: {nc_id: "{ref:NC-F302}"}, path: "/hypotheses[category=equipment]/0/hypothesis_id"}
+  HYP-F302-MISS: {operation: analysis.hypothesis.list, params: {nc_id: "{ref:NC-F302}"}, path: "/hypotheses[branch=why_missed]/0/hypothesis_id"}
+  ACT-F302-EQ: {operation: analysis.action.list, path: "/items[incident_id={ref:INC-F302},direction=prevent_occurrence]/0/action_id"}
   NC-F003: {operation: nonconformity.nonconformity.list, params: {item_id: "{item:F-003}"}, path: "/items/0/nc_id", note: "прожог У2 на Ф-003"}
   SIG-F003: {operation: quality.signal.list, params: {item_id: "{item:F-003}", state: open}, path: "/items/0/signal_id"}
-  INC-IS2: {operation: analysis.incident.list, path: "/items/0/incident_id", note: "инцидент по ИС-2"}
+  INC-IS2: {operation: analysis.incident.list, path: "/items[primary_nc_id={ref:NC-F003}]/0/incident_id", note: "инцидент по ИС-2 (по НС Ф-003: в журнале есть и расследование позапрошлой недели)"}
   HYP-EQ: {operation: analysis.hypothesis.list, params: {nc_id: "{ref:NC-F003}"}, path: "/hypotheses[category=equipment]/0/hypothesis_id", note: "гипотеза «оборудование ИС-2» у НС Ф-003"}
 
 items:
+  # История позапрошлой недели (Пн 07.09): три фланца на ИС-2, короткая история. Ф-302 и Ф-303
+  # сварены при токе вне уставки; КТ-3 признаков не видит (лицевая сторона), рентген Ф-302 —
+  # прожог корня: НС, завершённое расследование ИС-2 (карточка SHOW-IS2). Всё — до Ф-201/Ф-202:
+  # последней подтверждённо годной на ИС-2 для живого инцидента остаётся Ф-202.
+  - id: F-301
+    order: ORD-0907
+    launch: "2026-09-07T07:30:00+03:00"
+    entry: weld
+    until: kt3
+    weld: {at: "2026-09-07T08:00:00+03:00", station: WS-2, welder: WLD-02, arc: ["2026-09-07T08:10:00+03:00", "2026-09-07T08:11:00+03:00"]}
+  - id: F-302
+    order: ORD-0907
+    launch: "2026-09-07T08:30:00+03:00"
+    entry: weld
+    until: weld   # КТ-3 — шагом карточки: ракурс не охватил участок У2
+    weld: {at: "2026-09-07T09:00:00+03:00", station: WS-2, welder: WLD-03, arc: ["2026-09-07T09:10:00+03:00", "2026-09-07T09:11:00+03:00"], current: [176, 182]}
+  - id: F-303
+    order: ORD-0907
+    launch: "2026-09-07T09:30:00+03:00"
+    entry: weld
+    until: kt3
+    weld: {at: "2026-09-07T10:00:00+03:00", station: WS-2, welder: WLD-02, arc: ["2026-09-07T10:10:00+03:00", "2026-09-07T10:11:00+03:00"], current: [176, 182]}
   # История: прошлая партия (Пн 14.09 – Чт 17.09), проведена целиком.
   - id: F-201
     order: ORD-0911

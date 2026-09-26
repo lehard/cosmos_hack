@@ -89,6 +89,9 @@ type InvestigationFacts struct {
 	Causes map[string]string
 	// Actions — статусы мер: assigned | implemented | effective | failed | reopened.
 	Actions []string
+	// Supported — гипотеза (категория словами), которую подтвердила проверка
+	// измерением: дальше — вывод о причине человеком.
+	Supported string
 }
 
 // InvestigationStage — стадия расследования: от закрытия назад к области.
@@ -124,6 +127,11 @@ func InvestigationStage(f InvestigationFacts) string {
 func InvestigationNextStep(f InvestigationFacts) string {
 	if f.Closed {
 		return ""
+	}
+	// Проверка подтвердила гипотезу, а вывода о причине ещё нет — дальше
+	// вывод человека (FR-59): «Подтвердить причину», а не новое сужение.
+	if _, ok := f.Causes[BranchWhyMade]; !ok && f.Supported != "" {
+		return "Подтвердить причину «почему возник»: проверка подтвердила гипотезу «" + f.Supported + "»"
 	}
 	open := f.Counts.Suspect + f.Counts.Unknown
 	if !f.ScopeClosed && open > 0 && (!f.Narrowed || len(f.Causes) == 0 && f.NextCheck == "") {

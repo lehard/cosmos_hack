@@ -200,6 +200,10 @@ func (s *Service) StartRun(ctx context.Context, scenarioID string, in StartRun) 
 		e.Detail = "живой прогон идёт с начала определения: точка старта (start=start_step, from_step) — только на заготовках"
 		return StartedRun{}, e
 	}
+	// Прогоны, висящие на решении человека, новый старт останавливает: иначе
+	// раннер шагает и их, они забирают чужие допуски (WP-WELD-1) и пишут
+	// служебные записи со своим, более ранним временем.
+	s.stopWaiting(ctx)
 	if active, ok := s.active(ctx); ok {
 		e := platform.Fail(errcodes.ApiValidationFailed, "run_id", active.RunID)
 		e.Detail = "уже идёт прогон " + active.RunID + " (" + active.State + "): остановите его — доменное время журнала не убывает (AD-37), прогоны идут по очереди (AD-38)"
@@ -279,6 +283,41 @@ func (s *Service) active(ctx context.Context) (*RunState, bool) {
 		}
 	}
 	return nil, false
+}
+
+// stopWaiting — остановить прогоны, ждущие решения человека (в том числе
+// поставленные на паузу во время ожидания): итог stopped, как у
+// simulation.run.stop. Время записи — не раньше последнего тика прогона и
+// доменного «сейчас»; не записалось — прогон всё равно остановлен
+// (предупреждение в лог), новый старт важнее.
+func (s *Service) stopWaiting(ctx context.Context) {
+	runs, err := s.d.Store.List(ctx)
+	if err != nil {
+		return
+	}
+	var domainNow time.Time
+	if s.d.Domain != nil {
+		if t, err := s.d.Domain.Now(ctx); err == nil {
+			domainNow = t
+		}
+	}
+	for _, st := range runs {
+		if st.State != StateWaiting && (st.State != StatePaused || st.Waiting == nil) {
+			continue
+		}
+		at := notBefore(notBefore(st.Clock.Now(s.now()), st.LastTick), domainNow)
+		st.Clock = st.Clock.Pause(s.now())
+		st.State = StateStopped
+		t := s.now()
+		st.FinishedAt = &t
+		st.Waiting = nil
+		if _, err := s.record(ctx, st, "simulation.run.finished", at, map[string]any{"run_id": st.RunID, "outcome": "stopped"}); err != nil && s.d.Log != nil {
+			s.d.Log.Warn("прогон: остановка висящего прогона не записана в журнал", "run_id", st.RunID, "err", err)
+		}
+		if err := s.d.Store.Save(ctx, st); err != nil && s.d.Log != nil {
+			s.d.Log.Warn("прогон: остановка висящего прогона не сохранена", "run_id", st.RunID, "err", err)
+		}
+	}
 }
 
 func (s *Service) byCommand(ctx context.Context, commandID string) (*RunState, bool) {

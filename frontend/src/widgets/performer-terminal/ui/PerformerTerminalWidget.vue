@@ -45,7 +45,15 @@ const run = computed(() => (typeof props.slice.run_id === 'string' && props.slic
 const workplace = computed(() => session.data.value?.data.workplace ?? null)
 const workplaceId = computed(() => workplace.value?.id ?? null)
 
-const equipmentQ = useEquipmentStates(workplaceId)
+// Оборудование поста стоит на участке (IS-1/IS-2 → ST-WELD), а не на самом посту: читаем по участку,
+// иначе список пуст, «Выполнено» держится только на startedHere и пропадает после перезагрузки страницы.
+const stationId = computed(() => {
+  const wp = workplaceId.value
+  if (!wp) return null
+  const loc = (locationsQ.data.value?.data ?? []).find((l) => l.location_id === wp)
+  return loc?.parent_id ?? wp
+})
+const equipmentQ = useEquipmentStates(stationId)
 const registryQ = useEquipmentRegistry()
 const postsQ = usePosts(computed(() => (run.value ? { run_id: run.value } : {})))
 const mapQ = useLiveMap(computed(() => ({ period: 'shift' as const, ...(run.value ? { run_id: run.value } : {}) })))
@@ -62,7 +70,15 @@ const operations = computed(() => operationsOf(parsed.value, workshopId.value))
 
 // Без поста в сеансе оборудования «своего места» нет: чужие операции и
 // предупреждения не показываем (UI-40) — запрос без station_id вернул бы весь завод.
-const equipment = computed(() => (workplaceId.value ? (equipmentQ.data.value?.data ?? []) : []))
+// Своё оборудование: источник, привязанный к посту по номеру (WP-WELD-1 → IS-1), иначе всё оборудование участка.
+const equipment = computed(() => {
+  const wp = workplaceId.value
+  if (!wp) return []
+  const all = equipmentQ.data.value?.data ?? []
+  const n = /-(\d+)$/.exec(wp)?.[1]
+  const own = n ? all.filter((e) => new RegExp(`-${n}$`).test(e.equipment_id)) : []
+  return own.length ? own : all
+})
 /** Выполнение, начатое с этого терминала, — пока оборудование его не показало. */
 const startedHere = ref<{ runId: string; itemId: string } | null>(null)
 const runId = computed(() => currentRunId(equipment.value, startedHere.value?.runId ?? null))
@@ -91,12 +107,17 @@ const items = computed(() => postItems(post.value, runProfile.value, itemsQ.data
 /** Очередь шага + изделия из открытых задач «Начать» этого шага (шаг изделия меняется только при старте операции). */
 const candidates = computed(() => {
   const base = startCandidates(itemsQ.data.value?.data)
-  const have = new Set(base.map((c) => c.row.item_id))
   const fromTasks = (tasksQ.data.value?.data.items ?? [])
-    .filter((t) => t.state === 'open' && t.operation_id === 'process.operation.start' && t.step_key === stepKey.value && t.item_id && !have.has(t.item_id))
+    .filter((t) => t.state === 'open' && t.operation_id === 'process.operation.start' && t.step_key === stepKey.value && t.item_id)
     .map((t) => ({ row: { item_id: t.item_id!, label: t.item_label ?? t.item_id! } as (typeof base)[number]['row'], blocked: false }))
-  // Есть задачи «Начать» — очередь это они (без сваренного в истории); иначе очередь шага.
-  return fromTasks.length ? fromTasks : base
+  // Пока операция начата отсюда и сервер её ещё не показал — очередь скрыта: второй «Начать»
+  // до ответа сервера ушёл бы на другое изделие тем же выполнением.
+  if (startedHere.value && !runProfile.value) return []
+  // Очередь — только изделия с открытой задачей «Начать». Список шага (items?step_key) не годится:
+  // шаг изделия в паспорте отстаёт от процесса, там висит уже сваренное из истории (Ф-101, Ф-121…),
+  // и «Начать» по нему даёт отказ «изделие на шаге welding.weld (сейчас: …)».
+  void base
+  return fromTasks
 })
 
 // «Идёт N мин» против нормы шага.

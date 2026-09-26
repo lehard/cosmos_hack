@@ -1,6 +1,7 @@
 package analysis
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 	"maps"
@@ -33,7 +34,7 @@ func (s *Service) Circumstances(ctx context.Context, ncID string, m platform.Mom
 		return Circumstances{}, err
 	}
 	out := Circumstances{NCID: ncID, Records: []CircumstanceRecord{}, MissingInformation: append([]string{}, a.Missing...),
-		ConclusionIsCategorical: a.Categorical, BasisSeq: max(iv.BasisSeq, n.Seq)}
+		ConclusionIsCategorical: a.Categorical, BasisSeq: max(iv.BasisSeq, n.Seq, s.incidentBasis(ctx, n))}
 	if r := a.Operation; r != nil {
 		out.Operation = &OperationSpan{OperationRunID: r.RunID, Label: operationLabel(*r), StartedAt: r.Started, FinishedAt: r.Finished}
 	}
@@ -67,22 +68,13 @@ func (s *Service) Hypotheses(ctx context.Context, ncID string, m platform.Moment
 		return Hypotheses{}, err
 	}
 	out := Hypotheses{NCID: ncID, Version: n.Versions, Hypotheses: []Hypothesis{}, MissingInformation: append([]string{}, a.Missing...),
-		ConclusionIsCategorical: a.Categorical, SimilarCases: similar, BasisSeq: max(iv.BasisSeq, n.Seq)}
+		ConclusionIsCategorical: a.Categorical, SimilarCases: similar, BasisSeq: max(iv.BasisSeq, n.Seq, s.incidentBasis(ctx, n))}
 	refs := refIndex(iv.State, a)
 	rejected := map[string]*dom.ReasonRecord{}
 	for _, h := range n.Hypotheses {
 		if h.Verdict == "rejected" {
 			rejected[h.HypothesisID] = h.Reason
 		}
-	}
-	status := func(id, category, def string) string {
-		if c := n.Cause; c != nil && c.Conclusion == "confirmed" && c.Category == category {
-			return "confirmed"
-		}
-		if _, ok := rejected[id]; ok {
-			return "rejected"
-		}
-		return def
 	}
 	var inc *dom.IncidentRecord
 	for _, id := range n.IncidentIDs {
@@ -91,10 +83,27 @@ func (s *Service) Hypotheses(ctx context.Context, ncID string, m platform.Moment
 			break
 		}
 	}
+	// Подтверждена — вывод о причине своей ветки (кейс §2.3: у инцидента их два,
+	// «почему возник» и «почему не обнаружили раньше»); последний вывод по
+	// несоответствию — если выводов по веткам нет.
+	status := func(id, category, branch, def string) string {
+		if inc != nil {
+			if c, ok := inc.Causes[branch]; ok && c.Conclusion == "confirmed" && c.Category == category {
+				return "confirmed"
+			}
+		}
+		if c := n.Cause; c != nil && c.Conclusion == "confirmed" && c.Category == category && (c.Branch == "" || c.Branch == branch) {
+			return "confirmed"
+		}
+		if _, ok := rejected[id]; ok {
+			return "rejected"
+		}
+		return def
+	}
 	branch := "why_made"
 	for _, h := range a.Hypotheses {
 		x := Hypothesis{HypothesisID: h.ID, Category: h.Category, Branch: &branch, Statement: strp(h.Statement),
-			Status: status(h.ID, h.Category, "proposed_by_system"), ConfidenceBP: h.ConfidenceBP,
+			Status: status(h.ID, h.Category, branch, "proposed_by_system"), ConfidenceBP: h.ConfidenceBP,
 			Supporting: refs.of(h.Supporting), Contradicting: refs.of(h.Contradicting), MeasurementHint: strp(h.MeasurementHint),
 			History: hypothesisHistory(n, h.ID, h.Category), NextCheck: nextCheck(h, inc)}
 		// Результат измерения: уверенность пересчитана, проверка выполнена.
@@ -116,7 +125,7 @@ func (s *Service) Hypotheses(ctx context.Context, ncID string, m platform.Moment
 		}
 		b := h.Branch
 		x := Hypothesis{HypothesisID: h.HypothesisID, Category: h.Category, Branch: strp(b), Statement: strp(h.Statement),
-			Status: status(h.HypothesisID, h.Category, "recorded"), Supporting: refs.of(h.Supporting), Contradicting: []JournalRecordRef{},
+			Status: status(h.HypothesisID, h.Category, cmp.Or(b, "why_made"), "recorded"), Supporting: refs.of(h.Supporting), Contradicting: []JournalRecordRef{},
 			History: []HypothesisChange{{At: h.At, EventID: strp(h.EventID), Text: "Записана человеком (" + h.Actor + ")"}}}
 		out.Hypotheses = append(out.Hypotheses, x)
 	}
@@ -471,6 +480,24 @@ func (s *Service) driftOption(ctx context.Context, v dom.IncidentRecord, views [
 	o.Label = fmt.Sprintf("Исключить выполненные на %s до выхода режима из уставки (%d) — журнал %s", name, len(o.ItemIDs), name)
 	o.ReasonText = fmt.Sprintf("Журнал %s: режим впервые вне уставки %s; выполнения на %s до этого — в уставке", name, at, name)
 	return []NarrowOption{o}
+}
+
+// incidentBasis — basis_seq потоков инцидентов несоответствия: команды из
+// разбора и гипотез (запрос измерения, вывод о причине) проверяются по потоку
+// инцидента (AD-39), поэтому чтение, с которого их шлют, отдаёт и его seq —
+// иначе после сужения области команда получает journal.stale_state.
+func (s *Service) incidentBasis(ctx context.Context, n dom.NCRecord) int64 {
+	var out int64
+	for _, id := range n.IncidentIDs {
+		if v, err := s.incident(ctx, id); err == nil {
+			out = max(out, v.BasisSeq)
+		}
+	}
+	// Инцидент команды (тот же выбор, что у RequestMeasurement).
+	if v, err := s.ncIncident(ctx, n); err == nil {
+		out = max(out, v.BasisSeq)
+	}
+	return out
 }
 
 // labelOf — метка изделия из проекции разбора; нет — номер из id.

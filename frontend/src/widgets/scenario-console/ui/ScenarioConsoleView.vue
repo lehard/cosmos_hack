@@ -11,6 +11,7 @@
  * команды выключены (FR-4).
  */
 import { computed, reactive, watch } from 'vue'
+import { headMode, setHeadMode } from '@/shared/api/active-run'
 import { useI18n } from 'vue-i18n'
 import { NAlert, NButton, NInput, NInputNumber, NProgress, NRadioButton, NRadioGroup } from 'naive-ui'
 import {
@@ -18,7 +19,6 @@ import {
   SPEED_MAX,
   SPEED_MIN,
   SPEED_PRESETS,
-  ITEMS_MAX,
   actionKey,
   clampSpeed,
   configError,
@@ -111,10 +111,21 @@ function inject(item: Injection): void {
   const target = targets[item.injection]?.trim() || undefined
   emit('inject', item.injection, target)
 }
+
+// Режим этого браузера: «голова» — без активного прогона (shared/api/active-run).
+const head = headMode()
 </script>
 
 <template>
   <div class="console" :class="`density-${density}`" data-testid="scenario-console">
+    <div class="mode" data-testid="browser-mode">
+      <span class="muted">{{ t('widgets.scenarios.mode') }}</span>
+      <NRadioGroup :value="head ? 'head' : 'simulation'" size="small" @update:value="(v: string) => setHeadMode(v === 'head')">
+        <NRadioButton value="simulation">{{ t('widgets.scenarios.modeSimulation') }}</NRadioButton>
+        <NRadioButton value="head">{{ t('widgets.scenarios.modeHead') }}</NRadioButton>
+      </NRadioGroup>
+      <span class="muted note">{{ t('widgets.scenarios.modeNote') }}</span>
+    </div>
     <section class="scenarios" :aria-label="t('widgets.scenarios.list')">
       <h4>{{ t('widgets.scenarios.list') }}</h4>
       <ul class="list">
@@ -289,6 +300,18 @@ function inject(item: Injection): void {
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 40px;
   font-size: var(--ant-fs-body);
+}
+
+.mode {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.mode .note {
+  font-size: var(--ant-fs-meta);
 }
 
 .density-large {

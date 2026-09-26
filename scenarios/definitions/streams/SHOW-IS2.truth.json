@@ -2,7 +2,7 @@
  "run_id": "show-is2-20260921",
  "run": "SHOW-IS2",
  "seed": 20260921,
- "start": "2026-09-11T05:00:00.000Z",
+ "start": "2026-09-04T05:00:00.000Z",
  "end": "2026-09-21T11:00:00.000Z",
  "truth": {
   "items": [
@@ -474,9 +474,80 @@
     },
     "remarked_at": "2026-09-14T07:14:00Z",
     "until": "release"
+   },
+   {
+    "id": "F-301",
+    "order": "ORD-0907",
+    "line": "LINE-FL-2",
+    "stages": {
+     "kt3": "2026-09-07T05:50:00Z",
+     "launch": "2026-09-07T04:30:00Z",
+     "weld": "2026-09-07T05:00:00Z"
+    },
+    "until": "kt3"
+   },
+   {
+    "id": "F-302",
+    "order": "ORD-0907",
+    "line": "LINE-FL-2",
+    "stages": {
+     "launch": "2026-09-07T05:30:00Z",
+     "weld": "2026-09-07T06:00:00Z"
+    },
+    "until": "weld"
+   },
+   {
+    "id": "F-303",
+    "order": "ORD-0907",
+    "line": "LINE-FL-2",
+    "stages": {
+     "kt3": "2026-09-07T07:50:00Z",
+     "launch": "2026-09-07T06:30:00Z",
+     "weld": "2026-09-07T07:00:00Z"
+    },
+    "until": "kt3"
    }
   ],
   "welds": [
+   {
+    "item": "F-301",
+    "run": "SV-301-1",
+    "station": "WS-2",
+    "welder": "WLD-02",
+    "shift": "A",
+    "start": "2026-09-07T05:00:00Z",
+    "end": "2026-09-07T05:45:00Z",
+    "current_min": 158,
+    "current_max": 163,
+    "arc_from": "2026-09-07T05:10:00Z",
+    "arc_to": "2026-09-07T05:11:00Z"
+   },
+   {
+    "item": "F-302",
+    "run": "SV-302-1",
+    "station": "WS-2",
+    "welder": "WLD-03",
+    "shift": "A",
+    "start": "2026-09-07T06:00:00Z",
+    "end": "2026-09-07T06:45:00Z",
+    "current_min": 176,
+    "current_max": 182,
+    "arc_from": "2026-09-07T06:10:00Z",
+    "arc_to": "2026-09-07T06:11:00Z"
+   },
+   {
+    "item": "F-303",
+    "run": "SV-303-1",
+    "station": "WS-2",
+    "welder": "WLD-02",
+    "shift": "A",
+    "start": "2026-09-07T07:00:00Z",
+    "end": "2026-09-07T07:45:00Z",
+    "current_min": 176,
+    "current_max": 182,
+    "arc_from": "2026-09-07T07:10:00Z",
+    "arc_to": "2026-09-07T07:11:00Z"
+   },
    {
     "item": "F-201",
     "run": "SV-201-1",
@@ -1005,11 +1076,11 @@
     "key": "cam-kt3-a",
     "source_id": "show-is2-20260921/edge-kt3",
     "first_seq": 1,
-    "last_seq": 38,
+    "last_seq": 41,
     "counters": {
-     "records": 38,
-     "deliveries": 38,
-     "unique": 38,
+     "records": 41,
+     "deliveries": 41,
+     "unique": 41,
      "duplicates": 0,
      "conflicts": 0,
      "lost": 0,
@@ -1165,11 +1236,11 @@
     "key": "is-2",
     "source_id": "show-is2-20260921/edge-weld-2",
     "first_seq": 1,
-    "last_seq": 194,
+    "last_seq": 204,
     "counters": {
-     "records": 194,
-     "deliveries": 194,
-     "unique": 194,
+     "records": 204,
+     "deliveries": 204,
+     "unique": 204,
      "duplicates": 0,
      "conflicts": 0,
      "lost": 0,
@@ -1225,11 +1296,11 @@
     "key": "onec",
     "source_id": "show-is2-20260921/onec-stand",
     "first_seq": 1,
-    "last_seq": 10,
+    "last_seq": 11,
     "counters": {
-     "records": 10,
-     "deliveries": 10,
-     "unique": 10,
+     "records": 11,
+     "deliveries": 11,
+     "unique": 11,
      "duplicates": 0,
      "conflicts": 0,
      "lost": 0,
@@ -1305,11 +1376,11 @@
     "key": "xray",
     "source_id": "show-is2-20260921/gw-ndt",
     "first_seq": 1,
-    "last_seq": 5,
+    "last_seq": 7,
     "counters": {
-     "records": 5,
-     "deliveries": 5,
-     "unique": 5,
+     "records": 7,
+     "deliveries": 7,
+     "unique": 7,
      "duplicates": 0,
      "conflicts": 0,
      "lost": 0,
@@ -1323,9 +1394,9 @@
    }
   ],
   "totals": {
-   "records": 486,
-   "deliveries": 486,
-   "unique": 486,
+   "records": 502,
+   "deliveries": 502,
+   "unique": 502,
    "duplicates": 0,
    "conflicts": 0,
    "lost": 0,
@@ -1334,7 +1405,7 @@
    "reordered": 0,
    "invalid": 0,
    "quarantine": 0,
-   "decisions": 234
+   "decisions": 255
   }
  }
 }

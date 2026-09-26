@@ -65,6 +65,22 @@ export function headMode(): boolean {
   }
 }
 
+/**
+ * Переключить режим этого браузера (пульт администратора): «голова» или
+ * «симуляция». Страница перезагружается — кэш столов читается заново.
+ */
+export function setHeadMode(on: boolean): void {
+  try {
+    if (on) window.localStorage.setItem(HEAD_KEY, '1')
+    else window.localStorage.removeItem(HEAD_KEY)
+  } catch {
+    return
+  }
+  const url = new URL(window.location.href)
+  url.searchParams.delete('head')
+  window.location.assign(url.pathname + url.search + url.hash)
+}
+
 /** Опрос активного прогона: первый прогон в состоянии «идёт / пауза / ждёт решения». */
 export async function refreshActiveRun(): Promise<ActiveRun | null> {
   if (headMode()) {

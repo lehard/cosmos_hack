@@ -148,6 +148,9 @@ func (s *Service) facts(ctx context.Context, v dom.IncidentRecord, primary *stri
 						c = *h.ConfidenceBP
 					}
 					if r := measured(n, h.ID); r != nil && r.Outcome != dom.MeasurementInconclusive {
+						if r.Outcome == dom.MeasurementSupports && h.Category != "" {
+							f.Supported = dom.CategoryTitle(h.Category)
+						}
 						continue // проверка выполнена — дальше вывод о причине человеком
 					}
 					if h.MeasurementHint != "" && c > best {

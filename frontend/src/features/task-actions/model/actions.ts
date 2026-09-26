@@ -3,7 +3,8 @@
  * Задачу роли порождает бэкенд из шага процесса: объект — изделие (`item_id`,
  * `item_label`), действие — operationId (`operation_id`). По operationId решается,
  * что показать в задаче:
- * - `form` — форма прямо в задаче («Принять в цех» → куда принято / осмотр);
+ * - `form` — форма прямо в задаче («Принять в цех» → куда принято / осмотр;
+ *   «Отправить» → куда отправить);
  * - `window` — кнопка с глаголом действия, открывающая окно записи
  *   (`?open=‹тип›:‹id›`, Д-70), где это действие в нижней панели;
  * - `terminal` — действие исполнителя на его терминале (допуск, начать,
@@ -19,7 +20,7 @@ import type { DrillRef, TaskEntry } from '@/shared/api/generated/model'
 export type ProcessTask = TaskEntry
 
 /** Форма прямо в задаче. */
-export type TaskForm = 'receive' | 'isolator_move'
+export type TaskForm = 'receive' | 'send' | 'isolator_move' | 'recheck'
 
 /** Как задача показывает своё действие. */
 export type TaskActionDef =
@@ -37,7 +38,8 @@ export const TASK_ACTIONS: Readonly<Record<string, TaskActionDef>> = {
   'process.operation.finish': { kind: 'terminal', verbKey: `${V}finish` },
   'nonconformity.presentation.resolve': { kind: 'window', window: 'presentation', verbKey: `${V}resolvePresentation` },
   'nonconformity.presentation.review': { kind: 'window', window: 'presentation', verbKey: `${V}reviewPresentation` },
-  'nonconformity.recheck.request': { kind: 'window', window: 'nonconformity', verbKey: `${V}recheck` },
+  // Доп. проверка по изделию, без несоответствия (R-01, R-02): форма в задаче.
+  'nonconformity.recheck.request': { kind: 'form', form: 'recheck', verbKey: `${V}recheck` },
   'nonconformity.nonconformity.confirm': { kind: 'window', window: 'nonconformity', verbKey: `${V}confirmSignal` },
   'nonconformity.signal.reject': { kind: 'window', window: 'nonconformity', verbKey: `${V}confirmSignal` },
   'nonconformity.disposition.set': { kind: 'window', window: 'nonconformity', verbKey: `${V}disposition` },
@@ -50,7 +52,8 @@ export const TASK_ACTIONS: Readonly<Record<string, TaskActionDef>> = {
   'nonconformity.item.isolate': { kind: 'window', window: 'item', verbKey: `${V}isolate` },
   'nonconformity.containment.set': { kind: 'window', window: 'item', verbKey: `${V}containment` },
   'nonconformity.containment.release': { kind: 'window', window: 'item', verbKey: `${V}containmentRelease` },
-  'process.movement.send': { kind: 'window', window: 'item', verbKey: `${V}send` },
+  // «Отправить» — форма в задаче: откуда — цех задачи, куда — следующий цех (выбор мастера).
+  'process.movement.send': { kind: 'form', form: 'send', verbKey: `${V}send` },
 }
 
 /** Действие задачи, уже привязанное к объекту. */

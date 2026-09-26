@@ -132,13 +132,9 @@
   источники, КОМПАС (файл сборки), второе предприятие — [assumptions.md](assumptions.md).
 - **Частично или описано:** срез «по линиям» и доля ошибок по сопоставимым работам, прогон «1 = N» обработчиков
   (`make load` подготовлен, не прогонялся), Kafka и OpenTelemetry, TLS к Postgres, ротация KEK — [case-compliance.md](case-compliance.md),
-  [reviewer-guide.md — Что в работе](reviewer-guide.md#что-в-работе).
+  [reviewer-guide.md — Ограничения решения](reviewer-guide.md#ограничения-решения).
 
 ## 12. Как проверить без нас
 
-- Запуск: `make demo` (нужен только Docker), интерфейс — <http://127.0.0.1:8480/>, вход ADM-01 → «Тестовые сценарии».
-- Показ «Партия фланцев: сбой ИС-2» (SHOW-IS2) и главная история MS-1 — [guides/demo_scenarios.md](guides/demo_scenarios.md).
-- Проверки: `make check`, `make sim-check`, `make tamper`, `make verify`, `make contract-demo`, `make check-compat`;
-  документация — `node docs/scripts/check-docs.mjs`; все цели — `make help`.
-- Видео: скринкасты — ссылки будут добавлены (раздел «Материалы защиты» в [README.md](../README.md#материалы-защиты)).
-- Ответы на частые вопросы жюри — [jury-answers.md](jury-answers.md); источники — [sources.md](sources.md).
+- Онлайн-демо — <https://main.coopenomics.world/>.
+- Как проверить каждый критерий — [reviewer-guide.md](reviewer-guide.md); скринкасты — [папка с роликами](https://drive.google.com/drive/folders/1KHaW8OrHoSdArqbAYhVbvDC0NDHx3q_L?usp=sharing).

@@ -102,6 +102,18 @@ checkpoints:
       value: 60000
     mapping: exact
     note: 'сводка тока ИС-2 за минуту сварки Ф-002: вся минута вне уставки'
+  - id: SHOW-05b
+    what: 'тревога в момент сварки Ф-002: источник ИС-2 выдал отклонение «ток вне уставки» — предупреждение поста, задачи мастеру и руководителю'
+    check:
+      operation: journal.entry.list
+      params:
+        event_type: equipment.deviation.detected
+        limit: 500
+      path: /items[data.deviation_kind=out_of_setpoint]/#
+      op: gte
+      value: 1
+    mapping: exact
+    note: 'до опоздавшего журнала 11:16 — ровно одно (Пн 09:21); журнал за Пт 18:00 – Пн 08:00 досылает свои отклонения прошлой смены'
   - id: SHOW-06
     what: 'КТ-3 Ф-003: прожог У2 — сигнал'
     check:
@@ -169,7 +181,7 @@ checkpoints:
       op: eq
       value: done
     mapping: exact
-- at: '2026-09-21T11:27:00+03:00'
+- at: '2026-09-21T11:57:00+03:00'
   label: 'шаги 9–10: причина — оборудование ИС-2, переделка Ф-003'
   assertions:
   - id: SHOW-10
@@ -202,7 +214,7 @@ checkpoints:
       op: eq
       value: 0
     mapping: exact
-- at: '2026-09-21T12:40:00+03:00'
+- at: '2026-09-21T13:10:00+03:00'
   label: 'шаги 11–12: переварка Ф-003 на ИС-1, ЗТ-3 Ф-003 и Ф-002'
   assertions:
   - id: SHOW-11

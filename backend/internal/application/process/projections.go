@@ -27,12 +27,33 @@ const (
 	// ProjectionRuns — выполнение операции → изделие (ключ — operation_run_id):
 	// команды паузы и конца операции с терминала знают только выполнение.
 	ProjectionRuns = "process.runs"
+	// ProjectionOpenRuns — незавершённые выполнения (один ключ OpenRunsKey):
+	// гард «одна операция на человека на посту» (FR-137).
+	ProjectionOpenRuns = "process.open_runs"
+	// OpenRunsKey — ключ перечня незавершённых выполнений.
+	OpenRunsKey = "open"
 )
+
+// OpenRun — незавершённое выполнение: кто, на каком посту, над каким изделием.
+type OpenRun struct {
+	RunID     string `json:"operation_run_id"`
+	ItemID    string `json:"item_id"`
+	Operator  string `json:"operator_id,omitempty"`
+	Workplace string `json:"workplace_id,omitempty"`
+}
+
+// OpenRuns — значение проекции process.open_runs.
+type OpenRuns struct {
+	Runs []OpenRun `json:"runs"`
+}
 
 // RunRef — значение проекции process.runs.
 type RunRef struct {
 	ItemID  string `json:"item_id"`
 	StepKey string `json:"step_key,omitempty"`
+	// EventID — запись «начато» (event_id = command_id команды со стола):
+	// повтор той же команды — не второй старт.
+	EventID string `json:"event_id,omitempty"`
 }
 
 // Показатели вклада изделия для аналитики (AD-45, эпик 25): строки по шагу
@@ -129,6 +150,9 @@ func RegisterProjections(reg *engineapp.Registry) error {
 	if err := reg.AddGlobal(engineapp.GlobalProjection{Name: ProjectionRuns, Writer: dp.Module, Keys: runKeys, Step: runStep}); err != nil {
 		return err
 	}
+	if err := reg.AddGlobal(engineapp.GlobalProjection{Name: ProjectionOpenRuns, Writer: dp.Module, Keys: openRunKeys, Step: openRunStep}); err != nil {
+		return err
+	}
 	reg.AddContributor(contributions)
 	return nil
 }
@@ -149,12 +173,62 @@ func runKeys(r kernel.Record) []string {
 	return []string{d.RunID}
 }
 
-func runStep(_ string, _ json.RawMessage, r kernel.Record) (json.RawMessage, error) {
+func runStep(_ string, prev json.RawMessage, r kernel.Record) (json.RawMessage, error) {
 	var d runRecord
 	if err := json.Unmarshal(r.Data, &d); err != nil {
 		return nil, err
 	}
-	return json.Marshal(RunRef{ItemID: r.ItemID, StepKey: d.StepKey})
+	// Первое «начато» выполнения остаётся: повтор id выполнения у другого
+	// изделия — ошибка стола, а не переход выполнения (гард StartOperation).
+	if len(prev) > 0 {
+		var was RunRef
+		if json.Unmarshal(prev, &was) == nil && was.ItemID != "" {
+			return prev, nil
+		}
+	}
+	return json.Marshal(RunRef{ItemID: r.ItemID, StepKey: d.StepKey, EventID: r.EventID})
+}
+
+func openRunKeys(r kernel.Record) []string {
+	switch r.Type {
+	case catalog.OperationRunStarted, catalog.OperationRunFinished:
+		if r.ItemID != "" {
+			return []string{OpenRunsKey}
+		}
+	}
+	return nil
+}
+
+func openRunStep(_ string, prev json.RawMessage, r kernel.Record) (json.RawMessage, error) {
+	var v OpenRuns
+	if len(prev) > 0 {
+		if err := json.Unmarshal(prev, &v); err != nil {
+			return nil, err
+		}
+	}
+	var d struct {
+		RunID     string  `json:"operation_run_id"`
+		Operator  *string `json:"operator_id"`
+		Workplace *string `json:"workplace_id"`
+	}
+	if json.Unmarshal(r.Data, &d) != nil || d.RunID == "" {
+		return prev, nil
+	}
+	v.Runs = slices.DeleteFunc(v.Runs, func(o OpenRun) bool { return o.RunID == d.RunID && o.ItemID == r.ItemID })
+	if r.Type == catalog.OperationRunStarted {
+		o := OpenRun{RunID: d.RunID, ItemID: r.ItemID}
+		if d.Operator != nil {
+			o.Operator = *d.Operator
+		}
+		if d.Workplace != nil {
+			o.Workplace = *d.Workplace
+		}
+		v.Runs = append(v.Runs, o)
+	}
+	if v.Runs == nil {
+		v.Runs = []OpenRun{}
+	}
+	return json.Marshal(v)
 }
 
 func itemView(itemID string, s engine.Snapshot, _ []kernel.Reaction) (any, error) {

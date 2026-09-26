@@ -23,6 +23,11 @@ describe('реестр действий задачи', () => {
     expect(a).toEqual({ kind: 'form', form: 'receive', verbKey: 'receiveAction.title', itemId: ITEM })
   })
 
+  it('«Отправить» — форма прямо в задаче (откуда — цех задачи), а не окно изделия без кнопки', () => {
+    const a = taskActionOf({ ...base, operation_id: 'process.movement.send', item_id: ITEM, location_id: 'WS-WC', step_key: 'welding.send_to_assembly' })
+    expect(a).toEqual({ kind: 'form', form: 'send', verbKey: 'taskActions.verb.send', itemId: ITEM })
+  })
+
   it('изделие — из ссылки задачи, если item_id нет', () => {
     const a = taskActionOf({ ...base, operation_id: 'process.movement.receive', ref: { entity: 'item', id: ITEM } })
     expect(a).toMatchObject({ kind: 'form', form: 'receive', itemId: ITEM })
@@ -71,5 +76,14 @@ describe('реестр действий задачи', () => {
     expect(te('taskActions.verb.decide')).toBe(true)
     expect(taskItemLabel({ ...base, item_id: ITEM, item_label: 'Ф-001' })).toBe('Ф-001')
     expect(taskItemLabel({ ...base, item_id: ITEM })).toBeNull()
+  })
+})
+
+describe('доп. проверка по изделию', () => {
+  it('nonconformity.recheck.request — форма в задаче по изделию, без несоответствия', () => {
+    const task = { task_id: 't-r', kind: 'recheck', title: 'Доп. проверка Ф-002', state: 'open', assignee_role: 'quality_inspector', assignee_id: null,
+      created_at: '2026-09-21T07:10:00Z', due_at: null, overdue: false, operation_id: 'nonconformity.recheck.request',
+      item_id: 'ENT01:show-is2-20260921-1/I-2', item_label: 'Ф-002', ref: { entity: 'item', id: 'ENT01:show-is2-20260921-1/I-2' } } as unknown as ProcessTask
+    expect(taskActionOf(task)).toEqual({ kind: 'form', form: 'recheck', verbKey: 'taskActions.verb.recheck', itemId: 'ENT01:show-is2-20260921-1/I-2' })
   })
 })
