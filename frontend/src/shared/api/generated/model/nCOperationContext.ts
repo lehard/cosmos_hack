@@ -5,6 +5,8 @@
 
 export interface NCOperationContext {
   equipment_id?: string;
+  /** Название оборудования — из справочника оборудования; нет в справочнике — поля нет. */
+  equipment_label?: string;
   finished_at?: string;
   /** Название операции по описанию процесса. */
   label: string;

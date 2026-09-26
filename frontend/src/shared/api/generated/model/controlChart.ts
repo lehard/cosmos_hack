@@ -14,6 +14,8 @@ export interface ControlChart {
   metric_id: string;
   points: ControlChartPoint[];
   step_key: string;
+  /** Имя узла BPMN действующей версии процесса; нет — показывать step_key. */
+  step_name?: string;
   /** Название показателя карты («Доля результатов контроля с признаком дефекта», «Длительность операции»). */
   title: string;
   upper: MetricValue;

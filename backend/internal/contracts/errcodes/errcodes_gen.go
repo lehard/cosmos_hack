@@ -67,6 +67,8 @@ const (
 	AnalyzerTrustLevelExceeded Code = "analyzer.trust_level_exceeded"
 	// Внутренняя ошибка
 	ApiInternalError Code = "api.internal_error"
+	// Метод не разрешён
+	ApiMethodNotAllowed Code = "api.method_not_allowed"
 	// Объект не найден
 	ApiNotFound Code = "api.not_found"
 	// Операция ещё не реализована
@@ -321,6 +323,7 @@ var codes = [...]Info{
 	{Code: AnalyzerReinstateRequiresHeadOfQc, Status: 403, Title: "Вернуть анализатор может только начальник ОТК", Detail: "Вернуть анализатор в работу может только начальник ОТК", UIKey: "errors.vision.returnRequiresHeadOfQc", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
 	{Code: AnalyzerTrustLevelExceeded, Status: 403, Title: "Действие сверх уровня доверия паспорта", Detail: "Уровень доверия {trust_level} не разрешает действие {action}", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
 	{Code: ApiInternalError, Status: 500, Title: "Внутренняя ошибка", Detail: "{detail}", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
+	{Code: ApiMethodNotAllowed, Status: 405, Title: "Метод не разрешён", Detail: "{object} только дописывается: {method} не поддерживается", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: ApiNotFound, Status: 404, Title: "Объект не найден", Detail: "{object} «{id}» не найден", UIKey: "empty.notFound", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: ApiNotImplemented, Status: 501, Title: "Операция ещё не реализована", Detail: "Операция {operation_id} объявлена в контракте, реализация — в работе", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: ApiRateLimited, Status: 429, Title: "Слишком много запросов", Detail: "Повторите через {retry_after} с", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},

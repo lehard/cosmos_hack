@@ -53,10 +53,10 @@ func (s *Service) newItemID(local, commandID string) string {
 }
 
 // registered — data item.item.registered: версия нормативного слоя закрепляется
-// при запуске (AD-17).
-func (s *Service) registered(id string, in RegisterItem, splitFrom string) map[string]any {
+// при запуске (AD-17); pv — хеш версии процесса изделия.
+func (s *Service) registered(id string, in RegisterItem, splitFrom, pv string) map[string]any {
 	d := map[string]any{"item_id": id, "item_type_id": in.ItemTypeID, "item_revision": in.ItemRevision,
-		"process_version_hash": s.cfg.processVersion(), "normative_rev": s.cfg.normativeRev()}
+		"process_version_hash": pv, "normative_rev": s.cfg.normativeRev()}
 	if in.OrderID != "" {
 		d["order_id"] = in.OrderID
 	}
@@ -92,7 +92,11 @@ func (s *Service) Register(ctx context.Context, in RegisterItem) (platform.Recei
 	if in.ItemRevision == "" {
 		in.ItemRevision = "-"
 	}
-	return s.write(ctx, in.CommandMeta(), 1, itemRecord(catalog.ItemItemRegistered, id, s.registered(id, in, "")))
+	pv, err := s.processVersion(ctx)
+	if err != nil {
+		return platform.Receipt{}, err
+	}
+	return s.write(ctx, in.CommandMeta(), 1, itemRecord(catalog.ItemItemRegistered, id, s.registered(id, in, "", pv)))
 }
 
 // Split — разделение 1→N (FR-15): части регистрируются с split_from одной
@@ -106,6 +110,14 @@ func (s *Service) Split(ctx context.Context, itemID string, in SplitItem) (platf
 		return platform.Receipt{}, err
 	}
 	parent := a.Snap.Item
+	// Части — продолжение изделия в работе: доделываются по версии процесса
+	// родителя, а не по действующей (AD-17, FR-22).
+	pv := parent.ProcessVersion
+	if pv == "" {
+		if pv, err = s.processVersion(ctx); err != nil {
+			return platform.Receipt{}, err
+		}
+	}
 	recs := make([]Record, 0, len(in.Parts))
 	seen := map[string]bool{}
 	for i, part := range in.Parts {
@@ -131,7 +143,7 @@ func (s *Service) Split(ctx context.Context, itemID string, in SplitItem) (platf
 		if reg.ItemRevision == "" {
 			reg.ItemRevision = parent.ItemRevision
 		}
-		r := itemRecord(catalog.ItemItemRegistered, id, s.registered(id, reg, itemID))
+		r := itemRecord(catalog.ItemItemRegistered, id, s.registered(id, reg, itemID, pv))
 		r.GuardStreams = []string{"item:" + itemID}
 		recs = append(recs, r)
 	}
@@ -317,7 +329,23 @@ func (s *Service) RecordRelease(ctx context.Context, itemID string, in RecordRel
 	return s.write(ctx, in.CommandMeta(), 1, itemRecord(catalog.ItemReleaseRecorded, itemID, d))
 }
 
-// processVersion, normativeRev — закреплённая версия для новых изделий (AD-17).
+// processVersion — версия процесса для нового изделия (AD-17, FR-22):
+// действующая версия модуля process; её нет или порт не подключён —
+// запасная из конфигурации.
+func (s *Service) processVersion(ctx context.Context) (string, error) {
+	if s.cfg.ActiveProcess != nil {
+		h, err := s.cfg.ActiveProcess.ActiveVersionHash(ctx)
+		if err != nil {
+			return "", err
+		}
+		if h != "" {
+			return h, nil
+		}
+	}
+	return s.cfg.processVersion(), nil
+}
+
+// processVersion, normativeRev — запасная версия для новых изделий (AD-17).
 func (c Config) processVersion() string {
 	if c.ProcessVersion != "" {
 		return c.ProcessVersion

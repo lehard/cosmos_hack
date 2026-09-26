@@ -74,6 +74,7 @@ export const QUEUE_KIND_TEXT: Record<DecisionQueueRowKind, string> = {
   presentation: 'common.words.presentationPoint',
   signal: 'widgets.decisionQueue.kind.signal',
   isolated: 'widgets.decisionQueue.kind.isolated',
+  review: 'widgets.decisionQueue.kind.review',
 }
 
 export { codeText } from '@/entities/item'

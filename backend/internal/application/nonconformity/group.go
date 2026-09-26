@@ -139,8 +139,8 @@ func (s *Service) group(ctx context.Context, ncID string, c itemCommand, pick fu
 		meta := c.Meta
 		meta.CommandID, meta.BasisSeq = cmdID, basis
 		id := groupEventID(cmdID, it)
-		p, err := s.pending(decision{Type: c.Type, Stream: stream, ItemID: it, RunID: v.RunID, Data: c.Data, Meta: meta,
-			Actor: actor, OccurredAt: now, SignatureLevel: 2, GuardStreams: []string{stream}}, id)
+		p, err := s.pending(ctx, decision{Type: c.Type, Stream: stream, ItemID: it, RunID: v.RunID, Data: c.Data, Meta: meta,
+			Actor: actor, OccurredAt: now, SignatureLevel: 2, GuardStreams: []string{stream}}, id, "")
 		if err != nil {
 			return platform.Receipt{}, err
 		}

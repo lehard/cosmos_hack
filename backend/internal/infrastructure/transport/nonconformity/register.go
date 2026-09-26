@@ -25,7 +25,7 @@ func Register(api *httpapi.API, q app.Queries, c app.Commands) {
 			"сортировка по риску и сроку."),
 		platform.Action{ID: "nonconformity.queue.list", Owner: owner, Subject: "nonconformity"},
 		func(ctx context.Context, in *struct {
-			Kind string `query:"kind" enum:"presentation,signal,isolated" doc:"Вид строки; пусто — все."`
+			Kind string `query:"kind" enum:"presentation,signal,isolated,review" doc:"Вид строки; пусто — все."`
 			Sort string `query:"sort" enum:"risk,deadline" doc:"Сортировка: по риску (по умолчанию) или по сроку."`
 			httpapi.MomentQuery
 			httpapi.PageQuery

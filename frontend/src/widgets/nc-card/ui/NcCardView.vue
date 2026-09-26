@@ -78,8 +78,14 @@ const dec = (bp: number) => n(bpToFraction(bp), 'decimal2')
 const time = (x: string) => d(new Date(x), 'dateTime')
 const mode = (m: number) => (te(`decisions.automationMode.mode${m}`) ? t(`decisions.automationMode.mode${m}`) : `UNKNOWN(${m})`)
 
-/** Заголовок: что увидели; нет сигнала (нарушение специального процесса) — чем вызвано. */
-const headline = computed(() => (signal.value ? entryText(signal.value.record) : props.card.origin === 'special_process' ? t('ncCard.origin.specialProcess') : t('ncCard.number', { number: props.card.number })))
+/** Заголовок: вид дефекта по справочнику (нет названия — текст сигнала); нет сигнала (нарушение специального процесса) — чем вызвано. */
+const headline = computed(() => {
+  const s = signal.value
+  if (s) return s.defect_type_known && s.defect_type_label ? s.defect_type_label : entryText(s.record)
+  return props.card.origin === 'special_process' ? t('ncCard.origin.specialProcess') : t('ncCard.number', { number: props.card.number })
+})
+/** Что увидели — для строки «Наблюдение» у требования: вид дефекта и место. */
+const observed = computed(() => [headline.value, signal.value?.zone_label].filter(Boolean).join(' · '))
 
 const detailsOpen = ref(props.view === 'evidence')
 watch(
@@ -107,6 +113,7 @@ const inWindow = computed(() => !!frame.plain)
       </p>
       <h3 class="headline ant-wrap" data-testid="headline">{{ headline }}</h3>
       <p class="meta ant-wrap">
+        <span v-if="signal?.zone_label" class="zone" data-testid="zone">{{ signal.zone_label }}</span>
         <span v-if="op">{{ op.label }}</span>
         <span v-if="signal">{{ time(signal.record.occurred_at) }}</span>
         <span v-if="card.group_item_ids?.length">{{ t('ncCard.groupItems', { n: card.group_item_ids.length }) }}</span>
@@ -154,7 +161,7 @@ const inWindow = computed(() => !!frame.plain)
           <KeyValue :label="t('ncCard.requirement.designRevision')" :value="card.evidence.requirement.kd_ref ?? t('common.words.unknown')" />
         </KeyValueList>
         <p v-if="signal" class="observed ant-wrap">
-          <span class="muted">{{ t('ncCard.requirement.observed') }}:</span> {{ headline }}
+          <span class="muted">{{ t('ncCard.requirement.observed') }}:</span> {{ observed }}
         </p>
       </div>
       <p v-else class="warn ant-wrap" data-testid="no-requirement">{{ t('ncCard.requirement.noRequirement') }}</p>
@@ -312,6 +319,11 @@ p {
 
 .meta {
   color: var(--ant-text-2);
+}
+
+.zone {
+  color: var(--ant-text);
+  font-weight: var(--ant-fw-bold);
 }
 
 .deadline {

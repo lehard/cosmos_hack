@@ -7,6 +7,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"ant/cmd/internal/db"
 	crossitemapp "ant/internal/application/crossitem"
 	engineapp "ant/internal/application/engine"
 	ingestapp "ant/internal/application/ingest"
@@ -15,6 +16,7 @@ import (
 	sim "ant/internal/domain/simulation"
 	journalstore "ant/internal/infrastructure/storage/journal"
 	"ant/internal/infrastructure/storage/journal/clock"
+	storagesecurity "ant/internal/infrastructure/storage/security"
 	simstore "ant/internal/infrastructure/storage/simulation"
 	"ant/internal/infrastructure/transport/httpapi"
 	simhttp "ant/internal/infrastructure/transport/simulation"
@@ -153,9 +155,9 @@ func simulationLive(ctx context.Context, env *environment, ingest *ingestapp.Ser
 		Probe:       proxy,
 		Actor:       proxy,
 		Stands:      simapp.StandControl{Control: env.standsRegistry()},
-		// Подделка в обход системы (S09, F25): демо-инструмент эпика 29 — make
-		// tamper; порт пульта к нему — заглушка (Д-60), шаг «пропущен» с пояснением.
-		Tamper: simapp.PendingTamperer{},
+		// Подделка в обход системы (S09, F25, Д-60): Tamperer эпика 29 —
+		// отдельное подключение суперпользователя БД, только demo и fixtures.
+		Tamper: simTamperer(ctx, env),
 		Recorder: &simapp.JournalRecorder{Store: c.journal, ScenarioClock: scenarioClock(env.cfg), Now: clock.System{}.Now,
 			DomainBuild: c.codec.DomainBuild, Partition: env.cfg.Engine.Partitions},
 		Settler: settler,
@@ -195,4 +197,22 @@ func runSimulation(ctx context.Context, env *environment) {
 	}
 	env.log.Info("симуляция: раннер прогонов", "tick", tick)
 	_ = svc.Loop(ctx, tick)
+}
+
+// simTamperer — порт подделки пульта (Д-60): Tamperer эпика 29 (три атаки
+// AD-28 — правка записи, правка с пересчётом звеньев, правка проекции) через
+// отдельное подключение суперпользователя БД без SET ROLE, как действует
+// администратор БД (AD-34). Вне demo и fixtures или без подключения —
+// заглушка: шаг «пропущен» с пояснением.
+func simTamperer(ctx context.Context, env *environment) simapp.Tamperer {
+	pc, err := db.Config(env.cfg.DB, "ant-tamper")
+	if err != nil {
+		return simapp.PendingTamperer{}
+	}
+	t, err := storagesecurity.Open(ctx, pc.ConnConfig, env.cfg.Security.KEKFile, string(env.cfg.Profile))
+	if err != nil {
+		env.log.Info("симуляция: подделка в обход системы недоступна — шаг tamper будет пропущен", "err", err)
+		return simapp.PendingTamperer{}
+	}
+	return t
 }

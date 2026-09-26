@@ -96,6 +96,10 @@ type commandJSON struct {
 	CommandID  string `json:"command_id,omitempty"`
 	BasisSeq   int64  `json:"basis_seq"`
 	OnBehalfOf string `json:"on_behalf_of,omitempty"`
+	// Подпись команды человека рядом с записью (Д-59).
+	Signature       json.RawMessage `json:"signature,omitempty"`
+	SignatureMethod string          `json:"signature_method,omitempty"`
+	KeyStorage      string          `json:"key_storage,omitempty"`
 }
 
 type integrityJSON struct {
@@ -190,6 +194,9 @@ func (c *Codec) Decode(ctx context.Context, e jc.JournalEntry) (Decoded, error) 
 		if ej.Command != nil && ej.Command.OnBehalfOf != "" {
 			r.Actor = ej.Command.OnBehalfOf
 		}
+	}
+	if ej.Command != nil && len(ej.Command.Signature) > 0 {
+		r.SignatureMethod, r.KeyStorage = ej.Command.SignatureMethod, ej.Command.KeyStorage
 	}
 	if r.OccurredAt, err = parseTime(e.OccurredAt); err != nil {
 		return d, fmt.Errorf("запись seq %d: occurred_at: %w", e.Seq, err)

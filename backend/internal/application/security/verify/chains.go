@@ -63,6 +63,9 @@ type run struct {
 	// разновидность); sigByKey — число подписанных записей по ключу (AD-14, Д-72).
 	storage  map[string][2]string
 	sigByKey map[string]int
+	// signedCommands — записи-решения с подписанным пакетом команды человека
+	// рядом (command.signature, Д-59).
+	signedCommands int
 }
 
 func (v *run) lastSeq(chain string) int64 {
@@ -165,11 +168,17 @@ func (v *run) index(e jc.JournalEntry) rec {
 // content — то, что верификатору нужно из содержимого: запись CA, номера
 // источника в карантине, объявленные потери. Возвращает, есть ли подпись.
 func (v *run) content(r rec, env []byte) (signed bool) {
-	ev, d, err := app.ParseEnvelope(env)
+	ev, _, err := app.ParseEnvelope(env)
 	if err != nil {
 		return false
 	}
-	for _, s := range d.Signatures {
+	// Подписи записи или подписанного пакета команды человека рядом с
+	// записью-решением (command.signature, Д-59).
+	_, _, sigs, nested := sdom.RecordSignatures(env)
+	if nested {
+		v.signedCommands++
+	}
+	for _, s := range sigs {
 		if s.Sig != "" {
 			signed = true
 			if v.sigByKey == nil {
@@ -420,6 +429,9 @@ func (v *run) signatures() {
 	}
 	if line := v.keyStorageLine(); line != "" {
 		c.add("intact", "signatures.key_storage", line, "", 0, "")
+	}
+	if v.signedCommands > 0 {
+		c.add("intact", "signatures.commands", fmt.Sprintf("%d записей-решений с подписанным пакетом команды человека (агент токена, ключ в браузере, demo-signer, заверение бумаги) — конверт клиента хранится рядом с записью", v.signedCommands), "", 0, "")
 	}
 	if unsigned > 0 {
 		c.unverifiable("signatures.unsigned", fmt.Sprintf("%d записей без подписи (демо без агента токена и ключей источников, Д-28, Д-30) — «подпись не проверялась»", unsigned))

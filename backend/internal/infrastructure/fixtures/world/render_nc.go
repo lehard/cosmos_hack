@@ -48,6 +48,7 @@ func renderNonconformity(c *Ctx) []loader.Response {
 		s := ncapp.NCSummary{NCID: n.ID, Number: n.Number, Status: n.Status(c.M, c.T), ItemID: id, ItemLabel: label, Severity: "major", StepKey: n.StepKey, Disposition: "none", FoundAt: n.SignalAt}
 		if len(n.Spec.Defects) > 0 {
 			s.DefectTypeCode = ptr(n.Spec.Defects[0].Kind)
+			s.DefectTypeLabel = defectLabel(n.Spec.Defects[0].Kind)
 		}
 		if d := n.DispositionAt(c.M); d != nil && !d.After(c.T) {
 			s.Disposition = n.Disposition(c.M)
@@ -88,6 +89,7 @@ func (c *Ctx) queue() ncapp.DecisionQueue {
 			Title: fmt.Sprintf("Сигнал: %s %s", defectTitle(s.Kind), zoneTitle(s.Zone)), Severity: "major", BasisSeq: c.ItemSeq(it)}
 		if s.NC != nil {
 			row.NCID = ptr(s.NC.ID)
+			row.Reason = c.M.ncEssence(s.NC)
 		}
 		q.Items = append(q.Items, row)
 	}
@@ -96,8 +98,14 @@ func (c *Ctx) queue() ncapp.DecisionQueue {
 			continue
 		}
 		it := c.M.itemByID[rv.Item]
-		q.Items = append(q.Items, ncapp.DecisionQueueRow{Kind: "presentation", ObjectID: "REVIEW-" + rv.Gate + "-" + it.ID, ItemID: FullID(it.ID), ItemLabel: it.Label,
-			StepKey: "welding.zt3_acceptance", Title: "Решение ЗТ-3 принято до новых данных — пересмотрите (" + rv.LateEvent + ")", Severity: "major", PresentationN: ptr(1), BasisSeq: c.ItemSeq(it)})
+		// Пересмотр (AD-3): отдельный вид строки; что пришло — словами, id записи — полем.
+		row := ncapp.DecisionQueueRow{Kind: "review", ObjectID: "REVIEW-" + rv.Gate + "-" + it.ID, ItemID: FullID(it.ID), ItemLabel: it.Label,
+			StepKey: "welding.zt3_acceptance", Title: "Решение ЗТ-3 принято до новых данных — пересмотрите: " + c.M.lateArrival(rv.LateEvent), Severity: "major", PresentationN: ptr(1), BasisSeq: c.ItemSeq(it),
+			ReviewSince: tptr(rv.Flagged.Time())}
+		if rv.LateEvent != "" {
+			row.SourceEventID = ptr(rv.LateEvent)
+		}
+		q.Items = append(q.Items, row)
 	}
 	for _, n := range c.M.NCs {
 		if len(n.Spec.Items) > 0 || n.ConfirmedAt.After(c.T) || len(n.Items) == 0 {
@@ -108,8 +116,14 @@ func (c *Ctx) queue() ncapp.DecisionQueue {
 		}
 		it := n.Items[0]
 		due := workingDaysAfter(c.M, n.ConfirmedAt, 3)
+		// Суть — в заголовке и полем reason (вид дефекта и зона по справочникам).
+		title := n.Number + ": ждёт решения по изделию"
+		why := c.M.ncEssence(n)
+		if why != nil {
+			title = n.Number + ": " + *why + " — ждёт решения по изделию"
+		}
 		q.Items = append(q.Items, ncapp.DecisionQueueRow{Kind: "isolated", ObjectID: n.ID, NCID: ptr(n.ID), ItemID: FullID(it.ID), ItemLabel: it.Label, StepKey: n.StepKey,
-			Title: fmt.Sprintf("%s: ждёт решения по изделию", n.Number), Severity: "major", DueAt: tptr(due), Overdue: due.Before(c.T), BasisSeq: c.ItemSeq(it)})
+			Title: title, Reason: why, Severity: "major", DueAt: tptr(due), Overdue: due.Before(c.T), BasisSeq: c.ItemSeq(it)})
 	}
 	for _, it := range c.Existing() {
 		st := c.S(it)
@@ -179,7 +193,7 @@ func (c *Ctx) card(n *NC) ncapp.NCCard {
 		}
 	}
 	if run != nil && len(n.Spec.Items) == 0 && n.Spec.Component == "" {
-		card.Happened.Operation = &ncapp.NCOperationContext{OperationRunID: run.ID, StepKey: run.StepKey, Label: run.Label + " — сварка фланца с кольцом", EquipmentID: ptr(run.Equipment),
+		card.Happened.Operation = &ncapp.NCOperationContext{OperationRunID: run.ID, StepKey: run.StepKey, Label: run.Label + " — сварка фланца с кольцом", EquipmentID: ptr(run.Equipment), EquipmentLabel: nameOf(c.M.names.Equipment, run.Equipment),
 			ProgramRef: ptr(run.Program), PerformerID: ptr(run.Performer), StartedAt: tptr(run.From), FinishedAt: tptr(run.To)}
 		for _, e := range c.itemEvents(it) {
 			switch {
@@ -204,7 +218,13 @@ func (c *Ctx) card(n *NC) ncapp.NCCard {
 		}
 		v := c.signalView(s)
 		src := ncapp.NCSourceSignal{SignalID: v.SignalID, BasisKind: v.BasisKind, DefectTypeCode: v.DefectTypeCode, DefectTypeKnown: v.DefectTypeKnown, ZoneID: v.ZoneID,
-			Severity: v.Severity, AnalyzerConfidenceBP: v.AnalyzerConfidenceBP, ObservationQualityBP: v.ObservationQualityBP, Stages: []ncapp.NCAnalyzerStage{}, Versions: v.Versions, EvidenceRefs: []string{}}
+			Severity: v.Severity, AnalyzerConfidenceBP: v.AnalyzerConfidenceBP, ObservationQualityBP: v.ObservationQualityBP, Stages: []ncapp.NCAnalyzerStage{}, Versions: v.Versions, EvidenceRefs: v.EvidenceRefs}
+		if v.DefectTypeCode != nil {
+			src.DefectTypeLabel = defectLabel(*v.DefectTypeCode)
+		}
+		if v.ZoneID != nil {
+			src.ZoneLabel = nameOf(c.M.names.Zones, *v.ZoneID)
+		}
 		for _, st := range v.Stages {
 			src.Stages = append(src.Stages, ncapp.NCAnalyzerStage{Stage: st.Stage, Version: st.Version, ConfidenceBP: st.ConfidenceBP, OutputNote: st.OutputNote})
 		}
@@ -269,6 +289,53 @@ func (c *Ctx) card(n *NC) ncapp.NCCard {
 		card.ToDecide.Decisions = []string{"nonconformity.disposition.verify"}
 	}
 	return card
+}
+
+// ncEssence — суть несоответствия: виды дефектов и зоны («Прожог · Шов W-1,
+// участок У2 (40–80 мм)»; несколько дефектов — через «; »); зоны нет в
+// справочнике — только вид.
+func (m *Model) ncEssence(n *NC) *string {
+	var parts []string
+	for _, d := range n.Spec.Defects {
+		l := defectLabel(d.Kind)
+		if l == nil {
+			continue
+		}
+		p := *l
+		if z := nameOf(m.names.Zones, d.Zone); z != nil {
+			p += " · " + *z
+		}
+		parts = append(parts, p)
+	}
+	if len(parts) == 0 {
+		return nil
+	}
+	s := strings.Join(parts, "; ")
+	return &s
+}
+
+// lateArrival — что пришло после решения, словами: журнал оборудования
+// (название — из справочника оборудования) и значение против уставки.
+func (m *Model) lateArrival(id string) string {
+	for _, le := range m.Spec.LateEvents {
+		if le.ID != id {
+			continue
+		}
+		what := "пришёл опоздавший журнал оборудования"
+		for _, s := range m.Spec.Sources {
+			if s.ID != le.Source {
+				continue
+			}
+			if name := nameOf(m.names.Equipment, s.Equipment); name != nil {
+				what = "пришёл журнал «" + *name + "»"
+			}
+		}
+		if le.CurrentA > 0 && le.Setpoint != "" {
+			what += fmt.Sprintf(": ток %d А при уставке %s", le.CurrentA, le.Setpoint)
+		}
+		return what
+	}
+	return "пришли новые данные"
 }
 
 var missingTitle = map[string]string{"equipment_log_missing": "Журнал параметров ИС-2 за время сварки не пришёл", "no_observation_after_operation": "Нет рентгена после сварки", "other": "Проверки других колец партии"}

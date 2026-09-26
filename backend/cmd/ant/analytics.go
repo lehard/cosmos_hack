@@ -21,5 +21,7 @@ func analyticsLive(ctx context.Context, env *environment) (*analyticsapp.Service
 		analyticsapp.WithClock(c.domainClock()),
 		// Период и срез «смена» — по графику смен справочника (эпик 19, FR-81).
 		analyticsapp.WithShifts(referenceShifts{c.refSource}),
+		// Подписи узлов — именами BPMN действующей версии процесса (UI-21).
+		analyticsapp.WithStepNames(&activeProcess{store: c.versions}),
 	), nil
 }

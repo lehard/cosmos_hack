@@ -23,6 +23,8 @@ type Model struct {
 	// shifts — шаблоны смен справочника (период «смена» показателей, FR-81);
 	// пусто — смены по 8 ч с 00:00, как у live без графика.
 	shifts []shiftPattern
+	// names — названия зон и оборудования справочников (поля *_label карточки).
+	names Names
 
 	Items    []*Item
 	itemByID map[string]*Item
@@ -35,6 +37,8 @@ type Model struct {
 	ERP       []*ERPMsg
 	Events    []*Event
 	Tasks     []*Task
+	// Loop — контур улучшений: предложения генераторов и меры (эпик 42).
+	Loop Loop
 
 	// BPMN действующей версии: узлы по step_key и по порядку, отпечаток XML (AD-17).
 	Bpmn       map[string]*BpmnNode
@@ -135,6 +139,8 @@ type Event struct {
 	Late       bool
 	CARef      string
 	Entity     loader.Change
+	// Materials — материалы наблюдения (иллюстрации, illustrations.go): адреса — в evidence_refs.
+	Materials []*illustration
 }
 
 // Build разворачивает описание мира: разбирает времена, строит маршруты

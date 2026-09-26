@@ -1,7 +1,7 @@
 // Карточка «Требуется ваше решение» для редких подписантов (FR-136): что
 // предлагается, почему пришло, доказательства, похожие случаи, чьи подписи
 // нужны и чьи есть, остаток срока, кнопка подписи; «не согласовать» — с
-// замечанием. Операций documents в контракте нет — рамка честно в «ошибке входа».
+// замечанием. Нет ответа сервера — рамка честно в «ошибке входа».
 import { flushPromises, mount } from '@vue/test-utils'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createPinia, setActivePinia } from 'pinia'
@@ -85,7 +85,7 @@ describe('карточка «Требуется ваше решение»', () =
     expect(w.emitted('decline')?.[0]).toEqual(['Нужен протокол рентгена'])
   })
 
-  it('контейнер: операций documents ещё нет — «ошибка входа», а не выдуманная карточка (FR-150)', async () => {
+  it('контейнер: сервер не ответил — «ошибка входа», а не выдуманная карточка (FR-150)', async () => {
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
     queryClient.setQueryData(sessionKey, { data: SESSION, status: 200 })
     const w = mount(DecisionRequestCardWidget, {

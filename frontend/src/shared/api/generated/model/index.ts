@@ -435,6 +435,8 @@ export * from './itemRow';
 export * from './itemSignature';
 export * from './itemSignatureCheck';
 export * from './itemSignatureClass';
+export * from './itemSignatureKeyStorage';
+export * from './itemSignatureMethod';
 export * from './itemStatus';
 export * from './itemStatusContainment';
 export * from './itemStatusDisposition';

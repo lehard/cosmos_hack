@@ -10,4 +10,5 @@ export const NonconformityQueueListKind = {
   presentation: 'presentation',
   signal: 'signal',
   isolated: 'isolated',
+  review: 'review',
 } as const;

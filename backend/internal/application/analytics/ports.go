@@ -31,6 +31,14 @@ type Norms interface {
 	Norm(ctx context.Context, stepKey string) domain.Norm
 }
 
+// StepNames — ведомый порт «имена узлов» (UI-21): step_key → имя узла BPMN
+// действующей версии процесса (модуль process, адаптер собирает cmd/ant).
+// Подписи срезов «узел» и контрольных карт — именами, ключи — кодами. Без
+// порта или без имени узла подпись остаётся кодом.
+type StepNames interface {
+	StepNames(ctx context.Context) (map[string]string, error)
+}
+
 // DefaultNorms — нормы по умолчанию.
 type DefaultNorms struct{}
 

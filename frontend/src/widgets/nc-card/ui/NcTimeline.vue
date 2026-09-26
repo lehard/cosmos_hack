@@ -38,7 +38,7 @@ const TONE_TEXT: Record<RecordTone, string> = {
             <p class="op-title ant-wrap">{{ op.label }}</p>
             <p class="op-meta ant-wrap">
               <span v-if="op.started_at">{{ time(op.started_at) }}<template v-if="op.finished_at">–{{ clock(op.finished_at) }}</template></span>
-              <span>{{ t('ncCard.whatHappened.machine') }}: {{ op.equipment_id ?? t('common.words.unknown') }}</span>
+              <span>{{ t('ncCard.whatHappened.machine') }}: {{ op.equipment_label ?? op.equipment_id ?? t('common.words.unknown') }}</span>
               <span>{{ t('ncCard.whatHappened.program') }}: {{ op.program_ref ?? t('common.words.unknown') }}</span>
               <span v-if="op.tool_id">{{ t('ncCard.whatHappened.tool') }}: {{ op.tool_id }}</span>
               <span>{{ t('ncCard.whatHappened.performer') }}: <span data-testid="performer">{{ op.performer_id ?? t('empty.performerUnknown') }}</span></span>

@@ -37,6 +37,9 @@ type Config struct {
 	Gate *access.Gate
 	// Identity — порт определения субъекта по сеансу (барьер 1, AD-15).
 	Identity access.IdentityProvider
+	// Signatures — проверка подписи команд уровня ≥ 1 (модуль signing, Д-59);
+	// nil — подпись не проверяется (выгрузка OpenAPI, тесты).
+	Signatures platform.SignatureChecker
 }
 
 // API — Huma API ant с каталогом зарегистрированных операций.
@@ -64,6 +67,7 @@ func New(mux *http.ServeMux, cfg Config) *API {
 	h := humago.New(mux, hc)
 	a := &API{huma: h, cfg: cfg}
 	h.UseMiddleware(a.identify)
+	h.UseMiddleware(a.captureSigned)
 	registerComponents(h)
 	return a
 }
@@ -223,13 +227,13 @@ func (a *API) before(ctx context.Context, act platform.Action, in any) (context.
 		}
 	}
 	if a.cfg.Gate == nil {
-		return ctx, nil
+		return a.checkSignature(ctx, act, meta)
 	}
 	ctx, err := a.cfg.Gate.Admit(ctx, platform.PrincipalFrom(ctx), act, obj, meta)
 	if err != nil {
 		return ctx, problemFrom(err, act.ID)
 	}
-	return ctx, nil
+	return a.checkSignature(ctx, act, meta)
 }
 
 func actionExtension(act platform.Action) map[string]any {

@@ -11,3 +11,5 @@ frontend/dist/
 !scenarios/definitions/
 scenarios/definitions/streams/
 !scenarios/expected/
+# Стартовая политика — перечень демо-персон службы demo-signer (Д-59).
+!normative/policy/

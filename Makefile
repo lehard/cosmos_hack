@@ -72,7 +72,7 @@ up: ## Поднять систему (postgres + ant) в фоне и дожда�
 	@echo "ant: http://127.0.0.1:$${ANT_HTTP_PORT:-8480}/  (healthz: /healthz, readyz: /readyz)"
 
 down: ## Остановить систему (данные в томах сохраняются)
-	$(COMPOSE) down
+	$(COMPOSE) --profile demo down
 
 logs: ## Логи системы
 	$(COMPOSE) logs -f --tail=200
@@ -80,8 +80,8 @@ logs: ## Логи системы
 ps: ## Состояние контейнеров системы
 	$(COMPOSE) ps
 
-demo: ## Демо-профиль: то же, что up, с ANT_PROFILE=demo
-	ANT_PROFILE=demo $(MAKE) up
+demo: ## Демо-профиль: то же, что up, с ANT_PROFILE=demo и службой demo-signer (Д-59)
+	ANT_PROFILE=demo COMPOSE_PROFILES=demo $(MAKE) up
 
 # ---------------------------------------------------------------- сборка ----
 

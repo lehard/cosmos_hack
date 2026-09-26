@@ -75,16 +75,18 @@ type DocumentList struct {
 // хеш отрисовки, маршрут с прогрессом подписей. Агент токена сам пересчитывает
 // отпечаток из content (AD-14).
 type DocumentView struct {
-	DocumentID        string                  `json:"document_id"`
-	Version           int                     `json:"version" minimum:"1"`
-	Template          string                  `json:"template"`
-	DocFormatVersion  int                     `json:"doc_format_version" minimum:"1"`
-	Title             string                  `json:"title"`
-	Subject           platform.DrillRef       `json:"subject"`
-	Status            string                  `json:"status" enum:"requested,drafted,signing,route_closed,annulled,live,returned"`
-	Content           map[string]any          `json:"content" doc:"Канонические данные документа (JCS без rendering_hash)."`
-	RenderingHash     string                  `json:"rendering_hash" doc:"H(render(шаблон@версия, content))."`
-	DocDigest         string                  `json:"doc_digest" doc:"Отпечаток документа streebog256:…; в QR печатной рамки."`
+	DocumentID       string            `json:"document_id"`
+	Version          int               `json:"version" minimum:"1"`
+	Template         string            `json:"template"`
+	DocFormatVersion int               `json:"doc_format_version" minimum:"1"`
+	Title            string            `json:"title"`
+	Subject          platform.DrillRef `json:"subject"`
+	Status           string            `json:"status" enum:"requested,drafted,signing,route_closed,annulled,live,returned"`
+	Content          map[string]any    `json:"content" doc:"Канонические данные документа (JCS без rendering_hash)."`
+	RenderingHash    string            `json:"rendering_hash" doc:"H(render(шаблон@версия, content))."`
+	DocDigest        string            `json:"doc_digest" doc:"Отпечаток документа streebog256:…; в QR печатной рамки."`
+	// SigningPayloadB64 — содержимое для подписи агентом токена (AD-14, эпик 28).
+	SigningPayloadB64 string                  `json:"signing_payload_b64,omitempty" doc:"Содержимое для подписи (AD-12, AD-14): base64 канонических байт {content, rendering_hash, template_ref, doc_format_version}, отпечаток которых — doc_digest."`
 	SummaryFields     []DocumentSummaryField  `json:"summary_fields" doc:"Поля сводки уровня 2 — входят в отпечаток (AD-12)."`
 	SourceEventIDs    []string                `json:"source_event_ids" doc:"События-источники документа."`
 	Stages            []DocumentApprovalStage `json:"stages" doc:"Обязательные подписи — замороженный набор (AD-43)."`
@@ -165,16 +167,18 @@ type DocumentRouteStage struct {
 
 // RoutedDocument — документ с маршрутом подписей (форма эпика 11).
 type RoutedDocument struct {
-	DocumentID  string               `json:"document_id"`
-	Version     int                  `json:"version" minimum:"1"`
-	TemplateRef string               `json:"template_ref"`
-	DocType     string               `json:"doc_type"`
-	Title       string               `json:"title"`
-	DocDigest   string               `json:"doc_digest" doc:"Отпечаток — входит в QR бумажного экземпляра (AD-43)."`
-	Status      string               `json:"status" enum:"drafted,in_route,closed,annulled" doc:"Те же значения, что у документов паспорта."`
-	DraftedAt   time.Time            `json:"drafted_at"`
-	Route       []DocumentRouteStage `json:"route"`
-	BasisSeq    int64                `json:"basis_seq"`
+	DocumentID  string `json:"document_id"`
+	Version     int    `json:"version" minimum:"1"`
+	TemplateRef string `json:"template_ref"`
+	DocType     string `json:"doc_type"`
+	Title       string `json:"title"`
+	DocDigest   string `json:"doc_digest" doc:"Отпечаток — входит в QR бумажного экземпляра (AD-43)."`
+	// SigningPayloadB64 — содержимое для подписи агентом токена (AD-14, эпик 28).
+	SigningPayloadB64 string               `json:"signing_payload_b64,omitempty" doc:"Содержимое для подписи (AD-12, AD-14): base64 канонических байт {content, rendering_hash, template_ref, doc_format_version}, отпечаток которых — doc_digest. Агент токена подписывает содержимое, а не отпечаток, и пересчитывает отпечаток сам."`
+	Status            string               `json:"status" enum:"drafted,in_route,closed,annulled" doc:"Те же значения, что у документов паспорта."`
+	DraftedAt         time.Time            `json:"drafted_at"`
+	Route             []DocumentRouteStage `json:"route"`
+	BasisSeq          int64                `json:"basis_seq"`
 }
 
 // DecisionProposal — что предлагается подписать (FR-136).

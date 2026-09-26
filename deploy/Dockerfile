@@ -29,9 +29,16 @@ ENV CGO_ENABLED=0 GOFLAGS="-mod=vendor -buildvcs=false" GOTOOLCHAIN=local GOPROX
 COPY third_party/ /src/third_party/
 COPY backend/ ./
 COPY --from=frontend /src/frontend/dist/ ./internal/infrastructure/transport/webui/dist/
+# Пакет подписи в браузере (Д-72, вариант page — хранилище страницы): то же
+# ядро агента токена в WASM, раздаётся интерфейсом по /signer/ (встроен в ant).
+RUN --mount=type=cache,target=/root/.cache/go-build,id=ant-gobuild \
+    mkdir -p ./internal/infrastructure/transport/webui/dist/signer \
+    && GOOS=js GOARCH=wasm go build -trimpath -ldflags "-s -w -X ant/cmd/token-agent/internal/agent.Build=${VERSION}" \
+         -o ./internal/infrastructure/transport/webui/dist/signer/signer.wasm ./cmd/token-agent/wasm \
+    && cp "$(go env GOROOT)/lib/wasm/wasm_exec.js" ./internal/infrastructure/transport/webui/dist/signer/
 RUN --mount=type=cache,target=/root/.cache/go-build,id=ant-gobuild \
     go build -trimpath -ldflags "-s -w -X main.version=${VERSION}" -o /out/ant ./cmd/ant \
-    && for c in keeper verifier tamper; do \
+    && for c in keeper verifier tamper demo-signer; do \
          go build -trimpath -ldflags "-s -w -X main.version=${VERSION}" -o /out/$c ./cmd/$c || exit 1; done
 # Каталоги томов (materials.dir; хранитель, верификатор, сертификат mTLS ant,
 # KEK, экспорт шины безопасности — эпик 29): именованный том при первом
@@ -50,6 +57,10 @@ COPY --from=backend /out/ant /ant
 # Отдельные процессы по границам доверия (эпик 29, AD-8, AD-9, AD-28): хранитель,
 # верификатор и демо-инструмент подделки — в том же образе, свои службы compose.
 COPY --from=backend /out/keeper /out/verifier /out/tamper /
+# demo-signer — демо-персоны сценариев (AD-26, Д-59): своя служба compose,
+# перечень персон — стартовая политика нормативного слоя.
+COPY --from=backend /out/demo-signer /demo-signer
+COPY normative/policy/ /etc/ant/normative/policy/
 COPY --from=backend --chown=65532:65532 /out/var/lib/ /var/lib/
 COPY deploy/config/ant.yaml /etc/ant/ant.yaml
 # Определения и ожидания тестовых сценариев (AD-26): пульт сценариев роли

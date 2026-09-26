@@ -3,14 +3,17 @@
  * FR-136, FR-139; AD-12, AD-13, AD-43). Ключи кэша — по соглашению
  * shared/api/keys.ts.
  *
- * Операций ещё нет в contracts/openapi.yaml (эпик 02): запросы стоят на
- * заглушке `api.not_implemented` (shared/api/pending.ts) с настоящими ключами
- * кэша; форма данных (model/types.ts) — предложение для контракта.
+ * Список запросов решения и подпись этапа — операции эпика 28 из контракта;
+ * остальные (отказ, печать, заверение) пока на заглушке `api.not_implemented`
+ * (shared/api/pending.ts) с настоящими ключами кэша.
  */
 import { computed, toValue, type MaybeRefOrGetter } from 'vue'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
+import { documentsRequestList, documentsSignatureRecord } from '@/shared/api/generated/client'
+import type { DsseEnvelope } from '@/shared/api/generated/model'
 import { entityKeys } from '@/shared/api/keys'
 import { pendingOperation, type Envelope } from '@/shared/api/pending'
+import { newCommandId } from '@/shared/lib/command-id'
 import type { ApiError } from '@/shared/api/problem'
 import { useMomentStore } from '@/shared/model/moment'
 import type { DecisionRequest } from './model/types'
@@ -44,7 +47,11 @@ export function useDecisionRequests(params: MaybeRefOrGetter<{ run_id?: string }
   const moment = useMomentStore()
   return useQuery({
     queryKey: computed(() => documentKeys.list('decision-requests', toValue(params), moment.params)),
-    queryFn: () => pendingOperation<Envelope<DecisionRequest[]>>(DOCUMENT_OPERATIONS.requests)(),
+    // Эпик 28: операция в контракте — список без обёртки items для виджета.
+    queryFn: async (): Promise<Envelope<DecisionRequest[]>> => {
+      const r = await documentsRequestList({ ...moment.params, ...toValue(params) })
+      return { data: r.data.items as unknown as DecisionRequest[], headers: r.headers }
+    },
     retry: false,
   })
 }
@@ -72,6 +79,14 @@ export interface SignDocumentVars {
   stage: number
   key_ref: string
   signature_b64: string
+  /** Заголовок команды (AD-7, AD-39). */
+  command_id?: string
+  basis_seq?: number
+  policy_seq?: number
+  /** Отпечаток, который увидел подписант. */
+  doc_digest?: string
+  /** Конверт пакета document-signature целиком: его проверяет сервер (signing, Д-59). */
+  signature?: DsseEnvelope
 }
 
 /** Отказ в согласовании с замечанием. */
@@ -107,7 +122,16 @@ export interface RequestDecisionVars {
 export function useSignDocument() {
   const invalidate = useDocumentInvalidation()
   return useMutation<Envelope<SignatureAccepted>, ApiError, SignDocumentVars>({
-    mutationFn: pendingOperation(DOCUMENT_OPERATIONS.sign),
+    // Эпик 28: documents.signature.record — подпись этапа с конвертом агента.
+    mutationFn: async ({ document_id, command_id, basis_seq, policy_seq, ...rest }) => {
+      const r = await documentsSignatureRecord(document_id, {
+        ...rest,
+        command_id: command_id ?? newCommandId(),
+        basis_seq: basis_seq ?? 0,
+        policy_seq: policy_seq ?? 0,
+      })
+      return { data: r.data as unknown as SignatureAccepted, headers: r.headers }
+    },
     onSuccess: (_r, v) => invalidate(v.document_id),
   })
 }

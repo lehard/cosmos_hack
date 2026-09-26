@@ -24,6 +24,8 @@ type Service struct {
 	norms Norms
 	// shifts — график смен (эпик 19); nil — смены по 8 ч.
 	shifts Shifts
+	// steps — имена узлов действующей версии процесса (UI-21); nil — подписи кодами.
+	steps StepNames
 	// Location — часовой пояс границ смен и суток.
 	Location *time.Location
 }
@@ -50,6 +52,29 @@ func WithClock(c Clock) Option { return func(s *Service) { s.clock = c } }
 // WithShifts — график смен справочника (FR-81, эпик 19).
 func WithShifts(sh Shifts) Option { return func(s *Service) { s.shifts = sh } }
 
+// WithStepNames — имена узлов BPMN действующей версии процесса (UI-21).
+func WithStepNames(n StepNames) Option { return func(s *Service) { s.steps = n } }
+
+// stepNames — step_key → имя узла; сбой порта не мешает показателям — подписи кодами.
+func (s *Service) stepNames(ctx context.Context) map[string]string {
+	if s.steps == nil {
+		return nil
+	}
+	names, err := s.steps.StepNames(ctx)
+	if err != nil {
+		return nil
+	}
+	return names
+}
+
+// stepName — имя узла по step_key (nil — имени нет, фронт показывает код).
+func stepName(names map[string]string, key string) *string {
+	if n := names[key]; n != "" {
+		return &n
+	}
+	return nil
+}
+
 // WithNorms — нормы узлов (FR-5, FR-12).
 func WithNorms(n Norms) Option { return func(s *Service) { s.norms = n } }
 
@@ -67,6 +92,8 @@ type data struct {
 	win       window
 	// shiftOf — смена строки для среза «смена»; nil — графика нет.
 	shiftOf ShiftLookup
+	// stepNames — имена узлов действующей версии по step_key (подписи среза «узел», UI-21).
+	stepNames map[string]string
 }
 
 // load читает строки и проекции и выбирает период на момент m (AD-22: «как
@@ -113,7 +140,7 @@ func (s *Service) load(ctx context.Context, op string, p PeriodQuery, m platform
 	if err != nil {
 		return nil, err
 	}
-	d := &data{now: now, win: win, shiftOf: shiftOf}
+	d := &data{now: now, win: win, shiftOf: shiftOf, stepNames: s.stepNames(ctx)}
 	for _, r := range rows {
 		if inRun(r.Dims.Run, m.RunID) {
 			d.rows = append(d.rows, r)
@@ -163,6 +190,10 @@ func (d *data) compute(def metricDef, from, to time.Time) MetricRow {
 			}
 			if key == "" {
 				continue
+			}
+			if dn == "step" && d.stepNames[key] != "" {
+				// Узел — именем узла BPMN действующей версии, ключ — step_key (UI-21).
+				label = d.stepNames[key]
 			}
 			dimension = dn
 			groups[key] = append(groups[key], e)
@@ -545,7 +576,7 @@ func (s *Service) ControlChart(ctx context.Context, stepKey, metricID string, p 
 	if err != nil {
 		return ControlChart{}, err
 	}
-	out := ControlChart{StepKey: stepKey, MetricID: metricID, Points: []ControlChartPoint{}}
+	out := ControlChart{StepKey: stepKey, StepName: stepName(d.stepNames, stepKey), MetricID: metricID, Points: []ControlChartPoint{}}
 	var ch domain.Chart
 	unit := "bp"
 	if metricID == ChartDefectRate {

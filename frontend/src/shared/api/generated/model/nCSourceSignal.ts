@@ -18,6 +18,8 @@ export interface NCSourceSignal {
   basis_kind: NCSourceSignalBasisKind;
   defect_type_code?: string;
   defect_type_known: boolean;
+  /** Вид дефекта по-русски — из классификатора видов дефектов; нет в классификаторе — поля нет. */
+  defect_type_label?: string;
   /** Адреса материалов: кадры, иллюстрация. */
   evidence_refs: string[];
   /**
@@ -33,4 +35,6 @@ export interface NCSourceSignal {
   /** Вектор версий наблюдения (AD-29). */
   versions?: NCSourceSignalVersions;
   zone_id?: string;
+  /** Зона по-русски — из зон типа изделия по КД (справочник номенклатуры); нет в справочнике — поля нет. */
+  zone_label?: string;
 }
