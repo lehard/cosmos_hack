@@ -1,11 +1,13 @@
 // Карточка «Требуется ваше решение» для редких подписантов (FR-136): что
 // предлагается, почему пришло, доказательства, похожие случаи, чьи подписи
 // нужны и чьи есть, остаток срока, кнопка подписи; «не согласовать» — с
-// замечанием. Нет ответа сервера — рамка честно в «ошибке входа».
+// замечанием. Нет ответа сервера — рамка честно в «ошибке входа». Бумажный
+// путь: «Распечатать с QR-кодом» — запись «напечатан» и печатная форма сервера
+// в новой вкладке.
 import { flushPromises, mount } from '@vue/test-utils'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createPinia, setActivePinia } from 'pinia'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { documentKeys } from '@/entities/document'
 import { sessionKey } from '@/entities/session'
 import { i18n } from '@/shared/i18n'
@@ -19,6 +21,7 @@ beforeEach(() => {
   pinia = createPinia()
   setActivePinia(pinia)
 })
+afterEach(() => vi.unstubAllGlobals())
 const SESSION = { demo: true, policy_seq: 1, role: { id: 'approver', title: 'Согласующий' }, user: { id: 'master-07', name: 'Мастер 07' } }
 const norm = (x: string) => x.replace(/\s/g, ' ')
 const mountView = (over = {}, props = {}) =>
@@ -134,6 +137,44 @@ describe('карточка «Требуется ваше решение»', () =
     const dialog = document.querySelector('[data-testid="sign-confirm"]') as HTMLElement
     expect(dialog.textContent).toContain('Принять FL-0042 «как есть» по разрешению РО-12/26')
     expect(dialog.querySelector('[data-testid="sign-paper"]')).not.toBeNull()
+    w.unmount()
+    document.body.innerHTML = ''
+  })
+
+  it('«Подписать на бумаге» → «Распечатать с QR-кодом»: печать через API и печатная форма в новой вкладке', async () => {
+    const json = (body: unknown) => new Response(JSON.stringify(body), { status: 200, headers: { 'Content-Type': 'application/json', 'Ant-Backend': 'fixtures' } })
+    const fetchMock = vi.fn(async (url: string, init?: RequestInit) =>
+      init?.method === 'POST'
+        ? json({ command_id: 'c', event_ids: ['e'], replayed: false, seq: 2, version: 1, doc_digest: 'streebog256:c0ffee', qr: 'q', print_url: '/api/v1/documents/DOC-NCD-142/print?version=1' })
+        : json({ document_id: 'DOC-NCD-142', version: 1, doc_digest: 'streebog256:c0ffee', html: '<p>лист с QR</p>', qr: 'q', qr_svg: '', rendering_hash: 'h', printed_at: at('13:30') }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+    const tab = { document: { open: vi.fn(), write: vi.fn(), close: vi.fn() }, focus: vi.fn(), close: vi.fn() }
+    const open = vi.fn(() => tab)
+    vi.stubGlobal('open', open)
+
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: Infinity } } })
+    queryClient.setQueryData(documentKeys.list('decision-requests', {}, { axis: 'occurred' }), { data: [useAsIsRequest({ document: { ...useAsIsRequest().document, basis_seq: 1300 } })] })
+    queryClient.setQueryData(sessionKey, { data: { ...SESSION, policy_seq: 7 }, status: 200 })
+    const w = mount(DecisionRequestCardWidget, {
+      props: { widgetId: 'decision-request-card', titleKey: 'desks.decisionCard', slotId: 'card', slice: {}, density: 'comfortable' },
+      attachTo: document.body,
+      global: { plugins: [pinia, i18n, [VueQueryPlugin, { queryClient }]] },
+    })
+    await flushPromises()
+    await w.find('[data-testid="sign"]').trigger('click')
+    await flushPromises()
+    ;(document.querySelector('[data-testid="sign-paper"]') as HTMLElement).click()
+    await flushPromises()
+    ;(document.querySelector('[data-testid="print"]') as HTMLElement).click()
+    await vi.waitFor(() => expect(tab.document.write).toHaveBeenCalledWith('<p>лист с QR</p>'))
+
+    expect(open).toHaveBeenCalledWith('', '_blank')
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(url).toBe('/api/v1/documents/DOC-NCD-142/print')
+    expect(JSON.parse(String(init.body))).toMatchObject({ version: 1, basis_seq: 1300, policy_seq: 7 })
+    expect(fetchMock.mock.calls[1]?.[0]).toBe('/api/v1/documents/DOC-NCD-142/print?version=1')
+    expect(document.querySelector('[data-testid="paper-error"]')).toBeNull()
     w.unmount()
     document.body.innerHTML = ''
   })
