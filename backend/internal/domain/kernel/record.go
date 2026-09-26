@@ -61,6 +61,12 @@ type Record struct {
 	// разделения обязанностей (FR-56) и задаче «решение принято до новых
 	// данных — пересмотрите» автору (FR-32, AD-5).
 	Actor string
+	// Signature — подпись команды человека рядом с записью-решением (Д-59):
+	// способ (token_agent | paper | demo_signer) и класс хранения ключа
+	// (hardware_token | software_browser, AD-14, Д-72); пусто — без подписи
+	// (демо, Д-30). Для паспорта изделия и аудита.
+	SignatureMethod string `json:",omitempty"`
+	KeyStorage      string `json:",omitempty"`
 	// Data — канонический JSON поля data.
 	Data json.RawMessage
 }

@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"slices"
 	"strings"
 	"time"
 	"uuid"
@@ -131,8 +132,16 @@ func (s *Service) write(ctx context.Context, t catalog.Type, stream string, data
 	if meta.WorkplaceID != "" {
 		cmd["workplace_id"] = meta.WorkplaceID
 	}
+	// Д-59: подпись команды, принятая декоратором (signing.CheckCommand), — рядом с записью.
+	prov, err := platform.SignRecord(ctx, cmd, "")
+	if err != nil {
+		return platform.Receipt{}, err
+	}
 	e := entry{ID: id, Type: t, Stream: stream, Data: data, OccurredAt: occurred, ReceivedAt: s.d.Now(), SourceID: SourceAPI,
 		Signer: signer(actor), Provenance: jc.JournalEntryProvenanceClassPersonal, Command: cmd, Meta: meta, RunID: runID}
+	if info, ok := catalog.Lookup(t); ok && prov != "" && slices.Contains(info.Provenance, prov) {
+		e.Provenance = jc.JournalEntryProvenanceClass(prov)
+	}
 	if s.cfg.ScenarioClock {
 		e.RecordedAt = engineapp.FormatTime(occurred)
 	}

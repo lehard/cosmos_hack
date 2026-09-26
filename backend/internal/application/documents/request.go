@@ -108,6 +108,7 @@ func (s *Service) RequestVersion(ctx context.Context, in RequestVersion) (Reques
 	data["requested_by"] = me
 	o := out{Type: catalog.DocumentVersionRequested, DocumentID: docID, ItemID: v.ItemID, RunID: v.RunID, Data: data, Meta: in.CommandMeta(), Actor: me, Level: 2,
 		OccurredAt: now, Basis: v.BasisSeq}
+	o.Sign, _ = platform.SignatureFrom(ctx)
 	p, rec, err := s.pending(o)
 	if err != nil {
 		return RequestAccepted{}, err

@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 	"uuid"
@@ -57,6 +58,9 @@ type out struct {
 	// Basis — seq, на котором гард проверил поток (basis_seq конверта, AD-39);
 	// 0 — basis_seq клиента.
 	Basis int64
+	// Sign — подпись команды, принятая декоратором (Д-59): пишется в блок
+	// command записи-решения рядом с ней.
+	Sign platform.Signature
 }
 
 // pending — запись журнала и её представление в домене (для свёртки до записи).
@@ -98,6 +102,10 @@ func (s *Service) pending(o out) (appjournal.Pending, kernel.Record, error) {
 		if o.Meta.WorkplaceID != "" {
 			cmd["workplace_id"] = o.Meta.WorkplaceID
 		}
+		if err := o.Sign.CheckItem(o.ItemID); err != nil {
+			return appjournal.Pending{}, kernel.Record{}, err
+		}
+		o.Sign.CommandFields(cmd)
 		env["command"] = cmd
 	}
 	if o.ItemID != "" {
@@ -121,6 +129,9 @@ func (s *Service) pending(o out) (appjournal.Pending, kernel.Record, error) {
 		SchemaVersion: info.CurrentVersion, EventID: id, SourceID: SourceAPI, Stream: streamOf(o.DocumentID),
 		OccurredAt: occurred, ReceivedAt: engineapp.FormatTime(now), CorrelationID: id,
 		ProvenanceClass: jc.JournalEntryProvenanceClassPersonal, DomainBuild: s.cfg.DomainBuild,
+	}
+	if o.Sign.Signed() && info.Kind == catalog.KindDecision && slices.Contains(info.Provenance, o.Sign.Provenance) {
+		e.ProvenanceClass = jc.JournalEntryProvenanceClass(o.Sign.Provenance)
 	}
 	if s.cfg.ScenarioClock {
 		e.RecordedAt = occurred
@@ -405,6 +416,7 @@ func (s *Service) record(ctx context.Context, v *view, documentID string, o out)
 		return platform.Receipt{}, err
 	}
 	o.DocumentID, o.ItemID, o.RunID, o.OccurredAt, o.Basis = documentID, v.ItemID, v.RunID, now, v.BasisSeq
+	o.Sign, _ = platform.SignatureFrom(ctx)
 	p, rec, err := s.pending(o)
 	if err != nil {
 		return platform.Receipt{}, err

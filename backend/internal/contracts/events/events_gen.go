@@ -919,6 +919,14 @@ type CommandMeta struct {
 	// новых записей `guard_relevant`.
 	GuardStreams []StreamRef `json:"guard_streams"`
 
+	// Класс хранения ключа подписанта по акту регистрации (AD-11, AD-14, Д-72):
+	// физический ключ или ключ в браузере. Берётся из реестра ключей, а не из
+	// заявления клиента.
+	KeyStorage *EventEnvelopeV1CommandKeyStorage `json:"key_storage,omitempty,omitzero"`
+
+	// Разновидность хранения ключа в браузере: в расширении или в хранилище страницы.
+	KeyStorageVariant *EventEnvelopeV1CommandKeyStorageVariant `json:"key_storage_variant,omitempty,omitzero"`
+
 	// OnBehalfOf corresponds to the JSON schema field "on_behalf_of".
 	OnBehalfOf *PersonRef `json:"on_behalf_of,omitempty,omitzero"`
 
@@ -928,8 +936,19 @@ type CommandMeta struct {
 	// SeenCheckpoint corresponds to the JSON schema field "seen_checkpoint".
 	SeenCheckpoint *Seq `json:"seen_checkpoint,omitempty,omitzero"`
 
+	// Подписанный пакет команды — поле `signature` запроса, как есть (конверт DSSE,
+	// contracts/crypto/dsse-envelope.schema.json): подписан запрос JCS{operation,
+	// params, body} (Д-59). Принят модулем signing (CheckCommand) до записи; сам
+	// конверт записи — сервера. Его пересчитывает верификатор (AD-9). Отсутствует —
+	// демо без агента токена (Д-30).
+	Signature EventEnvelopeV1CommandSignature `json:"signature,omitempty,omitzero"`
+
 	// Уровень подписи 0–3 (AD-13).
 	SignatureLevel int `json:"signature_level"`
+
+	// Способ подписи команды: агент токена или ключ в браузере, бумага с заверением,
+	// демо-подписант сценариев.
+	SignatureMethod *EventEnvelopeV1CommandSignatureMethod `json:"signature_method,omitempty,omitzero"`
 
 	// WorkplaceID corresponds to the JSON schema field "workplace_id".
 	WorkplaceID *ObjectID `json:"workplace_id,omitempty,omitzero"`
@@ -2494,6 +2513,29 @@ type EventEnvelopeV1 struct {
 // Непосредственная причина — `event_id` записи, вызвавшей эту; null — корневое
 // событие.
 type EventEnvelopeV1CausationID *string
+
+type EventEnvelopeV1CommandKeyStorage string
+
+const EventEnvelopeV1CommandKeyStorageHardwareToken EventEnvelopeV1CommandKeyStorage = "hardware_token"
+const EventEnvelopeV1CommandKeyStorageSoftwareBrowser EventEnvelopeV1CommandKeyStorage = "software_browser"
+
+type EventEnvelopeV1CommandKeyStorageVariant string
+
+const EventEnvelopeV1CommandKeyStorageVariantExtension EventEnvelopeV1CommandKeyStorageVariant = "extension"
+const EventEnvelopeV1CommandKeyStorageVariantPage EventEnvelopeV1CommandKeyStorageVariant = "page"
+
+// Подписанный пакет команды — поле `signature` запроса, как есть (конверт DSSE,
+// contracts/crypto/dsse-envelope.schema.json): подписан запрос JCS{operation,
+// params, body} (Д-59). Принят модулем signing (CheckCommand) до записи; сам
+// конверт записи — сервера. Его пересчитывает верификатор (AD-9). Отсутствует —
+// демо без агента токена (Д-30).
+type EventEnvelopeV1CommandSignature map[string]interface{}
+
+type EventEnvelopeV1CommandSignatureMethod string
+
+const EventEnvelopeV1CommandSignatureMethodDemoSigner EventEnvelopeV1CommandSignatureMethod = "demo_signer"
+const EventEnvelopeV1CommandSignatureMethodPaper EventEnvelopeV1CommandSignatureMethod = "paper"
+const EventEnvelopeV1CommandSignatureMethodTokenAgent EventEnvelopeV1CommandSignatureMethod = "token_agent"
 
 // Содержимое, специфичное для типа: схема
 // `contracts/events/‹семейство›/‹event_type›.v‹schema_version›.json` (полиморфизм

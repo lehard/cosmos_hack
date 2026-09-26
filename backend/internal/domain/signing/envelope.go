@@ -196,3 +196,31 @@ func SignatureDigest(payloadType string, payload []byte, s Signature) []byte {
 	sig, _ := base64.StdEncoding.DecodeString(s.Sig)
 	return Hash(PAE(payloadType, payload), []byte{0}, []byte(s.KeyID), []byte{0}, sig)
 }
+
+// RecordSignatures — подписи записи журнала (Д-59): подписи конверта записи,
+// а если их нет — подписанного пакета команды человека, который хранится
+// рядом с записью-решением в блоке command.signature (конверт записи —
+// сервера, подписан запрос команды). nested — подписи взяты из блока command.
+// Возвращает payloadType и payload того конверта, чьи это подписи.
+func RecordSignatures(raw []byte) (payloadType string, payload []byte, sigs []Signature, nested bool) {
+	env, p, err := ParseEnvelope(raw)
+	if err != nil {
+		return "", nil, nil, false
+	}
+	if len(env.Signatures) > 0 {
+		return env.PayloadType, p, env.Signatures, false
+	}
+	var ev struct {
+		Command *struct {
+			Signature json.RawMessage `json:"signature"`
+		} `json:"command"`
+	}
+	if json.Unmarshal(p, &ev) != nil || ev.Command == nil || len(ev.Command.Signature) == 0 {
+		return env.PayloadType, p, nil, false
+	}
+	inner, ip, err := ParseEnvelope(ev.Command.Signature)
+	if err != nil || len(inner.Signatures) == 0 {
+		return env.PayloadType, p, nil, false
+	}
+	return inner.PayloadType, ip, inner.Signatures, true
+}

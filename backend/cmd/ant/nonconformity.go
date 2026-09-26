@@ -19,7 +19,7 @@ import (
 // (эпик 28) в профилях demo и fixtures — разрешающая заглушка DemoRoutes
 // (решение помечено approvals_status = demo_stub), иначе — PendingRoutes
 // (решение не исполняется до document.route.closed).
-func nonconformityLive(ctx context.Context, env *environment, dir *accessapp.Directory) (*nonconformityapp.Service, error) {
+func nonconformityLive(ctx context.Context, env *environment, dir *accessapp.Directory, policy func() (accessapp.PolicyAuthorities, bool)) (*nonconformityapp.Service, error) {
 	c, err := env.core(ctx)
 	if err != nil {
 		return nil, err
@@ -31,6 +31,11 @@ func nonconformityLive(ctx context.Context, env *environment, dir *accessapp.Dir
 	var auth nonconformityapp.AuthorityCheck
 	if dir != nil {
 		auth = dir // полномочия точки предъявления — по политике (FR-19)
+	}
+	if pol, ok := policy(); ok {
+		// Пачка стыков Д-59: полномочия — по проекции политики (эпик 26),
+		// с выдачами и отзывами из журнала, а не по стартовому каталогу.
+		auth = policyAuthority{a: pol, fallback: auth}
 	}
 	return nonconformityapp.NewService(
 		nonconformityapp.WithDeps(nonconformityapp.Deps{
@@ -47,4 +52,20 @@ func nonconformityLive(ctx context.Context, env *environment, dir *accessapp.Dir
 			ScenarioClock: scenarioClock(env.cfg),
 		}),
 	), nil
+}
+
+// policyAuthority — порт AuthorityCheck nonconformity над проекцией политики
+// (Policy.HasAuthority на действующей политике и доменном «сейчас»);
+// проекция недоступна — стартовый каталог.
+type policyAuthority struct {
+	a        accessapp.PolicyAuthorities
+	fallback nonconformityapp.AuthorityCheck
+}
+
+func (p policyAuthority) HasAuthority(person, authority string) bool {
+	ok, err := p.a.Has(context.Background(), person, authority, 0)
+	if err != nil && p.fallback != nil {
+		return p.fallback.HasAuthority(person, authority)
+	}
+	return err == nil && ok
 }

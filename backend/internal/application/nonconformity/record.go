@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"slices"
 	"strings"
 	"time"
 	"uuid"
@@ -74,7 +75,7 @@ func (s *Service) write(ctx context.Context, d decision) (platform.Receipt, erro
 	if r, ok, err := s.replayed(ctx, d.Stream, d.Type, id); err != nil || ok {
 		return r, err
 	}
-	p, err := s.pending(d, id)
+	p, err := s.pending(ctx, d, id, d.ItemID)
 	if err != nil {
 		return platform.Receipt{}, err
 	}
@@ -107,7 +108,9 @@ func (s *Service) write(ctx context.Context, d decision) (platform.Receipt, erro
 }
 
 // pending — запись-решение d с event_id id: конверт DSSE и строка журнала.
-func (s *Service) pending(d decision, id string) (appjournal.Pending, error) {
+// signedItem — изделие для сверки с изделием под подписью (пусто — не сверять:
+// групповая команда пишет в изделия группы, подпись относится к команде).
+func (s *Service) pending(ctx context.Context, d decision, id, signedItem string) (appjournal.Pending, error) {
 	info, _ := catalog.Lookup(d.Type)
 	data, err := json.Marshal(d.Data)
 	if err != nil {
@@ -128,6 +131,12 @@ func (s *Service) pending(d decision, id string) (appjournal.Pending, error) {
 		"signature_level": d.SignatureLevel}
 	if d.Meta.WorkplaceID != "" {
 		cmd["workplace_id"] = d.Meta.WorkplaceID
+	}
+	// Д-59: подпись команды, принятая декоратором (signing.CheckCommand), —
+	// конверт клиента и класс хранения ключа рядом с записью.
+	prov, err := platform.SignRecord(ctx, cmd, signedItem)
+	if err != nil {
+		return appjournal.Pending{}, err
 	}
 	env := map[string]any{
 		"event_id": id, "event_type": string(d.Type), "schema_version": info.CurrentVersion, "source_id": SourceAPI,
@@ -155,6 +164,9 @@ func (s *Service) pending(d decision, id string) (appjournal.Pending, error) {
 		SchemaVersion: info.CurrentVersion, EventID: id, SourceID: SourceAPI, Stream: d.Stream,
 		OccurredAt: occurred, ReceivedAt: engineapp.FormatTime(s.d.Now()), CorrelationID: cmdID,
 		ProvenanceClass: jc.JournalEntryProvenanceClassPersonal, DomainBuild: s.cfg.DomainBuild,
+	}
+	if prov != "" && slices.Contains(info.Provenance, prov) {
+		e.ProvenanceClass = jc.JournalEntryProvenanceClass(prov)
 	}
 	if s.cfg.ScenarioClock {
 		e.RecordedAt = occurred

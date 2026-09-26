@@ -4484,6 +4484,9 @@ components:
           items:
             $ref: "#/components/schemas/DocumentSignatureView"
           type: array
+        signing_payload_b64:
+          description: "Содержимое для подписи (AD-12, AD-14): base64 канонических байт {content, rendering_hash, template_ref, doc_format_version}, отпечаток которых — doc_digest."
+          type: string
         source_event_ids:
           description: События-источники документа.
           items:
@@ -7392,12 +7395,25 @@ components:
             - scenario
             - genesis
           type: string
+        key_storage:
+          description: "Класс хранения ключа подписанта (AD-14, Д-72): физический ключ или ключ в браузере."
+          enum:
+            - hardware_token
+            - software_browser
+          type: string
         level:
           description: Уровень подписи (AD-13).
           format: int64
           maximum: 3
           minimum: 0
           type: integer
+        method:
+          description: "Способ подписи решения: агент токена или ключ в браузере, бумага с заверением, демо-подписант (Д-59)."
+          enum:
+            - token_agent
+            - paper
+            - demo_signer
+          type: string
         paper_original_ref:
           description: Учётный номер бумажного оригинала в архиве ОТК (AD-43).
           type: string
@@ -13683,6 +13699,9 @@ components:
           items:
             $ref: "#/components/schemas/DocumentRouteStage"
           type: array
+        signing_payload_b64:
+          description: "Содержимое для подписи (AD-12, AD-14): base64 канонических байт {content, rendering_hash, template_ref, doc_format_version}, отпечаток которых — doc_digest. Агент токена подписывает содержимое, а не отпечаток, и пересчитывает отпечаток сам."
+          type: string
         status:
           description: Те же значения, что у документов паспорта.
           enum:

@@ -225,7 +225,9 @@ func checkEvent(payload []byte, e Expect) error {
 		return fail(errcodes.SigningDocumentChanged, "подписано "+ev.EventType+", команда исполняет "+e.EventType, "doc_id", e.CommandID)
 	case e.CommandID != "" && ev.EventID != e.CommandID && ev.Command.CommandID != e.CommandID:
 		return fail(errcodes.SigningDocumentChanged, "подпись относится к другой команде", "doc_id", e.CommandID)
-	case e.ItemID != "" && ev.ItemID != e.ItemID:
+	case e.ItemID != "" && ev.ItemID != "" && ev.ItemID != e.ItemID:
+		// Изделие под подписью необязательно: запрос связан с объектом
+		// параметрами пути, они под подписью (RequestData).
 		return fail(errcodes.SigningDocumentChanged, "подписано другое изделие", "doc_id", e.CommandID)
 	}
 	if e.Data != nil {

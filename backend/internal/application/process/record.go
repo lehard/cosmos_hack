@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"slices"
 	"strings"
 	"time"
 	"uuid"
@@ -56,10 +57,16 @@ func (r *Recorder) Record(ctx context.Context, t catalog.Type, stream, actor str
 		signer = actor + "@1"
 	}
 	occurred := engineapp.FormatTime(at)
+	cmd := map[string]any{"command_id": id, "basis_seq": meta.BasisSeq, "guard_streams": []string{stream}, "policy_seq": meta.PolicySeq}
+	// Д-59: подпись команды, принятая декоратором (signing.CheckCommand), — рядом с записью.
+	prov, err := platform.SignRecord(ctx, cmd, "")
+	if err != nil {
+		return platform.Receipt{}, err
+	}
 	env := map[string]any{
 		"event_id": id, "event_type": string(t), "schema_version": info.CurrentVersion, "source_id": SourceAPI,
 		"source_kind": "manual_entry", "occurred_at": occurred, "correlation_id": id, "causation_id": nil,
-		"command":   map[string]any{"command_id": id, "basis_seq": meta.BasisSeq, "guard_streams": []string{stream}, "policy_seq": meta.PolicySeq},
+		"command":   cmd,
 		"integrity": map[string]any{"format_version": 1, "crypto_profile": "gost", "signers": []string{signer}},
 		"data":      json.RawMessage(raw),
 	}
@@ -81,6 +88,9 @@ func (r *Recorder) Record(ctx context.Context, t catalog.Type, stream, actor str
 		SchemaVersion: info.CurrentVersion, EventID: id, SourceID: SourceAPI, Stream: stream, Partition: r.Partitions,
 		OccurredAt: occurred, ReceivedAt: engineapp.FormatTime(now()), CorrelationID: id,
 		ProvenanceClass: jc.JournalEntryProvenanceClassPersonal, DomainBuild: r.DomainBuild,
+	}
+	if prov != "" && slices.Contains(info.Provenance, prov) {
+		e.ProvenanceClass = jc.JournalEntryProvenanceClass(prov)
 	}
 	if meta.BasisSeq > 0 {
 		b := int(meta.BasisSeq)

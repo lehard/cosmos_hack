@@ -287,6 +287,10 @@ func entryOf(r kernel.Record) PassportEntry {
 		class = "server_attested"
 	}
 	e.Signatures = []ItemSignature{{SignerID: author, Class: class, Check: "unchecked"}}
+	if r.SignatureMethod != "" {
+		// Подпись команды принята модулем signing до записи (CheckCommand, Д-59).
+		e.Signatures[0].Check, e.Signatures[0].Method, e.Signatures[0].KeyStorage = "valid", r.SignatureMethod, r.KeyStorage
+	}
 	if r.Kind == catalog.KindFact {
 		e.BindingBasis, e.BindingReliability = "internal_id", "unique"
 		if r.CarrierRef != "" {

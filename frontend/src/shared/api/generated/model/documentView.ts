@@ -39,6 +39,8 @@ export interface DocumentView {
   /** Реакция document.route.closed версии. */
   route_closed_event_id?: string;
   signatures: DocumentSignatureView[];
+  /** Содержимое для подписи (AD-12, AD-14): base64 канонических байт {content, rendering_hash, template_ref, doc_format_version}, отпечаток которых — doc_digest. */
+  signing_payload_b64?: string;
   /** События-источники документа. */
   source_event_ids: string[];
   /** Обязательные подписи — замороженный набор (AD-43). */

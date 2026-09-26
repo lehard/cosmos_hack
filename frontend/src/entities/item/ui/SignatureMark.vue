@@ -3,7 +3,8 @@
  * Подпись записи и итог её автоматической проверки (FR-42, FR-68, FR-139): кто
  * подписал, класс происхождения (устройство / личная / бумага / сервер…),
  * уровень, итог проверки. «Не проверяемо» и «не проверялась» ≠ «действительна»;
- * бумажная подпись показывает заверителя.
+ * бумажная подпись показывает заверителя, подпись ключом — класс хранения
+ * ключа (физический ключ / ключ в браузере, AD-14, Д-72).
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -23,6 +24,9 @@ const check = computed(() => SIGNATURE_CHECK[props.signature.check])
     <span class="meta">
       {{ t('timeline.marks.signedBy', { who: signature.signer_id }) }} · {{ t(SIGNATURE_CLASS_TEXT[signature.class]) }} ·
       {{ t('widgets.passport.signature.level', { level: signature.level }) }}
+    </span>
+    <span v-if="signature.key_storage" class="meta" data-testid="key-storage">
+      {{ t(`common.header.tokenStorage.${signature.key_storage}`) }}
     </span>
     <span v-if="signature.class === 'paper'" class="meta" data-testid="paper-line">
       {{ t('widgets.passport.signature.paperAttested', { attester: signature.attested_by ?? t('common.words.unknown') }) }}

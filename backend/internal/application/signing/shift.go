@@ -144,13 +144,11 @@ func (s *Service) ShiftLeaves(ctx context.Context, person string, from, to time.
 			if err != nil {
 				continue
 			}
-			de, payload, err := dom.ParseEnvelope(env.Raw)
-			if err != nil {
-				continue
-			}
-			for _, sg := range de.Signatures {
+			// Подписи записи или подписанного пакета команды рядом с ней (Д-59).
+			pt, payload, sigs, _ := dom.RecordSignatures(env.Raw)
+			for _, sg := range sigs {
 				if slices.Contains(mine, sg.KeyID) {
-					out = append(out, dom.ShiftLeaf{Digest: dom.SignatureDigest(de.PayloadType, payload, sg), EventType: e.EventType, Seq: int64(e.Seq)})
+					out = append(out, dom.ShiftLeaf{Digest: dom.SignatureDigest(pt, payload, sg), EventType: e.EventType, Seq: int64(e.Seq)})
 				}
 			}
 		}
@@ -193,16 +191,13 @@ func (s *Service) Doubts(ctx context.Context, keyRef string) ([]dom.Doubt, error
 			if err != nil {
 				continue
 			}
-			de, _, err := dom.ParseEnvelope(env.Raw)
-			if err != nil {
-				continue
-			}
+			_, _, sigs, _ := dom.RecordSignatures(env.Raw)
 			d := dom.SignedDecision{EventID: e.EventID, EventType: e.EventType, Seq: int64(e.Seq)}
 			d.CommittedAt, _ = time.Parse(TimeLayout, e.CommittedAt)
 			if e.ItemID != nil {
 				d.ItemID = *e.ItemID
 			}
-			for _, sg := range de.Signatures {
+			for _, sg := range sigs {
 				d.KeyRefs = append(d.KeyRefs, sg.KeyID)
 			}
 			ds = append(ds, d)
