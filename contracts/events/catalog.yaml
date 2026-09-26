@@ -3316,7 +3316,7 @@ types:
   ops.integration.degraded:
     title: "Интеграция в режиме degraded"
     emitter: "ops"
-    role: "api"
+    role: "outbox"
     kind: "service"
     stream: "source"
     axis: "none"
