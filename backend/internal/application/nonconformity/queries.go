@@ -1,6 +1,7 @@
 package nonconformity
 
 import (
+	"cmp"
 	"context"
 	"encoding/json"
 	"slices"
@@ -161,27 +162,8 @@ func (s *Service) queueRows(v *itemView, now time.Time) []DecisionQueueRow {
 // данных, пересмотр закрывает.
 func (s *Service) reviewRows(ctx context.Context, v *itemView) []DecisionQueueRow {
 	var rows []DecisionQueueRow
-	for _, re := range v.Computed {
-		d, ok := re.Data.(ev.TaskTaskCreatedV1)
-		if re.Type != catalog.TaskTaskCreated || !ok || d.Kind != ev.TaskTaskCreatedV1KindReviewAfterNewData {
-			continue
-		}
-		dec, ok := v.Record(re.Slot.TriggerKey)
-		if !ok {
-			continue
-		}
-		var last *kernel.Record
-		for _, id := range re.Causes {
-			r, ok := v.Record(id)
-			if !ok || r.EventID == dec.EventID || (last != nil && r.Seq <= last.Seq) {
-				continue
-			}
-			rr := r
-			last = &rr
-		}
-		if last == nil || s.redecided(v, dec, *last) {
-			continue
-		}
+	for _, rv := range s.reviewsOf(v) {
+		dec, last := rv.decision, rv.facts[len(rv.facts)-1]
 		var pd struct {
 			StepKey      string `json:"step_key"`
 			ClosingPoint string `json:"closing_point"`
@@ -191,7 +173,7 @@ func (s *Service) reviewRows(ctx context.Context, v *itemView) []DecisionQueueRo
 		if pd.ClosingPoint != "" {
 			title += " " + pd.ClosingPoint
 		}
-		title += " принято до новых данных — пересмотрите: пришло «" + summaryOf(*last) + "»"
+		title += " принято до новых данных — пересмотрите: пришло «" + summaryOf(last) + "»"
 		var eq struct {
 			EquipmentID string `json:"equipment_id"`
 		}
@@ -200,11 +182,47 @@ func (s *Service) reviewRows(ctx context.Context, v *itemView) []DecisionQueueRo
 				title += " от «" + name + "»"
 			}
 		}
-		src, since := last.EventID, re.OccurredAt
+		src, since := last.EventID, rv.since
 		rows = append(rows, DecisionQueueRow{Kind: "review", ObjectID: dec.EventID, ItemID: v.ItemID, ItemLabel: v.ItemID, StepKey: pd.StepKey,
 			Title: title, Severity: "major", BasisSeq: v.BasisSeq, SourceEventID: &src, ReviewSince: &since})
 	}
 	return rows
+}
+
+// review — решение, принятое до новых данных: само решение и пришедшие после
+// него записи по seq (последняя — самая новая).
+type review struct {
+	decision kernel.Record
+	facts    []kernel.Record
+	since    time.Time
+}
+
+// reviewsOf — открытые пересмотры изделия (реакции движка review_after_new_data,
+// AD-3); новое решение того же вида после пришедших данных пересмотр закрывает.
+func (s *Service) reviewsOf(v *itemView) []review {
+	var out []review
+	for _, re := range v.Computed {
+		d, ok := re.Data.(ev.TaskTaskCreatedV1)
+		if re.Type != catalog.TaskTaskCreated || !ok || d.Kind != ev.TaskTaskCreatedV1KindReviewAfterNewData {
+			continue
+		}
+		dec, ok := v.Record(re.Slot.TriggerKey)
+		if !ok {
+			continue
+		}
+		rv := review{decision: dec, since: re.OccurredAt}
+		for _, id := range re.Causes {
+			if r, ok := v.Record(id); ok && r.EventID != dec.EventID {
+				rv.facts = append(rv.facts, r)
+			}
+		}
+		slices.SortFunc(rv.facts, func(a, b kernel.Record) int { return cmp.Compare(a.Seq, b.Seq) })
+		if len(rv.facts) == 0 || s.redecided(v, dec, rv.facts[len(rv.facts)-1]) {
+			continue
+		}
+		out = append(out, rv)
+	}
+	return out
 }
 
 // redecided — после пришедшей записи last по изделию принято новое решение

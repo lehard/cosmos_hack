@@ -297,7 +297,8 @@ func renderWorkplaces(c *Ctx) []loader.Response {
 		row := accessapp.PostRow{WorkplaceID: wp, Station: workplaceTitle[wp], Workshop: workplaceWorkshop[wp], WorkshopName: workshopName[workplaceWorkshop[wp]], Presence: "not_assigned"}
 		if p, ok := assigned[wp]; ok {
 			row.Assigned = &accessapp.PostPerson{PersonID: p, Display: c.M.personName(p)}
-			row.Presence = "present"
+			// Эпик 37: присутствие по СКУД и ключу — из событий поста мира заготовок.
+			row.Presence = c.postPresence(wp, p)
 		}
 		if it := current[wp]; it != nil {
 			row.CurrentItem = &accessapp.PostItem{ItemID: FullID(it.ID), Label: it.Label}

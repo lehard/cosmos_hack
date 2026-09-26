@@ -60,7 +60,7 @@
             "type": "string",
             "pattern": "^[a-z][a-z0-9_]*$",
             "maxLength": 64,
-            "description": "Построитель содержимого в domain/documents: traveler, nc_statement, nc_disposition, generic. Нет — шаблон только объявлен (эпик 44)."
+            "description": "Построитель содержимого в domain/documents: traveler, nc_statement, nc_disposition, generic, event_record (документ по событию-триггеру, эпик 44). Нет — шаблон только объявлен."
           },
           "subject": {
             "type": "string",
@@ -70,6 +70,7 @@
               "process_version",
               "lot",
               "policy",
+              "workplace",
               "other"
             ],
             "description": "Вид объекта документа."
@@ -332,6 +333,64 @@
               }
             },
             "description": "Каноническая отрисовка HTML (AD-12): печатная рамка в неё не входит."
+          },
+          "trigger": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "events"
+            ],
+            "description": "Событие-триггер (эпик 44, FR-65): документ с построителем event_record оформляется свёрткой изделия сам по записи журнала изделия одного из типов events.",
+            "properties": {
+              "events": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 20,
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z_]*\\.[a-z][a-z_]*\\.[a-z][a-z_]*$",
+                  "maxLength": 128,
+                  "description": "Тип записи из contracts/events/catalog.yaml."
+                },
+                "description": "Типы записей-триггеров."
+              },
+              "per": {
+                "type": "string",
+                "enum": [
+                  "event",
+                  "item"
+                ],
+                "description": "event — документ на каждую запись (акт, извещение); item — журнал изделия: одна запись — строка и новая версия. Нет — event."
+              },
+              "when": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "field",
+                  "values"
+                ],
+                "description": "Отбор записи-триггера по полю data: документ оформляется, только если значение поля — одно из values (например, решение «списать»).",
+                "properties": {
+                  "field": {
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9_]*$",
+                    "maxLength": 64,
+                    "description": "Поле data записи."
+                  },
+                  "values": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 20,
+                    "items": {
+                      "type": "string",
+                      "maxLength": 64,
+                      "description": "Допустимое значение."
+                    },
+                    "description": "Допустимые значения."
+                  }
+                }
+              }
+            }
           }
         }
       }

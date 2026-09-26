@@ -7,6 +7,7 @@ import (
 	app "ant/internal/application/access"
 	engineapp "ant/internal/application/engine"
 	appjournal "ant/internal/application/journal"
+	"ant/internal/contracts/catalog"
 	jc "ant/internal/contracts/journal"
 	accessdom "ant/internal/domain/access"
 )
@@ -20,6 +21,9 @@ type PolicyLog struct {
 	Codec   *engineapp.Codec
 	// Signal — «есть новое» (LISTEN/NOTIFY); nil — проекция перечитывает по интервалу.
 	Signal appjournal.Signal
+	// Types — читаемые типы; nil — типы политики accessdom.Types (проекция
+	// присутствия эпика 37 читает accessdom.PresenceTypes).
+	Types []catalog.Type
 }
 
 var _ app.PolicyLog = PolicyLog{}
@@ -30,7 +34,11 @@ const readLimit = 1000
 // Since — записи политики после seq по возрастанию seq.
 func (l PolicyLog) Since(ctx context.Context, afterSeq int64) ([]accessdom.Record, error) {
 	var out []accessdom.Record
-	for _, t := range accessdom.Types {
+	types := l.Types
+	if types == nil {
+		types = accessdom.Types
+	}
+	for _, t := range types {
 		after := afterSeq
 		for {
 			es, err := l.Journal.Read(ctx, appjournal.ReadQuery{EventType: string(t), AfterSeq: after, Limit: readLimit})

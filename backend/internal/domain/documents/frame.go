@@ -144,6 +144,7 @@ func Reduce(s State, r kernel.Record, env Env, up Upstream) State {
 	s.fromMachinelogs(up)
 	s.reduceNC(r, env, up)
 	s.reduceDocs(r, env, up)
+	s.reduceTriggers(r, env, up)
 	// Карта фиксируется версией при сдаче изделия на склад и при завершении
 	// процесса изделия (выпуск или списание, AD-12: новая версия — только
 	// если содержимое изменилось).

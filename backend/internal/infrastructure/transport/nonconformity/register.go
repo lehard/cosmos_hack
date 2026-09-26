@@ -55,6 +55,18 @@ func Register(api *httpapi.API, q app.Queries, c app.Commands) {
 			return q.Card(ctx, in.NCID, m)
 		})
 
+	httpapi.Read(api, httpapi.Get("/items/{item_id}/presentations/current", "Точка предъявления изделия",
+		"FR-19, FR-56: ждущее решения предъявление (шаг, ЗТ, номер, результаты методов, куда передаётся при «Принять») и решения, "+
+			"которые пройдут гарды для вошедшего; у пересмотра решения, принятого до новых данных (AD-3), — прежнее решение, его основание и что пришло после. "+
+			"Всё, что нужно команде nonconformity.presentation.resolve."),
+		platform.Action{ID: "nonconformity.presentation.read", Owner: owner, Subject: "item"},
+		func(ctx context.Context, in *struct {
+			ItemID string `path:"item_id" maxLength:"128" doc:"Изделие."`
+			httpapi.MomentQuery
+		}, m platform.Moment) (app.NCPresentationView, error) {
+			return q.Presentation(ctx, in.ItemID, m)
+		})
+
 	httpapi.Read(api, httpapi.Get("/concessions", "Разрешения на отклонение",
 		"FR-54: действующие разрешения на отклонение, применимые к изделию, с лимитом и остатком — для выбора при решении «ремонт» или «как есть»."),
 		platform.Action{ID: "nonconformity.concession.list", Owner: owner, Subject: "nonconformity"},

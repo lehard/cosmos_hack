@@ -45,7 +45,8 @@ func (c *core) documentsBundles(next engineapp.BundleSource) engineapp.BundleSou
 // documentsLive — live-реализация операций documents для роли api: чтение —
 // свёртка изделия или потока документа из журнала на момент (AD-22);
 // команды — доменный гард маршрута и запись в журнал ядра с проверкой AD-39.
-func documentsLive(ctx context.Context, env *environment) (*documentsapp.Service, error) {
+// stamps — реестр действующих цифровых клейм (эпик 37, FR-145); nil — срез стартовой политики.
+func documentsLive(ctx context.Context, env *environment, stamps documentsapp.StampRegistry) (*documentsapp.Service, error) {
 	c, err := env.core(ctx)
 	if err != nil {
 		return nil, err
@@ -53,7 +54,7 @@ func documentsLive(ctx context.Context, env *environment) (*documentsapp.Service
 	return documentsapp.NewService(
 		documentsapp.WithDeps(documentsapp.Deps{
 			Journal: c.journal, Codec: c.codec, Bundles: c.bundleSource(), Env: c.docsEnv,
-			DomainClock: c.domainClock(), Now: c.codec.Now,
+			DomainClock: c.domainClock(), Now: c.codec.Now, Stamps: stamps,
 		}),
 		documentsapp.WithConfig(documentsapp.Config{DomainBuild: c.codec.DomainBuild, Partitions: env.cfg.Engine.Partitions}),
 	), nil

@@ -722,6 +722,13 @@ components:
           description: UUIDv7 клиента; повтор с тем же id возвращает прежний ответ (AD-7). У подписанной команды — event_id пакета.
           format: uuid
           type: string
+        key_ref:
+          description: Ключ сотрудника (‹псевдоним›@‹версия›), вставленный на рабочем месте; эпик 37.
+          maxLength: 128
+          type: string
+        pin_verified:
+          description: PIN введён и ключ им открыт (порт подписи); эпик 37.
+          type: boolean
         policy_seq:
           description: Версия политики, по которой показаны права (policy_seq сеанса); изменилась — 409 journal.stale_policy (AD-39).
           format: int64
@@ -9335,6 +9342,104 @@ components:
         - presentation_no
         - event_id
       type: object
+    NCPresentationPoint:
+      additionalProperties: false
+      properties:
+        allowed_resolutions:
+          description: "Решения, которые пройдут гарды для вошедшего: разделение обязанностей, полномочие точки, блок, результаты методов, действующее разрешение на отклонение."
+          items:
+            enum:
+              - accept
+              - accept_with_concession
+              - reject
+              - insufficient_data
+            type: string
+          type: array
+        closing_point:
+          description: Закрывающая точка (ЗТ) — поле команды.
+          type: string
+        closing_point_label:
+          description: Закрывающая точка для людей — имя узла процесса с этой ЗТ.
+          type: string
+        event_id:
+          description: Запись предъявления (item.presentation.recorded).
+          type: string
+        method_event_ids:
+          description: Результаты методов контроля — method_event_ids команды.
+          items:
+            type: string
+          type: array
+        next_step_label:
+          description: Куда передаётся изделие при «Принять» — имя следующего шага процесса.
+          type: string
+        presentation_no:
+          description: Номер предъявления (повторное — больше 1).
+          format: int64
+          minimum: 1
+          type: integer
+        step_key:
+          type: string
+        step_label:
+          description: Имя шага по описанию процесса.
+          type: string
+      required:
+        - event_id
+        - step_key
+        - closing_point
+        - presentation_no
+        - method_event_ids
+        - allowed_resolutions
+      type: object
+    NCPresentationReview:
+      additionalProperties: false
+      properties:
+        decision:
+          $ref: "#/components/schemas/NCRecordRef"
+          description: Прежнее решение на точке (автор, время).
+        known_at_decision:
+          description: Что было в основании при подписи (результаты методов решения).
+          items:
+            $ref: "#/components/schemas/NCRecordRef"
+          type: array
+        new_facts:
+          description: Что пришло после решения (с числами режима reading, если есть).
+          items:
+            $ref: "#/components/schemas/NCRecordRef"
+          type: array
+      required:
+        - decision
+        - known_at_decision
+        - new_facts
+      type: object
+    NCPresentationView:
+      additionalProperties: false
+      properties:
+        basis_seq:
+          description: seq, на котором построен ответ (basis_seq команды, AD-39).
+          format: int64
+          type: integer
+        item_id:
+          type: string
+        item_label:
+          description: Номер детали для людей.
+          type: string
+        method_results:
+          description: Результаты методов контроля, на которых решение (как happened.after в карточке НС).
+          items:
+            $ref: "#/components/schemas/NCRecordRef"
+          type: array
+        presentation:
+          $ref: "#/components/schemas/NCPresentationPoint"
+        review:
+          $ref: "#/components/schemas/NCPresentationReview"
+          description: Пересмотр решения, принятого до новых данных (строка очереди kind = review).
+      required:
+        - item_id
+        - item_label
+        - presentation
+        - method_results
+        - basis_seq
+      type: object
     NCReason:
       additionalProperties: false
       properties:
@@ -12935,10 +13040,10 @@ components:
           maxLength: 128
           type: string
         workplace_session_id:
+          description: Сеанс рабочего места; пусто — открытый сеанс сотрудника на этом месте (эпик 37).
           format: uuid
           type: string
       required:
-        - workplace_session_id
         - command_id
         - basis_seq
         - policy_seq
@@ -16466,7 +16571,7 @@ components:
           description: Тип записи журнала.
           type: string
         kind:
-          description: Вид события поста.
+          description: Вид события поста; zone_in, zone_out — проход назначенного на пост через точку СКУД зоны поста (эпик 37).
           enum:
             - assigned
             - cleared
@@ -16476,6 +16581,8 @@ components:
             - released
             - revoked
             - presence_deviation
+            - zone_in
+            - zone_out
           type: string
         person_display:
           description: Отображаемое имя сотрудника.
@@ -16484,7 +16591,7 @@ components:
           description: Сотрудник, если известен.
           type: string
         reason:
-          description: "Основание: текст снятия назначения, причина снятия допуска, вид отклонения присутствия."
+          description: "Основание: текст снятия назначения, причина снятия допуска, вид отклонения присутствия, зона СКУД прохода."
           type: string
         seq:
           description: seq записи журнала.
@@ -22680,6 +22787,69 @@ paths:
         id: item.presentation.record
         owner: item
         signature_level: 1
+        subject: item
+  /api/v1/items/{item_id}/presentations/current:
+    get:
+      description: "FR-19, FR-56: ждущее решения предъявление (шаг, ЗТ, номер, результаты методов, куда передаётся при «Принять») и решения, которые пройдут гарды для вошедшего; у пересмотра решения, принятого до новых данных (AD-3), — прежнее решение, его основание и что пришло после. Всё, что нужно команде nonconformity.presentation.resolve."
+      operationId: nonconformity.presentation.read
+      parameters:
+        - description: Изделие.
+          in: path
+          name: item_id
+          required: true
+          schema:
+            description: Изделие.
+            maxLength: 128
+            type: string
+        - description: "Ось момента: occurred — «как было» (по умолчанию), recorded — «что мы знали» (AD-37)."
+          explode: false
+          in: query
+          name: axis
+          schema:
+            $ref: "#/components/schemas/Axis"
+            description: "Ось момента: occurred — «как было» (по умолчанию), recorded — «что мы знали» (AD-37)."
+        - description: "Момент (RFC 3339 UTC); пусто — «сейчас». Задан — воспроизведение: команды выключены (AD-21)."
+          explode: false
+          in: query
+          name: as_of
+          schema:
+            description: "Момент (RFC 3339 UTC); пусто — «сейчас». Задан — воспроизведение: команды выключены (AD-21)."
+            format: date-time
+            type: string
+        - description: "Прогон сценария: данные в его пространстве имён (AD-38)."
+          explode: false
+          in: query
+          name: run_id
+          schema:
+            description: "Прогон сценария: данные в его пространстве имён (AD-38)."
+            maxLength: 128
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NCPresentationView"
+          description: OK
+          headers:
+            Ant-Backend:
+              schema:
+                $ref: "#/components/schemas/BackendMode"
+                description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Error
+      summary: Точка предъявления изделия
+      tags:
+        - nonconformity
+      x-ant-action:
+        class: read
+        critical: false
+        id: nonconformity.presentation.read
+        owner: nonconformity
         subject: item
   /api/v1/items/{item_id}/presentations/resolve:
     post:

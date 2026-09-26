@@ -62,6 +62,7 @@ func renderNonconformity(c *Ctx) []loader.Response {
 	out = append(out, resp("nonconformity.nonconformity.list", list))
 	q := c.queue()
 	out = append(out, resp("nonconformity.queue.list", q))
+	out = append(out, c.presentations(q)...)
 	for _, role := range []string{"quality_inspector", "head_of_qc"} {
 		out = append(out, resp("nonconformity.queue.list", q, "role", role))
 	}
@@ -105,8 +106,8 @@ func (c *Ctx) queue() ncapp.DecisionQueue {
 		row := ncapp.DecisionQueueRow{Kind: "review", ObjectID: "REVIEW-" + rv.Gate + "-" + it.ID, ItemID: FullID(it.ID), ItemLabel: it.Label,
 			StepKey: "welding.zt3_acceptance", Title: "Решение ЗТ-3 принято до новых данных — пересмотрите: " + c.M.lateArrival(rv.LateEvent), Severity: "major", PresentationN: ptr(1), BasisSeq: c.ItemSeq(it),
 			ReviewSince: tptr(rv.Flagged.Time())}
-		if rv.LateEvent != "" {
-			row.SourceEventID = ptr(rv.LateEvent)
+		if e := c.M.lateRecord(rv.LateEvent); e != nil {
+			row.SourceEventID = ptr(e.ID)
 		}
 		q.Items = append(q.Items, row)
 	}
@@ -339,6 +340,127 @@ func (c *Ctx) investigation(n *NC) string {
 		}
 	}
 	return "none"
+}
+
+// lateRecord — запись журнала мира об опоздавшей записи источника id; нет — nil.
+func (m *Model) lateRecord(id string) *Event {
+	for _, e := range m.Events {
+		if id != "" && e.Type == "equipment.deviation.detected" && e.Params["record"] == id {
+			return e
+		}
+	}
+	return nil
+}
+
+// presentations — точки предъявления строк очереди (nonconformity.presentation.read,
+// FR-19): предъявление и пересмотр (AD-3) — всё, что нужно команде решения.
+func (c *Ctx) presentations(q ncapp.DecisionQueue) []loader.Response {
+	var out []loader.Response
+	for _, r := range q.Items {
+		if r.Kind != "presentation" && r.Kind != "review" {
+			continue
+		}
+		it := c.M.itemByID[strings.TrimPrefix(r.ItemID, enterprise+":")]
+		if it == nil {
+			continue
+		}
+		v := c.presentationView(it, r)
+		out = append(out, resp("nonconformity.presentation.read", v, "item_id", r.ItemID))
+	}
+	return out
+}
+
+// presentationView — точка предъявления изделия: шаг, ЗТ, результаты методов
+// этапа до точки; у пересмотра — прежнее решение, его основание и опоздавшая запись.
+func (c *Ctx) presentationView(it *Item, r ncapp.DecisionQueueRow) ncapp.NCPresentationView {
+	n := 1
+	if r.PresentationN != nil {
+		n = *r.PresentationN
+	}
+	p := ncapp.NCPresentationPoint{EventID: r.ObjectID, StepKey: r.StepKey, PresentationNo: n, MethodEventIDs: []string{},
+		AllowedResolutions: []string{"accept", "reject", "insufficient_data"}}
+	if nd := c.M.Bpmn[r.StepKey]; nd != nil {
+		p.StepLabel = c.nodeName(r.StepKey)
+		p.ClosingPoint = nd.Props["closingPoint"]
+		if p.ClosingPoint != "" {
+			p.ClosingPointLabel = c.nodeName(r.StepKey)
+		}
+		p.NextStepLabel = c.M.nextStepName(nd)
+	}
+	v := ncapp.NCPresentationView{ItemID: FullID(it.ID), ItemLabel: it.Label, MethodResults: []ncapp.NCRecordRef{}, BasisSeq: c.ItemSeq(it)}
+	stage, _, _ := strings.Cut(r.StepKey, ".")
+	var decision *Event
+	if r.Kind == "review" {
+		for _, e := range c.itemEvents(it) {
+			if e.Type == "decision.presentation.resolved" && e.StepKey == r.StepKey && e.Params["outcome"] == "accepted_incomplete_data" {
+				decision = e
+			}
+		}
+	}
+	upTo := c.T
+	if decision != nil {
+		upTo = decision.Occurred
+	}
+	latest := map[string]*Event{}
+	var order []string
+	for _, e := range c.itemEvents(it) {
+		if e.Type != "inspection.result.recorded" || e.Kind != "fact" || e.Occurred.After(upTo) || !strings.HasPrefix(e.StepKey, stage+".") {
+			continue
+		}
+		if _, ok := latest[e.StepKey]; !ok {
+			order = append(order, e.StepKey)
+		}
+		latest[e.StepKey] = e
+	}
+	for _, k := range order {
+		e := latest[k]
+		p.MethodEventIDs = append(p.MethodEventIDs, e.ID)
+		v.MethodResults = append(v.MethodResults, recRef(e))
+	}
+	if decision != nil {
+		rv := &ncapp.NCPresentationReview{Decision: recRef(decision), KnownAtDecision: slices.Clone(v.MethodResults), NewFacts: []ncapp.NCRecordRef{}}
+		for _, x := range c.M.Spec.Reviews {
+			if e := c.M.lateRecord(x.LateEvent); x.Item == it.ID && e != nil && !e.Recorded.After(c.T) {
+				rv.NewFacts = append(rv.NewFacts, recRef(e))
+			}
+		}
+		v.Review = rv
+	}
+	v.Presentation = p
+	return v
+}
+
+// nextStepName — имя следующего шага при «Принять» (не шлюз, с именем); на
+// развилке — ветка «годно» (decision == 'accept' или test.result == 'tight'), если она есть.
+func (m *Model) nextStepName(n *BpmnNode) *string {
+	byID := map[string]*BpmnNode{}
+	for _, x := range m.Bpmn {
+		byID[x.ID] = x
+	}
+	seen := map[string]bool{n.ID: true}
+	next := func(x *BpmnNode) []string {
+		for id, c := range x.Cond {
+			if strings.Contains(c, "'accept'") || strings.Contains(c, "'tight'") {
+				return []string{id}
+			}
+		}
+		return slices.Clone(x.Next)
+	}
+	queue := next(n)
+	for len(queue) > 0 {
+		id := queue[0]
+		queue = queue[1:]
+		x := byID[id]
+		if x == nil || seen[id] {
+			continue
+		}
+		seen[id] = true
+		if !strings.HasSuffix(x.Type, "Gateway") && !strings.HasSuffix(x.Type, "Event") && x.Name != "" {
+			return ptr(x.Name)
+		}
+		queue = append(queue, next(x)...)
+	}
+	return nil
 }
 
 // lateArrival — что пришло после решения, словами: журнал оборудования

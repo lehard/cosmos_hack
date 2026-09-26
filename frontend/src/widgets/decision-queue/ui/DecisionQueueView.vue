@@ -7,10 +7,13 @@
  * по сроку — считает сервер: группы идут в порядке первой своей строки, строки
  * внутри — как прислал сервер; «пересмотреть решение — пришли новые данные» —
  * всегда первой: изделие может уйти дальше по маршруту на прежнем решении.
- * В строке — суть (`reason`: вид дефекта и место), иначе заголовок сервера. Щелчок или Enter по строке — открыть запись в
+ * В строке — суть (`reason`: вид дефекта и место), иначе заголовок сервера.
+ * Сначала исключения: сверху сводка, пересмотры — крупными блоками, плановая
+ * приёмка на точках предъявления свёрнута (раскрывается по кнопке или когда
+ * открыта её строка). Щелчок или Enter по строке — открыть запись в
  * правом окне (Д-70). Работа с клавиатуры: ↑/↓ — соседняя строка сквозь группы.
  */
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { NRadioButton, NRadioGroup } from 'naive-ui'
 import { QUEUE_GROUP_TEXT, SEVERITY_TEXT, codeText, deadlineOf, rowKey, type DecisionQueueRow, type QueueSort } from '@/entities/nonconformity'
@@ -56,8 +59,16 @@ const groups = computed(() => {
   const list = [...map.values()].map((g) => ({ ...g, overdue: g.items.filter((x) => x.overdue).length }))
   return [...list.filter((g) => g.kind === 'review'), ...list.filter((g) => g.kind !== 'review')]
 })
-/** Строки в порядке показа — для ↑/↓ сквозь группы. */
-const flat = computed(() => groups.value.flatMap((g) => g.items))
+/** Плановая приёмка — рутина: свёрнута, пока её не раскрыли или не открыли её строку. */
+const routineOpen = ref(false)
+const isOpen = (g: { kind: DecisionQueueRow['kind']; items: Item[] }) => g.kind !== 'presentation' || routineOpen.value || g.items.some((x) => x.key === props.selected)
+/** Сводка: сколько на пересмотр, по отклонениям, плановых приёмок. */
+const summary = computed(() => {
+  const count = (kinds: DecisionQueueRow['kind'][]) => props.rows.filter((r) => kinds.includes(r.kind)).length
+  return { review: count(['review']), deviations: count(['signal', 'isolated']), routine: count(['presentation']) }
+})
+/** Строки в порядке показа (только раскрытые группы) — для ↑/↓ сквозь группы. */
+const flat = computed(() => groups.value.filter(isOpen).flatMap((g) => g.items))
 
 function move(delta: number): void {
   if (!flat.value.length) return
@@ -76,18 +87,34 @@ function move(delta: number): void {
       </NRadioGroup>
       <span class="hint" data-testid="open-hint">{{ t('widgets.decisionQueue.openHint') }}</span>
     </div>
+    <p class="summary ant-wrap" data-testid="queue-summary">
+      <span v-if="summary.review" class="summary-urgent">{{ t('widgets.decisionQueue.summary.review', { n: summary.review }, summary.review) }}</span>
+      <span v-if="summary.deviations">{{ t('widgets.decisionQueue.summary.deviations', { n: summary.deviations }, summary.deviations) }}</span>
+      <span v-if="summary.routine">{{ t('widgets.decisionQueue.summary.routine', { n: summary.routine }, summary.routine) }}</span>
+    </p>
     <div class="groups" tabindex="0" :aria-label="t('desks.decisionQueue')" data-testid="queue-groups" @keydown.down.prevent="move(1)" @keydown.up.prevent="move(-1)">
       <section v-for="g in groups" :key="g.kind" class="group" :data-group="g.kind">
         <h4 class="group-title">
           <span class="ant-ellipsis">{{ t(QUEUE_GROUP_TEXT[g.kind]) }}</span>
           <span class="count" data-testid="group-count">{{ g.items.length }}</span>
           <span v-if="g.overdue" class="overdue-count" data-testid="group-overdue">{{ t('widgets.decisionQueue.overdueCount', { n: g.overdue }) }}</span>
+          <button
+            v-if="g.kind === 'presentation'"
+            type="button"
+            class="toggle"
+            data-testid="toggle-routine"
+            :aria-expanded="isOpen(g)"
+            @click="routineOpen = !isOpen(g)"
+          >
+            {{ isOpen(g) ? t('widgets.decisionQueue.hideRoutine') : t('widgets.decisionQueue.showRoutine') }}
+          </button>
         </h4>
-        <ol class="rows">
+        <ol v-if="isOpen(g)" class="rows">
           <li
             v-for="{ row, key, overdue, due } in g.items"
             :key="key"
             class="row"
+            :class="{ hero: row.kind === 'review' }"
             :data-key="key"
             :data-kind="row.kind"
             :data-severity="row.severity"
@@ -97,6 +124,7 @@ function move(delta: number): void {
             @click="emit('select', row)"
             @keydown.enter.prevent="emit('select', row)"
           >
+            <p v-if="row.kind === 'review'" class="hero-kicker ant-wrap">{{ t('widgets.decisionQueue.heroKicker') }}</p>
             <div class="line head">
               <strong class="item">{{ row.item_label }}</strong>
               <span class="title ant-ellipsis" :title="row.reason ?? row.title" data-testid="row-title">{{ row.reason ?? row.title }}</span>
@@ -110,6 +138,7 @@ function move(delta: number): void {
             <div v-if="row.reason && row.kind === 'review'" class="line meta">
               <span class="ant-clamp-2" :title="row.title">{{ row.title }}</span>
             </div>
+            <p v-if="row.kind === 'review'" class="hero-action">{{ t('widgets.decisionQueue.heroAction') }} →</p>
           </li>
         </ol>
       </section>
@@ -154,6 +183,58 @@ function move(delta: number): void {
   flex-direction: column;
   gap: var(--ant-space-2);
   min-width: 0;
+}
+
+.summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ant-space-1) var(--ant-space-4);
+  margin: 0;
+  color: var(--ant-text-2);
+}
+
+.summary-urgent {
+  color: var(--ant-status-danger-text);
+  font-weight: var(--ant-fw-bold);
+}
+
+.toggle {
+  margin-left: auto;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ant-accent);
+  font: inherit;
+  text-transform: none;
+  letter-spacing: 0;
+  cursor: pointer;
+}
+
+/* Пересмотр — крупный блок: изменились данные после принятого решения. */
+.row.hero {
+  padding: var(--ant-space-3) var(--ant-space-4);
+  border-color: var(--ant-status-attention);
+  border-left: 4px solid var(--ant-status-attention);
+  background: var(--ant-status-attention-soft);
+}
+
+.row.hero .item {
+  font-size: var(--ant-fs-title);
+}
+
+.hero-kicker {
+  margin: 0 0 var(--ant-space-1);
+  color: var(--ant-status-attention-text);
+  font-size: var(--ant-fs-meta);
+  font-weight: var(--ant-fw-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.hero-action {
+  margin: var(--ant-space-1) 0 0;
+  color: var(--ant-accent);
+  font-weight: var(--ant-fw-bold);
 }
 
 .group-title {

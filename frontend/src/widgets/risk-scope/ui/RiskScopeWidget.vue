@@ -14,8 +14,10 @@ import { routerKey } from 'vue-router'
 import { scopeState, useAnalysisCommands, useAnalysisFocusStore, useCan } from '@/entities/incident'
 import type { WidgetProps } from '@/shared/config/widget'
 import { useProblemText } from '@/shared/i18n/problem'
+import { useRecordLink } from '@/shared/model/record'
 import { WidgetFrame } from '@/shared/ui'
 import { useRiskScopeSource } from '../model/source'
+import AuthorName from './AuthorName.vue'
 import RiskScopeView from './RiskScopeView.vue'
 
 defineProps<WidgetProps>()
@@ -48,8 +50,11 @@ function change(kind: 'narrow' | 'expand', input: { item_ids: string[]; reason: 
   else cmd.expandScope.mutate({ incidentId, body })
 }
 
-/** Изделие → паспорт изделия (FR-7). */
-const openItem = (id: string) => router?.push({ name: 'item', params: { id } })
+/** Изделие → окно изделия (Д-70); без окна (тест виджета) — страница паспорта (FR-7). */
+const record = useRecordLink()
+const openItem = (id: string) => record.open({ entity: 'item', id }) || router?.push({ name: 'item', params: { id } })
+/** Автор версии → окно человека. */
+const openPerson = (id: string) => record.open({ entity: 'person', id })
 
 const pick = (e: Event) => (focus.incidentId = (e.target as HTMLSelectElement).value || null)
 </script>
@@ -86,7 +91,9 @@ const pick = (e: Event) => (focus.incidentId = (e.target as HTMLSelectElement).v
       @narrow="(input) => change('narrow', input)"
       @expand="(input) => change('expand', input)"
       @open-item="openItem"
-    />
+    >
+      <template #author="{ id }"><AuthorName :id="id" @open="openPerson" /></template>
+    </RiskScopeView>
   </WidgetFrame>
 </template>
 

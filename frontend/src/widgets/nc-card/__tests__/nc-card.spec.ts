@@ -190,6 +190,14 @@ describe('карточка несоответствия', () => {
     expect(d).not.toContain('Запись журнала')
   })
 
+  it('в первом слое — «изделие сейчас» одной строкой; пять осей — по кнопке «Технические статусы»', async () => {
+    const w = mountCard()
+    expect(w.find('[data-testid="item-now"]').text()).toContain('Изделие сейчас')
+    expect(w.find('[data-testid="final-status"]').exists()).toBe(false)
+    await w.find('[data-testid="toggle-axes"]').trigger('click')
+    expect(w.findAll('[data-testid="final-status"] .status-tag')).toHaveLength(5)
+  })
+
   it('срок решения: обратный отсчёт и просрочка (FR-55)', () => {
     expect(norm(mountCard().find('[data-testid="deadline"]').text())).toBe('Осталось 37 мин')
     const late = mountCard({}, { now: Date.parse(at('12:37')) })
@@ -207,7 +215,7 @@ describe('карточка несоответствия', () => {
     expect(w.find('.number').exists()).toBe(false)
     expect(w.find('[data-testid="open-item"]').exists()).toBe(false)
     expect(norm(w.find('[data-testid="deadline"]').text())).toBe('Осталось 37 мин')
-    // Кнопки решения — только в нижней панели окна; здесь лишь «прежние версии» и «подробности».
-    expect(w.findAll('button').map((b) => b.attributes('data-testid')).sort()).toEqual(['toggle-details', 'toggle-previous'])
+    // Кнопки решения — только в нижней панели окна; здесь лишь раскрытие подробностей.
+    expect(w.findAll('button').map((b) => b.attributes('data-testid')).sort()).toEqual(['toggle-axes', 'toggle-details', 'toggle-previous'])
   })
 })

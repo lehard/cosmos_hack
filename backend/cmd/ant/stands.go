@@ -55,6 +55,15 @@ func runStands(ctx context.Context, env *environment) error {
 	}
 	reg.Add(st)
 	reg.Add(onecstand.Alias(st))
+	// Эпик 37 (FR-82): stand СКУД — турникеты зон цехов, журнал проходов
+	// skud.v1 под /stand/skud/api/v1/, страница с кнопками проходов /stand/skud/.
+	if skudEnabled(env) {
+		ss, err := skudStandOf()
+		if err != nil {
+			return err
+		}
+		reg.Add(ss)
+	}
 	if edge := strings.TrimSpace(sc.EdgeURL); edge != "" {
 		iv := sc.Interval
 		if iv <= 0 {

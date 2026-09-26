@@ -297,6 +297,8 @@ func (s *State) body(d *Doc, env Env) (map[string]any, []Ref, []Signature) {
 		return s.ncStatementBody(d)
 	case DocNCDisposition:
 		return s.dispositionBody(d)
+	case DocEventRecord:
+		return s.eventBody(d)
 	default:
 		b, src := genericBody(d)
 		return b, src, nil

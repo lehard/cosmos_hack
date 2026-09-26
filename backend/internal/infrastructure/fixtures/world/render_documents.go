@@ -86,6 +86,12 @@ type wver struct {
 	AnnulReason string
 }
 
+// wrow — строка журнала документа с моментом появления.
+type wrow struct {
+	At  time.Time
+	Row map[string]any
+}
+
 // wfield — поле содержимого: путь в content (как в шаблоне) и значение.
 type wfield struct{ Key, Label, Value string }
 
@@ -99,6 +105,8 @@ type wdoc struct {
 	Fields              []wfield
 	// Rows — строки таблиц (сопроводительная карта: операции и несоответствия) на момент.
 	Rows func(c *Ctx) map[string][]map[string]any
+	// Table — строки журнала документа по триггеру (rows), видимые к моменту — по полю at_time.
+	Table []wrow
 	// Live — сопроводительная карта собирается из истории, версия не зафиксирована.
 	Live     bool
 	LiveFrom time.Time
@@ -146,8 +154,9 @@ func (m *Model) documents() []*wdoc {
 	}{{"DOC-IIA-LOT-ZF-201", "LOT-ZF-201", "ЗФ-201", "С-201", 17, "42"}, {"DOC-IIA-LOT-R-117", "LOT-R-117", "П-117", "С-117", 22, "10"}} {
 		add(flange(&wdoc{ID: l.id, Template: "incoming-inspection-act", Title: "Акт входного контроля партии " + l.label,
 			Subject: platform.DrillRef{Entity: platform.EntityLot, ID: l.lot}, SubjectLabel: "Партия " + l.label,
-			Fields: []wfield{{"lot.label", "Партия", l.label}, {"lot.qty", "Количество", l.qty + " шт."}, {"lot.certificate", "Сертификат", l.cert},
-				{"inspection.result", "Результат", "Принята"}, {"inspection.inspector", "Контролёр ВК", "INS-02"}, {"inspection.at", "Дата", fmt.Sprintf("%02d.09.2026 10:55", l.day)}},
+			Fields: []wfield{{"subject", "Партия", "Партия " + l.label + ", " + l.qty + " шт."}, {"decision", "Заключение", "Принята, соответствует КД и сертификату"},
+				{"comment", "Результаты контроля", "Внешний осмотр, размеры по выборке, сертификат проверен"}, {"sources", "Сертификат, протоколы", "Сертификат " + l.cert},
+				{"requested_by", "Контролёр ВК", "INS-02"}, {"requested_at", "Дата", fmt.Sprintf("%02d.09.2026 10:55", l.day)}},
 			Versions: []wver{{At: at(l.day, 10, 50), Stages: []wstage{
 				{Title: "Контролёр входного контроля", Role: "quality_inspector", Authority: "qc_acceptance", Level: 2, Paper: true, Sig: sig("INS-02", at(l.day, 10, 55), keyBrowser)},
 				{Title: "Мастер склада — приёмка на хранение", Role: "site_foreman", Authority: "site_foreman", Level: 2, Who: []string{"FOR-SK"}, Sig: sig("FOR-SK", at(l.day, 11, 0), keyHW)},
@@ -155,8 +164,8 @@ func (m *Model) documents() []*wdoc {
 	}
 	add(flange(&wdoc{ID: "DOC-LBL-LOT-R-117", Template: "lot-conformity-label", Title: "Ярлык несоответствия партии П-117",
 		Subject: platform.DrillRef{Entity: platform.EntityLot, ID: "LOT-R-117"}, SubjectLabel: "Партия П-117",
-		Fields: []wfield{{"lot.label", "Партия", "П-117"}, {"label.kind", "Ярлык", "Несоответствие — в изолятор, к возврату поставщику"},
-			{"label.basis", "Основание", "НС-05: пора в теле кольца К-105 (РК-0923-11)"}, {"label.qr", "QR", "ant:lot:LOT-R-117"}},
+		Fields: []wfield{{"subject", "Партия", "Партия П-117 (кольца К-101…К-110)"}, {"decision", "Ярлык", "Несоответствие — в изолятор, к возврату поставщику"},
+			{"comment", "Основание", "НС-05: пора в теле кольца К-105 (РК-0923-11)"}, {"requested_by", "Контролёр", "INS-02"}, {"requested_at", "Дата", "23.09.2026 14:56"}},
 		Versions: []wver{{At: at(23, 14, 55), Stages: []wstage{
 			{Title: "Контролёр ОТК", Role: "quality_inspector", Authority: "qc_acceptance", Level: 2, Sig: sig("INS-02", at(23, 14, 56), keyBrowser)},
 		}}}}))
@@ -198,6 +207,14 @@ func (m *Model) documents() []*wdoc {
 	}
 
 	disp := func(id, nc, number, title, decision string, items []string, fields []wfield, v wver) {
+		// Поля разметки решения, которых у решения нет, — «—» (AD-12: разметка шаблона целиком).
+		for _, f := range []wfield{{"item.item_id", "Изделие", dom.Empty}, {"nc.requirement", "Требование", "ТП ФЛ-100.00.000 / КД ФЛ-100.00.000 СБ"},
+			{"nc.severity", "Значимость", "major"}, {"decision.scrap_kind", "Вид списания", dom.Empty}, {"decision.concession", "Разрешение на отклонение", dom.Empty},
+			{"decision.claim", "Основание претензии", dom.Empty}} {
+			if !slices.ContainsFunc(fields, func(x wfield) bool { return x.Key == f.Key }) {
+				fields = append(fields, f)
+			}
+		}
 		add(flange(&wdoc{ID: id, Template: dom.TemplateNCDisposition, Title: title, Subject: platform.DrillRef{Entity: platform.EntityNonconformity, ID: nc},
 			SubjectLabel: number, Items: items, Fields: append([]wfield{{"nc.number", "Несоответствие", number}, {"decision.label", "Решение", decision}}, fields...),
 			Versions: []wver{v}}))
@@ -255,9 +272,10 @@ func (m *Model) documents() []*wdoc {
 	// Разрешение на отклонение по Ф-019 — держатель КД вернул с замечанием.
 	add(flange(&wdoc{ID: "DOC-CONC-NC-04", Template: "concession", Title: "Разрешение на отклонение: пора в теле кольца К-101 (Ф-019)",
 		Subject: platform.DrillRef{Entity: platform.EntityNonconformity, ID: "NC-04"}, SubjectLabel: "НС-04", Items: f("F-019"),
-		Fields: []wfield{{"nc.number", "Несоответствие", "НС-04"}, {"item.item_id", "Изделие", "Ф-019 (кольцо К-101)"},
-			{"concession.requirement", "Требование КД", "ФЛ-100.01.002: тело кольца без пор"}, {"concession.deviation", "Отклонение", "Одиночная пора Ø0,4 мм в теле кольца"},
-			{"concession.scope", "На что распространяется", "Одно изделие Ф-019"}, {"requested_by", "Запросил", "TEC-01"}},
+		Fields: []wfield{{"item.item_id", "Изделие", "Ф-019 (кольцо К-101)"}, {"item.item_type_id", "Обозначение ДСЕ", flangeType}, {"data.nc_id", "Несоответствие", "НС-04"},
+			{"data.disposition", "Решение", "«Как есть»: одиночная пора Ø0,4 мм в теле кольца при требовании КД ФЛ-100.01.002 «без пор»"},
+			{"data.concession_id", "Номер разрешения", "РО-0923-01"}, {"data.reason", "Основание", "Пора вне зоны шва, прочность по расчёту обеспечена; на одно изделие Ф-019"},
+			{"event.actor", "Инициатор", "TEC-01"}, {"event.at", "Дата", "23.09.2026 14:00"}},
 		Versions: []wver{{At: at(23, 14, 0), Declines: []wdecline{{Stage: 2, Person: "DA-81", At: at(23, 14, 30),
 			Comment: "Пора в теле кольца вне допуска КД ФЛ-100.01.002; отклонение не согласовано — кольцо заменить"}}, Stages: []wstage{
 			{Title: "Технолог — инициатор", Role: "technologist", Authority: "nc_disposition", Level: 2, Sig: sig("TEC-01", at(23, 14, 2), keyHW)},
@@ -279,9 +297,11 @@ func (m *Model) documents() []*wdoc {
 	// Акты о браке: групповой (переделка ×6) закрыт; Ф-021 — напечатан, ждёт подписи ручкой.
 	add(flange(&wdoc{ID: "DOC-ACT-NC-G1", Template: "scrap-act", Title: "Акт о браке (исправимый) на 6 изделий, НС-И1",
 		Subject: platform.DrillRef{Entity: platform.EntityNonconformity, ID: "NC-G1"}, SubjectLabel: "НС-И1", Items: f("F-015", "F-017", "F-019", "F-021", "F-023", "F-025"),
-		Fields: []wfield{{"nc.number", "Несоответствие", "НС-И1"}, {"act.items", "Изделия", "Ф-015, Ф-017, Ф-019, Ф-021, Ф-023, Ф-025"}, {"act.kind", "Вид брака", "Исправимый — переделка"},
-			{"act.cause", "Причина", "Сварка вне режима ТП: дрейф регулятора тока ИС-2"}, {"act.culprit", "Виновник", "Оборудование ИС-2 (ошибок сварщиков — 0)"},
-			{"act.erp", "Проводка 1С", "Перевод в брак (переделка) OUT-000127"}},
+		Fields: []wfield{{"item.item_id", "Изделие", "Ф-015, Ф-017, Ф-019, Ф-021, Ф-023, Ф-025"}, {"item.item_type_id", "Обозначение ДСЕ", flangeType},
+			{"item.order_id", "Задание", "ЗП-0917"}, {"item.lots", "Партии", "ЗФ-201, П-116, П-117"}, {"data.nc_id", "Несоответствие", "НС-И1"},
+			{"data.disposition", "Решение", "Переделка ×6"}, {"data.scrap_kind", "Вид брака", "Исправимый — переделка"}, {"data.claim_basis", "Основание претензии", "Нет: причина — оборудование ИС-2 (ошибок сварщиков — 0)"},
+			{"data.reason", "Основание", "Сварка вне режима ТП: дрейф регулятора тока ИС-2; 1С — перевод в брак (переделка) OUT-000127"},
+			{"event.actor", "Решение принял", "TEC-01 (комиссия)"}, {"event.at", "Дата решения", "23.09.2026 15:30"}},
 		Versions: []wver{{At: at(23, 15, 31), Stages: []wstage{
 			{Title: "Контролёр ОТК", Role: "quality_inspector", Authority: "qc_acceptance", Level: 2, Paper: true, Sig: sig("INS-01", at(23, 15, 33), keyHW)},
 			{Title: "Начальник ОТК", Role: "head_of_qc", Authority: "nc_disposition", Level: 2, Paper: true, Sig: sig("HQC-01", at(23, 15, 40), keyHW)},
@@ -289,8 +309,11 @@ func (m *Model) documents() []*wdoc {
 		}}}}))
 	add(flange(&wdoc{ID: "DOC-ACT-NC-06", Template: "scrap-act", Title: "Акт о браке Ф-021 (окончательный), НС-06",
 		Subject: platform.DrillRef{Entity: platform.EntityNonconformity, ID: "NC-06"}, SubjectLabel: "НС-06", Items: f("F-021"),
-		Fields: []wfield{{"nc.number", "Несоответствие", "НС-06"}, {"act.items", "Изделия", "Ф-021"}, {"act.kind", "Вид брака", "Окончательный — списание"},
-			{"act.cause", "Причина", "Пористость нового шва после переварки"}, {"act.erp", "Проводка 1С", "Перевод в брак (списание) OUT-000135"}},
+		Fields: []wfield{{"item.item_id", "Изделие", "Ф-021"}, {"item.item_type_id", "Обозначение ДСЕ", flangeType}, {"item.order_id", "Задание", "ЗП-0917"},
+			{"item.lots", "Партии", "ЗФ-201, П-116"}, {"data.nc_id", "Несоответствие", "НС-06"}, {"data.disposition", "Решение", "Списать"},
+			{"data.scrap_kind", "Вид брака", "Окончательный — списание"}, {"data.claim_basis", "Основание претензии", "Нет"},
+			{"data.reason", "Основание", "Пористость нового шва после переварки; 1С — перевод в брак (списание) OUT-000135"},
+			{"event.actor", "Решение принял", "CWL-01"}, {"event.at", "Дата решения", "24.09.2026 15:30"}},
 		Versions: []wver{{At: at(24, 15, 35), Paper: []wpaper{{Status: "printed", At: at(24, 16, 0), CopyNo: "1"}}, Stages: []wstage{
 			{Title: "Контролёр ОТК", Role: "quality_inspector", Authority: "qc_acceptance", Level: 2, Paper: true, Sig: sig("INS-01", at(24, 15, 40), keyBrowser)},
 			{Title: "Начальник ОТК", Role: "head_of_qc", Authority: "nc_disposition", Level: 2, Paper: true},
@@ -300,24 +323,30 @@ func (m *Model) documents() []*wdoc {
 	// Журнал изолятора, запись вмешательства, маршрутный лист.
 	add(flange(&wdoc{ID: "DOC-ISO-NC-01", Template: "isolator-log", Title: "Журнал изолятора: Ф-017 помещён (НС-01)",
 		Subject: platform.DrillRef{Entity: platform.EntityNonconformity, ID: "NC-01"}, SubjectLabel: "НС-01", Items: f("F-017"),
-		Fields: []wfield{{"isolator.item", "Изделие", "Ф-017"}, {"isolator.place", "Место", "Изолятор сварочного цеха, ячейка 3"}, {"isolator.basis", "Основание", "НС-01"},
-			{"isolator.in_at", "Помещено", "23.09.2026 11:20"}, {"isolator.by", "Кто поместил", "INS-01"}},
+		Fields: []wfield{{"item.item_id", "Изделие", "Ф-017"}, {"item.item_type_id", "Обозначение ДСЕ", flangeType}, {"data.isolator_location_id", "Место", "Изолятор сварочного цеха, ячейка 3"},
+			{"data.reason", "Основание", "НС-01: прожог У2"}, {"data.decision_due_at", "Решение до", "23.09.2026 17:00"}, {"event.at", "Дата", "23.09.2026 11:20"}, {"event.actor", "Кто", "INS-01"}},
+		Table: []wrow{{at(23, 11, 20), trow(1, at(23, 11, 20), "decision.item.isolated", "КТ-3 камера", "INS-01", "Помещён в изолятор, ячейка 3")},
+			{at(23, 15, 30), trow(2, at(23, 15, 30), "decision.containment.released", "ЗТ-3", "HQC-01", "Выдан на переделку по решению НС-И1")}},
 		Versions: []wver{{At: at(23, 11, 20), Stages: []wstage{
 			{Title: "Контролёр ОТК", Role: "quality_inspector", Authority: "qc_acceptance", Level: 2, Sig: sig("INS-01", at(23, 11, 21), keyHW)},
 		}}}}))
 	add(flange(&wdoc{ID: "DOC-INT-F-015", Template: "intervention-record", Title: "Запись вмешательства: вскрытие Ф-015",
 		Subject: platform.DrillRef{Entity: platform.EntityItem, ID: FullID("F-015")}, SubjectLabel: "Ф-015", Items: f("F-015"),
-		Fields: []wfield{{"intervention.item", "Изделие", "Ф-015"}, {"intervention.zone", "Зона", "S-1 канавка уплотнения"},
-			{"intervention.what", "Что сделано", "Уплотнение снято; крышку и крепёж не ставили"}, {"intervention.reason", "Основание", "Пересмотр ЗТ-3 (журнал ИС-2 неполон)"},
-			{"intervention.opened_at", "Вскрыто", "23.09.2026 15:50"}, {"intervention.by", "Кто вскрыл", "FOR-AC"}},
+		Fields: []wfield{{"item.item_id", "Изделие", "Ф-015"}, {"item.item_type_id", "Обозначение ДСЕ", flangeType}, {"data.intervention_id", "Вмешательство", "INT-015-1"},
+			{"data.zone_ids", "Зоны", "S-1 канавка уплотнения"}, {"data.purpose", "Цель", "Возврат в сварку по пересмотру ЗТ-3 (журнал ИС-2 неполон)"},
+			{"data.removed_components", "Снятые компоненты", "Уплотнение УП-401; крышку и крепёж не ставили"}, {"event.at", "Дата", "23.09.2026 15:50"}, {"event.actor", "Кто", "FOR-AC"}},
+		Table: []wrow{{at(23, 15, 50), trow(1, at(23, 15, 50), "item.intervention.opened", "Сборка", "FOR-AC", "Уплотнение снято")},
+			{at(23, 16, 0), trow(2, at(23, 16, 0), "item.intervention.closed", "Сборка", "INS-02", "Зона S-1 осмотрена, повторная проверка — после переварки")}},
 		Versions: []wver{{At: at(23, 15, 50), Stages: []wstage{
 			{Title: "Мастер участка — вскрытие", Role: "site_foreman", Authority: "site_foreman", Level: 2, Who: []string{"FOR-AC"}, Sig: sig("FOR-AC", at(23, 15, 51), keyHW)},
 			{Title: "Контролёр ОТК — осмотр зоны", Role: "quality_inspector", Authority: "qc_acceptance", Level: 2, Sig: sig("INS-02", at(23, 16, 0), keyBrowser)},
 		}}}}))
 	add(flange(&wdoc{ID: "DOC-RS-F-015", Template: "route-sheet", Title: "Маршрутный лист: Ф-015 из сборочного цеха в сварочный",
 		Subject: platform.DrillRef{Entity: platform.EntityItem, ID: FullID("F-015")}, SubjectLabel: "Ф-015", Items: f("F-015"),
-		Fields: []wfield{{"route.item", "Изделие", "Ф-015"}, {"route.from", "Откуда", "Сборочно-испытательный цех"}, {"route.to", "Куда", "Сварочный цех"},
-			{"route.reason", "Причина", "Возврат в сварку по пересмотру ЗТ-3"}, {"route.erp", "Проводка 1С", "OUT-000129"}},
+		Fields: []wfield{{"item.item_id", "Изделие", "Ф-015"}, {"item.item_type_id", "Обозначение ДСЕ", flangeType}, {"data.from_location_id", "Откуда", "Сборочно-испытательный цех (WS-AC)"},
+			{"data.to_location_id", "Куда", "Сварочный цех (WS-WC)"}, {"data.container_id", "Тара", "Тележка Т-4"}, {"event.at", "Дата", "23.09.2026 16:00"}, {"event.actor", "Кто", "FOR-AC"}},
+		Table: []wrow{{at(23, 16, 0), trow(1, at(23, 16, 0), "operation.movement.sent", "Передача в сварку", "FOR-AC", "WS-AC → WS-WC; 1С OUT-000129")},
+			{at(23, 16, 10), trow(2, at(23, 16, 10), "operation.movement.received", "Передача в сварку", "FOR-WC", "Принят сварочным цехом")}},
 		Versions: []wver{{At: at(23, 16, 0), Stages: []wstage{
 			{Title: "Мастер — передал", Role: "site_foreman", Authority: "site_foreman", Level: 2, Who: []string{"FOR-AC"}, Sig: sig("FOR-AC", at(23, 16, 0), keyHW)},
 			{Title: "Мастер — принял", Role: "site_foreman", Authority: "site_foreman", Level: 2, Who: []string{"FOR-WC"}, Sig: sig("FOR-WC", at(23, 16, 10), keyHW)},
@@ -329,24 +358,28 @@ func (m *Model) documents() []*wdoc {
 			Items: f("F-001"), Fields: fields, Versions: []wver{v}}))
 	}
 	f001("DOC-PRES-F-001", "customer-presentation-notice", "Извещение о предъявлении ВП: Ф-001",
-		[]wfield{{"item.item_id", "Изделие", "Ф-001"}, {"presentation.what", "Что предъявляется", "Фланец люка в сборе ФЛ-100.00.000, приёмо-сдаточные испытания пройдены"},
-			{"presentation.otk", "Принято ОТК", "ЗТ-6, INS-02"}, {"presentation.at", "Предъявлено", "23.09.2026 09:42"}},
+		[]wfield{{"item.item_id", "Изделие", "Ф-001"}, {"item.item_type_id", "Обозначение ДСЕ", flangeType}, {"item.order_id", "Задание", "ЗП-0917"}, {"item.lots", "Партии", "ЗФ-201, П-116"},
+			{"data.step_key", "Точка приёмки", "ЗТ-6 — приёмка ВП, приёмо-сдаточные испытания пройдены"}, {"data.presentation_no", "Предъявление №", "1"},
+			{"data.presented_by", "Предъявил", "FOR-AC"}, {"event.at", "Дата предъявления", "23.09.2026 09:42"}},
 		wver{At: at(23, 9, 40), Stages: []wstage{
 			{Title: "Мастер — предъявил", Role: "site_foreman", Authority: "site_foreman", Level: 2, Who: []string{"FOR-AC"}, Sig: sig("FOR-AC", at(23, 9, 42), keyHW)},
 			{Title: "ОТК — принято", Role: "quality_inspector", Authority: "qc_acceptance", Level: 2, Sig: sig("INS-02", at(23, 9, 50), keyBrowser)},
 			{Title: "Представитель заказчика — заключение", Role: "customer_representative", Authority: "customer_acceptance", Level: 2, Paper: true, Sig: sig("CR-71", at(23, 10, 10), keyHW)},
 		}})
 	f001("DOC-CERT-F-001", "acceptance-certificate", "Свидетельство о приёмке Ф-001",
-		[]wfield{{"item.item_id", "Изделие", "Ф-001"}, {"certificate.conclusion", "Заключение", "Изготовлен и принят в соответствии с КД и ТУ, годен к эксплуатации"},
-			{"certificate.otk", "Контролёр ОТК", "INS-02"}, {"certificate.customer", "Представитель заказчика", "CR-71"}},
+		[]wfield{{"item.item_id", "Изделие", "Ф-001 — изготовлен и принят в соответствии с КД и ТУ, годен к эксплуатации"}, {"item.item_type_id", "Обозначение ДСЕ", flangeType},
+			{"item.order_id", "Задание", "ЗП-0917"}, {"item.lots", "Партии", "ЗФ-201, П-116, КР-301, УП-401, КП-501"}, {"data.warehouse_id", "Склад", "Склад готовой продукции СГП-1"},
+			{"data.received_by", "Принял на склад", "STK-51"}, {"data.after_rework", "После переделки", "нет"}, {"data.concession_id", "Разрешение на отклонение", "нет"},
+			{"event.at", "Дата выпуска", "23.09.2026 10:30"}},
 		wver{At: at(23, 10, 15), Paper: []wpaper{{Status: "printed", At: at(23, 10, 18), CopyNo: "1"}, {Status: "signed", At: at(23, 10, 25), CopyNo: "1"}}, Stages: []wstage{
 			{Title: "Контролёр ОТК", Role: "quality_inspector", Authority: "qc_acceptance", Level: 2, Paper: true, Sig: sig("INS-02", at(23, 10, 17), keyBrowser)},
 			{Title: "Представитель заказчика", Role: "customer_representative", Authority: "customer_acceptance", Level: 2, Paper: true,
 				Sig: &wsig{Person: "CR-71", At: at(23, 10, 25), Method: dom.MethodPaper, Attester: "HQC-01", PaperNo: "ОТК-А-0923-001"}},
 		}})
 	f001("DOC-PASS-F-001", "passport", "Паспорт изделия Ф-001",
-		[]wfield{{"item.item_id", "Изделие", "Ф-001"}, {"passport.type", "Обозначение", "ФЛ-100.00.000 СБ, изм. Б"}, {"passport.order", "Задание", "ЗП-0917"},
-			{"passport.release", "Выпуск", "23.09.2026 10:30, 1С «Выпуск годного»"}},
+		[]wfield{{"item.item_id", "Изделие", "Ф-001"}, {"item.item_type_id", "Обозначение ДСЕ", "ФЛ-100.00.000 СБ, изм. Б"}, {"item.order_id", "Задание", "ЗП-0917"},
+			{"item.lots", "Партии", "ЗФ-201, П-116, КР-301, УП-401, КП-501"}, {"data.warehouse_id", "Склад", "СГП-1; 1С «Выпуск годного» № 0000-000120"},
+			{"data.after_rework", "После переделки", "нет"}, {"event.at", "Дата выпуска", "23.09.2026 10:30"}},
 		wver{At: at(23, 10, 26), Stages: []wstage{
 			{Title: "Начальник ОТК", Role: "head_of_qc", Authority: "qc_acceptance", Level: 2, Paper: true, Sig: sig("HQC-01", at(23, 10, 28), keyHW)},
 			{Title: "Представитель заказчика", Role: "customer_representative", Authority: "customer_acceptance", Level: 2, Paper: true, Sig: sig("CR-71", at(23, 10, 30), keyHW)},
@@ -355,8 +388,9 @@ func (m *Model) documents() []*wdoc {
 	// Ф-017 после переделки предъявлен ВП повторно — ждёт заключения представителя заказчика.
 	add(flange(&wdoc{ID: "DOC-PRES-F-017", Template: "customer-presentation-notice", Title: "Извещение о предъявлении ВП: Ф-017 после переделки",
 		Subject: platform.DrillRef{Entity: platform.EntityItem, ID: FullID("F-017")}, SubjectLabel: "Ф-017", Items: f("F-017"),
-		Fields: []wfield{{"item.item_id", "Изделие", "Ф-017"}, {"presentation.what", "Что предъявляется", "Шов W-1 после переварки по решению НС-И1, повторная ЗТ-3 пройдена"},
-			{"presentation.otk", "Принято ОТК", "ЗТ-3 повторно, INS-01"}, {"presentation.at", "Предъявлено", "24.09.2026 16:10"}},
+		Fields: []wfield{{"item.item_id", "Изделие", "Ф-017"}, {"item.item_type_id", "Обозначение ДСЕ", flangeType}, {"item.order_id", "Задание", "ЗП-0917"}, {"item.lots", "Партии", "ЗФ-201, П-116"},
+			{"data.step_key", "Точка приёмки", "ЗТ-3 повторно — шов W-1 после переварки по решению НС-И1"}, {"data.presentation_no", "Предъявление №", "2"},
+			{"data.presented_by", "Предъявил", "FOR-WC"}, {"event.at", "Дата предъявления", "24.09.2026 16:10"}},
 		Versions: []wver{{At: at(24, 16, 5), Stages: []wstage{
 			{Title: "Мастер — предъявил", Role: "site_foreman", Authority: "site_foreman", Level: 2, Who: []string{"FOR-WC"}, Sig: sig("FOR-WC", at(24, 16, 10), keyHW)},
 			{Title: "ОТК — принято", Role: "quality_inspector", Authority: "qc_acceptance", Level: 2, Sig: sig("INS-01", at(24, 16, 20), keyHW)},
@@ -382,6 +416,7 @@ func (m *Model) documents() []*wdoc {
 				{Title: "Мастер участка — итоговая годность", Role: "site_foreman", Authority: "site_foreman", Level: 2, Paper: true, Who: []string{"FOR-AC"}, Sig: sig("FOR-AC", at(23, 10, 28), keyHW)},
 			}}}
 		} else {
+			d.Fields = append(d.Fields, wfield{"final.status", "Итоговая годность", "в работе"}, wfield{"final.at", "Дата", dom.Empty})
 			d.Live, d.LiveFrom = true, it.Launch
 			d.Versions = []wver{{At: it.Launch, Stages: []wstage{
 				{Title: "Контролёр ОТК — итоговая годность", Role: "quality_inspector", Authority: "qc_acceptance", Level: 2, Paper: true},
@@ -563,7 +598,7 @@ func (m *Model) docTemplate(d *wdoc) dom.Template {
 	if !ok {
 		t = dom.Template{ID: d.Template, Title: d.Title, Class: dom.ClassRecord, Version: 1}
 	}
-	if t.Complete() {
+	if t.Complete() && d.covers(t) {
 		return t
 	}
 	fb := t
@@ -574,6 +609,27 @@ func (m *Model) docTemplate(d *wdoc) dom.Template {
 	}
 	fb.Layout = []dom.Section{{Kind: "fields", Title: t.Title, Fields: fields}, {Kind: "route", Title: "Подписи"}}
 	return fb
+}
+
+// covers — у документа мира есть все поля разделов «поля» шаблона: тогда он
+// отрисовывается разметкой нормативного слоя, иначе — своими полями.
+func (d *wdoc) covers(t dom.Template) bool {
+	for _, sec := range t.Layout {
+		if sec.Kind != "fields" {
+			continue
+		}
+		for _, f := range sec.Fields {
+			if !slices.ContainsFunc(d.Fields, func(x wfield) bool { return x.Key == f.Key }) {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+// trow — строка журнала документа по триггеру (rows шаблона event_record).
+func trow(no int, at time.Time, event, step, actor, summary string) map[string]any {
+	return map[string]any{"no": strconv.Itoa(no), "at": dom.FormatTime(at), "event": event, "step": step, "actor": actor, "source": "", "summary": summary}
 }
 
 // setPath — значение по пути через точку в content.
@@ -610,6 +666,15 @@ func (c *Ctx) build(d *wdoc, v wver, no int) (dom.Built, error) {
 		for k, rows := range d.Rows(c) {
 			content[k] = rows
 		}
+	}
+	if len(d.Table) > 0 {
+		rows := []map[string]any{}
+		for _, r := range d.Table {
+			if !r.At.After(c.T) {
+				rows = append(rows, r.Row)
+			}
+		}
+		content["rows"] = rows
 	}
 	approvals := []map[string]any{}
 	for i, s := range v.Stages {

@@ -55,6 +55,11 @@ func (Adapter) Queue(ctx context.Context, f app.QueueFilter, m platform.Moment, 
 	return v, nil
 }
 
+// Presentation — точка предъявления изделия (nonconformity.presentation.read, FR-19).
+func (Adapter) Presentation(ctx context.Context, itemID string, m platform.Moment) (app.NCPresentationView, error) {
+	return respond[app.NCPresentationView](ctx, "nonconformity.presentation.read", map[string]string{"item_id": itemID}, &m)
+}
+
 // Card — карточка несоответствия (nonconformity.card.read, FR-51).
 func (Adapter) Card(ctx context.Context, ncID string, m platform.Moment) (app.NCCard, error) {
 	return respond[app.NCCard](ctx, "nonconformity.card.read", map[string]string{"nc_id": ncID}, &m)

@@ -37,8 +37,11 @@ type world struct {
 	part  engineapp.Partition
 	now   time.Time
 	env   dom.Env
-	docs  *app.Service
-	nc    *ncapp.Service
+	// stamps — реестр клейм поверх стартовой политики (эпик 37): «лицо/вид» →
+	// номер; пустой номер — клеймо отозвано.
+	stamps map[string]string
+	docs   *app.Service
+	nc     *ncapp.Service
 }
 
 type clock struct{ t *time.Time }
@@ -67,15 +70,31 @@ func newWorld(t *testing.T) *world {
 	}
 	feed := &enginemem.Feed{J: j, Parts: []engineapp.Partition{part}}
 	wk := engineapp.NewWorker(engineapp.WorkerConfig{Feed: feed, Codec: codec, Fold: nctest.DraftingFold, Projections: reg, Bundles: bundles})
-	w := &world{t: t, j: j, codec: codec, w: wk, feed: feed, part: part, now: nctest.T0.Add(8 * time.Hour), env: env}
+	w := &world{t: t, j: j, codec: codec, w: wk, feed: feed, part: part, now: nctest.T0.Add(8 * time.Hour), env: env, stamps: map[string]string{}}
 	w.docs = app.NewService(app.WithDeps(app.Deps{Journal: j, Codec: codec, Bundles: bundles, Fold: nctest.DraftingFold, Env: env,
-		DomainClock: clock{&w.now}, Now: func() time.Time { return w.now }}), app.WithConfig(app.Config{DomainBuild: "streebog256:" + zeros, Partitions: 1}))
+		DomainClock: clock{&w.now}, Now: func() time.Time { return w.now }, Stamps: stampReg{w}}), app.WithConfig(app.Config{DomainBuild: "streebog256:" + zeros, Partitions: 1}))
 	w.nc = ncapp.NewService(ncapp.WithDeps(ncapp.Deps{Journal: j, Codec: codec, Bundles: bundles, Fold: nctest.DraftingFold, Routes: ncapp.PendingRoutes{},
 		DomainClock: clock{&w.now}, Now: func() time.Time { return w.now }}), ncapp.WithConfig(ncapp.Config{DomainBuild: "streebog256:" + zeros, Partitions: 1}))
 	return w
 }
 
 const zeros = "0000000000000000000000000000000000000000000000000000000000000000"
+
+// stampReg — реестр клейм мира (эпик 37): выданное или отозванное в w.stamps,
+// иначе — клеймо стартовой политики.
+type stampReg struct{ w *world }
+
+func (r stampReg) ValidStamp(_ context.Context, person, kind string, _ time.Time) (string, bool, error) {
+	if id, ok := r.w.stamps[person+"/"+kind]; ok {
+		return id, id != "", nil
+	}
+	p, ok := r.w.env.People.Find(person)
+	if !ok {
+		return "", false, nil
+	}
+	id := p.StampOf(kind)
+	return id, id != "", nil
+}
 
 func (w *world) add(ps ...appjournal.Pending) {
 	w.t.Helper()
@@ -306,6 +325,13 @@ func TestSpineFlow(t *testing.T) {
 	if _, err := w.docs.RecordSignature(as("W22", "performer"), trvID, app.RecordSignature{CommandHeader: hdr(), Version: 2, Stage: 1}); codeOf(err) == "" {
 		t.Fatal("исполнитель подписал итоговую годность")
 	}
+	// Эпик 37, FR-145: клеймо «final» у INS-02 отозвано — подпись по виду
+	// контроля отклоняется; выдано снова — подпись проходит.
+	w.stamps["INS-02/final"] = ""
+	if _, err := w.docs.RecordSignature(as("INS-02", "quality_inspector"), trvID, app.RecordSignature{CommandHeader: hdr(), Version: 2, Stage: 1}); codeOf(err) != errcodes.AccessNoStamp {
+		t.Fatalf("отозванное клеймо: %v", err)
+	}
+	w.stamps["INS-02/final"] = "OTK-02-OK2"
 	if _, err := w.docs.RecordSignature(as("INS-02", "quality_inspector"), trvID, app.RecordSignature{CommandHeader: hdr(), Version: 2, Stage: 1}); err != nil {
 		t.Fatal(err)
 	}
@@ -334,9 +360,11 @@ func TestSpineFlow(t *testing.T) {
 		t.Fatalf("карта v2: %s %+v", v.Status, v.Route[1].Signatures)
 	}
 
-	// Счётчик FR-65 и паспортная проекция.
+	// Счётчик FR-65 и паспортная проекция. Решение «ремонт» по каталогу (эпик 44)
+	// оформляет ещё и разрешение на отклонение — документ по событию-триггеру.
 	list, err := w.docs.Documents(context.Background(), platform.DrillRef{Entity: platform.EntityItem, ID: item}, platform.Moment{}, platform.Page{})
-	if err != nil || list.CollectedFromHistory == nil || *list.CollectedFromHistory != 3 || *list.ManualEntries != 0 {
+	if err != nil || list.CollectedFromHistory == nil || *list.CollectedFromHistory != 4 || *list.ManualEntries != 0 ||
+		!slices.ContainsFunc(list.Items, func(d app.DocumentSummary) bool { return strings.HasPrefix(d.Template, "concession@") }) {
 		t.Fatalf("документы изделия: %+v %v", list, err)
 	}
 

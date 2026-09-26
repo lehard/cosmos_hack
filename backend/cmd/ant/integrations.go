@@ -63,6 +63,9 @@ func installedIntegrations(cfg *config.Config) []dom.Installed {
 			in.Stand, in.Real = cfg.ERP.Galaktika.Stand, !cfg.ERP.Galaktika.Stand
 		case "mes":
 			in.Stand, in.Real = cfg.MES.B2MML.Stand, !cfg.MES.B2MML.Stand
+		case "skud":
+			// Эпик 37: stand СКУД роли stands или реальная СКУД по base_url.
+			in.Stand, in.Real = cfg.Access.SKUD.Stand, !cfg.Access.SKUD.Stand
 		}
 		out = append(out, in)
 	}
@@ -137,6 +140,8 @@ func (p integrationProbe) Probe(ctx context.Context, system string) (opsapp.Prob
 		}
 		detail, err := ch.Check(ctx)
 		return probeOf(ch.Info().Endpoint, detail, err, mesContract), nil
+	case "skud":
+		return skudProbe(ctx, p.env), nil
 	}
 	return opsapp.ProbeResult{Result: opsapp.ProbeNotSupported, Detail: "у адаптера " + system + " нет проверки ответной стороны"}, nil
 }

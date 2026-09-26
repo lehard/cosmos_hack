@@ -350,14 +350,18 @@ func (s *Service) sign(ctx context.Context, documentID string, meta platform.Com
 		signer, attester = g.Signer, me
 	}
 	req := dom.SignRequest{DocumentID: documentID, Version: g.Version, Stage: g.Stage, Digest: g.Digest, Person: signer, Method: g.Method, Level: 2, AttestedBy: attester}
-	if err := dom.CheckSign(d, req, v.Env.People, v.State.Participants); err != nil {
+	people, err := s.livePeople(ctx, v, d, g, signer)
+	if err != nil {
+		return platform.Receipt{}, err
+	}
+	if err := dom.CheckSign(d, req, people, v.State.Participants); err != nil {
 		return platform.Receipt{}, err
 	}
 	cur := d.Current()
 	st := cur.Stages[stageIdx(cur, g.Stage)]
 	data := map[string]any{"document_id": documentID, "version": g.Version, "doc_digest": g.Digest, "stage": g.Stage, "method": g.Method,
 		"signer_person_id": signer, "signature_level": 2, "authority_id": st.AuthorityID}
-	if p, ok := v.Env.People.Find(signer); ok && st.StampKind != "" {
+	if p, ok := people.Find(signer); ok && st.StampKind != "" {
 		// Номер клейма — object_id контракта (ASCII); номера стартовой политики
 		// кириллические — тогда клеймо видно по полномочию, номер не пишется.
 		if stamp := p.StampOf(st.StampKind); stamp != "" && objectID.MatchString(stamp) {
@@ -390,6 +394,43 @@ func (s *Service) sign(ctx context.Context, documentID string, meta platform.Com
 		}
 	}
 	return s.record(ctx, v, documentID, out{Type: catalog.DocumentSignatureRecorded, Data: data, Meta: meta, Actor: me, Level: 2})
+}
+
+// livePeople — срез политики для проверки подписи, где клеймо подписанта по
+// виду контроля этапа взято из реестра клейм на момент подписи (эпик 37,
+// FR-145: выдача по приказу, срок и отзыв — записи policy.stamp.* журнала).
+// Нет действующего клейма — отказ access.no_stamp; реестр не подключён —
+// срез стартовой политики как есть.
+func (s *Service) livePeople(ctx context.Context, v *view, d *dom.Doc, g signing, signer string) (dom.People, error) {
+	people := v.Env.People
+	cur := d.Current()
+	if s.d.Stamps == nil || cur == nil || cur.No != g.Version || len(cur.Stages) == 0 {
+		return people, nil
+	}
+	st := cur.Stages[stageIdx(cur, g.Stage)]
+	if st.Stage != g.Stage || st.StampKind == "" {
+		return people, nil
+	}
+	now, err := s.now(ctx, v.RunID)
+	if err != nil {
+		return nil, err
+	}
+	stamp, ok, err := s.d.Stamps.ValidStamp(ctx, signer, st.StampKind, now)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, platform.Fail(errcodes.AccessNoStamp, "kind", st.StampKind)
+	}
+	out := slices.Clone(people)
+	for i := range out {
+		if out[i].ID != signer {
+			continue
+		}
+		stamps := slices.DeleteFunc(slices.Clone(out[i].Stamps), func(x dom.Stamp) bool { return x.Kind == st.StampKind })
+		out[i].Stamps = append(stamps, dom.Stamp{ID: stamp, Kind: st.StampKind})
+	}
+	return out, nil
 }
 
 func stageIdx(v *dom.Version, stage int) int {

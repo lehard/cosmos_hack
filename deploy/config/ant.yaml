@@ -108,6 +108,16 @@ defaults:
       recheck: 5m     # сверка /about при ok
       pull_every: 30s # опрос заданий и событий операций
       retry_max: 8    # транспортных попыток на блок
+  # СКУД (эпик 37, FR-82): журнал проходов по протоколу skud.v1; работает, если
+  # skud есть в integrations.enabled; роль outbox опрашивает, роль stands держит
+  # stand СКУД (/stand/skud/ — страница с кнопками проходов). Реальная СКУД — сменой base_url.
+  access:
+    skud:
+      base_url: "" # пусто — stand этого хоста (stands.addr)
+      stand: true
+      timeout: 5s
+      poll: 1s   # опрос журнала проходов: панель «Посты» меняется за 1–2 с (FR-6)
+      check: 30s # проверка «по графику должен быть, ключа нет» (FR-84)
   # Доверие (эпик 29): хранитель, верификатор, шифрование при хранении, шина
   # безопасности. Интервалы и порог — параметры аудита policy.audit.*: пока нет
   # записи policy.audit.parameters_set, подписанной Аудитором ИБ (эпик 26), — здесь.
@@ -154,7 +164,7 @@ profiles:
       synchronous_commit: "off"
     # integrations.enabled — список stand-ов заполняют эпики интеграций.
     integrations:
-      enabled: [onec] # эпик 30: обмен с stand-ом 1С (роли outbox и stands)
+      enabled: [onec, skud] # эпик 30: обмен с stand-ом 1С; эпик 37: stand СКУД (роли outbox и stands)
 
   # Нагрузочный прогон: больше партиций и параллелизма, ant-worker ×N (FR-107).
   load:

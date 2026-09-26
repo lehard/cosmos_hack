@@ -53,6 +53,16 @@ type Deps struct {
 	DomainClock appjournal.DomainClock
 	// Now — InfraClock для received_at (AD-37); nil — time.Now.
 	Now func() time.Time
+	// Stamps — реестр действующих цифровых клейм (FR-145, эпик 37: проекция
+	// политики access); nil — клеймо проверяется по срезу стартовой политики.
+	Stamps StampRegistry
+}
+
+// StampRegistry — ведомый порт реестра цифровых клейм (FR-145): действующее
+// в момент at клеймо сотрудника по виду контроля (выдано по приказу, в
+// сроке, не отозвано). Реализация — access.StampRegistry над проекцией политики.
+type StampRegistry interface {
+	ValidStamp(ctx context.Context, personID, kind string, at time.Time) (stampID string, ok bool, err error)
 }
 
 // Config — параметры модуля.
