@@ -14,8 +14,8 @@ import (
 	"ant/internal/infrastructure/security/mtls"
 	"ant/internal/infrastructure/security/permissive"
 	journalstore "ant/internal/infrastructure/storage/journal"
-	materialsstore "ant/internal/infrastructure/storage/materials"
 	"ant/internal/infrastructure/storage/journal/feed"
+	materialsstore "ant/internal/infrastructure/storage/materials"
 )
 
 // Доверие (эпик 29) на ядре процесса: журнал критических действий в
