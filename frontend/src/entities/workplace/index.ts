@@ -16,6 +16,7 @@ import { entityKeys } from '@/shared/api/keys'
 import {
   accessAssignmentClear,
   accessAssignmentList,
+  accessCandidateList,
   accessAssignmentSet,
   accessOperatorReportDeviation,
   accessOperatorRequestInspection,
@@ -218,6 +219,9 @@ export function useAssignmentCommand() {
  */
 export const CONTROLLER_ASSIGNMENT_TEMPLATE = 'controller-assignment@1'
 
+/** Решение в документе назначения контролёра: кто и в какую смену. */
+export const controllerDecision = (personId: string, shiftId: string): string => `quality_inspector:${personId}@${shiftId}`
+
 /**
  * Запросить назначение контролёра (`documents.document.request`, FR-146):
  * документ с маршрутом подписей; объект — пост, решение — кто и в какую смену.
@@ -321,3 +325,18 @@ export const PRESENCE_TONE: Record<PostPresence, StatusTone> = {
 /** Тип метки Naive UI для присутствия: на месте — успех, расхождение — предупреждение. */
 export const presenceTagType = (p: PostPresence): 'success' | 'warning' | 'default' =>
   p === 'present' ? 'success' : p === 'not_assigned' || p === 'unknown' ? 'default' : 'warning'
+
+/**
+ * Кандидаты на пост в смену (access.candidate.list): кто подходит по роли и
+ * области, вердикт квалификации на дату смены, можно ли назначить и почему.
+ */
+export function useCandidates(workplaceId: MaybeRefOrGetter<string | null | undefined>, shiftId: MaybeRefOrGetter<string | null | undefined>) {
+  const moment = useMomentStore()
+  const params = computed(() => ({ ...(toValue(shiftId) ? { shift_id: toValue(shiftId)! } : {}), ...moment.params }))
+  return useQuery({
+    queryKey: computed(() => workplaceKeys.one(toValue(workplaceId) ?? '', 'candidates', params.value)),
+    queryFn: ({ signal }) => accessCandidateList(toValue(workplaceId) ?? '', params.value, { signal }),
+    enabled: computed(() => !!toValue(workplaceId)),
+    retry: false,
+  })
+}

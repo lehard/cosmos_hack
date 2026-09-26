@@ -63,7 +63,7 @@ describe('виджет «Участок»', () => {
   it('мастер видит, почему растёт очередь у поста сварки (UJ-7)', async () => {
     mockApi(routes())
     const w = await mountWidget(StationPostsWidget, props)
-    expect(w.find('[data-testid="workshop"]').text()).toBe('Участок: Сварочный цех')
+    expect(w.find('[data-testid="workshop"]').text()).toContain('Сварочный цех')
     const weld = w.find('[data-step="welding.weld"]')
     expect(weld.attributes('data-growing')).toBe('true')
     expect(weld.find('[data-testid="queue"]').text()).toBe('В очереди: 7')
@@ -91,8 +91,9 @@ describe('виджет «Участок»', () => {
     expect(plain(weld.find('[data-testid="reworks"]').text())).toContain('2')
     expect(plain(weld.find('[data-testid="reworks"]').text())).toContain('лимит доработок на зону: 3')
     expect(plain(weld.find('[data-testid="unfinished"]').text())).toContain('1')
-    // Нет показателя — «неизвестно», а не ноль.
-    expect(plain(w.find('[data-step="welding.edge_prep"] [data-testid="reworks"]').text())).toContain('Нет данных — неизвестно')
+    // Нет ни одного показателя за смену — одной строкой, а не тремя «неизвестно».
+    expect(w.find('[data-step="welding.edge_prep"] [data-testid="no-stats"]').text()).toContain('Статистика смены по операции ещё не накоплена')
+    expect(w.find('[data-step="welding.edge_prep"] [data-testid="reworks"]').exists()).toBe(false)
   })
 
   it('посты: присутствие, текущая деталь, оборудование, ресурс инструмента, текущее выполнение', async () => {
@@ -109,6 +110,22 @@ describe('виджет «Участок»', () => {
     expect(w.find('[data-testid="posts"] [data-workplace="WP-WELD-2"]').text()).toContain('По графику на месте — ключ не вставлен')
     // Присутствие известно на всех постах, у узлов есть данные — рамка в «норме».
     expect(w.find('.widget-frame').attributes('data-state')).toBe('normal')
+  })
+
+  it('«Сейчас»: строка состояния и «требует действий» — несостыковка присутствия и пост без исполнителя, с действием', async () => {
+    mockApi(routes())
+    const w = await mountWidget(StationPostsWidget, props)
+    expect(plain(w.find('[data-testid="status-line"]').text())).toContain('требуют действия')
+    const acts = w.find('[data-testid="now-actions"]')
+    const presence = acts.find('[data-kind="presence"]')
+    expect(presence.text()).toContain('Несостыковка')
+    expect(presence.text()).toContain('Сварщик W21 на посту «Пост сварки 2»')
+    const unassigned = acts.find('[data-kind="unassigned"]')
+    expect(unassigned.text()).toContain('Пост «Пост ОТК сварочного цеха» без исполнителя')
+    expect(unassigned.find('[data-testid="act-unassigned"]').text()).toBe('Назначить')
+    // Посты — карточками с тоном состояния.
+    expect(w.find('[data-testid="posts"] [data-workplace="WP-WELD-1"]').attributes('data-tone')).toBe('ok')
+    expect(w.find('[data-testid="posts"] [data-workplace="WP-WELD-2"]').attributes('data-tone')).toBe('warn')
   })
 
   it('узел без данных источника — «оценка невозможна»', async () => {

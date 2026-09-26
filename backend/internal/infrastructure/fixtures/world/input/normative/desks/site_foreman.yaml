@@ -6,12 +6,13 @@ title_key: desks.station
 density: large
 help_key: site_foreman # раздел встроенной справки (эпик 47); наследники роли получают его вместе со столом
 tabs:
+  # «Сейчас» (разбор стола мастера): строка состояния, «требует действий» (задачи и
+  # несостыковки) и посты карточками — внутри виджета; пустой правой колонки «Задачи» нет.
   - id: station
     title_key: desks.station
-    layout: main-side
+    layout: single
     slots:
       - {id: posts, area: main, widget: station-posts, slice: {scope: own_station}}
-      - {id: tasks, area: right, widget: tasks, slice: {kinds: [task, alarm, escalation]}}
   - id: people
     title_key: desks.peopleAndEquipment
     layout: single
