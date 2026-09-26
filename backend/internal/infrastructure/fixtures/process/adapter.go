@@ -34,7 +34,7 @@ func ts(t *time.Time) string {
 func (Adapter) LiveMap(ctx context.Context, q app.LiveMapQuery, m platform.Moment) (app.LiveMap, error) {
 	return respond[app.LiveMap](ctx, "process.live_map.read", map[string]string{
 		"period": q.Period, "from": ts(q.From), "to": ts(q.To),
-		"process_version_id": q.ProcessVersionID, "incident_id": q.IncidentID,
+		"process_id": q.ProcessID, "process_version_id": q.ProcessVersionID, "incident_id": q.IncidentID,
 	}, &m)
 }
 
@@ -43,9 +43,14 @@ func (Adapter) Node(ctx context.Context, versionID, stepKey string, m platform.M
 	return respond[app.ProcessNodeCard](ctx, "process.node.read", map[string]string{"version_id": versionID, "step_key": stepKey}, &m)
 }
 
-// Versions — версии процесса (process.version.list, FR-22).
-func (Adapter) Versions(ctx context.Context, m platform.Moment) (app.ProcessVersionList, error) {
-	return respond[app.ProcessVersionList](ctx, "process.version.list", nil, &m)
+// Processes — процессы для выбора (process.process.list, UI-11).
+func (Adapter) Processes(ctx context.Context, m platform.Moment) (app.ProcessList, error) {
+	return respond[app.ProcessList](ctx, "process.process.list", nil, &m)
+}
+
+// Versions — версии процесса (process.version.list, FR-22); processID пусто — основной.
+func (Adapter) Versions(ctx context.Context, processID string, m platform.Moment) (app.ProcessVersionList, error) {
+	return respond[app.ProcessVersionList](ctx, "process.version.list", map[string]string{"process_id": processID}, &m)
 }
 
 // Version — версия в читаемом виде (process.version.read, FR-24).

@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Второй процесс-пример мира заготовок (UI-11): только для показа выбора процесса
+     в режиме заготовок. В нормативный слой (normative/process) не входит. -->
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  xmlns:ant="urn:ant:bpmn-ext:1"
+                  id="Definitions_Bracket"
+                  targetNamespace="urn:ant:fixtures:process:bracket"
+                  expressionLanguage="urn:ant:expr:1">
+  <bpmn:message id="Msg_BrOrder" name="Из 1С: производственное задание" />
+  <bpmn:collaboration id="Collaboration_Bracket">
+    <bpmn:participant id="Participant_Bracket" name="Кронштейн приборной панели КР-200.00.001 — маршрут" processRef="Process_Bracket" />
+  </bpmn:collaboration>
+  <bpmn:process id="Process_Bracket" name="Кронштейн крепления приборной панели" isExecutable="true">
+    <bpmn:documentation>Короткий маршрут кронштейна: механическая обработка → контроль размеров ОТК → маркировка и выпуск. Пример второго процесса для выбора на живой карте.</bpmn:documentation>
+    <bpmn:laneSet id="LaneSet_Bracket">
+      <bpmn:lane id="Lane_BM" name="Механический цех">
+        <bpmn:flowNodeRef>B0</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>B1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>B2</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_BQ" name="ОТК и выпуск">
+        <bpmn:flowNodeRef>B3</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>B4</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>B5</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="B0" name="Задание из 1С">
+      <bpmn:documentation>Процесс начинается с производственного задания 1С на кронштейны.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="order.received" triggerEventType="erp.order.received" />
+      </bpmn:extensionElements>
+      <bpmn:outgoing>Flow_B0_B1</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MED_B0" messageRef="Msg_BrOrder" />
+    </bpmn:startEvent>
+    <bpmn:task id="B1" name="Фрезерование кронштейна">
+      <bpmn:documentation>Фрезеровщик обрабатывает заготовку по программе ЧПУ. Норма 20–35 мин.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="machining.milling" stepKind="operation" />
+        <ant:norm timeMinMinutes="20" timeMaxMinutes="35" queueNormMinutes="240" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_B0_B1</bpmn:incoming>
+      <bpmn:outgoing>Flow_B1_B2</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="B2" name="Сверление и зенковка отверстий">
+      <bpmn:documentation>Сверление четырёх крепёжных отверстий и зенковка. Норма 10–15 мин.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="machining.drilling" stepKind="operation" />
+        <ant:norm timeMinMinutes="10" timeMaxMinutes="15" queueNormMinutes="240" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_B1_B2</bpmn:incoming>
+      <bpmn:outgoing>Flow_B2_B3</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="B3" name="Контроль размеров ОТК">
+      <bpmn:documentation>Контролёр ОТК проверяет межосевые расстояния отверстий и толщину полки по чертежу.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="inspection.dimensions" stepKind="operation" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_B2_B3</bpmn:incoming>
+      <bpmn:outgoing>Flow_B3_B4</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="B4" name="Маркировка и консервация">
+      <bpmn:documentation>Нанесение номера детали и консервационного покрытия.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="final.marking" stepKind="operation" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_B3_B4</bpmn:incoming>
+      <bpmn:outgoing>Flow_B4_B5</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:endEvent id="B5" name="Выпуск годного">
+      <bpmn:documentation>Кронштейн выпущен годным.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="final.released" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_B4_B5</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_B0_B1" sourceRef="B0" targetRef="B1" />
+    <bpmn:sequenceFlow id="Flow_B1_B2" sourceRef="B1" targetRef="B2" />
+    <bpmn:sequenceFlow id="Flow_B2_B3" sourceRef="B2" targetRef="B3" />
+    <bpmn:sequenceFlow id="Flow_B3_B4" sourceRef="B3" targetRef="B4" />
+    <bpmn:sequenceFlow id="Flow_B4_B5" sourceRef="B4" targetRef="B5" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_Bracket" name="Кронштейн — маршрут">
+    <bpmndi:BPMNPlane id="BPMNPlane_Bracket" bpmnElement="Collaboration_Bracket">
+      <bpmndi:BPMNShape id="Participant_Bracket_di" bpmnElement="Participant_Bracket" isHorizontal="true">
+        <dc:Bounds x="100" y="60" width="1000" height="440" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_BM_di" bpmnElement="Lane_BM" isHorizontal="true">
+        <dc:Bounds x="130" y="60" width="970" height="220" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_BQ_di" bpmnElement="Lane_BQ" isHorizontal="true">
+        <dc:Bounds x="130" y="280" width="970" height="220" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="B0_di" bpmnElement="B0">
+        <dc:Bounds x="182" y="152" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="B1_di" bpmnElement="B1">
+        <dc:Bounds x="270" y="130" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="B2_di" bpmnElement="B2">
+        <dc:Bounds x="450" y="130" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="B3_di" bpmnElement="B3">
+        <dc:Bounds x="630" y="350" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="B4_di" bpmnElement="B4">
+        <dc:Bounds x="810" y="350" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="B5_di" bpmnElement="B5">
+        <dc:Bounds x="1002" y="372" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_B0_B1_di" bpmnElement="Flow_B0_B1">
+        <di:waypoint x="218" y="170" />
+        <di:waypoint x="270" y="170" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_B1_B2_di" bpmnElement="Flow_B1_B2">
+        <di:waypoint x="390" y="170" />
+        <di:waypoint x="450" y="170" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_B2_B3_di" bpmnElement="Flow_B2_B3">
+        <di:waypoint x="570" y="170" />
+        <di:waypoint x="690" y="170" />
+        <di:waypoint x="690" y="350" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_B3_B4_di" bpmnElement="Flow_B3_B4">
+        <di:waypoint x="750" y="390" />
+        <di:waypoint x="810" y="390" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_B4_B5_di" bpmnElement="Flow_B4_B5">
+        <di:waypoint x="930" y="390" />
+        <di:waypoint x="1002" y="390" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

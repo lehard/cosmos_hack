@@ -4,12 +4,7 @@
  */
 import type { Axis } from './axis';
 
-export type ProcessVersionListParams = {
-/**
- * Процесс (process.process.list, UI-11); не задан — основной процесс.
- * @maxLength 128
- */
-process_id?: string;
+export type ProcessProcessListParams = {
 /**
  * Ось момента: occurred — «как было» (по умолчанию), recorded — «что мы знали» (AD-37).
  */

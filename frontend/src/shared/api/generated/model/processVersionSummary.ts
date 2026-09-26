@@ -13,6 +13,8 @@ export interface ProcessVersionSummary {
   /** @minimum 0 */
   items_in_work: number;
   label: string;
+  /** Процесс версии (UI-11). */
+  process_id?: string;
   quorum?: VersionQuorum;
   status: ProcessVersionSummaryStatus;
   version_id: string;

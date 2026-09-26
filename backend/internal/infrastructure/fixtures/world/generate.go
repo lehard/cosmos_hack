@@ -109,7 +109,7 @@ func Generate(fsys fs.FS) (map[string][]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	out := map[string][]byte{"common/blobs/" + BpmnBlob: bpmn}
+	out := map[string][]byte{"common/blobs/" + BpmnBlob: bpmn, "common/blobs/" + BracketBpmnBlob: BracketBpmn}
 	var people []PersonRef
 	seen := map[string]bool{}
 	for _, s := range specs {
