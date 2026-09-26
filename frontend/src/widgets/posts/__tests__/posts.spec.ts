@@ -20,7 +20,7 @@ const rows = (): PostRow[] => [
 ]
 
 /** `drawer` — оболочка поставила окно записи (Д-70) с окнами поста, сотрудника, изделия. */
-async function mountWidget(seed: PostRow[] | null, drawer = false) {
+async function mountWidget(seed: PostRow[] | null, drawer = false, slice: Record<string, unknown> = {}) {
   const pinia = createPinia()
   setActivePinia(pinia)
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: Infinity } } })
@@ -34,7 +34,7 @@ async function mountWidget(seed: PostRow[] | null, drawer = false) {
   await router.push('/desk')
   if (seed) queryClient.setQueryData<Envelope<PostRow[]>>(workplaceKeys.list('posts', {}, { axis: 'occurred' }), { data: seed, headers: new Headers({ 'Ant-Backend': 'live' }) })
   const w = mount(PostsWidget, {
-    props: { widgetId: 'posts', titleKey: 'liveMap.posts.title', slotId: 'posts', slice: {}, density: 'comfortable' },
+    props: { widgetId: 'posts', titleKey: 'liveMap.posts.title', slotId: 'posts', slice, density: 'comfortable' },
     global: {
       plugins: [pinia, i18n, router, [VueQueryPlugin, { queryClient }]],
       provide: drawer ? { [RECORD_DRAWER as symbol]: { kinds: new Set(['item', 'workplace', 'person']) } } : {},
@@ -60,6 +60,14 @@ const serverFails = () =>
 afterEach(() => vi.unstubAllGlobals())
 
 describe('виджет «Посты»', () => {
+  it('у руководителя (exceptions_first) — сначала проблемы ресурсов; прочие — «Показать все посты»', async () => {
+    const { w } = await mountWidget(rows(), false, { exceptions_first: true })
+    expect(w.find('[data-testid="posts-summary"]').text()).toContain('Проблемы на постах: 2')
+    expect(w.findAll('tbody tr').map((r) => r.attributes('data-presence'))).toEqual(['key_missing', 'owner_absent'])
+    await w.find('[data-testid="posts-toggle"]').trigger('click')
+    expect(w.findAll('tbody tr')).toHaveLength(4)
+  })
+
   it('участок — назначен — на месте ли — текущее изделие', async () => {
     const { w } = await mountWidget(rows())
     const text = (id: string) => w.find(`[data-workplace="${id}"]`).text()

@@ -45,9 +45,8 @@ describe('страница «Предложения»', () => {
     const w = await mountWidget(ProposalsWidget, props)
     expect(w.find('[data-testid="principle"]').text()).toContain('Система ничего не меняет сама')
     expect(w.find('[data-testid="no-proposals"]').exists()).toBe(true)
-    expect(w.findAll('[data-generator]')).toHaveLength(3)
-    expect(w.find('[data-generator="rules.bottleneck"]').text()).toContain('Вход не подключён')
-    expect(w.find('[data-generator="rules.risk_scope"]').text()).toContain('Подключён')
+    // Генераторы и адаптеры — архитектура для технической защиты, не работа руководителя: на экране их нет.
+    expect(w.findAll('[data-generator]')).toHaveLength(0)
   })
 
   it('строка открывает правое окно; «Принять» — только с основанием; кнопки в нижней панели', async () => {
