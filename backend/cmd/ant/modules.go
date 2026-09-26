@@ -107,6 +107,8 @@ type apiOptions struct {
 	// analytics — live-показатели над строками вклада ядра (analytics.go);
 	// nil — без хранилища (операции 501).
 	analytics *analyticsapp.Service
+	// process — живая карта, версии и команды исполнителя (process.go, эпик 17); nil — 501.
+	process *processapp.Service
 }
 
 // buildAPI собирает HTTP API: общий декоратор (Gate) над портами прав и входа,
@@ -156,7 +158,11 @@ func buildAPI(mux *http.ServeMux, o apiOptions) *httpapi.API {
 		referencehttp.Register(a, q, c)
 	}
 	{
-		q, c := pick[processapp.Queries, processapp.Commands](a.ModeFor("process"), processapp.NewService(), processfx.New())
+		live := o.process
+		if live == nil {
+			live = processapp.NewService()
+		}
+		q, c := pick[processapp.Queries, processapp.Commands](a.ModeFor("process"), live, processfx.New())
 		processhttp.Register(a, q, c)
 	}
 	{

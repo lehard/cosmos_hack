@@ -4027,6 +4027,14 @@ type OperationRunIntervalResolvedV1 struct {
 	// Идентификатор выполнения операции; повтор операции — новый идентификатор со
 	// ссылкой `rework_of` (FR-47).
 	OperationRunID ObjectID `json:"operation_run_id"`
+
+	// Шаг — специальный процесс по закреплённой версии процесса изделия
+	// (`ant:properties/@specialProcess`, FR-151): стадия относит выполнение к окнам
+	// нарушения режима.
+	SpecialProcess *bool `json:"special_process,omitempty,omitzero"`
+
+	// Ключ шага процесса (`ant:properties/@stepKey`), к которому относится запись.
+	StepKey *StepKey `json:"step_key,omitempty,omitzero"`
 }
 
 type OperationRunIntervalResolvedV1IntervalOrigin string

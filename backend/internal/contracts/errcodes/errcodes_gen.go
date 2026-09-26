@@ -191,6 +191,8 @@ const (
 	ProcessUnsupportedElement Code = "process.unsupported_element"
 	// Содержимое действующей версии изменено
 	ProcessVersionTampered Code = "process.version_tampered"
+	// Версия процесса изделия не найдена
+	ProcessVersionUnknown Code = "process.version_unknown"
 	// Сначала проверка зоны
 	ProcessZoneCheckRequired Code = "process.zone_check_required"
 	// Запись справочника не найдена
@@ -313,6 +315,7 @@ var codes = [...]Info{
 	{Code: ProcessUnreachableNode, Status: 422, Title: "Недостижимый узел", Detail: "Недостижимый узел: {element}", UIKey: "errors.process.unreachableNode", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: ProcessUnsupportedElement, Status: 422, Title: "Неподдерживаемый элемент BPMN", Detail: "Неподдерживаемый элемент BPMN: {element}", UIKey: "errors.process.unsupportedElement", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: ProcessVersionTampered, Status: 409, Title: "Содержимое действующей версии изменено", Detail: "Хеш версии {version_id} не совпадает с подписанным — версия не исполняется", UIKey: "errors.process.versionTampered", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
+	{Code: ProcessVersionUnknown, Status: 409, Title: "Версия процесса изделия не найдена", Detail: "Версия процесса с хешем {hash}, закреплённая за изделием, не найдена — изделие не исполняется", UIKey: "errors.process.versionTampered", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: ProcessZoneCheckRequired, Status: 409, Title: "Сначала проверка зоны", Detail: "Операция закрывает доступ к зоне {zone} — сначала завершите её проверку", UIKey: "errors.decision.zoneCheckRequired", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
 	{Code: ReferenceNotFound, Status: 422, Title: "Запись справочника не найдена", Detail: "Не найдена запись справочника: {field} — в том числе ответ 1С «в справочнике не найдена запись»", UIKey: "errors.integration.refNotFound", Quarantine: false, Severity: "error", Guard: false, Aliases: []string{"E_REF_NOT_FOUND"}},
 	{Code: SigningAgentNotFound, Status: 424, Title: "Агент токена не найден", Detail: "Агент токена не отвечает — подпишите на бумаге с заверением", UIKey: "errors.signing.agentNotFound", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},

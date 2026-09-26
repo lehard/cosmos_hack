@@ -353,6 +353,11 @@ export const errorCatalog = {
     "title": "Содержимое действующей версии изменено",
     "uiKey": "errors.process.versionTampered"
   },
+  "process.version_unknown": {
+    "status": 409,
+    "title": "Версия процесса изделия не найдена",
+    "uiKey": "errors.process.versionTampered"
+  },
   "process.quorum_incomplete": {
     "status": 409,
     "title": "Не хватает подписей кворума",
