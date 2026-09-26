@@ -106,9 +106,6 @@ func (s *Sender) SendDue(ctx context.Context, fence appjournal.Fence) (int, erro
 			return n, err
 		}
 		if err := s.respond(ctx, fence, b, resp, b.Attempts); err != nil {
-			if errors.Is(err, appjournal.ErrFenced) {
-				return n, err
-			}
 			return n, err
 		}
 		n++
