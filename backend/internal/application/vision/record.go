@@ -42,6 +42,8 @@ type entry struct {
 	// RecordedAt — задать recorded_at (часы scenario, AD-37); пусто — Append ставит сам.
 	RecordedAt string
 	Meta       platform.CommandMeta
+	// RunID — прогон сценария (AD-38): возврат после отката в прогоне — в том же прогоне.
+	RunID string
 }
 
 // pending — открытые поля и конверт DSSE без подписей (демо без агента
@@ -62,6 +64,9 @@ func pending(e entry, domainBuild string, partition int) (appjournal.Pending, er
 		"integrity": map[string]any{"format_version": 1, "crypto_profile": "gost", "signers": []string{e.Signer}},
 		"data":      json.RawMessage(data),
 	}
+	if e.RunID != "" {
+		env["run_id"] = e.RunID
+	}
 	canon, err := engine.Canonical(env)
 	if err != nil {
 		return appjournal.Pending{}, err
@@ -78,6 +83,10 @@ func pending(e entry, domainBuild string, partition int) (appjournal.Pending, er
 		ProvenanceClass: e.Provenance, DomainBuild: domainBuild, RecordedAt: e.RecordedAt,
 		// Записи вне изделия — партиция стадии за пределами 0…P-1 (как у приёма).
 		Partition: partition,
+	}
+	if e.RunID != "" {
+		run := e.RunID
+		je.RunID = &run
 	}
 	if e.Meta.BasisSeq > 0 {
 		b := int(e.Meta.BasisSeq)
@@ -111,7 +120,7 @@ func commandID(meta platform.CommandMeta) string {
 // потока паспорта: после basis_seq в нём нет новых записей guard_relevant.
 // Повтор с тем же command_id возвращает прежнюю квитанцию (AD-7). Запись
 // журнала критических действий (AD-28) — CriticalActions эпика 29.
-func (s *Service) write(ctx context.Context, t catalog.Type, stream string, data any, meta platform.CommandMeta, occurred time.Time) (platform.Receipt, error) {
+func (s *Service) write(ctx context.Context, t catalog.Type, stream string, data any, meta platform.CommandMeta, occurred time.Time, runID string) (platform.Receipt, error) {
 	id := commandID(meta)
 	if r, ok, err := s.replay(ctx, stream, t, id); err != nil || ok {
 		return r, err
@@ -123,7 +132,7 @@ func (s *Service) write(ctx context.Context, t catalog.Type, stream string, data
 		cmd["workplace_id"] = meta.WorkplaceID
 	}
 	e := entry{ID: id, Type: t, Stream: stream, Data: data, OccurredAt: occurred, ReceivedAt: s.d.Now(), SourceID: SourceAPI,
-		Signer: signer(actor), Provenance: jc.JournalEntryProvenanceClassPersonal, Command: cmd, Meta: meta}
+		Signer: signer(actor), Provenance: jc.JournalEntryProvenanceClassPersonal, Command: cmd, Meta: meta, RunID: runID}
 	if s.cfg.ScenarioClock {
 		e.RecordedAt = engineapp.FormatTime(occurred)
 	}

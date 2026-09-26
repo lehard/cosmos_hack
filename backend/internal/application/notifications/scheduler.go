@@ -182,7 +182,7 @@ func (s *Scheduler) ObjectTasks(ctx context.Context, batch []jc.JournalEntry) (a
 
 func objectTrigger(t string) bool {
 	switch catalog.Type(t) {
-	case catalog.IncidentMeasurementRequested, catalog.IncidentActionAssigned:
+	case catalog.IncidentMeasurementRequested, catalog.IncidentActionAssigned, catalog.AnalyzerPassportSuspended:
 		return true
 	}
 	return false

@@ -22,10 +22,14 @@ const (
 	SceneGlare = "glare"
 	// SceneAborted — обработка прервана (ResultState = 3).
 	SceneAborted = "aborted"
+	// SceneLightChanged — свет на посту изменился (эпик 40, FR-101): кадр
+	// пересвечен (качество 0,55), а анализатор уверенно говорит «признаков
+	// нет». Три таких кадра подряд — дрейф: ant приостанавливает паспорт.
+	SceneLightChanged = "light_changed"
 )
 
 // Scenes — все сцены stand-а.
-var Scenes = []string{SceneWeldOK, SceneWeldPores, SceneWeldUndercut, SceneWeldBurnThrough, SceneBadFrame, SceneGlare, SceneAborted}
+var Scenes = []string{SceneWeldOK, SceneWeldPores, SceneWeldUndercut, SceneWeldBurnThrough, SceneBadFrame, SceneGlare, SceneAborted, SceneLightChanged}
 
 // MainStory — главная история КТ-3 по кругу.
 var MainStory = []string{SceneWeldOK, SceneWeldPores, SceneBadFrame, SceneWeldOK, SceneGlare, SceneWeldBurnThrough, SceneWeldUndercut}
@@ -97,6 +101,10 @@ func Result(c Camera, seq int64, at time.Time, sh standkit.Shot) (visionqc.Resul
 		r.Stages = []visionqc.Stage{{Name: "localize", Version: ver, ConfidenceBP: bp(3100), Output: "блик на участке У4 — зона не читается"}}
 	case SceneAborted:
 		r.ResultState, r.Recommendation = visionqc.StateAborted, "review"
+	case SceneLightChanged:
+		r.Verdict, r.ConfidenceBP, r.Recommendation = "no_defects", bp(9100), "pass"
+		r.Frame = &visionqc.Frame{QualityBP: 5500, Issues: []string{"overexposed"}}
+		r.Stages = stages(8700, 9100, "шов найден, пересвет", "признаков не найдено")
 	default:
 		return r, fmt.Errorf("VisionQC stand: сцена %q не поддерживается", sh.Kind)
 	}

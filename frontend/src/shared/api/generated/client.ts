@@ -52,6 +52,7 @@ import type {
   AcknowledgeTask,
   ActivateAccount,
   ActivateVersion,
+  AdaptationEscapeList,
   AdmitPassport,
   AdmitWorkplace,
   AlertList,
@@ -182,6 +183,7 @@ import type {
   JournalTimelineReadParams,
   KeyDetails,
   KeyList,
+  LabeledExampleList,
   LiveMap,
   LotCard,
   LotList,
@@ -212,6 +214,7 @@ import type {
   NotificationsAttentionListParams,
   NotificationsSummaryReadParams,
   NotificationsTaskListParams,
+  ObservationAccount,
   OpenIntervention,
   OpsHealth,
   OpsStoppedItemListParams,
@@ -360,6 +363,9 @@ import type {
   ViolationList,
   VisionAnalyzerListParams,
   VisionCheckListParams,
+  VisionEscapeListParams,
+  VisionExampleListParams,
+  VisionObservationReadParams,
   VisionPassportReadParams,
   WaiveReworkLimit
 } from './model';
@@ -27240,6 +27246,365 @@ export function useSecurityVerifierReportRead<TData = Awaited<ReturnType<typeof 
  ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getSecurityVerifierReportReadQueryOptions(reportDigest,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+
+export type visionEscapeListResponse200 = {
+  data: AdaptationEscapeList
+  status: 200
+}
+
+export type visionEscapeListResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type visionEscapeListResponseSuccess = (visionEscapeListResponse200) & {
+  headers: Headers;
+};
+export type visionEscapeListResponseError = (visionEscapeListResponseDefault) & {
+  headers: Headers;
+};
+
+export const getVisionEscapeListUrl = (params?: VisionEscapeListParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/vision/escapes?${stringifiedParams}` : `/api/v1/vision/escapes`
+}
+
+/**
+ * FR-100: поздняя находка связана с ранними «признаков нет» той же зоны и их версиями; список изделий, пропущенных той же версией модели, — на перепроверку.
+ * @summary Пропуски брака и перепроверка
+ */
+export const visionEscapeList = async (params?: VisionEscapeListParams, options?: RequestInit): Promise<visionEscapeListResponseSuccess> => {
+
+  const res = await fetch(getVisionEscapeListUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: visionEscapeListResponseError['data'], status?: number} = new globalThis.Error();
+    const data : visionEscapeListResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: visionEscapeListResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as visionEscapeListResponseSuccess
+}
+
+
+
+
+
+export const getVisionEscapeListQueryKey = (params?: MaybeRefOrGetter<VisionEscapeListParams>,) => {
+    return [
+    'api','v1','vision','escapes', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getVisionEscapeListQueryOptions = <TData = Awaited<ReturnType<typeof visionEscapeList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(params?: MaybeRefOrGetter<VisionEscapeListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof visionEscapeList>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getVisionEscapeListQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof visionEscapeList>>> = ({ signal }) => visionEscapeList(toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof visionEscapeList>>, TError, TData>
+}
+
+export type VisionEscapeListQueryResult = NonNullable<Awaited<ReturnType<typeof visionEscapeList>>>
+export type VisionEscapeListQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Пропуски брака и перепроверка
+ */
+
+export function useVisionEscapeList<TData = Awaited<ReturnType<typeof visionEscapeList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ params?: MaybeRefOrGetter<VisionEscapeListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof visionEscapeList>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getVisionEscapeListQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+
+export type visionExampleListResponse200 = {
+  data: LabeledExampleList
+  status: 200
+}
+
+export type visionExampleListResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type visionExampleListResponseSuccess = (visionExampleListResponse200) & {
+  headers: Headers;
+};
+export type visionExampleListResponseError = (visionExampleListResponseDefault) & {
+  headers: Headers;
+};
+
+export const getVisionExampleListUrl = (params?: VisionExampleListParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/vision/labeled-examples?${stringifiedParams}` : `/api/v1/vision/labeled-examples`
+}
+
+/**
+ * FR-99: подтверждённые решения контролёров по сигналам анализатора — ответ анализатора и ответ эксперта раздельно, со ссылкой на наблюдение.
+ * @summary Размеченные примеры
+ */
+export const visionExampleList = async (params?: VisionExampleListParams, options?: RequestInit): Promise<visionExampleListResponseSuccess> => {
+
+  const res = await fetch(getVisionExampleListUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: visionExampleListResponseError['data'], status?: number} = new globalThis.Error();
+    const data : visionExampleListResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: visionExampleListResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as visionExampleListResponseSuccess
+}
+
+
+
+
+
+export const getVisionExampleListQueryKey = (params?: MaybeRefOrGetter<VisionExampleListParams>,) => {
+    return [
+    'api','v1','vision','labeled-examples', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getVisionExampleListQueryOptions = <TData = Awaited<ReturnType<typeof visionExampleList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(params?: MaybeRefOrGetter<VisionExampleListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof visionExampleList>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getVisionExampleListQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof visionExampleList>>> = ({ signal }) => visionExampleList(toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof visionExampleList>>, TError, TData>
+}
+
+export type VisionExampleListQueryResult = NonNullable<Awaited<ReturnType<typeof visionExampleList>>>
+export type VisionExampleListQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Размеченные примеры
+ */
+
+export function useVisionExampleList<TData = Awaited<ReturnType<typeof visionExampleList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ params?: MaybeRefOrGetter<VisionExampleListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof visionExampleList>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getVisionExampleListQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+
+export type visionObservationReadResponse200 = {
+  data: ObservationAccount
+  status: 200
+}
+
+export type visionObservationReadResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type visionObservationReadResponseSuccess = (visionObservationReadResponse200) & {
+  headers: Headers;
+};
+export type visionObservationReadResponseError = (visionObservationReadResponseDefault) & {
+  headers: Headers;
+};
+
+export const getVisionObservationReadUrl = (eventId: string,
+    params?: VisionObservationReadParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/vision/observations/${eventId}?${stringifiedParams}` : `/api/v1/vision/observations/${eventId}`
+}
+
+/**
+ * FR-98: по давнему наблюдению — вектор версий, ступени, признаки, паспорт и уровень доверия на момент наблюдения, почему изделие признано подозрительным.
+ * @summary Наблюдение анализатора: какими версиями и почему
+ */
+export const visionObservationRead = async (eventId: string,
+    params?: VisionObservationReadParams, options?: RequestInit): Promise<visionObservationReadResponseSuccess> => {
+
+  const res = await fetch(getVisionObservationReadUrl(eventId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: visionObservationReadResponseError['data'], status?: number} = new globalThis.Error();
+    const data : visionObservationReadResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: visionObservationReadResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as visionObservationReadResponseSuccess
+}
+
+
+
+
+
+export const getVisionObservationReadQueryKey = (eventId: MaybeRefOrGetter<string>,
+    params?: MaybeRefOrGetter<VisionObservationReadParams>,) => {
+    return [
+    'api','v1','vision','observations',eventId, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getVisionObservationReadQueryOptions = <TData = Awaited<ReturnType<typeof visionObservationRead>>, TError = globalThis.Error & { info?: Problem; status?: number }>(eventId: MaybeRefOrGetter<string>,
+    params?: MaybeRefOrGetter<VisionObservationReadParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof visionObservationRead>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getVisionObservationReadQueryKey(eventId,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof visionObservationRead>>> = ({ signal }) => visionObservationRead(toValue(eventId),toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: computed(() => toValue(eventId) !== null && toValue(eventId) !== undefined), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof visionObservationRead>>, TError, TData>
+}
+
+export type VisionObservationReadQueryResult = NonNullable<Awaited<ReturnType<typeof visionObservationRead>>>
+export type VisionObservationReadQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Наблюдение анализатора: какими версиями и почему
+ */
+
+export function useVisionObservationRead<TData = Awaited<ReturnType<typeof visionObservationRead>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ eventId: MaybeRefOrGetter<string>,
+    params?: MaybeRefOrGetter<VisionObservationReadParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof visionObservationRead>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getVisionObservationReadQueryOptions(eventId,params,options)
 
   const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

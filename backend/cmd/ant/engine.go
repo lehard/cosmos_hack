@@ -122,16 +122,21 @@ func runProjector(ctx context.Context, env *environment) error {
 	if err != nil {
 		return err
 	}
+	// Эпик 40: правило автоотката версии анализатора — глобальный потребитель
+	// роли projector со своим курсором vision.rollback (AD-45, FR-101).
+	vr := visionRollback(env, c)
 	return c.leader(env, "projector").Run(ctx, func(ctx context.Context, fence appjournal.Fence) error {
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
-		errc := make(chan error, 1)
-		go func() {
-			if err := rx.Run(ctx); err != nil && ctx.Err() == nil {
-				errc <- err
-				cancel()
-			}
-		}()
+		errc := make(chan error, 2)
+		for _, run := range []func(context.Context) error{rx.Run, vr.Run} {
+			go func() {
+				if err := run(ctx); err != nil && ctx.Err() == nil {
+					errc <- err
+					cancel()
+				}
+			}()
+		}
 		err := p.Run(ctx, fence)
 		cancel()
 		select {

@@ -13,4 +13,5 @@ export const InjectionInjection = {
   machine_fault: 'machine_fault',
   data_loss: 'data_loss',
   tamper_outside: 'tamper_outside',
+  light_change: 'light_change',
 } as const;

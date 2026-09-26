@@ -553,6 +553,50 @@ components:
         - basis_seq
         - policy_seq
       type: object
+    AdaptationEscape:
+      additionalProperties: false
+      properties:
+        analyzer_version:
+          type: string
+        defect_id:
+          type: string
+        event_id:
+          type: string
+        item_id:
+          type: string
+        method_covers_defect:
+          description: Метод способен выявить вид — иначе это не ошибка модели.
+          type: boolean
+        missed:
+          items:
+            $ref: "#/components/schemas/MissedObservation"
+          type: array
+        recheck:
+          items:
+            $ref: "#/components/schemas/RecheckItem"
+          type: array
+        recorded_at:
+          format: date-time
+          type: string
+      required:
+        - event_id
+        - defect_id
+        - item_id
+        - method_covers_defect
+        - recorded_at
+        - missed
+        - recheck
+      type: object
+    AdaptationEscapeList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: "#/components/schemas/AdaptationEscape"
+          type: array
+      required:
+        - items
+      type: object
     AdmitPassport:
       additionalProperties: false
       properties:
@@ -808,6 +852,33 @@ components:
       required:
         - items
       type: object
+    AnalyzerMonitor:
+      additionalProperties: false
+      properties:
+        quality_min_bp:
+          description: Качество кадра ниже — «кадр не как при допуске».
+          format: int64
+          type: integer
+        recent_quality_bp:
+          description: Качество последних кадров (старые — первыми).
+          items:
+            format: int64
+            type: integer
+          type: array
+        seen:
+          description: Сколько ответов анализатора учтено правилом.
+          format: int64
+          type: integer
+        window:
+          description: Сколько наблюдений подряд проверяется.
+          format: int64
+          type: integer
+      required:
+        - window
+        - quality_min_bp
+        - seen
+        - recent_quality_bp
+      type: object
     AnalyzerPassport:
       additionalProperties: false
       properties:
@@ -834,6 +905,14 @@ components:
         document_id:
           description: Протокол допуска (закрытый маршрут подписей).
           type: string
+        history:
+          description: "Смены статуса: допуск, приостановка, возврат, вывод."
+          items:
+            $ref: "#/components/schemas/AnalyzerStatus"
+          type: array
+        monitor:
+          $ref: "#/components/schemas/AnalyzerMonitor"
+          description: Контроль дрейфа правила автоотката (FR-101).
         passport_id:
           type: string
         previous_passport_id:
@@ -896,6 +975,29 @@ components:
       required:
         - text
       type: object
+    AnalyzerStatus:
+      additionalProperties: false
+      properties:
+        at:
+          format: date-time
+          type: string
+        event_id:
+          type: string
+        note:
+          type: string
+        status:
+          enum:
+            - active
+            - suspended
+            - retired
+          type: string
+        trigger:
+          type: string
+      required:
+        - status
+        - at
+        - event_id
+      type: object
     AnalyzerSummary:
       additionalProperties: false
       properties:
@@ -952,6 +1054,11 @@ components:
         at:
           format: date-time
           type: string
+        basis:
+          description: event_id записей-оснований приостановки (наблюдения, пропуск брака, отчёт проверки).
+          items:
+            type: string
+          type: array
         event_id:
           type: string
         fallback:
@@ -960,6 +1067,12 @@ components:
             - manual_control
           type: string
         fallback_passport_id:
+          type: string
+        note:
+          description: Что увидело правило автоотката, по-русски.
+          type: string
+        run_id:
+          description: Прогон сценария, в котором приостановлен паспорт (AD-38).
           type: string
         trigger:
           enum:
@@ -1085,6 +1198,7 @@ components:
             - machine_fault
             - data_loss
             - tamper_outside
+            - light_change
           type: string
         policy_seq:
           description: Версия политики, по которой показаны права (policy_seq сеанса); изменилась — 409 journal.stale_policy (AD-39).
@@ -5507,6 +5621,7 @@ components:
             - machine_fault
             - data_loss
             - tamper_outside
+            - light_change
           type: string
         needs_target:
           description: Нужна целевая запись (target_event_id).
@@ -6812,6 +6927,63 @@ components:
         - label
         - at
       type: object
+    LabeledExample:
+      additionalProperties: false
+      properties:
+        analyzer_confidence_bp:
+          format: int64
+          maximum: 10000
+          minimum: 0
+          type: integer
+        analyzer_defect:
+          type: string
+        analyzer_outcome:
+          type: string
+        decided_at:
+          format: date-time
+          type: string
+        decision_event_id:
+          type: string
+        expert_defect:
+          type: string
+        expert_reason:
+          type: string
+        for_adaptation:
+          description: Отмечен как кандидат в размеченные данные для настройки модели.
+          type: boolean
+        item_id:
+          type: string
+        observation_event_id:
+          type: string
+        verdict:
+          description: Эксперт подтвердил признак или отклонил (ложная тревога).
+          enum:
+            - confirmed
+            - rejected
+          type: string
+        versions:
+          additionalProperties:
+            type: string
+          type: object
+      required:
+        - decision_event_id
+        - verdict
+        - decided_at
+        - observation_event_id
+        - analyzer_outcome
+        - versions
+        - for_adaptation
+      type: object
+    LabeledExampleList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: "#/components/schemas/LabeledExample"
+          type: array
+      required:
+        - items
+      type: object
     LiveMap:
       additionalProperties: false
       properties:
@@ -7552,6 +7724,28 @@ components:
         - value
         - scale
         - unit
+      type: object
+    MissedObservation:
+      additionalProperties: false
+      properties:
+        event_id:
+          type: string
+        item_id:
+          type: string
+        occurred_at:
+          format: date-time
+          type: string
+        point:
+          type: string
+        versions:
+          additionalProperties:
+            type: string
+          description: Вектор версий наблюдения (AD-29).
+          type: object
+      required:
+        - event_id
+        - occurred_at
+        - versions
       type: object
     ModuleMode:
       additionalProperties: false
@@ -8433,6 +8627,108 @@ components:
         - alarm
         - task
         - decision_request
+      type: object
+    ObservationAccount:
+      additionalProperties: false
+      properties:
+        allowed_auto_actions:
+          items:
+            type: string
+          type: array
+        confidence_bp:
+          format: int64
+          maximum: 10000
+          minimum: 0
+          type: integer
+        event_id:
+          type: string
+        item_id:
+          type: string
+        level_then:
+          description: Уровень доверия, с которым система реагировала.
+          format: int64
+          maximum: 4
+          minimum: 0
+          type: integer
+        missing_versions:
+          items:
+            type: string
+          type: array
+        occurred_at:
+          format: date-time
+          type: string
+        outcome:
+          type: string
+        passport_id:
+          type: string
+        point:
+          type: string
+        quality_bp:
+          format: int64
+          maximum: 10000
+          minimum: 0
+          type: integer
+        reasons:
+          description: Почему — по-русски, по шагам.
+          items:
+            type: string
+          type: array
+        stages:
+          items:
+            $ref: "#/components/schemas/ObservationStage"
+          type: array
+        status_now:
+          enum:
+            - active
+            - suspended
+            - retired
+            - not_admitted
+          type: string
+        status_then:
+          description: Статус паспорта на момент наблюдения.
+          enum:
+            - active
+            - suspended
+            - retired
+            - not_admitted
+          type: string
+        suspicious:
+          description: Изделие поставлено «под подозрением» по этому наблюдению.
+          type: boolean
+        versions:
+          additionalProperties:
+            type: string
+          description: Вектор версий наблюдения (AD-29).
+          type: object
+      required:
+        - event_id
+        - occurred_at
+        - outcome
+        - versions
+        - status_then
+        - status_now
+        - level_then
+        - allowed_auto_actions
+        - suspicious
+        - reasons
+      type: object
+    ObservationStage:
+      additionalProperties: false
+      properties:
+        confidence_bp:
+          format: int64
+          maximum: 10000
+          minimum: 0
+          type: integer
+        name:
+          type: string
+        output:
+          type: string
+        version:
+          type: string
+      required:
+        - name
+        - version
       type: object
     OpenIntervention:
       additionalProperties: false
@@ -9978,6 +10274,23 @@ components:
         - basis_seq
         - policy_seq
       type: object
+    RecheckItem:
+      additionalProperties: false
+      properties:
+        item_id:
+          type: string
+        last_at:
+          format: date-time
+          type: string
+        observation_event_ids:
+          items:
+            type: string
+          type: array
+      required:
+        - item_id
+        - observation_event_ids
+        - last_at
+      type: object
     RecordAssembly:
       additionalProperties: false
       properties:
@@ -11012,6 +11325,10 @@ components:
           type: integer
         reason:
           $ref: "#/components/schemas/AnalyzerReason"
+        run_id:
+          description: Прогон сценария, в котором паспорт приостановлен автооткатом (AD-38); пусто — живая работа.
+          maxLength: 128
+          type: string
         signature:
           $ref: "#/components/schemas/DsseEnvelope"
           description: "Подписанный пакет DSSE для операций с уровнем подписи ≥ 1 (AD-10, AD-13, AD-14): подписывает агент токена, сервер сверяет отпечаток."
@@ -26753,6 +27070,179 @@ paths:
         id: security.verifier_report.read
         owner: security
         subject: integrity
+  /api/v1/vision/escapes:
+    get:
+      description: "FR-100: поздняя находка связана с ранними «признаков нет» той же зоны и их версиями; список изделий, пропущенных той же версией модели, — на перепроверку."
+      operationId: vision.escape.list
+      parameters:
+        - description: "Ось момента: occurred — «как было» (по умолчанию), recorded — «что мы знали» (AD-37)."
+          explode: false
+          in: query
+          name: axis
+          schema:
+            $ref: "#/components/schemas/Axis"
+            description: "Ось момента: occurred — «как было» (по умолчанию), recorded — «что мы знали» (AD-37)."
+        - description: "Момент (RFC 3339 UTC); пусто — «сейчас». Задан — воспроизведение: команды выключены (AD-21)."
+          explode: false
+          in: query
+          name: as_of
+          schema:
+            description: "Момент (RFC 3339 UTC); пусто — «сейчас». Задан — воспроизведение: команды выключены (AD-21)."
+            format: date-time
+            type: string
+        - description: "Прогон сценария: данные в его пространстве имён (AD-38)."
+          explode: false
+          in: query
+          name: run_id
+          schema:
+            description: "Прогон сценария: данные в его пространстве имён (AD-38)."
+            maxLength: 128
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdaptationEscapeList"
+          description: OK
+          headers:
+            Ant-Backend:
+              schema:
+                $ref: "#/components/schemas/BackendMode"
+                description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Error
+      summary: Пропуски брака и перепроверка
+      tags:
+        - vision
+      x-ant-action:
+        class: read
+        critical: false
+        id: vision.escape.list
+        owner: vision
+        subject: analyzer_passport
+  /api/v1/vision/labeled-examples:
+    get:
+      description: "FR-99: подтверждённые решения контролёров по сигналам анализатора — ответ анализатора и ответ эксперта раздельно, со ссылкой на наблюдение."
+      operationId: vision.example.list
+      parameters:
+        - description: "Ось момента: occurred — «как было» (по умолчанию), recorded — «что мы знали» (AD-37)."
+          explode: false
+          in: query
+          name: axis
+          schema:
+            $ref: "#/components/schemas/Axis"
+            description: "Ось момента: occurred — «как было» (по умолчанию), recorded — «что мы знали» (AD-37)."
+        - description: "Момент (RFC 3339 UTC); пусто — «сейчас». Задан — воспроизведение: команды выключены (AD-21)."
+          explode: false
+          in: query
+          name: as_of
+          schema:
+            description: "Момент (RFC 3339 UTC); пусто — «сейчас». Задан — воспроизведение: команды выключены (AD-21)."
+            format: date-time
+            type: string
+        - description: "Прогон сценария: данные в его пространстве имён (AD-38)."
+          explode: false
+          in: query
+          name: run_id
+          schema:
+            description: "Прогон сценария: данные в его пространстве имён (AD-38)."
+            maxLength: 128
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LabeledExampleList"
+          description: OK
+          headers:
+            Ant-Backend:
+              schema:
+                $ref: "#/components/schemas/BackendMode"
+                description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Error
+      summary: Размеченные примеры
+      tags:
+        - vision
+      x-ant-action:
+        class: read
+        critical: false
+        id: vision.example.list
+        owner: vision
+        subject: analyzer_passport
+  /api/v1/vision/observations/{event_id}:
+    get:
+      description: "FR-98: по давнему наблюдению — вектор версий, ступени, признаки, паспорт и уровень доверия на момент наблюдения, почему изделие признано подозрительным."
+      operationId: vision.observation.read
+      parameters:
+        - description: event_id наблюдения (inspection.result.recorded).
+          in: path
+          name: event_id
+          required: true
+          schema:
+            description: event_id наблюдения (inspection.result.recorded).
+            maxLength: 64
+            type: string
+        - description: "Ось момента: occurred — «как было» (по умолчанию), recorded — «что мы знали» (AD-37)."
+          explode: false
+          in: query
+          name: axis
+          schema:
+            $ref: "#/components/schemas/Axis"
+            description: "Ось момента: occurred — «как было» (по умолчанию), recorded — «что мы знали» (AD-37)."
+        - description: "Момент (RFC 3339 UTC); пусто — «сейчас». Задан — воспроизведение: команды выключены (AD-21)."
+          explode: false
+          in: query
+          name: as_of
+          schema:
+            description: "Момент (RFC 3339 UTC); пусто — «сейчас». Задан — воспроизведение: команды выключены (AD-21)."
+            format: date-time
+            type: string
+        - description: "Прогон сценария: данные в его пространстве имён (AD-38)."
+          explode: false
+          in: query
+          name: run_id
+          schema:
+            description: "Прогон сценария: данные в его пространстве имён (AD-38)."
+            maxLength: 128
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ObservationAccount"
+          description: OK
+          headers:
+            Ant-Backend:
+              schema:
+                $ref: "#/components/schemas/BackendMode"
+                description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Error
+      summary: "Наблюдение анализатора: какими версиями и почему"
+      tags:
+        - vision
+      x-ant-action:
+        class: read
+        critical: false
+        id: vision.observation.read
+        owner: vision
+        subject: analyzer_passport
   /api/v1/workplaces:
     get:
       description: "Панель «Посты» стола руководителя и участок мастера (PRD §3a, FR-6, FR-81): участок — кто назначен — на месте ли (СКУД, ключ) — текущая деталь."

@@ -315,6 +315,10 @@ type AnalyzerPassportSuspendedV1 struct {
 	// Предыдущий допущенный паспорт.
 	FallbackPassportID *ObjectID `json:"fallback_passport_id,omitempty,omitzero"`
 
+	// Пояснение по-русски: что увидело правило автоотката (например, «качество кадра
+	// ниже 0,70 в трёх наблюдениях подряд»).
+	Note *string `json:"note,omitempty,omitzero"`
+
 	// Паспорт.
 	PassportID ObjectID `json:"passport_id"`
 
@@ -5808,6 +5812,7 @@ const SimulationInjectionAppliedV1InjectionCorruptFrame SimulationInjectionAppli
 const SimulationInjectionAppliedV1InjectionDataLoss SimulationInjectionAppliedV1Injection = "data_loss"
 const SimulationInjectionAppliedV1InjectionDuplicateEvent SimulationInjectionAppliedV1Injection = "duplicate_event"
 const SimulationInjectionAppliedV1InjectionLateEvent SimulationInjectionAppliedV1Injection = "late_event"
+const SimulationInjectionAppliedV1InjectionLightChange SimulationInjectionAppliedV1Injection = "light_change"
 const SimulationInjectionAppliedV1InjectionMachineFault SimulationInjectionAppliedV1Injection = "machine_fault"
 const SimulationInjectionAppliedV1InjectionTamperOutside SimulationInjectionAppliedV1Injection = "tamper_outside"
 

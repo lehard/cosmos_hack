@@ -35,6 +35,10 @@ type Status struct {
 	Trigger            string `json:"trigger,omitempty"`
 	Fallback           string `json:"fallback,omitempty"`
 	FallbackPassportID string `json:"fallback_passport_id,omitempty"`
+	// Note — пояснение правила автоотката; RunID — прогон сценария записи (AD-38).
+	Note  string   `json:"note,omitempty"`
+	RunID string   `json:"run_id,omitempty"`
+	Basis []string `json:"basis,omitempty"`
 }
 
 // Passport — паспорт допуска карты контроля (нормативный слой, AD-29) в
@@ -180,7 +184,7 @@ func Fold(records []kernel.Record) Registry {
 		if !ok {
 			return
 		}
-		st.At, st.EventID, st.Seq = r.OccurredAt, r.EventID, r.Seq
+		st.At, st.EventID, st.Seq, st.RunID = r.OccurredAt, r.EventID, r.Seq, r.RunID
 		reg.Passports[i].History = append(reg.Passports[i].History, st)
 		reg.Passports[i].Seq = r.Seq
 	}
@@ -227,6 +231,12 @@ func Fold(records []kernel.Record) Registry {
 			st := Status{Status: StatusSuspended, Trigger: string(d.Trigger), Fallback: string(d.Fallback)}
 			if d.FallbackPassportID != nil {
 				st.FallbackPassportID = string(*d.FallbackPassportID)
+			}
+			if d.Note != nil {
+				st.Note = *d.Note
+			}
+			for _, b := range d.Basis {
+				st.Basis = append(st.Basis, string(b))
 			}
 			status(r, string(d.PassportID), st)
 		case catalog.AnalyzerPassportReinstated:

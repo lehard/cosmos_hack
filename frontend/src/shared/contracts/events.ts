@@ -547,6 +547,10 @@ fallback_passport_id?: string
  * via the `definition` "uuid".
  */
 basis: string[]
+/**
+ * Пояснение по-русски: что увидело правило автоотката (например, «качество кадра ниже 0,70 в трёх наблюдениях подряд»).
+ */
+note?: string
 }
 /**
  * Привязка задана человеком — событие «деталь не опознана» или перепутанную деталь привязали вручную; выводы пересчитываются у обоих изделий (FR-34, AD-41).
@@ -7911,7 +7915,7 @@ run_id: string
 /**
  * Кнопка.
  */
-injection: ("duplicate_event" | "late_event" | "corrupt_frame" | "machine_fault" | "data_loss" | "tamper_outside")
+injection: ("duplicate_event" | "late_event" | "corrupt_frame" | "machine_fault" | "data_loss" | "tamper_outside" | "light_change")
 /**
  * Идентификатор UUID в нижнем регистре (RFC 9562).
  */
