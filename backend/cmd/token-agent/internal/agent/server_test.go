@@ -81,4 +81,3 @@ func TestServerAcceptsBrowserSignature(t *testing.T) {
 		t.Fatal("подпись чужим ключом принята")
 	}
 }
-
