@@ -1,8 +1,17 @@
 # Шаблоны документов шагов процесса (AD-12, FR-65) — нормативный слой. Шаги ссылаются на них (ant:document/@template).
 # Класс: record — генерируется из журнала; decision — черновик + маршрут подписей; input — внешняя запись.
-# Полностью описаны (эпик 28, «позвоночник»): сопроводительная карта, заявление о несоответствии, решение по
-# несоответствующей продукции, лист утверждения версии процесса, «Запросить решение». Остальные — только объявлены;
-# поля, отрисовку и маршруты строит эпик 44 по каталогу документов спайна.
+# Полностью описаны: позвоночник эпика 28 (сопроводительная карта, заявление о несоответствии, решение по
+# несоответствующей продукции, лист утверждения версии процесса, «Запросить решение») и каталог эпика 44 — акт
+# входного контроля, ярлыки, журнал предъявления ОТК, извещение и заключение ВП, разрешение на отклонение, акт о
+# браке, журнал изолятора, маршрутный лист, запись вмешательства, паспорт и свидетельство о приёмке, выписка
+# паспорта, служебные акты. Остальные — только объявлены (не в MVP или внешний вход).
+#
+# Документ по событию-триггеру (эпик 44): doc_type event_record + trigger {events, per, when} — свёртка изделия
+# оформляет документ сама по записи журнала изделия (per: event — документ на запись, per: item — журнал изделия,
+# запись — строка и новая версия; when — отбор по полю data). Содержимое: item.* (шапка изделия), event.* (at,
+# step, actor, source, type), data.* (data записи целиком), rows (все записи-триггеры). Документы вне изделия
+# (партия, пост, служебные) — generic по запросу (documents.version.request): subject, decision, comment,
+# requested_by, requested_at, sources.
 #
 # Поля полного шаблона (схема — contracts/normative/templates.schema.json):
 #   version   — версия шаблона: template_ref = ‹id›@‹версия›; новая версия шаблона — новый файл templates.v‹N›.yaml;
@@ -17,10 +26,78 @@ version: 1
 templates:
   - {id: incoming-register,            title: "Журнал регистрации продукции, поступившей на входной контроль", class: record}
   - {id: incoming-inspection-protocol, title: "Протокол входного контроля (снимки — приложение)",            class: record}
-  - {id: incoming-inspection-act,      title: "Акт входного контроля",                                        class: record}
+  # Эпик 44: партия — поток вне изделия; акт оформляет контролёр ВК запросом (documents.version.request) по приёмке партии.
+  - id: incoming-inspection-act
+    title: "Акт входного контроля"
+    class: record
+    version: 1
+    doc_type: generic
+    subject: lot
+    summary:
+      - {key: subject, label: "Партия"}
+      - {key: decision, label: "Заключение"}
+      - {key: requested_by, label: "Контролёр ВК"}
+    route:
+      - {stage: 1, title: "Контролёр входного контроля", role: quality_inspector, authority_id: qc_acceptance, quorum: one, signature_level: 2, paper_allowed: true, attester_authority_id: paper_attestation, stamp_kind: incoming}
+      - {stage: 2, title: "Мастер склада — приёмка на хранение", role: site_foreman, authority_id: site_foreman, quorum: one, signature_level: 2, paper_allowed: true, attester_authority_id: paper_attestation}
+    layout:
+      - kind: fields
+        title: "Акт входного контроля"
+        fields:
+          - {key: subject, label: "Партия"}
+          - {key: decision, label: "Заключение"}
+          - {key: comment, label: "Результаты контроля"}
+          - {key: sources, label: "Сертификат, протоколы"}
+          - {key: requested_by, label: "Контролёр ВК"}
+          - {key: requested_at, label: "Дата"}
+      - {kind: route, title: "Подписи"}
   - {id: incoming-results-register,    title: "Журнал результатов входного контроля",                         class: record}
-  - {id: lot-conformity-label,         title: "Ярлык соответствия / несоответствия партии (QR)",              class: record}
-  - {id: item-tag,                     title: "Бирка изделия с QR",                                           class: record}
+  - id: lot-conformity-label
+    title: "Ярлык соответствия / несоответствия партии (QR)"
+    class: record
+    version: 1
+    doc_type: generic
+    subject: lot
+    summary:
+      - {key: subject, label: "Партия"}
+      - {key: decision, label: "Ярлык"}
+      - {key: comment, label: "Основание"}
+    route:
+      - {stage: 1, title: "Контролёр качества", role: quality_inspector, authority_id: qc_acceptance, quorum: one, signature_level: 2, paper_allowed: true, attester_authority_id: paper_attestation}
+    layout:
+      - kind: fields
+        title: "Ярлык партии"
+        fields:
+          - {key: subject, label: "Партия"}
+          - {key: decision, label: "Ярлык"}
+          - {key: comment, label: "Основание"}
+          - {key: requested_by, label: "Контролёр"}
+          - {key: requested_at, label: "Дата"}
+      - {kind: route, title: "Подпись"}
+  - id: item-tag
+    title: "Бирка изделия с QR"
+    class: record
+    version: 1
+    doc_type: event_record
+    subject: item
+    trigger: {events: [item.carrier.applied], per: event}
+    summary:
+      - {key: item.item_id, label: "Изделие"}
+      - {key: data.carrier_type, label: "Носитель"}
+      - {key: data.value, label: "Значение"}
+    route:
+      - {stage: 1, title: "Мастер или контролёр — нанесение носителя", authority_id: source_record, quorum: one, signature_level: 1, paper_allowed: false, by_source: true}
+    layout:
+      - kind: fields
+        title: "Бирка"
+        fields:
+          - {key: item.item_id, label: "Изделие"}
+          - {key: item.item_type_id, label: "Обозначение ДСЕ"}
+          - {key: data.carrier_type, label: "Носитель"}
+          - {key: data.value, label: "Значение"}
+          - {key: event.at, label: "Нанесено"}
+          - {key: event.actor, label: "Кто"}
+      - {kind: route, title: "Подпись"}
   - id: traveler
     title: "Сопроводительная карта изделия"
     class: record
@@ -76,24 +153,315 @@ templates:
       - {kind: route, title: "Итоговая годность — подписи"}
       - {kind: text, title: "Происхождение", key: origin}
   - {id: requisition,                  title: "Требование-накладная",                                         class: record}
-  - {id: first-article-act,            title: "Акт первой детали",                                            class: record}
+  - id: first-article-act
+    title: "Акт первой детали"
+    class: record
+    version: 1
+    doc_type: generic
+    subject: item
+    summary:
+      - {key: subject, label: "Изделие"}
+      - {key: decision, label: "Заключение"}
+      - {key: comment, label: "Причина первой детали"}
+    route:
+      - {stage: 1, title: "Контролёр с полномочием «первая деталь»", role: quality_inspector, authority_id: first_article, quorum: one, signature_level: 2, paper_allowed: true, attester_authority_id: paper_attestation}
+    layout:
+      - kind: fields
+        title: "Акт первой детали"
+        fields:
+          - {key: subject, label: "Изделие"}
+          - {key: decision, label: "Заключение"}
+          - {key: comment, label: "Смена программы, оснастки, КД"}
+          - {key: sources, label: "Протоколы измерений"}
+          - {key: requested_by, label: "Контролёр"}
+          - {key: requested_at, label: "Дата"}
+      - {kind: route, title: "Подпись"}
   - {id: cmm-protocol,                 title: "Протокол КИМ, карта измерений",                                class: input}
-  - {id: presentation-log,             title: "Журнал предъявления ОТК",                                      class: record}
-  - {id: route-sheet,                  title: "Маршрутный лист межцеховой передачи",                          class: record}
+  # Эпик 44: журнал изделия — каждая запись item.presentation.recorded — строка и новая версия; повторное предъявление подписывает начальник ОТК (qc_acceptance_repeat) — через «Запросить решение».
+  - id: presentation-log
+    title: "Журнал предъявления ОТК"
+    class: record
+    version: 1
+    doc_type: event_record
+    subject: item
+    trigger: {events: [item.presentation.recorded], per: item}
+    summary:
+      - {key: item.item_id, label: "Изделие"}
+      - {key: data.step_key, label: "Точка предъявления"}
+      - {key: data.presentation_no, label: "Предъявление №"}
+      - {key: data.presented_by, label: "Предъявил"}
+    route:
+      - {stage: 1, title: "Предъявивший (исполнитель или мастер)", authority_id: source_record, quorum: one, signature_level: 1, paper_allowed: false, by_source: true}
+      - {stage: 2, title: "Контролёр ОТК — приёмка", role: quality_inspector, authority_id: qc_acceptance, quorum: one, signature_level: 2, paper_allowed: true, attester_authority_id: paper_attestation}
+    layout:
+      - kind: fields
+        title: "Последнее предъявление"
+        fields:
+          - {key: item.item_id, label: "Изделие"}
+          - {key: item.item_type_id, label: "Обозначение ДСЕ"}
+          - {key: data.step_key, label: "Точка предъявления"}
+          - {key: data.presentation_no, label: "Предъявление №"}
+          - {key: data.presented_to, label: "Кому"}
+          - {key: data.presented_by, label: "Предъявил"}
+          - {key: event.at, label: "Дата"}
+      - kind: table
+        title: "Предъявления изделия"
+        rows: rows
+        columns:
+          - {key: no, label: "№"}
+          - {key: at, label: "Дата"}
+          - {key: event, label: "Запись журнала"}
+          - {key: step, label: "Операция"}
+          - {key: actor, label: "Кто"}
+          - {key: summary, label: "Данные"}
+      - {kind: route, title: "Подписи"}
+  - id: route-sheet
+    title: "Маршрутный лист межцеховой передачи"
+    class: record
+    version: 1
+    doc_type: event_record
+    subject: item
+    trigger: {events: [operation.movement.sent, operation.movement.received], per: item}
+    summary:
+      - {key: item.item_id, label: "Изделие"}
+      - {key: data.from_location_id, label: "Откуда"}
+      - {key: data.to_location_id, label: "Куда"}
+    route:
+      - {stage: 1, title: "Мастер-отправитель", authority_id: source_record, quorum: one, signature_level: 1, paper_allowed: false, by_source: true}
+      - {stage: 2, title: "Мастер-получатель", role: site_foreman, authority_id: site_foreman, quorum: one, signature_level: 1, paper_allowed: true, attester_authority_id: paper_attestation}
+    layout:
+      - kind: fields
+        title: "Передача"
+        fields:
+          - {key: item.item_id, label: "Изделие"}
+          - {key: item.item_type_id, label: "Обозначение ДСЕ"}
+          - {key: data.from_location_id, label: "Откуда"}
+          - {key: data.to_location_id, label: "Куда"}
+          - {key: data.container_id, label: "Тара"}
+          - {key: event.at, label: "Дата"}
+          - {key: event.actor, label: "Кто"}
+      - kind: table
+        title: "Отправки и приёмки"
+        rows: rows
+        columns:
+          - {key: no, label: "№"}
+          - {key: at, label: "Дата"}
+          - {key: event, label: "Запись журнала"}
+          - {key: step, label: "Операция"}
+          - {key: actor, label: "Кто"}
+          - {key: summary, label: "Данные"}
+      - {kind: route, title: "Подписи"}
   - {id: interworkshop-transfer,       title: "Накладная на передачу между цехами",                           class: record}
   - {id: welding-log,                  title: "Журнал сварочных работ",                                       class: record}
   - {id: special-process-log,          title: "Журнал параметров специального процесса",                      class: record}
   - {id: ndt-conclusion,               title: "Заключение неразрушающего контроля",                           class: input}
   - {id: assembly-card,                title: "Карта сборки (отметки скрытых работ)",                         class: record}
   - {id: torque-log,                   title: "Журнал затяжек",                                               class: record}
-  - {id: intervention-record,          title: "Запись вмешательства (вскрытия)",                              class: record}
+  - id: intervention-record
+    title: "Запись вмешательства (вскрытия)"
+    class: record
+    version: 1
+    doc_type: event_record
+    subject: item
+    trigger: {events: [item.intervention.opened, item.intervention.closed], per: item}
+    summary:
+      - {key: item.item_id, label: "Изделие"}
+      - {key: data.intervention_id, label: "Вмешательство"}
+      - {key: data.purpose, label: "Цель"}
+    route:
+      - {stage: 1, title: "Мастер — вскрытие", authority_id: source_record, quorum: one, signature_level: 1, paper_allowed: false, by_source: true}
+      - {stage: 2, title: "Контролёр — закрытие после повторной проверки зоны", role: quality_inspector, authority_id: qc_acceptance, quorum: one, signature_level: 2, paper_allowed: true, attester_authority_id: paper_attestation}
+    layout:
+      - kind: fields
+        title: "Вмешательство"
+        fields:
+          - {key: item.item_id, label: "Изделие"}
+          - {key: item.item_type_id, label: "Обозначение ДСЕ"}
+          - {key: data.intervention_id, label: "Вмешательство"}
+          - {key: data.zone_ids, label: "Зоны"}
+          - {key: data.purpose, label: "Цель"}
+          - {key: data.removed_components, label: "Снятые компоненты"}
+          - {key: event.at, label: "Дата"}
+          - {key: event.actor, label: "Кто"}
+      - kind: table
+        title: "Открытие и закрытие"
+        rows: rows
+        columns:
+          - {key: no, label: "№"}
+          - {key: at, label: "Дата"}
+          - {key: event, label: "Запись журнала"}
+          - {key: step, label: "Операция"}
+          - {key: actor, label: "Кто"}
+          - {key: summary, label: "Данные"}
+      - {kind: route, title: "Подписи"}
   - {id: test-program,                 title: "Программа и методика испытаний",                               class: input}
   - {id: test-protocol,                title: "Протокол испытаний на герметичность",                          class: record}
-  - {id: customer-presentation-notice, title: "Извещение о предъявлении ВП / ПЗ",                           class: decision}
-  - {id: acceptance-certificate,       title: "Свидетельство о приёмке (паспорт, формуляр)",                  class: decision}
-  - {id: passport,                     title: "Паспорт / формуляр изделия",                                   class: decision}
-  - {id: isolator-log,                 title: "Журнал изолятора",                                             class: record}
-  - {id: nc-label,                     title: "Ярлык «Брак» / НП (QR)",                                       class: record}
+  # Эпик 44: предъявление представителю заказчика; ответ ВП — «Заключение ВП» (связанный документ).
+  - id: customer-presentation-notice
+    title: "Извещение о предъявлении ВП / ПЗ"
+    class: decision
+    version: 1
+    doc_type: event_record
+    subject: item
+    trigger: {events: [item.presentation.recorded], per: event, when: {field: presented_to, values: [customer_representative]}}
+    summary:
+      - {key: item.item_id, label: "Изделие"}
+      - {key: data.step_key, label: "Точка приёмки"}
+      - {key: data.presentation_no, label: "Предъявление №"}
+    route:
+      - {stage: 1, title: "Мастер — предъявил", authority_id: source_record, quorum: one, signature_level: 2, paper_allowed: false, by_source: true}
+      - {stage: 2, title: "Контролёр ОТК — принято ОТК", role: quality_inspector, authority_id: qc_acceptance, quorum: one, signature_level: 2, paper_allowed: true, attester_authority_id: paper_attestation}
+    layout:
+      - kind: fields
+        title: "Извещение"
+        fields:
+          - {key: item.item_id, label: "Изделие"}
+          - {key: item.item_type_id, label: "Обозначение ДСЕ"}
+          - {key: item.order_id, label: "Задание"}
+          - {key: item.lots, label: "Партии"}
+          - {key: data.step_key, label: "Точка приёмки"}
+          - {key: data.presentation_no, label: "Предъявление №"}
+          - {key: data.presented_by, label: "Предъявил"}
+          - {key: event.at, label: "Дата предъявления"}
+      - {kind: route, title: "Подписи"}
+  - id: customer-conclusion
+    title: "Заключение ВП (связанный документ)"
+    class: decision
+    version: 1
+    doc_type: generic
+    subject: item
+    summary:
+      - {key: subject, label: "Изделие"}
+      - {key: decision, label: "Заключение"}
+      - {key: comment, label: "Замечания"}
+    route:
+      - {stage: 1, title: "Представитель заказчика", role: customer_representative, authority_id: customer_acceptance, quorum: one, signature_level: 2, paper_allowed: true, attester_authority_id: paper_attestation, external_party: customer_representative}
+    layout:
+      - kind: fields
+        title: "Заключение ВП"
+        fields:
+          - {key: subject, label: "Объект"}
+          - {key: decision, label: "Заключение / что решается"}
+          - {key: comment, label: "Содержание"}
+          - {key: requested_by, label: "Составил"}
+          - {key: requested_at, label: "Дата"}
+          - {key: sources, label: "Основания"}
+      - {kind: route, title: "Подпись"}
+  - id: acceptance-certificate
+    title: "Свидетельство о приёмке (паспорт, формуляр)"
+    class: decision
+    version: 1
+    doc_type: event_record
+    subject: item
+    trigger: {events: [item.release.recorded], per: event}
+    summary:
+      - {key: item.item_id, label: "Изделие"}
+      - {key: item.item_type_id, label: "Обозначение"}
+      - {key: data.warehouse_id, label: "Склад"}
+      - {key: data.after_rework, label: "После переделки"}
+    route:
+      - {stage: 1, title: "Начальник ОТК", role: head_of_qc, authority_id: qc_acceptance, quorum: one, signature_level: 2, paper_allowed: true, attester_authority_id: paper_attestation}
+      - {stage: 2, title: "Руководитель производства", role: production_manager, authority_id: production_manager, quorum: one, signature_level: 2, paper_allowed: true, attester_authority_id: paper_attestation}
+      - {stage: 3, title: "Представитель заказчика (для МО)", role: customer_representative, authority_id: customer_acceptance, quorum: one, signature_level: 2, paper_allowed: true, attester_authority_id: paper_attestation, external_party: customer_representative}
+    layout:
+      - kind: fields
+        title: "Свидетельство о приёмке"
+        fields:
+          - {key: item.item_id, label: "Изделие"}
+          - {key: item.item_type_id, label: "Обозначение ДСЕ"}
+          - {key: item.order_id, label: "Задание"}
+          - {key: item.lots, label: "Партии"}
+          - {key: data.warehouse_id, label: "Склад"}
+          - {key: data.received_by, label: "Принял на склад"}
+          - {key: data.after_rework, label: "После переделки"}
+          - {key: data.concession_id, label: "Разрешение на отклонение"}
+          - {key: event.at, label: "Дата выпуска"}
+      - {kind: route, title: "Подписи"}
+  - id: passport
+    title: "Паспорт / формуляр изделия"
+    class: decision
+    version: 1
+    doc_type: event_record
+    subject: item
+    trigger: {events: [item.release.recorded], per: event}
+    summary:
+      - {key: item.item_id, label: "Изделие"}
+      - {key: item.item_type_id, label: "Обозначение"}
+      - {key: item.order_id, label: "Задание"}
+    route:
+      - {stage: 1, title: "Начальник ОТК", role: head_of_qc, authority_id: qc_acceptance, quorum: one, signature_level: 2, paper_allowed: true, attester_authority_id: paper_attestation}
+      - {stage: 2, title: "Представитель заказчика", role: customer_representative, authority_id: customer_acceptance, quorum: one, signature_level: 2, paper_allowed: true, attester_authority_id: paper_attestation, external_party: customer_representative}
+    layout:
+      - kind: fields
+        title: "Паспорт изделия"
+        fields:
+          - {key: item.item_id, label: "Изделие"}
+          - {key: item.item_type_id, label: "Обозначение ДСЕ"}
+          - {key: item.order_id, label: "Задание"}
+          - {key: item.lots, label: "Партии"}
+          - {key: data.warehouse_id, label: "Склад"}
+          - {key: data.after_rework, label: "После переделки"}
+          - {key: event.at, label: "Дата выпуска"}
+      - {kind: route, title: "Подписи"}
+  - id: isolator-log
+    title: "Журнал изолятора"
+    class: record
+    version: 1
+    doc_type: event_record
+    subject: item
+    trigger: {events: [decision.item.isolated, decision.containment.released], per: item}
+    summary:
+      - {key: item.item_id, label: "Изделие"}
+      - {key: data.reason, label: "Основание"}
+      - {key: data.isolator_location_id, label: "Место"}
+    route:
+      - {stage: 1, title: "Исполнитель или мастер — физическое подтверждение", authority_id: source_record, quorum: one, signature_level: 1, paper_allowed: false, by_source: true}
+    layout:
+      - kind: fields
+        title: "Изолятор"
+        fields:
+          - {key: item.item_id, label: "Изделие"}
+          - {key: item.item_type_id, label: "Обозначение ДСЕ"}
+          - {key: data.isolator_location_id, label: "Место"}
+          - {key: data.reason, label: "Основание"}
+          - {key: data.decision_due_at, label: "Решение до"}
+          - {key: event.at, label: "Дата"}
+          - {key: event.actor, label: "Кто"}
+      - kind: table
+        title: "Вход и выход изолятора"
+        rows: rows
+        columns:
+          - {key: no, label: "№"}
+          - {key: at, label: "Дата"}
+          - {key: event, label: "Запись журнала"}
+          - {key: step, label: "Операция"}
+          - {key: actor, label: "Кто"}
+          - {key: summary, label: "Данные"}
+      - {kind: route, title: "Подпись"}
+  - id: nc-label
+    title: "Ярлык «Брак» / НП (QR)"
+    class: record
+    version: 1
+    doc_type: event_record
+    subject: item
+    trigger: {events: [decision.item.isolated], per: event}
+    summary:
+      - {key: item.item_id, label: "Изделие"}
+      - {key: data.reason, label: "Основание"}
+      - {key: data.isolator_location_id, label: "Место"}
+    route:
+      - {stage: 1, title: "Контролёр качества", authority_id: source_record, quorum: one, signature_level: 2, paper_allowed: false, by_source: true}
+    layout:
+      - kind: fields
+        title: "Ярлык"
+        fields:
+          - {key: item.item_id, label: "Изделие"}
+          - {key: item.item_type_id, label: "Обозначение ДСЕ"}
+          - {key: data.reason, label: "Основание"}
+          - {key: data.isolator_location_id, label: "Место"}
+          - {key: event.at, label: "Дата"}
+          - {key: event.actor, label: "Контролёр"}
+      - {kind: route, title: "Подпись"}
   - id: nc-statement
     title: "Заявление о несоответствии"
     class: record
@@ -167,8 +535,72 @@ templates:
           - {key: decision.author,     label: "Автор решения"}
           - {key: decision.at,         label: "Дата решения"}
       - {kind: route, title: "Подписи маршрута"}
-  - {id: scrap-act,                    title: "Акт о браке",                                                  class: decision}
-  - {id: concession,                   title: "Разрешение на отклонение",                                     class: decision}
+  # Эпик 44: комиссия (согласующие, k из n) и виновное лицо (после объяснительной) — «Запросить решение»; здесь — обязательный минимум маршрута.
+  - id: scrap-act
+    title: "Акт о браке"
+    class: decision
+    version: 1
+    doc_type: event_record
+    subject: item
+    trigger: {events: [decision.disposition.set], per: event, when: {field: disposition, values: [scrap]}}
+    summary:
+      - {key: item.item_id, label: "Изделие"}
+      - {key: data.nc_id, label: "Несоответствие"}
+      - {key: data.scrap_kind, label: "Вид брака"}
+      - {key: data.reason, label: "Основание"}
+    route:
+      - {stage: 1, title: "Контролёр ОТК", role: quality_inspector, authority_id: qc_acceptance, quorum: one, signature_level: 2, paper_allowed: true, attester_authority_id: paper_attestation}
+      - {stage: 2, title: "Начальник цеха", role: head_of_workshop, authority_id: head_of_workshop, quorum: one, signature_level: 2, paper_allowed: true, attester_authority_id: paper_attestation}
+      - {stage: 3, title: "Руководитель производства — «утверждаю»", role: production_manager, authority_id: scrap_approval, quorum: one, signature_level: 2, paper_allowed: true, attester_authority_id: paper_attestation}
+    layout:
+      - kind: fields
+        title: "Акт о браке"
+        fields:
+          - {key: item.item_id, label: "Изделие"}
+          - {key: item.item_type_id, label: "Обозначение ДСЕ"}
+          - {key: item.order_id, label: "Задание"}
+          - {key: item.lots, label: "Партии"}
+          - {key: data.nc_id, label: "Несоответствие"}
+          - {key: data.disposition, label: "Решение"}
+          - {key: data.scrap_kind, label: "Вид брака"}
+          - {key: data.claim_basis, label: "Основание претензии"}
+          - {key: data.reason, label: "Основание"}
+          - {key: event.actor, label: "Решение принял"}
+          - {key: event.at, label: "Дата решения"}
+      - {kind: route, title: "Подписи"}
+  # Эпик 44: форма — по ГОСТ Р 59312; порядок согласования — каталог документов спайна.
+  - id: concession
+    title: "Разрешение на отклонение"
+    class: decision
+    version: 1
+    doc_type: event_record
+    subject: item
+    trigger: {events: [decision.disposition.set], per: event, when: {field: disposition, values: [repair, use_as_is]}}
+    summary:
+      - {key: item.item_id, label: "Изделие"}
+      - {key: data.nc_id, label: "Несоответствие"}
+      - {key: data.disposition, label: "Решение"}
+      - {key: data.reason, label: "Основание"}
+    route:
+      - {stage: 1, title: "Мастер цеха-виновника", role: site_foreman, authority_id: site_foreman, quorum: one, signature_level: 2, paper_allowed: true, attester_authority_id: paper_attestation}
+      - {stage: 2, title: "Технолог", role: technologist, authority_id: concession_approval, quorum: one, signature_level: 2, paper_allowed: true, attester_authority_id: paper_attestation}
+      - {stage: 3, title: "Начальник ОТК", role: head_of_qc, authority_id: concession_approval, quorum: one, signature_level: 2, paper_allowed: true, attester_authority_id: paper_attestation}
+      - {stage: 4, title: "Представитель заказчика", role: customer_representative, authority_id: customer_acceptance, quorum: one, signature_level: 2, paper_allowed: true, attester_authority_id: paper_attestation, external_party: customer_representative}
+      - {stage: 5, title: "Согласующий — держатель КД", role: design_authority, authority_id: concession_approval, quorum: one, signature_level: 2, paper_allowed: true, attester_authority_id: paper_attestation}
+      - {stage: 6, title: "Руководитель производства", role: production_manager, authority_id: production_manager, quorum: one, signature_level: 2, paper_allowed: true, attester_authority_id: paper_attestation}
+    layout:
+      - kind: fields
+        title: "Разрешение на отклонение"
+        fields:
+          - {key: item.item_id, label: "Изделие"}
+          - {key: item.item_type_id, label: "Обозначение ДСЕ"}
+          - {key: data.nc_id, label: "Несоответствие"}
+          - {key: data.disposition, label: "Решение (ремонт / «как есть»)"}
+          - {key: data.concession_id, label: "Номер разрешения"}
+          - {key: data.reason, label: "Основание"}
+          - {key: event.actor, label: "Инициатор"}
+          - {key: event.at, label: "Дата"}
+      - {kind: route, title: "Подписи"}
   - id: process-version-approval
     title: "Лист утверждения версии процесса"
     class: decision
@@ -274,3 +706,101 @@ templates:
           - {key: requested_by, label: "Запросил мастер"}
           - {key: requested_at, label: "Дата запроса"}
       - {kind: route, title: "Согласование ОТК"}
+  # ── эпик 44: выписка паспорта и служебные акты ──
+  # Эпик 44: межзаводской обмен; подпись ключом шлюза предприятия (уровень 0) — модуль federation при отправке.
+  - id: passport-extract
+    title: "Выписка паспорта (экспорт партнёру)"
+    class: decision
+    version: 1
+    doc_type: generic
+    subject: item
+    summary:
+      - {key: subject, label: "Изделие"}
+      - {key: decision, label: "Кому"}
+      - {key: comment, label: "Состав выписки"}
+    route:
+      - {stage: 1, title: "Контролёр ОТК", role: quality_inspector, authority_id: qc_acceptance, quorum: one, signature_level: 2, paper_allowed: false}
+    layout:
+      - kind: fields
+        title: "Выписка паспорта"
+        fields:
+          - {key: subject, label: "Объект"}
+          - {key: decision, label: "Заключение / что решается"}
+          - {key: comment, label: "Содержание"}
+          - {key: requested_by, label: "Составил"}
+          - {key: requested_at, label: "Дата"}
+          - {key: sources, label: "Основания"}
+      - {kind: route, title: "Подписи (ключ шлюза предприятия ставится при отправке)"}
+  # Эпик 44, служебные акты: ввод устройства, восстановление, регистрация партнёра — по запросу администратора.
+  - id: device-commissioning-act
+    title: "Акт ввода устройства"
+    class: decision
+    version: 1
+    doc_type: generic
+    subject: other
+    summary:
+      - {key: subject, label: "Устройство"}
+      - {key: decision, label: "Что вводится"}
+      - {key: comment, label: "Основание"}
+    route:
+      - {stage: 1, title: "Администратор безопасности", role: administrator, authority_id: administrator, quorum: one, signature_level: 2, paper_allowed: false}
+      - {stage: 2, title: "Начальник ОТК (средства контроля)", role: head_of_qc, authority_id: qc_acceptance, quorum: one, signature_level: 2, paper_allowed: false}
+    layout:
+      - kind: fields
+        title: "Акт ввода устройства"
+        fields:
+          - {key: subject, label: "Объект"}
+          - {key: decision, label: "Заключение / что решается"}
+          - {key: comment, label: "Содержание"}
+          - {key: requested_by, label: "Составил"}
+          - {key: requested_at, label: "Дата"}
+          - {key: sources, label: "Основания"}
+      - {kind: route, title: "Подписи"}
+  - id: restore-act
+    title: "Акт восстановления"
+    class: decision
+    version: 1
+    doc_type: generic
+    subject: other
+    summary:
+      - {key: subject, label: "Что восстановлено"}
+      - {key: decision, label: "Из какой копии"}
+      - {key: comment, label: "Описание"}
+    route:
+      - {stage: 1, title: "Администратор безопасности", role: administrator, authority_id: administrator, quorum: one, signature_level: 2, paper_allowed: false}
+      - {stage: 2, title: "Аудитор ИБ", role: security_auditor, authority_id: security_auditor, quorum: one, signature_level: 2, paper_allowed: false}
+    layout:
+      - kind: fields
+        title: "Акт восстановления"
+        fields:
+          - {key: subject, label: "Объект"}
+          - {key: decision, label: "Заключение / что решается"}
+          - {key: comment, label: "Содержание"}
+          - {key: requested_by, label: "Составил"}
+          - {key: requested_at, label: "Дата"}
+          - {key: sources, label: "Основания"}
+      - {kind: route, title: "Подписи"}
+  - id: partner-registration-act
+    title: "Регистрация партнёра и его корней"
+    class: decision
+    version: 1
+    doc_type: generic
+    subject: other
+    summary:
+      - {key: subject, label: "Партнёр"}
+      - {key: decision, label: "Корни и ключи"}
+      - {key: comment, label: "Основание"}
+    route:
+      - {stage: 1, title: "Администратор безопасности", role: administrator, authority_id: administrator, quorum: one, signature_level: 2, paper_allowed: false}
+      - {stage: 2, title: "Начальник ОТК", role: head_of_qc, authority_id: qc_acceptance, quorum: one, signature_level: 2, paper_allowed: false}
+    layout:
+      - kind: fields
+        title: "Регистрация партнёра"
+        fields:
+          - {key: subject, label: "Объект"}
+          - {key: decision, label: "Заключение / что решается"}
+          - {key: comment, label: "Содержание"}
+          - {key: requested_by, label: "Составил"}
+          - {key: requested_at, label: "Дата"}
+          - {key: sources, label: "Основания"}
+      - {kind: route, title: "Подписи"}

@@ -225,7 +225,8 @@ type DocumentTemplatesSeedTemplatesElem struct {
 	Class DocumentTemplatesSeedTemplatesElemClass `json:"class"`
 
 	// Построитель содержимого в domain/documents: traveler, nc_statement,
-	// nc_disposition, generic. Нет — шаблон только объявлен (эпик 44).
+	// nc_disposition, generic, event_record (документ по событию-триггеру, эпик 44).
+	// Нет — шаблон только объявлен.
 	DocType *string `json:"doc_type,omitempty,omitzero"`
 
 	// Идентификатор шаблона.
@@ -245,6 +246,11 @@ type DocumentTemplatesSeedTemplatesElem struct {
 
 	// Название документа.
 	Title string `json:"title"`
+
+	// Событие-триггер (эпик 44, FR-65): документ с построителем event_record
+	// оформляется свёрткой изделия сам по записи журнала изделия одного из типов
+	// events.
+	Trigger *DocumentTemplatesSeedTemplatesElemTrigger `json:"trigger,omitempty,omitzero"`
 
 	// Версия шаблона: template_ref = ‹id›@‹версия› (AD-12). Нет — 1.
 	Version *int `json:"version,omitempty,omitzero"`
@@ -394,6 +400,7 @@ const DocumentTemplatesSeedTemplatesElemSubjectNonconformity DocumentTemplatesSe
 const DocumentTemplatesSeedTemplatesElemSubjectOther DocumentTemplatesSeedTemplatesElemSubject = "other"
 const DocumentTemplatesSeedTemplatesElemSubjectPolicy DocumentTemplatesSeedTemplatesElemSubject = "policy"
 const DocumentTemplatesSeedTemplatesElemSubjectProcessVersion DocumentTemplatesSeedTemplatesElemSubject = "process_version"
+const DocumentTemplatesSeedTemplatesElemSubjectWorkplace DocumentTemplatesSeedTemplatesElemSubject = "workplace"
 
 // Поле: путь в content и подпись.
 type DocumentTemplatesSeedTemplatesElemSummaryElem struct {
@@ -402,6 +409,37 @@ type DocumentTemplatesSeedTemplatesElemSummaryElem struct {
 
 	// Подпись поля.
 	Label string `json:"label"`
+}
+
+// Событие-триггер (эпик 44, FR-65): документ с построителем event_record
+// оформляется свёрткой изделия сам по записи журнала изделия одного из типов
+// events.
+type DocumentTemplatesSeedTemplatesElemTrigger struct {
+	// Типы записей-триггеров.
+	Events []string `json:"events"`
+
+	// event — документ на каждую запись (акт, извещение); item — журнал изделия: одна
+	// запись — строка и новая версия. Нет — event.
+	Per *DocumentTemplatesSeedTemplatesElemTriggerPer `json:"per,omitempty,omitzero"`
+
+	// Отбор записи-триггера по полю data: документ оформляется, только если значение
+	// поля — одно из values (например, решение «списать»).
+	When *DocumentTemplatesSeedTemplatesElemTriggerWhen `json:"when,omitempty,omitzero"`
+}
+
+type DocumentTemplatesSeedTemplatesElemTriggerPer string
+
+const DocumentTemplatesSeedTemplatesElemTriggerPerEvent DocumentTemplatesSeedTemplatesElemTriggerPer = "event"
+const DocumentTemplatesSeedTemplatesElemTriggerPerItem DocumentTemplatesSeedTemplatesElemTriggerPer = "item"
+
+// Отбор записи-триггера по полю data: документ оформляется, только если значение
+// поля — одно из values (например, решение «списать»).
+type DocumentTemplatesSeedTemplatesElemTriggerWhen struct {
+	// Поле data записи.
+	Field string `json:"field"`
+
+	// Допустимые значения.
+	Values []string `json:"values"`
 }
 
 // Оборудование и поверка (AD-31, FR-17): normative/reference/*/equipment.yaml.
