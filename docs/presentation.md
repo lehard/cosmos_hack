@@ -132,7 +132,7 @@
   источники, КОМПАС (файл сборки), второе предприятие — [assumptions.md](assumptions.md).
 - **Частично или описано:** срез «по линиям» и доля ошибок по сопоставимым работам, прогон «1 = N» обработчиков
   (`make load` подготовлен, не прогонялся), Kafka и OpenTelemetry, TLS к Postgres, ротация KEK — [case-compliance.md](case-compliance.md),
-  [reviewer-guide.md — Что в работе](reviewer-guide.md#что-в-работе).
+  [reviewer-guide.md — Ограничения решения](reviewer-guide.md#ограничения-решения).
 
 ## 12. Как проверить без нас
 
