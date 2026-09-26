@@ -426,6 +426,18 @@ type Catalog struct {
 	Entries []CatalogEntry `json:"scenarios"`
 	// Coverage — место кейса → сценарии (для жюри и путеводителя, FR-117).
 	Coverage map[string][]CoverageRow `json:"coverage"`
+	// Reproduction — набор воспроизведения (FR-119, кейс §6.4): что в нём,
+	// версии, допущения, параметры и команды запуска.
+	Reproduction *Reproduction `json:"reproduction,omitempty"`
+}
+
+// Reproduction — набор воспроизведения сценариев (FR-119).
+type Reproduction struct {
+	Contents    []string `json:"contents"`
+	Versions    []string `json:"versions"`
+	Parameters  []string `json:"parameters"`
+	Assumptions []string `json:"assumptions"`
+	Commands    []string `json:"commands"`
 }
 
 // CatalogEntry — строка пульта: карточка или прогон целиком.
