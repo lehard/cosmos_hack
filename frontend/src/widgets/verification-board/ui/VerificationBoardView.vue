@@ -8,7 +8,6 @@
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NRadioButton, NRadioGroup } from 'naive-ui'
 import { BOARD_STATUS_TONE, boardRows, boardSummary, boardValue, displayStep, type Board, type BoardFilter } from '@/entities/run'
 import { statusPalette } from '@/shared/api/generated/statuses'
 import type { Density } from '@/shared/config/widget'
@@ -31,40 +30,27 @@ const rows = computed(() =>
 
 <template>
   <div class="board" :class="`density-${density}`" data-testid="verification-board">
-    <p class="subtitle">{{ t('testStand.board.subtitle') }}</p>
-    <div class="summary" data-testid="board-summary">
+    <p class="head" data-testid="board-summary">
       <strong v-if="summary.allMatched" class="all" data-testid="all-matched">{{ t('testStand.board.allMatched') }}</strong>
       <template v-else>
-        <strong>{{ t('widgets.board.passedOf', { passed: summary.passed, total: summary.total }) }}</strong>
-        <span v-if="summary.failed" class="failed" data-testid="mismatches">{{ t('testStand.board.mismatches', { n: summary.failed }) }}</span>
-        <span v-if="summary.pending" class="muted">{{ t('widgets.board.pending', { n: summary.pending }) }}</span>
-        <span v-if="summary.notReached" class="muted">{{ t('widgets.board.notReached', { n: summary.notReached }) }}</span>
+        {{ t('widgets.board.passedOf', { passed: summary.passed, total: summary.total }) }}
+        <span v-if="summary.failed" class="failed" data-testid="mismatches"> · {{ t('testStand.board.mismatches', { n: summary.failed }) }}</span>
       </template>
-    </div>
-    <NRadioGroup :value="filter" size="small" @update:value="(v: BoardFilter) => emit('update:filter', v)">
-      <NRadioButton value="all" data-testid="filter-all">{{ t('widgets.board.filter.all') }}</NRadioButton>
-      <NRadioButton value="failed" data-testid="filter-failed">{{ t('widgets.board.filter.failed') }}</NRadioButton>
-      <NRadioButton value="open" data-testid="filter-open">{{ t('widgets.board.filter.open') }}</NRadioButton>
-    </NRadioGroup>
+    </p>
+    <p class="quiet">{{ t('testStand.board.subtitle') }}</p>
+    <p class="tabs">
+      <button v-for="f in (['all', 'failed', 'open'] as const)" :key="f" type="button" class="tab" :data-on="filter === f || undefined" :data-testid="`filter-${f}`" @click="emit('update:filter', f)">
+        {{ t(`widgets.board.filter.${f}`) }}
+      </button>
+    </p>
     <ol class="rows">
-      <li v-for="{ row, expected, actual, color } in rows" :key="row.assertion_id" class="row" :data-id="row.assertion_id" :data-status="row.status">
-        <div class="line">
-          <span class="status">
-            <span class="dot" :style="{ background: color }" aria-hidden="true" />
-            {{ t(`widgets.board.status.${codeToKey(row.status)}`) }}
-          </span>
-          <span class="muted">{{ row.assertion_id }} · {{ t('widgets.board.step', { step: displayStep(row.step) }) }}</span>
-        </div>
-        <div class="title">{{ row.title }}</div>
-        <div class="values">
-          <span class="muted">{{ t('testStand.board.expected') }}</span>
-          <code data-testid="expected">{{ expected }}</code>
-          <span aria-hidden="true">→</span>
-          <span class="muted">{{ t('testStand.board.actual') }}</span>
-          <code v-if="actual !== null" data-testid="actual">{{ actual }}</code>
-          <span v-else class="muted" data-testid="actual">{{ t('widgets.board.notChecked') }}</span>
-        </div>
-        <div class="muted check">{{ t('widgets.board.checkedBy', { operation: row.operation_id, path: row.path }) }}</div>
+      <li v-for="{ row, expected, actual, color } in rows" :key="row.assertion_id" class="row" :data-id="row.assertion_id" :data-status="row.status" :title="t('widgets.board.checkedBy', { operation: row.operation_id, path: row.path })">
+        <span class="dot" :style="{ background: color }" :aria-label="t(`widgets.board.status.${codeToKey(row.status)}`)" />
+        <span class="title">{{ row.title }}</span>
+        <span v-if="row.status === 'failed'" class="values">
+          {{ t('testStand.board.expected') }} <code data-testid="expected">{{ expected }}</code> → {{ t('testStand.board.actual') }}
+          <code v-if="actual !== null" data-testid="actual">{{ actual }}</code><template v-else>{{ t('widgets.board.notChecked') }}</template>
+        </span>
       </li>
     </ol>
   </div>
@@ -74,90 +60,98 @@ const rows = computed(() =>
 .board {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--ant-space-3);
   font-size: var(--ant-fs-body);
 }
 
-.density-large {
-  font-size: var(--ant-fs-lg);
-}
-
-.subtitle {
+p {
   margin: 0;
-  color: var(--ant-text-3);
 }
 
-.summary {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 12px;
-  align-items: baseline;
+.head {
+  font-size: var(--ant-fs-title);
 }
 
 .all {
-  color: var(--ant-status-success);
+  color: var(--ant-status-success-text);
 }
 
 .failed {
-  color: var(--ant-status-danger);
+  color: var(--ant-status-danger-text);
+}
+
+.quiet {
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-meta);
+}
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ant-space-3);
+}
+
+.tab {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ant-text-2);
+  font: inherit;
+  cursor: pointer;
+}
+
+.tab[data-on] {
+  color: var(--ant-text);
   font-weight: var(--ant-fw-bold);
 }
 
 .rows {
   display: flex;
   flex-direction: column;
-  gap: 4px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
 .row {
-  padding: 6px 8px;
-  border: 1px solid var(--ant-border);
-  border-radius: var(--ant-radius-md);
-}
-
-.row[data-status='failed'] {
-  border-left: 3px solid var(--ant-status-danger);
-}
-
-.row[data-status='not_reached'] {
-  opacity: 0.7;
-}
-
-.line,
-.values {
   display: flex;
   flex-wrap: wrap;
-  gap: 2px 8px;
+  gap: var(--ant-space-1) var(--ant-space-2);
   align-items: baseline;
+  padding: var(--ant-space-2) 0;
+  border-bottom: 1px solid var(--ant-border);
 }
 
-.status {
-  display: inline-flex;
-  gap: 6px;
-  align-items: center;
-  font-weight: var(--ant-fw-bold);
+.row:last-child {
+  border-bottom: 0;
+}
+
+.row[data-status='not_reached'],
+.row[data-status='pending'] {
+  color: var(--ant-text-3);
 }
 
 .dot {
-  width: 10px;
-  height: 10px;
+  flex: none;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
+  transform: translateY(-1px);
+}
+
+.title {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.values {
+  flex-basis: 100%;
+  padding-left: calc(8px + var(--ant-space-2));
+  color: var(--ant-status-danger-text);
+  font-size: var(--ant-fs-meta);
 }
 
 code {
   font-family: var(--ant-font-mono);
-  font-size: var(--ant-fs-meta);
-}
-
-.muted {
-  color: var(--ant-text-3);
-  font-size: var(--ant-fs-meta);
-}
-
-.check {
-  word-break: break-all;
 }
 </style>
