@@ -39,5 +39,27 @@ for (const v of vectors) {
   check(!bad.ok && bad.code === 'signing.pin_wrong', `${v.name}: неверный PIN отклонён`)
   const sg = call('sign', { block: v.block, sealed: v.sealed, dk_b64: u.dk_b64, context: v.context, confirmed_digest: v.doc_digest, journal: [] })
   check(sg.ok && sg.envelope.signatures.length === 1 && sg.journal.length === 1, `${v.name}: подпись и запись локального журнала`)
+
+  // Ключи многих персон разом под один PIN (Д-72, демо из одного браузера):
+  // argon2id один раз, по хранилищу на ключ; подпись — ключами одного человека.
+  if (v.key_files?.length) {
+    const many = call('sealEach', { files: v.key_files, storage_variant: 'extension', now: v.context.now }, v.pin)
+    check(many.ok && many.sealed.length === v.key_files.length && new Set(many.sealed.map((x) => x.kdf.salt_b64)).size === 1, `${v.name}: ${v.key_files.length} ключа под одним PIN, одна соль`)
+    const person = many.sealed[0].person_id
+    const mine = many.sealed.filter((x) => x.person_id === person)
+    const other = many.sealed.find((x) => x.person_id !== person)
+    const ctx = { ...v.context, profile: 'hybrid' }
+    const hp = call('prepare', v.block, mine, ctx)
+    const hs = hp.ok && call('sign', { block: v.block, sealed: mine, dk_b64: many.dk_b64, context: ctx, confirmed_digest: hp.prepared.doc_digest, journal: [] })
+    check(hs && hs.ok && hs.envelope.signatures.length === 2, `${v.name}: hybrid ключами ${person} из двух хранилищ, один ключ сеанса`)
+    const gp = call('prepare', v.block, mine, v.context)
+    check(gp.ok && gp.prepared.doc_digest === v.doc_digest, `${v.name}: gost из набора — тот же отпечаток, что у Go`)
+    const again = call('sealEach', { files: [v.key_files[0]], now: v.context.now, existing: many.sealed[0] }, v.pin + '0')
+    check(!again.ok && again.code === 'signing.pin_wrong', `${v.name}: дозагрузка под другим PIN отклонена`)
+    if (other) {
+      const mixed = call('prepare', v.block, [mine[0], other], v.context)
+      check(!mixed.ok, `${v.name}: ключи двух людей в одной подписи отклонены («суперключа» нет)`)
+    }
+  }
 }
 process.exit(failed ? 1 : 0)

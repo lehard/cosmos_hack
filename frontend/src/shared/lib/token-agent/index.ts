@@ -10,6 +10,10 @@
  * - `missing` — расширение есть, ключ не загружен (или токен не вставлен);
  * - `locked` — ключ загружен, PIN спросит окно подписи;
  * - `inserted` — ключ загружен и разблокирован: «готов».
+ *
+ * Расширение держит ключи многих персон (демо из одного браузера, Д-72) и
+ * подписывает ключом вошедшего: страница сообщает его в каждом сообщении
+ * (`person`, см. `setTokenPerson`), состояние — по его ключу.
  */
 import { readonly, ref, type Ref } from 'vue'
 import type { TokenAgentRequestV1, TokenAgentResponseV1 } from '@/shared/contracts/procs'
@@ -23,7 +27,12 @@ export type TokenInfo = NonNullable<TokenAgentResponseV1['status']> & {
   storage_variant?: string
   key_refs?: string[]
   adapter?: 'browser' | 'agent'
+  /** Люди, чьи ключи загружены в расширение. */
+  persons?: string[]
 }
+
+/** Вошедший в «Главный» человек: расширение выбирает его ключ. */
+export type TokenPerson = { id: string; name?: string }
 
 const status = ref<TokenStatus>('agent_missing')
 const info = ref<TokenInfo | null>(null)
@@ -36,6 +45,7 @@ const SIGN_MS = 10 * 60 * 1000
 const POLL_MS = 4000
 
 let present = false
+let person: TokenPerson | null = null
 let seq = 0
 const waiters = new Map<number, (r: TokenAgentResponseV1) => void>()
 let started = false
@@ -94,7 +104,7 @@ export function extensionRequest(
       clearTimeout(timer)
       resolve(r)
     })
-    window.postMessage({ source: PAGE, id, request }, window.location.origin)
+    window.postMessage({ source: PAGE, id, request, person }, window.location.origin)
   })
 }
 
@@ -114,6 +124,18 @@ export async function refreshTokenStatus(): Promise<TokenStatus> {
   info.value = s
   status.value = !s.token_present ? 'missing' : s.pin_unlocked ? 'inserted' : 'locked'
   return status.value
+}
+
+/**
+ * Сообщить расширению, кто вошёл: подпись и индикатор «Токен» — по его ключу.
+ * Смена человека — состояние перечитывается сразу.
+ * @param p — вошедший (псевдоним и имя) или null
+ */
+export function setTokenPerson(p: TokenPerson | null): void {
+  const next = p?.id ? { id: p.id, name: p.name } : null
+  if (next?.id === person?.id && next?.name === person?.name) return
+  person = next
+  if (started) void refreshTokenStatus()
 }
 
 /** Запустить мост: слушать расширение и опрашивать состояние (раз в 4 с и при возврате на вкладку). */

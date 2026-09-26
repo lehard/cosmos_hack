@@ -35,6 +35,7 @@ func main() {
 		"version":    fn(func([]js.Value) agent.Reply { return agent.APIVersion() }),
 		"inspectKey": fn(func(a []js.Value) agent.Reply { return agent.APIInspectKey(str(a, 0)) }),
 		"seal":       fn(func(a []js.Value) agent.Reply { return agent.APISeal(str(a, 0), str(a, 1)) }),
+		"sealEach":   fn(func(a []js.Value) agent.Reply { return agent.APISealEach(str(a, 0), str(a, 1)) }),
 		"unlock":     fn(func(a []js.Value) agent.Reply { return agent.APIUnlock(str(a, 0), str(a, 1)) }),
 		"prepare":    fn(func(a []js.Value) agent.Reply { return agent.APIPrepare(str(a, 0), str(a, 1), str(a, 2)) }),
 		"sign":       fn(func(a []js.Value) agent.Reply { return agent.APISign(str(a, 0)) }),

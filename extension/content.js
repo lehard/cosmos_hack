@@ -1,6 +1,7 @@
 // Мост страницы системы «Главный» и расширения (AD-14): страница шлёт
-// window.postMessage({source: 'glavny-page', id, request}), ответ приходит
-// {source: 'glavny-ext', id, response}. Ключей и PIN здесь нет — только
+// window.postMessage({source: 'glavny-page', id, request, person}), ответ приходит
+// {source: 'glavny-ext', id, response}. person — {id, name} вошедшего в
+// «Главный»: расширение подписывает его ключом (ключи многих персон, Д-72). Ключей и PIN здесь нет — только
 // пересылка; origin страницы проверяет фоновая служба.
 'use strict'
 
@@ -23,7 +24,7 @@
       return
     }
     const rq = d.request
-    chrome.runtime.sendMessage({ kind: 'page', request: rq }, (res) => {
+    chrome.runtime.sendMessage({ kind: 'page', request: rq, person: d.person }, (res) => {
       if (chrome.runtime.lastError) {
         post(d.id, {
           protocol_version: 1,

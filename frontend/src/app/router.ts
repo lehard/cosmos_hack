@@ -1,10 +1,12 @@
 /**
  * Маршруты интерфейса (AD-21, FR-128). Вход → стол своей роли; стол — данные
  * с сервера, поэтому маршрут один на все роли: /desk/‹вкладка›.
- * Охранник: без сеанса — на экран входа (с возвратом на запрошенную страницу).
+ * Охранник: без сеанса — на экран входа (с возвратом на запрошенную страницу);
+ * с сеансом — сообщает расширению подписи, кто вошёл.
  */
 import { createRouter, createWebHistory } from 'vue-router'
 import { sessionQueryOptions } from '@/entities/session'
+import { setTokenPerson } from '@/shared/lib/token-agent'
 import ShellLayout from './layout/ShellLayout.vue'
 import { queryClient } from './providers/query'
 
@@ -38,7 +40,9 @@ export const router = createRouter({
 router.beforeEach(async (to) => {
   if (to.meta.public) return true
   try {
-    await queryClient.fetchQuery(sessionQueryOptions())
+    const session = await queryClient.fetchQuery(sessionQueryOptions())
+    // Расширение подписи выбирает ключ вошедшего (ключи многих персон, Д-72).
+    setTokenPerson({ id: session.data.user.id, name: session.data.user.name })
     return true
   } catch {
     // Нет сеанса (401), операция ещё не реализована (501) или нет связи —

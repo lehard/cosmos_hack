@@ -2,17 +2,18 @@
 // шапки и подпись через порт; без расширения — «агент не найден».
 import { afterEach, describe, expect, it } from 'vitest'
 import { createExtensionSigningPort, payloadTypeOf } from '@/features/sign-decision'
-import { extensionRequest, refreshTokenStatus, useTokenInfo, useTokenStatus } from '@/shared/lib/token-agent'
+import { extensionRequest, refreshTokenStatus, setTokenPerson, useTokenInfo, useTokenStatus } from '@/shared/lib/token-agent'
 
 type Req = { type: string; request_id: string; sign?: { level: number; event_type?: string } }
+type Person = { id: string; name?: string } | null | undefined
 let handler: ((ev: MessageEvent) => void) | null = null
 
 /** Поддельный content-скрипт расширения: отвечает на запросы страницы. */
-function fakeExtension(reply: (rq: Req) => unknown): void {
+function fakeExtension(reply: (rq: Req, person: Person) => unknown): void {
   handler = (ev: MessageEvent) => {
-    const d = ev.data as { source?: string; id?: number; request?: Req }
+    const d = ev.data as { source?: string; id?: number; request?: Req; person?: Person }
     if (d?.source !== 'glavny-page' || !d.request) return
-    const response = reply(d.request)
+    const response = reply(d.request, d.person)
     window.dispatchEvent(new MessageEvent('message', { data: { source: 'glavny-ext', id: d.id, response }, source: window, origin: window.location.origin }))
   }
   window.addEventListener('message', handler)
@@ -21,6 +22,7 @@ function fakeExtension(reply: (rq: Req) => unknown): void {
 afterEach(() => {
   if (handler) window.removeEventListener('message', handler)
   handler = null
+  setTokenPerson(null)
 })
 
 describe('мост к расширению', () => {
@@ -58,6 +60,22 @@ describe('мост к расширению', () => {
     await expect(port.sign({ level: 1, payload_type: payloadTypeOf('event'), payload_b64: 'e30=', event_type: 'inspection.result.recorded' })).rejects.toMatchObject({
       info: { code: 'signing.level_not_allowed' },
     })
+  })
+
+  it('ключи многих персон: страница сообщает, кто вошёл, состояние — по его ключу', async () => {
+    const loaded = ['INS-01', 'HQC-01']
+    fakeExtension((rq, person) => ({
+      protocol_version: 1,
+      request_id: rq.request_id,
+      type: 'status',
+      status: { token_present: !!person && loaded.includes(person.id), pin_unlocked: true, person_id: person?.id, persons: loaded },
+    }))
+    setTokenPerson({ id: 'INS-01', name: 'Контролёр ОТК' })
+    expect(await refreshTokenStatus()).toBe('inserted')
+    expect(useTokenInfo().value?.person_id).toBe('INS-01')
+    setTokenPerson({ id: 'PM-01' })
+    expect(await refreshTokenStatus()).toBe('missing')
+    expect(useTokenInfo().value?.person_id).toBe('PM-01')
   })
 
   it('расширения нет — «агент не найден» по таймауту', async () => {

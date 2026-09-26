@@ -256,11 +256,15 @@ func TestWasmVectors(t *testing.T) {
 		DocDigest string          `json:"doc_digest"`
 		Payload   string          `json:"payload_b64"`
 		Level1    string          `json:"level1_refusal_code"`
+		// KeyFiles — файлы ключей нескольких персон (тестовые, детерминированные):
+		// WASM грузит их разом под один PIN и подписывает ключами одного человека.
+		KeyFiles []string `json:"key_files,omitempty"`
 	}
 	path := filepath.Join("..", "..", "..", "..", "..", "extension", "test", "vectors.json")
 	if os.Getenv("ANT_UPDATE_VECTORS") == "1" {
+		kf := []string{string(g), string(keyFile(t, "ins-01-ta-pq@1", dom.ProfilePQ, 8)), string(keyFile(t, "hqc-01-ta@1", dom.ProfileGost, 9))}
 		v := []vector{{Name: "решение контролёра, уровень 2", Block: blk, Sealed: s, PIN: "1234", Context: ctx, DocDigest: p.DocDigest,
-			Payload: p.PayloadB64, Level1: CodeLevel}}
+			Payload: p.PayloadB64, Level1: CodeLevel, KeyFiles: kf}}
 		b, _ := json.MarshalIndent(v, "", "  ")
 		if err := os.WriteFile(path, append(b, '\n'), 0o644); err != nil {
 			t.Fatal(err)
@@ -293,5 +297,68 @@ func TestNoBlindSigning(t *testing.T) {
 	blk := procs.SignBlock{Level: 2, PayloadType: dom.PayloadType(dom.ClassDocumentSignature, 1), PayloadB64: "", ExpectedDocDigest: &d}
 	if _, err := Prepare(blk, s.PersonID, s.Keys, Context{Now: at}); CodeOf(err) != CodeNoPath {
 		t.Fatalf("подпись по отпечатку: %v", err)
+	}
+}
+
+// Д-72, демо из одного браузера: ключи многих персон под одним PIN — argon2id
+// один раз (общая соль), по хранилищу на ключ; подпись — только ключами
+// одного человека, «суперключа» нет.
+func TestSealEach(t *testing.T) {
+	files := [][]byte{
+		keyFile(t, "ins-01-ta@1", dom.ProfileGost, 7),
+		keyFile(t, "ins-01-ta-pq@1", dom.ProfilePQ, 8),
+		keyFile(t, "hqc-01-ta@1", dom.ProfileGost, 9),
+		keyFile(t, "ins-01-ta@1", dom.ProfileGost, 7),
+	}
+	k := fastKDF
+	o := SealOptions{KeyStorage: dom.StorageSoftwareBrowser, StorageVariant: dom.VariantExtension, KDF: &k}
+	list, dk, err := SealEach(files, "1234", o, nil, rand.Reader)
+	if err != nil || len(list) != 3 {
+		t.Fatalf("SealEach: %v, %d хранилищ", err, len(list))
+	}
+	for _, s := range list {
+		if s.KDF.SaltB64 != list[0].KDF.SaltB64 || len(s.Keys) != 1 || s.PersonID != PersonOf(s.Keys[0].KeyRef) {
+			t.Fatalf("хранилище: %+v", s)
+		}
+		if _, err := Open(s, dk); err != nil {
+			t.Fatalf("один ключ из PIN открывает все: %v", err)
+		}
+	}
+	// Дозагрузка: тот же PIN — та же соль; другой PIN — отказ.
+	more, dk2, err := SealEach([][]byte{keyFile(t, "tec-01-ta@1", dom.ProfileGost, 10)}, "1234", o, &list[0], rand.Reader)
+	if err != nil || more[0].KDF.SaltB64 != list[0].KDF.SaltB64 || !bytes.Equal(dk, dk2) {
+		t.Fatalf("дозагрузка под тем же PIN: %v", err)
+	}
+	if _, _, err := SealEach(files[:1], "9999", o, &list[0], rand.Reader); !errors.Is(err, ErrPIN) {
+		t.Fatalf("дозагрузка под другим PIN: %v", err)
+	}
+
+	// Подпись hybrid ключами INS-01 из двух хранилищ.
+	ins, _ := json.Marshal([]Sealed{list[0], list[1]})
+	blk, _ := json.Marshal(decisionBlock(2))
+	ctx := CallContext{Now: "2026-09-26T10:00:00.000Z", Profile: dom.ProfileHybrid}
+	cj, _ := json.Marshal(ctx)
+	pr := APIPrepare(string(blk), string(ins), string(cj))
+	if pr["ok"] != true || len(pr["prepared"].(Prepared).Signers) != 2 || pr["prepared"].(Prepared).PersonID != "INS-01" {
+		t.Fatalf("prepare hybrid: %v", pr)
+	}
+	if un := APIUnlock(string(ins), "1234"); un["ok"] != true {
+		t.Fatalf("unlock набора: %v", un)
+	}
+	call := SignCall{Block: blk, Sealed: ins, DKB64: base64.StdEncoding.EncodeToString(dk), Context: ctx,
+		ConfirmedDigest: pr["prepared"].(Prepared).DocDigest}
+	cb, _ := json.Marshal(call)
+	if r := APISign(string(cb)); r["ok"] != true || len(r["envelope"].(dom.Envelope).Signatures) != 2 {
+		t.Fatalf("sign hybrid: %v", r)
+	}
+	// Ключи разных людей в одной подписи — отказ.
+	mixed, _ := json.Marshal([]Sealed{list[1], list[2]})
+	if r := APIPrepare(string(blk), string(mixed), string(cj)); r["ok"] != false || r["code"] != CodeInvalid {
+		t.Fatalf("чужой ключ в подписи: %v", r)
+	}
+	// Через API: ответ — хранилища и ключ сеанса.
+	req, _ := json.Marshal(SealRequest{Files: []string{string(files[0])}, StorageVariant: dom.VariantExtension, Now: "2026-09-26T10:00:00.000Z"})
+	if r := APISealEach(string(req), "12"); r["ok"] != false {
+		t.Fatalf("короткий PIN: %v", r)
 	}
 }
