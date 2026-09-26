@@ -128,6 +128,7 @@ type NCConclusionVersion struct {
 	RuleID         string        `json:"rule_id"`
 	AutomationMode int           `json:"automation_mode" minimum:"1" maximum:"5" doc:"Режим автоматизации правила (FR-50)."`
 	Outcome        string        `json:"outcome" enum:"pass_to_next,manual_review,isolate,question_to_technologist"`
+	RuleRev        *string       `json:"rule_rev,omitempty" doc:"Ревизия нормативного слоя правила (FR-50): карта реакций, версия."`
 	RevisedDueTo   *string       `nullable:"true" json:"revised_due_to" doc:"event_id записи, из-за которой вывод пересмотрен; null — первая версия."`
 	RecordedAt     time.Time     `json:"recorded_at"`
 	Causes         []NCRecordRef `json:"causes"`
@@ -138,7 +139,7 @@ type NCSystemAnalysis struct {
 	Versions           []NCConclusionVersion `json:"versions" doc:"По возрастанию версии."`
 	Why                []string              `json:"why" doc:"Почему система это предлагает — основания по-русски."`
 	Alternatives       []string              `json:"alternatives" doc:"Альтернативные объяснения."`
-	MissingInformation []string              `json:"missing_information" doc:"Нехватка сведений."`
+	MissingInformation []string              `json:"missing_information" enum:"tool_unknown,cycle_end_time_unknown,no_observation_after_operation,no_observation_before_operation,operator_unknown,equipment_log_missing,other" doc:"Нехватка сведений — перечисление (как missing_information в incident.hypothesis.computed)."`
 }
 
 // NCToDecide — зона «что решить»: допустимые решения и срок.
@@ -146,6 +147,39 @@ type NCToDecide struct {
 	Decisions          []string   `json:"decisions" doc:"id операций решений, допустимых по состоянию (права — access.permission.list)."`
 	DecisionDueAt      *time.Time `json:"decision_due_at,omitempty"`
 	ConcessionRequired bool       `json:"concession_required" doc:"Ремонт и «как есть» — только с действующим разрешением на отклонение."`
+}
+
+// NCPresentationContext — контекст точки предъявления (FR-19, FR-56): для
+// решения «Принять — передать дальше» с карточки.
+type NCPresentationContext struct {
+	StepKey        string `json:"step_key"`
+	ClosingPoint   string `json:"closing_point" doc:"Закрывающая точка (ЗТ)."`
+	PresentationNo int    `json:"presentation_no" minimum:"1" doc:"Номер предъявления (повторное — больше 1)."`
+	EventID        string `json:"event_id" doc:"Запись предъявления (item.presentation.recorded)."`
+}
+
+// NCIsolation — изоляция изделия (FR-55): срок решения по производственному
+// календарю и расхождение «изолировано в системе, физически не перемещено».
+type NCIsolation struct {
+	EventID            string     `json:"event_id" doc:"Решение «изолировать»."`
+	IsolatedAt         time.Time  `json:"isolated_at"`
+	DecisionDueAt      *time.Time `json:"decision_due_at,omitempty"`
+	IsolatorLocationID *string    `json:"isolator_location_id,omitempty"`
+	PhysicallyMoved    bool       `json:"physically_moved" doc:"Перемещение в изолятор подтверждено приёмкой."`
+	Overdue            bool       `json:"overdue" doc:"Срок решения истёк."`
+}
+
+// NCContainmentSource — действующее основание сдерживания (FR-49, FR-62):
+// правило или человек; снимает только человек (AD-27).
+type NCContainmentSource struct {
+	Key    string  `json:"key" doc:"Запись-основание — её указывают в released_event_ids при снятии."`
+	Level  string  `json:"level" enum:"none,observe,additional_check,item_hold,lot_hold"`
+	By     string  `json:"by" enum:"rule,human"`
+	RuleID *string `json:"rule_id,omitempty"`
+	Reason string  `json:"reason"`
+	// BasisGone — основание правила ушло (снятие не делегировано): блок
+	// остаётся до решения человека, движок поставил задачу пересмотра (AD-3).
+	BasisGone bool `json:"basis_gone"`
 }
 
 // NCCard — карточка несоответствия (FR-51): три зоны, анализ системы, решения людей.
@@ -162,6 +196,18 @@ type NCCard struct {
 	HumanDecisions []NCRecordRef    `json:"human_decisions" doc:"Решения людей с подписью (отдельно от вывода системы)."`
 	ToDecide       NCToDecide       `json:"to_decide"`
 	BasisSeq       int64            `json:"basis_seq" doc:"seq, на котором построена карточка (для basis_seq команд, AD-39)."`
+
+	// Совместимые дополнения эпика 21 (пробелы, найденные эпиком 11).
+	InvestigationStatus string                 `json:"investigation_status,omitempty" enum:"none,open,closed" doc:"Второй статус несоответствия — «системное расследование» (FR-51): закрытие по изделию его не закрывает."`
+	Resolution          *string                `json:"resolution,omitempty" enum:"signal_rejected" doc:"Исход несоответствия, закрытого без решения по изделию."`
+	Origin              string                 `json:"origin,omitempty" enum:"signal,special_process" doc:"Черновик по сигналу или регистрация окна нарушения специального процесса (FR-151)."`
+	Commission          bool                   `json:"commission,omitempty" doc:"Решение принимает комиссия (специальный процесс, FR-151)."`
+	RuleRev             *string                `json:"rule_rev,omitempty" doc:"Ревизия правила, построившего черновик (карта реакций)."`
+	Presentation        *NCPresentationContext `json:"presentation,omitempty" doc:"Контекст точки предъявления, если изделие ждёт решения на ней."`
+	Isolation           *NCIsolation           `json:"isolation,omitempty"`
+	PhysicallyNotMoved  bool                   `json:"physically_not_moved,omitempty" doc:"«Изолировано в системе, физически не перемещено» (FR-55)."`
+	ApprovalsStatus     *string                `json:"approvals_status,omitempty" enum:"route_closed,pending,demo_stub" doc:"Подписи маршрута решения (режим 4): pending — решение не исполняется; demo_stub — демо, подписи не проверялись."`
+	Containment         []NCContainmentSource  `json:"containment,omitempty" doc:"Действующие основания сдерживания."`
 }
 
 // NCSummary — несоответствие в списке.
@@ -176,6 +222,10 @@ type NCSummary struct {
 	StepKey        string    `json:"step_key"`
 	Disposition    string    `json:"disposition" enum:"none,rework,repair,use_as_is,scrap,return_to_supplier"`
 	FoundAt        time.Time `json:"found_at"`
+	// Совместимые дополнения эпика 21.
+	InvestigationStatus string `json:"investigation_status,omitempty" enum:"none,open,closed" doc:"Системное расследование (FR-51)."`
+	Containment         string `json:"containment,omitempty" enum:"none,observe,additional_check,item_hold,lot_hold" doc:"Сдерживание изделия."`
+	Commission          bool   `json:"commission,omitempty" doc:"Решение — комиссия (FR-151)."`
 }
 
 // NCList — несоответствия.
@@ -195,6 +245,13 @@ type Concession struct {
 	Used         int        `json:"used" minimum:"0"`
 	ValidUntil   *time.Time `json:"valid_until,omitempty"`
 	Status       string     `json:"status" enum:"active,exhausted,expired,revoked"`
+	// Совместимые дополнения эпика 21 (FR-54).
+	Number         *string  `json:"number,omitempty" doc:"Номер по стандарту предприятия."`
+	RequirementRef *string  `json:"requirement_ref,omitempty" doc:"Пункт КД/ТУ."`
+	ScopeItemIDs   []string `json:"scope_item_ids,omitempty" doc:"Область действия — изделия."`
+	ScopeRangeFrom *string  `json:"scope_range_from,omitempty"`
+	ScopeRangeTo   *string  `json:"scope_range_to,omitempty"`
+	BasisSeq       int64    `json:"basis_seq,omitempty" doc:"seq последней записи потока разрешения (basis_seq отзыва, AD-39)."`
 }
 
 // ConcessionList — разрешения на отклонение.

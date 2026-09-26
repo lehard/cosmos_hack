@@ -93,6 +93,9 @@ type apiOptions struct {
 	// analysis — live-реализация analysis над проекциями и журналом
 	// (engine.go, эпик 22); nil — заглушка 501.
 	analysis *analysisapp.Service
+	// nonconformity — live-реализация nonconformity над журналом и свёрткой
+	// изделия (nonconformity.go, эпик 21); nil — заглушка 501.
+	nonconformity *nonconformityapp.Service
 	// ingest — live-приём над журналом ядра (ingest.go); nil — заглушка 501.
 	ingest *ingestapp.Service
 	// identity, directory — вход демо-персоной и каталог политики (демо-трек
@@ -160,7 +163,11 @@ func buildAPI(mux *http.ServeMux, o apiOptions) *httpapi.API {
 		qualityhttp.Register(a, q, c)
 	}
 	{
-		q, c := pick[nonconformityapp.Queries, nonconformityapp.Commands](a.ModeFor("nonconformity"), nonconformityapp.NewService(), nonconformityfx.New())
+		live := o.nonconformity
+		if live == nil {
+			live = nonconformityapp.NewService()
+		}
+		q, c := pick[nonconformityapp.Queries, nonconformityapp.Commands](a.ModeFor("nonconformity"), live, nonconformityfx.New())
 		nonconformityhttp.Register(a, q, c)
 	}
 	{

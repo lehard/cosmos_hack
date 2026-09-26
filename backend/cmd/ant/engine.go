@@ -11,6 +11,7 @@ import (
 	engineapp "ant/internal/application/engine"
 	appjournal "ant/internal/application/journal"
 	machinelogsapp "ant/internal/application/machinelogs"
+	nonconformityapp "ant/internal/application/nonconformity"
 	mldomain "ant/internal/domain/machinelogs"
 	"ant/internal/infrastructure/storage/journal/clock"
 	"ant/internal/infrastructure/storage/journal/feed"
@@ -35,6 +36,11 @@ func engineRegistry() *engineapp.Registry {
 	// analysis (эпик 22): разбор обстоятельств изделия, инциденты и версии
 	// области риска, несоответствия для гипотез и общих факторов.
 	analysisapp.MustRegister(r)
+	// nonconformity (эпик 21): оси «решение по изделию» и «сдерживание»,
+	// изоляция и несоответствия изделия.
+	if err := nonconformityapp.RegisterProjections(r); err != nil {
+		panic(err)
+	}
 	return r
 }
 

@@ -135,3 +135,22 @@ type CloseNonconformity struct {
 	platform.CommandHeader
 	Summary string `json:"summary,omitempty" maxLength:"4000"`
 }
+
+// GrantConcession — выдать разрешение на отклонение (decision.concession.granted,
+// FR-54, Д-24): номер, пункт КД/ТУ, область действия (изделия или диапазон
+// номеров), лимит количества, срок; лимит открывается атомарно с записью.
+type GrantConcession struct {
+	platform.CommandHeader
+	ConcessionID   string   `json:"concession_id,omitempty" maxLength:"128" doc:"Пусто — присвоит сервер."`
+	Number         string   `json:"number,omitempty" maxLength:"64"`
+	Title          string   `json:"title" minLength:"1" maxLength:"256"`
+	Kind           string   `json:"kind" enum:"repair,use_as_is"`
+	RequirementRef string   `json:"requirement_ref,omitempty" maxLength:"256" doc:"Пункт КД/ТУ."`
+	ScopeItemIDs   []string `json:"scope_item_ids,omitempty" doc:"Область действия — перечень изделий."`
+	ScopeRangeFrom string   `json:"scope_range_from,omitempty" maxLength:"128"`
+	ScopeRangeTo   string   `json:"scope_range_to,omitempty" maxLength:"128"`
+	Limit          int      `json:"limit" minimum:"1" doc:"Лимит количества изделий."`
+	ValidUntil     string   `json:"valid_until,omitempty" format:"date-time"`
+	DocumentID     string   `json:"document_id,omitempty" maxLength:"128" doc:"Документ разрешения с маршрутом подписей."`
+	Reason         NCReason `json:"reason"`
+}

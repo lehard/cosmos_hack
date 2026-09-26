@@ -136,6 +136,11 @@ func (Adapter) RevokeConcession(ctx context.Context, concessionID string, in app
 	return decide(ctx, "nonconformity.concession.revoke", "nonconformity", concessionID, in.CommandMeta())
 }
 
+// GrantConcession — выдать разрешение на отклонение (nonconformity.concession.grant).
+func (Adapter) GrantConcession(ctx context.Context, in app.GrantConcession) (platform.Receipt, error) {
+	return decide(ctx, "nonconformity.concession.grant", "nonconformity", in.ConcessionID, in.CommandMeta())
+}
+
 // WaiveReworkLimit — разрешить сверх лимита доработок (nonconformity.rework_limit.waive).
 func (Adapter) WaiveReworkLimit(ctx context.Context, itemID string, in app.WaiveReworkLimit) (platform.Receipt, error) {
 	return decide(ctx, "nonconformity.rework_limit.waive", "item", itemID, in.CommandMeta())
