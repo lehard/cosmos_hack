@@ -18,8 +18,8 @@ item_revision: "Б"
 
 aliases:
   # Люди процессной сессии → персоны генезиса (normative/policy/policy.v1.yaml).
-  # OP-CMM-01 (оператор КИМ) в генезисе нет — остаётся как есть (в отчёте эпика 32).
   people:
+    OP-CMM-01: K16   # оператор КИМ (Д-64)
     OP-CNC-11: O17
     OP-CNC-12: O18
     WLD-02: W21
@@ -129,9 +129,10 @@ sources:
   cam-kt5:    {id: edge-kt5,     kind: camera,          reliability: medium, equipment: CAM-KT5, station: ST-FINAL}
 
 # Линии (кейс §1.4, §2.4): расходятся только на сварке — у каждой свой пост.
+# ID — из справочника мест normative/reference/flange/locations.yaml (Д-64).
 lines:
-  L-FL-1: {title: "Линия ФЛ-100 № 1", welding_source: is-1, weld_terminal: term-weld-1, workplace: WP-WELD-1, equipment: WS-1}
-  L-FL-2: {title: "Линия ФЛ-100 № 2", welding_source: is-2, weld_terminal: term-weld-2, workplace: WP-WELD-2, equipment: WS-2}
+  LINE-FL-1: {title: "Линия ФЛ-100 № 1", welding_source: is-1, weld_terminal: term-weld-1, workplace: WP-WELD-1, equipment: WS-1}
+  LINE-FL-2: {title: "Линия ФЛ-100 № 2", welding_source: is-2, weld_terminal: term-weld-2, workplace: WP-WELD-2, equipment: WS-2}
 
 # Смены [П]: A — 08:00–16:30, Б — 16:30–01:00 (местное время, МСК).
 shifts:

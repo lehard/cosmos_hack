@@ -1,0 +1,239 @@
+package simulation
+
+import (
+	"cmp"
+	"context"
+	"encoding/json"
+	"fmt"
+	"os"
+	"path/filepath"
+	"slices"
+	"strings"
+	"testing"
+	"time"
+
+	processapp "ant/internal/application/process"
+	"ant/internal/contracts/catalog"
+	"ant/internal/domain/engine"
+	"ant/internal/domain/kernel"
+	sim "ant/internal/domain/simulation"
+)
+
+// Генератор против процесса фланца (normative/process/flange-process.bpmn):
+// каждый шаг изделия, который строит генератор, проходим токеном BPMN — ни
+// одного факта или решения «вне маршрута» (FR-44), ни одной точки
+// предъявления без изделия на ней. Свёртка — та же композиция движка
+// (domain/engine.Fold) с нормативным слоем от process.Bundles, что у воркера;
+// решения людей — записями тех типов, что пишут их операции API.
+
+const flangeBPMN = "normative/process/flange-process.bpmn"
+
+// routeRecord — запись входа изделия: факт источника или решение человека.
+type routeRecord struct {
+	at    time.Time
+	order int
+	label string
+	rec   kernel.Record
+}
+
+// decisionRecord — запись, которую пишет операция решения (только то, что
+// читает исполнитель BPMN); ok=false — операция в процесс не входит.
+func decisionRecord(a sim.Action, ids *sim.IDMap, hash string) (catalog.Type, map[string]any, bool) {
+	body, _ := ids.ExpandMap(a.Body, false)
+	params, _ := ids.ExpandMap(a.Params, false)
+	get := func(m map[string]any, k string) any {
+		if m == nil {
+			return nil
+		}
+		return m[k]
+	}
+	switch a.Operation {
+	case "item.item.register":
+		d := map[string]any{"item_id": ids.Items[a.Item], "item_type_id": get(body, "item_type_id"), "item_revision": get(body, "item_revision"),
+			"process_version_hash": hash, "normative_rev": "flange-1", "lot_ids": get(body, "lot_ids")}
+		if v := get(body, "entry_step_key"); v != nil {
+			d["entry_step_key"] = v
+		}
+		return catalog.ItemItemRegistered, d, true
+	case "process.operation.start":
+		d := map[string]any{"operation_run_id": get(body, "operation_run_id"), "operation_code": get(body, "operation_code"),
+			"step_key": get(body, "step_key"), "operator_id": a.Actor}
+		if v := get(body, "equipment_id"); v != nil {
+			d["equipment_id"] = v
+		}
+		return catalog.OperationRunStarted, d, true
+	case "process.operation.finish":
+		return catalog.OperationRunFinished, map[string]any{"operation_run_id": get(params, "run_id"), "completion": get(body, "completion")}, true
+	case "process.operation.pause":
+		return catalog.OperationRunPaused, map[string]any{"operation_run_id": get(params, "run_id")}, true
+	case "process.operation.resume":
+		return catalog.OperationRunResumed, map[string]any{"operation_run_id": get(params, "run_id")}, true
+	case "process.movement.send":
+		return catalog.OperationMovementSent, map[string]any{"step_key": get(body, "step_key"), "to_location_id": get(body, "to_location_id")}, true
+	case "process.movement.receive":
+		return catalog.OperationMovementReceived, map[string]any{"step_key": get(body, "step_key"), "to_location_id": get(body, "to_location_id"),
+			"destination_kind": get(body, "destination_kind"), "inspection_on_receipt": get(body, "inspection_on_receipt"), "received_by": a.Actor}, true
+	case "item.presentation.record":
+		return catalog.ItemPresentationRecorded, map[string]any{"step_key": get(body, "step_key"), "presentation_no": get(body, "presentation_no"),
+			"presented_to": get(body, "presented_to")}, true
+	case "nonconformity.presentation.resolve":
+		return catalog.DecisionPresentationResolved, map[string]any{"step_key": get(body, "step_key"), "closing_point": get(body, "closing_point"),
+			"resolution": get(body, "resolution"), "presentation_no": get(body, "presentation_no"), "method_event_ids": []string{}}, true
+	case "nonconformity.disposition.set":
+		return catalog.DecisionDispositionSet, map[string]any{"nc_id": "NC", "disposition": get(body, "disposition"),
+			"concession_id": get(body, "concession_id"), "reason": map[string]string{"code": "x", "text": "x"}}, true
+	case "nonconformity.item.isolate":
+		return catalog.DecisionItemIsolated, map[string]any{}, true
+	}
+	return "", nil, false
+}
+
+// itemRoutes — записи входа каждого изделия прогона в порядке доставки:
+// события источников (без потерянных и не по контракту) и решения людей
+// (кроме шагов, которые ждут отказа).
+func itemRoutes(t *testing.T, p *sim.Plan, hash string) map[string][]routeRecord {
+	t.Helper()
+	out := map[string][]routeRecord{}
+	for _, e := range p.Emissions {
+		if e.Item == "" || !e.Contract || e.Quarantine || e.Delivery == sim.DeliveryDuplicate || e.Delivery == sim.DeliveryConflict {
+			continue
+		}
+		var env struct {
+			Type string          `json:"event_type"`
+			Data json.RawMessage `json:"data"`
+		}
+		if err := json.Unmarshal(e.Event, &env); err != nil {
+			t.Fatal(err)
+		}
+		out[e.Item] = append(out[e.Item], routeRecord{at: e.DeliverAt, order: e.Order, label: e.Label,
+			rec: kernel.Record{EventID: e.EventID, Type: catalog.Type(env.Type), Provenance: "device", OccurredAt: e.OccurredAt, Data: env.Data}})
+	}
+	for _, a := range p.Actions {
+		if a.Kind != sim.ActionDecision || a.Item == "" || a.Refusal != "" {
+			continue
+		}
+		typ, data, ok := decisionRecord(a, p.IDs, hash)
+		if !ok {
+			continue
+		}
+		b, err := json.Marshal(data)
+		if err != nil {
+			t.Fatal(err)
+		}
+		// решения идут после событий того же момента: раннер доставляет
+		// наступившие события до шагов людей
+		out[a.Item] = append(out[a.Item], routeRecord{at: a.At, order: 1 << 30, label: a.Label,
+			rec: kernel.Record{EventID: p.IDs.CommandID(a.Seq), Type: typ, Provenance: "personal", OccurredAt: a.At, Data: b}})
+	}
+	for item, rs := range out {
+		slices.SortStableFunc(rs, func(x, y routeRecord) int {
+			if c := x.at.Compare(y.at); c != 0 {
+				return c
+			}
+			return cmp.Compare(x.order, y.order)
+		})
+		itemID := "ent01:" + item
+		for i := range rs {
+			info, _ := catalog.Lookup(rs[i].rec.Type)
+			r := &rs[i].rec
+			r.Seq, r.Kind, r.ItemID, r.Stream = int64(i+1), info.Kind, itemID, "item:"+itemID
+			r.ReceivedAt, r.RecordedAt = rs[i].at, rs[i].at
+		}
+		out[item] = rs
+	}
+	return out
+}
+
+// knownGaps — изделия, чей путь в карточках процессной сессии не проходим
+// токеном по причинам вне данных сценариев (логика модулей, отчёт «сведение
+// табло»). Изделие здесь обязано давать отказ: когда модуль починят, тест
+// покраснеет — строку нужно убрать.
+var knownGaps = map[string]map[string]string{
+	"MS-1": {
+		// S05, S10A: переварка по групповому несоответствию инцидента. По BPMN
+		// в подпроцесс брака изделие попадает только через «не годно» на ЗТ;
+		// несоответствие, подтверждённое по сигналу (S03, S05), и групповое
+		// решение «переделка» (NC-G1) токен в подпроцесс не ведут — повторная
+		// сварка «вне маршрута» (process 17 + nonconformity 21).
+		"F-017": "переварка без входа в подпроцесс брака (НС по сигналу, групповое решение)",
+		"F-021": "переварка без входа в подпроцесс брака (НС по сигналу, групповое решение)",
+		"F-023": "переварка без входа в подпроцесс брака (НС по сигналу, групповое решение)",
+		"F-025": "переварка без входа в подпроцесс брака (групповое решение)",
+		// Ф-015 уже в сборке: пути из сборочной дорожки обратно на сварку в
+		// процессе нет — нужен нормативный ответ (процессная сессия, эпик 39).
+		"F-015": "переварка изделия, ушедшего со сварки: пути назад в процессе нет",
+	},
+	"S10B": {
+		"F-090": "повторные переварки по несоответствию без ЗТ-3 «не годно» (process 17 + nonconformity 21)",
+	},
+}
+
+// TestRouteWalksFlangeBPMN — FR-44, AD-17: маршрут генератора по каждому
+// изделию каждого прогона проходим токеном процесса фланца.
+func TestRouteWalksFlangeBPMN(t *testing.T) {
+	ctx := context.Background()
+	xml, err := os.ReadFile(filepath.Join(repo, flangeBPMN))
+	if err != nil {
+		t.Fatal(err)
+	}
+	store := &processapp.MemVersions{}
+	seed, err := processapp.EnsureSeed(ctx, store, xml, time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC))
+	if err != nil {
+		t.Fatal(err)
+	}
+	bundles := &processapp.Bundles{Store: store}
+	f := NewFiles(filepath.Join(repo, "scenarios"))
+	runs, err := f.Runs()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, run := range runs {
+		t.Run(run, func(t *testing.T) {
+			b, err := f.Bundle(ctx, run)
+			if err != nil {
+				t.Fatal(err)
+			}
+			p, err := sim.Generate(b, sim.Params{RunID: GoldenRunID(run, b.Run.Seed)})
+			if err != nil {
+				t.Fatal(err)
+			}
+			for _, it := range b.Run.Items {
+				p.IDs.Items[it.ID] = "ent01:" + it.ID
+			}
+			routes := itemRoutes(t, p, seed.Hash)
+			for _, it := range b.Run.Items {
+				rs := routes[it.ID]
+				labels := map[string]string{}
+				in := make([]kernel.Record, 0, len(rs))
+				for _, r := range rs {
+					labels[r.rec.EventID] = r.label
+					in = append(in, r.rec)
+				}
+				bundle, _, err := bundles.Bundle(ctx, "ent01:"+it.ID, in)
+				if err != nil {
+					t.Fatal(err)
+				}
+				s, _ := engine.Fold(bundle, in)
+				var bad []string
+				for _, r := range s.Process.Refusals {
+					bad = append(bad, fmt.Sprintf("%s [%s]: %s — %s", labels[r.EventID], r.Kind, r.Code, r.Detail))
+				}
+				for k, e := range s.Process.Errors {
+					bad = append(bad, "ошибка "+k+": "+e)
+				}
+				gap, known := knownGaps[run][it.ID]
+				switch {
+				case known && len(bad) == 0:
+					t.Errorf("%s: известный разрыв «%s» больше не воспроизводится — убрать из knownGaps", it.ID, gap)
+				case known:
+					t.Logf("%s — известный разрыв (%s):\n  %s", it.ID, gap, strings.Join(bad, "\n  "))
+				case len(bad) > 0:
+					t.Errorf("%s (до %s): шаги не проходимы токеном BPMN:\n  %s", it.ID, it.Until, strings.Join(bad, "\n  "))
+				}
+				if it.Until == "release" && !slices.Contains(it.Skip, "release") && !s.Process.Completed {
+					t.Errorf("%s: маршрут до выпуска, а изделие на %v", it.ID, s.Process.Steps())
+				}
+			}
+		})
+	}
+}

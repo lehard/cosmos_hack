@@ -781,9 +781,9 @@ checkpoints:
         metric_id: O-4
       path: /confirmed_defects_by_line
       op: eq
-      value: &id022
-        L-FL-1: 0
-        L-FL-2: 4
+      value:
+        LINE-FL-1: 0
+        LINE-FL-2: 4
     mapping: draft
     source:
       subject: metric/O-4
@@ -793,7 +793,9 @@ checkpoints:
         station: welding
         incident: RS-01
       op: eq
-      value: *id022
+      value:
+        L-FL-1: 0
+        L-FL-2: 4
     note: показатель O-4 каталога процессной сессии (analytics-catalog.md); сопоставление — эпик 25
   - id: S05-39
     what: 'время разбора [П, новый показатель Д-5]: по НС-01 от сигнала (Ср 11:06) до решения по изделию (15:30) — 4 ч 24 мин, до подтверждённой причины (16:20) — 5 ч 14 мин'

@@ -305,7 +305,7 @@ checkpoints:
       operation: item.item.list
       path: /items
       op: eq
-      value: L-FL-1
+      value: LINE-FL-1
     mapping: draft
     source:
       subject: item/*
@@ -329,9 +329,9 @@ checkpoints:
         metric_id: O-4
       path: /confirmed_defects_by_line
       op: eq
-      value: &id006
-        L-FL-1: 1
-        L-FL-2: 4
+      value:
+        LINE-FL-1: 1
+        LINE-FL-2: 4
     mapping: draft
     source:
       subject: metric/O-4
@@ -341,7 +341,9 @@ checkpoints:
         station: welding
         window: main_story
       op: eq
-      value: *id006
+      value:
+        L-FL-1: 1
+        L-FL-2: 4
     note: показатель O-4 каталога процессной сессии (analytics-catalog.md); сопоставление — эпик 25
   - id: S10A-17
     what: перед каждой переваркой — выборка (удаление шва, новое выполнение WL-…, С-03 в среду вечером) и контроль выборки ОТК-1 до заварки (узлы WL1 → WL2 → WLG → WL3)

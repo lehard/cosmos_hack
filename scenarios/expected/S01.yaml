@@ -248,21 +248,22 @@ checkpoints:
       op: eq
       value: true
   - id: S01-14
-    what: 'Ф-001 идёт по линии 2 (сварен на посту 2): у всех его событий после запуска — линия L-FL-2'
+    what: 'Ф-001 идёт по линии 2 (сварен на посту 2): у всех его событий после запуска — линия LINE-FL-2'
     check:
       operation: item.passport.read
       params:
         item_id: '{item:F-001}'
       path: /events_line_ids
       op: set_eq
-      value: &id007
-      - L-FL-2
+      value:
+      - LINE-FL-2
     mapping: draft
     source:
       subject: item/F-001
       field: events_line_ids
       op: set_eq
-      value: *id007
+      value:
+      - L-FL-2
   - id: S01-15
     what: 'установка оборудования (кейс §1.1, узел AO) — отдельное выполнение EQ-001-1 после затяжки крепежа: клапан V-001 отсканирован до установки, затяжка J-2 в норме (12 Н·м ± 10
       %), контровка подтверждена; основание ЗТ-4 включает журнал ключа по J-2'
