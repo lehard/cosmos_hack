@@ -482,7 +482,7 @@ responses:
     params: {"role":"security_auditor"}
     body: {"unread":1,"by_kind":{"info":0,"alarm":1,"task":0,"decision_request":0}}
   - op: notifications.alert.list
-    body: {"items":[{"alert_id":"AL-edge-weld-2","at":"2026-09-22T07:05:00Z","kind":"anomaly","node":"welding.weld","anomaly":"downtime_over_threshold","ref":{"entity":"equipment","id":"IS-2"}}]}
+    body: {"items":[{"alert_id":"AL-edge-weld-2","at":"2026-09-22T07:05:00Z","kind":"anomaly","node":"welding.weld","node_name":"Сварка фланца с патрубком","anomaly":"downtime_over_threshold","ref":{"entity":"equipment","id":"IS-2"}}]}
   - op: erp.message.read
     params: {"business_key":"OUT-200063"}
     body: {"business_key":"OUT-200063","external_system":"onec","action":"warehouse_transfer","item_id":"ENT01:F-001","message_version":1,"status":"acknowledged","accounting_state":"moved","after_rework":false,"request_event_id":"1cf434c0-bc12-537a-b9eb-d82ab557d641","requested_at":"2026-09-21T13:10:00Z","attempts":[{"at":"2026-09-21T13:11:00Z","outcome":"accepted"}],"basis_seq":30026}

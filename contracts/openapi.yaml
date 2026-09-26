@@ -741,6 +741,9 @@ components:
         node:
           description: Узел (step_key) аномалии.
           type: string
+        node_name:
+          description: Имя узла — name элемента BPMN действующей версии процесса (для подписи вместо step_key); нет — показывать node.
+          type: string
         operations:
           format: int64
           minimum: 0

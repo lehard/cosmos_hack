@@ -19,6 +19,8 @@ export interface AlertEntry {
   kind: AlertEntryKind;
   /** Узел (step_key) аномалии. */
   node?: string;
+  /** Имя узла — name элемента BPMN действующей версии процесса (для подписи вместо step_key); нет — показывать node. */
+  node_name?: string;
   /** @minimum 0 */
   operations?: number;
   /** @minimum 0 */
