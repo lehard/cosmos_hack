@@ -3,7 +3,8 @@
  * «Мои расследования» (UI-32): карточка на инцидент — что расследуем, сколько
  * изделий в области сейчас и сколько было при открытии, идёт ли расследование.
  * Выбранная карточка — рабочее пространство раздела (область риска, дорожки,
- * гипотезы). Открытые — сверху, свежие — первыми.
+ * гипотезы). Открытые — первыми, свежие — раньше; карточки — полосой над
+ * рабочим пространством (на узком экране — одна под другой).
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -36,7 +37,7 @@ const factor = (i: IncidentSummary) =>
         <span class="label ant-clamp-2">{{ i.label }}</span>
         <span class="scope">
           <span class="now">{{ t('plural.items', { n: i.size }, i.size) }}</span>
-          <span class="muted"> {{ t('widgets.analysis.investigations.inScope') }}</span>
+          <span class="muted">{{ t('widgets.analysis.investigations.inScope') }}</span>
         </span>
         <span v-if="i.initial_size !== i.size" class="path muted" data-testid="path">{{ t('widgets.analysis.investigations.path', { from: i.initial_size, to: i.size }) }}</span>
         <span v-if="factor(i)" class="muted ant-ellipsis" :title="factor(i) ?? undefined">{{ factor(i) }}</span>
@@ -51,8 +52,8 @@ const factor = (i: IncidentSummary) =>
 
 <style scoped>
 .list {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: var(--ant-space-2);
   margin: 0;
   padding: 0;
@@ -87,6 +88,13 @@ const factor = (i: IncidentSummary) =>
 .card[aria-current='true'] {
   border-color: var(--ant-accent);
   background: var(--ant-accent-soft);
+}
+
+.scope {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--ant-space-1);
+  align-items: baseline;
 }
 
 .label {

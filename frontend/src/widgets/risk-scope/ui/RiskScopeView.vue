@@ -251,7 +251,7 @@ function submit(): void {
             <li v-for="it in byKnown[k]" :key="it.item_id" :data-item="it.item_id">
               <button type="button" class="chip" :title="`${t(`statuses.incidentAction.${codeToKey(it.action)}`)} · ${t(LOCATION_TEXT[it.location])}`" @click="emit('open-item', it.item_id)">
                 <span class="chip-label ant-ellipsis">{{ it.label }}</span>
-                <span class="chip-meta ant-ellipsis">{{ t(`statuses.incidentAction.${codeToKey(it.action)}`) }} · {{ t(LOCATION_TEXT[it.location]) }}</span>
+                <span class="chip-meta ant-clamp-2">{{ t(`statuses.incidentAction.${codeToKey(it.action)}`) }} · {{ t(LOCATION_TEXT[it.location]) }}</span>
               </button>
             </li>
           </ul>
@@ -410,7 +410,7 @@ h4 {
 
 .step {
   display: grid;
-  grid-template-columns: 72px minmax(0, 1fr);
+  grid-template-columns: 56px minmax(0, 1fr);
   gap: var(--ant-space-3);
   padding: var(--ant-space-3) 0;
   border-top: 1px solid var(--ant-border);
@@ -490,7 +490,7 @@ summary.group-title {
 
 .chips {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: var(--ant-space-2);
   margin: 0;
   padding: 0;
