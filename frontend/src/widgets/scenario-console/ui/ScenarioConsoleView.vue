@@ -119,7 +119,7 @@ const head = headMode()
 <template>
   <div class="console" :class="`density-${density}`" data-testid="scenario-console">
     <div class="mode" data-testid="browser-mode">
-      <span class="muted">{{ t('widgets.scenarios.mode') }}</span>
+      <span class="muted">{{ t('widgets.scenarios.browserMode') }}</span>
       <NRadioGroup :value="head ? 'head' : 'simulation'" size="small" @update:value="(v: string) => setHeadMode(v === 'head')">
         <NRadioButton value="simulation">{{ t('widgets.scenarios.modeSimulation') }}</NRadioButton>
         <NRadioButton value="head">{{ t('widgets.scenarios.modeHead') }}</NRadioButton>
