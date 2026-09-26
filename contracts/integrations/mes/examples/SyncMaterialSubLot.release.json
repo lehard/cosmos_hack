@@ -1,0 +1,31 @@
+{
+  "SyncMaterialSubLot": {
+    "releaseID": "7.01",
+    "versionID": "mes.isa95.v1",
+    "ApplicationArea": {
+      "Sender": {
+        "LogicalID": "ant",
+        "ConfirmationCode": "Always"
+      },
+      "CreationDateTime": "2026-09-25T10:42:17.305Z",
+      "BODID": "7e717c16-d7b7-54cc-8350-e5ce3b407302"
+    },
+    "DataArea": {
+      "Sync": {
+        "ActionCriteria": {
+          "ActionExpression": {
+            "actionCode": "Change"
+          }
+        }
+      },
+      "MaterialSubLot": [
+        {
+          "ID": "ENT01:F-007",
+          "Description": "Снятие блока по решению человека; Главный: ENT01:F-007; ключ ENT01:F-007/release/1",
+          "Disposition": "UnRestricted",
+          "Status": "QC-RELEASED"
+        }
+      ]
+    }
+  }
+}

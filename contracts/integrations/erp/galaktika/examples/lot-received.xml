@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GalExchange xmlns="urn:ant-qc:galaktika:v1" messageId="GAL-2026-09-25-000118" createdAt="2026-09-25T05:20:00.000Z" from="GAL-ERP-ZAVOD2" to="ant" contract="gal.qc.v1">
+  <LotReceived nrec="4611686018427402210" table="KatSopr" number="ПН-000431" date="2026-09-24">
+    <Supplier nrec="4611686018427377001" code="ПОСТ-003" name="АО «Уралкольцо»"></Supplier>
+    <Item designation="ФЛ-100.01.002" name="Патрубок (кольцо)" nrec="4611686018427388130" table="KatMC"></Item>
+    <Lot number="П-2026-0915" quantity="12" heatNo="Пл-4471" certificateNo="СК-2026-1190"></Lot>
+  </LotReceived>
+</GalExchange>

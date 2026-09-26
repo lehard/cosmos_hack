@@ -1,0 +1,548 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/integrations/erp/galaktika/gal.qc.v1/exchange.schema.json",
+  "title": "GalExchange",
+  "description": "Пакет обмена с Галактика ERP, контракт gal.qc.v1 (FR-92, AD-18; проектное предположение). Одна модель сообщения — два транспорта: XML-пакет `GalExchange` в каталоге обмена (gal.qc.v1.xsd) и JSON-форма этого же пакета у REST-фасада. Внутри пакета — ровно одно сообщение: исходящие `quality_lot_result` (результат контроля) и `posting` (учётное действие), входящие `production_task`, `lot_received`, `item_catalog`. Имена XML — в README.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "message_id": {
+      "$ref": "#/definitions/message_id",
+      "description": "Номер пакета — ключ идемпотентности (у исходящих — X-Message-Id: UUIDv5 от бизнес-ключа и версии, AD-7)."
+    },
+    "created_at": {
+      "$ref": "#/definitions/timestamp",
+      "description": "Время формирования пакета (у исходящих — время учётного действия)."
+    },
+    "from": {
+      "$ref": "#/definitions/node",
+      "description": "Узел-отправитель: `ant` или узел Галактики (например, GAL-ERP-ZAVOD2)."
+    },
+    "to": {
+      "$ref": "#/definitions/node",
+      "description": "Узел-получатель."
+    },
+    "contract": {
+      "type": "string",
+      "pattern": "^gal\\.qc\\.v[0-9]+$",
+      "description": "Версия контракта пакета (gal.qc.v1)."
+    },
+    "quality_lot_result": {
+      "$ref": "#/definitions/quality_lot_result",
+      "description": "Результат контроля (ant → «Управление качеством продукции»)."
+    },
+    "posting": {
+      "$ref": "#/definitions/posting",
+      "description": "Учётное действие на закрывающей точке (ant → Галактика)."
+    },
+    "production_task": {
+      "$ref": "#/definitions/production_task",
+      "description": "Сменное задание или маршрутный лист (Галактика → ant)."
+    },
+    "lot_received": {
+      "$ref": "#/definitions/lot_received",
+      "description": "Поступившая партия: приходная накладная и партия (Галактика → ant)."
+    },
+    "item_catalog": {
+      "$ref": "#/definitions/item_catalog",
+      "description": "Каталог материальных ценностей (Галактика → ant)."
+    }
+  },
+  "required": [
+    "message_id",
+    "created_at",
+    "from",
+    "to",
+    "contract"
+  ],
+  "definitions": {
+    "message_id": {
+      "type": "string",
+      "description": "Номер пакета: UUID ant или номер Галактики (ASCII без пробелов).",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$"
+    },
+    "timestamp": {
+      "type": "string",
+      "description": "Время RFC 3339 UTC, три знака после секунд.",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$"
+    },
+    "date": {
+      "type": "string",
+      "description": "Дата ГГГГ-ММ-ДД.",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "node": {
+      "type": "string",
+      "description": "Узел обмена (ASCII без пробелов).",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+    },
+    "nrec": {
+      "type": "string",
+      "description": "Суррогатный ключ записи Галактики NRec — 64-битное целое строкой (в JSON число теряет точность).",
+      "pattern": "^[0-9]{1,20}$"
+    },
+    "table": {
+      "type": "string",
+      "description": "Таблица Галактики (KatMC — каталог МЦ, MnPlan — план, KatSopr — сопроводительные документы, KatOrg — организации); проектное предположение.",
+      "pattern": "^[A-Za-z][A-Za-z0-9_]{0,31}$"
+    },
+    "object_id": {
+      "type": "string",
+      "description": "Наш идентификатор объекта (латиница).",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$"
+    },
+    "text": {
+      "type": "string",
+      "description": "Текст для людей.",
+      "maxLength": 256
+    },
+    "item": {
+      "type": "object",
+      "description": "Изделие или материальная ценность: наш ID и естественный ключ; NRec Галактики — если сопоставлен.",
+      "additionalProperties": false,
+      "properties": {
+        "item_id": {
+          "$ref": "#/definitions/object_id",
+          "description": "Наш ID изделия (ENT01:…) или типа изделия."
+        },
+        "serial_no": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Заводской номер экземпляра."
+        },
+        "designation": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "Обозначение по КД (ЕСКД)."
+        },
+        "name": {
+          "$ref": "#/definitions/text",
+          "description": "Наименование."
+        },
+        "nrec": {
+          "$ref": "#/definitions/nrec",
+          "description": "NRec записи каталога МЦ."
+        },
+        "table": {
+          "$ref": "#/definitions/table",
+          "description": "Таблица записи (KatMC)."
+        },
+        "deleted": {
+          "type": "boolean",
+          "description": "Запись помечена на удаление (в каталоге МЦ)."
+        }
+      }
+    },
+    "lot": {
+      "type": "object",
+      "description": "Партия: номер и количество.",
+      "additionalProperties": false,
+      "properties": {
+        "lot_id": {
+          "$ref": "#/definitions/object_id",
+          "description": "Наш ID партии (LOT-…)."
+        },
+        "number": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Номер партии у поставщика или в Галактике."
+        },
+        "quantity": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000000,
+          "description": "Количество, шт."
+        },
+        "heat_no": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Номер плавки."
+        },
+        "certificate_no": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Номер сертификата качества поставщика."
+        },
+        "expiry_date": {
+          "$ref": "#/definitions/date",
+          "description": "Годен до."
+        }
+      }
+    },
+    "warehouse": {
+      "type": "object",
+      "description": "Склад по коду (наш код склада цеха, FR-130).",
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "$ref": "#/definitions/object_id",
+          "description": "Код склада."
+        },
+        "nrec": {
+          "$ref": "#/definitions/nrec",
+          "description": "NRec склада, если сопоставлен."
+        }
+      },
+      "required": [
+        "code"
+      ]
+    },
+    "production_order": {
+      "type": "object",
+      "description": "Производственное задание: наш ID и маршрутный лист Галактики.",
+      "additionalProperties": false,
+      "properties": {
+        "order_id": {
+          "$ref": "#/definitions/object_id",
+          "description": "Наш ID задания (ORD-…)."
+        },
+        "nrec": {
+          "$ref": "#/definitions/nrec",
+          "description": "NRec плана, если сопоставлен."
+        },
+        "route_sheet": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Номер маршрутного листа."
+        }
+      }
+    },
+    "reference": {
+      "type": "object",
+      "description": "Ссылка на запись ant (несоответствие, запись-основание).",
+      "additionalProperties": false,
+      "properties": {
+        "ref": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "Идентификатор."
+        }
+      },
+      "required": [
+        "ref"
+      ]
+    },
+    "exchange_source": {
+      "type": "object",
+      "description": "Бизнес-ключ исходящего сообщения ant и основание (AD-7).",
+      "additionalProperties": false,
+      "properties": {
+        "business_key": {
+          "type": "string",
+          "maxLength": 256,
+          "description": "Бизнес-ключ: субъект, учётное действие, закрывающая точка."
+        },
+        "message_version": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000,
+          "description": "Версия содержимого по бизнес-ключу."
+        },
+        "enterprise": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9_-]{0,15}$",
+          "description": "Код предприятия."
+        },
+        "closing_point": {
+          "type": "string",
+          "maxLength": 48,
+          "description": "Закрывающая точка (ZT-1…ZT-6) или цикл брака."
+        },
+        "step_key": {
+          "type": "string",
+          "maxLength": 96,
+          "description": "Шаг процесса."
+        },
+        "corrects_message_id": {
+          "$ref": "#/definitions/message_id",
+          "description": "Исправление: сторно пакета с этим номером и новое содержимое одной транзакцией (по решению человека)."
+        },
+        "basis": {
+          "type": "array",
+          "maxItems": 64,
+          "items": {
+            "$ref": "#/definitions/reference"
+          },
+          "description": "Записи журнала ant — основание."
+        }
+      },
+      "required": [
+        "business_key",
+        "message_version",
+        "enterprise"
+      ]
+    },
+    "quality_lot_result": {
+      "type": "object",
+      "description": "Результат контроля партии или экземпляра по подписанной закрывающей точке (ЗТ-1…ЗТ-6, ЗТ-Р) — в «Управление качеством продукции».",
+      "additionalProperties": false,
+      "properties": {
+        "source": {
+          "$ref": "#/definitions/exchange_source",
+          "description": "Бизнес-ключ и основание."
+        },
+        "presentation": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000,
+          "description": "Номер предъявления."
+        },
+        "item": {
+          "$ref": "#/definitions/item",
+          "description": "Экземпляр (если результат по изделию)."
+        },
+        "lot": {
+          "$ref": "#/definitions/lot",
+          "description": "Партия (если результат по партии)."
+        },
+        "production_order": {
+          "$ref": "#/definitions/production_order",
+          "description": "Задание."
+        },
+        "verdict": {
+          "type": "string",
+          "enum": [
+            "accepted",
+            "accepted_with_concession",
+            "accepted_partially",
+            "rejected",
+            "insufficient_data"
+          ],
+          "description": "Итог: годно / годно по разрешению на отклонение / частично / не годно / недостаточно данных."
+        },
+        "concession": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Номер разрешения на отклонение."
+        },
+        "nonconformities": {
+          "type": "array",
+          "maxItems": 64,
+          "items": {
+            "$ref": "#/definitions/reference"
+          },
+          "description": "Несоответствия — основание «не годно»."
+        }
+      },
+      "required": [
+        "source",
+        "verdict"
+      ]
+    },
+    "posting": {
+      "type": "object",
+      "description": "Учётное действие порта учёта в документе Галактики: kind — вид документа (проектное предположение: отметка в маршрутном листе, накладная на внутреннее перемещение, запрос на доработку, акт списания, акт пересортицы, накладная на возврат, сдача готовой продукции).",
+      "additionalProperties": false,
+      "properties": {
+        "source": {
+          "$ref": "#/definitions/exchange_source",
+          "description": "Бизнес-ключ и основание."
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "accept_to_work",
+            "internal_move",
+            "defect_rework",
+            "defect_writeoff",
+            "defect_reprocess",
+            "return_to_supplier",
+            "return_from_defect",
+            "release"
+          ],
+          "description": "Вид учётного действия: принято в работу, смена склада, перевод в брак (переделка, списание, переработка), возврат поставщику, возврат из брака, выпуск."
+        },
+        "item": {
+          "$ref": "#/definitions/item",
+          "description": "Изделие."
+        },
+        "lot": {
+          "$ref": "#/definitions/lot",
+          "description": "Партия."
+        },
+        "warehouse_from": {
+          "$ref": "#/definitions/warehouse",
+          "description": "Склад-отправитель."
+        },
+        "warehouse_to": {
+          "$ref": "#/definitions/warehouse",
+          "description": "Склад-получатель."
+        },
+        "production_order": {
+          "$ref": "#/definitions/production_order",
+          "description": "Задание."
+        },
+        "after_rework": {
+          "type": "boolean",
+          "description": "Выпуск после переделки."
+        },
+        "concession": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Номер разрешения на отклонение (выпуск)."
+        },
+        "claim_basis": {
+          "type": "string",
+          "maxLength": 512,
+          "description": "Основание претензии поставщику."
+        },
+        "nonconformities": {
+          "type": "array",
+          "maxItems": 64,
+          "items": {
+            "$ref": "#/definitions/reference"
+          },
+          "description": "Несоответствия — основание перевода в брак или возврата."
+        }
+      },
+      "required": [
+        "source",
+        "kind"
+      ]
+    },
+    "production_task": {
+      "type": "object",
+      "description": "Сменно-суточное задание / маршрутный лист Галактики.",
+      "additionalProperties": false,
+      "properties": {
+        "nrec": {
+          "$ref": "#/definitions/nrec",
+          "description": "NRec задания."
+        },
+        "table": {
+          "$ref": "#/definitions/table",
+          "description": "Таблица задания (MnPlan)."
+        },
+        "number": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "description": "Номер задания (СЗ-…)."
+        },
+        "date": {
+          "$ref": "#/definitions/date",
+          "description": "Дата задания."
+        },
+        "due_date": {
+          "$ref": "#/definitions/date",
+          "description": "Срок выполнения."
+        },
+        "item": {
+          "$ref": "#/definitions/item",
+          "description": "Что изготовить (запись каталога МЦ)."
+        },
+        "quantity": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100000,
+          "description": "Количество, шт."
+        },
+        "route_sheet": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Номер маршрутного листа."
+        },
+        "kd_revision": {
+          "type": "string",
+          "maxLength": 32,
+          "description": "Версия КД (литера)."
+        }
+      },
+      "required": [
+        "nrec",
+        "number",
+        "date",
+        "item",
+        "quantity"
+      ]
+    },
+    "supplier": {
+      "type": "object",
+      "description": "Поставщик (KatOrg).",
+      "additionalProperties": false,
+      "properties": {
+        "nrec": {
+          "$ref": "#/definitions/nrec",
+          "description": "NRec организации."
+        },
+        "code": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "description": "Код организации."
+        },
+        "name": {
+          "$ref": "#/definitions/text",
+          "description": "Наименование."
+        }
+      },
+      "required": [
+        "code"
+      ]
+    },
+    "lot_received": {
+      "type": "object",
+      "description": "Приходная накладная с партией — вход для ЗТ-1 (входной контроль).",
+      "additionalProperties": false,
+      "properties": {
+        "nrec": {
+          "$ref": "#/definitions/nrec",
+          "description": "NRec накладной."
+        },
+        "table": {
+          "$ref": "#/definitions/table",
+          "description": "Таблица документа (KatSopr)."
+        },
+        "number": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "description": "Номер накладной."
+        },
+        "date": {
+          "$ref": "#/definitions/date",
+          "description": "Дата накладной."
+        },
+        "supplier": {
+          "$ref": "#/definitions/supplier",
+          "description": "Поставщик."
+        },
+        "item": {
+          "$ref": "#/definitions/item",
+          "description": "Материальная ценность."
+        },
+        "lot": {
+          "$ref": "#/definitions/lot",
+          "description": "Партия."
+        }
+      },
+      "required": [
+        "nrec",
+        "number",
+        "date",
+        "supplier",
+        "item",
+        "lot"
+      ]
+    },
+    "item_catalog": {
+      "type": "object",
+      "description": "Изменённые записи каталога материальных ценностей.",
+      "additionalProperties": false,
+      "properties": {
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1000,
+          "items": {
+            "$ref": "#/definitions/item"
+          },
+          "description": "Записи каталога МЦ: NRec, обозначение, наименование."
+        }
+      },
+      "required": [
+        "items"
+      ]
+    }
+  }
+}

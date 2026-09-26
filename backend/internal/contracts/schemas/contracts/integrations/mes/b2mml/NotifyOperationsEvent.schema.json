@@ -1,0 +1,125 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/integrations/mes/b2mml/NotifyOperationsEvent.schema.json",
+  "title": "B2mmlNotifyOperationsEvent",
+  "description": "События операций MES (B2MML NotifyOperationsEvent, подмножество mes.isa95.v1): вход ant через шлюз MES и обычный приём → operation.run.started / paused / resumed / finished изделия — без повторного ручного ввода на терминале (FR-93, FR-140).",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "NotifyOperationsEvent": {
+      "type": "object",
+      "description": "Сообщение NotifyOperationsEvent.",
+      "additionalProperties": false,
+      "properties": {
+        "releaseID": {
+          "$ref": "common.schema.json#/definitions/ReleaseID",
+          "description": "Релиз B2MML."
+        },
+        "versionID": {
+          "$ref": "common.schema.json#/definitions/VersionID",
+          "description": "Версия контракта mes.isa95."
+        },
+        "ApplicationArea": {
+          "$ref": "common.schema.json#/definitions/ApplicationArea",
+          "description": "Заголовок сообщения."
+        },
+        "DataArea": {
+          "type": "object",
+          "description": "Глагол и существительные.",
+          "additionalProperties": false,
+          "properties": {
+            "Notify": {
+              "$ref": "common.schema.json#/definitions/EmptyVerb",
+              "description": "Глагол Notify."
+            },
+            "OperationsEvent": {
+              "type": "array",
+              "description": "События.",
+              "items": {
+                "type": "object",
+                "description": "Событие операции (OperationsEvent): начало, конец, пауза, возобновление, прерывание выполнения сегмента над экземпляром.",
+                "additionalProperties": false,
+                "properties": {
+                  "ID": {
+                    "$ref": "common.schema.json#/definitions/Identifier",
+                    "description": "ID события в MES."
+                  },
+                  "Description": {
+                    "type": "string",
+                    "description": "Описание.",
+                    "maxLength": 256
+                  },
+                  "Category": {
+                    "type": "string",
+                    "enum": [
+                      "Start",
+                      "End",
+                      "Pause",
+                      "Resume",
+                      "Abort"
+                    ],
+                    "description": "Категория события."
+                  },
+                  "EffectiveTimestamp": {
+                    "$ref": "common.schema.json#/definitions/DateTime",
+                    "description": "Когда событие произошло."
+                  },
+                  "RecordTimestamp": {
+                    "$ref": "common.schema.json#/definitions/DateTime",
+                    "description": "Когда MES его записала."
+                  },
+                  "OperationsRequestID": {
+                    "$ref": "common.schema.json#/definitions/Identifier",
+                    "description": "Запрос (задание)."
+                  },
+                  "SegmentResponseID": {
+                    "$ref": "common.schema.json#/definitions/Identifier",
+                    "description": "Выполнение сегмента: начало и конец одного выполнения несут один ID."
+                  },
+                  "ProcessSegmentID": {
+                    "$ref": "common.schema.json#/definitions/Identifier",
+                    "description": "Операция — код операции нормативного слоя."
+                  },
+                  "MaterialSubLotID": {
+                    "$ref": "common.schema.json#/definitions/Identifier",
+                    "description": "Экземпляр изделия в MES (или наш ID изделия)."
+                  },
+                  "EquipmentID": {
+                    "$ref": "common.schema.json#/definitions/Identifier",
+                    "description": "Оборудование."
+                  },
+                  "PersonnelID": {
+                    "$ref": "common.schema.json#/definitions/Identifier",
+                    "description": "Сотрудник MES."
+                  }
+                },
+                "required": [
+                  "ID",
+                  "Category",
+                  "EffectiveTimestamp",
+                  "SegmentResponseID",
+                  "ProcessSegmentID",
+                  "MaterialSubLotID"
+                ]
+              },
+              "minItems": 1,
+              "maxItems": 1000
+            }
+          },
+          "required": [
+            "Notify",
+            "OperationsEvent"
+          ]
+        }
+      },
+      "required": [
+        "releaseID",
+        "ApplicationArea",
+        "DataArea"
+      ]
+    }
+  },
+  "required": [
+    "NotifyOperationsEvent"
+  ]
+}

@@ -1,0 +1,117 @@
+{
+  "messages": [
+    {
+      "ProcessOperationsSchedule": {
+        "releaseID": "7.01",
+        "versionID": "mes.isa95.v1",
+        "ApplicationArea": {
+          "Sender": {
+            "LogicalID": "mes-ceh-2",
+            "ConfirmationCode": "OnError"
+          },
+          "CreationDateTime": "2026-09-25T05:10:00.000Z",
+          "BODID": "mes-2026-09-25-004411"
+        },
+        "DataArea": {
+          "Process": {},
+          "OperationsSchedule": [
+            {
+              "ID": "OS-2026-0925-01",
+              "OperationsRequest": [
+                {
+                  "ID": "OR-000812",
+                  "Description": "Фланец люка ФЛ-100.00.000 СБ, партия запуска 6 шт.",
+                  "SegmentRequirement": [
+                    {
+                      "ID": "SR-1",
+                      "ProcessSegmentID": "010",
+                      "Description": "Мехобработка фланца",
+                      "EarliestStartTime": "2026-09-25T06:00:00.000Z",
+                      "EquipmentRequirement": [
+                        {
+                          "EquipmentID": "CNC-1"
+                        }
+                      ],
+                      "MaterialRequirement": [
+                        {
+                          "MaterialDefinitionID": "ФЛ-100.01.001",
+                          "MaterialUse": "Produced",
+                          "Quantity": {
+                            "QuantityString": "6",
+                            "UnitOfMeasure": "шт"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "ID": "SR-3",
+                      "ProcessSegmentID": "030",
+                      "Description": "Сварка фланца с патрубком",
+                      "EarliestStartTime": "2026-09-25T09:00:00.000Z",
+                      "EquipmentRequirement": [
+                        {
+                          "EquipmentID": "IS-1"
+                        }
+                      ],
+                      "MaterialRequirement": [
+                        {
+                          "MaterialDefinitionID": "ФЛ-100.00.000 СБ",
+                          "MaterialUse": "Produced",
+                          "Quantity": {
+                            "QuantityString": "6",
+                            "UnitOfMeasure": "шт"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "NotifyOperationsEvent": {
+        "releaseID": "7.01",
+        "versionID": "mes.isa95.v1",
+        "ApplicationArea": {
+          "Sender": {
+            "LogicalID": "mes-ceh-2",
+            "ConfirmationCode": "OnError"
+          },
+          "CreationDateTime": "2026-09-25T09:41:02.000Z",
+          "BODID": "mes-2026-09-25-004502"
+        },
+        "DataArea": {
+          "Notify": {},
+          "OperationsEvent": [
+            {
+              "ID": "OE-77001",
+              "Category": "Start",
+              "EffectiveTimestamp": "2026-09-25T09:05:00.000Z",
+              "OperationsRequestID": "OR-000812",
+              "SegmentResponseID": "SRSP-4471",
+              "ProcessSegmentID": "030",
+              "MaterialSubLotID": "ФЛ-100.00.000#0007",
+              "EquipmentID": "IS-1",
+              "PersonnelID": "TAB-1142"
+            },
+            {
+              "ID": "OE-77002",
+              "Category": "End",
+              "EffectiveTimestamp": "2026-09-25T09:40:00.000Z",
+              "OperationsRequestID": "OR-000812",
+              "SegmentResponseID": "SRSP-4471",
+              "ProcessSegmentID": "030",
+              "MaterialSubLotID": "ФЛ-100.00.000#0007",
+              "EquipmentID": "IS-1",
+              "PersonnelID": "TAB-1142"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

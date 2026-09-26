@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GalExchange xmlns="urn:ant-qc:galaktika:v1" messageId="49170330-9d01-500c-bb28-938fb10fbe82" createdAt="2026-09-25T10:42:17.305Z" from="ant" to="GAL-ERP-ZAVOD2" contract="gal.qc.v1">
+  <Posting kind="internal_move">
+    <Source businessKey="ENT01:F-001/warehouse_transfer/welding.erp_transfer_in" messageVersion="1" enterprise="ENT01" closingPoint="welding.erp_transfer_in"></Source>
+    <Item itemId="ENT01:F-001" serialNo="F-001"></Item>
+    <WarehouseFrom code="WH-MC"></WarehouseFrom>
+    <WarehouseTo code="WH-WC"></WarehouseTo>
+  </Posting>
+</GalExchange>

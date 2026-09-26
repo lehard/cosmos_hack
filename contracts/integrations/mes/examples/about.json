@@ -1,0 +1,6 @@
+{
+  "logical_id": "mes-ceh-2",
+  "release_id": "7.01",
+  "supported": ["mes.isa95.v1"],
+  "product": "MES сварочно-сборочного цеха (B2MML через интеграционную шину)"
+}
