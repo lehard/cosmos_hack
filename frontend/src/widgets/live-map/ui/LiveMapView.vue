@@ -11,7 +11,8 @@
 import { computed, ref, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { NButton, NDatePicker, NIcon, NRadioButton, NRadioGroup, NSelect, NTooltip } from 'naive-ui'
-import { Clock } from '@vicons/tabler'
+import { Certificate, Clock } from '@vicons/tabler'
+import { NormsPanel, parseNorms } from '@/features/norms-layer'
 import type { CounterPeriod, LiveMapData, NodeAnomaly, NodeCounters } from '@/entities/live-map'
 import type { ProcessSummary } from '@/shared/api/generated/model'
 import { naiveSizeOf, type Density } from '@/shared/config/widget'
@@ -54,6 +55,10 @@ const selected = ref<string | null>(null)
 const incidentOpen = ref(false)
 /** Полоса времени показана (кнопка с часами). */
 const showTimeline = ref(false)
+/** Слой «нормы» (эпик 39, FR-156): шаги с опорой на ГОСТ подсвечены, опоры — в окне шага. */
+const normsOn = ref(false)
+const norms = computed(() => parseNorms(props.data.bpmn_xml))
+const normSteps = computed<ReadonlySet<string>>(() => (normsOn.value ? new Set(norms.value.keys()) : new Set()))
 
 // Новая схема — прежний выбор узла может быть не из неё.
 watch(
@@ -131,6 +136,22 @@ function onReady(idx: DiagramIndex) {
         </template>
         <span class="ant-wrap">{{ t('liveMap.playback.toggle') }}</span>
       </NTooltip>
+      <NTooltip placement="bottom-start">
+        <template #trigger>
+          <NButton
+            quaternary
+            circle
+            :type="normsOn ? 'primary' : 'default'"
+            :aria-pressed="normsOn"
+            :aria-label="t('normsLayer.toggle')"
+            data-testid="norms-toggle"
+            @click="normsOn = !normsOn"
+          >
+            <template #icon><NIcon><Certificate /></NIcon></template>
+          </NButton>
+        </template>
+        <span class="ant-wrap">{{ t('normsLayer.toggle') }}</span>
+      </NTooltip>
       <NRadioGroup
         :value="period"
         :size="naiveSizeOf(density)"
@@ -177,6 +198,10 @@ function onReady(idx: DiagramIndex) {
       <slot name="timeline" />
     </div>
 
+    <p v-if="normsOn" class="norms-hint ant-wrap" data-testid="norms-hint">
+      {{ t('normsLayer.count', { n: norms.size }) }} · {{ t('normsLayer.hint') }}
+    </p>
+
     <!-- Режим инцидента — строкой над схемой; подробности разворачиваются по щелчку. -->
     <section v-if="incident && reduction" class="incident" :data-open="incidentOpen || undefined" data-testid="incident">
       <div class="incident-head">
@@ -219,6 +244,7 @@ function onReady(idx: DiagramIndex) {
           :data-gaps="dataGaps"
           :incident-mode="!!incident"
           :selected="selected"
+          :norm-steps="normSteps"
           @ready="onReady"
           @import-error="(e) => (importError = e)"
           @select-node="(k) => (selected = k)"
@@ -237,6 +263,7 @@ function onReady(idx: DiagramIndex) {
       data-record="node"
       @close="selected = null"
     >
+      <NormsPanel v-if="shownNode && normsOn" :norms="norms.get(shownNode.stepKey) ?? null" />
       <NodeCard
         v-if="shownNode"
         :node="shownNode"
@@ -356,6 +383,13 @@ function onReady(idx: DiagramIndex) {
   height: 10px;
   margin-right: 6px;
   border-radius: 50%;
+}
+
+.norms-hint {
+  flex: none;
+  margin: 0;
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-meta);
 }
 
 .timeline-strip {

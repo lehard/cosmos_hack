@@ -43,9 +43,9 @@ describe('живая карта', () => {
     const dots = document.querySelector('.node-dots[data-step="welding.zt3_acceptance"]')!
     expect(dots.querySelectorAll('.dot')).toHaveLength(6)
     expect(dots.querySelector('.more')!.textContent).toBe('+6')
-    // Изделие прежней версии на этой карте не показано, но есть заметка (FR-1).
+    // Изделие прежней версии на этой карте не показано, но есть заметка (FR-1) — подсказкой у выбора версии.
     expect(dot('ENT:FL-0090')).toBeNull()
-    expect(norm(document.querySelector('[data-testid="other-versions"]')!.textContent)).toContain('2 изделия')
+    expect(norm(document.querySelector('[data-testid="version"]')!.getAttribute('title') ?? '')).toContain('2 изделия')
     // Цех: изделия в дорожке (FR-130).
     expect(norm(document.querySelector('[data-lane="Lane_WC"]')!.textContent)).toContain('14 изделий')
     // Перемещение между цехами — отдельный вид точки.
@@ -92,6 +92,10 @@ describe('живая карта', () => {
   it('режим инцидента: цвета по статусу в инциденте, легенда, версия области (FR-9)', async () => {
     await mountMap(frameScope34())
     expect(document.querySelector('[data-testid="scope-reduction"]')!.textContent).toContain('34 → 34')
+    // Строка инцидента свёрнута: легенда и основание — по щелчку.
+    expect(document.querySelectorAll('[data-legend]')).toHaveLength(0)
+    document.querySelector<HTMLElement>('[data-testid="incident"] .incident-toggle')!.click()
+    await flushPromises()
     expect(document.querySelectorAll('[data-legend]')).toHaveLength(4)
     expect(document.querySelector('[data-testid="incident"]')!.textContent).toContain('Цвет — статус относительно этого инцидента')
     // Подтверждённое — первой точкой узла, даже если пришло не первым.

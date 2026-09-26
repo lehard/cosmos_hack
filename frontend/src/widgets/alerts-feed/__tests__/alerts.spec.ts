@@ -1,5 +1,6 @@
 // Лента тревог (FR-8): тексты по виду тревоги, цена задержки у эскалации,
-// переход к объекту тревоги (FR-7), неизвестный вид аномалии — UNKNOWN(код).
+// переход к объекту тревоги (FR-7), неизвестный вид аномалии — UNKNOWN(код);
+// у аномалии — имя шага (node_name), код узла — только если имени нет.
 import { flushPromises, mount } from '@vue/test-utils'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createPinia, setActivePinia } from 'pinia'
@@ -15,7 +16,7 @@ const alerts = (): AlertEntry[] => [
   { alert_id: 'x1', at: '2026-09-23T08:05:00.000Z', kind: 'overdue_isolation', item: 'ФЛ-0001', ref: { entity: 'item', id: 'ENT:FL-0001' } },
   { alert_id: 'x2', at: '2026-09-23T08:10:00.000Z', kind: 'gate_overdue', gate: 'ЗТ-3' },
   { alert_id: 'x3', at: '2026-09-23T08:11:00.000Z', kind: 'not_moved_to_isolator', item: 'ФЛ-0002' },
-  { alert_id: 'x4', at: '2026-09-23T08:12:00.000Z', kind: 'anomaly', node: 'ЗТ-3 Приёмка ОТК', anomaly: 'queue_above_norm', ref: { entity: 'live_map', id: 'welding.zt3_acceptance' } },
+  { alert_id: 'x4', at: '2026-09-23T08:12:00.000Z', kind: 'anomaly', node: 'welding.zt3_acceptance', node_name: 'ЗТ-3 Приёмка ОТК', anomaly: 'queue_above_norm', ref: { entity: 'live_map', id: 'welding.zt3_acceptance' } },
   { alert_id: 'x5', at: '2026-09-23T08:13:00.000Z', kind: 'escalation', target: 'ЗТ-3', overdue_minutes: 37, items: 18, operations: 2 },
   { alert_id: 'x6', at: '2026-09-23T08:14:00.000Z', kind: 'integrity_violation', ref: { entity: 'integrity', id: 'main' } },
   { alert_id: 'x7', at: '2026-09-23T08:15:00.000Z', kind: 'anomaly', node: 'КТ-3', anomaly: 'mystery' },
@@ -66,10 +67,14 @@ describe('виджет «Тревоги»', () => {
     expect(t('x1')).toContain('Просрочена изоляция: ФЛ-0001')
     expect(t('x2')).toContain('Истёк срок ожидания на точке предъявления ЗТ-3')
     expect(t('x3')).toContain('Изолировано в системе, физически не перемещено: ФЛ-0002')
+    // Имя шага вместо кода узла; кода в тексте нет.
     expect(t('x4')).toContain('Аномалия узла ЗТ-3 Приёмка ОТК: Очередь выше нормы узла')
+    expect(t('x4')).not.toContain('welding.zt3_acceptance')
     expect(t('x5')).toContain('Эскалация: ЗТ-3: просрочено на 37 мин — стоят 18 изделий, 2 операции')
     expect(t('x6')).toContain('Нарушена целостность журнала')
     expect(t('x7')).toContain('UNKNOWN(mystery)')
+    // Имени нет — код узла.
+    expect(t('x7')).toContain('КТ-3')
     expect(w.find('.widget-frame').attributes('data-state')).toBe('defect_indication')
   })
 

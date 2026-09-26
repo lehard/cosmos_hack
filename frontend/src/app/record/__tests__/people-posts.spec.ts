@@ -1,6 +1,7 @@
-// Окна поста и сотрудника (Д-70): `?open=workplace:…` — что на посту сейчас,
-// назначения в смене, история поста из журнала; `?open=person:…` — профиль,
-// пост сейчас, квалификации. Чтения без права — ошибка в своём блоке.
+// Окна поста и сотрудника (Д-70, UI-16): `?open=workplace:…` — карточка поста
+// (`access.workplace.read`: сейчас, назначения смены) и история поста
+// (`access.workplace.history`, «показать ещё» по курсору); `?open=person:…` —
+// карточка сотрудника (`access.person.card`). Чтение без права — ошибка в блоке.
 import { defineComponent, h, provide } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
@@ -20,71 +21,61 @@ const json = (body: unknown, status = 200) =>
 const problem = (status: number, code: string) => json({ type: `urn:ant:problem:${code}`, title: 'нет', status, code }, status)
 
 /** Образцы — только для тестов. */
-const posts = {
-  items: [
-    { workplace_id: 'WP-W2', station: 'Сварочный пост 2', workshop: 'Сварочный цех', assigned: { person_id: 'P-17', display: 'Сварщик С-17' }, presence: 'present', current_item: { item_id: 'ENT:FL-0041', label: 'ФЛ-0041' } },
+const card = {
+  workplace_id: 'WP-W2',
+  station: 'Сварочный пост 2',
+  workshop: 'Сварочный цех',
+  scope: 'ent01/b1/wc/w2',
+  assigned: { person_id: 'P-17', display: 'Сварщик С-17' },
+  presence: 'present',
+  current_item: { item_id: 'ENT:FL-0041', label: 'ФЛ-0041' },
+  shift_id: 'S-1',
+  assignments: [
+    { person_id: 'P-17', person_display: 'Сварщик С-17', shift_id: 'S-1', assignee_role: 'performer', qualification_ok: true },
+    { person_id: 'INS-01', person_display: 'Контролёр ОТК 1', shift_id: 'S-1', assignee_role: 'quality_inspector', qualification_ok: true },
   ],
 }
-const assignments = {
-  basis_seq: 10,
-  items: [
-    { workplace_id: 'WP-W2', shift_id: 'S-1', person_id: 'P-17', assignee_role: 'performer', admitted: true, qualification_ok: true },
-    { workplace_id: 'WP-W9', shift_id: 'S-1', person_id: 'P-99', assignee_role: 'performer', admitted: true, qualification_ok: true },
-  ],
-}
-const entry = (seq: number, event_type: string, data: Record<string, unknown>) => ({
+const ev = (seq: number, kind: string, extra: Record<string, unknown> = {}) => ({
   seq,
-  chain: 'main',
-  entry_kind: 'decision',
-  event_type,
-  event_id: `E-${seq}`,
-  causation_id: null,
-  correlation_id: `C-${seq}`,
-  committed_at: '2026-09-26T06:00:00Z',
-  occurred_at: `2026-09-26T0${seq}:00:00Z`,
-  received_at: '2026-09-26T06:00:00Z',
-  recorded_at: '2026-09-26T06:00:00Z',
-  provenance_class: 'personal',
-  schema_version: 1,
-  signature_status: 'not_checked',
-  signers: [],
-  source_id: 'web',
-  stream: 'workplace:WP-W2',
-  data,
+  at: `2026-09-26T0${seq}:00:00Z`,
+  event_type: 'access.x',
+  kind,
+  person_id: 'P-17',
+  person_display: 'Сварщик С-17',
+  shift_id: 'S-1',
+  ...extra,
 })
-const journal = {
-  items: [
-    entry(1, 'access.assignment.set', { person_id: 'P-17', workplace_id: 'WP-W2', shift_id: 'S-1', assignee_role: 'performer' }),
-    entry(2, 'access.token.presence_changed', { person_id: 'P-17', workplace_id: 'WP-W2', present: true }),
-  ],
-}
+/** Первая страница истории (новые сверху) и вторая — по курсору. */
+const history1 = { workplace_id: 'WP-W2', items: [ev(4, 'revoked', { reason: 'zone_exit' }), ev(3, 'token_in')], next_cursor: '2' }
+const history2 = { workplace_id: 'WP-W2', items: [ev(2, 'cleared', { reason: 'Перевод на другой пост' }), ev(1, 'assigned')] }
 const person = {
   person_id: 'P-17',
   display_name: 'Сварщик С-17',
   org_unit: 'Сварочный цех',
-  login: 'welder17',
-  account_status: 'active',
   policy_seq: 3,
   roles: [{ role_id: 'performer', scope: 'ent01/b1/wc', valid_from: '2026-01-01T00:00:00Z' }],
+  qualifications: [
+    { person_id: 'P-17', qualification_id: 'welder_argon_arc_amg6', scope: 'ent01/b1/wc', status: 'valid', valid_from: '2026-01-01T00:00:00Z', valid_until: '2027-01-01T00:00:00Z' },
+  ],
+  posts: [{ workplace_id: 'WP-W2', station: 'Сварочный пост 2', shift_id: 'S-1', assignee_role: 'performer' }],
 }
-const quals = { items: [{ person_id: 'P-17', qualification_id: 'Q-1', scope: 'Сварка НАКС', status: 'valid', valid_from: '2026-01-01T00:00:00Z', valid_until: '2027-01-01T00:00:00Z' }] }
 
-/** Ответы сервера по пути; `deny` — операции, закрытые правом. */
-function serve(deny: string[] = [], pending: string[] = []) {
+/** Ответы сервера по пути; `deny` — операции, закрытые правом; `calls` — запрошенные пути. */
+function serve(deny: string[] = []) {
+  const calls: string[] = []
   vi.stubGlobal(
     'fetch',
     vi.fn(async (url: string) => {
-      const path = String(url).split('?')[0]!
+      const [path, query = ''] = String(url).split('?') as [string, string?]
+      calls.push(path)
       if (deny.includes(path)) return problem(403, 'access.forbidden')
-      if (pending.includes(path)) return problem(501, 'api.not_implemented')
-      if (path === '/api/v1/workplaces') return json(posts)
-      if (path === '/api/v1/assignments') return json(assignments)
-      if (path === '/api/v1/journal') return json(journal)
-      if (path === '/api/v1/persons/P-17') return json(person)
-      if (path === '/api/v1/qualifications') return json(quals)
+      if (path === '/api/v1/workplaces/WP-W2') return json(card)
+      if (path === '/api/v1/workplaces/WP-W2/history') return json(new URLSearchParams(query).get('cursor') === '2' ? history2 : history1)
+      if (path === '/api/v1/persons/P-17/card') return json(person)
       return problem(404, 'api.not_found')
     }),
   )
+  return calls
 }
 
 beforeAll(async () => {
@@ -112,8 +103,8 @@ async function mountAt(path: string) {
 }
 
 describe('окно поста', () => {
-  it('заголовок — пост и цех; сейчас, назначения смены, история (новые сверху)', async () => {
-    serve()
+  it('заголовок — пост и цех; сейчас и назначения смены из карточки, история (новые сверху)', async () => {
+    const calls = serve()
     const { w } = await mountAt('/desk?open=workplace:WP-W2')
     await until(() => expect($$('[data-testid="workplace-history-row"]').length).toBe(2))
     const head = $('[data-testid="record-drawer-head"]')!.textContent!
@@ -121,13 +112,30 @@ describe('окно поста', () => {
     expect(head).toContain('Сварочный пост 2')
     expect(head).toContain('Сварочный цех')
     expect($('[data-testid="workplace-now"]')!.textContent).toContain('ФЛ-0041')
-    // Только назначения этого поста.
     const shift = $('[data-testid="workplace-assignments"]')!.textContent!
     expect(shift).toContain('Сварщик С-17')
-    expect(shift).not.toContain('P-99')
+    expect(shift).toContain('Контролёр ОТК 1')
+    expect(shift).toContain('Контролёр')
     const rows = $$('[data-testid="workplace-history-row"]').map((r) => r.textContent)
-    expect(rows[0]).toContain('ключ вставлен')
-    expect(rows[1]).toContain('Назначение на пост')
+    // Вид события и основание — по-русски, без кодов.
+    expect(rows[0]).toContain('Допуск к рабочему месту снят автоматически: выход из зоны')
+    expect(rows[0]).not.toContain('zone_exit')
+    expect(rows[1]).toContain('Ключ вставлен')
+    // Только новые операции — без журнала, назначений и панели «Посты».
+    expect(calls.every((p) => p.startsWith('/api/v1/workplaces/WP-W2'))).toBe(true)
+    w.unmount()
+  })
+
+  it('«показать ещё» — следующая страница истории по курсору', async () => {
+    serve()
+    const { w } = await mountAt('/desk?open=workplace:WP-W2')
+    await until(() => expect($('[data-testid="workplace-history-more"]')).not.toBeNull())
+    $('[data-testid="workplace-history-more"]')!.click()
+    await until(() => expect($$('[data-testid="workplace-history-row"]').length).toBe(4))
+    const rows = $$('[data-testid="workplace-history-row"]').map((r) => r.textContent)
+    expect(rows[2]).toContain('Снят с поста: Перевод на другой пост')
+    expect(rows[3]).toContain('Назначен на пост')
+    expect($('[data-testid="workplace-history-more"]')).toBeNull()
     w.unmount()
   })
 
@@ -144,46 +152,41 @@ describe('окно поста', () => {
     w.unmount()
   })
 
-  it('журнал закрыт правом — ошибка в блоке истории; операции нет — «появится»', async () => {
-    serve(['/api/v1/journal'])
-    let m = await mountAt('/desk?open=workplace:WP-W2')
+  it('чтение закрыто правом — ошибка в своём блоке', async () => {
+    serve(['/api/v1/workplaces/WP-W2', '/api/v1/workplaces/WP-W2/history'])
+    const { w } = await mountAt('/desk?open=workplace:WP-W2')
+    await until(() => expect($('[data-testid="workplace-card-error"]')).not.toBeNull())
     await until(() => expect($('[data-testid="workplace-history-error"]')).not.toBeNull())
-    expect($('[data-testid="workplace-now"]')!.textContent).toContain('Сварщик С-17')
-    m.w.unmount()
-    document.body.innerHTML = ''
-
-    serve([], ['/api/v1/journal'])
-    m = await mountAt('/desk?open=workplace:WP-W2')
-    await until(() => expect($('[data-testid="workplace-history-pending"]')).not.toBeNull())
-    expect($('[data-testid="workplace-history-pending"]')!.textContent).toContain('История постов появится, когда бэкенд её отдаст')
-    m.w.unmount()
+    expect($('[data-testid="workplace-card-error"]')!.textContent).toContain('Карточка поста недоступна')
+    expect($('[data-testid="workplace-assignments"]')).toBeNull()
+    w.unmount()
   })
 })
 
 describe('окно сотрудника', () => {
-  it('профиль, роли, пост сейчас, квалификации', async () => {
-    serve()
+  it('карточка: подразделение, роли, посты, квалификации — по-русски', async () => {
+    const calls = serve()
     const { w, router } = await mountAt('/desk?open=person:P-17')
     await until(() => expect($('[data-qualification="valid"]')).not.toBeNull())
     const head = $('[data-testid="record-drawer-head"]')!.textContent!
     expect(head).toContain('Сотрудник')
     expect(head).toContain('Сварщик С-17')
-    expect($('[data-testid="person-profile"]')!.textContent).toContain('welder17')
+    expect(head).toContain('Сварочный цех')
     expect($('[data-testid="person-roles"]')!.textContent).toContain('Исполнитель')
-    expect($('[data-qualification="valid"]')!.textContent).toContain('Сварка НАКС')
-    // Пост сейчас → окно поста.
+    expect($('[data-qualification="valid"]')!.textContent).toContain('Аргонодуговая сварка АМг6')
+    expect(calls).toEqual(['/api/v1/persons/P-17/card'])
+    // Пост → окно поста.
     $('[data-testid="person-post"] [data-workplace="WP-W2"]')!.click()
     await until(() => expect(router.currentRoute.value.query.open).toBe('workplace:WP-W2'))
     w.unmount()
   })
 
-  it('профиль закрыт правом — ошибка, имя и пост — из панели «Посты»', async () => {
-    serve(['/api/v1/persons/P-17', '/api/v1/qualifications'])
+  it('карточка закрыта правом — ошибка с текстом по коду', async () => {
+    serve(['/api/v1/persons/P-17/card'])
     const { w } = await mountAt('/desk?open=person:P-17')
-    await until(() => expect($('[data-testid="person-profile-error"]')).not.toBeNull())
-    expect($('[data-testid="record-drawer-head"]')!.textContent).toContain('Сварщик С-17')
-    await until(() => expect($('[data-testid="person-post"]')!.textContent).toContain('Сварочный пост 2'))
-    expect($('[data-testid="person-qualifications"]')!.textContent).toContain('Квалификации недоступны')
+    await until(() => expect($('[data-testid="person-card-error"]')).not.toBeNull())
+    expect($('[data-testid="person-card-error"]')!.textContent).toContain('Карточка сотрудника недоступна')
+    expect($('[data-testid="person-profile"]')).toBeNull()
     w.unmount()
   })
 })
