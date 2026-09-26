@@ -82,7 +82,8 @@ func runWorker(ctx context.Context, env *environment) error {
 	wf := feed.NewWorkFeed(c.journal, c.leases, c.listener, env.cfg.Engine.Partitions, c.feedOptions(env, "worker"))
 	w := engineapp.NewWorker(engineapp.WorkerConfig{
 		Feed: wf, Codec: c.codec, Projections: c.registry, Log: env.log, Now: c.codec.Now,
-		Bundles: c.bundleSource(), // версия процесса изделия (эпик 17) + слой quality (эпик 20)
+		Telemetry: env.telemetry(),  // эпик 34: ant_fold_seconds, ant_processing_failed_total
+		Bundles:   c.bundleSource(), // версия процесса изделия (эпик 17) + слой quality (эпик 20)
 		// Аренды партиций продлевает WorkFeed.Partitions — не реже TTL/3.
 		Refresh: c.ttl / 3,
 	})
@@ -195,7 +196,7 @@ func journalLive(ctx context.Context, env *environment) (*appjournal.Service, er
 	if err != nil {
 		return nil, err
 	}
-	live := engineapp.NewLiveUpdates(engineapp.LiveConfig{Log: c.engine, Now: c.codec.Now, Logger: env.log})
+	live := engineapp.NewLiveUpdates(engineapp.LiveConfig{Log: c.engine, Now: c.codec.Now, Logger: env.log, Telemetry: env.telemetry()})
 	env.coreH.bg.Go(func() { _ = live.Run(ctx) })
 	return appjournal.NewServiceWith(c.journal, c.listener, appjournal.WithLive(live), appjournal.WithClockMode(c.clock.Mode)), nil
 }

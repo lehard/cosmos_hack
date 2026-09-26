@@ -9,7 +9,7 @@ import (
 // долгоживущая ждёт остановки, разовая завершается ошибкой «не реализовано».
 // Эпик-владелец заменяет тело роли, не меняя реестр.
 func pendingRole(name, epic string, oneShot bool) role {
-	return role{oneShot: oneShot, run: func(ctx context.Context, env *environment) error {
+	return role{oneShot: oneShot, pending: true, run: func(ctx context.Context, env *environment) error {
 		if oneShot {
 			return fmt.Errorf("роль %s ещё не реализована (%s)", name, epic)
 		}

@@ -11,11 +11,10 @@ import (
 	appjournal "ant/internal/application/journal"
 	"ant/internal/application/platform"
 	"ant/internal/contracts/catalog"
-	"ant/internal/contracts/constants"
 	ev "ant/internal/contracts/events"
 	jc "ant/internal/contracts/journal"
 	"ant/internal/domain/engine"
-	"ant/internal/domain/kernel"
+	dops "ant/internal/domain/ops"
 )
 
 // Rebuilder — `ant rebuild` (FR-115, FR-124, AD-45): проекции
@@ -70,7 +69,7 @@ func (r *Rebuilder) RebuildItem(ctx context.Context, itemID, reason string) (Reb
 		if reason == "" {
 			reason = "ant rebuild --item: повтор обработки после исправления"
 		}
-		id := kernel.UUIDv5(constants.NsAnt, string(catalog.OpsProcessingRetried)+"\x1f"+in.FailureID)
+		id := dops.RetryEventID(in.FailureID)
 		pend, err := r.Codec.Encode(ctx, Out{
 			EventID: id, Type: catalog.OpsProcessingRetried, Kind: catalog.KindDecision, Stream: "item:" + itemID,
 			ItemID: itemID, RunID: in.Last.RunID, OccurredAt: in.Last.OccurredAt, Causation: in.FailureID,

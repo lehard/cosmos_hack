@@ -52,6 +52,9 @@ type role struct {
 	// oneShot — роль выполняется и завершается (migrate, init, rebuild);
 	// такие роли не совмещаются с долгоживущими в одном процессе.
 	oneShot bool
+	// pending — заглушка до своего эпика (pendingRole): самопроверка (ops.go)
+	// предупреждает о ней; генезис обязателен, когда роль init собрана.
+	pending bool
 }
 
 // roles — реестр ролей процесса.
@@ -85,6 +88,9 @@ type environment struct {
 	// standsReg — реестр stand-ов процесса (stands.go).
 	standsReg  *stands.Registry
 	standsOnce sync.Once
+	// selectedRoles — роли этого процесса; obs — его телеметрия (ops.go, эпик 34).
+	selectedRoles []string
+	obs           observability
 }
 
 func main() {
@@ -140,7 +146,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 		_, _ = fmt.Fprintln(stderr, "-item — только для -role=rebuild")
 		return 2
 	}
-	env := &environment{cfg: cfg, log: log, item: *item, reason: *reason}
+	env := &environment{cfg: cfg, log: log, item: *item, reason: *reason, selectedRoles: selected}
 	err = runRoles(ctx, selected, env)
 	env.closeCore()
 	if err != nil {
