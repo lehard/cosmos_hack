@@ -355,6 +355,245 @@
       "notChecked": "ещё не проверено",
       "checkedBy": "Проверка: {operation} {path}",
       "step": "Шаг {step}"
+    },
+    "admin": {
+      "health": {
+        "version": "Версия {version}",
+        "profile": {
+          "fixtures": "Профиль: заготовки",
+          "demo": "Профиль: демонстрация",
+          "load": "Профиль: нагрузка",
+          "prod": "Профиль: производство"
+        },
+        "components": "Сервисы",
+        "component": "Компонент",
+        "state": "Состояние",
+        "instances": "Копий",
+        "leader": "Лидер",
+        "checkedAt": "Проверено",
+        "componentState": {
+          "ok": "Работает",
+          "degraded": "С перебоями",
+          "down": "Не работает",
+          "notImplemented": "Ещё не подключён",
+          "unknown": "Неизвестно"
+        },
+        "queue": "Очередь",
+        "scope": {
+          "partition": "Партиция",
+          "global": "Глобальный потребитель",
+          "outbox": "Исходящие"
+        },
+        "pending": "Ждут",
+        "lag": "Отставание, записей",
+        "integrations": "Интеграции",
+        "integrationState": {
+          "ok": "Работает",
+          "degraded": "С перебоями"
+        },
+        "since": "С {time}",
+        "verdict": {
+          "intact": "Цело",
+          "intactWithCaveats": "Цело с оговорками",
+          "intactWithReservations": "Цело с оговорками",
+          "violated": "Нарушено",
+          "unknown": "Неизвестно"
+        },
+        "noVerifier": "Отчётов верификатора ещё не было",
+        "metrics": "Метрики приёма",
+        "p50p95": "{p50} / {p95} мс (медиана / 95 %)",
+        "eventToScreen": "Событие → экран, 95 %",
+        "window": "Окно: {from} — {to}",
+        "stopped": "Остановленная обработка",
+        "stoppedCount": "Изделий с остановленной обработкой: {n}",
+        "consumer": "Обработчик",
+        "error": "Ошибка",
+        "failedAt": "Остановлено",
+        "retries": "Повторов",
+        "retry": "Повторить обработку",
+        "retried": "Обработка перезапущена",
+        "noStopped": "Остановленной обработки нет",
+        "partFailed": "Не удалось загрузить: {what}"
+      },
+      "sources": {
+        "source": "Источник",
+        "kind": "Вид",
+        "state": "Состояние",
+        "sourceState": {
+          "active": "Работает",
+          "disabled": "Отключён",
+          "lossSuspected": "Подозрение на потерю данных",
+          "unknownKey": "Ключ не зарегистрирован"
+        },
+        "key": "Ключ (акт ввода)",
+        "lastReceived": "Последнее сообщение",
+        "lastSeq": "Последний номер",
+        "gaps": "Пропусков в номерах",
+        "quarantined": "В карантине",
+        "clockSkew": "Расхождение часов, мс",
+        "disable": "Отключить",
+        "enable": "Включить",
+        "reason": "Основание",
+        "reasonRequired": "Укажите основание",
+        "switched": "Команда принята",
+        "noSources": "Источников пока нет",
+        "channel": "Система",
+        "endpoint": "Адрес",
+        "stand": "эмулятор кейса",
+        "queued": "В очереди",
+        "channelState": {
+          "ok": "Работает",
+          "degraded": "С перебоями",
+          "disabled": "Отключён"
+        },
+        "never": "ещё не было"
+      },
+      "quarantine": {
+        "filter": {
+          "open": "Открытые",
+          "all": "Все"
+        },
+        "entryState": {
+          "open": "В карантине",
+          "accepted": "Принято после переобработки",
+          "stillInvalid": "По-прежнему некорректно",
+          "discarded": "Отброшено"
+        },
+        "eventType": "Тип события",
+        "fingerprint": "Отпечаток",
+        "material": "Адрес содержимого",
+        "content": "Исходное содержимое",
+        "noContent": "Содержимое не показано: нет прав или не передано",
+        "select": "Выберите сообщение — будут видны содержимое и переобработка",
+        "discard": "Отбросить без повторной проверки",
+        "reason": "Основание",
+        "reasonRequired": "Укажите основание"
+      },
+      "access": {
+        "sections": {
+          "persons": "Сотрудники",
+          "roles": "Роли и полномочия",
+          "stamps": "Клейма",
+          "grant": "Выдать права"
+        },
+        "accountStatus": {
+          "none": "Нет учётной записи",
+          "pending": "Ждёт активации",
+          "active": "Действует",
+          "blocked": "Заблокирована"
+        },
+        "caseRole": "роль кейса",
+        "inherits": "Наследует: {roles}",
+        "actions": "Действий: {n}",
+        "stampStatus": {
+          "active": "Действует",
+          "revoked": "Отозвано",
+          "expired": "Истёк срок"
+        },
+        "kind": {
+          "role": "Роль",
+          "authority": "Полномочие",
+          "stamp": "Клеймо"
+        },
+        "person": "Сотрудник",
+        "subject": "Что выдать",
+        "validFrom": "Действует с",
+        "order": "Приказ",
+        "inspectionKind": "Вид контроля",
+        "document": "Документ выдачи (маршрут подписей)",
+        "granted": "Выдача записана: {ca}",
+        "grantedPending": "Выдача записана — ждёт второй подписи",
+        "revoke": "Отозвать",
+        "revokeReason": "Основание отзыва",
+        "revoked": "Отзыв записан: {ca}",
+        "noRoles": "Ролей нет"
+      },
+      "system": {
+        "onec": "1С",
+        "galaktika": "Галактика",
+        "mes": "MES",
+        "kompas": "КОМПАС",
+        "skud": "СКУД",
+        "ca": "Удостоверяющий центр",
+        "partner": "Партнёр"
+      }
+    },
+    "audit": {
+      "readOnly": "Только чтение",
+      "reports": "Отчёты верификатора",
+      "checkedUpTo": "Проверено до записи № {seq}",
+      "serverSide": "по данным сервера",
+      "checkStatus": {
+        "intact": "Цело",
+        "rejected": "Отвергнуто",
+        "unverifiable": "Не проверяемо"
+      },
+      "check": "Проверка",
+      "count": "Записей",
+      "signatureClasses": "Подписи по происхождению",
+      "signedBy": "Подписан ключом {key}",
+      "virtualTime": "Прогон сценария: временные проверки — по виртуальному времени",
+      "paperDecisions": "Бумажных решений для сверки с оригиналами: {n}",
+      "selectReport": "Выберите отчёт — будут видны проверки",
+      "group": "Группа",
+      "allGroups": "Все группы",
+      "caGroup": {
+        "productDecision": "Решение по изделию",
+        "ncDecision": "Решение по несоответствию",
+        "cause": "Причина",
+        "riskScope": "Область риска",
+        "controlChange": "Изменение контроля",
+        "authority": "Полномочия",
+        "protectedData": "Защищённые данные",
+        "adminSecurity": "Администрирование и безопасность"
+      },
+      "cancelledBy": "Отменено записью {caId}",
+      "mainEvent": "Основная запись",
+      "commit": "Обязательство",
+      "policySeq": "Ревизия политики {seq}",
+      "attestedBy": "Бумажную подпись заверил {who}",
+      "selectAction": "Выберите запись — будут видны основания и связь с основным журналом",
+      "eventType": "Тип события",
+      "allTypes": "Все типы",
+      "eventTypes": {
+        "securityAuthFailed": "@:audit.securityEvents.authFailure",
+        "securitySignatureInvalid": "@:audit.securityEvents.invalidSignature",
+        "securityIntegrityViolated": "@:audit.securityEvents.integrityViolation",
+        "securityIntegrityChecked": "Проверка целостности",
+        "securityAccessDenied": "@:audit.securityEvents.accessDenied",
+        "securityAdmissionDenied": "Отказ в допуске к рабочему месту",
+        "securityIdempotencyConflict": "@:audit.securityEvents.idempotencyConflict",
+        "securityCriticalActionRecorded": "Записано критическое действие",
+        "securityKeeperAlert": "Тревога хранителя контрольных точек",
+        "securityKeyAlert": "Тревога по ключу",
+        "securityPresenceDeviation": "Отклонение присутствия"
+      },
+      "severity": {
+        "info": "Сведения",
+        "warning": "Внимание",
+        "alarm": "Тревога"
+      },
+      "grants": {
+        "action": {
+          "granted": "Выдано",
+          "revoked": "Отозвано",
+          "set": "Установлено"
+        },
+        "kind": {
+          "role": "Роль",
+          "authority": "Полномочие",
+          "stamp": "Клеймо",
+          "qualification": "Квалификация",
+          "account": "Учётная запись",
+          "audit": "Параметры аудита",
+          "sodRule": "Разделение обязанностей"
+        },
+        "by": "Кто выдал",
+        "secondSignature": "Вторая подпись",
+        "noSecondSignature": "без второй подписи",
+        "personFilter": "Сотрудник (псевдоним)",
+        "document": "Документ {id}"
+      }
     }
   },
   "mapWidgets": {

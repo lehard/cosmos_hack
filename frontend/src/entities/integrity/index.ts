@@ -25,3 +25,7 @@ export function effectiveIntegrity(s: IntegrityStatus | undefined, now: number):
   if (s.status === 'ok' && (!s.checked_at || now - Date.parse(s.checked_at) > 2 * s.interval_seconds * 1000)) return 'stale'
   return s.status
 }
+
+// Эпик 14: состояние компонентов и стол Аудитора ИБ.
+export * from './ops'
+export * from './audit'
