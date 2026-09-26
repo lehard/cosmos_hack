@@ -51,8 +51,8 @@ const glavnyStore = {
 
 let glavnySignerPromise = null
 
-/** Пакет подписи WASM (globalThis.glavnySigner); загружается один раз. */
-function glavnySigner() {
+/** Пакет подписи WASM (globalThis.glavnySigner); загружается один раз. Имя загрузчика отличается от globalThis.glavnySigner: WASM кладёт туда свой объект и затёр бы функцию — второй вызов падал «glavnySigner is not a function». */
+function loadGlavnySigner() {
   if (!glavnySignerPromise) {
     glavnySignerPromise = new Promise((resolve, reject) => {
       globalThis.__glavnySignerReady = () => resolve(globalThis.glavnySigner)
@@ -71,7 +71,7 @@ function glavnySigner() {
 
 /** Вызов операции пакета: ответ JSON {ok, …} разобран. */
 async function glavnyCall(name, ...args) {
-  const s = await glavnySigner()
+  const s = await loadGlavnySigner()
   return JSON.parse(s[name](...args.map((a) => (typeof a === 'string' ? a : JSON.stringify(a)))))
 }
 
