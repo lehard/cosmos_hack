@@ -1372,6 +1372,49 @@ const EquipmentDeviationDetectedV1DeviationKindOverload EquipmentDeviationDetect
 const EquipmentDeviationDetectedV1DeviationKindToolLifeWarning EquipmentDeviationDetectedV1DeviationKind = "tool_life_warning"
 const EquipmentDeviationDetectedV1DeviationKindUnplannedProgramChange EquipmentDeviationDetectedV1DeviationKind = "unplanned_program_change"
 
+// Событие оборудования привязано к выполнению операции — межизделийная стадия по
+// оборудованию и интервалу выполнения отнесла событие оборудования (без изделия) к
+// выполнению операции изделия и адресовала его в поток изделия; из таких записей
+// свёртка изделия строит профиль выполнения операции (FR-121, FR-148, AD-29,
+// AD-42). Привязку делает только стадия; edge-агент `operation_run_id` не
+// подставляет. Данные исходного события копируются как есть (`subject_data`),
+// исходная запись остаётся в потоке оборудования.
+type EquipmentEventBoundV1 struct {
+	// Как привязано: событие в интервале выполнения / обстановка до начала (последние
+	// программа, инструмент, состояние).
+	Binding EquipmentEventBoundV1Binding `json:"binding"`
+
+	// Оборудование.
+	EquipmentID ObjectID `json:"equipment_id"`
+
+	// Выполнение операции, к которому привязано событие.
+	OperationRunID ObjectID `json:"operation_run_id"`
+
+	// Данные исходного события (текущая версия схемы его типа).
+	SubjectData EquipmentEventBoundV1SubjectData `json:"subject_data"`
+
+	// Исходное событие оборудования.
+	SubjectEventID UUID `json:"subject_event_id"`
+
+	// Тип исходного события (семейство equipment).
+	SubjectEventType string `json:"subject_event_type"`
+
+	// Время возникновения исходного события.
+	SubjectOccurredAt Timestamp `json:"subject_occurred_at"`
+
+	// Источник исходного события (FR-140): ручной ввод, станок, датчик, внешняя
+	// система.
+	SubjectSourceKind *string `json:"subject_source_kind,omitempty,omitzero"`
+}
+
+type EquipmentEventBoundV1Binding string
+
+const EquipmentEventBoundV1BindingContext EquipmentEventBoundV1Binding = "context"
+const EquipmentEventBoundV1BindingInterval EquipmentEventBoundV1Binding = "interval"
+
+// Данные исходного события (текущая версия схемы его типа).
+type EquipmentEventBoundV1SubjectData map[string]interface{}
+
 // Программа оборудования сменилась — программа и её ревизия (MTConnect EVENT);
 // смена программы — повод для акта первой детали (FR-147).
 type EquipmentProgramChangedV1 struct {
@@ -1508,6 +1551,10 @@ type EquipmentToolChangedV1 struct {
 // нарушения режима специального процесса; стадия регистрирует несоответствие всем
 // изделиям окна (FR-151).
 type EquipmentViolationWindowResolvedV1 struct {
+	// Изделия выполнений в окне — каждому стадия регистрирует несоответствие, даже
+	// без найденного дефекта (FR-151).
+	AffectedItemIds []ItemID `json:"affected_item_ids,omitempty,omitzero"`
+
 	// Выполнения операции в окне.
 	AffectedOperationRunIds []ObjectID `json:"affected_operation_run_ids"`
 

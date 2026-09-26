@@ -12,7 +12,10 @@ import (
 // Adapter — реализация fixtures ведущих портов модуля access (AD-36):
 // демо-персоны, сеанс и стол роли — из мира заготовок по субъекту запроса.
 // Субъекта определяет IdentityProvider (барьер 1, эпик 08); здесь сеанса нет.
-type Adapter struct{}
+type Adapter struct {
+	// Unimplemented — операции, которых нет в мире заготовок, отвечают 501.
+	app.Unimplemented
+}
 
 // New создаёт адаптер заготовок.
 func New() *Adapter { return &Adapter{} }

@@ -5,11 +5,12 @@ import (
 	"errors"
 	"net"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
 	"ant/internal/infrastructure/integration/ingest/stands"
+	cncstand "ant/internal/infrastructure/integration/machinelogs/cnc/stand"
+	weldstand "ant/internal/infrastructure/integration/machinelogs/welder/stand"
 )
 
 // Роль stands (AD-18, AD-6: одна копия) — каркас эпика 06: stand-ы внешних
@@ -23,22 +24,31 @@ func init() {
 // служебный порт сбоев /stand/_control/. Stand оборудования (сварочный
 // источник IS-1) включается, если задан адрес edge-агента.
 //
-// Переменные окружения (до секции stands в ant.yaml, эпик 02):
+// Настройки — секция stands в ant.yaml (переопределение переменными):
 //
-//	ANT_STANDS_ADDR       — адрес HTTP роли (по умолчанию :8491);
-//	ANT_STANDS_EDGE_URL   — локальный вход edge-агента для телеметрии (пусто — stand оборудования выключен);
-//	ANT_STANDS_INTERVAL   — период телеметрии (по умолчанию 5s).
+//	stands.addr     (ANT_STANDS_ADDR)     — адрес HTTP роли (по умолчанию :8491);
+//	stands.edge_url (ANT_STANDS_EDGE_URL) — локальный вход edge-агента для телеметрии (пусто — stand оборудования выключен);
+//	stands.interval (ANT_STANDS_INTERVAL) — период телеметрии (по умолчанию 5s).
 //
 // Stand-ы 1С, Галактики, MES и VisionQC (эпики 30–33, 43) добавляются в реестр здесь.
 func runStands(ctx context.Context, env *environment) error {
-	addr := envOr("ANT_STANDS_ADDR", ":8491")
+	sc := env.cfg.Stands
+	addr := sc.Addr
+	if addr == "" {
+		addr = ":8491"
+	}
 	reg := stands.NewRegistry()
-	if edge := strings.TrimSpace(os.Getenv("ANT_STANDS_EDGE_URL")); edge != "" {
-		iv, err := time.ParseDuration(envOr("ANT_STANDS_INTERVAL", "5s"))
-		if err != nil {
-			return err
+	if edge := strings.TrimSpace(sc.EdgeURL); edge != "" {
+		iv := sc.Interval
+		if iv <= 0 {
+			iv = 5 * time.Second
 		}
 		reg.Add(&stands.EquipmentStand{Name: "weld-is-1", EquipmentID: "IS-1", EdgeURL: edge, Interval: iv})
+		// Эпик 23 (FR-149): станок ЧПУ и сварочный источник — нормальное
+		// выполнение и выполнение с двумя отклонениями по очереди; заказ
+		// выполнения — POST /stand/‹имя›/executions {"kind": …}.
+		reg.Add(cncstand.New("cnc-1", "CNC-1", edge, iv))
+		reg.Add(weldstand.New("weld-is-2", "IS-2", edge, iv))
 	}
 	srv := &http.Server{Addr: addr, Handler: reg.Handler(), ReadHeaderTimeout: 10 * time.Second,
 		BaseContext: func(net.Listener) context.Context { return ctx }}

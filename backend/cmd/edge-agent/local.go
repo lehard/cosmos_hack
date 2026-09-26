@@ -18,10 +18,14 @@ import (
 type Extractor struct {
 	mu    sync.Mutex
 	state map[string]map[string]string // equipment_id → категория → значение
+	// sum — сводки на окно цикла и отклонения (эпик 23, summary.go).
+	sum *Summarizer
 }
 
 // NewExtractor создаёт выделитель.
-func NewExtractor() *Extractor { return &Extractor{state: map[string]map[string]string{}} }
+func NewExtractor() *Extractor {
+	return &Extractor{state: map[string]map[string]string{}, sum: NewSummarizer()}
+}
 
 // mtconnect — значения MTConnect → значения контракта; неизвестное проходит
 // как есть (ядро решит: неизвестное в поле безопасности — карантин).
@@ -71,6 +75,9 @@ func (x *Extractor) Extract(t procs.StandTelemetryV1) []map[string]any {
 			ev["run_id"] = *t.RunID
 		}
 		out = append(out, ev)
+	}
+	if x.sum != nil {
+		out = append(out, x.sum.Process(t)...)
 	}
 	return out
 }

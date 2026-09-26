@@ -7,6 +7,8 @@ import (
 
 	"ant/cmd/internal/db"
 	enginestore "ant/internal/infrastructure/storage/engine"
+	storagefx "ant/internal/infrastructure/storage/fixtures"
+	ingeststore "ant/internal/infrastructure/storage/ingest"
 	journalstore "ant/internal/infrastructure/storage/journal"
 	"ant/internal/infrastructure/storage/journal/migrator"
 )
@@ -17,6 +19,8 @@ import (
 var migrationSets = []migrator.Set{
 	{Module: "journal", FS: journalstore.Migrations, Dir: journalstore.MigrationsDir},
 	{Module: "engine", FS: enginestore.Migrations, Dir: enginestore.MigrationsDir},
+	{Module: "ingest", FS: ingeststore.Migrations, Dir: ingeststore.MigrationsDir},
+	{Module: "fixtures", FS: storagefx.Migrations, Dir: "migrations"},
 }
 
 // runMigrate — разовая роль migrate (AD-1, AD-25): ждёт БД, создаёт роли БД

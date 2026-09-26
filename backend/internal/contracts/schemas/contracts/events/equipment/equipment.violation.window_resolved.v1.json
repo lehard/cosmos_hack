@@ -37,6 +37,15 @@
       },
       "description": "Выполнения операции в окне.",
       "uniqueItems": true
+    },
+    "affected_item_ids": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/item_id",
+        "description": "Изделие."
+      },
+      "description": "Изделия выполнений в окне — каждому стадия регистрирует несоответствие, даже без найденного дефекта (FR-151).",
+      "uniqueItems": true
     }
   },
   "required": [

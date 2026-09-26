@@ -25,7 +25,13 @@ tabs:
     layout: main-side
     slots:
       - {id: analytics, area: main, widget: analytics-overview}
+      - {id: charts, area: main, widget: control-chart, slice: {step_key: welding.weld, metric_id: current_a}}
       - {id: drilldown, area: right, widget: metric-drilldown}
+  - id: data-deficit
+    title_key: desks.dataDeficit
+    layout: single
+    slots:
+      - {id: deficit, area: main, widget: data-deficit-map}
   - id: process
     title_key: desks.process
     layout: single

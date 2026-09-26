@@ -277,6 +277,419 @@
       "quorumOne": "один",
       "customerRepresentative": "представитель заказчика",
       "notYourStage": "Сейчас не ваш этап маршрута — подписать нельзя"
+    },
+    "scenarios": {
+      "list": "Сценарии",
+      "selectHint": "Выберите сценарий — появится его конфигурация",
+      "caseRefs": "Кейс: {refs}",
+      "decisions": "Остановок на решении человека: {n}",
+      "assertions": "Строк табло: {n}",
+      "version": "Версия {version}",
+      "config": {
+        "title": "Конфигурация прогона",
+        "fromDefinition": "по определению сценария",
+        "mode": "Режим",
+        "speedCustom": "Своя скорость",
+        "itemsInvalid": "Число изделий — целое от 0 до 10 000",
+        "seedInvalid": "Начальное число — целое не меньше 0",
+        "speedInvalid": "Скорость — от ×1 до ×1000"
+      },
+      "mode": {
+        "interactive": "Интерактивно: решения принимают роли на своих столах",
+        "autocheck": "Автопроверка: решения подписывает демо-подписант",
+        "load": "Нагрузка"
+      },
+      "current": "Текущий прогон",
+      "noRun": "Прогонов ещё не было — выберите сценарий и запустите",
+      "idle": "Сценарий «{scenario}» на месте по умолчанию: прогон не запущен",
+      "state": {
+        "running": "Идёт",
+        "paused": "Пауза",
+        "waitingForDecision": "Ждёт решения человека",
+        "completed": "Завершён",
+        "stopped": "Остановлен",
+        "failed": "Сбой прогона"
+      },
+      "step": "Шаг {step} из {steps}",
+      "clock": "Доменное время",
+      "startedAt": "Начат",
+      "finishedAt": "Завершён",
+      "seed": "Seed {seed}",
+      "items": "Изделий: {n}",
+      "speed": "Скорость",
+      "boardScore": "Табло: совпало {passed} из {total}",
+      "waitingObject": "объект {object}",
+      "waitAction": {
+        "nonconformityNonconformityConfirm": "подтвердить сигнал как несоответствие",
+        "analysisScopeNarrow": "сузить область риска",
+        "nonconformityDispositionSet": "решение по несоответствию",
+        "analysisCauseConclude": "подтвердить причину"
+      },
+      "commandFailed": "Команда пульта не выполнена",
+      "started": "Прогон запущен",
+      "stand": {
+        "hint": "Кнопки цифрового стенда вносят сбой в идущий прогон; результат виден на столах ролей и на табло",
+        "noRun": "Кнопки стенда доступны, когда прогон запущен",
+        "target": "Номер события",
+        "targetRequired": "Укажите номер события",
+        "unavailable": "Недоступно в текущем состоянии прогона",
+        "applied": "Сбой внесён: записей {n}"
+      }
+    },
+    "board": {
+      "noRun": "Табло появится, когда будет прогон",
+      "status": {
+        "passed": "Совпало",
+        "failed": "Не совпало",
+        "pending": "Ждёт проверки",
+        "notReached": "Сценарий не дошёл до шага"
+      },
+      "filter": {
+        "all": "Все",
+        "failed": "Не совпало",
+        "open": "Не совпало или ещё не проверено"
+      },
+      "passedOf": "Совпало {passed} из {total}",
+      "pending": "Ждут проверки: {n}",
+      "notReached": "Не дошли: {n}",
+      "notChecked": "ещё не проверено",
+      "checkedBy": "Проверка: {operation} {path}",
+      "step": "Шаг {step}"
+    },
+    "admin": {
+      "health": {
+        "version": "Версия {version}",
+        "profile": {
+          "fixtures": "Профиль: заготовки",
+          "demo": "Профиль: демонстрация",
+          "load": "Профиль: нагрузка",
+          "prod": "Профиль: производство"
+        },
+        "components": "Сервисы",
+        "component": "Компонент",
+        "state": "Состояние",
+        "instances": "Копий",
+        "leader": "Лидер",
+        "checkedAt": "Проверено",
+        "componentState": {
+          "ok": "Работает",
+          "degraded": "С перебоями",
+          "down": "Не работает",
+          "notImplemented": "Ещё не подключён",
+          "unknown": "Неизвестно"
+        },
+        "queue": "Очередь",
+        "scope": {
+          "partition": "Партиция",
+          "global": "Глобальный потребитель",
+          "outbox": "Исходящие"
+        },
+        "pending": "Ждут",
+        "lag": "Отставание, записей",
+        "integrations": "Интеграции",
+        "integrationState": {
+          "ok": "Работает",
+          "degraded": "С перебоями"
+        },
+        "since": "С {time}",
+        "verdict": {
+          "intact": "Цело",
+          "intactWithCaveats": "Цело с оговорками",
+          "intactWithReservations": "Цело с оговорками",
+          "violated": "Нарушено",
+          "unknown": "Неизвестно"
+        },
+        "noVerifier": "Отчётов верификатора ещё не было",
+        "metrics": "Метрики приёма",
+        "p50p95": "{p50} / {p95} мс (медиана / 95 %)",
+        "eventToScreen": "Событие → экран, 95 %",
+        "window": "Окно: {from} — {to}",
+        "stopped": "Остановленная обработка",
+        "stoppedCount": "Изделий с остановленной обработкой: {n}",
+        "consumer": "Обработчик",
+        "error": "Ошибка",
+        "failedAt": "Остановлено",
+        "retries": "Повторов",
+        "retry": "Повторить обработку",
+        "retried": "Обработка перезапущена",
+        "noStopped": "Остановленной обработки нет",
+        "partFailed": "Не удалось загрузить: {what}"
+      },
+      "sources": {
+        "source": "Источник",
+        "kind": "Вид",
+        "state": "Состояние",
+        "sourceState": {
+          "active": "Работает",
+          "disabled": "Отключён",
+          "lossSuspected": "Подозрение на потерю данных",
+          "unknownKey": "Ключ не зарегистрирован"
+        },
+        "key": "Ключ (акт ввода)",
+        "lastReceived": "Последнее сообщение",
+        "lastSeq": "Последний номер",
+        "gaps": "Пропусков в номерах",
+        "quarantined": "В карантине",
+        "clockSkew": "Расхождение часов, мс",
+        "disable": "Отключить",
+        "enable": "Включить",
+        "reason": "Основание",
+        "reasonRequired": "Укажите основание",
+        "switched": "Команда принята",
+        "noSources": "Источников пока нет",
+        "channel": "Система",
+        "endpoint": "Адрес",
+        "stand": "эмулятор кейса",
+        "queued": "В очереди",
+        "channelState": {
+          "ok": "Работает",
+          "degraded": "С перебоями",
+          "disabled": "Отключён"
+        },
+        "never": "ещё не было"
+      },
+      "quarantine": {
+        "filter": {
+          "open": "Открытые",
+          "all": "Все"
+        },
+        "entryState": {
+          "open": "В карантине",
+          "accepted": "Принято после переобработки",
+          "stillInvalid": "По-прежнему некорректно",
+          "discarded": "Отброшено"
+        },
+        "eventType": "Тип события",
+        "fingerprint": "Отпечаток",
+        "material": "Адрес содержимого",
+        "content": "Исходное содержимое",
+        "noContent": "Содержимое не показано: нет прав или не передано",
+        "select": "Выберите сообщение — будут видны содержимое и переобработка",
+        "discard": "Отбросить без повторной проверки",
+        "reason": "Основание",
+        "reasonRequired": "Укажите основание"
+      },
+      "access": {
+        "sections": {
+          "persons": "Сотрудники",
+          "roles": "Роли и полномочия",
+          "stamps": "Клейма",
+          "grant": "Выдать права"
+        },
+        "accountStatus": {
+          "none": "Нет учётной записи",
+          "pending": "Ждёт активации",
+          "active": "Действует",
+          "blocked": "Заблокирована"
+        },
+        "caseRole": "роль кейса",
+        "inherits": "Наследует: {roles}",
+        "actions": "Действий: {n}",
+        "stampStatus": {
+          "active": "Действует",
+          "revoked": "Отозвано",
+          "expired": "Истёк срок"
+        },
+        "kind": {
+          "role": "Роль",
+          "authority": "Полномочие",
+          "stamp": "Клеймо"
+        },
+        "person": "Сотрудник",
+        "subject": "Что выдать",
+        "validFrom": "Действует с",
+        "order": "Приказ",
+        "inspectionKind": "Вид контроля",
+        "document": "Документ выдачи (маршрут подписей)",
+        "granted": "Выдача записана: {ca}",
+        "grantedPending": "Выдача записана — ждёт второй подписи",
+        "revoke": "Отозвать",
+        "revokeReason": "Основание отзыва",
+        "revoked": "Отзыв записан: {ca}",
+        "noRoles": "Ролей нет"
+      },
+      "system": {
+        "onec": "1С",
+        "galaktika": "Галактика",
+        "mes": "MES",
+        "kompas": "КОМПАС",
+        "skud": "СКУД",
+        "ca": "Удостоверяющий центр",
+        "partner": "Партнёр"
+      }
+    },
+    "audit": {
+      "readOnly": "Только чтение",
+      "reports": "Отчёты верификатора",
+      "checkedUpTo": "Проверено до записи № {seq}",
+      "serverSide": "по данным сервера",
+      "checkStatus": {
+        "intact": "Цело",
+        "rejected": "Отвергнуто",
+        "unverifiable": "Не проверяемо"
+      },
+      "check": "Проверка",
+      "count": "Записей",
+      "signatureClasses": "Подписи по происхождению",
+      "signedBy": "Подписан ключом {key}",
+      "virtualTime": "Прогон сценария: временные проверки — по виртуальному времени",
+      "paperDecisions": "Бумажных решений для сверки с оригиналами: {n}",
+      "selectReport": "Выберите отчёт — будут видны проверки",
+      "group": "Группа",
+      "allGroups": "Все группы",
+      "caGroup": {
+        "productDecision": "Решение по изделию",
+        "ncDecision": "Решение по несоответствию",
+        "cause": "Причина",
+        "riskScope": "Область риска",
+        "controlChange": "Изменение контроля",
+        "authority": "Полномочия",
+        "protectedData": "Защищённые данные",
+        "adminSecurity": "Администрирование и безопасность"
+      },
+      "cancelledBy": "Отменено записью {caId}",
+      "mainEvent": "Основная запись",
+      "commit": "Обязательство",
+      "policySeq": "Ревизия политики {seq}",
+      "attestedBy": "Бумажную подпись заверил {who}",
+      "selectAction": "Выберите запись — будут видны основания и связь с основным журналом",
+      "eventType": "Тип события",
+      "allTypes": "Все типы",
+      "eventTypes": {
+        "securityAuthFailed": "@:audit.securityEvents.authFailure",
+        "securitySignatureInvalid": "@:audit.securityEvents.invalidSignature",
+        "securityIntegrityViolated": "@:audit.securityEvents.integrityViolation",
+        "securityIntegrityChecked": "Проверка целостности",
+        "securityAccessDenied": "@:audit.securityEvents.accessDenied",
+        "securityAdmissionDenied": "Отказ в допуске к рабочему месту",
+        "securityIdempotencyConflict": "@:audit.securityEvents.idempotencyConflict",
+        "securityCriticalActionRecorded": "Записано критическое действие",
+        "securityKeeperAlert": "Тревога хранителя контрольных точек",
+        "securityKeyAlert": "Тревога по ключу",
+        "securityPresenceDeviation": "Отклонение присутствия"
+      },
+      "severity": {
+        "info": "Сведения",
+        "warning": "Внимание",
+        "alarm": "Тревога"
+      },
+      "grants": {
+        "action": {
+          "granted": "Выдано",
+          "revoked": "Отозвано",
+          "set": "Установлено"
+        },
+        "kind": {
+          "role": "Роль",
+          "authority": "Полномочие",
+          "stamp": "Клеймо",
+          "qualification": "Квалификация",
+          "account": "Учётная запись",
+          "audit": "Параметры аудита",
+          "sodRule": "Разделение обязанностей"
+        },
+        "by": "Кто выдал",
+        "secondSignature": "Вторая подпись",
+        "noSecondSignature": "без второй подписи",
+        "personFilter": "Сотрудник (псевдоним)",
+        "document": "Документ {id}"
+      }
+    },
+    "analytics": {
+      "value": {
+        "unknown": "Оценка невозможна — не ноль"
+      },
+      "origin": {
+        "mixed": "Частично передано источником, частично вычислено системой",
+        "missing": "Происхождение времени не передано",
+        "unknownCode": "Происхождение неизвестно",
+        "hint": "Происхождение значения времени: передано источником или вычислено системой"
+      },
+      "hints": {
+        "leadTime": "Время детали в системе — от запуска до выпуска, по выпущенным изделиям"
+      },
+      "tiles": {
+        "previous": "Прошлый период: {value}",
+        "previousDelta": "Прошлый период: {value} ({sign}{delta})",
+        "percentPoints": "{value} п. п."
+      },
+      "periodRange": "Период: {from} — {to}",
+      "basis": "по записи журнала № {seq}",
+      "basisHint": "Показатели построены по журналу до этой записи включительно",
+      "notProvided": "Не передано сервером",
+      "columns": {
+        "defects": "Дефекты",
+        "items": "Изделия с дефектами"
+      },
+      "sections": {
+        "inspection": "Проверки",
+        "operations": "Повторные и незавершённые операции",
+        "accounts": "Раздельный учёт: входной брак, оборудование, исполнители, гипотезы",
+        "time": "Время",
+        "comparison": "Сравнение сопоставимых работ",
+        "other": "Прочие показатели"
+      },
+      "accounts": {
+        "incoming": "Входной брак",
+        "equipment": "Проблемы оборудования",
+        "people": "Ошибки исполнителей (подтверждённые)",
+        "hypotheses": "Гипотезы причин"
+      },
+      "dimensions": {
+        "location": "Место: линия, участок",
+        "origin": "Откуда брак",
+        "unknown": "Срез"
+      },
+      "drilldown": {
+        "pickHint": "Выберите число в плитках или в разделе «Аналитика» — здесь появятся изделия и исходные записи, из которых оно получено",
+        "noContributions": "Вкладов нет: число получено из пустого набора записей",
+        "records": "Исходные записи: {n}",
+        "seq": "запись № {seq}",
+        "notInPassport": "Запись {id} не найдена в паспорте изделия",
+        "sumMatch": "Сверка: сумма вкладов изделий равна итогу",
+        "sumMismatch": "Сумма вкладов изделий не равна итогу — сообщите администратору"
+      },
+      "chart": {
+        "hint": "Значения по порядку выполнений относительно контрольных границ. Границы и выход за них определяет сервер",
+        "upper": "Верхняя граница",
+        "center": "Центральная линия",
+        "lower": "Нижняя граница",
+        "value": "Значение",
+        "noPoints": "Выполнений за период нет",
+        "aria": "Контрольная карта: точек {n}, вне границ {out}",
+        "outOfControl": "Вне контрольных границ",
+        "inControl": "В границах",
+        "outsideList": "Вне контрольных границ: {n}",
+        "allInside": "Все точки в контрольных границах",
+        "table": "Таблица точек",
+        "metrics": {
+          "currentA": "Ток сварки",
+          "defectRate": "Доля дефектов"
+        }
+      },
+      "proposals": {
+        "principle": "Каждое предложение — запись журнала с основаниями и ответственным; оно ведёт на карту процесса ответственного лица и применяется только его решением",
+        "generators": "Генераторы предложений",
+        "generator": {
+          "bottleneck": "Ограничение линии",
+          "riskScope": "Область риска и её сужение",
+          "reactionRules": "Кандидаты в правила реакции из повторяющихся ручных решений",
+          "visionAdaptation": "Сигналы для адаптации визуального контроля"
+        },
+        "notConnected": "Не подключён",
+        "inputs": "Основания, уже доступные генераторам",
+        "wait": "среднее ожидание {wait}",
+        "noBottleneck": "Ограничение линии за период не выявлено"
+      },
+      "deficit": {
+        "gapsTitle": "Узлы без данных источника",
+        "noGaps": "Узлов без данных источника за период нет",
+        "investigationsTitle": "Чего не хватало в расследованиях",
+        "what": "Сведения",
+        "inInvestigations": "В скольких расследованиях не хватало",
+        "narrowing": "Как сузилась бы область риска",
+        "pending": "Сводку по расследованиям и оценку сужения области риска сервер пока не передаёт"
+      }
     }
   },
   "mapWidgets": {

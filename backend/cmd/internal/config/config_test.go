@@ -81,7 +81,7 @@ func TestUnknownProfile(t *testing.T) {
 
 func TestEnvNames(t *testing.T) {
 	names := EnvNames()
-	for _, want := range []string{"ANT_HTTP_ADDR", "ANT_DB_PASSWORD_FILE", "ANT_PORTS_MODE", "ANT_PROFILE"} {
+	for _, want := range []string{"ANT_HTTP_ADDR", "ANT_DB_PASSWORD_FILE", "ANT_PORTS_MODE", "ANT_PROFILE", "ANT_STANDS_ADDR", "ANT_STANDS_EDGE_URL"} {
 		found := false
 		for _, n := range names {
 			found = found || n == want

@@ -117,6 +117,11 @@ type StandTelemetryV1 struct {
 	// Номер сообщения stand-а.
 	Seq int `json:"seq"`
 
+	// Уставки параметров выполняемой программы (задание режима: WPS сварки,
+	// запрограммированные подача и нагрузка ЧПУ) — сообщает источник в начале цикла;
+	// по ним edge-агент выделяет выход за уставку (FR-147).
+	Setpoints []StandTelemetryV1SetpointsElem `json:"setpoints,omitempty,omitzero"`
+
 	// Идентификатор stand-а.
 	StandID string `json:"stand_id"`
 }
@@ -140,7 +145,9 @@ type StandTelemetryV1EventsElem struct {
 	// Время.
 	At string `json:"at"`
 
-	// Категория.
+	// Категория: режим работы, режим управления, исправность, программа, инструмент,
+	// цикл, авария, коррекция режима оператором (override: value — проценты, code —
+	// что корректируется: feed, spindle, rapid, current).
 	Category StandTelemetryV1EventsElemCategory `json:"category"`
 
 	// Код.
@@ -163,6 +170,7 @@ const StandTelemetryV1EventsElemCategoryCondition StandTelemetryV1EventsElemCate
 const StandTelemetryV1EventsElemCategoryControllerMode StandTelemetryV1EventsElemCategory = "controller_mode"
 const StandTelemetryV1EventsElemCategoryCycle StandTelemetryV1EventsElemCategory = "cycle"
 const StandTelemetryV1EventsElemCategoryExecution StandTelemetryV1EventsElemCategory = "execution"
+const StandTelemetryV1EventsElemCategoryOverride StandTelemetryV1EventsElemCategory = "override"
 const StandTelemetryV1EventsElemCategoryProgram StandTelemetryV1EventsElemCategory = "program"
 const StandTelemetryV1EventsElemCategoryTool StandTelemetryV1EventsElemCategory = "tool"
 
@@ -182,6 +190,27 @@ type StandTelemetryV1SamplesElem struct {
 
 	// Мантисса.
 	Value int `json:"value"`
+}
+
+// Уставка параметра: номинал и границы в масштабе и единице отсчёта.
+type StandTelemetryV1SetpointsElem struct {
+	// Нижняя граница, мантисса; нет — не ограничена.
+	Lower *int `json:"lower,omitempty,omitzero"`
+
+	// Номинал, мантисса.
+	Nominal *int `json:"nominal,omitempty,omitzero"`
+
+	// Параметр (как в отсчётах).
+	Parameter string `json:"parameter"`
+
+	// Масштаб.
+	Scale int `json:"scale"`
+
+	// Единица UCUM.
+	Unit string `json:"unit"`
+
+	// Верхняя граница, мантисса; нет — не ограничена.
+	Upper *int `json:"upper,omitempty,omitzero"`
 }
 
 // Сообщение браузерного расширения → агенту токена по Native Messaging (AD-14,

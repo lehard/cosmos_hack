@@ -152,6 +152,8 @@ const (
 	EquipmentCycleSummarized Type = "equipment.cycle.summarized"
 	// Отклонение оборудования выделено
 	EquipmentDeviationDetected Type = "equipment.deviation.detected"
+	// Событие оборудования привязано к выполнению операции
+	EquipmentEventBound Type = "equipment.event.bound"
 	// Программа оборудования сменилась
 	EquipmentProgramChanged Type = "equipment.program.changed"
 	// Состояние оборудования изменилось (v1)
@@ -490,6 +492,7 @@ var types = [...]Info{
 	{Type: DocumentVersionRequested, Title: "Запрошено оформление документа", Family: "document", Emitter: "documents", Role: "api", Kind: "decision", Stream: "document", Axis: "none", ActionClass: "record", Critical: false, CAGroup: "", GuardRelevant: false, PublishStage: false, Provenance: []string{"personal", "paper", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: EquipmentCycleSummarized, Title: "Сводка параметров за цикл", Family: "equipment", Emitter: "machinelogs", Role: "api", Kind: "fact", Stream: "equipment", Axis: "none", ActionClass: "record", Critical: false, CAGroup: "", GuardRelevant: false, PublishStage: true, Provenance: []string{"device", "personal", "paper", "server_attested", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: EquipmentDeviationDetected, Title: "Отклонение оборудования выделено", Family: "equipment", Emitter: "machinelogs", Role: "api", Kind: "fact", Stream: "equipment", Axis: "none", ActionClass: "record", Critical: false, CAGroup: "", GuardRelevant: true, PublishStage: true, Provenance: []string{"device", "personal", "paper", "server_attested", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
+	{Type: EquipmentEventBound, Title: "Событие оборудования привязано к выполнению операции", Family: "equipment", Emitter: "machinelogs", Role: "crossitem", Kind: "reaction", Stream: "item", Axis: "none", ActionClass: "record", Critical: false, CAGroup: "", GuardRelevant: false, PublishStage: false, Provenance: []string{"server_attested"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: EquipmentProgramChanged, Title: "Программа оборудования сменилась", Family: "equipment", Emitter: "machinelogs", Role: "api", Kind: "fact", Stream: "equipment", Axis: "none", ActionClass: "record", Critical: false, CAGroup: "", GuardRelevant: true, PublishStage: true, Provenance: []string{"device", "personal", "paper", "server_attested", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: EquipmentStateChanged, Title: "Состояние оборудования изменилось (v1)", Family: "equipment", Emitter: "machinelogs", Role: "api", Kind: "fact", Stream: "equipment", Axis: "none", ActionClass: "record", Critical: false, CAGroup: "", GuardRelevant: true, PublishStage: true, Provenance: []string{"device", "personal", "paper", "server_attested", "scenario"}, Versions: []int{1, 2}, CurrentVersion: 2},
 	{Type: EquipmentToolChanged, Title: "Инструмент установлен или заменён", Family: "equipment", Emitter: "machinelogs", Role: "api", Kind: "fact", Stream: "equipment", Axis: "none", ActionClass: "record", Critical: false, CAGroup: "", GuardRelevant: true, PublishStage: true, Provenance: []string{"device", "personal", "paper", "server_attested", "scenario"}, Versions: []int{1}, CurrentVersion: 1},

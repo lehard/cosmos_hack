@@ -509,6 +509,17 @@ export const eventCatalog = {
     "caGroup": null,
     "currentVersion": 1
   },
+  "equipment.event.bound": {
+    "title": "Событие оборудования привязано к выполнению операции",
+    "emitter": "machinelogs",
+    "kind": "reaction",
+    "stream": "item",
+    "axis": "none",
+    "actionClass": "record",
+    "critical": false,
+    "caGroup": null,
+    "currentVersion": 1
+  },
   "equipment.program.changed": {
     "title": "Программа оборудования сменилась",
     "emitter": "machinelogs",

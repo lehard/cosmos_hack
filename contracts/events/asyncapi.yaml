@@ -106,6 +106,8 @@ channels:
         $ref: "#/components/messages/equipment.deviation.detected.v1"
       equipment.violation.window_resolved.v1:
         $ref: "#/components/messages/equipment.violation.window_resolved.v1"
+      equipment.event.bound.v1:
+        $ref: "#/components/messages/equipment.event.bound.v1"
   operator:
     address: journal/operator
     title: "Журнал: семейство operator"
@@ -713,6 +715,7 @@ operations:
       - $ref: "#/channels/equipment/messages/equipment.cycle.summarized.v1"
       - $ref: "#/channels/equipment/messages/equipment.deviation.detected.v1"
       - $ref: "#/channels/equipment/messages/equipment.violation.window_resolved.v1"
+      - $ref: "#/channels/equipment/messages/equipment.event.bound.v1"
   journal.operator:
     action: send
     title: ant записывает записи семейства operator
@@ -1883,6 +1886,29 @@ components:
       x-ant-stream: equipment
       x-ant-axis: none
       x-ant-action-class: protective
+      x-ant-critical: false
+      x-ant-current: true
+    equipment.event.bound.v1:
+      name: equipment.event.bound.v1
+      title: Событие оборудования привязано к выполнению операции
+      summary: Событие оборудования привязано к выполнению операции — межизделийная стадия по оборудованию и интервалу выполнения отнесла событие оборудования (без изделия) к выполнению операции изделия и адресовала его в поток изделия; из таких записей свёртка изделия строит профиль выполнения операции (FR-121, FR-148, AD-29, AD-42). Привязку делает только стадия; edge-агент `operation_run_id` не подставляет. Данные исходного события копируются как есть (`subject_data`), исходная запись остаётся в потоке оборудования.
+      contentType: application/json
+      payload:
+        allOf:
+          - $ref: ./common/envelope.v1.json
+          - type: object
+            properties:
+              event_type:
+                const: equipment.event.bound
+              schema_version:
+                const: 1
+              data:
+                $ref: ./equipment/equipment.event.bound.v1.json
+      x-ant-kind: reaction
+      x-ant-emitter: machinelogs
+      x-ant-stream: item
+      x-ant-axis: none
+      x-ant-action-class: record
       x-ant-critical: false
       x-ant-current: true
     operator.step.confirmed.v1:

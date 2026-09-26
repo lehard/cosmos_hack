@@ -199,8 +199,4 @@ func TestBind(t *testing.T) {
 	if b := Bind("", nil); !b.Unbound {
 		t.Fatalf("%+v", b)
 	}
-	p := Partition("ENT01:FL-0007", 16)
-	if p < 0 || p >= 16 || p != Partition("ENT01:FL-0007", 16) {
-		t.Fatal(p)
-	}
 }

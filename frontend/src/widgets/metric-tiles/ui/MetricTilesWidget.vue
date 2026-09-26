@@ -1,12 +1,56 @@
 <script setup lang="ts">
-// Заготовка виджета «metric-tiles» (эпик 03). Эпик 15 заменяет её содержимым,
-// оставаясь в рамке WidgetFrame (четыре состояния, момент, метка fixtures | live).
-import type { WidgetProps } from '@/shared/config/widget'
-import { WidgetStub } from '@/shared/ui'
+/**
+ * Виджет «Показатели» — контейнер: плитки `analytics.tile.list` за период из
+ * фокуса аналитики. Нажатие на плитку выбирает число для раскрытия и ведёт на
+ * вкладку «Аналитика» стола (FR-7: по показателю → исходные записи).
+ */
+import { computed } from 'vue'
+import { useRouter } from 'vue-router'
+import type { MetricTile } from '@/shared/api/generated/model'
+import { PeriodPicker, useMetricFocusStore, useMetricTiles } from '@/entities/metric'
+import { naiveSizeOf, type WidgetDataState, type WidgetProps } from '@/shared/config/widget'
+import { WidgetFrame } from '@/shared/ui'
+import MetricTilesView from './MetricTilesView.vue'
+
+/** Вкладка стола, где стоят раздел «Аналитика» и раскрытие. */
+const ANALYTICS_TAB = 'analytics'
 
 const props = defineProps<WidgetProps>()
+const src = useMetricTiles()
+const focus = useMetricFocusStore()
+const router = useRouter()
+
+const tiles = computed(() => src.data.value?.items ?? [])
+/** Все плитки «оценка невозможна» — так и говорим, а не «норма». */
+const state = computed<WidgetDataState>(() => (tiles.value.length && tiles.value.every((x) => x.unknown) ? 'unable_to_assess' : 'normal'))
+
+function open(tile: MetricTile): void {
+  focus.select({ metricId: tile.metric_id, title: tile.title })
+  const tab = typeof props.slice.drill_tab === 'string' ? props.slice.drill_tab : ANALYTICS_TAB
+  if (router?.hasRoute('desk')) void router.push({ name: 'desk', params: { tab } })
+}
 </script>
 
 <template>
-  <WidgetStub v-bind="props" :epic="15" />
+  <WidgetFrame
+    :title-key="titleKey"
+    :density="density"
+    :mode="src.mode.value"
+    :state="state"
+    :loading="src.isPending.value"
+    :error="src.error.value"
+    :empty="!tiles.length"
+    :data-widget="widgetId"
+  >
+    <div class="head">
+      <PeriodPicker :size="naiveSizeOf(density)" />
+    </div>
+    <MetricTilesView :tiles="tiles" :density="density" @open="open" />
+  </WidgetFrame>
 </template>
+
+<style scoped>
+.head {
+  margin-bottom: 8px;
+}
+</style>
