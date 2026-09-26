@@ -36,7 +36,7 @@ func resolvePeriod(q PeriodQuery, now time.Time, loc *time.Location) (window, er
 		kind = "shift"
 	}
 	var from time.Time
-	shift := func(t time.Time) time.Time { return t }
+	var shift func(time.Time) time.Time
 	switch kind {
 	case "shift":
 		from = day.Add(time.Duration(local.Hour()/8*8) * time.Hour)

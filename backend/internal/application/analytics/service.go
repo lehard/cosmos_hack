@@ -69,7 +69,7 @@ func (s *Service) load(ctx context.Context, op string, p PeriodQuery, m platform
 	if s.store == nil {
 		return nil, platform.NotImplemented(op)
 	}
-	now := time.Time{}
+	var now time.Time
 	if m.AsOf != nil {
 		now = m.AsOf.UTC()
 	} else if s.clock != nil {
