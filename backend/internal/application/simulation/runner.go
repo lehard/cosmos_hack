@@ -1,7 +1,9 @@
 package simulation
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"maps"
@@ -199,7 +201,7 @@ func (s *Service) deliver(ctx context.Context, st *RunState, rp *runPlan, from, 
 	if s.d.Gateway == nil {
 		return nil
 	}
-	res, err := s.d.Gateway.Deliver(ctx, st.RunID, rp.plan.Emissions[from:to])
+	res, err := s.d.Gateway.Deliver(ctx, st.RunID, actualRuns(st, rp.plan.Emissions[from:to]))
 	if err != nil {
 		return fmt.Errorf("доставка событий %d…%d: %w", from, to, err)
 	}
@@ -282,6 +284,9 @@ func (s *Service) waitDone(ctx context.Context, st *RunState) (bool, error) {
 		return false, err
 	}
 	a := rp.plan.Actions[w.Action]
+	if a.Operation == opStart {
+		s.aliasRun(ctx, st, rp, a, seq)
+	}
 	st.Steps[stepKey(a)] = StepResult{Operation: a.Operation, At: a.At, Status: "done", Seq: seq, Detail: "решение принято на столе роли"}
 	st.Cursor.Actions = w.Action + 1
 	st.Waiting = nil
@@ -291,10 +296,71 @@ func (s *Service) waitDone(ctx context.Context, st *RunState) (bool, error) {
 	return err == nil, err
 }
 
+// Операции выполнения, у которых id выполнения выдаёт стол исполнителя.
+const (
+	opStart  = "process.operation.start"
+	opFinish = "process.operation.finish"
+)
+
+// aliasRun — «Начать» нажал человек: фактический operation_run_id записи
+// (терминал выдаёт свой) вместо планового для всех следующих событий и
+// решений прогона по этому выполнению.
+func (s *Service) aliasRun(ctx context.Context, st *RunState, rp *runPlan, a sim.Action, seq int64) {
+	v, ok := a.Body["operation_run_id"]
+	if !ok || s.d.Probe == nil {
+		return
+	}
+	planned, err := s.expand(ctx, st, rp, fmt.Sprint(v))
+	if err != nil || planned == "" {
+		return
+	}
+	doc, err := s.d.Probe.Read(ctx, "journal.entry.read", map[string]string{"seq": itoa(seq)}, st.RunID)
+	if err != nil {
+		return
+	}
+	vals, err := sim.Extract(doc, "/data/operation_run_id")
+	if err != nil || len(vals) != 1 {
+		return
+	}
+	actual, _ := vals[0].(string)
+	if actual == "" || actual == planned {
+		return
+	}
+	if st.Runs == nil {
+		st.Runs = map[string]string{}
+	}
+	st.Runs[planned] = actual
+}
+
+// actualRuns — события прогона с фактическими id выполнений вместо плановых.
+func actualRuns(st *RunState, batch []sim.Emission) []sim.Emission {
+	if len(st.Runs) == 0 {
+		return batch
+	}
+	out := make([]sim.Emission, len(batch))
+	for i, e := range batch {
+		for planned, actual := range st.Runs {
+			p, _ := json.Marshal(planned)
+			if bytes.Contains(e.Event, p) {
+				q, _ := json.Marshal(actual)
+				e.Event = bytes.ReplaceAll(e.Event, p, q)
+			}
+		}
+		out[i] = e
+	}
+	return out
+}
+
 // waitObject — объект ожидания: изделие, несоответствие, инцидент, партия,
 // пост или оборудование шага (из параметров, иначе из тела команды) —
 // решение человека засчитывается только над ним (не любое решение этого типа).
 func (s *Service) waitObject(ctx context.Context, st *RunState, rp *runPlan, a sim.Action) string {
+	if a.Operation == opFinish && a.Item != "" {
+		// «Выполнено» — по изделию, как «Начать»: id выполнения выдаёт стол
+		// исполнителя, плановый id прогона в журнале может не встретиться.
+		obj, _ := s.expand(ctx, st, rp, "{item:"+a.Item+"}")
+		return obj
+	}
 	for _, m := range []map[string]any{a.Params, a.Body} {
 		for _, k := range waitKeys {
 			if v, ok := m[k]; ok {
@@ -408,7 +474,7 @@ func (s *Service) body(ctx context.Context, st *RunState, rp *runPlan, a sim.Act
 	if m == nil {
 		m = map[string]any{}
 	}
-	m["command_id"] = rp.plan.IDs.CommandID(a.Seq)
+	m["command_id"] = rp.plan.IDs.ActionCommandID(a.Label, a.Seq)
 	if _, ok := m["basis_seq"]; !ok {
 		m["basis_seq"] = 0
 	}

@@ -64,8 +64,8 @@ describe('карта производства', () => {
         map: map(),
         scopePath: [34, 13, 6],
         marks: [
-          { mark_id: '1', at: '2026-09-23T08:21:00Z', kind: 'equipment', title: 'ИС-2 вышел за уставку' },
-          { mark_id: '2', at: '2026-09-23T12:00:00Z', kind: 'decision', title: 'из будущего' },
+          { mark_id: '1', at: '2026-09-23T08:21:00Z', kind: 'spike', title: 'ИС-2 вышел за уставку' },
+          { mark_id: '2', at: '2026-09-23T12:00:00Z', kind: 'escalation', title: 'из будущего' },
         ],
         now: Date.parse('2026-09-23T09:00:00Z'),
       },

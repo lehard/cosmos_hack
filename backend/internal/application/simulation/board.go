@@ -213,7 +213,19 @@ func (s *Service) read(ctx context.Context, st *RunState, rp *runPlan, c sim.Che
 
 // ids — сведение ID прогона с изделиями и объектами, узнанными во время прогона.
 func (s *Service) ids(st *RunState, rp *runPlan) *sim.IDMap {
-	m := rp.plan.IDs
+	// Копия с собственными картами: план кэширован и общий для раннера и
+	// чтений HTTP (simulation.run.plan, табло) — запись в его карты из
+	// параллельных вызовов роняла процесс (concurrent map read and map write).
+	cp := *rp.plan.IDs
+	m := &cp
+	m.Items = make(map[string]string, len(rp.plan.IDs.Items)+len(st.Items))
+	for k, v := range rp.plan.IDs.Items {
+		m.Items[k] = v
+	}
+	m.Refs = make(map[string]string, len(rp.plan.IDs.Refs)+len(st.Refs))
+	for k, v := range rp.plan.IDs.Refs {
+		m.Refs[k] = v
+	}
 	for k, v := range st.Items {
 		m.Items[k] = v
 	}
@@ -244,6 +256,9 @@ func (s *Service) expand(ctx context.Context, st *RunState, rp *runPlan, str str
 		out, err := ids.ExpandString(str, true)
 		var un *sim.ErrUnresolved
 		if err == nil || !errors.As(err, &un) {
+			if actual, ok := st.Runs[out]; ok && err == nil {
+				out = actual // выполнение начато человеком со своим id (aliasRun)
+			}
 			return out, err
 		}
 		name, ok := refName(un.Placeholder)

@@ -77,6 +77,16 @@ const placed = computed(() => {
 })
 
 const formatTooltip = (v: number) => d(new Date(v), 'dateTime')
+
+/** Следующее событие после текущего момента — «производственный фильм» идёт по событиям, а не по минутам. */
+const nextMark = computed(() => {
+  if (!replay.value) return null
+  return [...(props.marks ?? [])].filter((m) => Date.parse(m.at) > position.value).sort((a, b) => a.at.localeCompare(b.at))[0] ?? null
+})
+/** Что показывает ось: только известное тогда или как было с учётом поздних данных. */
+const axisNote = computed(() =>
+  replay.value ? t(props.axis === 'recorded' ? 'liveMap.playback.axisKnown' : 'liveMap.playback.axisActual', { at: d(new Date(position.value), 'dateTime') }) : null,
+)
 </script>
 
 <template>
@@ -99,6 +109,15 @@ const formatTooltip = (v: number) => d(new Date(v), 'dateTime')
         :title="compact ? t('liveMap.playback.pause') : undefined"
         @click="emit('pause')"
         :label="compact ? '⏸' : `⏸ ${t('liveMap.playback.pause')}`"
+      />
+      <ActionButton
+        v-if="nextMark"
+        :size="size"
+        quaternary
+        data-action="next-mark"
+        :title="`${t(MARK_TEXT[nextMark.kind])}${nextMark.title ? `: ${nextMark.title}` : ''}`"
+        @click="emit('jump', Date.parse(nextMark.at))"
+        :label="`→ ${t('liveMap.playback.nextEvent', { what: t(MARK_TEXT[nextMark.kind]) })}`"
       />
       <NRadioGroup :value="speed" :size="size" name="speed" @update:value="(v: Speed) => emit('speed', v)">
         <NRadioButton v-for="s in SPEEDS" :key="s" :value="s" :data-speed="s">{{ t('liveMap.playback.speed', { speed: s }) }}</NRadioButton>
@@ -160,6 +179,7 @@ const formatTooltip = (v: number) => d(new Date(v), 'dateTime')
       </NRadioGroup>
     </template>
     <p v-else-if="replay" class="note" data-testid="replay-note">{{ t('liveMap.playback.replayNote') }}</p>
+    <p v-if="axisNote" class="note axis-note ant-wrap" data-testid="axis-note">{{ axisNote }}</p>
   </div>
 </template>
 
