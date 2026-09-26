@@ -311,12 +311,6 @@ func quorumOf(persons []string, have map[string]bool) []string {
 	return out
 }
 
-func setPtr(d map[string]any, k string, v *string) {
-	if v != nil && *v != "" {
-		d[k] = *v
-	}
-}
-
 func nonNil[T any](s []T) []T {
 	if s == nil {
 		return []T{}

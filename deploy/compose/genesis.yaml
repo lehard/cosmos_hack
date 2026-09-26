@@ -2,10 +2,11 @@
 # (подключается в корневом compose.yaml списком path — файлы сливаются как
 # override). Отдельный файл — чтобы не править строки, которые меняют другие эпики.
 #
-# Порядок: … → migrate → init (разово: миграции, ключи в тома 0400, сертификаты
+# Порядок: … → trust-init, migrate → init (разово: миграции, ключи в тома 0400, сертификаты
 # mTLS, блок генезиса seq 1…k, подписанный ключом-якорем hybrid, уничтожение
 # якоря, trust-anchors в томе хранителя) → ant. Повторный запуск ничего не
-# меняет: генезис уже есть — журнал и ключи не трогаются.
+# меняет: генезис уже есть — журнал и ключи не трогаются. keeper и verifier
+# (эпик 29) стартуют после init.
 #
 # Тома ключей (права 0400, владелец 65532 — пользователь исполнения образа):
 #   ant-keys          — движок и шлюзы (engine@1, gateway-ingest@1, gateway-enterprise@1), корни партнёра;
@@ -51,9 +52,15 @@ services:
     depends_on:
       migrate:
         condition: service_completed_successfully
+      # Ключи хранителя и верификатора, демо-УЦ mTLS и KEK готовит trust-init
+      # (эпик 29, та же раскладка томов); init их берёт, генезис пишет уже с
+      # записями CA и шифрованием при хранении.
+      trust-init:
+        condition: service_completed_successfully
     volumes:
       - secrets:/run/ant-secrets:ro
       - ../config/ant.yaml:/etc/ant/ant.yaml:ro
+      - kek:/var/lib/ant-kek:ro
       - ant-keys:/var/lib/ant-keys
       - keeper-data:/var/lib/keeper
       - verifier-data:/var/lib/verifier
@@ -72,6 +79,18 @@ services:
     labels:
       ant.project: ant
 
+  # Хранитель и верификатор стартуют с trust-anchors, где уже закреплены якорь
+  # и отпечаток генезиса.
+  keeper:
+    depends_on:
+      init:
+        condition: service_completed_successfully
+
+  verifier:
+    depends_on:
+      init:
+        condition: service_completed_successfully
+
   ant:
     depends_on:
       init:
@@ -82,17 +101,9 @@ services:
     volumes:
       - ant-keys:/var/lib/ant-keys:ro
 
+# keeper-data, verifier-data, ant-pki, kek — тома эпика 29 (compose.yaml).
 volumes:
   ant-keys:
-    labels:
-      ant.project: ant
-  keeper-data:
-    labels:
-      ant.project: ant
-  verifier-data:
-    labels:
-      ant.project: ant
-  ant-pki:
     labels:
       ant.project: ant
   demo-signer-keys:
