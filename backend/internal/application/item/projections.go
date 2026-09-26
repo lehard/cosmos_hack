@@ -12,6 +12,7 @@ import (
 	"ant/internal/domain/engine"
 	dom "ant/internal/domain/item"
 	"ant/internal/domain/kernel"
+	"ant/internal/domain/process"
 )
 
 // Проекции модуля item (AD-45: один писатель — item; пишутся эффектами в
@@ -121,6 +122,13 @@ func StatusOf(s engine.Snapshot) ItemStatus {
 		st.Position = "isolated"
 	case len(it.Running) > 0:
 		st.Position = "in_progress"
+	}
+	// Ось «положение» ведёт process (AD-30): изделие принято в изоляторе и
+	// стоит в подпроцессе брака — «в изоляторе».
+	if env := s.Process.Env(); env.Def != nil && !it.Released {
+		if p, ok := s.Process.Primary(env); ok && p.Position == process.PosIsolated {
+			st.Position = "isolated"
+		}
 	}
 	if q := string(s.Quality.Axis); q != "" {
 		st.Quality = q

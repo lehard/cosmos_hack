@@ -880,10 +880,10 @@ func (s *LiveService) guardRun(ctx context.Context, itemID, who string, in Start
 			return nil
 		}
 	}
+	// Пост — рабочее место сеанса (допуск, барьер 2): так «Начать» шлёт
+	// терминал человека. Решения прогона по истории (станция без допуска)
+	// гард поста не касается.
 	wp := in.WorkplaceID
-	if wp == "" {
-		wp = in.StationID
-	}
 	if who == "" || wp == "" {
 		return nil
 	}
