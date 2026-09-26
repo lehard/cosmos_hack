@@ -250,3 +250,59 @@ func TestShowSmallBatchTime(t *testing.T) {
 		t.Fatalf("прогон: %s %s", st.State, st.Error)
 	}
 }
+
+// TestStartStopsWaitingRun — новый старт останавливает прогон, висящий на
+// решении человека (итог stopped): раннер больше его не шагает, и он не
+// забирает допуски и время нового прогона. Идущий прогон старт по-прежнему
+// не прерывает (TestInteractivePauseResume).
+func TestStartStopsWaitingRun(t *testing.T) {
+	ctx := context.Background()
+	files := NewFiles(filepath.Join(repo, "scenarios"))
+	ing := simfake.NewIngest()
+	clock := &simfake.Clock{T: time.Date(2026, 9, 26, 9, 0, 0, 0, time.UTC)}
+	d := &desk{a: &simfake.Actor{In: ing}}
+	store := NewMemoryRuns()
+	rec := &simfake.Recorder{}
+	svc := app.NewServiceWith(app.Deps{Definitions: files, Gateway: ing, Probe: deskProbe{Ingest: ing, d: d}, Actor: d, Recorder: rec,
+		Store: store, Infra: clock, Profile: "demo", Domain: lastRecorded{rec}})
+	first, err := svc.StartRun(ctx, "SHOW-IS2", app.StartRun{Mode: app.ModeInteractive})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var st *app.RunState
+	for i := 0; i < 200; i++ {
+		clock.Advance(10 * time.Second)
+		if err := svc.Step(ctx, first.RunID); err != nil {
+			t.Fatal(err)
+		}
+		if st, _, _ = store.Load(ctx, first.RunID); st.State == app.StateWaiting {
+			break
+		}
+	}
+	if st.State != app.StateWaiting {
+		t.Fatalf("первый прогон не встал на решение: %s", st.State)
+	}
+	second, err := svc.StartRun(ctx, "SHOW-IS2", app.StartRun{Mode: app.ModeInteractive})
+	if err != nil {
+		t.Fatalf("старт при висящем прогоне: %v", err)
+	}
+	if st, _, _ = store.Load(ctx, first.RunID); st.State != app.StateStopped || st.Waiting != nil {
+		t.Fatalf("висящий прогон не остановлен: %s %+v", st.State, st.Waiting)
+	}
+	if second.RunID == first.RunID {
+		t.Fatal("новый прогон — тот же")
+	}
+}
+
+// lastRecorded — доменное «сейчас» журнала: время последней записи регистратора.
+type lastRecorded struct{ r *simfake.Recorder }
+
+func (l lastRecorded) Now(context.Context) (time.Time, error) {
+	var at time.Time
+	for _, x := range l.r.Records {
+		if x.OccurredAt.After(at) {
+			at = x.OccurredAt
+		}
+	}
+	return at, nil
+}
