@@ -129,3 +129,15 @@ func TestKeeperAcceptsOnlyContinuation(t *testing.T) {
 		t.Fatalf("перезапуск: %v", err)
 	}
 }
+
+// AD-33, эпик 05: первая точка несёт отпечаток генезиса из trust-anchors
+// (его закрепил ant init), а не звено первой записи.
+func TestFirstCheckpointGenesisDigest(t *testing.T) {
+	st, _, _ := newStore(t)
+	const g = "streebog256:1111111111111111111111111111111111111111111111111111111111111111"
+	st.anchors.GenesisDigest = g
+	cp, err := st.Submit(sub(chain(t, 2, 0), 0))
+	if err != nil || cp.Payload.GenesisDigest == nil || *cp.Payload.GenesisDigest != g {
+		t.Fatalf("точка 1: %+v %v", cp.Payload, err)
+	}
+}

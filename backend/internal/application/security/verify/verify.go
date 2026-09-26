@@ -76,6 +76,38 @@ type Input struct {
 	Partitions int
 	// RunID — проверять только прогон (пусто — весь журнал).
 	RunID string
+	// Genesis — итог проверки блока генезиса целиком по якорю (AD-33, эпик
+	// 05): cmd/verifier вызывает signing.VerifyGenesis с anchor_fingerprint
+	// из trust-anchors. nil — генезиса нет и якорь не закреплён («не проверяемо»).
+	Genesis *GenesisResult
+}
+
+// GenesisResult — проверка блока генезиса: записей в блоке, отпечаток,
+// ошибка (подпись якоря или кворума, чужой якорь, второй генезис, генезиса
+// нет при закреплённом якоре — нарушение).
+type GenesisResult struct {
+	Records int
+	Digest  string
+	Err     error
+}
+
+// genesis — проверка блока генезиса (AD-33) и отпечатка в первой контрольной точке хранителя.
+func (v *run) genesis() {
+	g := v.in.Genesis
+	if g == nil {
+		return
+	}
+	c := v.checks["genesis"]
+	c.checked = g.Records
+	if g.Err != nil {
+		c.reject("genesis.invalid", g.Err.Error(), "main", 1, "")
+		return
+	}
+	if n := len(v.in.Checkpoints); n > 0 {
+		if d := v.in.Checkpoints[0].Payload.GenesisDigest; d != nil && *d != g.Digest {
+			c.reject("genesis.checkpoint_mismatch", fmt.Sprintf("первая контрольная точка хранителя закрепила генезис %s, в журнале — %s", *d, g.Digest), "main", 1, "")
+		}
+	}
 }
 
 // Report — итог проверки (без подписи: её ставит cmd/verifier).
@@ -167,6 +199,7 @@ func Run(ctx context.Context, in Input) (Report, error) {
 	if err := v.items(ctx); err != nil {
 		return Report{}, err
 	}
+	v.genesis()
 	v.pending()
 	return v.report(), nil
 }
