@@ -230,6 +230,45 @@ func TestSelfCheckOnDB(t *testing.T) {
 	if err != nil || len(bl) != 4 {
 		t.Fatalf("курсоры: %+v %v", bl, err)
 	}
+
+	// Сбой, повтор администратора и переход канала — настоящий журнал
+	// Postgres принимает записи ops (заголовки, партиции, CA не нужна).
+	codec := &engineapp.Codec{Store: store, Sealer: enginemem.Sealer{KeyRef: "engine@1"}, KeyRef: "engine@1", DomainBuild: domainBuild(), Partitions: 4}
+	item := "ENT01:FL-0100"
+	fact, err := codec.Encode(ctx, engineapp.Out{EventID: "01929a2b-7c3d-7e4f-8a5b-000000000020", Type: catalog.InspectionResultRecorded,
+		Kind: catalog.KindFact, Stream: "item:" + item, ItemID: item, OccurredAt: time.Now(), Data: map[string]string{"outcome": "defect_indicated"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := store.Append(ctx, appjournal.AppendRequest{Batch: []appjournal.Pending{fact}}); err != nil {
+		t.Fatal(err)
+	}
+	es := journaltest.ReadAll(t, store, "main")
+	fail, err := engineapp.FailureRequest(ctx, codec, appjournal.WorkerConsumer, item, int64(es[len(es)-1].Seq), es[len(es)-1], fmt.Errorf("паника свёртки"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := store.Append(ctx, appjournal.AppendRequest{Batch: fail.Batch}); err != nil {
+		t.Fatal(err)
+	}
+	svc := opsapp.NewLive(opsapp.Config{Journal: store, Codec: codec, Runtime: rt, Database: database, Partitions: 4, Profile: "demo", Version: "test",
+		DomainBuild: domainBuild()})
+	h, err := svc.Health(ctx)
+	if err != nil || h.StoppedItems != 1 || len(h.Queues) != 4 {
+		t.Fatalf("здоровье: %+v %v", h, err)
+	}
+	rc, err := svc.RetryProcessing(ctx, item, opsapp.RetryProcessing{CommandHeader: platform.CommandHeader{CommandID: "01929a2b-7c3d-7e4f-8a5b-0000000000d1"}})
+	if err != nil || rc.Seq == 0 {
+		t.Fatalf("повтор: %+v %v", rc, err)
+	}
+	in, err := codec.LoadItem(ctx, item, 0)
+	if err != nil || in.Stopped {
+		t.Fatalf("после повтора: %+v %v", in.Stopped, err)
+	}
+	rep := &opsapp.Reporter{Journal: store, Codec: codec}
+	if ok, err := rep.ReportIntegration(ctx, opsapp.IntegrationReport{System: "onec", State: "degraded", Detail: "$metadata"}); !ok || err != nil {
+		t.Fatalf("переход канала: %v %v", ok, err)
+	}
 }
 
 // fakeOutbox — хранилище очереди исходящих erp: только каналы.

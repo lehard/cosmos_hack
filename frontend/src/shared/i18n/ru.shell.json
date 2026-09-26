@@ -408,7 +408,8 @@
         "integrations": "Интеграции",
         "integrationState": {
           "ok": "Работает",
-          "degraded": "С перебоями"
+          "degraded": "С перебоями",
+          "disabled": "Не подключена"
         },
         "since": "С {time}",
         "verdict": {
