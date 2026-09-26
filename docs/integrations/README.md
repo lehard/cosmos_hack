@@ -10,7 +10,7 @@
 | КОМПАС-3D | [kompas.md](kompas.md) | импорт файла условной сборки; прямое подключение — описание |
 | СКУД | [skud.md](skud.md) | живой опрос журнала проходов stand-а СКУД; присутствие на постах, допуск к рабочему месту |
 
-**Опоры:** FR-90…96, FR-114, FR-130, FR-141; NFR-TEST-2; AD-7, AD-18, AD-20, AD-30, AD-35 (`architecture-spine.md`); кейс §1.5, §3.3, §4.7, §5.3, §6.2; критерии Т2 и О8.
+**Опоры:** FR-90…96, FR-114, FR-130, FR-141, FR-157; NFR-TEST-2; AD-7, AD-18, AD-20, AD-30, AD-35, AD-47 (`architecture-spine.md`); решение Д-71 журнала решений (интеграции включает администратор единолично); кейс §1.5, §3.3, §4.7, §5.3, §6.2; критерии Т2 и О8.
 
 Связанные документы: [architecture.md](../architecture.md) — общая архитектура; [data-model.md](../data-model.md) — запись журнала и сущности; [specifications.md](../specifications.md) — где лежат контракты; [new-adapter.md](../new-adapter.md) — как подключить новый адаптер; [codegen.md](../codegen.md) — кодогенерация и проверки контрактов; [federation.md](../federation.md) — обмен с предприятиями-партнёрами (это не интеграция с учётной системой, а вторая копия «Главного»); [threat-model.md](../threat-model.md) — доверие к фактам внешних систем; [assumptions.md](../assumptions.md) — сводный реестр проектных предположений.
 
@@ -32,11 +32,12 @@
 «Эмулятор» кейса в «Главном» сделан как **stand** — адаптер `infrastructure/integration/‹модуль›/‹система›/stand` (AD-18):
 
 - stand отвечает теми же адресами, форматами и кодами ошибок, что реальная система, на подмножестве объектов; наш клиент не знает, с кем говорит;
-- у stand-а собственное состояние в схеме Postgres `stand_‹система›`, свои квитанции и сбои;
+- у stand-а собственное состояние, свои квитанции и сбои: у 1С — схема Postgres `stand_onec`, у Галактики, MES и СКУД — память роли `stands` (квитанции каталога обмена Галактики — в томе `exchange`);
 - stand-ы работают в роли `stands` процесса `ant` — одна копия-лидер;
-- каркас stand-а генерируется из `contracts/integrations`, руками пишутся только состояние и сбои;
+- stand говорит по тому же контракту `contracts/integrations/…`, что и наш клиент; общий каркас (реестр, страница, сбои) — `backend/internal/infrastructure/integration/ingest/stands/`;
 - сбои (недоступность, ошибка, дубль, потеря ответа, несовместимые метаданные) включаются только со страницы тестовых сценариев через служебный порт stand-а (FR-91, FR-152);
-- переход на реальную систему — сменой адреса в `deploy/config/ant.yaml` (для 1С — плюс установка расширения конфигурации, см. [1c.md](1c.md), §9).
+- переход на реальную систему — сменой адреса в `deploy/config/ant.yaml` (для 1С — плюс установка расширения конфигурации, см. [1c.md](1c.md), §10);
+- **включение, выключение и «стенд ↔ реальная система»** — экран «Интеграции» стола администратора (FR-157, AD-47): критическое действие администратора единолично (Д-71), запись `ops.integration.state_set`, процессы подхватывают без перезапуска; у выключенной системы исходящие копятся в очереди, входящие отвергает приём; в профиле `prod` стенд запрещён (`ops.stand_forbidden`). «Проверить соединение» — та же сверка ответной стороны, что при старте адаптера (`ops.integration.checked`). Код — `backend/cmd/ant/integrations.go`, `backend/internal/application/ops/`, `backend/internal/infrastructure/transport/ops/register.go`, экран — `frontend/src/widgets/integrations/`.
 
 Граница эмуляции описана для каждого stand-а в его документе (NFR-TEST-2): что stand имитирует, чего в нём нет и почему.
 
@@ -87,7 +88,9 @@ sequenceDiagram
 Каждый адаптер при старте и по расписанию сверяет контракт внешней системы со своим (AD-18, кейс §6.2):
 
 - у 1С — читает `$metadata` OData и сравнивает с манифестом ожидаемых сущностей и полей;
-- у MES и Галактики — сверяет версию контракта в квитанциях и валидирует эталонные сообщения по схемам.
+- у Галактики — читает `about.xml` каталога обмена (или `about` REST-фасада) и сверяет версию `gal.qc.v1`;
+- у MES — читает `/about` привязки B2MML-JSON и сверяет версию `mes.isa95.v1`;
+- перед каждой отправкой адаптер проверяет сообщение схемой контракта (`backend/internal/infrastructure/integration/schemacheck/`).
 
 При расхождении канал переходит в состояние `degraded`: сообщения не отправляются и копятся в очереди, администратор видит карточку «чего не хватает» на столе состояния компонентов (FR-127). Так ошибка интеграции обнаруживается **до** отправки результата (FR-111).
 
@@ -135,11 +138,11 @@ sequenceDiagram
 - Схемы и эталонные сообщения лежат в `contracts/integrations/…` и используются только в `infrastructure` (AD-20).
 - `make check` содержит контрактные тесты адаптеров на эталонных сообщениях: каждое эталонное сообщение валидируется схемой (JSON Schema, XSD; для MES — родные XSD B2MML), адаптер проверяется против stand-а с эталонными метаданными.
 - `make contract-demo` — ветка с ломающим изменением контракта краснеет **до** отправки результата в 1С (FR-111, кейс §6.2, критерий О8).
-- В работе — проверка ответной стороны при старте (§5).
+- Проверка ответной стороны при старте и по расписанию — §5 (тесты `TestCheckAndCorruptMetadata` у 1С, сбой `corrupt` у stand-ов Галактики и MES).
 
 ## 7. Событие системы → сообщение → система → объект
 
-Сводная таблица сигналов. Имена наших типов событий — предварительные (фиксирует `contracts/events/catalog.yaml`, эпик 00). Объекты внешних систем, кроме отмеченных «проверено по документации» в документах систем, — **проектные предположения**.
+Сводная таблица сигналов. Имена наших типов событий — по `contracts/events/catalog.yaml` (`erp.*`, `mes.*`, `cad.*`, `reference.external_id.mapped`). Объекты внешних систем, кроме отмеченных «проверено по документации» в документах систем, — **проектные предположения**.
 
 | # | Что произошло в «Главном» | Сообщение / вызов | Система | Объект у получателя |
 |---|---|---|---|---|
@@ -163,63 +166,72 @@ sequenceDiagram
 
 ## 8. Где что лежит в коде
 
-Пути — по дереву репозитория из `architecture-spine.md`; окончательные имена пакетов уточняются по коду.
-
 | Что | Путь |
 |---|---|
-| Порт учёта и сценарии модуля `erp` | `backend/internal/application/erp/` |
-| Доменные правила «какое учётное действие на какой закрывающей точке» | `backend/internal/domain/erp/` |
-| Клиент и stand 1С | `backend/internal/infrastructure/integration/erp/1c/`, `…/erp/1c/stand/` |
-| Клиент и stand Галактики | `backend/internal/infrastructure/integration/erp/galaktika/`, `…/galaktika/stand/` |
-| Клиент и stand MES | `backend/internal/infrastructure/integration/mes/b2mml/`, `…/b2mml/stand/` |
-| Импорт файла сборки КОМПАС | `backend/internal/infrastructure/integration/cad/kompas/` |
+| Порт учёта и сценарии модуля `erp`: шлюз входящих, очередь исходящих, общий контрактный тест порта | `backend/internal/application/erp/` (`ports.go`, `gateway.go`, `outbox.go`, `ledgertest/`) |
+| Доменные правила «какое учётное действие на какой закрывающей точке» | `backend/internal/domain/erp/` (`plan.go`, `action.go`, `topology.go`) |
+| Клиент и stand 1С | `backend/internal/infrastructure/integration/erp/onec/`, `backend/internal/infrastructure/integration/erp/onec/stand/` |
+| Клиент и stand Галактики | `backend/internal/infrastructure/integration/erp/galaktika/`, `backend/internal/infrastructure/integration/erp/galaktika/stand/` |
+| Клиент и stand MES, шлюз и реакция блоков | `backend/internal/infrastructure/integration/mes/b2mml/`, `backend/internal/infrastructure/integration/mes/b2mml/stand/`, `backend/internal/application/mes/`, `backend/internal/domain/mes/` |
+| Импорт файла сборки КОМПАС | `backend/internal/infrastructure/integration/cad/kompas/`, `backend/internal/application/cad/`, `backend/internal/domain/cad/` |
+| СКУД | `backend/internal/infrastructure/integration/access/skud/`, `backend/internal/infrastructure/integration/access/skud/stand/` |
+| Сборка каналов в процессе `ant` | `backend/cmd/ant/outbox.go`, `backend/cmd/ant/mes.go`, `backend/cmd/ant/cad.go`, `backend/cmd/ant/stands.go`, `backend/cmd/ant/integrations.go` |
 | Схемы, манифест метаданных 1С, эталонные сообщения | `contracts/integrations/erp/1c/`, `contracts/integrations/erp/galaktika/`, `contracts/integrations/mes/`, `contracts/integrations/cad/assembly.schema.json` |
-| Типы событий `erp.*`, `mes.*`, `cad.*`, `reference.*` | `contracts/events/catalog.yaml`, `contracts/events/‹семейство›/` |
-| Включённые системы, адреса, таймауты, повторы | `deploy/config/ant.yaml`, переменные `ANT_*` (без секретов; учётные данные — файлами в томах) |
-| Карантин исходящих, состояние каналов | модуль `ops`, стол администратора (FR-127) |
+| Типы событий `erp.*`, `mes.*`, `cad.*`, `reference.*`, `ops.integration.*` | `contracts/events/catalog.yaml` |
+| Коды ошибок интеграций (`erp.*`, `mes.*`, `ops.integration_*`, `ops.stand_forbidden`) | `contracts/errors.yaml` |
+| Установленные системы, адреса, таймауты, повторы | `deploy/config/ant.yaml`, переменные `ANT_*` (без секретов; учётные данные — файлами в томах) |
+| Экран «Интеграции» (включение, режим, проверка соединения), карантин исходящих, состояние каналов | модуль `ops`; `frontend/src/widgets/integrations/`, `frontend/src/widgets/sources/`, `frontend/src/widgets/system-health/` (FR-127, FR-157) |
 
-Пример фрагмента конфигурации (предварительно, ключи уточняются по коду):
+Фрагмент конфигурации — как в `deploy/config/ant.yaml` (секция `defaults`, профиль `demo` включает stand-ы):
 
 ```yaml
-integrations:
+defaults:
+  integrations:
+    enabled: []                 # какие системы установлены на экземпляре
   erp:
+    ledger: ""                  # кто ведёт учётный обмен: onec | galaktika
     onec:
-      enabled: true
-      base_url: http://ant/stand/1c/erp          # адрес stand-а внутри compose; реальная 1С — адрес публикации базы
-      contract: qc.v1
-      poll_interval: 15s
-      timezone: Europe/Moscow
-      retry: { max_attempts: 10, initial: 1s, max: 30m }
-      credentials_file: /run/secrets/onec-basic    # файл в томе, не переменная окружения
+      base_url: "http://127.0.0.1:8491/stand/1c/erp"   # stand 1С; реальная 1С — адрес публикации базы
+      password_file: ""         # учётные данные — только файлом
+      stand: true
+      poll: 1s                  # опрос очереди исходящих
+      recheck: 5m               # сверка $metadata и версии qc
+      pull_every: 30s           # опрос заданий, номенклатуры, партий
+      retry_max: 8
     galaktika:
-      enabled: false
-      transport: exchange-dir                      # exchange-dir | rest-facade
+      transport: exchange-dir   # exchange-dir | rest-facade
+      dir: /var/lib/ant/exchange/galaktika
+      stand: false
   mes:
-    enabled: false
-    contract: mes.isa95.v1
-  cad:
-    kompas:
-      import_dir: /data/import/cad
+    b2mml:
+      base_url: ""              # пусто со stand: true — stand этого хоста
+      stand: false
+  access:
+    skud:
+      base_url: ""              # пусто — stand этого хоста
+profiles:
+  demo:
+    integrations:
+      enabled: [onec, skud, galaktika, mes, partner]
+    erp:
+      ledger: onec              # переключить на Галактику — ANT_ERP_LEDGER=galaktika
+      galaktika: {stand: true}
+    mes:
+      b2mml: {stand: true}
 ```
 
-## 9. Состав MVP и очередь
+КОМПАС-3D не требует ключей: файл сборки загружается операцией `cad.assembly.import` (см. [kompas.md](kompas.md)).
 
-| Система | Позвоночник (строим первым) | Очередь |
+## 9. Состав MVP
+
+| Система | Что работает в `main` | Только описание |
 |---|---|---|
-| 1С | stand, клиент OData и HTTP-сервиса, порт учёта целиком, квитанции, сбои, сверка `$metadata`, `/stand/1c/` | — |
-| Галактика | порт, клиент, контракт `gal.qc.v1`, эталонные сообщения, контрактные тесты | stand (файловый приёмник + REST-фасад) |
-| MES | порт, клиент, контракт `mes.isa95.v1`, эталонные сообщения, контрактные тесты | stand |
-| КОМПАС-3D | импорт файла условной сборки ФЛ-100.00.000 СБ | прямое подключение — только описание |
+| 1С | stand (OData v3 + HTTP-сервис `/hs/qc/v1/`, схема `stand_onec`), клиент, порт учёта целиком, квитанции, сбои, сверка `$metadata`, страница `/stand/1c/` | реальная база 1С с расширением `qc` |
+| Галактика | клиент на двух транспортах, контракт `gal.qc.v1`, эталонные сообщения, общий контрактный тест порта учёта; stand (каталог обмена + REST-фасад), страница `/stand/galaktika/` | реальный обработчик на VIP |
+| MES | клиент, контракт `mes.isa95.v1`, эталонные сообщения, контрактные тесты; stand B2MML-JSON, страница `/stand/mes/` | дополнительные сообщения B2MML (см. [mes.md](mes.md)) |
+| КОМПАС-3D | импорт файла условной сборки ФЛ-100.00.000 СБ | экстрактор COM API7, адаптер ЛОЦМАН:PLM |
+| СКУД | stand и опрос журнала проходов, страница `/stand/skud/` | реальная СКУД |
+
+Все stand-ы — в профиле `demo` по `docker compose up`; адрес — <http://127.0.0.1:8491/stand/‹система›/>. Учётный обмен на экземпляре ведёт одна система (`erp.ledger`); в `demo` — 1С, Галактика установлена stand-ом и отвечает на «Проверить соединение».
 
 Основание — карта возможностей спайна (строка «Интеграции») и кейс §3.3: «в MVP реализуется один двусторонний обмен с эмулятором… для остальных систем предоставляются контракты, примеры сообщений, правила сопоставления идентификаторов и обработки ошибок».
-
-## Уточнить после появления кода
-
-- Окончательные имена типов событий семейств `erp`, `mes`, `cad`, `reference` (сейчас предварительные) — по `contracts/events/catalog.yaml`.
-- Имя и методы порта учёта в `backend/internal/application/erp/`, перечень учётных действий (включён ли «возврат из брака в производство»).
-- Фактические пути пакетов адаптеров и stand-ов, схема `stand_‹система›`.
-- Ключи конфигурации в `deploy/config/ant.yaml` (пример выше — предварительный).
-- Формула идентификатора исходящего сообщения из бизнес-ключа (UUIDv5 от `NS_ANT` и бизнес-ключа — предварительно).
-- Имена эталонных сообщений и тестов в `contracts/integrations/…`; имя цели и ветки для `make contract-demo`.
-- Коды ошибок `contracts/errors.yaml` для интеграций (карантин исходящих, `degraded`, конфликт соответствия ID).
-- Где на столе администратора показаны карантин исходящих и состояние каналов.
