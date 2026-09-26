@@ -83,8 +83,23 @@ const formatTooltip = (v: number) => d(new Date(v), 'dateTime')
   <div class="timeline" :class="{ 'timeline--compact': compact }" :data-replay="replay || undefined" :data-playing="playing || undefined">
     <div class="controls">
       <ActionButton :size="size" :type="replay ? 'default' : 'primary'" :disabled="!replay" data-action="live" @click="emit('live')" :label="t('liveMap.playback.now')" />
-      <ActionButton v-if="!playing" :size="size" :disabled="!range" data-action="play" @click="emit('play')" :label="`▶ ${replay ? t('liveMap.playback.play') : t('liveMap.playback.replay')}`" />
-      <ActionButton v-else :size="size" data-action="pause" @click="emit('pause')" :label="`⏸ ${t('liveMap.playback.pause')}`" />
+      <ActionButton
+        v-if="!playing"
+        :size="size"
+        :disabled="!range"
+        data-action="play"
+        :title="compact ? (replay ? t('liveMap.playback.play') : t('liveMap.playback.replay')) : undefined"
+        @click="emit('play')"
+        :label="compact ? '▶' : `▶ ${replay ? t('liveMap.playback.play') : t('liveMap.playback.replay')}`"
+      />
+      <ActionButton
+        v-else
+        :size="size"
+        data-action="pause"
+        :title="compact ? t('liveMap.playback.pause') : undefined"
+        @click="emit('pause')"
+        :label="compact ? '⏸' : `⏸ ${t('liveMap.playback.pause')}`"
+      />
       <NRadioGroup :value="speed" :size="size" name="speed" @update:value="(v: Speed) => emit('speed', v)">
         <NRadioButton v-for="s in SPEEDS" :key="s" :value="s" :data-speed="s">{{ t('liveMap.playback.speed', { speed: s }) }}</NRadioButton>
       </NRadioGroup>
