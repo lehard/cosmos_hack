@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <title>Главный — управление ключом</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="brand">
+      <img src="icon128.png" alt="" />
+      <div>
+        <div class="name">Главный — подпись</div>
+        <div class="sub">Управление ключом подписи на этом рабочем месте</div>
+      </div>
+    </header>
+    <main>
+      <section class="card">
+        <h2>Ключ</h2>
+        <div id="key-status" data-testid="key-status"></div>
+        <div class="actions">
+          <button id="lock" type="button">Заблокировать (PIN снова)</button>
+          <button id="remove" type="button" class="danger">Удалить ключ из браузера</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Загрузить ключ файлом</h2>
+        <p class="muted">
+          Файл ключа персоны — <code>‹псевдоним›-ta@1.key.json</code> (ГОСТ), для профиля hybrid ещё
+          <code>‹псевдоним›-ta-pq@1.key.json</code>. Демо-ключи создаёт генезис в <code>.demo-keys/token-agent/</code>. Ключ
+          хранится только зашифрованным под PIN (argon2id + AES-256-GCM); сам файл после загрузки можно удалить.
+        </p>
+        <label for="files">Файлы ключа</label>
+        <input id="files" type="file" accept=".json,application/json" multiple />
+        <div id="files-info" class="muted"></div>
+        <label for="pin1">PIN (не короче 4 символов)</label>
+        <input id="pin1" type="password" autocomplete="new-password" />
+        <label for="pin2">PIN ещё раз</label>
+        <input id="pin2" type="password" autocomplete="new-password" />
+        <p class="warn">
+          Ключ в браузере — умышленно сниженный порог безопасности (Д-72): класс хранения <b>software_browser</b> записан в
+          акте регистрации ключа и виден в подписи, аудите и отчёте верификатора. Эталон — физический ключ.
+        </p>
+        <p id="load-msg" role="status"></p>
+        <div class="actions"><button id="load" type="button" class="primary">Загрузить и зашифровать</button></div>
+      </section>
+
+      <section class="card">
+        <h2>Где ключ</h2>
+        <label><input type="radio" name="adapter" value="browser" /> Ключ в браузере (это расширение)</label>
+        <label><input type="radio" name="adapter" value="agent" /> Физический ключ — агент токена <code>token-agent</code> (Native Messaging)</label>
+        <div class="row"><button id="agent-check" type="button">Проверить агент токена</button> <span id="agent-msg" class="muted"></span></div>
+        <label for="workplace">Рабочее место (workplace_id, входит в подпись)</label>
+        <input id="workplace" type="text" placeholder="например, WP-QC-1 — пусто: берётся из сеанса страницы" />
+        <label for="profile">Профиль подписи решений</label>
+        <select id="profile">
+          <option value="gost">gost — ГОСТ Р 34.10-2012</option>
+          <option value="hybrid">hybrid — ГОСТ + ML-DSA-65 (нужны оба файла)</option>
+        </select>
+        <label for="origin">Дополнительный адрес системы «Главный» (127.0.0.1 и localhost разрешены всегда)</label>
+        <div class="row">
+          <input id="origin" type="text" placeholder="https://glavny.example.ru" style="flex: 1" />
+          <button id="origin-add" type="button">Разрешить</button>
+        </div>
+        <div id="origins" class="muted"></div>
+        <div class="actions"><button id="save" type="button" class="primary">Сохранить</button></div>
+      </section>
+
+      <section class="card">
+        <h2>Проверка: «годен» уровнем 1</h2>
+        <p class="muted">Пакет подписи сам отклоняет подпись уровня 1 для действий вне вкомпилированного перечня (AD-13).</p>
+        <div class="row"><button id="level1" type="button">Попробовать подписать «годен» уровнем 1</button></div>
+        <p id="level1-msg" data-testid="level1-msg"></p>
+      </section>
+
+      <section class="card">
+        <h2>Локальный журнал подписанного</h2>
+        <div class="row"><button id="shift" type="button">Сменный рапорт за сутки</button> <span id="shift-msg" class="muted"></span></div>
+        <table>
+          <thead><tr><th>№</th><th>Когда</th><th>Действие</th><th>Ур.</th><th>Отпечаток</th></tr></thead>
+          <tbody id="journal"></tbody>
+        </table>
+      </section>
+    </main>
+    <script src="wasm_exec.js"></script>
+    <script src="common.js"></script>
+    <script src="manage.js"></script>
+  </body>
+</html>

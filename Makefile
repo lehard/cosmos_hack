@@ -257,5 +257,24 @@ rebuild: ## Пересборка проекций из журнала (ant rebui
 	@if [[ -z "$(ITEM)" ]]; then $(COMPOSE) stop ant; fi; \
 	status=0; $(COMPOSE_LOCKED) run --rm --no-deps ant -role=rebuild $(if $(ITEM),-item=$(ITEM)) || status=$$?; \
 	if [[ -z "$(ITEM)" ]]; then $(COMPOSE) start ant; fi; exit $$status
-token-agent: ## Агент токена и расширение браузера (эпик 38)
-	@echo "token-agent: пока пусто — эпик 38 (AD-14)"
+# make token-agent — пакет рабочего места под macOS arm64 (эпик 38, AD-14, Д-72):
+# расширение «Главный — подпись» (распакованное) с пакетом подписи WASM, агент
+# токена token-agent (darwin/arm64; по возможности darwin/amd64 и linux/amd64),
+# скрипт установки и README. Перед сборкой — Go-тесты ядра и сверка «отпечаток
+# WASM = отпечаток Go» в Node. Демо-ключи персон кладутся в пакет, если есть
+# DEMO_KEYS (по умолчанию ./.demo-keys/token-agent). Итог — dist/glavny-token-agent-macos-arm64.tar.gz.
+TA_DIST     := $(ROOT)/dist/glavny-token-agent
+DEMO_KEYS   ?= $(ROOT)/.demo-keys/token-agent
+TA_EXT_FILES := manifest.json background.js content.js common.js confirm.html confirm.js manage.html manage.js popup.html popup.js style.css icon128.png
+token-agent: ## Пакет рабочего места: расширение + WASM + token-agent (macOS arm64) + установка (эпик 38)
+	@rm -rf $(TA_DIST) && mkdir -p $(TA_DIST)/extension $(TA_DIST)/bin
+	$(GO_RUN) bash /src/backend/cmd/token-agent/build.sh $(ANT_VERSION) /src/dist/glavny-token-agent
+	@cd $(ROOT)/extension && cp $(TA_EXT_FILES) $(TA_DIST)/extension/
+	$(DOCKER_LOCKED) run --rm -u $(UID):$(GID) -v $(ROOT):/src -w /src $(NODE_IMAGE) node extension/test/wasm-vectors.mjs dist/glavny-token-agent/extension
+	@cp $(ROOT)/extension/install.sh $(ROOT)/extension/README.md $(TA_DIST)/
+	@if [ -d "$(DEMO_KEYS)" ] && ls $(DEMO_KEYS)/*-ta@1.key.json >/dev/null 2>&1; then \
+		mkdir -p $(TA_DIST)/demo-keys && cp $(DEMO_KEYS)/*.key.json $(TA_DIST)/demo-keys/ && chmod 600 $(TA_DIST)/demo-keys/*; \
+		echo "демо-ключи персон: $(DEMO_KEYS) → demo-keys/ (секреты демо-стенда, не для промышленной эксплуатации)"; \
+	else echo "демо-ключей нет в $(DEMO_KEYS) — make keys или DEMO_KEYS=‹каталог›"; fi
+	@cd $(ROOT)/dist && tar -czf glavny-token-agent-macos-arm64.tar.gz glavny-token-agent
+	@echo "пакет: $(ROOT)/dist/glavny-token-agent-macos-arm64.tar.gz (распакованный — $(TA_DIST))"

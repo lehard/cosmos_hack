@@ -88,7 +88,7 @@ type Prepared struct {
 	Signers        []string `json:"signers"`
 	PersonID       string   `json:"person_id"`
 	ClientSignedAt string   `json:"client_signed_at"`
-	// Batch — пачка уровня 2 (одно окно на все элементы).
+	// ItemID — изделие подписываемого (строка окна пачки уровня 2).
 	ItemID string `json:"item_id,omitempty"`
 }
 
@@ -191,6 +191,11 @@ func Prepare(b procs.SignBlock, person string, keys []KeyInfo, c Context) (Prepa
 	if b.ExpectedDocDigest != nil && *b.ExpectedDocDigest != "" && *b.ExpectedDocDigest != p.DocDigest {
 		return p, refuse(CodeChanged, "сервер ожидает отпечаток %s, агент посчитал %s — подпись не выполнена", short(*b.ExpectedDocDigest), short(p.DocDigest))
 	}
+	var hdr struct {
+		ItemID string `json:"item_id"`
+	}
+	_ = json.Unmarshal(payload, &hdr)
+	p.ItemID = hdr.ItemID
 	p.Summary = summarize(p, b, payload)
 	return p, nil
 }

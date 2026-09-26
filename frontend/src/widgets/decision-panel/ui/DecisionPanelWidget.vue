@@ -112,11 +112,16 @@ async function submit(withAgent: boolean): Promise<void> {
     let req = buildDecisionRequest(p.draft, c, meta)
     if (withAgent) {
       // Уровень 2: агент показывает доверенную сводку и ждёт касания токена (AD-14).
+      // Событие-команду, отпечаток и сводку расширение собирает само из
+      // операции, параметров пути и тела — тем же пакетом, что сервер (AD-12).
+      const def = DECISION_ACTIONS[p.draft.action]
+      const params = def.subject === 'item' ? { item_id: req.item_id } : { nc_id: req.nc_id }
       const signature = await port.sign({
         level: 2,
         payload_type: payloadTypeOf('event'),
         payload_b64: toPayloadB64(req.body),
-        event_type: DECISION_ACTIONS[p.draft.action].eventType,
+        event_type: def.eventType,
+        command_request: { operation: def.operation, params, item_id: req.item_id },
       })
       req = buildDecisionRequest(p.draft, c, { ...meta, signature })
     }

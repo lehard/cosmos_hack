@@ -10,3 +10,6 @@ node_modules/
 *.log
 *.tsbuildinfo
 /backend/ant
+/dist/
+/extension/signer.wasm
+/extension/wasm_exec.js
