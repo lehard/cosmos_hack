@@ -237,6 +237,10 @@ services:
       - ../config/ant.yaml:/etc/ant/ant.yaml:ro
       # Хранилище материалов по адресу содержимого (materials.dir, AD-23).
       - materials:/var/lib/ant/materials
+      # Каталог обмена с Галактикой (erp.galaktika.dir, эпик 43): корень ФС
+      # только для чтения — out/ ack/ in/ in-ack/ about.xml пишут роль outbox
+      # (адаптер) и роль stands (stand Галактики) в этом томе.
+      - exchange:/var/lib/ant/exchange
       # Доверие (эпик 29): сертификат mTLS, KEK (только чтение), экспорт шины
       # безопасности во внешний мониторинг ИБ (JSON-строки).
       - ant-pki:/var/lib/ant-pki:ro
@@ -258,6 +262,9 @@ volumes:
     labels:
       ant.project: ant
   materials:
+    labels:
+      ant.project: ant
+  exchange:
     labels:
       ant.project: ant
   secrets:

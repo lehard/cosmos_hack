@@ -10,6 +10,7 @@ import (
 	mesdom "ant/internal/domain/mes"
 	"ant/internal/infrastructure/fixtures/world"
 	"ant/internal/infrastructure/integration/mes/b2mml"
+	messtand "ant/internal/infrastructure/integration/mes/b2mml/stand"
 	"ant/internal/infrastructure/storage/journal/feed"
 )
 
@@ -17,7 +18,8 @@ import (
 // (engine.go), отправка блоков и шлюз входящих заданий и событий операций в
 // роли outbox (outbox.go, аренда outbox.mes), чтение блоков и заданий в роли
 // api (api.go). Канал — порт mes.Channel, адаптер B2MML-JSON (mes.isa95.v1);
-// работает, если "mes" есть в integrations.enabled (stand MES — эпик 43).
+// работает, если "mes" есть в integrations.enabled (stand MES — эпик 43,
+// роль stands: /stand/mes/b2mml, пустой base_url со stand: true).
 
 // mesEnabled — канал MES включён (integrations.enabled содержит mes).
 func mesEnabled(env *environment) bool {
@@ -30,6 +32,10 @@ func mesChannel(env *environment) (*b2mml.Client, error) {
 	pw, err := secretFile("mes.b2mml.password_file", c.PasswordFile)
 	if err != nil {
 		return nil, err
+	}
+	if c.BaseURL == "" && c.Stand {
+		// Эпик 43: stand MES роли stands этого хоста.
+		c.BaseURL = standURL(env, messtand.Name+messtand.Binding)
 	}
 	return b2mml.New(b2mml.Config{BaseURL: c.BaseURL, LogicalID: c.LogicalID, User: c.User, Password: pw, Timeout: c.Timeout, Stand: c.Stand})
 }
