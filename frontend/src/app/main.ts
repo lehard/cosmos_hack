@@ -10,6 +10,7 @@ import { VueQueryPlugin } from '@tanstack/vue-query'
 import '@fontsource/pt-sans/400.css'
 import '@fontsource/pt-sans/700.css'
 import '@fontsource/pt-mono/400.css'
+import { installRunFetch } from '@/shared/api/active-run'
 import { i18n } from '@/shared/i18n'
 import '@/shared/ui/theme/base.css'
 import { installTokens } from '@/shared/ui/theme'
@@ -19,6 +20,7 @@ import { queryClient } from './providers/query'
 import { router } from './router'
 
 installTokens()
+installRunFetch()
 
 const app = createApp(App).use(createPinia()).use(i18n).use(VueQueryPlugin, { queryClient })
 installAccess(app)
