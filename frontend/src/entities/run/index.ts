@@ -28,13 +28,16 @@ import {
 } from '@/shared/api/generated/client'
 import type { ApplyInjection, Receipt, RunControl, SetSpeed, StartRun } from '@/shared/api/generated/model'
 import { entityKeys } from '@/shared/api/keys'
-import type { ApiError } from '@/shared/api/problem'
+import { statusOf, type ApiError } from '@/shared/api/problem'
 import { useMomentStore } from '@/shared/model/moment'
-import { isActive, pickCurrentRun } from './model/run'
+import { isActive, isIdle, pickCurrentRun } from './model/run'
 import { useRunFocusStore } from './model/focus'
+import { simulationRunPlan } from './model/plan'
 
 export * from './model/run'
 export * from './model/focus'
+export * from './model/clock'
+export * from './model/plan'
 export type { ApplyInjection, Receipt, RunControl, SetSpeed, StartRun }
 
 export const runKeys = entityKeys('run')
@@ -52,13 +55,22 @@ export function useScenarios() {
   })
 }
 
-/** Прогоны (`simulation.run.list`). */
+/** Период перечитывания списка прогонов, мс: пока есть идущий прогон — чаще. */
+export const RUNS_POLL_MS = 5000
+export const RUNS_IDLE_POLL_MS = 15_000
+
+/**
+ * Прогоны (`simulation.run.list`). Список читают пульт и часы в шапке всех
+ * столов (Д-85): без идущего прогона — реже, чтобы не нагружать сервер.
+ */
 export function useRuns() {
   return useQuery({
     queryKey: runKeys.list('runs'),
     queryFn: ({ signal }) => simulationRunList({ limit: 50 }, { signal }),
     retry: false,
-    refetchInterval: 5000,
+    // Нет права читать прогоны (роль «только карточка») — не переспрашивать.
+    refetchInterval: (q) =>
+      statusOf(q.state.error) === 403 ? false : (q.state.data?.data?.items ?? []).some((r) => isActive(r.state) && !isIdle(r)) ? RUNS_POLL_MS : RUNS_IDLE_POLL_MS,
   })
 }
 
@@ -109,6 +121,22 @@ export function useBoard(runId: MaybeRefOrGetter<string | null>, live: MaybeRefO
     enabled: computed(() => !!toValue(runId)),
     retry: false,
     placeholderData: keepPreviousData,
+    refetchInterval: () => (toValue(live) ? RUN_POLL_MS : false),
+  })
+}
+
+/**
+ * План прогона (`simulation.run.plan`, Д-85): чего ждём и что дальше. Пока
+ * прогон идёт — перечитывается вместе с состоянием; операции ещё нет на
+ * сервере (501) — пульт просто не показывает план.
+ */
+export function useRunPlan(runId: MaybeRefOrGetter<string | null>, live: MaybeRefOrGetter<boolean> = false) {
+  return useQuery({
+    queryKey: computed(() => runKeys.one(toValue(runId) ?? '', 'plan')),
+    queryFn: ({ signal }) => simulationRunPlan(toValue(runId) ?? '', { limit: 50 }, { signal }),
+    enabled: computed(() => !!toValue(runId)),
+    retry: false,
+    placeholderData: (prev, prevQuery) => (prevQuery?.queryKey[1] === toValue(runId) ? prev : undefined),
     refetchInterval: () => (toValue(live) ? RUN_POLL_MS : false),
   })
 }

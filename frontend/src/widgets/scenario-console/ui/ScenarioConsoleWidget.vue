@@ -27,6 +27,7 @@ import {
   useRun,
   useRunCommand,
   useRunFocusStore,
+  useRunPlan,
   useScenarios,
   type Injection,
   type RunCommand,
@@ -57,6 +58,9 @@ const { runId } = useCurrentRunId(fixedRun)
 const runQ = useRun(runId)
 const run = computed(() => runQ.data.value?.data ?? null)
 const live = computed(() => !!run.value && !isIdle(run.value) && isActive(run.value.state))
+// План прогона (Д-85): чего ждём и что дальше; операции ещё нет — плана нет, пульт работает как раньше.
+const planQ = useRunPlan(computed(() => (run.value && !isIdle(run.value) ? runId.value : null)), live)
+const plan = computed(() => planQ.data.value?.data ?? null)
 const injectionsQ = useInjections(computed(() => (live.value ? runId.value : null)))
 const injections = computed(() => injectionsQ.data.value?.data?.items ?? [])
 
@@ -144,6 +148,7 @@ function inject(injection: Injection['injection'], target: string | undefined): 
       :scenarios="scenarios"
       :selected-scenario="selectedScenario"
       :run="run"
+      :plan="plan"
       :injections="injections"
       :can-act="!moment.isReplay"
       :busy="command.isPending.value"
