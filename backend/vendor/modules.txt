@@ -37,7 +37,11 @@ github.com/santhosh-tekuri/jsonschema/v6
 github.com/santhosh-tekuri/jsonschema/v6/kind
 # go.stargrave.org/gogost/v7 v7.0.0 => ../third_party/gogost
 ## explicit; go 1.24
+go.stargrave.org/gogost/v7/gost28147
+go.stargrave.org/gogost/v7/gost3410
 go.stargrave.org/gogost/v7/gost34112012256
+go.stargrave.org/gogost/v7/gost34112012512
+go.stargrave.org/gogost/v7/gost341194
 go.stargrave.org/gogost/v7/internal/gost34112012
 # go.yaml.in/yaml/v3 v3.0.5
 ## explicit; go 1.16
