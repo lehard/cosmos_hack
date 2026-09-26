@@ -3,7 +3,7 @@
 // геометрия контрольной карты.
 import { describe, expect, it } from 'vitest'
 import { i18n } from '@/shared/i18n'
-import { accountOf, chartGeometry, deltaOf, formatValue, meaningOf, originOf, sumCheck, toOverviewModel } from '../index'
+import { accountOf, chartGeometry, deltaOf, formatValue, meaningOf, originOf, sumCheck, toOverviewModel, valueNotes } from '../index'
 import { chart, drilldown, overview } from './fixtures'
 
 const x = {
@@ -35,6 +35,15 @@ describe('значение показателя', () => {
     expect(meaningOf({ unit: 'min', meaning: 'other', meaning_note: 'от запуска до выпуска' })).toMatchObject({ code: 'other', note: 'от запуска до выпуска' })
     expect(meaningOf({ unit: 'min' })).toBeNull()
     expect(meaningOf({ unit: 'pcs', meaning: 'other' })).toBeNull()
+  })
+
+  it('оговорки числа словами для подсказки (не плашки): интервал и происхождение; у штук — пусто', () => {
+    expect(valueNotes(x.t, { unit: 'min', origin: 'computed_by_system', meaning: 'other', meaning_note: 'от запуска до выпуска' })).toEqual([
+      'Интервал: от запуска до выпуска',
+      'Время вычислено системой по отметкам событий: источник его не передавал',
+    ])
+    expect(valueNotes(x.t, { unit: 'min' })).toEqual(['Происхождение времени не передано'])
+    expect(valueNotes(x.t, { unit: 'pcs' })).toEqual([])
   })
 
   it('сравнение с прошлым периодом — только при одинаковых единицах', () => {
