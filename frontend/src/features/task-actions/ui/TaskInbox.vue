@@ -55,7 +55,7 @@ const acked = reactive<Record<string, { outcome: AcknowledgeTaskOutcome; seq: nu
 const actions = computed(() => new Map<string, TaskAction>(props.tasks.map((task) => [task.task_id, taskActionOf(task as ProcessTask)])))
 const actionOf = (task: TaskEntry): TaskAction => actions.value.get(task.task_id) ?? { kind: 'ack', ref: task.ref ?? null }
 const itemLabel = (task: TaskEntry) => taskItemLabel(task as ProcessTask)
-const opOf = (task: TaskEntry) => (task as ProcessTask).operation ?? task.kind
+const opOf = (task: TaskEntry) => (task as ProcessTask).operation ?? (task as ProcessTask).operation_id ?? task.kind
 
 /**
  * Действие исполнителя — на его терминале: если терминал на этом столе, кнопка

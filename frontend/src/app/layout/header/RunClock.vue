@@ -50,6 +50,8 @@ const clock = computed(() => {
     <span class="time" data-testid="run-clock-time">{{ clock }}</span>
     <span class="speed" aria-hidden="true">·</span>
     <span class="speed" data-testid="run-clock-speed">×{{ run.speed }}</span>
+    <span v-if="run.state === 'waiting_for_decision'" class="halt" title="Время процесса стоит, пока человек не выполнит своё действие">ждёт решения</span>
+    <span v-else-if="run.state === 'paused'" class="halt">пауза</span>
   </span>
 </template>
 
@@ -74,6 +76,10 @@ const clock = computed(() => {
 
 .speed {
   color: var(--ant-text-2);
+}
+
+.halt {
+  color: var(--ant-status-attention-text);
 }
 
 .dot {

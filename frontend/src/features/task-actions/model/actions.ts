@@ -19,6 +19,8 @@ import type { DrillRef, TaskEntry } from '@/shared/api/generated/model'
 export interface ProcessTaskFields {
   /** operationId действия шага процесса. */
   operation?: string | null
+  /** operationId в ответе notifications.task.list (имя поля контракта). */
+  operation_id?: string | null
   /** Изделие — объект задачи. */
   item_id?: string | null
   /** Метка изделия для людей (Ф-001, DM-код), не внутренний id. */
@@ -100,7 +102,8 @@ const DECISION_KINDS = new Set(['decision_required', 'review_after_new_data', 'p
 export function taskActionOf(task: ProcessTask): TaskAction {
   const item = taskItemId(task)
   const ref = task.ref ?? (item ? ({ entity: 'item', id: item } as DrillRef) : null)
-  const def = task.operation ? TASK_ACTIONS[task.operation] : undefined
+  const op = task.operation ?? task.operation_id
+  const def = op ? TASK_ACTIONS[op] : undefined
   // Задачу «в изолятор» закрывает приёмка в изоляторе (FR-55) — своя форма.
   if (task.kind === 'isolate_move' && item) return { kind: 'form', form: 'isolator_move', verbKey: 'decisions.containment.confirmIsolatorMove', itemId: item }
   if (def?.kind === 'form' && item) return { kind: 'form', form: def.form, verbKey: def.verbKey, itemId: item }
