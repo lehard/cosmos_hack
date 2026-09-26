@@ -160,7 +160,7 @@ func TestFaultsREST(t *testing.T) {
 		t.Fatalf("страница: %v %v", resp, err)
 	}
 	b, _ := io.ReadAll(resp.Body)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	if !strings.Contains(string(b), "Главного") || !strings.Contains(string(b), "Сдача готовой продукции") {
 		t.Fatalf("страница без журнала обмена: %.300s", b)
 	}
@@ -168,7 +168,7 @@ func TestFaultsREST(t *testing.T) {
 	if err != nil || resp.StatusCode != http.StatusOK || len(st.Snapshot().Packets) != 1 {
 		t.Fatalf("кнопка «выдать задание»: %v %v", resp, err)
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 }
 
 // Каталог обмена: недоступность — квитанций нет; ошибка 5xx — квитанций нет;

@@ -133,7 +133,7 @@ func TestFaults(t *testing.T) {
 		t.Fatalf("кнопка: %v %v", resp, err)
 	}
 	b, _ := io.ReadAll(resp.Body)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	if !strings.Contains(string(b), "отказала") || !strings.Contains(string(b), "заблокирован ОТК") {
 		t.Fatalf("страница без отказа: %.400s", b)
 	}
