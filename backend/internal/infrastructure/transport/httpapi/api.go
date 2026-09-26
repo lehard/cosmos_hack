@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -215,6 +216,18 @@ func Register[I, O any](a *API, route Route, act platform.Action, h func(ctx con
 	if route.ReadByPost {
 		op.Extensions["x-ant-read-by-post"] = true
 	}
+	if len(route.Binary) > 0 {
+		// Huma не трогает заданное содержимое ответа: схема тела — байты по каждому типу.
+		content := map[string]*huma.MediaType{}
+		for _, ct := range route.Binary {
+			content[ct] = &huma.MediaType{Schema: &huma.Schema{Type: huma.TypeString, Format: "binary"}}
+		}
+		status := route.Status
+		if status == 0 {
+			status = http.StatusOK
+		}
+		op.Responses = map[string]*huma.Response{strconv.Itoa(status): {Description: "Байты содержимого", Content: content}}
+	}
 	mode := a.ModeFor(act.Owner)
 	huma.Register(a.huma, op, func(ctx context.Context, in *I) (*O, error) {
 		ctx, err := a.before(ctx, act, in)
@@ -305,6 +318,9 @@ type Route struct {
 	ReadByPost bool
 	// NoCommandMeta — команда без метаданных AD-39 (вход, выход, служебные операции сеанса).
 	NoCommandMeta bool
+	// Binary — типы содержимого бинарного ответа (image/*, application/pdf, */*):
+	// тело — сырые байты (type: string, format: binary), не JSON; тип — заголовок Content-Type.
+	Binary []string
 }
 
 // Get, Post, Put, Delete — сокращения маршрута.

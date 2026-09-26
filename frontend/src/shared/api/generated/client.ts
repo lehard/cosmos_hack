@@ -16203,7 +16203,17 @@ export function useMaterialsMaterialRead<TData = Awaited<ReturnType<typeof mater
 
 
 export type materialsMaterialContentResponse200 = {
-  data: string
+  data: Blob
+  status: 200
+}
+
+export type materialsMaterialContentResponse200ApplicationPdf = {
+  data: Blob
+  status: 200
+}
+
+export type materialsMaterialContentResponse200Image = {
+  data: Blob
   status: 200
 }
 
@@ -16212,7 +16222,7 @@ export type materialsMaterialContentResponseDefault = {
   status: Exclude<HTTPStatusCodes, 200>
 }
 
-export type materialsMaterialContentResponseSuccess = (materialsMaterialContentResponse200) & {
+export type materialsMaterialContentResponseSuccess = (materialsMaterialContentResponse200 | materialsMaterialContentResponse200ApplicationPdf | materialsMaterialContentResponse200Image) & {
   headers: Headers;
 };
 export type materialsMaterialContentResponseError = (materialsMaterialContentResponseDefault) & {
@@ -16228,7 +16238,7 @@ export const getMaterialsMaterialContentUrl = (address: string,) => {
 }
 
 /**
- * AD-23: байты материала; адрес проверяется после расшифрования и чтения.
+ * AD-23: байты материала (кадр, иллюстрация, скан, протокол) как есть, тип — заголовок Content-Type; адрес проверяется после расшифрования и чтения.
  * @summary Содержимое материала
  */
 export const materialsMaterialContent = async (address: string, options?: RequestInit): Promise<materialsMaterialContentResponseSuccess> => {
@@ -16242,17 +16252,17 @@ export const materialsMaterialContent = async (address: string, options?: Reques
   }
 )
 
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
   if (!res.ok) {
+    const errorBody = [204, 205, 304].includes(res.status) ? null : await res.text();
 
     const err: globalThis.Error & {info?: materialsMaterialContentResponseError['data'], status?: number} = new globalThis.Error();
-    const data : materialsMaterialContentResponseError['data'] = body ? JSON.parse(body) : {}
+    const data : materialsMaterialContentResponseError['data'] = errorBody ? JSON.parse(errorBody) : {}
     err.info = data;
     err.status = res.status;
     throw err;
   }
-  const data: materialsMaterialContentResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  const body = [204, 205, 304].includes(res.status) ? null : await res.blob();
+  const data: materialsMaterialContentResponseSuccess['data'] = body as materialsMaterialContentResponseSuccess['data']
   return { data, status: res.status, headers: res.headers } as materialsMaterialContentResponseSuccess
 }
 

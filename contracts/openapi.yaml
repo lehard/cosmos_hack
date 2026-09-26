@@ -24673,7 +24673,7 @@ paths:
         owner: materials
   /api/v1/materials/{address}/content:
     get:
-      description: "AD-23: байты материала; адрес проверяется после расшифрования и чтения."
+      description: "AD-23: байты материала (кадр, иллюстрация, скан, протокол) как есть, тип — заголовок Content-Type; адрес проверяется после расшифрования и чтения."
       operationId: materials.material.content
       parameters:
         - description: Адрес содержимого streebog256:….
@@ -24687,11 +24687,22 @@ paths:
       responses:
         "200":
           content:
-            application/json:
+            "*/*":
               schema:
-                contentEncoding: base64
+                contentMediaType: application/octet-stream
+                format: binary
                 type: string
-          description: OK
+            application/pdf:
+              schema:
+                contentMediaType: application/octet-stream
+                format: binary
+                type: string
+            image/*:
+              schema:
+                contentMediaType: application/octet-stream
+                format: binary
+                type: string
+          description: Байты содержимого
           headers:
             Ant-Backend:
               schema:
