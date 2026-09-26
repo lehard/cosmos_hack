@@ -96,7 +96,7 @@ func newERPRig(t *testing.T) *erpRig {
 	if err != nil {
 		t.Fatal(err)
 	}
-	env, err := erpEnv()
+	env, err := erpEnvFor("onec")
 	if err != nil {
 		t.Fatal(err)
 	}
