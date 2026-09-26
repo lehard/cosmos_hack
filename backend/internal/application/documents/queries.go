@@ -494,15 +494,7 @@ func (s *Service) DecisionCard(ctx context.Context, documentID string, m platfor
 	return card, nil
 }
 
-func afterSignature(d *dom.Doc) string {
-	switch d.DocType {
-	case dom.DocNCDisposition:
-		return "Когда подпишут все этапы, маршрут закроется (document.route.closed) и решение по несоответствию исполнится (AD-43)"
-	case dom.DocTraveler:
-		return "Итоговая годность изделия зафиксирована подписями контролёра ОТК и мастера"
-	}
-	return "Когда подпишут все этапы, маршрут закроется (document.route.closed)"
-}
+func afterSignature(d *dom.Doc) string { return AfterSignatureText(d.DocType) }
 
 // DecisionRequests — запросы решения, ждущие подписи текущего пользователя
 // (documents.request.list, FR-136): открытые версии документов, чей

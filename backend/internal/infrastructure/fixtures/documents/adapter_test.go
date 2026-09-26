@@ -39,3 +39,51 @@ func TestRegistryOnBuiltinWorld(t *testing.T) {
 		t.Fatalf("печатная форма: %v", err)
 	}
 }
+
+// TestDecisionRequestsForRareSigners — стол «Требуется ваше решение» у редких
+// подписантов на встроенном мире: держатель КД, метролог, представитель
+// заказчика видят свой запрос (этап, который ждёт именно их); у аудитора
+// запросов нет; карточка решения — по тому же документу.
+func TestDecisionRequestsForRareSigners(t *testing.T) {
+	a := New()
+	as := func(person, role string) context.Context {
+		return platform.WithPrincipal(context.Background(), platform.Principal{PersonID: person, Role: role})
+	}
+	for _, c := range []struct{ person, role, doc string }{
+		{"DA-81", "design_authority", "DOC-REQ-DA-F-023"},
+		{"MET-82", "metrologist", "DOC-REQ-MET-KT3"},
+		{"CR-71", "customer_representative", "DOC-REQ-CR-RS-01"},
+	} {
+		ctx := as(c.person, c.role)
+		l, err := a.DecisionRequests(ctx, platform.Moment{})
+		if err != nil {
+			t.Fatalf("%s: %v", c.person, err)
+		}
+		var found *app.DecisionRequest
+		for i, rq := range l.Items {
+			if rq.MyStage == nil || rq.Document.DocumentID == "" {
+				t.Fatalf("%s: запрос без этапа: %+v", c.person, rq)
+			}
+			if rq.Document.DocumentID == c.doc {
+				found = &l.Items[i]
+			}
+		}
+		if found == nil {
+			t.Fatalf("%s: нет запроса %s среди %d", c.person, c.doc, len(l.Items))
+		}
+		if found.ExpectedSigner == nil || *found.ExpectedSigner != c.person || found.Proposal.Summary == "" || len(found.Document.Route) == 0 {
+			t.Errorf("%s: запрос %+v", c.person, found)
+		}
+		card, err := a.DecisionCard(ctx, c.doc, platform.Moment{})
+		if err != nil || card.Stage.Stage != *found.MyStage || card.Question == "" || card.AfterSignature == "" {
+			t.Errorf("%s: карточка %+v %v", c.person, card, err)
+		}
+	}
+	l, err := a.DecisionRequests(as("AUD-01", "security_auditor"), platform.Moment{})
+	if err != nil || len(l.Items) != 0 {
+		t.Errorf("аудитор: %d запросов, %v", len(l.Items), err)
+	}
+	if _, err := a.DecisionCard(as("CR-71", "customer_representative"), "DOC-PVA-FLANGE-1", platform.Moment{}); err == nil {
+		t.Error("карточка подписанного документа — должна быть «не найдено»")
+	}
+}

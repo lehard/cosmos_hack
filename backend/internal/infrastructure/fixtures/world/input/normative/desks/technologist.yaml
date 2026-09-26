@@ -1,12 +1,14 @@
 # Стол технолога (PRD §3a, UI-32): главный объект — расследование. Первый раздел —
 # рабочее пространство: слева «Мои расследования», в центре область риска ступенями
 # 34 → 13 → 6 и три дорожки «как было дело» (FR-153), справа — гипотезы по двум
-# причинам (почему возник / почему не остановили) с «что проверить следующим».
-# Разбор причин (группы и общие факторы), меры, процесс, документы — следующие разделы.
+# причинам (почему возник / почему не остановили) с «что проверить следующим»;
+# над ними — что общего у несоответствий (общие факторы фразами). Отдельного раздела
+# «Разбор причин» нет (UI-33): группы повторяющихся дефектов — это расследования.
+# Меры, процесс, документы — следующие разделы.
 # Плотный инженерный вид. Владелец после волны 1 — эпик 12.
 version: 1
 role: technologist
-title_key: desks.causeAnalysis
+title_key: desks.investigation
 density: compact
 help_key: technologist # раздел встроенной справки (эпик 47); наследники роли получают его вместе со столом
 tabs:
@@ -17,13 +19,8 @@ tabs:
       - {id: investigations, area: left, widget: investigations}
       - {id: scope, area: main, widget: risk-scope}
       - {id: tracks, area: main, widget: circumstances}
-      - {id: hypothesis, area: right, widget: hypothesis}
-  - id: causes
-    title_key: desks.causeAnalysis
-    layout: main-side
-    slots:
-      - {id: groups, area: main, widget: cause-analysis, slice: {group_by: [defect_type, operation, equipment]}}
       - {id: factors, area: right, widget: common-factors}
+      - {id: hypothesis, area: right, widget: hypothesis}
   # Эпик 42 (FR-64, FR-138): меры и их эффективность — тот же виджет, что у руководителя, плотный вид.
   - id: actions
     title_key: widgets.quality.tab

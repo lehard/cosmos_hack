@@ -211,6 +211,7 @@ func runAPI(ctx context.Context, env *environment) error {
 		opsSvc = opts.ops
 	}
 	close(opsReady)
+	opts.now = serverNow(ctx, env, opts)
 	api := buildAPI(mux, opts)
 	// Метрики процесса (FR-41, FR-113, AD-35): приём, воркер, живые обновления, ops.
 	mux.Handle("GET /metrics", env.metricsHandler(opts.ops))
