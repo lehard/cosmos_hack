@@ -83,7 +83,7 @@ func Reduce(s State, r kernel.Record, env Env, up Upstream) State {
 	}
 	if env.Def == nil {
 		if r.Type == catalog.ItemItemRegistered {
-			s.Refused, s.RefusedWhy = string(errcodes.ProcessVersionTampered), "версия процесса изделия не найдена"
+			s.Refused, s.RefusedWhy = string(errcodes.ProcessVersionUnknown), "версия процесса изделия не найдена"
 		}
 		return s
 	}
@@ -283,7 +283,7 @@ func Guard(s State, env Env, up Upstream, cmd kernel.Command) error {
 		return env.Refusal
 	}
 	if env.Def == nil {
-		return kernel.Refuse(errcodes.ProcessVersionTampered, "version_id", s.VersionID)
+		return kernel.Refuse(errcodes.ProcessVersionUnknown, "hash", s.VersionHash)
 	}
 	if s.Completed {
 		return kernel.Refuse(errcodes.ProcessPreconditionFailed, "condition", "изделие не завершено ("+s.Outcome+")")
