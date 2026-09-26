@@ -850,6 +850,17 @@ export const eventCatalog = {
     "caGroup": "risk_scope",
     "currentVersion": 1
   },
+  "incident.measurement.requested": {
+    "title": "Запрошено измерение для проверки гипотезы",
+    "emitter": "analysis",
+    "kind": "decision",
+    "stream": "incident",
+    "axis": "none",
+    "actionClass": "record",
+    "critical": false,
+    "caGroup": null,
+    "currentVersion": 1
+  },
   "incident.membership.changed": {
     "title": "Статус изделия в инциденте изменён",
     "emitter": "analysis",

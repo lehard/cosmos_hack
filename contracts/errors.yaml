@@ -535,6 +535,27 @@ codes:
     ui_key: riskScope.basisRequired
     guard: true
     refs: [FR-61]
+  incident.item_not_in_scope:
+    status: 409
+    title: "Изделия нет в области риска"
+    detail: "Изделие {item_id} не входит в текущую версию области риска инцидента {incident_id} (или уже исключено)"
+    ui_key: errors.generic
+    guard: true
+    refs: [FR-61, FR-62]
+  incident.closed:
+    status: 409
+    title: "Инцидент закрыт"
+    detail: "Инцидент {incident_id} закрыт — область риска и выводы больше не меняются"
+    ui_key: errors.generic
+    guard: true
+    refs: [FR-9, FR-61]
+  incident.explanation_required:
+    status: 422
+    title: "Нужно письменное объяснение работника"
+    detail: "Ошибку исполнителя подтверждает только уполномоченный после письменного объяснения работника (ТК РФ ст. 247); сначала — incident.operator_error.confirmed"
+    ui_key: errors.generic
+    guard: true
+    refs: [FR-59]
 
   # ── erp / mes: внешние учётные системы (FR-91, FR-96) ──
   erp.unavailable:

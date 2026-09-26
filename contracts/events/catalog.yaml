@@ -2793,6 +2793,22 @@ types:
     versions: [1]
     current_version: 1
     refs: ["FR-59", "FR-146"]
+  incident.measurement.requested:
+    title: "Запрошено измерение для проверки гипотезы"
+    emitter: "analysis"
+    role: "api"
+    kind: "decision"
+    stream: "incident"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-59", "FR-135", "Д-26"]
   incident.analysis.scoped:
     title: "Решено, нужен ли полный разбор"
     emitter: "analysis"

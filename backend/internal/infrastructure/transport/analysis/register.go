@@ -103,8 +103,8 @@ func Register(api *httpapi.API, q app.Queries, c app.Commands) {
 		})
 
 	httpapi.Do(api, httpapi.Post("/nonconformities/{nc_id}/measurements", "Запросить измерение",
-		"Проверка гипотезы измерением: задачу исполнителю ставит notifications по записи запроса (тип записи — предложение контракта, см. docs/codegen.md)."),
-		platform.Action{ID: "analysis.measurement.request", Class: platform.ClassRecord, Owner: owner, Subject: "nonconformity"},
+		"Проверка гипотезы измерением: запись incident.measurement.requested; задачу исполнителю ставит notifications по этой записи."),
+		platform.Action{ID: "analysis.measurement.request", Class: platform.ClassRecord, Owner: owner, Subject: "nonconformity", Emits: emits(catalog.IncidentMeasurementRequested)},
 		func(ctx context.Context, in *struct {
 			NCID string `path:"nc_id" maxLength:"128"`
 			Body app.RequestMeasurement

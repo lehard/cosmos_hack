@@ -106,6 +106,7 @@ var Files = [...]string{
 	"contracts/events/incident/incident.incident.closed.v1.json",
 	"contracts/events/incident/incident.incident.opened.v1.json",
 	"contracts/events/incident/incident.item.assessed.v1.json",
+	"contracts/events/incident/incident.measurement.requested.v1.json",
 	"contracts/events/incident/incident.membership.changed.v1.json",
 	"contracts/events/incident/incident.operator_error.confirmed.v1.json",
 	"contracts/events/incident/incident.scope.computed.v1.json",
