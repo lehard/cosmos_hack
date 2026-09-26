@@ -132,8 +132,8 @@ generate-frontend: ## Клиент orval + Vue Query, словарь стату�
 
 # ------------------------------------------------------------- проверки ----
 
-.PHONY: check check-backend check-frontend check-contracts check-third-party gogost-verify
-check: check-backend check-frontend check-third-party check-contracts ## Все проверки: слои, детерминизм, линтеры, тесты, фронтенд, GoGOST, контракты
+.PHONY: check check-backend check-frontend check-contracts check-third-party gogost-verify check-generated check-compat
+check: check-backend check-frontend check-third-party check-contracts check-generated check-compat ## Все проверки: слои, детерминизм, линтеры, тесты, фронтенд, GoGOST, контракты
 	@echo; echo "make check: зелёный"
 
 check-fast: ## Быстрая проверка при слиянии пачек: как check, но тесты из кэша и без самопроверки линтеров (Д-18)
@@ -162,6 +162,27 @@ check-contracts: ## Контракты: contracts/scripts/check.sh (эпик 00)
 		echo "contracts/scripts/check.sh пока нет (эпик 00) — пропуск"; \
 	fi
 
+# Базовая версия контракта для обнаружения ломающих изменений (AD-20, О8): прошлый
+# тег contract-v* или ветка main (на main — предыдущий коммит). Переопределение — ANT_CONTRACT_BASE.
+CONTRACT_BASE ?= $(or $(ANT_CONTRACT_BASE),$(shell git -C $(ROOT) describe --tags --abbrev=0 --match 'contract-v*' 2>/dev/null),$(shell b=main; [ "$$(git -C $(ROOT) rev-parse HEAD 2>/dev/null)" = "$$(git -C $(ROOT) rev-parse $$b 2>/dev/null)" ] && b=HEAD~1; echo $$b))
+
+# Всё, что пишет make generate (AD-20: руками не правится, конфликт — перегенерацией).
+GENERATED_PATHS = backend/.golangci.yml backend/internal/contracts contracts/openapi.yaml contracts/bpmn-ext/ant.xsd \
+	docs/bpmn-ext-properties.md frontend/src/shared/contracts frontend/src/shared/api/generated
+
+check-generated: ## Сгенерированное не устарело: make generate + git diff --exit-code (AD-20)
+	@$(MAKE) --no-print-directory generate
+	@cd $(ROOT) && gen="$(GENERATED_PATHS)"; if [ -n "$$(git status --porcelain --untracked-files=all -- $$gen)" ]; then \
+		echo "Сгенерированное расходится с закоммиченным — выполните make generate и закоммитьте:"; git status --short -- $$gen; exit 1; fi
+	@echo "check-generated: сгенерированное совпадает с источниками"
+
+check-compat: ## Ломающие изменения контракта: oasdiff breaking (openapi.yaml) и @asyncapi/diff (asyncapi.yaml со схемами) против $(CONTRACT_BASE)
+	@rm -rf $(ROOT)/.dev/compat && mkdir -p $(ROOT)/.dev/compat/base
+	@git -C $(ROOT) archive $(CONTRACT_BASE) contracts/events contracts/openapi.yaml 2>/dev/null | tar -x -C $(ROOT)/.dev/compat/base 2>/dev/null || true
+	@echo "check-compat: база $(CONTRACT_BASE)"
+	$(GO_RUN) sh -c 'bin=$$(/src/deploy/scripts/go-tools.sh github.com/oasdiff/oasdiff); b=/src/.dev/compat/base/contracts/openapi.yaml; if [ -s $$b ]; then $$bin/oasdiff breaking $$b /src/contracts/openapi.yaml --fail-on ERR && echo "oasdiff: ломающих изменений HTTP API нет"; else echo "oasdiff: базовой openapi.yaml нет — пропуск"; fi'
+	$(NODE_RUN_CONTRACTS) sh -c 'test -d node_modules && test ! package-lock.json -nt node_modules/.package-lock.json || npm ci --prefer-offline --no-audit --no-fund --loglevel=error; node check-compat.mjs /src/.dev/compat/base/contracts/events/asyncapi.yaml'
+
 # ------------------------------------------------------------- лицензии ----
 
 .PHONY: licenses
@@ -186,8 +207,8 @@ clean: ## Остановить систему и убрать висящие о�
 # ------------------------------------------ цели будущих эпиков (пока пусто) ----
 
 .PHONY: contract-demo tamper keys load verify rebuild token-agent
-contract-demo: ## Ломающее изменение контракта краснеет до отправки в 1С (эпики 02, 30)
-	@echo "contract-demo: пока пусто — эпики 02, 30 (FR-111)"
+contract-demo: ## Ломающее изменение контракта краснеет до отправки в 1С (FR-111; эпик 30 — отправка в stand 1С)
+	$(NODE_RUN_CONTRACTS) sh -c 'test -d node_modules && test ! package-lock.json -nt node_modules/.package-lock.json || npm ci --prefer-offline --no-audit --no-fund --loglevel=error; node contract-demo.mjs'
 tamper: ## Подделка в обход системы и её обнаружение (эпики 29, 36)
 	@echo "tamper: пока пусто — эпики 29, 36 (FR-74, FR-152)"
 keys: ## Ключи и генезис доверия (эпик 05)

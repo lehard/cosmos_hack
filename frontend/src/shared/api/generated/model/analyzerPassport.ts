@@ -1,0 +1,33 @@
+/**
+ * СГЕНЕРИРОВАНО orval (frontend/scripts/generate.mjs) — руками не править (AD-20).
+ * Источник: contracts/openapi.yaml
+ */
+import type { AnalyzerPassportStage } from './analyzerPassportStage';
+import type { AnalyzerPassportStatus } from './analyzerPassportStatus';
+import type { AnalyzerPassportVersions } from './analyzerPassportVersions';
+import type { AnalyzerSuspension } from './analyzerSuspension';
+
+export interface AnalyzerPassport {
+  admitted_at: string;
+  /** Допустимые автоматические действия уровня доверия (contracts/analyzer-trust-levels.yaml). */
+  allowed_auto_actions: string[];
+  analyzer_id: string;
+  /** seq, на котором построен ответ (AD-39). */
+  basis_seq: number;
+  /** Протокол допуска (закрытый маршрут подписей). */
+  document_id: string;
+  passport_id: string;
+  previous_passport_id?: string;
+  /** Карта контроля. */
+  recipe_ref: string;
+  stage: AnalyzerPassportStage;
+  status: AnalyzerPassportStatus;
+  suspension?: AnalyzerSuspension;
+  /**
+     * @minimum 0
+     * @maximum 4
+     */
+  trust_level: number;
+  /** Вектор версий допуска. */
+  versions: AnalyzerPassportVersions;
+}

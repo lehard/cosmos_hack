@@ -17,7 +17,7 @@ roles:
   - id: quality_inspector
     title: "Контролёр качества"
     case_role: true
-    actions: ["quality.*.read", "nonconformity.signal.reject", "nonconformity.nonconformity.confirm", "nonconformity.recheck.request", "nonconformity.item.isolate", "nonconformity.presentation.resolve", "nonconformity.lot.resolve", "nonconformity.containment.set", "nonconformity.disposition.verify", "item.intervention.close", "item.identification.confirm", "analysis.item.assess", "documents.document.sign", "documents.document.request", "binding.link.assign", "item.*.read", "analysis.*.read", "process.*.read"]
+    actions: ["quality.*.read", "nonconformity.signal.reject", "nonconformity.nonconformity.confirm", "nonconformity.recheck.request", "nonconformity.item.isolate", "nonconformity.presentation.resolve", "nonconformity.lot.resolve", "nonconformity.containment.set", "nonconformity.disposition.verify", "item.intervention.close", "item.identification.confirm", "analysis.item.assess", "documents.document.sign", "documents.document.request", "crossitem.binding.assign", "item.*.read", "analysis.*.read", "process.*.read"]
   - id: site_foreman
     title: "Мастер участка"
     case_role: true
@@ -52,7 +52,7 @@ roles:
     title: "Аудитор ИБ"
     actions: ["security.*.read", "access.*.read", "journal.*.read", "access.audit.set_parameters", "signing.key.register", "access.policy.grant"]
   # ── руководящие подписанты — наследники базовых ролей ──
-  - {id: head_of_qc,       title: "Начальник ОТК",           inherits: [quality_inspector], actions: ["analyzer.passport.reinstate", "analyzer.passport.admit", "nonconformity.containment.release", "nonconformity.concession.revoke", "access.policy.grant", "signing.key.register"]}
+  - {id: head_of_qc,       title: "Начальник ОТК",           inherits: [quality_inspector], actions: ["vision.passport.reinstate", "vision.passport.admit", "vision.passport.retire", "nonconformity.containment.release", "nonconformity.concession.revoke", "access.policy.grant", "signing.key.register"]}
   - {id: head_of_workshop, title: "Начальник цеха",          inherits: [site_foreman],      actions: ["nonconformity.containment.release"]}
   - {id: chief_welder,     title: "Главный сварщик",         inherits: [technologist],      actions: []}
   - {id: metrologist,      title: "Метролог",                inherits: [approver],          actions: ["reference.equipment.verify"]}

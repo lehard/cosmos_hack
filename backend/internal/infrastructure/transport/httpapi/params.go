@@ -35,44 +35,7 @@ func (q *PageQuery) Page() platform.Page {
 	return platform.Page{Cursor: q.Cursor, Limit: l}
 }
 
-// CommandBody — метаданные команды в теле (AD-7, AD-39, AD-14); встраивается
-// в тело каждой команды.
-type CommandBody struct {
-	CommandID   string          `json:"command_id" format:"uuid" doc:"UUIDv7 клиента; повтор с тем же id возвращает прежний ответ (AD-7). У подписанной команды — event_id пакета."`
-	BasisSeq    int64           `json:"basis_seq" minimum:"0" doc:"seq, на котором клиент видел объект (basis_seq из ответа чтения): после него в потоках гарда не должно быть новых записей guard_relevant, иначе 409 journal.stale_state (AD-39)."`
-	PolicySeq   int64           `json:"policy_seq" minimum:"0" doc:"Версия политики, по которой показаны права (policy_seq сеанса); изменилась — 409 journal.stale_policy (AD-39)."`
-	WorkplaceID string          `json:"workplace_id,omitempty" maxLength:"128" doc:"Рабочее место сеанса (барьер 2, AD-15)."`
-	Signature   *SignedEnvelope `json:"signature,omitempty" doc:"Подписанный пакет DSSE для операций с уровнем подписи ≥ 1 (AD-10, AD-13, AD-14): подписывает агент токена, сервер сверяет отпечаток."`
-}
-
-// CommandMeta — метаданные команды для порта.
-func (b *CommandBody) CommandMeta() platform.CommandMeta {
-	m := platform.CommandMeta{CommandID: b.CommandID, BasisSeq: b.BasisSeq, PolicySeq: b.PolicySeq, WorkplaceID: b.WorkplaceID}
-	if b.Signature != nil {
-		m.Signature = b.Signature.raw()
-	}
-	return m
-}
-
-// SignedEnvelope — конверт DSSE (contracts/crypto/dsse-envelope.schema.json, AD-10).
-type SignedEnvelope struct {
-	PayloadType string              `json:"payloadType" maxLength:"256" doc:"application/vnd.ant.‹класс›+json; v=‹версия›."`
-	Payload     string              `json:"payload" contentEncoding:"base64" doc:"Канонический JSON (RFC 8785) подписываемого содержимого, base64."`
-	Signatures  []EnvelopeSignature `json:"signatures" minItems:"1" doc:"Подписи."`
-}
-
-// EnvelopeSignature — подпись в конверте DSSE.
-type EnvelopeSignature struct {
-	KeyID string `json:"keyid" maxLength:"128" doc:"key_id@версия подписанта."`
-	Sig   string `json:"sig" contentEncoding:"base64" doc:"Подпись, base64."`
-}
-
-func (e *SignedEnvelope) raw() []byte {
-	b, _ := jsonMarshal(e)
-	return b
-}
-
-// commandMeta достаёт метаданные команды из поля Body входа (если тело встраивает CommandBody).
+// commandMeta достаёт метаданные команды из поля Body входа (если тело встраивает platform.CommandHeader).
 func commandMeta(in any) (platform.CommandMeta, bool) {
 	v := reflect.ValueOf(in)
 	if v.Kind() != reflect.Pointer || v.IsNil() {
@@ -102,7 +65,7 @@ func commandMeta(in any) (platform.CommandMeta, bool) {
 	return c.CommandMeta(), true
 }
 
-// hasCommandMeta — проверка на этапе регистрации: тело команды встраивает CommandBody.
+// hasCommandMeta — проверка на этапе регистрации: тело команды встраивает platform.CommandHeader.
 func hasCommandMeta[I any]() bool {
 	t := reflect.TypeFor[I]()
 	f, ok := t.FieldByName("Body")
@@ -159,9 +122,4 @@ func ReceiptOf(r platform.Receipt) *Out[Receipt] {
 		out.RecordedAt = &t
 	}
 	return OK(out)
-}
-
-// Cmd — команда для порта из тела, встраивающего CommandBody.
-func Cmd[T any](meta interface{ CommandMeta() platform.CommandMeta }, body T) platform.Command[T] {
-	return platform.Command[T]{Meta: meta.CommandMeta(), Body: body}
 }

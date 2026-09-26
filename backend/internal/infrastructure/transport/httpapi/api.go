@@ -160,7 +160,7 @@ func Register[I, O any](a *API, route Route, act platform.Action, h func(ctx con
 	}
 	if act.IsCommand() && route.Method != http.MethodDelete && !route.NoCommandMeta {
 		if !hasCommandMeta[I]() {
-			panic(fmt.Errorf("x-ant-action %s: у команды нет command_id/basis_seq/policy_seq (httpapi.CommandBody)", act.ID))
+			panic(fmt.Errorf("x-ant-action %s: у команды нет command_id/basis_seq/policy_seq (platform.CommandHeader)", act.ID))
 		}
 	}
 	for _, x := range a.actions {
@@ -179,6 +179,9 @@ func Register[I, O any](a *API, route Route, act platform.Action, h func(ctx con
 		Tags:          []string{act.Owner},
 		DefaultStatus: route.Status,
 		Extensions:    map[string]any{"x-ant-action": actionExtension(act)},
+	}
+	if route.ReadByPost {
+		op.Extensions["x-ant-read-by-post"] = true
 	}
 	mode := a.ModeFor(act.Owner)
 	huma.Register(a.huma, op, func(ctx context.Context, in *I) (*O, error) {
