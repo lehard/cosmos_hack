@@ -34,6 +34,23 @@ type NCRecordRef struct {
 	Author     *string           `json:"author,omitempty" doc:"Псевдоним автора решения или подписанта."`
 	Summary    string            `json:"summary" doc:"Краткое содержание для строки."`
 	Params     map[string]string `json:"params,omitempty"`
+	// Reading — числа режима оборудования (совместимое дополнение): у
+	// equipment.deviation.detected и equipment.cycle.summarized.
+	Reading *NCParameterReading `json:"reading,omitempty" doc:"Параметр режима числами: уставка и наблюдённые значения (отклонение режима, сводка цикла)."`
+}
+
+// NCParameterReading — параметр режима числами (AD-4: целые с масштабом, без
+// float): значение = число × 10^(−scale) в единице unit. Нет границы или
+// значения в записи — поля нет.
+type NCParameterReading struct {
+	Parameter       string `json:"parameter" doc:"Параметр у источника (current_a — ток сварки, …)."`
+	Unit            string `json:"unit" doc:"Единица, код UCUM (A, V, mm, …)."`
+	Scale           int    `json:"scale" minimum:"0" maximum:"12" doc:"Знаков после запятой: значение = число × 10^(−scale)."`
+	SetpointNominal *int64 `json:"setpoint_nominal,omitempty" doc:"Уставка: номинал."`
+	SetpointMin     *int64 `json:"setpoint_min,omitempty" doc:"Уставка: нижняя граница."`
+	SetpointMax     *int64 `json:"setpoint_max,omitempty" doc:"Уставка: верхняя граница."`
+	ObservedMin     *int64 `json:"observed_min,omitempty" doc:"Наблюдённый минимум (у отклонения — значение)."`
+	ObservedMax     *int64 `json:"observed_max,omitempty" doc:"Наблюдённый максимум (у отклонения — значение)."`
 }
 
 // DecisionQueueRow — строка очереди «Ждут моего решения».

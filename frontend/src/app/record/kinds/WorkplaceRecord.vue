@@ -52,7 +52,9 @@ const historyRows = computed(() =>
   })),
 )
 
-const subtitle = computed(() => (card.value?.workshop ? `${t('common.words.workshop')}: ${card.value.workshop}` : ''))
+/** Цех по имени; код — только если имени нет. */
+const workshop = computed(() => card.value?.workshop_name ?? card.value?.workshop ?? null)
+const subtitle = computed(() => (workshop.value ? `${t('common.words.workshop')}: ${workshop.value}` : ''))
 const qualText = (ok: boolean) => t(ok ? 'shell.record.workplace.qualificationOk' : 'shell.record.workplace.qualificationMissing')
 const roleText = (role: string) => t(role === 'quality_inspector' ? 'widgets.shopFloor.shift.inspector' : 'widgets.shopFloor.shift.performer')
 
@@ -81,7 +83,7 @@ const openItem = (id: string) => drill.open({ entity: 'item', id })
       <SectionPanel :title="t('shell.record.workplace.now')" variant="plain" :padded="false" data-testid="workplace-now">
         <KeyValueList v-if="card">
           <KeyValue :label="t('liveMap.posts.station')" :value="card.station" />
-          <KeyValue :label="t('common.words.workshop')" :value="card.workshop ?? null" />
+          <KeyValue :label="t('common.words.workshop')" :value="workshop" />
           <KeyValue :label="t('liveMap.posts.assigned')">
             <button v-if="card.assigned" type="button" class="link ant-wrap" data-testid="workplace-person" @click="openPerson(card.assigned.person_id)">
               {{ card.assigned.display }}

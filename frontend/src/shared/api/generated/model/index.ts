@@ -554,6 +554,7 @@ export * from './nCItemAxesPosition';
 export * from './nCItemAxesQuality';
 export * from './nCList';
 export * from './nCOperationContext';
+export * from './nCParameterReading';
 export * from './nCPresentationContext';
 export * from './nCReason';
 export * from './nCRecordRef';
