@@ -9,11 +9,11 @@ import { useI18n } from 'vue-i18n'
 import { NButton } from 'naive-ui'
 import { codeText, LAYER_TEXT, SOURCE_KIND_TEXT } from '@/entities/item'
 import { MetricNumber, sumCheck, type MetricPick } from '@/entities/metric'
-import type { ContributionRow, MetricDrilldown } from '@/shared/api/generated/model'
+import type { ContributionRow, DrillRef, MetricDrilldown } from '@/shared/api/generated/model'
 import SourceRecords from './SourceRecords.vue'
 
 const props = defineProps<{ pick: MetricPick; drilldown: MetricDrilldown; hasMore: boolean; loadingMore: boolean }>()
-const emit = defineEmits<{ openItem: [itemId: string]; more: [] }>()
+const emit = defineEmits<{ openItem: [itemId: string]; openRef: [ref: DrillRef]; more: [] }>()
 const { t, d } = useI18n()
 
 /** Раскрытые строки: item_id + срез. */
@@ -31,8 +31,15 @@ const period = computed(() =>
   t('widgets.analytics.periodRange', { from: d(new Date(props.drilldown.period.from), 'dateTime'), to: d(new Date(props.drilldown.period.to), 'dateTime') }),
 )
 
-/** Происхождение вклада: вид источника (FR-140) или вид записи (AD-2); чужой код — UNKNOWN(код). */
-const KIND_TEXT: Record<string, string> = { ...LAYER_TEXT, ...SOURCE_KIND_TEXT }
+/** Происхождение вклада: вид источника (FR-140), «вывод системы» или вид записи (AD-2); чужой код — UNKNOWN(код). */
+const KIND_TEXT: Record<string, string> = { ...LAYER_TEXT, ...SOURCE_KIND_TEXT, system: 'timeline.sourceKind.system' }
+
+/** Строка вне изделия (оборудование, несоответствие, инцидент): открывается её объект. */
+const outside = (r: ContributionRow) => !!r.ref && r.ref.entity !== 'item'
+function openRow(r: ContributionRow): void {
+  if (r.ref && outside(r)) emit('openRef', r.ref)
+  else emit('openItem', r.item_id)
+}
 const kindText = (code: string) => codeText(KIND_TEXT, code, t)
 </script>
 
@@ -54,7 +61,7 @@ const kindText = (code: string) => codeText(KIND_TEXT, code, t)
     <ul v-else class="rows">
       <li v-for="r in drilldown.items" :key="rowKey(r)" class="row" :data-item="r.item_id">
         <div class="line">
-          <button type="button" class="item" :title="t('common.actions.openPassport')" @click="emit('openItem', r.item_id)">{{ r.label }}</button>
+          <button type="button" class="item" :title="t('common.actions.openPassport')" @click="openRow(r)">{{ r.label }}</button>
           <span v-if="r.slice_key" class="slice-key">{{ r.slice_key }}</span>
           <MetricNumber class="value" :value="r.value" />
         </div>
@@ -71,7 +78,12 @@ const kindText = (code: string) => codeText(KIND_TEXT, code, t)
             {{ t('widgets.analytics.drilldown.records', { n: r.source_event_ids.length }) }}
           </button>
         </div>
-        <SourceRecords v-if="open.has(rowKey(r))" :item-id="r.item_id" :event-ids="r.source_event_ids" />
+        <template v-if="open.has(rowKey(r))">
+          <ol v-if="outside(r)" class="ids" data-testid="record-ids">
+            <li v-for="id in r.source_event_ids" :key="id"><code>{{ id }}</code></li>
+          </ol>
+          <SourceRecords v-else :item-id="r.item_id" :event-ids="r.source_event_ids" />
+        </template>
       </li>
     </ul>
     <NButton v-if="hasMore" size="small" :loading="loadingMore" data-testid="more" @click="emit('more')">{{ t('common.actions.showAll') }}</NButton>
@@ -79,6 +91,12 @@ const kindText = (code: string) => codeText(KIND_TEXT, code, t)
 </template>
 
 <style scoped>
+.ids {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 12px;
+}
+
 .drilldown {
   display: flex;
   flex-direction: column;

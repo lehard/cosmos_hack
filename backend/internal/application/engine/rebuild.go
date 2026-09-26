@@ -111,7 +111,7 @@ func (r *Rebuilder) itemValues(ctx context.Context, in ItemInput) ([]appjournal.
 		return nil, &ProcessingError{ItemID: in.ItemID, Seq: in.Last.Seq, Err: err}
 	}
 	normalize(rs)
-	return r.Registry.ItemEffects(in.ItemID, snap, rs)
+	return r.Registry.ItemEffects(in.ItemID, snap, rs, in.Input)
 }
 
 // RebuildAll — `ant rebuild`: сбросить все проекции и построить их заново из

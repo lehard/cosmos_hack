@@ -101,6 +101,9 @@ type apiOptions struct {
 	directory *accessapp.Directory
 	// quality — живые операции quality над проекциями движка (quality.go); nil — 501.
 	quality *qualityapp.Service
+	// analytics — live-показатели над строками вклада ядра (analytics.go);
+	// nil — без хранилища (операции 501).
+	analytics *analyticsapp.Service
 }
 
 // buildAPI собирает HTTP API: общий декоратор (Gate) над портами прав и входа,
@@ -217,7 +220,11 @@ func buildAPI(mux *http.ServeMux, o apiOptions) *httpapi.API {
 		notificationshttp.Register(a, q, c)
 	}
 	{
-		q, c := pick[analyticsapp.Queries, analyticsapp.Commands](a.ModeFor("analytics"), analyticsapp.NewService(), analyticsfx.New())
+		live := o.analytics
+		if live == nil {
+			live = analyticsapp.NewService()
+		}
+		q, c := pick[analyticsapp.Queries, analyticsapp.Commands](a.ModeFor("analytics"), live, analyticsfx.New())
 		analyticshttp.Register(a, q, c)
 	}
 	{

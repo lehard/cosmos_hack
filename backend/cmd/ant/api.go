@@ -73,6 +73,12 @@ func runAPI(ctx context.Context, env *environment) error {
 			return err
 		}
 	}
+	if modeOf(opts, "analytics") == platform.ModeLive {
+		// Показатели — строки вклада движка на ядре процесса (эпик 25).
+		if opts.analytics, err = analyticsLive(ctx, env); err != nil {
+			return err
+		}
+	}
 	// Курсор мира заготовок — в Postgres, общий для копий api (AD-36, эпик 09).
 	// Схему создаёт migrate; EnsureSchema — для запуска без migrate (make run).
 	// Без модулей на заготовках мир не строится (память, AD-25).

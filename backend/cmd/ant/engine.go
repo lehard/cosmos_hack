@@ -7,6 +7,7 @@ import (
 
 	"ant/cmd/internal/db"
 	analysisapp "ant/internal/application/analysis"
+	analyticsapp "ant/internal/application/analytics"
 	crossitemapp "ant/internal/application/crossitem"
 	engineapp "ant/internal/application/engine"
 	appjournal "ant/internal/application/journal"
@@ -37,6 +38,10 @@ func engineRegistry() *engineapp.Registry {
 	// analysis (эпик 22): разбор обстоятельств изделия, инциденты и версии
 	// области риска, несоответствия для гипотез и общих факторов.
 	analysisapp.MustRegister(r)
+	// Показатели (эпик 25, AD-45): вклады изделий и глобальные проекции analytics.
+	if err := analyticsapp.Register(r); err != nil {
+		panic(err)
+	}
 	return r
 }
 

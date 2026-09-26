@@ -26,6 +26,10 @@ type MetricValue struct {
 	Unit  string `json:"unit" doc:"Единица: pcs, bp (доли), s, min…"`
 	// Origin — происхождение времени (соглашение «Длительности»).
 	Origin *string `json:"origin,omitempty" enum:"reported_by_source,computed_by_system,mixed" doc:"Для длительностей: передано источником / вычислено системой."`
+	// Meaning — смысл интервала длительности (соглашение «Длительности», FR-88).
+	Meaning *string `json:"meaning,omitempty" enum:"active_processing,time_at_station,other" doc:"Для длительностей: смысл интервала — активная обработка / полное время на участке / иной интервал (пояснение — meaning_note)."`
+	// MeaningNote — что за интервал, если смысл «иной» или смыслы строк разные.
+	MeaningNote *string `json:"meaning_note,omitempty" maxLength:"500" doc:"Пояснение смысла интервала: от чего до чего считается время."`
 }
 
 // MetricTile — плитка показателя стола руководителя (PRD §3a).
@@ -82,18 +86,24 @@ type NodeCounterSet struct {
 
 // MetricRow — показатель раздела «Аналитика» с разбивкой по срезу.
 type MetricRow struct {
-	MetricID string        `json:"metric_id"`
-	Title    string        `json:"title"`
-	Group    string        `json:"group" enum:"inspection,defects,causes,time,equipment,people,comparison" doc:"Раздел: раздельный учёт кейса §2.4, §5.2."`
-	Total    MetricValue   `json:"total"`
-	Unknown  bool          `json:"unknown"`
-	Slices   []MetricSlice `json:"slices"`
+	MetricID string `json:"metric_id"`
+	Title    string `json:"title"`
+	Group    string `json:"group" enum:"inspection,defects,causes,time,equipment,people,comparison" doc:"Раздел: раздельный учёт кейса §2.4, §5.2."`
+	// Counts — что считается (единица счёта), чтобы число не читалось шире
+	// своего смысла (NFR-UI-4): дефекты и изделия с дефектами — раздельно.
+	Counts *string `json:"counts,omitempty" enum:"items,defects,nonconformities,operations,observations,presentations,hypotheses,time" doc:"Что считается: изделия / физические дефекты / несоответствия / выполнения операций / наблюдения (результаты контроля) / предъявления / гипотезы / время. Для долей — чья это доля."`
+	// Account — графа раздельного учёта (FR-87): входной брак, проблемы
+	// оборудования, ошибки исполнителей, гипотезы — не складываются.
+	Account *string       `json:"account,omitempty" enum:"incoming,equipment,performer,hypotheses" doc:"Графа раздельного учёта FR-87: входной брак / оборудование / исполнители / гипотезы; нет — показатель вне раздельного учёта."`
+	Total   MetricValue   `json:"total"`
+	Unknown bool          `json:"unknown"`
+	Slices  []MetricSlice `json:"slices"`
 }
 
 // MetricSlice — значение показателя в срезе (участок, операция, оборудование,
 // исполнитель, смена, вид дефекта, источник: входной брак / производственные ошибки).
 type MetricSlice struct {
-	Dimension string      `json:"dimension" enum:"location,step,equipment,performer,shift,defect_type,origin"`
+	Dimension string      `json:"dimension" enum:"location,step,equipment,performer,shift,defect_type,origin" doc:"Измерение среза; origin — откуда брак: входной / производственный или категория подтверждённой причины (входной брак, оборудование, исполнитель…)."`
 	Key       string      `json:"key"`
 	Label     string      `json:"label"`
 	Value     MetricValue `json:"value"`
@@ -110,12 +120,16 @@ type AnalyticsOverview struct {
 
 // ContributionRow — строка вклада изделия в показатель (AD-45) с исходными записями.
 type ContributionRow struct {
-	ItemID         string      `json:"item_id"`
+	ItemID         string      `json:"item_id" doc:"Изделие; для строк вне изделия (простой оборудования) — id объекта из ref."`
 	Label          string      `json:"label"`
 	SliceKey       string      `json:"slice_key"`
 	Value          MetricValue `json:"value"`
 	SourceEventIDs []string    `json:"source_event_ids" doc:"id исходных записей журнала (раскрытие до записей)."`
-	SourceKinds    []string    `json:"source_kinds" doc:"Происхождение: источник факта (FR-140)."`
+	SourceKinds    []string    `json:"source_kinds" doc:"Виды источника исходных записей (FR-140), а не виды записей: manual_entry, machine, sensor, camera, external_system, import — для фактов; manual_entry — решение человека; system — вывод системы."`
+	// At — момент вклада (occurred_at записи-основания), по нему строка попадает в период.
+	At *time.Time `json:"at,omitempty" doc:"Момент, к которому относится вклад (FR-3)."`
+	// Ref — объект строки, если это не изделие (оборудование, несоответствие).
+	Ref *platform.DrillRef `json:"ref,omitempty" doc:"Объект строки вне изделия — куда провалиться (FR-7)."`
 }
 
 // MetricDrilldown — раскрытие числа до строк вклада и исходных записей.
@@ -138,12 +152,16 @@ type ControlChartPoint struct {
 // ControlChart — контрольная карта по узлу (FR-5): доля дефектов или
 // характеристика во времени, центральная линия и границы.
 type ControlChart struct {
-	StepKey  string              `json:"step_key"`
-	MetricID string              `json:"metric_id"`
-	Center   MetricValue         `json:"center"`
-	Upper    MetricValue         `json:"upper"`
-	Lower    MetricValue         `json:"lower"`
-	Points   []ControlChartPoint `json:"points"`
+	StepKey  string `json:"step_key"`
+	MetricID string `json:"metric_id"`
+	// Title — название показателя карты по словарю продукта.
+	Title string `json:"title" doc:"Название показателя карты («Доля результатов контроля с признаком дефекта», «Длительность операции»)."`
+	// ChartKind — вид карты Шухарта (ГОСТ Р ИСО 7870-2).
+	ChartKind *string             `json:"chart_kind,omitempty" enum:"p,xmr" doc:"Вид карты: p — доля дефектных по подгруппам; xmr — индивидуальные значения и скользящий размах."`
+	Center    MetricValue         `json:"center"`
+	Upper     MetricValue         `json:"upper"`
+	Lower     MetricValue         `json:"lower"`
+	Points    []ControlChartPoint `json:"points"`
 }
 
 // PeriodQuery — параметры периода для порта.

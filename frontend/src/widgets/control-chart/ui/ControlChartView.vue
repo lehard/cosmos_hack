@@ -28,6 +28,7 @@ const CHART_METRIC_TEXT: Record<string, string> = {
   defect_rate: 'widgets.analytics.chart.metrics.defectRate',
 }
 const metricName = computed(() => {
+  if (props.chart.title) return props.chart.title
   const key = CHART_METRIC_TEXT[props.chart.metric_id]
   return key ? t(key) : props.chart.metric_id
 })
