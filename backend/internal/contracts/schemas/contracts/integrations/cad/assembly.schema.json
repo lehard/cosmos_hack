@@ -1,0 +1,393 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/integrations/cad/assembly.schema.json",
+  "title": "CadAssemblyFile",
+  "description": "Файл условной сборки КОМПАС-3D, формат 1.x (FR-94, PRD §11.15, AD-18; кейс §3.3, §5.3): идентификатор, версия КД, позиции с количествами, связи (шов, болтовое и резьбовое соединения, уплотнение), важные характеристики; геометрия отсутствует явно (`geometry: null` с пояснением — пропущенное поле является ошибкой, а не «геометрии нет»). Формат сохраняется при переходе к прямому подключению: экстрактор COM API7 (KOMPAS.Application.7 → IKompasDocument3D → дерево компонентов) или выгрузка состава из ЛОЦМАН:PLM пишут тот же файл. Эталон — examples/kompas-assembly-flange.json (ФЛ-100.00.000 СБ, все значения — проектные допущения). Ключи с «_» в начале — комментарии.",
+  "type": "object",
+  "additionalProperties": false,
+  "patternProperties": {
+    "^_": {
+      "type": "string",
+      "description": "Комментарий для людей; системой не читается."
+    }
+  },
+  "properties": {
+    "format_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+$",
+      "description": "Версия формата файла; адаптер понимает 1.x, иная мажорная — «неизвестная версия», переобработка после появления повышателя (AD-20)."
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Откуда состав: система, вид выгрузки, время, путь к прямому подключению.",
+      "properties": {
+        "system": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "description": "Система-источник (КОМПАС-3D, эмуляция файлом; COM API7; ЛОЦМАН:PLM)."
+        },
+        "export_kind": {
+          "type": "string",
+          "enum": [
+            "assembly_structure"
+          ],
+          "description": "Вид выгрузки: структура сборки."
+        },
+        "exported_at": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,9})?(Z|[+-][0-9]{2}:[0-9]{2})$",
+          "description": "Время выгрузки RFC 3339 с зоной."
+        },
+        "note": {
+          "type": "string",
+          "maxLength": 1024,
+          "description": "Примечание: путь к прямому подключению."
+        }
+      },
+      "required": [
+        "system",
+        "export_kind"
+      ]
+    },
+    "assembly": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Сборка верхнего уровня.",
+      "properties": {
+        "assembly_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "description": "Идентификатор сборки в файле (на него ссылаются позиции через parent)."
+        },
+        "designation": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "description": "Обозначение по КД (ФЛ-100.00.000 СБ)."
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "description": "Наименование."
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 32,
+          "description": "Версия КД (литера изменения): изделие исполняется по версии, действовавшей при запуске."
+        },
+        "lifecycle_letter": {
+          "type": "string",
+          "maxLength": 16,
+          "description": "Литера КД (О1)."
+        },
+        "geometry": {
+          "type": "null",
+          "description": "Геометрия отсутствует — явно (кейс §5.3)."
+        },
+        "geometry_note": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512,
+          "description": "Пояснение, почему геометрии нет."
+        },
+        "critical_characteristics": {
+          "type": "array",
+          "maxItems": 200,
+          "description": "Важные характеристики с методами контроля (FR-14).",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "Важная характеристика.",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,31}$",
+                "description": "Идентификатор (CC-1…)."
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "description": "Название."
+              },
+              "control": {
+                "type": "array",
+                "maxItems": 20,
+                "items": {
+                  "type": "string",
+                  "maxLength": 128,
+                  "description": "Метод контроля."
+                },
+                "description": "Методы контроля."
+              },
+              "note": {
+                "type": "string",
+                "maxLength": 512,
+                "description": "Примечание."
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          }
+        }
+      },
+      "required": [
+        "assembly_id",
+        "designation",
+        "name",
+        "version",
+        "geometry",
+        "geometry_note"
+      ]
+    },
+    "components": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 2000,
+      "description": "Позиции состава; дерево — через parent.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Позиция состава.",
+        "properties": {
+          "position": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100000,
+            "description": "Номер позиции в спецификации."
+          },
+          "designation": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "description": "Обозначение по КД — естественный ключ позиции; пустое — ошибка импорта."
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "description": "Наименование."
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "detail",
+              "subassembly",
+              "standard_part",
+              "fastener",
+              "purchased_equipment"
+            ],
+            "description": "Вид: деталь, сборочная единица, стандартное изделие, крепёж, покупное оборудование."
+          },
+          "qty": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100000,
+            "description": "Количество на родителя."
+          },
+          "unit": {
+            "type": "string",
+            "maxLength": 16,
+            "description": "Единица измерения."
+          },
+          "material": {
+            "type": "string",
+            "maxLength": 128,
+            "description": "Материал."
+          },
+          "make_or_buy": {
+            "type": "string",
+            "enum": [
+              "make",
+              "buy"
+            ],
+            "description": "Изготавливаем или покупаем."
+          },
+          "parent": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "description": "Родитель: assembly_id сборки или обозначение сборочной единицы."
+          },
+          "geometry": {
+            "type": "null",
+            "description": "Геометрия позиции отсутствует — явно."
+          },
+          "shelf_life_tracked": {
+            "type": "boolean",
+            "description": "Учитывается срок хранения (партия)."
+          },
+          "lot_tracked": {
+            "type": "boolean",
+            "description": "Учёт по партиям."
+          },
+          "serial_tracked": {
+            "type": "boolean",
+            "description": "Учёт по заводским номерам."
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 512,
+            "description": "Примечание."
+          }
+        },
+        "required": [
+          "position",
+          "designation",
+          "name",
+          "kind",
+          "qty",
+          "parent",
+          "geometry"
+        ]
+      }
+    },
+    "links": {
+      "type": "array",
+      "maxItems": 2000,
+      "description": "Связи сборки: переводятся в зоны и ограничения нормативного слоя.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Связь сборки.",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "weld",
+              "bolted_joint",
+              "seal",
+              "threaded_joint"
+            ],
+            "description": "Вид: сварной шов, болтовое соединение, уплотнение, резьбовое соединение."
+          },
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,31}$",
+            "description": "Идентификатор связи (W-1, J-1, S-1) — он же зона изделия."
+          },
+          "from": {
+            "type": "string",
+            "maxLength": 128,
+            "description": "Позиция (обозначение), которую присоединяют."
+          },
+          "to": {
+            "type": "string",
+            "maxLength": 128,
+            "description": "Позиция, к которой присоединяют."
+          },
+          "between": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {
+              "type": "string",
+              "maxLength": 128,
+              "description": "Позиция."
+            },
+            "description": "Пара позиций, между которыми стоит уплотнение."
+          },
+          "part": {
+            "type": "string",
+            "maxLength": 128,
+            "description": "Позиция-уплотнение."
+          },
+          "fasteners": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "type": "string",
+              "maxLength": 128,
+              "description": "Позиция крепежа."
+            },
+            "description": "Крепёж соединения."
+          },
+          "qty": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10000,
+            "description": "Число крепёжных комплектов."
+          },
+          "tightening_sequence": {
+            "type": "string",
+            "maxLength": 128,
+            "description": "Порядок затяжки."
+          },
+          "torque_nm": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100000,
+            "description": "Момент затяжки, Н·м (целое; дробные значения — через масштаб, AD-4)."
+          },
+          "tolerance_pct": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100,
+            "description": "Допуск момента, %."
+          },
+          "locking": {
+            "type": "string",
+            "maxLength": 128,
+            "description": "Контровка."
+          },
+          "rework_limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "description": "Лимит ремонтов зоны связи, если его задаёт КД; нет — лимит из ТП (нормативный слой)."
+          },
+          "closes_access_to": {
+            "type": "array",
+            "maxItems": 50,
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,31}$",
+              "description": "Зона."
+            },
+            "description": "Зоны, к которым соединение закрывает доступ, если заданы явно; нет — уплотнения между соединяемыми позициями."
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 512,
+            "description": "Примечание."
+          }
+        },
+        "required": [
+          "type",
+          "id"
+        ]
+      }
+    },
+    "id_mapping_hint": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Правило сопоставления ID с учётной системой (для людей; исполняет домен cad).",
+      "properties": {
+        "rule": {
+          "type": "string",
+          "maxLength": 512,
+          "description": "Правило сопоставления."
+        },
+        "conflict_behavior": {
+          "type": "string",
+          "maxLength": 512,
+          "description": "Что делать при несовпадении."
+        }
+      }
+    }
+  },
+  "required": [
+    "format_version",
+    "source",
+    "assembly",
+    "components",
+    "links"
+  ]
+}
