@@ -1,7 +1,8 @@
 <script setup lang="ts">
 /**
- * Виджет «Разбор причин» — контейнер: группы несоответствий; выбранная группа
- * уходит в фокус разбора — её читают общие факторы и разбор обстоятельств.
+ * Виджет «Разбор причин» — контейнер: группы несоответствий (`analysis.group.list`);
+ * выбранная группа уходит в фокус разбора — её читают общие факторы и разбор
+ * обстоятельств (первое несоответствие группы).
  */
 import { computed } from 'vue'
 import { useAnalysisFocusStore } from '@/entities/incident'
@@ -15,7 +16,13 @@ defineProps<WidgetProps>()
 const focus = useAnalysisFocusStore()
 const src = useNcGroupsSource()
 const data = computed(() => src.data.value)
-const selected = computed({ get: () => focus.groupKey, set: (k: string | null) => focus.selectGroup(k) })
+const selected = computed({
+  get: () => focus.groupKey,
+  set: (k: string | null) => {
+    focus.selectGroup(k)
+    focus.ncId = data.value?.find((g) => g.group_key === k)?.nc_ids?.[0] ?? null
+  },
+})
 </script>
 
 <template>

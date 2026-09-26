@@ -3,9 +3,10 @@
 // кадра и записи журнала по клику, формулировки без «причины».
 import { mount } from '@vue/test-utils'
 import { createPinia } from 'pinia'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { i18n } from '@/shared/i18n'
-import { incomingCircumstances, weldCircumstances } from '@/entities/incident/__tests__/fixtures'
+import { mockApi, mountWidget } from '@/entities/incident/__tests__/api-mock'
+import { incomingCircumstances, ncGroups, weldCircumstances } from '@/entities/incident/__tests__/fixtures'
 import CircumstancesView from '../ui/CircumstancesView.vue'
 import CircumstancesWidget from '../ui/CircumstancesWidget.vue'
 
@@ -104,13 +105,30 @@ describe('разбор обстоятельств', () => {
 })
 
 describe('виджет разбора обстоятельств', () => {
-  it('без операции API — рамка в норме и «записей нет», без выдуманных данных', () => {
-    const w = mount(CircumstancesWidget, {
-      props: { widgetId: 'circumstances', titleKey: 'desks.circumstances', slotId: 'tracks', slice: {}, density: 'compact' },
-      global: { plugins: [createPinia(), i18n] },
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('читает проекцию по первому несоответствию группы; метка «демо на заготовках»', async () => {
+    const calls = mockApi({
+      'GET /api/v1/analysis/groups': { items: ncGroups().map((g) => ({ ...g, nc_ids: g.equipment === 'ИС-3' ? ['NC-0142'] : [] })) },
+      'GET /api/v1/nonconformities/NC-0142/circumstances': { ...weldCircumstances(), basis_seq: 1250 },
     })
+    const w = await mountWidget(CircumstancesWidget, { widgetId: 'circumstances', titleKey: 'desks.circumstances' })
+    expect(calls.map((c) => c.path)).toContain('/api/v1/nonconformities/NC-0142/circumstances')
+    expect(w.attributes('data-state')).toBe('defect_indication')
+    expect(w.attributes('data-mode')).toBe('fixtures')
+    expect(w.findAll('.lane')).toHaveLength(3)
+  })
+
+  it('несоответствие не выбрано — подсказка, а не выдуманные данные', async () => {
+    mockApi({ 'GET /api/v1/analysis/groups': { items: [] } })
+    const w = await mountWidget(CircumstancesWidget, { widgetId: 'circumstances', titleKey: 'desks.circumstances' })
     expect(w.attributes('data-state')).toBe('normal')
-    expect(w.attributes('data-widget')).toBe('circumstances')
-    expect(w.text()).toContain('Записей нет')
+    expect(w.text()).toContain('Выберите несоответствие')
+  })
+
+  it('ошибка сервера — «ошибка входа»', async () => {
+    mockApi({ 'GET /api/v1/analysis/groups': { items: [{ ...ncGroups()[1], nc_ids: ['NC-404'] }] } })
+    const w = await mountWidget(CircumstancesWidget, { widgetId: 'circumstances', titleKey: 'desks.circumstances' })
+    expect(w.attributes('data-state')).toBe('input_error')
   })
 })
