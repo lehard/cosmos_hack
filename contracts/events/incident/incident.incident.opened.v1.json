@@ -30,6 +30,10 @@
       "$ref": "../common/defs.v1.json#/definitions/object_id",
       "description": "Объект фактора: станок, инструмент, партия и т. п."
     },
+    "step_key": {
+      "$ref": "../common/defs.v1.json#/definitions/step_key",
+      "description": "Операция (шаг процесса), через которую действует фактор; для партии компонента — отсутствует."
+    },
     "trigger_event_ids": {
       "type": "array",
       "items": {

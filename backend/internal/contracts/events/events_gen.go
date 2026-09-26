@@ -2461,17 +2461,29 @@ type IncidentHypothesisRecordedV1 struct {
 	// Категория.
 	Category IncidentHypothesisRecordedV1Category `json:"category"`
 
+	// Гипотеза, о которой запись: у записи с verdict = rejected — отклоняемая
+	// гипотеза (вывода системы `HYP-‹nc›-‹категория›` или записанная человеком),
+	// иначе — идентификатор новой гипотезы.
+	HypothesisID *ObjectID `json:"hypothesis_id,omitempty,omitzero"`
+
 	// Инцидент.
 	IncidentID ObjectID `json:"incident_id"`
 
 	// Несоответствия.
 	NcIds []ObjectID `json:"nc_ids,omitempty,omitzero"`
 
+	// Основание отклонения (для verdict = rejected).
+	Reason *Reason `json:"reason,omitempty,omitzero"`
+
 	// Формулировка гипотезы.
 	Statement string `json:"statement"`
 
 	// Основания.
 	SupportingEventIds []UUID `json:"supporting_event_ids,omitempty,omitzero"`
+
+	// Что записано: предложена гипотеза / гипотеза отклонена с основанием (вывод
+	// системы не переписывается, FR-59). Нет поля — proposed.
+	Verdict *IncidentHypothesisRecordedV1Verdict `json:"verdict,omitempty,omitzero"`
 }
 
 type IncidentHypothesisRecordedV1Branch string
@@ -2488,6 +2500,11 @@ const IncidentHypothesisRecordedV1CategoryHandling IncidentHypothesisRecordedV1C
 const IncidentHypothesisRecordedV1CategoryIncoming IncidentHypothesisRecordedV1Category = "incoming"
 const IncidentHypothesisRecordedV1CategoryNotEstablished IncidentHypothesisRecordedV1Category = "not_established"
 const IncidentHypothesisRecordedV1CategoryPerformer IncidentHypothesisRecordedV1Category = "performer"
+
+type IncidentHypothesisRecordedV1Verdict string
+
+const IncidentHypothesisRecordedV1VerdictProposed IncidentHypothesisRecordedV1Verdict = "proposed"
+const IncidentHypothesisRecordedV1VerdictRejected IncidentHypothesisRecordedV1Verdict = "rejected"
 
 // Инцидент закрыт — итог: сколько было в области, сколько подтверждено, сколько
 // исключено; показатель сокращения области (FR-9).
@@ -2520,6 +2537,10 @@ type IncidentIncidentOpenedV1 struct {
 
 	// Инцидент.
 	IncidentID ObjectID `json:"incident_id"`
+
+	// Операция (шаг процесса), через которую действует фактор; для партии компонента
+	// — отсутствует.
+	StepKey *StepKey `json:"step_key,omitempty,omitzero"`
 
 	// Записи, открывшие инцидент.
 	TriggerEventIds []UUID `json:"trigger_event_ids"`
@@ -2560,6 +2581,27 @@ type IncidentItemAssessedV1Assessment string
 
 const IncidentItemAssessedV1AssessmentConfirmed IncidentItemAssessedV1Assessment = "confirmed"
 const IncidentItemAssessedV1AssessmentExcluded IncidentItemAssessedV1Assessment = "excluded"
+
+// Запрошено измерение для проверки гипотезы — технолог просит измерить
+// (контрольный образец, рентген, замер режима); задачу исполнителю ставит
+// notifications по этой записи; вывод о причине не меняется до решения человека
+// (FR-59, FR-135).
+type IncidentMeasurementRequestedV1 struct {
+	// Кому; нет — по правилу назначения.
+	AssigneeID *PersonRef `json:"assignee_id,omitempty,omitzero"`
+
+	// Проверяемая гипотеза.
+	HypothesisID ObjectID `json:"hypothesis_id"`
+
+	// Инцидент.
+	IncidentID ObjectID `json:"incident_id"`
+
+	// Несоответствия.
+	NcIds []ObjectID `json:"nc_ids,omitempty,omitzero"`
+
+	// Что измерить.
+	What string `json:"what"`
+}
 
 // Статус изделия в инциденте изменён — адресованная запись межизделийной стадии
 // изделию: что известно и что делать (FR-62); распространяется вверх по дереву
@@ -2615,11 +2657,26 @@ type IncidentScopeComputedV1 struct {
 	// Разбивка: в производстве / ушли дальше / собраны / отгружены (FR-61).
 	Breakdown ScopeBreakdown `json:"breakdown"`
 
+	// Что дало версию: правило системы (вычислена или расширена правилом) / решение
+	// человека «расширить» / решение человека «сузить». Нет поля — computed.
+	Change *IncidentScopeComputedV1Change `json:"change,omitempty,omitzero"`
+
+	// Решение человека (`incident.scope.expanded` / `incident.scope.narrowed`), по
+	// которому построена версия; у версий правила — отсутствует.
+	DecisionEventID *UUID `json:"decision_event_id,omitempty,omitzero"`
+
 	// Инцидент.
 	IncidentID ObjectID `json:"incident_id"`
 
 	// Запись последнего подтверждённо нормального состояния.
 	LastKnownGoodEventID *UUID `json:"last_known_good_event_id,omitempty,omitzero"`
+
+	// Изделие последнего подтверждённо нормального состояния через тот же фактор.
+	LastKnownGoodItemID *ItemID `json:"last_known_good_item_id,omitempty,omitzero"`
+
+	// Исключённые изделия — только по решению человека с основанием (FR-61, AD-27);
+	// правило системы изделий не исключает.
+	RemovedItemIds []ItemID `json:"removed_item_ids,omitempty,omitzero"`
 
 	// Версия области.
 	ScopeVersion int `json:"scope_version"`
@@ -2633,6 +2690,12 @@ type IncidentScopeComputedV1 struct {
 	// Начало окна — последнее подтверждённо нормальное состояние.
 	WindowStart Timestamp `json:"window_start"`
 }
+
+type IncidentScopeComputedV1Change string
+
+const IncidentScopeComputedV1ChangeComputed IncidentScopeComputedV1Change = "computed"
+const IncidentScopeComputedV1ChangeExpanded IncidentScopeComputedV1Change = "expanded"
+const IncidentScopeComputedV1ChangeNarrowed IncidentScopeComputedV1Change = "narrowed"
 
 // Область риска расширена человеком — осторожный шаг: человек добавляет изделия с
 // основанием (FR-61).

@@ -15804,7 +15804,7 @@ export const getAnalysisMeasurementRequestUrl = (ncId: string,) => {
 }
 
 /**
- * Проверка гипотезы измерением: задачу исполнителю ставит notifications по записи запроса (тип записи — предложение контракта, см. docs/codegen.md).
+ * Проверка гипотезы измерением: запись incident.measurement.requested; задачу исполнителю ставит notifications по этой записи.
  * @summary Запросить измерение
  */
 export const analysisMeasurementRequest = async (ncId: string,

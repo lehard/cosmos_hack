@@ -84,6 +84,11 @@ func runAPI(ctx context.Context, env *environment) error {
 			return err
 		}
 	}
+	if modeOf(opts, "analysis") == platform.ModeLive {
+		if opts.analysis, err = analysisLive(ctx, env); err != nil {
+			return err
+		}
+	}
 	buildAPI(mux, opts)
 	mux.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/problem+json")
