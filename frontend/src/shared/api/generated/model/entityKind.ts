@@ -27,4 +27,11 @@ export const EntityKind = {
   live_map: 'live_map',
   policy: 'policy',
   quarantine: 'quarantine',
+  concession: 'concession',
+  process_hold: 'process_hold',
+  person: 'person',
+  reference: 'reference',
+  key: 'key',
+  material: 'material',
+  partner: 'partner',
 } as const;

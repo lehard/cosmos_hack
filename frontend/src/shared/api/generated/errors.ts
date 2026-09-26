@@ -108,6 +108,11 @@ export const errorCatalog = {
     "title": "Лимит разрешения на отклонение исчерпан",
     "uiKey": "errors.decision.concessionRequired"
   },
+  "journal.duplicate": {
+    "status": 409,
+    "title": "Запись уже есть в журнале",
+    "uiKey": "errors.generic"
+  },
   "journal.append_only": {
     "status": 405,
     "title": "Журнал только на дописывание",

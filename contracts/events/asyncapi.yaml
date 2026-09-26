@@ -162,6 +162,8 @@ channels:
         $ref: "#/components/messages/decision.presentation.resolved.v1"
       decision.lot.resolved.v1:
         $ref: "#/components/messages/decision.lot.resolved.v1"
+      decision.concession.granted.v1:
+        $ref: "#/components/messages/decision.concession.granted.v1"
       decision.concession.revoked.v1:
         $ref: "#/components/messages/decision.concession.revoked.v1"
       decision.rework_limit.waived.v1:
@@ -172,8 +174,6 @@ channels:
         $ref: "#/components/messages/decision.process_hold.released.v1"
       decision.clean_point.assigned.v1:
         $ref: "#/components/messages/decision.clean_point.assigned.v1"
-      decision.concession.granted.v1:
-        $ref: "#/components/messages/decision.concession.granted.v1"
   erp:
     address: journal/erp
     title: "Журнал: семейство erp"
@@ -397,6 +397,8 @@ channels:
     messages:
       normative.version.loaded.v1:
         $ref: "#/components/messages/normative.version.loaded.v1"
+      normative.version.drafted.v1:
+        $ref: "#/components/messages/normative.version.drafted.v1"
       normative.version.submitted.v1:
         $ref: "#/components/messages/normative.version.submitted.v1"
       normative.version.activated.v1:
@@ -754,12 +756,12 @@ operations:
       - $ref: "#/channels/decision/messages/decision.nonconformity.closed.v1"
       - $ref: "#/channels/decision/messages/decision.presentation.resolved.v1"
       - $ref: "#/channels/decision/messages/decision.lot.resolved.v1"
+      - $ref: "#/channels/decision/messages/decision.concession.granted.v1"
       - $ref: "#/channels/decision/messages/decision.concession.revoked.v1"
       - $ref: "#/channels/decision/messages/decision.rework_limit.waived.v1"
       - $ref: "#/channels/decision/messages/decision.process_hold.set.v1"
       - $ref: "#/channels/decision/messages/decision.process_hold.released.v1"
       - $ref: "#/channels/decision/messages/decision.clean_point.assigned.v1"
-      - $ref: "#/channels/decision/messages/decision.concession.granted.v1"
   journal.erp:
     action: send
     title: ant записывает записи семейства erp
@@ -924,6 +926,7 @@ operations:
       $ref: "#/channels/normative"
     messages:
       - $ref: "#/channels/normative/messages/normative.version.loaded.v1"
+      - $ref: "#/channels/normative/messages/normative.version.drafted.v1"
       - $ref: "#/channels/normative/messages/normative.version.submitted.v1"
       - $ref: "#/channels/normative/messages/normative.version.activated.v1"
       - $ref: "#/channels/normative/messages/normative.version.retired.v1"
@@ -2423,6 +2426,29 @@ components:
       x-ant-action-class: permissive
       x-ant-critical: true
       x-ant-current: true
+    decision.concession.granted.v1:
+      name: decision.concession.granted.v1
+      title: Разрешение на отклонение выдано
+      summary: "Разрешение на отклонение выдано (ГОСТ Р ИСО 9000 п. 3.12.5, FR-54): номер, пункт КД/ТУ, область действия, лимит количества, срок; лимит открывается атомарно с записью, расход — атомарно с решением (AD-39)."
+      contentType: application/json
+      payload:
+        allOf:
+          - $ref: ./common/envelope.v1.json
+          - type: object
+            properties:
+              event_type:
+                const: decision.concession.granted
+              schema_version:
+                const: 1
+              data:
+                $ref: ./decision/decision.concession.granted.v1.json
+      x-ant-kind: decision
+      x-ant-emitter: nonconformity
+      x-ant-stream: concession
+      x-ant-axis: none
+      x-ant-action-class: permissive
+      x-ant-critical: true
+      x-ant-current: true
     decision.concession.revoked.v1:
       name: decision.concession.revoked.v1
       title: Разрешение на отклонение отозвано
@@ -2537,29 +2563,6 @@ components:
       x-ant-axis: containment
       x-ant-action-class: protective
       x-ant-critical: false
-      x-ant-current: true
-    decision.concession.granted.v1:
-      name: decision.concession.granted.v1
-      title: Разрешение на отклонение выдано
-      summary: "Разрешение на отклонение выдано (ГОСТ Р ИСО 9000 п. 3.12.5, FR-54): номер, пункт КД/ТУ, область действия, лимит количества, срок; лимит открывается атомарно с записью, расход — атомарно с решением (AD-39)."
-      contentType: application/json
-      payload:
-        allOf:
-          - $ref: ./common/envelope.v1.json
-          - type: object
-            properties:
-              event_type:
-                const: decision.concession.granted
-              schema_version:
-                const: 1
-              data:
-                $ref: ./decision/decision.concession.granted.v1.json
-      x-ant-kind: decision
-      x-ant-emitter: nonconformity
-      x-ant-stream: concession
-      x-ant-axis: none
-      x-ant-action-class: permissive
-      x-ant-critical: true
       x-ant-current: true
     erp.order.received.v1:
       name: erp.order.received.v1
@@ -4257,6 +4260,29 @@ components:
               data:
                 $ref: ./normative/normative.version.loaded.v1.json
       x-ant-kind: service
+      x-ant-emitter: process
+      x-ant-stream: process_version
+      x-ant-axis: none
+      x-ant-action-class: record
+      x-ant-critical: false
+      x-ant-current: true
+    normative.version.drafted.v1:
+      name: normative.version.drafted.v1
+      title: Черновик версии процесса сохранён
+      summary: Черновик версии процесса сохранён — технолог сохранил BPMN из редактора; загрузчик проверил его (FR-13); дальше — отправка на утверждение кворумом `normative.version.submitted` (FR-22, FR-25). Черновик не действует до введения в действие.
+      contentType: application/json
+      payload:
+        allOf:
+          - $ref: ./common/envelope.v1.json
+          - type: object
+            properties:
+              event_type:
+                const: normative.version.drafted
+              schema_version:
+                const: 1
+              data:
+                $ref: ./normative/normative.version.drafted.v1.json
+      x-ant-kind: decision
       x-ant-emitter: process
       x-ant-stream: process_version
       x-ant-axis: none

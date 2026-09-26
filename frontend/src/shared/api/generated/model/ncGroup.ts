@@ -12,5 +12,7 @@ export interface NcGroup {
   last_found_at: string;
   /** @minimum 0 */
   nc_count: number;
+  /** Несоответствия группы — вход разбора обстоятельств и гипотез (эпик 12). */
+  nc_ids: string[];
   operation: string;
 }

@@ -183,6 +183,7 @@ type NcGroup struct {
 	Operation     string    `json:"operation"`
 	Equipment     string    `json:"equipment"`
 	NCCount       int       `json:"nc_count" minimum:"0"`
+	NCIDs         []string  `json:"nc_ids" doc:"Несоответствия группы — вход разбора обстоятельств и гипотез (эпик 12)."`
 	Investigation string    `json:"investigation" enum:"not_required,not_started,in_progress,hypothesis_only,cause_confirmed,cause_not_established,measures_assigned,effectiveness_check,closed"`
 	LastFoundAt   time.Time `json:"last_found_at"`
 }
