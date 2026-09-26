@@ -188,15 +188,15 @@ function onReady(idx: DiagramIndex) {
 
 .note {
   margin: 0;
-  color: #6b7280;
-  font-size: 12px;
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-meta);
 }
 
 .incident {
   padding: 8px 12px;
-  border-left: 3px solid #d64545;
-  border-radius: 4px;
-  background: #fdf3f3;
+  border-left: 3px solid var(--ant-status-danger);
+  border-radius: var(--ant-radius-sm);
+  background: var(--ant-status-danger-soft);
 }
 
 .incident-head {
@@ -207,12 +207,12 @@ function onReady(idx: DiagramIndex) {
 }
 
 .reduction {
-  font-weight: 700;
+  font-weight: var(--ant-fw-bold);
 }
 
 .basis {
   margin: 4px 0 0;
-  font-size: 13px;
+  font-size: var(--ant-fs-body);
 }
 
 .legend {
@@ -222,7 +222,7 @@ function onReady(idx: DiagramIndex) {
   margin: 6px 0 4px;
   padding: 0;
   list-style: none;
-  font-size: 13px;
+  font-size: var(--ant-fs-body);
 }
 
 .swatch {
@@ -246,8 +246,8 @@ function onReady(idx: DiagramIndex) {
 .map {
   position: relative;
   height: 560px;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
+  border: 1px solid var(--ant-border);
+  border-radius: var(--ant-radius-md);
   overflow: hidden;
 }
 
@@ -263,6 +263,6 @@ function onReady(idx: DiagramIndex) {
   position: absolute;
   z-index: 1;
   margin: 8px;
-  color: #d64545;
+  color: var(--ant-status-danger);
 }
 </style>

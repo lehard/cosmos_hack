@@ -6,7 +6,7 @@
  */
 import { useI18n } from 'vue-i18n'
 import { AXIS_TEXT, type ItemHistoryEntry, type ItemStatuses } from '@/entities/item'
-import { StatusTag } from '@/shared/ui'
+import { DataTable, EmptyState, StatusTag } from '@/shared/ui'
 
 defineProps<{ changes: ItemHistoryEntry[] }>()
 const { t, d } = useI18n()
@@ -17,8 +17,8 @@ const time = (x: string) => d(new Date(x), 'dateTime')
 
 <template>
   <section class="changes" data-testid="passport-changes">
-    <p v-if="!changes.length" class="muted">{{ t('empty.noRecords') }}</p>
-    <table v-else class="table">
+    <EmptyState v-if="!changes.length" compact :title="t('empty.noRecords')" />
+    <DataTable v-else class="table">
       <thead>
         <tr>
           <th>{{ t('widgets.passport.changes.record') }}</th>
@@ -48,29 +48,11 @@ const time = (x: string) => d(new Date(x), 'dateTime')
           <td>{{ c.reason ?? '—' }}</td>
         </tr>
       </tbody>
-    </table>
+    </DataTable>
   </section>
 </template>
 
 <style scoped>
-.table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 12px;
-}
-
-.table th,
-.table td {
-  padding: 4px 6px;
-  border-bottom: 1px solid #f3f4f6;
-  text-align: left;
-  vertical-align: top;
-}
-
-.table th {
-  color: #6b7280;
-  font-weight: 400;
-}
 
 .ba {
   display: flex;
@@ -81,6 +63,6 @@ const time = (x: string) => d(new Date(x), 'dateTime')
 
 .muted {
   margin: 0;
-  color: #6b7280;
+  color: var(--ant-text-3);
 }
 </style>

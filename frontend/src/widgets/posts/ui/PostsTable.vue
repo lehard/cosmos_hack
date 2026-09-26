@@ -7,6 +7,7 @@ import { useI18n } from 'vue-i18n'
 import type { PostRow } from '@/entities/workplace'
 import { statusPalette } from '@/shared/api/generated/statuses'
 import { PRESENCE } from '../model/presence'
+import { DataTable } from '@/shared/ui'
 
 defineProps<{ rows: readonly PostRow[] }>()
 const emit = defineEmits<{ 'open-item': [itemId: string] }>()
@@ -14,7 +15,7 @@ const { t } = useI18n()
 </script>
 
 <template>
-  <table class="posts">
+  <DataTable class="posts">
     <thead>
       <tr>
         <th>{{ t('liveMap.posts.station') }}</th>
@@ -41,27 +42,10 @@ const { t } = useI18n()
         </td>
       </tr>
     </tbody>
-  </table>
+  </DataTable>
 </template>
 
 <style scoped>
-.posts {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-}
-
-th {
-  color: #6b7280;
-  font-weight: 400;
-  text-align: left;
-}
-
-th,
-td {
-  padding: 4px 8px;
-  border-bottom: 1px solid #eef0f3;
-}
 
 .presence {
   display: inline-flex;
@@ -80,13 +64,13 @@ td {
   padding: 0;
   border: 0;
   background: none;
-  color: #2f6fdb;
+  color: var(--ant-accent);
   font: inherit;
-  font-family: 'PT Mono', monospace;
+  font-family: var(--ant-font-mono);
   cursor: pointer;
 }
 
 .none {
-  color: #9ca3af;
+  color: var(--ant-n-400);
 }
 </style>

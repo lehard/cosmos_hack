@@ -10,6 +10,7 @@
  * показаны с «не передано», а не с нулём (NFR-UI-4).
  */
 import { useI18n } from 'vue-i18n'
+import { DataTable } from '@/shared/ui'
 
 defineProps<{ dataGaps: string[] }>()
 const { t } = useI18n()
@@ -33,7 +34,7 @@ const MISSING = ['toolUnknown', 'cycleEndTimeUnknown', 'noObservationAfterOperat
 
     <section class="section" data-section="investigations">
       <h3>{{ t('widgets.analytics.deficit.investigationsTitle') }}</h3>
-      <table class="table">
+      <DataTable class="table">
         <thead>
           <tr>
             <th scope="col">{{ t('widgets.analytics.deficit.what') }}</th>
@@ -48,7 +49,7 @@ const MISSING = ['toolUnknown', 'cycleEndTimeUnknown', 'noObservationAfterOperat
             <td class="absent">{{ t('widgets.analytics.notProvided') }}</td>
           </tr>
         </tbody>
-      </table>
+      </DataTable>
       <p class="note" data-testid="pending">{{ t('widgets.analytics.deficit.pending') }}</p>
     </section>
   </div>
@@ -65,13 +66,13 @@ const MISSING = ['toolUnknown', 'cycleEndTimeUnknown', 'noObservationAfterOperat
 .note,
 .empty {
   margin: 0;
-  color: #6b7280;
-  font-size: 12px;
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-meta);
 }
 
 .section h3 {
   margin: 0 0 6px;
-  font-size: 15px;
+  font-size: var(--ant-fs-title);
 }
 
 .gaps {
@@ -79,30 +80,7 @@ const MISSING = ['toolUnknown', 'cycleEndTimeUnknown', 'noObservationAfterOperat
   padding-left: 18px;
 }
 
-.table {
-  width: 100%;
-  margin-bottom: 6px;
-  border-collapse: collapse;
-  font-size: 13px;
-}
-
-.table th,
-.table td {
-  padding: 4px 8px;
-  border-bottom: 1px solid #f0f1f3;
-  text-align: left;
-}
-
-.table thead th {
-  color: #4b5563;
-  font-weight: 500;
-}
-
-.table tbody th {
-  font-weight: 400;
-}
-
 .absent {
-  color: #9ca3af;
+  color: var(--ant-n-400);
 }
 </style>

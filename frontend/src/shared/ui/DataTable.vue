@@ -80,7 +80,7 @@ table {
   line-height: var(--ant-lh-tight);
 }
 
-.data-table :deep(th) {
+.data-table :deep(thead th) {
   padding: var(--ant-pad-cell-y) var(--ant-pad-cell-x);
   border-bottom: 1px solid var(--ant-border-strong);
   background: var(--ant-surface-subtle);
@@ -92,22 +92,31 @@ table {
   white-space: nowrap;
 }
 
-.data-table :deep(td) {
+.data-table :deep(td),
+.data-table :deep(tbody th) {
   padding: var(--ant-pad-cell-y) var(--ant-pad-cell-x);
   border-bottom: 1px solid var(--ant-border);
   vertical-align: top;
   overflow-wrap: break-word;
 }
 
-.data-table :deep(tbody tr:last-child > td) {
+.data-table :deep(tbody th) {
+  font-weight: var(--ant-fw-regular);
+  text-align: left;
+}
+
+.data-table :deep(tbody tr:last-child > td),
+.data-table :deep(tbody tr:last-child > th) {
   border-bottom: 0;
 }
 
-.data-table :deep(tbody tr:hover > td) {
+.data-table :deep(tbody tr:hover > td),
+.data-table :deep(tbody tr:hover > th) {
   background: var(--ant-surface-subtle);
 }
 
-.data-table :deep(tbody tr[aria-selected='true'] > td) {
+.data-table :deep(tbody tr[aria-selected='true'] > td),
+.data-table :deep(tbody tr[aria-selected='true'] > th) {
   background: var(--ant-accent-soft);
 }
 

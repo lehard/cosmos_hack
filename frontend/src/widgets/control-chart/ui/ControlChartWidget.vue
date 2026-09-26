@@ -86,7 +86,7 @@ const state = computed<WidgetDataState>(() => (chart.value?.points.some((p) => p
 
 .hint {
   margin: 0 0 8px;
-  color: #6b7280;
-  font-size: 12px;
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-meta);
 }
 </style>

@@ -36,7 +36,7 @@ const check = computed(() => SIGNATURE_CHECK[props.signature.check])
   flex-wrap: wrap;
   gap: 4px 6px;
   align-items: baseline;
-  font-size: 12px;
+  font-size: var(--ant-fs-meta);
 }
 
 .dot {
@@ -47,10 +47,10 @@ const check = computed(() => SIGNATURE_CHECK[props.signature.check])
 }
 
 .check {
-  font-weight: 600;
+  font-weight: var(--ant-fw-bold);
 }
 
 .meta {
-  color: #6b7280;
+  color: var(--ant-text-3);
 }
 </style>

@@ -149,3 +149,19 @@ samp {
   clip: rect(0 0 0 0);
   white-space: nowrap;
 }
+
+/* --- страховка для элементов Naive UI вне shared/ui (UI-2) ---
+   Кнопка не шире своего контейнера, подпись не вылезает за её край; для
+   многоточия с подсказкой или переноса — ActionButton. */
+.n-button {
+  max-width: 100%;
+}
+
+.n-button .n-button__content {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.n-radio-group {
+  max-width: 100%;
+}

@@ -36,6 +36,7 @@ export function rootVariables(): Record<string, string> {
   for (const [tone, c] of Object.entries(status)) {
     v[`--ant-status-${tone}`] = c.base
     v[`--ant-status-${tone}-soft`] = c.soft
+    v[`--ant-status-${tone}-text`] = c.text
   }
   for (const [k, c] of Object.entries(color)) v[`--ant-${kebab(k)}`] = c
   v['--ant-font'] = font.family

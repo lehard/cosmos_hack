@@ -59,19 +59,19 @@ const GENERATORS = ['bottleneck', 'riskScope', 'reactionRules', 'visionAdaptatio
 .principle {
   margin: 0;
   padding: 8px 10px;
-  border-left: 3px solid #8a8f98;
-  background: #f9fafb;
-  font-size: 13px;
+  border-left: 3px solid var(--ant-status-neutral);
+  background: var(--ant-surface-subtle);
+  font-size: var(--ant-fs-body);
 }
 
 .section h3 {
   margin: 0 0 6px;
-  font-size: 15px;
+  font-size: var(--ant-fs-title);
 }
 
 .empty {
   margin: 0;
-  color: #6b7280;
+  color: var(--ant-text-3);
 }
 
 .generators {
@@ -85,11 +85,11 @@ const GENERATORS = ['bottleneck', 'riskScope', 'reactionRules', 'visionAdaptatio
   gap: 12px;
   justify-content: space-between;
   padding: 4px 0;
-  border-bottom: 1px solid #f0f1f3;
+  border-bottom: 1px solid var(--ant-n-100);
 }
 
 .status {
-  color: #6b7280;
-  font-size: 12px;
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-meta);
 }
 </style>

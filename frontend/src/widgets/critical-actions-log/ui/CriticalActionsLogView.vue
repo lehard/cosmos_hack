@@ -11,6 +11,7 @@ import { CA_GROUPS, type CriticalAction, type CriticalActionCaGroup } from '@/en
 import type { Density } from '@/shared/config/widget'
 import { codeToKey } from '@/shared/i18n'
 import { useProblemText } from '@/shared/i18n/problem'
+import { DataTable, EmptyState } from '@/shared/ui'
 
 withDefaults(
   defineProps<{
@@ -42,8 +43,8 @@ const groupOptions = CA_GROUPS.map((g) => ({ label: groupText(g), value: g }))
         <option v-for="o in groupOptions" :key="o.value" :value="o.value">{{ o.label }}</option>
       </select>
     </label>
-    <p v-if="!actions.length" class="muted">{{ t('empty.noRecords') }}</p>
-    <table v-else>
+    <EmptyState v-if="!actions.length" compact :title="t('empty.noRecords')" />
+    <DataTable v-else>
       <thead>
         <tr>
           <th>{{ t('audit.criticalAction') }}</th>
@@ -84,7 +85,7 @@ const groupOptions = CA_GROUPS.map((g) => ({ label: groupText(g), value: g }))
           </td>
         </tr>
       </tbody>
-    </table>
+    </DataTable>
 
     <section v-if="selected" class="card" data-testid="detail">
       <p v-if="detailError" class="error">{{ problemText(detailError) }}</p>
@@ -121,7 +122,7 @@ const groupOptions = CA_GROUPS.map((g) => ({ label: groupText(g), value: g }))
   display: flex;
   flex-direction: column;
   gap: 8px;
-  font-size: 13px;
+  font-size: var(--ant-fs-body);
 }
 
 .filter {
@@ -138,28 +139,10 @@ const groupOptions = CA_GROUPS.map((g) => ({ label: groupText(g), value: g }))
 .filter select {
   flex: 1;
   padding: 3px 6px;
-  border: 1px solid #d1d5db;
-  border-radius: 4px;
-  background: #fff;
+  border: 1px solid var(--ant-border-strong);
+  border-radius: var(--ant-radius-sm);
+  background: var(--ant-surface);
   font: inherit;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-th,
-td {
-  padding: 3px 6px;
-  border-bottom: 1px solid #e5e7eb;
-  text-align: left;
-  vertical-align: top;
-}
-
-th {
-  color: #6b7280;
-  font-weight: 400;
 }
 
 tbody tr {
@@ -167,17 +150,17 @@ tbody tr {
 }
 
 tr[aria-selected='true'] {
-  background: #eff6ff;
+  background: var(--ant-accent-soft);
 }
 
 tr[data-cancelled] td {
-  color: #6b7280;
+  color: var(--ant-text-3);
 }
 
 .card {
   padding: 8px;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
+  border: 1px solid var(--ant-border);
+  border-radius: var(--ant-radius-md);
 }
 
 .facts {
@@ -188,7 +171,7 @@ tr[data-cancelled] td {
 }
 
 .facts dt {
-  color: #6b7280;
+  color: var(--ant-text-3);
 }
 
 .facts dd {
@@ -201,18 +184,18 @@ tr[data-cancelled] td {
 }
 
 code {
-  font-family: 'PT Mono', monospace;
-  font-size: 12px;
+  font-family: var(--ant-font-mono);
+  font-size: var(--ant-fs-meta);
 }
 
 .muted {
   margin: 0;
-  color: #6b7280;
-  font-size: 12px;
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-meta);
 }
 
 .warn,
 .error {
-  color: #d64545;
+  color: var(--ant-status-danger);
 }
 </style>

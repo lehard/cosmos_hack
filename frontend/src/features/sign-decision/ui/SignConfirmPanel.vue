@@ -10,11 +10,12 @@
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NAlert, NButton } from 'naive-ui'
+import { NAlert } from 'naive-ui'
 import type { SummaryField } from '@/entities/document'
 import type { TokenStatus } from '@/shared/lib/token-agent'
 import { useProblemText } from '@/shared/i18n/problem'
 import { tokenReady } from '../model/port'
+import { ActionButton } from '@/shared/ui'
 
 const props = withDefaults(
   defineProps<{
@@ -80,16 +81,10 @@ const tokenNote = computed(() =>
     <NAlert v-if="error" type="error" :bordered="false" :show-icon="false" data-testid="sign-error">{{ problemText(error) }}</NAlert>
 
     <footer class="buttons">
-      <NButton type="primary" :disabled="!ready || busy" :loading="busy" data-testid="confirm-token" @click="emit('confirm-token')">
-        {{ t('decisions.signature.confirmWithToken') }}
-      </NButton>
-      <NButton v-if="demoUnsigned && !ready" type="primary" secondary :disabled="busy" :loading="busy" data-testid="confirm-unsigned" @click="emit('confirm-unsigned')">
-        {{ t('widgets.signing.demoUnsigned') }}
-      </NButton>
-      <NButton v-if="paperAllowed" :disabled="busy" data-testid="sign-paper" @click="emit('sign-paper')">
-        {{ t('decisions.signature.signOnPaper') }}
-      </NButton>
-      <NButton quaternary :disabled="busy" data-testid="cancel" @click="emit('cancel')">{{ t('common.actions.cancel') }}</NButton>
+      <ActionButton overflow="wrap" type="primary" :disabled="!ready || busy" :loading="busy" data-testid="confirm-token" @click="emit('confirm-token')" :label="t('decisions.signature.confirmWithToken')" />
+      <ActionButton overflow="wrap" v-if="demoUnsigned && !ready" type="primary" secondary :disabled="busy" :loading="busy" data-testid="confirm-unsigned" @click="emit('confirm-unsigned')" :label="t('widgets.signing.demoUnsigned')" />
+      <ActionButton overflow="wrap" v-if="paperAllowed" :disabled="busy" data-testid="sign-paper" @click="emit('sign-paper')" :label="t('decisions.signature.signOnPaper')" />
+      <ActionButton overflow="wrap" quaternary :disabled="busy" data-testid="cancel" @click="emit('cancel')" :label="t('common.actions.cancel')" />
     </footer>
   </section>
 </template>
@@ -103,13 +98,13 @@ const tokenNote = computed(() =>
 
 h3 {
   margin: 0;
-  font-size: 16px;
+  font-size: var(--ant-fs-lg);
 }
 
 .muted {
   margin: 0;
-  color: #6b7280;
-  font-size: 12px;
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-meta);
 }
 
 .summary {
@@ -118,17 +113,17 @@ h3 {
   gap: 4px 12px;
   margin: 0;
   padding: 8px 10px;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
+  border: 1px solid var(--ant-border);
+  border-radius: var(--ant-radius-md);
 }
 
 .summary dt {
-  color: #6b7280;
+  color: var(--ant-text-3);
 }
 
 .summary dd {
   margin: 0;
-  font-weight: 600;
+  font-weight: var(--ant-fw-bold);
 }
 
 .buttons {

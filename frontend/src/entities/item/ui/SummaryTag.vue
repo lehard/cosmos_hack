@@ -19,9 +19,9 @@ const label = computed(() => {
 </script>
 
 <template>
-  <span class="summary-tag" :data-code="code">
+  <span class="summary-tag" :data-code="code" :title="label">
     <span class="dot" :style="{ background: statusPalette[entry?.tone ?? 'neutral'] }" aria-hidden="true" />
-    {{ label }}
+    <span class="text">{{ label }}</span>
   </span>
 </template>
 
@@ -30,7 +30,15 @@ const label = computed(() => {
   display: inline-flex;
   gap: 6px;
   align-items: center;
+  max-width: 100%;
+  min-width: 0;
   white-space: nowrap;
+}
+
+.text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .dot {

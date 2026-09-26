@@ -8,10 +8,10 @@
  */
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NButton } from 'naive-ui'
 import { OUTCOME_TEXT, codeText, conclusionVersions, type NCConclusionVersion, type NCSystemAnalysis } from '@/entities/nonconformity'
 import { codeToKey } from '@/shared/i18n'
 import RecordLine from './RecordLine.vue'
+import { ActionButton } from '@/shared/ui'
 
 const props = defineProps<{ analysis: NCSystemAnalysis }>()
 const { t, te, d } = useI18n()
@@ -64,9 +64,7 @@ const missing = (m: string) => {
     </template>
 
     <template v-if="versions.previous.length">
-      <NButton size="tiny" quaternary data-testid="toggle-previous" @click="showPrevious = !showPrevious">
-        {{ t('common.actions.showPreviousVersions') }} ({{ versions.previous.length }})
-      </NButton>
+      <ActionButton size="tiny" quaternary data-testid="toggle-previous" @click="showPrevious = !showPrevious" :label="`${t('common.actions.showPreviousVersions')} (${versions.previous.length})`" />
       <div v-if="showPrevious" class="previous" data-testid="conclusion-previous">
         <article v-for="v in versions.previous" :key="v.event_id" class="version old" :data-version="v.version">
           <p class="head">
@@ -86,8 +84,8 @@ const missing = (m: string) => {
   flex-direction: column;
   gap: 6px;
   padding: 8px 10px;
-  border-left: 3px solid #2f6fdb;
-  background: #f8fafc;
+  border-left: 3px solid var(--ant-accent);
+  background: var(--ant-surface-subtle);
 }
 
 h4,
@@ -104,8 +102,8 @@ h5 {
 
 .note,
 .muted {
-  color: #6b7280;
-  font-size: 12px;
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-meta);
 }
 
 .head {
@@ -116,8 +114,8 @@ h5 {
 }
 
 .revised {
-  color: #b45309;
-  font-size: 12px;
+  color: var(--ant-status-attention-text);
+  font-size: var(--ant-fs-meta);
 }
 
 .list {

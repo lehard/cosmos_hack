@@ -54,10 +54,34 @@ export function tint(hex: string, amount: number): string {
   return `#${ch(16)}${ch(8)}${ch(0)}`
 }
 
-/** Статусные цвета — из словаря статусов контракта; мягкий фон — производный. */
-export const status: Record<StatusTone, { base: string; soft: string }> = Object.fromEntries(
-  (Object.keys(statusPalette) as StatusTone[]).map((tone) => [tone, { base: statusPalette[tone], soft: tint(statusPalette[tone], 0.1) }]),
-) as Record<StatusTone, { base: string; soft: string }>
+/**
+ * Затемнить цвет (доля исходной яркости 0…1) — текст тона, читаемый на белом.
+ * @param hex — цвет #rrggbb
+ * @param amount — доля яркости
+ */
+export function shade(hex: string, amount: number): string {
+  const n = Number.parseInt(hex.slice(1), 16)
+  const ch = (shift: number) =>
+    Math.round(((n >> shift) & 0xff) * amount)
+      .toString(16)
+      .padStart(2, '0')
+  return `#${ch(16)}${ch(8)}${ch(0)}`
+}
+
+/** Цвет тона статуса: основа (точка, рамка), мягкий фон, текст на белом. */
+export interface ToneColors {
+  base: string
+  soft: string
+  text: string
+}
+
+/** Статусные цвета — из словаря статусов контракта; фон и текст — производные. */
+export const status: Record<StatusTone, ToneColors> = Object.fromEntries(
+  (Object.keys(statusPalette) as StatusTone[]).map((tone) => [
+    tone,
+    { base: statusPalette[tone], soft: tint(statusPalette[tone], 0.1), text: shade(statusPalette[tone], 0.62) },
+  ]),
+) as Record<StatusTone, ToneColors>
 
 /** Смысловые цвета интерфейса. */
 export const color = {

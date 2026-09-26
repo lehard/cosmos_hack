@@ -8,7 +8,6 @@
  */
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NButton } from 'naive-ui'
 import {
   activeVersion,
   diffVersions,
@@ -19,6 +18,7 @@ import {
 } from '@/entities/process-version'
 import { codeToKey } from '@/shared/i18n'
 import type { Density } from '@/shared/config/widget'
+import { ActionButton } from '@/shared/ui'
 
 type Mode = 'view' | 'diff'
 
@@ -115,12 +115,8 @@ const propsOf = (p: Partial<Record<ProcessPropertyKey, ProcessPropertyValue>>) =
 
     <section v-if="current" class="body">
       <div class="modes" role="tablist">
-        <NButton size="small" :type="mode === 'view' ? 'primary' : 'default'" secondary role="tab" :aria-selected="mode === 'view'" data-testid="mode-view" @click="mode = 'view'">
-          {{ t('process.readableView') }}
-        </NButton>
-        <NButton size="small" :type="mode === 'diff' ? 'primary' : 'default'" secondary role="tab" :aria-selected="mode === 'diff'" data-testid="mode-diff" @click="mode = 'diff'">
-          {{ t('process.diffTitle') }}
-        </NButton>
+        <ActionButton size="small" :type="mode === 'view' ? 'primary' : 'default'" secondary role="tab" :aria-selected="mode === 'view'" data-testid="mode-view" @click="mode = 'view'" :label="t('process.readableView')" />
+        <ActionButton size="small" :type="mode === 'diff' ? 'primary' : 'default'" secondary role="tab" :aria-selected="mode === 'diff'" data-testid="mode-diff" @click="mode = 'diff'" :label="t('process.diffTitle')" />
       </div>
 
       <p class="meta">
@@ -173,11 +169,11 @@ const propsOf = (p: Partial<Record<ProcessPropertyKey, ProcessPropertyValue>>) =
   display: grid;
   grid-template-columns: minmax(180px, 240px) minmax(0, 1fr);
   gap: 16px;
-  font-size: 13px;
+  font-size: var(--ant-fs-body);
 }
 
 .density-large {
-  font-size: 16px;
+  font-size: var(--ant-fs-lg);
 }
 
 h4 {
@@ -196,9 +192,9 @@ h4 {
   grid-template-columns: 1fr auto;
   gap: 2px 8px;
   padding: 6px 8px;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  background: #fff;
+  border: 1px solid var(--ant-border);
+  border-radius: var(--ant-radius-md);
+  background: var(--ant-surface);
   color: inherit;
   font: inherit;
   text-align: left;
@@ -206,22 +202,22 @@ h4 {
 }
 
 .version.on {
-  border-color: #2f6fdb;
-  background: #eff6ff;
+  border-color: var(--ant-accent);
+  background: var(--ant-accent-soft);
 }
 
 .v-label {
-  font-weight: 700;
+  font-weight: var(--ant-fw-bold);
 }
 
 .v-status {
-  color: #6b7280;
+  color: var(--ant-text-3);
 }
 
 .v-date {
   grid-column: 1 / -1;
-  color: #6b7280;
-  font-size: 12px;
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-meta);
 }
 
 .body {
@@ -242,7 +238,7 @@ h4 {
 }
 
 .muted {
-  color: #6b7280;
+  color: var(--ant-text-3);
 }
 
 .diff ul {
@@ -255,7 +251,7 @@ h4 {
 
 .diff li[data-kind='presentationPointAdded'],
 .diff li[data-kind='thresholdChanged'] {
-  font-weight: 700;
+  font-weight: var(--ant-fw-bold);
 }
 
 .elements {
@@ -275,15 +271,15 @@ h4 {
 
 .kind {
   padding: 0 6px;
-  border-radius: 8px;
-  background: #f3f4f6;
-  font-size: 11px;
+  border-radius: var(--ant-radius-lg);
+  background: var(--ant-n-100);
+  font-size: var(--ant-fs-xs);
 }
 
 .step {
-  color: #6b7280;
-  font-family: 'PT Mono', monospace;
-  font-size: 11px;
+  color: var(--ant-text-3);
+  font-family: var(--ant-font-mono);
+  font-size: var(--ant-fs-xs);
 }
 
 .props {
@@ -294,7 +290,7 @@ h4 {
 }
 
 .props dt {
-  color: #6b7280;
+  color: var(--ant-text-3);
 }
 
 .props dd {
@@ -303,6 +299,6 @@ h4 {
 
 .thr {
   margin-right: 10px;
-  font-family: 'PT Mono', monospace;
+  font-family: var(--ant-font-mono);
 }
 </style>
