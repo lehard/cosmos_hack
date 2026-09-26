@@ -98,6 +98,10 @@ const (
 	BindingLinkResolved Type = "binding.link.resolved"
 	// Условная сборка импортирована
 	CadAssemblyImported Type = "cad.assembly.imported"
+	// Изделие в точке чистоты
+	DecisionCleanPointAssigned Type = "decision.clean_point.assigned"
+	// Разрешение на отклонение выдано
+	DecisionConcessionGranted Type = "decision.concession.granted"
 	// Разрешение на отклонение отозвано
 	DecisionConcessionRevoked Type = "decision.concession.revoked"
 	// Сдерживание применено правилом
@@ -463,6 +467,8 @@ var types = [...]Info{
 	{Type: BindingLinkAssigned, Title: "Привязка задана человеком", Family: "binding", Emitter: "crossitem", Role: "api", Kind: "decision", Stream: "item", Axis: "none", ActionClass: "record", Critical: true, CAGroup: "protected_data", GuardRelevant: true, PublishStage: true, Provenance: []string{"personal", "paper", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: BindingLinkResolved, Title: "Событие привязано к изделию", Family: "binding", Emitter: "crossitem", Role: "crossitem", Kind: "reaction", Stream: "item", Axis: "none", ActionClass: "record", Critical: false, CAGroup: "", GuardRelevant: true, PublishStage: false, Provenance: []string{"server_attested"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: CadAssemblyImported, Title: "Условная сборка импортирована", Family: "cad", Emitter: "cad", Role: "api", Kind: "fact", Stream: "reference", Axis: "none", ActionClass: "record", Critical: false, CAGroup: "", GuardRelevant: false, PublishStage: false, Provenance: []string{"server_attested", "personal", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
+	{Type: DecisionCleanPointAssigned, Title: "Изделие в точке чистоты", Family: "decision", Emitter: "nonconformity", Role: "crossitem", Kind: "reaction", Stream: "item", Axis: "containment", ActionClass: "protective", Critical: false, CAGroup: "", GuardRelevant: true, PublishStage: false, Provenance: []string{"server_attested"}, Versions: []int{1}, CurrentVersion: 1},
+	{Type: DecisionConcessionGranted, Title: "Разрешение на отклонение выдано", Family: "decision", Emitter: "nonconformity", Role: "api", Kind: "decision", Stream: "concession", Axis: "none", ActionClass: "permissive", Critical: true, CAGroup: "nc_decision", GuardRelevant: true, PublishStage: false, Provenance: []string{"personal", "paper", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: DecisionConcessionRevoked, Title: "Разрешение на отклонение отозвано", Family: "decision", Emitter: "nonconformity", Role: "api", Kind: "decision", Stream: "concession", Axis: "none", ActionClass: "protective", Critical: true, CAGroup: "nc_decision", GuardRelevant: true, PublishStage: false, Provenance: []string{"personal", "paper", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: DecisionContainmentApplied, Title: "Сдерживание применено правилом", Family: "decision", Emitter: "nonconformity", Role: "worker", Kind: "reaction", Stream: "item", Axis: "containment", ActionClass: "protective", Critical: true, CAGroup: "product_decision", GuardRelevant: true, PublishStage: true, Provenance: []string{"server_attested"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: DecisionContainmentReleased, Title: "Сдерживание снято", Family: "decision", Emitter: "nonconformity", Role: "api", Kind: "decision", Stream: "item", Axis: "containment", ActionClass: "permissive", Critical: true, CAGroup: "product_decision", GuardRelevant: true, PublishStage: true, Provenance: []string{"personal", "paper", "scenario"}, Versions: []int{1}, CurrentVersion: 1},

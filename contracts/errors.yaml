@@ -414,6 +414,20 @@ codes:
     ui_key: errors.decision.concessionRequired
     guard: true
     refs: [FR-54]
+  nonconformity.invalid_transition:
+    status: 409
+    title: "Решение недопустимо в этом состоянии"
+    detail: "«{action}» недопустимо: несоответствие {nc_id} в состоянии «{status}»"
+    ui_key: errors.generic
+    guard: true
+    refs: [FR-51, FR-52, FR-53, AD-39]
+  nonconformity.process_hold_not_active:
+    status: 409
+    title: "Остановка точки процесса не действует"
+    detail: "Остановка {hold_id} не найдена или уже снята"
+    ui_key: errors.generic
+    guard: true
+    refs: [FR-49]
 
   # ── process: загрузка BPMN и гарды процесса (FR-11, FR-13, FR-17, FR-20) ──
   process.unsupported_element:

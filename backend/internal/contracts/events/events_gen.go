@@ -651,6 +651,82 @@ type Count int
 // Календарная дата YYYY-MM-DD (без format: date — диалект AD-20).
 type Date string
 
+// Изделие попало в «точку чистоты» (FR-49): после снятия стопа точки процесса
+// первые N изделий, прошедших её, проходят усиленный контроль; межизделийная
+// стадия адресует запись в поток изделия.
+type DecisionCleanPointAssignedV1 struct {
+	// Оборудование точки процесса.
+	EquipmentID *ObjectID `json:"equipment_id,omitempty,omitzero"`
+
+	// Снятая остановка точки процесса.
+	HoldID ObjectID `json:"hold_id"`
+
+	// Сколько изделий под усиленным контролем (N).
+	Of int `json:"of"`
+
+	// Выполнение операции на точке процесса после снятия.
+	OperationRunID ObjectID `json:"operation_run_id"`
+
+	// Порядковый номер изделия после снятия (1…N).
+	Ordinal int `json:"ordinal"`
+}
+
+// Разрешение на отклонение выдано (ГОСТ Р ИСО 9000 п. 3.12.5, FR-54): номер, пункт
+// КД/ТУ, область действия, лимит количества, срок; лимит открывается атомарно с
+// записью, расход — атомарно с решением (AD-39).
+type DecisionConcessionGrantedV1 struct {
+	// Подписи маршрута разрешения на момент записи; demo_stub — демо-профиль, подписи
+	// не проверялись.
+	ApprovalsStatus *DecisionConcessionGrantedV1ApprovalsStatus `json:"approvals_status,omitempty,omitzero"`
+
+	// Разрешение.
+	ConcessionID ObjectID `json:"concession_id"`
+
+	// Документ разрешения с маршрутом подписей (режим 5 — внешние полномочия).
+	DocumentID *ObjectID `json:"document_id,omitempty,omitzero"`
+
+	// Для какого решения по несоответствию.
+	Kind DecisionConcessionGrantedV1Kind `json:"kind"`
+
+	// Лимит количества изделий.
+	Limit int `json:"limit"`
+
+	// Номер разрешения по стандарту предприятия.
+	Number *string `json:"number,omitempty,omitzero"`
+
+	// Основание выдачи.
+	Reason Reason `json:"reason"`
+
+	// Пункт КД/ТУ, от которого разрешено отклонение.
+	RequirementRef *string `json:"requirement_ref,omitempty,omitzero"`
+
+	// Область действия — перечень изделий.
+	ScopeItemIds []ItemID `json:"scope_item_ids,omitempty,omitzero"`
+
+	// Область действия — диапазон номеров: от (включительно).
+	ScopeRangeFrom *string `json:"scope_range_from,omitempty,omitzero"`
+
+	// Область действия — диапазон номеров: до (включительно).
+	ScopeRangeTo *string `json:"scope_range_to,omitempty,omitzero"`
+
+	// Краткое содержание отклонения.
+	Title *string `json:"title,omitempty,omitzero"`
+
+	// Срок действия.
+	ValidUntil *Timestamp `json:"valid_until,omitempty,omitzero"`
+}
+
+type DecisionConcessionGrantedV1ApprovalsStatus string
+
+const DecisionConcessionGrantedV1ApprovalsStatusDemoStub DecisionConcessionGrantedV1ApprovalsStatus = "demo_stub"
+const DecisionConcessionGrantedV1ApprovalsStatusPending DecisionConcessionGrantedV1ApprovalsStatus = "pending"
+const DecisionConcessionGrantedV1ApprovalsStatusRouteClosed DecisionConcessionGrantedV1ApprovalsStatus = "route_closed"
+
+type DecisionConcessionGrantedV1Kind string
+
+const DecisionConcessionGrantedV1KindRepair DecisionConcessionGrantedV1Kind = "repair"
+const DecisionConcessionGrantedV1KindUseAsIs DecisionConcessionGrantedV1Kind = "use_as_is"
+
 // Разрешение на отклонение отозвано — отзыв — новая запись; решения, принятые по
 // разрешению, подсвечиваются (FR-54).
 type DecisionConcessionRevokedV1 struct {
@@ -717,6 +793,11 @@ const DecisionDispositionAppliedV1DispositionRework DecisionDispositionAppliedV1
 // поставщику; ремонт и «как есть» — только по действующему разрешению на
 // отклонение; исполнение — после закрытия маршрута подписей (FR-53, AD-43).
 type DecisionDispositionSetV1 struct {
+	// Подписи маршрута решения на момент записи (FR-50 режим 4, AD-43): route_closed
+	// — маршрут закрыт; pending — исполнение ждёт document.route.closed; demo_stub —
+	// демо-профиль, подписи не проверялись (заглушка порта «маршрут закрыт»).
+	ApprovalsStatus *DecisionDispositionSetV1ApprovalsStatus `json:"approvals_status,omitempty,omitzero"`
+
 	// Основание претензии для возврата поставщику.
 	ClaimBasis *string `json:"claim_basis,omitempty,omitzero"`
 
@@ -739,6 +820,12 @@ type DecisionDispositionSetV1 struct {
 	// Для списания: списание / переработка (разборка на годные части).
 	ScrapKind *DecisionDispositionSetV1ScrapKind `json:"scrap_kind,omitempty,omitzero"`
 }
+
+type DecisionDispositionSetV1ApprovalsStatus string
+
+const DecisionDispositionSetV1ApprovalsStatusDemoStub DecisionDispositionSetV1ApprovalsStatus = "demo_stub"
+const DecisionDispositionSetV1ApprovalsStatusPending DecisionDispositionSetV1ApprovalsStatus = "pending"
+const DecisionDispositionSetV1ApprovalsStatusRouteClosed DecisionDispositionSetV1ApprovalsStatus = "route_closed"
 
 type DecisionDispositionSetV1Disposition string
 
@@ -840,17 +927,83 @@ type DecisionNonconformityConfirmedV1 struct {
 }
 
 // Черновик карточки несоответствия — система собрала карточку для контролёра:
-// сигналы, обстоятельства до и после, чего не хватает (режим 1, FR-50).
+// сигналы, обстоятельства до и после, чего не хватает (режим 1, FR-50). Те же
+// данные — полезная нагрузка функции-намерения nonconformity «черновик
+// несоответствия» (draft_nonconformity), которую вызывают quality и machinelogs.
 type DecisionNonconformityDraftedV1 struct {
+	// На чём основан сигнал.
+	BasisKind *DecisionNonconformityDraftedV1BasisKind `json:"basis_kind,omitempty,omitzero"`
+
+	// Закрывающая точка предъявления (`ZT-…`), если черновик возник на ней.
+	ClosingPoint *string `json:"closing_point,omitempty,omitzero"`
+
+	// Вид дефекта по классификатору; неизвестный — с флагом.
+	DefectTypeCode *string `json:"defect_type_code,omitempty,omitzero"`
+
 	// Черновик заявления о несоответствии (`document.version.drafted`).
 	DocumentID *ObjectID `json:"document_id,omitempty,omitzero"`
+
+	// Нехватка сведений для разбора (перечисление, как у
+	// incident.hypothesis.computed).
+	MissingInformation []DecisionNonconformityDraftedV1MissingInformationElem `json:"missing_information,omitempty,omitzero"`
 
 	// Несоответствие.
 	NcID ObjectID `json:"nc_id"`
 
+	// Выполнение операции, после которой найден признак.
+	OperationRunID *ObjectID `json:"operation_run_id,omitempty,omitzero"`
+
+	// Номер предъявления, если черновик возник на точке предъявления.
+	PresentationNo *int `json:"presentation_no,omitempty,omitzero"`
+
+	// Карта реакций и строка: `‹id›@‹версия›#‹строка›`.
+	ReactionMapRef *string `json:"reaction_map_ref,omitempty,omitzero"`
+
+	// Реакция карты реакций (FR-48): isolate — сдерживание правилом.
+	ReactionOutcome *DecisionNonconformityDraftedV1ReactionOutcome `json:"reaction_outcome,omitempty,omitzero"`
+
+	// Требование КД: характеристика, допуск, ревизия.
+	RequirementRef *string `json:"requirement_ref,omitempty,omitzero"`
+
+	// Severity corresponds to the JSON schema field "severity".
+	Severity *Severity `json:"severity,omitempty,omitzero"`
+
 	// Сигналы карточки.
 	SignalIds []ObjectID `json:"signal_ids"`
+
+	// Ключ шага процесса (`ant:properties/@stepKey`), к которому относится запись.
+	StepKey *StepKey `json:"step_key,omitempty,omitzero"`
+
+	// Зона.
+	ZoneID *ObjectID `json:"zone_id,omitempty,omitzero"`
 }
+
+type DecisionNonconformityDraftedV1BasisKind string
+
+const DecisionNonconformityDraftedV1BasisKindCheckSkipped DecisionNonconformityDraftedV1BasisKind = "check_skipped"
+const DecisionNonconformityDraftedV1BasisKindDamageOnReceipt DecisionNonconformityDraftedV1BasisKind = "damage_on_receipt"
+const DecisionNonconformityDraftedV1BasisKindEquipmentDeviation DecisionNonconformityDraftedV1BasisKind = "equipment_deviation"
+const DecisionNonconformityDraftedV1BasisKindInspectionResult DecisionNonconformityDraftedV1BasisKind = "inspection_result"
+const DecisionNonconformityDraftedV1BasisKindLeak DecisionNonconformityDraftedV1BasisKind = "leak"
+const DecisionNonconformityDraftedV1BasisKindOperatorReport DecisionNonconformityDraftedV1BasisKind = "operator_report"
+const DecisionNonconformityDraftedV1BasisKindSpecialProcessViolation DecisionNonconformityDraftedV1BasisKind = "special_process_violation"
+
+type DecisionNonconformityDraftedV1MissingInformationElem string
+
+const DecisionNonconformityDraftedV1MissingInformationElemCycleEndTimeUnknown DecisionNonconformityDraftedV1MissingInformationElem = "cycle_end_time_unknown"
+const DecisionNonconformityDraftedV1MissingInformationElemEquipmentLogMissing DecisionNonconformityDraftedV1MissingInformationElem = "equipment_log_missing"
+const DecisionNonconformityDraftedV1MissingInformationElemNoObservationAfterOperation DecisionNonconformityDraftedV1MissingInformationElem = "no_observation_after_operation"
+const DecisionNonconformityDraftedV1MissingInformationElemNoObservationBeforeOperation DecisionNonconformityDraftedV1MissingInformationElem = "no_observation_before_operation"
+const DecisionNonconformityDraftedV1MissingInformationElemOperatorUnknown DecisionNonconformityDraftedV1MissingInformationElem = "operator_unknown"
+const DecisionNonconformityDraftedV1MissingInformationElemOther DecisionNonconformityDraftedV1MissingInformationElem = "other"
+const DecisionNonconformityDraftedV1MissingInformationElemToolUnknown DecisionNonconformityDraftedV1MissingInformationElem = "tool_unknown"
+
+type DecisionNonconformityDraftedV1ReactionOutcome string
+
+const DecisionNonconformityDraftedV1ReactionOutcomeIsolate DecisionNonconformityDraftedV1ReactionOutcome = "isolate"
+const DecisionNonconformityDraftedV1ReactionOutcomeManualReview DecisionNonconformityDraftedV1ReactionOutcome = "manual_review"
+const DecisionNonconformityDraftedV1ReactionOutcomePassToNext DecisionNonconformityDraftedV1ReactionOutcome = "pass_to_next"
+const DecisionNonconformityDraftedV1ReactionOutcomeQuestionToTechnologist DecisionNonconformityDraftedV1ReactionOutcome = "question_to_technologist"
 
 // Несоответствие зарегистрировано правилом — межизделийная стадия регистрирует
 // несоответствие всем изделиям окна нарушения специального процесса, даже без
