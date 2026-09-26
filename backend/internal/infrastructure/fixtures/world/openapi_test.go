@@ -118,6 +118,14 @@ func loadOpenAPI(t *testing.T) (huma.Registry, map[string]*huma.Schema) {
 					if c, ok := r.Content["application/json"]; ok && c.Schema != nil {
 						prepare(c.Schema, seen)
 						ops[op.OperationID] = c.Schema
+						continue
+					}
+					// Бинарный ответ (format: binary): в заготовках байты хранятся
+					// строкой base64 — её и проверяем.
+					for _, c := range r.Content {
+						if c.Schema != nil && c.Schema.Format == "binary" {
+							ops[op.OperationID] = &huma.Schema{Type: huma.TypeString, ContentEncoding: "base64"}
+						}
 					}
 				}
 			}

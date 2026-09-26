@@ -1,0 +1,6 @@
+# Точечные исключения oasdiff breaking (make check-compat, --err-ignore): строка —
+# «МЕТОД путь описание изменения» как в выводе oasdiff. Только исправления контракта
+# под фактическое поведение сервера; после нового тега contract-v* строки удалить.
+# п. 9 (стол контролёра): materials.material.content всегда отдавал сырые байты
+# с Content-Type файла, а контракт обещал application/json (base64) — теперь format: binary.
+GET /api/v1/materials/{address}/content removed the media type `application/json` for the response with the status `200`
