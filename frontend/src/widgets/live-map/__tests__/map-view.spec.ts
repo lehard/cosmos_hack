@@ -64,17 +64,17 @@ describe('живая карта', () => {
     expect(document.querySelector('.node-badge[data-step="welding.zt3_acceptance"] [data-flag="bottleneck"]')!.getAttribute('title')).toContain('37 мин')
   })
 
-  it('клик по узлу — карточка: описание шага и счётчики, переход к изделиям узла (FR-154)', async () => {
+  it('клик по узлу — правое окно (Д-70): шаг в заголовке, описание и счётчики, внизу — изделия узла (FR-154)', async () => {
     const w = await mountMap(frameScope34())
     const viewer = w.findComponent(BpmnMapViewer)
     viewer.vm.$emit('select-node', 'welding.kt3_camera')
     await flushPromises()
-    const card = document.querySelector('.node-card[data-step="welding.kt3_camera"]')!
-    expect(card.querySelector('.name')!.textContent).toBe('КТ-3 Камера на шов (участки 40 мм)')
+    const card = document.querySelector('[data-record="node"] .node-card[data-step="welding.kt3_camera"]')!
+    expect(document.querySelector('[data-record="node"] [data-testid="record-drawer-head"]')!.textContent).toContain('КТ-3 Камера на шов (участки 40 мм)')
     expect(card.querySelector('[data-testid="node-doc"]')!.textContent!.length).toBeGreaterThan(40)
     expect(card.querySelector('[data-counter="defects"]')!.textContent).toBe('1')
     expect(norm(card.querySelector('[data-counter="nonconformities"]')!.textContent)).toBe('1 несоответствие')
-    card.querySelector<HTMLElement>('[data-action="open-node"]')!.click()
+    document.querySelector<HTMLElement>('[data-record="node"] [data-testid="record-drawer-actions"] [data-action="open-node"]')!.click()
     expect(w.emitted('open-node')).toEqual([['welding.kt3_camera']])
     // Выбранный узел помечен на схеме.
     expect(document.querySelector('.djs-element[data-element-id="W3"]')!.classList.contains('ant-selected')).toBe(true)

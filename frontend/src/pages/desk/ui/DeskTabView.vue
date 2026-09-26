@@ -2,6 +2,8 @@
 /**
  * Вкладка стола: раскладка — CSS-сетка с именованными областями, слоты — виджеты
  * из реестра в своих областях, по порядку yaml. Плотность: слот ← вкладка ← стол.
+ * Раздел из одной колонки с виджетом «на всю высоту» (реестр, `fill`) — колонка
+ * на высоту окна: этот виджет растягивается, остальные — по содержимому.
  */
 import { computed } from 'vue'
 import { LAYOUT_AREAS, type Density, type DeskTab } from '@/entities/desk'
@@ -22,12 +24,16 @@ const areas = computed(() => {
 
 const tabDensity = computed<Density>(() => props.tab.density ?? props.density)
 
+/** Виджет растягивается на всю высоту раздела. */
+const fills = (widget: string): boolean => props.tab.layout === 'single' && isWidgetId(widget) && widgetRegistry[widget].fill === true
+const fill = computed(() => props.tab.slots.some((s) => fills(s.widget)))
+
 /** Заголовок панели совпадает с заголовком страницы или вкладки — второй раз не пишем (UI-6). */
 const repeatsTitle = (widget: string): boolean => isWidgetId(widget) && widgetRegistry[widget].titleKey === props.tab.title_key
 </script>
 
 <template>
-  <div class="desk-grid" :class="`layout-${tab.layout}`" :data-layout="tab.layout">
+  <div class="desk-grid" :class="[`layout-${tab.layout}`, { 'desk-grid--fill': fill }]" :data-layout="tab.layout">
     <div v-for="[area, slots] in areas" :key="area" class="area" :style="{ gridArea: area }" :data-area="area">
       <WidgetHost
         v-for="slot in slots"
@@ -36,7 +42,8 @@ const repeatsTitle = (widget: string): boolean => isWidgetId(widget) && widgetRe
         :slot-id="slot.id"
         :slice="slot.slice ?? {}"
         :density="slot.density ?? tabDensity"
-        :frame="{ hideTitle: repeatsTitle(slot.widget) }"
+        :frame="{ hideTitle: repeatsTitle(slot.widget), fill: fills(slot.widget) }"
+        :class="{ 'slot--fill': fills(slot.widget) }"
         :data-slot="slot.id"
       />
     </div>
@@ -61,6 +68,28 @@ const repeatsTitle = (widget: string): boolean => isWidgetId(widget) && widgetRe
 
 .layout-single {
   grid-template: 'main' auto / minmax(0, 1fr);
+}
+
+/* Раздел на всю высоту: колонка без прокрутки страницы. */
+.desk-grid--fill {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.desk-grid--fill .area {
+  flex: 1 1 auto;
+  gap: var(--ant-space-3);
+  min-height: 0;
+}
+
+.desk-grid--fill .area > * {
+  flex: none;
+}
+
+.desk-grid--fill .area > .slot--fill {
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .layout-main-side {

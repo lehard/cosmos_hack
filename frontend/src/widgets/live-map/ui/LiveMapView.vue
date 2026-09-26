@@ -2,15 +2,19 @@
 /**
  * Живая карта на готовых данных (FR-1…3, 5, 7, 9, 130, 154, 155): панель периода
  * и версии, полоса режима инцидента с легендой и счётчиком сокращения области,
- * схема с наложениями и карточка выбранного узла. Данные приходят свойствами —
- * компонент не ходит на сервер; контейнер — LiveMapWidget.vue.
+ * схема с наложениями. Схема занимает всю оставшуюся высоту места (в своём
+ * разделе — окна); щелчок по узлу открывает правое окно (Д-70, UI-12): шаг,
+ * цех, описание, счётчики, изделия; внизу — «Изделия и несоответствия узла».
+ * Данные приходят свойствами — компонент не ходит на сервер; контейнер —
+ * LiveMapWidget.vue.
  */
 import { computed, ref, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { NDatePicker, NRadioButton, NRadioGroup, NSelect } from 'naive-ui'
 import type { CounterPeriod, LiveMapData, NodeAnomaly, NodeCounters } from '@/entities/live-map'
 import { naiveSizeOf, type Density } from '@/shared/config/widget'
-import type { DiagramIndex } from '../model/bpmn'
+import { ActionButton, RecordDrawer } from '@/shared/ui'
+import type { DiagramIndex, StepNode } from '../model/bpmn'
 import { INCIDENT_LEGEND, itemsByStep, itemsOfOtherVersions, itemsPerLane, scopeReduction } from '../model/overlays'
 import BpmnMapViewer from './BpmnMapViewer.vue'
 import NodeCard from './NodeCard.vue'
@@ -73,6 +77,16 @@ const versionOptions = computed(() =>
 )
 
 const selectedNode = computed(() => (selected.value && index.value ? index.value.byStepKey.get(selected.value) ?? null : null))
+/** Последний выбранный узел остаётся в окне, пока оно уезжает. */
+const shownNode = shallowRef<StepNode | null>(null)
+watch(selectedNode, (node) => {
+  if (node) shownNode.value = node
+})
+const nodeSubtitle = computed(() => {
+  const node = shownNode.value
+  if (!node) return ''
+  return [node.laneName ? `${t('liveMap.workshops.lane')}: ${node.laneName}` : '', node.stepKey].filter(Boolean).join(' · ')
+})
 
 function onReady(idx: DiagramIndex) {
   index.value = idx
@@ -132,7 +146,7 @@ function onReady(idx: DiagramIndex) {
       <p class="note">{{ t('liveMap.incident.colorNote') }}</p>
     </section>
 
-    <div class="body" :class="{ 'with-card': selectedNode }">
+    <div class="body">
       <div class="map">
         <p v-if="importError" class="import-error" role="alert">{{ t('errors.loadFailed') }}</p>
         <BpmnMapViewer
@@ -151,17 +165,34 @@ function onReady(idx: DiagramIndex) {
           @open-item="(id) => emit('open-item', id)"
         />
       </div>
-      <NodeCard
-        v-if="selectedNode"
-        :node="selectedNode"
-        :counters="counters.get(selectedNode.stepKey)"
-        :items="byStep.get(selectedNode.stepKey) ?? []"
-        :incident-mode="!!incident"
-        @close="selected = null"
-        @open-item="(id) => emit('open-item', id)"
-        @open-node="(k) => emit('open-node', k)"
-      />
     </div>
+
+    <RecordDrawer
+      :show="!!selectedNode"
+      :kind-label="t('liveMap.nodeKind')"
+      :number="shownNode ? shownNode.name || shownNode.stepKey : ''"
+      :subtitle="nodeSubtitle"
+      data-record="node"
+      @close="selected = null"
+    >
+      <NodeCard
+        v-if="shownNode"
+        :node="shownNode"
+        :counters="counters.get(shownNode.stepKey)"
+        :items="byStep.get(shownNode.stepKey) ?? []"
+        :incident-mode="!!incident"
+        @open-item="(id) => emit('open-item', id)"
+      />
+      <template #actions>
+        <ActionButton
+          v-if="shownNode"
+          type="primary"
+          data-action="open-node"
+          :label="t('liveMap.drillDown.nodeItems')"
+          @click="emit('open-node', shownNode.stepKey)"
+        />
+      </template>
+    </RecordDrawer>
     <p class="note">{{ t('liveMap.noPeopleOnMap') }}</p>
   </div>
 </template>
@@ -171,6 +202,8 @@ function onReady(idx: DiagramIndex) {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  height: 100%;
+  min-height: 0;
 }
 
 .toolbar {
@@ -233,30 +266,22 @@ function onReady(idx: DiagramIndex) {
   border-radius: 50%;
 }
 
+/* Схема — вся оставшаяся высота: в разделе «на всю высоту» до низа окна,
+   в обычном месте — не ниже минимума. Двигаемся по схеме, не по странице. */
 .body {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 12px;
-}
-
-.body.with-card {
-  grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .map {
   position: relative;
-  height: 560px;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 420px;
   border: 1px solid var(--ant-border);
   border-radius: var(--ant-radius-md);
   overflow: hidden;
-}
-
-.density-compact .map {
-  height: 480px;
-}
-
-.density-large .map {
-  height: 640px;
 }
 
 .import-error {

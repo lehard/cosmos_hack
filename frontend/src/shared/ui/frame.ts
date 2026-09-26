@@ -11,6 +11,8 @@ export interface FrameContext {
   hideTitle?: boolean
   /** Без обводки и тени — виджет внутри окна записи. */
   plain?: boolean
+  /** Рамка на всю высоту места: тело растягивается (живая карта в своём разделе). */
+  fill?: boolean
 }
 
 export const WIDGET_FRAME_CONTEXT: InjectionKey<FrameContext> = Symbol('widget-frame-context')

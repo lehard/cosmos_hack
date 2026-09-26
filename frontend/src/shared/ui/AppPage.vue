@@ -11,11 +11,13 @@ defineProps<{
   title: string
   /** Пояснение под заголовком. */
   subtitle?: string
+  /** На всю высоту окна без прокрутки: тело растягивается (раздел с живой картой). */
+  fill?: boolean
 }>()
 </script>
 
 <template>
-  <section class="app-page">
+  <section class="app-page" :class="{ 'app-page--fill': fill }">
     <header class="head">
       <div class="titles ant-box">
         <h1 class="title ant-ellipsis" :title="title">{{ title }}</h1>
@@ -72,5 +74,14 @@ defineProps<{
   display: flex;
   flex-direction: column;
   gap: var(--ant-space-4);
+}
+
+.app-page--fill {
+  height: 100%;
+}
+
+.app-page--fill .body {
+  flex: 1 1 auto;
+  min-height: 0;
 }
 </style>
