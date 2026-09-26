@@ -230,6 +230,8 @@
     "verificationBoard": "Табло проверки",
     "integrityAudit": "Целостность и аудит",
     "criticalActionsLog": "Журнал критических действий",
+    "journal": "Журнал операций",
+    "decisionsJournal": "Журнал решений",
     "terminal": "Терминал исполнителя",
     "decisionCard": "Требуется ваше решение",
     "passport": "Паспорт изделия",

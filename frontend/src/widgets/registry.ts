@@ -69,6 +69,7 @@ export const widgetRegistry = {
   'critical-actions-log': { titleKey: 'desks.criticalActionsLog', epic: 14, load: () => import('./critical-actions-log') },
   'security-events': { titleKey: 'audit.securityEvents.title', epic: 14, load: () => import('./security-events') },
   'grants-history': { titleKey: 'widgets.grantsHistory', epic: 14, load: () => import('./grants-history') },
+  'journal': { titleKey: 'desks.journal', epic: 14, load: () => import('./journal') },
   // ── эпик 15: Аналитика ──
   'metric-tiles': { titleKey: 'widgets.metricTiles', epic: 15, load: () => import('./metric-tiles') },
   'control-chart': { titleKey: 'widgets.controlChart', epic: 15, load: () => import('./control-chart') },

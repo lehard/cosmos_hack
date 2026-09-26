@@ -61,6 +61,8 @@ export const i18n = createI18n({
     ru: {
       date: { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: PLANT_TIME_ZONE },
       dateTime: { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: PLANT_TIME_ZONE },
+      // с секундами — журнал: порядок записей внутри минуты (AD-37)
+      dateTimeSec: { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: PLANT_TIME_ZONE },
       time: { hour: '2-digit', minute: '2-digit', timeZone: PLANT_TIME_ZONE },
     },
   },
