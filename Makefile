@@ -111,9 +111,12 @@ dev-db-psql: ## psql в свою БД
 
 # ------------------------------------------------------------ генерация ----
 
-.PHONY: generate
+.PHONY: generate generate-frontend
 generate: ## Перегенерировать производные файлы (правила линтера слоёв; дальше — эпик 02)
 	$(GO_RUN) sh -c 'bin=$$(/src/deploy/scripts/go-tools.sh ./archgen) && cd tools && $$bin/archgen -layers archgen/layers.json -out ../.golangci.yml'
+
+generate-frontend: ## Клиент orval + Vue Query, словарь статусов и коды ошибок для фронтенда (frontend/src/shared/api/generated)
+	$(NODE_RUN) sh -c 'test -d node_modules || npm ci --prefer-offline --no-audit --no-fund; npm run --silent generate'
 
 # ------------------------------------------------------------- проверки ----
 
@@ -124,7 +127,7 @@ check: check-backend check-frontend check-third-party check-contracts ## Все 
 check-backend: ## Бэкенд: правила слоёв, gofmt, vet, golangci-lint, detcheck, тесты, самопроверка линтеров
 	$(GO_RUN) /src/deploy/scripts/check-backend.sh
 
-check-frontend: ## Фронтенд: ESLint (запрет ручных HTTP-вызовов), vue-tsc, сборка
+check-frontend: ## Фронтенд: ESLint (запрет ручных HTTP-вызовов), столы ↔ реестр, клиент не устарел, vue-tsc, тесты, сборка
 	$(NODE_RUN) /src/deploy/scripts/check-frontend.sh
 
 check-third-party: ## GoGOST: sha256, подпись автора, побайтное совпадение с архивом (офлайн)

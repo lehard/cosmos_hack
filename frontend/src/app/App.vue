@@ -1,23 +1,16 @@
 <script setup lang="ts">
-// Корневой компонент: русская локаль Naive UI и общая тема (NFR-UI-2:
-// минималистично, одноцветно; цвет — только для статуса и главного действия).
-import { dateRuRU, NConfigProvider, NMessageProvider, ruRU, type GlobalThemeOverrides } from 'naive-ui'
-
-const themeOverrides: GlobalThemeOverrides = {
-  common: {
-    fontFamily: "'PT Sans', system-ui, sans-serif",
-    fontFamilyMono: "'PT Mono', ui-monospace, monospace",
-    primaryColor: '#1f2937',
-    primaryColorHover: '#374151',
-    primaryColorPressed: '#111827',
-  },
-}
+// Корневой компонент: русская локаль Naive UI (календарь, пагинация) и общая
+// тема (NFR-UI-2); провайдеры сообщений и диалогов для всех страниц.
+import { dateRuRU, NConfigProvider, NDialogProvider, NMessageProvider, ruRU } from 'naive-ui'
+import { themeOverrides } from './theme'
 </script>
 
 <template>
   <NConfigProvider :locale="ruRU" :date-locale="dateRuRU" :theme-overrides="themeOverrides">
     <NMessageProvider>
-      <RouterView />
+      <NDialogProvider>
+        <RouterView />
+      </NDialogProvider>
     </NMessageProvider>
   </NConfigProvider>
 </template>

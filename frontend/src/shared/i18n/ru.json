@@ -1,0 +1,2060 @@
+{
+  "common": {
+    "appName": "Контроль качества изделий",
+    "actions": {
+      "save": "Сохранить",
+      "cancel": "Отмена",
+      "close": "Закрыть",
+      "back": "Назад",
+      "next": "Далее",
+      "confirm": "Подтвердить",
+      "apply": "Применить",
+      "reset": "Сбросить",
+      "search": "Найти",
+      "filter": "Фильтр",
+      "clearFilter": "Сбросить фильтр",
+      "export": "Выгрузить",
+      "print": "Распечатать",
+      "download": "Скачать",
+      "upload": "Загрузить",
+      "refresh": "Обновить",
+      "retry": "Повторить",
+      "add": "Добавить",
+      "open": "Открыть",
+      "details": "Подробнее",
+      "showAll": "Показать все",
+      "collapse": "Свернуть",
+      "expand": "Развернуть",
+      "why": "Почему?",
+      "copy": "Скопировать",
+      "copied": "Скопировано",
+      "select": "Выбрать",
+      "send": "Отправить",
+      "sign": "Подписать",
+      "login": "Войти",
+      "logout": "Выйти",
+      "help": "Справка",
+      "helpForRole": "Справка для вашей роли",
+      "drillDown": "Раскрыть до исходных записей",
+      "openPassport": "Открыть паспорт изделия",
+      "openNcCard": "Открыть карточку несоответствия",
+      "openDocument": "Открыть документ",
+      "showPreviousVersions": "Показать прежние версии",
+      "yes": "Да",
+      "no": "Нет"
+    },
+    "words": {
+      "item": "Изделие",
+      "items": "Изделия",
+      "part": "Деталь",
+      "component": "Компонент",
+      "itemType": "Тип изделия",
+      "batch": "Партия",
+      "heat": "Плавка",
+      "operation": "Операция",
+      "operationRun": "Выполнение операции",
+      "processStep": "Технологический шаг",
+      "routing": "Технологический маршрут",
+      "station": "Участок",
+      "line": "Линия",
+      "shift": "Смена",
+      "workshop": "Цех",
+      "warehouse": "Склад",
+      "workplace": "Рабочее место",
+      "post": "Пост",
+      "equipment": "Оборудование",
+      "machine": "Станок",
+      "tool": "Инструмент",
+      "fixture": "Оснастка",
+      "program": "Программа",
+      "performer": "Исполнитель",
+      "author": "Автор",
+      "time": "Время",
+      "date": "Дата",
+      "period": "Период",
+      "status": "Статус",
+      "basis": "Основание",
+      "evidence": "Подтверждающие материалы",
+      "source": "Источник",
+      "version": "Версия",
+      "revision": "Ревизия",
+      "zone": "Зона",
+      "defect": "Дефект",
+      "defectType": "Вид дефекта",
+      "severity": "Тяжесть",
+      "requirement": "Требование",
+      "characteristic": "Характеристика",
+      "tolerance": "Допуск",
+      "setpoint": "Уставка",
+      "designDocs": "КД",
+      "processDocs": "ТП",
+      "productionOrder": "Производственное задание",
+      "supplier": "Поставщик",
+      "enterprise": "Предприятие",
+      "inspectionPoint": "Точка контроля",
+      "closingGate": "Закрывающая точка",
+      "presentationPoint": "Точка предъявления",
+      "incident": "Инцидент",
+      "nonconformity": "Несоответствие",
+      "signal": "Сигнал",
+      "hypothesis": "Гипотеза",
+      "unknown": "Неизвестно",
+      "notApplicable": "Не применимо",
+      "none": "Нет",
+      "total": "Всего",
+      "outOf": "{a} из {b}",
+      "deadline": "Срок",
+      "overdue": "Просрочено",
+      "remaining": "Осталось: {time}",
+      "comment": "Комментарий",
+      "required": "Обязательно",
+      "optional": "Необязательно",
+      "designAssumption": "Проектное предположение",
+      "designAssumptionShort": "ПП",
+      "ourAssumption": "Допущение",
+      "demoData": "Демонстрационные данные — не промышленная проверка",
+      "conditionalPrices": "Цены условные"
+    },
+    "header": {
+      "user": "Пользователь",
+      "role": "Роль",
+      "shift": "Смена",
+      "tokenStatus": "Токен",
+      "tokenInserted": "Токен вставлен",
+      "tokenMissing": "@:errors.signing.tokenMissing",
+      "tokenAgentMissing": "Агент токена не найден — доступна подпись на бумаге",
+      "integrity": "Целостность журнала",
+      "integrityOk": "Цело · проверено {time}",
+      "integrityViolated": "Нарушена целостность",
+      "integrityStale": "Нет свежего отчёта верификатора",
+      "integrityServerSide": "по данным сервера",
+      "notifications": "Уведомления",
+      "searchPlaceholder": "Номер детали или скан DataMatrix",
+      "workplace": "Рабочее место: {workplace}"
+    },
+    "modes": {
+      "now": "Сейчас",
+      "replay": "Воспроизведение",
+      "asOfOccurred": "Как было",
+      "asOfRecorded": "Что мы знали",
+      "atMoment": "на момент {time}",
+      "replayReadOnly": "Действия недоступны в режиме воспроизведения",
+      "backendFixtures": "Демо на заготовках",
+      "backendLive": "Данные движка",
+      "scenarioRun": "Прогон сценария {run}"
+    },
+    "notifications": {
+      "info": "Информация",
+      "alarm": "Тревога",
+      "task": "Задача",
+      "decisionRequest": "Запрос решения",
+      "markRead": "Отметить прочитанным",
+      "acknowledge": "Подтвердить получение",
+      "owner": "Ответственный",
+      "escalation": "Эскалация"
+    },
+    "modules": {
+      "visionQc": "Визуальный контроль",
+      "operatorVision": "Контроль действий оператора",
+      "machineLogs": "Журналы оборудования",
+      "criticalActions": "Критические действия",
+      "predictive": "Прогнозирование",
+      "mobileOps": "Мобильные средства и роботы"
+    },
+    "units": {
+      "mm": "{value}\u00a0мм",
+      "um": "{value}\u00a0мкм",
+      "ampere": "{value}\u00a0А",
+      "volt": "{value}\u00a0В",
+      "seconds": "{value}\u00a0с",
+      "minutes": "{value}\u00a0мин",
+      "hours": "{value}\u00a0ч",
+      "hoursMinutes": "{h}\u00a0ч\u00a0{m}\u00a0мин",
+      "days": "{value}\u00a0дн.",
+      "workDays": "{value}\u00a0раб.\u00a0дн.",
+      "pieces": "{value}\u00a0шт.",
+      "percent": "{value}\u00a0%",
+      "celsius": "{value}\u00a0°С",
+      "newtonMeter": "{value}\u00a0Н·м",
+      "normHours": "{value}\u00a0нормо-ч",
+      "rubles": "{value}\u00a0руб.",
+      "cycles": "{used}\u00a0из\u00a0{limit}\u00a0циклов"
+    },
+    "state": {
+      "loading": "Загрузка…",
+      "saving": "Сохранение…",
+      "saved": "Сохранено",
+      "sending": "Отправка…",
+      "sent": "Отправлено",
+      "processing": "Обработка…"
+    }
+  },
+
+  "desks": {
+    "dashboard": "Обзор производства",
+    "liveMap": "Живая карта",
+    "history": "История",
+    "proposals": "Предложения",
+    "analytics": "Аналитика",
+    "process": "Процесс",
+    "references": "Справочники",
+    "reactionRules": "Правила реакции и сдерживания",
+    "decisionQueue": "Ждут моего решения",
+    "station": "Участок",
+    "peopleAndEquipment": "Люди и оборудование",
+    "tasks": "Задачи",
+    "shift": "Смена",
+    "commonFactors": "Общие факторы",
+    "causeAnalysis": "Разбор причин",
+    "circumstances": "Разбор обстоятельств",
+    "analyzerAdaptation": "Адаптация анализатора",
+    "dataDeficit": "Карта дефицита данных",
+    "access": "Доступ",
+    "sources": "Источники",
+    "integrations": "Интеграции",
+    "components": "Состояние компонентов",
+    "quarantine": "Карантин сообщений",
+    "testScenarios": "Тестовые сценарии",
+    "digitalStand": "Цифровой стенд",
+    "verificationBoard": "Табло проверки",
+    "integrityAudit": "Целостность и аудит",
+    "criticalActionsLog": "Журнал критических действий",
+    "terminal": "Терминал исполнителя",
+    "decisionCard": "Требуется ваше решение",
+    "passport": "Паспорт изделия",
+    "ncCard": "Карточка несоответствия",
+    "eventLog": "Журнал событий",
+    "documents": "Документы",
+    "help": "Справка"
+  },
+
+  "roles": {
+    "qualityInspector": "Контролёр качества",
+    "siteForeman": "Мастер участка",
+    "technologist": "Технолог",
+    "productionManager": "Руководитель производства",
+    "administrator": "Администратор",
+    "performer": "Исполнитель",
+    "customerRepresentative": "Представитель заказчика (ВП / ПЗ)",
+    "approver": "Согласующий",
+    "securityAuditor": "Аудитор информационной безопасности",
+    "designAuthority": "Конструктор — держатель КД",
+    "metrologist": "Метролог",
+    "qualityBoardMember": "Член комиссии по качеству",
+    "headOfQualityControl": "Начальник ОТК",
+    "headOfWorkshop": "Начальник цеха",
+    "chiefDesigner": "Главный конструктор",
+    "chiefWelder": "Главный сварщик",
+    "qualityEngineer": "Инженер по качеству",
+    "qualityManager": "Руководитель по качеству",
+    "device": "Устройство",
+    "system": "Система",
+    "groups": {
+      "caseRoles": "Роли",
+      "additionalRoles": "Дополнительные роли",
+      "participants": "Участники без роли — работают с карточкой решения",
+      "seniorSigners": "Руководящие подписанты",
+      "targetRoles": "Целевые роли (после внедрения)"
+    },
+    "tasks": {
+      "qualityInspector": "Рассматривает несоответствия, подтверждает или отклоняет результаты контроля, назначает доп. проверку",
+      "siteForeman": "Отслеживает изделия, выполнение операций, задержки и повторные обработки на участке",
+      "technologist": "Разбирает связь дефектов с операциями, действиями исполнителей и режимами оборудования",
+      "productionManager": "Видит весь процесс, показатели качества, время обработки и повторяемость проблем",
+      "administrator": "Управляет доступом, источниками, настройками и состоянием компонентов",
+      "performer": "Выполняет операции на своём рабочем месте, сообщает об отклонениях, запрашивает контроль",
+      "customerRepresentative": "Принимает изделия на точках приёмки заказчика и согласует решения по несоответствиям",
+      "approver": "Подписывает решения по маршрутам согласования",
+      "securityAuditor": "Только чтение: журналы, отчёты верификатора, события безопасности, выдача прав"
+    }
+  },
+
+  "statuses": {
+    "position": {
+      "inQueue": "В очереди",
+      "inProgress": "В работе",
+      "atInspection": "На контроле",
+      "atPresentationPoint": "На точке предъявления",
+      "inTransit": "В перемещении",
+      "inStorage": "На хранении",
+      "isolated": "В изоляции",
+      "completed": "Завершено"
+    },
+    "quality": {
+      "notInspected": "Не проверено",
+      "conforming": "Годно",
+      "acceptedWithConcession": "Годно по разрешению на отклонение",
+      "unableToAssess": "@:inspection.outcome.unableToAssess",
+      "signal": "Сигнал о признаке дефекта",
+      "nonconforming": "Несоответствие подтверждено"
+    },
+    "disposition": {
+      "none": "Решения нет",
+      "rework": "Переделка",
+      "repair": "Ремонт",
+      "useAsIs": "Как есть",
+      "scrap": "Списание",
+      "returnToSupplier": "Возврат поставщику"
+    },
+    "containment": {
+      "none": "Без сдерживания",
+      "observe": "Наблюдать",
+      "additionalCheck": "Доп. проверка",
+      "itemHold": "Блок изделия",
+      "batchHold": "Блок партии",
+      "processPointStop": "Стоп точки процесса",
+      "criticalStop": "Критическая остановка"
+    },
+    "erpAccounting": {
+      "notSent": "Не передано в 1С",
+      "sentAwaitingAck": "Отправлено — ждём подтверждения 1С",
+      "acceptedIntoWork": "Принято в работу",
+      "moved": "Перемещено",
+      "transferredToScrap": "Переведено в брак",
+      "returnedToSupplier": "Возвращено поставщику",
+      "released": "Выпущено",
+      "exchangeError": "Ошибка обмена"
+    },
+    "incident": {
+      "confirmed": "Подтверждено",
+      "suspect": "Под подозрением",
+      "excluded": "Исключено",
+      "unknown": "Неизвестно"
+    },
+    "incidentAction": {
+      "observe": "Наблюдать",
+      "check": "Проверить",
+      "block": "Заблокировать",
+      "release": "Выпустить"
+    },
+    "itemSummary": {
+      "inProcess": "В работе",
+      "suspect": "@:statuses.incident.suspect",
+      "reinspectionRequired": "Ожидает доп. контроля",
+      "hold": "Заблокировано",
+      "pendingDecision": "Ожидает решения",
+      "nonconforming": "@:statuses.quality.nonconforming",
+      "cleared": "Исключено из подозрения",
+      "released": "Разрешено к движению",
+      "inRework": "На переделке",
+      "inRepair": "На ремонте",
+      "acceptedWithConcession": "@:statuses.quality.acceptedWithConcession",
+      "scrapped": "Списано",
+      "returned": "Возвращено поставщику"
+    },
+    "signal": {
+      "underReview": "На рассмотрении",
+      "confirmed": "Подтверждён",
+      "rejected": "Отклонён",
+      "recheckAssigned": "Назначена доп. проверка"
+    },
+    "ncByItem": {
+      "title": "@:ncCard.twoStatuses.byItem",
+      "draft": "Черновик карточки",
+      "isolated": "Изолировано",
+      "awaitingDisposition": "Ждёт решения по изделию",
+      "awaitingApprovals": "Ждёт подписей: {have} из {need}",
+      "inExecution": "Исполняется",
+      "awaitingReinspection": "Ждёт повторного контроля",
+      "executionVerified": "Исполнение проверено",
+      "closed": "Закрыто по изделию",
+      "overdue": "Срок решения просрочен"
+    },
+    "ncInvestigation": {
+      "title": "@:ncCard.twoStatuses.investigation",
+      "notRequired": "Разбор не нужен по политике",
+      "notStarted": "Разбор не начат",
+      "inProgress": "Идёт разбор",
+      "hypothesisOnly": "Есть только гипотеза",
+      "causeConfirmed": "Причина подтверждена",
+      "causeNotEstablished": "Причина не установлена",
+      "measuresAssigned": "Меры назначены",
+      "effectivenessCheck": "Проверка результативности",
+      "closed": "Расследование закрыто"
+    },
+    "hypothesis": {
+      "proposedBySystem": "Предложена системой",
+      "recorded": "Записана",
+      "confirmed": "Подтверждена",
+      "rejected": "Отклонена",
+      "revised": "Пересмотрена из-за события {eventId}"
+    },
+    "causeCategory": {
+      "incoming": "Входной брак (материал, поставщик)",
+      "equipment": "Оборудование",
+      "performer": "Исполнитель (отклонение от процедуры)",
+      "handling": "Перемещение и хранение",
+      "assembly": "Сборка",
+      "documentation": "Документация и метод",
+      "notEstablished": "Не установлена"
+    },
+    "correctiveAction": {
+      "assigned": "Назначено",
+      "implemented": "Внедрено",
+      "effective": "Результативно",
+      "failed": "Нерезультативно — мера переоткрыта",
+      "underObservation": "Идёт наблюдение: {from} — {to}"
+    },
+    "processVersion": {
+      "draft": "Черновик",
+      "onApproval": "На утверждении",
+      "active": "Действующая",
+      "retired": "Выведена"
+    },
+    "zone": {
+      "checked": "Проверена",
+      "staleAfterIntervention": "Устарела после вмешательства",
+      "closed": "Закрыта"
+    },
+    "operationRun": {
+      "running": "Идёт",
+      "paused": "Приостановлено",
+      "finished": "Завершено",
+      "interrupted": "Прервано",
+      "stuck": "Зависло — нет завершения дольше нормы"
+    },
+    "processingState": {
+      "completed": "Выполнено",
+      "aborted": "Прервано",
+      "failed": "Сбой"
+    },
+    "equipmentCondition": {
+      "normal": "Норма",
+      "warning": "Предупреждение",
+      "fault": "Неисправность"
+    },
+    "equipmentState": {
+      "running": "Работает",
+      "idle": "Ожидает",
+      "stopped": "Остановлено",
+      "alarm": "Авария",
+      "setup": "Наладка",
+      "auto": "Автоматический режим",
+      "manual": "Ручной режим"
+    },
+    "analyzerPassport": {
+      "shadow": "Теневой режим",
+      "pilot": "Пилот",
+      "active": "Допущен",
+      "suspended": "Приостановлен",
+      "retired": "Выведен"
+    },
+    "document": {
+      "draft": "Черновик",
+      "onRoute": "На подписи",
+      "routeClosed": "Маршрут закрыт",
+      "annulled": "Аннулирован",
+      "newVersion": "Новая версия — маршрут заново"
+    },
+    "concession": {
+      "draft": "Черновик",
+      "onApproval": "На подписи",
+      "active": "Действует",
+      "exhausted": "Лимит исчерпан",
+      "expired": "Срок истёк",
+      "revoked": "Отозвано"
+    },
+    "key": {
+      "active": "Действует",
+      "revoked": "Отозван",
+      "compromised": "Скомпрометирован с {time}",
+      "expired": "Срок истёк"
+    },
+    "task": {
+      "open": "Открыта",
+      "done": "Выполнена",
+      "overdue": "Просрочена",
+      "escalated": "Эскалирована"
+    },
+    "scenario": {
+      "notStarted": "Не запущен",
+      "running": "Идёт",
+      "paused": "Пауза",
+      "waitingForDecision": "Ждёт решения человека",
+      "finished": "Завершён"
+    },
+    "check": {
+      "matched": "Совпало",
+      "mismatched": "Не совпало",
+      "notChecked": "Не проверено"
+    }
+  },
+
+  "inspection": {
+    "outcome": {
+      "defectFound": "Обнаружен признак дефекта",
+      "noDefectFound": "Признаки не обнаружены",
+      "unableToAssess": "Оценка невозможна"
+    },
+    "outcomeShort": {
+      "defectFound": "Признак дефекта",
+      "noDefectFound": "Признаков нет",
+      "unableToAssess": "Оценить нельзя"
+    },
+    "outcomeNote": {
+      "defectFound": "Это сигнал, а не несоответствие: решение за контролёром",
+      "noDefectFound": "Только для видов дефектов, которые метод способен выявить. «Годно» ставит человек на точке предъявления",
+      "unableToAssess": "Не годно и не брак. Нужен ручной осмотр или повторный контроль"
+    },
+    "unableReason": {
+      "title": "Почему оценка невозможна",
+      "glare": "Блик",
+      "blur": "Нерезкий снимок",
+      "zoneObscured": "Зона закрыта",
+      "idUnreadable": "Код детали не прочитан",
+      "analyzerFailure": "Сбой анализатора",
+      "processingAborted": "Обработка прервана",
+      "lowObservationQuality": "Качество наблюдения ниже порога ({value} при пороге {threshold})",
+      "noDataReceived": "Результат контроля не поступил"
+    },
+    "notCoveredByMethod": "Не проверено методом, способным выявить «{defectType}»",
+    "observationQuality": "Качество наблюдения",
+    "observationQualityValue": "Качество наблюдения {value}",
+    "analyzerConfidence": "Уверенность анализатора",
+    "analyzerConfidenceValue": "Уверенность {value}",
+    "confidenceIsNotProbability": "Уверенность — не вероятность брака",
+    "analyzerRecommendation": "Рекомендация анализатора: {recommendation} — это совет, реакцию определяет карта реакций",
+    "stages": {
+      "title": "Ступени анализатора",
+      "localization": "Где дефект",
+      "classification": "Какой вид",
+      "stageLine": "{stage}: {result}, уверенность {confidence}, версия {version}"
+    },
+    "versions": {
+      "title": "Какими версиями проанализировано",
+      "itemRevision": "Ревизия изделия",
+      "recipe": "@:inspection.recipe",
+      "cameraConfig": "Конфигурация камеры",
+      "calibration": "Калибровка",
+      "analyzer": "Версия анализатора",
+      "thresholdProfile": "Профиль порогов",
+      "dataContract": "Версия контракта данных",
+      "application": "Версия приложения",
+      "analyzedBy": "Проанализировано версией {version}"
+    },
+    "method": {
+      "title": "Метод контроля",
+      "automatedVisual": "Автоматизированный визуальный",
+      "visualHuman": "Визуальный (человек)",
+      "measuring": "Измерительный",
+      "cmm": "Размерный (КИМ)",
+      "scan3d": "Трёхмерное сканирование",
+      "xray": "Рентгеновский (РК)",
+      "ultrasonic": "Ультразвуковой (УЗК)",
+      "nonDestructive": "Неразрушающий",
+      "leakTest": "Испытание на герметичность",
+      "laboratory": "Лабораторный",
+      "test": "Испытания",
+      "documents": "Проверка документов"
+    },
+    "phase": {
+      "incoming": "Входной контроль",
+      "beforeOperation": "До операции",
+      "afterOperation": "После операции",
+      "beforeZoneClosure": "Перед закрытием зоны",
+      "final": "Окончательный контроль"
+    },
+    "severity": {
+      "critical": "Критический",
+      "major": "Значительный",
+      "minor": "Малозначительный"
+    },
+    "measurement": "Измерено {value} при допуске {tolerance}",
+    "measurementOutOfTolerance": "Вне допуска: {value} при допуске {tolerance}",
+    "defectCount": "Дефектов в наблюдении: {n}",
+    "unknownDefectType": "Неизвестный вид дефекта: {code}",
+    "staleAfterIntervention": "Устарело после вмешательства",
+    "automatedInspection": "Автоматизированный контроль: машина ищет, человек решает",
+    "recipe": "Карта контроля",
+    "qualificationPassport": "Паспорт допуска карты контроля",
+    "trustLevel": {
+      "title": "Уровень доверия",
+      "level0": "0 — только запись наблюдения",
+      "level1": "1 — рекомендация контролёру",
+      "level2": "2 — сам ставит «под подозрением» и предлагает доп. контроль",
+      "level3": "3 — сам блокирует и изолирует",
+      "level4": "4 — сам пропускает уверенные результаты «признаки не обнаружены» по правилу"
+    },
+    "manualControl": "Контроль ручной",
+    "controlPointLabel": "Точка контроля {code}",
+    "closingGateLabel": "Закрывающая точка {code}"
+  },
+
+  "decisions": {
+    "panelTitle": "@:ncCard.zones.whatToDecide",
+    "signal": {
+      "confirmNc": "Подтвердить несоответствие — изолировать до решения",
+      "rejectSignal": "Отклонить сигнал — изделие продолжает маршрут",
+      "requestRecheck": "Назначить доп. проверку — {method}",
+      "requestRecheckWaiting": "Назначить доп. проверку — изделие ждёт в изоляции",
+      "acceptAndPass": "Принять — передать на {nextStep}",
+      "isolate": "Изолировать — до решения по изделию",
+      "rejectReasonLabel": "Почему сигнал отклонён (обязательно)",
+      "rejectReasonPlaceholder": "Например: блик на кромке, на повторном снимке признаков нет",
+      "recheckSuggested": "Система предлагает: {method}. Утвердите или выберите другой метод",
+      "originalSignalKept": "Исходный сигнал сохраняется в истории без изменений"
+    },
+    "disposition": {
+      "title": "Решение по изделию",
+      "rework": "Переделка — вернуть на операцию «{operation}»",
+      "repair": "Ремонт — по разрешению на отклонение",
+      "useAsIs": "Как есть — по разрешению на отклонение",
+      "scrap": "Списать — оформить акт о браке",
+      "returnToSupplier": "Вернуть поставщику — оформить возврат с основанием претензии",
+      "selectConcession": "Выберите действующее разрешение на отклонение",
+      "noActiveConcession": "Действующего разрешения нет — оформить новое",
+      "afterReworkNote": "После переделки или ремонта изделие заново проходит весь контроль операции",
+      "returnOnlyUnprocessed": "Вернуть поставщику можно только необработанные изделия партии",
+      "reworkCounter": "Доработок зоны {zone}: {used} из {limit}",
+      "verifyExecution": "Подтвердить исполнение — направить на повторный контроль",
+      "closeByItem": "Закрыть по изделию — расследование продолжится отдельно",
+      "correctPrevious": "Исправить прежнее решение — новой записью",
+      "decisionDoesNotWaitForCause": "Решение по изделию не ждёт установления причины"
+    },
+    "containment": {
+      "releaseHold": "Снять блок — вернуть изделие в маршрут",
+      "releaseHoldNote": "Снятие блока не означает годность",
+      "holdItem": "Заблокировать изделие",
+      "holdBatch": "Заблокировать партию",
+      "stopProcessPoint": "Остановить точку процесса — {target}",
+      "releaseProcessPoint": "Снять стоп точки процесса — первые {n} изделий на усиленный контроль",
+      "criticalStop": "@:statuses.containment.criticalStop",
+      "confirmIsolatorMove": "Подтвердить перемещение в изолятор",
+      "notMovedWarning": "Изолировано в системе, физически не перемещено"
+    },
+    "gate": {
+      "accept": "Принять на точке предъявления — передать на {nextStep}",
+      "returnForRepresentation": "Вернуть — на повторное предъявление",
+      "presentationNumber": "Предъявление № {n}",
+      "higherSignerRequired": "Повторное предъявление — нужна подпись: {role}",
+      "separationOfDuties": "Вы участвовали в изготовлении этого изделия — принять его здесь может только другой сотрудник",
+      "waitingFor": "Ждёт подписи: {role}, срок {deadline}"
+    },
+    "concession": {
+      "title": "Разрешение на отклонение",
+      "create": "Оформить разрешение на отклонение — отправить на подписи",
+      "revoke": "Отозвать разрешение — указать обоснование",
+      "number": "Номер",
+      "clause": "Пункт КД или ТУ",
+      "scope": "Область действия: изделия или диапазон номеров",
+      "limit": "Лимит количества",
+      "usage": "Использовано: {used} из {limit}",
+      "validUntil": "Действует до",
+      "approvals": "Подписи по порядку",
+      "notDeviationPermit": "Не путать с разрешением на отступление: оно выдаётся до изготовления и входит в нормативный слой",
+      "resultStatus": "Итог: «годно по разрешению на отклонение» — это не «годно»"
+    },
+    "authority": {
+      "whyCan": "Почему вы можете это сделать",
+      "whyCannot": "Почему вы не можете это сделать",
+      "yourAuthority": "Ваши полномочия",
+      "allowed": "Разрешено",
+      "notAllowed": "Не разрешено",
+      "requiredSignatures": "Нужны подписи",
+      "alreadySigned": "Уже подписали",
+      "missingSignatures": "Не хватает подписей: {who}",
+      "requestDecision": "Запросить решение",
+      "requestDecisionFrom": "Запросить решение — {who}",
+      "requestSent": "Запрос отправлен: {who}, срок {deadline}",
+      "byRule": "Выполнено по утверждённому правилу {ruleId}, редакция {revision}",
+      "ruleDetails": "Владелец правила: {owner}. Утвердил: {approvedBy}. Действует до {validUntil}. Рамки: {scope}",
+      "whyStopped": "Почему система остановила эти изделия"
+    },
+    "automationMode": {
+      "title": "Режим автоматизации",
+      "mode1": "Сама — только безопасное и обратимое",
+      "mode2": "Сама по утверждённому правилу",
+      "mode3": "Предлагает — человек утверждает",
+      "mode4": "Несколько одобрений",
+      "mode5": "Внешние полномочия"
+    },
+    "actionClass": {
+      "protective": "Защитное и обратимое — система может сама",
+      "permissive": "Разрешающее — только по делегированному правилу или человеком",
+      "irreversible": "Необратимое и инженерное — только уполномоченный человек"
+    },
+    "signature": {
+      "summaryTitle": "Проверьте перед подписью",
+      "confirmWithToken": "Подтвердить касанием токена",
+      "reenterPin": "Введите ПИН-код ещё раз",
+      "signClosingDecision": "Подписать решение",
+      "signOnPaper": "Подписать на бумаге",
+      "level0": "Уровень 0 — устройство подписывает своё сообщение",
+      "level1": "Уровень 1 — рутинное действие, ПИН-код один раз за смену",
+      "level2": "Уровень 2 — закрывающее решение: сводка и явное подтверждение",
+      "level3": "Уровень 3 — сменный рапорт одной подписью"
+    },
+    "decisionCard": {
+      "title": "@:desks.decisionCard",
+      "whatProposed": "Что предлагается",
+      "whyEscalated": "Почему это пришло к вам",
+      "evidence": "Подтверждающие материалы",
+      "similarAccepted": "Похожие случаи: приняты",
+      "similarRejected": "Похожие случаи: отклонены",
+      "signaturesNeeded": "Чьи подписи нужны",
+      "signaturesPresent": "Чьи подписи уже есть",
+      "timeLeft": "@:common.words.remaining",
+      "sign": "Подписать — {decision}",
+      "decline": "Не согласовать — вернуть с замечанием",
+      "declineCommentLabel": "Замечание (обязательно)"
+    },
+    "cause": {
+      "confirmCause": "Подтвердить причину — указать, чем проверили",
+      "verifiedBy": "Чем проверили",
+      "rejectHypothesis": "Отклонить гипотезу",
+      "requestMeasurement": "Запросить измерение — {what}",
+      "causeNotEstablished": "Причина не установлена — указать обоснование",
+      "confirmPerformerError": "Подтвердить ошибку исполнителя",
+      "performerErrorPrerequisites": "Только после расследования, письменного объяснения работника и решения уполномоченного"
+    },
+    "correctiveAction": {
+      "assign": "Назначить корректирующее действие — с планом проверки результативности",
+      "markImplemented": "Отметить внедрение — начать наблюдение",
+      "confirmEffective": "Подтвердить результативность",
+      "markFailed": "Нерезультативно — переоткрыть меру",
+      "typeWhyMade": "Мера против возникновения",
+      "typeWhyMissed": "Мера против пропуска контроля"
+    },
+    "process": {
+      "submitForApproval": "Отправить на утверждение — кворуму",
+      "signVersion": "Подписать версию — в составе кворума",
+      "activateVersion": "Ввести версию в действие — для новых изделий",
+      "handOverProposal": "Передать предложение — {who}"
+    }
+  },
+
+  "ncCard": {
+    "title": "@:desks.ncCard",
+    "number": "Несоответствие {number}",
+    "zones": {
+      "whatHappened": "Что произошло",
+      "evidence": "Доказательства",
+      "whatToDecide": "Что решить"
+    },
+    "layers": {
+      "sourceSignal": "Исходный сигнал",
+      "systemAnalysis": "Анализ системы",
+      "humanDecisions": "Решения людей",
+      "finalStatus": "Итоговый статус"
+    },
+    "twoStatuses": {
+      "byItem": "По изделию",
+      "investigation": "Системное расследование",
+      "note": "Закрытие по изделию не закрывает расследование"
+    },
+    "whatHappened": {
+      "beforeOperation": "До операции",
+      "operation": "Операция",
+      "afterOperation": "После операции",
+      "machine": "Станок",
+      "tool": "Инструмент и ресурс",
+      "program": "Программа и ревизия",
+      "performer": "Исполнитель",
+      "zoneHistory": "История зоны",
+      "lastCleanCheck": "Последняя чистая проверка зоны: {checkpoint}, {time}",
+      "firstDefectiveCheck": "Первая проверка с признаком: {checkpoint}, {time}"
+    },
+    "requirement": {
+      "title": "Требование",
+      "characteristic": "Характеристика",
+      "tolerance": "Допуск",
+      "designRevision": "Ревизия КД",
+      "noRequirement": "Требования нет — это вопрос технологу, а не брак"
+    },
+    "whySystemSuggests": {
+      "title": "Почему система это предлагает",
+      "rule": "Правило: {ruleId}, редакция {revision}",
+      "reactionMap": "Карта реакций: {defectType}, тяжесть «{severity}», уверенность {confidence}, качество наблюдения {quality}",
+      "basis": "Основания",
+      "alternatives": "Альтернативные объяснения",
+      "missingData": "Чего не хватает",
+      "notAVerdict": "Это предложение системы, а не решение"
+    },
+    "equipment": {
+      "title": "Оборудование во время операции",
+      "operationRunProfile": "Профиль выполнения операции",
+      "parameterVsSetpoint": "{parameter}: {value} при уставке {setpoint}",
+      "manualOverride": "@:timeline.equipment.manualOverride",
+      "possiblyRelated": "Возможные связанные обстоятельства"
+    },
+    "performerActions": {
+      "title": "Действия исполнителя на операции",
+      "circumstanceNotBlame": "Обстоятельство, а не вина",
+      "noPerformerData": "@:empty.performerUnknown"
+    },
+    "similarCases": {
+      "title": "Похожие случаи",
+      "line": "{case}: причина ({causeStatus}) — {cause}, мера — {measure}, результат — {result}"
+    },
+    "commonFactors": {
+      "title": "@:desks.commonFactors",
+      "subtitle": "Что общего у несоответствий группы",
+      "row": "{factor}: {k} из {n}",
+      "machine": "Станок",
+      "tool": "Инструмент",
+      "fixture": "Оснастка",
+      "program": "Программа",
+      "performer": "Исполнитель",
+      "materialBatch": "Партия материала",
+      "toHypothesis": "Открыть как гипотезу",
+      "toNarrowScope": "Сузить область риска по этому фактору",
+      "argumentsFor": "Доводы «за»",
+      "argumentsAgainst": "Доводы «против»"
+    },
+    "causalWindow": {
+      "title": "Окно возможного возникновения",
+      "range": "От {from} до {to}",
+      "lowerBound": "Последнее подтверждённо нормальное состояние",
+      "upperBound": "Первая находка",
+      "operationsInWindow": "Операции и перемещения в окне"
+    },
+    "circumstances": {
+      "title": "@:desks.circumstances",
+      "laneItem": "Изделие",
+      "lanePerson": "Человек",
+      "laneEquipment": "Оборудование",
+      "possibleCircumstances": "Возможные обстоятельства",
+      "noCategoricalConclusion": "Сведений недостаточно — категоричного вывода нет",
+      "incomingNotPerformer": "Дефект обнаружен до операции — с исполнителем операции не связывается"
+    },
+    "hypotheses": {
+      "title": "Гипотезы причины",
+      "version": "Версия гипотез {version}",
+      "category": "Категория",
+      "status": "Статус"
+    },
+    "investigation": {
+      "whyMade": "Почему возник",
+      "whyMissed": "Почему пропустили",
+      "correction": "Коррекция",
+      "containment": "Сдерживание",
+      "correctiveAction": "Корректирующее действие",
+      "effectivenessPlan": "План проверки результативности",
+      "baseline": "Базовый уровень",
+      "observationWindow": "Окно наблюдения",
+      "metric": "Показатель",
+      "successCriterion": "Критерий успеха",
+      "failureCriterion": "Критерий провала",
+      "enhancedMonitoring": "Период усиленного контроля",
+      "lessons": "Распространить урок на похожие операции и изделия"
+    },
+    "deadline": {
+      "decisionDue": "Срок решения: {deadline}",
+      "countdown": "Осталось {time}",
+      "overdueBy": "Просрочено на {time}"
+    }
+  },
+
+  "riskScope": {
+    "title": "Область риска",
+    "meltingScope": "Тающая область риска",
+    "version": "Версия области {version}",
+    "versions": "Версии области",
+    "versionLine": "Версия {version}: {change}. Основание: {basis}. {author}, {time}",
+    "basis": "Основание",
+    "basisRequired": "Без основания изделие из области не выходит",
+    "narrowed": "Сужено",
+    "expanded": "Расширено",
+    "excluded": "@:statuses.incident.excluded",
+    "suspect": "@:statuses.incident.suspect",
+    "confirmed": "@:statuses.incident.confirmed",
+    "noData": "Нет данных",
+    "narrow": "Сузить область — указать основание",
+    "expand": "Расширить область",
+    "exclude": "Исключить из области — указать основание",
+    "confirmForItem": "Подтвердить для изделия — зарегистрировать несоответствие",
+    "close": "Закрыть область",
+    "narrowedBy": "Сужено: {from} → {to}",
+    "expandedBy": "Расширено: {from} → {to}",
+    "reduction": "Область сокращена: {from} → {to}",
+    "reductionPercent": "Сокращение на {percent}",
+    "sizeAtCreation": "Размер при создании: {n}",
+    "commonFactor": "Общий фактор: {factor}",
+    "window": "Окно: от {from} до {to}",
+    "lastKnownGood": "Последнее подтверждённо нормальное состояние: {what}, {time}",
+    "notDefective": "Изделия в области подвергались условиям, способным вызвать дефект. Это не брак",
+    "expandIsCautious": "Расширение — осторожный шаг: система может сделать его сама",
+    "narrowOnlyByHuman": "Сузить может только человек и только по доказательствам",
+    "whyThisWide": "Почему так широко?",
+    "whatToFindOut": "Что выяснить, чтобы сузить",
+    "whatIsMissing": "@:ncCard.whySystemSuggests.missingData",
+    "breakdown": {
+      "title": "Где изделия области",
+      "inProduction": "В производстве",
+      "movedOn": "Ушли дальше",
+      "assembled": "Собраны",
+      "shipped": "Отгружены"
+    },
+    "costOfDelay": "Цена задержки",
+    "costOfDelayLine": "Стоят {items}, {operations}, незавершённое производство {hours}",
+    "partners": {
+      "shippedToPartners": "Отгружено другим предприятиям: {n}",
+      "notificationSent": "@:timeline.federation.partnerNotified",
+      "supplierClaim": "Основание претензии поставщику: {supplier}"
+    },
+    "decisionForScope": "Решение для всей области одним правилом сдерживания",
+    "tasksDistributed": "Задачи разосланы тем, у кого изделия физически: {n}"
+  },
+
+  "timeline": {
+    "title": "История изделия",
+    "feed": "Лента событий",
+    "layer": {
+      "all": "Все записи",
+      "fact": "Факт",
+      "conclusion": "Вывод системы",
+      "decision": "Решение человека",
+      "exchange": "Обмен с внешней системой"
+    },
+    "sourceKind": {
+      "title": "Источник факта",
+      "manual": "Ручной ввод",
+      "import": "Импорт журнала",
+      "machine": "Станок",
+      "sensor": "Датчик",
+      "camera": "Камера",
+      "external": "Внешняя система",
+      "system": "Вывод системы"
+    },
+    "reliability": {
+      "reliable": "Надёжно",
+      "unreliable": "Ненадёжно",
+      "ambiguous": "Неоднозначно: кандидаты {candidates}"
+    },
+    "bindingMethod": {
+      "dataMatrix": "По коду DataMatrix",
+      "tag": "По метке",
+      "routeCard": "По маршрутной карте",
+      "stationContext": "По контексту поста",
+      "manual": "Ручной ввод"
+    },
+    "timeKind": {
+      "occurredAt": "Время возникновения",
+      "receivedAt": "Время получения",
+      "recordedAt": "Время записи"
+    },
+    "marks": {
+      "revised": "Пересмотрен из-за события {eventId}",
+      "decisionBeforeNewData": "Решение принято до новых данных — пересмотрите",
+      "lateEvent": "Опоздало: получено {receivedAt}, встало на своё время {occurredAt}",
+      "duplicate": "Повтор — учтён один раз",
+      "corrects": "Исправляет запись {eventId}",
+      "correctedBy": "Исправлено записью {eventId}",
+      "correctionDetails": "Было: {before} → стало: {after}. Обоснование: {reason}. {author}",
+      "clockSkew": "Расхождение часов источника",
+      "futureTime": "Время из будущего",
+      "sequenceViolation": "Нарушение последовательности процесса",
+      "inferred": "Вывод системы, уверенность {confidence}",
+      "oldConclusionKept": "Прежний вывод сохранён в журнале",
+      "recalculated": "Пересчитано из-за события {eventId}",
+      "signedBy": "Подписал: {who}",
+      "ruleApplied": "Правило применило: {ruleId}",
+      "systemProposed": "Система предложила",
+      "specialistApproved": "Специалист утвердил: {who}"
+    },
+    "item": {
+      "batchRegistered": "Партия принята на входной контроль",
+      "itemMarked": "Деталь промаркирована",
+      "itemRegistered": "Изделие запущено в работу",
+      "batchIssued": "Партия выдана на операцию «{operation}»",
+      "assemblyRecorded": "Компонент установлен: {component}",
+      "itemPresented": "Изделие предъявлено: {to}",
+      "inspectionSummary": "Сводка методов контроля по маршруту",
+      "itemReleased": "Выпуск годного"
+    },
+    "operation": {
+      "runStarted": "Операция начата",
+      "runPaused": "Операция приостановлена",
+      "runResumed": "Операция возобновлена",
+      "runFinished": "Операция завершена",
+      "runInterrupted": "Операция прервана",
+      "runRepeated": "Повторное выполнение операции",
+      "preconditionFailed": "Не выполнено предусловие операции: {condition}",
+      "movementSent": "Изделие отправлено: {from} → {to}",
+      "movementReceived": "Изделие принято: {to}",
+      "isolatorConfirmed": "Изделие физически перемещено в изолятор",
+      "interventionOpened": "Вскрытие открыто: зона {zone}",
+      "interventionClosed": "Вскрытие закрыто: зона {zone} проверена повторно",
+      "reworkLimitReached": "Достигнут лимит доработок зоны {zone}"
+    },
+    "inspection": {
+      "resultDefectFound": "{method}: обнаружен признак дефекта",
+      "resultNoDefectFound": "{method}: признаки не обнаружены",
+      "resultUnableToAssess": "{method}: оценка невозможна",
+      "measurementRecorded": "{method}: измерено {value} при допуске {tolerance}",
+      "documentsChecked": "Проверены документы поставщика",
+      "leakTestResult": "Испытание на герметичность: {result}",
+      "checkpointModeChanged": "Точка контроля {checkpoint}: режим «{mode}»"
+    },
+    "quality": {
+      "signalReceived": "Сигнал о признаке дефекта",
+      "deviationSignal": "Сигнал об отклонении от техпроцесса",
+      "observationLinked": "Наблюдение связано с уже известным дефектом",
+      "inspectionMissing": "Нет данных контроля: {checkpoint}",
+      "escapeRecorded": "Пропуск контроля: дефект найден позже, чем мог быть"
+    },
+    "equipment": {
+      "stateChanged": "Состояние оборудования: {state}",
+      "warning": "Предупреждение оборудования: {what}",
+      "alarm": "Авария оборудования: {what}",
+      "parameterOutOfRange": "Вне уставки: {parameter} {value} при уставке {setpoint}",
+      "parametersRecorded": "Записаны параметры: {what}",
+      "cycleStarted": "Цикл начат",
+      "cycleFinished": "Цикл окончен",
+      "programChanged": "Смена программы: {program}",
+      "toolLife": "Ресурс инструмента: {used} из {limit}",
+      "manualOverride": "Ручное изменение режима: {what}"
+    },
+    "operator": {
+      "modeChange": "Исполнитель сменил режим: {what}",
+      "checkSkipped": "Пропущена обязательная проверка: {check}",
+      "manualIntervention": "Ручное вмешательство: {what}",
+      "stepConfirmed": "Шаг подтверждён: {step}",
+      "deviationReported": "Исполнитель сообщил об отклонении",
+      "inspectionRequested": "Исполнитель запросил контроль",
+      "actionDetected": "Контроль действий оператора: замечено «{action}» — это гипотеза"
+    },
+    "decision": {
+      "ncDraftCreated": "Создан черновик карточки несоответствия",
+      "holdAppliedByRule": "Изделие заблокировано по правилу {ruleId}",
+      "nonconformityConfirmed": "Сигнал подтверждён — несоответствие {nc}",
+      "signalRejected": "Сигнал отклонён",
+      "recheckRequested": "Назначена доп. проверка: {method}",
+      "itemIsolated": "Изделие изолировано",
+      "dispositionSet": "Решение по изделию: {disposition}",
+      "dispositionVerified": "Исполнение решения подтверждено",
+      "gatePassed": "Принято на точке предъявления {gate}",
+      "gateReturned": "Возвращено с точки предъявления {gate}",
+      "itemClosed": "@:statuses.ncByItem.closed",
+      "holdReleased": "Блок снят — изделие возвращено в маршрут",
+      "processHoldSet": "Остановлена точка процесса: {target}",
+      "processHoldReleased": "Снят стоп точки процесса: {target}",
+      "concessionApproved": "Подписано разрешение на отклонение {number}",
+      "concessionRevoked": "Отозвано разрешение на отклонение {number}",
+      "eventCorrected": "Исправлена запись {eventId}"
+    },
+    "incident": {
+      "incidentOpened": "Открыт инцидент {incident}",
+      "riskScopeCreated": "Создана область риска, изделий: {n}",
+      "riskScopeExpanded": "Область риска расширена: {from} → {to}",
+      "riskScopeNarrowed": "Область риска сужена: {from} → {to}",
+      "itemAssessed": "Изделие в области проверено: {result}",
+      "riskScopeClosed": "Область риска закрыта",
+      "hypothesesUpdated": "Гипотезы причины пересчитаны, версия {version}",
+      "hypothesisRecorded": "Записана гипотеза причины: {category}",
+      "analysisScoped": "По политике решено: {decision}",
+      "causeConfirmed": "Причина подтверждена: {category}",
+      "causeNotEstablished": "Причина не установлена — с обоснованием",
+      "performerErrorConfirmed": "Подтверждена ошибка исполнителя — решение {who}",
+      "actionAssigned": "Назначено корректирующее действие",
+      "actionImplemented": "Корректирующее действие внедрено",
+      "effectivenessConfirmed": "Результативность подтверждена",
+      "effectivenessFailed": "Результативность не подтверждена — мера переоткрыта"
+    },
+    "obligation": {
+      "dueSet": "Назначен срок: {deadline}",
+      "dueOverdue": "Срок просрочен: {what}",
+      "dueCleared": "Срок снят: решение принято"
+    },
+    "task": {
+      "created": "Задача для {who}: {what}",
+      "done": "Задача выполнена: {what}",
+      "escalated": "Эскалация: {who}"
+    },
+    "integration": {
+      "orderReceived": "Из 1С получено производственное задание {order}",
+      "nomenclatureSynced": "Из 1С получен справочник номенклатуры",
+      "batchReceived": "Из 1С: поступила партия {batch}",
+      "structureImported": "Импортирован состав сборки из КОМПАС-3D, версия {version}",
+      "postingSent": "В 1С отправлено: {posting}",
+      "ack": "1С подтвердила приём: {document}",
+      "error": "1С вернула ошибку {code}: {message}",
+      "mesHoldSent": "В MES передан блок изделия"
+    },
+    "document": {
+      "drafted": "Сформирован черновик: {document}",
+      "signed": "Подписано: {document} — {who}",
+      "signedOnPaper": "Подписано на бумаге: {document} — {who}, заверил {attester}",
+      "routeClosed": "Маршрут подписей закрыт: {document}",
+      "annulled": "Документ аннулирован: {document}"
+    },
+    "normative": {
+      "versionSubmitted": "Версия процесса {version} отправлена на утверждение",
+      "versionApproved": "Версия процесса {version} вступила в силу",
+      "versionRetired": "Версия процесса {version} выведена"
+    },
+    "analyzer": {
+      "passportApproved": "Допущена версия анализатора {version} для карты контроля {recipe}",
+      "driftDetected": "Обнаружен дрейф: {what}",
+      "rolledBack": "Анализатор откачен: {trigger}. Действует версия {version}",
+      "returnedToService": "Анализатор возвращён в работу — решение {who}"
+    },
+    "access": {
+      "workplaceAdmitted": "Допуск к рабочему месту {workplace}",
+      "workplaceRevoked": "Допуск к рабочему месту снят",
+      "workplaceDenied": "@:access.admission.denied",
+      "keyInserted": "Ключ вставлен",
+      "keyRemoved": "Ключ вынут"
+    },
+    "binding": {
+      "linkResolved": "Событие привязано к изделию {item}",
+      "linkAmbiguous": "Привязка неоднозначна: кандидаты {candidates}",
+      "bindingCorrected": "Привязка уточнена: {from} → {to}"
+    },
+    "genealogy": {
+      "linkAdded": "{component} вошёл в сборку {assembly}"
+    },
+    "reference": {
+      "changeAffectsItem": "Изменение справочника касается изделия: {what}",
+      "externalIdMapped": "Добавлено соответствие идентификатора: {object}"
+    },
+    "federation": {
+      "extractExported": "Выписка паспорта отправлена: {partner}",
+      "extractImported": "Выписка паспорта принята от {partner}, подписи проверены",
+      "extractUnverified": "Выписка паспорта принята: происхождение не подтверждено",
+      "partnerNotified": "Уведомление отправлено: {partner}"
+    },
+    "security": {
+      "integrityChecked": "Проверка целостности: {result}",
+      "integrityViolated": "@:audit.integrity.violatedRecord",
+      "signatureInvalid": "Недействительная подпись: {source}",
+      "accessDenied": "Отказ в доступе: {action}",
+      "duplicateConflict": "Тот же номер события, другое содержимое: {eventId}",
+      "privilegeGranted": "Выданы права: {what} — {who}",
+      "keyRevoked": "Отозван ключ: {key}"
+    },
+    "simulation": {
+      "runStarted": "Запущен тестовый сценарий «{scenario}»",
+      "runPaused": "Сценарий на паузе",
+      "runResumed": "Сценарий продолжен",
+      "injection": "Цифровой стенд: {injection}"
+    },
+    "ops": {
+      "processingFailed": "Обработка изделия остановлена из-за ошибки: {error}"
+    }
+  },
+
+  "analytics": {
+    "title": "@:desks.analytics",
+    "period": "Период",
+    "coverage": "Покрытие данными: по {missing} из {total} изделий нет данных",
+    "recalculated": "@:timeline.marks.recalculated",
+    "changeLogTitle": "Журнал изменений показателя",
+    "changeLogLine": "Было {from} → стало {to}: событие {eventId}, {author}, {time}",
+    "hypothesisTag": "Гипотеза",
+    "confirmedTag": "Подтверждено",
+    "notEnoughData": "Мало данных: выполнений {n} при минимуме {min} — число не показываем",
+    "notARanking": "Это не рейтинг людей: сравниваются только сопоставимые работы",
+    "unableToAssessBucket": "Оценка невозможна — не годно и не брак",
+    "participatedIsNotCause": "Участвовал — не значит стал причиной",
+    "modes": {
+      "whatHappened": "Что уже произошло",
+      "whereProcessWeakens": "Где процесс начинает сдавать",
+      "didWeLearn": "Научились ли устранять причины"
+    },
+    "slices": {
+      "itemType": "Тип изделия",
+      "line": "Линия",
+      "station": "Участок",
+      "workshop": "Цех",
+      "inspectionPoint": "Точка контроля",
+      "method": "Метод контроля",
+      "shift": "Смена",
+      "performer": "Исполнитель",
+      "equipment": "Оборудование",
+      "defectType": "Вид дефекта",
+      "severity": "Тяжесть",
+      "supplier": "Поставщик",
+      "causeCategory": "Категория причины",
+      "operation": "Операция",
+      "period": "Период"
+    },
+    "durationLabels": {
+      "activeWork": "Активная работа",
+      "timeAtStation": "Время на участке",
+      "reportedBySource": "Передано источником",
+      "computedBySystem": "Вычислено системой",
+      "discrepancy": "Расхождение источника и системы",
+      "median": "Медиана",
+      "p90": "Долгие (90-й процентиль)",
+      "firstRun": "Первое выполнение",
+      "repeats": "Повторы",
+      "crossShift": "Переходящая через смену"
+    },
+    "metrics": {
+      "inspectedItems": {
+        "title": "Проверено изделий",
+        "hint": "Сколько разных изделий за период прошли хотя бы одну проверку с понятным итогом. «Оценка невозможна» и «нет данных» сюда не входят"
+      },
+      "nonconformingItems": {
+        "title": "Изделия с подтверждёнными несоответствиями",
+        "hint": "Сколько разных изделий имеют хотя бы одно несоответствие, подтверждённое контролёром. Сигналы на рассмотрении не считаются"
+      },
+      "defectCount": {
+        "title": "Количество дефектов",
+        "hint": "Подтверждённые уникальные дефекты. Три дефекта на одной детали — одно изделие с несоответствием"
+      },
+      "defectLadder": {
+        "title": "Дефекты и изделия с дефектами",
+        "hint": "Лесенка из четырёх чисел: один дефект могут увидеть две камеры, а на одной детали бывает несколько дефектов",
+        "observations": "Наблюдения с признаками",
+        "uniqueDefects": "Уникальные дефекты",
+        "confirmedDefects": "Подтверждённые дефекты",
+        "itemsWithDefects": "Изделия с подтверждёнными дефектами",
+        "defectsPerItem": "Дефектов на одно изделие с несоответствием"
+      },
+      "defectsByType": {
+        "title": "Дефекты по видам, линиям и участкам",
+        "hint": "Где и какие дефекты находим чаще всего. «Где обнаружено» известно всегда, «где возникло» — только при подтверждённой причине",
+        "whereDetected": "Где обнаружено",
+        "whereOriginated": "Где возникло",
+        "originHypothesis": "Гипотеза: {value}",
+        "originUnknown": "Не установлено"
+      },
+      "causeEstablished": {
+        "title": "Случаи с установленной и неустановленной причиной",
+        "hint": "По скольким подтверждённым несоответствиям мы знаем, почему они возникли",
+        "confirmed": "@:statuses.ncInvestigation.causeConfirmed",
+        "notEstablished": "Причина не установлена (с обоснованием)",
+        "hypothesisOnly": "@:statuses.ncInvestigation.hypothesisOnly",
+        "notRequired": "@:statuses.ncInvestigation.notRequired",
+        "notStarted": "@:statuses.ncInvestigation.notStarted"
+      },
+      "causeMatrix": {
+        "title": "Причины: гипотеза и подтверждено",
+        "hint": "Входной брак, оборудование, ошибки исполнителей и гипотезы учитываются раздельно. Гипотеза никогда не попадает в графу «подтверждено»",
+        "multipleHypothesesNote": "У одного случая бывает несколько гипотез, поэтому сумма в столбце «гипотеза» больше числа случаев"
+      },
+      "operationDuration": {
+        "title": "Длительность операций",
+        "hint": "По изделию, участку, исполнителю и смене. У каждого числа видно, откуда оно и что измеряет. Числа с разными метками не складываются"
+      },
+      "reworkRuns": {
+        "title": "Повторные обработки",
+        "hint": "Сколько раз операцию делали заново и почему. Повтор события — не повтор операции",
+        "byDecision": "По решению: переделка или ремонт",
+        "afterInterruption": "После прерывания",
+        "afterIntervention": "Повторное испытание после вскрытия"
+      },
+      "unfinishedOperations": {
+        "title": "Незавершённые операции",
+        "hint": "Что начали и не закончили: идёт сейчас, зависло дольше нормы, прервано без повтора",
+        "running": "Идёт сейчас",
+        "stuck": "Зависло",
+        "interrupted": "Прервано",
+        "waitingAtGate": "Стоят на точке предъявления без подписи"
+      },
+      "comparableWork": {
+        "title": "Подтверждённые ошибки по сопоставимым работам",
+        "hint": "Сравниваем только одинаковую работу: та же операция, тип изделия, оборудование и версия техпроцесса. Учитываются только подтверждённые ошибки"
+      },
+      "waiting": {
+        "title": "Ожидание",
+        "hint": "Сколько изделие ждёт, а не обрабатывается",
+        "inTransit": "В пути",
+        "inQueue": "В очереди на участке",
+        "awaitingSignature": "Ждёт подписи на точке предъявления",
+        "awaitingDecision": "Ждёт решения по качеству"
+      },
+      "downtime": {
+        "title": "Простой",
+        "hint": "Сколько оборудование не работает и почему",
+        "alarm": "Авария",
+        "setup": "Наладка",
+        "noPart": "Нет детали",
+        "qualityStop": "Остановка по качеству",
+        "shiftEnd": "Конец смены",
+        "inspectionPointDowntime": "Простой точки контроля"
+      },
+      "firstPassYield": {
+        "title": "Прохождение контроля с первого раза",
+        "altTitle": "Сдача с первого предъявления",
+        "hint": "Прохождение контроля с первого раза (FPY) — доля изделий, принятых на точке предъявления без возврата по качеству. На языке ОТК — сдача с первого предъявления. Отклонённый сигнал и доп. проверка без дефекта возвратом не считаются; «годно по разрешению на отклонение» — не с первого раза"
+      },
+      "detectionDelay": {
+        "title": "Задержка обнаружения",
+        "hint": "Сколько времени прошло от момента, когда дефект мог появиться, до момента, когда его заметили. Если место возникновения не установлено — показываем интервал",
+        "reactionTime": "Время реакции: сигнал → подтверждение"
+      },
+      "defectRate": {
+        "title": "Уровень дефектности",
+        "hint": "Доля изделий с несоответствиями, число несоответствий на 100 изделий и коэффициент дефектности с весами по тяжести. Входной и операционный уровни не складываются"
+      },
+      "scrapLosses": {
+        "title": "Потери от брака",
+        "hint": "Себестоимость окончательного брака плюс расходы на исправление, за вычетом взысканного. В рублях, в процентах к себестоимости и в нормо-часах"
+      },
+      "incomingDefectShare": {
+        "title": "Доля входного брака",
+        "hint": "Какая часть поступившего от поставщиков оказалась с несоответствиями. В показатели участков и исполнителей не входит",
+        "foundLater": "Найден позже — пропуск входного контроля"
+      },
+      "representations": {
+        "title": "Повторные предъявления",
+        "hint": "Сколько раз изделие приходилось предъявлять снова. Третье предъявление требует подписи уровнем выше"
+      },
+      "reworkRate": {
+        "title": "Доля переделки",
+        "hint": "Доля изделий с решением «переделка» среди проверенных"
+      },
+      "scrapRate": {
+        "title": "Доля списания",
+        "hint": "Доля изделий с решением «списать» среди проверенных"
+      },
+      "escapeRate": {
+        "title": "Доля пропусков контроля",
+        "hint": "Доля пропусков контроля (Escape Rate) — дефекты, которые должна была поймать предыдущая точка контроля, а нашла следующая. Разрез — по точке, которая пропустила"
+      },
+      "concessionRate": {
+        "title": "Доля разрешений на отклонение",
+        "hint": "Доля изделий, принятых через «ремонт» или «как есть» по разрешению на отклонение. Не даёт низкой переделке скрыть жизнь «через согласования»"
+      },
+      "timeToRootCause": {
+        "title": "Время установления причины",
+        "hint": "От обнаружения до подтверждённой причины"
+      },
+      "ncResponseTime": {
+        "title": "Время обработки несоответствия",
+        "hint": "От обнаружения до решения по изделию"
+      },
+      "recurrenceRate": {
+        "title": "Повторяемость проблем",
+        "hint": "Сколько раз один вид дефекта повторился на одной операции или оборудовании за период"
+      },
+      "correctiveActionEffectiveness": {
+        "title": "Результативность корректирующих действий",
+        "hint": "Доля мер, после которых проблема не повторилась в окне наблюдения. «Внедрено» не значит «результативно»"
+      },
+      "processCapability": {
+        "title": "Способность процесса",
+        "hint": "Способность процесса (Cp, Cpk) — для конкретной характеристики на конкретной операции и оборудовании. Видно сползание к границе допуска до первого несоответствия"
+      },
+      "processStability": {
+        "title": "Стабильность процесса",
+        "hint": "Держится ли процесс в контрольных границах"
+      },
+      "controlCharts": {
+        "title": "Контрольные карты по узлам",
+        "hint": "Доля дефектов по узлу процесса относительно контрольных границ"
+      },
+      "riskScopeSize": {
+        "title": "Область риска: размер и сокращение",
+        "hint": "Сколько изделий под подозрением после сбоя и как быстро круг сужается. Каждое сужение — с основанием и автором"
+      },
+      "overdueDecisions": {
+        "title": "Просроченные решения и цена задержки",
+        "hint": "Несоответствия, которые ждут решения дольше срока, и во что это обходится: изделия на блоке, стоящие операции, часы незавершённого производства"
+      },
+      "inspectionPointHealth": {
+        "title": "Состояние точек контроля",
+        "hint": "Можно ли доверять точке контроля: доля «оценка невозможна», подтверждённых сигналов, ложных тревог и пропусков, время в ручном режиме — по версиям анализатора"
+      },
+      "dataFlowQuality": {
+        "title": "Качество потока данных",
+        "hint": "Насколько полны и чисты входные данные, на которых стоит вся аналитика",
+        "duplicatesFiltered": "Повторов отсеяно",
+        "lateEvents": "Опоздавших событий",
+        "quarantined": "В карантине",
+        "unreliableBinding": "Ненадёжная привязка к изделию",
+        "performerUnknown": "@:empty.performerUnknown",
+        "inspectionMissing": "Нет данных контроля",
+        "erpErrors": "Ошибок обмена с 1С"
+      },
+      "dataDeficitMap": {
+        "title": "@:desks.dataDeficit",
+        "hint": "Каких сведений чаще всего не хватало в расследованиях и какая цифровизация сузила бы область риска",
+        "line": "{what}: не хватало в {k} расследованиях из {n}",
+        "estimate": "{measure} сузил бы область риска в среднем с {from} до {to}"
+      },
+      "documentsFromHistory": {
+        "title": "Документы из истории",
+        "hint": "Сколько документов собрано из записей системы без ручного заполнения"
+      }
+    }
+  },
+
+  "liveMap": {
+    "title": "Живая карта процесса",
+    "versionLabel": "Действующая версия процесса: {version}",
+    "ownVersionNote": "Изделия, запущенные по прежней версии, показаны на карте своей версии",
+    "noPeopleOnMap": "Люди на схеме не показываются — присутствие в панели «Посты»",
+    "counters": {
+      "inQueue": "В очереди",
+      "inWork": "В работе",
+      "passed": "Прошло",
+      "defects": "Дефекты за период",
+      "waiting": "Ожидание",
+      "buffer": "Буфер",
+      "downtime": "Простой"
+    },
+    "period": {
+      "shift": "Смена",
+      "day": "Сутки",
+      "week": "Неделя",
+      "month": "Месяц",
+      "custom": "Произвольный интервал"
+    },
+    "bottleneck": "Ограничение линии",
+    "bottleneckShort": "Узкое место",
+    "anomalies": {
+      "title": "Аномалии",
+      "queueAboveNorm": "Очередь выше нормы узла",
+      "waitAboveNorm": "Ожидание выше нормы узла",
+      "downtimeOverThreshold": "Простой дольше {threshold} в рабочую смену",
+      "outputSpike": "Всплеск выработки после простоя",
+      "defectRateOutOfControl": "Доля дефектов вне контрольных границ"
+    },
+    "playback": {
+      "now": "@:common.modes.now",
+      "replay": "@:common.modes.replay",
+      "speed": "×{speed}",
+      "pause": "Пауза",
+      "play": "Продолжить",
+      "goTo": "Перейти к моменту",
+      "replayNote": "Воспроизведение строится из журнала и ничего не меняет. Во внешние системы ничего не отправляется"
+    },
+    "marks": {
+      "escalation": "Эскалация",
+      "processStop": "@:statuses.containment.processPointStop",
+      "spike": "Всплеск",
+      "revision": "Пересмотр вывода"
+    },
+    "posts": {
+      "title": "Посты",
+      "station": "Участок",
+      "assigned": "Назначен",
+      "presence": "На месте",
+      "currentItem": "Текущее изделие",
+      "present": "На месте",
+      "keyMissing": "По графику на месте — ключ не вставлен",
+      "ownerAbsent": "Ключ вставлен — владельца нет в зоне",
+      "notAssigned": "Никто не назначен"
+    },
+    "attention": {
+      "title": "Требует вашего внимания",
+      "overdueDecision": "{target}: просрочено на {overdue} — стоят {items}, {operations}",
+      "unverifiedMeasures": "Меры без подтверждённой результативности: {n}",
+      "temporaryMeasures": "Временные меры, условие выхода не достигнуто: {n}"
+    },
+    "alerts": {
+      "title": "Тревоги",
+      "overdueIsolation": "Просрочена изоляция: {item}",
+      "gateOverdue": "Истёк срок ожидания на точке предъявления {gate}",
+      "notMovedToIsolator": "Изолировано в системе, физически не перемещено: {item}",
+      "anomaly": "Аномалия узла {node}: {what}",
+      "integrityViolation": "Нарушена целостность журнала"
+    },
+    "incident": {
+      "modeTitle": "Режим инцидента: {incident}",
+      "legendConfirmed": "Подтверждено или блок до решения",
+      "legendSuspect": "@:statuses.incident.suspect",
+      "legendExcluded": "Проверено и исключено",
+      "legendUnknown": "Данных недостаточно",
+      "colorNote": "Цвет — статус относительно этого инцидента, а не общий статус качества изделия"
+    },
+    "workshops": {
+      "lane": "Цех",
+      "transfer": "Передача между цехами",
+      "warehouse": "Склад цеха"
+    },
+    "drillDown": {
+      "nodeItems": "Изделия и несоответствия узла",
+      "metricSource": "Исходные записи показателя"
+    },
+    "proposals": {
+      "title": "@:desks.proposals",
+      "bottleneckProposal": "Узел «{node}» — ограничение линии: изделия ждут в среднем {wait}, это {items} за смену",
+      "handOver": "Передать — {who}",
+      "systemChangesNothing": "Система ничего не меняет сама"
+    }
+  },
+
+  "process": {
+    "versions": "Версии процесса",
+    "upload": "Загрузить описание процесса",
+    "uploadHint": "Формат — BPMN 2.0 XML с расширениями опубликованной схемы",
+    "validation": "Проверка описания",
+    "validationPassed": "Описание прошло проверку",
+    "quorum": "Кворум утверждения: {have} из {need}",
+    "diffTitle": "Отличия от действующей версии",
+    "readableView": "Читаемое представление",
+    "diff": {
+      "presentationPointAdded": "Добавлена точка предъявления после «{step}»",
+      "thresholdChanged": "Порог уверенности для вида «{defectType}»: {from} → {to}",
+      "elementAdded": "Добавлен элемент «{element}»",
+      "elementRemoved": "Удалён элемент «{element}»",
+      "propertyChanged": "«{element}»: {property} {from} → {to}"
+    },
+    "futureItemsOnly": "Новая версия действует только для изделий, запущенных после вступления в силу",
+    "elements": {
+      "automatedInspection": "Автоматизированный контроль",
+      "operation": "Операция",
+      "humanInspection": "Контроль человеком",
+      "parallelGateway": "Развилка И",
+      "inclusiveGateway": "Развилка ИЛИ",
+      "startEvent": "Начало",
+      "endEvent": "Конец",
+      "intermediateEvent": "Промежуточное событие",
+      "timer": "Таймер",
+      "subprocess": "Подпроцесс",
+      "callActivity": "Вызов общего подпроцесса",
+      "conditionalFlow": "Переход с условием",
+      "lane": "Цех (дорожка)"
+    },
+    "properties": {
+      "inspectionMethod": "Метод контроля",
+      "coverage": "Какие виды дефектов способен выявить",
+      "requirement": "Требование: характеристика, допуск, ревизия КД",
+      "zone": "Зона изделия",
+      "closesZoneAccess": "Закрывает доступ к зоне",
+      "presentationPoint": "Точка предъявления",
+      "roleOrAuthority": "Роль или полномочие",
+      "waitLimit": "Срок ожидания",
+      "reworkLimit": "Лимит доработок по зоне",
+      "preconditions": "Предусловия операции",
+      "stepDocuments": "Документы шага",
+      "reactionMap": "Карта реакций",
+      "timeNorm": "Норма времени",
+      "throughputNorm": "Норма пропускной способности",
+      "buffer": "Буфер (место очереди)",
+      "workshop": "Цех",
+      "warehouse": "Склад цеха",
+      "specialProcess": "Специальный процесс",
+      "paperAttester": "Кто заверяет бумажную подпись",
+      "description": "Описание элемента"
+    },
+    "defectClassifier": {
+      "title": "Классификатор видов дефектов",
+      "code": "Код",
+      "name": "Наименование",
+      "severityClass": "Класс тяжести",
+      "detectingMethods": "Методы, способные выявить",
+      "measurable": "Измеряемая характеристика"
+    }
+  },
+
+  "passport": {
+    "title": "@:desks.passport",
+    "identifier": "Идентификатор",
+    "carrier": "Носитель идентификатора",
+    "genealogy": "Генеалогия",
+    "genealogyUp": "Куда входит",
+    "genealogyDown": "Из чего состоит",
+    "zones": "Зоны изделия",
+    "documents": "@:desks.documents",
+    "presentations": "Предъявления",
+    "processVersion": "Версия процесса при запуске: {version}",
+    "whoWhatWhen": "Кто · что · когда",
+    "origin": "Происхождение",
+    "originUnverified": "Происхождение не подтверждено",
+    "originVerified": "Подписи поставщика проверены",
+    "supplierExtract": "Выписка паспорта поставщика",
+    "documentsFromHistory": "Документов собрано из истории: {n} — вручную не понадобилось",
+    "processingStopped": "Обработка изделия остановлена — нужен разбор администратора"
+  },
+
+  "terminal": {
+    "title": "@:desks.terminal",
+    "startOperation": "Начать операцию",
+    "stopOperation": "Остановить операцию",
+    "pauseOperation": "Приостановить операцию",
+    "resumeOperation": "Возобновить операцию",
+    "reportDeviation": "Сообщить об отклонении",
+    "requestInspection": "Запросить контроль",
+    "confirmIsolatorMove": "@:decisions.containment.confirmIsolatorMove",
+    "confirmStep": "Подтвердить шаг",
+    "toolLifeWarning": "Ресурс инструмента {used} из {limit} — заменить после этой детали",
+    "inspectionFirst": "Сначала контроль",
+    "wrongComponent": "Ожидается {expected}, взято {actual}",
+    "onlyOwnWorkplace": "Действия принимаются только с вашего рабочего места",
+    "currentItems": "Изделия на рабочем месте"
+  },
+
+  "access": {
+    "loginTitle": "Вход",
+    "username": "Логин",
+    "password": "Пароль",
+    "register": "Подать заявку на регистрацию",
+    "registrationSent": "Заявка отправлена. Её активирует администратор и назначит роль",
+    "employees": "Сотрудники",
+    "conditionalId": "Условный идентификатор",
+    "role": "Роль",
+    "scope": "Область действия",
+    "scopeLevels": "Здание → цех → участок → рабочее место",
+    "authorities": "Полномочия",
+    "authorityLimits": "Рамки полномочия",
+    "validUntil": "Срок действия",
+    "qualifications": "Квалификации и аттестации",
+    "shiftsAndAssignments": "Смены и назначения",
+    "assignToPost": "Назначить на пост",
+    "onlyQualified": "Назначить можно только допущенного по квалификации",
+    "tokens": "Токены и сертификаты",
+    "issueToken": "Выдать токен",
+    "revokeToken": "Отозвать токен — указать дату компрометации",
+    "stampRegistry": "Реестр цифровых клейм",
+    "accessZones": "Зоны доступа (СКУД)",
+    "workplaces": "Рабочие места",
+    "admission": {
+      "title": "Допуск к рабочему месту",
+      "inZone": "В зоне по данным СКУД",
+      "roleInScope": "Роль в области этого рабочего места",
+      "validQualification": "Действующая квалификация",
+      "shiftAssignment": "Назначение на смену",
+      "keyInserted": "Ключ вставлен",
+      "pinEntered": "ПИН-код введён",
+      "denied": "Отказ в допуске: {reason}"
+    },
+    "presenceDeviation": {
+      "expectedNoKey": "По графику должен быть на месте, ключа нет — уведомление мастеру",
+      "keyNoOwner": "Ключ вставлен, владельца нет в зоне — тревога администратору"
+    },
+    "privilegedGrant": "Выдача привилегированных прав — нужна вторая подпись руководителя производства",
+    "policyChangesLogged": "Изменения прав записываются в журнал"
+  },
+
+  "admin": {
+    "sources": "Источники событий",
+    "devices": "Устройства и их ключи",
+    "deviceCommissioning": "@:documents.types.deviceCommissioningAct",
+    "integrationsStatus": "Статус обмена",
+    "lastExchange": "Последний обмен: {time}",
+    "resend": "Отправить повторно — с тем же номером сообщения",
+    "servicesHealth": "Состояние сервисов",
+    "queues": "Очереди сообщений",
+    "lastIntegrityCheck": "Последняя проверка целостности: {time}",
+    "ingestMetrics": {
+      "latency": "Задержка приёма",
+      "completeness": "Полнота: событий на изделие против ожидаемых",
+      "duplicates": "Повторы",
+      "rejects": "Отказы",
+      "quarantineSize": "В карантине"
+    },
+    "quarantine": {
+      "title": "@:desks.quarantine",
+      "code": "Код",
+      "field": "Поле",
+      "value": "Значение",
+      "source": "Источник",
+      "receivedAt": "Получено",
+      "reprocess": "Обработать повторно",
+      "reprocessedOnce": "Обработано повторно и принято один раз",
+      "noAutoBinding": "Номер изделия без человека не подставляется"
+    }
+  },
+
+  "testStand": {
+    "title": "@:desks.digitalStand",
+    "scenariosTitle": "@:desks.testScenarios",
+    "config": {
+      "items": "Изделий",
+      "intensity": "Интенсивность",
+      "timeSpeed": "Скорость времени: ×{speed}",
+      "seed": "Начальное число генератора",
+      "processors": "Обработчиков"
+    },
+    "controls": {
+      "start": "Запустить сценарий",
+      "pause": "Пауза",
+      "resume": "Продолжить",
+      "stop": "Остановить"
+    },
+    "run": "Прогон {run}",
+    "runIsolated": "Данные прогона отделены от других прогонов",
+    "pausedState": "Пауза: все рабочие столы показывают состояние на {time}",
+    "waitingForDecision": "Сценарий ждёт решения: {role} — {what}",
+    "waitingHint": "Войдите под этой ролью и примите решение с подписью — сценарий продолжится",
+    "scenarios": {
+      "endToEnd": "Сквозной сценарий: задание из 1С → контроль → решение → 1С",
+      "s01NormalFlow": "Нормальное изготовление",
+      "s02IncomingDefect": "«На вход завезли брак»: пора в металле кольца",
+      "s03DefectAfterOperation": "Новый дефект после сварки",
+      "s04InsufficientData": "Недостаток сведений: блик и потерянные данные",
+      "s05EquipmentEvent": "«Станок сломался»: ток сварочного источника вне уставки",
+      "s06Duplicate": "Повторная доставка",
+      "s07LateEvent": "Позднее событие пересматривает вывод",
+      "s08InspectorDecision": "Решение контролёра: ложное срабатывание отклонено",
+      "s09Tamper": "Подмена записи",
+      "s10Rework": "Переделка шва и лимит доработок",
+      "s11ForgottenSeal": "«Забыли прокладку»: шаг остановлен до дефекта",
+      "s12Quarantine": "Некорректные сообщения: карантин с кодами",
+      "s13SpecialistAsleep": "«Специалист заснул»: очередь на точке предъявления",
+      "specialProcessViolation": "Сварка вне режима: несоответствие для всего окна нарушения",
+      "loadTest": "Нагрузочный режим"
+    },
+    "injections": {
+      "title": "Внести сбой",
+      "duplicate": "Прислать повтор события",
+      "lateEvent": "Прислать опоздавшее событие",
+      "badFrame": "Испортить кадр (качество наблюдения 0,3)",
+      "machineFault": "Сбой станка: ток вне уставки",
+      "dataLoss": "Потерять кусок данных",
+      "tamper": "Подделать запись в обход системы"
+    },
+    "results": {
+      "duplicate": "Ничего не задвоилось: повтор отсеян, показатели не изменились",
+      "lateEvent": "История пересчитана: вывод пересмотрен из-за события {eventId}",
+      "badFrame": "Изделие не стало «годным»: оценка невозможна, назначен повторный контроль",
+      "machineFault": "Область риска изменилась: {from} → {to}",
+      "dataLoss": "Нет данных — изделие серое: неизвестно, а не «годно»",
+      "tamper": "Подделка обнаружена: {where}"
+    },
+    "board": {
+      "title": "@:desks.verificationBoard",
+      "subtitle": "Ожидалось → получилось",
+      "expected": "Ожидалось",
+      "actual": "Получилось",
+      "allMatched": "Все проверки сценария совпали",
+      "mismatches": "Не совпало: {n}"
+    },
+    "load": {
+      "report": "Отчёт о задержках, потерях, повторах и полноте",
+      "hashesMatch": "Хеш проекций на одном и на нескольких обработчиках совпадает",
+      "hashesDiffer": "Хеш проекций не совпадает — проверьте порядок обработки"
+    },
+    "demoOnly": "Инструмент подделки есть только в демонстрационном режиме"
+  },
+
+  "audit": {
+    "title": "@:desks.integrityAudit",
+    "criticalActions": "@:desks.criticalActionsLog",
+    "criticalAction": "Критическое действие",
+    "caNumber": "Запись {caId}",
+    "record": {
+      "action": "Действие",
+      "object": "Объект",
+      "beforeAfter": "Было → стало",
+      "who": "Кто",
+      "inRole": "В роли",
+      "authority": "По полномочию (редакция)",
+      "stamp": "@:audit.digitalStamp",
+      "basis": "Основание",
+      "materials": "Связанные материалы",
+      "time": "Когда",
+      "integrity": "Целостность"
+    },
+    "cancels": "Отменяет {caId}",
+    "cancelOnlyByNewRecord": "Отменить можно только новой записью со ссылкой на прежнюю",
+    "protectedFromAdmin": "Удалить или тихо изменить запись не может никто, включая администратора",
+    "digitalStamp": "Цифровое клеймо",
+    "digitalStampOfInspector": "Цифровое клеймо контролёра",
+    "stampIssued": "Выдано по приказу {order}, вид контроля «{kind}», до {validUntil}",
+    "stampRevoked": "Клеймо отозвано: {reason}",
+    "integrity": {
+      "check": "Проверить целостность",
+      "checking": "Идёт проверка целостности…",
+      "ok": "Цело",
+      "violatedRecord": "Нарушена целостность записи № {seq}",
+      "brokenLink": "Нарушено звено цепочки на записи № {seq}",
+      "checkpointMismatch": "Журнал расходится с контрольной точкой хранителя {checkpoint}",
+      "projectionMismatch": "Проекция расходится с журналом: изделие {item} в журнале «{journalState}» ({caId}), в проекции «{projectionState}»",
+      "caChangedOutsideProcess": "Критическое действие {caId} изменено вне разрешённого процесса",
+      "apiChangeRejected": "Изменение записей журнала запрещено — попытка отклонена и записана",
+      "indicatorOk": "Целостность журнала подтверждена",
+      "indicatorViolated": "Нарушение целостности — подробности в разделе «Целостность и аудит»",
+      "indicatorStale": "Нет свежего отчёта верификатора дольше двух интервалов"
+    },
+    "verifier": {
+      "title": "Верификатор",
+      "report": "Отчёт верификатора",
+      "reportSigned": "Отчёт подписан ключом верификатора",
+      "binaryHash": "Отпечаток программы верификатора",
+      "place": "Место нарушения",
+      "type": "Тип нарушения"
+    },
+    "journalCheckpoint": "Контрольная точка журнала",
+    "securityEvents": {
+      "title": "События безопасности",
+      "authFailure": "Ошибка аутентификации",
+      "invalidSignature": "Недействительная подпись",
+      "integrityViolation": "Нарушение целостности",
+      "accessDenied": "Отказ в доступе или допуске",
+      "idempotencyConflict": "Тот же номер, другое содержимое",
+      "privilegeGrant": "Выдача привилегий",
+      "keyRevocation": "Отзыв ключа"
+    },
+    "crypto": {
+      "profile": "Криптопрофиль",
+      "gost": "ГОСТ",
+      "postQuantum": "Постквантовый",
+      "hybrid": "Гибридный (обе подписи обязательны)",
+      "profileChange": "Смена криптопрофиля",
+      "keyRotation": "Смена ключей"
+    },
+    "signatureCheck": {
+      "valid": "Подпись действительна",
+      "invalid": "Подпись недействительна",
+      "certRevoked": "Сертификат отозван",
+      "noAuthorityAtSigning": "На момент подписи не было полномочия",
+      "keyUnavailable": "Ключ недоступен — проверить нельзя",
+      "method": "Способ подписи",
+      "methodTokenAgent": "Агент токена",
+      "methodPaper": "Бумага"
+    }
+  },
+
+  "documents": {
+    "title": "@:desks.documents",
+    "types": {
+      "traveler": "Сопроводительная карта изделия",
+      "scrapAct": "Акт о браке",
+      "isolatorLog": "Журнал изолятора",
+      "nonconformityStatement": "Заявление о несоответствии",
+      "nonconformityDecision": "Решение по несоответствующей продукции",
+      "concession": "@:decisions.concession.title",
+      "deviationPermit": "Разрешение на отступление",
+      "customerPresentationNotice": "Извещение о предъявлении ВП",
+      "customerConclusion": "Заключение ВП",
+      "qcPresentationLog": "Журнал предъявления ОТК",
+      "incomingInspectionAct": "Акт входного контроля",
+      "batchLabel": "Ярлык соответствия или несоответствия партии",
+      "defectLabel": "Ярлык «Брак»",
+      "itemTag": "Бирка изделия с QR-кодом",
+      "firstArticleAct": "Акт первой детали",
+      "ncRegister": "Журнал регистрации несоответствий",
+      "correctiveActionPlan": "План корректирующих мер",
+      "specialProcessBoardDecision": "Решение комиссии по специальному процессу",
+      "interShopRouteSheet": "Маршрутный лист межцеховой передачи",
+      "interventionRecord": "Запись вмешательства",
+      "acceptanceCertificate": "Паспорт (формуляр) — свидетельство о приёмке",
+      "shiftReport": "Сменный рапорт",
+      "passportExtract": "Выписка паспорта",
+      "partnerNotice": "Уведомление предприятию-партнёру",
+      "supplierClaim": "Основание претензии поставщику",
+      "processVersionApproval": "Лист утверждения версии процесса",
+      "inspectionQualificationRecord": "@:inspection.qualificationPassport",
+      "deviceCommissioningAct": "Акт ввода устройства"
+    },
+    "route": {
+      "title": "Маршрут подписей",
+      "stage": "Этап {n}",
+      "signed": "Подписано",
+      "waiting": "Ожидает подписи",
+      "kOfN": "{k} из {n}",
+      "previousVersionSignatures": "Подписи по прежней версии документа не засчитываются",
+      "closed": "Маршрут закрыт"
+    },
+    "generatedFromHistory": "Собран из истории изделия",
+    "manualNotNeeded": "Вручную не понадобилось: {n}",
+    "fingerprint": "Отпечаток документа",
+    "paper": {
+      "title": "Подпись на бумаге",
+      "printWithQr": "Распечатать с QR-кодом",
+      "instruction": "Подпишите ручкой и передайте на заверение",
+      "uploadScan": "Загрузить скан",
+      "attestScan": "Заверить скан своей подписью",
+      "attesterNotSigner": "Заверитель не может быть подписантом",
+      "signedOnPaper": "Подписано на бумаге · заверил {attester} · оригинал № {archiveNo}",
+      "qrContains": "В QR-коде — отпечаток документа и ожидаемый подписант этапа",
+      "archiveNumber": "Учётный номер оригинала в архиве ОТК"
+    },
+    "scrapActNote": "Виновное лицо указывается только после письменного объяснения работника"
+  },
+
+  "errors": {
+    "generic": "Не удалось выполнить действие. Повторите или обратитесь к администратору",
+    "network": "Нет связи с сервером",
+    "loadFailed": "Не удалось загрузить данные",
+    "staleState": "Данные изменились, пока вы смотрели. Обновите и проверьте ещё раз",
+    "ingest": {
+      "unknownSchemaVersion": "Неизвестная версия контракта «{version}» — сообщение в карантине",
+      "missingRequiredField": "Нет обязательного поля «{field}» — сообщение в карантине",
+      "unknownEnumValue": "Неизвестное значение «{value}» в поле «{field}»",
+      "unknownEnumValueAccepted": "Неизвестное значение «{value}» в поле «{field}» — принято с пометкой",
+      "unknownEnumValueQuarantined": "Неизвестное значение «{value}» в важном для безопасности поле «{field}» — сообщение в карантине",
+      "signatureInvalid": "Подпись сообщения недействительна — сообщение отклонено",
+      "duplicateConflict": "Тот же номер события, другое содержимое — конфликт записан в журнал критических действий",
+      "unknownSource": "Источник не зарегистрирован — сообщение отклонено",
+      "revokedKey": "Ключ источника отозван — сообщение отклонено",
+      "incompatibleChange": "Несовместимое изменение контракта — нужна новая основная версия"
+    },
+    "byWorkingCode": {
+      "E_MISSING_FIELD": "@:errors.ingest.missingRequiredField",
+      "E_UNSUPPORTED_VERSION": "@:errors.ingest.unknownSchemaVersion",
+      "E_UNKNOWN_ENUM": "@:errors.ingest.unknownEnumValue",
+      "E_ID_CONFLICT": "@:errors.ingest.duplicateConflict",
+      "E_REWORK_LIMIT": "@:errors.decision.reworkLimitReached",
+      "E_PERMIT_REQUIRED": "@:errors.decision.concessionRequired",
+      "E_REF_NOT_FOUND": "@:errors.integration.refNotFound"
+    },
+    "decision": {
+      "concessionRequired": "«{decision}» без действующего разрешения на отклонение не подписывается",
+      "reworkLimitReached": "Лимит доработок зоны {zone} исчерпан ({used} из {limit}) — нужно отдельное разрешение уполномоченного",
+      "rejectReasonRequired": "Укажите, почему сигнал отклонён",
+      "returnOnlyUnprocessed": "@:decisions.disposition.returnOnlyUnprocessed",
+      "approvalsMissing": "Не хватает подписей: {who} — решение не исполняется",
+      "itemBlocked": "Изделие заблокировано — операция запрещена до решения",
+      "gateWithoutSignature": "Без подписи {role} изделие не проходит точку предъявления",
+      "separationOfDuties": "Вы участвовали в изготовлении этого изделия — принять его на точке предъявления нельзя",
+      "interventionOpen": "Открыта запись вмешательства — приёмка и отгрузка запрещены",
+      "zoneCheckRequired": "Операция закрывает доступ к зоне {zone} — сначала завершите её проверку",
+      "qualificationExpired": "Квалификация исполнителя {performer} истекла {date} — операция заблокирована",
+      "preconditionFailed": "Не выполнено предусловие: {condition}",
+      "statusExpired": "Истёк срок статуса «{status}» — нужна повторная обработка",
+      "noStamp": "Нет действующего цифрового клейма по виду контроля «{kind}»",
+      "autoExcludeForbidden": "Исключить изделие из области риска автоматически нельзя — нужен человек или делегированное правило",
+      "replayReadOnly": "В режиме воспроизведения действия недоступны",
+      "decisionOutdated": "Решение принято до новых данных — пересмотрите его"
+    },
+    "access": {
+      "forbidden": "Нет полномочий на это действие",
+      "needSignature": "Нет полномочий — нужна подпись: {who}",
+      "wrongWorkplace": "Подписать можно только на своём рабочем месте: {workplace}",
+      "selfGrant": "Выдать права себе нельзя без второй подписи руководителя производства",
+      "notInZone": "По данным СКУД вы не в зоне {zone}",
+      "loginFailed": "Неверный логин или пароль",
+      "sessionExpired": "Сеанс завершён — войдите снова",
+      "accountPending": "Заявка ещё не активирована администратором"
+    },
+    "signing": {
+      "agentNotFound": "Агент токена не найден — подпишите на бумаге",
+      "tokenMissing": "Токен не вставлен",
+      "pinWrong": "Неверный ПИН-код",
+      "certRevoked": "Сертификат отозван — подпись этим ключом не принимается",
+      "keyUnavailable": "Ключ недоступен — проверить подпись нельзя. Это не «подпись действительна»",
+      "qrMismatch": "QR-отпечаток на скане не совпадает с документом — скан не принят",
+      "attesterIsSigner": "@:documents.paper.attesterNotSigner",
+      "paperForbidden": "Для этого этапа подпись на бумаге запрещена",
+      "documentChanged": "Документ изменён после подписи — подпись недействительна",
+      "packageTampered": "Пакет изменён — отклонён",
+      "noSignaturePath": "Нет ни агента токена, ни подписи на бумаге — закрывающее решение не подписывается"
+    },
+    "integration": {
+      "erpUnavailable": "1С недоступна — повтор с тем же номером сообщения через {delay}",
+      "erpDataError": "1С вернула ошибку данных {code}: {message}. Автоповтора нет — задача администратору",
+      "idMappingMissing": "Нет соответствия идентификатора: {object} «{externalId}» — добавьте его в таблицу соответствий",
+      "contractNotFound": "Не найден договор с контрагентом {counterparty}",
+      "refNotFound": "В справочнике 1С не найдена запись: {field}",
+      "noAck": "1С не подтвердила приём за {time} — статус «учтено в 1С» не поставлен",
+      "duplicateInErp": "1С уже провела документ с этим номером сообщения — второй не создан",
+      "contractIncompatible": "Несовместимое изменение контракта обмена — результат не отправлен",
+      "replayNoSend": "При воспроизведении истории во внешние системы ничего не отправляется",
+      "galaktikaUnavailable": "Галактика:ERP недоступна — повтор с тем же номером сообщения",
+      "mesUnavailable": "MES недоступна — блок изделия не передан, повтор"
+    },
+    "process": {
+      "unsupportedElement": "Неподдерживаемый элемент BPMN: {element}",
+      "schemaViolation": "Нарушение схемы расширения: {element} — {detail}",
+      "unreachableNode": "Недостижимый узел: {element}",
+      "closingPathWithoutHuman": "Закрывающий путь без контроля человеком: {element}",
+      "presentationPointWithoutRole": "Точка предъявления без роли или полномочия: {element}",
+      "inspectionWithoutRequirement": "Предупреждение: контроль без ссылки на требование КД — {element}",
+      "versionTampered": "Содержимое действующей версии изменено после подписания — версия не исполняется",
+      "quorumIncomplete": "Не хватает подписей кворума: {who}"
+    },
+    "vision": {
+      "noQualifiedAnalyzer": "Для этой карты контроля нет допущенного анализатора — контроль ручной",
+      "passportSuspended": "Паспорт допуска приостановлен: {trigger}. Действует предыдущая версия {version}",
+      "returnRequiresHeadOfQc": "Вернуть анализатор в работу может только начальник ОТК"
+    },
+    "federation": {
+      "extractTampered": "Выписка паспорта изменена — не принята",
+      "extractUnverifiable": "Подписи выписки проверить нельзя — принята с пометкой «происхождение не подтверждено»"
+    }
+  },
+
+  "hints": {
+    "firstPassYield": "@:analytics.metrics.firstPassYield.hint",
+    "processCapability": "@:analytics.metrics.processCapability.hint",
+    "defectIndication": "Признак дефекта — то, что заметила автоматика или прибор. Это ещё не несоответствие: решение принимает уполномоченный человек",
+    "signalVsNonconformity": "Сигнал ≠ подтверждённое несоответствие ≠ гипотеза причины ≠ подтверждённая ошибка. Каждый статус ставит свой участник",
+    "unableToAssess": "Оценка невозможна (Unassessable) — данных недостаточно для вывода: блик, нерезко, зона закрыта, сбой. Это не «годно» и не брак",
+    "observationQuality": "Качество наблюдения (Observation Quality) — пригодность данных: свет, резкость, покрытие зоны. Не путать с уверенностью анализатора",
+    "analyzerConfidence": "Уверенность анализатора (Analyzer Confidence) — насколько анализатор уверен в своей интерпретации. Это не вероятность брака и не «точность»",
+    "suspect": "Под подозрением — есть основания, но несоответствие не подтверждено. Это не брак",
+    "hold": "Заблокировано — движение временно запрещено. Это не значит «признано дефектным»; снятие блока не значит «годно»",
+    "isolation": "Изоляция — положение изделия, ожидающего решения. Блок — уровень сдерживания, запрещающий движение",
+    "reworkVsRepair": "Переделка возвращает изделие к исходным требованиям. Ремонт делает его пригодным к использованию, но не обязательно соответствующим — только по разрешению на отклонение",
+    "concession": "Разрешение на отклонение (Concession) — разрешение использовать уже изготовленное изделие с несоответствием: для ремонта и «как есть». Итог — «годно по разрешению на отклонение», а не «годно»",
+    "deviationPermit": "Разрешение на отступление (Deviation Permit) — выдаётся до изготовления и входит в нормативный слой",
+    "correctionTypes": "Коррекция устраняет конкретное несоответствие. Сдерживание — временные защитные меры. Корректирующее действие устраняет причину",
+    "implementedVsEffective": "Внедрено ≠ результативно: меру закрывают только по плану проверки результативности",
+    "causalWindow": "Окно возможного возникновения (Causal Window) — от последнего подтверждённо нормального состояния до первой находки",
+    "lastKnownGood": "Последнее подтверждённо нормальное состояние (Last Known Good) — нижняя граница окна возникновения и области риска",
+    "riskScope": "Область риска (Impact Scope) — изделия, которые могли подвергнуться той же причине. Расширяется осторожно, сужается только по доказательствам",
+    "commonFactors": "Общие факторы — что общего у группы несоответствий: станок, инструмент, оснастка, программа, исполнитель, партия. Показывает, у скольких случаев из группы фактор совпадает",
+    "costOfDelay": "Цена задержки — изделия на блоке, стоящие операции и часы незавершённого производства из-за просроченного решения",
+    "digitalStamp": "Цифровое клеймо (Acceptance Authority Media) — электронный аналог личного клейма ОТК: выдаётся по приказу, по одному на вид контроля, со сроком",
+    "criticalAction": "Критическое действие (Critical Action) — меняет судьбу изделия или процесса, заключение о качестве, полномочия или защищённую настройку контроля",
+    "trustLevel": "Уровень доверия (Trust Level) — какие действия анализатор может выполнять сам по паспорту допуска: от 0 — только запись до 4 — пропуск безопасных результатов по правилу",
+    "reactionMap": "Карта реакций — утверждённое правило: что делать с сигналом по виду дефекта, тяжести, уверенности и качеству наблюдения",
+    "inspectionRecipe": "Карта контроля (Inspection Recipe) — что проверять, каким методом, при каком свете, что метод ловит и что нет, что делать с результатом",
+    "qualificationPassport": "Паспорт допуска карты контроля (Inspection Qualification Record) — утверждённая конфигурация контура контроля с разрешёнными и запрещёнными автоматическими действиями",
+    "automatedInspection": "Автоматизированный контроль — машина ищет, человек решает. Не «автоматический»",
+    "signatureLevels": "Уровни подписи: 0 — устройство, 1 — рутинное действие, 2 — закрывающее решение со сводкой, 3 — сменный рапорт",
+    "quorum": "Кворум утверждения — роли, чьи подписи обязательны, чтобы версия процесса вступила в силу",
+    "timeKinds": "Время возникновения — когда случилось; время получения — когда пришло; время записи — когда записано в журнал. История строится по времени возникновения",
+    "asOfModes": "«Как было» — по времени возникновения со всем, что известно сейчас. «Что мы знали» — только то, что было записано к выбранному моменту",
+    "duplicate": "Повторная доставка (Duplicate) — то же событие пришло ещё раз. Подтверждается, но не учитывается повторно",
+    "lateEvent": "Позднее событие (Late Event) — пришло после более поздних. Встаёт на своё время, выводы пересчитываются, прежний вывод остаётся в журнале",
+    "quarantine": "Карантин сообщений (Quarantine) — сообщения, не прошедшие проверку. Администратор разбирает их и обрабатывает повторно",
+    "sourceKind": "Источник факта — откуда пришёл факт и насколько он надёжен. Ручная отметка не выдаётся за данные станка",
+    "operationRunProfile": "Профиль выполнения операции (Operation Run Profile) — всё об одном выполнении: изделие, станок, программа, инструмент и ресурс, режим, ручные изменения, предупреждения, контроль до и после",
+    "toolLife": "Ресурс инструмента (Tool Life) — сколько циклов сделано из допустимых, например 73 из 75",
+    "manualOverride": "Ручное изменение режима (Manual Override) — например, подача 130 % от программы. Обстоятельство, а не вина",
+    "specialProcess": "Специальный процесс — результат нельзя полностью проверить после операции, поэтому нарушение режима само по себе — несоответствие для всех изделий окна нарушения",
+    "presentationPoint": "Точка предъявления (Hold Point) — изделие дальше не идёт без подписи ОТК или представителя заказчика",
+    "closingGate": "Закрывающая точка (Closing Gate) — точка маршрута, где изделие не идёт дальше без решения человека с подписью",
+    "inspectionPoint": "Точка контроля — место и момент контроля в маршруте. Не путать с контрольной точкой журнала",
+    "journalCheckpoint": "Контрольная точка журнала — подписанный снимок цепочки записей у независимого хранителя",
+    "verifier": "Верификатор — независимая программа: переигрывает журнал, проверяет цепочку, подписи и правила и выдаёт «цело» или место нарушения",
+    "tokenAgent": "Агент токена — программа на рабочем месте, которая хранит ваш ключ и подписывает решения. Сервер ключей не хранит",
+    "paperSignature": "Подпись на бумаге — равноправный путь: документ с QR-кодом подписывают ручкой, скан заверяет второй сотрудник своей подписью",
+    "passportExtract": "Выписка паспорта — подписанный пакет сведений об изделии или партии, который передают при отгрузке вместо бумажного сертификата",
+    "dataDeficitMap": "Карта дефицита данных — каких сведений чаще всего не хватало в расследованиях и что даст следующий шаг цифровизации",
+    "automationRestrictFirst": "Автоматически ограничивать безопаснее, чем автоматически разрешать: блокировать система может сама, снимать блок — строже, списывать — только человек",
+    "twoSpeedContours": "Изделие закрыто ≠ проблема устранена: решение по изделию и системное расследование ведутся отдельно",
+    "whyMadeWhyMissed": "У значимой проблемы две причины: почему возник дефект и почему его пропустил контроль",
+    "incomingDefect": "Входной брак — несоответствие материала или покупного изделия. Исполнителям не приписывается",
+    "confirmedPerformerError": "Подтверждённая ошибка исполнителя — только после расследования, письменного объяснения работника и решения уполномоченного",
+    "operatorVision": "Контроль действий оператора (OperatorVision) — сравнивает ожидаемую последовательность шагов с наблюдаемой. Результат — гипотеза, а не вина",
+    "visionQc": "Визуальный контроль (VisionQC) — внешний анализатор изображений. Присылает признаки дефекта, уверенность и качество наблюдения",
+    "machineLogs": "Журналы оборудования (MachineLogs) — выделяют значимые события станка: что делал, чем, как шёл процесс, отклонения",
+    "criticalActionsModule": "Критические действия (CriticalActions) — сервис, который записывает каждое критическое действие неизменяемо, с полномочием и основанием",
+    "fixturesMode": "Демо на заготовках — экраны работают через настоящий интерфейс программы, но данные подаёт адаптер заготовок, а не движок",
+    "cryptoProfile": "Криптопрофиль — набор алгоритмов подписи и хеширования: ГОСТ, постквантовый или гибридный"
+  },
+
+  "empty": {
+    "photoMissing": "Фото отсутствует",
+    "materialNotProvided": "Материал не предоставлен источником",
+    "illustration": "ИЛЛЮСТРАЦИЯ",
+    "illustrationBadge": "Иллюстрация из открытого набора. Не снимок этого изделия",
+    "illustrationCaption": "Иллюстрация. Источник: {dataset} — {author}, {url}, лицензия {license}. Изображение не относится к изделию и не является результатом промышленной проверки",
+    "noDataUnknown": "Нет данных — неизвестно",
+    "performerUnknown": "Исполнитель неизвестен",
+    "inspectionMissing": "Нет данных контроля — это не «годно»",
+    "noDecisionIsNotNoData": "Нет решения ≠ нет данных",
+    "noNonconformities": "За период несоответствий нет",
+    "queueEmpty": "Решений не ждёт ничего",
+    "noAlerts": "Тревог нет",
+    "noTasks": "Задач нет",
+    "noSimilarCases": "Похожих случаев не найдено",
+    "noHypotheses": "Гипотез пока нет",
+    "quarantineEmpty": "Карантин пуст",
+    "noRecords": "Записей нет",
+    "notFound": "По номеру «{query}» ничего не найдено",
+    "scenarioNotStarted": "Сценарий не запущен",
+    "noActiveConcessions": "Действующих разрешений на отклонение нет",
+    "noRiskScope": "Активных областей риска нет",
+    "noDocuments": "Документов пока нет",
+    "notEnoughRuns": "Мало выполнений для сравнения: {n} при минимуме {min}",
+    "noGeometry": "Геометрия в файле сборки отсутствует",
+    "noProposals": "Предложений нет"
+  },
+
+  "plural": {
+    "items": "{n}\u00a0изделие | {n}\u00a0изделия | {n}\u00a0изделий",
+    "operations": "{n}\u00a0операция | {n}\u00a0операции | {n}\u00a0операций",
+    "defects": "{n}\u00a0дефект | {n}\u00a0дефекта | {n}\u00a0дефектов",
+    "nonconformities": "{n}\u00a0несоответствие | {n}\u00a0несоответствия | {n}\u00a0несоответствий",
+    "records": "{n}\u00a0запись | {n}\u00a0записи | {n}\u00a0записей",
+    "events": "{n}\u00a0событие | {n}\u00a0события | {n}\u00a0событий",
+    "signatures": "{n}\u00a0подпись | {n}\u00a0подписи | {n}\u00a0подписей",
+    "investigations": "{n}\u00a0расследование | {n}\u00a0расследования | {n}\u00a0расследований",
+    "minutes": "{n}\u00a0минута | {n}\u00a0минуты | {n}\u00a0минут",
+    "hours": "{n}\u00a0час | {n}\u00a0часа | {n}\u00a0часов",
+    "days": "{n}\u00a0день | {n}\u00a0дня | {n}\u00a0дней",
+    "workDays": "{n}\u00a0рабочий день | {n}\u00a0рабочих дня | {n}\u00a0рабочих дней",
+    "flanges": "{n}\u00a0фланец | {n}\u00a0фланца | {n}\u00a0фланцев"
+  }
+}

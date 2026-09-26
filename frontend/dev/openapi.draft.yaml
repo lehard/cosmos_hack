@@ -1,0 +1,462 @@
+# ЧЕРНОВИК спецификации API для оболочки фронтенда (эпик 03).
+#
+# Настоящий контракт — contracts/openapi.yaml: его генерирует эпик 02 из Go-описаний
+# операций Huma (AD-20, NFR-DEV-2). Пока его нет, клиент orval + Vue Query
+# собирается из этого файла; как только contracts/openapi.yaml появится,
+# `npm run generate` переключится на него сам (frontend/scripts/generate.mjs).
+#
+# Здесь — только то, что нужно оболочке: вход (демо-персоны и логин с
+# необязательным паролем), сеанс, стол роли, права для @casl/vue, индикатор
+# целостности, сводка уведомлений, поиск по номеру детали и SSE-канал.
+# Имена операций = x-ant-action id `‹модуль›.‹объект›.‹действие›` (AD-40);
+# эпику 02 — взять их как предложение, при расхождении правится этот черновик
+# и обёртки в frontend/src/entities.
+openapi: 3.1.0
+info:
+  title: ant — черновик API оболочки фронтенда
+  version: 0.1.0-draft
+  description: Черновик эпика 03. Не контракт — контракт генерирует эпик 02 в contracts/openapi.yaml.
+servers:
+  - url: /
+tags:
+  - name: access
+    description: Вход, сеанс, стол роли, права (AD-15, AD-21, FR-128)
+  - name: security
+    description: Индикатор целостности «по данным сервера» (AD-46)
+  - name: notifications
+    description: Уведомления и задачи (FR-57)
+  - name: item
+    description: Изделие — поиск по номеру детали
+  - name: journal
+    description: Живые обновления (SSE, AD-21)
+
+paths:
+  /api/v1/auth/personas:
+    get:
+      operationId: access.persona.list
+      tags: [access]
+      summary: Демо-персоны для входа без пароля
+      description: >-
+        Демо-трек (эпик 08, заметка): экран входа сначала предлагает выбрать
+        демо-персону — псевдоним из стартовой политики (normative/policy) с ролью
+        и областью. Вне демо-профиля операция отвечает 404 (api.not_found), и экран
+        показывает только вход по логину.
+      x-ant-action: {id: access.persona.list, class: read, critical: false, owner: access}
+      responses:
+        '200':
+          description: Список демо-персон
+          headers: {Ant-Backend: {$ref: '#/components/headers/AntBackend'}}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/DemoPersonaList'}
+        default: {$ref: '#/components/responses/Problem'}
+
+  /api/v1/auth/session:
+    get:
+      operationId: access.session.read
+      tags: [access]
+      summary: Текущий сеанс
+      description: Пользователь, активная роль, область, смена, рабочее место; 401 access.unauthenticated — сеанса нет.
+      x-ant-action: {id: access.session.read, class: read, critical: false, owner: access}
+      responses:
+        '200':
+          description: Сеанс
+          headers: {Ant-Backend: {$ref: '#/components/headers/AntBackend'}}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Session'}
+        default: {$ref: '#/components/responses/Problem'}
+    post:
+      operationId: access.session.create
+      tags: [access]
+      summary: Войти
+      description: >-
+        FR-128. Вход демо-персоной (persona_id) или по логину. Пароль пока
+        необязателен (демо-трек); после эпика 08 — обязателен для входа по логину
+        (сеанс scs, argon2id). Ответ ставит cookie сеанса.
+      x-ant-action: {id: access.session.create, class: record, critical: false, owner: access}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/SessionCreate'}
+      responses:
+        '201':
+          description: Сеанс открыт
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Session'}
+        default: {$ref: '#/components/responses/Problem'}
+    delete:
+      operationId: access.session.delete
+      tags: [access]
+      summary: Выйти
+      x-ant-action: {id: access.session.delete, class: record, critical: false, owner: access}
+      responses:
+        '204':
+          description: Сеанс закрыт
+        default: {$ref: '#/components/responses/Problem'}
+
+  /api/v1/desk:
+    get:
+      operationId: access.desk.read
+      tags: [access]
+      summary: Стол активной роли
+      description: >-
+        AD-21: стол — данные normative/desks/‹роль›.yaml (раскладка → вкладки →
+        слоты → виджеты → срез и плотность), отдаётся через access.Queries.Desks.
+        Для роли-наследника без своего файла — стол ближайшей базовой роли (inherits).
+      x-ant-action: {id: access.desk.read, class: read, critical: false, owner: access}
+      responses:
+        '200':
+          description: Стол
+          headers: {Ant-Backend: {$ref: '#/components/headers/AntBackend'}}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Desk'}
+        default: {$ref: '#/components/responses/Problem'}
+
+  /api/v1/permissions:
+    get:
+      operationId: access.permission.list
+      tags: [access]
+      summary: Разрешённые действия
+      description: >-
+        AD-15 «Для фронтенда»: без subject — плоский список «действие → объект»
+        для @casl/vue; с subject и id — допустимые действия по конкретному объекту.
+        Сервер вычисляет его тем же Enforce, что проверяет команды («в списке ⇔
+        разрешено»). На момент as_of (воспроизведение) команд в списке нет.
+      x-ant-action: {id: access.permission.list, class: read, critical: false, owner: access}
+      parameters:
+        - {name: subject, in: query, required: false, schema: {$ref: '#/components/schemas/EntityKind'}, description: Вид объекта}
+        - {name: id, in: query, required: false, schema: {type: string, maxLength: 128}, description: Идентификатор объекта}
+        - $ref: '#/components/parameters/Axis'
+        - $ref: '#/components/parameters/AsOf'
+      responses:
+        '200':
+          description: Разрешения
+          headers: {Ant-Backend: {$ref: '#/components/headers/AntBackend'}}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PermissionList'}
+        default: {$ref: '#/components/responses/Problem'}
+
+  /api/v1/integrity:
+    get:
+      operationId: security.integrity.read
+      tags: [security]
+      summary: Состояние целостности журнала «по данным сервера»
+      description: >-
+        AD-46: ant забирает последний подписанный отчёт верификатора у хранителя и
+        журналирует security.integrity.checked. Индикатор на столах помечен «по
+        данным сервера» и желтеет сам, если свежего отчёта нет дольше двух интервалов.
+      x-ant-action: {id: security.integrity.read, class: read, critical: false, owner: security}
+      responses:
+        '200':
+          description: Состояние
+          headers: {Ant-Backend: {$ref: '#/components/headers/AntBackend'}}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/IntegrityStatus'}
+        default: {$ref: '#/components/responses/Problem'}
+
+  /api/v1/notifications/summary:
+    get:
+      operationId: notifications.summary.read
+      tags: [notifications]
+      summary: Сводка уведомлений для шапки
+      x-ant-action: {id: notifications.summary.read, class: read, critical: false, owner: notifications}
+      parameters:
+        - $ref: '#/components/parameters/Axis'
+        - $ref: '#/components/parameters/AsOf'
+      responses:
+        '200':
+          description: Сводка
+          headers: {Ant-Backend: {$ref: '#/components/headers/AntBackend'}}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/NotificationSummary'}
+        default: {$ref: '#/components/responses/Problem'}
+
+  /api/v1/items/lookup:
+    get:
+      operationId: item.item.lookup
+      tags: [item]
+      summary: Найти изделие по номеру детали или скану DataMatrix
+      description: Разрешение носителя (AD-41) → изделие. Не найдено — 404 api.not_found.
+      x-ant-action: {id: item.item.lookup, class: read, critical: false, owner: item}
+      parameters:
+        - {name: q, in: query, required: true, schema: {type: string, minLength: 1, maxLength: 256}, description: Номер детали или содержимое DataMatrix}
+        - $ref: '#/components/parameters/Axis'
+        - $ref: '#/components/parameters/AsOf'
+      responses:
+        '200':
+          description: Найдено
+          headers: {Ant-Backend: {$ref: '#/components/headers/AntBackend'}}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ItemLookup'}
+        default: {$ref: '#/components/responses/Problem'}
+
+  /api/v1/stream:
+    get:
+      operationId: journal.stream.subscribe
+      tags: [journal]
+      summary: Живые обновления столов (SSE)
+      description: >-
+        Канал `sse` из contracts/events/asyncapi.yaml: `id:` = seq, `event:
+        entity_changed`, `data:` — EntityChanged. Фронтенд инвалидирует ключ Vue
+        Query [сущность, id]; переподключение — с Last-Event-ID. Клиент — ручной
+        модуль src/shared/api/sse (единственное исключение AD-20), типы — отсюда.
+      x-ant-action: {id: journal.stream.subscribe, class: read, critical: false, owner: journal}
+      parameters:
+        - {name: Last-Event-ID, in: header, required: false, schema: {type: string}, description: seq последнего полученного события}
+      responses:
+        '200':
+          description: Поток событий
+          content:
+            text/event-stream:
+              # Тело — поток строк SSE; тип сообщения data: — EntityChanged (components).
+              # Схема ответа — строка, иначе orval генерирует некомпилируемый разбор тела.
+              schema: {type: string, description: 'Поток SSE; data: — EntityChanged'}
+        default: {$ref: '#/components/responses/Problem'}
+
+components:
+  headers:
+    AntBackend:
+      description: Режим ведущих портов, отдавших ответ (AD-36, FR-150); метка fixtures | live на виджете.
+      schema: {$ref: '#/components/schemas/BackendMode'}
+
+  parameters:
+    Axis:
+      name: axis
+      in: query
+      required: false
+      description: Ось момента (AD-21, AD-37) — occurred «как было» (по умолчанию) или recorded «что мы знали».
+      schema: {$ref: '#/components/schemas/Axis'}
+    AsOf:
+      name: as_of
+      in: query
+      required: false
+      description: Момент (RFC 3339 UTC); пусто — «сейчас». Задан — воспроизведение, действия выключены.
+      schema: {type: string, format: date-time}
+
+  responses:
+    Problem:
+      description: Ошибка — RFC 9457 problem+json, код из contracts/errors.yaml
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
+
+  schemas:
+    BackendMode:
+      type: string
+      enum: [fixtures, live]
+      description: Режим ведущих портов (AD-36).
+    Axis:
+      type: string
+      enum: [occurred, recorded]
+      default: occurred
+      description: Ось момента (AD-37).
+    EntityKind:
+      type: string
+      description: Вид сущности — первый элемент ключа Vue Query и объект прав (как в contracts/events/common/sse-entity-changed.v1.json).
+      enum: [item, lot, nonconformity, incident, document, task, notification, workplace, equipment, process_version, analyzer_passport, erp_message, run, integrity, live_map, policy, quarantine]
+
+    Problem:
+      type: object
+      description: RFC 9457 с расширениями ant (contracts/problem.schema.json).
+      required: [type, title, status, code]
+      properties:
+        type: {type: string, description: 'urn:ant:problem:‹код›'}
+        title: {type: string}
+        status: {type: integer}
+        detail: {type: string}
+        instance: {type: string}
+        code: {type: string, description: Код из contracts/errors.yaml}
+        params:
+          type: object
+          additionalProperties: {type: string}
+        allowed_actions:
+          type: array
+          items: {type: string}
+
+    EntityChanged:
+      type: object
+      description: Сообщение SSE (contracts/events/common/sse-entity-changed.v1.json).
+      required: [entity, id, seq]
+      properties:
+        entity: {$ref: '#/components/schemas/EntityKind'}
+        id: {type: string, description: Идентификатор сущности; для live_map и integrity — global}
+        seq: {type: integer, minimum: 0}
+        run_id: {type: string}
+        mode: {$ref: '#/components/schemas/BackendMode'}
+
+    RoleRef:
+      type: object
+      required: [id, title]
+      properties:
+        id: {type: string, pattern: '^[a-z][a-z0-9_]*$', description: id роли из политики (normative/policy)}
+        title: {type: string, description: Название роли из политики}
+        inherits:
+          type: array
+          items: {type: string}
+          description: Базовые роли (руководящие подписанты — наследники)
+
+    DemoPersona:
+      type: object
+      required: [id, name, role]
+      properties:
+        id: {type: string, description: Псевдоним сотрудника (кейс §4.6)}
+        name: {type: string}
+        role: {$ref: '#/components/schemas/RoleRef'}
+        scope: {type: string, description: Область действия роли (здание → цех → участок → рабочее место)}
+    DemoPersonaList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/DemoPersona'}
+
+    SessionCreate:
+      type: object
+      description: Либо persona_id (демо), либо login (+ password — пока необязателен).
+      properties:
+        persona_id: {type: string}
+        login: {type: string, maxLength: 128}
+        password: {type: string, maxLength: 256}
+
+    Session:
+      type: object
+      required: [user, role, policy_seq, demo]
+      properties:
+        user:
+          type: object
+          required: [id, name]
+          properties:
+            id: {type: string}
+            name: {type: string}
+        role: {$ref: '#/components/schemas/RoleRef'}
+        scope: {type: string}
+        shift:
+          type: object
+          required: [id, title]
+          properties:
+            id: {type: string}
+            title: {type: string}
+            starts_at: {type: string, format: date-time}
+            ends_at: {type: string, format: date-time}
+        workplace:
+          type: object
+          required: [id, title]
+          properties:
+            id: {type: string}
+            title: {type: string}
+        policy_seq: {type: integer, minimum: 0, description: Версия политики, по которой вычислены права (AD-39)}
+        demo: {type: boolean, description: Вход демо-персоной без пароля}
+
+    ActionClass:
+      type: string
+      enum: [read, record, protective, permissive, irreversible]
+      description: Класс операции из x-ant-action (AD-27, AD-40); read — чтение.
+    Permission:
+      type: object
+      required: [action, action_class, subject]
+      properties:
+        action: {type: string, description: 'x-ant-action id ‹модуль›.‹объект›.‹действие›'}
+        action_class: {$ref: '#/components/schemas/ActionClass'}
+        subject: {type: string, description: Вид объекта (EntityKind) или all}
+        object_id: {type: string, description: Для списка по объекту — его id}
+    PermissionList:
+      type: object
+      required: [policy_seq, items]
+      properties:
+        policy_seq: {type: integer, minimum: 0}
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/Permission'}
+
+    Density:
+      type: string
+      enum: [large, comfortable, compact]
+      description: Плотность — мастеру и исполнителю крупно (large), технологу — плотный инженерный вид (compact).
+    DeskLayout:
+      type: string
+      enum: [single, main-side, queue-main-side, overview]
+      description: >-
+        Раскладка вкладки: single — main; main-side — main + right; queue-main-side —
+        left + main + right; overview — top + main + right + bottom.
+    DeskArea:
+      type: string
+      enum: [top, left, main, right, bottom]
+    DeskSlot:
+      type: object
+      required: [id, area, widget]
+      properties:
+        id: {type: string, pattern: '^[a-z][a-z0-9-]*$'}
+        area: {$ref: '#/components/schemas/DeskArea'}
+        widget: {type: string, pattern: '^[a-z][a-z0-9-]*$', description: id виджета из frontend/src/widgets/registry.ts}
+        density: {$ref: '#/components/schemas/Density'}
+        slice:
+          type: object
+          additionalProperties: true
+          description: Параметры среза — «одна правда, разные взгляды»
+    DeskTab:
+      type: object
+      required: [id, title_key, layout, slots]
+      properties:
+        id: {type: string, pattern: '^[a-z][a-z0-9-]*$'}
+        title_key: {type: string, description: Ключ текста интерфейса (ru.json)}
+        layout: {$ref: '#/components/schemas/DeskLayout'}
+        density: {$ref: '#/components/schemas/Density'}
+        slots:
+          type: array
+          items: {$ref: '#/components/schemas/DeskSlot'}
+    Desk:
+      type: object
+      description: Стол роли — normative/desks/‹роль›.yaml (схема normative/desks/desk.schema.json).
+      required: [version, role, title_key, density, tabs]
+      properties:
+        version: {type: integer, enum: [1]}
+        role: {type: string}
+        title_key: {type: string}
+        density: {$ref: '#/components/schemas/Density'}
+        help_key: {type: string, description: Раздел встроенной справки роли}
+        tabs:
+          type: array
+          minItems: 1
+          items: {$ref: '#/components/schemas/DeskTab'}
+
+    IntegrityStatus:
+      type: object
+      required: [status, server_side, interval_seconds]
+      properties:
+        status:
+          type: string
+          enum: [ok, violated, stale, unknown]
+          description: ok — последний отчёт верификатора «цело»; stale — свежего отчёта нет дольше двух интервалов.
+        checked_at: {type: string, format: date-time}
+        report_ref: {type: string, description: Отпечаток отчёта верификатора}
+        interval_seconds: {type: integer, minimum: 1, description: Интервал проверок верификатора}
+        server_side: {type: boolean, const: true, description: Всегда true — показывается «по данным сервера»}
+
+    NotificationSummary:
+      type: object
+      required: [unread]
+      properties:
+        unread: {type: integer, minimum: 0}
+        by_kind:
+          type: object
+          properties:
+            info: {type: integer, minimum: 0}
+            alarm: {type: integer, minimum: 0}
+            task: {type: integer, minimum: 0}
+            decision_request: {type: integer, minimum: 0}
+
+    ItemLookup:
+      type: object
+      required: [item_id]
+      properties:
+        item_id: {type: string, description: 'код_предприятия:локальный_id'}
+        carrier_ref: {type: string}

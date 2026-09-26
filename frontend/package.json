@@ -11,11 +11,16 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "typecheck": "vue-tsc --noEmit -p tsconfig.app.json && vue-tsc --noEmit -p tsconfig.node.json",
+    "generate": "node scripts/generate.mjs",
+    "typecheck": "vue-tsc --noEmit -p tsconfig.app.json && vue-tsc --noEmit -p tsconfig.node.json && vue-tsc --noEmit -p tsconfig.vitest.json",
     "lint": "eslint --max-warnings=0 .",
+    "test": "vitest run",
+    "check:shell": "node scripts/check-shell.mjs --selftest && node scripts/generate.mjs --check",
     "licenses": "license-checker-rseidelsohn --production --csv --out ../docs/licenses/npm.csv"
   },
   "dependencies": {
+    "@casl/ability": "7.0.1",
+    "@casl/vue": "3.0.1",
     "@fontsource/pt-mono": "5.3.0",
     "@fontsource/pt-sans": "5.3.0",
     "@tanstack/vue-query": "5.103.2",
@@ -23,6 +28,7 @@
     "naive-ui": "2.45.3",
     "pinia": "4.0.3",
     "vue": "3.5.43",
+    "vue-i18n": "11.4.2",
     "vue-router": "5.3.1"
   },
   "devDependencies": {
@@ -30,15 +36,21 @@
     "@tsconfig/node24": "24.0.5",
     "@types/node": "24.19.0",
     "@vitejs/plugin-vue": "6.0.9",
+    "@vue/test-utils": "2.5.1",
     "@vue/tsconfig": "0.9.1",
+    "ajv": "8.20.0",
     "eslint": "10.11.0",
     "eslint-plugin-vue": "10.11.1",
     "globals": "17.12.0",
+    "happy-dom": "20.14.5",
     "license-checker-rseidelsohn": "5.0.1",
+    "orval": "8.37.0",
     "typescript": "5.9.3",
     "typescript-eslint": "8.70.1",
     "vite": "8.3.1",
+    "vitest": "5.0.2",
     "vue-eslint-parser": "10.4.1",
-    "vue-tsc": "3.3.11"
+    "vue-tsc": "3.3.11",
+    "yaml": "2.9.1"
   }
 }

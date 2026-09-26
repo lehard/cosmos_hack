@@ -1,0 +1,29 @@
+# Стол технолога (PRD §3a): разбор причин, общие факторы, разбор обстоятельств, область риска, процесс.
+# Плотный инженерный вид. Владелец после волны 1 — эпик 12.
+version: 1
+role: technologist
+title_key: desks.causeAnalysis
+density: compact
+tabs:
+  - id: causes
+    title_key: desks.causeAnalysis
+    layout: main-side
+    slots:
+      - {id: groups, area: main, widget: cause-analysis, slice: {group_by: [defect_type, operation, equipment]}}
+      - {id: factors, area: right, widget: common-factors}
+  - id: circumstances
+    title_key: desks.circumstances
+    layout: main-side
+    slots:
+      - {id: tracks, area: main, widget: circumstances}
+      - {id: hypothesis, area: right, widget: hypothesis}
+  - id: risk
+    title_key: riskScope.title
+    layout: single
+    slots:
+      - {id: scope, area: main, widget: risk-scope}
+  - id: process
+    title_key: desks.process
+    layout: single
+    slots:
+      - {id: versions, area: main, widget: process-versions, slice: {mode: diff}}

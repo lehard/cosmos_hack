@@ -3,7 +3,9 @@
 #  - зависимости ставятся строго по package-lock.json (npm ci), только если
 #    lock-файл изменился с прошлой установки;
 #  - ESLint (запрет ручных HTTP-вызовов, AD-20) + самопроверка правила;
-#  - vue-tsc; сборка vite.
+#  - оболочка (эпик 03): столы normative/desks ↔ реестр виджетов, тексты,
+#    сгенерированный клиент совпадает с контрактом (+ самопроверка);
+#  - vue-tsc; юнит-тесты (vitest); сборка vite.
 set -euo pipefail
 cd /src/frontend
 
@@ -39,8 +41,14 @@ if printf '%s\n' "$probe_import" | npx --no-install eslint --stdin --stdin-filen
 fi
 echo "  ок: HTTP-библиотеки запрещены"
 
+step "оболочка: столы ролей ↔ реестр виджетов, тексты, сгенерированный клиент не устарел"
+npm run --silent check:shell
+
 step "vue-tsc"
 npm run --silent typecheck
+
+step "юнит-тесты оболочки"
+npm run --silent test
 
 step "сборка vite"
 npm run --silent build
