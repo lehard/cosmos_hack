@@ -21,18 +21,31 @@ const desk = useDesk()
 
 const ownRole = computed(() => session.data.value?.data.role.id ?? '')
 const role = computed(() => (typeof route.params.role === 'string' && route.params.role ? route.params.role : ownRole.value))
+/**
+ * Раздел справки (FR-117): для своей роли — help_key стола (наследник роли
+ * получает его вместе со столом: держатель КД видит руководство согласующего,
+ * начальник ОТК — контролёра), иначе собственная роль. Другой раздел — по
+ * адресу /help/‹раздел›, в том числе «demo_scenarios».
+ */
+const guide = computed(() => {
+  const d = desk.data.value?.data
+  const keys = role.value === ownRole.value ? [d?.help_key, role.value] : [role.value]
+  for (const key of keys) {
+    const md = key ? helpGuide(key) : null
+    if (md) return parseHelp(md)
+  }
+  return null
+})
 const roleTitle = computed(() => {
   const key = `roles.${codeToKey(role.value)}`
-  return te(key) ? t(key) : role.value
+  if (te(key)) return t(key)
+  // Раздел без названия роли (например, «Демо-сценарии») — по заголовку руководства.
+  const head = guide.value?.[0]
+  return head?.kind === 'h' ? head.text : role.value
 })
 const roleTask = computed(() => {
   const key = `roles.tasks.${codeToKey(role.value)}`
   return te(key) ? t(key) : ''
-})
-const guide = computed(() => {
-  const d = desk.data.value?.data
-  const md = helpGuide(role.value === ownRole.value && d?.help_key ? d.help_key : role.value)
-  return md ? parseHelp(md) : null
 })
 
 /** Вкладки и виджеты своего стола. */

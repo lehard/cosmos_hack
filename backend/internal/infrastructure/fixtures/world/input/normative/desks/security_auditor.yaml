@@ -3,6 +3,7 @@ version: 1
 role: security_auditor
 title_key: desks.integrityAudit
 density: compact
+help_key: security_auditor # раздел встроенной справки (эпик 47); наследники роли получают его вместе со столом
 tabs:
   - id: integrity
     title_key: desks.integrityAudit

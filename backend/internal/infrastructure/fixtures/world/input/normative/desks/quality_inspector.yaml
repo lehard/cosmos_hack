@@ -4,6 +4,7 @@ version: 1
 role: quality_inspector
 title_key: desks.decisionQueue
 density: comfortable
+help_key: quality_inspector # раздел встроенной справки (эпик 47); наследники роли получают его вместе со столом
 tabs:
   - id: queue
     title_key: desks.decisionQueue

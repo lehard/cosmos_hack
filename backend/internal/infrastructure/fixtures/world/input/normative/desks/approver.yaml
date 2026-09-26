@@ -5,6 +5,7 @@ version: 1
 role: approver
 title_key: desks.decisionCard
 density: comfortable
+help_key: approver # раздел встроенной справки (эпик 47); наследники роли получают его вместе со столом
 tabs:
   - id: decision
     title_key: desks.decisionCard
