@@ -47,8 +47,30 @@ export function installRunFetch(): void {
   }
 }
 
+// Режим «голова» (отладка столов при идущем показе): `?head=1` в адресе — этот
+// браузер на этом адресе и порту не подхватывает активный прогон и читает
+// текущее состояние без run_id; `?head=0` — вернуть. Запоминается в localStorage
+// источника (порт свой у каждого Vite), другие фронты и прогон не затрагивает.
+const HEAD_KEY = 'ant.head'
+
+/** Режим «голова»: активный прогон не подхватывается. */
+export function headMode(): boolean {
+  try {
+    const q = new URLSearchParams(window.location.search).get('head')
+    if (q === '1') window.localStorage.setItem(HEAD_KEY, '1')
+    else if (q === '0') window.localStorage.removeItem(HEAD_KEY)
+    return window.localStorage.getItem(HEAD_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
 /** Опрос активного прогона: первый прогон в состоянии «идёт / пауза / ждёт решения». */
 export async function refreshActiveRun(): Promise<ActiveRun | null> {
+  if (headMode()) {
+    activeRun.value = null
+    return null
+  }
   const f = original ?? window.fetch
   try {
     const res = await f('/api/v1/runs', { credentials: 'include' })
