@@ -209,6 +209,7 @@ import type {
   OpenIntervention,
   OpsHealth,
   OpsStoppedItemListParams,
+  PaperQRView,
   PartnerList,
   PassportExtractList,
   PassportExtractView,
@@ -263,6 +264,7 @@ import type {
   RegisterLot,
   RegisterPartner,
   RegisterPerson,
+  RegisterProfile,
   ReinstatePassport,
   RejectHypothesis,
   RejectSignal,
@@ -292,6 +294,8 @@ import type {
   RunControl,
   RunList,
   RunProfile,
+  ScanRead,
+  ScanView,
   ScenarioList,
   ScheduleShift,
   ScopeAnalysis,
@@ -314,6 +318,7 @@ import type {
   SignDocument,
   SigningKeyListParams,
   SigningKeyReadParams,
+  SigningPaperQrParams,
   SigningProfileListParams,
   SimilarCaseList,
   SimulationBoardReadParams,
@@ -325,6 +330,7 @@ import type {
   StartRun,
   StartedRun,
   StoppedItemList,
+  SubmitShiftReport,
   SubmitVersion,
   SwitchSource,
   TaskList,
@@ -4145,6 +4151,126 @@ export function useSigningProfileList<TData = Awaited<ReturnType<typeof signingP
 
 
 
+
+export type signingProfileRegisterResponse200 = {
+  data: Receipt
+  status: 200
+}
+
+export type signingProfileRegisterResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type signingProfileRegisterResponseSuccess = (signingProfileRegisterResponse200) & {
+  headers: Headers;
+};
+export type signingProfileRegisterResponseError = (signingProfileRegisterResponseDefault) & {
+  headers: Headers;
+};
+
+export const getSigningProfileRegisterUrl = () => {
+
+
+
+
+  return `/api/v1/crypto-profiles`
+}
+
+/**
+ * AD-32, FR-76, кейс §6.3: обязательный профиль для классов пакетов с позиции журнала. Только повышение (gost → hybrid); понижение отвергается (signing.profile_downgrade). Старые подписи не трогаются и проверяются по профилю на момент подписи.
+ * @summary Сменить криптопрофиль
+ */
+export const signingProfileRegister = async (registerProfile: RegisterProfile, options?: RequestInit): Promise<signingProfileRegisterResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getSigningProfileRegisterUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(registerProfile)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: signingProfileRegisterResponseError['data'], status?: number} = new globalThis.Error();
+    const data : signingProfileRegisterResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: signingProfileRegisterResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as signingProfileRegisterResponseSuccess
+}
+
+
+
+
+
+export const getSigningProfileRegisterMutationKey = () => ['signingProfileRegister'] as const;
+
+export const getSigningProfileRegisterMutationOptions = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof signingProfileRegister>>, TError,SigningProfileRegisterMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof signingProfileRegister>>, TError,SigningProfileRegisterMutationVariables, TContext> => {
+
+const mutationKey = getSigningProfileRegisterMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof signingProfileRegister>>, SigningProfileRegisterMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  signingProfileRegister(data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SigningProfileRegisterMutationResult = NonNullable<Awaited<ReturnType<typeof signingProfileRegister>>>
+    export type SigningProfileRegisterMutationBody = RegisterProfile
+    export type SigningProfileRegisterMutationError = globalThis.Error & { info?: Problem; status?: number }
+    export type SigningProfileRegisterMutationVariables = {data: RegisterProfile}
+
+    /**
+ * @summary Сменить криптопрофиль
+ */
+export const useSigningProfileRegister = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof signingProfileRegister>>, TError,SigningProfileRegisterMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof signingProfileRegister>>,
+        TError,
+        SigningProfileRegisterMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSigningProfileRegisterMutationOptions(options), queryClient);
+    }
 
 export type documentsDecisionCardReadResponse200 = {
   data: DecisionCard
@@ -18056,6 +18182,244 @@ export const useOpsProcessingRetry = <TError = globalThis.Error & { info?: Probl
       return useMutation(getOpsProcessingRetryMutationOptions(options), queryClient);
     }
 
+export type signingPaperQrResponse200 = {
+  data: PaperQRView
+  status: 200
+}
+
+export type signingPaperQrResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type signingPaperQrResponseSuccess = (signingPaperQrResponse200) & {
+  headers: Headers;
+};
+export type signingPaperQrResponseError = (signingPaperQrResponseDefault) & {
+  headers: Headers;
+};
+
+export const getSigningPaperQrUrl = (params: SigningPaperQrParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/paper/qr?${stringifiedParams}` : `/api/v1/paper/qr`
+}
+
+/**
+ * FR-139, AD-12, Д-30: QR ant:doc:‹id›:‹отпечаток› картинкой SVG для распечатки документа или листа решения; рисует сервер. Печатная рамка в отрисовку документа не входит — отпечаток от неё не зависит.
+ * @summary QR печатной рамки
+ */
+export const signingPaperQr = async (params: SigningPaperQrParams, options?: RequestInit): Promise<signingPaperQrResponseSuccess> => {
+
+  const res = await fetch(getSigningPaperQrUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: signingPaperQrResponseError['data'], status?: number} = new globalThis.Error();
+    const data : signingPaperQrResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: signingPaperQrResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as signingPaperQrResponseSuccess
+}
+
+
+
+
+
+export const getSigningPaperQrQueryKey = (params?: MaybeRefOrGetter<SigningPaperQrParams>,) => {
+    return [
+    'api','v1','paper','qr', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getSigningPaperQrQueryOptions = <TData = Awaited<ReturnType<typeof signingPaperQr>>, TError = globalThis.Error & { info?: Problem; status?: number }>(params: MaybeRefOrGetter<SigningPaperQrParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof signingPaperQr>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getSigningPaperQrQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof signingPaperQr>>> = ({ signal }) => signingPaperQr(toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof signingPaperQr>>, TError, TData>
+}
+
+export type SigningPaperQrQueryResult = NonNullable<Awaited<ReturnType<typeof signingPaperQr>>>
+export type SigningPaperQrQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary QR печатной рамки
+ */
+
+export function useSigningPaperQr<TData = Awaited<ReturnType<typeof signingPaperQr>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ params: MaybeRefOrGetter<SigningPaperQrParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof signingPaperQr>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getSigningPaperQrQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+
+export type signingPaperScanResponse200 = {
+  data: ScanView
+  status: 200
+}
+
+export type signingPaperScanResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type signingPaperScanResponseSuccess = (signingPaperScanResponse200) & {
+  headers: Headers;
+};
+export type signingPaperScanResponseError = (signingPaperScanResponseDefault) & {
+  headers: Headers;
+};
+
+export const getSigningPaperScanUrl = () => {
+
+
+
+
+  return `/api/v1/paper/scans`
+}
+
+/**
+ * FR-139, AD-43: QR со скана подписанной распечатки и сверка с ожидаемым документом — скан с чужим QR не принимается (signing.qr_mismatch). Окончательная проверка — при заверении бумажной подписи.
+ * @summary Прочитать QR со скана
+ */
+export const signingPaperScan = async (scanRead: ScanRead, options?: RequestInit): Promise<signingPaperScanResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getSigningPaperScanUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(scanRead)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: signingPaperScanResponseError['data'], status?: number} = new globalThis.Error();
+    const data : signingPaperScanResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: signingPaperScanResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as signingPaperScanResponseSuccess
+}
+
+
+
+
+
+export const getSigningPaperScanMutationKey = () => ['signingPaperScan'] as const;
+
+export const getSigningPaperScanMutationOptions = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof signingPaperScan>>, TError,SigningPaperScanMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof signingPaperScan>>, TError,SigningPaperScanMutationVariables, TContext> => {
+
+const mutationKey = getSigningPaperScanMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof signingPaperScan>>, SigningPaperScanMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  signingPaperScan(data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SigningPaperScanMutationResult = NonNullable<Awaited<ReturnType<typeof signingPaperScan>>>
+    export type SigningPaperScanMutationBody = ScanRead
+    export type SigningPaperScanMutationError = globalThis.Error & { info?: Problem; status?: number }
+    export type SigningPaperScanMutationVariables = {data: ScanRead}
+
+    /**
+ * @summary Прочитать QR со скана
+ */
+export const useSigningPaperScan = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof signingPaperScan>>, TError,SigningPaperScanMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof signingPaperScan>>,
+        TError,
+        SigningPaperScanMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSigningPaperScanMutationOptions(options), queryClient);
+    }
+
 export type federationPartnerListResponse200 = {
   data: PartnerList
   status: 200
@@ -24492,6 +24856,126 @@ export function useSecurityEventList<TData = Awaited<ReturnType<typeof securityE
 
 
 
+
+export type signingShiftReportSubmitResponse200 = {
+  data: Receipt
+  status: 200
+}
+
+export type signingShiftReportSubmitResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type signingShiftReportSubmitResponseSuccess = (signingShiftReportSubmitResponse200) & {
+  headers: Headers;
+};
+export type signingShiftReportSubmitResponseError = (signingShiftReportSubmitResponseDefault) & {
+  headers: Headers;
+};
+
+export const getSigningShiftReportSubmitUrl = () => {
+
+
+
+
+  return `/api/v1/shift-reports`
+}
+
+/**
+ * FR-66 (уровень 3), FR-81, AD-12, AD-14: подпись агента над корнем дерева Меркла RFC 6962 отпечатков подписей смены из его локального журнала; сервер строит тот же корень по своему журналу и сверяет, расхождение — тревога agent_journal_mismatch. Конверт — в поле signature (класс shift-report).
+ * @summary Сдать сменный рапорт
+ */
+export const signingShiftReportSubmit = async (submitShiftReport: SubmitShiftReport, options?: RequestInit): Promise<signingShiftReportSubmitResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getSigningShiftReportSubmitUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(submitShiftReport)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: signingShiftReportSubmitResponseError['data'], status?: number} = new globalThis.Error();
+    const data : signingShiftReportSubmitResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: signingShiftReportSubmitResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as signingShiftReportSubmitResponseSuccess
+}
+
+
+
+
+
+export const getSigningShiftReportSubmitMutationKey = () => ['signingShiftReportSubmit'] as const;
+
+export const getSigningShiftReportSubmitMutationOptions = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof signingShiftReportSubmit>>, TError,SigningShiftReportSubmitMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof signingShiftReportSubmit>>, TError,SigningShiftReportSubmitMutationVariables, TContext> => {
+
+const mutationKey = getSigningShiftReportSubmitMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof signingShiftReportSubmit>>, SigningShiftReportSubmitMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  signingShiftReportSubmit(data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SigningShiftReportSubmitMutationResult = NonNullable<Awaited<ReturnType<typeof signingShiftReportSubmit>>>
+    export type SigningShiftReportSubmitMutationBody = SubmitShiftReport
+    export type SigningShiftReportSubmitMutationError = globalThis.Error & { info?: Problem; status?: number }
+    export type SigningShiftReportSubmitMutationVariables = {data: SubmitShiftReport}
+
+    /**
+ * @summary Сдать сменный рапорт
+ */
+export const useSigningShiftReportSubmit = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof signingShiftReportSubmit>>, TError,SigningShiftReportSubmitMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof signingShiftReportSubmit>>,
+        TError,
+        SigningShiftReportSubmitMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSigningShiftReportSubmitMutationOptions(options), queryClient);
+    }
 
 export type qualitySignalListResponse200 = {
   data: QualitySignalList

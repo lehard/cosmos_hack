@@ -93,8 +93,9 @@ func Canonical(raw []byte) ([]byte, error) {
 }
 
 // Commit — обязательство записи: H(salt ‖ JCS(конверт)) (AD-23, AD-44).
-// envelope — байты конверта DSSE (канонизируются здесь же). Демо-трек: salt
-// пустой — TODO(29): 16 случайных байт на запись и шифрование блока.
+// envelope — байты конверта DSSE (канонизируются здесь же); salt — 128
+// случайных бит на запись (SaltSize), хранится в зашифрованном блоке: по
+// открытому commit нельзя перебором узнать содержимое.
 func Commit(salt, envelope []byte) (Digest, error) {
 	c, err := Canonical(envelope)
 	if err != nil {

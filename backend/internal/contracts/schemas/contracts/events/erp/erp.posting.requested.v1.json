@@ -28,9 +28,10 @@
         "scrap_transfer_reprocess",
         "return_to_supplier",
         "release",
-        "inspection_result"
+        "inspection_result",
+        "return_from_defect"
       ],
-      "description": "Учётное действие порта учёта."
+      "description": "Учётное действие порта учёта; `return_from_defect` — «возврат из брака в производство» после удачной переделки или ремонта (решение Д-17)."
     },
     "item_id": {
       "$ref": "../common/defs.v1.json#/definitions/item_id",
@@ -66,6 +67,62 @@
       "minimum": 1,
       "maximum": 1000,
       "description": "Версия содержимого по бизнес-ключу; другое содержимое — только исправлением по решению человека."
+    },
+    "message_id": {
+      "$ref": "../common/defs.v1.json#/definitions/uuid",
+      "description": "Номер сообщения для учётной системы (`X-Message-Id`): UUIDv5 от бизнес-ключа и версии; повтор и переотправка — с тем же номером (AD-7)."
+    },
+    "step_key": {
+      "$ref": "../common/defs.v1.json#/definitions/step_key",
+      "description": "Шаг процесса, на котором сформировано действие (событие-сообщение BPMN или точка предъявления)."
+    },
+    "closing_point": {
+      "type": "string",
+      "maxLength": 48,
+      "description": "Закрывающая точка — часть бизнес-ключа: `ZT-1`…`ZT-6`, `ZT-R`, шаг процесса или цикл брака `defect.‹N›`."
+    },
+    "basis_event_ids": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/uuid"
+      },
+      "uniqueItems": true,
+      "description": "Записи-основания: событие-сообщение процесса, решение на закрывающей точке, решение по несоответствию."
+    },
+    "order_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Производственное задание (наш ID; соответствие — `reference.external_id.mapped`)."
+    },
+    "quantity": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100000000,
+      "description": "Количество (для партии)."
+    },
+    "resolution": {
+      "type": "string",
+      "enum": [
+        "accept",
+        "accept_with_concession",
+        "accept_partially",
+        "reject",
+        "insufficient_data"
+      ],
+      "description": "Итог контроля для «результата контроля»: годно / годно по разрешению на отклонение / годно частично / не годно / мало данных."
+    },
+    "presentation_no": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100,
+      "description": "Номер предъявления."
+    },
+    "nc_ids": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/object_id"
+      },
+      "uniqueItems": true,
+      "description": "Несоответствия — основание перевода в брак, возврата или «не годно»."
     }
   },
   "required": [

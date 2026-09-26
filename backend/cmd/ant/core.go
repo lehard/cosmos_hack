@@ -15,6 +15,7 @@ import (
 	dj "ant/internal/domain/journal"
 	"ant/internal/infrastructure/security/permissive"
 	enginestore "ant/internal/infrastructure/storage/engine"
+	erpstore "ant/internal/infrastructure/storage/erp"
 	journalstore "ant/internal/infrastructure/storage/journal"
 	"ant/internal/infrastructure/storage/journal/clock"
 	"ant/internal/infrastructure/storage/journal/feed"
@@ -110,8 +111,12 @@ func openCore(ctx context.Context, env *environment) (*core, error) {
 	}
 	c := &core{
 		pool: pool,
-		// Профиль demo — журнал в режиме часов scenario (AD-37, эпик 16).
-		journal:  journalstore.NewStore(pool, infra, journalstore.WithBatchMax(batch), journalstore.WithScenarioClock(scenarioClock(cfg))),
+		// Эффекты модулей со своими таблицами в транзакции Append (AD-45):
+		// очередь исходящих erp (эпик 30); доверие (эпик 29): записи CA в той
+		// же транзакции и шифрование при хранении. Профиль demo — журнал в
+		// режиме часов scenario (AD-37, эпик 16).
+		journal: journalstore.NewStore(pool, infra, append([]journalstore.Option{journalstore.WithBatchMax(batch),
+			journalstore.WithEffects(erpstore.ApplyEffect), journalstore.WithScenarioClock(scenarioClock(cfg))}, trustOptions(cfg, env)...)...),
 		leases:   journalstore.NewLeases(pool, infra),
 		listener: journalstore.NewListener(pool, env.log),
 		engine:   &enginestore.Store{Pool: pool},

@@ -2,9 +2,11 @@ package journal
 
 import (
 	"context"
+	"crypto/rand"
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -53,6 +55,12 @@ type Store struct {
 	batchMax int
 	skew     time.Duration
 	effects  []EffectApplier
+	// critical — построитель записей журнала критических действий (AD-28);
+	// nil — только записи Critical из запроса.
+	critical app.CriticalBuilder
+	// cipher — шифрование блока при хранении (AD-23); nil — блок открыт.
+	cipher Cipher
+	deks   dekCache
 	// scenario — журнал в режиме часов scenario (AD-37): recorded_at записи
 	// без доменного времени — доменное «сейчас» журнала (recorded_at головы).
 	scenario bool
@@ -92,6 +100,12 @@ func WithScenarioClock(on bool) Option { return func(s *Store) { s.scenario = on
 func WithEffects(a ...EffectApplier) Option {
 	return func(s *Store) { s.effects = append(s.effects, a...) }
 }
+
+// WithCritical — построитель записей журнала критических действий, который
+// Append вызывает в своей транзакции для каждой пачки (AD-8, AD-28):
+// критическое действие не записывается без записи CA — ни решением модуля, ни
+// реакцией движка, ни фактом приёма.
+func WithCritical(b app.CriticalBuilder) Option { return func(s *Store) { s.critical = b } }
 
 // NewStore создаёт хранилище журнала над пулом pgx. Часы — InfraClock
 // (committed_at, проверка аренд; AD-37).
@@ -207,25 +221,64 @@ func (s *Store) append(ctx context.Context, tx pgx.Tx, rq app.AppendRequest) (ap
 		}
 	}
 	res.Committed = committed
-	var rows [][]any
-	mainRows, seqs, err := sealChain(jc.JournalEntryChainMain, rq.Batch, mainHead, committed, s.scenario)
+	var rows, wraps [][]any
+	mainRows, seqs, sealed, mainWraps, err := s.sealChain(jc.JournalEntryChainMain, rq.Batch, mainHead, committed)
 	if err != nil {
 		return res, err
 	}
-	rows = append(rows, mainRows...)
+	rows, wraps = append(rows, mainRows...), append(wraps, mainWraps...)
 	res.Seqs = seqs
-	if len(rq.Critical) > 0 {
-		caRows, caSeqs, err := sealChain(jc.JournalEntryChainCa, rq.Critical, caHead, committed, s.scenario)
+	// Записи CA (AD-8, AD-28): переданные запросом и построенные
+	// CriticalBuilder по записям основной пачки — та же транзакция. Голова ca
+	// блокируется после основной (порядок фиксирован, AD-44).
+	critical := rq.Critical
+	caLocked := len(rq.Critical) > 0
+	caNext := caHead.seq + int64(len(rq.Critical))
+	if s.critical != nil && len(sealed) > 0 {
+		next := func() (int64, error) {
+			if !caLocked {
+				if _, err := tx.Exec(ctx, "SELECT pg_advisory_xact_lock($1)", lockCA); err != nil {
+					return 0, err
+				}
+				if caHead, err = readHead(ctx, tx, "ca"); err != nil {
+					return 0, err
+				}
+				caLocked, caNext = true, caHead.seq
+			}
+			caNext++
+			return caNext, nil
+		}
+		built, err := s.critical.Critical(ctx, sealed, next)
+		if err != nil {
+			return res, fmt.Errorf("журнал критических действий: %w", err)
+		}
+		for _, p := range built {
+			if err := dj.ValidatePending(p.Entry); err != nil {
+				return res, fmt.Errorf("%w: запись CA: %v", app.ErrInvalidEntry, err)
+			}
+		}
+		critical = append(slices.Clone(critical), built...)
+	}
+	if len(critical) > 0 {
+		if caHead.committed.After(committed) {
+			return res, app.Reject(app.ErrTimeRegression, 0, "committed_at", dj.FormatTime(committed), "head", dj.FormatTime(caHead.committed))
+		}
+		caRows, caSeqs, _, caWraps, err := s.sealChain(jc.JournalEntryChainCa, critical, caHead, committed)
 		if err != nil {
 			return res, err
 		}
-		rows = append(rows, caRows...)
+		rows, wraps = append(rows, caRows...), append(wraps, caWraps...)
 		for _, n := range caSeqs {
 			res.CARefs = append(res.CARefs, "CA-"+strconv.FormatInt(n, 10))
 		}
 	}
 	if len(rows) > 0 {
 		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"journal", "entries"}, entryColumns, pgx.CopyFromRows(rows)); err != nil {
+			return res, err
+		}
+	}
+	if len(wraps) > 0 {
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"journal", "dek_wraps"}, []string{"dek_id", "kek_id", "wrapped", "created_at"}, pgx.CopyFromRows(wraps)); err != nil {
 			return res, err
 		}
 	}
@@ -324,13 +377,16 @@ func (s *Store) committedAt(now, prev time.Time) (time.Time, error) {
 var entryColumns = []string{
 	"chain", "seq", "event_id", "event_type", "entry_kind", "stream", "partition", "item_id", "run_id", "source_id",
 	"occurred_at", "recorded_at", "committed_at", "guard_relevant", "is_trigger", "commit", "link", "header", "salt", "envelope",
+	"dek_id", "aead", "nonce",
 }
 
 // sealChain ставит пачке одной цепочки seq, committed_at, recorded_at, commit
-// и link по формуле AD-44 и готовит строки вставки.
-func sealChain(chain jc.JournalEntryChain, batch []app.Pending, h head, committed time.Time, scenario bool) ([][]any, []int64, error) {
-	rows := make([][]any, 0, len(batch))
-	seqs := make([]int64, 0, len(batch))
+// и link по формуле AD-44 и готовит строки вставки. Соль — 128 случайных бит
+// на запись (AD-23); с Cipher блок {соль, конверт} шифруется DEK записи, а
+// обёртка DEK идёт в journal.dek_wraps (wraps).
+func (s *Store) sealChain(chain jc.JournalEntryChain, batch []app.Pending, h head, committed time.Time) (rows [][]any, seqs []int64, sealed []app.Sealed, wraps [][]any, err error) {
+	rows = make([][]any, 0, len(batch))
+	seqs = make([]int64, 0, len(batch))
 	prev, seq, recorded := h.link, h.seq, h.recorded
 	committedS := dj.FormatTime(committed)
 	for _, p := range batch {
@@ -343,44 +399,61 @@ func sealChain(chain jc.JournalEntryChain, batch []app.Pending, h head, committe
 			// Часы system: recorded_at = committed_at (AD-37). Часы scenario:
 			// доменное «сейчас» — recorded_at головы (последний тик прогона).
 			e.RecordedAt = committedS
-			if scenario && !recorded.IsZero() {
+			if s.scenario && !recorded.IsZero() {
 				e.RecordedAt = dj.FormatTime(recorded)
 			}
 		}
 		rec, err := dj.ParseTime(e.RecordedAt)
 		if err != nil {
-			return nil, nil, fmt.Errorf("%w: recorded_at %q", app.ErrInvalidEntry, e.RecordedAt)
+			return nil, nil, nil, nil, fmt.Errorf("%w: recorded_at %q", app.ErrInvalidEntry, e.RecordedAt)
 		}
 		if rec.Before(recorded) {
-			return nil, nil, app.Reject(app.ErrTimeRegression, 0, "recorded_at", e.RecordedAt, "head", dj.FormatTime(recorded))
+			return nil, nil, nil, nil, app.Reject(app.ErrTimeRegression, 0, "recorded_at", e.RecordedAt, "head", dj.FormatTime(recorded))
 		}
 		recorded = rec
 		occurred, _ := dj.ParseTime(e.OccurredAt)
-		// TODO(29): соль — 16 случайных байт на запись внутри зашифрованного
-		// блока (AD-23); в демо-треке соль пустая, конверт хранится открыто.
-		salt := []byte{}
+		// AD-23: соль — 128 случайных бит на запись; хранится только внутри
+		// блока, поэтому открытый commit не выдаёт содержимое перебором.
+		salt := make([]byte, dj.SaltSize)
+		if _, err := rand.Read(salt); err != nil {
+			return nil, nil, nil, nil, err
+		}
 		envelope, err := dj.Canonical(p.Envelope)
 		if err != nil {
-			return nil, nil, fmt.Errorf("%w: конверт %s: %v", app.ErrInvalidEntry, e.EventID, err)
+			return nil, nil, nil, nil, fmt.Errorf("%w: конверт %s: %v", app.ErrInvalidEntry, e.EventID, err)
 		}
 		link, header, err := dj.Seal(&e, prev, salt, envelope)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, nil, err
 		}
 		commit, _ := dj.ParseDigest(e.Commit)
 		cls := dj.Classify(e)
 		eventUUID, err := parseUUID(e.EventID)
 		if err != nil {
-			return nil, nil, fmt.Errorf("%w: event_id %q", app.ErrInvalidEntry, e.EventID)
+			return nil, nil, nil, nil, fmt.Errorf("%w: event_id %q", app.ErrInvalidEntry, e.EventID)
+		}
+		storedSalt, stored := salt, envelope
+		var dekID, aead *string
+		var nonce []byte
+		if s.cipher != nil {
+			id, n, ct, wrapped, err := s.sealBlock(e, salt, envelope)
+			if err != nil {
+				return nil, nil, nil, nil, fmt.Errorf("шифрование записи %s: %w", e.EventID, err)
+			}
+			alg := s.cipher.AEAD()
+			dekID, aead, nonce, storedSalt, stored = &id, &alg, n, []byte{}, ct
+			wraps = append(wraps, []any{id, s.cipher.KEKID(), wrapped, committed})
 		}
 		rows = append(rows, []any{
 			string(chain), seq, eventUUID, e.EventType, string(e.EntryKind), e.Stream, e.Partition, e.ItemID, e.RunID, e.SourceID,
-			occurred, rec, committed, cls.GuardRelevant, cls.Trigger, commit.Bytes(), link.Bytes(), string(header), salt, envelope,
+			occurred, rec, committed, cls.GuardRelevant, cls.Trigger, commit.Bytes(), link.Bytes(), string(header), storedSalt, stored,
+			dekID, aead, nonce,
 		})
 		seqs = append(seqs, seq)
+		sealed = append(sealed, app.Sealed{Entry: e, Envelope: envelope})
 		prev = link
 	}
-	return rows, seqs, nil
+	return rows, seqs, sealed, wraps, nil
 }
 
 func readHead(ctx context.Context, tx pgx.Tx, chain string) (head, error) {

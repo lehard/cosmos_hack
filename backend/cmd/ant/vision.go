@@ -62,7 +62,8 @@ func seedVisionPassports(ctx context.Context, env *environment) error {
 		return err
 	}
 	defer pool.Close()
-	j := journalstore.NewStore(pool, clock.System{})
+	// Доверие (эпик 29): записи CA и шифрование при хранении — как у ядра.
+	j := journalstore.NewStore(pool, clock.System{}, trustOptions(env.cfg, env)...)
 	n, err := appvision.SeedPassports(ctx, j, seed, appvision.SeedConfig{Profile: env.cfg.Profile, DomainBuild: domainBuild(),
 		Partitions: env.cfg.Engine.Partitions, Now: time.Now})
 	if err != nil {

@@ -83,6 +83,19 @@ paths:
           content:
             application/problem+json:
               schema: {$ref: '../problem.schema.json'}
+    get:
+      operationId: keeper.reports.list
+      summary: Отчёты верификатора, новые сверху
+      parameters:
+        - {name: limit, in: query, required: false, schema: {type: integer, minimum: 1, maximum: 1000}, description: Сколько выдать}
+      responses:
+        '200':
+          description: Пакеты DSSE отчётов
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '../crypto/dsse-envelope.schema.json'}
   /v1/verifier-reports/latest:
     get:
       operationId: keeper.reports.latest
@@ -99,6 +112,54 @@ paths:
           content:
             application/problem+json:
               schema: {$ref: '../problem.schema.json'}
+  /v1/verifier-reports/{digest}:
+    get:
+      operationId: keeper.reports.read
+      summary: Отчёт верификатора по отпечатку
+      description: Отчёт целиком для стола Аудитора ИБ (ant показывает его «по данным сервера», AD-46). Отпечаток — streebog256 канонического payload.
+      parameters:
+        - {name: digest, in: path, required: true, schema: {type: string, pattern: '^streebog256:[0-9a-f]{64}$'}, description: Отпечаток отчёта}
+      responses:
+        '200':
+          description: Пакет DSSE класса verifier-report
+          content:
+            application/json:
+              schema: {$ref: '../crypto/dsse-envelope.schema.json'}
+        '404':
+          description: Такого отчёта нет
+          content:
+            application/problem+json:
+              schema: {$ref: '../problem.schema.json'}
+  /v1/links:
+    get:
+      operationId: keeper.links.list
+      summary: Звенья, принятые хранителем
+      description: |
+        Верификатор сравнивает звенья журнала с принятыми хранителем и находит точное место переписанной
+        записи (правка с пересчётом цепочки, AD-8, AD-9), а не только диапазон между контрольными точками.
+      parameters:
+        - {name: chain, in: query, required: true, schema: {type: string, enum: [main, ca]}, description: Цепочка}
+        - {name: after_seq, in: query, required: false, schema: {type: integer, minimum: 0}, description: После номера}
+        - {name: limit, in: query, required: false, schema: {type: integer, minimum: 1, maximum: 10000}, description: Сколько выдать}
+      responses:
+        '200':
+          description: Звенья по возрастанию seq
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/Link'}
+  /v1/status:
+    get:
+      operationId: keeper.status
+      summary: Состояние хранителя и тревоги
+      description: Тревоги хранителя (молчание сервера дольше 2N, вилка, откат); ant журналирует их как security.keeper.alert.
+      responses:
+        '200':
+          description: Состояние
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/KeeperStatus'}
   /healthz:
     get:
       operationId: keeper.health
@@ -130,15 +191,40 @@ components:
         links:
           type: array
           description: Звенья после прежней принятой головы по порядку seq — чтобы хранитель проверил продолжение цепочки.
+          items: {$ref: '#/components/schemas/Link'}
+        committed_at_from: {type: string, format: date-time, description: Наименьший committed_at}
+        committed_at_to: {type: string, format: date-time, description: Наибольший committed_at}
+    Link:
+      type: object
+      additionalProperties: false
+      required: [chain, seq, commit, open_fields_hash, link]
+      description: Звено записи — хранитель проверяет продолжение цепочки, не видя содержимого.
+      properties:
+        chain: {type: string, enum: [main, ca], description: Цепочка}
+        seq: {type: integer, minimum: 1, description: Номер}
+        commit: {type: string, pattern: '^streebog256:[0-9a-f]{64}$', description: Обязательство}
+        open_fields_hash: {type: string, pattern: '^streebog256:[0-9a-f]{64}$', description: H(JCS(открытые поля без link))}
+        link: {type: string, pattern: '^streebog256:[0-9a-f]{64}$', description: Звено}
+    KeeperStatus:
+      type: object
+      additionalProperties: false
+      required: [interval_seconds, checkpoints, alarms]
+      description: Состояние хранителя.
+      properties:
+        last_submission_at: {type: string, format: date-time, description: Последняя передача голов}
+        interval_seconds: {type: integer, minimum: 1, description: N — интервал голов (policy.audit.*)}
+        checkpoints: {type: integer, minimum: 0, description: Сколько контрольных точек}
+        alarms:
+          type: array
+          description: Тревоги хранителя по порядку
           items:
             type: object
             additionalProperties: false
-            required: [chain, seq, commit, open_fields_hash, link]
+            required: [no, alert, chain, last_seq, detail, at]
             properties:
-              chain: {type: string, enum: [main, ca], description: Цепочка}
-              seq: {type: integer, minimum: 1, description: Номер}
-              commit: {type: string, pattern: '^streebog256:[0-9a-f]{64}$', description: Обязательство}
-              open_fields_hash: {type: string, pattern: '^streebog256:[0-9a-f]{64}$', description: H(JCS(открытые поля без link))}
-              link: {type: string, pattern: '^streebog256:[0-9a-f]{64}$', description: Звено}
-        committed_at_from: {type: string, format: date-time, description: Наименьший committed_at}
-        committed_at_to: {type: string, format: date-time, description: Наибольший committed_at}
+              no: {type: integer, minimum: 1, description: Номер тревоги}
+              alert: {type: string, enum: [heads_silent, fork_attempt, rollback_attempt, checkpoint_gap], description: Вид}
+              chain: {type: string, description: Цепочка}
+              last_seq: {type: integer, minimum: 0, description: Последний принятый номер}
+              detail: {type: string, description: Подробности}
+              at: {type: string, format: date-time, description: Время хранителя}

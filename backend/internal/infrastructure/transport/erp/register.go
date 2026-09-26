@@ -74,4 +74,27 @@ func Register(api *httpapi.API, q app.Queries, c app.Commands) {
 		func(ctx context.Context, in *keyCmd[app.CompensatePosting]) (platform.Receipt, error) {
 			return c.CompensatePosting(ctx, in.BusinessKey, in.Body)
 		})
+
+	// Д-17: словарь учётных действий порта учёта расширяется (возврат из брака
+	// в производство): в ответах — x-extensible-enum вместо закрытого enum,
+	// клиент обязан принимать новые значения (совместимое расширение, AD-20).
+	extensible(api, "ErpMessage", "action")
+}
+
+// extensible — перечисление свойства prop схемы-компонента объявляется
+// расширяемым (x-extensible-enum со списком известных значений).
+func extensible(api *httpapi.API, schema, prop string) {
+	s := api.Huma().OpenAPI().Components.Schemas.Map()[schema]
+	if s == nil {
+		return
+	}
+	p := s.Properties[prop]
+	if p == nil || len(p.Enum) == 0 {
+		return
+	}
+	if p.Extensions == nil {
+		p.Extensions = map[string]any{}
+	}
+	p.Extensions["x-extensible-enum"] = p.Enum
+	p.Enum = nil
 }

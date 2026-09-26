@@ -1,0 +1,20 @@
+{
+  "name": "compromised-key",
+  "title": "Подписано после «скомпрометирован с X», до отзыва — под сомнением (защитная реакция: сдерживание и переподписание)",
+  "seq": 90,
+  "committed_at": "2026-09-21T09:30:00.000Z",
+  "envelope": {
+    "payloadType": "application/vnd.ant.event+json; v=1",
+    "payload": "eyJjYXVzYXRpb25faWQiOm51bGwsImNvbW1hbmQiOnsiYmFzaXNfc2VxIjowLCJjbGllbnRfc2lnbmVkX2F0IjoiMjAyNi0wOS0yMVQwOTozMDowMC4wMDBaIiwiY29tbWFuZF9pZCI6IjAxOTI5YTJiLTdjM2QtN2U0Zi04YTViLTAwMDAwMDAwMDA5MCIsImd1YXJkX3N0cmVhbXMiOltdLCJwb2xpY3lfc2VxIjowLCJzaWduYXR1cmVfbGV2ZWwiOjJ9LCJjb3JyZWxhdGlvbl9pZCI6IjAxOTI5YTJiLTdjM2QtN2U0Zi04YTViLTAwMDAwMDAwMDA5MCIsImRhdGEiOnsiaXRlbV9pZCI6IkVOVDAxOkYtMDAxIiwib3V0Y29tZSI6ImFjY2VwdCJ9LCJldmVudF9pZCI6IjAxOTI5YTJiLTdjM2QtN2U0Zi04YTViLTAwMDAwMDAwMDA5MCIsImV2ZW50X3R5cGUiOiJpbnNwZWN0aW9uLnJlc3VsdC5yZWNvcmRlZCIsImludGVncml0eSI6eyJjcnlwdG9fcHJvZmlsZSI6Imdvc3QiLCJmb3JtYXRfdmVyc2lvbiI6MSwic2lnbmVycyI6WyJpbnMtMDJAMSJdfSwiaXRlbV9pZCI6IkVOVDAxOkYtMDAxIiwib2NjdXJyZWRfYXQiOiIyMDI2LTA5LTIxVDA5OjMwOjAwLjAwMFoiLCJzY2hlbWFfdmVyc2lvbiI6MSwic291cmNlX2lkIjoiSU5TLTAxIiwic291cmNlX2tpbmQiOiJtYW51YWxfZW50cnkifQ==",
+    "signatures": [
+      {
+        "keyid": "ins-02@1",
+        "sig": "G1fma+NjBMAzX2rlodJZngt9/GyIJ9IuEgNq9XmV1eokHxEtVMbEo4sqeQmVSScpAJYzqvaHNaXkKGmTUFyJmA=="
+      }
+    ]
+  },
+  "expected": {
+    "status": "doubtful",
+    "reason": "signing.key_compromised"
+  }
+}

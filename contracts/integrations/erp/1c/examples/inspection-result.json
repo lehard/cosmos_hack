@@ -1,0 +1,24 @@
+{
+  "message_id": "5e4f3a2b-6c7d-5e8f-8a9b-1c2d3e4f5a6b",
+  "contract": "qc.v1",
+  "occurred_at": "2026-09-23T07:15:00.000Z",
+  "source": {
+    "system": "ant",
+    "enterprise": "ENT01",
+    "business_key": "ENT01:F-001/inspection_result/ZT-6.p1",
+    "message_version": 1,
+    "closing_point": "ZT-6.p1",
+    "step_key": "final.zt6",
+    "basis_event_ids": [
+      "0192ad10-4c7e-7f21-9b3a-5c6d7e8f9a0f"
+    ]
+  },
+  "item": {
+    "item_id": "ENT01:F-001",
+    "designation": "ФЛ-100.00.000",
+    "serial_no": "F-001"
+  },
+  "closing_point": "ZT-6",
+  "presentation_no": 1,
+  "result": "conforming"
+}

@@ -41,6 +41,8 @@ type Delivered struct {
 	EventID string
 	Status  DeliveryStatus
 	Code    string
+	// Seq — позиция записи в журнале (принято — новая, повтор — прежняя; 0 — не известна).
+	Seq int64
 }
 
 // Gateway — отправка исходных событий источников в обычный приём (AD-26:
@@ -175,6 +177,10 @@ type RunState struct {
 	Error string `json:"error,omitempty"`
 	// BasisSeq — seq последней служебной записи прогона.
 	BasisSeq int64 `json:"basis_seq"`
+	// Injections — нажатия кнопок цифрового стенда (FR-152) и их строки табло.
+	Injections []InjectionState `json:"injections,omitempty"`
+	// StandSeq — последние source_seq источников stand-а цифрового стенда.
+	StandSeq map[string]int64 `json:"stand_seq,omitempty"`
 }
 
 // Waiting — ожидание решения человека (FR-129).
@@ -196,6 +202,8 @@ type StepResult struct {
 	Refusal   string    `json:"refusal,omitempty"`
 	Seq       int64     `json:"seq,omitempty"`
 	Detail    string    `json:"detail,omitempty"`
+	// Delivered — ответы приёма на события шага (кнопки стенда): accepted, duplicate…
+	Delivered []string `json:"delivered,omitempty"`
 }
 
 // Snapshot — глубокая копия состояния (хранилища отдают копии: без гонок).

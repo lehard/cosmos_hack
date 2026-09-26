@@ -61,6 +61,33 @@ defaults:
     batch_wait: 50ms
   integrations:
     enabled: [] # stand-ы внешних систем включают эпики 30, 31, 33
+  # Каналы обмена с учётными системами (эпик 30, AD-18). Канал 1С работает,
+  # если onec есть в integrations.enabled; роль outbox отправляет, роль stands
+  # держит stand 1С (/stand/1c/). Реальная 1С — сменой base_url.
+  erp:
+    onec:
+      base_url: "http://127.0.0.1:8491/stand/1c/erp" # stand 1С роли stands на этом хосте
+      user: ""
+      password_file: ""
+      enterprise: ENT01
+      stand: true
+      timeout: 10s
+      poll: 1s        # опрос очереди исходящих
+      recheck: 5m     # сверка $metadata и версии qc при ok (при degraded — чаще)
+      pull_every: 30s # опрос заданий, номенклатуры и партий
+      retry_max: 8    # попыток при транспортных ошибках: 1 с, 5 с, 30 с, 2 мин, 10 мин, далее 30 мин; затем карантин
+  # Доверие (эпик 29): хранитель, верификатор, шифрование при хранении, шина
+  # безопасности. Интервалы и порог — параметры аудита policy.audit.*: пока нет
+  # записи policy.audit.parameters_set, подписанной Аудитором ИБ (эпик 26), — здесь.
+  security:
+    keeper_url: "" # https://keeper:8444 в compose; пусто — хранителя нет
+    pki_dir: /var/lib/ant-pki/pki # сертификат mTLS ant (выпускает keeper -init)
+    kek_file: /var/lib/ant-kek/kek # KEK (AD-23); файла нет — блок записи открыт
+    interval: 10s # N — головы хранителю
+    verifier_interval: 30s # проверки верификатора; индикатор желтеет через 2 интервала
+    max_gap: 5m # предельная задержка передачи записи хранителю
+    late_write: 10m # порог «задержки записи» факта устройства
+    export_file: "" # экспорт шины безопасности (JSON-строки); в compose — том
   # Роль stands (эпик 06, AD-18): stand-ы внешних систем и оборудования,
   # служебный порт сбоев /stand/_control/.
   stands:
@@ -88,6 +115,8 @@ profiles:
     ports:
       mode: live
     # integrations.enabled — список stand-ов заполняют эпики интеграций.
+    integrations:
+      enabled: [onec] # эпик 30: обмен с stand-ом 1С (роли outbox и stands)
 
   # Нагрузочный прогон: больше партиций и параллелизма, ant-worker ×N (FR-107).
   load:

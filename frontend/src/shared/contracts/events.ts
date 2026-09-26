@@ -3161,6 +3161,26 @@ attempts: number
  * Код последней ошибки.
  */
 last_error_code?: string
+/**
+ * Почему в карантине: повторы при транспортных ошибках исчерпаны / ошибка данных без автоповтора / несовместимый контракт / новая версия отправленного ждёт решения человека (AD-7).
+ */
+cause?: ("transport_exhausted" | "data_error" | "contract_incompatible" | "correction_pending")
+/**
+ * Текст последней ошибки.
+ */
+error_message?: string
+/**
+ * Версия содержимого, которая в карантине.
+ */
+message_version?: number
+/**
+ * Внутренний идентификатор изделия: `код_предприятия:локальный_id` (AD-16). Из метки не выводится; в прогоне локальная часть несёт префикс прогона.
+ */
+item_id?: string
+/**
+ * Идентификатор объекта системы или справочника: ASCII, без пробелов.
+ */
+lot_id?: string
 }
 /**
  * Учётное сообщение сформировано — исходящее учётное действие на закрывающей точке с бизнес-ключом идемпотентности (субъект, действие, точка); очередь отправки — проекция журнала; при воспроизведении ничего не отправляется (AD-7, AD-18).
@@ -3178,9 +3198,9 @@ business_key: string
  */
 external_system: ("onec" | "galaktika")
 /**
- * Учётное действие порта учёта.
+ * Учётное действие порта учёта; `return_from_defect` — «возврат из брака в производство» после удачной переделки или ремонта (решение Д-17).
  */
-action: ("accept_into_work" | "warehouse_transfer" | "scrap_transfer_rework" | "scrap_transfer_writeoff" | "scrap_transfer_reprocess" | "return_to_supplier" | "release" | "inspection_result")
+action: ("accept_into_work" | "warehouse_transfer" | "scrap_transfer_rework" | "scrap_transfer_writeoff" | "scrap_transfer_reprocess" | "return_to_supplier" | "release" | "inspection_result" | "return_from_defect")
 /**
  * Внутренний идентификатор изделия: `код_предприятия:локальный_id` (AD-16). Из метки не выводится; в прогоне локальная часть несёт префикс прогона.
  */
@@ -3213,6 +3233,52 @@ claim_basis?: string
  * Версия содержимого по бизнес-ключу; другое содержимое — только исправлением по решению человека.
  */
 message_version: number
+/**
+ * Идентификатор UUID в нижнем регистре (RFC 9562).
+ */
+message_id?: string
+/**
+ * Шаг процесса, на котором сформировано действие (событие-сообщение BPMN или точка предъявления).
+ */
+step_key?: string
+/**
+ * Закрывающая точка — часть бизнес-ключа: `ZT-1`…`ZT-6`, `ZT-R`, шаг процесса или цикл брака `defect.‹N›`.
+ */
+closing_point?: string
+/**
+ * Записи-основания: событие-сообщение процесса, решение на закрывающей точке, решение по несоответствию.
+ * 
+ * Items: Идентификатор UUID в нижнем регистре (RFC 9562).
+ * 
+ * This interface was referenced by `AntDefsV1`'s JSON-Schema
+ * via the `definition` "uuid".
+ */
+basis_event_ids?: string[]
+/**
+ * Идентификатор объекта системы или справочника: ASCII, без пробелов.
+ */
+order_id?: string
+/**
+ * Количество (для партии).
+ */
+quantity?: number
+/**
+ * Итог контроля для «результата контроля»: годно / годно по разрешению на отклонение / годно частично / не годно / мало данных.
+ */
+resolution?: ("accept" | "accept_with_concession" | "accept_partially" | "reject" | "insufficient_data")
+/**
+ * Номер предъявления.
+ */
+presentation_no?: number
+/**
+ * Несоответствия — основание перевода в брак, возврата или «не годно».
+ * 
+ * Items: Идентификатор объекта системы или справочника: ASCII, без пробелов.
+ * 
+ * This interface was referenced by `AntDefsV1`'s JSON-Schema
+ * via the `definition` "object_id".
+ */
+nc_ids?: string[]
 }
 /**
  * Переотправка запрошена администратором — ручная переотправка сообщения из карантина с тем же бизнес-ключом (FR-96).
@@ -3285,6 +3351,34 @@ error_message?: string
  * Статус учёта изделия после подтверждения.
  */
 resulting_status?: ("not_sent" | "accepted_into_work" | "moved" | "transferred_to_scrap" | "returned_to_supplier" | "released")
+/**
+ * Идентификатор UUID в нижнем регистре (RFC 9562).
+ */
+message_id?: string
+/**
+ * Учётное действие сообщения.
+ */
+action?: ("accept_into_work" | "warehouse_transfer" | "scrap_transfer_rework" | "scrap_transfer_writeoff" | "scrap_transfer_reprocess" | "return_to_supplier" | "release" | "inspection_result" | "return_from_defect")
+/**
+ * Внутренний идентификатор изделия: `код_предприятия:локальный_id` (AD-16). Из метки не выводится; в прогоне локальная часть несёт префикс прогона.
+ */
+item_id?: string
+/**
+ * Идентификатор объекта системы или справочника: ASCII, без пробелов.
+ */
+lot_id?: string
+/**
+ * Номер квитанции учётной системы; повтор с тем же номером сообщения возвращает ту же квитанцию.
+ */
+receipt?: string
+/**
+ * Код ответа HTTP учётной системы.
+ */
+http_status?: number
+/**
+ * Номер попытки отправки, на которую пришёл ответ.
+ */
+attempt?: number
 }
 /**
  * Выписка паспорта партнёра принята — получатель сам проверил подписи до корней партнёра (класс `partner`); непроверяемая — «происхождение не подтверждено»; изменённая — отклонена (FR-132, AD-19).
@@ -5368,6 +5462,69 @@ code?: string
 text: string
 }
 /**
+ * Сменный рапорт записан — подпись уровня 3 над корнем дерева Меркла отпечатков подписей смены из локального журнала агента токена и итог сверки с журналом сервера; расхождение — тревога agent_journal_mismatch (FR-66, FR-81, AD-12, AD-14).
+ * 
+ * This interface was referenced by `EventsContracts`'s JSON-Schema
+ * via the `definition` "KeyShiftReportRecordedV1".
+ */
+export interface KeyShiftReportRecordedV1 {
+/**
+ * Условный идентификатор (псевдоним) сотрудника; соответствие человеку хранит модуль access.
+ */
+person_id: string
+/**
+ * Идентификатор объекта системы или справочника: ASCII, без пробелов.
+ */
+shift_id: string
+/**
+ * Идентификатор объекта системы или справочника: ASCII, без пробелов.
+ */
+workplace_id?: string
+/**
+ * Момент времени: RFC 3339 UTC, ровно три знака после секунд (YYYY-MM-DDTHH:MM:SS.mmmZ).
+ */
+window_from: string
+/**
+ * Момент времени: RFC 3339 UTC, ровно три знака после секунд (YYYY-MM-DDTHH:MM:SS.mmmZ).
+ */
+window_to: string
+/**
+ * Отпечаток по хешу формата цепочки с префиксом алгоритма: `streebog256:‹64 hex›` (AD-44). Им же адресуются материалы.
+ */
+merkle_root: string
+/**
+ * Число подписей по рапорту агента.
+ */
+leaf_count: number
+/**
+ * Отпечаток по хешу формата цепочки с префиксом алгоритма: `streebog256:‹64 hex›` (AD-44). Им же адресуются материалы.
+ */
+server_merkle_root?: string
+/**
+ * Число подписей по журналу сервера.
+ */
+server_leaf_count?: number
+/**
+ * Рапорт агента совпал с журналом сервера.
+ */
+matches: boolean
+/**
+ * Типы записей, по которым расходятся счётчики.
+ * 
+ * Items: Тип события: семейство.сущность.действие — три сегмента латиницей (AD-40).
+ * 
+ * This interface was referenced by `AntDefsV1`'s JSON-Schema
+ * via the `definition` "event_type".
+ */
+mismatch_types?: string[]
+/**
+ * Подписанный агентом конверт DSSE класса shift-report (contracts/crypto/dsse-envelope.schema.json) — как есть.
+ */
+signed_report: {
+
+}
+}
+/**
  * Материал помещён в хранилище — фото, видео, скан, протокол, иллюстрация — по адресу H(байты), зашифровано; в журнале — адрес и метаданные: источник, время, изделие, точка контроля, происхождение (FR-102, AD-23).
  * 
  * This interface was referenced by `EventsContracts`'s JSON-Schema
@@ -5774,9 +5931,9 @@ step_key: string
  */
 message_ref: string
 /**
- * Учётное действие по свойству шага `ant:properties/@erpAction`.
+ * Учётное действие по свойству шага `ant:properties/@erpAction`; `return_from_defect` — «возврат из брака в производство» (решение Д-17).
  */
-erp_action: ("accept_into_work" | "warehouse_transfer" | "scrap_transfer_rework" | "scrap_transfer_writeoff" | "scrap_transfer_reprocess" | "return_to_supplier" | "release")
+erp_action: ("accept_into_work" | "warehouse_transfer" | "scrap_transfer_rework" | "scrap_transfer_writeoff" | "scrap_transfer_reprocess" | "return_to_supplier" | "release" | "return_from_defect")
 /**
  * Записи закрывающей точки, на которых основано действие.
  * 
@@ -7665,6 +7822,21 @@ injection: ("duplicate_event" | "late_event" | "corrupt_frame" | "machine_fault"
  * Идентификатор UUID в нижнем регистре (RFC 9562).
  */
 target_event_id?: string
+/**
+ * Номер нажатия кнопки в прогоне (1, 2, …): повторное нажатие — новая запись, не повтор (AD-7).
+ */
+press?: number
+/**
+ * Записи, внесённые кнопкой через обычный приём (повтор — ни одной).
+ * 
+ * @maxItems 100
+ * 
+ * Items: Идентификатор UUID в нижнем регистре (RFC 9562).
+ * 
+ * This interface was referenced by `AntDefsV1`'s JSON-Schema
+ * via the `definition` "uuid".
+ */
+event_ids?: string[]
 }
 /**
  * Прогон завершён — итог прогона; автосверка — табло «ожидалось → получилось» (FR-108).

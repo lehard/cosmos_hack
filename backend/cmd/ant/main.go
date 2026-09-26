@@ -66,6 +66,7 @@ var roles = map[string]role{
 	"stands":    pendingRole("stands", "эпики 06, 30–33: stand-ы внешних систем и прогоны", false),
 	"init":      pendingRole("init", "эпик 05: ключи, миграции, генезис", true),
 	"rebuild":   {run: runRebuild, oneShot: true},
+	"security":  {run: runSecurity}, // эпик 29: хранитель, отчёты верификатора, шина безопасности
 }
 
 // environment — то, что роль получает от точки входа.

@@ -153,6 +153,9 @@ func simulationLive(ctx context.Context, env *environment, ingest *ingestapp.Ser
 		Probe:       proxy,
 		Actor:       proxy,
 		Stands:      simapp.StandControl{Control: env.standsRegistry()},
+		// Подделка в обход системы (S09, F25): демо-инструмент эпика 29 — make
+		// tamper; порт пульта к нему — заглушка (Д-60), шаг «пропущен» с пояснением.
+		Tamper: simapp.PendingTamperer{},
 		Recorder: &simapp.JournalRecorder{Store: c.journal, ScenarioClock: scenarioClock(env.cfg), Now: clock.System{}.Now,
 			DomainBuild: c.codec.DomainBuild, Partition: env.cfg.Engine.Partitions},
 		Settler: settler,

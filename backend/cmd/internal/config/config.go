@@ -122,6 +122,67 @@ type Config struct {
 		// Enabled — включённые внешние системы (stand-ы или настоящие адаптеры).
 		Enabled []string `yaml:"enabled"`
 	} `yaml:"integrations"`
+
+	// ERP — каналы обмена с учётными системами (эпик 30; AD-18: включённые
+	// системы и адреса — конфигурация). Канал 1С работает, если "onec" есть в
+	// integrations.enabled.
+	ERP struct {
+		OneC OneC `yaml:"onec"`
+	} `yaml:"erp"`
+
+	// Security — доверие (эпик 29): хранитель, верификатор, шифрование при
+	// хранении, шина безопасности (AD-8, AD-9, AD-23, AD-24, AD-46).
+	// Интервалы и порог — параметры аудита policy.audit.*: до записи
+	// policy.audit.parameters_set, подписанной Аудитором ИБ (эпик 26), — здесь.
+	Security Security `yaml:"security"`
+}
+
+// OneC — канал обмена с 1С: адрес публикации базы (stand или реальная 1С),
+// учётные данные файлом, повторы и опросы роли outbox (AD-7, AD-18, FR-96).
+type OneC struct {
+	// BaseURL — `http(s)://‹хост›/‹база›`; OData — `…/odata/standard.odata/`,
+	// сервис qc — `…/hs/qc/v1/`. Пусто — stand роли stands на этом хосте.
+	BaseURL string `yaml:"base_url"`
+	// User, PasswordFile — HTTP Basic (пароль — только файлом).
+	User         string `yaml:"user"`
+	PasswordFile string `yaml:"password_file"`
+	// Enterprise — код предприятия в источнике сообщений.
+	Enterprise string `yaml:"enterprise"`
+	// Stand — на месте 1С stand (эмулятор кейса).
+	Stand bool `yaml:"stand"`
+	// Timeout — предел ответа 1С (дольше — транспортная ошибка, повтор).
+	Timeout time.Duration `yaml:"timeout"`
+	// Poll — период опроса очереди исходящих; Recheck — сверки $metadata при
+	// ok; PullEvery — опроса входящих (задания, номенклатура, партии).
+	Poll      time.Duration `yaml:"poll"`
+	Recheck   time.Duration `yaml:"recheck"`
+	PullEvery time.Duration `yaml:"pull_every"`
+	// RetryMax — попыток при транспортных ошибках до карантина.
+	RetryMax int `yaml:"retry_max"`
+}
+
+// Security — параметры доверия (эпик 29).
+type Security struct {
+	// KeeperURL — адрес хранителя (mTLS); пусто — хранителя нет (головы не
+	// передаются, индикатор — «неизвестно»).
+	KeeperURL string `yaml:"keeper_url"`
+	// PKIDir — каталог сертификата mTLS участника (‹имя›.crt, ‹имя›.key, ca.crt).
+	PKIDir string `yaml:"pki_dir"`
+	// KEKFile — ключ шифрования ключей при хранении (AD-23); нет файла — блок
+	// записи хранится открыто (разработка).
+	KEKFile string `yaml:"kek_file"`
+	// Interval — N: раз в N ant передаёт хранителю головы (policy.audit.checkpoint_interval).
+	Interval time.Duration `yaml:"interval"`
+	// VerifierInterval — интервал проверок верификатора (индикатор желтеет
+	// сам через два интервала без отчёта, AD-46).
+	VerifierInterval time.Duration `yaml:"verifier_interval"`
+	// MaxGap — предельная задержка передачи записи хранителю (policy.audit.max_gap).
+	MaxGap time.Duration `yaml:"max_gap"`
+	// LateWrite — порог «задержки записи» факта устройства (AD-9).
+	LateWrite time.Duration `yaml:"late_write"`
+	// ExportFile — экспорт шины безопасности во внешний мониторинг ИБ
+	// (JSON-строки); пусто — без экспорта.
+	ExportFile string `yaml:"export_file"`
 }
 
 // DB — подключение к PostgreSQL. Пароль — только файлом.

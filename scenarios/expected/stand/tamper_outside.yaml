@@ -1,0 +1,31 @@
+# Кнопка цифрового стенда «Подделать запись в обход системы» (FR-152, FR-74, эпик 36) —
+# ожидаемый видимый результат (кейс §5.1, AD-26, AD-28). Строки — из сбоя F25
+# «Вмешательство в хранилище» и S09. Подделку делает только демо-инструмент
+# cmd/tamper (эпик 29) в профилях fixtures и demo. Плейсхолдеры — см. duplicate_event.yaml.
+scenario: F25
+version: '1'
+title: 'Кнопка стенда: подделка в обход системы'
+run: stand
+source: эпик 36 по F25 и S09 (research/data-collection-sources-and-failures.md §6, process/scenarios-flange.md S09)
+checkpoints:
+- at: apply
+  label: после нажатия
+  assertions:
+  - id: STAND-TAMP-01
+    what: запись изменена в хранилище в обход API
+    check:
+      operation: step
+      params:
+        label: '{inj:step}'
+      path: /status
+      op: eq
+      value: done
+    mapping: exact
+  - id: STAND-TAMP-02
+    what: подделку поймали — нарушение целостности найдено
+    check:
+      operation: security.integrity.read
+      path: /status
+      op: eq
+      value: violated
+    mapping: exact

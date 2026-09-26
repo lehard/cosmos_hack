@@ -1,0 +1,20 @@
+{
+  "name": "hybrid-signature-removed",
+  "title": "Из гибридного пакета удалена подпись ML-DSA-65 — отвергнуто: понижение профиля",
+  "seq": 152,
+  "committed_at": "2026-09-21T10:32:00.000Z",
+  "envelope": {
+    "payloadType": "application/vnd.ant.event+json; v=1",
+    "payload": "eyJjYXVzYXRpb25faWQiOm51bGwsImNvbW1hbmQiOnsiYmFzaXNfc2VxIjowLCJjbGllbnRfc2lnbmVkX2F0IjoiMjAyNi0wOS0yMVQxMDozMjowMC4wMDBaIiwiY29tbWFuZF9pZCI6IjAxOTI5YTJiLTdjM2QtN2U0Zi04YTViLTAwMDAwMDAwMDE1MiIsImd1YXJkX3N0cmVhbXMiOltdLCJwb2xpY3lfc2VxIjowLCJzaWduYXR1cmVfbGV2ZWwiOjJ9LCJjb3JyZWxhdGlvbl9pZCI6IjAxOTI5YTJiLTdjM2QtN2U0Zi04YTViLTAwMDAwMDAwMDE1MiIsImRhdGEiOnsiaXRlbV9pZCI6IkVOVDAxOkYtMDAxIiwib3V0Y29tZSI6ImFjY2VwdCJ9LCJldmVudF9pZCI6IjAxOTI5YTJiLTdjM2QtN2U0Zi04YTViLTAwMDAwMDAwMDE1MiIsImV2ZW50X3R5cGUiOiJpbnNwZWN0aW9uLnJlc3VsdC5yZWNvcmRlZCIsImludGVncml0eSI6eyJjcnlwdG9fcHJvZmlsZSI6Imh5YnJpZCIsImZvcm1hdF92ZXJzaW9uIjoxLCJzaWduZXJzIjpbImlucy0wMUAxIiwiaW5zLTAxLXBxQDEiXX0sIml0ZW1faWQiOiJFTlQwMTpGLTAwMSIsIm9jY3VycmVkX2F0IjoiMjAyNi0wOS0yMVQxMDozMjowMC4wMDBaIiwic2NoZW1hX3ZlcnNpb24iOjEsInNvdXJjZV9pZCI6IklOUy0wMSIsInNvdXJjZV9raW5kIjoibWFudWFsX2VudHJ5In0=",
+    "signatures": [
+      {
+        "keyid": "ins-01@1",
+        "sig": "OyDcWHqSv+7M9RDLDCxCHKZ5RN0LCUADBVFj6gsF9QAw5op2G5vCfGT54BCJ1dQwR7ZriDzvpw+quxNfKYFfgw=="
+      }
+    ]
+  },
+  "expected": {
+    "status": "rejected",
+    "reason": "signing.profile_downgrade"
+  }
+}

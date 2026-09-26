@@ -108,6 +108,12 @@ func runAPI(ctx context.Context, env *environment) error {
 			return err
 		}
 	}
+	if modeOf(opts, "erp") == platform.ModeLive {
+		// Эпик 30: операции erp.* над проекциями erp.* и каналами обмена.
+		if opts.erp, err = erpLive(ctx, env); err != nil {
+			return err
+		}
+	}
 	if modeOf(opts, "analysis") == platform.ModeLive {
 		if opts.analysis, err = analysisLive(ctx, env); err != nil {
 			return err
@@ -133,6 +139,12 @@ func runAPI(ctx context.Context, env *environment) error {
 	if modeOf(opts, "notifications") == platform.ModeLive {
 		// Сроки, задачи, тревоги — проекции notifications.* (эпик 24).
 		if opts.notifications, err = notificationsLive(ctx, env); err != nil {
+			return err
+		}
+	}
+	if modeOf(opts, "security") == platform.ModeLive {
+		// Журнал CA, шина безопасности, индикатор целостности (эпик 29).
+		if opts.security, err = securityLive(ctx, env); err != nil {
 			return err
 		}
 	}

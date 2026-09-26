@@ -64,3 +64,28 @@ type CryptoProfile struct {
 type CryptoProfileList struct {
 	Items []CryptoProfile `json:"items"`
 }
+
+// PaperQRView — QR печатной рамки (AD-12, Д-30): текст и картинка SVG.
+type PaperQRView struct {
+	Text       string `json:"text" doc:"ant:doc:‹id›:‹отпечаток›."`
+	DocumentID string `json:"document_id"`
+	DocDigest  string `json:"doc_digest"`
+	SVG        string `json:"svg" doc:"QR векторной картинкой для печатной рамки (без внешних ресурсов)."`
+}
+
+// ScanRead — скан подписанной распечатки для чтения QR.
+type ScanRead struct {
+	ImageB64 string `json:"image_b64" contentEncoding:"base64" maxLength:"16777216" doc:"Скан PNG или JPEG в base64."`
+	// DocumentID, DocDigest — ожидаемый документ: QR сверяется с ним (чужой QR — signing.qr_mismatch).
+	DocumentID string `json:"document_id,omitempty" maxLength:"128"`
+	DocDigest  string `json:"doc_digest,omitempty" maxLength:"80"`
+}
+
+// ScanView — прочитанный QR скана.
+type ScanView struct {
+	Text        string `json:"text"`
+	DocumentID  string `json:"document_id"`
+	DocDigest   string `json:"doc_digest"`
+	ScanAddress string `json:"scan_address" doc:"H(байты скана) — адрес в хранилище материалов (AD-23)."`
+	Matches     bool   `json:"matches" doc:"QR совпал с ожидаемым документом."`
+}

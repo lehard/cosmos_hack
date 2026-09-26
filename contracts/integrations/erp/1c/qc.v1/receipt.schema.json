@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/integrations/erp/1c/qc.v1/receipt.schema.json",
+  "title": "QcReceipt",
+  "description": "Квитанция HTTP-сервиса «qc»: `202 Accepted` — сообщение принято и проведено; повтор с тем же `X-Message-Id` — `200 OK` с той же квитанцией (AD-7, FR-96).",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "message_id": {
+      "$ref": "common.schema.json#/definitions/uuid",
+      "description": "Номер сообщения."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "accepted"
+      ],
+      "description": "Сообщение принято."
+    },
+    "receipt": {
+      "type": "string",
+      "maxLength": 64,
+      "description": "Номер квитанции 1С."
+    },
+    "document_ref_key": {
+      "$ref": "common.schema.json#/definitions/uuid",
+      "description": "Ref_Key созданного документа 1С."
+    },
+    "document_type": {
+      "type": "string",
+      "maxLength": 128,
+      "description": "Вид документа 1С (имя объекта метаданных)."
+    },
+    "document_number": {
+      "type": "string",
+      "maxLength": 64,
+      "description": "Номер документа 1С."
+    },
+    "received_at": {
+      "$ref": "common.schema.json#/definitions/timestamp",
+      "description": "Когда 1С приняла сообщение впервые."
+    }
+  },
+  "required": [
+    "message_id",
+    "status",
+    "receipt",
+    "document_ref_key"
+  ]
+}

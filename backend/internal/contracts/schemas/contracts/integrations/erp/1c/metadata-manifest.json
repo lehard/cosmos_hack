@@ -1,0 +1,412 @@
+{
+  "manifest": "1c-erp",
+  "contract": "qc.v1",
+  "description": "Ожидаемые метаданные стандартного интерфейса OData 1С:ERP 2.5 / ERP УХ для адаптера ant (AD-18, FR-111): сущности и реквизиты, на которые опирается чтение заданий, номенклатуры и партий. При старте адаптер сверяет с ними $metadata ответной стороны и версию HTTP-сервиса qc; расхождение по обязательному реквизиту — канал degraded, отправки нет. Имена реквизитов — проектное предположение до сверки с базой предприятия (docs/integrations/1c.md, §6.1). Из этого же файла stand 1С строит свой $metadata.",
+  "odata": {
+    "version": "3.0",
+    "namespace": "StandardODATA",
+    "container": "EnterpriseV8",
+    "path": "/odata/standard.odata/"
+  },
+  "qc": {
+    "path": "/hs/qc/v1/",
+    "contract": "qc.v1"
+  },
+  "entities": [
+    {
+      "name": "Catalog_Номенклатура",
+      "title": "Номенклатура",
+      "key": "Ref_Key",
+      "properties": [
+        {
+          "name": "Ref_Key",
+          "type": "Edm.Guid",
+          "required": true
+        },
+        {
+          "name": "DataVersion",
+          "type": "Edm.String",
+          "required": true
+        },
+        {
+          "name": "DeletionMark",
+          "type": "Edm.Boolean",
+          "required": true
+        },
+        {
+          "name": "Code",
+          "type": "Edm.String",
+          "required": true
+        },
+        {
+          "name": "Description",
+          "type": "Edm.String",
+          "required": true
+        },
+        {
+          "name": "Артикул",
+          "type": "Edm.String",
+          "required": true
+        },
+        {
+          "name": "НаименованиеПолное",
+          "type": "Edm.String",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Catalog_Склады",
+      "title": "Склады",
+      "key": "Ref_Key",
+      "properties": [
+        {
+          "name": "Ref_Key",
+          "type": "Edm.Guid",
+          "required": true
+        },
+        {
+          "name": "DataVersion",
+          "type": "Edm.String",
+          "required": true
+        },
+        {
+          "name": "DeletionMark",
+          "type": "Edm.Boolean",
+          "required": true
+        },
+        {
+          "name": "Code",
+          "type": "Edm.String",
+          "required": true
+        },
+        {
+          "name": "Description",
+          "type": "Edm.String",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "Catalog_СтруктураПредприятия",
+      "title": "Структура предприятия",
+      "key": "Ref_Key",
+      "properties": [
+        {
+          "name": "Ref_Key",
+          "type": "Edm.Guid",
+          "required": true
+        },
+        {
+          "name": "DataVersion",
+          "type": "Edm.String",
+          "required": true
+        },
+        {
+          "name": "DeletionMark",
+          "type": "Edm.Boolean",
+          "required": true
+        },
+        {
+          "name": "Code",
+          "type": "Edm.String",
+          "required": true
+        },
+        {
+          "name": "Description",
+          "type": "Edm.String",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "Catalog_Контрагенты",
+      "title": "Контрагенты",
+      "key": "Ref_Key",
+      "properties": [
+        {
+          "name": "Ref_Key",
+          "type": "Edm.Guid",
+          "required": true
+        },
+        {
+          "name": "DataVersion",
+          "type": "Edm.String",
+          "required": true
+        },
+        {
+          "name": "DeletionMark",
+          "type": "Edm.Boolean",
+          "required": true
+        },
+        {
+          "name": "Code",
+          "type": "Edm.String",
+          "required": true
+        },
+        {
+          "name": "Description",
+          "type": "Edm.String",
+          "required": true
+        },
+        {
+          "name": "ИНН",
+          "type": "Edm.String",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Catalog_СерииНоменклатуры",
+      "title": "Серии номенклатуры",
+      "key": "Ref_Key",
+      "properties": [
+        {
+          "name": "Ref_Key",
+          "type": "Edm.Guid",
+          "required": true
+        },
+        {
+          "name": "DataVersion",
+          "type": "Edm.String",
+          "required": true
+        },
+        {
+          "name": "DeletionMark",
+          "type": "Edm.Boolean",
+          "required": true
+        },
+        {
+          "name": "Description",
+          "type": "Edm.String",
+          "required": true
+        },
+        {
+          "name": "Номер",
+          "type": "Edm.String",
+          "required": true
+        },
+        {
+          "name": "НомерПлавки",
+          "type": "Edm.String",
+          "required": false
+        },
+        {
+          "name": "НомерСертификата",
+          "type": "Edm.String",
+          "required": false
+        },
+        {
+          "name": "ГоденДо",
+          "type": "Edm.DateTime",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Document_ЭтапПроизводства2_2",
+      "title": "Этап производства",
+      "key": "Ref_Key",
+      "properties": [
+        {
+          "name": "Ref_Key",
+          "type": "Edm.Guid",
+          "required": true
+        },
+        {
+          "name": "DataVersion",
+          "type": "Edm.String",
+          "required": true
+        },
+        {
+          "name": "DeletionMark",
+          "type": "Edm.Boolean",
+          "required": true
+        },
+        {
+          "name": "Number",
+          "type": "Edm.String",
+          "required": true
+        },
+        {
+          "name": "Date",
+          "type": "Edm.DateTime",
+          "required": true
+        },
+        {
+          "name": "Posted",
+          "type": "Edm.Boolean",
+          "required": true
+        },
+        {
+          "name": "Распоряжение_Key",
+          "type": "Edm.Guid",
+          "required": true
+        },
+        {
+          "name": "Подразделение_Key",
+          "type": "Edm.Guid",
+          "required": true
+        },
+        {
+          "name": "Статус",
+          "type": "Edm.String",
+          "required": true
+        },
+        {
+          "name": "НаправлениеДеятельности_Key",
+          "type": "Edm.Guid",
+          "required": false
+        },
+        {
+          "name": "ДатаОкончания",
+          "type": "Edm.DateTime",
+          "required": false
+        },
+        {
+          "name": "РевизияКД",
+          "type": "Edm.String",
+          "required": false
+        }
+      ],
+      "tables": [
+        {
+          "name": "ВыходныеИзделия",
+          "properties": [
+            {
+              "name": "LineNumber",
+              "type": "Edm.Int64",
+              "required": true
+            },
+            {
+              "name": "Номенклатура_Key",
+              "type": "Edm.Guid",
+              "required": true
+            },
+            {
+              "name": "Серия_Key",
+              "type": "Edm.Guid",
+              "required": false
+            },
+            {
+              "name": "Количество",
+              "type": "Edm.Double",
+              "required": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Document_ЗаказНаПроизводство2_2",
+      "title": "Заказ на производство",
+      "key": "Ref_Key",
+      "properties": [
+        {
+          "name": "Ref_Key",
+          "type": "Edm.Guid",
+          "required": true
+        },
+        {
+          "name": "DataVersion",
+          "type": "Edm.String",
+          "required": true
+        },
+        {
+          "name": "DeletionMark",
+          "type": "Edm.Boolean",
+          "required": true
+        },
+        {
+          "name": "Number",
+          "type": "Edm.String",
+          "required": true
+        },
+        {
+          "name": "Date",
+          "type": "Edm.DateTime",
+          "required": true
+        },
+        {
+          "name": "Posted",
+          "type": "Edm.Boolean",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "Document_ПриобретениеТоваровУслуг",
+      "title": "Приобретение товаров и услуг",
+      "key": "Ref_Key",
+      "properties": [
+        {
+          "name": "Ref_Key",
+          "type": "Edm.Guid",
+          "required": true
+        },
+        {
+          "name": "DataVersion",
+          "type": "Edm.String",
+          "required": true
+        },
+        {
+          "name": "DeletionMark",
+          "type": "Edm.Boolean",
+          "required": true
+        },
+        {
+          "name": "Number",
+          "type": "Edm.String",
+          "required": true
+        },
+        {
+          "name": "Date",
+          "type": "Edm.DateTime",
+          "required": true
+        },
+        {
+          "name": "Posted",
+          "type": "Edm.Boolean",
+          "required": true
+        },
+        {
+          "name": "Контрагент_Key",
+          "type": "Edm.Guid",
+          "required": true
+        },
+        {
+          "name": "Склад_Key",
+          "type": "Edm.Guid",
+          "required": false
+        }
+      ],
+      "tables": [
+        {
+          "name": "Товары",
+          "properties": [
+            {
+              "name": "LineNumber",
+              "type": "Edm.Int64",
+              "required": true
+            },
+            {
+              "name": "Номенклатура_Key",
+              "type": "Edm.Guid",
+              "required": true
+            },
+            {
+              "name": "Серия_Key",
+              "type": "Edm.Guid",
+              "required": true
+            },
+            {
+              "name": "Количество",
+              "type": "Edm.Double",
+              "required": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

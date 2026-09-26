@@ -19,6 +19,8 @@ type RegisterKey struct {
 	ProofOfPossessionB64 string   `json:"proof_of_possession_b64" contentEncoding:"base64" doc:"Подпись нового ключа над актом."`
 	SubjectConfirmation  string   `json:"subject_confirmation" enum:"rotation_signature,paper_receipt"`
 	DocumentID           string   `json:"document_id,omitempty" doc:"Документ акта с маршрутом подписей (AD-13)."`
+	ReceiptOriginalNo    string   `json:"receipt_original_no,omitempty" maxLength:"64" doc:"Первичная выдача: учётный номер бумажной расписки субъекта с отпечатком ключа (архив ОТК, AD-11)."`
+	ReceiptAttestedBy    string   `json:"receipt_attested_by,omitempty" maxLength:"64" doc:"Первичная выдача: кто заверил расписку (≠ субъект, AD-43)."`
 	ValidFrom            string   `json:"valid_from" format:"date-time"`
 	ValidUntil           string   `json:"valid_until,omitempty" format:"date-time"`
 }
@@ -36,4 +38,16 @@ type RevokeKey struct {
 type SigningReason struct {
 	Code string `json:"code,omitempty" maxLength:"64"`
 	Text string `json:"text" minLength:"1" maxLength:"2000"`
+}
+
+// RegisterProfile — смена обязательного криптопрофиля для классов пакетов
+// (key.profile.registered, AD-32, FR-76): только повышение — понижение
+// отвергается (signing.profile_downgrade); старые подписи проверяются по
+// профилю на момент подписи.
+type RegisterProfile struct {
+	platform.CommandHeader
+	ProfileID        string        `json:"profile_id" enum:"gost,pq,hybrid"`
+	ObjectClasses    []string      `json:"object_classes" minItems:"1" doc:"Классы пакетов (contracts/crypto/payload-classes.yaml)."`
+	EffectiveFromSeq int64         `json:"effective_from_seq,omitempty" minimum:"0" doc:"С какой позиции журнала обязателен; 0 — с позиции записи."`
+	Reason           SigningReason `json:"reason"`
 }

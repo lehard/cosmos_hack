@@ -10,6 +10,10 @@
 //     эффекты проекций применяют адаптеры хранения модулей-писателей
 //     (EngineEffects — storage/engine.ApplyEffect, остальные — WithEffects);
 //     чтение по оси и моменту (AD-22), головы цепочек для хранителя (AD-8);
+//     записи журнала критических действий строит CriticalBuilder модуля
+//     security в той же транзакции (WithCritical, AD-28); соль — 128
+//     случайных бит на запись, блок {соль, конверт} шифруется DEK записи,
+//     обёртки DEK — journal.dek_wraps, KEK — вне БД (WithCipher, AD-23);
 //   - Leases — адаптер LeaseStore: аренды с эпохой по InfraClock (AD-6);
 //   - Listener — адаптер Signal: LISTEN/NOTIFY «есть новое» с seq (AD-6);
 //   - Migrations — миграции goose схем journal (неизменяемая) и journal_state

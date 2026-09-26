@@ -1,0 +1,7 @@
+{
+  "message_id": "4d3e2f1a-5b6c-5d7e-9f8a-0b1c2d3e4f5a",
+  "status": "rejected",
+  "code": "CONTRACT_NOT_FOUND",
+  "message": "Не найден договор с контрагентом ctr-0b19-0003",
+  "field": "lot.lot_id"
+}

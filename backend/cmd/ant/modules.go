@@ -96,6 +96,9 @@ type apiOptions struct {
 	// nonconformity — live-реализация nonconformity над журналом и свёрткой
 	// изделия (nonconformity.go, эпик 21); nil — заглушка 501.
 	nonconformity *nonconformityapp.Service
+	// erp — live-реализация erp над проекциями erp.*, каналами обмена и
+	// журналом (outbox.go, эпик 30); nil — заглушка 501.
+	erp *erpapp.Service
 	// ingest — live-приём над журналом ядра (ingest.go); nil — заглушка 501.
 	ingest *ingestapp.Service
 	// identity, directory — вход демо-персоной и каталог политики (демо-трек
@@ -120,6 +123,8 @@ type apiOptions struct {
 	process *processapp.Service
 	// simulation — пульт тестовых сценариев (simulation.go, эпики 32, 16); nil — 501.
 	simulation *simulationapp.Service
+	// security — журнал CA, шина безопасности, индикатор целостности (security.go, эпик 29); nil — 501.
+	security *securityapp.Service
 }
 
 // buildAPI собирает HTTP API: общий декоратор (Gate) над портами прав и входа,
@@ -244,7 +249,11 @@ func buildAPI(mux *http.ServeMux, o apiOptions) *httpapi.API {
 		accesshttp.Register(a, live, live, gate)
 	}
 	{
-		q, c := pick[securityapp.Queries, securityapp.Commands](a.ModeFor("security"), securityapp.NewService(), securityfx.New())
+		live := o.security
+		if live == nil {
+			live = securityapp.NewService()
+		}
+		q, c := pick[securityapp.Queries, securityapp.Commands](a.ModeFor("security"), live, securityfx.New())
 		securityhttp.Register(a, q, c)
 	}
 	{
@@ -268,7 +277,11 @@ func buildAPI(mux *http.ServeMux, o apiOptions) *httpapi.API {
 		analyticshttp.Register(a, q, c)
 	}
 	{
-		q, c := pick[erpapp.Queries, erpapp.Commands](a.ModeFor("erp"), erpapp.NewService(), erpfx.New())
+		live := o.erp
+		if live == nil {
+			live = erpapp.NewService()
+		}
+		q, c := pick[erpapp.Queries, erpapp.Commands](a.ModeFor("erp"), live, erpfx.New())
 		erphttp.Register(a, q, c)
 	}
 	{
