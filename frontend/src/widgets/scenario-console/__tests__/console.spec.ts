@@ -126,6 +126,16 @@ describe('пульт — представление', () => {
     expect(fault.text()).toContain('Недоступно в текущем состоянии прогона')
     expect(w.find('[data-injection="tamper_outside"]').text()).toContain('только в демонстрационном режиме')
   })
+
+  it('стенд: цель необязательна — пусто, сервер берёт последнее подходящее событие; указанная уходит с кнопкой', async () => {
+    const w = mountView()
+    const frame = w.find('[data-injection="corrupt_frame"]')
+    expect(frame.find('input').attributes('placeholder')).toBe('Номер события (пусто — последнее подходящее)')
+    expect(frame.find('button').attributes('disabled')).toBeUndefined()
+    await frame.find('input').setValue('0b7d6c1e-8f4a-5d2b-9c3e-1a2b3c4d5e6f')
+    await frame.find('button').trigger('click')
+    expect(w.emitted('inject')?.[0]).toEqual(['corrupt_frame', '0b7d6c1e-8f4a-5d2b-9c3e-1a2b3c4d5e6f'])
+  })
 })
 
 describe('пульт — контейнер', () => {

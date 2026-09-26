@@ -17,8 +17,10 @@ import (
 // runPlan — план прогона и его табло: точки проверки по времени и строки
 // утверждений (AD-26, FR-108).
 type runPlan struct {
-	plan   *sim.Plan
-	refs   map[string]sim.Ref
+	plan *sim.Plan
+	refs map[string]sim.Ref
+	// world — мир прогона: уставки и линии для кнопок цифрового стенда.
+	world  sim.World
 	rows   []row
 	points []sim.Point
 	// byPoint — строки точки (номер Point.Index → номера строк).
@@ -115,7 +117,13 @@ func (s *Service) evaluate(ctx context.Context, st *RunState, rp *runPlan, p sim
 			}
 			continue
 		}
-		st.Rows[r.a.ID] = s.check(ctx, st, rp, r)
+		res := s.check(ctx, st, rp, r)
+		if res.Status == sim.StatusFailed && len(st.Injections) > 0 {
+			// FR-152: кнопки стенда меняют ход прогона — ожидания карточки
+			// рассчитаны без них; расхождение остаётся расхождением, но с пояснением
+			res.Detail = strings.TrimSpace(res.Detail + " (в прогон вносились сбои кнопками стенда: ожидание карточки рассчитано без них)")
+		}
+		st.Rows[r.a.ID] = res
 	}
 }
 
@@ -126,6 +134,9 @@ func (s *Service) check(ctx context.Context, st *RunState, rp *runPlan, r row) s
 	}
 	v, found, err := s.read(ctx, st, rp, r.a.Check)
 	switch {
+	case errors.Is(err, ErrUnavailable) && r.a.Check.Operation == "step":
+		label, _ := r.a.Check.Params["label"].(string)
+		return sim.Result{Status: sim.StatusPending, Detail: "шаг не выполнен: " + st.Steps[label].Detail}
 	case errors.Is(err, ErrUnavailable):
 		return sim.Result{Status: sim.StatusPending, Detail: "операция " + r.a.Check.Operation + " пока не отвечает (модуль в работе)"}
 	case err != nil:
@@ -338,6 +349,21 @@ func (s *Service) Board(ctx context.Context, runID string, m platform.Moment) (B
 			b.Pending++
 		}
 		b.Rows = append(b.Rows, br)
+	}
+	// строки кнопок цифрового стенда (FR-152) — после строк сценария, по нажатиям
+	for _, x := range st.Injections {
+		for _, r := range x.Rows {
+			br := injectionRow(st, x, r)
+			switch sim.Status(br.Status) {
+			case sim.StatusPassed:
+				b.Passed++
+			case sim.StatusFailed:
+				b.Failed++
+			default:
+				b.Pending++
+			}
+			b.Rows = append(b.Rows, br)
+		}
 	}
 	return b, nil
 }

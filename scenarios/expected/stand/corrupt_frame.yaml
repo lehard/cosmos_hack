@@ -1,0 +1,56 @@
+# Кнопка цифрового стенда «Испортить кадр» (FR-152, эпик 36) — ожидаемый видимый
+# результат (кейс §5.1, AD-26). Строки — из сбоя F08 «Плохое наблюдение» и S04:
+# кадр камеры с качеством 0,30. Плейсхолдеры — см. duplicate_event.yaml.
+scenario: F08
+version: '1'
+title: 'Кнопка стенда: испорченный кадр'
+run: stand
+source: эпик 36 по F08 и S04 (research/data-collection-sources-and-failures.md §6, process/scenarios-flange.md S04)
+checkpoints:
+- at: apply
+  label: после нажатия
+  assertions:
+  - id: STAND-FRAME-00
+    what: кадр принят приёмом как есть — плохое наблюдение не отбрасывается
+    check:
+      operation: step
+      params:
+        label: '{inj:step}'
+      path: /delivered/0
+      op: eq
+      value: accepted
+    mapping: exact
+  - id: STAND-FRAME-01
+    what: 'исходный результат сохранён: качество 0,30'
+    check:
+      operation: quality.inspection.list
+      params:
+        item_id: '{inj:item}'
+      path: /items[event_id={inj:event}]/0/observation_quality_bp
+      op: eq
+      value: 3000
+    mapping: exact
+  - id: STAND-FRAME-02
+    what: 'система: «оценка невозможна», а не «годно»'
+    check:
+      operation: quality.inspection.list
+      params:
+        item_id: '{inj:item}'
+      path: /items[event_id={inj:event}]/0/outcome
+      op: eq
+      value: unable_to_assess
+    mapping: exact
+- at: apply
+  label: после нажатия
+  must_not: true
+  assertions:
+  - id: STAND-FRAME-03
+    what: изделие не стало «годным»
+    check:
+      operation: item.passport.read
+      params:
+        item_id: '{inj:item}'
+      path: /status/quality
+      op: ne
+      value: conforming
+    mapping: exact
