@@ -38,7 +38,18 @@ checkpoints:
       operation: ingest.quarantine.list
       path: /items
       op: contains
-      value: &id001
+      value:
+      - problem_code: ingest.unknown_schema_version
+        source_id: '{run}/edge-weld-1'
+      - problem_code: ingest.unknown_enum_value_critical
+        source_id: '{run}/edge-kt3-2'
+    mapping: exact
+    note: 'сведение: у записи карантина — код, источник, время и пояснение (сообщение 1 без номера изделия — в очереди привязки, AD-41)'
+    source:
+      subject: quarantine
+      field: details
+      op: contains
+      value:
       - code: E_MISSING_FIELD
         field: item_id
       - code: E_UNSUPPORTED_VERSION
@@ -46,12 +57,6 @@ checkpoints:
       - code: E_UNKNOWN_ENUM
         field: inspection_result
         value: maybe
-    mapping: draft
-    source:
-      subject: quarantine
-      field: details
-      op: contains
-      value: *id001
   - id: S12-03
     what: новое необязательное поле принято и сохранено
     check:
@@ -143,11 +148,12 @@ checkpoints:
   - id: S12-N2
     what: «maybe» не превратилось в «признаков нет»
     check:
-      operation: ingest.metrics.read
-      path: /stored_as_no_defect
+      operation: ingest.quarantine.list
+      path: /items[problem_code=ingest.unknown_enum_value_critical]/#
       op: eq
-      value: false
-    mapping: draft
+      value: 1
+    mapping: exact
+    note: 'сведение: «maybe» лежит в карантине, а не принято как «признаков нет»'
     source:
       subject: ingest
       field: stored_as_no_defect

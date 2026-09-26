@@ -78,10 +78,14 @@ checkpoints:
     what: ключевая запись встала на своё время
     check:
       operation: journal.entry.list
-      path: /items
+      params:
+        event_type: equipment.deviation.detected
+        limit: 500
+      path: /items[event_id={event:EV-WS2-0412}]/0/occurred_at
       op: eq
-      value: true
-    mapping: draft
+      value: '2026-09-22T10:20:14+03:00'
+    mapping: exact
+    note: 'сведение: EV-WS2-0412 — на своём времени события (Вт 10:20:14), не на времени получения'
     source:
       subject: event/EV-WS2-0412
       field:
@@ -92,7 +96,6 @@ checkpoints:
         run: SV-015-1
       op: eq
       value: true
-    note: запись EV-WS2-0412
   - id: S07-03
     what: в истории Ф-017 журнал ИС-2 стоит раньше наблюдения камеры
     check:
@@ -241,11 +244,15 @@ checkpoints:
   - id: S07-N1
     what: опоздавшие не датированы временем получения
     check:
-      operation: ingest.metrics.read
-      path: /ordered_by_received_at
+      operation: journal.entry.list
+      params:
+        event_type: equipment.deviation.detected
+        limit: 500
+      path: /items[event_id={event:EV-WS2-0412}]/0/occurred_at
       op: eq
-      value: false
-    mapping: draft
+      value: '2026-09-22T10:20:14+03:00'
+    mapping: exact
+    note: 'сведение: время события опоздавшей записи не заменено временем получения'
     source:
       subject: ingest
       field: ordered_by_received_at

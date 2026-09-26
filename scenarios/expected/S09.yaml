@@ -286,10 +286,13 @@ checkpoints:
     what: претензия поставщику и «возврат поставщику» в 1С не отменены из-за подменённого заключения
     check:
       operation: erp.message.list
-      path: /items
+      params:
+        limit: 500
+      path: /items[action=return_to_supplier]/0/status
       op: eq
-      value: false
-    mapping: draft
+      value: acknowledged
+    mapping: exact
+    note: 'сведение: «возврат поставщику» остаётся подтверждённым'
     source:
       subject: erp/postings
       field: cancelled

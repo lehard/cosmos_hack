@@ -768,11 +768,13 @@ checkpoints:
     check:
       operation: analytics.metric.drilldown
       params:
-        metric_id: O-3
-      path: /total
+        metric_id: confirmed_defects
+        period: week
+      path: /total/value
       op: eq
-      value: true
-    mapping: draft
+      value: 4
+    mapping: exact
+    note: 'сведение: показатель confirmed_defects (О-3, производственные) за неделю: 4 дефекта сварки'
     source:
       subject: metric/O-3
       field:
@@ -782,7 +784,6 @@ checkpoints:
         incident: RS-01
       op: eq
       value: true
-    note: показатель O-3 каталога процессной сессии (analytics-catalog.md); сопоставление — эпик 25
   - id: S05-31
     what: у сварщиков подтверждённых ошибок 0
     check:
