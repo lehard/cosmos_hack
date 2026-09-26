@@ -1,16 +1,14 @@
 <script setup lang="ts">
 /**
- * Окно сотрудника (Д-70): заголовок — имя и подразделение; внутри — профиль
- * (`access.person.read`: учётная запись, роли в областях), пост, на который
- * сотрудник назначен сейчас (строка панели «Посты» — открывается окном поста),
- * и квалификации с аттестациями (`access.qualification.list`, FR-80).
- * Чтения без права у роли — честная ошибка в своём блоке, а не пустой профиль.
+ * Окно сотрудника (Д-70, UI-16): заголовок — имя и подразделение; внутри —
+ * карточка `access.person.card`: профиль, роли в областях, посты, на которые
+ * сотрудник назначен сейчас (щелчок — окно поста), квалификации со сроками (FR-80).
+ * Чтение без права у роли — честная ошибка, а не пустой профиль.
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
-import { usePerson } from '@/entities/person'
-import { PRESENCE_TEXT, usePosts, useQualifications } from '@/entities/workplace'
+import { usePersonCard } from '@/entities/person'
 import { useDrillDown } from '@/features/drill-down'
 import { codeToKey } from '@/shared/i18n'
 import { useProblemText } from '@/shared/i18n/problem'
@@ -24,22 +22,20 @@ const drill = useDrillDown()
 const problemText = useProblemText()
 
 const runId = computed(() => (typeof route.query.run === 'string' && route.query.run ? route.query.run : undefined))
-const runParams = computed(() => (runId.value ? { run_id: runId.value } : {}))
 
-const personQ = usePerson(() => props.id, runId)
-const person = computed(() => personQ.data.value?.data ?? null)
-
-// Пост сейчас — из панели «Посты» (тот же запрос, что у виджета).
-const postsQ = usePosts(runParams)
-const posts = computed(() => (postsQ.data.value?.data ?? []).filter((r) => r.assigned?.person_id === props.id))
-const displayName = computed(() => person.value?.display_name ?? posts.value[0]?.assigned?.display ?? props.id)
-
-const qualsQ = useQualifications(() => props.id, runId)
-const quals = computed(() => qualsQ.data.value?.data ?? [])
+const cardQ = usePersonCard(() => props.id, runId)
+const person = computed(() => cardQ.data.value?.data ?? null)
+const displayName = computed(() => person.value?.display_name || props.id)
 
 const date = (iso: string | null | undefined) => (iso ? d(new Date(iso), 'date') : '—')
 const roleText = (role: string) => (te(`roles.${codeToKey(role)}`) ? t(`roles.${codeToKey(role)}`) : role)
-const accountText = (s: string) => t(`widgets.admin.access.accountStatus.${s}`)
+/** Квалификация по-русски из словаря; нет в словаре — код как есть. */
+const qualName = (id: string) => {
+  const key = `shell.record.person.qualificationName.${codeToKey(id)}`
+  return /^[a-z0-9_]+$/.test(id) && te(key) ? t(key) : id
+}
+const postRoleText = (role: string | undefined) =>
+  role ? t(role === 'quality_inspector' ? 'widgets.shopFloor.shift.inspector' : 'widgets.shopFloor.shift.performer') : '—'
 
 const openPost = (id: string) => drill.open({ entity: 'workplace', id })
 </script>
@@ -50,35 +46,27 @@ const openPost = (id: string) => drill.open({ entity: 'workplace', id })
     :kind-label="t('shell.record.person.kind')"
     :number="displayName"
     :subtitle="person?.org_unit ?? ''"
-    :loading="personQ.isPending.value && postsQ.isPending.value"
+    :loading="cardQ.isPending.value && !person && !cardQ.error.value"
     data-record="person"
     @close="emit('close')"
   >
-    <template v-if="person" #status>
-      <span class="ant-ellipsis">{{ accountText(person.account_status) }}</span>
-    </template>
-
-    <div class="sections ant-box">
+    <EmptyState
+      v-if="!person && cardQ.error.value"
+      compact
+      :title="t('shell.record.person.unavailable')"
+      :description="problemText(cardQ.error.value)"
+      data-testid="person-card-error"
+    />
+    <div v-else-if="person" class="sections ant-box">
       <SectionPanel :title="t('shell.record.person.profile')" variant="plain" :padded="false" data-testid="person-profile">
         <KeyValueList>
           <KeyValue :label="t('shell.record.person.name')" :value="displayName" />
-          <KeyValue :label="t('access.conditionalId')" :value="id" mono />
-          <template v-if="person">
-            <KeyValue :label="t('shell.record.person.orgUnit')" :value="person.org_unit ?? null" />
-            <KeyValue :label="t('access.username')" :value="person.login ?? null" mono />
-            <KeyValue :label="t('shell.record.person.account')" :value="accountText(person.account_status)" />
-          </template>
+          <KeyValue :label="t('shell.record.person.orgUnit')" :value="person.org_unit ?? null" />
+          <KeyValue :label="t('access.conditionalId')" :value="person.person_id" mono />
         </KeyValueList>
-        <EmptyState
-          v-if="personQ.error.value"
-          compact
-          :title="t('shell.record.person.profileUnavailable')"
-          :description="problemText(personQ.error.value)"
-          data-testid="person-profile-error"
-        />
       </SectionPanel>
 
-      <SectionPanel v-if="person" :title="t('shell.record.person.roles')" variant="plain" :padded="false" data-testid="person-roles">
+      <SectionPanel :title="t('shell.record.person.roles')" variant="plain" :padded="false" data-testid="person-roles">
         <DataTable v-if="person.roles.length">
           <thead>
             <tr>
@@ -99,37 +87,33 @@ const openPost = (id: string) => drill.open({ entity: 'workplace', id })
       </SectionPanel>
 
       <SectionPanel :title="t('shell.record.person.post')" variant="plain" :padded="false" data-testid="person-post">
-        <DataTable v-if="posts.length">
+        <DataTable v-if="person.posts.length">
           <thead>
             <tr>
               <th>{{ t('liveMap.posts.station') }}</th>
-              <th>{{ t('liveMap.posts.presence') }}</th>
-              <th>{{ t('liveMap.posts.currentItem') }}</th>
+              <th>{{ t('shell.record.workplace.roleOnPost') }}</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="p in posts" :key="p.workplace_id" class="row" :data-workplace="p.workplace_id" @click="openPost(p.workplace_id)">
+            <tr
+              v-for="p in person.posts"
+              :key="`${p.workplace_id}:${p.assignee_role ?? ''}`"
+              class="row"
+              :data-workplace="p.workplace_id"
+              @click="openPost(p.workplace_id)"
+            >
               <td>
                 <button type="button" class="link ant-wrap" @click.stop="openPost(p.workplace_id)">{{ p.station }}</button>
               </td>
-              <td><span class="ant-wrap">{{ t(PRESENCE_TEXT[p.presence]) }}</span></td>
-              <td><span class="ant-wrap mono">{{ p.current_item?.label ?? '—' }}</span></td>
+              <td><span class="ant-wrap">{{ postRoleText(p.assignee_role) }}</span></td>
             </tr>
           </tbody>
         </DataTable>
-        <EmptyState v-else-if="postsQ.error.value" compact :title="t('errors.loadFailed')" :description="problemText(postsQ.error.value)" />
-        <EmptyState v-else-if="postsQ.data.value" compact :title="t('shell.record.person.noPost')" />
+        <EmptyState v-else compact :title="t('shell.record.person.noPost')" />
       </SectionPanel>
 
       <SectionPanel :title="t('access.qualifications')" variant="plain" :padded="false" data-testid="person-qualifications">
-        <EmptyState
-          v-if="qualsQ.error.value"
-          compact
-          :title="t('shell.record.person.qualificationsUnavailable')"
-          :description="problemText(qualsQ.error.value)"
-        />
-        <EmptyState v-else-if="qualsQ.data.value && !quals.length" compact :title="t('shell.record.person.noQualifications')" />
-        <DataTable v-else-if="quals.length">
+        <DataTable v-if="person.qualifications.length">
           <thead>
             <tr>
               <th>{{ t('shell.record.person.qualification') }}</th>
@@ -139,9 +123,9 @@ const openPost = (id: string) => drill.open({ entity: 'workplace', id })
             </tr>
           </thead>
           <tbody>
-            <tr v-for="q in quals" :key="q.qualification_id" :data-qualification="q.status">
+            <tr v-for="q in person.qualifications" :key="q.qualification_id" :data-qualification="q.status">
               <td>
-                <span class="ant-wrap">{{ q.scope ?? q.qualification_id }}</span>
+                <span class="ant-wrap">{{ qualName(q.qualification_id) }}</span>
                 <span v-if="q.certificate_ref" class="muted mono ant-wrap">{{ q.certificate_ref }}</span>
               </td>
               <td><span class="ant-wrap">{{ t(`shell.record.person.qualificationStatus.${q.status}`) }}</span></td>
@@ -150,6 +134,7 @@ const openPost = (id: string) => drill.open({ entity: 'workplace', id })
             </tr>
           </tbody>
         </DataTable>
+        <EmptyState v-else compact :title="t('shell.record.person.noQualifications')" />
       </SectionPanel>
     </div>
   </RecordDrawer>

@@ -47,7 +47,8 @@ function text(a: AlertEntry): string {
     case 'anomaly': {
       const key = a.anomaly ? `liveMap.anomalies.${codeToKey(a.anomaly)}` : ''
       const what = key && te(key) ? t(key, { threshold: dash }) : `UNKNOWN(${a.anomaly ?? ''})`
-      return t('liveMap.alerts.anomaly', { node: a.node ?? dash, what })
+      // Имя шага из BPMN; код узла — только если имени нет.
+      return t('liveMap.alerts.anomaly', { node: a.node_name || a.node || dash, what })
     }
     case 'escalation':
       return `${t('common.notifications.escalation')}: ${t('liveMap.attention.overdueDecision', {

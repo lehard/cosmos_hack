@@ -5,13 +5,13 @@
  * Эпик 13: назначения на посты в смене, квалификации, действия исполнителя
  * с рабочего места и запрос назначения контролёра с согласованием начальника ОТК.
  *
- * Операции — `access.workplace.list`, `journal.entry.list` (история поста),
+ * Операции — `access.workplace.list`, `access.workplace.read|history` (окно поста),
  * `access.assignment.list|set|clear`,
  * `access.qualification.list`, `access.operator.report_deviation|request_inspection`,
  * `documents.document.request|list` (contracts/openapi.yaml), сгенерированный клиент.
  */
 import { computed, toValue, type MaybeRefOrGetter } from 'vue'
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
+import { keepPreviousData, useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { entityKeys } from '@/shared/api/keys'
 import {
   accessAssignmentClear,
@@ -20,10 +20,11 @@ import {
   accessOperatorReportDeviation,
   accessOperatorRequestInspection,
   accessQualificationList,
+  accessWorkplaceHistory,
   accessWorkplaceList,
+  accessWorkplaceRead,
   documentsDocumentList,
   documentsDocumentRequest,
-  journalEntryList,
 } from '@/shared/api/generated/client'
 import type {
   AccessAssignment,
@@ -32,21 +33,24 @@ import type {
   AccessQualificationStatus,
   ClearAssignment,
   DocumentSummary,
-  JournalEntryList,
-  JournalEntryView,
   PostRow,
   PostRowPresence,
   ReportDeviation,
   RequestDecision,
   RequestInspection,
   SetAssignment,
+  WorkplaceAssignee,
+  WorkplaceCard,
+  WorkplaceEvent,
+  WorkplaceEventKind,
 } from '@/shared/api/generated/model'
 import type { StatusTone } from '@/shared/api/generated/statuses'
 import type { ApiError } from '@/shared/api/problem'
 import type { Envelope } from '@/shared/api/response'
 import { useMomentStore } from '@/shared/model/moment'
 
-export type { AccessAssignment, AccessAssignmentList, AccessQualification, AccessQualificationStatus, DocumentSummary, JournalEntryView, SetAssignment, ClearAssignment }
+export type { AccessAssignment, AccessAssignmentList, AccessQualification, AccessQualificationStatus, DocumentSummary, SetAssignment, ClearAssignment }
+export type { WorkplaceAssignee, WorkplaceCard, WorkplaceEvent, WorkplaceEventKind }
 
 export const workplaceKeys = entityKeys('workplace')
 
@@ -67,32 +71,65 @@ export function usePosts(params: MaybeRefOrGetter<{ workshop?: string; run_id?: 
   })
 }
 
-/**
- * История поста — записи журнала в потоке `workplace:‹id›` (`journal.entry.list`):
- * назначения и снятия с поста, ключ вставлен/вынут, допуск открыт/снят, сеанс
- * завершён, отклонения присутствия (каталог событий, поток `workplace`).
- * Журнал отдаёт записи по возрастанию seq страницами; `limit` — сколько взять.
- * Чтение закрыто правом `journal.entry.list` — без него сервер отвечает ошибкой.
- */
-export function useWorkplaceHistory(
-  workplaceId: MaybeRefOrGetter<string | null | undefined>,
-  runId: MaybeRefOrGetter<string | undefined> = undefined,
-  limit = 200,
-) {
+/** Параметры чтения окна поста: прогон сценария (из адреса) и момент. */
+function readParams(runId: MaybeRefOrGetter<string | undefined>) {
   const moment = useMomentStore()
-  const params = computed(() => {
+  return computed(() => {
     const run = toValue(runId)
-    return { stream: `workplace:${toValue(workplaceId) ?? ''}`, limit, ...(run ? { run_id: run } : {}), ...moment.params }
+    return run ? { ...moment.params, run_id: run } : { ...moment.params }
   })
+}
+
+/**
+ * Карточка поста (UI-16) — `access.workplace.read`: строка панели «Посты»
+ * (назначен, присутствие, текущее изделие), область поста и назначения
+ * текущей смены с именами и допуском по квалификации.
+ */
+export function useWorkplaceCard(workplaceId: MaybeRefOrGetter<string | null | undefined>, runId: MaybeRefOrGetter<string | undefined> = undefined) {
+  const params = readParams(runId)
   return useQuery({
-    queryKey: computed(() => workplaceKeys.one(toValue(workplaceId) ?? '', 'history', params.value)),
-    queryFn: async ({ signal }): Promise<Envelope<JournalEntryList>> => {
-      const res = await journalEntryList(params.value, { signal })
+    queryKey: computed(() => workplaceKeys.one(toValue(workplaceId) ?? '', 'card', params.value)),
+    queryFn: async ({ signal }): Promise<Envelope<WorkplaceCard>> => {
+      const res = await accessWorkplaceRead(toValue(workplaceId) ?? '', params.value, { signal })
       return { data: res.data, headers: res.headers }
     },
     enabled: computed(() => !!toValue(workplaceId)),
     retry: false,
   })
+}
+
+/**
+ * История поста (UI-16) — `access.workplace.history`: назначения и снятия,
+ * ключ вставлен/вынут, допуск открыт/снят/отозван, отклонения присутствия.
+ * Сервер отдаёт новые сверху страницами по `limit`; следующая — по `next_cursor`
+ * («показать ещё»). Страницы склеиваются в один список.
+ */
+export function useWorkplaceHistory(
+  workplaceId: MaybeRefOrGetter<string | null | undefined>,
+  runId: MaybeRefOrGetter<string | undefined> = undefined,
+  limit = 50,
+) {
+  const params = readParams(runId)
+  const q = useInfiniteQuery({
+    queryKey: computed(() => workplaceKeys.one(toValue(workplaceId) ?? '', 'history', limit, params.value)),
+    queryFn: async ({ signal, pageParam }) => {
+      const res = await accessWorkplaceHistory(toValue(workplaceId) ?? '', { ...params.value, limit, ...(pageParam ? { cursor: pageParam } : {}) }, { signal })
+      return res.data
+    },
+    initialPageParam: '' as string,
+    getNextPageParam: (last) => last.next_cursor || undefined,
+    enabled: computed(() => !!toValue(workplaceId)),
+    retry: false,
+  })
+  return {
+    /** Записи всех загруженных страниц; null — первая страница ещё не пришла. */
+    items: computed<WorkplaceEvent[] | null>(() => (q.data.value ? q.data.value.pages.flatMap((p) => p.items) : null)),
+    isPending: computed(() => q.isLoading.value),
+    error: computed(() => q.error.value ?? null),
+    hasMore: computed(() => q.hasNextPage.value),
+    loadingMore: computed(() => q.isFetchingNextPage.value),
+    loadMore: () => void q.fetchNextPage(),
+  }
 }
 
 // ─────────────────── смены и назначения на посты (FR-81, PRD §11.18) ───────────────────
@@ -112,21 +149,13 @@ export function useAssignments(params: MaybeRefOrGetter<{ shift_id?: string; wor
   })
 }
 
-/**
- * Квалификации и аттестации (FR-80) — `access.qualification.list`; сотрудник пуст — все.
- * `runId` — прогон сценария (окно записи берёт его из адреса).
- */
-export function useQualifications(personId: MaybeRefOrGetter<string | null | undefined> = null, runId: MaybeRefOrGetter<string | undefined> = undefined) {
+/** Квалификации и аттестации (FR-80) — `access.qualification.list`, все сотрудники. */
+export function useQualifications() {
   const moment = useMomentStore()
-  const full = computed(() => {
-    const p = toValue(personId)
-    const run = toValue(runId)
-    return { ...(p ? { person_id: p } : {}), ...(run ? { run_id: run } : {}), ...moment.params }
-  })
   return useQuery({
-    queryKey: computed(() => workplaceKeys.list('qualifications', full.value)),
+    queryKey: computed(() => workplaceKeys.list('qualifications', moment.params)),
     queryFn: async ({ signal }): Promise<Envelope<AccessQualification[]>> => {
-      const res = await accessQualificationList(full.value, { signal })
+      const res = await accessQualificationList(moment.params, { signal })
       return { data: res.data.items, headers: res.headers }
     },
     placeholderData: keepPreviousData,
