@@ -10,11 +10,12 @@
 export type VersionStatus = 'draft' | 'on_approval' | 'active' | 'retired'
 
 /** Действие окна версии. */
-export type VersionAction = 'newDraft' | 'saveDraft' | 'submit' | 'activate' | 'retire'
+export type VersionAction = 'newDraft' | 'edit' | 'saveDraft' | 'submit' | 'activate' | 'retire'
 
 /** x-ant-action операции действия. */
 export const ACTION_ID: Record<VersionAction, string> = {
   newDraft: 'process.version.draft',
+  edit: 'process.version.draft',
   saveDraft: 'process.version.draft',
   submit: 'process.version.submit',
   activate: 'process.version.activate',
@@ -23,7 +24,8 @@ export const ACTION_ID: Record<VersionAction, string> = {
 
 /** Какие действия есть у статуса (в порядке кнопок, главное — последним). */
 export const ACTIONS_BY_STATUS: Record<VersionStatus, VersionAction[]> = {
-  draft: ['newDraft', 'saveDraft', 'submit'],
+  // Правка схемы — на весь экран (UI-34): «Править схему» открывает рабочее место, «Сохранить» — там.
+  draft: ['edit', 'submit'],
   on_approval: ['activate'],
   active: ['newDraft', 'retire'],
   retired: ['newDraft'],
