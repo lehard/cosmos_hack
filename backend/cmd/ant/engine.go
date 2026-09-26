@@ -54,7 +54,7 @@ func engineRegistry() *engineapp.Registry {
 	mustRegister(qualityapp.Register(r)) // эпик 20: quality.item, quality.index, вклады показателей качества
 	// notifications (эпик 24): единственная проекция сроков, задачи, уведомления.
 	mustRegister(notificationsapp.Register(r))
-	mustRegister(itemapp.Register(r))    // эпик 18: item.row, item.index
+	mustRegister(itemapp.Register(r)) // эпик 18: item.row, item.index
 	return r
 }
 
