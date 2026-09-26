@@ -1,12 +1,45 @@
 <script setup lang="ts">
-// Заготовка виджета «metric-drilldown» (эпик 03). Эпик 15 заменяет её содержимым,
-// оставаясь в рамке WidgetFrame (четыре состояния, момент, метка fixtures | live).
+/**
+ * Виджет «Раскрытие показателя до исходных записей» — контейнер: число,
+ * выбранное в плитках или разделе «Аналитика» (фокус аналитики), →
+ * `analytics.metric.drilldown` (FR-7, AD-45). Изделие — переход в паспорт.
+ */
+import { computed } from 'vue'
+import { useDrillDown } from '@/features/drill-down'
+import { useMetricDrilldown, useMetricFocusStore } from '@/entities/metric'
 import type { WidgetProps } from '@/shared/config/widget'
-import { WidgetStub } from '@/shared/ui'
+import { WidgetFrame } from '@/shared/ui'
+import MetricDrilldownView from './MetricDrilldownView.vue'
 
-const props = defineProps<WidgetProps>()
+defineProps<WidgetProps>()
+const focus = useMetricFocusStore()
+const drill = useDrillDown()
+const src = useMetricDrilldown(
+  () => focus.pick?.metricId ?? null,
+  () => focus.pick?.sliceKey,
+)
+const data = computed(() => (focus.pick ? src.data.value : null))
 </script>
 
 <template>
-  <WidgetStub v-bind="props" :epic="15" />
+  <WidgetFrame
+    :title-key="titleKey"
+    :density="density"
+    :mode="src.mode.value"
+    :loading="!!focus.pick && src.isPending.value"
+    :error="focus.pick ? src.error.value : undefined"
+    :empty="!focus.pick"
+    empty-key="widgets.analytics.drilldown.pickHint"
+    :data-widget="widgetId"
+  >
+    <MetricDrilldownView
+      v-if="focus.pick && data"
+      :pick="focus.pick"
+      :drilldown="data"
+      :has-more="src.hasMore.value"
+      :loading-more="src.loadingMore.value"
+      @open-item="(id) => drill.open({ entity: 'item', id })"
+      @more="src.loadMore"
+    />
+  </WidgetFrame>
 </template>
