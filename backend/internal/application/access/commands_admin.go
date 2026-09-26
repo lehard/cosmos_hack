@@ -138,7 +138,7 @@ type AdmitWorkplace struct {
 // ReleaseWorkplace — снять допуск (access.workplace.released).
 type ReleaseWorkplace struct {
 	platform.CommandHeader
-	WorkplaceSessionID string `json:"workplace_session_id" format:"uuid"`
+	WorkplaceSessionID string `json:"workplace_session_id,omitempty" format:"uuid" doc:"Сеанс рабочего места; пусто — открытый сеанс сотрудника на этом месте (эпик 37)."`
 }
 
 // ConfirmStep — исполнитель подтверждает шаг ТП у рабочего места (operator.step.confirmed, FR-137, уровень подписи 1).

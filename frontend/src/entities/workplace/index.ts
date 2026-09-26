@@ -10,7 +10,7 @@
  * `access.qualification.list`, `access.operator.report_deviation|request_inspection`,
  * `documents.document.request|list` (contracts/openapi.yaml), сгенерированный клиент.
  */
-import { computed, toValue, type MaybeRefOrGetter } from 'vue'
+import { computed, toValue, watch, type MaybeRefOrGetter } from 'vue'
 import { keepPreviousData, useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { entityKeys } from '@/shared/api/keys'
 import {
@@ -20,13 +20,17 @@ import {
   accessOperatorReportDeviation,
   accessOperatorRequestInspection,
   accessQualificationList,
+  accessWorkplaceAdmit,
   accessWorkplaceHistory,
   accessWorkplaceList,
   accessWorkplaceRead,
+  accessWorkplaceRelease,
   documentsDocumentList,
   documentsDocumentRequest,
 } from '@/shared/api/generated/client'
 import type {
+  AdmitWorkplace,
+  ReleaseWorkplace,
   AccessAssignment,
   AccessAssignmentList,
   AccessQualification,
@@ -64,20 +68,27 @@ const personKeys = entityKeys('person')
 /**
  * Посты под картой на момент из useMomentStore — `access.workplace.list`.
  * Присутствие меняют и проходы СКУД (FR-6, эпик 37): они в потоке сотрудника,
- * SSE инвалидирует `[person, LIST]` — метка `presence-tick` перечитывается и
- * через ключ тянет за собой список постов (без опроса по таймеру).
+ * SSE инвалидирует `[person, LIST]` — метка `presence-tick` перечитывается, и
+ * список постов перечитывается вслед за ней (без опроса по таймеру).
  */
 export function usePosts(params: MaybeRefOrGetter<{ workshop?: string; run_id?: string }>) {
   const moment = useMomentStore()
   const tick = useQuery({ queryKey: personKeys.list('presence-tick'), queryFn: () => Date.now(), staleTime: Infinity })
-  return useQuery({
-    queryKey: computed(() => workplaceKeys.list('posts', toValue(params), tick.data.value ?? 0, moment.params)),
+  const posts = useQuery({
+    queryKey: computed(() => workplaceKeys.list('posts', toValue(params), moment.params)),
     queryFn: async ({ signal }): Promise<Envelope<PostRow[]>> => {
       const res = await accessWorkplaceList({ ...toValue(params), ...moment.params }, { signal })
       return { data: res.data.items, headers: res.headers }
     },
     placeholderData: keepPreviousData,
   })
+  watch(
+    () => tick.dataUpdatedAt.value,
+    (now, before) => {
+      if (before && now !== before) void posts.refetch()
+    },
+  )
+  return posts
 }
 
 /** Параметры чтения окна поста: прогон сценария (из адреса) и момент. */
@@ -256,6 +267,27 @@ export function useOperatorCommand() {
     onSuccess: (_r, c) => {
       void queryClient.invalidateQueries({ queryKey: workplaceKeys.one(c.workplace_id) })
       void queryClient.invalidateQueries({ queryKey: ['task'] })
+    },
+  })
+}
+
+/** Команда допуска к рабочему месту (барьер 2, FR-83; эпик 37). */
+export type AdmissionCommand =
+  | { kind: 'admit'; workplace_id: string; body: AdmitWorkplace }
+  | { kind: 'release'; workplace_id: string; body: ReleaseWorkplace }
+
+/**
+ * Допуск к рабочему месту и его снятие — `access.workplace.admit|release`:
+ * после ответа перечитываются пост, посты и сеанс (рабочее место сеанса).
+ */
+export function useAdmission() {
+  const queryClient = useQueryClient()
+  return useMutation<Awaited<ReturnType<typeof accessWorkplaceAdmit>>, ApiError, AdmissionCommand>({
+    mutationFn: (c) => (c.kind === 'admit' ? accessWorkplaceAdmit(c.workplace_id, c.body) : accessWorkplaceRelease(c.workplace_id, c.body)),
+    onSuccess: (_r, c) => {
+      void queryClient.invalidateQueries({ queryKey: workplaceKeys.one(c.workplace_id) })
+      void queryClient.invalidateQueries({ queryKey: workplaceKeys.all })
+      void queryClient.invalidateQueries({ queryKey: ['session'] })
     },
   })
 }

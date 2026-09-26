@@ -24,6 +24,7 @@ import { useLocations, workshopOf } from '@/entities/reference'
 import { useSession } from '@/entities/session'
 import { useOperatorCommand, usePosts } from '@/entities/workplace'
 import { useDrillDown } from '@/features/drill-down'
+import { WorkplaceAdmission } from '@/features/workplace-admission'
 import { backendModeOf } from '@/shared/api/response'
 import type { WidgetProps } from '@/shared/config/widget'
 import { newCommandId } from '@/shared/lib/command-id'
@@ -199,6 +200,8 @@ const state = computed(() => (!session.data.value && session.error.value ? 'inpu
     :loading="session.isPending.value"
     :data-widget="widgetId"
   >
+    <!-- Эпик 37: допуск к рабочему месту (барьер 2) — рабочее место сеанса. -->
+    <WorkplaceAdmission :run-id="run" :can-act="!moment.isReplay" :density="density" />
     <PerformerTerminalView
       v-model:step-key="stepKey"
       :workplace="workplace"

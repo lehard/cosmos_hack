@@ -12715,10 +12715,10 @@ components:
           maxLength: 128
           type: string
         workplace_session_id:
+          description: Сеанс рабочего места; пусто — открытый сеанс сотрудника на этом месте (эпик 37).
           format: uuid
           type: string
       required:
-        - workplace_session_id
         - command_id
         - basis_seq
         - policy_seq
