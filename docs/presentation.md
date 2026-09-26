@@ -136,7 +136,7 @@
 
 ## 12. Как проверить без нас
 
-- Запуск: `make demo` (нужен только Docker), интерфейс — <http://127.0.0.1:8480/>, вход ADM-01 → «Тестовые сценарии».
+- Онлайн-демо — <https://main.coopenomics.world/>; у себя — `make demo` (нужен только Docker), вход «Администратор безопасности» → «Тестовые сценарии».
 - Показ «Партия фланцев: сбой ИС-2» (SHOW-IS2) и главная история MS-1 — [guides/demo_scenarios.md](guides/demo_scenarios.md).
 - Проверки: `make check`, `make sim-check`, `make tamper`, `make verify`, `make contract-demo`, `make check-compat`;
   документация — `node docs/scripts/check-docs.mjs`; все цели — `make help`.
