@@ -1337,8 +1337,8 @@ components:
           format: date-time
           type: string
         effectiveness_plan:
-          additionalProperties: {}
-          type: object
+          $ref: "#/components/schemas/EffectivenessPlanInput"
+          description: "План проверки эффективности (FR-64): метрика, базовый уровень, окно, критерий успеха; без него мера не создаётся (422 incident.effectiveness_plan_required)."
         owner_id:
           type: string
         policy_seq:
@@ -4827,6 +4827,32 @@ components:
       required:
         - keyid
         - sig
+      type: object
+    EffectivenessPlanInput:
+      additionalProperties: true
+      properties:
+        baseline:
+          description: Базовый уровень до меры.
+          maxLength: 500
+          type: string
+        enhanced_control:
+          description: Усиленный контроль на время окна.
+          maxLength: 500
+          type: string
+        metric:
+          description: Что измеряем.
+          maxLength: 500
+          type: string
+        success_criterion:
+          description: Критерий успеха.
+          maxLength: 500
+          type: string
+        window_days:
+          description: Окно наблюдения, дней.
+          format: int64
+          maximum: 3650
+          minimum: 0
+          type: integer
       type: object
     EffectivenessPlanView:
       additionalProperties: false
