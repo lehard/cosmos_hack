@@ -44,7 +44,7 @@ func qualityLive(ctx context.Context, env *environment) (*qualityapp.Service, er
 	if err != nil {
 		return nil, err
 	}
-	sq := engineapp.StateQueries{Codec: c.codec, Bundles: c.qualityBundles(nil)}
+	sq := c.states()
 	at := func(ctx context.Context, itemID string, m platform.Moment) (engine.Snapshot, error) {
 		st, err := sq.Item(ctx, itemID, m)
 		return st.Snapshot, err

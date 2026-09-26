@@ -106,6 +106,12 @@ func runAPI(ctx context.Context, env *environment) error {
 			return err
 		}
 	}
+	if modeOf(opts, "process") == platform.ModeLive {
+		// Живая карта, версии и команды исполнителя (эпик 17).
+		if opts.process, err = processLive(ctx, env, opts.ingest, opts.analytics); err != nil {
+			return err
+		}
+	}
 	if modeOf(opts, "notifications") == platform.ModeLive {
 		// Сроки, задачи, тревоги — проекции notifications.* (эпик 24).
 		if opts.notifications, err = notificationsLive(ctx, env); err != nil {

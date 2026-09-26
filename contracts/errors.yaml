@@ -485,6 +485,12 @@ codes:
     detail: "Хеш версии {version_id} не совпадает с подписанным — версия не исполняется"
     ui_key: errors.process.versionTampered
     refs: [FR-23, AD-17]
+  process.version_unknown:
+    status: 409
+    title: "Версия процесса изделия не найдена"
+    detail: "Версия процесса с хешем {hash}, закреплённая за изделием, не найдена — изделие не исполняется"
+    ui_key: errors.process.versionTampered
+    refs: [FR-22, AD-17]
   process.quorum_incomplete:
     status: 409
     title: "Не хватает подписей кворума"
