@@ -4,9 +4,10 @@
 // зоны инфраструктуры соединяются с приложением (AD-1).
 //
 // Роль процесса задаётся флагом -role (несколько — через запятую). Все роли
-// спайна зарегистрированы заранее (эпик 02): api и migrate работают, остальные
-// — заглушки до своих эпиков (worker, crossitem, projector — 07; scheduler —
-// 24; outbox — 30; stands — 06; init — 05; rebuild — 07, 34).
+// спайна зарегистрированы заранее (эпик 02). Работают: api, migrate, worker,
+// crossitem, projector, rebuild (-item ‹id› — одно изделие); остальные —
+// заглушки до своих эпиков (scheduler — 24; outbox — 30; stands — 06; init — 05).
+// Роли одного процесса делят ядро (пул ant_app, журнал, LISTEN) — core.go.
 //
 // Флаг -openapi ‹файл› — выгрузить спецификацию HTTP API (contracts/openapi.yaml)
 // из операций Huma и выйти (make generate, AD-20); БД и конфигурация не нужны.
@@ -54,20 +55,27 @@ type role struct {
 var roles = map[string]role{
 	"api":       {run: runAPI},
 	"migrate":   {run: runMigrate, oneShot: true},
-	"worker":    pendingRole("worker", "эпик 07: свёртка изделий по партициям", false),
-	"crossitem": pendingRole("crossitem", "эпик 07: межизделийная стадия, копия-лидер", false),
-	"projector": pendingRole("projector", "эпик 07: глобальные потребители журнала, копия-лидер", false),
+	"worker":    {run: runWorker},
+	"crossitem": {run: runCrossItem},
+	"projector": {run: runProjector},
 	"scheduler": pendingRole("scheduler", "эпик 24: сроки и «наступил срок»", false),
 	"outbox":    pendingRole("outbox", "эпик 30: исходящие сообщения и квитанции", false),
 	"stands":    pendingRole("stands", "эпики 06, 30–33: stand-ы внешних систем и прогоны", false),
 	"init":      pendingRole("init", "эпик 05: ключи, миграции, генезис", true),
-	"rebuild":   pendingRole("rebuild", "эпики 07, 34: пересборка проекций", true),
+	"rebuild":   {run: runRebuild, oneShot: true},
 }
 
 // environment — то, что роль получает от точки входа.
 type environment struct {
 	cfg *config.Config
 	log *slog.Logger
+	// item, reason — `ant rebuild -item ‹id› [-reason ‹текст›]`.
+	item   string
+	reason string
+	// coreH — ядро процесса, общее для ролей (core.go).
+	coreH coreHolder
+	// ctx — общий контекст ролей процесса (runRoles): фоновые циклы ядра.
+	ctx context.Context
 }
 
 func main() {
@@ -82,6 +90,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 	healthcheck := fs.Bool("healthcheck", false, "проверить /healthz запущенного процесса и выйти (для HEALTHCHECK)")
 	showVersion := fs.Bool("version", false, "показать версию и выйти")
 	openapiOut := fs.String("openapi", "", "выгрузить спецификацию HTTP API в файл и выйти (make generate)")
+	item := fs.String("item", "", "роль rebuild: только это изделие (повтор после «обработка остановлена» или пересборка его проекций)")
+	reason := fs.String("reason", "", "роль rebuild -item: причина повтора обработки (в журнал)")
 	if err := fs.Parse(args); err != nil {
 		return 2
 	}
@@ -117,7 +127,14 @@ func run(args []string, stdout, stderr io.Writer) int {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	if err := runRoles(ctx, selected, &environment{cfg: cfg, log: log}); err != nil {
+	if *item != "" && !slices.Equal(selected, []string{"rebuild"}) {
+		_, _ = fmt.Fprintln(stderr, "-item — только для -role=rebuild")
+		return 2
+	}
+	env := &environment{cfg: cfg, log: log, item: *item, reason: *reason}
+	err = runRoles(ctx, selected, env)
+	env.closeCore()
+	if err != nil {
 		log.Error("остановка с ошибкой", "err", err)
 		return 1
 	}
@@ -164,6 +181,7 @@ func parseRoles(s string) ([]string, error) {
 func runRoles(ctx context.Context, names []string, env *environment) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
+	env.ctx = ctx
 	var (
 		wg   sync.WaitGroup
 		once sync.Once

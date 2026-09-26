@@ -51,8 +51,11 @@ defaults:
       fixture_cursor: postgres
       consumer: postgres
   engine:
-    partitions: 16 # P — фиксированные партиции по изделию (AD-6)
+    partitions: 16 # P — фиксированные партиции по изделию (AD-6); одно P у приёма и движка
     fold_parallelism: 2
+    lease_ttl: 10s # аренды партиций и ролей-лидеров по InfraClock, продление каждые TTL/3 (AD-6)
+  materials:
+    dir: /var/lib/ant/materials # том хранилища материалов по адресу содержимого (AD-23)
   journal:
     batch_max: 256 # K записей в пачке journal.Append (AD-44)
     batch_wait: 50ms

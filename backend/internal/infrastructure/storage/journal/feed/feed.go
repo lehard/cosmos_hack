@@ -83,6 +83,14 @@ func (c *Consumer) Consume(ctx context.Context, name string, scope app.Scope, ha
 		part = scope.Partition
 	}
 	lease := ConsumerLease(name, scope)
+	// Уходя (остановка, смена лидера роли), копия отдаёт аренду сразу:
+	// следующий лидер не ждёт её истечения.
+	var held app.Fence
+	defer func() {
+		if held.Lease != "" {
+			_ = c.leases.Release(context.WithoutCancel(ctx), held)
+		}
+	}()
 	for ctx.Err() == nil {
 		fence, ok, err := c.leases.Acquire(ctx, lease, c.opt.Holder, c.opt.TTL)
 		if err != nil {
@@ -95,6 +103,7 @@ func (c *Consumer) Consume(ctx context.Context, name string, scope app.Scope, ha
 			pause(ctx, c.opt.TTL/2)
 			continue
 		}
+		held = fence
 		head := c.signal.Head()
 		cursor, err := c.store.Cursor(ctx, name, part)
 		if err != nil {
@@ -125,6 +134,8 @@ func (c *Consumer) Consume(ctx context.Context, name string, scope app.Scope, ha
 			}
 			return fmt.Errorf("потребитель %s: %w", name, err)
 		}
+		// Fence — аренда потребителя: она, а не аренда роли-лидера, защищает
+		// курсор (Fence, поставленный handle, заменяется).
 		rq.Fence = &fence
 		rq.Consumer = &app.CursorAdvance{Name: name, Partition: part, Seq: int64(batch[len(batch)-1].Seq)}
 		if _, err := c.store.Append(ctx, rq); err != nil {

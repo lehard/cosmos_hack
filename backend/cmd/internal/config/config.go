@@ -84,7 +84,16 @@ type Config struct {
 		Partitions int `yaml:"partitions"`
 		// FoldParallelism — параллелизм свёртки изделий внутри воркера.
 		FoldParallelism int `yaml:"fold_parallelism"`
+		// LeaseTTL — срок аренд партиций воркеров и ролей-лидеров (crossitem,
+		// projector) по InfraClock; продление — каждые TTL/3 (AD-6).
+		LeaseTTL time.Duration `yaml:"lease_ttl"`
 	} `yaml:"engine"`
+
+	Materials struct {
+		// Dir — каталог тома хранилища материалов по адресу содержимого
+		// (MaterialStore, ключ material_store: volume; AD-23).
+		Dir string `yaml:"dir"`
+	} `yaml:"materials"`
 
 	Journal struct {
 		// BatchMax — предельное число записей в пачке journal.Append (AD-44).
@@ -178,6 +187,9 @@ func (c *Config) Validate() error {
 	}
 	if c.Engine.Partitions <= 0 {
 		errs = append(errs, errors.New("engine.partitions должно быть > 0"))
+	}
+	if c.Engine.LeaseTTL < 0 {
+		errs = append(errs, errors.New("engine.lease_ttl должно быть ≥ 0 (0 — 10 с)"))
 	}
 	switch c.Log.Level {
 	case "debug", "info", "warn", "error":

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"hash/fnv"
 	"regexp"
 	"strings"
 	"time"
@@ -29,18 +28,6 @@ func ParseTime(s string) (time.Time, error) {
 		return time.Time{}, err
 	}
 	return t.UTC(), nil
-}
-
-// Partition — фиксированная партиция изделия: hash(item_id) mod P (AD-6,
-// AD-41). Хеш — FNV-1a 64 над байтами внутреннего ID: детерминирован и
-// одинаков у приёма, воркера и верификатора; семантика Kafka `key = item_id`.
-func Partition(itemID string, p int) int {
-	if p <= 0 {
-		return 0
-	}
-	h := fnv.New64a()
-	h.Write([]byte(itemID))
-	return int(h.Sum64() % uint64(p))
 }
 
 // ItemStream — поток изделия `item:‹item_id›` (AD-39).

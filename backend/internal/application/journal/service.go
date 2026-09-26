@@ -15,14 +15,34 @@ type Service struct {
 	Unimplemented
 	store  JournalStore
 	signal Signal
+	live   LiveSource
 }
+
+// LiveSource — источник живых обновлений, которому Service отдаёт операцию
+// journal.stream.subscribe: публикатор движка (application/engine.LiveUpdates)
+// сообщает об изменениях проекций после их записи, а не о каждой записи
+// журнала (AD-6, AD-21, FR-2).
+type LiveSource interface {
+	Subscribe(ctx context.Context, afterSeq int64, runID string) (Subscription, error)
+}
+
+// ServiceOption — настройка Service.
+type ServiceOption func(*Service)
+
+// WithLive — живые обновления из публикатора проекций вместо подписки на
+// записи журнала.
+func WithLive(l LiveSource) ServiceOption { return func(s *Service) { s.live = l } }
 
 // NewService создаёт реализацию live без хранилища (все операции — 501).
 func NewService() *Service { return &Service{} }
 
 // NewServiceWith создаёт реализацию live над журналом и сигналом «есть новое».
-func NewServiceWith(store JournalStore, signal Signal) *Service {
-	return &Service{store: store, signal: signal}
+func NewServiceWith(store JournalStore, signal Signal, opts ...ServiceOption) *Service {
+	s := &Service{store: store, signal: signal}
+	for _, o := range opts {
+		o(s)
+	}
+	return s
 }
 
 // subscribeBatch — сколько записей читается за один шаг подписки.
@@ -32,7 +52,14 @@ const subscribeBatch = 256
 // каждая запись основной цепочки после afterSeq в пределах прогона даёт
 // изменение сущности своего потока. Сигнал несёт только seq (AD-6): данные
 // подписка читает из журнала сама, поэтому после обрыва догоняет по seq.
+//
+// С публикатором проекций (WithLive) подписка — его: сообщение уходит после
+// того, как воркер или проектор записал проекцию сущности, и экран, получив
+// его, читает уже новое состояние.
 func (s *Service) Subscribe(ctx context.Context, afterSeq int64, runID string) (Subscription, error) {
+	if s.live != nil {
+		return s.live.Subscribe(ctx, afterSeq, runID)
+	}
 	if s.store == nil || s.signal == nil {
 		return s.Unimplemented.Subscribe(ctx, afterSeq, runID)
 	}

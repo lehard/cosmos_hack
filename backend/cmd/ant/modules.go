@@ -84,6 +84,9 @@ import (
 type apiOptions struct {
 	mode        platform.Mode
 	moduleModes map[string]platform.Mode
+	// journal — live-реализация journal над журналом и публикатором SSE
+	// (core.go); nil — заглушка 501 (выгрузка OpenAPI, тесты).
+	journal *journalapp.Service
 }
 
 // buildAPI собирает HTTP API: общий декоратор (Gate) над портами прав и входа,
@@ -99,7 +102,11 @@ func buildAPI(mux *http.ServeMux, o apiOptions) *httpapi.API {
 	gate.SetCatalog(a.Actions)
 
 	{
-		q, c := pick[journalapp.Queries, journalapp.Commands](a.ModeFor("journal"), journalapp.NewService(), journalfx.New())
+		live := o.journal
+		if live == nil {
+			live = journalapp.NewService()
+		}
+		q, c := pick[journalapp.Queries, journalapp.Commands](a.ModeFor("journal"), live, journalfx.New())
 		journalhttp.Register(a, q, c)
 	}
 	{
