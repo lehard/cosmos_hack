@@ -88,6 +88,17 @@ export function describeRecord(r: JournalRecordRef): RecordText {
     : { key: null, params: {}, tone: 'unknown', eventType: r.variant ? `${r.event_type}/${r.variant}` : r.event_type }
 }
 
+/**
+ * Запись словами: текст сервера, если он есть; иначе фраза по словарю записи;
+ * неизвестный тип — код в скобках (видно, чего не хватает в словаре).
+ * @param t — функция перевода (vue-i18n)
+ */
+export function recordLabel(r: JournalRecordRef, t: (key: string, params: Record<string, unknown>) => string): string {
+  if (r.text) return r.text
+  const x = describeRecord(r)
+  return x.key ? t(x.key, x.params) : `UNKNOWN(${x.eventType})`
+}
+
 /** Тон словаря статусов для отметки — цвета только из контракта (AD-30, NFR-UI-2). */
 export const RECORD_TONE: Record<RecordTone, StatusTone> = {
   normal: 'success',

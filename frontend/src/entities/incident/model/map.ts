@@ -28,6 +28,8 @@ const ref = (r: ApiRecordRef): JournalRecordRef => ({
   variant: r.variant ?? null,
   occurred_at: r.occurred_at,
   params: r.params ?? {},
+  text: r.text ?? null,
+  source_label: r.source_label ?? null,
 })
 
 /** Разбор обстоятельств (`analysis.circumstances.read`). */
@@ -46,6 +48,7 @@ export const toCircumstancesModel = (a: Circumstances): CircumstancesModel => ({
   })),
   missing_information: a.missing_information as MissingInformation[],
   conclusion_is_categorical: a.conclusion_is_categorical,
+  lanes: a.lanes ?? null,
 })
 
 /** Общие факторы (`analysis.common_factors.read`). */
@@ -53,7 +56,7 @@ export const toCommonFactorsModel = (a: CommonFactors): CommonFactorsModel => ({
   group_key: a.group_key,
   group_label: a.group_label,
   nc_count: a.nc_count,
-  rows: a.rows.map((r) => ({ factor: r.factor, value: r.value ?? null, matches: r.matches, distinct_values: r.distinct_values })),
+  rows: a.rows.map((r) => ({ factor: r.factor, value: r.value ?? null, matches: r.matches, distinct_values: r.distinct_values, value_label: r.value_label ?? null })),
 })
 
 /** Гипотезы и похожие случаи (`analysis.hypothesis.list`). */
@@ -70,6 +73,8 @@ export const toHypothesesModel = (a: Hypotheses): HypothesesModel => ({
     supporting: h.supporting.map(ref),
     contradicting: h.contradicting.map(ref),
     measurement_hint: h.measurement_hint ?? null,
+    history: (h.history ?? []).map((c) => ({ at: c.at, confidence_bp: c.confidence_bp ?? null, event_id: c.event_id ?? null, text: c.text })),
+    next_check: h.next_check ?? null,
   })),
   missing_information: a.missing_information as MissingInformation[],
   conclusion_is_categorical: a.conclusion_is_categorical,
@@ -100,9 +105,16 @@ export const toRiskScopeModel = (a: RiskScope): RiskScopeModel => ({
     reason: v.reason ? { code: v.reason.code ?? null, text: v.reason.text } : null,
     evidence_event_ids: v.evidence_event_ids,
     breakdown: v.breakdown,
+    trigger: v.trigger ?? null,
+    items_added: v.items_added ?? [],
+    items_removed: v.items_removed ?? [],
+    evidence: (v.evidence ?? []).map(ref),
+    signed_by: v.signed_by ?? null,
   })),
   items: a.items,
   shipped_to_partners: a.shipped_to_partners ?? 0,
+  nc_ids: a.nc_ids ?? [],
+  primary_nc_id: a.primary_nc_id ?? null,
 })
 
 /**

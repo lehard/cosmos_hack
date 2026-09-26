@@ -34,6 +34,10 @@ export interface JournalRecordRef {
   occurred_at: string
   /** Параметры подписи: метод, параметр, значение, уставка, шаг… */
   params?: Record<string, string | number>
+  /** Запись словами (текст сервера); есть — показывать его, а не собирать фразу по словарю. */
+  text?: string | null
+  /** Источник словами: «Сварочный источник ИС-2», «Камера КТ-3». */
+  source_label?: string | null
 }
 
 /** Запись на дорожке разбора обстоятельств — строка проекции `analysis.circumstances`. */
@@ -100,6 +104,15 @@ export interface CircumstancesModel {
   missing_information: MissingInformation[]
   /** Категоричный ли вывод; при недостатке сведений — false. */
   conclusion_is_categorical: boolean
+  /** Качество данных дорожек: опоздания и пропуски (пропуск — исключать нельзя). */
+  lanes?: Record<CircumstanceLane, LaneQuality> | null
+}
+
+/** Качество данных одной дорожки. */
+export interface LaneQuality {
+  late_count: number
+  max_delay_min: number
+  gaps: { from: string; to: string; source: string; text: string }[]
 }
 
 /** Вид общего фактора (FR-135, FR-61). */
@@ -115,6 +128,8 @@ export interface CommonFactorRow {
   matches: number
   /** Сколько разных значений фактора в группе. */
   distinct_values: number
+  /** Значение словами («Сварочный источник ИС-2»); нет — показать `value`. */
+  value_label?: string | null
 }
 
 /** Общие факторы по группе несоответствий. */
@@ -155,6 +170,27 @@ export interface Hypothesis {
   contradicting: JournalRecordRef[]
   /** Что измерить, чтобы проверить гипотезу. */
   measurement_hint?: string | null
+  /** Что меняло уверенность: когда, какая запись, было → стало (словами сервера). */
+  history?: HypothesisChange[]
+  /** «Что проверить следующим»: проверка, что она разблокирует, сколько изделий может исключить. */
+  next_check?: NextCheck | null
+}
+
+/** Изменение уверенности гипотезы. */
+export interface HypothesisChange {
+  at: string
+  confidence_bp?: number | null
+  event_id?: string | null
+  text: string
+}
+
+/** Проверка, которая сильнее всего снижает неопределённость (стол технолога). */
+export interface NextCheck {
+  text: string
+  measurement_kind: string
+  unlocks_text: string
+  could_exclude: number
+  scope_size: number
 }
 
 /** Результат меры похожего случая — коды словаря корректирующих действий. */
@@ -229,6 +265,25 @@ export interface ScopeVersion {
   evidence_event_ids: string[]
   /** Разбивка после версии. */
   breakdown: ScopeBreakdown
+  /** Повод ступени: опоздавшие данные, окно нарушения, решение человека, правило. */
+  trigger?: ScopeTrigger | null
+  /** Изделия, вошедшие этой версией. */
+  items_added?: string[]
+  /** Изделия, исключённые этой версией. */
+  items_removed?: string[]
+  /** Доказательства словами (те же записи, что `evidence_event_ids`). */
+  evidence?: JournalRecordRef[]
+  /** Кто подписал сужение. */
+  signed_by?: string | null
+}
+
+/** Повод ступени области. */
+export interface ScopeTrigger {
+  kind: 'late_event' | 'violation_window' | 'human' | 'computed'
+  label: string
+  event_id?: string | null
+  received_at?: string | null
+  occurred_at?: string | null
 }
 
 /** Что известно об изделии в инциденте — ось `incident` словаря статусов (FR-62). */
@@ -258,7 +313,7 @@ export interface RiskScopeModel {
   /** Подпись инцидента. */
   incident_label: string
   /** Общий фактор, по которому собрана область. */
-  common_factor: { factor: FactorKind; value: string } | null
+  common_factor: { factor: FactorKind; value: string; label?: string | null } | null
   /** Окно области. */
   window: { start: string; end: string } | null
   /** Последнее подтверждённо нормальное состояние; null — неизвестно. */
@@ -269,6 +324,9 @@ export interface RiskScopeModel {
   items: ScopeItem[]
   /** Отгружено другим предприятиям. */
   shipped_to_partners?: number
+  /** Несоответствия инцидента и ведущее — вход гипотез и дорожек. */
+  nc_ids?: string[]
+  primary_nc_id?: string | null
 }
 
 /** Статус системного расследования — словарь `ncInvestigation`. */

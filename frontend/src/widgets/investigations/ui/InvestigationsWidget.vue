@@ -15,7 +15,12 @@ defineProps<WidgetProps>()
 const focus = useAnalysisFocusStore()
 const { incidents, list, id } = useFocusedIncident()
 const items = computed(() => list.value)
-const select = (incidentId: string) => (focus.incidentId = incidentId)
+/** Выбрать расследование: его несоответствие (primary_nc_id) становится входом гипотез и дорожек. */
+function select(incidentId: string): void {
+  focus.incidentId = incidentId
+  focus.ncId = null
+  focus.eventId = null
+}
 </script>
 
 <template>

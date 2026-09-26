@@ -19,7 +19,9 @@ import {
   hasBasis,
   scopeIssues,
   scopeReduction,
+  recordLabel,
   type IncidentKnown,
+  type JournalRecordRef,
   type RiskScopeModel,
   type ScopeIssue,
   type ScopeItem,
@@ -42,14 +44,16 @@ const props = withDefaults(
     canExpand?: boolean
     /** Команда отправляется — формы выключены. */
     busy?: boolean
+    /** Записи, на которые можно сослаться как на доказательство (дорожки несоответствия расследования). */
+    evidenceOptions?: readonly JournalRecordRef[]
   }>(),
-  { density: 'compact', canNarrow: true, canExpand: true, busy: false },
+  { density: 'compact', canNarrow: true, canExpand: true, busy: false, evidenceOptions: () => [] },
 )
 const emit = defineEmits<{
-  /** Сузить область: исключаемые изделия и основание (FR-61). */
-  narrow: [input: { item_ids: string[]; reason: string }]
-  /** Расширить область: добавляемые изделия и основание. */
-  expand: [input: { item_ids: string[]; reason: string }]
+  /** Сузить область: исключаемые изделия, доказательства и основание (FR-61, AD-27). */
+  narrow: [input: { item_ids: string[]; reason: string; evidence_event_ids: string[] }]
+  /** Расширить область: добавляемые изделия, основание и (по желанию) доказательства. */
+  expand: [input: { item_ids: string[]; reason: string; evidence_event_ids: string[] }]
   /** Открыть изделие. */
   'open-item': [itemId: string]
 }>()
@@ -131,6 +135,7 @@ const form = ref<'narrow' | 'expand' | null>(null)
 const picked = ref<string[]>([])
 const typed = ref('')
 const reason = ref('')
+const evidence = ref<string[]>([])
 
 /** Кандидаты на исключение — изделия, ещё не исключённые. */
 const narrowable = computed(() => props.model.items.filter((i) => i.known !== 'excluded'))
@@ -140,7 +145,13 @@ function openForm(kind: 'narrow' | 'expand'): void {
   picked.value = []
   typed.value = ''
   reason.value = ''
+  evidence.value = []
 }
+
+/** Записи-доказательства — свежие сверху. */
+const evidenceList = computed(() => [...props.evidenceOptions].sort((a, b) => b.occurred_at.localeCompare(a.occurred_at)))
+const recordText = (r: JournalRecordRef) => recordLabel(r, t)
+const labelOf = (id: string) => props.model.items.find((i) => i.item_id === id)?.label ?? id
 
 const typedIds = computed(() =>
   typed.value
@@ -149,12 +160,19 @@ const typedIds = computed(() =>
     .filter(Boolean),
 )
 const formIds = computed(() => (form.value === 'narrow' ? picked.value : typedIds.value))
-// Без основания изделие из области не выходит (FR-61) — и не входит без него.
-const formReady = computed(() => formIds.value.length > 0 && reason.value.trim() !== '')
+// Без основания изделие из области не выходит (FR-61) — и не входит без него; сужение — только с доказательством (AD-27).
+const missing = computed(() => {
+  const out: string[] = []
+  if (!formIds.value.length) out.push(t(form.value === 'narrow' ? 'widgets.analysis.riskScope.needItems' : 'widgets.analysis.riskScope.needItemsExpand'))
+  if (form.value === 'narrow' && !evidence.value.length) out.push(t('widgets.analysis.riskScope.needEvidence'))
+  if (!reason.value.trim()) out.push(t('widgets.analysis.riskScope.needReason'))
+  return out
+})
+const formReady = computed(() => missing.value.length === 0)
 
 function submit(): void {
   if (!form.value || !formReady.value) return
-  const input = { item_ids: [...formIds.value], reason: reason.value.trim() }
+  const input = { item_ids: [...formIds.value], reason: reason.value.trim(), evidence_event_ids: [...evidence.value] }
   if (form.value === 'narrow') emit('narrow', input)
   else emit('expand', input)
   form.value = null
@@ -177,7 +195,7 @@ function submit(): void {
         · {{ t('riskScope.reductionPercent', { percent: n(reduction.ratio, 'percent') }) }}
       </p>
       <p class="context muted ant-wrap">
-        <template v-if="model.common_factor">{{ t('riskScope.commonFactor', { factor: `${t(FACTOR_TEXT[model.common_factor.factor])}: ${model.common_factor.value}` }) }}</template>
+        <template v-if="model.common_factor">{{ t('riskScope.commonFactor', { factor: `${t(FACTOR_TEXT[model.common_factor.factor])}: ${model.common_factor.label || model.common_factor.value}` }) }}</template>
         <template v-if="model.last_known_good"> · {{ t('riskScope.lastKnownGood', { what: model.last_known_good.label, time: dateTime(model.last_known_good.at) }) }}</template>
         <template v-else> · {{ t('ncCard.causalWindow.lowerBound') }}: {{ t('empty.noDataUnknown') }}</template>
       </p>
@@ -215,6 +233,9 @@ function submit(): void {
           </div>
           <div class="step-body">
             <p class="step-title">{{ stepTitle(v) }}</p>
+            <p v-if="v.trigger && v.trigger.kind !== 'human' && v.trigger.kind !== 'computed'" class="step-trigger ant-wrap" :data-kind="v.trigger.kind" data-testid="step-trigger">
+              {{ t(`widgets.analysis.riskScope.trigger.${codeToKey(v.trigger.kind)}`) }}: {{ v.trigger.label }}
+            </p>
             <p class="step-basis ant-wrap" :class="{ bad: v.change === 'narrowed' && !hasBasis(v) }">
               <template v-if="v.reason?.text.trim()">{{ v.reason.text }}</template>
               <template v-else-if="v.change === 'narrowed'">{{ t('riskScope.basis') }}: {{ t('widgets.analysis.riskScope.noBasis') }}</template>
@@ -224,6 +245,15 @@ function submit(): void {
               <template v-else>{{ t('widgets.analysis.riskScope.systemAuthor') }}</template>
               · {{ dateTime(v.recorded_at) }}
               <template v-if="v.evidence_event_ids.length"> · {{ t('widgets.analysis.riskScope.evidence', { n: v.evidence_event_ids.length }) }}</template>
+            </p>
+            <ul v-if="v.evidence?.length" class="step-evidence" data-testid="step-evidence">
+              <li v-for="r in v.evidence" :key="r.event_id" class="ant-wrap">{{ d(new Date(r.occurred_at), 'dateTime') }} · {{ recordText(r) }}</li>
+            </ul>
+            <p v-if="v.change !== 'computed' && (v.items_removed?.length || v.items_added?.length)" class="step-items ant-wrap" data-testid="step-items">
+              <template v-if="v.items_removed?.length">{{ t('widgets.analysis.riskScope.itemsRemoved') }}: </template>
+              <button v-for="id in v.items_removed ?? []" :key="`r-${id}`" type="button" class="item-link" @click="emit('open-item', id)">{{ labelOf(id) }}</button>
+              <template v-if="v.items_added?.length">{{ t('widgets.analysis.riskScope.itemsAdded') }}: </template>
+              <button v-for="id in v.items_added ?? []" :key="`a-${id}`" type="button" class="item-link" @click="emit('open-item', id)">{{ labelOf(id) }}</button>
             </p>
             <p v-if="whereText(v)" class="step-where muted ant-wrap">{{ t('riskScope.breakdown.title') }}: {{ whereText(v) }}</p>
           </div>
@@ -276,10 +306,19 @@ function submit(): void {
         <span>{{ t('widgets.analysis.riskScope.expandItems') }}</span>
         <textarea v-model="typed" rows="2" data-testid="expand-items" />
       </label>
+      <fieldset class="evidence" data-testid="evidence-picks">
+        <legend>{{ t(form === 'narrow' ? 'widgets.analysis.riskScope.evidenceLegend' : 'widgets.analysis.riskScope.evidenceLegendOptional') }}</legend>
+        <label v-for="r in evidenceList" :key="r.event_id" class="evidence-row">
+          <input v-model="evidence" type="checkbox" :value="r.event_id" :data-evidence="r.event_id" />
+          <span class="ant-wrap"><span class="muted">{{ d(new Date(r.occurred_at), 'dateTime') }}</span> · {{ recordText(r) }}</span>
+        </label>
+        <p v-if="!evidenceList.length" class="muted ant-wrap" data-testid="no-evidence">{{ t('widgets.analysis.riskScope.noEvidence') }}</p>
+      </fieldset>
       <label>
         <span>{{ t('widgets.analysis.riskScope.reason') }}</span>
         <textarea v-model="reason" rows="2" required data-testid="scope-reason" />
       </label>
+      <p v-if="missing.length" class="missing ant-wrap" data-testid="form-missing">{{ t('widgets.analysis.riskScope.stillNeeded', { what: missing.join(' · ') }) }}</p>
       <p class="muted">{{ t(form === 'narrow' ? 'riskScope.narrowOnlyByHuman' : 'riskScope.expandIsCautious') }}</p>
       <div class="actions">
         <ActionButton overflow="wrap" :size="naiveSizeOf(density)" type="primary" attr-type="submit" :disabled="!formReady || busy || moment.isReplay" data-testid="scope-submit" :label="t('common.actions.send')" />
@@ -458,6 +497,70 @@ h4 {
 
 .step-basis.bad {
   color: var(--ant-status-danger-text);
+  font-weight: var(--ant-fw-bold);
+}
+
+.step-trigger {
+  color: var(--ant-status-attention-text);
+  font-weight: var(--ant-fw-bold);
+}
+
+.step[data-change='expanded'] .step-trigger {
+  color: var(--ant-status-danger-text);
+}
+
+.step-evidence {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding-left: var(--ant-space-4);
+  color: var(--ant-text-2);
+  font-size: var(--ant-fs-meta);
+}
+
+.step-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ant-space-1);
+  align-items: baseline;
+  font-size: var(--ant-fs-meta);
+}
+
+.item-link {
+  padding: 0 var(--ant-space-1);
+  border: 1px solid var(--ant-border);
+  border-radius: var(--ant-radius-sm);
+  background: var(--ant-surface);
+  color: var(--ant-accent);
+  font: inherit;
+  cursor: pointer;
+}
+
+.item-link:hover {
+  background: var(--ant-surface-hover);
+}
+
+.evidence {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ant-space-1);
+  max-height: 240px;
+  margin: 0;
+  padding: var(--ant-space-1) var(--ant-space-2);
+  overflow-y: auto;
+  border: 1px solid var(--ant-border);
+  border-radius: var(--ant-radius-sm);
+}
+
+.form .evidence-row {
+  flex-direction: row;
+  gap: var(--ant-space-2);
+  align-items: baseline;
+}
+
+.missing {
+  color: var(--ant-status-attention-text);
   font-weight: var(--ant-fw-bold);
 }
 

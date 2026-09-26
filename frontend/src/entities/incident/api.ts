@@ -216,7 +216,10 @@ export function useFocusedNc() {
   const focus = useAnalysisFocusStore()
   const fromRoute = useQueryParam('nc')
   const { group } = useFocusedGroup()
-  return computed(() => focus.ncId ?? fromRoute.value ?? group.value?.nc_ids?.[0] ?? null)
+  // Несоответствие расследования (primary_nc_id) — вход гипотез и дорожек; первое в группе — запасной путь.
+  const { list, id } = useFocusedIncident()
+  const primary = computed(() => list.value.find((i) => i.incident_id === id.value)?.primary_nc_id ?? null)
+  return computed(() => focus.ncId ?? fromRoute.value ?? primary.value ?? group.value?.nc_ids?.[0] ?? null)
 }
 
 /** Инцидент в разборе: выбранный, из адреса (`?incident=`), иначе первый открытый. */
