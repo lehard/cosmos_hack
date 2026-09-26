@@ -10,7 +10,8 @@
  */
 import { computed, ref, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NDatePicker, NRadioButton, NRadioGroup, NSelect } from 'naive-ui'
+import { NDatePicker, NIcon, NRadioButton, NRadioGroup, NSelect, NTooltip } from 'naive-ui'
+import { InfoCircle } from '@vicons/tabler'
 import type { CounterPeriod, LiveMapData, NodeAnomaly, NodeCounters } from '@/entities/live-map'
 import type { ProcessSummary } from '@/shared/api/generated/model'
 import { naiveSizeOf, type Density } from '@/shared/config/widget'
@@ -47,6 +48,8 @@ const PERIODS: CounterPeriod[] = ['shift', 'day', 'week', 'month', 'custom']
 const index = shallowRef<DiagramIndex | null>(null)
 const importError = ref<Error | null>(null)
 const selected = ref<string | null>(null)
+/** Плашка инцидента развёрнута; свёрнутая — одна строка поверх схемы. */
+const incidentOpen = ref(true)
 
 // Новая схема — прежний выбор узла может быть не из неё.
 watch(
@@ -146,31 +149,19 @@ function onReady(idx: DiagramIndex) {
           @update:value="(v: string) => emit('select-version', v)"
         />
       </div>
-    </div>
-    <p v-if="otherVersions" class="note" data-testid="other-versions">
-      {{ t('liveMap.ownVersionNote') }} · {{ t('plural.items', { n: otherVersions }, otherVersions) }}
-    </p>
-
-    <section v-if="incident && reduction" class="incident" data-testid="incident">
-      <div class="incident-head">
-        <strong>{{ t('liveMap.incident.modeTitle', { incident: incident.label }) }}</strong>
-        <span data-testid="scope-version">{{ t('riskScope.version', { version: incident.scope_version }) }}</span>
-        <span class="reduction" data-testid="scope-reduction">
-          {{ t('riskScope.reduction', { from: reduction.from, to: reduction.to }) }}
-          · {{ t('riskScope.reductionPercent', { percent: n(reduction.fraction, 'percent') }) }}
+      <NTooltip placement="bottom-end">
+        <template #trigger>
+          <NIcon class="hint" size="18" :aria-label="t('liveMap.noPeopleOnMap')" tabindex="0"><InfoCircle /></NIcon>
+        </template>
+        <span class="ant-wrap">{{ t('liveMap.noPeopleOnMap') }}</span>
+        <span v-if="otherVersions" class="ant-wrap" data-testid="other-versions">
+          <br />{{ t('liveMap.ownVersionNote') }} · {{ t('plural.items', { n: otherVersions }, otherVersions) }}
         </span>
-      </div>
-      <p v-if="incident.basis" class="basis">{{ t('riskScope.basis') }}: {{ incident.basis }}</p>
-      <ul class="legend">
-        <li v-for="l in INCIDENT_LEGEND" :key="l.status" :data-legend="l.status">
-          <span class="swatch" :style="{ background: l.color }" aria-hidden="true" />{{ t(l.textKey) }}
-        </li>
-      </ul>
-      <p class="note">{{ t('liveMap.incident.colorNote') }}</p>
-    </section>
+      </NTooltip>
+    </div>
 
-    <div class="body">
-      <div class="map">
+    <div class="map">
+      <div class="canvas-box">
         <p v-if="importError" class="import-error" role="alert">{{ t('errors.loadFailed') }}</p>
         <BpmnMapViewer
           :xml="data.bpmn_xml"
@@ -188,6 +179,41 @@ function onReady(idx: DiagramIndex) {
           @open-item="(id) => emit('open-item', id)"
         />
       </div>
+
+      <!-- Режим инцидента — плашкой поверх схемы: место под схему не меняется. -->
+      <section v-if="incident && reduction" class="incident" :data-open="incidentOpen || undefined" data-testid="incident">
+      <div class="incident-head">
+        <ActionButton
+          text
+          size="tiny"
+          class="incident-toggle"
+          :label="incidentOpen ? '▾' : '▸'"
+          :aria-expanded="incidentOpen"
+          :aria-label="incidentOpen ? t('liveMap.incident.collapse') : t('liveMap.incident.expand')"
+          @click="incidentOpen = !incidentOpen"
+        />
+        <strong>{{ t('liveMap.incident.modeTitle', { incident: incident.label }) }}</strong>
+        <span data-testid="scope-version">{{ t('riskScope.version', { version: incident.scope_version }) }}</span>
+        <span class="reduction" data-testid="scope-reduction">
+          {{ t('riskScope.reduction', { from: reduction.from, to: reduction.to }) }}
+          · {{ t('riskScope.reductionPercent', { percent: n(reduction.fraction, 'percent') }) }}
+        </span>
+      </div>
+      <template v-if="incidentOpen">
+        <p v-if="incident.basis" class="basis ant-clamp-2" :title="incident.basis">{{ t('riskScope.basis') }}: {{ incident.basis }}</p>
+        <ul class="legend">
+          <li v-for="l in INCIDENT_LEGEND" :key="l.status" :data-legend="l.status">
+            <span class="swatch" :style="{ background: l.color }" aria-hidden="true" />{{ t(l.textKey) }}
+          </li>
+        </ul>
+        <p class="note">{{ t('liveMap.incident.colorNote') }}</p>
+      </template>
+      </section>
+    </div>
+
+    <!-- Полоса времени — часть карты, постоянной высоты (UI-19). -->
+    <div v-if="$slots.timeline" class="timeline-strip">
+      <slot name="timeline" />
     </div>
 
     <RecordDrawer
@@ -216,7 +242,6 @@ function onReady(idx: DiagramIndex) {
         />
       </template>
     </RecordDrawer>
-    <p class="note">{{ t('liveMap.noPeopleOnMap') }}</p>
   </div>
 </template>
 
@@ -231,22 +256,32 @@ function onReady(idx: DiagramIndex) {
 
 .toolbar {
   display: flex;
-  flex-wrap: wrap;
+  flex: none;
+  flex-wrap: nowrap;
   gap: 8px;
   align-items: center;
+  min-width: 0;
 }
 
 .selects {
   display: flex;
-  flex-wrap: wrap;
+  flex: 1 1 auto;
+  flex-wrap: nowrap;
   gap: 8px;
-  margin-left: auto;
+  justify-content: flex-end;
+  min-width: 0;
 }
 
 .process,
 .version {
-  width: auto;
-  min-width: 260px;
+  flex: 0 1 300px;
+  min-width: 160px;
+}
+
+.hint {
+  flex: none;
+  color: var(--ant-text-3);
+  cursor: help;
 }
 
 .note {
@@ -255,17 +290,41 @@ function onReady(idx: DiagramIndex) {
   font-size: var(--ant-fs-meta);
 }
 
+/* Схема — вся оставшаяся высота и ширина, строго внутри своей рамки:
+   двигаемся по схеме, не по странице; размер не зависит от инцидента и времени. */
+.map {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 420px;
+  border: 1px solid var(--ant-border);
+  border-radius: var(--ant-radius-md);
+  overflow: hidden;
+}
+
+.canvas-box {
+  position: absolute;
+  inset: 0;
+}
+
 .incident {
-  padding: 8px 12px;
+  position: absolute;
+  top: var(--ant-space-2);
+  left: var(--ant-space-2);
+  z-index: 2;
+  max-width: min(760px, calc(100% - var(--ant-space-4)));
+  padding: var(--ant-space-2) var(--ant-space-3);
   border-left: 3px solid var(--ant-status-danger);
   border-radius: var(--ant-radius-sm);
   background: var(--ant-status-danger-soft);
+  box-shadow: var(--ant-shadow-md);
+  font-size: var(--ant-fs-meta);
 }
 
 .incident-head {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 4px 10px;
   align-items: baseline;
 }
 
@@ -275,17 +334,15 @@ function onReady(idx: DiagramIndex) {
 
 .basis {
   margin: 4px 0 0;
-  font-size: var(--ant-fs-body);
 }
 
 .legend {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 16px;
-  margin: 6px 0 4px;
+  gap: 2px 12px;
+  margin: 4px 0 2px;
   padding: 0;
   list-style: none;
-  font-size: var(--ant-fs-body);
 }
 
 .swatch {
@@ -296,22 +353,9 @@ function onReady(idx: DiagramIndex) {
   border-radius: 50%;
 }
 
-/* Схема — вся оставшаяся высота: в разделе «на всю высоту» до низа окна,
-   в обычном месте — не ниже минимума. Двигаемся по схеме, не по странице. */
-.body {
-  display: flex;
-  flex: 1 1 auto;
-  min-height: 0;
-}
-
-.map {
-  position: relative;
-  flex: 1 1 auto;
-  min-width: 0;
-  min-height: 420px;
-  border: 1px solid var(--ant-border);
-  border-radius: var(--ant-radius-md);
-  overflow: hidden;
+.timeline-strip {
+  flex: none;
+  padding-top: var(--ant-space-1);
 }
 
 .import-error {

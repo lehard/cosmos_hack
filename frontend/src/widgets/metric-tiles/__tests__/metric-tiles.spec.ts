@@ -72,18 +72,6 @@ describe('плитки показателей', () => {
     expect(new URL(urls[1]!, 'http://ant.local').searchParams.get('period')).toBe('week')
   })
 
-  it('сервер вернул другой период, чем выбран, — сказано словами рядом с переключателем', async () => {
-    mockApi({ 'GET /api/v1/metrics/tiles': tiles() })
-    const w = await mountWidget(MetricTilesWidget, props)
-    // Выбрана смена (по умолчанию), а в ответе — сутки.
-    expect(w.find('[data-testid="other-period"]').text()).toBe('Числа — за сутки: за выбранный период сервер данных не дал')
-    useMetricFocusStore().period = 'day'
-    await vi.waitFor(async () => {
-      await new Promise((r) => setTimeout(r, 0))
-      expect(w.find('[data-testid="other-period"]').exists()).toBe(false)
-    })
-  })
-
   it('ошибка сервера — «ошибка входа» с текстом по коду', async () => {
     mockApi({})
     const w = await mountWidget(MetricTilesWidget, props)

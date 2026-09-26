@@ -86,6 +86,8 @@ export const bpmnXml = `<?xml version="1.0" encoding="UTF-8"?>
 export const liveMap = (over: Partial<LiveMap> = {}): LiveMap => ({
   basis_seq: 9000,
   bpmn_xml: bpmnXml,
+  process_id: 'Process_Flange',
+  process_name: 'Фланец люка гермокорпуса в сборе',
   process_version: { process_version_id: 'flange-1', label: 'v1', is_current: true, items: 47 },
   versions: [{ process_version_id: 'flange-1', label: 'v1', is_current: true, items: 47 }],
   counters: [

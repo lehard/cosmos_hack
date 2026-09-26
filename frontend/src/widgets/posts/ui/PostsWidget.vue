@@ -4,6 +4,8 @@
  * момент из useMomentStore; вынутый ключ приходит событием SSE `workplace` и
  * перечитывает панель (проверка FR-6: не позднее 2 с). Срез: `workshop` — цех,
  * `run_id` — прогон сценария.
+ * Щелчок по посту, назначенному сотруднику, изделию — правое окно записи
+ * (Д-70): `workplace`, `person`, `item`; нет окна поста или сотрудника — текст.
  */
 import { computed } from 'vue'
 import { usePosts } from '@/entities/workplace'
@@ -29,6 +31,9 @@ const query = usePosts(
   }),
 )
 const rows = computed(() => query.data.value?.data ?? null)
+// Id не важен: окно ставится на вид записи целиком.
+const canOpenPost = computed(() => drill.canOpen({ entity: 'workplace', id: '-' }))
+const canOpenPerson = computed(() => drill.canOpen({ entity: 'person', id: '-' }))
 </script>
 
 <template>
@@ -42,6 +47,14 @@ const rows = computed(() => query.data.value?.data ?? null)
     :empty="!!rows && !rows.length"
     :data-widget="widgetId"
   >
-    <PostsTable v-if="rows" :rows="rows" @open-item="(id) => drill.open({ entity: 'item', id })" />
+    <PostsTable
+      v-if="rows"
+      :rows="rows"
+      :can-open-post="canOpenPost"
+      :can-open-person="canOpenPerson"
+      @open-post="(id) => drill.open({ entity: 'workplace', id })"
+      @open-person="(id) => drill.open({ entity: 'person', id })"
+      @open-item="(id) => drill.open({ entity: 'item', id })"
+    />
   </WidgetFrame>
 </template>

@@ -9,7 +9,6 @@
  * рядом с переключателем — иначе кажется, что переключатель не работает.
  */
 import { computed } from 'vue'
-import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import type { MetricTile } from '@/shared/api/generated/model'
 import { PeriodPicker, useMetricFocusStore, useMetricTiles } from '@/entities/metric'
@@ -24,21 +23,10 @@ const props = defineProps<WidgetProps>()
 const src = useMetricTiles()
 const focus = useMetricFocusStore()
 const router = useRouter()
-const { t, d } = useI18n()
 
 const tiles = computed(() => src.data.value?.items ?? [])
 /** Все плитки «оценка невозможна» — так и говорим, а не «норма». */
 const state = computed<WidgetDataState>(() => (tiles.value.length && tiles.value.every((x) => x.unknown) ? 'unable_to_assess' : 'normal'))
-
-/** Сервер отдал числа за другой период, чем выбран: подпись и точные границы. */
-const otherPeriod = computed(() => {
-  const p = src.data.value?.period
-  if (!p || p.kind === focus.period) return null
-  return {
-    text: t('widgets.analytics.tiles.otherPeriod', { period: t(`widgets.analytics.tiles.periodFor.${p.kind}`) }),
-    range: t('widgets.analytics.periodRange', { from: d(new Date(p.from), 'dateTime'), to: d(new Date(p.to), 'dateTime') }),
-  }
-})
 
 function open(tile: MetricTile): void {
   focus.select({ metricId: tile.metric_id, title: tile.title })
@@ -61,9 +49,6 @@ function open(tile: MetricTile): void {
     <div class="head">
       <ToolBar>
         <PeriodPicker :size="naiveSizeOf(density)" />
-        <span v-if="otherPeriod" class="period-note ant-ellipsis" data-testid="other-period" :title="`${otherPeriod.text}. ${otherPeriod.range}`">
-          {{ otherPeriod.text }}
-        </span>
       </ToolBar>
     </div>
     <MetricTilesView :tiles="tiles" :density="density" @open="open" />
@@ -75,8 +60,4 @@ function open(tile: MetricTile): void {
   margin-bottom: var(--ant-space-2);
 }
 
-.period-note {
-  color: var(--ant-text-3);
-  font-size: var(--ant-fs-meta);
-}
 </style>

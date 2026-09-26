@@ -10,7 +10,7 @@ import { liveMapKeys, type TimelineData } from '@/entities/live-map'
 import type { Envelope } from '@/shared/api/response'
 import { i18n } from '@/shared/i18n'
 import { useMomentStore } from '@/shared/model/moment'
-import { advance, toMoment, usePlayback } from '../model/playback'
+import { advance, toMoment, usePlayback } from '@/features/playback'
 import MapTimelineWidget from '../ui/MapTimelineWidget.vue'
 
 const FROM = Date.parse('2026-09-23T06:00:00.000Z')

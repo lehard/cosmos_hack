@@ -19,8 +19,8 @@ tabs:
     title_key: desks.processes
     layout: single
     slots:
+      # Таймлайн — часть живой карты (полоса внизу, UI-19), отдельного слота нет.
       - {id: map, area: main, widget: live-map, slice: {counters: [queue, in_progress, passed, defects], period: shift}}
-      - {id: timeline, area: main, widget: map-timeline}
   - id: posts
     title_key: desks.posts
     layout: single
