@@ -672,34 +672,46 @@ func (s *Service) planEvents(st *RunState, rp *runPlan, all bool, expand func(an
 	if all {
 		from = 0
 	}
-	for i := from; i < len(em); {
+	// сводки по минутам одного источника и изделия — одна строка, пока идут
+	// подряд (разрыв больше 2 минут — новая строка)
+	type group struct {
+		row   int
+		last  time.Time
+		count int
+		src   string
+	}
+	open := map[string]*group{}
+	for i := from; i < len(em); i++ {
 		e := em[i]
-		j := i + 1
+		src := e.SourceID
+		if x, ok := rp.world.Sources[e.SourceKey]; ok && x.Equipment != "" {
+			src = x.Equipment
+		}
 		if e.EventType == "equipment.cycle.summarized" {
-			for j < len(em) && em[j].EventType == e.EventType && em[j].SourceKey == e.SourceKey && em[j].Scenario == e.Scenario {
-				j++
+			key := e.SourceKey + "|" + e.Scenario + "|" + e.Item + "|" + labelItem(e.Label)
+			if g := open[key]; g != nil && e.DeliverAt.Sub(g.last) <= 2*time.Minute {
+				g.last, g.count = e.DeliverAt, g.count+1
+				u := e.DeliverAt
+				out[g.row].Until = &u
+				out[g.row].Title = fmt.Sprintf("Журнал %s: сводки по минутам (%d)", g.src, g.count)
+				out[g.row].Done = i < st.Cursor.Emissions
+				continue
 			}
+			open[key] = &group{row: len(out), last: e.DeliverAt, count: 1, src: src}
 		}
 		r := PlanEntry{At: e.DeliverAt, Kind: "event", Label: e.Label, Done: i < st.Cursor.Emissions}
 		if e.Item != "" {
 			r.ItemID = expand("{item:" + e.Item + "}")
 		}
-		src := e.SourceID
-		if x, ok := rp.world.Sources[e.SourceKey]; ok && x.Equipment != "" {
-			src = x.Equipment
-		}
 		switch {
-		case j-i > 1:
-			u := em[j-1].DeliverAt
-			r.Until = &u
-			r.Title = fmt.Sprintf("Журнал %s: сводки по минутам (%d)", src, j-i)
+		case e.EventType == "equipment.cycle.summarized":
+			r.Title = fmt.Sprintf("Журнал %s: сводки по минутам (1)", src)
 		case rp.notes[e.Label] != "":
 			r.Title = rp.notes[e.Label]
 		default:
 			r.Title = e.EventType + " — " + src
 		}
 		out = append(out, r)
-		i = j
 	}
 	nom, tol := rp.world.Route.CurrentNominal, rp.world.Route.CurrentTol
 	for _, w := range rp.plan.Truth.Welds {
@@ -718,4 +730,11 @@ func (s *Service) planEvents(st *RunState, rp *runPlan, all bool, expand func(an
 			Title: fmt.Sprintf("Сбой: %s уходит из уставки — ток %d–%d А при уставке %d ± %d (сварка %s, %s)", eq, w.CurrentMin, w.CurrentMax, nom, tol, w.Run, w.Item)})
 	}
 	return out
+}
+
+// labelItem — изделие метки события (‹изделие›/‹этап›/…): сводки тока разных
+// сварок не склеиваются в одну строку плана.
+func labelItem(label string) string {
+	item, _, _ := strings.Cut(label, "/")
+	return item
 }

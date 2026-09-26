@@ -270,7 +270,7 @@ func (g *gen) stepWeld(scenario string, st *Step) {
 	for _, d := range g.weldCycles(wt, ln.WeldingSource, runID, NewRand(g.seed, "weld/"+w.Run), false) {
 		d.scenario = scenario
 	}
-	g.act(Action{Kind: ActionDecision, At: wt.End, Scenario: scenario, Label: w.Run + "/finish", Note: "Сварка " + w.Run + " — «Выполнено»", Operation: "process.operation.finish",
+	g.act(Action{Kind: ActionDecision, At: wt.End, Scenario: scenario, Label: w.Run + "/finish", Note: "Сварка " + w.Run + " (" + w.Item + ") — «Выполнено»", Operation: "process.operation.finish",
 		Role: "performer", Actor: actor, Item: w.Item, Params: map[string]any{"run_id": runID}, Body: map[string]any{"completion": "completed"}})
 }
 
