@@ -83,6 +83,21 @@ describe('мои расследования', () => {
     expect(w.find('[data-testid="close-blockers"]').text()).toContain('«почему не остановили раньше»')
   })
 
+  it('виджет: несоответствия расследования — ссылками с номером; щелчок — расследование и несоответствие в фокусе', async () => {
+    mockApi({
+      'GET /api/v1/incidents': { items: [incident('RS-01', { nc_ids: ['NC-03'] } as Partial<IncidentSummary>)] },
+      'GET /api/v1/nonconformities/NC-03': { nc_id: 'NC-03', number: 'НС-03', item_label: 'Ф-003', status: 'isolated' },
+    })
+    const w = await mountWidget(InvestigationsWidget, { widgetId: 'investigations', titleKey: 'widgets.analysis.investigations.title' })
+    const link = w.find('[data-testid="nc-link"]')
+    expect(link.text()).toContain('НС-03')
+    expect(link.text()).toContain('Ф-003')
+    await link.trigger('click')
+    setActivePinia(w.vm.$pinia)
+    expect(useAnalysisFocusStore().incidentId).toBe('RS-01')
+    expect(useAnalysisFocusStore().ncId).toBe('NC-03')
+  })
+
   it('виджет: первый открытый инцидент выбран; щелчок — инцидент в фокус разбора', async () => {
     mockApi({ 'GET /api/v1/incidents': { items: [incident('RS-01'), incident('RS-02', { opened_at: '2026-09-23T12:00:00Z' })] } })
     const w = await mountWidget(InvestigationsWidget, { widgetId: 'investigations', titleKey: 'widgets.analysis.investigations.title' })
