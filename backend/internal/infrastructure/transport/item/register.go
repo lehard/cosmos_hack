@@ -85,6 +85,13 @@ func Register(api *httpapi.API, q app.Queries, c app.Commands) {
 			return c.Register(ctx, in.Body)
 		})
 
+	httpapi.Do(api, httpapi.Post("/items/{item_id}/split", "Разделить изделие 1→N",
+		"FR-15: части регистрируются как новые изделия (item.item.registered с split_from); происхождение и партии исходного переносит межизделийная стадия (genealogy.link.added, AD-42)."),
+		platform.Action{ID: "item.item.split", Class: platform.ClassRecord, Owner: owner, Subject: "item", Emits: emits(catalog.ItemItemRegistered), SignatureLevel: 1},
+		func(ctx context.Context, in *itemCmd[app.SplitItem]) (platform.Receipt, error) {
+			return c.Split(ctx, in.ItemID, in.Body)
+		})
+
 	httpapi.Do(api, httpapi.Post("/items/{item_id}/carriers", "Нанести носитель", "AD-16: бирка с QR, DPM, тара с ячейкой; перемаркировка — replaces_value."),
 		platform.Action{ID: "item.carrier.apply", Class: platform.ClassRecord, Owner: owner, Subject: "item", Emits: emits(catalog.ItemCarrierApplied), SignatureLevel: 1},
 		func(ctx context.Context, in *itemCmd[app.ApplyCarrier]) (platform.Receipt, error) {

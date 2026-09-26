@@ -112,7 +112,7 @@ func Guard(s State, env Env, cmd kernel.Command) error {
 		if !slices.ContainsFunc(s.OpenInterventions(), func(iv Intervention) bool { return iv.ID == c.ID }) {
 			return kernel.Refuse(errcodes.ItemInterventionNotOpen, "intervention_id", c.ID)
 		}
-	case "item.presentation.record", "item.assembly.record", "item.release.record":
+	case "item.presentation.record", "item.assembly.record", "item.release.record", "item.item.split":
 		if s.Released {
 			return kernel.Refuse(errcodes.ItemAlreadyReleased, "item_id", s.ItemID)
 		}

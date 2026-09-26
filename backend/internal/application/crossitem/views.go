@@ -24,6 +24,8 @@ type Lot struct {
 	ReceivedAt         *time.Time `json:"received_at,omitempty"`
 	RegisteredAt       *time.Time `json:"registered_at,omitempty"`
 	BasisSeq           int64      `json:"basis_seq"`
+	Kind               string     `json:"kind,omitempty" doc:"Вид: lot — партия, heat — плавка (FR-45)."`
+	HeatNo             string     `json:"heat_no,omitempty" doc:"Номер плавки партии."`
 }
 
 // LotList — партии.
@@ -37,6 +39,10 @@ type LotItem struct {
 	ItemID   string `json:"item_id"`
 	Label    string `json:"label"`
 	Relation string `json:"relation" enum:"made_from_lot,issued" doc:"Связь генеалогии."`
+	// Assembled, Via — изделие собрано из изделия партии (FR-45: «партия → все
+	// изделия, включая собранные»).
+	Assembled bool   `json:"assembled,omitempty" doc:"Сборка, в которую вошло изделие партии (FR-45)."`
+	Via       string `json:"via,omitempty" doc:"Изделие партии, через которое сборка попала в список."`
 }
 
 // LotIssue — выдача из партии.
@@ -65,6 +71,42 @@ type ItemGroup struct {
 	WitnessItemID string     `json:"witness_item_id,omitempty" doc:"Образец-свидетель."`
 	FormedAt      time.Time  `json:"formed_at"`
 	DissolvedAt   *time.Time `json:"dissolved_at,omitempty"`
+}
+
+// TraceItem — изделие в ответе «партия / плавка / садка → все изделия» (FR-45).
+type TraceItem struct {
+	ItemID    string `json:"item_id"`
+	Label     string `json:"label"`
+	Relation  string `json:"relation" doc:"made_from_lot — из партии или плавки; grouped_with — в садке; assembled — собрано из них."`
+	Via       string `json:"via,omitempty" doc:"Изделие, через которое сборка попала в список."`
+	Assembled bool   `json:"assembled"`
+}
+
+// Trace — «партия / плавка / садка → все изделия, включая собранные» (FR-45).
+type Trace struct {
+	LotID   string      `json:"lot_id,omitempty"`
+	HeatNo  string      `json:"heat_no,omitempty"`
+	GroupID string      `json:"group_id,omitempty"`
+	Items   []TraceItem `json:"items"`
+}
+
+// UnboundEvent — событие без изделия в межизделийной стадии (AD-41, FR-34):
+// носитель, кандидаты, текущая привязка — для ручной привязки контролёром.
+type UnboundEvent struct {
+	EventID    string    `json:"event_id"`
+	EventType  string    `json:"event_type"`
+	OccurredAt time.Time `json:"occurred_at"`
+	SourceID   string    `json:"source_id,omitempty"`
+	CarrierRef string    `json:"carrier_ref,omitempty"`
+	Candidates []string  `json:"candidates"`
+	BoundTo    string    `json:"bound_to,omitempty"`
+	Basis      string    `json:"basis,omitempty" doc:"carrier — по носителю; manual — человеком."`
+	RunID      string    `json:"run_id,omitempty"`
+}
+
+// UnboundList — события без изделия: неразрешённые и неоднозначные.
+type UnboundList struct {
+	Items []UnboundEvent `json:"items"`
 }
 
 // ItemGroupList — группы.

@@ -10,6 +10,7 @@ import (
 	analyticsapp "ant/internal/application/analytics"
 	crossitemapp "ant/internal/application/crossitem"
 	engineapp "ant/internal/application/engine"
+	itemapp "ant/internal/application/item"
 	appjournal "ant/internal/application/journal"
 	machinelogsapp "ant/internal/application/machinelogs"
 	qualityapp "ant/internal/application/quality"
@@ -30,6 +31,7 @@ import (
 func engineRegistry() *engineapp.Registry {
 	r := engineapp.NewRegistry()
 	mustRegister(qualityapp.Register(r)) // эпик 20: quality.item, quality.index, вклады показателей качества
+	mustRegister(itemapp.Register(r))    // эпик 18: item.row, item.index
 	// machinelogs (эпик 23): профили выполнения изделия, индекс выполнений,
 	// состояние и журнал оборудования, окна нарушений специального процесса.
 	if err := machinelogsapp.RegisterProjections(r, mldomain.Env{}); err != nil {
@@ -63,7 +65,7 @@ func runWorker(ctx context.Context, env *environment) error {
 	wf := feed.NewWorkFeed(c.journal, c.leases, c.listener, env.cfg.Engine.Partitions, c.feedOptions(env, "worker"))
 	w := engineapp.NewWorker(engineapp.WorkerConfig{
 		Feed: wf, Codec: c.codec, Projections: c.registry, Log: env.log, Now: c.codec.Now,
-		Bundles: c.qualityBundles(nil), // эпик 20; эпик 17 передаст сюда свой источник версии
+		Bundles: c.engineBundles(), // эпики 18, 20; эпик 17 передаст сюда свой источник версии
 		// Аренды партиций продлевает WorkFeed.Partitions — не реже TTL/3.
 		Refresh: c.ttl / 3,
 	})
@@ -114,7 +116,7 @@ func runRebuild(ctx context.Context, env *environment) error {
 	if err != nil {
 		return err
 	}
-	rb := &engineapp.Rebuilder{Codec: c.codec, Registry: c.registry, Bundles: c.qualityBundles(nil)}
+	rb := &engineapp.Rebuilder{Codec: c.codec, Registry: c.registry, Bundles: c.engineBundles()}
 	var rep engineapp.RebuildReport
 	if env.item != "" {
 		rep, err = rb.RebuildItem(ctx, env.item, env.reason)

@@ -96,6 +96,18 @@ func runAPI(ctx context.Context, env *environment) error {
 			return err
 		}
 	}
+	if modeOf(opts, "item") == platform.ModeLive {
+		// Паспорт, носители, генеалогия (эпик 18).
+		if opts.item, err = itemLive(ctx, env); err != nil {
+			return err
+		}
+	}
+	if modeOf(opts, "crossitem") == platform.ModeLive {
+		// Партии, садки, привязка событий без изделия (эпик 18).
+		if opts.crossitem, err = crossitemLive(ctx, env); err != nil {
+			return err
+		}
+	}
 	if modeOf(opts, "analysis") == platform.ModeLive {
 		if opts.analysis, err = analysisLive(ctx, env); err != nil {
 			return err
