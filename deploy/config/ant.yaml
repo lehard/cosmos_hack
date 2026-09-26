@@ -114,6 +114,12 @@ profiles:
   demo:
     ports:
       mode: live
+    # Эпик 35 (прогон MS-1): десятки потребителей проектора в одном процессе —
+    # пул больше 10, иначе они ждут соединения; фиксации не ждут сброса WAL
+    # на диск (db.synchronous_commit, docs/scaling.md §8).
+    db:
+      max_conns: 24
+      synchronous_commit: "off"
     # integrations.enabled — список stand-ов заполняют эпики интеграций.
     integrations:
       enabled: [onec] # эпик 30: обмен с stand-ом 1С (роли outbox и stands)
@@ -129,6 +135,7 @@ profiles:
       fold_parallelism: 4
     db:
       max_conns: 30
+      synchronous_commit: "off"
     journal:
       batch_max: 1024
 

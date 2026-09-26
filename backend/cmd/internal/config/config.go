@@ -195,6 +195,12 @@ type DB struct {
 	SSLMode        string        `yaml:"sslmode"`
 	MaxConns       int           `yaml:"max_conns"`
 	ConnectTimeout time.Duration `yaml:"connect_timeout"`
+	// SynchronousCommit — synchronous_commit соединений ant (on | off; пусто —
+	// как на сервере). off в demo и load (эпик 35): фиксация не ждёт сброса
+	// WAL на диск — после сбоя БД теряется разве что последняя доля секунды
+	// подтверждённых записей, порядок и целостность журнала сохраняются. В prod
+	// не задаётся: записи журнала подтверждаются только после сброса на диск.
+	SynchronousCommit string `yaml:"synchronous_commit"`
 }
 
 // file — формат deploy/config/ant.yaml.
