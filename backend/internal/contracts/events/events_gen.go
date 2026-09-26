@@ -4753,6 +4753,10 @@ type PolicyAuthorityGrantedV1 struct {
 	// Кто делегировал, если это делегирование.
 	DelegatedBy *PersonRef `json:"delegated_by,omitempty,omitzero"`
 
+	// Документ «Выдача ролей, полномочий, клейм» с закрытым маршрутом подписей
+	// (AD-13, AD-43); отсутствует — обычная выдача одной подписью.
+	DocumentID *ObjectID `json:"document_id,omitempty,omitzero"`
+
 	// Рамки полномочия.
 	Limits *AuthorityLimits `json:"limits,omitempty,omitzero"`
 
@@ -4765,6 +4769,10 @@ type PolicyAuthorityGrantedV1 struct {
 	// Область действия: путь `здание/цех/участок/рабочее место` (иерархия областей,
 	// AD-15).
 	Scope string `json:"scope"`
+
+	// Вторая подпись независимой стороны (AD-11, PRD §11.16): начальник ОТК,
+	// руководитель производства или Аудитор ИБ; не инициатор и не получатель.
+	SecondSignatureBy *PersonRef `json:"second_signature_by,omitempty,omitzero"`
 
 	// Начало действия (доменное время).
 	ValidFrom Timestamp `json:"valid_from"`
@@ -4796,6 +4804,10 @@ type PolicyAuthorityRevokedV1 struct {
 // («исполнитель — пост сварки 2»); привилегированные выдачи — со второй подписью
 // независимой стороны (AD-11, PRD §11.16).
 type PolicyRoleAssignedV1 struct {
+	// Документ «Выдача ролей, полномочий, клейм» с закрытым маршрутом подписей
+	// (AD-13, AD-43); отсутствует — обычная выдача одной подписью.
+	DocumentID *ObjectID `json:"document_id,omitempty,omitzero"`
+
 	// Сотрудник.
 	PersonID PersonRef `json:"person_id"`
 
@@ -4805,6 +4817,10 @@ type PolicyRoleAssignedV1 struct {
 	// Область действия: путь `здание/цех/участок/рабочее место` (иерархия областей,
 	// AD-15).
 	Scope string `json:"scope"`
+
+	// Вторая подпись независимой стороны (AD-11, PRD §11.16): начальник ОТК,
+	// руководитель производства или Аудитор ИБ; не инициатор и не получатель.
+	SecondSignatureBy *PersonRef `json:"second_signature_by,omitempty,omitzero"`
 
 	// Начало действия (доменное время).
 	ValidFrom Timestamp `json:"valid_from"`
@@ -4868,6 +4884,10 @@ type PolicySodRuleSetV1 struct {
 // Цифровое клеймо выдано — цифровое клеймо контролёра: по приказу, одно на вид
 // контроля, с областью и сроком (FR-145); выдачу согласует начальник ОТК (AD-11).
 type PolicyStampIssuedV1 struct {
+	// Документ «Выдача ролей, полномочий, клейм» с закрытым маршрутом подписей
+	// (AD-13, AD-43); отсутствует — обычная выдача одной подписью.
+	DocumentID *ObjectID `json:"document_id,omitempty,omitzero"`
+
 	// Вид контроля.
 	InspectionKind Code `json:"inspection_kind"`
 
@@ -4880,6 +4900,10 @@ type PolicyStampIssuedV1 struct {
 	// Область действия: путь `здание/цех/участок/рабочее место` (иерархия областей,
 	// AD-15).
 	Scope string `json:"scope"`
+
+	// Вторая подпись независимой стороны (AD-11, PRD §11.16): начальник ОТК,
+	// руководитель производства или Аудитор ИБ; не инициатор и не получатель.
+	SecondSignatureBy *PersonRef `json:"second_signature_by,omitempty,omitzero"`
 
 	// Клеймо (номер).
 	StampID ObjectID `json:"stamp_id"`

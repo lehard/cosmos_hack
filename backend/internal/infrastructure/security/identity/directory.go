@@ -48,9 +48,28 @@ type policyFile struct {
 		ID       string   `yaml:"id"`
 		Title    string   `yaml:"title"`
 		CaseRole bool     `yaml:"case_role"`
+		Domain   string   `yaml:"domain"`
+		CardOnly bool     `yaml:"card_only"`
 		Inherits []string `yaml:"inherits"`
 		Actions  []string `yaml:"actions"`
 	} `yaml:"roles"`
+	Authorities []struct {
+		ID     string `yaml:"id"`
+		Title  string `yaml:"title"`
+		Domain string `yaml:"domain"`
+	} `yaml:"authorities"`
+	StampKinds []string `yaml:"stamp_kinds"`
+	GrantRoute struct {
+		Template string                 `yaml:"template"`
+		Route    []accessdom.RouteStage `yaml:"route"`
+	} `yaml:"grant_route"`
+	Audit struct {
+		CheckpointIntervalS    int      `yaml:"checkpoint_interval_s"`
+		CheckpointMaxGapS      int      `yaml:"checkpoint_max_gap_s"`
+		KeeperKeyFingerprint   string   `yaml:"keeper_key_fingerprint"`
+		CriticalTypes          []string `yaml:"critical_types"`
+		SecurityBusSubscribers []string `yaml:"security_bus_subscribers"`
+	} `yaml:"audit"`
 	Persons []struct {
 		ID    string `yaml:"id"`
 		Name  string `yaml:"name"`
@@ -96,10 +115,20 @@ func LoadSeed(fsys fs.FS) (accessdom.Seed, error) {
 		return accessdom.Seed{}, err
 	}
 	s := accessdom.Seed{Root: pf.Scopes.Root, Unauthenticated: pf.UnauthenticatedRole}
+	// Справочная часть (эпик 26): сферы ролей и полномочий, «только карточка»,
+	// маршрут документа выдачи, параметры аудита по умолчанию.
+	s.Catalog = accessdom.Catalog{Roles: map[string]accessdom.RoleTraits{}, StampKinds: pf.StampKinds,
+		GrantTemplate: pf.GrantRoute.Template, GrantRoute: pf.GrantRoute.Route,
+		Audit: accessdom.AuditParameters{CheckpointIntervalS: pf.Audit.CheckpointIntervalS, CheckpointMaxGapS: pf.Audit.CheckpointMaxGapS,
+			KeeperKeyFingerprint: pf.Audit.KeeperKeyFingerprint, CriticalTypes: pf.Audit.CriticalTypes, SecurityBusSubscribers: pf.Audit.SecurityBusSubscribers}}
+	for _, a := range pf.Authorities {
+		s.Catalog.Authorities = append(s.Catalog.Authorities, accessdom.AuthorityDef{ID: a.ID, Title: a.Title, Domain: a.Domain})
+	}
 	known := map[string]bool{}
 	for _, r := range pf.Roles {
 		known[r.ID] = true
 		s.Roles = append(s.Roles, accessdom.Role{ID: r.ID, Title: r.Title, CaseRole: r.CaseRole, Inherits: r.Inherits, Actions: r.Actions})
+		s.Catalog.Roles[r.ID] = accessdom.RoleTraits{Domain: r.Domain, CardOnly: r.CardOnly}
 	}
 	for _, r := range pf.Roles {
 		for _, b := range r.Inherits {

@@ -18,6 +18,11 @@ type Record struct {
 	OccurredAt time.Time
 	// Genesis — запись генезиса (provenance_class genesis, AD-33).
 	Genesis bool
+	// EventID, Actor (key_id@версия первого подписанта), CausationID — для
+	// истории выдачи прав у Аудитора ИБ; свёртка их не использует.
+	EventID     string
+	Actor       string
+	CausationID string
 }
 
 // Types — типы записей, которые меняют политику и учётные записи (проекция
@@ -25,7 +30,7 @@ type Record struct {
 var Types = []catalog.Type{
 	catalog.PolicyRoleDefined, catalog.PolicyRoleAssigned, catalog.PolicyRoleUnassigned,
 	catalog.PolicyAuthorityGranted, catalog.PolicyAuthorityRevoked,
-	catalog.PolicyStampIssued, catalog.PolicyStampRevoked,
+	catalog.PolicyStampIssued, catalog.PolicyStampRevoked, catalog.PolicyAuditParametersSet,
 	catalog.AccessPersonRegistered, catalog.AccessAccountActivated,
 }
 
@@ -116,6 +121,21 @@ func (p *Policy) Apply(r Record) error {
 				p.Stamps[i].Revoked = true
 			}
 		}
+	case catalog.PolicyAuditParametersSet:
+		// Параметры аудита — данные журнала, а не конфигурация (AD-8, AD-15).
+		var d ev.PolicyAuditParametersSetV1
+		if err := decode(r, &d); err != nil {
+			return err
+		}
+		a := AuditParameters{CheckpointIntervalS: d.CheckpointIntervalS, CheckpointMaxGapS: d.CheckpointMaxGapS,
+			KeeperKeyFingerprint: string(d.KeeperKeyFingerprint), Seq: r.Seq, EventID: r.EventID, SetBy: r.Actor, SetAt: r.OccurredAt}
+		for _, t := range d.CriticalTypes {
+			a.CriticalTypes = append(a.CriticalTypes, string(t))
+		}
+		for _, x := range d.SecurityBusSubscribers {
+			a.SecurityBusSubscribers = append(a.SecurityBusSubscribers, string(x))
+		}
+		p.Audit = a
 	case catalog.AccessPersonRegistered:
 		var d ev.AccessPersonRegisteredV1
 		if err := decode(r, &d); err != nil {
@@ -148,6 +168,22 @@ func (p *Policy) Apply(r Record) error {
 		p.upsertPerson(x)
 	}
 	return nil
+}
+
+// PolicyAt — политика на позиции журнала seq (AD-9, FR-85: «у подписанта было
+// право на момент подписи»): base (затравка или политика генезиса) плюс записи
+// recs с seq ≤ seq по возрастанию seq. Записи после seq не применяются.
+func PolicyAt(base Policy, recs []Record, seq int64) (Policy, error) {
+	p := base.Clone()
+	for _, r := range recs {
+		if r.Seq > seq {
+			break
+		}
+		if err := p.Apply(r); err != nil {
+			return p, err
+		}
+	}
+	return p, nil
 }
 
 // closes — срок until ещё открыт в момент at (бессрочно или позже at).

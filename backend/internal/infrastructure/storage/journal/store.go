@@ -129,6 +129,9 @@ type head struct {
 // монотонна и вилка цепочки невозможна при любом числе копий.
 func (s *Store) Append(ctx context.Context, rq app.AppendRequest) (app.AppendResult, error) {
 	var res app.AppendResult
+	// Политика субъекта команды (AD-39): проверки, положенные в контекст
+	// общим декоратором прав, — в той же транзакции.
+	rq = app.WithContextChecks(ctx, rq)
 	if len(rq.Batch) > s.batchMax || len(rq.Critical) > s.batchMax {
 		return res, fmt.Errorf("%w: %d / %d > %d", app.ErrBatchTooLarge, len(rq.Batch), len(rq.Critical), s.batchMax)
 	}

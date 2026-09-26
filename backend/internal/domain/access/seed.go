@@ -10,6 +10,8 @@ type Seed struct {
 	Persons         []SeedPerson
 	Authorities     []Authority
 	Stamps          []Stamp
+	// Catalog — сферы ролей и полномочий, маршрут выдачи, параметры аудита по умолчанию.
+	Catalog Catalog
 }
 
 // SeedPerson — сотрудник затравки с ролями в областях.
@@ -29,7 +31,7 @@ type SeedGrant struct {
 // записей нет (вход демо-персоной — только профили fixtures и demo; учётную
 // запись активирует администратор, FR-128).
 func FromSeed(s Seed) Policy {
-	p := Policy{Root: s.Root, Unauthenticated: s.Unauthenticated}
+	p := Policy{Root: s.Root, Unauthenticated: s.Unauthenticated, Catalog: s.Catalog, Audit: s.Catalog.Audit}
 	p.Roles = append(p.Roles, s.Roles...)
 	for _, sp := range s.Persons {
 		p.Persons = append(p.Persons, Person{ID: sp.ID, Name: sp.Name})
