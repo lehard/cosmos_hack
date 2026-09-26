@@ -1,4 +1,7 @@
 # ant — запуск одной командой: docker compose up (FR-109).
-# Состав и параметры — deploy/compose/compose.yaml.
+# Состав и параметры — deploy/compose/compose.yaml; роль init (ключи,
+# генезис, эпик 05) — deploy/compose/genesis.yaml, сливается с ним как override.
 include:
-  - deploy/compose/compose.yaml
+  - path:
+      - deploy/compose/compose.yaml
+      - deploy/compose/genesis.yaml

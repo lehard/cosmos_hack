@@ -67,10 +67,7 @@ func runMigrate(ctx context.Context, env *environment) error {
 		return fmt.Errorf("миграции: %w", err)
 	}
 	env.log.Info("миграции: схема актуальна", "postgres", serverVersion, "applied", len(applied), "modules", len(migrationSets))
-	// Эпик 19: стартовые справочники генезисом (кроме prod).
-	if err := seedReference(ctx, env); err != nil {
-		return err
-	}
-	// Эпик 33: стартовые паспорта допуска анализаторов демо (профили demo, fixtures).
-	return seedVisionPassports(ctx, env)
+	// Стартовые справочники (эпик 19), паспорта допуска анализаторов (эпик 33), политика и нормативный слой —
+	// записи блока генезиса (ant init, эпик 05, AD-33): migrate в журнал не пишет.
+	return nil
 }

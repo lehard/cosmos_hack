@@ -35,6 +35,9 @@ func ingestLive(ctx context.Context, env *environment) (*ingestapp.Service, erro
 		return nil, err
 	}
 	store := ingeststore.NewStore(c.pool)
+	// Эпик 05: проверка подписи источников по реестру ключей из генезиса и
+	// подпись служебных записей ключом шлюза gateway-ingest@1 (genesisIngest, init.go).
+	sigVerifier, sigKeys, sigSigner := genesisIngest(env, c)
 	ic := ingestapp.DefaultConfig()
 	ic.Profile = cfg.Profile
 	if cfg.Profile == config.ProfileFixtures || cfg.Profile == config.ProfileDemo {
@@ -53,6 +56,8 @@ func ingestLive(ctx context.Context, env *environment) (*ingestapp.Service, erro
 	return ingestapp.NewService(
 		ingestapp.WithConfig(ic),
 		ingestapp.WithDeps(ingestapp.Deps{
+			// Ключи из генезиса (эпик 05).
+			Verifier: sigVerifier, Keys: sigKeys, ServerSigner: sigSigner,
 			Journal:    c.journal,
 			Registry:   store,
 			Quarantine: store,

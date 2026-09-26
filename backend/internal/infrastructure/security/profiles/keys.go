@@ -82,7 +82,7 @@ func FromSecret(ref, profile string, secret []byte) (*PrivateKey, error) {
 	return nil, fmt.Errorf("profiles: профиль %q", profile)
 }
 
-// Secret — закрытая часть ключа (для записи в том 0600).
+// Secret — закрытая часть ключа (для записи в том 0400).
 func (k *PrivateKey) Secret() []byte {
 	if k.gost != nil {
 		return k.gost.RawLE()
@@ -140,7 +140,7 @@ func Verify(profile string, pub []byte, payloadType string, pae, sig []byte) boo
 	return false
 }
 
-// keyFile — файл закрытого ключа в томе (0600): key_ref, профиль, секрет hex.
+// keyFile — файл закрытого ключа в томе (0400): key_ref, профиль, секрет hex.
 type keyFile struct {
 	KeyRef    string `json:"key_ref"`
 	Profile   string `json:"profile"`
@@ -153,14 +153,15 @@ type keyFile struct {
 // FileName — имя файла ключа в томе: ‹key_id›@‹версия›.key.json.
 func FileName(ref string) string { return strings.ReplaceAll(ref, ":", "_") + ".key.json" }
 
-// Save записывает ключ в каталог dir (0600); существующий файл не перезаписывается.
+// Save записывает ключ в каталог dir (0400 — только чтение владельцем, AD-11,
+// эпик 05); существующий файл не перезаписывается.
 func Save(dir string, k *PrivateKey) error {
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return err
 	}
 	b, _ := json.MarshalIndent(keyFile{KeyRef: k.Ref, Profile: k.Profile, SecretHex: hex.EncodeToString(k.Secret()),
 		PublicB64: k.PublicB64(), Fingerprint: k.Fingerprint()}, "", "  ")
-	f, err := os.OpenFile(filepath.Join(dir, FileName(k.Ref)), os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
+	f, err := os.OpenFile(filepath.Join(dir, FileName(k.Ref)), os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o400)
 	if err != nil {
 		return err
 	}

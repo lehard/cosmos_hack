@@ -1,0 +1,22 @@
+# Оборудование и средства контроля с поверкой (AD-31, FR-17, FR-149). Поверка — предусловие операций. [ПП]
+version: 1
+equipment:
+  - {id: CNC-1,    kind: cnc_machine,    location_id: ST-CNC,   name: "Станок ЧПУ",                     measuring: false, source_id: edge-cnc-1}
+  - {id: IS-1,     kind: welding_source, location_id: ST-WELD,  name: "Сварочный источник ИС-1",        measuring: false, source_id: edge-weld-1, setpoints: {current_a: {nominal: 160, lower: 150, upper: 170}}}
+  - {id: IS-2,     kind: welding_source, location_id: ST-WELD,  name: "Сварочный источник ИС-2",        measuring: false, source_id: edge-weld-2, setpoints: {current_a: {nominal: 160, lower: 150, upper: 170}}}
+  - {id: CAM-KT1,  kind: camera,         location_id: ST-VK,    name: "Камера входного контроля (КТ-1)", measuring: false, source_id: edge-kt1}
+  - {id: CAM-KT2,  kind: camera,         location_id: ST-CNC,   name: "Камера с косым светом (КТ-2)",   measuring: false, source_id: edge-kt2}
+  - {id: CAM-KT3,  kind: camera,         location_id: ST-WELD,  name: "Камера на шов (КТ-3)",           measuring: false, source_id: edge-kt3}
+  - {id: CAM-KT4D, kind: camera,         location_id: ST-ASM,   name: "Камера зоны с УФ (КТ-4d)",       measuring: false, source_id: edge-kt4d}
+  - {id: CAM-KT4,  kind: camera,         location_id: ST-ASM,   name: "Камера сборки (КТ-4)",           measuring: false, source_id: edge-kt4}
+  - {id: OV-ASM,   kind: camera,         location_id: ST-ASM,   name: "Камера OperatorVision поста сборки", measuring: false, source_id: edge-ov-asm}
+  - {id: CAM-KT5,  kind: camera,         location_id: ST-FINAL, name: "Камера окончательного контроля (КТ-5)", measuring: false, source_id: edge-kt5}
+  - {id: CMM-1,    kind: cmm,            location_id: ST-CMM,   name: "Координатно-измерительная машина", measuring: true, source_id: gw-cmm}
+  - {id: XRAY-LAB, kind: xray,           location_id: LAB-NDT,  name: "Рентгеновский контроль (лаборатория НК)", measuring: true, source_id: gw-ndt}
+  - {id: LEAK-1,   kind: leak_tester,    location_id: ST-LEAK,  name: "Стенд с течеискателем",          measuring: true,  source_id: edge-leak-1}
+  - {id: TW-1,     kind: torque_wrench,  location_id: ST-ASM,   name: "Ключ с регистрацией момента",    measuring: true,  source_id: edge-tw-1}
+verifications:
+  - {equipment_id: CMM-1,    kind: calibration,  result: valid, valid_until: "2027-03-31", certificate_ref: "Сертификат калибровки [ПП]"}
+  - {equipment_id: XRAY-LAB, kind: verification, result: valid, valid_until: "2027-01-31", certificate_ref: "Свидетельство о поверке [ПП]"}
+  - {equipment_id: LEAK-1,   kind: verification, result: valid, valid_until: "2026-12-31", certificate_ref: "Свидетельство о поверке [ПП]"}
+  - {equipment_id: TW-1,     kind: verification, result: valid, valid_until: "2026-11-30", certificate_ref: "Свидетельство о поверке [ПП]"}

@@ -1,0 +1,958 @@
+# Сгенерировано contracts/scripts/check-bpmn.mjs --write из flange-process.bpmn — не редактировать руками.
+# Список step_key (AD-17): карта, заготовки, счётчики узлов. Изделия прежних версий — на узлах своего step_key.
+source: flange-process.bpmn
+steps:
+  - step_key: order.received
+    bpmn_id: S0
+    bpmn_type: startEvent
+    name: Задание из 1С
+    process: Process_Flange
+    workshop: WS-SK
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: incoming.lots_received.merge
+    bpmn_id: J_S1
+    bpmn_type: exclusiveGateway
+    name: ""
+    process: Process_Flange
+    workshop: WS-SK
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: incoming.lots_received
+    bpmn_id: S1
+    bpmn_type: intermediateCatchEvent
+    name: Партии поступили (из 1С)
+    process: Process_Flange
+    workshop: WS-SK
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: incoming.lot_registration
+    bpmn_id: V1
+    bpmn_type: task
+    name: Приём партий на входной контроль
+    process: Process_Flange
+    workshop: WS-SK
+    step_kind: movement
+    closing_point: null
+    inspection_point: null
+  - step_key: incoming.kt1_camera.merge
+    bpmn_id: J_V2
+    bpmn_type: exclusiveGateway
+    name: ""
+    process: Process_Flange
+    workshop: WS-SK
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: incoming.kt1_camera
+    bpmn_id: V2
+    bpmn_type: serviceTask
+    name: КТ-1 Камера входного контроля
+    process: Process_Flange
+    workshop: WS-SK
+    step_kind: automated_inspection
+    closing_point: null
+    inspection_point: KT-1
+  - step_key: incoming.zt1_lot_acceptance
+    bpmn_id: V3
+    bpmn_type: userTask
+    name: ЗТ-1 Приёмка партии ОТК
+    process: Process_Flange
+    workshop: WS-SK
+    step_kind: human_inspection
+    closing_point: ZT-1
+    inspection_point: null
+  - step_key: incoming.zt1_decision
+    bpmn_id: VG
+    bpmn_type: exclusiveGateway
+    name: Партия?
+    process: Process_Flange
+    workshop: WS-SK
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: incoming.lot_nonconformity
+    bpmn_id: VN
+    bpmn_type: callActivity
+    name: Брак партии (Н)
+    process: Process_Flange
+    workshop: WS-SK
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: incoming.lot_nonconformity_outcome
+    bpmn_id: VNG
+    bpmn_type: exclusiveGateway
+    name: Итог Н (партия)
+    process: Process_Flange
+    workshop: WS-SK
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: incoming.marking.merge
+    bpmn_id: J_V4
+    bpmn_type: exclusiveGateway
+    name: ""
+    process: Process_Flange
+    workshop: WS-SK
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: incoming.marking
+    bpmn_id: V4
+    bpmn_type: task
+    name: Маркировка DataMatrix
+    process: Process_Flange
+    workshop: WS-SK
+    step_kind: operation
+    closing_point: null
+    inspection_point: null
+  - step_key: incoming.distribute
+    bpmn_id: VP
+    bpmn_type: parallelGateway
+    name: Раздать по цехам
+    process: Process_Flange
+    workshop: WS-SK
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: incoming.issue_blank
+    bpmn_id: V5
+    bpmn_type: task
+    name: Выдача заготовки фланца в механический цех
+    process: Process_Flange
+    workshop: WS-SK
+    step_kind: movement
+    closing_point: null
+    inspection_point: null
+  - step_key: incoming.erp_accept_blank
+    bpmn_id: E1
+    bpmn_type: intermediateThrowEvent
+    name: "В 1С: принято в работу (заготовка)"
+    process: Process_Flange
+    workshop: WS-SK
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: incoming.issue_pipe
+    bpmn_id: V6
+    bpmn_type: task
+    name: "Склад: патрубок — выдача в сварочный цех"
+    process: Process_Flange
+    workshop: WS-SK
+    step_kind: storage
+    closing_point: null
+    inspection_point: null
+  - step_key: incoming.erp_accept_pipe
+    bpmn_id: E1b
+    bpmn_type: intermediateThrowEvent
+    name: "В 1С: принято в работу (патрубок)"
+    process: Process_Flange
+    workshop: WS-SK
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: incoming.issue_assembly_parts
+    bpmn_id: V7
+    bpmn_type: task
+    name: "Склад: крышка, уплотнение, крепёж — выдача на сборку"
+    process: Process_Flange
+    workshop: WS-SK
+    step_kind: movement
+    closing_point: null
+    inspection_point: null
+  - step_key: incoming.erp_accept_parts
+    bpmn_id: E4
+    bpmn_type: intermediateThrowEvent
+    name: "В 1С: принято в работу (покупные на сборку)"
+    process: Process_Flange
+    workshop: WS-SK
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: machining.cnc.merge
+    bpmn_id: J_M1
+    bpmn_type: exclusiveGateway
+    name: ""
+    process: Process_Flange
+    workshop: WS-MC
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: machining.cnc
+    bpmn_id: M1
+    bpmn_type: task
+    name: Мехобработка фланца на ЧПУ
+    process: Process_Flange
+    workshop: WS-MC
+    step_kind: operation
+    closing_point: null
+    inspection_point: null
+  - step_key: machining.kt2_camera.merge
+    bpmn_id: J_M2
+    bpmn_type: exclusiveGateway
+    name: ""
+    process: Process_Flange
+    workshop: WS-MC
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: machining.kt2_camera
+    bpmn_id: M2
+    bpmn_type: serviceTask
+    name: КТ-2 Камера, косой свет (до / после)
+    process: Process_Flange
+    workshop: WS-MC
+    step_kind: automated_inspection
+    closing_point: null
+    inspection_point: KT-2
+  - step_key: machining.kt2_cmm
+    bpmn_id: M3
+    bpmn_type: serviceTask
+    name: "КТ-2 КИМ: размеры"
+    process: Process_Flange
+    workshop: WS-MC
+    step_kind: automated_inspection
+    closing_point: null
+    inspection_point: KT-2
+  - step_key: machining.zt2_acceptance
+    bpmn_id: M4
+    bpmn_type: userTask
+    name: ЗТ-2 Приёмка ОТК
+    process: Process_Flange
+    workshop: WS-MC
+    step_kind: human_inspection
+    closing_point: ZT-2
+    inspection_point: null
+  - step_key: machining.zt2_decision
+    bpmn_id: MG
+    bpmn_type: exclusiveGateway
+    name: Годно?
+    process: Process_Flange
+    workshop: WS-MC
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: machining.nonconformity
+    bpmn_id: MN
+    bpmn_type: callActivity
+    name: Брак (Н)
+    process: Process_Flange
+    workshop: WS-MC
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: machining.nonconformity_outcome
+    bpmn_id: MNG
+    bpmn_type: exclusiveGateway
+    name: Итог Н
+    process: Process_Flange
+    workshop: WS-MC
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: machining.scrapped
+    bpmn_id: MX
+    bpmn_type: endEvent
+    name: Списано
+    process: Process_Flange
+    workshop: WS-MC
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: machining.send_to_welding.merge
+    bpmn_id: J_M5
+    bpmn_type: exclusiveGateway
+    name: ""
+    process: Process_Flange
+    workshop: WS-MC
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: machining.send_to_welding
+    bpmn_id: M5
+    bpmn_type: task
+    name: Отправка в сварочный цех
+    process: Process_Flange
+    workshop: WS-MC
+    step_kind: movement
+    closing_point: null
+    inspection_point: null
+  - step_key: welding.receive
+    bpmn_id: W0
+    bpmn_type: userTask
+    name: "Приёмка цехом: осмотр, подпись мастера"
+    process: Process_Flange
+    workshop: WS-WC
+    step_kind: movement
+    closing_point: null
+    inspection_point: null
+  - step_key: welding.erp_transfer_in
+    bpmn_id: E2
+    bpmn_type: intermediateThrowEvent
+    name: "В 1С: перемещение МЦ → СЦ"
+    process: Process_Flange
+    workshop: WS-WC
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: welding.join_parts
+    bpmn_id: WJ
+    bpmn_type: parallelGateway
+    name: Фланец + патрубок
+    process: Process_Flange
+    workshop: WS-WC
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: welding.edge_prep.merge
+    bpmn_id: J_W1
+    bpmn_type: exclusiveGateway
+    name: ""
+    process: Process_Flange
+    workshop: WS-WC
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: welding.edge_prep
+    bpmn_id: W1
+    bpmn_type: task
+    name: Подготовка кромок
+    process: Process_Flange
+    workshop: WS-WC
+    step_kind: operation
+    closing_point: null
+    inspection_point: null
+  - step_key: welding.weld
+    bpmn_id: W2
+    bpmn_type: task
+    name: Сварка фланца с патрубком
+    process: Process_Flange
+    workshop: WS-WC
+    step_kind: operation
+    closing_point: null
+    inspection_point: null
+  - step_key: welding.edge_window_expired
+    bpmn_id: WT
+    bpmn_type: boundaryEvent
+    name: Окно кромок 8 ч истекло
+    process: Process_Flange
+    workshop: WS-WC
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: welding.kt3_camera.merge
+    bpmn_id: J_W3
+    bpmn_type: exclusiveGateway
+    name: ""
+    process: Process_Flange
+    workshop: WS-WC
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: welding.kt3_camera
+    bpmn_id: W3
+    bpmn_type: serviceTask
+    name: КТ-3 Камера на шов (участки 40 мм)
+    process: Process_Flange
+    workshop: WS-WC
+    step_kind: automated_inspection
+    closing_point: null
+    inspection_point: KT-3
+  - step_key: welding.radiography_required
+    bpmn_id: WR
+    bpmn_type: exclusiveGateway
+    name: РК по КД?
+    process: Process_Flange
+    workshop: WS-WC
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: welding.kt3_radiography
+    bpmn_id: W4
+    bpmn_type: serviceTask
+    name: КТ-3 Рентген шва
+    process: Process_Flange
+    workshop: WS-WC
+    step_kind: automated_inspection
+    closing_point: null
+    inspection_point: KT-3
+  - step_key: welding.zt3_acceptance.merge
+    bpmn_id: J_W5
+    bpmn_type: exclusiveGateway
+    name: ""
+    process: Process_Flange
+    workshop: WS-WC
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: welding.zt3_acceptance
+    bpmn_id: W5
+    bpmn_type: userTask
+    name: ЗТ-3 Приёмка ОТК
+    process: Process_Flange
+    workshop: WS-WC
+    step_kind: human_inspection
+    closing_point: ZT-3
+    inspection_point: null
+  - step_key: welding.zt3_decision
+    bpmn_id: WG
+    bpmn_type: exclusiveGateway
+    name: Годно?
+    process: Process_Flange
+    workshop: WS-WC
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: welding.nonconformity
+    bpmn_id: WN
+    bpmn_type: callActivity
+    name: Брак (Н)
+    process: Process_Flange
+    workshop: WS-WC
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: welding.nonconformity_outcome
+    bpmn_id: WNG
+    bpmn_type: exclusiveGateway
+    name: Итог Н
+    process: Process_Flange
+    workshop: WS-WC
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: welding.scrapped
+    bpmn_id: WX
+    bpmn_type: endEvent
+    name: Списано
+    process: Process_Flange
+    workshop: WS-WC
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: welding.send_to_assembly.merge
+    bpmn_id: J_W6
+    bpmn_type: exclusiveGateway
+    name: ""
+    process: Process_Flange
+    workshop: WS-WC
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: welding.send_to_assembly
+    bpmn_id: W6
+    bpmn_type: task
+    name: Отправка в сборочный цех
+    process: Process_Flange
+    workshop: WS-WC
+    step_kind: movement
+    closing_point: null
+    inspection_point: null
+  - step_key: assembly.receive
+    bpmn_id: A0
+    bpmn_type: userTask
+    name: "Приёмка цехом: осмотр, подпись мастера"
+    process: Process_Flange
+    workshop: WS-AC
+    step_kind: movement
+    closing_point: null
+    inspection_point: null
+  - step_key: assembly.erp_transfer_in
+    bpmn_id: E3
+    bpmn_type: intermediateThrowEvent
+    name: "В 1С: перемещение СЦ → СИЦ"
+    process: Process_Flange
+    workshop: WS-AC
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: assembly.join_parts
+    bpmn_id: AJ
+    bpmn_type: parallelGateway
+    name: Узел + крышка + уплотнение + крепёж
+    process: Process_Flange
+    workshop: WS-AC
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: assembly.seal_install.merge
+    bpmn_id: J_A1
+    bpmn_type: exclusiveGateway
+    name: ""
+    process: Process_Flange
+    workshop: WS-AC
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: assembly.seal_install
+    bpmn_id: A1
+    bpmn_type: task
+    name: Установка уплотнения
+    process: Process_Flange
+    workshop: WS-AC
+    step_kind: operation
+    closing_point: null
+    inspection_point: null
+  - step_key: assembly.kt4d_zone_camera.merge
+    bpmn_id: J_A2
+    bpmn_type: exclusiveGateway
+    name: ""
+    process: Process_Flange
+    workshop: WS-AC
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: assembly.kt4d_zone_camera
+    bpmn_id: A2
+    bpmn_type: serviceTask
+    name: КТ-4d Камера зоны (УФ)
+    process: Process_Flange
+    workshop: WS-AC
+    step_kind: automated_inspection
+    closing_point: null
+    inspection_point: KT-4d
+  - step_key: assembly.zt4_zone_presentation
+    bpmn_id: A3
+    bpmn_type: userTask
+    name: ЗТ-4 ч.1 Предъявление зоны ОТК
+    process: Process_Flange
+    workshop: WS-AC
+    step_kind: human_inspection
+    closing_point: ZT-4.1
+    inspection_point: null
+  - step_key: assembly.zone_clean_decision
+    bpmn_id: A3G
+    bpmn_type: exclusiveGateway
+    name: Зона чистая?
+    process: Process_Flange
+    workshop: WS-AC
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: assembly.zone_cleaning
+    bpmn_id: A3C
+    bpmn_type: task
+    name: Очистка зоны
+    process: Process_Flange
+    workshop: WS-AC
+    step_kind: operation
+    closing_point: null
+    inspection_point: null
+  - step_key: assembly.cover_install
+    bpmn_id: A4
+    bpmn_type: task
+    name: Установка крышки
+    process: Process_Flange
+    workshop: WS-AC
+    step_kind: operation
+    closing_point: null
+    inspection_point: null
+  - step_key: assembly.fasteners_install
+    bpmn_id: A5
+    bpmn_type: task
+    name: Установка крепежа
+    process: Process_Flange
+    workshop: WS-AC
+    step_kind: operation
+    closing_point: null
+    inspection_point: null
+  - step_key: assembly.torque
+    bpmn_id: A6
+    bpmn_type: task
+    name: Затяжка по схеме
+    process: Process_Flange
+    workshop: WS-AC
+    step_kind: operation
+    closing_point: null
+    inspection_point: null
+  - step_key: assembly.tool_accounting
+    bpmn_id: A7
+    bpmn_type: userTask
+    name: Учёт инструмента (FOD)
+    process: Process_Flange
+    workshop: WS-AC
+    step_kind: human_inspection
+    closing_point: null
+    inspection_point: null
+  - step_key: assembly.tool_accounting_decision
+    bpmn_id: A7G
+    bpmn_type: exclusiveGateway
+    name: Инструмент на месте?
+    process: Process_Flange
+    workshop: WS-AC
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: assembly.intervention.merge
+    bpmn_id: J_AV
+    bpmn_type: exclusiveGateway
+    name: ""
+    process: Process_Flange
+    workshop: WS-AC
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: assembly.intervention
+    bpmn_id: AV
+    bpmn_type: task
+    name: "Вскрытие: снять крепёж и крышку"
+    process: Process_Flange
+    workshop: WS-AC
+    step_kind: operation
+    closing_point: null
+    inspection_point: null
+  - step_key: assembly.kt4_camera.merge
+    bpmn_id: J_A8
+    bpmn_type: exclusiveGateway
+    name: ""
+    process: Process_Flange
+    workshop: WS-AC
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: assembly.kt4_camera
+    bpmn_id: A8
+    bpmn_type: serviceTask
+    name: КТ-4 Камера сборки
+    process: Process_Flange
+    workshop: WS-AC
+    step_kind: automated_inspection
+    closing_point: null
+    inspection_point: KT-4
+  - step_key: assembly.zt4_acceptance
+    bpmn_id: A9
+    bpmn_type: userTask
+    name: ЗТ-4 ч.2 Приёмка сборки ОТК
+    process: Process_Flange
+    workshop: WS-AC
+    step_kind: human_inspection
+    closing_point: ZT-4.2
+    inspection_point: null
+  - step_key: assembly.zt4_decision
+    bpmn_id: AG
+    bpmn_type: exclusiveGateway
+    name: Годно?
+    process: Process_Flange
+    workshop: WS-AC
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: assembly.nonconformity
+    bpmn_id: AN
+    bpmn_type: callActivity
+    name: Брак (Н)
+    process: Process_Flange
+    workshop: WS-AC
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: assembly.nonconformity_outcome
+    bpmn_id: ANG
+    bpmn_type: exclusiveGateway
+    name: Итог Н
+    process: Process_Flange
+    workshop: WS-AC
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: assembly.scrapped.merge
+    bpmn_id: J_AX
+    bpmn_type: exclusiveGateway
+    name: ""
+    process: Process_Flange
+    workshop: WS-AC
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: assembly.scrapped
+    bpmn_id: AX
+    bpmn_type: endEvent
+    name: Списано
+    process: Process_Flange
+    workshop: WS-AC
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: testing.leak_test.merge
+    bpmn_id: J_T1
+    bpmn_type: exclusiveGateway
+    name: ""
+    process: Process_Flange
+    workshop: WS-AC
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: testing.leak_test
+    bpmn_id: T1
+    bpmn_type: serviceTask
+    name: Испытание на герметичность
+    process: Process_Flange
+    workshop: WS-AC
+    step_kind: automated_inspection
+    closing_point: null
+    inspection_point: null
+  - step_key: testing.zt5_protocol
+    bpmn_id: T2
+    bpmn_type: userTask
+    name: ЗТ-5 Протокол испытаний
+    process: Process_Flange
+    workshop: WS-AC
+    step_kind: human_inspection
+    closing_point: ZT-5
+    inspection_point: null
+  - step_key: testing.result_decision
+    bpmn_id: TG
+    bpmn_type: exclusiveGateway
+    name: Результат испытания?
+    process: Process_Flange
+    workshop: WS-AC
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: testing.nonconformity
+    bpmn_id: TN
+    bpmn_type: callActivity
+    name: "Брак: течь (Н)"
+    process: Process_Flange
+    workshop: WS-AC
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: testing.nonconformity_outcome
+    bpmn_id: TNG
+    bpmn_type: exclusiveGateway
+    name: Итог Н (течь)
+    process: Process_Flange
+    workshop: WS-AC
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: final.kt5_camera.merge
+    bpmn_id: J_K2
+    bpmn_type: exclusiveGateway
+    name: ""
+    process: Process_Flange
+    workshop: WS-QA
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: final.kt5_camera
+    bpmn_id: K2
+    bpmn_type: serviceTask
+    name: КТ-5 Камера окончательного контроля (4 ракурса)
+    process: Process_Flange
+    workshop: WS-QA
+    step_kind: automated_inspection
+    closing_point: null
+    inspection_point: KT-5
+  - step_key: final.zt6_acceptance
+    bpmn_id: K3
+    bpmn_type: userTask
+    name: ЗТ-6 Окончательный контроль ОТК
+    process: Process_Flange
+    workshop: WS-QA
+    step_kind: human_inspection
+    closing_point: ZT-6
+    inspection_point: null
+  - step_key: final.zt6_decision
+    bpmn_id: KG
+    bpmn_type: exclusiveGateway
+    name: Принять?
+    process: Process_Flange
+    workshop: WS-QA
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: final.nonconformity
+    bpmn_id: KN
+    bpmn_type: callActivity
+    name: Брак (Н)
+    process: Process_Flange
+    workshop: WS-QA
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: final.nonconformity_outcome
+    bpmn_id: KNG
+    bpmn_type: exclusiveGateway
+    name: Итог Н
+    process: Process_Flange
+    workshop: WS-QA
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: final.scrapped
+    bpmn_id: KX
+    bpmn_type: endEvent
+    name: Списано
+    process: Process_Flange
+    workshop: WS-QA
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: final.release_to_warehouse.merge
+    bpmn_id: J_K4
+    bpmn_type: exclusiveGateway
+    name: ""
+    process: Process_Flange
+    workshop: WS-QA
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: final.release_to_warehouse
+    bpmn_id: K4
+    bpmn_type: task
+    name: Сдача на склад готовой продукции
+    process: Process_Flange
+    workshop: WS-QA
+    step_kind: movement
+    closing_point: null
+    inspection_point: null
+  - step_key: final.erp_release
+    bpmn_id: E5
+    bpmn_type: intermediateThrowEvent
+    name: "В 1С: выпуск годного"
+    process: Process_Flange
+    workshop: WS-QA
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: final.released
+    bpmn_id: KE
+    bpmn_type: endEvent
+    name: Изделие выпущено
+    process: Process_Flange
+    workshop: WS-QA
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: nc.start
+    bpmn_id: N0
+    bpmn_type: startEvent
+    name: «Не годно» на ЗТ
+    process: Process_NC
+    workshop: null
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: nc.isolation
+    bpmn_id: N1
+    bpmn_type: task
+    name: Изоляция
+    process: Process_NC
+    workshop: null
+    step_kind: movement
+    closing_point: null
+    inspection_point: null
+  - step_key: nc.zt_r_disposition
+    bpmn_id: N2
+    bpmn_type: userTask
+    name: ЗТ-Р Решение по изделию
+    process: Process_NC
+    workshop: null
+    step_kind: human_inspection
+    closing_point: ZT-R
+    inspection_point: null
+  - step_key: nc.disposition_decision
+    bpmn_id: NG
+    bpmn_type: exclusiveGateway
+    name: Вариант решения
+    process: Process_NC
+    workshop: null
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: nc.concession
+    bpmn_id: N3
+    bpmn_type: userTask
+    name: Разрешение на отклонение
+    process: Process_NC
+    workshop: null
+    step_kind: human_inspection
+    closing_point: null
+    inspection_point: null
+  - step_key: nc.repair_or_as_is
+    bpmn_id: NG2
+    bpmn_type: exclusiveGateway
+    name: Ремонт или как есть?
+    process: Process_NC
+    workshop: null
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: nc.erp_scrap_rework.merge
+    bpmn_id: J_E8
+    bpmn_type: exclusiveGateway
+    name: ""
+    process: Process_NC
+    workshop: null
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: nc.erp_scrap_rework
+    bpmn_id: E8
+    bpmn_type: intermediateThrowEvent
+    name: "В 1С: перевод в брак (переделка)"
+    process: Process_NC
+    workshop: null
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: nc.end_rework_or_repair
+    bpmn_id: NR
+    bpmn_type: endEvent
+    name: "Итог: переделка или ремонт"
+    process: Process_NC
+    workshop: null
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: nc.end_use_as_is
+    bpmn_id: NA
+    bpmn_type: endEvent
+    name: "Итог: как есть"
+    process: Process_NC
+    workshop: null
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: nc.erp_scrap_writeoff
+    bpmn_id: E6
+    bpmn_type: intermediateThrowEvent
+    name: "В 1С: перевод в брак (списание)"
+    process: Process_NC
+    workshop: null
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: nc.end_scrapped
+    bpmn_id: NS
+    bpmn_type: endEvent
+    name: "Итог: списано"
+    process: Process_NC
+    workshop: null
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: nc.erp_return_to_supplier
+    bpmn_id: E7
+    bpmn_type: intermediateThrowEvent
+    name: "В 1С: возврат поставщику"
+    process: Process_NC
+    workshop: null
+    step_kind: null
+    closing_point: null
+    inspection_point: null
+  - step_key: nc.end_returned
+    bpmn_id: NV
+    bpmn_type: endEvent
+    name: "Итог: возвращено поставщику"
+    process: Process_NC
+    workshop: null
+    step_kind: null
+    closing_point: null
+    inspection_point: null
