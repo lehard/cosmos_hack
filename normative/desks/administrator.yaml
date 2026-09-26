@@ -19,10 +19,15 @@ tabs:
       - {id: access, area: main, widget: access-admin}
   - id: sources
     title_key: desks.sources
-    layout: main-side
+    layout: single
     slots:
       - {id: sources, area: main, widget: sources}
-      - {id: quarantine, area: right, widget: quarantine, slice: {view: summary}}
+  # Карантин сообщений — отдельной вкладкой, чтобы не мешал источникам (решение пользователя 26.09).
+  - id: quarantine
+    title_key: desks.quarantine
+    layout: single
+    slots:
+      - {id: quarantine, area: main, widget: quarantine}
   - id: integrations
     title_key: widgets.integrations.title
     layout: single
