@@ -42,6 +42,7 @@ type Commands interface {
 	RequestRecheck(ctx context.Context, itemID string, in RequestRecheck) (platform.Receipt, error)
 	Isolate(ctx context.Context, itemID string, in IsolateItem) (platform.Receipt, error)
 	ResolvePresentation(ctx context.Context, itemID string, in ResolvePresentation) (platform.Receipt, error)
+	ReviewPresentation(ctx context.Context, itemID string, in ReviewPresentation) (platform.Receipt, error)
 	ResolveLot(ctx context.Context, lotID string, in ResolveLot) (platform.Receipt, error)
 	SetDisposition(ctx context.Context, ncID string, in SetDisposition) (platform.Receipt, error)
 	VerifyDisposition(ctx context.Context, ncID string, in VerifyDisposition) (platform.Receipt, error)
@@ -92,6 +93,9 @@ func (Unimplemented) Isolate(context.Context, string, IsolateItem) (platform.Rec
 }
 func (Unimplemented) ResolvePresentation(context.Context, string, ResolvePresentation) (platform.Receipt, error) {
 	return nr("nonconformity.presentation.resolve")
+}
+func (Unimplemented) ReviewPresentation(context.Context, string, ReviewPresentation) (platform.Receipt, error) {
+	return nr("nonconformity.presentation.review")
 }
 func (Unimplemented) ResolveLot(context.Context, string, ResolveLot) (platform.Receipt, error) {
 	return nr("nonconformity.lot.resolve")

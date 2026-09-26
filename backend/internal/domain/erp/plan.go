@@ -130,6 +130,8 @@ func Plan(env Env, b Books, t Trigger) ([]Draft, Books, error) {
 		return planThrown(env, b, t)
 	case catalog.DecisionPresentationResolved:
 		return planPresentation(env, b, r)
+	case catalog.DecisionPresentationReviewed:
+		return planReviewed(env, b, r)
 	case catalog.DecisionLotResolved:
 		return planLot(env, b, r)
 	case catalog.DecisionDispositionVerified:
@@ -265,6 +267,33 @@ func planPresentation(env Env, b Books, r kernel.Record) ([]Draft, Books, error)
 			b.ConcessionID = string(*d.ConcessionID)
 		}
 	}
+	cp := d.ClosingPoint
+	dr.Data.ClosingPoint = &cp
+	return []Draft{dr}, b, nil
+}
+
+// planReviewed — пересмотр решения на закрывающей точке (Д-81): отзыв
+// приёмки — новая версия «результата контроля» той же точки (бизнес-ключ
+// исправляемого решения) с итогом «мало данных»; уже подтверждённое учётной
+// системой сообщение исправляется (сторно + новое) только по решению
+// человека (AD-7, View.NeedsDecision). «Оставить в силе» учёт не меняет.
+func planReviewed(env Env, b Books, r kernel.Record) ([]Draft, Books, error) {
+	if r.ItemID == "" {
+		return nil, b, nil
+	}
+	var d ev.DecisionPresentationReviewedV1
+	if err := json.Unmarshal(r.Data, &d); err != nil {
+		return nil, b, err
+	}
+	if d.Outcome != ev.DecisionPresentationReviewedV1OutcomeRevoked {
+		return nil, b, nil
+	}
+	point := b.decisionPoint(r.EventID, string(d.ReviewedEventID), d.ClosingPoint+".p"+strconv.Itoa(d.PresentationNo))
+	dr := draft(env, b, InspectionResult, point, string(d.StepKey), []string{r.EventID, string(d.ReviewedEventID)}, r)
+	res := ev.ErpPostingRequestedV1ResolutionInsufficientData
+	dr.Data.Resolution = &res
+	n := d.PresentationNo
+	dr.Data.PresentationNo = &n
 	cp := d.ClosingPoint
 	dr.Data.ClosingPoint = &cp
 	return []Draft{dr}, b, nil

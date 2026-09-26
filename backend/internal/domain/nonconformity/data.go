@@ -130,6 +130,27 @@ type PresentationResolvedData struct {
 	Reason         *Reason  `json:"reason,omitempty"`
 }
 
+// PresentationReviewedData — decision.presentation.reviewed (FR-32, FR-146,
+// Д-81): пересмотр решения на точке, принятого до новых данных, — новая
+// запись поверх прежней; прежняя не меняется.
+type PresentationReviewedData struct {
+	ReviewedEventID string   `json:"reviewed_event_id"`
+	StepKey         string   `json:"step_key"`
+	ClosingPoint    string   `json:"closing_point"`
+	PresentationNo  int      `json:"presentation_no"`
+	Outcome         string   `json:"outcome"`
+	NewFactIDs      []string `json:"new_fact_ids"`
+	Reason          Reason   `json:"reason"`
+}
+
+// Исходы пересмотра (Д-81).
+const (
+	// ReviewUpheld — оставить прежнее решение в силе.
+	ReviewUpheld = "upheld"
+	// ReviewRevoked — отозвать приёмку: основание приёмки не держится.
+	ReviewRevoked = "revoked"
+)
+
 // LotResolvedData — decision.lot.resolved (ЗТ-1).
 type LotResolvedData struct {
 	LotID            string   `json:"lot_id"`

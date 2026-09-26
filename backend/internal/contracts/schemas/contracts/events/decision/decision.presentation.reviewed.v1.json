@@ -1,0 +1,57 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/decision/decision.presentation.reviewed.v1.json",
+  "title": "DecisionPresentationReviewedV1",
+  "description": "Пересмотр решения на закрывающей точке, принятого до новых данных (FR-32, FR-146, AD-5, Д-81): новая запись поверх прежней, прежняя не меняется. «Оставить в силе» — приёмка подтверждена на текущем состоянии; «отозвать приёмку» — основание приёмки не держится: блок изделия человеком, качество «не проверено», исправление результата контроля в учётной системе по решению человека (AD-7).",
+  "type": "object",
+  "properties": {
+    "reviewed_event_id": {
+      "$ref": "../common/defs.v1.json#/definitions/uuid",
+      "description": "Пересматриваемое решение (decision.presentation.resolved)."
+    },
+    "step_key": {
+      "$ref": "../common/defs.v1.json#/definitions/step_key",
+      "description": "Шаг точки предъявления пересматриваемого решения."
+    },
+    "closing_point": {
+      "type": "string",
+      "description": "Закрывающая точка пересматриваемого решения: `ZT-1`…`ZT-6`, `ZT-R`, `ZT-V`.",
+      "maxLength": 16
+    },
+    "presentation_no": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100,
+      "description": "Номер предъявления пересматриваемого решения."
+    },
+    "outcome": {
+      "type": "string",
+      "enum": [
+        "upheld",
+        "revoked"
+      ],
+      "description": "Исход пересмотра: оставить решение в силе / отозвать приёмку."
+    },
+    "new_fact_ids": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/uuid"
+      },
+      "description": "Новые факты, которые рассмотрены при пересмотре (причины метки «принято до новых данных»).",
+      "uniqueItems": true
+    },
+    "reason": {
+      "$ref": "../common/defs.v1.json#/definitions/reason",
+      "description": "Основание пересмотра: код и текст."
+    }
+  },
+  "required": [
+    "reviewed_event_id",
+    "step_key",
+    "closing_point",
+    "presentation_no",
+    "outcome",
+    "new_fact_ids",
+    "reason"
+  ]
+}

@@ -63,6 +63,7 @@ var Files = [...]string{
 	"contracts/events/decision/decision.nonconformity.drafted.v1.json",
 	"contracts/events/decision/decision.nonconformity.registered.v1.json",
 	"contracts/events/decision/decision.presentation.resolved.v1.json",
+	"contracts/events/decision/decision.presentation.reviewed.v1.json",
 	"contracts/events/decision/decision.process_hold.released.v1.json",
 	"contracts/events/decision/decision.process_hold.set.v1.json",
 	"contracts/events/decision/decision.recheck.requested.v1.json",

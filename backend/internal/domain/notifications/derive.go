@@ -217,6 +217,18 @@ func (s *State) wanted(env Env, up Upstream, cur Cause) ([]Obligation, []Task) {
 			os = append(os, o)
 			ts = append(ts, task("incident/"+c.Key+"/"+kind, kind, RoleForeman, "Изделие "+s.ItemID+" в области риска "+incident+": "+what, nil, cause))
 		}
+		// Д-81: приёмка отозвана пересмотром — пока блок человека по отзыву не
+		// снят, задача тому, у кого изделие: остановить и отложить до решения.
+		for _, p := range nc.Presentations {
+			if !p.Revoked() || !slices.ContainsFunc(nc.Containment, func(c nonconformity.ContainmentSource) bool {
+				return c.Key == p.ReviewEventID && !c.Released
+			}) {
+				continue
+			}
+			c := Cause{EventID: p.ReviewEventID, At: decisionAt(*nc, p.ReviewEventID, cur.At)}
+			ts = append(ts, task("revoked/"+p.ReviewEventID, "physical_move", RoleForeman,
+				"Приёмка "+first(p.ClosingPoint, p.StepKey)+" отозвана: остановить и отложить "+s.ItemID+" до решения", nil, c))
+		}
 		// FR-52: назначенная доп. проверка — срок, пока нет нового результата контроля.
 		for _, rc := range nc.Rechecks {
 			at := decisionAt(*nc, rc.EventID, time.Time{})
