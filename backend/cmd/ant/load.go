@@ -179,8 +179,11 @@ func runLoad(ctx context.Context, env *environment) error {
 			}
 			return names
 		}}
-	if err := settler.Settle(ctx, rep.RunID); err != nil {
-		return err
+	// ANT_LOAD_SETTLE=0 — не ждать догонки (разбор БД остановленного стенда).
+	if os.Getenv("ANT_LOAD_SETTLE") != "0" {
+		if err := settler.Settle(ctx, rep.RunID); err != nil {
+			return err
+		}
 	}
 	if err := loadJournalStats(ctx, c, &rep); err != nil {
 		return err
@@ -260,6 +263,10 @@ func stateHash(ctx context.Context, c *core, items []string) (string, int, error
 			stopped++
 		}
 		lines = append(lines, id+":"+at.StateHash)
+		if os.Getenv("ANT_LOAD_ITEMS") == "1" {
+			// Хеш по изделию — сверка прогонов, прерванных на разном шаге.
+			_, _ = fmt.Fprintln(os.Stdout, "LOAD-ITEM "+id+" "+at.StateHash)
+		}
 	}
 	return engine.Hash([]byte(strings.Join(lines, "\n"))), stopped, nil
 }
