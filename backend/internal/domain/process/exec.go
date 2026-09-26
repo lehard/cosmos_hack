@@ -287,13 +287,30 @@ func (m *machine) take(id int, f *Flow) {
 // стрелкам своего кадра вызова; развилка порождает токен на каждую ветку.
 func (m *machine) parallel(id int, n *Node) {
 	if len(n.In) > 1 {
-		k, ok := m.join(id, n, len(n.In))
+		need := len(n.In)
+		if m.alone(n) {
+			// Других токенов изделия нет — ждать слиянию некого: изделие
+			// вошло в процесс после ветвления (entry_step_key регистрации,
+			// эпик 16), ветви, которые оно не проходило, не запирают слияние.
+			need = 0
+		}
+		k, ok := m.join(id, n, need)
 		if !ok {
 			return
 		}
 		id = k
 	}
 	m.split(id, n, n.Out)
+}
+
+// alone — все токены изделия стоят на узле n (ни один не может прийти ещё).
+func (m *machine) alone(n *Node) bool {
+	for _, o := range m.s.Tokens {
+		if o.Node != n.ID {
+			return false
+		}
+	}
+	return true
 }
 
 // join — слияние: токены на шлюзе в том же кадре вызова сливаются в токен с
