@@ -224,6 +224,8 @@ func refOf(stream string) (platform.EntityKind, string) {
 		return platform.EntityIncident, id
 	case "nonconformity":
 		return platform.EntityNonconformity, id
+	case "equipment":
+		return platform.EntityEquipment, id
 	}
 	return platform.EntityItem, id
 }

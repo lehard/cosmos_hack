@@ -184,7 +184,8 @@ func objectTrigger(t string) bool {
 	switch catalog.Type(t) {
 	case catalog.IncidentIncidentOpened, catalog.IncidentCauseConcluded, catalog.IncidentIncidentClosed, // «Разобрать инцидент»
 		catalog.IncidentMeasurementRequested, catalog.IncidentActionAssigned, catalog.AnalyzerPassportSuspended,
-		catalog.IncidentSuggestionForwarded: // эпик 42: задача ответственному за предложение
+		catalog.IncidentSuggestionForwarded, // эпик 42: задача ответственному за предложение
+		catalog.EquipmentDeviationDetected:  // режим вне уставки: мастеру и руководителю
 		return true
 	}
 	return false

@@ -1165,11 +1165,11 @@
     "key": "is-2",
     "source_id": "show-is2-20260921/edge-weld-2",
     "first_seq": 1,
-    "last_seq": 194,
+    "last_seq": 195,
     "counters": {
-     "records": 194,
-     "deliveries": 194,
-     "unique": 194,
+     "records": 195,
+     "deliveries": 195,
+     "unique": 195,
      "duplicates": 0,
      "conflicts": 0,
      "lost": 0,
@@ -1323,9 +1323,9 @@
    }
   ],
   "totals": {
-   "records": 486,
-   "deliveries": 486,
-   "unique": 486,
+   "records": 487,
+   "deliveries": 487,
+   "unique": 487,
    "duplicates": 0,
    "conflicts": 0,
    "lost": 0,

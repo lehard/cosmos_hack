@@ -69,7 +69,10 @@ type gen struct {
 	welds  []WeldTruth
 	// streams — окна потоков журнала оборудования: сводки сварок в окне даёт поток.
 	streams []streamWindow
-	errs    []string
+	// outOfSetpoint — посты, у которых сварка шагом карточки уже выдала
+	// отклонение «ток вне уставки», а ток в уставку ещё не вернулся.
+	outOfSetpoint map[string]bool
+	errs          []string
 }
 
 type streamWindow struct {
@@ -267,11 +270,56 @@ func (g *gen) stepWeld(scenario string, st *Step) {
 	}
 	g.act(Action{Kind: ActionDecision, At: start, Scenario: scenario, Label: w.Run + "/start", Note: note, Operation: "process.operation.start",
 		Role: "performer", Actor: actor, Item: w.Item, Params: map[string]any{"item_id": "{item:" + w.Item + "}"}, Body: body})
-	for _, d := range g.weldCycles(wt, ln.WeldingSource, runID, NewRand(g.seed, "weld/"+w.Run), false) {
+	cycles := g.weldCycles(wt, ln.WeldingSource, runID, NewRand(g.seed, "weld/"+w.Run), false)
+	for _, d := range cycles {
 		d.scenario = scenario
 	}
+	g.weldDeviation(scenario, wt, ln.WeldingSource, cycles)
 	g.act(Action{Kind: ActionDecision, At: wt.End, Scenario: scenario, Label: w.Run + "/finish", Note: "Сварка " + w.Run + " (" + w.Item + ") — «Выполнено»", Operation: "process.operation.finish",
 		Role: "performer", Actor: actor, Item: w.Item, Params: map[string]any{"run_id": runID}, Body: map[string]any{"completion": "completed"}})
+}
+
+// weldDeviation — отклонение «ток вне уставки» в момент сварки (показ SHOW-IS2,
+// шаг 5; FR-148, FR-151): источник поста выдаёт equipment.deviation.detected в
+// ту же минуту, что и первую сводку цикла вне уставки, — предупреждение у
+// оборудования и задачи мастеру и руководителю появляются сразу, а не только
+// по опоздавшему журналу. Конца отклонения источник не знает (пост
+// останавливают, в уставку ток не возвращается) — ended_at нет, окно нарушения
+// остаётся открытым. Одно отклонение на эпизод: пока ток поста не вернулся в
+// уставку, следующая сварка на нём нового отклонения не даёт.
+func (g *gen) weldDeviation(scenario string, w WeldTruth, source string, cycles []*draft) {
+	r := g.b.World.Route
+	var first *draft
+	var peak any
+	for _, d := range cycles {
+		ps, _ := d.data["parameters"].([]any)
+		if len(ps) == 0 {
+			continue
+		}
+		p, _ := ps[0].(map[string]any)
+		if _, out := p["out_of_setpoint_ms"]; out && first == nil {
+			first, peak = d, p["max"]
+		}
+	}
+	if first == nil {
+		// ток в уставке — эпизод (если был) закончился
+		delete(g.outOfSetpoint, w.Station)
+		return
+	}
+	if g.outOfSetpoint[w.Station] {
+		return
+	}
+	if g.outOfSetpoint == nil {
+		g.outOfSetpoint = map[string]bool{}
+	}
+	g.outOfSetpoint[w.Station] = true
+	data := map[string]any{"equipment_id": g.ids.Equipment(w.Station), "station_id": "ST-WELD", "deviation_kind": "out_of_setpoint",
+		"parameter": "current", "value": peak, "started_at": first.data["window_start"],
+		"setpoint": map[string]any{"nominal": measurement(int64(r.CurrentNominal), 0, "A"),
+			"lower": measurement(int64(r.CurrentNominal-r.CurrentTol), 0, "A"), "upper": measurement(int64(r.CurrentNominal+r.CurrentTol), 0, "A")},
+		"code": "I_OUT_OF_SETPOINT"}
+	g.add(&draft{at: first.at, source: source, typ: "equipment.deviation.detected", scenario: scenario, data: data,
+		label: fmt.Sprintf("%s/deviation/%s", w.Station, w.Run)})
 }
 
 // routeRef — строка карточки, которую даёт маршрут изделия: проверяем, что
