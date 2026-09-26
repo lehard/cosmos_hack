@@ -20,6 +20,7 @@ import { ActionButton, EmptyState } from '@/shared/ui'
 import { taskActionOf, taskItemLabel, type TaskAction } from '../model/actions'
 import IsolatorMoveConfirm from './IsolatorMoveConfirm.vue'
 import RecheckRequestForm from './RecheckRequestForm.vue'
+import SendMoveForm from './SendMoveForm.vue'
 
 const props = withDefaults(
   defineProps<{
@@ -131,6 +132,14 @@ const kindKey = (task: TaskEntry) => (taskNotificationKind(task.kind) === 'decis
       <template v-if="isOpenTask(task) && canAct && !acked[task.task_id] && actionOf(task).kind !== 'ack'">
         <template v-for="a in [actionOf(task)]" :key="a.kind">
           <ReceiveAction v-if="a.kind === 'form' && a.form === 'receive'" :item-id="a.itemId" :basis-seq="basisSeq" :to-location-id="(task as unknown as { location_id?: string | null }).location_id ?? null" :step-key="task.step_key ?? null" data-testid="task-receive" />
+          <SendMoveForm
+            v-else-if="a.kind === 'form' && a.form === 'send'"
+            :item-id="a.itemId"
+            :basis-seq="basisSeq"
+            :from-location-id="task.location_id ?? null"
+            :step-key="task.step_key ?? null"
+            :density="density"
+          />
           <RecheckRequestForm
             v-else-if="a.kind === 'form' && a.form === 'recheck'"
             :item-id="a.itemId"

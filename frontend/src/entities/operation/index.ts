@@ -5,7 +5,7 @@
  * на шаге процесса.
  *
  * Операции — `process.operation.start|pause|resume|finish`,
- * `process.movement.receive`, `item.item.list` (contracts/openapi.yaml),
+ * `process.movement.receive|send`, `item.item.list` (contracts/openapi.yaml),
  * сгенерированный клиент. Гарды (предусловия FR-17, лимит доработок FR-18,
  * точка предъявления FR-19) проверяет сервер; отказ приходит кодом ошибки.
  *
@@ -16,7 +16,7 @@
  */
 import { computed, toValue, type MaybeRefOrGetter } from 'vue'
 import { keepPreviousData, useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/vue-query'
-import { itemItemList, itemPassportRead, processMovementReceive, processOperationFinish, processOperationPause, processOperationStart } from '@/shared/api/generated/client'
+import { itemItemList, itemPassportRead, processMovementReceive, processMovementSend, processOperationFinish, processOperationPause, processOperationStart } from '@/shared/api/generated/client'
 import type {
   FinishOperation,
   FinishOperationCompletion,
@@ -24,6 +24,7 @@ import type {
   PauseOperation,
   ReceiveMovement,
   ReceiveMovementInspectionOnReceipt,
+  SendMovement,
   StartOperation,
 } from '@/shared/api/generated/model'
 import { entityKeys } from '@/shared/api/keys'
@@ -57,6 +58,7 @@ export type OperationCommand =
   | { kind: 'pause'; item_id: string; run_id: string; body: PauseOperation }
   | { kind: 'finish'; item_id: string; run_id: string; body: FinishOperation }
   | { kind: 'receive'; item_id: string; body: ReceiveMovement }
+  | { kind: 'send'; item_id: string; body: SendMovement }
 
 function send(c: OperationCommand) {
   switch (c.kind) {
@@ -68,6 +70,8 @@ function send(c: OperationCommand) {
       return processOperationFinish(c.run_id, c.body)
     case 'receive':
       return processMovementReceive(c.item_id, c.body)
+    case 'send':
+      return processMovementSend(c.item_id, c.body)
   }
 }
 
