@@ -1324,6 +1324,11 @@ components:
           format: int64
           minimum: 0
           type: integer
+        not_reached:
+          description: Строк, до которых прогон не дошёл.
+          format: int64
+          minimum: 0
+          type: integer
         passed:
           format: int64
           minimum: 0
@@ -1356,14 +1361,37 @@ components:
             - "null"
         assertion_id:
           type: string
+        at:
+          description: Доменное время проверки.
+          format: date-time
+          type: string
+        checkpoint:
+          description: Момент проверки словами карточки.
+          type: string
+        detail:
+          description: "Пояснение: почему ожидает или не совпало."
+          type: string
         expected:
           description: Ожидаемое значение (JSON).
           type: string
+        mapping:
+          description: exact — поле ответа контракта; draft — по смыслу, путь уточняет модуль-владелец; manual — видно на экране.
+          enum:
+            - exact
+            - draft
+            - manual
+          type: string
+        must_not:
+          description: Утверждение «чего не должно случиться».
+          type: boolean
         operation_id:
           description: Операция API, которой проверяется утверждение (те же Queries).
           type: string
         path:
           description: JSON Pointer в ответе операции.
+          type: string
+        scenario_id:
+          description: Карточка сценария, которой принадлежит утверждение.
           type: string
         status:
           description: not_reached — сценарий не дошёл до шага.
@@ -10556,6 +10584,12 @@ components:
           minimum: 0
           type: integer
         description:
+          type: string
+        kind:
+          description: situation — ситуация кейса §4.2; check — проверка §5.1; demo — демо-сценарий; failure — сбой каталога; extra — сверх кейса; run — прогон целиком.
+          type: string
+        run_def:
+          description: Определение прогона, который запускается (scenarios/definitions/runs).
           type: string
         scenario_id:
           description: Идентификатор сценария (S01…S13, демо, сбой).

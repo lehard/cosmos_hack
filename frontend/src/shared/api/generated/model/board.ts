@@ -8,6 +8,11 @@ export interface Board {
   basis_seq: number;
   /** @minimum 0 */
   failed: number;
+  /**
+     * Строк, до которых прогон не дошёл.
+     * @minimum 0
+     */
+  not_reached?: number;
   /** @minimum 0 */
   passed: number;
   /** @minimum 0 */

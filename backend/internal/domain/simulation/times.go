@@ -2,7 +2,9 @@ package simulation
 
 import (
 	"fmt"
+	"maps"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 )
@@ -79,8 +81,8 @@ func ShiftValue(v any, d time.Duration) any {
 		return out
 	case map[string]any:
 		out := make(map[string]any, len(x))
-		for k, e := range x {
-			out[k] = ShiftValue(e, d)
+		for _, k := range slices.Sorted(maps.Keys(x)) {
+			out[k] = ShiftValue(x[k], d)
 		}
 		return out
 	}

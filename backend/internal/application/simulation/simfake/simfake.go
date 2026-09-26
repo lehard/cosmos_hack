@@ -177,7 +177,9 @@ func (g *Ingest) Read(_ context.Context, op string, params map[string]string, ru
 		v = map[string]any{"items": items}
 	case "journal.entry.read":
 		var seq int64
-		fmt.Sscan(params["seq"], &seq)
+		if _, err := fmt.Sscan(params["seq"], &seq); err != nil {
+			return nil, app.ErrNotFound
+		}
 		e, ok := g.journal[seq]
 		if !ok {
 			return nil, app.ErrNotFound
@@ -216,7 +218,11 @@ func bounds(m map[int64]bool) (int64, int64) {
 // Actor — решения людей: регистрация изделий и нанесение носителя принимаются
 // (без них не узнать изделия прогона), прочие операции «пока не отвечают» —
 // их исполнит настоящий API с движком.
-type Actor struct{ In *Ingest }
+type Actor struct {
+	In *Ingest
+	// OnDesk — решения людей на столах принимаются (интерактивный прогон идёт дальше).
+	OnDesk bool
+}
 
 var _ app.Actor = Actor{}
 
@@ -239,9 +245,16 @@ func (a Actor) Act(_ context.Context, persona, op string, params map[string]stri
 	return app.ActResult{}, app.ErrUnavailable
 }
 
-// Decided — в заготовке решение на столе не принимается само.
+// Decided — решение на столе роли принято (OnDesk) или ещё нет.
 func (a Actor) Decided(context.Context, string, string, int64) (bool, int64, error) {
-	return false, 0, nil
+	return a.OnDesk, 0, nil
+}
+
+// Deliveries — всего доставок, принято и повторов.
+func (g *Ingest) Deliveries() (received, accepted, duplicates int) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	return g.received, g.accepted, g.dups
 }
 
 // Recorder — служебные записи прогона в памяти; проверяет, что доменное время

@@ -1,6 +1,7 @@
 package simulation
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -166,7 +167,9 @@ func (s *Service) read(ctx context.Context, st *RunState, rp *runPlan, c sim.Che
 			return nil, false, nil
 		}
 		b, _ := json.Marshal(res)
-		if err := json.Unmarshal(b, &doc); err != nil {
+		dec := json.NewDecoder(bytes.NewReader(b))
+		dec.UseNumber()
+		if err := dec.Decode(&doc); err != nil {
 			return nil, false, err
 		}
 	} else {

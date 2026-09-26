@@ -105,6 +105,7 @@ export * from './backendMode';
 export * from './bindingReason';
 export * from './board';
 export * from './boardRow';
+export * from './boardRowMapping';
 export * from './boardRowStatus';
 export * from './bottleneck';
 export * from './cadAssembly';
