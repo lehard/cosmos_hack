@@ -282,7 +282,8 @@
         "closed": "Закрыто",
         "opened": "открыто {time}",
         "next": "Дальше: {what}",
-        "lastEvent": "последнее событие {time}"
+        "lastEvent": "последнее событие {time}",
+        "cannotClose": "Почему ещё нельзя закрыть:"
       },
       "riskScope": {
         "systemAuthor": "Правило системы",

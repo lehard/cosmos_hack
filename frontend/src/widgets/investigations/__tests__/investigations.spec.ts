@@ -71,6 +71,18 @@ describe('мои расследования', () => {
     expect(w.text()).not.toContain('IS-2')
   })
 
+  it('открытое расследование: почему ещё нельзя закрыть — словами сервера', () => {
+    const w = mount(InvestigationsView, {
+      props: {
+        incidents: [incident('RS-01', { close_blockers: [{ code: 'incident.cause_branch_open', text: 'Нет вывода о причине «почему не остановили раньше»' }] } as Partial<IncidentSummary>)],
+        selected: null,
+      },
+      global: { plugins: [createPinia(), i18n] },
+    })
+    expect(w.find('[data-testid="close-blockers"]').text()).toContain('Почему ещё нельзя закрыть')
+    expect(w.find('[data-testid="close-blockers"]').text()).toContain('«почему не остановили раньше»')
+  })
+
   it('виджет: первый открытый инцидент выбран; щелчок — инцидент в фокус разбора', async () => {
     mockApi({ 'GET /api/v1/incidents': { items: [incident('RS-01'), incident('RS-02', { opened_at: '2026-09-23T12:00:00Z' })] } })
     const w = await mountWidget(InvestigationsWidget, { widgetId: 'investigations', titleKey: 'widgets.analysis.investigations.title' })
