@@ -1,14 +1,16 @@
-package documents
+package documents_test
 
 import (
 	"encoding/json"
 	"os"
 	"strconv"
 	"testing"
+
+	. "ant/internal/domain/documents" //nolint:revive // правила отпечатка домена под их именами
 )
 
 // «Отпечаток сервера = отпечаток агента» (AD-12): правила отпечатка
-// сверяются с эталоном contracts/crypto/test-vectors/vectors.v1.json (раздел
+// (domain/documents) сверяются с эталоном contracts/crypto/test-vectors/vectors.v1.json (раздел
 // doc_digest), который независимо собран генератором тест-векторов на
 // GoGOST; агент токена и demo-signer проверяют себя по тому же эталону.
 func TestDocDigestVector(t *testing.T) {

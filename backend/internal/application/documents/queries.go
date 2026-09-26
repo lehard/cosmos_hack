@@ -319,7 +319,8 @@ func candidates(st DocumentRouteStage, v *view) []string {
 		return out
 	}
 	for _, p := range v.Env.People {
-		if canSign(p, st.Role, st.AuthorityID) && !(slices.Contains(st.Separation, access.SeparationNotItemParticipant) && slices.Contains(v.State.Participants, p.ID)) {
+		excluded := slices.Contains(st.Separation, access.SeparationNotItemParticipant) && slices.Contains(v.State.Participants, p.ID)
+		if canSign(p, st.Role, st.AuthorityID) && !excluded {
 			out = append(out, p.ID)
 		}
 	}
