@@ -183,4 +183,7 @@ func Register(api *httpapi.API, q app.Queries, c app.Commands) {
 		func(ctx context.Context, in *actionCmd[app.EvaluateAction]) (platform.Receipt, error) {
 			return c.EvaluateAction(ctx, in.IncidentID, in.ActionID, in.Body)
 		})
+
+	// Эпик 42: предложения, меры и карта дефицита (register_suggestions.go).
+	registerSuggestions(api, q, c)
 }

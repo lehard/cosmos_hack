@@ -712,6 +712,27 @@ codes:
     ui_key: errors.generic
     guard: true
     refs: [FR-9, FR-61]
+  incident.effectiveness_plan_required:
+    status: 422
+    title: "Нужен план проверки эффективности"
+    detail: "Мера не создаётся без плана проверки эффективности: метрика, базовый уровень, окно наблюдения, критерий успеха ({missing})"
+    ui_key: errors.generic
+    guard: true
+    refs: [FR-64]
+  incident.action_state:
+    status: 409
+    title: "Мера не в том состоянии"
+    detail: "Мера {action_id} сейчас «{status}»: {why}"
+    ui_key: errors.generic
+    guard: true
+    refs: [FR-64]
+  incident.suggestion_state:
+    status: 409
+    title: "Предложение уже решено"
+    detail: "Предложение {suggestion_id} сейчас «{status}»: {why}"
+    ui_key: errors.generic
+    guard: true
+    refs: [FR-63]
   incident.explanation_required:
     status: 422
     title: "Нужно письменное объяснение работника"

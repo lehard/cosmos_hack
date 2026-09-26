@@ -182,7 +182,8 @@ func (s *Scheduler) ObjectTasks(ctx context.Context, batch []jc.JournalEntry) (a
 
 func objectTrigger(t string) bool {
 	switch catalog.Type(t) {
-	case catalog.IncidentMeasurementRequested, catalog.IncidentActionAssigned, catalog.AnalyzerPassportSuspended:
+	case catalog.IncidentMeasurementRequested, catalog.IncidentActionAssigned, catalog.AnalyzerPassportSuspended,
+		catalog.IncidentSuggestionForwarded: // эпик 42: задача ответственному за предложение
 		return true
 	}
 	return false

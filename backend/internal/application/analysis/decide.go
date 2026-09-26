@@ -301,11 +301,17 @@ func (s *Service) AssignAction(ctx context.Context, incidentID string, in Assign
 	if _, err := s.incident(ctx, incidentID); err != nil {
 		return platform.Receipt{}, err
 	}
+	// Эпик 42 (FR-64): без плана проверки эффективности мера не создаётся.
+	plan, err := planOf(in.EffectivenessPlan)
+	if err != nil {
+		return platform.Receipt{}, refusal(err)
+	}
 	data := map[string]any{"incident_id": incidentID, "action_id": "ACT-" + shortID(in.CommandID), "action_type": in.ActionType,
-		"direction": in.Direction, "owner_id": in.OwnerID, "effectiveness_plan": in.EffectivenessPlan}
+		"direction": in.Direction, "owner_id": in.OwnerID, "effectiveness_plan": plan}
 	if in.DueAt != "" {
 		data["due_at"] = in.DueAt
 	}
+	addActionExtras(data, in)
 	return s.decide(ctx, catalog.IncidentActionAssigned, incidentID, in.CommandMeta(), 0, data)
 }
 
@@ -315,6 +321,9 @@ func (s *Service) ImplementAction(ctx context.Context, incidentID, actionID stri
 		return s.Unimplemented.ImplementAction(ctx, incidentID, actionID, in)
 	}
 	if err := s.actionExists(ctx, incidentID, actionID); err != nil {
+		return platform.Receipt{}, err
+	}
+	if err := s.guardAction(ctx, actionID, "implement", ""); err != nil {
 		return platform.Receipt{}, err
 	}
 	data := map[string]any{"incident_id": incidentID, "action_id": actionID}
@@ -330,6 +339,9 @@ func (s *Service) EvaluateAction(ctx context.Context, incidentID, actionID strin
 		return s.Unimplemented.EvaluateAction(ctx, incidentID, actionID, in)
 	}
 	if err := s.actionExists(ctx, incidentID, actionID); err != nil {
+		return platform.Receipt{}, err
+	}
+	if err := s.guardAction(ctx, actionID, "evaluate", in.Result); err != nil {
 		return platform.Receipt{}, err
 	}
 	data := map[string]any{"incident_id": incidentID, "action_id": actionID, "result": in.Result}

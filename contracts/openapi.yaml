@@ -474,6 +474,40 @@ components:
         - permissive
         - irreversible
       type: string
+    ActionHistory:
+      additionalProperties: false
+      properties:
+        actor:
+          type: string
+        at:
+          format: date-time
+          type: string
+        cycle:
+          format: int64
+          type: integer
+        event_id:
+          type: string
+        evidence:
+          type: string
+        result:
+          enum:
+            - effective
+            - failed
+          type: string
+        text:
+          type: string
+        type:
+          enum:
+            - assigned
+            - implemented
+            - evaluated
+          type: string
+      required:
+        - type
+        - at
+        - cycle
+        - event_id
+      type: object
     ActivateAccount:
       additionalProperties: false
       properties:
@@ -1305,6 +1339,14 @@ components:
         signature:
           $ref: "#/components/schemas/DsseEnvelope"
           description: "Подписанный пакет DSSE для операций с уровнем подписи ≥ 1 (AD-10, AD-13, AD-14): подписывает агент токена, сервер сверяет отпечаток."
+        suggestion_id:
+          description: Предложение, из которого родилась мера.
+          maxLength: 128
+          type: string
+        title:
+          description: Что делается словами — основа организационной памяти.
+          maxLength: 256
+          type: string
         workplace_id:
           description: Рабочее место сеанса (барьер 2, AD-15).
           maxLength: 128
@@ -2681,6 +2723,121 @@ components:
         - value
         - out_of_control
       type: object
+    CorrectiveActionList:
+      additionalProperties: false
+      properties:
+        as_of:
+          description: Доменное «сейчас», на которое посчитаны флаги.
+          format: date-time
+          type: string
+        basis_seq:
+          format: int64
+          type: integer
+        items:
+          items:
+            $ref: "#/components/schemas/CorrectiveActionView"
+          type: array
+        memory:
+          items:
+            $ref: "#/components/schemas/MemoryEntry"
+          type: array
+        recurring:
+          items:
+            $ref: "#/components/schemas/RecurringProblem"
+          type: array
+        summary:
+          $ref: "#/components/schemas/QualitySummary"
+      required:
+        - items
+        - summary
+        - recurring
+        - memory
+        - as_of
+        - basis_seq
+      type: object
+    CorrectiveActionView:
+      additionalProperties: false
+      properties:
+        action_id:
+          type: string
+        action_type:
+          description: Коррекция / корректирующее / предупреждающее действие (ГОСТ Р ИСО 9000).
+          enum:
+            - correction
+            - corrective_action
+            - preventive_action
+          type: string
+        assigned_at:
+          format: date-time
+          type: string
+        basis_seq:
+          format: int64
+          type: integer
+        cause_category:
+          type: string
+        cycle:
+          description: "Попытка: 1 + сколько раз мера не помогла."
+          format: int64
+          type: integer
+        direction:
+          description: «Почему возник» / «почему пропустили».
+          enum:
+            - prevent_occurrence
+            - improve_detection
+          type: string
+        due_at:
+          format: date-time
+          type: string
+        evaluation_due_at:
+          description: "С какого момента можно поставить «эффективно»: внедрено + окно наблюдения."
+          format: date-time
+          type: string
+        factor:
+          type: string
+        flags:
+          description: overdue — просрочена; ineffective — не помогла; hanging_temporary_control — висит временно усиленный контроль; evaluation_due — пора оценить; awaiting_window — идёт окно наблюдения.
+          items:
+            type: string
+          type: array
+        history:
+          items:
+            $ref: "#/components/schemas/ActionHistory"
+          type: array
+        implemented_at:
+          format: date-time
+          type: string
+        incident_id:
+          type: string
+        owner:
+          type: string
+        plan:
+          $ref: "#/components/schemas/EffectivenessPlanView"
+        status:
+          description: Назначена / внедрена (идёт окно наблюдения) / эффективна / переоткрыта — не помогла. «Внедрено» ≠ «эффективно».
+          enum:
+            - assigned
+            - implemented
+            - effective
+            - reopened
+          type: string
+        suggestion_id:
+          type: string
+        title:
+          type: string
+      required:
+        - action_id
+        - incident_id
+        - action_type
+        - direction
+        - owner
+        - plan
+        - status
+        - cycle
+        - assigned_at
+        - flags
+        - history
+        - basis_seq
+      type: object
     CoveragePoint:
       additionalProperties: false
       properties:
@@ -2916,6 +3073,25 @@ components:
         - scale
         - unit
         - in_range
+      type: object
+    DataDeficitMap:
+      additionalProperties: false
+      properties:
+        basis_seq:
+          format: int64
+          type: integer
+        investigations:
+          description: Всего расследований (разборов несоответствий).
+          format: int64
+          type: integer
+        rows:
+          items:
+            $ref: "#/components/schemas/DeficitRow"
+          type: array
+      required:
+        - investigations
+        - rows
+        - basis_seq
       type: object
     DecisionCard:
       additionalProperties: false
@@ -3250,6 +3426,86 @@ components:
         - name
         - severity
         - status
+      type: object
+    DeficitEstimate:
+      additionalProperties: false
+      properties:
+        from_tenths:
+          format: int64
+          type: integer
+        incidents:
+          description: Сколько инцидентов с сужением по основаниям легло в оценку.
+          format: int64
+          type: integer
+        text:
+          description: «в среднем с 13 до 4 деталей».
+          type: string
+        to_tenths:
+          format: int64
+          type: integer
+      required:
+        - from_tenths
+        - to_tenths
+        - incidents
+        - text
+      type: object
+    DeficitPlace:
+      additionalProperties: false
+      properties:
+        count:
+          format: int64
+          type: integer
+        place:
+          type: string
+      required:
+        - place
+        - count
+      type: object
+    DeficitRow:
+      additionalProperties: false
+      properties:
+        digitization:
+          description: Какая цифровизация закрыла бы пробел.
+          type: string
+        estimate:
+          $ref: "#/components/schemas/DeficitEstimate"
+          description: "Нет — оценка невозможна: по этим расследованиям область ещё не сужали по основаниям."
+        incident_ids:
+          items:
+            type: string
+          type: array
+        investigations:
+          description: В скольких расследованиях не хватало.
+          format: int64
+          type: integer
+        kind:
+          enum:
+            - tool_unknown
+            - cycle_end_time_unknown
+            - no_observation_after_operation
+            - no_observation_before_operation
+            - operator_unknown
+            - equipment_log_missing
+            - other
+          type: string
+        nc_ids:
+          items:
+            type: string
+          type: array
+        places:
+          items:
+            $ref: "#/components/schemas/DeficitPlace"
+          type: array
+        suggestion_id:
+          description: Предложение цифровизации по этой строке, если записано.
+          type: string
+      required:
+        - kind
+        - investigations
+        - places
+        - nc_ids
+        - incident_ids
+        - digitization
       type: object
     DefineCalendar:
       additionalProperties: false
@@ -4344,6 +4600,26 @@ components:
         - keyid
         - sig
       type: object
+    EffectivenessPlanView:
+      additionalProperties: false
+      properties:
+        baseline:
+          type: string
+        enhanced_control:
+          type: string
+        metric:
+          type: string
+        success_criterion:
+          type: string
+        window_days:
+          format: int64
+          type: integer
+      required:
+        - metric
+        - baseline
+        - window_days
+        - success_criterion
+      type: object
     EntityChanged:
       additionalProperties: false
       properties:
@@ -5105,6 +5381,47 @@ components:
         - basis_seq
         - policy_seq
       type: object
+    ForwardSuggestion:
+      additionalProperties: false
+      properties:
+        basis_seq:
+          description: "seq, на котором клиент видел объект (basis_seq из ответа чтения): после него в потоках гарда не должно быть новых записей guard_relevant, иначе 409 journal.stale_state (AD-39)."
+          format: int64
+          minimum: 0
+          type: integer
+        command_id:
+          description: UUIDv7 клиента; повтор с тем же id возвращает прежний ответ (AD-7). У подписанной команды — event_id пакета.
+          format: uuid
+          type: string
+        note:
+          maxLength: 4000
+          type: string
+        policy_seq:
+          description: Версия политики, по которой показаны права (policy_seq сеанса); изменилась — 409 journal.stale_policy (AD-39).
+          format: int64
+          minimum: 0
+          type: integer
+        responsible_id:
+          description: Псевдоним ответственного.
+          maxLength: 128
+          type: string
+        responsible_role:
+          description: "Роль: site_foreman — по персоналу, technologist — если нужна новая версия процесса."
+          maxLength: 64
+          type: string
+        signature:
+          $ref: "#/components/schemas/DsseEnvelope"
+          description: "Подписанный пакет DSSE для операций с уровнем подписи ≥ 1 (AD-10, AD-13, AD-14): подписывает агент токена, сервер сверяет отпечаток."
+        workplace_id:
+          description: Рабочее место сеанса (барьер 2, AD-15).
+          maxLength: 128
+          type: string
+      required:
+        - responsible_id
+        - command_id
+        - basis_seq
+        - policy_seq
+      type: object
     GenealogyHold:
       additionalProperties: false
       properties:
@@ -5182,6 +5499,50 @@ components:
         - ref
         - kind
         - label
+      type: object
+    GenerateSuggestions:
+      additionalProperties: false
+      properties:
+        basis_seq:
+          description: "seq, на котором клиент видел объект (basis_seq из ответа чтения): после него в потоках гарда не должно быть новых записей guard_relevant, иначе 409 journal.stale_state (AD-39)."
+          format: int64
+          minimum: 0
+          type: integer
+        command_id:
+          description: UUIDv7 клиента; повтор с тем же id возвращает прежний ответ (AD-7). У подписанной команды — event_id пакета.
+          format: uuid
+          type: string
+        policy_seq:
+          description: Версия политики, по которой показаны права (policy_seq сеанса); изменилась — 409 journal.stale_policy (AD-39).
+          format: int64
+          minimum: 0
+          type: integer
+        signature:
+          $ref: "#/components/schemas/DsseEnvelope"
+          description: "Подписанный пакет DSSE для операций с уровнем подписи ≥ 1 (AD-10, AD-13, AD-14): подписывает агент токена, сервер сверяет отпечаток."
+        workplace_id:
+          description: Рабочее место сеанса (барьер 2, AD-15).
+          maxLength: 128
+          type: string
+      required:
+        - command_id
+        - basis_seq
+        - policy_seq
+      type: object
+    GeneratorInfo:
+      additionalProperties: false
+      properties:
+        connected:
+          description: false — вход генератора не подключён (например, счётчики узлов).
+          type: boolean
+        id:
+          type: string
+        kind:
+          type: string
+      required:
+        - id
+        - kind
+        - connected
       type: object
     GrantApprovalStage:
       additionalProperties: false
@@ -7827,6 +8188,43 @@ components:
         - kind
         - is_illustration
       type: object
+    MemoryEntry:
+      additionalProperties: false
+      properties:
+        action_id:
+          type: string
+        action_type:
+          type: string
+        cause_category:
+          type: string
+        cycles:
+          format: int64
+          type: integer
+        direction:
+          type: string
+        factor:
+          type: string
+        incident_id:
+          type: string
+        outcome:
+          description: Помогло / не помогло / помогло не с первого раза / ещё проверяется.
+          enum:
+            - helped
+            - not_helped
+            - helped_after_retry
+            - in_progress
+          type: string
+        title:
+          type: string
+      required:
+        - action_id
+        - incident_id
+        - title
+        - action_type
+        - direction
+        - outcome
+        - cycles
+      type: object
     MesBlock:
       additionalProperties: false
       properties:
@@ -10368,6 +10766,35 @@ components:
       required:
         - items
       type: object
+    QualitySummary:
+      additionalProperties: false
+      properties:
+        evaluation_due:
+          format: int64
+          type: integer
+        hanging_temporary:
+          format: int64
+          type: integer
+        ineffective:
+          format: int64
+          type: integer
+        open:
+          format: int64
+          type: integer
+        overdue:
+          format: int64
+          type: integer
+        recurring:
+          format: int64
+          type: integer
+      required:
+        - open
+        - overdue
+        - ineffective
+        - hanging_temporary
+        - evaluation_due
+        - recurring
+      type: object
     QuarantineEntry:
       additionalProperties: false
       properties:
@@ -10913,6 +11340,30 @@ components:
         - command_id
         - basis_seq
         - policy_seq
+      type: object
+    RecurringProblem:
+      additionalProperties: false
+      properties:
+        count:
+          format: int64
+          type: integer
+        defect_type:
+          type: string
+        nc_ids:
+          items:
+            type: string
+          type: array
+        step_key:
+          type: string
+        with_action:
+          description: По инцидентам этих несоответствий есть мера.
+          type: boolean
+      required:
+        - defect_type
+        - step_key
+        - count
+        - nc_ids
+        - with_action
       type: object
     RefCalendar:
       additionalProperties: false
@@ -12440,6 +12891,45 @@ components:
         - resolution
         - presentation_no
         - method_event_ids
+        - command_id
+        - basis_seq
+        - policy_seq
+      type: object
+    ResolveSuggestion:
+      additionalProperties: false
+      properties:
+        basis_seq:
+          description: "seq, на котором клиент видел объект (basis_seq из ответа чтения): после него в потоках гарда не должно быть новых записей guard_relevant, иначе 409 journal.stale_state (AD-39)."
+          format: int64
+          minimum: 0
+          type: integer
+        command_id:
+          description: UUIDv7 клиента; повтор с тем же id возвращает прежний ответ (AD-7). У подписанной команды — event_id пакета.
+          format: uuid
+          type: string
+        policy_seq:
+          description: Версия политики, по которой показаны права (policy_seq сеанса); изменилась — 409 journal.stale_policy (AD-39).
+          format: int64
+          minimum: 0
+          type: integer
+        reason:
+          $ref: "#/components/schemas/Reason"
+        resolution:
+          description: Принято в работу / отклонено.
+          enum:
+            - accepted
+            - rejected
+          type: string
+        signature:
+          $ref: "#/components/schemas/DsseEnvelope"
+          description: "Подписанный пакет DSSE для операций с уровнем подписи ≥ 1 (AD-10, AD-13, AD-14): подписывает агент токена, сервер сверяет отпечаток."
+        workplace_id:
+          description: Рабочее место сеанса (барьер 2, AD-15).
+          maxLength: 128
+          type: string
+      required:
+        - resolution
+        - reason
         - command_id
         - basis_seq
         - policy_seq
@@ -14514,6 +15004,130 @@ components:
         - basis_seq
         - policy_seq
       type: object
+    Suggestion:
+      additionalProperties: false
+      properties:
+        basis:
+          description: Основания — event_id записей журнала.
+          items:
+            type: string
+          type: array
+        basis_seq:
+          description: basis_seq для команд по предложению (AD-39).
+          format: int64
+          type: integer
+        estimate:
+          description: Оценка эффекта словами с единицами.
+          type: string
+        event_id:
+          type: string
+        generator:
+          description: "Генератор (порт + адаптер): rules.bottleneck, rules.risk_scope…"
+          type: string
+        history:
+          items:
+            $ref: "#/components/schemas/SuggestionHistory"
+          type: array
+        incident_id:
+          type: string
+        kind:
+          enum:
+            - bottleneck
+            - risk_scope
+            - reaction_rule_candidate
+            - analyzer_adaptation
+            - data_deficit
+            - other
+          type: string
+        missing_kind:
+          description: Вид недостающих сведений (карта дефицита).
+          type: string
+        recorded_at:
+          format: date-time
+          type: string
+        responsible_id:
+          description: Кому передано.
+          type: string
+        responsible_role:
+          description: Роль ответственного.
+          type: string
+        statement:
+          type: string
+        status:
+          description: Новое / передано ответственному / принято в работу / отклонено. «Принято» ничего не применяет само.
+          enum:
+            - new
+            - forwarded
+            - accepted
+            - rejected
+          type: string
+        step_key:
+          description: Узел процесса — ссылка на карту процесса.
+          type: string
+        suggestion_id:
+          type: string
+        title:
+          type: string
+      required:
+        - suggestion_id
+        - generator
+        - kind
+        - title
+        - statement
+        - basis
+        - status
+        - recorded_at
+        - event_id
+        - basis_seq
+        - history
+      type: object
+    SuggestionHistory:
+      additionalProperties: false
+      properties:
+        actor:
+          type: string
+        at:
+          format: date-time
+          type: string
+        event_id:
+          type: string
+        responsible_id:
+          type: string
+        responsible_role:
+          type: string
+        text:
+          type: string
+        type:
+          enum:
+            - recorded
+            - forwarded
+            - accepted
+            - rejected
+          type: string
+      required:
+        - type
+        - at
+        - event_id
+      type: object
+    SuggestionList:
+      additionalProperties: false
+      properties:
+        basis_seq:
+          format: int64
+          type: integer
+        generators:
+          items:
+            $ref: "#/components/schemas/GeneratorInfo"
+          type: array
+        items:
+          items:
+            $ref: "#/components/schemas/Suggestion"
+          type: array
+      required:
+        - items
+        - generators
+        - basis_seq
+      type: object
     SwitchSource:
       additionalProperties: false
       properties:
@@ -15210,6 +15824,61 @@ paths:
         id: notifications.alert.list
         owner: notifications
         subject: notification
+  /api/v1/analysis/data-deficit:
+    get:
+      description: "FR-143: по каждому виду недостающих сведений разбора (FR-58) — в скольких расследованиях не хватало, где, какая цифровизация закрыла бы пробел и оценка сужения области риска по уже сделанным сужениям с основаниями; нет оценки — так и сказано."
+      operationId: analysis.data_deficit.read
+      parameters:
+        - description: "Ось момента: occurred — «как было» (по умолчанию), recorded — «что мы знали» (AD-37)."
+          explode: false
+          in: query
+          name: axis
+          schema:
+            $ref: "#/components/schemas/Axis"
+            description: "Ось момента: occurred — «как было» (по умолчанию), recorded — «что мы знали» (AD-37)."
+        - description: "Момент (RFC 3339 UTC); пусто — «сейчас». Задан — воспроизведение: команды выключены (AD-21)."
+          explode: false
+          in: query
+          name: as_of
+          schema:
+            description: "Момент (RFC 3339 UTC); пусто — «сейчас». Задан — воспроизведение: команды выключены (AD-21)."
+            format: date-time
+            type: string
+        - description: "Прогон сценария: данные в его пространстве имён (AD-38)."
+          explode: false
+          in: query
+          name: run_id
+          schema:
+            description: "Прогон сценария: данные в его пространстве имён (AD-38)."
+            maxLength: 128
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataDeficitMap"
+          description: OK
+          headers:
+            Ant-Backend:
+              schema:
+                $ref: "#/components/schemas/BackendMode"
+                description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Error
+      summary: Карта дефицита данных
+      tags:
+        - analysis
+      x-ant-action:
+        class: read
+        critical: false
+        id: analysis.data_deficit.read
+        owner: analysis
+        subject: incident
   /api/v1/analysis/groups:
     get:
       description: "Стол технолога, «Разбор причин»: несоответствия, сгруппированные по виду дефекта × операции × оборудованию, со статусом расследования."
@@ -16772,6 +17441,61 @@ paths:
         owner: nonconformity
         signature_level: 2
         subject: nonconformity
+  /api/v1/corrective-actions:
+    get:
+      description: "FR-64, FR-138: меры с планом проверки эффективности, статус («внедрено» ≠ «эффективно»), флаги — просрочена, не помогла, висит временно усиленный контроль, пора оценить; повторяющиеся проблемы; организационная память — что пробовали и с каким результатом."
+      operationId: analysis.action.list
+      parameters:
+        - description: "Ось момента: occurred — «как было» (по умолчанию), recorded — «что мы знали» (AD-37)."
+          explode: false
+          in: query
+          name: axis
+          schema:
+            $ref: "#/components/schemas/Axis"
+            description: "Ось момента: occurred — «как было» (по умолчанию), recorded — «что мы знали» (AD-37)."
+        - description: "Момент (RFC 3339 UTC); пусто — «сейчас». Задан — воспроизведение: команды выключены (AD-21)."
+          explode: false
+          in: query
+          name: as_of
+          schema:
+            description: "Момент (RFC 3339 UTC); пусто — «сейчас». Задан — воспроизведение: команды выключены (AD-21)."
+            format: date-time
+            type: string
+        - description: "Прогон сценария: данные в его пространстве имён (AD-38)."
+          explode: false
+          in: query
+          name: run_id
+          schema:
+            description: "Прогон сценария: данные в его пространстве имён (AD-38)."
+            maxLength: 128
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CorrectiveActionList"
+          description: OK
+          headers:
+            Ant-Backend:
+              schema:
+                $ref: "#/components/schemas/BackendMode"
+                description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Error
+      summary: Корректирующие меры и взгляд руководителя по качеству
+      tags:
+        - analysis
+      x-ant-action:
+        class: read
+        critical: false
+        id: analysis.action.list
+        owner: analysis
+        subject: incident
   /api/v1/critical-actions:
     get:
       description: "AD-28, FR-77: CA-‹n› — действие, объект, было → стало, кто, полномочие и клеймо с ревизией политики, основание, ссылка на подписанную запись основного журнала; отмена — только новой записью. Стол Аудитора ИБ."
@@ -27303,6 +28027,192 @@ paths:
         data:
           $ref: "#/components/schemas/EntityChanged"
         event: entity_changed
+  /api/v1/suggestions:
+    get:
+      description: "FR-63: предложения генераторов (ограничение линии, область риска, кандидаты в правила реакции, адаптация VisionQC, карта дефицита данных) с основаниями, ответственным и историей решений; подключённые генераторы. Ничего не применяется автоматически."
+      operationId: analysis.suggestion.list
+      parameters:
+        - description: "Ось момента: occurred — «как было» (по умолчанию), recorded — «что мы знали» (AD-37)."
+          explode: false
+          in: query
+          name: axis
+          schema:
+            $ref: "#/components/schemas/Axis"
+            description: "Ось момента: occurred — «как было» (по умолчанию), recorded — «что мы знали» (AD-37)."
+        - description: "Момент (RFC 3339 UTC); пусто — «сейчас». Задан — воспроизведение: команды выключены (AD-21)."
+          explode: false
+          in: query
+          name: as_of
+          schema:
+            description: "Момент (RFC 3339 UTC); пусто — «сейчас». Задан — воспроизведение: команды выключены (AD-21)."
+            format: date-time
+            type: string
+        - description: "Прогон сценария: данные в его пространстве имён (AD-38)."
+          explode: false
+          in: query
+          name: run_id
+          schema:
+            description: "Прогон сценария: данные в его пространстве имён (AD-38)."
+            maxLength: 128
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuggestionList"
+          description: OK
+          headers:
+            Ant-Backend:
+              schema:
+                $ref: "#/components/schemas/BackendMode"
+                description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Error
+      summary: Предложения
+      tags:
+        - analysis
+      x-ant-action:
+        class: read
+        critical: false
+        id: analysis.suggestion.list
+        owner: analysis
+        subject: suggestion
+  /api/v1/suggestions/generate:
+    post:
+      description: "FR-63: прогнать подключённые генераторы; новые предложения записываются фактами incident.suggestion.recorded, уже записанные не повторяются. Квитанция перечисляет event_id новых предложений."
+      operationId: analysis.suggestion.generate
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateSuggestions"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Receipt"
+          description: OK
+          headers:
+            Ant-Backend:
+              schema:
+                $ref: "#/components/schemas/BackendMode"
+                description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Error
+      summary: Сформировать предложения
+      tags:
+        - analysis
+      x-ant-action:
+        class: record
+        critical: false
+        emits:
+          - incident.suggestion.recorded
+        id: analysis.suggestion.generate
+        owner: analysis
+        subject: suggestion
+  /api/v1/suggestions/{suggestion_id}/forward:
+    post:
+      description: "UJ-1: руководитель передаёт предложение мастеру участка (по персоналу) или технологу (если нужна новая версия процесса); задачу ставит notifications."
+      operationId: analysis.suggestion.forward
+      parameters:
+        - in: path
+          name: suggestion_id
+          required: true
+          schema:
+            maxLength: 128
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ForwardSuggestion"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Receipt"
+          description: OK
+          headers:
+            Ant-Backend:
+              schema:
+                $ref: "#/components/schemas/BackendMode"
+                description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Error
+      summary: Передать предложение ответственному
+      tags:
+        - analysis
+      x-ant-action:
+        class: record
+        critical: false
+        emits:
+          - incident.suggestion.forwarded
+        id: analysis.suggestion.forward
+        owner: analysis
+        subject: suggestion
+  /api/v1/suggestions/{suggestion_id}/resolve:
+    post:
+      description: "FR-63: принять в работу или отклонить — с основанием. «Принято» ничего не применяет: норма — новая версия процесса через кворум, мера — назначением меры."
+      operationId: analysis.suggestion.resolve
+      parameters:
+        - in: path
+          name: suggestion_id
+          required: true
+          schema:
+            maxLength: 128
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResolveSuggestion"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Receipt"
+          description: OK
+          headers:
+            Ant-Backend:
+              schema:
+                $ref: "#/components/schemas/BackendMode"
+                description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Error
+      summary: Решение по предложению
+      tags:
+        - analysis
+      x-ant-action:
+        class: record
+        critical: false
+        emits:
+          - incident.suggestion.resolved
+        id: analysis.suggestion.resolve
+        owner: analysis
+        subject: suggestion
   /api/v1/tasks:
     get:
       description: "FR-57: задачи пользователя и его роли — физические, доп. проверка, эскалации, запросы решения; срок и цена задержки."

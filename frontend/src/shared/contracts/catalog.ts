@@ -982,11 +982,33 @@ export const eventCatalog = {
     "caGroup": "risk_scope",
     "currentVersion": 1
   },
+  "incident.suggestion.forwarded": {
+    "title": "Предложение передано ответственному",
+    "emitter": "analysis",
+    "kind": "decision",
+    "stream": "suggestion",
+    "axis": "none",
+    "actionClass": "record",
+    "critical": false,
+    "caGroup": null,
+    "currentVersion": 1
+  },
   "incident.suggestion.recorded": {
     "title": "Предложение записано",
     "emitter": "analysis",
     "kind": "fact",
-    "stream": "global",
+    "stream": "suggestion",
+    "axis": "none",
+    "actionClass": "record",
+    "critical": false,
+    "caGroup": null,
+    "currentVersion": 1
+  },
+  "incident.suggestion.resolved": {
+    "title": "Решение по предложению",
+    "emitter": "analysis",
+    "kind": "decision",
+    "stream": "suggestion",
     "axis": "none",
     "actionClass": "record",
     "critical": false,

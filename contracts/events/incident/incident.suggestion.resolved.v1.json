@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/incident/incident.suggestion.resolved.v1.json",
+  "title": "IncidentSuggestionResolvedV1",
+  "description": "Решение по предложению: принято в работу или отклонено — с основанием. «Принято» не применяет ничего само: изменение нормы — новая версия процесса через кворум, мера — incident.action.assigned (FR-63, FR-64).",
+  "type": "object",
+  "properties": {
+    "suggestion_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Предложение."
+    },
+    "resolution": {
+      "type": "string",
+      "enum": [
+        "accepted",
+        "rejected"
+      ],
+      "description": "Итог: принято в работу / отклонено."
+    },
+    "reason": {
+      "$ref": "../common/defs.v1.json#/definitions/reason",
+      "description": "Основание решения."
+    }
+  },
+  "required": [
+    "suggestion_id",
+    "resolution",
+    "reason"
+  ]
+}

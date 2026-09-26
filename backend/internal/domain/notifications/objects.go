@@ -13,7 +13,9 @@ import (
 //     запроса, иначе контролёру ОТК (эпик 22: «задачу ставит notifications»);
 //   - incident.action.assigned — задача владельцу меры со сроком меры;
 //   - analyzer.passport.suspended — задача начальнику ОТК «решить о возврате
-//     анализатора» после автоотката (эпик 40, FR-101).
+//     анализатора» после автоотката (эпик 40, FR-101);
+//   - incident.suggestion.forwarded — задача ответственному рассмотреть
+//     предложение (эпик 42, FR-63, UJ-1).
 //
 // Чистая функция записи: слот — (правило, поток объекта, event_id решения),
 // версия одна — повтор даёт тот же reaction_id. Исполняет её роль scheduler
@@ -53,6 +55,28 @@ func ObjectReact(r kernel.Record) []kernel.Reaction {
 		if t, ok := ParseTime(m.DueAt); ok {
 			d.DueAt = FormatTime(t)
 		}
+	case catalog.IncidentSuggestionForwarded:
+		// Эпик 42 (FR-63, UJ-1): руководитель передал предложение — задача
+		// ответственному; система сама ничего не меняет.
+		var m struct {
+			SuggestionID    string `json:"suggestion_id"`
+			ResponsibleID   string `json:"responsible_id"`
+			ResponsibleRole string `json:"responsible_role"`
+			Title           string `json:"title"`
+		}
+		if !decode(r, &m) || m.ResponsibleID == "" {
+			return nil
+		}
+		role := m.ResponsibleRole
+		if role == "" {
+			role = RoleForeman
+		}
+		title := m.Title
+		if title == "" {
+			title = m.SuggestionID
+		}
+		d = TaskData{Kind: "other", AssigneeRoleID: role, AssigneePersonID: m.ResponsibleID,
+			Title: truncate("Предложение "+m.SuggestionID+": "+title+" — рассмотреть и принять решение", 256)}
 	case catalog.AnalyzerPassportSuspended:
 		// Эпик 40 (FR-101): автооткат анализатора — задача начальнику ОТК:
 		// контроль стал строже, вернуть анализатор может только он.

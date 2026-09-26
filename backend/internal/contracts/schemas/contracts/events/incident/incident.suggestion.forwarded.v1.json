@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/incident/incident.suggestion.forwarded.v1.json",
+  "title": "IncidentSuggestionForwardedV1",
+  "description": "Предложение передано ответственному — решение руководителя (UJ-1): задачу ответственному ставит notifications; система сама ничего не меняет (FR-63).",
+  "type": "object",
+  "properties": {
+    "suggestion_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Предложение."
+    },
+    "responsible_id": {
+      "$ref": "../common/defs.v1.json#/definitions/person_ref",
+      "description": "Кому передано (псевдоним)."
+    },
+    "responsible_role": {
+      "type": "string",
+      "maxLength": 64,
+      "description": "Роль ответственного: мастер участка — по персоналу, технолог — если нужна новая версия процесса."
+    },
+    "title": {
+      "type": "string",
+      "maxLength": 256,
+      "description": "Заголовок предложения — для задачи ответственному."
+    },
+    "note": {
+      "type": "string",
+      "maxLength": 4000,
+      "description": "Пояснение руководителя."
+    }
+  },
+  "required": [
+    "suggestion_id",
+    "responsible_id"
+  ]
+}

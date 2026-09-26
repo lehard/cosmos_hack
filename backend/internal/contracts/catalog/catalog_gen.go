@@ -238,8 +238,12 @@ const (
 	IncidentScopeExpanded Type = "incident.scope.expanded"
 	// Область риска сужена
 	IncidentScopeNarrowed Type = "incident.scope.narrowed"
+	// Предложение передано ответственному
+	IncidentSuggestionForwarded Type = "incident.suggestion.forwarded"
 	// Предложение записано
 	IncidentSuggestionRecorded Type = "incident.suggestion.recorded"
+	// Решение по предложению
+	IncidentSuggestionResolved Type = "incident.suggestion.resolved"
 	// Флаг аномалии входа
 	IngestAnomalyFlagged Type = "ingest.anomaly.flagged"
 	// Импорт журнала завершён
@@ -549,7 +553,9 @@ var types = [...]Info{
 	{Type: IncidentScopeComputed, Title: "Новая версия области риска вычислена", Family: "incident", Emitter: "analysis", Role: "crossitem", Kind: "reaction", Stream: "incident", Axis: "none", ActionClass: "protective", Critical: false, CAGroup: "", GuardRelevant: true, PublishStage: false, Provenance: []string{"server_attested"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: IncidentScopeExpanded, Title: "Область риска расширена человеком", Family: "incident", Emitter: "analysis", Role: "api", Kind: "decision", Stream: "incident", Axis: "none", ActionClass: "protective", Critical: true, CAGroup: "risk_scope", GuardRelevant: true, PublishStage: false, Provenance: []string{"personal", "paper", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: IncidentScopeNarrowed, Title: "Область риска сужена", Family: "incident", Emitter: "analysis", Role: "api", Kind: "decision", Stream: "incident", Axis: "none", ActionClass: "permissive", Critical: true, CAGroup: "risk_scope", GuardRelevant: true, PublishStage: false, Provenance: []string{"personal", "paper", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
-	{Type: IncidentSuggestionRecorded, Title: "Предложение записано", Family: "incident", Emitter: "analysis", Role: "api", Kind: "fact", Stream: "global", Axis: "none", ActionClass: "record", Critical: false, CAGroup: "", GuardRelevant: false, PublishStage: false, Provenance: []string{"server_attested", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
+	{Type: IncidentSuggestionForwarded, Title: "Предложение передано ответственному", Family: "incident", Emitter: "analysis", Role: "api", Kind: "decision", Stream: "suggestion", Axis: "none", ActionClass: "record", Critical: false, CAGroup: "", GuardRelevant: true, PublishStage: false, Provenance: []string{"personal", "paper", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
+	{Type: IncidentSuggestionRecorded, Title: "Предложение записано", Family: "incident", Emitter: "analysis", Role: "api", Kind: "fact", Stream: "suggestion", Axis: "none", ActionClass: "record", Critical: false, CAGroup: "", GuardRelevant: false, PublishStage: false, Provenance: []string{"server_attested", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
+	{Type: IncidentSuggestionResolved, Title: "Решение по предложению", Family: "incident", Emitter: "analysis", Role: "api", Kind: "decision", Stream: "suggestion", Axis: "none", ActionClass: "record", Critical: false, CAGroup: "", GuardRelevant: true, PublishStage: false, Provenance: []string{"personal", "paper", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: IngestAnomalyFlagged, Title: "Флаг аномалии входа", Family: "ingest", Emitter: "ingest", Role: "api", Kind: "service", Stream: "item", Axis: "none", ActionClass: "record", Critical: false, CAGroup: "", GuardRelevant: false, PublishStage: true, Provenance: []string{"server_attested", "genesis"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: IngestImportCompleted, Title: "Импорт журнала завершён", Family: "ingest", Emitter: "ingest", Role: "api", Kind: "service", Stream: "source", Axis: "none", ActionClass: "record", Critical: false, CAGroup: "", GuardRelevant: false, PublishStage: false, Provenance: []string{"server_attested", "genesis"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: IngestMessageQuarantined, Title: "Сообщение помещено в карантин", Family: "ingest", Emitter: "ingest", Role: "api", Kind: "service", Stream: "source", Axis: "none", ActionClass: "record", Critical: false, CAGroup: "", GuardRelevant: false, PublishStage: false, Provenance: []string{"server_attested", "genesis"}, Versions: []int{1}, CurrentVersion: 1},
@@ -770,6 +776,7 @@ var Streams = [...]ModuleInfo{
 	{Name: "erp_message", Title: "исходящее учётное сообщение `erp_message:‹бизнес-ключ›`"},
 	{Name: "run", Title: "прогон сценария `run:‹run_id›`"},
 	{Name: "global", Title: "служебный глобальный поток"},
+	{Name: "suggestion", Title: "предложение генератора и решения по нему `suggestion:‹suggestion_id›` (FR-63)"},
 }
 
 // Lookup возвращает строку каталога для типа.

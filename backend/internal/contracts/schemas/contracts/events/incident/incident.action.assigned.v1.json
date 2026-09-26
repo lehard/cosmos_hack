@@ -76,6 +76,15 @@
         "success_criterion"
       ],
       "title": "EffectivenessPlan"
+    },
+    "title": {
+      "type": "string",
+      "maxLength": 256,
+      "description": "Что делается — словами («проверка инструмента каждые 75 циклов», «обучение сварщиков»); основа организационной памяти (FR-138)."
+    },
+    "suggestion_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Предложение, из которого родилась мера (FR-63), если есть."
     }
   },
   "required": [

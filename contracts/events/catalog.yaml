@@ -65,6 +65,7 @@ streams:
   erp_message: "исходящее учётное сообщение `erp_message:‹бизнес-ключ›`"
   run: "прогон сценария `run:‹run_id›`"
   global: "служебный глобальный поток"
+  suggestion: "предложение генератора и решения по нему `suggestion:‹suggestion_id›` (FR-63)"
 
 families:
   item: {owner: item, title: "Изделие: регистрация, носители идентификатора, сборка, предъявление, вмешательства, выпуск"}
@@ -3006,7 +3007,7 @@ types:
     emitter: "analysis"
     role: "api"
     kind: "fact"
-    stream: "global"
+    stream: "suggestion"
     axis: "none"
     action_class: "record"
     critical: false
@@ -3017,6 +3018,38 @@ types:
     versions: [1]
     current_version: 1
     refs: ["FR-63", "FR-143", "AD-3"]
+  incident.suggestion.forwarded:
+    title: "Предложение передано ответственному"
+    emitter: "analysis"
+    role: "api"
+    kind: "decision"
+    stream: "suggestion"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-63", "UJ-1"]
+  incident.suggestion.resolved:
+    title: "Решение по предложению"
+    emitter: "analysis"
+    role: "api"
+    kind: "decision"
+    stream: "suggestion"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-63", "FR-64"]
 
   # ── analyzer (владелец схемы: vision) ──
   analyzer.check.recorded:

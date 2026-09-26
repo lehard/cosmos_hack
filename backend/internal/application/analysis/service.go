@@ -22,6 +22,11 @@ type Config struct {
 	Decisions DecisionWriter
 	// Clock — доменное «сейчас» при приёме команды (AD-37); nil — системное.
 	Clock appjournal.DomainClock
+	// Generators — генераторы предложений (FR-63); nil — встроенные на правилах
+	// (RuleGenerators) плюс подключённые RegisterGenerator.
+	Generators []Generator
+	// Line — ограничение линии для генератора «bottleneck»; nil — не подключено.
+	Line LineSource
 }
 
 // Service — реализация live ведущих портов модуля analysis (AD-36): чтение —
