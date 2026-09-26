@@ -10,10 +10,65 @@
 2. **Проверить каждый критерий оценки** — что нажать или запустить, что должно получиться и где это в коде.
 3. **Понять, что сделано полностью, а что частично** — без преувеличений.
 
-Полная таблица соответствия — каждый пункт постановки и каждый критерий: каким решением закрыт, где в коде и в каком состоянии — в [case-compliance.md](case-compliance.md).
+## Навигатор по решению
+
+**Посмотреть**
+
+| Что | Где |
+|---|---|
+| Онлайн-демо — работает без установки | <https://main.coopenomics.world/> |
+| Техническая презентация — 12 слайдов со ссылками на доказательства | [presentation.md](presentation.md) |
+| Скринкасты | [README — «Материалы защиты»](../README.md#материалы-защиты) |
+| Сценарии показа и главная история | [guides/demo_scenarios.md](guides/demo_scenarios.md) |
+
+**Как устроено**
+
+| Что | Где |
+|---|---|
+| Архитектура: схемы, модули, потоки данных | [architecture.md](architecture.md) |
+| 47 архитектурных решений с обоснованием | [architecture-spine.md](architecture-spine.md) |
+| Состав целевой системы (кейс §3.2) | [target-components.md](target-components.md) |
+| Модель данных | [data-model.md](data-model.md) |
+| Спецификации: API, события, процесс, интеграции | [specifications.md](specifications.md), контракты — [`contracts/`](../contracts/) |
+| Кодогенерация и проверка контрактов | [codegen.md](codegen.md) |
+| Масштабирование и расширение | [scaling.md](scaling.md), [new-adapter.md](new-adapter.md), [observability-kafka-otel.md](observability-kafka-otel.md) |
+
+**Производство и контроль качества**
+
+| Что | Где |
+|---|---|
+| Схема процесса изготовления фланца (BPMN) и материалы процесса | [process/README.md](process/README.md) |
+| Как система отрабатывает сценарии кейса | [scenario-processing.md](scenario-processing.md) |
+| Камеры и ИИ: проект комплекса и контур допуска моделей | [vision-camera-project.md](vision-camera-project.md) |
+| Документы по этапам процесса | [document-catalog.md](document-catalog.md) |
+| Нормативные опоры: ГОСТ и отраслевые требования | [normative-anchors.md](normative-anchors.md) |
+| Интеграции: 1С, Галактика:ERP, MES, КОМПАС-3D | [integrations/README.md](integrations/README.md), кооперация заводов — [federation.md](federation.md) |
+
+**Безопасность**
+
+| Что | Где |
+|---|---|
+| Модель угроз | [threat-model.md](threat-model.md) |
+| Подписи, ключи, криптопрофили | [crypto.md](crypto.md) |
+| Резервирование и восстановление | [backup-restore.md](backup-restore.md) |
+
+**Пользователям и проверяющим**
+
+| Что | Где |
+|---|---|
+| Руководства по ролям | [guides/README.md](guides/README.md) |
+| Соответствие каждому пункту кейса и критерию: решение, код, состояние | [case-compliance.md](case-compliance.md) |
+| Короткие ответы на вопросы жюри | [jury-answers.md](jury-answers.md) |
+| Ограничения и допущения | [assumptions.md](assumptions.md) |
+| Словарь терминов | [glossary.md](glossary.md) |
+| Лицензии, заимствованный код, источники | [third-party.md](third-party.md), [sources.md](sources.md) |
+| Все документы | [README.md](README.md) |
+
+![Архитектура «Главного»: контейнеры и границы доверия](images/architecture-containers.png)
 
 ## Содержание
 
+- [Навигатор по решению](#навигатор-по-решению)
 - [Быстрый старт: онлайн-демо](#быстрый-старт-онлайн-демо)
 - [Что посмотреть за 10 минут](#что-посмотреть-за-10-минут)
 - [Запуск у себя](#запуск-у-себя)
