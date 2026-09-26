@@ -1,5 +1,10 @@
 # Стол технолога (PRD §3a): разбор причин, общие факторы, разбор обстоятельств, область риска, процесс.
 # Плотный инженерный вид. Владелец после волны 1 — эпик 12.
+#
+# Разбор обстоятельств (FR-153): под тремя дорожками — таблица общих факторов
+# (тот же виджет, что на вкладке «Разбор причин», — одна правда, разные взгляды),
+# справа — гипотезы с доводами «за / против» и похожие случаи; вход из строки
+# общих факторов в гипотезу — на той же вкладке.
 version: 1
 role: technologist
 title_key: desks.causeAnalysis
@@ -16,6 +21,7 @@ tabs:
     layout: main-side
     slots:
       - {id: tracks, area: main, widget: circumstances}
+      - {id: tracks-factors, area: main, widget: common-factors}
       - {id: hypothesis, area: right, widget: hypothesis}
   - id: risk
     title_key: riskScope.title

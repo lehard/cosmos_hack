@@ -47,6 +47,79 @@
     "grantsHistory": "История выдачи прав",
     "metricTiles": "Показатели",
     "controlChart": "Контрольные карты",
-    "metricDrilldown": "Раскрытие показателя до исходных записей"
+    "metricDrilldown": "Раскрытие показателя до исходных записей",
+    "analysis": {
+      "circumstances": {
+        "selectHint": "Нажмите на событие — подсветятся связанный кадр и запись журнала",
+        "journalRecord": "Запись журнала № {seq}",
+        "journalRecordUnknown": "Номер записи журнала не передан",
+        "frame": "Кадр: {ref}",
+        "noFrame": "Кадров к записи нет",
+        "linked": "Связанные записи",
+        "operation": "Операция «{name}»",
+        "inWindow": "В окне возможного возникновения",
+        "outsideWindow": "Вне окна возможного возникновения",
+        "windowUnknown": "Окно возможного возникновения определить нельзя: нет последнего подтверждённо нормального состояния или первой находки",
+        "nothingNotable": "Значимых записей нет",
+        "phaseSummary": "Ход событий"
+      },
+      "missing": {
+        "title": "@:ncCard.whySystemSuggests.missingData",
+        "toolUnknown": "Неизвестен инструмент",
+        "cycleEndTimeUnknown": "Неизвестно точное время конца цикла",
+        "noObservationAfterOperation": "Нет наблюдения после операции",
+        "noObservationBeforeOperation": "Нет наблюдения до операции",
+        "operatorUnknown": "@:empty.performerUnknown",
+        "equipmentLogMissing": "Нет журнала оборудования",
+        "other": "Другие сведения"
+      },
+      "factors": {
+        "factor": "Фактор",
+        "group": "Группа: {label}",
+        "value": "Значение",
+        "share": "Сколько из N",
+        "varies": "разные ({n})",
+        "valueUnknown": "@:common.words.unknown",
+        "commonToAll": "Общий для всей группы",
+        "noGroup": "Выберите группу несоответствий в «Разборе причин»"
+      },
+      "hypothesis": {
+        "confidence": "Уверенность вывода {value} — не вероятность вины",
+        "noArguments": "Доводов нет",
+        "fromFactor": "Вход из общего фактора: {factor}",
+        "similarCauseHypothesis": "гипотеза",
+        "similarCauseConfirmed": "подтверждена",
+        "noMeasure": "не назначена"
+      },
+      "riskScope": {
+        "systemAuthor": "Правило системы",
+        "noBasis": "без основания",
+        "evidence": "доказательств: {n}",
+        "items": "Изделия области",
+        "known": "Что известно",
+        "action": "Что делать",
+        "location": "Где",
+        "issueBasisMissing": "Версия {version}: изделия вышли из области без основания",
+        "issueBreakdownMismatch": "Версия {version}: разбивка не сходится с размером области",
+        "issueVersionOrder": "Версия {version}: версии области не по порядку",
+        "issueNarrowedGrew": "Версия {version}: «сужение» увеличило область"
+      },
+      "process": {
+        "noActive": "Действующей версии нет — сравнивать не с чем",
+        "noDiff": "Отличий от действующей версии нет",
+        "isActive": "Это действующая версия",
+        "author": "Автор: {who}",
+        "effectiveFrom": "Действует с {time}",
+        "valueYes": "@:common.actions.yes",
+        "valueNo": "@:common.actions.no",
+        "valueEmpty": "—",
+        "step": "Шаг: {key}"
+      },
+      "causes": {
+        "count": "Несоответствий",
+        "lastFound": "Последняя находка",
+        "investigation": "@:ncCard.twoStatuses.investigation"
+      }
+    }
   }
 }
