@@ -9,7 +9,7 @@ import type { NCPresentationActionResolution } from './nCPresentationActionResol
 export interface NCPresentationAction {
   /** Пройдёт гарды для вошедшего (полномочие точки, разделение обязанностей, блок, результаты методов). */
   allowed: boolean;
-  /** Что произойдёт: изделие, маршрут, блокировка, область риска, 1С, история. */
+  /** Что произойдёт по делу: изделие, маршрут, блокировка, область риска, кому уйдёт действие (строки 1С и истории — в technical_consequences). */
   consequences: string[];
   /** Надпись кнопки: действие и направление. */
   label: string;
@@ -21,6 +21,8 @@ export interface NCPresentationAction {
   policy_ref?: string;
   /** resolution команды nonconformity.presentation.resolve. */
   resolution?: NCPresentationActionResolution;
+  /** Что изменится в системе: статусы, 1С, история. */
+  technical_consequences?: string[];
   /** Почему доступно или почему нет — словами. */
   why_available: string;
 }

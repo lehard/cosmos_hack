@@ -179,6 +179,42 @@ type NCToDecide struct {
 	Decisions          []string   `json:"decisions" doc:"id операций решений, допустимых по состоянию (права — access.permission.list)."`
 	DecisionDueAt      *time.Time `json:"decision_due_at,omitempty"`
 	ConcessionRequired bool       `json:"concession_required" doc:"Ремонт и «как есть» — только с действующим разрешением на отклонение."`
+	// Actions — совместимое дополнение (стол контролёра, интерфейс 7): решения
+	// карточки с доступностью и последствиями — по образцу presentation.read.
+	Actions []NCDecisionAction `json:"actions,omitempty" doc:"Решения карточки: доступность для вошедшего (те же гарды, что у команд), почему, и последствия, вычисленные сервером из состояния изделия и политики. Интерфейс показывает только их."`
+}
+
+// NCDecisionAction — решение в карточке несоответствия: операция, её вариант
+// (решение по изделию или на точке), доступность для вошедшего и последствия
+// — деловые (изделие, маршрут, кому уйдёт действие, чьё ещё решение нужно) и
+// технические (статусы, 1С, история) раздельно.
+type NCDecisionAction struct {
+	Operation             string   `json:"operation" enum:"nonconformity.nonconformity.confirm,nonconformity.signal.reject,nonconformity.recheck.request,nonconformity.item.isolate,nonconformity.presentation.resolve,nonconformity.disposition.set,nonconformity.disposition.verify,nonconformity.nonconformity.close,nonconformity.containment.set,nonconformity.containment.release" doc:"Операция API."`
+	Disposition           *string  `json:"disposition,omitempty" enum:"rework,repair,use_as_is,scrap,return_to_supplier" doc:"disposition команды nonconformity.disposition.set."`
+	Resolution            *string  `json:"resolution,omitempty" enum:"accept,accept_with_concession,reject,insufficient_data" doc:"resolution команды nonconformity.presentation.resolve."`
+	ConcessionID          *string  `json:"concession_id,omitempty" doc:"Действующее разрешение на отклонение, по которому пройдёт решение (ремонт, «как есть», приёмка по разрешению)."`
+	Label                 string   `json:"label" doc:"Надпись кнопки: действие и направление."`
+	Allowed               bool     `json:"allowed" doc:"Пройдёт гарды для вошедшего: доменный гард операции, полномочие, разрешение на отклонение."`
+	WhyAvailable          string   `json:"why_available" doc:"Почему доступно или почему нет — словами."`
+	Consequences          []string `json:"consequences" doc:"Что произойдёт по делу: с изделием и маршрутом, кому уйдёт действие, чьё ещё решение нужно."`
+	TechnicalConsequences []string `json:"technical_consequences" doc:"Что изменится в системе: статусы, 1С, история."`
+	PolicyRef             *string  `json:"policy_ref,omitempty" doc:"Основание в политике: полномочие или правило подписи."`
+}
+
+// NCHandoff — кому передано исполнение решения по изделию и в каком оно
+// состоянии («передано на исполнение: мастеру участка — переделка на
+// СВ-017-1, ожидает исполнения»). Вычисляется из задачи notifications,
+// порождённой решением, а без неё — из состояния процесса изделия.
+type NCHandoff struct {
+	DecisionEventID string    `json:"decision_event_id" doc:"Решение, исполнение которого передано."`
+	RoleID          string    `json:"role_id" doc:"Роль исполнителя по политике."`
+	RoleLabel       string    `json:"role_label" doc:"Кому передано — словами в дательном падеже («мастеру участка»)."`
+	Person          *string   `json:"person,omitempty" doc:"Псевдоним исполнителя, если известен."`
+	TaskTitle       string    `json:"task_title" doc:"Что поручено — словами."`
+	TaskID          *string   `json:"task_id,omitempty" doc:"Задача notifications, если решение её породило."`
+	Status          string    `json:"status" enum:"waiting,in_progress,done" doc:"Ожидает исполнения, исполняется, исполнено."`
+	StatusLabel     string    `json:"status_label" doc:"Состояние словами."`
+	Since           time.Time `json:"since" doc:"С какого момента в этом состоянии."`
 }
 
 // NCPresentationContext — контекст точки предъявления (FR-19, FR-56): для
@@ -244,6 +280,8 @@ type NCCard struct {
 	ApprovalsStatus     *string                `json:"approvals_status,omitempty" enum:"route_closed,pending,demo_stub" doc:"Подписи маршрута решения (режим 4): pending — решение не исполняется; demo_stub — демо, подписи не проверялись."`
 	Containment         []NCContainmentSource  `json:"containment,omitempty" doc:"Действующие основания сдерживания."`
 	GroupItemIDs        []string               `json:"group_item_ids,omitempty" doc:"Изделия группового несоответствия: окно нарушения специального процесса — одно несоответствие на все изделия окна, решение комиссии приходит каждому (FR-151)."`
+	// Handoff — совместимое дополнение (интерфейс 7): исполнение решения.
+	Handoff *NCHandoff `json:"handoff,omitempty" doc:"Кому передано исполнение решения по изделию и в каком оно состоянии; нет решения — поля нет."`
 }
 
 // NCPresentationView — точка предъявления изделия для решения контролёра
@@ -278,8 +316,10 @@ type NCPresentationAction struct {
 	Label        string   `json:"label" doc:"Надпись кнопки: действие и направление."`
 	Allowed      bool     `json:"allowed" doc:"Пройдёт гарды для вошедшего (полномочие точки, разделение обязанностей, блок, результаты методов)."`
 	WhyAvailable string   `json:"why_available" doc:"Почему доступно или почему нет — словами."`
-	Consequences []string `json:"consequences" doc:"Что произойдёт: изделие, маршрут, блокировка, область риска, 1С, история."`
+	Consequences []string `json:"consequences" doc:"Что произойдёт по делу: изделие, маршрут, блокировка, область риска, кому уйдёт действие (строки 1С и истории — в technical_consequences)."`
 	PolicyRef    *string  `json:"policy_ref,omitempty" doc:"Основание в политике: полномочие точки или правило подписи."`
+	// TechnicalConsequences — совместимое дополнение (интерфейс 7).
+	TechnicalConsequences []string `json:"technical_consequences,omitempty" doc:"Что изменится в системе: статусы, 1С, история."`
 }
 
 // NCPresentationPoint — точка предъявления: поля команды решения и подписи для людей.

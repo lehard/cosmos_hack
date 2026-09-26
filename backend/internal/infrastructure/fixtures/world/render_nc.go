@@ -294,6 +294,9 @@ func (c *Ctx) card(n *NC) ncapp.NCCard {
 	case "disposition_set":
 		card.ToDecide.Decisions = []string{"nonconformity.disposition.verify"}
 	}
+	// Интерфейс 7: решения с последствиями и исполнение решения по изделию.
+	c.decisionActions(n, it, run, &card)
+	card.Handoff = c.handoff(n, it, run, &card)
 	return card
 }
 
@@ -452,7 +455,9 @@ func (c *Ctx) presentationView(it *Item, r ncapp.DecisionQueueRow) ncapp.NCPrese
 		for _, r := range []string{"accept", "reject", "insufficient_data"} {
 			res := r
 			a := ncapp.NCPresentationAction{Operation: "nonconformity.presentation.resolve", Resolution: &res, Allowed: slices.Contains(p.AllowedResolutions, r)}
-			a.Label, a.WhyAvailable, a.Consequences = ncapp.ResolveTexts(r, gate, next, "", p.PresentationNo)
+			var cons []string
+			a.Label, a.WhyAvailable, cons = ncapp.ResolveTexts(r, gate, next, "", p.PresentationNo)
+			a.Consequences, a.TechnicalConsequences = ncapp.SplitConsequences(cons)
 			v.Actions = append(v.Actions, a)
 		}
 		v.Recommendation = &ncapp.NCRecommendation{Outcome: "accept", Why: []string{"Методы контроля признаков дефекта не нашли; блока и открытых несоответствий нет"}}
@@ -535,17 +540,19 @@ func (c *Ctx) reviewBasis(it *Item, x ReviewSpec, decision, late *Event, rv *nca
 		where = "«" + *n + "»"
 	}
 	revoked, upheld := ncapp.ReviewConsequences(gate, "accept", where, incidents)
+	revoked, revokedTech := ncapp.SplitConsequences(revoked)
+	upheld, upheldTech := ncapp.SplitConsequences(upheld)
 	policy := ptr("полномочие точки ЗТ-3; вторая подпись по политике не требуется (Д-81)")
 	rvk, uph := "revoked", "upheld"
 	blocked := st.Containment == "item_hold" || st.Containment == "lot_hold" || len(incidents) > 0
 	up := ncapp.NCPresentationAction{Operation: "nonconformity.presentation.review", Outcome: &uph, Label: ncapp.LabelUphold, Allowed: !blocked,
-		WhyAvailable: ncapp.ReviewWhyAllowed(uph, gate), Consequences: upheld, PolicyRef: policy}
+		WhyAvailable: ncapp.ReviewWhyAllowed(uph, gate), Consequences: upheld, TechnicalConsequences: upheldTech, PolicyRef: policy}
 	if blocked {
 		up.WhyAvailable = "Изделие заблокировано — операция запрещена до решения: оставить приёмку в силе нельзя, путь — несоответствие и разрешение на отклонение"
 	}
 	v.Actions = []ncapp.NCPresentationAction{
 		{Operation: "nonconformity.presentation.review", Outcome: &rvk, Label: ncapp.LabelRevoke, Allowed: true,
-			WhyAvailable: ncapp.ReviewWhyAllowed(rvk, gate), Consequences: revoked, PolicyRef: policy},
+			WhyAvailable: ncapp.ReviewWhyAllowed(rvk, gate), Consequences: revoked, TechnicalConsequences: revokedTech, PolicyRef: policy},
 		up,
 	}
 }

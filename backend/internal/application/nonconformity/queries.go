@@ -452,6 +452,9 @@ func (s *Service) Card(ctx context.Context, ncID string, m platform.Moment) (NCC
 	}
 	c := s.card(v, n, s.at(ctx, m, v.RunID))
 	s.withLabels(ctx, v, &c)
+	// Интерфейс 7: решения с доступностью и последствиями, исполнение решения.
+	c.ToDecide.Actions = s.cardActions(ctx, v, n, c)
+	c.Handoff = s.handoff(ctx, v, n, c)
 	if n.Origin == dom.OriginSpecialProcess {
 		// FR-151, S05 (NC-G1): состав группового несоответствия окна.
 		items, err := s.ncGroup(ctx, ncID, m)

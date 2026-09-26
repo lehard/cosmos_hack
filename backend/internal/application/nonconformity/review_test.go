@@ -138,7 +138,7 @@ func TestReviewRevokeAcceptance(t *testing.T) {
 	if pv.Recommendation == nil || pv.Recommendation.Outcome != "revoked" {
 		t.Fatalf("рекомендация: %+v", pv.Recommendation)
 	}
-	if len(pv.Actions) != 2 || *pv.Actions[0].Outcome != "revoked" || !pv.Actions[0].Allowed || len(pv.Actions[0].Consequences) < 5 ||
+	if len(pv.Actions) != 2 || *pv.Actions[0].Outcome != "revoked" || !pv.Actions[0].Allowed || len(pv.Actions[0].Consequences) < 4 || len(pv.Actions[0].TechnicalConsequences) != 2 ||
 		pv.Actions[0].Operation != "nonconformity.presentation.review" {
 		t.Fatalf("решения: %+v", pv.Actions)
 	}
