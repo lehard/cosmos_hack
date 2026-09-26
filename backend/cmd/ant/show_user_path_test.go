@@ -520,6 +520,11 @@ func (s *showSystem) session(persona string) showSession {
 	return showSession{user: str(u, "id"), workplace: str(w, "id"), policySeq: m["policy_seq"]}
 }
 
+// plainMeta — поля команды технолога (useAnalysisCommands): без рабочего места.
+func (ss showSession) plainMeta(basis any) map[string]any {
+	return map[string]any{"command_id": newID(), "basis_seq": basis, "policy_seq": ss.policySeq}
+}
+
 // meta — общие поля команды, как у интерфейса (AD-7, AD-39).
 func (ss showSession) meta(basis any) map[string]any {
 	m := map[string]any{"command_id": newID(), "basis_seq": basis, "policy_seq": ss.policySeq}
@@ -626,10 +631,15 @@ func (s *showSystem) isolatorMove(st *showStop) string {
 		s.t.Fatalf("%s: в паспорте %s нет несоответствия — изоляции по решению нет", st, item)
 	}
 	card := s.read(st.Persona, "nonconformity.card.read", map[string]string{"nc_id": fmt.Sprint(ncs[len(ncs)-1])})
+	// Изолятор по умолчанию — из решения «изолировать», иначе первый изолятор
+	// цеха рабочего места (IsolatorMoveConfirm, isolatorsFor).
 	iso, _ := card["isolation"].(map[string]any)
 	to := str(iso, "isolator_location_id")
 	if to == "" {
-		s.t.Fatalf("%s: в карточке НС нет изолятора решения «изолировать»: %v", st, card["isolation"])
+		to = s.firstIsolator(st.Persona)
+	}
+	if to == "" {
+		s.t.Fatalf("%s: изолятора нет ни в решении «изолировать» (%v), ни в справочнике мест", st, card["isolation"])
 	}
 	body := s.session(st.Persona).meta(pp["basis_seq"])
 	body["destination_kind"] = "isolator"
@@ -637,6 +647,38 @@ func (s *showSystem) isolatorMove(st *showStop) string {
 	body["inspection_on_receipt"] = "no_damage"
 	s.command(st, st.Persona, st.Op, map[string]string{"item_id": item}, body)
 	return "задачи: «" + str(t, "title") + "» → «Принять в изоляторе»"
+}
+
+// firstIsolator — первый изолятор цеха рабочего места сеанса (isolatorsFor):
+// без рабочего места — первый изолятор справочника.
+func (s *showSystem) firstIsolator(persona string) string {
+	s.t.Helper()
+	locs := list(s.read(persona, "reference.location.list", nil), "items")
+	wp := s.session(persona).workplace
+	shop := ""
+	for _, l := range locs {
+		if str(l, "location_id") == wp {
+			shop = str(l, "parent_id") // пост → участок → цех
+			for _, x := range locs {
+				if str(x, "location_id") == shop && str(x, "kind") != "workshop" {
+					shop = str(x, "parent_id")
+				}
+			}
+		}
+	}
+	first := ""
+	for _, l := range locs {
+		if str(l, "kind") != "isolator" {
+			continue
+		}
+		if shop != "" && str(l, "parent_id") == shop {
+			return str(l, "location_id")
+		}
+		if first == "" {
+			first = str(l, "location_id")
+		}
+	}
+	return first
 }
 
 // admit — сварщик: терминал исполнителя → «Допуск к посту» (WorkplaceAdmission):
@@ -907,32 +949,19 @@ func (s *showSystem) isolate(st *showStop) string {
 	return "экран: карточка НС → «Изолировать»"
 }
 
-// recheck — контролёр: очередь → Ф-002 → карточка → «Назначить доп. проверку» (рентген).
+// recheck — контролёр: «Задачи» «Доп. проверка Ф-002» → форма в задаче
+// (RecheckRequestForm: метод по умолчанию рентген, основание — заголовок задачи,
+// basis_seq — голова журнала списка задач).
 func (s *showSystem) recheck(st *showStop) string {
 	s.t.Helper()
-	s.logTasks(st)
-	row := s.queueRow(st)
-	nc := str(row, "nc_id")
-	if nc == "" {
-		s.t.Fatalf("%s: строка очереди по %s без несоответствия (%s «%s») — карточки с «Доп. проверка» нет\n%s", st, st.flange(), str(row, "kind"), str(row, "title"), s.itemDiag(st.Item))
-	}
-	c := s.card(st, nc)
-	item := str(c, "item_id")
-	s.object(st, item, "карточка НС "+str(c, "number"))
-	b := s.decisionBody(st, c, "Ток ИС-2 вне уставки при сварке — рентген перед ЗТ-3")
+	t := s.task(st, st.Op, "")
+	item := str(t, "item_id")
+	s.object(st, item, fmt.Sprintf("задача «%s»", str(t, "title")))
+	b := s.session(st.Persona).plainMeta(s.head(st.Persona))
 	b["method"] = "radiography"
-	ev, _ := c["evidence"].(map[string]any)
-	var zones []string
-	for _, x := range list(ev, "signals") {
-		if z := str(x, "zone_id"); z != "" {
-			zones = append(zones, z)
-		}
-	}
-	if len(zones) > 0 {
-		b["zone_ids"] = zones
-	}
+	b["reason"] = map[string]any{"text": str(t, "title")}
 	s.command(st, st.Persona, st.Op, map[string]string{"item_id": item}, b)
-	return "экран: очередь контролёра (" + str(row, "kind") + ") → карточка НС «Доп. проверка»"
+	return "задачи: «" + str(t, "title") + "» → форма «Доп. проверка»"
 }
 
 // hold — мастер: окно поста ИС-2 (WorkplaceRecord) → оборудование поста →
@@ -1002,7 +1031,7 @@ func (s *showSystem) narrow(st *showStop) string {
 	for _, e := range list(opt, "evidence") {
 		ev = append(ev, str(e, "event_id"))
 	}
-	b := s.session(st.Persona).meta(rs["basis_seq"])
+	b := s.session(st.Persona).plainMeta(rs["basis_seq"])
 	b["item_ids"] = opt["item_ids"]
 	b["evidence_event_ids"] = ev
 	b["reason"] = map[string]any{"text": str(opt, "reason_text")}
@@ -1038,7 +1067,7 @@ func (s *showSystem) measure(st *showStop) string {
 	if nc2, _ := h["next_check"].(map[string]any); str(nc2, "text") != "" {
 		what = str(nc2, "text")
 	}
-	b := s.session(st.Persona).meta(basis)
+	b := s.session(st.Persona).plainMeta(basis)
 	b["hypothesis_id"] = str(h, "hypothesis_id")
 	b["what"] = what
 	s.command(st, st.Persona, st.Op, map[string]string{"nc_id": nc}, b)
@@ -1050,7 +1079,7 @@ func (s *showSystem) cause(st *showStop) string {
 	s.t.Helper()
 	inc, nc, h, basis := s.hypothesis(st)
 	s.object(st, inc, "инцидент в разборе")
-	b := s.session(st.Persona).meta(basis)
+	b := s.session(st.Persona).plainMeta(basis)
 	b["nc_ids"] = []string{nc}
 	b["conclusion"] = "confirmed"
 	b["category"] = str(h, "category")
