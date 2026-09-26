@@ -208,25 +208,26 @@ func NaturalProvenance(subjectKind string) string {
 	return ProvServerAttested
 }
 
-// trustRank — ранг класса доверия: scenario < genesis < прочие (AD-11:
-// ключ, зарегистрированный подписями класса scenario или genesis, получает
-// класс не выше исходного).
+// trustRank — ранг класса доверия: scenario < прочие (AD-11: ключ,
+// зарегистрированный подписями класса scenario, получает класс не выше
+// scenario).
 func trustRank(p string) int {
-	switch p {
-	case ProvScenario:
+	if p == ProvScenario {
 		return 0
-	case ProvGenesis:
-		return 1
 	}
-	return 2
+	return 1
 }
 
 // InheritProvenance — класс доверия нового ключа: естественный класс
 // субъекта, ограниченный сверху самым слабым классом регистрирующих подписей.
+// Подписи блока генезиса (класс genesis) класс не ограничивают (Д-67): ключ
+// устройства или шлюза, зарегистрированный генезисом, даёт фактам класс по
+// назначению ключа (device, server_attested); класс genesis — только у
+// записей самого блока.
 func InheritProvenance(subjectKind string, signers []string) string {
 	p := NaturalProvenance(subjectKind)
 	for _, s := range signers {
-		if trustRank(s) < trustRank(p) {
+		if s != ProvGenesis && trustRank(s) < trustRank(p) {
 			p = s
 		}
 	}

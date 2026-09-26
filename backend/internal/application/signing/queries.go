@@ -157,7 +157,7 @@ func (s *Service) view(k dom.Key, head int64) KeyView {
 		v.PayloadClasses = []string{}
 	}
 	if v.ProvenanceClass == "" {
-		v.ProvenanceClass = dom.ProvGenesis
+		v.ProvenanceClass = dom.NaturalProvenance(k.SubjectKind) // Д-67
 	}
 	switch {
 	case k.Revoked != nil:

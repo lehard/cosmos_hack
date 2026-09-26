@@ -263,7 +263,14 @@ func TestRegistrationRules(t *testing.T) {
 	if p := InheritProvenance(SubjectPerson, []string{ProvPersonal, ProvScenario}); p != ProvScenario {
 		t.Fatal(p)
 	}
-	if p := InheritProvenance(SubjectDevice, []string{ProvGenesis}); p != ProvGenesis {
+	// Д-67: ключ, зарегистрированный генезисом, — класс по назначению ключа.
+	if p := InheritProvenance(SubjectDevice, []string{ProvGenesis}); p != ProvDevice {
+		t.Fatal(p)
+	}
+	if p := InheritProvenance(SubjectEngine, []string{ProvGenesis}); p != ProvServerAttested {
+		t.Fatal(p)
+	}
+	if p := InheritProvenance(SubjectDemoPersona, []string{ProvGenesis}); p != ProvScenario {
 		t.Fatal(p)
 	}
 	// Ключ устройства по акту ввода — вторая подпись руководителя производства.
