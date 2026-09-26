@@ -6,11 +6,16 @@ import (
 
 	app "ant/internal/application/machinelogs"
 	"ant/internal/application/platform"
+	"ant/internal/infrastructure/fixtures/loader"
+	processfx "ant/internal/infrastructure/fixtures/process"
 )
 
 // Adapter — реализация fixtures ведущих портов модуля machinelogs (AD-36):
 // оборудование, профиль выполнения, временная линия, нарушения спецпроцесса —
-// из мира заготовок. Команд у модуля нет.
+// из мира заготовок. Команд у модуля нет; поверх мира — выполнения операций,
+// начатые, приостановленные и завершённые с терминала в этой сессии
+// (fixtures/process.OperationRuns): текущее выполнение оборудования поста и
+// профиль выполнения меняются до сброса прогона.
 type Adapter struct{}
 
 // New создаёт адаптер заготовок.
@@ -24,13 +29,14 @@ var (
 // Equipment — оборудование участка (machinelogs.equipment.list).
 func (Adapter) Equipment(ctx context.Context, stationID string, m platform.Moment) (app.EquipmentList, error) {
 	v, err := respond[app.EquipmentList](ctx, "machinelogs.equipment.list", map[string]string{"station_id": stationID}, &m)
-	if err != nil || stationID == "" {
+	if err != nil {
 		return v, err
 	}
+	runs := processfx.OperationRuns(ctx, &m)
 	out := v.Items[:0]
 	for _, x := range v.Items {
-		if x.StationID == stationID {
-			out = append(out, x)
+		if stationID == "" || x.StationID == stationID {
+			out = append(out, withRuns(ctx, x, runs))
 		}
 	}
 	v.Items = out
@@ -39,12 +45,79 @@ func (Adapter) Equipment(ctx context.Context, stationID string, m platform.Momen
 
 // EquipmentByID — состояние оборудования (machinelogs.equipment.read).
 func (Adapter) EquipmentByID(ctx context.Context, equipmentID string, m platform.Moment) (app.EquipmentState, error) {
-	return respond[app.EquipmentState](ctx, "machinelogs.equipment.read", map[string]string{"equipment_id": equipmentID}, &m)
+	v, err := respond[app.EquipmentState](ctx, "machinelogs.equipment.read", map[string]string{"equipment_id": equipmentID}, &m)
+	if err != nil {
+		return v, err
+	}
+	return withRuns(ctx, v, processfx.OperationRuns(ctx, &m)), nil
 }
 
-// RunProfile — профиль выполнения операции (machinelogs.run_profile.read).
+// withRuns — состояние оборудования с выполнениями сессии: завершённое
+// выполнение освобождает оборудование, начатое на его посту (или на нём
+// самом) становится текущим; пауза — оборудование остановлено.
+func withRuns(ctx context.Context, x app.EquipmentState, runs map[string]*processfx.Run) app.EquipmentState {
+	if len(runs) == 0 {
+		return x
+	}
+	rt, err := loader.Default()
+	if err != nil {
+		return x
+	}
+	if r := runs[rt.Local(ctx, x.CurrentRunID)]; x.CurrentRunID != "" && r != nil {
+		switch {
+		case r.FinishedAt != nil:
+			x.CurrentRunID, x.Execution = "", "idle"
+		case r.Paused:
+			x.Execution = "stopped"
+		default:
+			x.Execution = "running"
+		}
+	}
+	var cur *processfx.Run
+	for _, r := range runs {
+		if !r.Started || r.FinishedAt != nil || !(r.Equipment == x.EquipmentID || (r.Equipment == "" && r.StationID != "" && r.StationID == x.StationID)) {
+			continue
+		}
+		if cur == nil || r.StartedAt.After(cur.StartedAt) || (r.StartedAt.Equal(cur.StartedAt) && r.RunID > cur.RunID) {
+			cur = r
+		}
+	}
+	if cur != nil {
+		x.CurrentRunID, x.Execution = cur.RunID, "running"
+		if cur.Paused {
+			x.Execution = "stopped"
+		}
+		if cur.ProgramRef != "" {
+			x.ProgramRef = cur.ProgramRef
+		}
+		at := cur.StartedAt
+		x.UpdatedAt = &at
+	}
+	return x
+}
+
+// RunProfile — профиль выполнения операции (machinelogs.run_profile.read):
+// выполнение мира (с завершением сессии поверх) или начатое в этой сессии.
 func (Adapter) RunProfile(ctx context.Context, runID string, m platform.Moment) (app.RunProfile, error) {
-	return respond[app.RunProfile](ctx, "machinelogs.run_profile.read", map[string]string{"run_id": runID}, &m)
+	rt, err := loader.Default()
+	if err != nil {
+		return app.RunProfile{}, err
+	}
+	r := processfx.OperationRuns(ctx, &m)[rt.Local(ctx, runID)]
+	if r != nil && r.Started {
+		op := r.Operator
+		p := app.RunProfile{OperationRunID: runID, ItemID: r.ItemID, StepKey: r.StepKey, EquipmentID: r.Equipment, OperatorID: &op, StartedAt: r.StartedAt,
+			FinishedAt: r.FinishedAt, IntervalOrigin: "system_computed", ProgramRef: r.ProgramRef, Parameters: []app.CycleParameter{}, Events: []app.EquipmentEventRow{}}
+		if op == "" {
+			p.OperatorID = nil
+		}
+		return p, nil
+	}
+	v, err := respond[app.RunProfile](ctx, "machinelogs.run_profile.read", map[string]string{"run_id": runID}, &m)
+	if err == nil && r != nil && r.FinishedAt != nil && v.FinishedAt == nil {
+		v.FinishedAt = r.FinishedAt
+	}
+	return v, err
 }
 
 // Timeline — временная линия оборудования (machinelogs.timeline.read);

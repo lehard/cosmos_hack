@@ -6,6 +6,7 @@ import (
 
 	"ant/internal/application/platform"
 	app "ant/internal/application/process"
+	"ant/internal/contracts/errcodes"
 )
 
 // Adapter — реализация fixtures ведущих портов модуля process (AD-36): живая
@@ -88,24 +89,36 @@ func (Adapter) RetireVersion(ctx context.Context, versionID string, in app.Retir
 	return decide(ctx, "process.version.retire", "process_version", versionID, in.CommandMeta())
 }
 
-// StartOperation — начать операцию (process.operation.start).
+// StartOperation — начать операцию (process.operation.start): выполнение
+// видно на терминале и оборудовании поста до сброса прогона (runs.go).
 func (Adapter) StartOperation(ctx context.Context, itemID string, in app.StartOperation) (platform.Receipt, error) {
-	return decide(ctx, "process.operation.start", "item", itemID, in.CommandMeta())
+	runID := in.OperationRunID
+	if runID == "" {
+		runID = in.CommandID
+	}
+	if runID == "" {
+		return platform.Receipt{}, platform.Fail(errcodes.ApiValidationFailed, "field", "operation_run_id", "reason", "нужен id выполнения")
+	}
+	if r := OperationRuns(ctx, nil)[runID]; r != nil && r.Started && r.FinishedAt == nil {
+		return platform.Receipt{}, platform.Fail(errcodes.ApiValidationFailed, "field", "operation_run_id", "reason", "выполнение уже идёт")
+	}
+	return record(ctx, "process.operation.start", runID, in.CommandMeta(), startedRun{ItemID: itemID, In: in})
 }
 
 // PauseOperation — пауза операции (process.operation.pause).
 func (Adapter) PauseOperation(ctx context.Context, runID string, in app.PauseOperation) (platform.Receipt, error) {
-	return decide(ctx, "process.operation.pause", "item", runID, in.CommandMeta())
+	return record(ctx, "process.operation.pause", runID, in.CommandMeta(), in)
 }
 
 // ResumeOperation — продолжить операцию (process.operation.resume).
 func (Adapter) ResumeOperation(ctx context.Context, runID string, in app.ResumeOperation) (platform.Receipt, error) {
-	return decide(ctx, "process.operation.resume", "item", runID, in.CommandMeta())
+	return record(ctx, "process.operation.resume", runID, in.CommandMeta(), in)
 }
 
-// FinishOperation — завершить операцию (process.operation.finish).
+// FinishOperation — завершить операцию (process.operation.finish): выполнение
+// закрыто, оборудование поста свободно.
 func (Adapter) FinishOperation(ctx context.Context, runID string, in app.FinishOperation) (platform.Receipt, error) {
-	return decide(ctx, "process.operation.finish", "item", runID, in.CommandMeta())
+	return record(ctx, "process.operation.finish", runID, in.CommandMeta(), in)
 }
 
 // SendMovement — отправить изделие (process.movement.send).
