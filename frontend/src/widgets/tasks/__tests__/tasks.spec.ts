@@ -4,7 +4,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mockApi, mountWidget, settle } from '@/entities/run/__tests__/api'
 import { at, foremanSession, isolatedPassport, isolationCard, locations, tasks } from '@/entities/workplace/__tests__/fixtures'
-import { noticeText, OBLIGATION_BASES } from '@/entities/notification'
+import { alertText, noticeText, OBLIGATION_BASES } from '@/entities/notification'
 import { codeToKey, i18n } from '@/shared/i18n'
 import { ownWorkplaceTasks, sectionsOf, splitTasks } from '../model/slice'
 import TasksWidget from '../ui/TasksWidget.vue'
@@ -48,11 +48,9 @@ describe('задачи и уведомления', () => {
   it('виды уведомлений, задачи со сроком, тревоги, эскалация с ценой задержки', async () => {
     mockApi(world().routes)
     const w = await mountWidget(TasksWidget, props)
-    const summary = w.find('[data-testid="summary"]')
-    expect(summary.find('[data-kind="info"]').text()).toBe('Информация: 1')
-    expect(summary.find('[data-kind="alarm"]').text()).toBe('Тревога: 2')
-    expect(summary.find('[data-kind="task"]').text()).toBe('Задача: 2')
-    expect(summary.find('[data-kind="decision_request"]').text()).toBe('Запрос решения: 1')
+    // Без плашек-счётчиков и без второго заголовка «Задачи» внутри рамки (UI-38).
+    expect(w.find('[data-testid="summary"]').exists()).toBe(false)
+    expect(w.find('[data-testid="section-tasks"] h3').exists()).toBe(false)
 
     const open = w.findAll('[data-testid="section-tasks"] [data-task][data-state="open"]')
     expect(open.map((t) => t.attributes('data-task'))).toEqual(['TASK-003', 'TASK-004'])
@@ -74,7 +72,11 @@ describe('задачи и уведомления', () => {
     const post = calls.find((c) => c.method === 'POST' && c.path === '/api/v1/tasks/TASK-004/acknowledge')
     expect(post?.body).toMatchObject({ outcome: 'done', basis_seq: 9100, policy_seq: 3 })
     expect(post?.body).not.toHaveProperty('note')
-    expect(w.find('[data-task="TASK-004"] [data-testid="acked"]').text()).toBe('Записано в журнал: запись № 142')
+    // Итог виден сразу: что отмечено; кнопки у задачи убраны (UI-37).
+    const acked = w.find('[data-task="TASK-004"] [data-testid="acked"]').text()
+    expect(acked).toContain('Вы отметили задачу: Выполнена')
+    expect(acked).toContain('Записано в журнал: запись № 142')
+    expect(w.find('[data-task="TASK-004"] [data-testid="ack-done"]').exists()).toBe(false)
   })
 
   it('отклонить — только с примечанием', async () => {
@@ -127,6 +129,12 @@ describe('тексты уведомлений модуля notifications', () =>
   it('у каждого основания срока есть текст тревоги; ключ контракта → текст (codeToKey)', () => {
     for (const basis of OBLIGATION_BASES) expect(te(codeToKey(`notifications.overdue.${basis}`)), basis).toBe(true)
     expect(te(codeToKey('notifications.info.moved_to_isolator'))).toBe(true)
+  })
+
+  it('аномалия узла — именем узла по схеме, код — только если имени нет (UI-38)', () => {
+    const base = { alert_id: 'A', kind: 'anomaly', at: '2026-09-23T08:00:00Z', anomaly: 'queue_above_norm', node: 'welding.weld' } as const
+    expect(alertText(x, { ...base, node_name: 'Сварка фланца' } as never)).toContain('Аномалия узла Сварка фланца')
+    expect(alertText(x, base as never)).toContain('welding.weld')
   })
 
   it('параметры: время — по часам завода, неизвестный ключ — как есть', () => {

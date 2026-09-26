@@ -6,6 +6,11 @@
  * (изделие из очереди шага; ждущее контроля — «сначала контроль»), изделия у
  * поста с подтверждением перемещения в изолятор, «сообщить об отклонении»,
  * «запросить контроль». Крупно: мастеру и исполнителю — крупные кнопки.
+ *
+ * Действия (UI-41, Д-70): большие кнопки «начать операцию», «сообщить об
+ * отклонении», «запросить контроль», «остановить операцию» — форма открывается
+ * по нажатию в правом окне, кнопка отправки — внизу окна. Нет поста в сеансе —
+ * это сказано прямо, действия выключены с причиной (UI-39, UI-40).
  */
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -20,7 +25,7 @@ import { naiveSizeOf } from '@/shared/config/widget'
 import { codeToKey } from '@/shared/i18n'
 import { useProblemText } from '@/shared/i18n/problem'
 import { formatMinutes } from '@/shared/lib/duration'
-import { ActionButton, EmptyState, FormField, SectionPanel, StatusTag } from '@/shared/ui'
+import { ActionButton, EmptyState, FormField, RecordDrawer, SectionPanel, StatusTag } from '@/shared/ui'
 import type { ItemRow } from '@/entities/operation'
 import type { PostItem, TerminalWarning } from '../model/terminal'
 
@@ -90,11 +95,40 @@ function warningText(w: TerminalWarning): string {
   return ''
 }
 
+/** Открытая форма действия в правом окне. */
+type Panel = 'start' | 'finish' | 'deviation' | 'inspection'
+const panel = ref<Panel | null>(null)
+const PANEL_TITLE: Record<Panel, string> = {
+  start: 'terminal.startOperation',
+  finish: 'terminal.stopOperation',
+  deviation: 'terminal.reportDeviation',
+  inspection: 'terminal.requestInspection',
+}
+/** Почему действия выключены — сказать прямо, а не молча серыми кнопками. */
+const offReason = computed(() => (!props.workplace ? t('widgets.shopFloor.terminal.noPostActions') : !props.canAct ? t('common.modes.replayReadOnly') : null))
+
+function submitStart(): void {
+  if (!startItem.value) return
+  emit('start', startItem.value)
+  panel.value = null
+}
+
+function submitFinish(): void {
+  emit('finish', completion.value)
+  panel.value = null
+}
+
 function submitDeviation(): void {
   const text = deviationText.value.trim()
   if (!text) return
   emit('deviation', text, deviationItem.value)
   deviationText.value = ''
+  panel.value = null
+}
+
+function submitInspection(): void {
+  emit('inspection', inspectionItem.value)
+  panel.value = null
 }
 </script>
 
@@ -104,7 +138,11 @@ function submitDeviation(): void {
       <strong class="ant-wrap">{{ workplace ? t('common.header.workplace', { workplace: workplace.title }) : t('widgets.shopFloor.terminal.noWorkplace') }}</strong>
       <span v-if="shiftTitle" class="ant-muted ant-wrap">· {{ t('common.words.shift') }}: {{ shiftTitle }}</span>
     </div>
-    <p class="ant-muted ant-wrap">{{ t('terminal.onlyOwnWorkplace') }}</p>
+    <p v-if="!workplace" class="no-post ant-wrap" data-testid="no-post">{{ t('widgets.shopFloor.terminal.noPostHint') }}</p>
+    <p v-else class="ant-muted ant-wrap">{{ t('terminal.onlyOwnWorkplace') }}</p>
+
+    <NAlert v-if="result" type="success" :bordered="false" data-testid="result">{{ result }}</NAlert>
+    <NAlert v-if="error" type="error" :bordered="false" data-testid="command-error">{{ problemText(error) }}</NAlert>
 
     <div v-if="warnings.length" class="stack" data-testid="warnings">
       <NAlert v-for="(w, i) in warnings" :key="i" :type="w.kind === 'unusable' ? 'error' : 'warning'" :bordered="false" :data-warning="w.kind">
@@ -112,8 +150,8 @@ function submitDeviation(): void {
       </NAlert>
     </div>
 
-    <!-- Текущая операция и «остановить». -->
-    <SectionPanel :title="t('widgets.shopFloor.terminal.currentOperation')" variant="subtle" data-testid="current-run">
+    <!-- Текущая операция: что идёт, сколько против нормы, большая кнопка «остановить». -->
+    <SectionPanel v-if="workplace" :title="t('widgets.shopFloor.terminal.currentOperation')" variant="subtle" data-testid="current-run">
       <template v-if="run">
         <div class="line">
           <strong class="ant-wrap">{{ runStep?.name ?? run.step_key }}</strong>
@@ -129,54 +167,23 @@ function submitDeviation(): void {
           <span class="ant-muted">{{ runNorm }}</span>
           <NTag v-if="runOver" size="small" type="error" :bordered="false">{{ t('widgets.shopFloor.station.overNorm') }}</NTag>
         </div>
-        <NRadioGroup v-model:value="completion" :size="size">
-          <NRadio value="completed">{{ t('widgets.shopFloor.terminal.completion.completed') }}</NRadio>
-          <NRadio value="interrupted">{{ t('widgets.shopFloor.terminal.completion.interrupted') }}</NRadio>
-        </NRadioGroup>
-        <ActionButton type="warning" :size="size" block :disabled="actionsOff || !!run.finished_at" :label="t('terminal.stopOperation')" data-testid="stop" @click="emit('finish', completion)" />
+        <p v-if="runOver" class="ant-wrap" data-testid="over-hint">{{ t('widgets.shopFloor.terminal.overNormHint') }}</p>
+        <ActionButton type="warning" :size="size" block :disabled="actionsOff || !!run.finished_at" :label="t('terminal.stopOperation')" data-testid="stop" @click="panel = 'finish'" />
       </template>
       <EmptyState v-else compact :title="t('widgets.shopFloor.station.noRun')" />
     </SectionPanel>
 
-    <!-- Начать операцию. -->
-    <SectionPanel :title="t('terminal.startOperation')" variant="subtle" data-testid="start">
-      <FormField :label="t('common.words.operation')">
-        <NSelect
-          :value="stepKey"
-          :options="stepOptions"
-          :size="size"
-          :placeholder="t('common.words.operation')"
-          :consistent-menu-width="false"
-          data-testid="step"
-          @update:value="(v: string) => emit('update:stepKey', v)"
-        />
-      </FormField>
-      <NAlert v-if="itemsError" type="error" :bordered="false">{{ problemText(itemsError) }}</NAlert>
-      <FormField v-else :label="t('common.words.item')" :hint="t('terminal.inspectionFirst')">
-        <NSelect
-          v-model:value="startItem"
-          :options="itemOptions"
-          :size="size"
-          :placeholder="t('widgets.shopFloor.terminal.pickItem')"
-          filterable
-          :consistent-menu-width="false"
-          data-testid="start-item"
-        />
-      </FormField>
-      <ActionButton
-        type="primary"
-        :size="size"
-        block
-        :disabled="actionsOff || !stepKey || !startItem || !!run"
-        :label="t('terminal.startOperation')"
-        data-testid="start-operation"
-        @click="startItem && emit('start', startItem)"
-      />
-      <p v-if="run" class="ant-muted ant-wrap">{{ t('widgets.shopFloor.terminal.finishFirst') }}</p>
-    </SectionPanel>
+    <!-- Действия — большими кнопками, форма — в правом окне. -->
+    <section class="actions" data-testid="actions">
+      <ActionButton type="primary" :size="size" block :disabled="actionsOff || !!run" :label="t('terminal.startOperation')" data-testid="open-start" @click="panel = 'start'" />
+      <ActionButton type="warning" secondary :size="size" block :disabled="actionsOff" :label="t('terminal.reportDeviation')" data-testid="open-deviation" @click="panel = 'deviation'" />
+      <ActionButton type="primary" secondary :size="size" block :disabled="actionsOff || !stepKey" :label="t('terminal.requestInspection')" data-testid="open-inspection" @click="panel = 'inspection'" />
+    </section>
+    <p v-if="offReason" class="ant-muted ant-wrap" data-testid="off-reason">{{ offReason }}</p>
+    <p v-else-if="run" class="ant-muted ant-wrap">{{ t('widgets.shopFloor.terminal.finishFirst') }}</p>
 
     <!-- Изделия у поста: статус и перемещение в изолятор (FR-55). -->
-    <SectionPanel :title="t('terminal.currentItems')" variant="subtle" data-testid="items">
+    <SectionPanel v-if="workplace" :title="t('terminal.currentItems')" variant="subtle" data-testid="items">
       <EmptyState v-if="!items.length" compact :title="t('empty.noRecords')" />
       <div v-for="i in items" :key="i.item_id" class="stack" :data-item="i.item_id">
         <div class="line">
@@ -188,54 +195,75 @@ function submitDeviation(): void {
       </div>
     </SectionPanel>
 
-    <!-- Сообщить об отклонении и запросить контроль. -->
-    <SectionPanel :title="t('terminal.reportDeviation')" variant="subtle" data-testid="deviation">
-      <form class="stack" @submit.prevent="submitDeviation">
-        <FormField v-if="itemChoice.length" :label="t('common.words.item')">
-          <NSelect v-model:value="deviationItem" :options="itemChoice" :size="size" clearable :placeholder="t('common.words.item')" data-testid="deviation-item" />
-        </FormField>
-        <FormField :label="t('common.words.comment')" required>
-          <NInput
-            v-model:value="deviationText"
-            type="textarea"
-            :size="size"
-            :autosize="{ minRows: 2, maxRows: 6 }"
-            :maxlength="2000"
-            :placeholder="t('widgets.shopFloor.terminal.deviationPlaceholder')"
-            data-testid="deviation-text"
-          />
-        </FormField>
-        <ActionButton
-          type="warning"
-          secondary
-          :size="size"
-          block
-          attr-type="submit"
-          :disabled="actionsOff || !deviationText.trim()"
-          :label="t('terminal.reportDeviation')"
-          data-testid="report-deviation"
-        />
-      </form>
-    </SectionPanel>
+    <RecordDrawer :show="!!panel" :kind-label="panel ? t(PANEL_TITLE[panel]) : ''" :subtitle="workplace?.title ?? ''" data-testid="terminal-drawer" @close="panel = null">
+      <div class="stack form" :data-panel="panel ?? undefined">
+        <template v-if="panel === 'start'">
+          <FormField :label="t('common.words.operation')">
+            <NSelect
+              :value="stepKey"
+              :options="stepOptions"
+              :size="size"
+              :placeholder="t('common.words.operation')"
+              :consistent-menu-width="false"
+              data-testid="step"
+              @update:value="(v: string) => emit('update:stepKey', v)"
+            />
+          </FormField>
+          <NAlert v-if="itemsError" type="error" :bordered="false">{{ problemText(itemsError) }}</NAlert>
+          <FormField v-else :label="t('common.words.item')" :hint="t('terminal.inspectionFirst')">
+            <NSelect
+              v-model:value="startItem"
+              :options="itemOptions"
+              :size="size"
+              :placeholder="t('widgets.shopFloor.terminal.pickItem')"
+              filterable
+              :consistent-menu-width="false"
+              data-testid="start-item"
+            />
+          </FormField>
+        </template>
 
-    <SectionPanel :title="t('terminal.requestInspection')" variant="subtle" data-testid="inspection">
-      <FormField v-if="itemChoice.length" :label="t('common.words.item')">
-        <NSelect v-model:value="inspectionItem" :options="itemChoice" :size="size" clearable :placeholder="t('common.words.item')" data-testid="inspection-item" />
-      </FormField>
-      <ActionButton
-        secondary
-        type="primary"
-        :size="size"
-        block
-        :disabled="actionsOff || !stepKey"
-        :label="t('terminal.requestInspection')"
-        data-testid="request-inspection"
-        @click="emit('inspection', inspectionItem)"
-      />
-    </SectionPanel>
+        <template v-else-if="panel === 'finish' && run">
+          <p class="ant-wrap"><strong>{{ runStep?.name ?? run.step_key }}</strong></p>
+          <FormField :label="t('widgets.shopFloor.terminal.completion.title')">
+            <NRadioGroup v-model:value="completion" :size="size" data-testid="completion">
+              <NRadio value="completed">{{ t('widgets.shopFloor.terminal.completion.completed') }}</NRadio>
+              <NRadio value="interrupted">{{ t('widgets.shopFloor.terminal.completion.interrupted') }}</NRadio>
+            </NRadioGroup>
+          </FormField>
+        </template>
 
-    <NAlert v-if="result" type="success" :bordered="false" data-testid="result">{{ result }}</NAlert>
-    <NAlert v-if="error" type="error" :bordered="false" data-testid="command-error">{{ problemText(error) }}</NAlert>
+        <template v-else-if="panel === 'deviation'">
+          <FormField v-if="itemChoice.length" :label="t('common.words.item')">
+            <NSelect v-model:value="deviationItem" :options="itemChoice" :size="size" clearable :placeholder="t('common.words.item')" data-testid="deviation-item" />
+          </FormField>
+          <FormField :label="t('common.words.comment')" required>
+            <NInput
+              v-model:value="deviationText"
+              type="textarea"
+              :size="size"
+              :autosize="{ minRows: 3, maxRows: 8 }"
+              :maxlength="2000"
+              :placeholder="t('widgets.shopFloor.terminal.deviationPlaceholder')"
+              data-testid="deviation-text"
+            />
+          </FormField>
+        </template>
+
+        <template v-else-if="panel === 'inspection'">
+          <FormField v-if="itemChoice.length" :label="t('common.words.item')">
+            <NSelect v-model:value="inspectionItem" :options="itemChoice" :size="size" clearable :placeholder="t('common.words.item')" data-testid="inspection-item" />
+          </FormField>
+          <p class="ant-muted ant-wrap">{{ t('widgets.shopFloor.terminal.inspectionHint') }}</p>
+        </template>
+      </div>
+      <template #actions>
+        <ActionButton v-if="panel === 'start'" type="primary" :size="size" :disabled="actionsOff || !stepKey || !startItem || !!run" :label="t('terminal.startOperation')" data-testid="start-operation" @click="submitStart" />
+        <ActionButton v-else-if="panel === 'finish'" type="warning" :size="size" :disabled="actionsOff || !run" :label="t('terminal.stopOperation')" data-testid="confirm-stop" @click="submitFinish" />
+        <ActionButton v-else-if="panel === 'deviation'" type="warning" :size="size" :disabled="actionsOff || !deviationText.trim()" :label="t('terminal.reportDeviation')" data-testid="report-deviation" @click="submitDeviation" />
+        <ActionButton v-else-if="panel === 'inspection'" type="primary" :size="size" :disabled="actionsOff || !stepKey" :label="t('terminal.requestInspection')" data-testid="request-inspection" @click="submitInspection" />
+      </template>
+    </RecordDrawer>
   </div>
 </template>
 
@@ -262,5 +290,25 @@ function submitDeviation(): void {
 
 .over {
   color: var(--ant-status-danger-text);
+}
+
+/* Большие кнопки действий — сеткой, переносятся, без горизонтальной прокрутки. */
+.actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--ant-space-3);
+}
+
+.no-post {
+  padding: var(--ant-space-3) var(--ant-space-4);
+  border-left: 4px solid var(--ant-status-attention);
+  border-radius: 0 var(--ant-radius-md) var(--ant-radius-md) 0;
+  background: var(--ant-status-attention-soft);
+  color: var(--ant-status-attention-text);
+  font-weight: var(--ant-fw-bold);
+}
+
+.form {
+  gap: var(--ant-space-4);
 }
 </style>

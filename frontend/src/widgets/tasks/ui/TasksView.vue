@@ -1,12 +1,13 @@
 <script setup lang="ts">
 /**
- * Задачи — представление (FR-57, FR-8): сводка по видам (информация, тревога,
- * задача, запрос решения), открытые задачи и запросы решения с отметкой,
- * тревоги и просроченные решения с ценой задержки. Выполненные — свёрнуты.
+ * Задачи — представление (FR-57, FR-8): открытые задачи и запросы решения с
+ * отметкой, тревоги и просроченные решения с ценой задержки. Выполненные —
+ * свёрнуты. Заголовок «Задачи» несёт рамка виджета — внутри не повторяется;
+ * пустые разделы тревог и просроченных решений не показываются (UI-38).
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NAlert, NCollapse, NCollapseItem, NTag } from 'naive-ui'
+import { NAlert, NCollapse, NCollapseItem } from 'naive-ui'
 import type { NotificationSummary } from '@/entities/notification'
 import type { TaskEntry } from '@/entities/task'
 import { TaskInbox } from '@/features/task-actions'
@@ -14,7 +15,7 @@ import type { DrillRef } from '@/shared/model/drill'
 import type { Density } from '@/shared/config/widget'
 import { naiveSizeOf } from '@/shared/config/widget'
 import { useProblemText } from '@/shared/i18n/problem'
-import { ActionButton, EmptyState, SectionPanel } from '@/shared/ui'
+import { ActionButton, SectionPanel } from '@/shared/ui'
 import type { NoticeRow, TaskSection } from '../model/slice'
 
 const props = withDefaults(
@@ -40,23 +41,12 @@ const { t } = useI18n()
 const problemText = useProblemText()
 const size = computed(() => naiveSizeOf(props.density))
 
-const KINDS = [
-  { key: 'info', text: 'common.notifications.info', type: 'default' },
-  { key: 'alarm', text: 'common.notifications.alarm', type: 'error' },
-  { key: 'task', text: 'common.notifications.task', type: 'warning' },
-  { key: 'decision_request', text: 'common.notifications.decisionRequest', type: 'info' },
-] as const
 </script>
 
 <template>
   <div class="tasks" data-testid="tasks-view">
-    <div v-if="summary?.by_kind" class="line" data-testid="summary">
-      <NTag v-for="k in KINDS" :key="k.key" size="small" :bordered="false" :type="summary.by_kind[k.key] ? k.type : 'default'" :data-kind="k.key">
-        {{ t(k.text) }}: {{ summary.by_kind[k.key] }}
-      </NTag>
-    </div>
 
-    <SectionPanel v-if="sections.includes('task')" :title="t('desks.tasks')" variant="plain" data-testid="section-tasks">
+    <SectionPanel v-if="sections.includes('task')" variant="plain" data-testid="section-tasks">
       <NAlert v-if="tasksError && !open" type="error" :bordered="false">{{ problemText(tasksError) }}</NAlert>
       <TaskInbox v-else-if="open" :tasks="open" :basis-seq="basisSeq" :can-act="canAct" :density="density" :can-open="canOpen" @open="(r) => emit('open', r)" />
       <NCollapse v-if="closed.length" data-testid="closed-tasks">
@@ -66,9 +56,8 @@ const KINDS = [
       </NCollapse>
     </SectionPanel>
 
-    <SectionPanel v-if="sections.includes('escalation')" :title="t('widgets.shopFloor.tasks.escalations')" variant="plain" data-testid="section-escalations">
+    <SectionPanel v-if="sections.includes('escalation') && (escalationsError || escalations?.length)" :title="t('widgets.shopFloor.tasks.escalations')" variant="plain" data-testid="section-escalations">
       <NAlert v-if="escalationsError && !escalations" type="error" :bordered="false">{{ problemText(escalationsError) }}</NAlert>
-      <EmptyState v-else-if="escalations && !escalations.length" compact :title="t('empty.queueEmpty')" />
       <ul v-else-if="escalations" class="notices">
         <li v-for="r in escalations" :key="r.id" class="notice" :data-escalation="r.id">
           <p class="ant-clamp-2" :class="r.severe ? 'severe' : 'mild'" :title="r.text">{{ r.text }}</p>
@@ -79,9 +68,8 @@ const KINDS = [
       </ul>
     </SectionPanel>
 
-    <SectionPanel v-if="sections.includes('alarm')" :title="t('liveMap.alerts.title')" variant="plain" data-testid="section-alarms">
+    <SectionPanel v-if="sections.includes('alarm') && (alertsError || alerts?.length)" :title="t('liveMap.alerts.title')" variant="plain" data-testid="section-alarms">
       <NAlert v-if="alertsError && !alerts" type="error" :bordered="false">{{ problemText(alertsError) }}</NAlert>
-      <EmptyState v-else-if="alerts && !alerts.length" compact :title="t('empty.noAlerts')" />
       <ul v-else-if="alerts" class="notices">
         <li v-for="r in alerts" :key="r.id" class="notice" :data-alert="r.id">
           <p class="ant-clamp-2" :title="r.text">

@@ -59,7 +59,9 @@ const workshopId = computed(() => {
 const parsed = computed(() => parseProcessSteps(mapQ.data.value?.data.bpmn_xml))
 const operations = computed(() => operationsOf(parsed.value, workshopId.value))
 
-const equipment = computed(() => equipmentQ.data.value?.data ?? [])
+// Без поста в сеансе оборудования «своего места» нет: чужие операции и
+// предупреждения не показываем (UI-40) — запрос без station_id вернул бы весь завод.
+const equipment = computed(() => (workplaceId.value ? (equipmentQ.data.value?.data ?? []) : []))
 /** Выполнение, начатое с этого терминала, — пока оборудование его не показало. */
 const startedHere = ref<{ runId: string; itemId: string } | null>(null)
 const runId = computed(() => currentRunId(equipment.value, startedHere.value?.runId ?? null))
