@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -20,8 +21,9 @@ const DefaultSettleTimeout = 30 * time.Second
 // догонят голову основной цепочки.
 //
 // Ожидание — по сигналу журнала (Listener.Progress: новая голова или сдвиг
-// курсора потребителя), без опроса по таймеру; срок — Timeout (обязателен:
-// потерянный воркер не должен вешать прогон навсегда).
+// курсора потребителем этого процесса, Store.OnProgress) и перепроверка раз в
+// settleRecheck для потребителей других процессов; срок — Timeout
+// (обязателен: потерянный воркер не должен вешать прогон навсегда).
 type Settler struct {
 	Store  *Store
 	Signal *Listener
@@ -33,7 +35,15 @@ type Settler struct {
 	Partitions int
 	// Timeout — предел ожидания (0 — DefaultSettleTimeout).
 	Timeout time.Duration
+
+	// hook — подписка на сдвиги курсоров этого процесса (Store.OnProgress).
+	hook sync.Once
 }
+
+// settleRecheck — как часто Settler перепроверяет условие без сигнала:
+// курсоры потребителей другого процесса (отдельный worker, k8s) сигнала в
+// этот процесс не дают (эпик 35: pg_notify на каждый сдвиг курсора убран).
+const settleRecheck = 100 * time.Millisecond
 
 // ErrNotSettled — потребители не догнали журнал за отведённое время.
 var ErrNotSettled = errors.New("журнал: потребители не догнали голову")
@@ -51,6 +61,10 @@ func (s *Settler) Settle(ctx context.Context, _ string) error {
 	if s.Consumers != nil {
 		consumers = s.Consumers()
 	}
+	// Сдвиг курсора потребителем этого процесса будит ожидание сразу.
+	s.hook.Do(func() { s.Store.OnProgress(s.Signal.bump) })
+	recheck := time.NewTimer(settleRecheck)
+	defer recheck.Stop()
 	for {
 		// Канал берётся до проверки: движение между проверкой и ожиданием не теряется.
 		ch := s.Signal.Progress()
@@ -64,10 +78,12 @@ func (s *Settler) Settle(ctx context.Context, _ string) error {
 		if ok {
 			return nil
 		}
+		recheck.Reset(settleRecheck)
 		select {
 		case <-ctx.Done():
 			return fmt.Errorf("%w за %s", ErrNotSettled, timeout)
 		case <-ch:
+		case <-recheck.C:
 		}
 	}
 }
@@ -76,36 +92,31 @@ func (s *Settler) Settle(ctx context.Context, _ string) error {
 // одной из partitions партиций нет записей-триггеров после курсора воркера
 // (AD-5: изделие с необработанным входом).
 func (s *Store) Settled(ctx context.Context, consumers []string, partitions int) (bool, error) {
-	var head int64
-	if err := s.pool.QueryRow(ctx, "SELECT COALESCE(MAX(seq), 0) FROM journal.entries WHERE chain = 'main'").Scan(&head); err != nil {
-		return false, err
+	// Эпик 35 (узкое место MS-1): одна выборка вместо запроса на каждого
+	// потребителя — Settler перепроверяет условие на каждый сдвиг любого
+	// курсора, а потребителей у проектора десятки.
+	if consumers == nil {
+		consumers = []string{}
 	}
-	for _, name := range consumers {
-		cur, err := s.Cursor(ctx, name, app.GlobalPartition)
-		if err != nil {
-			return false, err
-		}
-		if cur < head {
-			return false, nil
-		}
-	}
-	if partitions <= 0 {
-		return true, nil
-	}
-	var pending bool
-	err := s.pool.QueryRow(ctx, `SELECT EXISTS (
-    SELECT 1 FROM generate_series(0, $2::int - 1) AS p(n)
+	var settled bool
+	err := s.pool.QueryRow(ctx, `WITH h AS (SELECT COALESCE(MAX(seq), 0) AS head FROM journal.entries WHERE chain = 'main')
+SELECT NOT EXISTS (
+    SELECT 1 FROM unnest($1::text[]) AS c(name)
+    LEFT JOIN journal_state.consumer_offsets o ON o.name = c.name AND o.partition = $2
+    WHERE COALESCE(o.seq, 0) < (SELECT head FROM h)
+) AND NOT EXISTS (
+    SELECT 1 FROM generate_series(0, $4::int - 1) AS p(n)
     CROSS JOIN LATERAL (
         SELECT 1 FROM journal.entries e
         WHERE e.chain = 'main' AND e.partition = p.n AND e.is_trigger
-          AND e.seq > COALESCE((SELECT o.seq FROM journal_state.consumer_offsets o WHERE o.name = $1 AND o.partition = p.n), 0)
+          AND e.seq > COALESCE((SELECT o.seq FROM journal_state.consumer_offsets o WHERE o.name = $3 AND o.partition = p.n), 0)
         LIMIT 1
     ) x
-)`, app.WorkerConsumer, partitions).Scan(&pending)
+)`, consumers, app.GlobalPartition, app.WorkerConsumer, max(partitions, 0)).Scan(&settled)
 	if err != nil {
 		return false, err
 	}
-	return !pending, nil
+	return settled, nil
 }
 
 // RecordedHead — recorded_at головы основной цепочки (доменное «сейчас»

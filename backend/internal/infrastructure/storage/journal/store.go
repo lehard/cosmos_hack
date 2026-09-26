@@ -9,6 +9,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -26,9 +27,10 @@ import (
 const NotifyChannel = "ant_journal"
 
 // ProgressChannel — канал LISTEN/NOTIFY «курсор потребителя сдвинулся»
-// (эпик 16): полезной нагрузки нет. Нужен тем, кто ждёт, пока воркер,
-// стадия и проектор догонят журнал (Settler), — курсор без новых записей
-// головы не двигает и сигнала NotifyChannel не даёт.
+// (эпик 16): полезной нагрузки нет. Listener его слушает, но Append в него
+// больше не пишет (эпик 35): сдвиг курсора сообщается в процессе
+// (Store.OnProgress), а Settler перепроверяет условие по таймеру для
+// потребителей других процессов.
 const ProgressChannel = "ant_journal_progress"
 
 // Ключи pg_advisory_xact_lock голов цепочек (AD-44): порядок фиксирован —
@@ -64,6 +66,28 @@ type Store struct {
 	// scenario — журнал в режиме часов scenario (AD-37): recorded_at записи
 	// без доменного времени — доменное «сейчас» журнала (recorded_at головы).
 	scenario bool
+	// progress — подписчики «курсор потребителя сдвинулся» в этом процессе
+	// (Settler); вызываются после фиксации (эпик 35).
+	progressMu sync.Mutex
+	progress   []func()
+}
+
+// OnProgress подписывает fn на сдвиг курсора потребителя этим процессом:
+// fn вызывается после фиксации Append с CursorAdvance (эпик 35: вместо
+// pg_notify в каждой фиксации потребителя).
+func (s *Store) OnProgress(fn func()) {
+	s.progressMu.Lock()
+	defer s.progressMu.Unlock()
+	s.progress = append(s.progress, fn)
+}
+
+func (s *Store) notifyProgress() {
+	s.progressMu.Lock()
+	fns := slices.Clone(s.progress)
+	s.progressMu.Unlock()
+	for _, fn := range fns {
+		fn()
+	}
 }
 
 // EffectApplier — применяющий эффекты модуля-писателя проекций внутри
@@ -166,6 +190,9 @@ func (s *Store) Append(ctx context.Context, rq app.AppendRequest) (app.AppendRes
 		}
 		return app.AppendResult{}, err
 	}
+	if rq.Consumer != nil || len(rq.Cursors) > 0 {
+		s.notifyProgress()
+	}
 	return res, nil
 }
 
@@ -184,6 +211,14 @@ func (s *Store) append(ctx context.Context, tx pgx.Tx, rq app.AppendRequest) (ap
 	// цепочки не нужна.
 	chainless := len(rq.Batch) == 0 && len(rq.Critical) == 0 && len(rq.Checks) == 0 && len(rq.ConcessionGrants) == 0
 	if chainless {
+		// Эпик 35: фиксация без записей журнала (курсор и проекции —
+		// пересобираемый кэш, AD-45) не ждёт сброса WAL на диск. После сбоя
+		// БД теряется разве что хвост таких фиксаций — курсор вместе со своим
+		// выходом (одна транзакция), и потребитель повторяет их; записи
+		// журнала и курсоры в транзакциях с записями фиксируются синхронно.
+		if _, err := tx.Exec(ctx, "SET LOCAL synchronous_commit = off"); err != nil {
+			return res, err
+		}
 		return res, s.finish(ctx, tx, rq, &res, now)
 	}
 	// 2. Головы цепочек: основная, затем ca (порядок фиксирован, AD-44).
@@ -317,18 +352,28 @@ func (s *Store) append(ctx context.Context, tx pgx.Tx, rq app.AppendRequest) (ap
 // finish — курсор потребителя и выход потребителя в той же транзакции (AD-45).
 func (s *Store) finish(ctx context.Context, tx pgx.Tx, rq app.AppendRequest, res *app.AppendResult, now time.Time) error {
 	// 6. Курсор потребителя не убывает; единственность писателя — Fence.
-	if c := rq.Consumer; c != nil {
-		if c.Name == "" || c.Partition < app.GlobalPartition || c.Seq < 0 {
-			return fmt.Errorf("%w: курсор %q/%d/%d", app.ErrInvalidEntry, c.Name, c.Partition, c.Seq)
+	// Сигнал «курсор сдвинулся» (Settler, эпик 16) — после фиксации в
+	// процессе (Append → progress), а не pg_notify: NOTIFY берёт общую на
+	// кластер блокировку очереди уведомлений до сброса WAL на диск, и фиксации
+	// всех потребителей выстраивались в одну очередь (эпик 35, главное узкое
+	// место MS-1).
+	cursors := rq.Cursors
+	if rq.Consumer != nil {
+		cursors = append([]app.CursorAdvance{*rq.Consumer}, cursors...)
+	}
+	if len(cursors) > 0 {
+		names, parts, seqs := make([]string, len(cursors)), make([]int32, len(cursors)), make([]int64, len(cursors))
+		for i, c := range cursors {
+			if c.Name == "" || c.Partition < app.GlobalPartition || c.Seq < 0 {
+				return fmt.Errorf("%w: курсор %q/%d/%d", app.ErrInvalidEntry, c.Name, c.Partition, c.Seq)
+			}
+			names[i], parts[i], seqs[i] = c.Name, int32(c.Partition), c.Seq
 		}
+		// Все курсоры — одним запросом (группа проектора — десятки курсоров).
 		if _, err := tx.Exec(ctx, `INSERT INTO journal_state.consumer_offsets (name, partition, seq, updated_at)
-VALUES ($1, $2, $3, $4)
+SELECT n, p, s, $4 FROM unnest($1::text[], $2::int[], $3::bigint[]) AS c(n, p, s)
 ON CONFLICT (name, partition) DO UPDATE SET seq = GREATEST(consumer_offsets.seq, EXCLUDED.seq), updated_at = EXCLUDED.updated_at`,
-			c.Name, c.Partition, c.Seq, now); err != nil {
-			return err
-		}
-		// Сигнал «курсор сдвинулся» — при фиксации (Settler, эпик 16).
-		if _, err := tx.Exec(ctx, "SELECT pg_notify($1, '')", ProgressChannel); err != nil {
+			names, parts, seqs, now); err != nil {
 			return err
 		}
 	}

@@ -56,6 +56,10 @@ type AppendRequest struct {
 	ConcessionGrants []ConcessionGrant
 	// Consumer — курсор потребителя, обновляемый в той же транзакции (AD-45).
 	Consumer *CursorAdvance
+	// Cursors — ещё курсоры в той же транзакции: группа потребителей одной
+	// копии (GroupConsumer, эпик 35 — проектор сдвигает курсоры всех
+	// глобальных проекций одной фиксацией).
+	Cursors []CursorAdvance
 	// Effects — выход потребителя в таблицы модулей-писателей проекций в той
 	// же транзакции (AD-44, AD-45): проекции изделия, вклады показателей,
 	// журнал изменений для SSE. Виды эффектов объявляет модуль-писатель
@@ -243,6 +247,17 @@ type Consumer interface {
 	// (глобальный) или `consumer:‹имя›:‹партиция›`; Fence ставит адаптер.
 	// Возвращается при отмене ctx или ошибке handle.
 	Consume(ctx context.Context, name string, scope Scope, handle func(ctx context.Context, batch []jc.JournalEntry) (AppendRequest, error)) error
+}
+
+// GroupConsumer — необязательное расширение Consumer (эпик 35): несколько
+// глобальных потребителей одной копии читают журнал одним проходом, их
+// выходы и курсоры фиксируются одной транзакцией Append. У каждого имени —
+// свой курсор и своя аренда `consumer:‹имя›`, как у Consume: смысл и
+// единственность писателя те же, меньше чтений и фиксаций. handle получает
+// пачку после наименьшего курсора группы и курсоры имён (from): записи с
+// seq ≤ from[имя] этому имени уже отданы.
+type GroupConsumer interface {
+	ConsumeGroup(ctx context.Context, names []string, handle func(ctx context.Context, batch []jc.JournalEntry, from map[string]int64) (AppendRequest, error)) error
 }
 
 // Signal — сигнал «есть новое» (AD-6): LISTEN/NOTIFY несёт только seq головы
