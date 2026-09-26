@@ -1572,6 +1572,9 @@
       "defectRateOutOfControl": "Доля дефектов вне контрольных границ"
     },
     "playback": {
+      "nextEvent": "к следующему: {what}",
+      "axisKnown": "Что мы знали на {at}: только данные, пришедшие к этому моменту",
+      "axisActual": "Как было на {at}: с учётом данных, пришедших позже",
       "now": "@:common.modes.now",
       "replay": "@:common.modes.replay",
       "speed": "×{speed}",
