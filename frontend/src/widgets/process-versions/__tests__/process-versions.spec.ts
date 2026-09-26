@@ -2,10 +2,12 @@
 // с действующей.
 import { mount } from '@vue/test-utils'
 import { createPinia } from 'pinia'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { mockApi, mountWidget } from '@/entities/incident/__tests__/api-mock'
 import { i18n } from '@/shared/i18n'
 import { processVersions } from '@/entities/process-version/__tests__/fixtures'
 import ProcessVersionsView from '../ui/ProcessVersionsView.vue'
+import ProcessVersionsWidget from '../ui/ProcessVersionsWidget.vue'
 
 const mountView = (props: Record<string, unknown> = {}) =>
   mount(ProcessVersionsView, {
@@ -61,5 +63,24 @@ describe('раздел «Процесс»', () => {
     const w = mountView()
     await w.find('button[data-version="pv-0.1"]').trigger('click')
     expect(w.emitted('update:selected')?.at(-1)).toEqual(['pv-0.1'])
+  })
+})
+
+describe('виджет «Процесс» через API', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('список, выбранная версия и отличия от действующей — с сервера', async () => {
+    const [draft, active] = processVersions()
+    const summary = (v: typeof draft) => ({ version_id: v!.version_id, label: v!.label, status: v!.status, created_at: v!.created_at, items_in_work: 0 })
+    const calls = mockApi({
+      'GET /api/v1/process/versions': { items: [summary(draft), summary(active)] },
+      'GET /api/v1/process/versions/pv-0.2': { ...draft, basis_seq: 10 },
+      'GET /api/v1/process/versions/pv-0.1': { ...active, basis_seq: 10 },
+      'GET /api/v1/process/versions/pv-0.2/diff': { version_id: 'pv-0.2', against_id: 'pv-0.1', entries: [{ kind: 'presentationPointAdded', step: 'Сварка' }] },
+    })
+    const w = await mountWidget(ProcessVersionsWidget, { widgetId: 'process-versions', titleKey: 'desks.process', slice: { mode: 'diff' } })
+    expect(w.attributes('data-mode')).toBe('fixtures')
+    expect(w.findAll('[data-testid="diff"] li').map((l) => l.text())).toEqual(['Добавлена точка предъявления после «Сварка»'])
+    expect(calls.map((c) => c.path)).toContain('/api/v1/process/versions/pv-0.2/diff')
   })
 })

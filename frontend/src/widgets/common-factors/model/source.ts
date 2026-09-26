@@ -1,13 +1,12 @@
 /**
- * Источник данных виджета «common-factors» (эпик 12). Будущая операция — общие факторы по выбранной группе несоответствий (FR-135).
- *
- * Пока операции чтения нет в contracts/openapi.yaml (эпик 02), источник пуст —
- * виджет показывает пустое состояние, а не выдуманные данные (PRD §11.10,
- * FR-150). Подключение: запрос Vue Query через обёртку entities/* с ключами
- * по соглашению shared/api/keys.ts и параметрами момента (AD-21).
+ * Источник данных виджета «common-factors»: общие факторы группы в разборе
+ * (операция `analysis.common_factors.read`, FR-135).
  */
-import { emptySource, type WidgetSource } from '@/entities/incident'
-import type { CommonFactorsModel } from '@/entities/incident'
+import { computed } from 'vue'
+import { useCommonFactors, useFocusedGroup } from '@/entities/incident'
 
 /** Данные виджета «common-factors». */
-export const useCommonFactorsSource = (): WidgetSource<CommonFactorsModel> => emptySource<CommonFactorsModel>()
+export function useCommonFactorsSource() {
+  const { group } = useFocusedGroup()
+  return useCommonFactors(computed(() => group.value?.group_key ?? null))
+}

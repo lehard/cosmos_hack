@@ -2,11 +2,14 @@
 // вход из строки в гипотезу и в сужение области риска.
 import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { useAnalysisFocusStore } from '@/entities/incident'
+import { mockApi, mountWidget } from '@/entities/incident/__tests__/api-mock'
 import { i18n } from '@/shared/i18n'
 import { useMomentStore } from '@/shared/model/moment'
-import { weldFactors } from '@/entities/incident/__tests__/fixtures'
+import { ncGroups, weldFactors } from '@/entities/incident/__tests__/fixtures'
 import CommonFactorsView from '../ui/CommonFactorsView.vue'
+import CommonFactorsWidget from '../ui/CommonFactorsWidget.vue'
 
 let pinia: ReturnType<typeof createPinia>
 beforeEach(() => {
@@ -49,5 +52,21 @@ describe('общие факторы', () => {
     useMomentStore().travel('2026-09-23T09:00:00.000Z')
     await w.vm.$nextTick()
     expect(w.find('tr[data-factor="machine"] [data-testid="to-hypothesis"]').attributes('disabled')).toBeDefined()
+  })
+})
+
+describe('виджет общих факторов через API', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('факторы самой крупной группы, пока группа не выбрана', async () => {
+    const calls = mockApi({
+      'GET /api/v1/analysis/groups': { items: ncGroups() },
+      'GET /api/v1/analysis/groups/burn_through|welding|IS-3/common-factors': weldFactors(),
+    })
+    const w = await mountWidget(CommonFactorsWidget, { widgetId: 'common-factors', titleKey: 'desks.commonFactors' })
+    expect(calls.map((c) => c.path)).toContain('/api/v1/analysis/groups/burn_through|welding|IS-3/common-factors')
+    expect(w.find('tbody tr').attributes('data-factor')).toBe('machine')
+    await w.find('tr[data-factor="machine"] [data-testid="to-hypothesis"]').trigger('click')
+    expect(useAnalysisFocusStore().factor).toMatchObject({ intent: 'hypothesis', row: { factor: 'machine' } })
   })
 })
