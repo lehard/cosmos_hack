@@ -102,7 +102,7 @@ describe('план прогона на пульте', () => {
     w.unmount()
   })
 
-  it('контейнер: операции плана нет (501) — пульт показывает «ждёт решения» как раньше', async () => {
+  it('контейнер: сервер плана не отдал (501) — пульт показывает «ждёт решения» как раньше', async () => {
     mockApi({
       'GET /api/v1/scenarios': { items: scenarios() },
       'GET /api/v1/runs': { items: [run({ state: 'waiting_for_decision', waiting_for: { role: 'site_foreman', action: 'process.movement.receive', object_id: 'Ф-001' } })] },

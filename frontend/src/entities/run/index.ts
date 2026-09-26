@@ -19,6 +19,7 @@ import {
   simulationInjectionList,
   simulationRunList,
   simulationRunPause,
+  simulationRunPlan,
   simulationRunRead,
   simulationRunResume,
   simulationRunSetSpeed,
@@ -32,7 +33,6 @@ import { statusOf, type ApiError } from '@/shared/api/problem'
 import { useMomentStore } from '@/shared/model/moment'
 import { isActive, isIdle, pickCurrentRun } from './model/run'
 import { useRunFocusStore } from './model/focus'
-import { simulationRunPlan } from './model/plan'
 
 export * from './model/run'
 export * from './model/focus'
@@ -127,8 +127,8 @@ export function useBoard(runId: MaybeRefOrGetter<string | null>, live: MaybeRefO
 
 /**
  * План прогона (`simulation.run.plan`, Д-85): чего ждём и что дальше. Пока
- * прогон идёт — перечитывается вместе с состоянием; операции ещё нет на
- * сервере (501) — пульт просто не показывает план.
+ * прогон идёт — перечитывается вместе с состоянием; сервер плана не отдал —
+ * пульт просто не показывает план.
  */
 export function useRunPlan(runId: MaybeRefOrGetter<string | null>, live: MaybeRefOrGetter<boolean> = false) {
   return useQuery({
