@@ -9,6 +9,7 @@ import (
 	"ant/internal/contracts/catalog"
 	"ant/internal/domain/analysis"
 	"ant/internal/domain/kernel"
+	"ant/internal/domain/machinelogs"
 )
 
 // item — вход свёртки изделия (AD-5): записи с item_id.
@@ -276,5 +277,49 @@ func TestSimilarCases(t *testing.T) {
 	}
 	if !slices.Equal(ids, []string{"NC-01", "NC-00"}) {
 		t.Fatalf("похожие: %v", ids)
+	}
+}
+
+// Оборудование — из профилей выполнения machinelogs (эпик 23, FR-148):
+// стадия привязала отклонение к выполнению (equipment.event.bound), профиль
+// классифицировал его как отклонение, разбор видит его на дорожке
+// оборудования и строит гипотезу «оборудование».
+func TestEquipmentFromMachinelogsProfile(t *testing.T) {
+	it := weldItem("W21")
+	var ml machinelogs.State
+	for _, r := range it.in {
+		ml = machinelogs.Reduce(ml, r, machinelogs.Env{}, machinelogs.Upstream{})
+	}
+	bound := func(id string, typ catalog.Type, binding string, occurred time.Time, data map[string]any) {
+		raw, _ := json.Marshal(map[string]any{"operation_run_id": "RUN-17", "equipment_id": "IS-2", "binding": binding,
+			"subject_event_id": id, "subject_event_type": string(typ), "subject_occurred_at": occurred.Format(analysis.TimeLayout),
+			"subject_source_kind": "machine", "subject_data": data})
+		ml = machinelogs.Reduce(ml, kernel.Record{EventID: "b-" + id, Type: catalog.EquipmentEventBound, ItemID: it.id, Data: raw},
+			machinelogs.Env{}, machinelogs.Upstream{})
+	}
+	tool := it.j.id("tool")
+	dev := it.j.id("dev")
+	bound(tool, catalog.EquipmentToolChanged, "context", at(23, 7, 0), map[string]any{"equipment_id": "IS-2", "tool_id": "TORCH-7"})
+	bound(dev, catalog.EquipmentDeviationDetected, "interval", at(23, 10, 55), map[string]any{"equipment_id": "IS-2",
+		"deviation_kind": "out_of_setpoint", "started_at": "2026-09-23T07:45:00.000Z", "ended_at": "2026-09-23T07:55:00.000Z",
+		"parameter": "current", "value": map[string]any{"value": 176, "unit": "A", "scale": 0}})
+	s, _ := it.state()
+	eq := analysis.EquipmentFrom(analysis.Upstream{Machinelogs: &ml})
+	a, _ := analysis.Analyze(s, it.id, "NC-01", eq)
+	var eqLane []string
+	for _, m := range a.Records {
+		if m.Lane == analysis.LaneEquipment {
+			eqLane = append(eqLane, m.EventID)
+		}
+	}
+	if !slices.Contains(eqLane, dev) || a.Profile.Tool != "TORCH-7" {
+		t.Fatalf("дорожка оборудования %v, инструмент %q", eqLane, a.Profile.Tool)
+	}
+	var strong bool
+	for _, h := range a.Hypotheses {
+		strong = strong || (h.Category == analysis.CatEquipment && h.ConfidenceBP != nil && *h.ConfidenceBP >= 8500 && slices.Contains(h.Supporting, dev))
+	}
+	if !strong || !a.Categorical {
+		t.Fatalf("гипотеза «оборудование» по профилю: %+v, категоричен %v, нехватка %v", a.Hypotheses, a.Categorical, a.Missing)
 	}
 }
