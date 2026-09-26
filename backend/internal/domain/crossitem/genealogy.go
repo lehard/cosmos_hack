@@ -278,7 +278,7 @@ func (g Genealogy) HeatItems(heatNo string) []LotItem {
 	var direct []string
 	for _, id := range slices.Sorted(maps.Keys(g.Lots)) {
 		l := g.Lots[id]
-		if l.HeatNo != heatNo && !(l.Kind == LotKindHeat && l.LotID == heatNo) {
+		if l.HeatNo != heatNo && (l.Kind != LotKindHeat || l.LotID != heatNo) {
 			continue
 		}
 		for _, it := range g.LotItems(id) {

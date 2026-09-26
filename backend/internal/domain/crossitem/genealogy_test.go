@@ -3,6 +3,7 @@ package crossitem_test
 import (
 	"encoding/json"
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 	"testing"
@@ -70,9 +71,7 @@ func (w *world) to(typ catalog.Type, id string) []map[string]any {
 
 func (w *world) register(id string, extra map[string]any) {
 	d := map[string]any{"item_id": id, "item_type_id": "FL-100.00.000", "item_revision": "Б", "process_version_hash": "streebog256:00", "normative_rev": "r1"}
-	for k, v := range extra {
-		d[k] = v
-	}
+	maps.Copy(d, extra)
 	w.feed(catalog.ItemItemRegistered, id, 0, d)
 }
 
