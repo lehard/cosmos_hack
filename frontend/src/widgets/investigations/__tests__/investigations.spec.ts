@@ -21,6 +21,8 @@ const incident = (id: string, over: Partial<IncidentSummary> = {}): IncidentSumm
   nc_ids: [],
   close_blockers: [],
   counts: { confirmed: 0, suspect: 0, unknown: 0, excluded: 0 },
+  stage: 'scope_defined',
+  next_step: null,
   ...over,
 })
 
