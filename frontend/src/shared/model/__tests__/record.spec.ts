@@ -36,9 +36,9 @@ describe('ссылка на запись в адресе', () => {
     await new Promise((r) => setTimeout(r))
     expect(router.currentRoute.value.query).toEqual({ tab: 'queue', open: 'item:ENT:FL-0042' })
     expect(link.current.value).toEqual({ entity: 'item', id: 'ENT:FL-0042' })
-    // Тот же тип, которого нет в окне, — false: вызывающий откроет страницу.
-    expect(link.canOpen({ entity: 'alarm', id: 'A-1' })).toBe(false)
-    expect(link.open({ entity: 'alarm', id: 'A-1' })).toBe(false)
+    // Тип, которого нет в окне, — false: вызывающий откроет страницу.
+    expect(link.canOpen({ entity: 'lot', id: 'L-1' })).toBe(false)
+    expect(link.open({ entity: 'lot', id: 'L-1' })).toBe(false)
   })
 
   it('окно открыто по прямой ссылке — закрытие убирает параметр, а не уходит со страницы', async () => {
