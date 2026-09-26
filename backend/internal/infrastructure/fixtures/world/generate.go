@@ -114,6 +114,7 @@ func Generate(fsys fs.FS) (map[string][]byte, error) {
 		return nil, err
 	}
 	names, err := LoadNames(fsys)
+	templates, err := LoadTemplates(fsys)
 	if err != nil {
 		return nil, err
 	}
@@ -133,6 +134,7 @@ func Generate(fsys fs.FS) (map[string][]byte, error) {
 		}
 		m.shifts = shifts
 		m.names = names
+		m.templates = templates
 		if err := m.write(out); err != nil {
 			return nil, err
 		}

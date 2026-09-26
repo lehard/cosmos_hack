@@ -1,7 +1,6 @@
 package world
 
 import (
-	"fmt"
 	"slices"
 	"sort"
 	"strings"
@@ -131,28 +130,8 @@ func (c *Ctx) passport(it *Item) itemapp.ItemPassport {
 			p.Nonconformities = append(p.Nonconformities, n.ID)
 		}
 	}
-	p.Documents = append(p.Documents, c.M.documentsFor(it, c.T)...)
+	p.Documents = append(p.Documents, c.itemDocuments(it)...)
 	return p
-}
-
-// documentsFor — документы, собранные из истории изделия (FR-65): заявление о
-// несоответствии, акт о браке (групповой), журнал изолятора.
-func (m *Model) documentsFor(it *Item, t time.Time) []itemapp.ItemDocumentRef {
-	var out []itemapp.ItemDocumentRef
-	for _, n := range m.NCs {
-		if !slices.Contains(n.Items, it) || n.ConfirmedAt.After(t) {
-			continue
-		}
-		status := "in_route"
-		if d := n.DispositionAt(m); d != nil && !d.After(t) {
-			status = "closed"
-		}
-		out = append(out, itemapp.ItemDocumentRef{DocumentID: "DOC-" + n.ID, Template: "nc-statement@1", Title: "Заявление о несоответствии " + n.Number, Status: status, Digest: Digest([]byte("DOC-" + n.ID))})
-		if len(n.Spec.Items) > 0 && n.Spec.Disposition != nil && !n.Spec.Disposition.At.Time().After(t) {
-			out = append(out, itemapp.ItemDocumentRef{DocumentID: "DOC-ACT-" + n.ID, Template: "defect-act@1", Title: fmt.Sprintf("Акт о браке на %d изделий (%s)", len(n.Items), n.Number), Status: "closed", Digest: Digest([]byte("DOC-ACT-" + n.ID))})
-		}
-	}
-	return out
 }
 
 // history — журнал изменений паспорта (FR-43): было / стало / кто / причина по осям статусов.

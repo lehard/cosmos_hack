@@ -5277,7 +5277,7 @@ export type documentsDocumentListResponseError = (documentsDocumentListResponseD
   headers: Headers;
 };
 
-export const getDocumentsDocumentListUrl = (params: DocumentsDocumentListParams,) => {
+export const getDocumentsDocumentListUrl = (params?: DocumentsDocumentListParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -5293,10 +5293,10 @@ export const getDocumentsDocumentListUrl = (params: DocumentsDocumentListParams,
 }
 
 /**
- * FR-65: документы изделия, несоответствия, партии — «документов собрано из истории»; статус маршрута и бумажного экземпляра.
- * @summary Документы объекта
+ * FR-65: документы изделия, несоответствия, партии — «документов собрано из истории»; статус маршрута и бумажного экземпляра. Без объекта или с отбором — реестр документов (раздел «Документы» столов): по изделию, процессу, версии процесса, виду, состоянию, поиску; в строке — кто должен подписать сейчас и прогресс маршрута.
+ * @summary Документы объекта и реестр документов
  */
-export const documentsDocumentList = async (params: DocumentsDocumentListParams, options?: RequestInit): Promise<documentsDocumentListResponseSuccess> => {
+export const documentsDocumentList = async (params?: DocumentsDocumentListParams, options?: RequestInit): Promise<documentsDocumentListResponseSuccess> => {
 
   const res = await fetch(getDocumentsDocumentListUrl(params),
   {
@@ -5332,7 +5332,7 @@ export const getDocumentsDocumentListQueryKey = (params?: MaybeRefOrGetter<Docum
     }
 
 
-export const getDocumentsDocumentListQueryOptions = <TData = Awaited<ReturnType<typeof documentsDocumentList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(params: MaybeRefOrGetter<DocumentsDocumentListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof documentsDocumentList>>, TError, TData>>, fetch?: RequestInit}
+export const getDocumentsDocumentListQueryOptions = <TData = Awaited<ReturnType<typeof documentsDocumentList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(params?: MaybeRefOrGetter<DocumentsDocumentListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof documentsDocumentList>>, TError, TData>>, fetch?: RequestInit}
 ) => {
 
 const {query: queryOptions, fetch: fetchOptions} = options ?? {};
@@ -5355,11 +5355,11 @@ export type DocumentsDocumentListQueryError = globalThis.Error & { info?: Proble
 
 
 /**
- * @summary Документы объекта
+ * @summary Документы объекта и реестр документов
  */
 
 export function useDocumentsDocumentList<TData = Awaited<ReturnType<typeof documentsDocumentList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
- params: MaybeRefOrGetter<DocumentsDocumentListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof documentsDocumentList>>, TError, TData>>, fetch?: RequestInit}
+ params?: MaybeRefOrGetter<DocumentsDocumentListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof documentsDocumentList>>, TError, TData>>, fetch?: RequestInit}
  , queryClient?: QueryClient
  ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 

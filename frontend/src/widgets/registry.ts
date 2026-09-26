@@ -77,6 +77,8 @@ export const widgetRegistry = {
   'data-deficit-map': { titleKey: 'desks.dataDeficit', epic: 15, load: () => import('./data-deficit-map') },
   // ── эпик 42: Предложения, меры и карта дефицита данных ──
   'corrective-actions': { titleKey: 'widgets.quality.title', epic: 42, load: () => import('./corrective-actions') },
+  // ── эпик 44: Документы каталога — реестр документов ──
+  'documents-registry': { titleKey: 'docRegistry.title', epic: 44, load: () => import('./documents-registry') },
   // ── эпик 40: Адаптация VisionQC ──
   'vision-adaptation': { titleKey: 'widgets.visionAdaptation.title', epic: 40, load: () => import('./vision-adaptation') },
   // ── эпик 48: Управление интеграциями ──

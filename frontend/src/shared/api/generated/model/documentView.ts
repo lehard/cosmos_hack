@@ -3,6 +3,7 @@
  * Источник: contracts/openapi.yaml
  */
 import type { DocumentApprovalStage } from './documentApprovalStage';
+import type { DocumentDecline } from './documentDecline';
 import type { DocumentPaperMark } from './documentPaperMark';
 import type { DocumentRouteStage } from './documentRouteStage';
 import type { DocumentSignatureView } from './documentSignatureView';
@@ -19,6 +20,8 @@ export interface DocumentView {
   class?: DocumentViewClass;
   /** Канонические данные документа (JCS без rendering_hash). */
   content: DocumentViewContent;
+  /** Отказы в согласовании с замечаниями (FR-136). */
+  declines?: DocumentDecline[];
   /** Отпечаток документа streebog256:…; в QR печатной рамки. */
   doc_digest: string;
   /** @minimum 1 */
@@ -47,6 +50,8 @@ export interface DocumentView {
   stages: DocumentApprovalStage[];
   status: DocumentViewStatus;
   subject: DrillRef;
+  /** Объект документа для людей. */
+  subject_label?: string;
   /** Поля сводки уровня 2 — входят в отпечаток (AD-12). */
   summary_fields: DocumentSummaryField[];
   /** Предыдущая версия документа. */

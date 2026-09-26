@@ -38,3 +38,10 @@ tabs:
     layout: single
     slots:
       - {id: adaptation, area: main, widget: vision-adaptation}
+  # Реестр документов (эпик 44; FR-65, FR-66, FR-139): все документы по процессам, изделиям, НС, версиям процесса —
+  # состояние, кто должен подписать; щелчок — окно документа с маршрутом подписей и кнопками по правам.
+  - id: documents
+    title_key: docRegistry.tab
+    layout: single
+    slots:
+      - {id: documents, area: main, widget: documents-registry}

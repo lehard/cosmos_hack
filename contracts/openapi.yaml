@@ -4043,6 +4043,61 @@ components:
         - signed_by
         - status
       type: object
+    DocumentAwaiting:
+      additionalProperties: false
+      properties:
+        candidates:
+          description: Кто может подписать этап (псевдонимы).
+          items:
+            type: string
+          type: array
+        role:
+          description: Роль этапа.
+          type: string
+        stage:
+          description: Номер этапа.
+          format: int64
+          minimum: 1
+          type: integer
+        title:
+          description: Кто подписывает этап — для людей.
+          type: string
+      required:
+        - stage
+        - title
+        - candidates
+      type: object
+    DocumentDecline:
+      additionalProperties: false
+      properties:
+        at:
+          format: date-time
+          type: string
+        comment:
+          description: Замечание.
+          type: string
+        event_id:
+          description: Запись document.signature.declined.
+          type: string
+        signer_id:
+          description: Кто вернул.
+          type: string
+        stage:
+          format: int64
+          minimum: 1
+          type: integer
+        version:
+          format: int64
+          minimum: 1
+          type: integer
+      required:
+        - event_id
+        - version
+        - stage
+        - signer_id
+        - comment
+        - at
+      type: object
     DocumentList:
       additionalProperties: false
       properties:
@@ -4293,6 +4348,15 @@ components:
         event_id:
           description: Запись document.signature.recorded или решение-источник (by_source).
           type: string
+        key_ref:
+          description: Ключ подписанта key_id@версия.
+          type: string
+        key_storage:
+          description: "Класс хранения ключа (Д-72): hardware_token — физический ключ, software_browser — ключ в браузере под PIN."
+          enum:
+            - hardware_token
+            - software_browser
+          type: string
         level:
           description: Уровень подписи (AD-13).
           format: int64
@@ -4338,6 +4402,9 @@ components:
     DocumentSummary:
       additionalProperties: false
       properties:
+        awaiting:
+          $ref: "#/components/schemas/DocumentAwaiting"
+          description: "Кто должен подписать сейчас: первый незакрытый этап маршрута; нет — маршрут закрыт или не начат."
         class:
           description: "Класс документа: запись, решение, требование, вход."
           enum:
@@ -4359,12 +4426,41 @@ components:
         drafted_at:
           format: date-time
           type: string
+        item_ids:
+          description: Изделия, к которым относится документ (фильтр «по изделию»).
+          items:
+            type: string
+          type: array
         paper_status:
           description: Статус бумажного экземпляра.
           enum:
             - printed
             - signed
             - destroyed
+          type: string
+        process_id:
+          description: Процесс (главный bpmn:process), к которому относится документ.
+          type: string
+        process_version_id:
+          description: Версия процесса, по которой сформирован документ.
+          type: string
+        stages_done:
+          description: Сколько этапов маршрута закрыто.
+          format: int64
+          type: integer
+        stages_total:
+          description: Сколько этапов в маршруте текущей версии.
+          format: int64
+          type: integer
+        state:
+          description: "Состояние для реестра: черновик, на подписи, подписан, аннулирован, возвращён с замечанием, на бумаге (напечатан, ждёт заверения)."
+          enum:
+            - draft
+            - signing
+            - signed
+            - annulled
+            - returned
+            - paper
           type: string
         status:
           description: live — сопроводительная карта собирается из истории, версия ещё не зафиксирована; returned — подписант вернул версию с замечанием.
@@ -4380,10 +4476,17 @@ components:
         subject:
           $ref: "#/components/schemas/DrillRef"
           description: "Объект документа: изделие, несоответствие, партия…"
+        subject_label:
+          description: "Объект документа для людей: «Ф-017», «НС-01», «Фланец люка, версия v1»."
+          type: string
         template:
           description: Шаблон@версия из нормативного слоя.
           type: string
         title:
+          type: string
+        updated_at:
+          description: "Последнее событие документа: версия, подпись, отказ, бумага, закрытие."
+          format: date-time
           type: string
         version:
           format: int64
@@ -4463,6 +4566,11 @@ components:
           additionalProperties: {}
           description: Канонические данные документа (JCS без rendering_hash).
           type: object
+        declines:
+          description: Отказы в согласовании с замечаниями (FR-136).
+          items:
+            $ref: "#/components/schemas/DocumentDecline"
+          type: array
         doc_digest:
           description: Отпечаток документа streebog256:…; в QR печатной рамки.
           type: string
@@ -4526,6 +4634,9 @@ components:
           type: string
         subject:
           $ref: "#/components/schemas/DrillRef"
+        subject_label:
+          description: Объект документа для людей.
+          type: string
         summary_fields:
           description: Поля сводки уровня 2 — входят в отпечаток (AD-12).
           items:
@@ -18723,24 +18834,76 @@ paths:
         owner: access
   /api/v1/documents:
     get:
-      description: "FR-65: документы изделия, несоответствия, партии — «документов собрано из истории»; статус маршрута и бумажного экземпляра."
+      description: "FR-65: документы изделия, несоответствия, партии — «документов собрано из истории»; статус маршрута и бумажного экземпляра. Без объекта или с отбором — реестр документов (раздел «Документы» столов): по изделию, процессу, версии процесса, виду, состоянию, поиску; в строке — кто должен подписать сейчас и прогресс маршрута."
       operationId: documents.document.list
       parameters:
-        - description: Вид объекта.
+        - description: Вид объекта; пусто — все документы (реестр).
           explode: false
           in: query
           name: subject
-          required: true
           schema:
             $ref: "#/components/schemas/EntityKind"
-            description: Вид объекта.
-        - description: Идентификатор объекта.
+            description: Вид объекта; пусто — все документы (реестр).
+        - description: Идентификатор объекта; пусто — все документы (реестр).
           explode: false
           in: query
           name: id
-          required: true
           schema:
-            description: Идентификатор объекта.
+            description: Идентификатор объекта; пусто — все документы (реестр).
+            maxLength: 128
+            type: string
+        - description: "Реестр: документы изделия, включая документы его несоответствий."
+          explode: false
+          in: query
+          name: item_id
+          schema:
+            description: "Реестр: документы изделия, включая документы его несоответствий."
+            maxLength: 128
+            type: string
+        - description: "Реестр: документы процесса."
+          explode: false
+          in: query
+          name: process_id
+          schema:
+            description: "Реестр: документы процесса."
+            maxLength: 128
+            type: string
+        - description: "Реестр: документы версии процесса."
+          explode: false
+          in: query
+          name: process_version_id
+          schema:
+            description: "Реестр: документы версии процесса."
+            maxLength: 128
+            type: string
+        - description: "Реестр: вид документа — id шаблона (nc-disposition) или template_ref."
+          explode: false
+          in: query
+          name: template
+          schema:
+            description: "Реестр: вид документа — id шаблона (nc-disposition) или template_ref."
+            maxLength: 128
+            type: string
+        - description: "Реестр: состояние документа."
+          explode: false
+          in: query
+          name: state
+          schema:
+            description: "Реестр: состояние документа."
+            enum:
+              - draft
+              - signing
+              - signed
+              - annulled
+              - returned
+              - paper
+            type: string
+        - description: "Реестр: поиск по номеру, названию, объекту."
+          explode: false
+          in: query
+          name: q
+          schema:
+            description: "Реестр: поиск по номеру, названию, объекту."
             maxLength: 128
             type: string
         - description: "Ось момента: occurred — «как было» (по умолчанию), recorded — «что мы знали» (AD-37)."
@@ -18802,7 +18965,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
           description: Error
-      summary: Документы объекта
+      summary: Документы объекта и реестр документов
       tags:
         - documents
       x-ant-action:

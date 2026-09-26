@@ -3,18 +3,48 @@
  * Источник: contracts/openapi.yaml
  */
 import type { Axis } from './axis';
+import type { DocumentsDocumentListState } from './documentsDocumentListState';
 import type { EntityKind } from './entityKind';
 
 export type DocumentsDocumentListParams = {
 /**
- * Вид объекта.
+ * Вид объекта; пусто — все документы (реестр).
  */
-subject: EntityKind;
+subject?: EntityKind;
 /**
- * Идентификатор объекта.
+ * Идентификатор объекта; пусто — все документы (реестр).
  * @maxLength 128
  */
-id: string;
+id?: string;
+/**
+ * Реестр: документы изделия, включая документы его несоответствий.
+ * @maxLength 128
+ */
+item_id?: string;
+/**
+ * Реестр: документы процесса.
+ * @maxLength 128
+ */
+process_id?: string;
+/**
+ * Реестр: документы версии процесса.
+ * @maxLength 128
+ */
+process_version_id?: string;
+/**
+ * Реестр: вид документа — id шаблона (nc-disposition) или template_ref.
+ * @maxLength 128
+ */
+template?: string;
+/**
+ * Реестр: состояние документа.
+ */
+state?: DocumentsDocumentListState;
+/**
+ * Реестр: поиск по номеру, названию, объекту.
+ * @maxLength 128
+ */
+q?: string;
 /**
  * Ось момента: occurred — «как было» (по умолчанию), recorded — «что мы знали» (AD-37).
  */

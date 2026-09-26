@@ -16,16 +16,29 @@ const owner = "documents"
 // подпись, бумага с заверением, аннулирование (FR-65, FR-66, FR-136, FR-139,
 // FR-146; AD-12, AD-13, AD-43).
 func Register(api *httpapi.API, q app.Queries, c app.Commands) {
-	httpapi.Read(api, httpapi.Get("/documents", "Документы объекта",
-		"FR-65: документы изделия, несоответствия, партии — «документов собрано из истории»; статус маршрута и бумажного экземпляра."),
+	httpapi.Read(api, httpapi.Get("/documents", "Документы объекта и реестр документов",
+		"FR-65: документы изделия, несоответствия, партии — «документов собрано из истории»; статус маршрута и бумажного экземпляра. "+
+			"Без объекта или с отбором — реестр документов (раздел «Документы» столов): по изделию, процессу, версии процесса, виду, состоянию, поиску; "+
+			"в строке — кто должен подписать сейчас и прогресс маршрута."),
 		platform.Action{ID: "documents.document.list", Owner: owner, Subject: "document"},
 		func(ctx context.Context, in *struct {
-			Subject platform.EntityKind `query:"subject" required:"true" doc:"Вид объекта."`
-			ID      string              `query:"id" required:"true" maxLength:"128" doc:"Идентификатор объекта."`
+			Subject          platform.EntityKind `query:"subject" doc:"Вид объекта; пусто — все документы (реестр)."`
+			ID               string              `query:"id" maxLength:"128" doc:"Идентификатор объекта; пусто — все документы (реестр)."`
+			ItemID           string              `query:"item_id" maxLength:"128" doc:"Реестр: документы изделия, включая документы его несоответствий."`
+			ProcessID        string              `query:"process_id" maxLength:"128" doc:"Реестр: документы процесса."`
+			ProcessVersionID string              `query:"process_version_id" maxLength:"128" doc:"Реестр: документы версии процесса."`
+			Template         string              `query:"template" maxLength:"128" doc:"Реестр: вид документа — id шаблона (nc-disposition) или template_ref."`
+			State            string              `query:"state" enum:"draft,signing,signed,annulled,returned,paper" doc:"Реестр: состояние документа."`
+			Q                string              `query:"q" maxLength:"128" doc:"Реестр: поиск по номеру, названию, объекту."`
 			httpapi.MomentQuery
 			httpapi.PageQuery
 		}, m platform.Moment) (app.DocumentList, error) {
-			return q.Documents(ctx, platform.DrillRef{Entity: in.Subject, ID: in.ID}, m, in.Page())
+			f := app.DocumentFilter{Subject: platform.DrillRef{Entity: in.Subject, ID: in.ID}, ItemID: in.ItemID, ProcessID: in.ProcessID,
+				ProcessVersionID: in.ProcessVersionID, Template: in.Template, State: in.State, Q: in.Q}
+			if !f.Registry() && in.Subject != "" {
+				return q.Documents(ctx, f.Subject, m, in.Page())
+			}
+			return q.Registry(ctx, f, m, in.Page())
 		})
 
 	type docIn struct {

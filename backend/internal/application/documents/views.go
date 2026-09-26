@@ -59,6 +59,48 @@ type DocumentSummary struct {
 	DocType  string `json:"doc_type,omitempty" doc:"Вид документа: traveler, nc_statement, nc_disposition, generic."`
 	Class    string `json:"class,omitempty" enum:"record,decision,requirement,input" doc:"Класс документа: запись, решение, требование, вход."`
 	Versions int    `json:"versions,omitempty" doc:"Сколько версий сформировано."`
+	// Поля реестра документов (раздел «Документы» столов): состояние для
+	// людей, объект, изделия и процесс, кто должен подписать сейчас, прогресс
+	// маршрута. Совместимые дополнения — у документов объекта могут отсутствовать.
+	State            string            `json:"state,omitempty" enum:"draft,signing,signed,annulled,returned,paper" doc:"Состояние для реестра: черновик, на подписи, подписан, аннулирован, возвращён с замечанием, на бумаге (напечатан, ждёт заверения)."`
+	SubjectLabel     string            `json:"subject_label,omitempty" doc:"Объект документа для людей: «Ф-017», «НС-01», «Фланец люка, версия v1»."`
+	ItemIDs          []string          `json:"item_ids,omitempty" doc:"Изделия, к которым относится документ (фильтр «по изделию»)."`
+	ProcessID        string            `json:"process_id,omitempty" doc:"Процесс (главный bpmn:process), к которому относится документ."`
+	ProcessVersionID string            `json:"process_version_id,omitempty" doc:"Версия процесса, по которой сформирован документ."`
+	Awaiting         *DocumentAwaiting `json:"awaiting,omitempty" doc:"Кто должен подписать сейчас: первый незакрытый этап маршрута; нет — маршрут закрыт или не начат."`
+	StagesDone       int               `json:"stages_done,omitempty" doc:"Сколько этапов маршрута закрыто."`
+	StagesTotal      int               `json:"stages_total,omitempty" doc:"Сколько этапов в маршруте текущей версии."`
+	UpdatedAt        *time.Time        `json:"updated_at,omitempty" doc:"Последнее событие документа: версия, подпись, отказ, бумага, закрытие."`
+}
+
+// DocumentAwaiting — этап маршрута, который ждёт подписи сейчас (реестр
+// документов, AD-43: подписант видит весь маршрут).
+type DocumentAwaiting struct {
+	Stage      int      `json:"stage" minimum:"1" doc:"Номер этапа."`
+	Title      string   `json:"title" doc:"Кто подписывает этап — для людей."`
+	Role       string   `json:"role,omitempty" doc:"Роль этапа."`
+	Candidates []string `json:"candidates" doc:"Кто может подписать этап (псевдонимы)."`
+}
+
+// DocumentFilter — отбор реестра документов (documents.document.list без
+// объекта или с фильтрами): по объекту, изделию, процессу, виду, состоянию,
+// поиску. Пустое поле — без отбора.
+type DocumentFilter struct {
+	Subject          platform.DrillRef
+	ItemID           string
+	ProcessID        string
+	ProcessVersionID string
+	// Template — id шаблона без версии (`nc-disposition`) или template_ref.
+	Template string
+	// State — состояние реестра (DocumentSummary.State).
+	State string
+	// Q — поиск по номеру, названию, объекту (без учёта регистра).
+	Q string
+}
+
+// Registry — нужен ли реестр: объекта нет или задан любой отбор кроме объекта.
+func (f DocumentFilter) Registry() bool {
+	return f.Subject.ID == "" || f.ItemID != "" || f.ProcessID != "" || f.ProcessVersionID != "" || f.Template != "" || f.State != "" || f.Q != ""
 }
 
 // DocumentList — документы объекта.
@@ -105,6 +147,10 @@ type DocumentView struct {
 	Verification string               `json:"verification,omitempty" enum:"full,demo" doc:"Как проверены подписи при закрытии маршрута; demo — без агента токена (Д-30)."`
 	Live         bool                 `json:"live,omitempty" doc:"Версия ещё не зафиксирована: показан текущий сбор из истории (номер — следующей версии)."`
 	RouteClosed  *string              `json:"route_closed_event_id,omitempty" doc:"Реакция document.route.closed версии."`
+	// Declines, SubjectLabel — совместимые дополнения реестра документов:
+	// отказы с замечаниями и объект для людей.
+	Declines     []DocumentDecline `json:"declines,omitempty" doc:"Отказы в согласовании с замечаниями (FR-136)."`
+	SubjectLabel string            `json:"subject_label,omitempty" doc:"Объект документа для людей."`
 }
 
 // DocumentVersionRef — версия документа в списке версий.
@@ -141,6 +187,20 @@ type DocumentStageSignature struct {
 	Counted          bool      `json:"counted" doc:"Засчитана модулем documents: текущий отпечаток, полномочие и клеймо, уровень, разделение обязанностей."`
 	PreviousVersion  bool      `json:"previous_version,omitempty" doc:"Подпись по прежней версии — видна, но не засчитывается."`
 	Why              string    `json:"why,omitempty" doc:"Почему не засчитана: prior_version, authority, no_stamp, level, separation_*, paper_forbidden, attester_*, surplus."`
+	// KeyRef, KeyStorage — каким ключом подписано (Д-72): ссылка на ключ и
+	// класс его хранения из акта регистрации ключа.
+	KeyRef     string `json:"key_ref,omitempty" doc:"Ключ подписанта key_id@версия."`
+	KeyStorage string `json:"key_storage,omitempty" enum:"hardware_token,software_browser" doc:"Класс хранения ключа (Д-72): hardware_token — физический ключ, software_browser — ключ в браузере под PIN."`
+}
+
+// DocumentDecline — отказ в согласовании версии с замечанием (FR-136).
+type DocumentDecline struct {
+	EventID  string    `json:"event_id" doc:"Запись document.signature.declined."`
+	Version  int       `json:"version" minimum:"1"`
+	Stage    int       `json:"stage" minimum:"1"`
+	SignerID string    `json:"signer_id" doc:"Кто вернул."`
+	Comment  string    `json:"comment" doc:"Замечание."`
+	At       time.Time `json:"at"`
 }
 
 // DocumentRouteStage — этап маршрута с подписями (форма RouteStage эпика 11:

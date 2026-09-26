@@ -16,6 +16,8 @@
  *   профиль, роли, пост сейчас, квалификации;
  * - `integration` — строки экрана «Интеграции» стола администратора (эпик 48,
  *   FR-157): состояние, канал, ошибки, карантин, кнопки включения.
+ * - `document` — строки реестра документов (раздел «Документы»): маршрут
+ *   подписей, содержимое, версии, «Подписать / Отказать / Печать с QR / Скачать».
  * Заявка на решение редкого подписанта — это сам стол согласующего (одна
  * карточка с подписью), паспорт изделия из неё открывается окном `item`.
  * Новый тип — строка здесь и компонент в kinds/.
@@ -33,6 +35,7 @@ export const recordKinds: Record<string, RecordKindDefinition> = {
   workplace: { load: () => import('./kinds/WorkplaceRecord.vue') },
   person: { load: () => import('./kinds/PersonRecord.vue') },
   integration: { load: () => import('./kinds/IntegrationRecord.vue') },
+  document: { load: () => import('./kinds/DocumentRecord.vue') },
 }
 
 /** Типы, которые окно умеет показывать. */
