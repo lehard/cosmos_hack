@@ -132,3 +132,22 @@ export function meaningOf(v: Pick<MetricValue, 'meaning' | 'meaning_note' | 'uni
   const key = MEANING_TEXT[v.meaning]
   return key ? { code: v.meaning, key, note: v.meaning_note ?? null } : null
 }
+
+/**
+ * Оговорки значения словами — для подсказки, а не плашками рядом с числом:
+ * смысл интервала длительности (пояснение сервера важнее общего названия) и
+ * происхождение времени (для длительности без происхождения — явная оговорка).
+ * Пусто — оговаривать нечего (штуки, доли).
+ * @param t — функция текстов
+ * @param v — значение контракта
+ */
+export function valueNotes(t: MetricTexts['t'], v: Pick<MetricValue, 'origin' | 'unit' | 'meaning' | 'meaning_note'>): string[] {
+  const out: string[] = []
+  const m = meaningOf(v)
+  if (m?.note) out.push(t('widgets.analytics.tiles.interval', { note: m.note }))
+  else if (m?.code === 'active_processing') out.push(t('widgets.analytics.tiles.intervalActive'))
+  else if (m?.code === 'time_at_station') out.push(t('widgets.analytics.tiles.intervalStation'))
+  const o = originOf(v)
+  if (o) out.push(o.code === 'reported_by_source' || o.code === 'computed_by_system' ? t(`widgets.analytics.tiles.origin.${o.code}`) : t(o.key))
+  return out
+}

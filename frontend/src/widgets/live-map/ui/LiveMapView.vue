@@ -10,8 +10,8 @@
  */
 import { computed, ref, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NDatePicker, NIcon, NRadioButton, NRadioGroup, NSelect, NTooltip } from 'naive-ui'
-import { InfoCircle } from '@vicons/tabler'
+import { NButton, NDatePicker, NIcon, NRadioButton, NRadioGroup, NSelect, NTooltip } from 'naive-ui'
+import { Clock } from '@vicons/tabler'
 import type { CounterPeriod, LiveMapData, NodeAnomaly, NodeCounters } from '@/entities/live-map'
 import type { ProcessSummary } from '@/shared/api/generated/model'
 import { naiveSizeOf, type Density } from '@/shared/config/widget'
@@ -29,9 +29,11 @@ const props = withDefaults(
     range?: [number, number] | null
     /** Процессы предприятия для выбора (UI-11). */
     processes?: ProcessSummary[]
+    /** Идёт просмотр прошлого — кнопка времени подсвечена. */
+    replay?: boolean
     density?: Density
   }>(),
-  { range: null, processes: () => [], density: 'comfortable' },
+  { range: null, processes: () => [], replay: false, density: 'comfortable' },
 )
 const emit = defineEmits<{
   'update:period': [period: CounterPeriod]
@@ -48,8 +50,10 @@ const PERIODS: CounterPeriod[] = ['shift', 'day', 'week', 'month', 'custom']
 const index = shallowRef<DiagramIndex | null>(null)
 const importError = ref<Error | null>(null)
 const selected = ref<string | null>(null)
-/** Плашка инцидента развёрнута; свёрнутая — одна строка поверх схемы. */
-const incidentOpen = ref(true)
+/** Пояснение инцидента развёрнуто; свёрнутое — одна строка над схемой. */
+const incidentOpen = ref(false)
+/** Полоса времени показана (кнопка с часами). */
+const showTimeline = ref(false)
 
 // Новая схема — прежний выбор узла может быть не из неё.
 watch(
@@ -111,6 +115,22 @@ function onReady(idx: DiagramIndex) {
 <template>
   <div class="live-map" :class="`density-${density}`" :data-version="versionId" :data-incident="incident?.incident_id">
     <div class="toolbar">
+      <NTooltip v-if="$slots.timeline" placement="bottom-start">
+        <template #trigger>
+          <NButton
+            quaternary
+            circle
+            :type="showTimeline || replay ? 'primary' : 'default'"
+            :aria-pressed="showTimeline"
+            :aria-label="t('liveMap.playback.toggle')"
+            data-action="toggle-timeline"
+            @click="showTimeline = !showTimeline"
+          >
+            <template #icon><NIcon><Clock /></NIcon></template>
+          </NButton>
+        </template>
+        <span class="ant-wrap">{{ t('liveMap.playback.toggle') }}</span>
+      </NTooltip>
       <NRadioGroup
         :value="period"
         :size="naiveSizeOf(density)"
@@ -146,42 +166,19 @@ function onReady(idx: DiagramIndex) {
           :options="versionOptions"
           :consistent-menu-width="false"
           data-testid="version"
+          :title="otherVersions ? `${t('liveMap.ownVersionNote')} · ${t('plural.items', { n: otherVersions }, otherVersions)}` : undefined"
           @update:value="(v: string) => emit('select-version', v)"
         />
       </div>
-      <NTooltip placement="bottom-end">
-        <template #trigger>
-          <NIcon class="hint" size="18" :aria-label="t('liveMap.noPeopleOnMap')" tabindex="0"><InfoCircle /></NIcon>
-        </template>
-        <span class="ant-wrap">{{ t('liveMap.noPeopleOnMap') }}</span>
-        <span v-if="otherVersions" class="ant-wrap" data-testid="other-versions">
-          <br />{{ t('liveMap.ownVersionNote') }} · {{ t('plural.items', { n: otherVersions }, otherVersions) }}
-        </span>
-      </NTooltip>
     </div>
 
-    <div class="map">
-      <div class="canvas-box">
-        <p v-if="importError" class="import-error" role="alert">{{ t('errors.loadFailed') }}</p>
-        <BpmnMapViewer
-          :xml="data.bpmn_xml"
-          :counters="counters"
-          :items-by-step="byStep"
-          :lane-counts="laneCounts"
-          :bottleneck="bottleneck"
-          :anomalies="anomalies"
-          :data-gaps="dataGaps"
-          :incident-mode="!!incident"
-          :selected="selected"
-          @ready="onReady"
-          @import-error="(e) => (importError = e)"
-          @select-node="(k) => (selected = k)"
-          @open-item="(id) => emit('open-item', id)"
-        />
-      </div>
+    <!-- Полоса времени — по кнопке с часами, строкой под панелью (UI-22). -->
+    <div v-if="$slots.timeline && showTimeline" class="timeline-strip" data-testid="timeline-strip">
+      <slot name="timeline" />
+    </div>
 
-      <!-- Режим инцидента — плашкой поверх схемы: место под схему не меняется. -->
-      <section v-if="incident && reduction" class="incident" :data-open="incidentOpen || undefined" data-testid="incident">
+    <!-- Режим инцидента — строкой над схемой; подробности разворачиваются по щелчку. -->
+    <section v-if="incident && reduction" class="incident" :data-open="incidentOpen || undefined" data-testid="incident">
       <div class="incident-head">
         <ActionButton
           text
@@ -208,12 +205,28 @@ function onReady(idx: DiagramIndex) {
         </ul>
         <p class="note">{{ t('liveMap.incident.colorNote') }}</p>
       </template>
-      </section>
-    </div>
+    </section>
+    <div class="map">
+      <div class="canvas-box">
+        <p v-if="importError" class="import-error" role="alert">{{ t('errors.loadFailed') }}</p>
+        <BpmnMapViewer
+          :xml="data.bpmn_xml"
+          :counters="counters"
+          :items-by-step="byStep"
+          :lane-counts="laneCounts"
+          :bottleneck="bottleneck"
+          :anomalies="anomalies"
+          :data-gaps="dataGaps"
+          :incident-mode="!!incident"
+          :selected="selected"
+          @ready="onReady"
+          @import-error="(e) => (importError = e)"
+          @select-node="(k) => (selected = k)"
+          @open-item="(id) => emit('open-item', id)"
+        />
+      </div>
 
-    <!-- Полоса времени — часть карты, постоянной высоты (UI-19). -->
-    <div v-if="$slots.timeline" class="timeline-strip">
-      <slot name="timeline" />
+
     </div>
 
     <RecordDrawer
@@ -248,16 +261,18 @@ function onReady(idx: DiagramIndex) {
 <style scoped>
 .live-map {
   display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
   gap: 8px;
   height: 100%;
+  min-width: 0;
   min-height: 0;
 }
 
 .toolbar {
   display: flex;
   flex: none;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   gap: 8px;
   align-items: center;
   min-width: 0;
@@ -265,7 +280,7 @@ function onReady(idx: DiagramIndex) {
 
 .selects {
   display: flex;
-  flex: 1 1 auto;
+  flex: 1 1 320px;
   flex-wrap: nowrap;
   gap: 8px;
   justify-content: flex-end;
@@ -275,14 +290,9 @@ function onReady(idx: DiagramIndex) {
 .process,
 .version {
   flex: 0 1 300px;
-  min-width: 160px;
+  min-width: 0;
 }
 
-.hint {
-  flex: none;
-  color: var(--ant-text-3);
-  cursor: help;
-}
 
 .note {
   margin: 0;
@@ -308,16 +318,11 @@ function onReady(idx: DiagramIndex) {
 }
 
 .incident {
-  position: absolute;
-  top: var(--ant-space-2);
-  left: var(--ant-space-2);
-  z-index: 2;
-  max-width: min(760px, calc(100% - var(--ant-space-4)));
-  padding: var(--ant-space-2) var(--ant-space-3);
+  flex: none;
+  padding: var(--ant-space-1) var(--ant-space-3);
   border-left: 3px solid var(--ant-status-danger);
   border-radius: var(--ant-radius-sm);
   background: var(--ant-status-danger-soft);
-  box-shadow: var(--ant-shadow-md);
   font-size: var(--ant-fs-meta);
 }
 
@@ -355,7 +360,10 @@ function onReady(idx: DiagramIndex) {
 
 .timeline-strip {
   flex: none;
-  padding-top: var(--ant-space-1);
+  padding: var(--ant-space-1) var(--ant-space-3);
+  border: 1px solid var(--ant-border);
+  border-radius: var(--ant-radius-md);
+  background: var(--ant-surface-subtle);
 }
 
 .import-error {

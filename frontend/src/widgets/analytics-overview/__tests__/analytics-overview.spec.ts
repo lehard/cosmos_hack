@@ -33,7 +33,7 @@ describe('раздел «Аналитика»', () => {
     expect(w.find('[data-column="defects"] [data-metric="incoming_defects"]').exists()).toBe(false)
     expect(w.find('[data-account="equipment"] [data-metric="equipment_downtime"]').exists()).toBe(true)
     expect(w.find('[data-account="people"] [data-metric="confirmed_performer_errors"]').exists()).toBe(true)
-    expect(w.find('[data-account="hypotheses"] [data-testid="account-absent"]').text()).toBe('Не передано сервером')
+    expect(w.find('[data-account="hypotheses"] [data-testid="absent"]').text()).toBe('Не передано сервером')
     expect(w.find('[data-account="incoming"]').text()).toContain('Поставщик-3, партия П-117')
   })
 
@@ -44,13 +44,28 @@ describe('раздел «Аналитика»', () => {
     expect(s.text()).toContain('Оценка невозможна — не годно и не брак')
   })
 
-  it('время: у каждого значения видно происхождение; без пометки — предупреждение', async () => {
+  it('время: плашек у чисел нет — происхождение и интервал в подсказке значка у заголовка; без пометки — предупреждение', async () => {
     const w = await mountOverview()
     const s = w.find('[data-section="time"]')
-    expect(s.find('[data-metric="lead_time"] [data-origin]').text()).toBe('Вычислено системой')
-    expect(s.find('[data-metric="weld_cycle"] [data-origin]').text()).toBe('Передано источником')
-    expect(s.find('[data-metric="waiting_raw"] [data-origin="missing"]').attributes('data-warn')).toBeDefined()
-    expect(w.find('[data-account="equipment"] [data-origin="computed_by_system"]').exists()).toBe(true)
+    expect(s.text()).not.toContain('Вычислено системой')
+    expect(s.text()).not.toContain('Передано источником')
+    expect(s.find('[data-meaning]').exists()).toBe(false)
+    const notes = (id: string) => s.find(`[data-card="${id}"] [data-testid="metric-notes"]`)
+    expect(notes('lead_time').attributes('aria-label')).toContain('Время вычислено системой')
+    expect(notes('weld_cycle').attributes('aria-label')).toContain('Время передано источником')
+    expect(notes('waiting_raw').attributes('data-warn')).toBeDefined()
+    expect(w.find('[data-account="equipment"] [data-testid="metric-notes"]').attributes('aria-label')).toContain('Время вычислено системой')
+  })
+
+  it('один показатель в карточке — один заголовок: название показателя не повторяется, пояснение под числом', async () => {
+    const w = await mountOverview()
+    const incoming = w.find('[data-account="incoming"]')
+    expect(incoming.find('[data-testid="card-title"]').text()).toBe('Входной брак')
+    expect(incoming.find('[data-testid="metric-title"]').exists()).toBe(false)
+    expect(incoming.text()).not.toContain('отдельно от производственных ошибок')
+    expect(incoming.find('[data-testid="metric-notes"]').attributes('aria-label')).toContain('Входной брак (отдельно от производственных ошибок)')
+    // Разбивка — таблица на всю ширину карточки: название среза и число в отдельных ячейках.
+    expect(w.find('[data-account="equipment"] .slices tbody th').exists()).toBe(true)
   })
 
   it('сравнение сопоставимых работ — таблица по исполнителям, не рейтинг', async () => {

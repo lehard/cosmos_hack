@@ -7,7 +7,7 @@
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { codeText, LAYER_TEXT, SOURCE_KIND_TEXT } from '@/entities/item'
-import { MetricNumber, sumCheck, type MetricPick } from '@/entities/metric'
+import { MetricNotes, MetricNumber, originOf, sumCheck, valueNotes, type MetricPick } from '@/entities/metric'
 import type { ContributionRow, DrillRef, MetricDrilldown } from '@/shared/api/generated/model'
 import SourceRecords from './SourceRecords.vue'
 import { ActionButton } from '@/shared/ui'
@@ -41,16 +41,23 @@ function openRow(r: ContributionRow): void {
   else emit('openItem', r.item_id)
 }
 const kindText = (code: string) => codeText(KIND_TEXT, code, t)
+
+/** Оговорки итога (происхождение времени, интервал) — одна подсказка у итога, не плашки у каждой строки. */
+const notes = computed(() => valueNotes(t, props.drilldown.total))
+const warn = computed(() => Boolean(originOf(props.drilldown.total)?.warn))
 </script>
 
 <template>
   <div class="drilldown">
     <header class="head">
       <div class="what">
-        <span class="title" data-testid="drill-title">{{ pick.title }}</span>
-        <span v-if="pick.sliceLabel" class="slice" data-testid="drill-slice">{{ pick.sliceLabel }}</span>
+        <span class="title ant-wrap" data-testid="drill-title">{{ pick.title }}</span>
+        <span v-if="pick.sliceLabel" class="slice ant-wrap" data-testid="drill-slice">{{ pick.sliceLabel }}</span>
       </div>
-      <MetricNumber class="total" :value="drilldown.total" />
+      <span class="total-box">
+        <MetricNumber class="total" :value="drilldown.total" :show-origin="false" />
+        <MetricNotes :notes="notes" :warn="warn" />
+      </span>
     </header>
     <p class="period">{{ period }}</p>
     <p v-if="check" class="check" :data-check="check" data-testid="sum-check">
@@ -61,9 +68,9 @@ const kindText = (code: string) => codeText(KIND_TEXT, code, t)
     <ul v-else class="rows">
       <li v-for="r in drilldown.items" :key="rowKey(r)" class="row" :data-item="r.item_id">
         <div class="line">
-          <button type="button" class="item" :title="t('common.actions.openPassport')" @click="openRow(r)">{{ r.label }}</button>
-          <span v-if="r.slice_key" class="slice-key">{{ r.slice_key }}</span>
-          <MetricNumber class="value" :value="r.value" />
+          <button type="button" class="item ant-wrap" :title="t('common.actions.openPassport')" @click="openRow(r)">{{ r.label }}</button>
+          <span v-if="r.slice_key" class="slice-key ant-wrap">{{ r.slice_key }}</span>
+          <MetricNumber class="value" :value="r.value" :show-origin="false" />
         </div>
         <div class="line sub">
           <span v-for="k in r.source_kinds" :key="k" class="kind" data-testid="source-kind">{{ kindText(k) }}</span>
@@ -112,7 +119,16 @@ const kindText = (code: string) => codeText(KIND_TEXT, code, t)
 
 .what {
   display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
+  min-width: 0;
+}
+
+.total-box {
+  display: inline-flex;
+  flex: none;
+  gap: var(--ant-space-1);
+  align-items: baseline;
 }
 
 .title {
@@ -172,7 +188,9 @@ const kindText = (code: string) => codeText(KIND_TEXT, code, t)
 }
 
 .item {
+  min-width: 0;
   padding: 0;
+  text-align: left;
   border: 0;
   background: none;
   color: var(--ant-text);

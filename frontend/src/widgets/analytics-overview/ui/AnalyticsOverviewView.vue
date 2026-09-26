@@ -8,13 +8,17 @@
  * - причины установлены / не установлены; время с происхождением;
  * - сравнение сопоставимых работ — не рейтинг людей.
  * Любое число раскрывается до исходных записей (FR-7, AD-45).
+ *
+ * Вёрстка: разделы — ровная сетка карточек (MetricCard): название сверху,
+ * крупное число ниже, срезы — таблицей на всю ширину карточки. Плашек у чисел
+ * нет — оговорки времени в подсказке значка у заголовка.
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ACCOUNT_TEXT, ACCOUNTS, DIMENSION_TEXT, MetricNumber, toOverviewModel, type MetricPick, type MetricRow } from '@/entities/metric'
+import { ACCOUNT_TEXT, ACCOUNTS, DIMENSION_TEXT, MetricNotes, MetricNumber, toOverviewModel, valueNotes, type MetricPick, type MetricRow } from '@/entities/metric'
 import type { AnalyticsOverview } from '@/shared/api/generated/model'
-import MetricRowView from './MetricRowView.vue'
 import { DataTable } from '@/shared/ui'
+import MetricCard from './MetricCard.vue'
 
 const props = defineProps<{ overview: AnalyticsOverview; picked: MetricPick | null }>()
 const emit = defineEmits<{ pick: [p: MetricPick] }>()
@@ -34,68 +38,66 @@ const plainSections = computed(() =>
 )
 
 const pick = (p: MetricPick) => emit('pick', p)
+/** Оговорки столбца сравнения (время: происхождение, интервал) — в подсказке шапки, не у каждой ячейки. */
+const columnNotes = (row: MetricRow) => valueNotes(t, row.total)
 const pickCell = (row: MetricRow, sliceKey: string, sliceLabel: string) => pick({ metricId: row.metric_id, title: row.title, sliceKey, sliceLabel })
 const cellPicked = (row: MetricRow, key: string) => props.picked?.metricId === row.metric_id && props.picked?.sliceKey === key
 </script>
 
 <template>
   <div class="overview">
-    <p class="period" data-testid="period-range">
+    <p class="period ant-wrap" data-testid="period-range">
       {{ period }} · <span :title="t('widgets.analytics.basisHint')">{{ t('widgets.analytics.basis', { seq: overview.basis_seq }) }}</span>
     </p>
 
     <!-- Дефекты и изделия с дефектами — раздельно (кейс §5.2) -->
     <section class="section" data-section="defects">
-      <h3>{{ t('analytics.metrics.defectLadder.title') }}</h3>
-      <p class="note">{{ t('analytics.metrics.defectCount.hint') }}</p>
-      <div class="columns two">
-        <div class="column" data-column="defects">
-          <h4>{{ t('widgets.analytics.columns.defects') }}</h4>
-          <MetricRowView v-for="r in model.defects" :key="r.metric_id" :row="r" :picked="picked" @pick="pick" />
-          <p v-if="!model.defects.length" class="absent">{{ t('widgets.analytics.notProvided') }}</p>
-        </div>
-        <div class="column" data-column="items">
-          <h4>{{ t('widgets.analytics.columns.items') }}</h4>
-          <MetricRowView v-for="r in model.items" :key="r.metric_id" :row="r" :picked="picked" @pick="pick" />
-          <p v-if="!model.items.length" class="absent">{{ t('widgets.analytics.notProvided') }}</p>
-        </div>
+      <h3 class="ant-wrap">{{ t('analytics.metrics.defectLadder.title') }}</h3>
+      <p class="note ant-wrap">{{ t('analytics.metrics.defectCount.hint') }}</p>
+      <div class="cards">
+        <MetricCard :title="t('widgets.analytics.columns.defects')" :rows="model.defects" :picked="picked" data-column="defects" @pick="pick" />
+        <MetricCard :title="t('widgets.analytics.columns.items')" :rows="model.items" :picked="picked" data-column="items" @pick="pick" />
       </div>
     </section>
 
     <!-- Раздельный учёт (FR-87, кейс §2.4) -->
     <section class="section" data-section="accounts">
-      <h3>{{ t('widgets.analytics.sections.accounts') }}</h3>
-      <p class="note">{{ t('analytics.metrics.causeMatrix.hint') }}</p>
-      <div class="columns four">
-        <div v-for="a in ACCOUNTS" :key="a" class="column" :data-account="a">
-          <h4>{{ t(ACCOUNT_TEXT[a]) }}</h4>
-          <MetricRowView v-for="r in model.accounts[a]" :key="r.metric_id" :row="r" :picked="picked" @pick="pick" />
-          <p v-if="!model.accounts[a].length" class="absent" data-testid="account-absent">{{ t('widgets.analytics.notProvided') }}</p>
-        </div>
+      <h3 class="ant-wrap">{{ t('widgets.analytics.sections.accounts') }}</h3>
+      <p class="note ant-wrap">{{ t('analytics.metrics.causeMatrix.hint') }}</p>
+      <div class="cards">
+        <MetricCard v-for="a in ACCOUNTS" :key="a" :title="t(ACCOUNT_TEXT[a])" :rows="model.accounts[a]" :picked="picked" :data-account="a" @pick="pick" />
       </div>
     </section>
 
+    <!-- Простые разделы: карточка на показатель, заголовок карточки — название показателя -->
     <section v-for="s in plainSections" :key="s.id" class="section" :data-section="s.id">
-      <h3>{{ t(s.title) }}</h3>
-      <p v-if="s.note" class="note">{{ t(s.note) }}</p>
-      <MetricRowView v-for="r in s.rows" :key="r.metric_id" :row="r" :picked="picked" @pick="pick" />
+      <h3 class="ant-wrap">{{ t(s.title) }}</h3>
+      <p v-if="s.note" class="note ant-wrap">{{ t(s.note) }}</p>
+      <div class="cards">
+        <MetricCard v-for="r in s.rows" :key="r.metric_id" :rows="[r]" :picked="picked" @pick="pick" />
+      </div>
     </section>
 
     <!-- Сравнение сопоставимых работ (кейс §2.4, §5.2) -->
     <section v-if="model.comparison.length" class="section" data-section="comparison">
-      <h3>{{ t('widgets.analytics.sections.comparison') }}</h3>
-      <p class="note">{{ t('analytics.metrics.comparableWork.hint') }}</p>
-      <p class="note strong">{{ t('analytics.notARanking') }}. {{ t('analytics.participatedIsNotCause') }}</p>
+      <h3 class="ant-wrap">{{ t('widgets.analytics.sections.comparison') }}</h3>
+      <p class="note ant-wrap">{{ t('analytics.metrics.comparableWork.hint') }}</p>
+      <p class="note strong ant-wrap">{{ t('analytics.notARanking') }}. {{ t('analytics.participatedIsNotCause') }}</p>
       <DataTable v-for="tbl in model.comparison" :key="tbl.dimension" class="comparison" :data-dimension="tbl.dimension">
         <thead>
           <tr>
-            <th scope="col">{{ t(DIMENSION_TEXT[tbl.dimension] ?? 'widgets.analytics.dimensions.unknown') }}</th>
-            <th v-for="c in tbl.columns" :key="c.metric_id" scope="col" :data-metric="c.metric_id">{{ c.title }}</th>
+            <th scope="col"><span class="ant-clamp-2">{{ t(DIMENSION_TEXT[tbl.dimension] ?? 'widgets.analytics.dimensions.unknown') }}</span></th>
+            <th v-for="c in tbl.columns" :key="c.metric_id" scope="col" :data-metric="c.metric_id">
+              <span class="col-head">
+                <span class="ant-clamp-2" :title="c.title">{{ c.title }}</span>
+                <MetricNotes :notes="columnNotes(c)" />
+              </span>
+            </th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="r in tbl.rows" :key="r.key" :data-slice="r.key">
-            <th scope="row">{{ r.label }}</th>
+            <th scope="row"><span class="ant-wrap">{{ r.label }}</span></th>
             <td v-for="(cell, i) in r.cells" :key="tbl.columns[i]!.metric_id">
               <button
                 v-if="cell"
@@ -105,7 +107,7 @@ const cellPicked = (row: MetricRow, key: string) => props.picked?.metricId === r
                 :title="t('common.actions.drillDown')"
                 @click="pickCell(tbl.columns[i]!, r.key, r.label)"
               >
-                <MetricNumber :value="cell.value" />
+                <MetricNumber :value="cell.value" :show-origin="false" />
               </button>
               <span v-else class="absent" :title="t('widgets.analytics.notProvided')">—</span>
             </td>
@@ -115,8 +117,10 @@ const cellPicked = (row: MetricRow, key: string) => props.picked?.metricId === r
     </section>
 
     <section v-if="model.other.length" class="section" data-section="other">
-      <h3>{{ t('widgets.analytics.sections.other') }}</h3>
-      <MetricRowView v-for="r in model.other" :key="r.metric_id" :row="r" :picked="picked" @pick="pick" />
+      <h3 class="ant-wrap">{{ t('widgets.analytics.sections.other') }}</h3>
+      <div class="cards">
+        <MetricCard v-for="r in model.other" :key="r.metric_id" :rows="[r]" :picked="picked" @pick="pick" />
+      </div>
     </section>
   </div>
 </template>
@@ -125,7 +129,8 @@ const cellPicked = (row: MetricRow, key: string) => props.picked?.metricId === r
 .overview {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: var(--ant-space-5);
+  min-width: 0;
 }
 
 .period {
@@ -134,20 +139,17 @@ const cellPicked = (row: MetricRow, key: string) => props.picked?.metricId === r
   font-size: var(--ant-fs-meta);
 }
 
+.section {
+  min-width: 0;
+}
+
 .section h3 {
-  margin: 0 0 4px;
+  margin: 0 0 var(--ant-space-1);
   font-size: var(--ant-fs-title);
 }
 
-.section h4 {
-  margin: 0 0 4px;
-  color: var(--ant-n-700);
-  font-size: var(--ant-fs-body);
-  font-weight: var(--ant-fw-bold);
-}
-
 .note {
-  margin: 0 0 8px;
+  margin: 0 0 var(--ant-space-2);
   color: var(--ant-text-3);
   font-size: var(--ant-fs-meta);
 }
@@ -156,23 +158,12 @@ const cellPicked = (row: MetricRow, key: string) => props.picked?.metricId === r
   color: var(--ant-n-700);
 }
 
-.columns {
+/* Ровная сетка карточек: колонки одной ширины, в узкой области — одна колонка. */
+.cards {
   display: grid;
-  gap: 12px;
-}
-
-.columns.two {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.columns.four {
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-}
-
-.column {
-  padding: 8px 10px;
-  border: 1px solid var(--ant-border);
-  border-radius: var(--ant-radius-md);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, calc(var(--ant-space-10) * 6)), 1fr));
+  gap: var(--ant-space-3);
+  margin-top: var(--ant-space-2);
 }
 
 .absent {
@@ -185,13 +176,27 @@ const cellPicked = (row: MetricRow, key: string) => props.picked?.metricId === r
   margin-bottom: var(--ant-space-2);
 }
 
+/* Шапка сравнения — названия показателей переносятся, а не распирают таблицу. */
+.overview .comparison thead th {
+  white-space: normal;
+  vertical-align: bottom;
+}
+
+.col-head {
+  display: inline-flex;
+  gap: var(--ant-space-1);
+  align-items: flex-start;
+  justify-content: flex-end;
+  max-width: 100%;
+}
+
 .comparison td,
 .comparison thead th:not(:first-child) {
   text-align: right;
 }
 
 .num {
-  padding: 1px 6px;
+  padding: 1px var(--ant-space-1);
   border: 1px solid transparent;
   border-radius: var(--ant-radius-sm);
   background: none;

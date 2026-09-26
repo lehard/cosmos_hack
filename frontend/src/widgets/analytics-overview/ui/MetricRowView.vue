@@ -1,14 +1,21 @@
 <script setup lang="ts">
 /**
- * Строка показателя раздела «Аналитика»: название (от сервера), итог и срезы по
- * измерениям. Каждое число — кнопка раскрытия до исходных записей (FR-7,
- * AD-45); у времени видно происхождение (кейс §5.2).
+ * Показатель в карточке раздела «Аналитика»: название (от сервера) сверху,
+ * крупное число ниже, пояснение мелко под числом, срезы по измерениям —
+ * таблицей на всю ширину карточки. Каждое число — кнопка раскрытия до исходных
+ * записей (FR-7, AD-45).
+ *
+ * Плашек у чисел нет: оговорки времени (происхождение, смысл интервала — кейс
+ * §5.2, FR-88) — в подсказке значка у названия показателя, одна на показатель,
+ * а не у каждой строки среза. Если показатель в карточке один, название и
+ * значок несёт заголовок карточки (`show-title=false`) — без второго заголовка.
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { DIMENSION_TEXT, metricHintKey, MetricNumber, slicesByDimension, type MetricPick, type MetricRow } from '@/entities/metric'
+import { DIMENSION_TEXT, metricHintKey, MetricNotes, MetricNumber, originOf, slicesByDimension, valueNotes, type MetricPick, type MetricRow } from '@/entities/metric'
+import { DataTable } from '@/shared/ui'
 
-const props = defineProps<{ row: MetricRow; picked: MetricPick | null }>()
+const props = withDefaults(defineProps<{ row: MetricRow; picked: MetricPick | null; showTitle?: boolean }>(), { showTitle: true })
 const emit = defineEmits<{ pick: [p: MetricPick] }>()
 const { t } = useI18n()
 
@@ -16,32 +23,41 @@ const hint = computed(() => {
   const key = metricHintKey(props.row.metric_id)
   return key ? t(key) : null
 })
+const notes = computed(() => valueNotes(t, props.row.total))
+const warn = computed(() => Boolean(originOf(props.row.total)?.warn))
 const groups = computed(() => slicesByDimension(props.row))
 const isPicked = (sliceKey?: string) => props.picked?.metricId === props.row.metric_id && props.picked?.sliceKey === sliceKey
 </script>
 
 <template>
   <div class="metric-row" :data-metric="row.metric_id" :data-group="row.group">
-    <div class="head">
-      <span class="title">{{ row.title }}</span>
-      <button
-        type="button"
-        class="num total"
-        data-testid="total"
-        :data-picked="isPicked() || undefined"
-        :title="t('common.actions.drillDown')"
-        @click="emit('pick', { metricId: row.metric_id, title: row.title })"
-      >
-        <MetricNumber :value="row.total" :unknown="row.unknown" />
-      </button>
+    <div v-if="showTitle" class="head">
+      <span class="title ant-clamp-2" data-testid="metric-title" :title="row.title">{{ row.title }}</span>
+      <MetricNotes :notes="notes" :warn="warn" />
     </div>
-    <p v-if="hint" class="hint">{{ hint }}</p>
-    <table v-for="g in groups" :key="g.dimension" class="slices" :data-dimension="g.dimension">
-      <caption>{{ t(DIMENSION_TEXT[g.dimension] ?? 'widgets.analytics.dimensions.unknown') }}</caption>
+    <button
+      type="button"
+      class="num total"
+      data-testid="total"
+      :data-picked="isPicked() || undefined"
+      :title="t('common.actions.drillDown')"
+      @click="emit('pick', { metricId: row.metric_id, title: row.title })"
+    >
+      <MetricNumber :value="row.total" :unknown="row.unknown" :show-origin="false" />
+    </button>
+    <p v-if="hint" class="hint ant-wrap" data-testid="metric-hint">{{ hint }}</p>
+    <DataTable v-for="g in groups" :key="g.dimension" class="slices" :data-dimension="g.dimension">
+      <thead>
+        <tr>
+          <th scope="col">{{ t(DIMENSION_TEXT[g.dimension] ?? 'widgets.analytics.dimensions.unknown') }}</th>
+          <th scope="col" class="num-col">{{ t('widgets.analytics.sliceValue') }}</th>
+        </tr>
+      </thead>
       <tbody>
         <tr v-for="s in g.slices" :key="s.key" :data-slice="s.key">
-          <th scope="row">{{ s.label }}</th>
-          <td>
+          <!-- Название среза переносится по словам; число — в узкой колонке по своей ширине. -->
+          <th scope="row"><span class="label ant-wrap">{{ s.label }}</span></th>
+          <td class="num-col">
             <button
               type="button"
               class="num"
@@ -50,44 +66,40 @@ const isPicked = (sliceKey?: string) => props.picked?.metricId === props.row.met
               :title="t('common.actions.drillDown')"
               @click="emit('pick', { metricId: row.metric_id, title: row.title, sliceKey: s.key, sliceLabel: s.label })"
             >
-              <MetricNumber :value="s.value" />
+              <MetricNumber :value="s.value" :show-origin="false" />
             </button>
           </td>
         </tr>
       </tbody>
-    </table>
+    </DataTable>
   </div>
 </template>
 
 <style scoped>
+/* Столбик: название, число, пояснение, срезы — одинаково во всех карточках. */
 .metric-row {
-  padding: 8px 0;
-  border-bottom: 1px solid var(--ant-n-100);
-}
-
-.metric-row:last-child {
-  border-bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ant-space-1);
+  min-width: 0;
 }
 
 .head {
   display: flex;
-  gap: 12px;
-  align-items: baseline;
-  justify-content: space-between;
+  gap: var(--ant-space-1);
+  align-items: flex-start;
+  min-width: 0;
 }
 
 .title {
-  font-weight: var(--ant-fw-bold);
-}
-
-.hint {
-  margin: 2px 0 0;
-  color: var(--ant-text-3);
+  flex: 1 1 auto;
+  color: var(--ant-text-2);
   font-size: var(--ant-fs-meta);
+  line-height: var(--ant-lh-tight);
 }
 
 .num {
-  padding: 1px 6px;
+  padding: 1px var(--ant-space-1);
   border: 1px solid transparent;
   border-radius: var(--ant-radius-sm);
   background: none;
@@ -106,31 +118,42 @@ const isPicked = (sliceKey?: string) => props.picked?.metricId === props.row.met
   background: var(--ant-n-100);
 }
 
+/* Итог — крупно, от левого края, как в плитках. */
 .total {
-  font-size: var(--ant-fs-lg);
+  align-self: flex-start;
+  max-width: 100%;
+  margin-left: calc(-1 * var(--ant-space-1));
+  font-size: var(--ant-fs-xl);
   font-weight: var(--ant-fw-bold);
-  white-space: nowrap;
+  line-height: var(--ant-lh-tight);
+  text-align: left;
+}
+
+.hint {
+  margin: 0;
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-meta);
+  line-height: var(--ant-lh-tight);
 }
 
 .slices {
-  margin: 6px 0 0 12px;
-  border-collapse: collapse;
-  font-size: var(--ant-fs-body);
+  margin-top: var(--ant-space-2);
 }
 
-.slices caption {
-  color: var(--ant-text-3);
-  font-size: var(--ant-fs-xs);
-  text-align: left;
+/* Шапка среза в узкой карточке переносится, а не распирает таблицу. */
+.metric-row .slices thead th {
+  white-space: normal;
 }
 
-.slices th {
-  padding: 1px 12px 1px 0;
-  font-weight: 400;
-  text-align: left;
-}
-
-.slices td {
+/* Колонка числа — по ширине числа, остальное — названию среза. */
+.metric-row .slices .num-col {
+  width: 1%;
   text-align: right;
+  white-space: nowrap;
+}
+
+.label {
+  display: block;
+  word-break: normal;
 }
 </style>
