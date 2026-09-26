@@ -16,7 +16,7 @@ func TestBottleneckProposal(t *testing.T) {
 	if !ok || p.Kind != analysis.SuggestBottleneck || p.ResponsibleRole != analysis.RoleSiteForeman || p.StepKey != "quality.zt3" {
 		t.Fatalf("%+v", p)
 	}
-	if !strings.Contains(p.Estimate, "в среднем 10 мин") || !strings.Contains(p.Estimate, "около 400 мин") {
+	if !strings.Contains(p.Estimate, "в среднем 10 мин") || !strings.Contains(p.Estimate, "около 6 ч 40 мин") {
 		t.Fatalf("оценка: %s", p.Estimate)
 	}
 	if _, ok := analysis.BottleneckProposal(analysis.LineBottleneck{StepKey: "x"}); ok {

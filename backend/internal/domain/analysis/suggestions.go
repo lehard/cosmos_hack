@@ -248,10 +248,10 @@ func BottleneckProposal(b LineBottleneck) (Proposal, bool) {
 	if period == "" {
 		period = "смену"
 	}
-	est := "Детали ждут в среднем " + strconv.FormatInt(waitMin, 10) + " мин; в очереди сейчас " + strconv.Itoa(b.Queue) + " дет."
+	est := "Детали ждут в среднем " + minutesText(waitMin) + "; в очереди сейчас " + strconv.Itoa(b.Queue) + " дет."
 	if b.Passed > 0 && waitMin > 0 {
 		est += "; за " + period + " узел прошли " + strconv.Itoa(b.Passed) + " дет. — это около " +
-			strconv.FormatInt(int64(b.Passed)*waitMin, 10) + " мин ожидания"
+			minutesText(int64(b.Passed)*waitMin) + " ожидания"
 	}
 	return Proposal{
 		Generator: "rules.bottleneck", Kind: SuggestBottleneck, StepKey: b.StepKey, ResponsibleRole: RoleSiteForeman,
@@ -478,4 +478,15 @@ func firstNonEmpty(xs ...string) string {
 		}
 	}
 	return ""
+}
+
+// minutesText — «37 мин», «2 ч 5 мин», «3 ч».
+func minutesText(m int64) string {
+	if m < 60 {
+		return strconv.FormatInt(m, 10) + " мин"
+	}
+	if m%60 == 0 {
+		return strconv.FormatInt(m/60, 10) + " ч"
+	}
+	return strconv.FormatInt(m/60, 10) + " ч " + strconv.FormatInt(m%60, 10) + " мин"
 }
