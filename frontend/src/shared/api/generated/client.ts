@@ -18407,7 +18407,7 @@ export const getAnalysisMeasurementRecordUrl = (ncId: string,) => {
 
 
 
-  return `/api/v1/nonconformities/${ncId}/measurements/result`
+  return `/api/v1/nonconformities/${encodeURIComponent(String(ncId))}/measurements/result`
 }
 
 /**
