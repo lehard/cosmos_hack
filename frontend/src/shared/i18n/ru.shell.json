@@ -490,7 +490,21 @@
       "quorumAll": "все",
       "quorumOne": "один",
       "customerRepresentative": "представитель заказчика",
-      "notYourStage": "Сейчас не ваш этап маршрута — подписать нельзя"
+      "notYourStage": "Сейчас не ваш этап маршрута — подписать нельзя",
+      "needFromYou": "От вас нужно",
+      "notYourStageTitle": "Для сведения",
+      "yourStage": "Подпись этапа {n}: {who}",
+      "yourTurn": "ваш черёд",
+      "afterYou": "После вашей подписи документ перейдёт на этап {n}: {who}",
+      "youAreLast": "Ваша подпись — последняя в маршруте",
+      "signShort": "Подписать",
+      "noMaterials": "Материалов к запросу не приложено",
+      "materialAttached": "материал приложен",
+      "similarTitle": "Похожие случаи",
+      "details": "Подробности: шаблон, правило, режим",
+      "ruleLabel": "Правило",
+      "template": "Шаблон документа",
+      "version": "версия {n}"
     },
     "scenarios": {
       "list": "Сценарии",
