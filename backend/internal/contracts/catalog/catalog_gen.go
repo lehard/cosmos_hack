@@ -144,6 +144,8 @@ const (
 	DocumentPaperStatusChanged Type = "document.paper.status_changed"
 	// Маршрут подписей закрыт
 	DocumentRouteClosed Type = "document.route.closed"
+	// Подписант не согласовал документ
+	DocumentSignatureDeclined Type = "document.signature.declined"
 	// Подпись документа записана
 	DocumentSignatureRecorded Type = "document.signature.recorded"
 	// Версия документа аннулирована
@@ -498,6 +500,7 @@ var types = [...]Info{
 	{Type: DecisionSignalRejected, Title: "Сигнал отклонён", Family: "decision", Emitter: "nonconformity", Role: "api", Kind: "decision", Stream: "item", Axis: "none", ActionClass: "permissive", Critical: true, CAGroup: "product_decision", GuardRelevant: true, PublishStage: false, Provenance: []string{"personal", "paper", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: DocumentPaperStatusChanged, Title: "Статус бумажного экземпляра", Family: "document", Emitter: "documents", Role: "api", Kind: "fact", Stream: "document", Axis: "none", ActionClass: "record", Critical: false, CAGroup: "", GuardRelevant: false, PublishStage: false, Provenance: []string{"personal", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: DocumentRouteClosed, Title: "Маршрут подписей закрыт", Family: "document", Emitter: "documents", Role: "worker", Kind: "reaction", Stream: "document", Axis: "none", ActionClass: "record", Critical: false, CAGroup: "", GuardRelevant: true, PublishStage: true, Provenance: []string{"server_attested"}, Versions: []int{1}, CurrentVersion: 1},
+	{Type: DocumentSignatureDeclined, Title: "Подписант не согласовал документ", Family: "document", Emitter: "documents", Role: "api", Kind: "decision", Stream: "document", Axis: "none", ActionClass: "record", Critical: false, CAGroup: "", GuardRelevant: true, PublishStage: false, Provenance: []string{"personal", "paper", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: DocumentSignatureRecorded, Title: "Подпись документа записана", Family: "document", Emitter: "documents", Role: "api", Kind: "decision", Stream: "document", Axis: "none", ActionClass: "record", Critical: false, CAGroup: "", GuardRelevant: true, PublishStage: false, Provenance: []string{"personal", "paper", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: DocumentVersionAnnulled, Title: "Версия документа аннулирована", Family: "document", Emitter: "documents", Role: "api", Kind: "decision", Stream: "document", Axis: "none", ActionClass: "record", Critical: true, CAGroup: "protected_data", GuardRelevant: true, PublishStage: false, Provenance: []string{"personal", "paper", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: DocumentVersionDrafted, Title: "Версия документа сформирована", Family: "document", Emitter: "documents", Role: "worker", Kind: "reaction", Stream: "document", Axis: "none", ActionClass: "record", Critical: false, CAGroup: "", GuardRelevant: false, PublishStage: false, Provenance: []string{"server_attested"}, Versions: []int{1}, CurrentVersion: 1},

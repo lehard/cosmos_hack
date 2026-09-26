@@ -1596,6 +1596,22 @@ types:
     versions: [1]
     current_version: 1
     refs: ["AD-12", "FR-139"]
+  document.signature.declined:
+    title: "Подписант не согласовал документ"
+    emitter: "documents"
+    role: "api"
+    kind: "decision"
+    stream: "document"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-136", "AD-43"]
 
   # ── policy (владелец схемы: access) ──
   policy.role.defined:

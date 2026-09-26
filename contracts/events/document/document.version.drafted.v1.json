@@ -103,6 +103,33 @@
               "partner"
             ],
             "description": "Внешняя сторона."
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 128,
+            "description": "Кто подписывает этап — для людей (из маршрута шаблона)."
+          },
+          "role": {
+            "$ref": "../common/defs.v1.json#/definitions/code",
+            "description": "Роль подписанта этапа по политике (с наследованием), если этап задан ролью."
+          },
+          "required": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "description": "Сколько засчитанных подписей нужно на этапе."
+          },
+          "by_source": {
+            "type": "boolean",
+            "description": "Этап закрывает само решение-источник документа (его автор подписал решение уровнем этапа) — отдельной подписи не требуется."
+          },
+          "separation": {
+            "type": "array",
+            "items": {
+              "$ref": "../common/defs.v1.json#/definitions/code"
+            },
+            "uniqueItems": true,
+            "description": "Правила разделения обязанностей этапа: distinct_signers — один человек подписывает один этап; not_item_participant — не участвовал в изготовлении изделия (FR-56)."
           }
         },
         "required": [
@@ -122,6 +149,11 @@
       "minimum": 1,
       "maximum": 100000,
       "description": "Заменяемая версия документа."
+    },
+    "title": {
+      "type": "string",
+      "maxLength": 256,
+      "description": "Название документа для людей (из шаблона)."
     }
   },
   "required": [

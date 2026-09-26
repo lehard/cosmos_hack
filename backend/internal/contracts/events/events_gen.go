@@ -386,6 +386,10 @@ type ApprovalStage struct {
 	// Полномочие.
 	AuthorityID ObjectID `json:"authority_id"`
 
+	// Этап закрывает само решение-источник документа (его автор подписал решение
+	// уровнем этапа) — отдельной подписи не требуется.
+	BySource *bool `json:"by_source,omitempty,omitzero"`
+
 	// Внешняя сторона.
 	ExternalParty *DocumentVersionDraftedV1RequiredApprovalsElemExternalParty `json:"external_party,omitempty,omitzero"`
 
@@ -398,6 +402,17 @@ type ApprovalStage struct {
 	// Сколько подписей.
 	Quorum DocumentVersionDraftedV1RequiredApprovalsElemQuorum `json:"quorum"`
 
+	// Сколько засчитанных подписей нужно на этапе.
+	Required *int `json:"required,omitempty,omitzero"`
+
+	// Роль подписанта этапа по политике (с наследованием), если этап задан ролью.
+	Role *Code `json:"role,omitempty,omitzero"`
+
+	// Правила разделения обязанностей этапа: distinct_signers — один человек
+	// подписывает один этап; not_item_participant — не участвовал в изготовлении
+	// изделия (FR-56).
+	Separation []Code `json:"separation,omitempty,omitzero"`
+
 	// Уровень подписи.
 	SignatureLevel int `json:"signature_level"`
 
@@ -406,6 +421,9 @@ type ApprovalStage struct {
 
 	// Вид клейма, если нужен.
 	StampKind *Code `json:"stamp_kind,omitempty,omitzero"`
+
+	// Кто подписывает этап — для людей (из маршрута шаблона).
+	Title *string `json:"title,omitempty,omitzero"`
 }
 
 // Рамки полномочия.
@@ -1321,7 +1339,39 @@ type DocumentRouteClosedV1 struct {
 	// Засчитанные подписи.
 	SignatureEventIds []UUID `json:"signature_event_ids"`
 
+	// Как проверены подписи: full — полномочие и клеймо по политике на seq,
+	// криптопроверка подписи (эпик 27); demo — демо-профиль: подписи без агента
+	// токена, полномочие по стартовой политике, криптопроверка не проводилась (Д-30).
+	Verification *DocumentRouteClosedV1Verification `json:"verification,omitempty,omitzero"`
+
 	// Версия.
+	Version int `json:"version"`
+}
+
+type DocumentRouteClosedV1Verification string
+
+const DocumentRouteClosedV1VerificationDemo DocumentRouteClosedV1Verification = "demo"
+const DocumentRouteClosedV1VerificationFull DocumentRouteClosedV1Verification = "full"
+
+// Подписант не согласовал версию документа — вернул с замечанием; маршрут этой
+// версии не закрывается, нужна новая версия или аннулирование (FR-136, AD-43).
+type DocumentSignatureDeclinedV1 struct {
+	// Замечание — обязательно.
+	Comment Text `json:"comment"`
+
+	// Отпечаток версии, которую видел подписант.
+	DocDigest Digest `json:"doc_digest"`
+
+	// Документ.
+	DocumentID ObjectID `json:"document_id"`
+
+	// Кто не согласовал.
+	SignerPersonID PersonRef `json:"signer_person_id"`
+
+	// Этап маршрута.
+	Stage int `json:"stage"`
+
+	// Версия документа.
 	Version int `json:"version"`
 }
 
@@ -1341,6 +1391,10 @@ type DocumentSignatureRecordedV1 struct {
 	// Документ.
 	DocumentID ObjectID `json:"document_id"`
 
+	// Ключ подписанта `key_id@версия` (агент токена); проверяет модуль signing (эпик
+	// 27).
+	KeyRef *string `json:"key_ref,omitempty,omitzero"`
+
 	// Способ подписи.
 	Method DocumentSignatureRecordedV1Method `json:"method"`
 
@@ -1349,6 +1403,11 @@ type DocumentSignatureRecordedV1 struct {
 
 	// Адрес скана в хранилище материалов.
 	ScanAddress *Digest `json:"scan_address,omitempty,omitzero"`
+
+	// Подпись агента над отпечатком документа (base64, DSSE PAE класса
+	// document-signature); проверяет модуль signing (эпик 27). Пусто — демо без
+	// агента токена (Д-30).
+	Signature *string `json:"signature,omitempty,omitzero"`
 
 	// Уровень подписи.
 	SignatureLevel int `json:"signature_level"`
@@ -1419,6 +1478,9 @@ type DocumentVersionDraftedV1 struct {
 
 	// Шаблон `‹id›@‹версия›`.
 	TemplateRef string `json:"template_ref"`
+
+	// Название документа для людей (из шаблона).
+	Title *string `json:"title,omitempty,omitzero"`
 
 	// Версия документа.
 	Version int `json:"version"`
