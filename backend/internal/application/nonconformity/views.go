@@ -156,6 +156,9 @@ type NCPresentationContext struct {
 	ClosingPoint   string `json:"closing_point" doc:"Закрывающая точка (ЗТ)."`
 	PresentationNo int    `json:"presentation_no" minimum:"1" doc:"Номер предъявления (повторное — больше 1)."`
 	EventID        string `json:"event_id" doc:"Запись предъявления (item.presentation.recorded)."`
+	// MethodEventIDs — результаты контроля изделия, на которых можно основать
+	// решение (method_event_ids команды nonconformity.presentation.resolve).
+	MethodEventIDs []string `json:"method_event_ids,omitempty" doc:"Результаты методов контроля изделия (для method_event_ids решения)."`
 }
 
 // NCIsolation — изоляция изделия (FR-55): срок решения по производственному

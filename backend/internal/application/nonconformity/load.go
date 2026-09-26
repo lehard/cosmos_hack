@@ -157,14 +157,16 @@ func isZeroEnv(e dom.Env) bool { return len(e.ClosingPoints) == 0 && !e.Delegate
 
 // indexTypes — записи, по которым изделие попадает в очередь и список
 // несоответствий: черновики и регистрации несоответствий, изоляция,
-// предъявления на закрывающих точках, сдерживание человеком.
+// сдерживание человеком. Предъявления — отдельно (только нерешённые).
 var indexTypes = []catalog.Type{
 	catalog.DecisionNonconformityDrafted, catalog.DecisionNonconformityRegistered, catalog.DecisionItemIsolated,
-	catalog.ItemPresentationRecorded, catalog.DecisionContainmentSet, catalog.DecisionNonconformityConfirmed,
+	catalog.DecisionContainmentSet, catalog.DecisionNonconformityConfirmed,
 }
 
-// indexItems — изделия с несоответствиями, изоляцией или предъявлением на
-// момент m в прогоне m.RunID (AD-38), отсортированы.
+// indexItems — изделия с несоответствиями, изоляцией или нерешённым
+// предъявлением на момент m в прогоне m.RunID (AD-38), отсортированы.
+// Предъявления сверяются с решениями по ним без свёртки изделия: в очередь
+// попадают только изделия, ждущие решения на точке.
 func (s *Service) indexItems(ctx context.Context, m platform.Moment) ([]string, error) {
 	set := map[string]bool{}
 	for _, t := range indexTypes {
@@ -176,6 +178,46 @@ func (s *Service) indexItems(ctx context.Context, m platform.Moment) ([]string, 
 			if e.ItemID != nil && *e.ItemID != "" {
 				set[*e.ItemID] = true
 			}
+		}
+	}
+	type key struct {
+		item, step string
+		no         int
+	}
+	pending := map[key]bool{}
+	for _, t := range []catalog.Type{catalog.ItemPresentationRecorded, catalog.DecisionPresentationResolved} {
+		es, err := s.readAll(ctx, appjournal.ReadQuery{EventType: string(t), RunID: m.RunID, Moment: m})
+		if err != nil {
+			return nil, err
+		}
+		for _, e := range es {
+			if e.ItemID == nil || *e.ItemID == "" {
+				continue
+			}
+			d, err := s.d.Codec.Decode(ctx, e)
+			if err != nil {
+				continue
+			}
+			var x struct {
+				StepKey        string `json:"step_key"`
+				PresentationNo int    `json:"presentation_no"`
+			}
+			if json.Unmarshal(d.Record.Data, &x) != nil {
+				continue
+			}
+			k := key{*e.ItemID, x.StepKey, x.PresentationNo}
+			if t == catalog.ItemPresentationRecorded {
+				if _, done := pending[k]; !done {
+					pending[k] = true
+				}
+			} else {
+				pending[k] = false
+			}
+		}
+	}
+	for k, open := range pending {
+		if open {
+			set[k.item] = true
 		}
 	}
 	out := make([]string, 0, len(set))

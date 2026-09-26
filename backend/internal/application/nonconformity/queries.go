@@ -364,7 +364,8 @@ func (s *Service) card(v *itemView, n dom.NC, now time.Time) NCCard {
 		c.HumanDecisions = append(c.HumanDecisions, ref)
 	}
 	if pr := st.PendingPresentation(); pr != nil {
-		c.Presentation = &NCPresentationContext{StepKey: pr.StepKey, ClosingPoint: pr.ClosingPoint, PresentationNo: pr.PresentationNo, EventID: pr.EventID}
+		c.Presentation = &NCPresentationContext{StepKey: pr.StepKey, ClosingPoint: pr.ClosingPoint, PresentationNo: pr.PresentationNo, EventID: pr.EventID,
+			MethodEventIDs: slices.Clone(st.Inspections)}
 	}
 	if iso := st.Isolation; iso != nil && !iso.Released {
 		ni := &NCIsolation{EventID: iso.EventID, IsolatedAt: iso.At, DecisionDueAt: iso.DecisionDueAt, PhysicallyMoved: iso.PhysicallyMoved}
