@@ -1,90 +1,62 @@
 <script setup lang="ts">
 /**
- * Общие факторы группы несоответствий «сколько из N» (FR-135, PRD §3a «Технолог»):
- * станок, инструмент, оснастка, программа, исполнитель, партия материала.
- * Фактор, общий для всей группы, — первым. Из строки — прямой вход в гипотезу
- * и в сужение области риска. Совпадение фактора — обстоятельство, а не причина.
+ * Что общего у несоответствий группы (FR-135, PRD §3a «Технолог»; UI-33): станок,
+ * инструмент, оснастка, программа, исполнитель, партия материала — фразами, а
+ * не таблицей: «Станок: ИС-2 — у всех 3», «у 2 из 3», «разное у 3», «неизвестно».
+ * Общий для всех — первым и выделен. Совпадение фактора — обстоятельство, а не
+ * причина: проверяется гипотезой. Узкая колонка — без горизонтальной прокрутки.
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { FACTOR_TEXT, isCommonToAll, sortFactors, type CommonFactorRow, type CommonFactorsModel } from '@/entities/incident'
-import { naiveSizeOf, type Density } from '@/shared/config/widget'
-import { useMomentStore } from '@/shared/model/moment'
-import { ActionButton, DataTable } from '@/shared/ui'
+import type { Density } from '@/shared/config/widget'
 
 const props = withDefaults(defineProps<{ model: CommonFactorsModel; density?: Density }>(), { density: 'compact' })
-const emit = defineEmits<{
-  /** Открыть как гипотезу. */
-  'to-hypothesis': [row: CommonFactorRow]
-  /** Сузить область риска по фактору. */
-  'to-narrow-scope': [row: CommonFactorRow]
-}>()
 
 const { t } = useI18n()
-const moment = useMomentStore()
 
 const rows = computed(() => sortFactors(props.model.rows))
 const n = computed(() => props.model.nc_count)
 const share = (r: CommonFactorRow) => (n.value > 0 ? Math.min(100, (r.matches / n.value) * 100) : 0)
+
+type Kind = 'all' | 'some' | 'varies' | 'unknown'
+const kindOf = (r: CommonFactorRow): Kind => {
+  if (r.value === null) return 'unknown'
+  if (isCommonToAll(r, n.value)) return 'all'
+  // Разное и ни одно значение не повторилось — «не совпадает»; иначе — самое частое «у k из n».
+  if (r.distinct_values > 1 && r.matches <= 1) return 'varies'
+  return 'some'
+}
+/** Сколько совпало — словами. */
+function howMany(r: CommonFactorRow): string {
+  switch (kindOf(r)) {
+    case 'all':
+      return t('widgets.analysis.factors.inAll', { n: n.value })
+    case 'varies':
+      return t('widgets.analysis.factors.variesIn', { k: r.distinct_values, n: n.value })
+    case 'unknown':
+      return t('widgets.analysis.factors.noData')
+    default:
+      return t('widgets.analysis.factors.inSome', { k: r.matches, n: n.value })
+  }
+}
 </script>
 
 <template>
   <div class="factors" :class="`density-${density}`" data-testid="common-factors">
-    <p class="group">
-      <strong>{{ t('widgets.analysis.factors.group', { label: model.group_label }) }}</strong>
-      · {{ t('plural.nonconformities', { n }, n) }}
-    </p>
-    <p class="muted" :title="t('hints.commonFactors')">{{ t('ncCard.commonFactors.subtitle') }}</p>
-
-    <DataTable class="table">
-      <thead>
-        <tr>
-          <th>{{ t('widgets.analysis.factors.factor') }}</th>
-          <th>{{ t('widgets.analysis.factors.value') }}</th>
-          <th class="share-col">{{ t('widgets.analysis.factors.share') }}</th>
-          <th />
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="r in rows" :key="r.factor" :data-factor="r.factor" :class="{ common: isCommonToAll(r, n) }">
-          <td class="factor">{{ t(FACTOR_TEXT[r.factor]) }}</td>
-          <td class="value">
-            <template v-if="r.value === null">
-              <span class="muted">{{ t('widgets.analysis.factors.valueUnknown') }}</span>
-            </template>
-            <template v-else-if="r.distinct_values > 1">
-              <span :title="r.value">{{ t('widgets.analysis.factors.varies', { n: r.distinct_values }) }}</span>
-            </template>
-            <template v-else>{{ r.value }}</template>
-            <span v-if="isCommonToAll(r, n)" class="badge">{{ t('widgets.analysis.factors.commonToAll') }}</span>
-          </td>
-          <td class="share-col">
-            <div class="bar" role="img" :aria-label="t('ncCard.commonFactors.row', { factor: t(FACTOR_TEXT[r.factor]), k: r.matches, n })">
-              <span class="fill" :style="{ width: `${share(r)}%` }" />
-            </div>
-            <span class="num">{{ t('common.words.outOf', { a: r.matches, b: n }) }}</span>
-          </td>
-          <td class="actions">
-            <ActionButton overflow="wrap"
-              :size="naiveSizeOf(density)"
-              quaternary
-              :disabled="moment.isReplay || r.value === null"
-              data-testid="to-hypothesis"
-              @click="emit('to-hypothesis', r)"
-              :label="t('ncCard.commonFactors.toHypothesis')"
-            />
-            <ActionButton overflow="wrap"
-              :size="naiveSizeOf(density)"
-              quaternary
-              :disabled="moment.isReplay || r.value === null"
-              data-testid="to-narrow-scope"
-              @click="emit('to-narrow-scope', r)"
-              :label="t('ncCard.commonFactors.toNarrowScope')"
-            />
-          </td>
-        </tr>
-      </tbody>
-    </DataTable>
+    <p class="lead ant-wrap" :title="t('hints.commonFactors')">{{ t('widgets.analysis.factors.lead', { n }) }}</p>
+    <ul class="rows">
+      <li v-for="r in rows" :key="r.factor" class="row" :data-factor="r.factor" :data-kind="kindOf(r)">
+        <p class="what ant-wrap">
+          <span class="name">{{ t(FACTOR_TEXT[r.factor]) }}</span><template v-if="r.value !== null && kindOf(r) !== 'varies'">: <span class="value">{{ r.value }}</span></template>
+        </p>
+        <p class="how">
+          <span class="bar" aria-hidden="true"><span class="fill" :style="{ width: `${share(r)}%` }" /></span>
+          <span class="how-text ant-wrap" data-testid="how-many">{{ howMany(r) }}</span>
+        </p>
+      </li>
+    </ul>
+    <p class="muted ant-wrap">{{ t('widgets.analysis.factors.notACause') }}</p>
   </div>
 </template>
 
@@ -92,7 +64,8 @@ const share = (r: CommonFactorRow) => (n.value > 0 ? Math.min(100, (r.matches / 
 .factors {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--ant-space-2);
+  min-width: 0;
   font-size: var(--ant-fs-body);
 }
 
@@ -100,50 +73,77 @@ const share = (r: CommonFactorRow) => (n.value > 0 ? Math.min(100, (r.matches / 
   font-size: var(--ant-fs-lg);
 }
 
-.group,
-.muted {
+p {
   margin: 0;
+}
+
+.lead {
+  color: var(--ant-text-2);
 }
 
 .muted {
   color: var(--ant-text-3);
+  font-size: var(--ant-fs-meta);
 }
 
-td {
-  vertical-align: middle;
+.rows {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-tr.common td {
-  background: var(--ant-surface-subtle);
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: var(--ant-space-2) 0;
+  border-top: 1px solid var(--ant-border);
 }
 
-tr.common .factor {
+.row:first-child {
+  border-top: 0;
+}
+
+.row[data-kind='all'] {
+  margin: 0 calc(-1 * var(--ant-space-2));
+  padding: var(--ant-space-2);
+  border-top: 0;
+  border-left: 4px solid var(--ant-accent);
+  border-radius: var(--ant-radius-md);
+  background: var(--ant-accent-soft);
+}
+
+.name {
   font-weight: var(--ant-fw-bold);
 }
 
-.badge {
-  margin-left: 6px;
-  padding: 0 6px;
-  border-radius: var(--ant-radius-lg);
-  background: var(--ant-accent-soft-border);
-  color: var(--ant-accent-pressed);
-  font-size: var(--ant-fs-xs);
+/* Обозначение (ИС-2, П-88) не рвётся посередине. */
+.value {
   white-space: nowrap;
 }
 
-.share-col {
-  white-space: nowrap;
+.row[data-kind='unknown'] .what,
+.row[data-kind='unknown'] .how-text {
+  color: var(--ant-text-3);
+}
+
+.how {
+  display: flex;
+  gap: var(--ant-space-2);
+  align-items: center;
+  min-width: 0;
 }
 
 .bar {
-  display: inline-block;
+  flex: none;
   width: 64px;
   height: 6px;
-  margin-right: 6px;
-  border-radius: var(--ant-radius-sm);
-  background: var(--ant-border);
-  vertical-align: middle;
   overflow: hidden;
+  border-radius: var(--ant-radius-pill);
+  background: var(--ant-border);
 }
 
 .fill {
@@ -152,11 +152,7 @@ tr.common .factor {
   background: var(--ant-accent);
 }
 
-.num {
-  font-family: var(--ant-font-mono);
-}
-
-.actions {
-  text-align: right;
+.row[data-kind='all'] .how-text {
+  font-weight: var(--ant-fw-bold);
 }
 </style>
