@@ -667,6 +667,14 @@ func (s *showSystem) admit(st *showStop) string {
 	body["key_ref"] = strings.ToLower(st.Persona) + "@1"
 	body["pin_verified"] = true
 	s.command(st, st.Persona, st.Op, map[string]string{"workplace_id": st.Object}, body)
+	// Оборудование поста на терминале и в окне поста — по station_id == пост.
+	var eqs []string
+	for _, e := range list(s.read(st.Persona, "machinelogs.equipment.list", nil), "items") {
+		eqs = append(eqs, str(e, "equipment_id")+"@"+str(e, "station_id"))
+	}
+	if eq := list(s.read(st.Persona, "machinelogs.equipment.list", map[string]string{"station_id": st.Object}), "items"); len(eq) == 0 {
+		s.t.Logf("%s: у поста %s нет оборудования (machinelogs.equipment.list?station_id): терминал «Начать» уйдёт без equipment_id, в окне поста нет «Остановить пост»; всё оборудование: %v", st, st.Object, eqs)
+	}
 	return "экран: терминал исполнителя → «Допуск к посту» " + st.Object
 }
 
