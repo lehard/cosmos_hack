@@ -9,8 +9,8 @@ import { computed, onBeforeUnmount, onMounted, ref, watch, type Component } from
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import {
-  Alarm, ChartLine, ClipboardCheck, Clock, Components, Dashboard, Database, Eye, FileAnalytics, FileText, GitBranch,
-  History, Key, Layout2, ListCheck, Lock, PlugConnected, Point, Search, Shield, Signature, Sitemap, Target, Terminal,
+  Alarm, ChartLine, ClipboardCheck, Clock, Components, Dashboard, Database, Eye, FileAnalytics, FileText,
+  History, Key, Layout2, ListCheck, Lock, PlugConnected, Point, Route, Search, Shield, Signature, Sitemap, Target, Terminal,
   Tool, Users,
 } from '@vicons/tabler'
 import { useDesk } from '@/entities/desk'
@@ -27,12 +27,12 @@ const desk = useDesk()
  */
 const ICONS: Record<string, Component> = {
   overview: Dashboard,
-  processes: Sitemap,
+  processes: Route,
   posts: Tool,
   proposals: ClipboardCheck,
   analytics: ChartLine,
   'data-deficit': Search,
-  process: GitBranch,
+  process: Sitemap,
   station: Layout2,
   people: Users,
   tasks: ListCheck,

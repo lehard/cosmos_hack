@@ -16,7 +16,7 @@ tabs:
       - {id: attention, area: main, widget: attention}
       - {id: alerts, area: main, widget: alerts-feed}
   - id: processes
-    title_key: desks.processes
+    title_key: desks.liveMap
     layout: single
     slots:
       # Таймлайн — часть живой карты (полоса внизу, UI-19), отдельного слота нет.
@@ -50,7 +50,7 @@ tabs:
     slots:
       - {id: deficit, area: main, widget: data-deficit-map}
   - id: process
-    title_key: desks.processVersions
+    title_key: desks.processes
     layout: single
     slots:
       - {id: processes, area: main, widget: process-registry}
