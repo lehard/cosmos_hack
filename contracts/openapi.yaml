@@ -3584,6 +3584,13 @@ components:
         - live_map
         - policy
         - quarantine
+        - concession
+        - process_hold
+        - person
+        - reference
+        - key
+        - material
+        - partner
       type: string
     EquipmentEventRow:
       additionalProperties: false
@@ -7449,6 +7456,11 @@ components:
           format: int64
           minimum: 0
           type: integer
+        nc_ids:
+          description: Несоответствия группы — вход разбора обстоятельств и гипотез (эпик 12).
+          items:
+            type: string
+          type: array
         operation:
           type: string
       required:
@@ -7457,6 +7469,7 @@ components:
         - operation
         - equipment
         - nc_count
+        - nc_ids
         - investigation
         - last_found_at
       type: object
@@ -8750,6 +8763,10 @@ components:
     QuarantineEntry:
       additionalProperties: false
       properties:
+        basis_seq:
+          description: seq, на котором построен ответ (для basis_seq команды переобработки, AD-39).
+          format: int64
+          type: integer
         content:
           description: Исходное содержимое (только в чтении одной записи и при правах).
           type: string
@@ -8793,6 +8810,7 @@ components:
         - problem_code
         - quarantined_at
         - state
+        - basis_seq
       type: object
     QuarantineList:
       additionalProperties: false
@@ -11991,6 +12009,10 @@ components:
     SourceView:
       additionalProperties: false
       properties:
+        basis_seq:
+          description: seq, на котором построен ответ (для basis_seq команд над источником, AD-39).
+          format: int64
+          type: integer
         clock_skew_ms:
           description: Оценка расхождения часов источника (FR-33).
           format: int64
@@ -12038,6 +12060,7 @@ components:
         - gap_count
         - last_received_at
         - quarantined
+        - basis_seq
       type: object
     StartOperation:
       additionalProperties: false

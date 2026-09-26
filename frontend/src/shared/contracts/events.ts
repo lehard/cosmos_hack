@@ -1298,7 +1298,7 @@ export interface SseEntityChangedV1 {
 /**
  * Вид сущности — первый элемент ключа Vue Query.
  */
-entity: ("item" | "lot" | "nonconformity" | "incident" | "document" | "task" | "notification" | "workplace" | "equipment" | "process_version" | "analyzer_passport" | "erp_message" | "run" | "integrity" | "live_map" | "policy" | "quarantine")
+entity: ("item" | "lot" | "nonconformity" | "incident" | "document" | "task" | "notification" | "workplace" | "equipment" | "process_version" | "analyzer_passport" | "erp_message" | "run" | "integrity" | "live_map" | "policy" | "quarantine" | "concession" | "process_hold" | "person" | "reference" | "key" | "material" | "partner")
 /**
  * Идентификатор объекта системы или справочника: ASCII, без пробелов.
  */
@@ -2485,6 +2485,14 @@ subject_ref: string
  * via the `definition` "uuid".
  */
 source_event_ids?: string[]
+/**
+ * Решение, которое оформляется документом «Запросить решение» (например, `disposition=scrap`; FR-146).
+ */
+decision?: string
+/**
+ * Комментарий автора запроса.
+ */
+comment?: string
 }
 /**
  * Сводка параметров за цикл — edge-агент на окно цикла отдаёт сводку (среднее, максимум, выход за уставку) — не миллисекундную телеметрию; сырые данные остаются на краю (FR-147, AD-25). `event_id` = UUIDv5(устройство, окно, вид сводки).
@@ -5346,6 +5354,38 @@ process_version_hash: string
 route_closed_event_id: string
 }
 /**
+ * Черновик версии процесса сохранён — технолог сохранил BPMN из редактора; загрузчик проверил его (FR-13); дальше — отправка на утверждение кворумом `normative.version.submitted` (FR-22, FR-25). Черновик не действует до введения в действие.
+ * 
+ * This interface was referenced by `EventsContracts`'s JSON-Schema
+ * via the `definition` "NormativeVersionDraftedV1".
+ */
+export interface NormativeVersionDraftedV1 {
+/**
+ * Идентификатор объекта системы или справочника: ASCII, без пробелов.
+ */
+version_id: string
+/**
+ * Метка версии для людей.
+ */
+label: string
+/**
+ * Идентификатор объекта системы или справочника: ASCII, без пробелов.
+ */
+base_version_id?: string
+/**
+ * Отпечаток по хешу формата цепочки с префиксом алгоритма: `streebog256:‹64 hex›` (AD-44). Им же адресуются материалы.
+ */
+process_version_hash: string
+/**
+ * Отпечаток по хешу формата цепочки с префиксом алгоритма: `streebog256:‹64 hex›` (AD-44). Им же адресуются материалы.
+ */
+bundle_digest?: string
+/**
+ * Номер сохранения черновика: каждое сохранение — новая запись с номером на единицу больше.
+ */
+revision?: number
+}
+/**
  * Стартовая версия нормативного слоя загружена — seed при первом запуске: BPMN как загружен, карта реакций, классификатор, шаблоны, политика; подписи кворума — ключами генезиса (FR-10, AD-33).
  * 
  * This interface was referenced by `EventsContracts`'s JSON-Schema
@@ -5507,6 +5547,26 @@ owner_role_id?: string
  * Ключ шага процесса (`ant:properties/@stepKey`), к которому относится запись.
  */
 step_key?: string
+/**
+ * Уровень эскалации, к которому относится срок: 1 — исходный срок; после «наступил срок» notifications переустанавливает срок следующего уровня того же обязательства (лестница эскалации, FR-57).
+ */
+level?: number
+/**
+ * Момент времени: RFC 3339 UTC, ровно три знака после секунд (YYYY-MM-DDTHH:MM:SS.mmmZ).
+ */
+first_due_at?: string
+/**
+ * Поток записи (AD-39): `item:‹item_id›`, `‹вид_объекта›:‹id›` или `global`.
+ */
+waits_on?: string
+/**
+ * Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
+ */
+basis?: string
+/**
+ * Что ждёт решения — для ленты тревог и блока «требует вашего внимания» (FR-8).
+ */
+title?: string
 }
 /**
  * Эскалация — просрочка с ценой задержки («просрочено 37 мин — стоят 18 изделий, 2 операции») (FR-57, FR-8).
@@ -5738,6 +5798,14 @@ interval_end?: string
  * Откуда границы: переданы источником / вычислены системой.
  */
 interval_origin: ("source_reported" | "system_computed")
+/**
+ * Ключ шага процесса (`ant:properties/@stepKey`), к которому относится запись.
+ */
+step_key?: string
+/**
+ * Шаг — специальный процесс по закреплённой версии процесса изделия (`ant:properties/@specialProcess`, FR-151): стадия относит выполнение к окнам нарушения режима.
+ */
+special_process?: boolean
 }
 /**
  * Операция приостановлена — перерыв внутри выполнения операции: наладка, сбой, ожидание, конец смены.
@@ -7412,9 +7480,9 @@ source_id?: string
  */
 key_ref?: string
 /**
- * Что не так.
+ * Что не так; `unsigned` — подписи нет там, где политика её требует.
  */
-failure: ("unknown_key" | "revoked_key" | "foreign_key" | "profile_downgrade" | "payload_tampered" | "bad_signature" | "key_unavailable" | "class_not_allowed")
+failure: ("unknown_key" | "revoked_key" | "foreign_key" | "profile_downgrade" | "payload_tampered" | "bad_signature" | "key_unavailable" | "class_not_allowed" | "unsigned")
 /**
  * Идентификатор UUID в нижнем регистре (RFC 9562).
  */

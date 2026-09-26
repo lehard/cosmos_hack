@@ -27,9 +27,10 @@
         "payload_tampered",
         "bad_signature",
         "key_unavailable",
-        "class_not_allowed"
+        "class_not_allowed",
+        "unsigned"
       ],
-      "description": "Что не так."
+      "description": "Что не так; `unsigned` — подписи нет там, где политика её требует."
     },
     "quarantine_event_id": {
       "$ref": "../common/defs.v1.json#/definitions/uuid",

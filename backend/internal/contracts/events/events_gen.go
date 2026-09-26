@@ -1403,6 +1403,13 @@ const DocumentVersionDraftedV1RequiredApprovalsElemQuorumOne DocumentVersionDraf
 // Запрошено оформление документа — человек запрашивает документ с маршрутом:
 // «Запросить решение», выдача прав, назначение контролёра (FR-136, AD-12).
 type DocumentVersionRequestedV1 struct {
+	// Комментарий автора запроса.
+	Comment *string `json:"comment,omitempty,omitzero"`
+
+	// Решение, которое оформляется документом «Запросить решение» (например,
+	// `disposition=scrap`; FR-146).
+	Decision *string `json:"decision,omitempty,omitzero"`
+
 	// Будущий документ.
 	DocumentID ObjectID `json:"document_id"`
 
@@ -3712,6 +3719,31 @@ type NormativeVersionActivatedV1 struct {
 	VersionID ObjectID `json:"version_id"`
 }
 
+// Черновик версии процесса сохранён — технолог сохранил BPMN из редактора;
+// загрузчик проверил его (FR-13); дальше — отправка на утверждение кворумом
+// `normative.version.submitted` (FR-22, FR-25). Черновик не действует до введения
+// в действие.
+type NormativeVersionDraftedV1 struct {
+	// Версия, от которой начат черновик (для читаемой разницы).
+	BaseVersionID *ObjectID `json:"base_version_id,omitempty,omitzero"`
+
+	// Отпечаток пакета нормативного слоя черновика, если собран.
+	BundleDigest *Digest `json:"bundle_digest,omitempty,omitzero"`
+
+	// Метка версии для людей.
+	Label string `json:"label"`
+
+	// Хеш BPMN XML черновика; им же XML адресуется в хранилище материалов (AD-17).
+	ProcessVersionHash Digest `json:"process_version_hash"`
+
+	// Номер сохранения черновика: каждое сохранение — новая запись с номером на
+	// единицу больше.
+	Revision *int `json:"revision,omitempty,omitzero"`
+
+	// Версия-черновик.
+	VersionID ObjectID `json:"version_id"`
+}
+
 // Стартовая версия нормативного слоя загружена — seed при первом запуске: BPMN как
 // загружен, карта реакций, классификатор, шаблоны, политика; подписи кворума —
 // ключами генезиса (FR-10, AD-33).
@@ -3789,11 +3821,24 @@ type ObligationDueReachedV1 struct {
 // Срок установлен — срок решения, точки предъявления, таймера BPMN: `due_at` — по
 // производственному календарю и графику смен; эмитит только notifications (AD-4).
 type ObligationDueSetV1 struct {
+	// Основание срока у модуля-владельца: isolation, isolation_move, nonconformity,
+	// presentation, incident_scope, recheck (FR-55, FR-57).
+	Basis *Code `json:"basis,omitempty,omitzero"`
+
 	// Срок.
 	DueAt Timestamp `json:"due_at"`
 
+	// Исходный срок обязательства (уровень 1): от него считается просрочка — цена
+	// задержки (FR-8, FR-57).
+	FirstDueAt *Timestamp `json:"first_due_at,omitempty,omitzero"`
+
 	// Вид срока.
 	Kind ObligationDueSetV1Kind `json:"kind"`
+
+	// Уровень эскалации, к которому относится срок: 1 — исходный срок; после
+	// «наступил срок» notifications переустанавливает срок следующего уровня того же
+	// обязательства (лестница эскалации, FR-57).
+	Level *int `json:"level,omitempty,omitzero"`
 
 	// Обязательство.
 	ObligationID ObjectID `json:"obligation_id"`
@@ -3806,6 +3851,13 @@ type ObligationDueSetV1 struct {
 
 	// Субъект срока.
 	SubjectRef StreamRef `json:"subject_ref"`
+
+	// Что ждёт решения — для ленты тревог и блока «требует вашего внимания» (FR-8).
+	Title *string `json:"title,omitempty,omitzero"`
+
+	// Чьего решения ждёт срок: изделие, несоответствие или инцидент; по нему сводится
+	// цена задержки — сколько изделий и операций стоят (FR-8).
+	WaitsOn *StreamRef `json:"waits_on,omitempty,omitzero"`
 }
 
 type ObligationDueSetV1Kind string
@@ -4011,6 +4063,14 @@ type OperationRunIntervalResolvedV1 struct {
 	// Идентификатор выполнения операции; повтор операции — новый идентификатор со
 	// ссылкой `rework_of` (FR-47).
 	OperationRunID ObjectID `json:"operation_run_id"`
+
+	// Шаг — специальный процесс по закреплённой версии процесса изделия
+	// (`ant:properties/@specialProcess`, FR-151): стадия относит выполнение к окнам
+	// нарушения режима.
+	SpecialProcess *bool `json:"special_process,omitempty,omitzero"`
+
+	// Ключ шага процесса (`ant:properties/@stepKey`), к которому относится запись.
+	StepKey *StepKey `json:"step_key,omitempty,omitzero"`
 }
 
 type OperationRunIntervalResolvedV1IntervalOrigin string
@@ -5313,7 +5373,7 @@ const SecurityPresenceDeviationV1DeviationTokenWithoutPresence SecurityPresenceD
 // неизвестный, отозванный, чужой ключ, понижение профиля, изменённый пакет (FR-26,
 // FR-68, AD-10).
 type SecuritySignatureInvalidV1 struct {
-	// Что не так.
+	// Что не так; `unsigned` — подписи нет там, где политика её требует.
 	Failure SecuritySignatureInvalidV1Failure `json:"failure"`
 
 	// Ключ из пакета.
@@ -5339,6 +5399,7 @@ const SecuritySignatureInvalidV1FailurePayloadTampered SecuritySignatureInvalidV
 const SecuritySignatureInvalidV1FailureProfileDowngrade SecuritySignatureInvalidV1Failure = "profile_downgrade"
 const SecuritySignatureInvalidV1FailureRevokedKey SecuritySignatureInvalidV1Failure = "revoked_key"
 const SecuritySignatureInvalidV1FailureUnknownKey SecuritySignatureInvalidV1Failure = "unknown_key"
+const SecuritySignatureInvalidV1FailureUnsigned SecuritySignatureInvalidV1Failure = "unsigned"
 
 // Позиция записи в основной цепочке журнала (порядок знания, AD-37).
 type Seq int
@@ -5474,19 +5535,26 @@ type SseEntityChangedV1 struct {
 type SseEntityChangedV1Entity string
 
 const SseEntityChangedV1EntityAnalyzerPassport SseEntityChangedV1Entity = "analyzer_passport"
+const SseEntityChangedV1EntityConcession SseEntityChangedV1Entity = "concession"
 const SseEntityChangedV1EntityDocument SseEntityChangedV1Entity = "document"
 const SseEntityChangedV1EntityEquipment SseEntityChangedV1Entity = "equipment"
 const SseEntityChangedV1EntityErpMessage SseEntityChangedV1Entity = "erp_message"
 const SseEntityChangedV1EntityIncident SseEntityChangedV1Entity = "incident"
 const SseEntityChangedV1EntityIntegrity SseEntityChangedV1Entity = "integrity"
 const SseEntityChangedV1EntityItem SseEntityChangedV1Entity = "item"
+const SseEntityChangedV1EntityKey SseEntityChangedV1Entity = "key"
 const SseEntityChangedV1EntityLiveMap SseEntityChangedV1Entity = "live_map"
 const SseEntityChangedV1EntityLot SseEntityChangedV1Entity = "lot"
+const SseEntityChangedV1EntityMaterial SseEntityChangedV1Entity = "material"
 const SseEntityChangedV1EntityNonconformity SseEntityChangedV1Entity = "nonconformity"
 const SseEntityChangedV1EntityNotification SseEntityChangedV1Entity = "notification"
+const SseEntityChangedV1EntityPartner SseEntityChangedV1Entity = "partner"
+const SseEntityChangedV1EntityPerson SseEntityChangedV1Entity = "person"
 const SseEntityChangedV1EntityPolicy SseEntityChangedV1Entity = "policy"
+const SseEntityChangedV1EntityProcessHold SseEntityChangedV1Entity = "process_hold"
 const SseEntityChangedV1EntityProcessVersion SseEntityChangedV1Entity = "process_version"
 const SseEntityChangedV1EntityQuarantine SseEntityChangedV1Entity = "quarantine"
+const SseEntityChangedV1EntityReference SseEntityChangedV1Entity = "reference"
 const SseEntityChangedV1EntityRun SseEntityChangedV1Entity = "run"
 const SseEntityChangedV1EntityTask SseEntityChangedV1Entity = "task"
 const SseEntityChangedV1EntityWorkplace SseEntityChangedV1Entity = "workplace"

@@ -108,6 +108,11 @@ export const errorCatalog = {
     "title": "Лимит разрешения на отклонение исчерпан",
     "uiKey": "errors.decision.concessionRequired"
   },
+  "journal.duplicate": {
+    "status": 409,
+    "title": "Запись уже есть в журнале",
+    "uiKey": "errors.generic"
+  },
   "journal.append_only": {
     "status": 405,
     "title": "Журнал только на дописывание",
@@ -346,6 +351,11 @@ export const errorCatalog = {
   "process.version_tampered": {
     "status": 409,
     "title": "Содержимое действующей версии изменено",
+    "uiKey": "errors.process.versionTampered"
+  },
+  "process.version_unknown": {
+    "status": 409,
+    "title": "Версия процесса изделия не найдена",
     "uiKey": "errors.process.versionTampered"
   },
   "process.quorum_incomplete": {

@@ -10,7 +10,7 @@ import (
 
 // RejectError — отказ Append с параметрами для problem+json: Kind — одна из
 // ошибок ErrFenced, ErrStaleState, ErrStalePolicy, ErrConcessionExhausted,
-// ErrTimeRegression (errors.Is работает по Kind), Params — подстановки шаблона
+// ErrTimeRegression, ErrDuplicate (errors.Is работает по Kind), Params — подстановки шаблона
 // detail из contracts/errors.yaml.
 type RejectError struct {
 	Kind   error
@@ -43,6 +43,7 @@ var codes = []struct {
 	{ErrStalePolicy, errcodes.JournalStalePolicy},
 	{ErrConcessionExhausted, errcodes.JournalConcessionExhausted},
 	{ErrTimeRegression, errcodes.JournalTimeRegression},
+	{ErrDuplicate, errcodes.JournalDuplicate},
 }
 
 // Problem приводит ошибку Append к ошибке ведущего порта с кодом journal.*

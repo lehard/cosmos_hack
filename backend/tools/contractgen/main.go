@@ -9,6 +9,8 @@
 //	contracts/constants.yaml          → backend/internal/contracts/constants/constants_gen.go
 //	contracts/events/upcasters/*.yaml → backend/internal/contracts/upcast/upcast_gen.go
 //	contracts/events/**.v*.json       → backend/internal/contracts/events/registry_gen.go (тип+версия → Go-тип data)
+//	contracts/events/common/defs.v1.json#/definitions/timestamp
+//	                                  → backend/internal/contracts/events/timestamp_gen.go (JSON-методы Timestamp)
 //	contracts/bpmn-ext/ant.json       → backend/internal/contracts/bpmnext/bpmnext_gen.go,
 //	                                    contracts/bpmn-ext/ant.xsd, docs/bpmn-ext-properties.md
 //	contracts/**.json                 → backend/internal/contracts/schemas/** (копия для встраивания в бинарник)
@@ -57,6 +59,7 @@ func main() {
 		{"constants", genConstants},
 		{"upcast", genUpcasters},
 		{"events registry", genEventRegistry},
+		{"events timestamp", genTimestamp},
 		{"bpmnext", genBPMN},
 		{"schemas", copySchemas},
 		{"docs", genDocs},
@@ -841,6 +844,97 @@ func NewData(eventType string, version int) (any, bool) {
 }
 `)
 	return writeGo("backend/internal/contracts/events/registry_gen.go", b.String())
+}
+
+// genTimestamp — JSON-методы типа events.Timestamp. go-jsonschema объявляет
+// его как `type Timestamp time.Time` (определение timestamp в defs.v1.json с
+// format: date-time), и методы time.Time при этом теряются: без них поля времени
+// сгенерированных типов не разбираются и не сериализуются. Формат — соглашение
+// спайна «Время» и pattern определения timestamp; расхождение с pattern ловит
+// проверка ниже, чтобы генератор и схема не разъехались молча.
+func genTimestamp() error {
+	var defs struct {
+		Definitions map[string]struct {
+			Pattern string `json:"pattern"`
+		} `json:"definitions"`
+	}
+	raw, err := os.ReadFile(path("contracts/events/common/defs.v1.json"))
+	if err != nil {
+		return err
+	}
+	if err := json.Unmarshal(raw, &defs); err != nil {
+		return err
+	}
+	const pattern = `^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{3}Z$`
+	if got := defs.Definitions["timestamp"].Pattern; got != pattern {
+		return fmt.Errorf("defs.v1.json#/definitions/timestamp: pattern %q, генератор знает %q — обновите genTimestamp", got, pattern)
+	}
+	src := header("contracts/events/common/defs.v1.json#/definitions/timestamp", "events") + `package events
+
+import (
+	"bytes"
+	"errors"
+	"fmt"
+	"time"
+)
+
+// TimestampLayout — формат момента времени в контрактах: RFC 3339 UTC, ровно
+// три знака после секунд (YYYY-MM-DDTHH:MM:SS.mmmZ; соглашение спайна «Время»).
+const TimestampLayout = "2006-01-02T15:04:05.000Z"
+
+// NewTimestamp приводит момент к UTC и отбрасывает доли меньше миллисекунды —
+// так он будет записан в JSON.
+func NewTimestamp(t time.Time) Timestamp { return Timestamp(t.UTC().Truncate(time.Millisecond)) }
+
+// ParseTimestamp разбирает строку строго по TimestampLayout.
+func ParseTimestamp(s string) (Timestamp, error) {
+	t, err := time.Parse(TimestampLayout, s)
+	if err != nil {
+		return Timestamp{}, fmt.Errorf("время %q: ожидается YYYY-MM-DDTHH:MM:SS.mmmZ: %w", s, err)
+	}
+	return Timestamp(t), nil
+}
+
+// Time возвращает момент как time.Time.
+func (t Timestamp) Time() time.Time { return time.Time(t) }
+
+// IsZero — нулевой момент (для omitzero).
+func (t Timestamp) IsZero() bool { return time.Time(t).IsZero() }
+
+// String — момент в формате TimestampLayout.
+func (t Timestamp) String() string { return time.Time(t).UTC().Format(TimestampLayout) }
+
+// MarshalJSON пишет момент строкой TimestampLayout в UTC; доли меньше
+// миллисекунды отбрасываются.
+func (t Timestamp) MarshalJSON() ([]byte, error) {
+	u := time.Time(t).UTC()
+	if y := u.Year(); y < 0 || y > 9999 {
+		return nil, errors.New("events.Timestamp.MarshalJSON: год вне диапазона [0,9999]")
+	}
+	b := make([]byte, 0, len(TimestampLayout)+2)
+	b = append(b, '"')
+	b = u.AppendFormat(b, TimestampLayout)
+	return append(b, '"'), nil
+}
+
+// UnmarshalJSON разбирает строку строго по TimestampLayout (как pattern схемы);
+// null не меняет значение (соглашение encoding/json).
+func (t *Timestamp) UnmarshalJSON(b []byte) error {
+	if bytes.Equal(b, []byte("null")) {
+		return nil
+	}
+	if len(b) < 2 || b[0] != '"' || b[len(b)-1] != '"' {
+		return fmt.Errorf("events.Timestamp.UnmarshalJSON: ожидается строка, получено %s", b)
+	}
+	v, err := ParseTimestamp(string(b[1 : len(b)-1]))
+	if err != nil {
+		return err
+	}
+	*t = v
+	return nil
+}
+`
+	return writeGo("backend/internal/contracts/events/timestamp_gen.go", src)
 }
 
 // goTypeName повторяет правило go-jsonschema (--capitalization ID URL UUID JSON

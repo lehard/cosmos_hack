@@ -273,14 +273,15 @@ func TestSpecialProcessSixItems(t *testing.T) {
 	}
 }
 
-// До эпика 21 (порт пуст, настоящая сборка стадии crossitem.Fold): окно и
-// его 6 изделий видны, записей несоответствия ещё нет.
+// Настоящая сборка стадии crossitem.Fold: порт несоответствий подключён
+// (эпик 21, nonconformity.RegisterWindowNC) — окно, его 6 изделий и 6
+// несоответствий окна (FR-151, «даже без найденного дефекта»).
 func TestSpecialProcessWithFrameStage(t *testing.T) {
 	sc := mltest.WeldingOutOfRegime(t0, "run-7")
 	w := newWorld(t, sc, nil)
 	v, err := w.svc.Violations(context.Background(), platform.Moment{RunID: "run-7"})
-	if err != nil || len(v.Items) != 1 || len(v.Items[0].Items) != 6 || len(v.Items[0].Nonconformities) != 0 {
-		t.Fatalf("окно без порта: %+v %v", v, err)
+	if err != nil || len(v.Items) != 1 || len(v.Items[0].Items) != 6 || len(v.Items[0].Nonconformities) != 6 {
+		t.Fatalf("окно и несоответствия окна: %+v %v", v, err)
 	}
 	if w.count(catalog.EquipmentEventBound) == 0 {
 		t.Fatal("привязка событий к выполнению")

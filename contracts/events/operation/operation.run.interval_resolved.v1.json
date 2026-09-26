@@ -28,6 +28,14 @@
         "system_computed"
       ],
       "description": "Откуда границы: переданы источником / вычислены системой."
+    },
+    "step_key": {
+      "$ref": "../common/defs.v1.json#/definitions/step_key",
+      "description": "Ключ шага процесса (`ant:properties/@stepKey`), к которому относится запись."
+    },
+    "special_process": {
+      "type": "boolean",
+      "description": "Шаг — специальный процесс по закреплённой версии процесса изделия (`ant:properties/@specialProcess`, FR-151): стадия относит выполнение к окнам нарушения режима."
     }
   },
   "required": [

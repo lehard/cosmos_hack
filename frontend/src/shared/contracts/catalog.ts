@@ -1312,6 +1312,17 @@ export const eventCatalog = {
     "caGroup": "control_change",
     "currentVersion": 1
   },
+  "normative.version.drafted": {
+    "title": "Черновик версии процесса сохранён",
+    "emitter": "process",
+    "kind": "decision",
+    "stream": "process_version",
+    "axis": "none",
+    "actionClass": "record",
+    "critical": false,
+    "caGroup": null,
+    "currentVersion": 1
+  },
   "normative.version.loaded": {
     "title": "Стартовая версия нормативного слоя загружена",
     "emitter": "process",

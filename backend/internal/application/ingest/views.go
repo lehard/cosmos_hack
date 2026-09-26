@@ -83,6 +83,7 @@ type QuarantineEntry struct {
 	QuarantinedAt   time.Time `json:"quarantined_at"`
 	State           string    `json:"state" enum:"open,accepted,still_invalid,discarded"`
 	Content         *string   `json:"content,omitempty" doc:"Исходное содержимое (только в чтении одной записи и при правах)."`
+	BasisSeq        int64     `json:"basis_seq" doc:"seq, на котором построен ответ (для basis_seq команды переобработки, AD-39)."`
 }
 
 // QuarantineList — карантин сообщений.
@@ -116,6 +117,7 @@ type SourceView struct {
 	LastReceivedAt *time.Time `nullable:"true" json:"last_received_at"`
 	ClockSkewMs    *int64     `json:"clock_skew_ms,omitempty" doc:"Оценка расхождения часов источника (FR-33)."`
 	Quarantined    int        `json:"quarantined" minimum:"0"`
+	BasisSeq       int64      `json:"basis_seq" doc:"seq, на котором построен ответ (для basis_seq команд над источником, AD-39)."`
 }
 
 // SourceList — источники событий.
