@@ -238,7 +238,7 @@ func (c *Ctx) analyticsMetrics() []aMetric {
 		lead = aMetric{id: "lead_time", title: "Время детали в системе (выпущенные)", group: "time", counts: "time", agg: aggMean,
 			origin: "computed_by_system", meaning: "other", note: "от запуска изделия до сдачи на склад готовой продукции"}
 		wait = aMetric{id: "waiting_time", title: "Ожидание изделий в очередях", group: "time", counts: "time", agg: aggTime,
-			origin: "computed_by_system", meaning: "time_at_station", note: "время изделий в очереди узла до начала операции или решения"}
+			origin: "computed_by_system", meaning: "other", note: "время изделий в очереди узла до начала операции или решения, в пределах периода"}
 	)
 	for _, w := range []string{"W21", "W22"} {
 		s := aSlice{dim: "performer", key: w, label: c.M.personName(w)}
@@ -287,7 +287,9 @@ func (c *Ctx) analyticsMetrics() []aMetric {
 		if nc {
 			e := itemEntry(it)
 			e.at = ncAt
-			e.events = c.eventsWhere(func(x *Event) bool { return x.Item == it && len(x.Type) > 23 && x.Type[:23] == "decision.nonconformity." })
+			e.events = c.eventsWhere(func(x *Event) bool {
+				return x.Item == it && len(x.Type) > 23 && x.Type[:23] == "decision.nonconformity."
+			})
 			if n := ncOf[it]; n != nil {
 				origin := "production"
 				if n.Spec.Cause != nil && n.Spec.Cause.Category == "incoming" && !n.Spec.Cause.At.Time().After(c.T) {
@@ -316,7 +318,9 @@ func (c *Ctx) analyticsMetrics() []aMetric {
 			}
 			runEvs := c.eventsWhere(func(x *Event) bool { return x.Item == it && x.Params["operation_run_id"] == r.ID })
 			if len(runEvs) == 0 {
-				runEvs = c.eventsWhere(func(x *Event) bool { return x.Item == it && x.StepKey == r.StepKey && x.Type == "operation.run.started" })
+				runEvs = c.eventsWhere(func(x *Event) bool {
+					return x.Item == it && x.StepKey == r.StepKey && x.Type == "operation.run.started"
+				})
 			}
 			if r.ReworkOf != "" {
 				e := itemEntry(it)
@@ -356,8 +360,13 @@ func (c *Ctx) analyticsMetrics() []aMetric {
 				}
 			}
 			if !since.IsZero() {
+				// Время ожидания в пределах периода (сутки на часах шага), как у live.
+				from := since
+				if day := c.dayStart(); from.Before(day) {
+					from = day
+				}
 				e := itemEntry(it)
-				e.at, e.value = since, int64(c.T.Sub(since).Minutes())
+				e.at, e.value = since, int64(c.T.Sub(from).Minutes())
 				e.slices = []aSlice{{dim: "step", key: st.Step, label: stepName(st.Step)}}
 				e.events = c.eventsWhere(func(x *Event) bool { return x.Item == it && x.StepKey == st.Step })
 				if len(e.events) == 0 {
