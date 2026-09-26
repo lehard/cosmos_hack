@@ -110,6 +110,9 @@ const candidates = computed(() => {
   const fromTasks = (tasksQ.data.value?.data.items ?? [])
     .filter((t) => t.state === 'open' && t.operation_id === 'process.operation.start' && t.step_key === stepKey.value && t.item_id)
     .map((t) => ({ row: { item_id: t.item_id!, label: t.item_label ?? t.item_id! } as (typeof base)[number]['row'], blocked: false }))
+  // Пока операция начата отсюда и сервер её ещё не показал — очередь скрыта: второй «Начать»
+  // до ответа сервера ушёл бы на другое изделие тем же выполнением.
+  if (startedHere.value && !runProfile.value) return []
   // Очередь — только изделия с открытой задачей «Начать». Список шага (items?step_key) не годится:
   // шаг изделия в паспорте отстаёт от процесса, там висит уже сваренное из истории (Ф-101, Ф-121…),
   // и «Начать» по нему даёт отказ «изделие на шаге welding.weld (сейчас: …)».
