@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"slices"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -554,6 +555,40 @@ func (s *showSystem) command(st *showStop, persona, op string, params map[string
 	}
 }
 
+// commandRefresh — команда экрана; на 409 journal.stale_state человек видит
+// «обновите и проверьте ещё раз»: экран перечитывается (basis_seq заново) и
+// команда уходит снова — до трёх раз; не помогло — разрыв пути.
+func (s *showSystem) commandRefresh(st *showStop, params map[string]string, body map[string]any, basis func() any) {
+	s.t.Helper()
+	for i := 0; ; i++ {
+		code, out := s.call(st.Persona, st.Op, params, body)
+		if code >= 200 && code < 300 {
+			if i > 0 {
+				s.t.Errorf("%s: %s прошла только после %d «обновите» (409 journal.stale_state на basis_seq экрана)", st, st.Op, i)
+			}
+			return
+		}
+		if code != http.StatusConflict || str(out, "code") != "journal.stale_state" || i == 4 {
+			s.t.Fatalf("%s: команда %s от %s отклонена: HTTP %d %v\nтело: %v", st, st.Op, st.Persona, code, out, body)
+		}
+		if i == 3 {
+			// Экран не даёт basis_seq, который пропустит гард: отмечаем разрыв и,
+			// чтобы пройти остановки дальше, шлём с basis_seq области риска
+			// инцидента (она читает его поток) — так интерфейс не умеет.
+			inc, _, _, _ := s.hypothesis(st)
+			rsb := s.read(st.Persona, "analysis.risk_scope.read", map[string]string{"incident_id": inc})["basis_seq"]
+			s.t.Errorf("%s: %s — 409 journal.stale_state и после трёх «обновите»: basis_seq экрана %v не покрывает поток инцидента (%v); дальше — с basis_seq области риска %v",
+				st, st.Op, body["basis_seq"], out["params"], rsb)
+			body["basis_seq"] = rsb
+			body["command_id"] = newID()
+			continue
+		}
+		time.Sleep(time.Second)
+		body["basis_seq"] = basis()
+		body["command_id"] = newID()
+	}
+}
+
 // object — объект, который человек взял из задачи или экрана, — тот, которого ждёт прогон.
 func (s *showSystem) object(st *showStop, got, from string) {
 	s.t.Helper()
@@ -681,6 +716,66 @@ func (s *showSystem) firstIsolator(persona string) string {
 	return first
 }
 
+// terminalEquipment — оборудование поста на терминале (PerformerTerminalWidget):
+// список по участку поста (parent_id рабочего места), своё — по номеру поста
+// (WP-WELD-1 → IS-1), иначе всё оборудование участка.
+func (s *showSystem) terminalEquipment(persona, wp string) []map[string]any {
+	s.t.Helper()
+	station := wp
+	for _, l := range list(s.read(persona, "reference.location.list", nil), "items") {
+		if str(l, "location_id") == wp && str(l, "parent_id") != "" {
+			station = str(l, "parent_id")
+		}
+	}
+	all := list(s.read(persona, "machinelogs.equipment.list", map[string]string{"station_id": station}), "items")
+	n := wp[strings.LastIndex(wp, "-")+1:]
+	var own []map[string]any
+	for _, e := range all {
+		if strings.HasSuffix(str(e, "equipment_id"), "-"+n) {
+			own = append(own, e)
+		}
+	}
+	if len(own) > 0 {
+		return own
+	}
+	return all
+}
+
+// postEquipment — оборудование в окне поста (WorkplaceRecord.postEquipment):
+// с station_id поста; иначе участка поста (карточка поста), своё — по номеру.
+func (s *showSystem) postEquipment(persona, wp string) []map[string]any {
+	s.t.Helper()
+	all := list(s.read(persona, "machinelogs.equipment.list", nil), "items")
+	var own, atStation, byNo []map[string]any
+	for _, e := range all {
+		if str(e, "station_id") == wp {
+			own = append(own, e)
+		}
+	}
+	if len(own) > 0 {
+		return own
+	}
+	card := s.read(persona, "access.workplace.read", map[string]string{"workplace_id": wp})
+	station := str(card, "station_id")
+	if station == "" {
+		station = str(card, "parent_id")
+	}
+	n := wp[strings.LastIndex(wp, "-")+1:]
+	for _, e := range all {
+		sid := str(e, "station_id")
+		if sid != "" && (sid == station || strings.HasPrefix(wp, strings.Replace(sid, "ST-", "WP-", 1))) {
+			atStation = append(atStation, e)
+			if strings.HasSuffix(str(e, "equipment_id"), "-"+n) {
+				byNo = append(byNo, e)
+			}
+		}
+	}
+	if len(byNo) > 0 {
+		return byNo
+	}
+	return atStation
+}
+
 // admit — сварщик: терминал исполнителя → «Допуск к посту» (WorkplaceAdmission):
 // свои посты из панели постов, ключ w21@1, открыт PIN-ом (как расширение).
 func (s *showSystem) admit(st *showStop) string {
@@ -714,8 +809,8 @@ func (s *showSystem) admit(st *showStop) string {
 	for _, e := range list(s.read(st.Persona, "machinelogs.equipment.list", nil), "items") {
 		eqs = append(eqs, str(e, "equipment_id")+"@"+str(e, "station_id"))
 	}
-	if eq := list(s.read(st.Persona, "machinelogs.equipment.list", map[string]string{"station_id": st.Object}), "items"); len(eq) == 0 {
-		s.t.Logf("%s: у поста %s нет оборудования (machinelogs.equipment.list?station_id): терминал «Начать» уйдёт без equipment_id, в окне поста нет «Остановить пост»; всё оборудование: %v", st, st.Object, eqs)
+	if eq := s.terminalEquipment(st.Persona, st.Object); len(eq) == 0 {
+		s.t.Errorf("%s: у поста %s на терминале нет оборудования — «Начать» уйдёт без equipment_id; всё оборудование: %v", st, st.Object, eqs)
 	}
 	return "экран: терминал исполнителя → «Допуск к посту» " + st.Object
 }
@@ -766,7 +861,7 @@ func (s *showSystem) start(st *showStop) string {
 		s.t.Errorf("%s: на терминале нет кнопки «Начать» по %s — в очереди шага %s его нет (%d); в паспорте шаг %s, состояние %v",
 			st, item, step, len(cands), str(pp, "step_key"), pp["status"])
 	}
-	eq := list(s.read(st.Persona, "machinelogs.equipment.list", map[string]string{"station_id": ss.workplace}), "items")
+	eq := s.terminalEquipment(st.Persona, ss.workplace)
 	run := newID()
 	body := ss.meta(pp["basis_seq"])
 	body["operation_run_id"] = run
@@ -793,7 +888,7 @@ func (s *showSystem) finish(st *showStop) string {
 	ss := s.session(st.Persona)
 	// Как currentRunId терминала: текущее выполнение оборудования поста, иначе начатое здесь.
 	run := s.runs[item]
-	for _, e := range list(s.read(st.Persona, "machinelogs.equipment.list", map[string]string{"station_id": ss.workplace}), "items") {
+	for _, e := range s.terminalEquipment(st.Persona, ss.workplace) {
 		if r := str(e, "current_run_id"); r != "" {
 			if r != run {
 				s.t.Logf("%s: оборудование %s показывает текущее выполнение %s, начато с терминала %s", st, str(e, "equipment_id"), r, run)
@@ -969,25 +1064,7 @@ func (s *showSystem) recheck(st *showStop) string {
 func (s *showSystem) hold(st *showStop) string {
 	s.t.Helper()
 	const post = "WP-WELD-2" // пост ИС-2 (как в панели постов мастера)
-	var eqs []map[string]any
-	for _, e := range list(s.read(st.Persona, "machinelogs.equipment.list", nil), "items") {
-		if str(e, "station_id") == post {
-			eqs = append(eqs, e)
-		}
-	}
-	if len(eqs) == 0 {
-		// Окно поста показывает оборудование с station_id == пост; у источников
-		// сварки station_id — участок (ST-WELD). Отмечаем разрыв и идём дальше
-		// с источником поста по участку (как правка «Процесса» для терминала).
-		var all []string
-		for _, e := range list(s.read(st.Persona, "machinelogs.equipment.list", nil), "items") {
-			all = append(all, str(e, "equipment_id")+"@"+str(e, "station_id"))
-			if str(e, "station_id") == "ST-WELD" && strings.HasSuffix(str(e, "equipment_id"), post[len(post)-1:]) {
-				eqs = append(eqs, e)
-			}
-		}
-		s.t.Errorf("%s: в окне поста %s нет оборудования (station_id == пост) — нет «Остановить пост»; оборудование: %v", st, post, all)
-	}
+	eqs := s.postEquipment(st.Persona, post)
 	if len(eqs) != 1 {
 		s.t.Fatalf("%s: в окне поста %s оборудования %d: %v", st, post, len(eqs), eqs)
 	}
@@ -1025,6 +1102,10 @@ func (s *showSystem) narrow(st *showStop) string {
 	inc := str(s.incident(st), "incident_id")
 	s.object(st, inc, "инцидент в разборе")
 	rs := s.read(st.Persona, "analysis.risk_scope.read", map[string]string{"incident_id": inc})
+	// Область риска по карточке показа: 34 → (ИС-1) 13 → (до выхода тока) 6.
+	if size, exp := scopeSize(rs), map[bool]int{true: 34, false: 13}[strings.Contains(st.Label, "IS1")]; size != exp {
+		s.t.Errorf("%s: область риска до сужения — %d изделий, по карточке %d", st, size, exp)
+	}
 	want := "до выхода"
 	if strings.Contains(st.Label, "IS1") {
 		want = "IS-1"
@@ -1050,6 +1131,16 @@ func (s *showSystem) narrow(st *showStop) string {
 	b["reason"] = map[string]any{"text": str(opt, "reason_text")}
 	s.command(st, st.Persona, st.Op, map[string]string{"incident_id": inc}, b)
 	return "экран: «Расследование» → «Область риска» → предложение «" + str(opt, "label") + "»"
+}
+
+// scopeSize — размер последней версии области риска.
+func scopeSize(rs map[string]any) int {
+	vs := list(rs, "versions")
+	if len(vs) == 0 {
+		return -1
+	}
+	n, _ := strconv.Atoi(str(vs[len(vs)-1], "size"))
+	return n
 }
 
 // hypothesis — гипотеза «оборудование» у несоответствия расследования.
@@ -1080,10 +1171,14 @@ func (s *showSystem) measure(st *showStop) string {
 	if nc2, _ := h["next_check"].(map[string]any); str(nc2, "text") != "" {
 		what = str(nc2, "text")
 	}
+	inc, _, _, _ := s.hypothesis(st)
+	if size := scopeSize(s.read(st.Persona, "analysis.risk_scope.read", map[string]string{"incident_id": inc})); size != 6 {
+		s.t.Errorf("%s: область риска после двух сужений — %d изделий, по карточке 6", st, size)
+	}
 	b := s.session(st.Persona).plainMeta(basis)
 	b["hypothesis_id"] = str(h, "hypothesis_id")
 	b["what"] = what
-	s.command(st, st.Persona, st.Op, map[string]string{"nc_id": nc}, b)
+	s.commandRefresh(st, map[string]string{"nc_id": nc}, b, func() any { _, _, _, x := s.hypothesis(st); return x })
 	return "экран: «Расследование» → гипотеза «оборудование» → «Запросить проверку»"
 }
 
@@ -1099,7 +1194,7 @@ func (s *showSystem) cause(st *showStop) string {
 	b["hypothesis_id"] = str(h, "hypothesis_id")
 	b["verification"] = "журнал тока ИС-2, КТ-3"
 	b["reason"] = map[string]any{"text": "Ток ИС-2 вне уставки на сварках Ф-002 и Ф-003; на Ф-001 ток в уставке"}
-	s.command(st, st.Persona, st.Op, map[string]string{"incident_id": inc}, b)
+	s.commandRefresh(st, map[string]string{"incident_id": inc}, b, func() any { _, _, _, x := s.hypothesis(st); return x })
 	return "экран: «Расследование» → гипотеза «оборудование» → «Подтвердить причину»"
 }
 
