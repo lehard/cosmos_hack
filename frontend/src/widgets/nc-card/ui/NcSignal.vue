@@ -103,8 +103,8 @@ const dec = (bp: number) => n(bpToFraction(bp), 'decimal2')
   flex-direction: column;
   gap: 6px;
   padding: 8px 10px;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
+  border: 1px solid var(--ant-border);
+  border-radius: var(--ant-radius-md);
 }
 
 .facts {
@@ -115,7 +115,7 @@ const dec = (bp: number) => n(bpToFraction(bp), 'decimal2')
 }
 
 .facts dt {
-  color: #6b7280;
+  color: var(--ant-text-3);
 }
 
 .facts dd {
@@ -133,7 +133,7 @@ ul {
 
 .muted {
   margin: 0;
-  color: #6b7280;
-  font-size: 12px;
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-meta);
 }
 </style>

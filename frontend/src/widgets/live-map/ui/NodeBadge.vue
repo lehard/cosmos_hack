@@ -73,31 +73,31 @@ const anomalyTitle = computed(() => (props.anomalies ?? []).map(anomalyText).joi
   min-width: 16px;
   padding: 2px 3px;
   border: 1px solid;
-  border-radius: 3px;
-  background: #fff;
-  color: #1f2937;
+  border-radius: var(--ant-radius-sm);
+  background: var(--ant-surface);
+  color: var(--ant-text);
   text-align: center;
 }
 
 .flag {
   padding: 2px 4px;
-  border-radius: 3px;
-  color: #fff;
+  border-radius: var(--ant-radius-sm);
+  color: var(--ant-surface);
 }
 
 .bottleneck {
-  background: #d64545;
+  background: var(--ant-status-danger);
 }
 
 .anomaly {
-  background: #e0a100;
+  background: var(--ant-status-attention);
 }
 
 .gap {
-  background: #8a8f98;
+  background: var(--ant-status-neutral);
 }
 
 .node-badge[data-selected] .cell {
-  box-shadow: 0 0 0 1px #2f6fdb;
+  box-shadow: 0 0 0 1px var(--ant-accent);
 }
 </style>

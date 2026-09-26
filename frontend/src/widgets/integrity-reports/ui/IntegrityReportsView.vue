@@ -13,6 +13,7 @@ import { statusPalette, type StatusTone } from '@/shared/api/generated/statuses'
 import type { Density } from '@/shared/config/widget'
 import { codeToKey } from '@/shared/i18n'
 import { useProblemText } from '@/shared/i18n/problem'
+import { DataTable } from '@/shared/ui'
 
 const props = withDefaults(
   defineProps<{
@@ -89,7 +90,7 @@ const short = (digest: string) => (digest.length > 16 ? `${digest.slice(0, 16)}â
         <h4>{{ t('audit.verifier.report') }}</h4>
         <p class="muted">{{ t('audit.verifier.reportSigned') }} Â· {{ t('widgets.audit.signedBy', { key: report.signed_by }) }}</p>
         <p v-if="report.virtual_time" class="muted">{{ t('widgets.audit.virtualTime') }}</p>
-        <table>
+        <DataTable>
           <thead>
             <tr>
               <th>{{ t('widgets.audit.check') }}</th>
@@ -109,7 +110,7 @@ const short = (digest: string) => (digest.length > 16 ? `${digest.slice(0, 16)}â
               </td>
             </tr>
           </tbody>
-        </table>
+        </DataTable>
         <h5>{{ t('widgets.audit.signatureClasses') }}</h5>
         <p class="muted">
           <span v-for="(n, cls) in report.signature_classes" :key="cls" class="cls">{{ cls }}: {{ n }}</span>
@@ -126,7 +127,7 @@ const short = (digest: string) => (digest.length > 16 ? `${digest.slice(0, 16)}â
   display: flex;
   flex-direction: column;
   gap: 8px;
-  font-size: 13px;
+  font-size: var(--ant-fs-body);
 }
 
 h4,
@@ -157,38 +158,20 @@ h5 {
   gap: 2px 10px;
   align-items: center;
   padding: 4px 8px;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
+  border: 1px solid var(--ant-border);
+  border-radius: var(--ant-radius-md);
   cursor: pointer;
 }
 
 .row[aria-selected='true'] {
-  border-color: #2f6fdb;
-  background: #eff6ff;
+  border-color: var(--ant-accent);
+  background: var(--ant-accent-soft);
 }
 
 .card {
   padding: 8px;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-th,
-td {
-  padding: 3px 6px;
-  border-bottom: 1px solid #e5e7eb;
-  text-align: left;
-  vertical-align: top;
-}
-
-th {
-  color: #6b7280;
-  font-weight: 400;
+  border: 1px solid var(--ant-border);
+  border-radius: var(--ant-radius-md);
 }
 
 .dot {
@@ -205,11 +188,11 @@ th {
 
 .muted {
   margin: 0;
-  color: #6b7280;
-  font-size: 12px;
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-meta);
 }
 
 .error {
-  color: #d64545;
+  color: var(--ant-status-danger);
 }
 </style>

@@ -7,6 +7,7 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { SummaryTag, splitGenealogy, type GenealogyNode, type ItemGenealogy } from '@/entities/item'
+import { EmptyState } from '@/shared/ui'
 
 const props = defineProps<{ genealogy: ItemGenealogy }>()
 const emit = defineEmits<{ 'open-item': [itemId: string] }>()
@@ -26,7 +27,7 @@ const openable = (n: GenealogyNode) => n.kind === 'item'
   <section class="genealogy" data-testid="passport-genealogy">
     <div v-for="s in sections" :key="s.key" class="block" :data-section="s.key">
       <h5>{{ t(s.title) }}</h5>
-      <p v-if="!s.nodes.length" class="muted">{{ t('empty.noRecords') }}</p>
+      <EmptyState v-if="!s.nodes.length" compact :title="t('empty.noRecords')" />
       <ul v-else>
         <li v-for="n in s.nodes" :key="n.ref" :data-ref="n.ref" :data-kind="n.kind">
           <button v-if="openable(n)" type="button" class="linklike" @click="emit('open-item', n.ref)">{{ n.label }}</button>
@@ -69,15 +70,15 @@ li {
 
 .muted {
   margin: 0;
-  color: #6b7280;
-  font-size: 12px;
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-meta);
 }
 
 .linklike {
   padding: 0;
   border: 0;
   background: none;
-  color: #2f6fdb;
+  color: var(--ant-accent);
   font: inherit;
   cursor: pointer;
 }

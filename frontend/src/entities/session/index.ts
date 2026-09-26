@@ -7,13 +7,14 @@
 import { useQueryClient } from '@tanstack/vue-query'
 import {
   accessSessionRead,
+  useAccessAccountRequest,
   useAccessPersonaList,
   useAccessSessionCreate,
   useAccessSessionDelete,
   useAccessSessionRead,
 } from '@/shared/api/generated/client'
 
-export type { DemoPersona, RoleRef, Session, SessionCreate } from '@/shared/api/generated/model'
+export type { AccountRequest, DemoPersona, RoleRef, Session, SessionCreate } from '@/shared/api/generated/model'
 
 /** Ключ кэша текущего сеанса. */
 export const sessionKey = ['session', 'me'] as const
@@ -53,3 +54,6 @@ export function useLogout() {
   const queryClient = useQueryClient()
   return useAccessSessionDelete({ mutation: { onSettled: () => queryClient.clear() } })
 }
+
+/** Заявка сотрудника на доступ (FR-128): учётная запись ждёт активации администратором. */
+export const useAccessRequest = () => useAccessAccountRequest()

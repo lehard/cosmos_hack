@@ -6,6 +6,7 @@
  */
 import { useI18n } from 'vue-i18n'
 import { ZONE_STATUS_TEXT, zoneStatus, type ItemZone } from '@/entities/item'
+import { EmptyState } from '@/shared/ui'
 
 defineProps<{ zones: ItemZone[] }>()
 const { t } = useI18n()
@@ -13,7 +14,7 @@ const { t } = useI18n()
 
 <template>
   <section class="zones" data-testid="passport-zones">
-    <p v-if="!zones.length" class="muted">{{ t('empty.noRecords') }}</p>
+    <EmptyState v-if="!zones.length" compact :title="t('empty.noRecords')" />
     <ul v-else>
       <li v-for="z in zones" :key="z.zone_id" :data-zone="z.zone_id" :data-status="zoneStatus(z) ?? 'none'">
         <strong>{{ z.title }}</strong>
@@ -44,19 +45,19 @@ li {
 
 .status {
   padding: 0 6px;
-  border-radius: 8px;
-  background: #f3f4f6;
-  font-size: 12px;
+  border-radius: var(--ant-radius-lg);
+  background: var(--ant-n-100);
+  font-size: var(--ant-fs-meta);
 }
 
 .muted {
   margin: 0;
-  color: #6b7280;
-  font-size: 12px;
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-meta);
 }
 
 .warn {
-  color: #b45309;
-  font-size: 12px;
+  color: var(--ant-status-attention-text);
+  font-size: var(--ant-fs-meta);
 }
 </style>

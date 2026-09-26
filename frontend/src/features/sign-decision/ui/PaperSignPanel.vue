@@ -12,9 +12,10 @@
  */
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NAlert, NButton, NInput } from 'naive-ui'
+import { NAlert, NInput } from 'naive-ui'
 import { canAttest, qrPayload, type DocumentHead } from '@/entities/document'
 import { useProblemText } from '@/shared/i18n/problem'
+import { ActionButton } from '@/shared/ui'
 
 const props = withDefaults(
   defineProps<{
@@ -72,9 +73,7 @@ function submit(): void {
       <p v-if="expectedSigner" class="muted" data-testid="expected-signer">{{ t('widgets.signing.expectedSigner', { who: expectedSigner }) }}</p>
 
       <template v-if="mode === 'print'">
-        <NButton type="primary" :disabled="busy" :loading="busy" data-testid="print" @click="emit('print')">
-          {{ t('documents.paper.printWithQr') }}
-        </NButton>
+        <ActionButton overflow="wrap" type="primary" :disabled="busy" :loading="busy" data-testid="print" @click="emit('print')" :label="t('documents.paper.printWithQr')" />
         <p class="muted">{{ t('documents.paper.instruction') }}</p>
       </template>
 
@@ -90,9 +89,7 @@ function submit(): void {
           <span>{{ t('documents.paper.archiveNumber') }}</span>
           <NInput v-model:value="archiveNo" size="small" :disabled="!attesterOk || busy" data-testid="archive-no" />
         </label>
-        <NButton type="primary" :disabled="!canSubmit" :loading="busy" data-testid="attest" @click="submit">
-          {{ t('documents.paper.attestScan') }}
-        </NButton>
+        <ActionButton overflow="wrap" type="primary" :disabled="!canSubmit" :loading="busy" data-testid="attest" @click="submit" :label="t('documents.paper.attestScan')" />
       </template>
     </template>
     <NAlert v-if="error" type="error" :bordered="false" :show-icon="false" data-testid="paper-error">{{ problemText(error) }}</NAlert>
@@ -113,15 +110,15 @@ h4 {
 
 .muted {
   margin: 0;
-  color: #6b7280;
-  font-size: 12px;
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-meta);
 }
 
 .qr {
   padding: 4px 8px;
-  border: 1px dashed #8a8f98;
-  border-radius: 4px;
-  font-family: 'PT Mono', monospace;
+  border: 1px dashed var(--ant-status-neutral);
+  border-radius: var(--ant-radius-sm);
+  font-family: var(--ant-font-mono);
   word-break: break-all;
 }
 
@@ -130,6 +127,6 @@ h4 {
   flex-direction: column;
   gap: 2px;
   width: 100%;
-  font-size: 12px;
+  font-size: var(--ant-fs-meta);
 }
 </style>

@@ -50,8 +50,8 @@ const missing = computed(() => (passport.data.value ? props.eventIds.filter((id)
 .records {
   margin: 4px 0 0;
   padding: 6px 8px;
-  border-left: 2px solid #e5e7eb;
-  font-size: 12px;
+  border-left: 2px solid var(--ant-border);
+  font-size: var(--ant-fs-meta);
 }
 
 .list {
@@ -71,21 +71,21 @@ const missing = computed(() => (passport.data.value ? props.eventIds.filter((id)
 }
 
 .layer {
-  color: #374151;
-  font-weight: 600;
+  color: var(--ant-n-700);
+  font-weight: var(--ant-fw-bold);
 }
 
 .record[data-kind='decision'] .layer {
-  color: #1f2937;
+  color: var(--ant-text);
 }
 
 .meta {
-  color: #6b7280;
+  color: var(--ant-text-3);
 }
 
 .missing,
 .error {
   margin: 4px 0 0;
-  color: #7a5a00;
+  color: var(--ant-status-attention-text);
 }
 </style>

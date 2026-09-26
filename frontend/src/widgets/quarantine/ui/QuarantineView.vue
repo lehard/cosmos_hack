@@ -7,12 +7,13 @@
  */
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NAlert, NButton, NCheckbox, NInput, NRadioButton, NRadioGroup } from 'naive-ui'
+import { NAlert, NCheckbox, NInput, NRadioButton, NRadioGroup } from 'naive-ui'
 import type { QuarantineEntry } from '@/entities/quarantine'
 import { errorCatalog } from '@/shared/api/generated/errors'
 import type { Density } from '@/shared/config/widget'
 import { codeToKey } from '@/shared/i18n'
 import { useProblemText } from '@/shared/i18n/problem'
+import { ActionButton } from '@/shared/ui'
 
 const props = withDefaults(
   defineProps<{
@@ -117,9 +118,7 @@ function submit(): void {
       <form v-else-if="current.state === 'open' || current.state === 'still_invalid'" class="reprocess" @submit.prevent="submit">
         <NInput v-model:value="reason" size="small" :placeholder="t('widgets.admin.quarantine.reason')" :aria-label="t('widgets.admin.quarantine.reason')" data-testid="reason" />
         <NCheckbox v-model:checked="discard" data-testid="discard">{{ t('widgets.admin.quarantine.discard') }}</NCheckbox>
-        <NButton type="primary" size="small" attr-type="submit" :disabled="!canAct || busy || !reason.trim()" data-testid="reprocess">
-          {{ t('admin.quarantine.reprocess') }}
-        </NButton>
+        <ActionButton overflow="wrap" type="primary" size="small" attr-type="submit" :disabled="!canAct || busy || !reason.trim()" data-testid="reprocess" :label="t('admin.quarantine.reprocess')" />
       </form>
       <NAlert v-if="error" type="error" :bordered="false" :show-icon="false" data-testid="command-error">{{ problemText(error) }}</NAlert>
     </section>
@@ -132,7 +131,7 @@ function submit(): void {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  font-size: 13px;
+  font-size: var(--ant-fs-body);
 }
 
 .rows {
@@ -146,20 +145,20 @@ function submit(): void {
 
 .row {
   padding: 6px 8px;
-  border: 1px solid #e5e7eb;
-  border-left: 3px solid #e0a100;
-  border-radius: 6px;
+  border: 1px solid var(--ant-border);
+  border-left: 3px solid var(--ant-status-attention);
+  border-radius: var(--ant-radius-md);
   cursor: pointer;
 }
 
 .row[data-state='accepted'],
 .row[data-state='discarded'] {
-  border-left-color: #b8bdc6;
+  border-left-color: var(--ant-status-muted);
 }
 
 .row[aria-selected='true'] {
-  border-color: #2f6fdb;
-  background: #eff6ff;
+  border-color: var(--ant-accent);
+  background: var(--ant-accent-soft);
 }
 
 .line {
@@ -174,8 +173,8 @@ function submit(): void {
   flex-direction: column;
   gap: 6px;
   padding: 8px;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
+  border: 1px solid var(--ant-border);
+  border-radius: var(--ant-radius-md);
 }
 
 h4,
@@ -191,7 +190,7 @@ h5 {
 }
 
 .facts dt {
-  color: #6b7280;
+  color: var(--ant-text-3);
 }
 
 .facts dd {
@@ -204,8 +203,8 @@ pre {
   margin: 0;
   padding: 6px;
   overflow: auto;
-  background: #f5f6f8;
-  font-size: 12px;
+  background: var(--ant-n-50);
+  font-size: var(--ant-fs-meta);
   white-space: pre-wrap;
   word-break: break-all;
 }
@@ -219,15 +218,15 @@ pre {
 
 .muted {
   margin: 0;
-  color: #6b7280;
-  font-size: 12px;
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-meta);
 }
 
 .error {
-  color: #d64545;
+  color: var(--ant-status-danger);
 }
 
 .ok {
-  color: #2e9e5b;
+  color: var(--ant-status-success);
 }
 </style>

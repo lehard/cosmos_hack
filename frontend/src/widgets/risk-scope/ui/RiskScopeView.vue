@@ -8,7 +8,7 @@
  */
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NAlert, NButton } from 'naive-ui'
+import { NAlert } from 'naive-ui'
 import {
   FACTOR_TEXT,
   SCOPE_LOCATIONS,
@@ -25,7 +25,7 @@ import { statusDictionaries, statusPalette } from '@/shared/api/generated/status
 import { codeToKey } from '@/shared/i18n'
 import { naiveSizeOf, type Density } from '@/shared/config/widget'
 import { useMomentStore } from '@/shared/model/moment'
-import { StatusTag } from '@/shared/ui'
+import { ActionButton, DataTable, StatusTag } from '@/shared/ui'
 
 const props = withDefaults(
   defineProps<{
@@ -204,7 +204,7 @@ const actionColor = (code: string) =>
     <!-- Изделия: что известно / что делать (FR-62). -->
     <section v-if="model.items.length" class="items">
       <h4>{{ t('widgets.analysis.riskScope.items') }} · {{ t('plural.items', { n: model.items.length }, model.items.length) }}</h4>
-      <table class="table">
+      <DataTable class="table">
         <thead>
           <tr>
             <th>{{ t('common.words.item') }}</th>
@@ -223,16 +223,12 @@ const actionColor = (code: string) =>
             <td>{{ t(LOCATION_TEXT[it.location]) }}</td>
           </tr>
         </tbody>
-      </table>
+      </DataTable>
     </section>
 
     <footer class="actions">
-      <NButton :size="naiveSizeOf(density)" type="primary" secondary :disabled="!canNarrow || busy || moment.isReplay" data-testid="narrow" @click="openForm('narrow')">
-        {{ t('riskScope.narrow') }}
-      </NButton>
-      <NButton :size="naiveSizeOf(density)" :disabled="!canExpand || busy || moment.isReplay" data-testid="expand" @click="openForm('expand')">
-        {{ t('riskScope.expand') }}
-      </NButton>
+      <ActionButton overflow="wrap" :size="naiveSizeOf(density)" type="primary" secondary :disabled="!canNarrow || busy || moment.isReplay" data-testid="narrow" @click="openForm('narrow')" :label="t('riskScope.narrow')" />
+      <ActionButton overflow="wrap" :size="naiveSizeOf(density)" :disabled="!canExpand || busy || moment.isReplay" data-testid="expand" @click="openForm('expand')" :label="t('riskScope.expand')" />
     </footer>
 
     <form v-if="form" class="form" :data-form="form" @submit.prevent="submit">
@@ -253,10 +249,8 @@ const actionColor = (code: string) =>
       </label>
       <p class="muted">{{ t(form === 'narrow' ? 'riskScope.narrowOnlyByHuman' : 'riskScope.expandIsCautious') }}</p>
       <div class="actions">
-        <NButton :size="naiveSizeOf(density)" type="primary" attr-type="submit" :disabled="!formReady || busy || moment.isReplay" data-testid="scope-submit">
-          {{ t('common.actions.send') }}
-        </NButton>
-        <NButton :size="naiveSizeOf(density)" quaternary @click="form = null">{{ t('common.actions.cancel') }}</NButton>
+        <ActionButton overflow="wrap" :size="naiveSizeOf(density)" type="primary" attr-type="submit" :disabled="!formReady || busy || moment.isReplay" data-testid="scope-submit" :label="t('common.actions.send')" />
+        <ActionButton overflow="wrap" :size="naiveSizeOf(density)" quaternary @click="form = null" :label="t('common.actions.cancel')" />
       </div>
     </form>
   </div>
@@ -267,11 +261,11 @@ const actionColor = (code: string) =>
   display: flex;
   flex-direction: column;
   gap: 10px;
-  font-size: 13px;
+  font-size: var(--ant-fs-body);
 }
 
 .density-large {
-  font-size: 16px;
+  font-size: var(--ant-fs-lg);
 }
 
 .head {
@@ -282,7 +276,7 @@ const actionColor = (code: string) =>
 
 .muted {
   margin: 0;
-  color: #6b7280;
+  color: var(--ant-text-3);
 }
 
 .note {
@@ -312,35 +306,35 @@ h4 {
 
 .track {
   height: 14px;
-  border-radius: 3px;
-  background: #f3f4f6;
+  border-radius: var(--ant-radius-sm);
+  background: var(--ant-n-100);
   overflow: hidden;
 }
 
 .fill {
   display: block;
   height: 100%;
-  background: #e0a100;
+  background: var(--ant-status-attention);
   transition: width 0.4s ease;
 }
 
 .bars li:last-child .fill {
-  background: #d64545;
+  background: var(--ant-status-danger);
 }
 
 .bars li[data-basis='missing'] .change {
-  color: #d64545;
-  font-weight: 700;
+  color: var(--ant-status-danger);
+  font-weight: var(--ant-fw-bold);
 }
 
 .size {
-  font-family: 'PT Mono', monospace;
-  font-weight: 700;
+  font-family: var(--ant-font-mono);
+  font-weight: var(--ant-fw-bold);
   text-align: right;
 }
 
 .change {
-  color: #6b7280;
+  color: var(--ant-text-3);
 }
 
 .history ul {
@@ -352,7 +346,7 @@ h4 {
 }
 
 .history li.bad {
-  color: #d64545;
+  color: var(--ant-status-danger);
 }
 
 .tiles {
@@ -365,35 +359,17 @@ h4 {
   display: flex;
   flex-direction: column;
   padding: 6px 10px;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
+  border: 1px solid var(--ant-border);
+  border-radius: var(--ant-radius-md);
 }
 
 .tile-n {
   font-size: 1.6em;
-  font-weight: 700;
+  font-weight: var(--ant-fw-bold);
 }
 
 .tile-l {
-  color: #6b7280;
-}
-
-.table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.table th {
-  padding: 4px 6px;
-  color: #6b7280;
-  font-weight: 400;
-  text-align: left;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.table td {
-  padding: 3px 6px;
-  border-bottom: 1px solid #f3f4f6;
+  color: var(--ant-text-3);
 }
 
 .action {
@@ -431,9 +407,9 @@ h4 {
   flex-direction: column;
   gap: 6px;
   padding: 8px;
-  border: 1px solid #cbd5e1;
-  border-radius: 6px;
-  background: #f8fafc;
+  border: 1px solid var(--ant-n-300);
+  border-radius: var(--ant-radius-md);
+  background: var(--ant-surface-subtle);
 }
 
 .form label {
@@ -448,8 +424,8 @@ h4 {
   gap: 4px 14px;
   margin: 0;
   padding: 4px 8px;
-  border: 1px solid #e5e7eb;
-  border-radius: 4px;
+  border: 1px solid var(--ant-border);
+  border-radius: var(--ant-radius-sm);
 }
 
 .picks label {
@@ -461,8 +437,8 @@ h4 {
 .form textarea {
   font: inherit;
   padding: 4px 6px;
-  border: 1px solid #cbd5e1;
-  border-radius: 4px;
+  border: 1px solid var(--ant-n-300);
+  border-radius: var(--ant-radius-sm);
   resize: vertical;
 }
 </style>

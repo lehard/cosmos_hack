@@ -11,6 +11,7 @@ import { NInput } from 'naive-ui'
 import type { AccessGrantEntry } from '@/entities/policy'
 import type { Density } from '@/shared/config/widget'
 import { codeToKey } from '@/shared/i18n'
+import { DataTable, EmptyState } from '@/shared/ui'
 
 const props = withDefaults(defineProps<{ entries: AccessGrantEntry[]; personId: string | null; density?: Density }>(), { density: 'compact' })
 const emit = defineEmits<{ 'update:personId': [personId: string | null] }>()
@@ -33,8 +34,8 @@ const apply = () => emit('update:personId', draft.value.trim() || null)
       <span>{{ t('widgets.audit.grants.personFilter') }}</span>
       <NInput v-model:value="draft" size="small" clearable data-testid="person" @keydown.enter.prevent="apply" @blur="apply" @clear="emit('update:personId', null)" />
     </label>
-    <p v-if="!entries.length" class="muted">{{ t('empty.noRecords') }}</p>
-    <table v-else>
+    <EmptyState v-if="!entries.length" compact :title="t('empty.noRecords')" />
+    <DataTable v-else>
       <thead>
         <tr>
           <th>{{ t('audit.record.time') }}</th>
@@ -63,7 +64,7 @@ const apply = () => emit('update:personId', draft.value.trim() || null)
           </td>
         </tr>
       </tbody>
-    </table>
+    </DataTable>
   </div>
 </template>
 
@@ -72,7 +73,7 @@ const apply = () => emit('update:personId', draft.value.trim() || null)
   display: flex;
   flex-direction: column;
   gap: 8px;
-  font-size: 13px;
+  font-size: var(--ant-fs-body);
 }
 
 .filter {
@@ -86,31 +87,13 @@ const apply = () => emit('update:personId', draft.value.trim() || null)
   white-space: nowrap;
 }
 
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-th,
-td {
-  padding: 3px 6px;
-  border-bottom: 1px solid #e5e7eb;
-  text-align: left;
-  vertical-align: top;
-}
-
-th {
-  color: #6b7280;
-  font-weight: 400;
-}
-
 tr[data-action='revoked'] strong {
-  color: #d64545;
+  color: var(--ant-status-danger);
 }
 
 .muted {
   margin: 0;
-  color: #6b7280;
-  font-size: 12px;
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-meta);
 }
 </style>

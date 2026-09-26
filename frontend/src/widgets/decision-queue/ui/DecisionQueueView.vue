@@ -87,11 +87,11 @@ function move(delta: number): void {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  font-size: 13px;
+  font-size: var(--ant-fs-body);
 }
 
 .density-large {
-  font-size: 16px;
+  font-size: var(--ant-fs-lg);
 }
 
 .rows {
@@ -106,18 +106,18 @@ function move(delta: number): void {
 
 .row {
   padding: 6px 8px;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
+  border: 1px solid var(--ant-border);
+  border-radius: var(--ant-radius-md);
   cursor: pointer;
 }
 
 .row[aria-selected='true'] {
-  border-color: #2f6fdb;
-  background: #eff6ff;
+  border-color: var(--ant-accent);
+  background: var(--ant-accent-soft);
 }
 
 .row[data-severity='critical'] {
-  border-left: 3px solid #8b1e1e;
+  border-left: 3px solid var(--ant-status-critical);
 }
 
 .line {
@@ -130,12 +130,12 @@ function move(delta: number): void {
 .kind,
 .muted,
 .meta {
-  color: #6b7280;
-  font-size: 12px;
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-meta);
 }
 
 .row[data-overdue] .due {
-  color: #d64545;
-  font-weight: 700;
+  color: var(--ant-status-danger);
+  font-weight: var(--ant-fw-bold);
 }
 </style>

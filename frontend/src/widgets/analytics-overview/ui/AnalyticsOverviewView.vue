@@ -14,6 +14,7 @@ import { useI18n } from 'vue-i18n'
 import { ACCOUNT_TEXT, ACCOUNTS, DIMENSION_TEXT, MetricNumber, toOverviewModel, type MetricPick, type MetricRow } from '@/entities/metric'
 import type { AnalyticsOverview } from '@/shared/api/generated/model'
 import MetricRowView from './MetricRowView.vue'
+import { DataTable } from '@/shared/ui'
 
 const props = defineProps<{ overview: AnalyticsOverview; picked: MetricPick | null }>()
 const emit = defineEmits<{ pick: [p: MetricPick] }>()
@@ -85,7 +86,7 @@ const cellPicked = (row: MetricRow, key: string) => props.picked?.metricId === r
       <h3>{{ t('widgets.analytics.sections.comparison') }}</h3>
       <p class="note">{{ t('analytics.metrics.comparableWork.hint') }}</p>
       <p class="note strong">{{ t('analytics.notARanking') }}. {{ t('analytics.participatedIsNotCause') }}</p>
-      <table v-for="tbl in model.comparison" :key="tbl.dimension" class="comparison" :data-dimension="tbl.dimension">
+      <DataTable v-for="tbl in model.comparison" :key="tbl.dimension" class="comparison" :data-dimension="tbl.dimension">
         <thead>
           <tr>
             <th scope="col">{{ t(DIMENSION_TEXT[tbl.dimension] ?? 'widgets.analytics.dimensions.unknown') }}</th>
@@ -110,7 +111,7 @@ const cellPicked = (row: MetricRow, key: string) => props.picked?.metricId === r
             </td>
           </tr>
         </tbody>
-      </table>
+      </DataTable>
     </section>
 
     <section v-if="model.other.length" class="section" data-section="other">
@@ -129,30 +130,30 @@ const cellPicked = (row: MetricRow, key: string) => props.picked?.metricId === r
 
 .period {
   margin: 0;
-  color: #6b7280;
-  font-size: 12px;
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-meta);
 }
 
 .section h3 {
   margin: 0 0 4px;
-  font-size: 15px;
+  font-size: var(--ant-fs-title);
 }
 
 .section h4 {
   margin: 0 0 4px;
-  color: #374151;
-  font-size: 13px;
-  font-weight: 600;
+  color: var(--ant-n-700);
+  font-size: var(--ant-fs-body);
+  font-weight: var(--ant-fw-bold);
 }
 
 .note {
   margin: 0 0 8px;
-  color: #6b7280;
-  font-size: 12px;
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-meta);
 }
 
 .note.strong {
-  color: #374151;
+  color: var(--ant-n-700);
 }
 
 .columns {
@@ -170,44 +171,29 @@ const cellPicked = (row: MetricRow, key: string) => props.picked?.metricId === r
 
 .column {
   padding: 8px 10px;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
+  border: 1px solid var(--ant-border);
+  border-radius: var(--ant-radius-md);
 }
 
 .absent {
   margin: 0;
-  color: #9ca3af;
-  font-size: 12px;
+  color: var(--ant-n-400);
+  font-size: var(--ant-fs-meta);
 }
 
 .comparison {
-  width: 100%;
-  margin-bottom: 8px;
-  border-collapse: collapse;
-  font-size: 13px;
+  margin-bottom: var(--ant-space-2);
 }
 
-.comparison th,
-.comparison td {
-  padding: 4px 8px;
-  border-bottom: 1px solid #f0f1f3;
+.comparison td,
+.comparison thead th:not(:first-child) {
   text-align: right;
-}
-
-.comparison th:first-child {
-  font-weight: 400;
-  text-align: left;
-}
-
-.comparison thead th {
-  color: #4b5563;
-  font-weight: 500;
 }
 
 .num {
   padding: 1px 6px;
   border: 1px solid transparent;
-  border-radius: 4px;
+  border-radius: var(--ant-radius-sm);
   background: none;
   color: inherit;
   font: inherit;
@@ -216,11 +202,11 @@ const cellPicked = (row: MetricRow, key: string) => props.picked?.metricId === r
 
 .num:hover,
 .num:focus-visible {
-  border-color: #9ca3af;
+  border-color: var(--ant-n-400);
 }
 
 .num[data-picked] {
-  border-color: #1f2937;
-  background: #f3f4f6;
+  border-color: var(--ant-text);
+  background: var(--ant-n-100);
 }
 </style>

@@ -24,15 +24,19 @@ const mark = computed(() => sourceMark(props.record))
 .source {
   display: inline-block;
   padding: 0 6px;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  color: #4b5563;
-  font-size: 11px;
+  border: 1px solid var(--ant-border-strong);
+  border-radius: var(--ant-radius-lg);
+  color: var(--ant-text-2);
+  font-size: var(--ant-fs-xs);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
+  vertical-align: middle;
 }
 
 .source[data-manual] {
   border-style: dashed;
-  border-color: #8a8f98;
+  border-color: var(--ant-status-neutral);
 }
 </style>

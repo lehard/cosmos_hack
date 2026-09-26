@@ -12,7 +12,6 @@
  * загрузка скана и заверение (заверитель ≠ подписант).
  */
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
-import { NButton } from 'naive-ui'
 import { paperAllowed, useAttestPaper, useDecisionRequests, useDeclineDocument, usePrintPaper, useSignDocument, type SummaryField } from '@/entities/document'
 import { useSession } from '@/entities/session'
 import { PaperSignPanel, SignDialog, payloadTypeOf, useSigningPort } from '@/features/sign-decision'
@@ -20,7 +19,7 @@ import { backendModeOf } from '@/shared/api/response'
 import { useProblemText } from '@/shared/i18n/problem'
 import type { WidgetProps } from '@/shared/config/widget'
 import { useMomentStore } from '@/shared/model/moment'
-import { WidgetFrame } from '@/shared/ui'
+import { ActionButton, WidgetFrame } from '@/shared/ui'
 import DecisionRequestView from './DecisionRequestView.vue'
 
 defineProps<WidgetProps>()
@@ -123,16 +122,15 @@ function sendDecline(comment: string): void {
     :data-widget="widgetId"
   >
     <nav v-if="list && list.length > 1" class="switch" data-testid="requests-nav">
-      <NButton
+      <ActionButton
         v-for="(r, i) in list"
         :key="r.document.document_id"
         size="small"
         :type="i === index ? 'primary' : 'default'"
         :secondary="i !== index"
         @click="index = i"
-      >
-        {{ r.proposal.item_label }}
-      </NButton>
+        :label="r.proposal.item_label"
+      />
     </nav>
     <DecisionRequestView
       v-if="request"
@@ -184,12 +182,12 @@ function sendDecline(comment: string): void {
 }
 
 .error {
-  color: #d64545;
+  color: var(--ant-status-danger);
 }
 
 .attest {
   margin-top: 12px;
   padding-top: 8px;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--ant-border);
 }
 </style>

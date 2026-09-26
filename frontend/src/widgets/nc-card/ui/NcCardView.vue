@@ -150,11 +150,11 @@ const op = computed(() => props.card.happened.operation ?? null)
   display: flex;
   flex-direction: column;
   gap: 8px;
-  font-size: 13px;
+  font-size: var(--ant-fs-body);
 }
 
 .density-large {
-  font-size: 16px;
+  font-size: var(--ant-fs-lg);
 }
 
 .head,
@@ -170,12 +170,12 @@ const op = computed(() => props.card.happened.operation ?? null)
 }
 
 .deadline {
-  color: #6b7280;
+  color: var(--ant-text-3);
 }
 
 .deadline[data-overdue] {
-  color: #d64545;
-  font-weight: 700;
+  color: var(--ant-status-danger);
+  font-weight: var(--ant-fw-bold);
 }
 
 .zones {
@@ -228,7 +228,7 @@ h3 {
 }
 
 .facts dt {
-  color: #6b7280;
+  color: var(--ant-text-3);
 }
 
 .facts dd {
@@ -237,20 +237,20 @@ h3 {
 
 .muted {
   margin: 0;
-  color: #6b7280;
-  font-size: 12px;
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-meta);
 }
 
 .warn {
   margin: 0;
-  color: #b45309;
+  color: var(--ant-status-attention-text);
 }
 
 .linklike {
   padding: 0;
   border: 0;
   background: none;
-  color: #2f6fdb;
+  color: var(--ant-accent);
   font: inherit;
   cursor: pointer;
 }

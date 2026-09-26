@@ -8,10 +8,11 @@
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NButton, NSpin } from 'naive-ui'
+import { NSpin } from 'naive-ui'
 import { errorCatalog } from '@/shared/api/generated/errors'
 import type { Explanation } from '@/shared/api/generated/model'
 import { useProblemText } from '@/shared/i18n/problem'
+import { ActionButton } from '@/shared/ui'
 
 const props = withDefaults(
   defineProps<{
@@ -59,7 +60,7 @@ const can = computed(() => props.explanation?.allowed ?? props.allowed)
       <button v-if="can !== null" type="button" class="linklike" data-testid="why" @click="emit('toggle')">
         {{ t(can ? 'decisions.authority.whyCan' : 'decisions.authority.whyCannot') }}
       </button>
-      <NButton
+      <ActionButton overflow="wrap"
         v-if="can === false && canRequest"
         :size="size"
         type="primary"
@@ -67,9 +68,8 @@ const can = computed(() => props.explanation?.allowed ?? props.allowed)
         :disabled="disabled"
         data-testid="request-decision"
         @click="emit('request-decision')"
-      >
-        {{ t('decisions.authority.requestDecision') }}
-      </NButton>
+        :label="t('decisions.authority.requestDecision')"
+      />
     </div>
     <div v-if="open" class="details" data-testid="explanation">
       <NSpin v-if="loading" size="small" />
@@ -90,7 +90,7 @@ const can = computed(() => props.explanation?.allowed ?? props.allowed)
   display: flex;
   flex-direction: column;
   gap: 4px;
-  font-size: 12px;
+  font-size: var(--ant-fs-meta);
 }
 
 .row {
@@ -105,18 +105,18 @@ const can = computed(() => props.explanation?.allowed ?? props.allowed)
 }
 
 .reason {
-  color: #1f2937;
+  color: var(--ant-text);
 }
 
 .muted {
-  color: #6b7280;
+  color: var(--ant-text-3);
 }
 
 .linklike {
   padding: 0;
   border: 0;
   background: none;
-  color: #2f6fdb;
+  color: var(--ant-accent);
   font: inherit;
   cursor: pointer;
 }

@@ -54,7 +54,7 @@ const rest = computed(() => Math.max(0, props.items.length - DOTS_PER_NODE))
   width: 12px;
   height: 12px;
   padding: 0;
-  border: 2px solid #fff;
+  border: 2px solid var(--ant-surface);
   border-radius: 50%;
   box-shadow: 0 0 0 1px rgb(0 0 0 / 25%);
   cursor: pointer;
@@ -73,7 +73,7 @@ const rest = computed(() => Math.max(0, props.items.length - DOTS_PER_NODE))
   padding: 0 3px;
   border: 0;
   background: transparent;
-  color: #374151;
+  color: var(--ant-n-700);
   font: 600 11px/12px 'PT Sans', sans-serif;
   cursor: pointer;
 }

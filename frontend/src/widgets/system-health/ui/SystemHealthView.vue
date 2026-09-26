@@ -7,12 +7,13 @@
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NAlert, NButton } from 'naive-ui'
+import { NAlert } from 'naive-ui'
 import type { IngestMetrics, OpsHealth, StoppedItem } from '@/shared/api/generated/model'
 import { statusPalette, type StatusTone } from '@/shared/api/generated/statuses'
 import type { Density } from '@/shared/config/widget'
 import { codeToKey } from '@/shared/i18n'
 import { useProblemText } from '@/shared/i18n/problem'
+import { ActionButton, DataTable } from '@/shared/ui'
 
 const props = withDefaults(
   defineProps<{
@@ -48,7 +49,7 @@ const completeness = computed(() => (props.metrics ? n(props.metrics.completenes
 
     <section>
       <h4>{{ t('widgets.admin.health.components') }}</h4>
-      <table>
+      <DataTable>
         <thead>
           <tr>
             <th>{{ t('widgets.admin.health.component') }}</th>
@@ -70,12 +71,12 @@ const completeness = computed(() => (props.metrics ? n(props.metrics.completenes
             <td>{{ time(c.checked_at) }}</td>
           </tr>
         </tbody>
-      </table>
+      </DataTable>
     </section>
 
     <section v-if="health.queues.length">
       <h4>{{ t('admin.queues') }}</h4>
-      <table>
+      <DataTable>
         <thead>
           <tr>
             <th>{{ t('widgets.admin.health.queue') }}</th>
@@ -90,7 +91,7 @@ const completeness = computed(() => (props.metrics ? n(props.metrics.completenes
             <td>{{ q.lag_seq }}</td>
           </tr>
         </tbody>
-      </table>
+      </DataTable>
     </section>
 
     <section v-if="health.integrations.length">
@@ -141,7 +142,7 @@ const completeness = computed(() => (props.metrics ? n(props.metrics.completenes
       <p class="muted">{{ t('widgets.admin.health.stoppedCount', { n: health.stopped_items }) }}</p>
       <p v-if="stoppedError" class="error">{{ t('widgets.admin.health.partFailed', { what: t('widgets.admin.health.stopped') }) }}: {{ problemText(stoppedError) }}</p>
       <p v-else-if="stopped && !stopped.length" class="muted">{{ t('widgets.admin.health.noStopped') }}</p>
-      <table v-else-if="stopped">
+      <DataTable v-else-if="stopped">
         <thead>
           <tr>
             <th>{{ t('common.words.item') }}</th>
@@ -161,11 +162,11 @@ const completeness = computed(() => (props.metrics ? n(props.metrics.completenes
             <td>{{ s.retries }}</td>
             <td>
               <span v-if="retried === s.item_id" class="ok">{{ t('widgets.admin.health.retried') }}</span>
-              <NButton v-else size="tiny" :disabled="!canAct || busy" @click="emit('retry', s)">{{ t('widgets.admin.health.retry') }}</NButton>
+              <ActionButton v-else size="tiny" :disabled="!canAct || busy" @click="emit('retry', s)" :label="t('widgets.admin.health.retry')" />
             </td>
           </tr>
         </tbody>
-      </table>
+      </DataTable>
       <NAlert v-if="error" type="error" :bordered="false" :show-icon="false" data-testid="command-error">{{ problemText(error) }}</NAlert>
     </section>
   </div>
@@ -176,30 +177,12 @@ const completeness = computed(() => (props.metrics ? n(props.metrics.completenes
   display: flex;
   flex-direction: column;
   gap: 12px;
-  font-size: 13px;
+  font-size: var(--ant-fs-body);
 }
 
 h4 {
   margin: 0 0 4px;
   font-size: 1em;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-th,
-td {
-  padding: 3px 6px;
-  border-bottom: 1px solid #e5e7eb;
-  text-align: left;
-  vertical-align: top;
-}
-
-th {
-  color: #6b7280;
-  font-weight: 400;
 }
 
 .state {
@@ -238,7 +221,7 @@ td.state {
 }
 
 .facts dt {
-  color: #6b7280;
+  color: var(--ant-text-3);
 }
 
 .facts dd {
@@ -247,16 +230,16 @@ td.state {
 
 .muted {
   margin: 0;
-  color: #6b7280;
-  font-size: 12px;
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-meta);
 }
 
 .error,
 .err {
-  color: #d64545;
+  color: var(--ant-status-danger);
 }
 
 .ok {
-  color: #2e9e5b;
+  color: var(--ant-status-success);
 }
 </style>
