@@ -16,6 +16,222 @@ run: SHOW-IS2
 where: Сварочный участок, посты ИС-1 и ИС-2, Пн 21.09 с 08:00; история — прошлая партия Ф-201, Ф-202 и мехобработка живой партии
 source: ~/ant/_bmad-output/implementation-artifacts/demo-show-scenario.md (Д-85)
 steps:
+# ── История позапрошлой недели: завершённое расследование ИС-2 (Ф-301…Ф-303) ──
+# Стол технолога не пуст: область 3 → 2 → 1 с основаниями, гипотезы обеих веток
+# с доводами и проверкой, причина по обеим веткам, меры (одна внедрена — идёт
+# проверка эффективности), НС закрыто. Подписывает demo-signer до «сейчас».
+- at: '2026-09-07T14:00:00+03:00'
+  ref: Е-45
+  label: F-302/xray
+  note: 'Рентген Ф-302, РК-0907-02: прожог корня шва у кромки на участке У2 — зона корня в кадр камеры КТ-3 (участки шва У1…У8, лицевая сторона) не входит'
+  fact: inspection.result.recorded
+  source: xray
+  item: F-302
+  data:
+    observation_id: '{local:RK-0907-02}'
+    method: radiography
+    phase: after_operation
+    step_key: welding.kt3_radiography
+    operation_run_id: '{local:SV-302-1}'
+    zone_ids: ['{zone:U1}', '{zone:U2}', '{zone:U3}', '{zone:U4}', '{zone:U5}', '{zone:U6}', '{zone:U7}', '{zone:U8}', '{zone:EDGE}']
+    outcome: defect_indicated
+    processing_state: completed
+    inspector_id: '{person:NDT-01}'
+    conclusion_ref: РК-0907-02
+    defects:
+    - {defect_type_code: W-BURNTHRU, description: Прожог корня шва, zone_id: '{zone:EDGE}', location: 'корень шва у кромки, участок У2', severity: critical}
+- at: '2026-09-07T14:10:00+03:00'
+  ref: Е-45
+  label: F-303/xray
+  note: 'Рентген Ф-303, РК-0907-03: шов У1…У8 — признаков нет'
+  fact: inspection.result.recorded
+  source: xray
+  item: F-303
+  data:
+    observation_id: '{local:RK-0907-03}'
+    method: radiography
+    phase: after_operation
+    step_key: welding.kt3_radiography
+    operation_run_id: '{local:SV-303-1}'
+    zone_ids: ['{zone:U1}', '{zone:U2}', '{zone:U3}', '{zone:U4}', '{zone:U5}', '{zone:U6}', '{zone:U7}', '{zone:U8}']
+    outcome: no_defect_indicated
+    processing_state: completed
+    inspector_id: '{person:NDT-01}'
+    conclusion_ref: РК-0907-03
+- at: '2026-09-08T09:00:00+03:00'
+  label: HIST/confirm-F-302
+  note: 'История: контролёр подтвердил НС Ф-302 (прожог корня У2) — система открыла инцидент ИС-2: область 3'
+  decision: nonconformity.nonconformity.confirm
+  role: QC
+  actor: QC-01
+  item: F-302
+  params: {nc_id: '{ref:NC-F302}'}
+  body:
+    signal_ids: ['{ref:SIG-F302}']
+    severity: critical
+    defect_type_code: W-BURNTHRU
+    reason: {code: xray, text: 'РК-0907-02: прожог корня шва на участке У2'}
+- at: '2026-09-08T09:30:00+03:00'
+  label: HIST/narrow-F-301
+  note: 'История: технолог исключил Ф-301 — журнал ИС-2 за его сварку в уставке: 3 → 2'
+  decision: analysis.scope.narrow
+  role: TECHNOLOGIST
+  actor: TECH-01
+  params: {incident_id: '{ref:INC-F302}'}
+  body:
+    item_ids: ['{item:F-301}']
+    evidence_event_ids: ['{event:F-301/weld/0907-0510}']
+    release_containment: true
+    reason: {code: equipment_log_in_setpoint, text: 'Журнал ИС-2 за сварку Ф-301 непрерывный и в уставке (158–163 А); ток ушёл из уставки позже'}
+- at: '2026-09-08T09:35:00+03:00'
+  label: HIST/narrow-F-303
+  note: 'История: технолог исключил Ф-303 по рентгену РК-0907-03 — шов чистый, хотя ток был вне уставки: 2 → 1'
+  decision: analysis.scope.narrow
+  role: TECHNOLOGIST
+  actor: TECH-01
+  params: {incident_id: '{ref:INC-F302}'}
+  body:
+    item_ids: ['{item:F-303}']
+    evidence_event_ids: ['{event:F-303/xray}']
+    release_containment: true
+    reason: {code: xray_clean, text: 'Рентген РК-0907-03: шов У1…У8 без признаков, корень проверен'}
+- at: '2026-09-08T10:00:00+03:00'
+  label: HIST/measure
+  note: 'История: технолог запросил проверку гипотезы «оборудование ИС-2» — контрольный образец при 160 А'
+  decision: analysis.measurement.request
+  role: TECHNOLOGIST
+  actor: TECH-01
+  params: {nc_id: '{ref:NC-F302}'}
+  body:
+    hypothesis_id: '{ref:HYP-F302-EQ}'
+    what: Контрольный образец на ИС-2 при уставке 160 А
+- at: '2026-09-08T10:05:00+03:00'
+  label: HIST/hypothesis-missed
+  note: 'История: технолог записал гипотезу «почему не обнаружили раньше» — КТ-3 видит лицевую сторону, корень — только рентген'
+  decision: analysis.hypothesis.record
+  role: TECHNOLOGIST
+  actor: TECH-01
+  params: {nc_id: '{ref:NC-F302}'}
+  body:
+    incident_id: '{ref:INC-F302}'
+    branch: why_missed
+    category: documentation
+    statement: 'Камера КТ-3 снимает лицевую сторону шва (участки У1…У8): корень у кромки в её кадр не входит — прожог корня находит только рентген на ЗТ-3; карта контроля КТ-3 корень не проверяет'
+    supporting_event_ids: ['{event:F-302/kt3}', '{event:F-302/xray}']
+- at: '2026-09-08T11:30:00+03:00'
+  label: HIST/measure-result
+  note: 'История: контролёр ОТК 2 (лаборатория) — контрольный образец КО-0908 на ИС-2: ток 179–181 А при уставке 160 ± 10, прожог корня повторён'
+  decision: analysis.measurement.record
+  role: QC
+  actor: QC-02
+  params: {nc_id: '{ref:NC-F302}'}
+  body:
+    hypothesis_id: '{ref:HYP-F302-EQ}'
+    outcome: supports
+    result: 'КО-0908 на ИС-2 при уставке 160 А: по журналу 179–181 А; на рентгене образца прожог корня повторён'
+- at: '2026-09-08T12:00:00+03:00'
+  label: HIST/cause-missed
+  note: 'История: причина «почему не обнаружили раньше» подтверждена — метод КТ-3 корень не видит'
+  decision: analysis.cause.conclude
+  role: TECHNOLOGIST
+  actor: TECH-01
+  params: {incident_id: '{ref:INC-F302}'}
+  body:
+    hypothesis_id: '{ref:HYP-F302-MISS}'
+    branch: why_missed
+    category: documentation
+    conclusion: confirmed
+    nc_ids: ['{ref:NC-F302}']
+    reason: {code: detection_method_gap, text: 'КТ-3 снимает только лицевую сторону шва; прожог корня виден лишь на рентгене ЗТ-3'}
+    verification: 'КТ-3 Ф-302 — признаков нет, рентген РК-0907-02 — прожог корня; карта контроля kt3-weld@1 корень не включает'
+- at: '2026-09-08T12:05:00+03:00'
+  label: HIST/cause-made
+  note: 'История: причина «почему возник» подтверждена — оборудование ИС-2, дрейф регулятора тока'
+  decision: analysis.cause.conclude
+  role: TECHNOLOGIST
+  actor: TECH-01
+  params: {incident_id: '{ref:INC-F302}'}
+  body:
+    hypothesis_id: '{ref:HYP-F302-EQ}'
+    branch: why_made
+    category: equipment
+    conclusion: confirmed
+    nc_ids: ['{ref:NC-F302}']
+    reason: {code: equipment_drift, text: 'Оборудование: ИС-2, дрейф регулятора тока (176–182 А при уставке 160 ± 10 А)'}
+    verification: 'Журнал ИС-2 и контрольный образец КО-0908 (прожог повторён при 180 А)'
+- at: '2026-09-08T12:30:00+03:00'
+  label: HIST/scrap-F-302
+  note: 'История: решение по Ф-302 — брак, списание (переварка корня не допускается ТП)'
+  decision: nonconformity.disposition.set
+  role: TECHNOLOGIST
+  actor: TECH-01
+  item: F-302
+  params: {nc_id: '{ref:NC-F302}'}
+  body:
+    disposition: scrap
+    scrap_kind: writeoff
+    reason: {code: root_burnthrough, text: 'Прожог корня У2: повторный ремонт корня ТП не допускает — списать'}
+- at: '2026-09-08T12:40:00+03:00'
+  label: HIST/close-NC-F302
+  note: 'История: контролёр закрыл НС Ф-302 — решение исполнено'
+  decision: nonconformity.nonconformity.close
+  role: QC
+  actor: QC-01
+  item: F-302
+  params: {nc_id: '{ref:NC-F302}'}
+  body: {summary: 'Ф-302 списан; причина — ИС-2 (дрейф регулятора тока), обнаружение — только рентгеном корня'}
+- at: '2026-09-08T13:00:00+03:00'
+  label: HIST/close-scope
+  note: 'История: область риска закрыта — было 3, подтверждено 1, исключено 2 (расследование открыто: проверка эффективности мер)'
+  decision: analysis.incident.close
+  role: TECHNOLOGIST
+  actor: TECH-01
+  params: {incident_id: '{ref:INC-F302}'}
+  body: {scope: risk_scope, summary: 'Область закрыта: было 3, подтверждено 1 (Ф-302), исключено 2 — по журналу ИС-2 и рентгену'}
+- at: '2026-09-08T13:10:00+03:00'
+  label: HIST/action-equipment
+  note: 'История: мера «почему возник» — ремонт регулятора тока ИС-2 и контрольный образец в начале смены'
+  decision: analysis.action.assign
+  role: TECHNOLOGIST
+  actor: TECH-01
+  params: {incident_id: '{ref:INC-F302}'}
+  body:
+    action_type: corrective_action
+    direction: prevent_occurrence
+    owner_id: '{person:TECH-01}'
+    due_at: '2026-09-10T16:00:00+03:00'
+    title: Ремонт регулятора тока ИС-2; контрольный образец при 160 А в начале каждой смены
+    effectiveness_plan:
+      metric: доля сводок тока ИС-2 вне уставки 160 ± 10 А
+      baseline: 'Пн 07.09: 2 сварки из 3 вне уставки'
+      window_days: 21
+      success_criterion: 'за 3 недели — ни одной сварки ИС-2 вне уставки и ни одного прожога'
+- at: '2026-09-08T13:15:00+03:00'
+  label: HIST/action-detection
+  note: 'История: мера «почему не обнаружили раньше» — рентген корня на ИС-2 выборочно до внедрения меры по оборудованию'
+  decision: analysis.action.assign
+  role: TECHNOLOGIST
+  actor: TECH-01
+  params: {incident_id: '{ref:INC-F302}'}
+  body:
+    action_type: corrective_action
+    direction: improve_detection
+    owner_id: '{person:TECH-01}'
+    due_at: '2026-09-30T16:00:00+03:00'
+    title: Добавить в карту контроля КТ-3 проверку корня шва (второй ракурс) для сварки на ИС-2
+    effectiveness_plan:
+      metric: прожоги корня, найденные только на рентгене ЗТ-3
+      baseline: 1 из 1 (Ф-302)
+      window_days: 30
+      success_criterion: прожог корня находит КТ-3, а не рентген ЗТ-3
+- at: '2026-09-10T16:00:00+03:00'
+  label: HIST/action-equipment-done
+  note: 'История: мера по ИС-2 внедрена — регулятор отремонтирован, КО в начале смены введён; идёт окно проверки эффективности'
+  decision: analysis.action.implement
+  role: TECHNOLOGIST
+  actor: TECH-01
+  params: {incident_id: '{ref:INC-F302}', action_id: '{ref:ACT-F302-EQ}'}
+  body: {note: 'Регулятор тока ИС-2 отремонтирован 10.09; контрольный образец при 160 А — в начале каждой смены'}
 - at: '2026-09-21T07:00:00+03:00'
   ref: Е-01, Е-03…Е-09
   route: order:ORD-0917
@@ -231,6 +447,8 @@ steps:
   params:
     workplace_id: WP-WELD-1
   body:
+    key_ref: w21@1  # демо-ключ W21 (Д-82): робот открывает допуск, как человек с ключом в расширении
+    pin_verified: true
     shift_id: SHIFT-1
 - at: '2026-09-21T08:15:00+03:00'
   label: SHOW/weld-SV-001-1
@@ -325,6 +543,8 @@ steps:
   params:
     workplace_id: WP-WELD-2
   body:
+    key_ref: w21@1  # демо-ключ W21 (Д-82): робот открывает допуск, как человек с ключом в расширении
+    pin_verified: true
     shift_id: SHIFT-1
 - at: '2026-09-21T09:20:00+03:00'
   label: SHOW/weld-SV-002-1
@@ -540,6 +760,8 @@ steps:
   params:
     workplace_id: WP-WELD-1
   body:
+    key_ref: w21@1  # демо-ключ W21 (Д-82): робот открывает допуск, как человек с ключом в расширении
+    pin_verified: true
     shift_id: SHIFT-1
 - at: '2026-09-21T11:14:00+03:00'
   ref: Е-112
@@ -661,6 +883,18 @@ steps:
   body:
     hypothesis_id: '{ref:HYP-EQ}'
     what: Контрольный образец на ИС-2 при уставке 160 А
+- at: '2026-09-21T11:40:00+03:00'
+  label: SHOW/measure-result
+  note: 'Лаборатория (контролёр ОТК 2, подписывает demo-signer — не человек показа): контрольный образец КО-0921 на ИС-2 при 160 А — ток 178–181 А, прожог повторён; у гипотезы «оборудование ИС-2» уверенность растёт, дальше — «Подтвердить причину»'
+  decision: analysis.measurement.record
+  role: QC
+  actor: QC-02
+  auto: true
+  params: {nc_id: '{ref:NC-F003}'}
+  body:
+    hypothesis_id: '{ref:HYP-EQ}'
+    outcome: supports
+    result: 'Контрольный образец КО-0921 на ИС-2 при уставке 160 А: по журналу 178–181 А (вне уставки 160 ± 10); на образце прожог повторён'
 - at: '2026-09-21T11:50:00+03:00'
   ref: П-04
   label: SHOW/cause

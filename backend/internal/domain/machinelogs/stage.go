@@ -286,6 +286,11 @@ func (st *stage) deviation(r kernel.Record, ev Event) {
 		if w.End != nil && ev.Start.After(*w.End) {
 			continue
 		}
+		// Отклонение, закончившееся до начала окна (опоздавший журнал за
+		// прошлую смену), — своё окно, а не часть открытого текущего.
+		if ev.End != nil && ev.End.Before(w.Start) {
+			continue
+		}
 		if ev.Start.Before(w.Start) {
 			w.Start = ev.Start
 		}

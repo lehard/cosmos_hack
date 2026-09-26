@@ -330,6 +330,9 @@ type Step struct {
 	Body     map[string]any `json:"body,omitempty"`
 	// Refusal — ожидаемый отказ (код контракта): шаг проверяет запрет.
 	Refusal string `json:"refusal,omitempty"`
+	// Auto — решение машины или лаборатории, а не человека сценария (Д-85):
+	// в живой части его подписывает demo-signer без остановки.
+	Auto bool `json:"auto,omitempty"`
 
 	// Служебное.
 	Stand  *StandAction `json:"stand,omitempty"`

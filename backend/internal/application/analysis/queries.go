@@ -1,6 +1,7 @@
 package analysis
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 	"maps"
@@ -75,15 +76,6 @@ func (s *Service) Hypotheses(ctx context.Context, ncID string, m platform.Moment
 			rejected[h.HypothesisID] = h.Reason
 		}
 	}
-	status := func(id, category, def string) string {
-		if c := n.Cause; c != nil && c.Conclusion == "confirmed" && c.Category == category {
-			return "confirmed"
-		}
-		if _, ok := rejected[id]; ok {
-			return "rejected"
-		}
-		return def
-	}
 	var inc *dom.IncidentRecord
 	for _, id := range n.IncidentIDs {
 		if v, err := s.incident(ctx, id); err == nil {
@@ -91,10 +83,27 @@ func (s *Service) Hypotheses(ctx context.Context, ncID string, m platform.Moment
 			break
 		}
 	}
+	// Подтверждена — вывод о причине своей ветки (кейс §2.3: у инцидента их два,
+	// «почему возник» и «почему не обнаружили раньше»); последний вывод по
+	// несоответствию — если выводов по веткам нет.
+	status := func(id, category, branch, def string) string {
+		if inc != nil {
+			if c, ok := inc.Causes[branch]; ok && c.Conclusion == "confirmed" && c.Category == category {
+				return "confirmed"
+			}
+		}
+		if c := n.Cause; c != nil && c.Conclusion == "confirmed" && c.Category == category && (c.Branch == "" || c.Branch == branch) {
+			return "confirmed"
+		}
+		if _, ok := rejected[id]; ok {
+			return "rejected"
+		}
+		return def
+	}
 	branch := "why_made"
 	for _, h := range a.Hypotheses {
 		x := Hypothesis{HypothesisID: h.ID, Category: h.Category, Branch: &branch, Statement: strp(h.Statement),
-			Status: status(h.ID, h.Category, "proposed_by_system"), ConfidenceBP: h.ConfidenceBP,
+			Status: status(h.ID, h.Category, branch, "proposed_by_system"), ConfidenceBP: h.ConfidenceBP,
 			Supporting: refs.of(h.Supporting), Contradicting: refs.of(h.Contradicting), MeasurementHint: strp(h.MeasurementHint),
 			History: hypothesisHistory(n, h.ID, h.Category), NextCheck: nextCheck(h, inc)}
 		// Результат измерения: уверенность пересчитана, проверка выполнена.
@@ -116,7 +125,7 @@ func (s *Service) Hypotheses(ctx context.Context, ncID string, m platform.Moment
 		}
 		b := h.Branch
 		x := Hypothesis{HypothesisID: h.HypothesisID, Category: h.Category, Branch: strp(b), Statement: strp(h.Statement),
-			Status: status(h.HypothesisID, h.Category, "recorded"), Supporting: refs.of(h.Supporting), Contradicting: []JournalRecordRef{},
+			Status: status(h.HypothesisID, h.Category, cmp.Or(b, "why_made"), "recorded"), Supporting: refs.of(h.Supporting), Contradicting: []JournalRecordRef{},
 			History: []HypothesisChange{{At: h.At, EventID: strp(h.EventID), Text: "Записана человеком (" + h.Actor + ")"}}}
 		out.Hypotheses = append(out.Hypotheses, x)
 	}
