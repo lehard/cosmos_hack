@@ -15,13 +15,15 @@
  */
 import { computed, toValue, type MaybeRefOrGetter } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
-import type { EntityKind } from '@/shared/api/generated/model'
 import { statusAxes, statusDictionaries } from '@/shared/api/generated/statuses'
 import { entityKeys } from '@/shared/api/keys'
 import { pendingOperation, type Envelope } from '@/shared/api/pending'
 
 export type { Envelope }
+import type { DrillRef } from '@/shared/model/drill'
 import { useMomentStore } from '@/shared/model/moment'
+
+export type { DrillRef }
 
 export const liveMapKeys = entityKeys('live_map')
 
@@ -52,15 +54,6 @@ export type ItemSummaryStatus = keyof typeof statusDictionaries.item_summary.val
 
 /** Положение изделия в процессе (ось `position`). */
 export type PositionStatus = keyof typeof statusAxes.position.values
-
-/**
- * Ссылка «провалиться в детали» (FR-7): вид сущности контракта SSE и её id.
- * Узел карты — `live_map` + step_key.
- */
-export interface DrillRef {
-  entity: EntityKind
-  id: string
-}
 
 /** Счётчики одного узла по `step_key` (FR-2, FR-3). */
 export interface NodeCounters {

@@ -13,6 +13,9 @@ import { frameMorning, frameScope13, frameScope34, frameScope6, storyFrames, V0 
 import { installSvgStubs } from './svg-env'
 
 installSvgStubs()
+// bpmn-js открывает схему на 300 узлов — под общей нагрузкой прогона это секунды.
+vi.setConfig({ testTimeout: 30_000 })
+const WAIT = { timeout: 15_000 }
 
 let wrapper: VueWrapper | null = null
 beforeEach(() => setActivePinia(createPinia()))
@@ -24,7 +27,7 @@ afterEach(() => {
 
 async function mountMap(data: LiveMapData) {
   wrapper = mount(LiveMapView, { props: { data, period: 'shift' }, attachTo: document.body, global: { plugins: [i18n] } })
-  await vi.waitFor(() => expect(document.querySelector('[data-step="welding.zt3_acceptance"]')).not.toBeNull())
+  await vi.waitFor(() => expect(document.querySelector('[data-step="welding.zt3_acceptance"]')).not.toBeNull(), WAIT)
   return wrapper
 }
 
@@ -120,14 +123,14 @@ describe('живая карта', () => {
     const w = await mountMap(frameMorning())
     const f = frameMorning()
     await w.setProps({ data: { ...f, process_version: f.versions[1]! } })
-    await vi.waitFor(() => expect(dot('ENT:FL-0090')).not.toBeNull())
+    await vi.waitFor(() => expect(dot('ENT:FL-0090')).not.toBeNull(), WAIT)
     expect(dot('ENT:FL-0041')).toBeNull()
     expect(w.find('[data-version]').attributes('data-version')).toBe(V0)
   })
 
   it('битый XML — сообщение, а не пустой холст', async () => {
     wrapper = mount(LiveMapView, { props: { data: { ...frameScope13(), bpmn_xml: '<nope' }, period: 'shift' }, attachTo: document.body, global: { plugins: [i18n] } })
-    await vi.waitFor(() => expect(document.querySelector('.import-error')).not.toBeNull())
+    await vi.waitFor(() => expect(document.querySelector('.import-error')).not.toBeNull(), WAIT)
   })
 
   it('смена периода уходит наружу (FR-3)', async () => {

@@ -9,7 +9,7 @@
  * а не ведёт в пустоту.
  */
 import { useRouter, type RouteLocationRaw } from 'vue-router'
-import type { DrillRef } from '@/entities/live-map'
+import type { DrillRef } from '@/shared/model/drill'
 
 export type { DrillRef }
 

@@ -13,6 +13,9 @@ import { frameMorning, frameScope34 } from './fixtures'
 import { installSvgStubs } from './svg-env'
 
 installSvgStubs()
+// bpmn-js открывает схему на 300 узлов — под общей нагрузкой прогона это секунды.
+vi.setConfig({ testTimeout: 30_000 })
+const WAIT = { timeout: 15_000 }
 
 let pinia: ReturnType<typeof createPinia>
 let queryClient: QueryClient
@@ -56,7 +59,7 @@ function mountWidget(slice: Record<string, unknown> = { period: 'shift' }) {
 describe('виджет «Живая карта»', () => {
   it('операции ещё нет — «ошибка входа», а не выдуманные данные (FR-150)', async () => {
     const w = mountWidget()
-    await vi.waitFor(() => expect(w.find('.widget-frame').attributes('data-state')).toBe('input_error'))
+    await vi.waitFor(() => expect(w.find('.widget-frame').attributes('data-state')).toBe('input_error'), WAIT)
     expect(w.find('.live-map').exists()).toBe(false)
   })
 
@@ -68,7 +71,7 @@ describe('виджет «Живая карта»', () => {
     expect(frame.attributes('data-state')).toBe('defect_indication')
     expect(frame.attributes('data-mode')).toBe('fixtures')
     expect(frame.text()).toContain('Демо на заготовках')
-    await vi.waitFor(() => expect(document.querySelector('.dot[data-item="ENT:FL-0041"]')).not.toBeNull())
+    await vi.waitFor(() => expect(document.querySelector('.dot[data-item="ENT:FL-0041"]')).not.toBeNull(), WAIT)
   })
 
   it('инцидент из адреса страницы попадает в запрос (FR-9)', async () => {
@@ -82,7 +85,7 @@ describe('виджет «Живая карта»', () => {
   it('клик по точке — страница паспорта изделия (FR-2)', async () => {
     seed({ period: 'day' }, frameMorning())
     mountWidget({ period: 'day' })
-    await vi.waitFor(() => expect(document.querySelector('.dot[data-item="ENT:FL-0041"]')).not.toBeNull())
+    await vi.waitFor(() => expect(document.querySelector('.dot[data-item="ENT:FL-0041"]')).not.toBeNull(), WAIT)
     document.querySelector<HTMLElement>('.dot[data-item="ENT:FL-0041"]')!.click()
     await flushPromises()
     expect(router.currentRoute.value.fullPath).toBe('/items/ENT:FL-0041')

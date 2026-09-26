@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import NavigatedViewer from 'bpmn-js/lib/NavigatedViewer'
 import { parse } from 'yaml'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { statusPalette } from '@/shared/api/generated/statuses'
 import { buildIndex, type BusinessObjectLike } from '../model/bpmn'
 import { dotLook, INCIDENT_LEGEND, itemsByStep, itemsOfOtherVersions, itemsPerLane, mapDataState, scopeReduction } from '../model/overlays'
@@ -12,6 +12,8 @@ import { flangeXml, frameMorning, frameScope34, frameScope6, V0, V1 } from './fi
 import { installSvgStubs } from './svg-env'
 
 installSvgStubs()
+// bpmn-js открывает схему на 300 узлов — под общей нагрузкой прогона это секунды.
+vi.setConfig({ testTimeout: 30_000 })
 
 /** Индекс схемы так же, как его строит просмотрщик: по бизнес-объектам элементов холста. */
 async function flangeIndex() {
