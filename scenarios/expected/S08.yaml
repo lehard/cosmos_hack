@@ -53,19 +53,21 @@ checkpoints:
   - id: S08-03
     what: ЗТ-4 пройдена с первого предъявления
     check:
-      operation: item.passport.read
+      operation: journal.entry.list
       params:
+        event_type: decision.presentation.resolved
+        limit: 500
         item_id: '{item:F-002}'
-      path: /entries[event_type=decision.presentation.resolved]
+      path: /items[data.step_key=assembly.zt4_acceptance]/0/data/presentation_no
       op: eq
-      value: true
-    mapping: draft
+      value: 1
+    mapping: exact
+    note: 'сведение: решение ЗТ-4 ч.2 по Ф-002 — на первом предъявлении'
     source:
       subject: gate/ZT-4/F-002
       field: first_pass
       op: eq
       value: true
-    note: ЗТ ZT-4
   - id: S08-04
     what: 'Н-4: ложных тревог КТ-4 +1'
     check:
