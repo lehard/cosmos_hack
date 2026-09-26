@@ -77,6 +77,7 @@ const inspectors = computed(() => candidates(persons.value, rolesInheriting(role
  */
 function blocked(list: readonly unknown[]): string | null {
   if (personsQ.error.value || rolesQ.error.value) return t('widgets.shopFloor.shift.noPeopleAccess')
+  if (shiftsQ.data.value && !(shiftsQ.data.value.data ?? []).length) return t('widgets.shopFloor.shift.noShifts')
   if (!shiftId.value) return t('widgets.shopFloor.shift.pickShiftFirst')
   if (personsQ.data.value && !list.length) return t('widgets.shopFloor.shift.noCandidates')
   return null
