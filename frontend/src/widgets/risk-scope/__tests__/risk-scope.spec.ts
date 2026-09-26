@@ -13,37 +13,54 @@ const mountView = (model = weldScope(), props: Record<string, unknown> = {}) =>
   mount(RiskScopeView, { props: { model, ...props }, global: { plugins: [createPinia(), i18n] } })
 
 describe('область риска', () => {
-  it('сужение 34 → 13 → 6 и итог сокращения', () => {
+  it('итог крупно: сколько сейчас и путь 34 → 13 → 6', () => {
     const w = mountView()
+    expect(w.find('[data-testid="scope-now"]').text()).toBe('6')
+    expect(w.find('[data-testid="scope-path"]').findAll('li').map((s) => s.text())).toEqual(['34', '13', '6'])
     expect(w.findAll('[data-testid="size"]').map((s) => s.text())).toEqual(['34', '13', '6'])
     expect(w.find('[data-testid="reduction"]').text()).toBe('Область сокращена: 34 → 6')
     expect(w.text()).toContain('Сокращение на 82,4')
   })
 
-  it('у каждой версии — изменение, основание, автор и время', () => {
-    const lines = mountView().findAll('[data-testid="version-line"]').map((l) => l.text())
-    expect(lines[0]).toContain('Версия 1: Размер при создании: 34')
-    expect(lines[0]).toContain('Правило системы')
-    expect(lines[1]).toContain('Версия 2: Сужено: 34 → 13. Основание: Журнал станка: до 08:05 режим в норме, доказательств: 2. Технолог Т-03')
-    expect(lines[2]).toContain('Сужено: 13 → 6')
-    expect(lines[2]).toContain('доказательств: 7. Контролёр К-07')
+  it('у каждой ступени — что произошло, основание сервера, автор, время, где изделия', () => {
+    const steps = mountView().findAll('[data-testid="version-line"]')
+    expect(steps[0]!.text()).toContain('Система собрала область')
+    expect(steps[0]!.text()).toContain('Правило системы')
+    expect(steps[1]!.find('.delta').text()).toBe('−21')
+    expect(steps[1]!.text()).toContain('Сужено человеком по основанию')
+    expect(steps[1]!.text()).toContain('Журнал станка: до 08:05 режим в норме')
+    expect(steps[1]!.text()).toContain('Технолог Т-03')
+    expect(steps[1]!.text()).toContain('доказательств: 2')
+    expect(steps[2]!.find('.delta').text()).toBe('−7')
+    expect(steps[2]!.find('.step-where').text()).toContain('Ушли дальше 1')
+    expect(steps[2]!.find('.step-where').text()).not.toContain('Отгружены')
   })
 
-  it('разбивка текущей версии: в производстве / ушли дальше / собраны / отгружены', () => {
-    const tiles = mountView().findAll('.tile')
-    expect(tiles.map((t) => t.attributes('data-location'))).toEqual(['in_production', 'moved_on', 'assembled', 'shipped'])
-    expect(tiles.map((t) => t.find('.tile-n').text())).toEqual(['5', '1', '0', '0'])
-    expect(tiles[1]!.text()).toContain('Ушли дальше')
+  it('расширение новыми данными — отдельной ступенью, с приростом', () => {
+    const m = weldScope()
+    m.versions.push({ ...m.versions[2]!, scope_version: 4, change: 'expanded', size: 18, author: null, reason: { text: 'Поздний журнал: отклонение с 07:47' } })
+    const step = mountView(m).find('li[data-version="4"]')
+    expect(step.text()).toContain('Новые данные расширили область')
+    expect(step.find('.delta').text()).toBe('+12')
   })
 
-  it('две оси статуса: что известно и что делать; изделия в области — не брак', () => {
+  it('изделия группами по тому, что известно: серое (нет данных) — не зелёное; изделия в области — не брак', () => {
     const w = mountView()
-    const row = w.find('tr[data-item="ANT:FL-0042"]')
-    expect(row.text()).toContain('Подтверждено')
-    expect(row.text()).toContain('Заблокировать')
-    expect(w.find('tr[data-item="ANT:FL-0046"]').text()).toContain('Неизвестно')
+    const counts = w.find('[data-testid="known-counts"]')
+    expect(counts.findAll('li').map((l) => l.attributes('data-known'))).toEqual(['confirmed', 'suspect', 'unknown', 'excluded'])
+    expect(counts.find('[data-known="suspect"] .count-n').text()).toBe('4')
+    expect(counts.find('[data-known="unknown"]').text()).toContain('Нет данных')
+    const unknown = w.find('.group[data-known="unknown"]')
+    expect(unknown.text()).toContain('не исключено')
+    expect(unknown.find('[data-item="ANT:FL-0046"]').text()).toContain('Наблюдать')
+    expect(w.find('.group[data-known="confirmed"] [data-item="ANT:FL-0042"]').text()).toContain('Заблокировать')
     expect(w.find('[data-testid="not-defective"]').text()).toContain('Это не брак')
-    expect(w.text()).toContain('6\u00a0изделий')
+  })
+
+  it('щелчок по изделию — открыть изделие', async () => {
+    const w = mountView()
+    await w.find('[data-item="ANT:FL-0043"] button').trigger('click')
+    expect(w.emitted('open-item')?.[0]).toEqual(['ANT:FL-0043'])
   })
 
   it('сужение без основания — видно и помечено ошибкой', () => {
@@ -53,7 +70,7 @@ describe('область риска', () => {
     const w = mountView(m)
     expect(w.find('[data-testid="issues"]').text()).toContain('Версия 3: изделия вышли из области без основания')
     expect(w.find('li[data-version="3"]').attributes('data-basis')).toBe('missing')
-    expect(w.findAll('[data-testid="version-line"]')[2]!.text()).toContain('Основание: без основания')
+    expect(w.find('li[data-version="3"] .step-basis').text()).toContain('без основания')
   })
 
   it('без прав «сузить / расширить» выключены', () => {

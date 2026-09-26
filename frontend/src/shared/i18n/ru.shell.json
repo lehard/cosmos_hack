@@ -258,7 +258,18 @@
         "expandItems": "Какие изделия добавить — номера через запятую или с новой строки",
         "reason": "@:common.words.basis",
         "incident": "@:common.words.incident",
-        "pickIncident": "@:common.words.incident"
+        "pickIncident": "@:common.words.incident",
+        "nowInScope": "{items} в области риска сейчас",
+        "whyThisSize": "Почему {n}: как менялась область",
+        "excludedWithBasis": "Исключено с основанием",
+        "hintConfirmed": "дефект подтверждён",
+        "hintSuspect": "нужна проверка",
+        "hintUnknown": "данных нет — не исключено, нужна проверка",
+        "hintExcluded": "есть доказательство, основание — на ступенях выше",
+        "stepComputed": "Система собрала область",
+        "stepNarrowed": "Сужено человеком по основанию",
+        "stepExpanded": "Расширено человеком",
+        "stepExpandedBySystem": "Новые данные расширили область"
       },
       "process": {
         "noActive": "Действующей версии нет — сравнивать не с чем",
