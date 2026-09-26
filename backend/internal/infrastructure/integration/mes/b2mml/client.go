@@ -145,10 +145,8 @@ func (c *Client) Post(ctx context.Context, m app.HoldMessage) (app.Response, err
 	if err != nil {
 		return app.Response{}, err
 	}
-	switch {
-	case code == http.StatusOK || code == http.StatusAccepted:
-		return Confirm(m.MessageID, b)
-	case code == http.StatusUnprocessableEntity || code == http.StatusBadRequest:
+	switch code {
+	case http.StatusOK, http.StatusAccepted, http.StatusUnprocessableEntity, http.StatusBadRequest:
 		return Confirm(m.MessageID, b)
 	}
 	return app.Response{}, statusErr(code, b)

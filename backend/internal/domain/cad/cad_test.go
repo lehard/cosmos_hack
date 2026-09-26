@@ -41,13 +41,13 @@ func env() cad.Env {
 }
 
 func TestItemTypeID(t *testing.T) {
-	cases := map[string]string{
-		"ФЛ-100.00.000 СБ": "FL-100.00.000", "ФЛ-100.01.001": "FL-100.01.001", "Болт М6×20 [П]": "BOLT-M6-20",
-		"Шайба 6 [П]": "SHAYBA-6", "КВД-6 [ПП]": "KVD-6", "  ": "",
+	cases := [][2]string{
+		{"ФЛ-100.00.000 СБ", "FL-100.00.000"}, {"ФЛ-100.01.001", "FL-100.01.001"}, {"Болт М6×20 [П]", "BOLT-M6-20"},
+		{"Шайба 6 [П]", "SHAYBA-6"}, {"КВД-6 [ПП]", "KVD-6"}, {"  ", ""},
 	}
-	for in, want := range cases {
-		if got := cad.ItemTypeID(in); got != want {
-			t.Errorf("ItemTypeID(%q) = %q, ожидалось %q", in, got, want)
+	for _, c := range cases {
+		if got := cad.ItemTypeID(c[0]); got != c[1] {
+			t.Errorf("ItemTypeID(%q) = %q, ожидалось %q", c[0], got, c[1])
 		}
 	}
 }
@@ -185,7 +185,8 @@ func TestIDs(t *testing.T) {
 	if !strings.HasPrefix(d, "streebog256:") || len(d) != 12+64 {
 		t.Fatalf("отпечаток: %s", d)
 	}
-	if cad.ImportEventID(d) != cad.ImportEventID(d) || cad.ImportEventID(d) == cad.ImportEventID(cad.Digest([]byte("[]"))) {
+	first, again, other := cad.ImportEventID(d), cad.ImportEventID(cad.Digest([]byte("{}"))), cad.ImportEventID(cad.Digest([]byte("[]")))
+	if first != again || first == other {
 		t.Error("id импорта детерминирован и зависит от файла")
 	}
 }

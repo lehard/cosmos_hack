@@ -172,13 +172,15 @@ func isItemID(s string) bool {
 	if !ok || ent == "" || local == "" || len(ent) > 16 {
 		return false
 	}
+	upper := func(r rune) bool { return r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || r == '_' || r == '-' }
+	local1 := func(r rune) bool { return upper(r) || r >= 'a' && r <= 'z' || r == '.' || r == '/' }
 	for _, r := range ent {
-		if !(r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || r == '_' || r == '-') {
+		if !upper(r) {
 			return false
 		}
 	}
 	for _, r := range local {
-		if !(r >= 'A' && r <= 'Z' || r >= 'a' && r <= 'z' || r >= '0' && r <= '9' || strings.ContainsRune("._/-", r)) {
+		if !local1(r) {
 			return false
 		}
 	}
