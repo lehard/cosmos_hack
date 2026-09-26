@@ -278,15 +278,24 @@ func (s *Service) waitDone(ctx context.Context, st *RunState) (bool, error) {
 	if seq < 0 {
 		return false, nil
 	}
-	st.Consumed = append(st.Consumed, seq)
 	rp, err := s.plan(ctx, st)
 	if err != nil {
 		return false, err
 	}
 	a := rp.plan.Actions[w.Action]
 	if a.Operation == opStart {
-		s.aliasRun(ctx, st, rp, a, seq)
+		// Фактический id выполнения не прочитан — остановка не снимается:
+		// иначе ток, КТ-3 и рентген уйдут на плановый id, ЗТ-3 не построится
+		// и следующие остановки не снимутся никогда. Повтор — на следующем тике.
+		if err := s.aliasRun(ctx, st, rp, a, seq); err != nil {
+			if s.d.Log != nil {
+				s.d.Log.Warn("прогон: «Начать» принято, фактический id выполнения не прочитан — жду", "run_id", st.RunID,
+					"step", stepKey(a), "seq", seq, "err", err)
+			}
+			return false, nil
+		}
 	}
+	st.Consumed = append(st.Consumed, seq)
 	st.Steps[stepKey(a)] = StepResult{Operation: a.Operation, At: a.At, Status: "done", Seq: seq, Detail: "решение принято на столе роли"}
 	st.Cursor.Actions = w.Action + 1
 	st.Waiting = nil
@@ -304,32 +313,41 @@ const (
 
 // aliasRun — «Начать» нажал человек: фактический operation_run_id записи
 // (терминал выдаёт свой) вместо планового для всех следующих событий и
-// решений прогона по этому выполнению.
-func (s *Service) aliasRun(ctx context.Context, st *RunState, rp *runPlan, a sim.Action, seq int64) {
+// решений прогона по этому выполнению. Ошибка — у шага есть плановый id, а
+// фактический не прочитан (запись ещё не видна, чтение не удалось, нет data):
+// остановку снимать нельзя. Без порта чтения подменять нечем — не ошибка.
+func (s *Service) aliasRun(ctx context.Context, st *RunState, rp *runPlan, a sim.Action, seq int64) error {
 	v, ok := a.Body["operation_run_id"]
 	if !ok || s.d.Probe == nil {
-		return
+		return nil
 	}
 	planned, err := s.expand(ctx, st, rp, fmt.Sprint(v))
-	if err != nil || planned == "" {
-		return
+	if err != nil {
+		return fmt.Errorf("плановый id выполнения: %w", err)
+	}
+	if planned == "" {
+		return errors.New("плановый id выполнения пуст")
 	}
 	doc, err := s.d.Probe.Read(ctx, "journal.entry.read", map[string]string{"seq": itoa(seq)}, st.RunID)
 	if err != nil {
-		return
+		return fmt.Errorf("journal.entry.read seq %d: %w", seq, err)
 	}
 	vals, err := sim.Extract(doc, "/data/operation_run_id")
 	if err != nil || len(vals) != 1 {
-		return
+		return fmt.Errorf("в записи seq %d нет data.operation_run_id", seq)
 	}
 	actual, _ := vals[0].(string)
-	if actual == "" || actual == planned {
-		return
+	if actual == "" {
+		return fmt.Errorf("в записи seq %d пустой data.operation_run_id", seq)
+	}
+	if actual == planned {
+		return nil
 	}
 	if st.Runs == nil {
 		st.Runs = map[string]string{}
 	}
 	st.Runs[planned] = actual
+	return nil
 }
 
 // actualRuns — события прогона с фактическими id выполнений вместо плановых.
