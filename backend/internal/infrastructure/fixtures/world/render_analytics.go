@@ -15,7 +15,9 @@ import (
 // итог, срезы и раскрытие итога и каждого среза, поэтому сумма строк
 // раскрытия штучного показателя равна итогу (AD-45). Дефекты и изделия с
 // дефектами — раздельно; входной брак — отдельно от производственных;
-// «под подозрением» браком не считается (кейс §2.4, §5.2).
+// «под подозрением» браком не считается (кейс §2.4, §5.2). Вклады собираются
+// за всё видимое на шаге, в период попадают по своему моменту (длительности —
+// пересечением интервала с периодом, как у live), см. within.
 
 // aggKind — вид агрегата показателя.
 type aggKind int
@@ -35,10 +37,15 @@ type aEntry struct {
 	item, label string
 	ref         *platform.DrillRef
 	at          time.Time
-	value       int64
-	num         bool
-	slices      []aSlice
-	events      []*Event
+	// until — конец интервала вклада-длительности [at, until] (ожидание,
+	// простой): значение — пересечение с периодом, мин; пусто — вклад-момент.
+	// open — интервал не закрыт к часам шага (until — часы шага).
+	until  time.Time
+	open   bool
+	value  int64
+	num    bool
+	slices []aSlice
+	events []*Event
 }
 
 // aMetric — показатель заготовок.
@@ -46,6 +53,9 @@ type aMetric struct {
 	id, title, group, counts, account string
 	agg                               aggKind
 	origin, meaning, note             string
+	// atEnd — длительность считается только у вкладов, идущих в конце периода
+	// (ожидание: изделия в очереди на конец периода, время в пределах периода).
+	atEnd bool
 	// fixed — срезы, которые показываются и с нулём (исполнители в сравнении).
 	fixed   []aSlice
 	entries []aEntry
@@ -157,11 +167,45 @@ func srcKind(e *Event) string {
 	return "system"
 }
 
-// drilldown — раскрытие итога (key пусто) или среза.
-func (m aMetric) drilldown(c *Ctx, key string) analyticsapp.MetricDrilldown {
+// within — показатель за период [from, to] (FR-3): вклады-моменты — с
+// моментом в периоде; вклады-длительности — пересечением интервала с периодом
+// (минуты; простой — как overlap у live); у ожидания (atEnd) — только
+// эпизоды, идущие в конце периода, от входа в очередь или начала периода.
+func (m aMetric) within(from, to time.Time) aMetric {
+	out := m
+	out.entries = nil
+	for _, e := range m.entries {
+		if m.atEnd && (e.at.After(to) || (!e.open && !e.until.After(to))) {
+			continue
+		}
+		if !e.until.IsZero() {
+			a, b := e.at, e.until
+			if a.Before(from) {
+				a = from
+			}
+			if b.After(to) {
+				b = to
+			}
+			if b.Before(a) || (b.Equal(a) && !m.atEnd) {
+				continue
+			}
+			e.value = int64(b.Sub(a).Minutes())
+			out.entries = append(out.entries, e)
+			continue
+		}
+		if e.at.Before(from) || e.at.After(to) {
+			continue
+		}
+		out.entries = append(out.entries, e)
+	}
+	return out
+}
+
+// drilldown — раскрытие итога (key пусто) или среза за период p.
+func (m aMetric) drilldown(p analyticsapp.Period, key string) analyticsapp.MetricDrilldown {
 	es := m.inSlice(key)
 	total, _ := m.value(es)
-	dd := analyticsapp.MetricDrilldown{MetricID: m.id, Period: c.period(), Total: total, Items: []analyticsapp.ContributionRow{}}
+	dd := analyticsapp.MetricDrilldown{MetricID: m.id, Period: p, Total: total, Items: []analyticsapp.ContributionRow{}}
 	for _, e := range es {
 		sk := key
 		if sk == "" && len(e.slices) > 0 {
@@ -190,10 +234,6 @@ func (m aMetric) drilldown(c *Ctx, key string) analyticsapp.MetricDrilldown {
 		dd.Items = append(dd.Items, row)
 	}
 	return dd
-}
-
-func (c *Ctx) period() analyticsapp.Period {
-	return analyticsapp.Period{Kind: "day", From: c.dayStart(), To: c.T}
 }
 
 // visible — запись мира видна на шаге (поздние — с шага записи).
@@ -237,7 +277,7 @@ func (c *Ctx) analyticsMetrics() []aMetric {
 			origin: "computed_by_system", meaning: "other", note: "от остановки точки процесса до конца периода (остановка не снята)"}
 		lead = aMetric{id: "lead_time", title: "Время детали в системе (выпущенные)", group: "time", counts: "time", agg: aggMean,
 			origin: "computed_by_system", meaning: "other", note: "от запуска изделия до сдачи на склад готовой продукции"}
-		wait = aMetric{id: "waiting_time", title: "Ожидание изделий в очередях", group: "time", counts: "time", agg: aggTime,
+		wait = aMetric{id: "waiting_time", title: "Ожидание изделий в очередях", group: "time", counts: "time", agg: aggTime, atEnd: true,
 			origin: "computed_by_system", meaning: "other", note: "время изделий в очереди узла до начала операции или решения, в пределах периода"}
 	)
 	for _, w := range []string{"W21", "W22"} {
@@ -348,32 +388,33 @@ func (c *Ctx) analyticsMetrics() []aMetric {
 				}
 			}
 		}
-		if st.Position != "in_progress" && st.Position != "at_inspection" && st.Position != "completed" && st.Exists {
-			var since time.Time
-			for _, mv := range it.moves {
-				if !mv.at.After(c.T) && mv.step == st.Step {
-					if since.IsZero() {
-						since = mv.at
-					}
-				} else if !mv.at.After(c.T) {
-					since = time.Time{}
+		// Ожидание: каждый эпизод изделия в очереди узла (вне работы и
+		// контроля) — интервал от входа в узел до следующего перемещения или до
+		// часов шага; в период попадают эпизоды, идущие в конце периода.
+		for _, ep := range c.queueEpisodes(it) {
+			e := itemEntry(it)
+			e.at, e.until, e.open, e.value = ep.since, ep.until, ep.open, int64(ep.until.Sub(ep.since).Minutes())
+			e.slices = []aSlice{{dim: "step", key: ep.step, label: stepName(ep.step)}}
+			// Записи эпизода: записи узла за время ожидания; нет таких — последняя
+			// запись изделия до входа в очередь (перемещение, с которого ждёт).
+			var before []*Event
+			for _, x := range evs {
+				if !c.visible(x) || x.Occurred.After(ep.until) {
+					continue
+				}
+				if x.Occurred.Before(ep.since) {
+					before = append(before, x)
+				} else if x.StepKey == ep.step {
+					e.events = append(e.events, x)
 				}
 			}
-			if !since.IsZero() {
-				// Время ожидания в пределах периода (сутки на часах шага), как у live.
-				from := since
-				if day := c.dayStart(); from.Before(day) {
-					from = day
-				}
-				e := itemEntry(it)
-				e.at, e.value = since, int64(c.T.Sub(from).Minutes())
-				e.slices = []aSlice{{dim: "step", key: st.Step, label: stepName(st.Step)}}
-				e.events = c.eventsWhere(func(x *Event) bool { return x.Item == it && x.StepKey == st.Step })
-				if len(e.events) == 0 {
-					e.events = lastEvents(evs, 1)
-				}
-				wait.entries = append(wait.entries, e)
+			if len(e.events) == 0 {
+				e.events = lastEvents(before, 1)
 			}
+			if len(e.events) == 0 {
+				e.events = lastEvents(evs, 1)
+			}
+			wait.entries = append(wait.entries, e)
 		}
 	}
 	for _, n := range c.M.NCs {
@@ -420,7 +461,7 @@ func (c *Ctx) analyticsMetrics() []aMetric {
 			continue
 		}
 		e := aEntry{item: h.Equipment, label: "Сварочный источник " + h.Equipment, ref: &platform.DrillRef{Entity: platform.EntityEquipment, ID: h.Equipment},
-			at: h.Set.Time(), value: int64(c.T.Sub(h.Set.Time()).Minutes())}
+			at: h.Set.Time(), until: c.T, value: int64(c.T.Sub(h.Set.Time()).Minutes())}
 		e.events = c.eventsWhere(func(x *Event) bool {
 			return (x.Type == "decision.process_hold.set" && x.Params["equipment_id"] == h.Equipment) || (x.Type == "equipment.state.changed" && x.Entity.ID == h.Equipment && !x.Occurred.Before(h.Set.Time()))
 		})
@@ -439,6 +480,47 @@ func (c *Ctx) metricTotal(id string) int {
 		}
 	}
 	return 0
+}
+
+// queueEpisode — изделие ждёт в очереди узла step с since до until.
+type queueEpisode struct {
+	step         string
+	since, until time.Time
+	open         bool
+}
+
+// queueEpisodes — эпизоды ожидания изделия к часам шага: подряд идущие
+// перемещения в ожидающих положениях одного узла — один эпизод; незакрытый
+// эпизод длится до часов шага.
+func (c *Ctx) queueEpisodes(it *Item) []queueEpisode {
+	mv := slices.Clone(it.moves)
+	slices.SortStableFunc(mv, func(a, b move) int { return a.at.Compare(b.at) })
+	var out []queueEpisode
+	var cur *queueEpisode
+	for _, m := range mv {
+		if m.at.After(c.T) {
+			break
+		}
+		waiting := m.pos != "in_progress" && m.pos != "at_inspection" && m.pos != "completed"
+		if cur != nil && waiting && m.step == cur.step {
+			continue
+		}
+		if cur != nil {
+			cur.until = m.at
+			if cur.until.After(cur.since) {
+				out = append(out, *cur)
+			}
+			cur = nil
+		}
+		if waiting {
+			cur = &queueEpisode{step: m.step, since: m.at}
+		}
+	}
+	if cur != nil {
+		cur.until, cur.open = c.T, true
+		out = append(out, *cur)
+	}
+	return out
 }
 
 func lastEvents(evs []*Event, n int) []*Event {
@@ -466,30 +548,57 @@ func causeTitle(c string) string {
 	return c
 }
 
+// tileIDs — плитки стола руководителя (как у live).
+var tileIDs = []string{"inspected_items", "items_with_confirmed_nc", "first_pass_yield", "defects_by_type", "cause_established", "lead_time", "waiting_time"}
+
+// renderAnalytics — ответы аналитики на шаг по каждому периоду переключателя
+// (UI-15, FR-3): плитки с прошлым таким же периодом, счётчики узлов, показатели
+// кейса, раскрытие каждого числа и контрольная карта. Период по умолчанию
+// (смена, как у live) — без параметра period; остальные — с period=‹вид›.
+// Произвольный период (custom) заготовки не считают — отвечает смена.
 func renderAnalytics(c *Ctx) []loader.Response {
-	ms := c.analyticsMetrics()
+	all := c.analyticsMetrics()
+	var out []loader.Response
+	for _, kind := range periodKinds {
+		out = append(out, c.renderAnalyticsPeriod(all, c.window(kind))...)
+	}
+	return out
+}
+
+func (c *Ctx) renderAnalyticsPeriod(all []aMetric, w aWindow) []loader.Response {
+	kind := w.Kind
 	byID := map[string]aMetric{}
-	for _, m := range ms {
+	ms := make([]aMetric, 0, len(all))
+	for _, m := range all {
+		wm := m.within(w.From, w.To)
+		ms = append(ms, wm)
 		byID[m.id] = m
 	}
-	tiles := analyticsapp.MetricTileList{Period: c.period(), Items: []analyticsapp.MetricTile{}}
-	for _, id := range []string{"inspected_items", "items_with_confirmed_nc", "first_pass_yield", "defects_by_type", "cause_established", "lead_time", "waiting_time"} {
+	tiles := analyticsapp.MetricTileList{Period: w.Period, Items: []analyticsapp.MetricTile{}}
+	for _, id := range tileIDs {
 		m := byID[id]
-		v, unknown := m.value(m.entries)
-		tiles.Items = append(tiles.Items, analyticsapp.MetricTile{MetricID: id, Title: m.title, Value: v, Unknown: unknown})
+		cur := m.within(w.From, w.To)
+		v, unknown := cur.value(cur.entries)
+		t := analyticsapp.MetricTile{MetricID: id, Title: m.title, Value: v, Unknown: unknown}
+		// Прошлый такой же период (FR-3): без данных — не показывается, как у live.
+		prev := m.within(w.prevFrom, w.prevTo)
+		if pv, unk := prev.value(prev.entries); !unk {
+			t.Previous = &pv
+		}
+		tiles.Items = append(tiles.Items, t)
 	}
-	cs := c.Counters()
-	ncs := analyticsapp.NodeCounterSet{Period: c.period(), ProcessVersionID: ProcessVersionID, Counters: []analyticsapp.NodeCounters{}, Anomalies: []analyticsapp.NodeAnomaly{}, DataGaps: c.dataGaps(), BasisSeq: c.Seq()}
+	cs := c.CountersFrom(w.From)
+	ncs := analyticsapp.NodeCounterSet{Period: w.Period, ProcessVersionID: ProcessVersionID, Counters: []analyticsapp.NodeCounters{}, Anomalies: []analyticsapp.NodeAnomaly{}, DataGaps: c.dataGaps(), BasisSeq: c.Seq()}
 	for _, mc := range c.mapCounters(cs) {
 		ncs.Counters = append(ncs.Counters, analyticsapp.NodeCounters{StepKey: mc.StepKey, Queue: mc.Queue, InProgress: mc.InProgress, Passed: mc.Passed, Defects: mc.Defects, Nonconformities: mc.Nonconformities})
 	}
 	for _, a := range c.anomalies(cs) {
 		ncs.Anomalies = append(ncs.Anomalies, analyticsapp.NodeAnomaly{StepKey: a.StepKey, Kind: a.Kind, Threshold: ptr(a.Threshold)})
 	}
-	if k, w := c.bottleneck(cs); k != "" {
-		ncs.Bottleneck = &analyticsapp.Bottleneck{StepKey: k, Wait: ptr(w)}
+	if k, wt := c.bottleneck(cs); k != "" {
+		ncs.Bottleneck = &analyticsapp.Bottleneck{StepKey: k, Wait: ptr(wt)}
 	}
-	ov := analyticsapp.AnalyticsOverview{Period: c.period(), BasisSeq: c.Seq(), Items: []analyticsapp.MetricRow{}}
+	ov := analyticsapp.AnalyticsOverview{Period: w.Period, BasisSeq: c.Seq(), Items: []analyticsapp.MetricRow{}}
 	for _, m := range ms {
 		if m.id == "defects_by_type" {
 			continue // плитка; в разделе — «Подтверждённые дефекты» со срезом по видам
@@ -497,25 +606,27 @@ func renderAnalytics(c *Ctx) []loader.Response {
 		ov.Items = append(ov.Items, m.row())
 	}
 	out := []loader.Response{
-		resp("analytics.tile.list", tiles),
-		resp("analytics.node_counters.read", ncs),
-		resp("analytics.overview.read", ov),
+		resp("analytics.tile.list", tiles, periodParams(kind)...),
+		resp("analytics.node_counters.read", ncs, periodParams(kind)...),
+		resp("analytics.overview.read", ov, periodParams(kind)...),
 	}
-	// Раскрытие каждого числа: итог и каждый срез каждого показателя (FR-7, AD-45).
-	for _, m := range ms {
-		out = append(out, resp("analytics.metric.drilldown", m.drilldown(c, ""), "metric_id", m.id))
-		for _, s := range m.sliceList() {
+	// Раскрытие каждого числа: итог и каждый срез каждого показателя (FR-7,
+	// AD-45). Срезы — все встреченные к шагу, чтобы срез без вкладов в этом
+	// периоде раскрывался в пустой список, а не в итог.
+	for i, m := range ms {
+		out = append(out, resp("analytics.metric.drilldown", m.drilldown(w.Period, ""), periodParams(kind, "metric_id", m.id)...))
+		for _, s := range all[i].sliceList() {
 			k := sliceKeyOf(s)
-			out = append(out, resp("analytics.metric.drilldown", m.drilldown(c, k), "metric_id", m.id, "slice", k))
+			out = append(out, resp("analytics.metric.drilldown", m.drilldown(w.Period, k), periodParams(kind, "metric_id", m.id, "slice", k)...))
 		}
 	}
-	// Контрольная карта тока сварки по выполнениям (FR-5): центр 160 А, границы ±10 А.
+	// Контрольная карта тока сварки по выполнениям за период (FR-5): центр 160 А, границы ±10 А.
 	cc := analyticsapp.ControlChart{StepKey: "welding.weld", MetricID: "current_a", Title: "Ток сварки (максимум за выполнение)", ChartKind: ptr("xmr"),
 		Center: analyticsapp.MetricValue{Value: 160, Unit: "A"}, Upper: analyticsapp.MetricValue{Value: 170, Unit: "A"}, Lower: analyticsapp.MetricValue{Value: 150, Unit: "A"}, Points: []analyticsapp.ControlChartPoint{}}
 	var runs []*OpRun
 	for _, it := range c.M.Items {
 		for _, r := range it.Runs {
-			if r.Kind == "welding" && !r.LogLost && !r.LogReceived.IsZero() && !r.LogReceived.After(c.T) && r.To.After(c.M.Steps[0]) {
+			if r.Kind == "welding" && !r.LogLost && !r.LogReceived.IsZero() && !r.LogReceived.After(c.T) && r.To.After(c.M.Steps[0]) && !r.To.Before(w.From) && !r.To.After(w.To) {
 				runs = append(runs, r)
 			}
 		}
@@ -525,6 +636,7 @@ func renderAnalytics(c *Ctx) []loader.Response {
 		cc.Points = append(cc.Points, analyticsapp.ControlChartPoint{At: r.To, Value: analyticsapp.MetricValue{Value: int64(r.CurrentA[1]), Unit: "A"}, OutOfControl: r.CurrentA[1] > 170,
 			Ref: &platform.DrillRef{Entity: platform.EntityItem, ID: FullID(r.Item.ID)}})
 	}
-	out = append(out, resp("analytics.control_chart.read", cc), resp("analytics.control_chart.read", cc, "step_key", "welding.weld", "metric_id", "current_a"))
+	out = append(out, resp("analytics.control_chart.read", cc, periodParams(kind)...),
+		resp("analytics.control_chart.read", cc, periodParams(kind, "step_key", "welding.weld", "metric_id", "current_a")...))
 	return out
 }
