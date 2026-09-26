@@ -107,6 +107,46 @@ describe('задачи и уведомления', () => {
     expect(task().find('[data-testid="moved"]').exists()).toBe(true)
   })
 
+  it('задача процесса «Принять в цех»: форма прямо в задаче, id изделия кодируется в пути', async () => {
+    const item = 'ENT01:show-is2-20260921-1/I-3CDF7159'
+    const receive = {
+      task_id: 'TASK-RCV-1',
+      kind: 'other',
+      title: 'Принять в цех Ф-001',
+      state: 'open',
+      assignee_role: 'site_foreman',
+      assignee_id: null,
+      created_at: at('08:00'),
+      due_at: null,
+      overdue: false,
+      ref: { entity: 'item', id: item },
+      operation: 'process.movement.receive',
+      item_id: item,
+      item_label: 'Ф-001',
+    }
+    const { routes } = world()
+    const calls = mockApi({
+      ...routes,
+      'GET /api/v1/tasks': { items: [receive] },
+      'GET /api/v1/permissions': { policy_seq: 3, items: [{ action: 'process.movement.receive', subject: 'item', action_class: 'record' }] },
+      [`POST /api/v1/items/${item}/movements/receive`]: receipt(150),
+    })
+    const w = await mountWidget(TasksWidget, props)
+    const task = () => w.find('[data-task="TASK-RCV-1"]')
+    expect(task().text()).toContain('Принять в цех Ф-001')
+    expect(task().text()).not.toContain('I-3CDF7159')
+    // Действие — глаголом, а не «Открыть»; отметки «выполнено» у задачи с действием нет.
+    expect(task().find('[data-testid="ack-done"]').exists()).toBe(false)
+    await task().find('[data-action="receive-item"]').trigger('click')
+    await settle()
+    expect(task().find('[data-testid="receive-place"]').exists()).toBe(true)
+    await task().find('[data-action="confirm-receive"]').trigger('click')
+    await settle()
+    const post = calls.find((c) => c.method === 'POST' && c.path === `/api/v1/items/${item}/movements/receive`)
+    expect(post?.body).toMatchObject({ destination_kind: 'workshop', to_location_id: 'WS-WC', inspection_on_receipt: 'no_damage', basis_seq: 9100 })
+    expect(task().find('[data-testid="receive-receipt"]').text()).toContain('запись № 150')
+  })
+
   it('открытых задач нет — одной строкой, выполненные ниже; аномалия узла открывает окно операции (UI-44, UI-45)', async () => {
     const { routes } = world()
     mockApi({ ...routes, 'GET /api/v1/tasks': { items: tasks().filter((t) => t.state !== 'open'), basis_seq: 9100 } })
