@@ -31,7 +31,7 @@ func TestRequestsPortForLateModules(t *testing.T) {
 	for _, w := range []want{
 		{RequestDraftNC, "", ""},                           // черновик несоответствия по несплавлению
 		{RequestContain, "", ""},                           // блок изделия
-		{RequestTask, "isolate_move", "quality_inspector"}, // переместить в изолятор
+		{RequestTask, "isolate_move", "site_foreman"},      // переместить в изолятор — мастер
 		{RequestTask, "decision_required", "technologist"}, // вопрос технологу: вид без требования КД
 	} {
 		if got[w] == 0 {

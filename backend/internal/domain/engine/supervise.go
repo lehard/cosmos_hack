@@ -46,7 +46,7 @@ func decisionsBeforeNewData(in []kernel.Record) []kernel.Reaction {
 		}
 		causes := []kernel.Record{d}
 		for _, r := range in {
-			if r.Kind == catalog.KindDecision || r.Seq <= known || r.OccurredAt.After(d.OccurredAt) {
+			if r.Kind == catalog.KindDecision || r.Seq <= known || r.OccurredAt.After(d.OccurredAt) || !reviewRelevant(r.Type) {
 				continue
 			}
 			causes = append(causes, r)
@@ -75,4 +75,12 @@ func decisionsBeforeNewData(in []kernel.Record) []kernel.Reaction {
 		out = append(out, re)
 	}
 	return out
+}
+
+// reviewRelevant — поздняя запись может поменять основание решения: связи
+// генеалогии (genealogy.*) и носители (item.carrier.*) — учёт состава и
+// идентификации, а не данные о качестве; пересмотра решения ОТК они не требуют.
+func reviewRelevant(t catalog.Type) bool {
+	s := string(t)
+	return !strings.HasPrefix(s, "genealogy.") && !strings.HasPrefix(s, "item.carrier.")
 }

@@ -14,6 +14,7 @@ import (
 	"ant/internal/application/analysis/analysistest"
 	engineapp "ant/internal/application/engine"
 	"ant/internal/application/engine/enginemem"
+	appjournal "ant/internal/application/journal"
 	"ant/internal/application/platform"
 	"ant/internal/contracts/catalog"
 	sim "ant/internal/domain/simulation"
@@ -38,8 +39,8 @@ func TestShowIncidentScope(t *testing.T) {
 		t.Fatal(err)
 	}
 	j := enginemem.New(nil)
-	codec := &engineapp.Codec{Store: j, Sealer: enginemem.Sealer{KeyRef: "engine@1"}, KeyRef: "engine@1", DomainBuild: "test", Partitions: 1}
-	w := analysistest.New(j, codec, "show")
+	codec := &engineapp.Codec{Store: staleChecked{j}, Sealer: enginemem.Sealer{KeyRef: "engine@1"}, KeyRef: "engine@1", DomainBuild: "test", Partitions: 1}
+	w := analysistest.New(staleChecked{j}, codec, "show")
 	item := func(id string) string { return "ENT01:" + id }
 	local := func(x string) string { v, _ := p.IDs.ExpandString("{local:"+x+"}", false); return v }
 	type rec struct {
@@ -76,8 +77,13 @@ func TestShowIncidentScope(t *testing.T) {
 		if x.Start.After(confirmAt) || x.Rework != "" {
 			continue
 		}
-		later(catalog.OperationRunStarted, item(x.Item), "", x.Start, map[string]any{"operation_run_id": local(x.Run), "step_key": analysistest.StepWeld,
-			"operation_code": "030", "equipment_id": eq[x.Station], "operator_id": x.Welder, "program_ref": analysistest.Program})
+		started := map[string]any{"operation_run_id": local(x.Run), "step_key": analysistest.StepWeld,
+			"operation_code": "030", "equipment_id": eq[x.Station], "operator_id": x.Welder, "program_ref": analysistest.Program}
+		if strings.HasPrefix(x.Item, "F-00") {
+			// Живая партия: «Начать» с терминала — без программы и со своим id выполнения.
+			delete(started, "program_ref")
+		}
+		later(catalog.OperationRunStarted, item(x.Item), "", x.Start, started)
 		later(catalog.OperationRunFinished, item(x.Item), "", x.End, map[string]any{"operation_run_id": local(x.Run), "completion": "completed"})
 		switch x.Item {
 		case "F-201", "F-202":
@@ -221,4 +227,44 @@ func TestShowIncidentScope(t *testing.T) {
 	if want := []string{"F-002", "F-003", "F-128", "F-129", "F-130", "F-131"}; size(rs) != 6 || !slices.Equal(left, want) {
 		t.Fatalf("v3: %d изделий %v, ждали %v", size(rs), left, want)
 	}
+	// Стол технолога после сужений: «Запросить проверку» и «Подтвердить
+	// причину» с basis_seq чтения гипотез (так шлёт фронт) — без stale_state.
+	hs, err := svc.Hypotheses(ctx, "NC-F003", m)
+	if err != nil {
+		t.Fatal(err)
+	}
+	eqHyp := ""
+	for _, h := range hs.Hypotheses {
+		if h.Category == "equipment" {
+			eqHyp = h.HypothesisID
+		}
+	}
+	if _, err := svc.RequestMeasurement(tec, "NC-F003", appanalysis.RequestMeasurement{CommandHeader: platform.CommandHeader{CommandID: w.ID("command"),
+		BasisSeq: hs.BasisSeq}, HypothesisID: eqHyp, What: "Контрольный образец на ИС-2 при 160 А"}); err != nil {
+		t.Fatalf("запрос проверки по basis_seq гипотез: %v", err)
+	}
+	if hs, err = svc.Hypotheses(ctx, "NC-F003", m); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := svc.ConcludeCause(tec, inc, appanalysis.ConcludeCause{CommandHeader: platform.CommandHeader{CommandID: w.ID("command"), BasisSeq: hs.BasisSeq},
+		HypothesisID: eqHyp, NCIDs: []string{"NC-F003"}, Conclusion: "confirmed", Category: "equipment", Verification: "журнал тока ИС-2",
+		Reason: appanalysis.Reason{Text: "дрейф регулятора тока ИС-2"}}); err != nil {
+		t.Fatalf("подтвердить причину по basis_seq гипотез: %v", err)
+	}
+}
+
+// staleChecked — проверка basis_seq команды, как у journal.Append на Postgres
+// (AD-39): в потоке гарда после basis_seq — новая запись guard_relevant → 409.
+type staleChecked struct{ *enginemem.Journal }
+
+func (c staleChecked) Append(ctx context.Context, rq appjournal.AppendRequest) (appjournal.AppendResult, error) {
+	for _, ch := range rq.Checks {
+		for _, e := range c.Entries() {
+			info, _ := catalog.Lookup(catalog.Type(e.EventType))
+			if ch.Stream != "" && e.Stream == ch.Stream && int64(e.Seq) > ch.BasisSeq && info.GuardRelevant {
+				return appjournal.AppendResult{}, appjournal.Reject(appjournal.ErrStaleState, ch.BasisSeq, "stream", ch.Stream)
+			}
+		}
+	}
+	return c.Journal.Append(ctx, rq)
 }

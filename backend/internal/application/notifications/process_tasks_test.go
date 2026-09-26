@@ -76,9 +76,7 @@ func (f *flow) tasks() (open map[string]notif.TaskData, closed map[string]bool) 
 		case catalog.TaskTaskCreated:
 			var d notif.TaskData
 			_ = json.Unmarshal(raw, &d)
-			if d.Kind == notif.KindProcessStep {
-				open[d.TaskID] = d
-			}
+			open[d.TaskID] = d
 		case catalog.TaskTaskWithdrawn:
 			var d notif.TaskWithdrawnData
 			_ = json.Unmarshal(raw, &d)
@@ -96,7 +94,7 @@ func (f *flow) only(op string) notif.TaskData {
 	open, _ := f.tasks()
 	var got []notif.TaskData
 	for _, d := range open {
-		if d.OperationID == op && d.AssigneeRoleID != "storekeeper" {
+		if d.Kind == notif.KindProcessStep && d.OperationID == op && d.AssigneeRoleID != "storekeeper" {
 			got = append(got, d)
 		}
 	}
@@ -172,7 +170,7 @@ func TestProcessStepTasks(t *testing.T) {
 	}
 	// Дальше — машинный контроль КТ-3 и ЗТ-3 в очереди контролёра: задач процесса нет.
 	for _, d := range open {
-		if d.StepKey != "incoming.issue_assembly_parts" || d.AssigneeRoleID != "storekeeper" {
+		if d.Kind == notif.KindProcessStep && (d.StepKey != "incoming.issue_assembly_parts" || d.AssigneeRoleID != "storekeeper") {
 			t.Errorf("лишняя задача после сварки: %+v", d)
 		}
 	}
