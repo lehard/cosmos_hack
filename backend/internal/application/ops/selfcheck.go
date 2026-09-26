@@ -82,13 +82,13 @@ func (c *SelfCheck) report(ctx context.Context, v SelfCheckView) {
 		if f.Severity == string(dom.Critical) {
 			lvl = slog.LevelError
 		}
-		log.Log(ctx, lvl, "самопроверка: "+f.Text, "module", "ops", "check", f.Check, "severity", f.Severity)
+		log.Log(ctx, lvl, "самопроверка: "+f.Text, "check", f.Check, "severity", f.Severity)
 	}
 	if v.OK {
-		log.Info(dom.MsgOK, "module", "ops", "warnings", len(v.Findings))
+		log.Info(dom.MsgOK, "warnings", len(v.Findings))
 		return
 	}
-	log.Error(v.Summary, "module", "ops", "findings", len(v.Findings))
+	log.Error(v.Summary, "findings", len(v.Findings))
 }
 
 // journal — голова читается, первая и последняя записи открываются (конверт

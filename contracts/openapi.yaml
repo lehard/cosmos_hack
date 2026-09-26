@@ -5767,9 +5767,11 @@ components:
             - string
             - "null"
         state:
+          description: disabled — система не включена (integrations.enabled) или канал выключен.
           enum:
             - ok
             - degraded
+            - disabled
           type: string
         system:
           enum:
@@ -8529,6 +8531,9 @@ components:
           items:
             $ref: "#/components/schemas/QueueState"
           type: array
+        selfcheck:
+          $ref: "#/components/schemas/SelfCheckView"
+          description: Самопроверка после старта этой копии api (FR-109).
         stopped_items:
           description: Изделия «обработка остановлена» (AD-45).
           format: int64
@@ -9787,6 +9792,11 @@ components:
           description: Партиция воркера, глобальный потребитель, outbox.
           type: string
         pending:
+          format: int64
+          minimum: 0
+          type: integer
+        quarantined:
+          description: "Очередь исходящих: сообщений в карантине (ждут решения человека, FR-96)."
           format: int64
           minimum: 0
           type: integer
@@ -12726,6 +12736,51 @@ components:
       required:
         - items
       type: object
+    SelfCheckFinding:
+      additionalProperties: false
+      properties:
+        check:
+          enum:
+            - journal
+            - genesis
+            - migrations
+            - db_roles
+            - roles
+          type: string
+        severity:
+          enum:
+            - critical
+            - warning
+          type: string
+        text:
+          type: string
+      required:
+        - check
+        - severity
+        - text
+      type: object
+    SelfCheckView:
+      additionalProperties: false
+      properties:
+        checked_at:
+          format: date-time
+          type: string
+        findings:
+          items:
+            $ref: "#/components/schemas/SelfCheckFinding"
+          type: array
+        ok:
+          description: Критических находок нет.
+          type: boolean
+        summary:
+          description: «инициализация без критических ошибок» или перечень критических находок.
+          type: string
+      required:
+        - ok
+        - summary
+        - findings
+        - checked_at
+      type: object
     SendExtract:
       additionalProperties: false
       properties:
@@ -13242,6 +13297,11 @@ components:
           items:
             $ref: "#/components/schemas/PortSetting"
           type: array
+        sources:
+          description: Источники, которые отключали или включали (ops.source.disabled / enabled).
+          items:
+            $ref: "#/components/schemas/SourceSwitch"
+          type: array
       required:
         - ports
         - modules
@@ -13392,6 +13452,32 @@ components:
           type: string
       required:
         - items
+      type: object
+    SourceSwitch:
+      additionalProperties: false
+      properties:
+        actor:
+          description: Кто решил (псевдоним).
+          type: string
+        at:
+          format: date-time
+          type: string
+        enabled:
+          type: boolean
+        reason:
+          type: string
+        seq:
+          description: basis_seq для следующей команды над источником (AD-39).
+          format: int64
+          type: integer
+        source_id:
+          type: string
+      required:
+        - source_id
+        - enabled
+        - reason
+        - at
+        - seq
       type: object
     SourceView:
       additionalProperties: false

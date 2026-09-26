@@ -163,7 +163,7 @@ func simulationLive(ctx context.Context, env *environment, ingest *ingestapp.Ser
 		Infra:   clock.System{},
 		Domain:  runStart{c},
 		Profile: env.cfg.Profile,
-		Log:     env.log,
+		Log:     env.moduleLog("simulation"),
 		// Шаг раннера — небольшими порциями: состояние прогона (шаг, часы,
 		// табло) видно на пульте по ходу, пауза и остановка не ждут конца прогона.
 		Batch: simBatch,

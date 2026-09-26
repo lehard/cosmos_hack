@@ -125,7 +125,7 @@ func openCore(ctx context.Context, env *environment) (*core, error) {
 		journal: journalstore.NewStore(pool, infra, append([]journalstore.Option{journalstore.WithBatchMax(batch),
 			journalstore.WithEffects(erpstore.ApplyEffect), journalstore.WithScenarioClock(scenarioClock(cfg))}, trustOptions(cfg, env)...)...),
 		leases:   journalstore.NewLeases(pool, infra),
-		listener: journalstore.NewListener(pool, env.log),
+		listener: journalstore.NewListener(pool, env.moduleLog("journal")),
 		engine:   &enginestore.Store{Pool: pool},
 		registry: engineRegistry(),
 		versions: &processstore.Versions{Pool: pool},
@@ -152,12 +152,12 @@ func openCore(ctx context.Context, env *environment) (*core, error) {
 
 // feedOptions — параметры потребителей и подачи работы роли role.
 func (c *core) feedOptions(env *environment, role string) feed.Options {
-	return feed.Options{Holder: c.holder + "/" + role, TTL: c.ttl, Log: env.log}
+	return feed.Options{Holder: c.holder + "/" + role, TTL: c.ttl, Log: env.moduleLog("journal")}
 }
 
 // leader — копия-лидер роли по аренде `role` (AD-6).
 func (c *core) leader(env *environment, role string) engineapp.Leader {
-	return engineapp.Leader{Leases: c.leases, Name: role, Holder: c.holder, TTL: c.ttl, Log: env.log}
+	return engineapp.Leader{Leases: c.leases, Name: role, Holder: c.holder, TTL: c.ttl, Log: env.moduleLog("engine")}
 }
 
 // domainBuild — domain_build записей движка (AD-9): хеш сборки доменного

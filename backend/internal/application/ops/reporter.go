@@ -53,7 +53,7 @@ func (r *Reporter) ReportFailure(ctx context.Context, f FailureReport) (appjourn
 	if f.Cause == nil {
 		f.Cause = errors.New("причина не указана")
 	}
-	r.log().Error("обработка остановлена", "module", "ops", "item_id", f.ItemID, "consumer", f.Consumer, "seq", f.Seq,
+	r.log().Error("обработка остановлена", "item_id", f.ItemID, "consumer", f.Consumer, "seq", f.Seq,
 		"event_id", f.Trigger.EventID, "correlation_id", f.Trigger.CorrelationID, "run_id", deref(f.Trigger.RunID), "err", f.Cause)
 	return engineapp.FailureRequest(ctx, r.Codec, f.Consumer, f.ItemID, f.Seq, f.Trigger, f.Cause)
 }
@@ -122,7 +122,7 @@ func (r *Reporter) ReportIntegration(ctx context.Context, rep IntegrationReport)
 	if rep.State == dom.IntegrationOK {
 		lvl = slog.LevelInfo
 	}
-	r.log().Log(ctx, lvl, "интеграция: смена состояния канала", "module", "ops", "event_id", id, "system", rep.System, "state", rep.State)
+	r.log().Log(ctx, lvl, "интеграция: смена состояния канала", "event_id", id, "system", rep.System, "state", rep.State)
 	return true, nil
 }
 

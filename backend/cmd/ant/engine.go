@@ -81,7 +81,7 @@ func runWorker(ctx context.Context, env *environment) error {
 	}
 	wf := feed.NewWorkFeed(c.journal, c.leases, c.listener, env.cfg.Engine.Partitions, c.feedOptions(env, "worker"))
 	w := engineapp.NewWorker(engineapp.WorkerConfig{
-		Feed: wf, Codec: c.codec, Projections: c.registry, Log: env.log, Now: c.codec.Now,
+		Feed: wf, Codec: c.codec, Projections: c.registry, Log: env.moduleLog("engine"), Now: c.codec.Now,
 		Telemetry: env.telemetry(),  // эпик 34: ant_fold_seconds, ant_processing_failed_total
 		Bundles:   c.bundleSource(), // версия процесса изделия (эпик 17) + слой quality (эпик 20)
 		// Аренды партиций продлевает WorkFeed.Partitions — не реже TTL/3.
@@ -101,7 +101,7 @@ func runCrossItem(ctx context.Context, env *environment) error {
 	}
 	stage := &crossitemapp.StageRunner{
 		Consumer: feed.NewConsumer(c.journal, c.leases, c.listener, c.feedOptions(env, "crossitem")),
-		Codec:    c.codec, Store: c.engine, Log: env.log,
+		Codec:    c.codec, Store: c.engine, Log: env.moduleLog("crossitem"),
 	}
 	return c.leader(env, "crossitem").Run(ctx, stage.Run)
 }
@@ -115,7 +115,7 @@ func runProjector(ctx context.Context, env *environment) error {
 	}
 	p := &engineapp.Projector{
 		Consumer: feed.NewConsumer(c.journal, c.leases, c.listener, c.feedOptions(env, "projector")),
-		Codec:    c.codec, Store: c.engine, Registry: c.registry, Log: env.log,
+		Codec:    c.codec, Store: c.engine, Registry: c.registry, Log: env.moduleLog("engine"),
 	}
 	// Эпик 30: реакция «учётное сообщение сформировано» — глобальный
 	// потребитель роли projector со своим курсором erp.postings (AD-45).
@@ -196,7 +196,7 @@ func journalLive(ctx context.Context, env *environment) (*appjournal.Service, er
 	if err != nil {
 		return nil, err
 	}
-	live := engineapp.NewLiveUpdates(engineapp.LiveConfig{Log: c.engine, Now: c.codec.Now, Logger: env.log, Telemetry: env.telemetry()})
+	live := engineapp.NewLiveUpdates(engineapp.LiveConfig{Log: c.engine, Now: c.codec.Now, Logger: env.moduleLog("engine"), Telemetry: env.telemetry()})
 	env.coreH.bg.Go(func() { _ = live.Run(ctx) })
 	return appjournal.NewServiceWith(c.journal, c.listener, appjournal.WithLive(live), appjournal.WithClockMode(c.clock.Mode)), nil
 }

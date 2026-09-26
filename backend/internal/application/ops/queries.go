@@ -42,7 +42,7 @@ func (s *Service) Health(ctx context.Context) (OpsHealth, error) {
 		if b, err := rt.Backlogs(ctx, s.cfg.Partitions); err == nil {
 			backlogs = b
 		} else {
-			s.cfg.Log.Warn("ops: курсоры не прочитаны", "module", "ops", "err", err)
+			s.cfg.Log.Warn("ops: курсоры не прочитаны", "err", err)
 		}
 	}
 	verifier, report := s.verifier(ctx, now)
@@ -66,7 +66,7 @@ func (s *Service) Health(ctx context.Context) (OpsHealth, error) {
 	for _, x := range s.cfg.Exchanges {
 		qs, chs, err := x.Exchange(ctx)
 		if err != nil {
-			s.cfg.Log.Warn("ops: очереди исходящих не прочитаны", "module", "ops", "err", err)
+			s.cfg.Log.Warn("ops: очереди исходящих не прочитаны", "err", err)
 			continue
 		}
 		channels = append(channels, chs...)
@@ -90,7 +90,7 @@ func (s *Service) Health(ctx context.Context) (OpsHealth, error) {
 		if n, err := q.QuarantineOpen(ctx); err == nil {
 			h.QuarantineOpen = int(n)
 		} else {
-			s.cfg.Log.Warn("ops: карантин не прочитан", "module", "ops", "err", err)
+			s.cfg.Log.Warn("ops: карантин не прочитан", "err", err)
 		}
 	}
 	failures, retries, err := failuresAndRetries(ctx, s.cfg.Journal, s.cfg.Codec)

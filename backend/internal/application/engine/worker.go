@@ -215,7 +215,8 @@ func (w *WorkerService) Process(ctx context.Context, p Partition, works []Work) 
 		var perr *ProcessingError
 		switch {
 		case errors.As(err, &perr):
-			w.cfg.Log.Error("обработка остановлена", "item_id", wk.ItemID, "seq", wk.UpToSeq, "err", perr.Err)
+			w.cfg.Log.Error("обработка остановлена", "item_id", wk.ItemID, "seq", wk.UpToSeq, "event_id", wk.Trigger.EventID,
+				"correlation_id", wk.Trigger.CorrelationID, "run_id", runOf(wk.Trigger), "err", perr.Err)
 			w.cfg.Telemetry.Counter(MetricProcessingFailed, 1)
 			if rq, err = w.failure(ctx, wk, perr); err != nil {
 				return err
@@ -445,6 +446,14 @@ func FailureRequest(ctx context.Context, c *Codec, consumer, itemID string, seq 
 		Batch:   []appjournal.Pending{pend},
 		Effects: []appjournal.Effect{Notify{Changes: []Change{{Entity: platform.EntityItem, ID: itemID, Seq: seq, RunID: run, ReceivedAt: received}}}},
 	}, nil
+}
+
+// runOf — run_id записи для логов (пусто вне прогона).
+func runOf(e jc.JournalEntry) string {
+	if e.RunID == nil {
+		return ""
+	}
+	return *e.RunID
 }
 
 // NopTelemetry — телеметрия-пустышка.

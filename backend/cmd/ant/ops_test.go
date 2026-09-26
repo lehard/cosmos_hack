@@ -16,6 +16,7 @@ import (
 	"ant/cmd/internal/config"
 	engineapp "ant/internal/application/engine"
 	"ant/internal/application/engine/enginemem"
+	erpapp "ant/internal/application/erp"
 	appingest "ant/internal/application/ingest"
 	"ant/internal/application/ingest/inmem"
 	appjournal "ant/internal/application/journal"
@@ -228,5 +229,69 @@ func TestSelfCheckOnDB(t *testing.T) {
 	bl, err := rt.Backlogs(ctx, 4)
 	if err != nil || len(bl) != 4 {
 		t.Fatalf("курсоры: %+v %v", bl, err)
+	}
+}
+
+// fakeOutbox — хранилище очереди исходящих erp: только каналы.
+type fakeOutbox struct {
+	erpapp.OutboxStore
+	ch map[string]erpapp.Channel
+}
+
+func (f *fakeOutbox) Channel(_ context.Context, s string) (erpapp.Channel, bool, error) {
+	c, ok := f.ch[s]
+	return c, ok, nil
+}
+
+func (f *fakeOutbox) SetChannel(_ context.Context, c erpapp.Channel) error {
+	f.ch[c.System] = c
+	return nil
+}
+
+// Эпик 30 → 34: смена состояния канала 1С пишет ops.integration.degraded
+// через порт ops, не меняя кода обмена (обёртка хранилища роли outbox).
+func TestChannelWatch(t *testing.T) {
+	j := enginemem.New(nil)
+	codec := &engineapp.Codec{Store: j, Sealer: enginemem.Sealer{KeyRef: "engine@1"}, KeyRef: "engine@1", DomainBuild: "test", Partitions: 1}
+	w := channelWatch{OutboxStore: &fakeOutbox{ch: map[string]erpapp.Channel{}}, rep: &opsapp.Reporter{Journal: j, Codec: codec}, log: slog.New(slog.DiscardHandler)}
+	ctx := context.Background()
+	for _, st := range []string{"ok", "degraded", "degraded", "ok"} {
+		if err := w.SetChannel(ctx, erpapp.Channel{System: "onec", State: st, Detail: "сверка $metadata"}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	var states []string
+	for _, e := range j.Entries() {
+		if e.EventType == string(catalog.OpsIntegrationDegraded) {
+			d, err := codec.Decode(ctx, e)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var x struct{ State string }
+			_ = json.Unmarshal(d.Record.Data, &x)
+			states = append(states, x.State)
+		}
+	}
+	if strings.Join(states, ",") != "degraded,ok" {
+		t.Fatalf("переходы: %v", states)
+	}
+}
+
+// FR-109: /readyz — итог самопроверки: до итога и при критических находках 503.
+func TestReadyView(t *testing.T) {
+	if code, _ := readyView(nil, nil); code != http.StatusServiceUnavailable {
+		t.Fatal("до самопроверки — не готов")
+	}
+	ok := &opsapp.SelfCheckView{OK: true, Summary: dom.MsgOK}
+	code, body := readyView(ok, nil)
+	if code != http.StatusOK || body["summary"] != dom.MsgOK {
+		t.Fatalf("%d %+v", code, body)
+	}
+	bad := &opsapp.SelfCheckView{Summary: dom.MsgFailed + ": genesis: генезиса нет"}
+	if code, body := readyView(bad, nil); code != http.StatusServiceUnavailable || body["checks"].(map[string]string)["selfcheck"] != "failed" {
+		t.Fatalf("%d %+v", code, body)
+	}
+	if code, _ := readyView(ok, fmt.Errorf("нет связи")); code != http.StatusServiceUnavailable {
+		t.Fatal("БД не отвечает — не готов")
 	}
 }

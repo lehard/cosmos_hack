@@ -198,7 +198,7 @@ func (s *Service) decide(ctx context.Context, d decision) (platform.Receipt, err
 		}
 		return platform.Receipt{}, err
 	}
-	s.cfg.Log.Info("ops: решение записано", "module", "ops", "event_id", id, "correlation_id", id, "item_id", d.ItemID, "run_id", run,
+	s.cfg.Log.Info("ops: решение записано", "event_id", id, "correlation_id", id, "item_id", d.ItemID, "run_id", run,
 		"event_type", string(d.Type))
 	rc := platform.Receipt{CommandID: id, EventIDs: []string{id}, RecordedAt: res.Committed}
 	if len(res.Seqs) > 0 {

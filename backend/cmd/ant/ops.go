@@ -44,7 +44,7 @@ type observability struct {
 // останавливать процесс).
 func (e *environment) telemetry() platform.Telemetry {
 	e.obs.once.Do(func() {
-		tel, prom, err := telemetry.New(e.cfg.Ports.Adapters[string(platform.PortTelemetry)], e.log.With(logging.KeyModule, "ops"))
+		tel, prom, err := telemetry.New(e.cfg.Ports.Adapters[string(platform.PortTelemetry)], e.moduleLog("ops"))
 		if err != nil {
 			e.log.Error("телеметрия: адаптер не собран — метрики не выгружаются", logging.KeyModule, "ops", "err", err)
 			tel = telemetry.Nop{}
@@ -52,6 +52,11 @@ func (e *environment) telemetry() platform.Telemetry {
 		e.obs.tel, e.obs.prom = tel, prom
 	})
 	return e.obs.tel
+}
+
+// moduleLog — логгер модуля: поле module по соглашению спайна («Логи»).
+func (e *environment) moduleLog(module string) *slog.Logger {
+	return e.log.With(logging.KeyModule, module)
 }
 
 // metricsHandler — /metrics (FR-41, FR-113): перед выдачей ops снимает свои
@@ -99,7 +104,7 @@ func opsLive(ctx context.Context, env *environment, pool *pgxpool.Pool, ingest *
 		Adapters:         cfg.Ports.Adapters,
 		VerifierInterval: cfg.Security.VerifierInterval,
 		Now:              c.codec.Now, Clock: c.domainClock(), DomainBuild: c.codec.DomainBuild,
-		Telemetry: env.telemetry(), Log: env.log.With(logging.KeyModule, "ops"),
+		Telemetry: env.telemetry(), Log: env.moduleLog("ops"),
 	}
 	if ingest != nil {
 		oc.Quarantine = ingestQuarantine{ingest}
@@ -111,7 +116,7 @@ func opsLive(ctx context.Context, env *environment, pool *pgxpool.Pool, ingest *
 // ops.integration.degraded) на ядре процесса.
 func opsReporter(env *environment, c *core) *opsapp.Reporter {
 	return &opsapp.Reporter{Journal: c.journal, Codec: c.codec, Clock: c.domainClock(), Now: c.codec.Now,
-		Log: env.log.With(logging.KeyModule, "ops")}
+		Log: env.moduleLog("ops")}
 }
 
 // opsRuntime — аренды и курсоры из хранения журнала (схема journal_state
@@ -262,7 +267,7 @@ func runSelfCheck(ctx context.Context, env *environment, pool *pgxpool.Pool) ops
 		RequireGenesis: !isPending("init"),
 		Runtime:        opsRuntime{store: c.journal, leases: c.leases},
 		Roles:          roles, Pending: pendingOf(roles), Idle: idleLeaders(env),
-		LeaderWait: 2 * c.ttl, Now: c.codec.Now, Log: env.log,
+		LeaderWait: 2 * c.ttl, Now: c.codec.Now, Log: env.moduleLog("ops"),
 	}
 	return sc.Run(ctx)
 }
