@@ -247,14 +247,15 @@ second_signature:
 # Этап второй подписи выбирает сфера выдачи (domain.access.Assess по эффективным правам): обычная роль — без второй
 # подписи; «выдача себе» и расширение прав администратора — привилегированная выдача, кто бы её ни делал (AD-11).
 # Подписант второй подписи ≠ инициатор ≠ получатель. Этапы вычисляет одна функция access.RequiredApprovals.
+# Подпись инициатора (администратора безопасности) — подпись самой команды access.policy.grant (уровень 2);
+# документ несёт вторую подпись. Тот же маршрут — у шаблона policy-grant в normative/documents (проверяет тест).
 grant_route:
   template: policy-grant@1
   title: "Выдача ролей, полномочий, клейм"
   route:
-    - {stage: 1, title: "Администратор безопасности — выдача", role: administrator, authority_id: administrator, quorum: one, signature_level: 2, paper_allowed: false, by_source: true}
-    - {stage: 2, title: "Начальник ОТК — вторая подпись", authority_id: second_signature_qc, quorum: one, signature_level: 2, paper_allowed: false, separation: [distinct_signers], when: {grant_domains: [qc]}}
-    - {stage: 3, title: "Руководитель производства — вторая подпись", authority_id: second_signature_production, quorum: one, signature_level: 2, paper_allowed: false, separation: [distinct_signers], when: {grant_domains: [production]}}
-    - {stage: 4, title: "Аудитор ИБ — вторая подпись", authority_id: second_signature_audit, quorum: one, signature_level: 2, paper_allowed: false, separation: [distinct_signers], when: {grant_domains: [admin]}}
+    - {stage: 1, title: "Начальник ОТК — вторая подпись", authority_id: second_signature_qc, quorum: one, signature_level: 2, paper_allowed: false, separation: [distinct_signers], when: {grant_domains: [qc]}}
+    - {stage: 2, title: "Руководитель производства — вторая подпись", authority_id: second_signature_production, quorum: one, signature_level: 2, paper_allowed: false, separation: [distinct_signers], when: {grant_domains: [production]}}
+    - {stage: 3, title: "Аудитор ИБ — вторая подпись", authority_id: second_signature_audit, quorum: one, signature_level: 2, paper_allowed: false, separation: [distinct_signers], when: {grant_domains: [admin]}}
 
 # Параметры аудита — принадлежат Аудитору ИБ (AD-8, AD-15); в генезисе — policy.audit.parameters_set.
 audit:

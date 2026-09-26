@@ -147,3 +147,15 @@ func (c *cachedClock) Now(ctx context.Context) (time.Time, error) {
 	c.at, c.last = t, now
 	return t, nil
 }
+
+// authorities — порт полномочий модуля signing над проекцией политики (эпик
+// 26; вместо signingapp.StaticAuthorities эпика 27): вторая подпись акта
+// ключа и заверение бумаги — по полномочию на позиции seq. Подключается при
+// сборке signing в роли api (пачка стыков Д-59).
+func (b *accessBundle) authorities() (accessapp.PolicyAuthorities, bool) {
+	p, ok := b.policy.(*accessapp.Projection)
+	if !ok {
+		return accessapp.PolicyAuthorities{}, false
+	}
+	return accessapp.PolicyAuthorities{Policy: p, Now: b.now}, true
+}

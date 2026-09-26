@@ -57,8 +57,8 @@ type Crypto interface {
 
 // Authorities — ведомый порт полномочий (AD-15, AD-43): есть ли у человека
 // полномочие на позиции seq (вторая подпись акта ключа, заверение бумаги).
-// Реализация — модуль access (эпик 26); до него — StaticAuthorities по
-// стартовой политике normative/policy.
+// Реализация — access.PolicyAuthorities (эпик 26) над проекцией политики;
+// StaticAuthorities по стартовой политике — для тестов.
 type Authorities interface {
 	Has(ctx context.Context, personID, authorityID string, seq int64) (bool, error)
 	// Domain — сфера сотрудника для выбора второй подписи: qc / production / admin (AD-11).

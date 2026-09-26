@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"slices"
 	"testing"
@@ -13,10 +14,12 @@ import (
 	"ant/internal/application/platform"
 	signingapp "ant/internal/application/signing"
 	accessdom "ant/internal/domain/access"
+	domdocs "ant/internal/domain/documents"
 	dj "ant/internal/domain/journal"
 	"ant/internal/infrastructure/security/casbin"
 	"ant/internal/infrastructure/security/identity"
 	accessstore "ant/internal/infrastructure/storage/access"
+	storagedocs "ant/internal/infrastructure/storage/documents"
 )
 
 // Эпик 26 на HTTP API с настоящими барьерами (вход демо-персоной, Casbin над
@@ -66,10 +69,10 @@ func TestAdminCannotGrantSelfHTTP(t *testing.T) {
 	// Чья подпись нужна — для «Запросить решение».
 	code, out, _ = do(t, h, call{method: "GET", path: "/api/v1/grants/assessment?person_id=ADM-01&kind=role&subject_id=technologist", persona: "ADM-01"})
 	stages, _ := out["stages"].([]any)
-	if code != http.StatusOK || out["self_grant"] != true || out["second_signer"] != "Аудитор ИБ" || len(stages) != 2 {
+	if code != http.StatusOK || out["self_grant"] != true || out["second_signer"] != "Аудитор ИБ" || len(stages) != 1 || out["template"] != "policy-grant@1" {
 		t.Fatalf("оценка выдачи: %d %v", code, out)
 	}
-	if c := stages[1].(map[string]any)["candidates"].([]any); len(c) != 1 || c[0] != "AUD-01" {
+	if c := stages[0].(map[string]any)["candidates"].([]any); len(c) != 1 || c[0] != "AUD-01" {
 		t.Fatalf("кандидаты второй подписи: %v", c)
 	}
 	// Объяснение прав своим кодом.
@@ -102,6 +105,15 @@ func TestCustomerRepresentativeCardOnlyHTTP(t *testing.T) {
 	}
 	if code, desk, _ := do(t, h, call{method: "GET", path: "/api/v1/desk", persona: "CR-71"}); code != http.StatusOK || desk["role"] != "customer_representative" {
 		t.Fatalf("стол карточки: %d %v", code, desk)
+	}
+	// Порт полномочий signing над проекцией: вторая подпись Аудитора ИБ и сферы сотрудников.
+	auth, ok := b.authorities()
+	if !ok {
+		t.Fatal("порт полномочий")
+	}
+	if has, err := auth.Has(context.Background(), "AUD-01", "second_signature_audit", 0); err != nil || !has || auth.Domain(context.Background(), "HQC-01") != "qc" ||
+		auth.Domain(context.Background(), "ADM-01") != "admin" || auth.Domain(context.Background(), "W21") != "production" {
+		t.Fatal("полномочия и сферы", err)
 	}
 	pol, err := b.policy.Policy(context.Background())
 	if err != nil || !pol.CardOnly("CR-71", now26) || pol.CardOnly("HQC-01", now26) {
@@ -207,4 +219,27 @@ func TestStalePolicyCommandHTTP(t *testing.T) {
 		t.Fatalf("актуальный policy_seq: %d %v", code, out)
 	}
 	_ = accessdom.PolicyStream
+}
+
+// Маршрут документа «Выдача ролей, полномочий, клейм» — один: grant_route
+// политики (оценка выдачи в access) совпадает с маршрутом шаблона policy-grant
+// нормативного слоя documents (черновик документа).
+func TestGrantRouteMatchesDocumentTemplate(t *testing.T) {
+	_, seed, _, err := seedFS()
+	if err != nil {
+		t.Fatal(err)
+	}
+	env, err := storagedocs.SeedEnv(domdocs.VerificationDemo)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tpl, ok := env.Templates.ByRef(seed.Catalog.GrantTemplate)
+	if !ok {
+		t.Fatalf("шаблон %s не найден в normative/documents", seed.Catalog.GrantTemplate)
+	}
+	a, _ := json.Marshal(seed.Catalog.GrantRoute)
+	b, _ := json.Marshal(tpl.Route)
+	if string(a) != string(b) || len(seed.Catalog.GrantRoute) != 3 {
+		t.Fatalf("маршрут выдачи расходится:\n политика  %s\n документы %s", a, b)
+	}
 }
