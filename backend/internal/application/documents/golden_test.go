@@ -53,7 +53,7 @@ func goldenDocs(t *testing.T) []goldenEntry {
 				map[string]any{"no": 1, "step_key": "machining.turn", "operation": "Токарная обработка", "operation_run_id": "RUN-1", "executor": "O17",
 					"date": "2026-09-28T07:00:00.000Z — 2026-09-28T07:42:00.000Z", "signature": []string{"O17 (подпись personal, ур. 1)"},
 					"params": []string{"Оборудование: CNC-3", "Программа: УП-017 ред. 4", "Ø 120: 120.02 mm (within)"},
-					"otk": "годен — INS-01, 2026-09-28T08:00:00.000Z", "otk_by": "INS-01", "completion": "completed", "remarks": []string{}},
+					"otk":    "годен — INS-01, 2026-09-28T08:00:00.000Z", "otk_by": "INS-01", "completion": "completed", "remarks": []string{}},
 				map[string]any{"no": 2, "step_key": "welding.weld", "operation": "Сварка шва W-1", "operation_run_id": "RUN-2", "executor": "W21",
 					"date": "2026-09-28T09:00:00.000Z — 2026-09-28T09:20:00.000Z", "signature": []string{"W21 (подпись personal, ур. 1)"},
 					"params": []string{"Оборудование: WELD-1", "Длительность: 20 min"}, "otk": "признак дефекта — камера, 2026-09-28T09:30:00.000Z",

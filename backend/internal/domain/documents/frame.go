@@ -46,7 +46,7 @@ type State struct {
 	Completed bool `json:"completed,omitempty"`
 	// TravelerRef — шаблон сопроводительной карты версии нормативного слоя изделия.
 	TravelerRef string `json:"traveler_ref,omitempty"`
-	Docs      []Doc `json:"docs,omitempty"`
+	Docs        []Doc  `json:"docs,omitempty"`
 	// Requested — черновики, запрошенные намерением documents.Draft (AD-40);
 	// оформляются на следующей записи изделия.
 	Requested []DraftContext `json:"requested,omitempty"`
@@ -357,13 +357,13 @@ func (s *State) fromIntent(env Env, c DraftContext, r kernel.Record, up Upstream
 // draftedData — data реакции document.version.drafted (схема
 // contracts/events/document/document.version.drafted.v1.json).
 type draftedData struct {
-	DocumentID       string `json:"document_id"`
-	Version          int    `json:"version"`
-	TemplateRef      string `json:"template_ref"`
-	DocFormatVersion int    `json:"doc_format_version"`
-	DocDigest        string `json:"doc_digest"`
-	RenderingHash    string `json:"rendering_hash"`
-	SubjectRef       string `json:"subject_ref"`
+	DocumentID       string   `json:"document_id"`
+	Version          int      `json:"version"`
+	TemplateRef      string   `json:"template_ref"`
+	DocFormatVersion int      `json:"doc_format_version"`
+	DocDigest        string   `json:"doc_digest"`
+	RenderingHash    string   `json:"rendering_hash"`
+	SubjectRef       string   `json:"subject_ref"`
 	SourceEventIDs   []string `json:"source_event_ids"`
 	// RequiredApprovals — замороженный набор обязательных подписей (AD-43).
 	RequiredApprovals any    `json:"required_approvals"`
