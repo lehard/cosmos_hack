@@ -1,6 +1,5 @@
 /**
- * Виджет «attention» — публичный вход (FSD). Заготовка оболочки (эпик 03);
- * наполняет эпик 10 «Живая карта и стол руководителя». Оболочка грузит его через
- * widgets/registry.ts и передаёт WidgetProps (shared/config/widget.ts).
+ * Виджет «attention» — публичный вход (FSD): блок «требует вашего внимания»
+ * поверх живой карты (FR-8), эпик 10.
  */
 export { default } from './ui/AttentionWidget.vue'
