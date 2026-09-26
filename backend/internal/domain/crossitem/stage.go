@@ -3,6 +3,7 @@ package crossitem
 import (
 	"time"
 
+	"ant/internal/contracts/constants"
 	"ant/internal/domain/analysis"
 	"ant/internal/domain/documents"
 	"ant/internal/domain/kernel"
@@ -17,7 +18,12 @@ const Module kernel.Module = "crossitem"
 // Own — собственное состояние стадии: генеалогия, партии, садки, плавки,
 // временные группы, привязка событий без изделия, расход разрешений на
 // отклонение (проекция), точки процесса (AD-42).
-type Own struct{}
+type Own struct {
+	// Emitted — event_id адресованных записей, уже выданных стадией (рамка
+	// эпика 07): повтор той же записи подавляется, записи, вызванные своими
+	// адресованными, не порождают новых (неподвижная точка, AD-42).
+	Emitted map[string]bool `json:"emitted,omitempty"`
+}
 
 // Stage — состояние межизделийной стадии целиком: своё и подключённых модулей.
 type Stage struct {
@@ -32,8 +38,53 @@ type Stage struct {
 // Fold — шаг межизделийной стадии (AD-42): запись стадии → адресованные
 // записи. Порядок подключённых функций фиксирован: своё (привязка,
 // генеалогия, партии) → reference → machinelogs → documents → nonconformity →
-// analysis. Слои: изделие → стадия → изделие.
+// analysis. Слои: изделие → стадия → изделие. Неподвижную точку обеспечивает
+// Settle.
 func Fold(s Stage, r kernel.Record) (Stage, []kernel.Addressed) {
+	return Settle(s, r, Modules)
+}
+
+// StepFunc — шаг подключённых функций стадии без правил неподвижной точки.
+type StepFunc func(s Stage, r kernel.Record) (Stage, []kernel.Addressed)
+
+// AddressedID — event_id адресованной записи стадии: UUIDv5(NS_ANT, эмитент ‖
+// тип ‖ поток-адресат ‖ ключ) (AD-42, «Соглашения/Идентификаторы»). Один и тот
+// же вывод стадии при повторе даёт тот же id.
+func AddressedID(a kernel.Addressed) string {
+	return kernel.UUIDv5(constants.NsAnt, "stage\x1f"+string(a.Module)+"\x1f"+string(a.Type)+"\x1f"+a.Stream+"\x1f"+a.Key)
+}
+
+// Settle — шаг стадии с правилами неподвижной точки (AD-42):
+//   - запись, непосредственно вызванная адресованной записью самой стадии
+//     (causation_id ∈ выданных), меняет состояние, но выхода не даёт — «без
+//     нового факта стадия не реагирует на записи, вызванные её же
+//     адресованными записями»;
+//   - адресованная запись с уже выданным id не повторяется.
+//
+// Выход упорядочен: порядок подключённых функций, внутри — как вернула функция.
+func Settle(s Stage, r kernel.Record, step StepFunc) (Stage, []kernel.Addressed) {
+	s, out := step(s, r)
+	if s.Own.Emitted[r.CausationID] {
+		return s, nil
+	}
+	var kept []kernel.Addressed
+	for _, a := range out {
+		id := AddressedID(a)
+		if s.Own.Emitted[id] {
+			continue
+		}
+		if s.Own.Emitted == nil {
+			s.Own.Emitted = map[string]bool{}
+		}
+		s.Own.Emitted[id] = true
+		kept = append(kept, a)
+	}
+	return s, kept
+}
+
+// Modules — подключённые функции стадии в фиксированном порядке (AD-42):
+// модули волны 4 наполняют свои Stage, не трогая рамку.
+func Modules(s Stage, r kernel.Record) (Stage, []kernel.Addressed) {
 	var out, a []kernel.Addressed
 	s.Own, a = own(s.Own, r)
 	out = append(out, a...)
