@@ -120,7 +120,7 @@ func obligationReactions(s State, o Obligation) []kernel.Reaction {
 	slot := kernel.Slot{RuleID: RuleObligation, Subject: o.Subject, TriggerKey: o.ID}
 	if o.Open {
 		d := DueSetData{ObligationID: o.ID, Kind: o.Kind, SubjectRef: o.Subject, DueAt: FormatTime(o.DueAt()), OwnerRoleID: o.OwnerRole,
-			StepKey: o.StepKey, Level: o.Level(), FirstDueAt: FormatTime(o.FirstDue), WaitsOn: o.WaitsOn, Basis: o.Basis, Title: o.Title}
+			StepKey: o.StepKey, Level: o.Level(), FirstDueAt: FormatTime(o.FirstDue), WaitsOn: o.WaitsOn, Basis: o.Basis, Title: truncate(o.Title, 256)}
 		must(kernel.NewReaction(Module, catalog.ObligationDueSet, slot, d, records(o.Causes, reachCauses)...))
 	} else {
 		must(kernel.NewReaction(Module, catalog.ObligationDueCleared, slot, DueClearedData{ObligationID: o.ID, Cause: "fulfilled"},
@@ -146,7 +146,7 @@ func obligationReactions(s State, o Obligation) []kernel.Reaction {
 			last := o.Reaches[len(o.Reaches)-1]
 			d := NotificationData{NotificationID: id, Severity: "alarm", RecipientRoleID: o.OwnerRole, SubjectRef: o.Subject,
 				TextKey: "notifications.overdue." + o.Basis,
-				Params: map[string]string{"title": o.Title, "level": strconv.Itoa(last.Level), "first_due_at": FormatTime(o.FirstDue),
+				Params: map[string]string{"title": truncate(o.Title, 256), "level": strconv.Itoa(last.Level), "first_due_at": FormatTime(o.FirstDue),
 					"item": o.ItemID, "step_key": o.StepKey, "obligation_id": o.ID}}
 			must(kernel.NewReaction(Module, catalog.TaskNotificationSent, as, d, records(o.Causes, reachCauses)...))
 		} else {

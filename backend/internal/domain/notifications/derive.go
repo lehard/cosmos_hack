@@ -201,7 +201,7 @@ func (s *State) wanted(env Env, up Upstream) ([]Obligation, []Task) {
 			for _, id := range rq.Causes {
 				cs = append(cs, Cause{EventID: id, At: s.At})
 			}
-			t := task("quality/"+rq.Key, rq.TaskKind, rq.RoleID, rq.Title, nil, cs...)
+			t := task("quality/"+rq.Key, taskKind(rq.TaskKind), rq.RoleID, rq.Title, nil, cs...)
 			ts = append(ts, t)
 		}
 	}
@@ -245,6 +245,17 @@ func decisionAt(nc nonconformity.State, eventID string, def time.Time) time.Time
 		}
 	}
 	return def
+}
+
+// taskKind — вид задачи из перечисления контракта task.task.created
+// (незнакомый вид запроса — other).
+func taskKind(k string) string {
+	switch k {
+	case "physical_move", "isolate_move", "recheck", "decision_required", "review_after_new_data", "protection_basis_changed",
+		"resign", "remark_carrier", "remove_temporary_carrier", "inspection_missing", "admin_resend", "other":
+		return k
+	}
+	return "other"
 }
 
 func firstCause(cs []string) string {
