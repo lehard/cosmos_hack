@@ -16622,7 +16622,7 @@ components:
         - items
       type: object
 info:
-  description: "HTTP API системы ant — доверенная система контроля качества. Сгенерировано из операций Huma (backend/internal/infrastructure/transport); руками не править (AD-20). Каждая операция несёт x-ant-action: id (он же operationId, ключ прав Casbin и @casl), класс (AD-27), критичность (AD-28), модуль-владелец (AD-40), гарды (AD-39), эмитируемые типы записей журнала. Чтение принимает axis и as_of (AD-21, AD-22); команды — command_id, basis_seq, policy_seq (AD-7, AD-39); режим fixtures | live — в заголовке ответа Ant-Backend (AD-36); ошибки — RFC 9457 problem+json с кодом из contracts/errors.yaml."
+  description: "HTTP API системы ant — доверенная система контроля качества. Сгенерировано из операций Huma (backend/internal/infrastructure/transport); руками не править (AD-20). Каждая операция несёт x-ant-action: id (он же operationId, ключ прав Casbin и @casl), класс (AD-27), критичность (AD-28), модуль-владелец (AD-40), гарды (AD-39), эмитируемые типы записей журнала. Чтение принимает axis и as_of (AD-21, AD-22); команды — command_id, basis_seq, policy_seq (AD-7, AD-39); режим fixtures | live — в заголовке ответа Ant-Backend (AD-36); «сейчас» сервера — в заголовке Ant-Now каждого ответа (RFC 3339, UTC; AD-37); ошибки — RFC 9457 problem+json с кодом из contracts/errors.yaml."
   title: ant API
   version: "1"
 openapi: 3.1.0
@@ -16685,6 +16685,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -16740,6 +16744,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -16795,6 +16803,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -16858,6 +16870,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -16942,6 +16958,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -17042,6 +17062,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -17160,6 +17184,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -17197,6 +17225,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -17264,6 +17296,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -17345,6 +17381,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -17389,6 +17429,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -17437,6 +17481,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -17496,6 +17544,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -17565,6 +17617,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -17601,6 +17657,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -17644,6 +17704,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -17701,6 +17765,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -17756,6 +17824,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -17792,6 +17864,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -17827,6 +17903,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -17863,6 +17943,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -17897,6 +17981,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -17926,6 +18014,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -17961,6 +18053,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
             Set-Cookie:
               schema:
                 description: Cookie сеанса веба (HttpOnly, SameSite=Strict).
@@ -18001,6 +18097,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -18060,6 +18160,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -18115,6 +18219,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -18150,6 +18258,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -18214,6 +18326,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -18250,6 +18366,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -18298,6 +18418,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -18357,6 +18481,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -18469,6 +18597,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -18509,6 +18641,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -18564,6 +18700,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -18599,6 +18739,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -18663,6 +18807,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -18758,6 +18906,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -18813,6 +18965,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -18894,6 +19050,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -18925,6 +19085,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -19066,6 +19230,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -19103,6 +19271,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -19142,6 +19314,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -19217,6 +19393,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -19261,6 +19441,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -19309,6 +19493,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -19360,6 +19548,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -19409,6 +19601,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -19452,6 +19648,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -19502,6 +19702,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -19546,6 +19750,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -19597,6 +19805,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -19651,6 +19863,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -19722,6 +19938,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -19777,6 +19997,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -19838,6 +20062,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -19917,6 +20145,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -19948,6 +20180,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -20052,6 +20288,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -20113,6 +20353,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -20159,6 +20403,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -20209,6 +20457,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -20284,6 +20536,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -20357,6 +20613,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -20436,6 +20696,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -20517,6 +20781,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -20553,6 +20821,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -20638,6 +20910,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -20675,6 +20951,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -20754,6 +21034,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -20798,6 +21082,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -20850,6 +21138,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -20902,6 +21194,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -20948,6 +21244,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -20994,6 +21294,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -21042,6 +21346,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -21088,6 +21396,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -21155,6 +21467,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -21199,6 +21515,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -21246,6 +21566,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -21287,6 +21611,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -21327,6 +21655,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -21367,6 +21699,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -21402,6 +21738,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -21433,6 +21773,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -21488,6 +21832,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -21524,6 +21872,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -21571,6 +21923,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -21690,6 +22046,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -21726,6 +22086,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -21794,6 +22158,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -21838,6 +22206,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -21885,6 +22257,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -21932,6 +22308,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -21979,6 +22359,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -22027,6 +22411,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -22096,6 +22484,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -22159,6 +22551,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -22238,6 +22634,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -22282,6 +22682,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -22367,6 +22771,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -22411,6 +22819,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -22464,6 +22876,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -22512,6 +22928,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -22560,6 +22980,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -22609,6 +23033,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -22656,6 +23084,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -22726,6 +23158,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -22770,6 +23206,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -22836,6 +23276,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -22880,6 +23324,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -22933,6 +23381,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -22979,6 +23431,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -23026,6 +23482,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -23074,6 +23534,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -23124,6 +23588,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -23245,6 +23713,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -23300,6 +23772,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -23341,6 +23817,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -23451,6 +23931,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -23486,6 +23970,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -23555,6 +24043,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -23598,6 +24090,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -23709,6 +24205,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -23790,6 +24290,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -23851,6 +24355,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -23895,6 +24403,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -23944,6 +24456,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -23991,6 +24507,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -24088,6 +24608,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -24129,6 +24653,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -24169,6 +24697,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
             Content-Type:
               schema:
                 description: Тип содержимого.
@@ -24227,6 +24759,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -24299,6 +24835,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -24390,6 +24930,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -24474,6 +25018,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -24568,6 +25116,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -24631,6 +25183,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -24694,6 +25250,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -24738,6 +25298,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -24784,6 +25348,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -24832,6 +25400,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -24884,6 +25456,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -24951,6 +25527,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -24994,6 +25574,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -25040,6 +25624,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -25086,6 +25674,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -25151,6 +25743,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -25206,6 +25802,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -25252,6 +25852,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -25301,6 +25905,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -25367,6 +25975,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -25413,6 +26025,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -25447,6 +26063,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -25478,6 +26098,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -25524,6 +26148,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -25572,6 +26200,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -25607,6 +26239,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -25652,6 +26288,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -25702,6 +26342,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -25756,6 +26400,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -25800,6 +26448,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -25843,6 +26495,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -25879,6 +26535,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -25934,6 +26594,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -25970,6 +26634,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -26065,6 +26733,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -26101,6 +26773,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -26143,6 +26819,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -26213,6 +26893,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -26268,6 +26952,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -26340,6 +27028,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -26376,6 +27068,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -26441,6 +27137,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -26485,6 +27185,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -26552,6 +27256,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -26596,6 +27304,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -26644,6 +27356,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -26685,6 +27401,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -26733,6 +27453,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -26800,6 +27524,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -26836,6 +27564,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -26897,6 +27629,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -26941,6 +27677,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -26985,6 +27725,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -27054,6 +27798,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -27121,6 +27869,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -27165,6 +27917,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -27213,6 +27969,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -27271,6 +28031,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -27332,6 +28096,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -27410,6 +28178,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -27448,6 +28220,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -27492,6 +28268,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -27549,6 +28329,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -27614,6 +28398,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -27649,6 +28437,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -27706,6 +28498,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -27742,6 +28538,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -27789,6 +28589,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -27871,6 +28675,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -27925,6 +28733,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -27960,6 +28772,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -28017,6 +28833,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -28052,6 +28872,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -28109,6 +28933,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -28163,6 +28991,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -28223,6 +29055,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -28258,6 +29094,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -28315,6 +29155,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -28365,6 +29209,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -28428,6 +29276,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -28491,6 +29343,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -28529,6 +29385,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -28572,6 +29432,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -28618,6 +29482,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -28664,6 +29532,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -28710,6 +29582,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -28756,6 +29632,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -28789,6 +29669,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -28833,6 +29717,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -28916,6 +29804,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -28953,6 +29845,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -29047,6 +29943,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -29110,6 +30010,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -29160,6 +30064,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -29221,6 +30129,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -29322,6 +30234,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -29359,6 +30275,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -29405,6 +30325,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -29451,6 +30375,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -29547,6 +30475,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -29591,6 +30523,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -29648,6 +30584,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -29698,6 +30638,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -29738,6 +30682,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -29793,6 +30741,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -29848,6 +30800,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -29911,6 +30867,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -29974,6 +30934,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -30037,6 +31001,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -30083,6 +31051,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -30138,6 +31110,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -30222,6 +31198,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -30268,6 +31248,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -30317,6 +31301,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:
@@ -30365,6 +31353,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/BackendMode"
                 description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+            Ant-Now:
+              schema:
+                description: "«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."
+                type: string
         default:
           content:
             application/problem+json:

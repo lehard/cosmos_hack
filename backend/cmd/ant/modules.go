@@ -83,6 +83,8 @@ import (
 
 // apiOptions — режимы ведущих портов и адаптеры прав для сборки API.
 type apiOptions struct {
+	// now — «сейчас» сервера для заголовка Ant-Now (serverNow); nil — реальное время.
+	now         func(ctx context.Context) time.Time
 	mode        platform.Mode
 	moduleModes map[string]platform.Mode
 	// journal — live-реализация journal над журналом и публикатором SSE
@@ -165,7 +167,7 @@ func buildAPI(mux *http.ServeMux, o apiOptions) *httpapi.API {
 		// (AD-39), редких подписантов и объяснения прав своим кодом.
 		gate.Policy = x.policy
 	}
-	hc := httpapi.Config{Mode: o.mode, ModuleModes: o.moduleModes, Gate: gate, Identity: idp}
+	hc := httpapi.Config{Mode: o.mode, ModuleModes: o.moduleModes, Gate: gate, Identity: idp, Now: o.now}
 	if o.signing != nil {
 		// Д-59: подпись команд уровня ≥ 1 — signing.CheckCommand по ExpectRequest.
 		hc.Signatures = o.signing

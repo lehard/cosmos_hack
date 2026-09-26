@@ -80,12 +80,14 @@ func hasCommandMeta[I any]() bool {
 }
 
 // Meta — заголовки ответа каждой операции: режим ведущих портов Ant-Backend
-// (AD-36, FR-150). Встраивается в выход операции (Out, NoBody или свой).
+// (AD-36, FR-150) и «сейчас» сервера Ant-Now (AD-37). Встраивается в выход
+// операции (Out, NoBody или свой).
 type Meta struct {
 	Backend platform.Mode `header:"Ant-Backend" doc:"Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."`
+	Now     string        `header:"Ant-Now" doc:"«Сейчас» сервера, RFC 3339 UTC (AD-37): в заготовках — часы текущего шага мира, на часах сценария — часы прогона, иначе — реальное время. С ним сравнивать время в ответе (checked_at и т. п.), а не часы браузера. Есть и у ответов-ошибок."`
 }
 
-func (m *Meta) setMode(x platform.Mode) { m.Backend = x }
+func (m *Meta) setMeta(x platform.Mode, now string) { m.Backend, m.Now = x, now }
 
 // Out — выход операции: заголовки Meta и тело.
 type Out[T any] struct {

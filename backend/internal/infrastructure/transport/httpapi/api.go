@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/adapters/humago"
@@ -40,6 +41,10 @@ type Config struct {
 	// Signatures — проверка подписи команд уровня ≥ 1 (модуль signing, Д-59);
 	// nil — подпись не проверяется (выгрузка OpenAPI, тесты).
 	Signatures platform.SignatureChecker
+	// Now — «сейчас» сервера для заголовка Ant-Now каждого ответа: в заготовках
+	// — часы шага мира, на часах сценария — часы прогона, иначе — реальное
+	// время; nil — реальное время (UTC).
+	Now func(ctx context.Context) time.Time
 }
 
 // API — Huma API ant с каталогом зарегистрированных операций.
@@ -58,7 +63,7 @@ func New(mux *http.ServeMux, cfg Config) *API {
 		"Каждая операция несёт x-ant-action: id (он же operationId, ключ прав Casbin и @casl), класс (AD-27), " +
 		"критичность (AD-28), модуль-владелец (AD-40), гарды (AD-39), эмитируемые типы записей журнала. " +
 		"Чтение принимает axis и as_of (AD-21, AD-22); команды — command_id, basis_seq, policy_seq (AD-7, AD-39); " +
-		"режим fixtures | live — в заголовке ответа Ant-Backend (AD-36); ошибки — RFC 9457 problem+json с кодом из contracts/errors.yaml."
+		"режим fixtures | live — в заголовке ответа Ant-Backend (AD-36); «сейчас» сервера — в заголовке Ant-Now каждого ответа (RFC 3339, UTC; AD-37); ошибки — RFC 9457 problem+json с кодом из contracts/errors.yaml."
 	hc.Servers = []*huma.Server{{URL: "/"}}
 	hc.OpenAPIPath = Prefix + "/openapi"
 	hc.DocsPath = ""
@@ -66,10 +71,33 @@ func New(mux *http.ServeMux, cfg Config) *API {
 	hc.CreateHooks = nil
 	h := humago.New(mux, hc)
 	a := &API{huma: h, cfg: cfg}
+	h.UseMiddleware(a.stampNow) // первым: и отказы входа несут Ant-Now
 	h.UseMiddleware(a.identify)
 	h.UseMiddleware(a.captureSigned)
 	registerComponents(h)
 	return a
+}
+
+// NowHeader — заголовок «сейчас» сервера: с ним фронтенд сравнивает время
+// ответа (например, checked_at индикатора целостности), а не часы браузера —
+// в заготовках и на часах сценария доменное время ≠ реальное (AD-37).
+const NowHeader = "Ant-Now"
+
+// now — «сейчас» сервера строкой RFC 3339 (UTC, миллисекунды).
+func (a *API) now(ctx context.Context) string {
+	t := time.Now()
+	if a.cfg.Now != nil {
+		if x := a.cfg.Now(ctx); !x.IsZero() {
+			t = x
+		}
+	}
+	return t.UTC().Format("2006-01-02T15:04:05.000Z07:00")
+}
+
+// stampNow — заголовок Ant-Now на каждом ответе операций (и ошибках).
+func (a *API) stampNow(ctx huma.Context, next func(huma.Context)) {
+	ctx.SetHeader(NowHeader, a.now(ctx.Context()))
+	next(ctx)
 }
 
 // Huma возвращает нижележащий huma.API (для особых операций: SSE, загрузка файлов).
@@ -146,7 +174,7 @@ type momenter interface {
 }
 
 // metaSetter — выход с заголовками Ant-Backend и Ant-Seq.
-type metaSetter interface{ setMode(platform.Mode) }
+type metaSetter interface{ setMeta(platform.Mode, string) }
 
 // Register объявляет операцию: маршрут route, описание x-ant-action act и
 // обработчик h, вызывающий ведущий порт модуля. Общий декоратор (Gate) и
@@ -198,7 +226,7 @@ func Register[I, O any](a *API, route Route, act platform.Action, h func(ctx con
 			return nil, problemFrom(err, act.ID)
 		}
 		if ms, ok := any(out).(metaSetter); ok {
-			ms.setMode(mode)
+			ms.setMeta(mode, a.now(ctx))
 		}
 		return out, nil
 	})
