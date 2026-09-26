@@ -41,6 +41,8 @@ type Model struct {
 	Tasks     []*Task
 	// Loop — контур улучшений: предложения генераторов и меры (эпик 42).
 	Loop Loop
+	// WhyMissed — вторые причины инцидентов «почему не остановили раньше» (render_investigation.go).
+	WhyMissed []*whyMissed
 
 	// BPMN действующей версии: узлы по step_key и по порядку, отпечаток XML (AD-17).
 	Bpmn       map[string]*BpmnNode
@@ -182,6 +184,7 @@ func Build(spec *Spec, pol *Policy, bpmnXML []byte) (*Model, error) {
 	if err := m.buildStory(); err != nil {
 		return nil, err
 	}
+	m.buildWhyMissed()
 	m.finishEvents()
 	return m, nil
 }

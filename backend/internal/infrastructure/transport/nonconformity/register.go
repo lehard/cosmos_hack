@@ -153,6 +153,17 @@ func Register(api *httpapi.API, q app.Queries, c app.Commands) {
 			return c.ResolvePresentation(ctx, in.ItemID, in.Body)
 		})
 
+	httpapi.Do(api, httpapi.Post("/items/{item_id}/presentations/review", "Пересмотреть решение на точке предъявления",
+		"FR-32, FR-146, Д-81: решение, принятое до новых данных, пересматривается новой записью — «оставить в силе» (только если приёмка прошла бы сейчас) "+
+			"или «отозвать приёмку» (блок изделия человеком, качество «не проверено», исправление результата контроля в 1С по решению человека). "+
+			"Прежняя запись не меняется; вторая подпись по политике не требуется."),
+		platform.Action{ID: "nonconformity.presentation.review", Class: platform.ClassPermissive, Critical: true, CAGroup: "product_decision", Owner: owner,
+			Subject: "item", Guards: []string{"separation_of_duties", "item_blocked", "intervention_open"},
+			Emits: emits(catalog.DecisionPresentationReviewed), SignatureLevel: 2},
+		func(ctx context.Context, in *itemCmd[app.ReviewPresentation]) (platform.Receipt, error) {
+			return c.ReviewPresentation(ctx, in.ItemID, in.Body)
+		})
+
 	httpapi.Do(api, httpapi.Post("/items/{item_id}/containment", "Установить сдерживание",
 		"FR-49: наблюдать / доп. проверка / блок изделия или партии — защитное действие, критическое."),
 		platform.Action{ID: "nonconformity.containment.set", Class: platform.ClassProtective, Critical: true, CAGroup: "product_decision", Owner: owner,

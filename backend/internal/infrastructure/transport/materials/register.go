@@ -69,8 +69,10 @@ func Register(api *httpapi.API, q app.Queries, c app.Commands) {
 		ContentType string `header:"Content-Type" doc:"Тип содержимого."`
 		Body        []byte
 	}
-	httpapi.Register(api, httpapi.Get("/materials/{address}/content", "Содержимое материала",
-		"AD-23: байты материала; адрес проверяется после расшифрования и чтения."),
+	content := httpapi.Get("/materials/{address}/content", "Содержимое материала",
+		"AD-23: байты материала (кадр, иллюстрация, скан, протокол) как есть, тип — заголовок Content-Type; адрес проверяется после расшифрования и чтения.")
+	content.Binary = []string{"image/*", "application/pdf", "*/*"}
+	httpapi.Register(api, content,
 		platform.Action{ID: "materials.material.content", Class: platform.ClassRead, Owner: owner},
 		func(ctx context.Context, in *addrIn) (*contentOut, error) {
 			v, err := q.Content(ctx, in.Address)

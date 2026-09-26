@@ -192,6 +192,9 @@ func (s *Service) ConcludeCause(ctx context.Context, incidentID string, in Concl
 	}
 	data := map[string]any{"incident_id": incidentID, "nc_ids": in.NCIDs, "conclusion": in.Conclusion, "verification": in.Verification,
 		"reason": reasonOf(in.Reason)}
+	if in.Branch != "" {
+		data["branch"] = in.Branch
+	}
 	if category != "" {
 		data["category"] = category
 	}
@@ -274,7 +277,13 @@ func (s *Service) CloseIncident(ctx context.Context, incidentID string, in Close
 	if err != nil {
 		return platform.Receipt{}, err
 	}
-	if err := refusal(dom.GuardOpen(v)); err != nil {
+	// Кейс §2.3, FR-64: расследование закрывается, когда отвечены обе причины
+	// и эффективность мер проверена; область риска — раньше и отдельно (S05).
+	if in.Scope == dom.CloseInvestigation {
+		if err := refusal(dom.GuardCloseInvestigation(s.facts(ctx, v, nil))); err != nil {
+			return platform.Receipt{}, err
+		}
+	} else if err := refusal(dom.GuardOpen(v)); err != nil {
 		return platform.Receipt{}, err
 	}
 	confirmed, excluded := 0, 0
@@ -289,6 +298,9 @@ func (s *Service) CloseIncident(ctx context.Context, incidentID string, in Close
 	data := map[string]any{"incident_id": incidentID, "initial_size": v.InitialSize, "confirmed": confirmed, "excluded": excluded}
 	if in.Summary != "" {
 		data["summary"] = in.Summary
+	}
+	if in.Scope != "" {
+		data["scope"] = in.Scope
 	}
 	return s.decide(ctx, catalog.IncidentIncidentClosed, incidentID, in.CommandMeta(), 0, data)
 }

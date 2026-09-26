@@ -8,7 +8,7 @@
  * Запросы решения и подпись этапа — операции модуля documents (эпик 28).
  * Подпись: окно уровня 2 → агент токена или ключ в браузере через порт
  * подписи над содержимым документа (signing_payload_b64); без агента — бумага с QR (FR-139): печать
- * здесь; если бумажная подпись этапа ждёт заверения текущим пользователем —
+ * здесь (печатная форма сервера — в новой вкладке); если бумажная подпись этапа ждёт заверения текущим пользователем —
  * загрузка скана и заверение (заверитель ≠ подписант). Паспорт изделия —
  * правым окном записи (Д-70), не панелью сбоку.
  */
@@ -18,6 +18,7 @@ import { useSession } from '@/entities/session'
 import { useDrillDown } from '@/features/drill-down'
 import { PaperSignPanel, SignDialog, payloadTypeOf, useSigningPort } from '@/features/sign-decision'
 import { backendModeOf } from '@/shared/api/response'
+import { openPrintWindow } from '@/shared/lib/print-window'
 import { useProblemText } from '@/shared/i18n/problem'
 import type { WidgetProps } from '@/shared/config/widget'
 import { useMomentStore } from '@/shared/model/moment'
@@ -52,6 +53,16 @@ const decline = useDeclineDocument()
 const print = usePrintPaper()
 const dialog = ref<'confirm' | 'paper' | null>(null)
 const error = ref<unknown>(undefined)
+
+/** Заголовок команды над документом (AD-39): seq документа, версия политики и рабочее место сеанса. */
+function commandHeader() {
+  const s = session.data.value?.data
+  return {
+    basis_seq: request.value?.document.basis_seq ?? 0,
+    policy_seq: s?.policy_seq ?? 0,
+    ...(s?.workplace?.id ? { workplace_id: s.workplace.id } : {}),
+  }
+}
 
 /** Сводка уровня 2: документ, изделие, предложение, этап, отпечаток. */
 const summary = computed<SummaryField[]>(() => {
@@ -88,8 +99,7 @@ async function signWithAgent(): Promise<void> {
       key_ref: sig?.keyid ?? '',
       signature_b64: sig?.sig ?? '',
       doc_digest: r.document.doc_digest,
-      basis_seq: r.document.basis_seq ?? 0,
-      policy_seq: session.data.value?.data?.policy_seq ?? 0,
+      ...commandHeader(),
       signature: envelope,
     })
     dialog.value = null
@@ -98,10 +108,18 @@ async function signWithAgent(): Promise<void> {
   }
 }
 
-function printPaper(): void {
+/** Распечатать с QR: запись «напечатан» и печатная форма сервера в новой вкладке (FR-139). */
+async function printPaper(): Promise<void> {
   const r = request.value
   if (!r) return
-  print.mutate({ document_id: r.document.document_id, version: r.document.version })
+  const tab = openPrintWindow()
+  try {
+    const res = await print.mutateAsync({ document_id: r.document.document_id, version: r.document.version, ...commandHeader() })
+    tab.write(res.data.html)
+  } catch {
+    // Ошибку показывает окно подписи (print.error).
+    tab.close()
+  }
 }
 
 /** Заверить бумажную подпись: скан и учётный номер оригинала (FR-139, AD-43). */
@@ -109,13 +127,29 @@ function attestScan(payload: { file: File; archive_no: string }): void {
   const r = request.value
   const a = attestation.value
   if (!r || !a) return
-  attest.mutate({ document_id: r.document.document_id, version: r.document.version, stage: a.stage, ...payload })
+  attest.mutate({
+    document_id: r.document.document_id,
+    version: r.document.version,
+    stage: a.stage,
+    signer_person_id: a.signer,
+    doc_digest: r.document.doc_digest,
+    item_id: r.proposal.item_id,
+    ...commandHeader(),
+    ...payload,
+  })
 }
 
 function sendDecline(comment: string): void {
   const r = request.value
   if (!r || r.my_stage == null) return
-  decline.mutate({ document_id: r.document.document_id, version: r.document.version, stage: r.my_stage, comment })
+  decline.mutate({
+    document_id: r.document.document_id,
+    version: r.document.version,
+    stage: r.my_stage,
+    doc_digest: r.document.doc_digest,
+    comment,
+    ...commandHeader(),
+  })
 }
 </script>
 

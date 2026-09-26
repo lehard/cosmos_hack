@@ -260,6 +260,35 @@ export const statusDictionaries = {
       }
     }
   },
+  "investigation_stage": {
+    "title": "Стадия расследования инцидента (стол технолога): область → гипотезы → причина → меры → проверка эффективности → закрыто",
+    "values": {
+      "scope_defined": {
+        "label": "Область определена",
+        "tone": "info"
+      },
+      "hypothesis": {
+        "label": "Проверка гипотез",
+        "tone": "attention"
+      },
+      "cause_confirmed": {
+        "label": "Причина установлена",
+        "tone": "info"
+      },
+      "action_assigned": {
+        "label": "Меры назначены",
+        "tone": "info"
+      },
+      "effectiveness_check": {
+        "label": "Проверка эффективности",
+        "tone": "attention"
+      },
+      "closed": {
+        "label": "Расследование закрыто",
+        "tone": "muted"
+      }
+    }
+  },
   "item_summary": {
     "title": "Сводный статус изделия для списков и карты (словарь продукта «Статусы изделия»); вычисляется из шести осей, сам осью не является",
     "values": {

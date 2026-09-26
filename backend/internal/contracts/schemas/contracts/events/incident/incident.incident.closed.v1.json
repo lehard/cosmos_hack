@@ -31,6 +31,14 @@
       "type": "string",
       "maxLength": 4000,
       "description": "Итог."
+    },
+    "scope": {
+      "type": "string",
+      "enum": [
+        "risk_scope",
+        "investigation"
+      ],
+      "description": "Что закрыто: область риска (risk_scope, по умолчанию) или расследование целиком (investigation — обе причины отвечены, эффективность мер проверена)."
     }
   },
   "required": [

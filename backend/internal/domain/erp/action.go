@@ -113,7 +113,7 @@ var (
 	Triggers = []catalog.Type{
 		catalog.ItemItemRegistered, catalog.ErpLotReceived, catalog.GenealogyLotIssued,
 		catalog.OperationMessageThrown, catalog.DecisionPresentationResolved, catalog.DecisionLotResolved,
-		catalog.DecisionDispositionSet, catalog.DecisionDispositionVerified,
+		catalog.DecisionDispositionSet, catalog.DecisionDispositionVerified, catalog.DecisionPresentationReviewed,
 	}
 	// Exchange — записи обмена своего семейства (запрос, ответ, карантин,
 	// решения человека): по ним ведётся очередь и журнал обмена.

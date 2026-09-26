@@ -123,16 +123,27 @@ type integrationProbe struct{ env *environment }
 func (p integrationProbe) Probe(ctx context.Context, system string) (opsapp.ProbeResult, error) {
 	switch system {
 	case "onec", "galaktika":
-		if ledgerSystem(p.env) != system {
-			return opsapp.ProbeResult{Result: opsapp.ProbeNotSupported, Detail: "порт учёта обслуживает другую систему: " + ledgerSystem(p.env)}, nil
+		// Эпик 43: сверка адаптера той системы, которую проверяют, — и когда
+		// порт учёта обслуживает другую установленную систему (erp.ledger).
+		var (
+			l   erpapp.Ledger
+			err error
+		)
+		if system == "galaktika" {
+			l, err = galaktikaClient(p.env)
+		} else {
+			l, err = onecClient(p.env)
 		}
-		l, _, err := ledger(p.env)
-		if err != nil || l == nil {
+		if err != nil {
 			return opsapp.ProbeResult{}, fmt.Errorf("адаптер учёта не собран: %v", err)
 		}
 		info := l.Info()
 		c, err := l.Check(ctx)
-		return probeOf(info.Endpoint, c.Detail, err, erpContract), nil
+		detail := c.Detail
+		if s := ledgerSystem(p.env); s != system && err == nil {
+			detail += "; учётный обмен сейчас ведёт " + s + " (erp.ledger)"
+		}
+		return probeOf(info.Endpoint, detail, err, erpContract), nil
 	case "mes":
 		ch, err := mesChannel(p.env)
 		if err != nil {

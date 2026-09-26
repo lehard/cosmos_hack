@@ -574,7 +574,13 @@ func (s *Service) request(_ context.Context, v *view, d *dom.Doc, person string)
 func proposal(d *dom.Doc, v *view) (DecisionProposal, DecisionEscalation) {
 	item := v.ItemID
 	p := DecisionProposal{Kind: "other", Code: d.Context.Decision, Summary: d.Title, ItemID: item, ItemLabel: item}
-	e := DecisionEscalation{Reason: "Документ «" + d.Title + "» ждёт подписей по маршруту шаблона " + d.TemplateRef, RuleID: "documents.route", RuleRev: d.TemplateRef}
+	// Текст для людей без кода шаблона (код — в template_ref / rule_rev): имя
+	// шаблона по-русски из шаблонов документов, нет — «по маршруту согласования».
+	route := "по маршруту согласования"
+	if t, ok := v.Env.Templates.ByRef(d.TemplateRef); ok && t.Title != "" && t.Title != d.Title {
+		route = "по маршруту «" + t.Title + "»"
+	}
+	e := DecisionEscalation{Reason: "Документ «" + d.Title + "» ждёт подписей " + route, RuleID: "documents.route", RuleRev: d.TemplateRef}
 	switch d.DocType {
 	case dom.DocNCDisposition:
 		p.Kind, p.NCID, p.NCNumber = "disposition", d.Key, dom.NCNumber(d.Key)

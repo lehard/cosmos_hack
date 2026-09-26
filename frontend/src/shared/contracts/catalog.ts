@@ -388,6 +388,17 @@ export const eventCatalog = {
     "caGroup": "product_decision",
     "currentVersion": 1
   },
+  "decision.presentation.reviewed": {
+    "title": "Пересмотр решения на точке предъявления",
+    "emitter": "nonconformity",
+    "kind": "decision",
+    "stream": "item",
+    "axis": "none",
+    "actionClass": "permissive",
+    "critical": true,
+    "caGroup": "product_decision",
+    "currentVersion": 1
+  },
   "decision.process_hold.released": {
     "title": "Остановка точки процесса снята",
     "emitter": "nonconformity",

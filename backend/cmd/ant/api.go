@@ -139,7 +139,7 @@ func runAPI(ctx context.Context, env *environment) error {
 		}
 	}
 	if modeOf(opts, "analysis") == platform.ModeLive {
-		if opts.analysis, err = analysisLive(ctx, env); err != nil {
+		if opts.analysis, err = analysisLive(ctx, env, opts.accessDirectory()); err != nil {
 			return err
 		}
 		// Эпик 42: вход генератора «ограничение линии» — счётчики узлов analytics.

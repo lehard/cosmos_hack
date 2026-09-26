@@ -160,6 +160,8 @@ channels:
         $ref: "#/components/messages/decision.nonconformity.closed.v1"
       decision.presentation.resolved.v1:
         $ref: "#/components/messages/decision.presentation.resolved.v1"
+      decision.presentation.reviewed.v1:
+        $ref: "#/components/messages/decision.presentation.reviewed.v1"
       decision.lot.resolved.v1:
         $ref: "#/components/messages/decision.lot.resolved.v1"
       decision.concession.granted.v1:
@@ -771,6 +773,7 @@ operations:
       - $ref: "#/channels/decision/messages/decision.disposition.verified.v1"
       - $ref: "#/channels/decision/messages/decision.nonconformity.closed.v1"
       - $ref: "#/channels/decision/messages/decision.presentation.resolved.v1"
+      - $ref: "#/channels/decision/messages/decision.presentation.reviewed.v1"
       - $ref: "#/channels/decision/messages/decision.lot.resolved.v1"
       - $ref: "#/channels/decision/messages/decision.concession.granted.v1"
       - $ref: "#/channels/decision/messages/decision.concession.revoked.v1"
@@ -2420,6 +2423,29 @@ components:
                 const: 1
               data:
                 $ref: ./decision/decision.presentation.resolved.v1.json
+      x-ant-kind: decision
+      x-ant-emitter: nonconformity
+      x-ant-stream: item
+      x-ant-axis: none
+      x-ant-action-class: permissive
+      x-ant-critical: true
+      x-ant-current: true
+    decision.presentation.reviewed.v1:
+      name: decision.presentation.reviewed.v1
+      title: Пересмотр решения на точке предъявления
+      summary: "Пересмотр решения на закрывающей точке, принятого до новых данных (FR-32, FR-146, AD-5, Д-81): новая запись поверх прежней, прежняя не меняется. «Оставить в силе» — приёмка подтверждена на текущем состоянии; «отозвать приёмку» — основание приёмки не держится: блок изделия человеком, качество «не проверено», исправление результата контроля в учётной системе по решению человека (AD-7)."
+      contentType: application/json
+      payload:
+        allOf:
+          - $ref: ./common/envelope.v1.json
+          - type: object
+            properties:
+              event_type:
+                const: decision.presentation.reviewed
+              schema_version:
+                const: 1
+              data:
+                $ref: ./decision/decision.presentation.reviewed.v1.json
       x-ant-kind: decision
       x-ant-emitter: nonconformity
       x-ant-stream: item

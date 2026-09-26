@@ -138,7 +138,15 @@ async function submit(withAgent: boolean): Promise<void> {
 function askForDecision(operation: string): void {
   const subject = Object.values(DECISION_ACTIONS).find((d) => d.operation === operation)?.subject ?? 'nonconformity'
   const id = subject === 'item' ? itemId.value : (ncId.value ?? '')
-  requestDecision.mutate({ action: operation, subject_ref: `${subject}:${id}` })
+  const s = session.data.value?.data
+  // Заголовок команды (AD-39): seq карточки и версия политики сеанса.
+  requestDecision.mutate({
+    action: operation,
+    subject_ref: `${subject}:${id}`,
+    basis_seq: card.value?.basis_seq ?? 0,
+    policy_seq: s?.policy_seq ?? 0,
+    ...(s?.workplace?.id ? { workplace_id: s.workplace.id } : {}),
+  })
 }
 </script>
 

@@ -3,6 +3,9 @@
  * Источник: contracts/openapi.yaml
  */
 
+/**
+ * Область риска: open — идёт, closed — решение по изделиям принято (расследование — stage).
+ */
 export type IncidentSummaryStatus = typeof IncidentSummaryStatus[keyof typeof IncidentSummaryStatus];
 
 

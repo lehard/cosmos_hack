@@ -4,8 +4,10 @@
  */
 import type { HypothesisBranch } from './hypothesisBranch';
 import type { HypothesisCategory } from './hypothesisCategory';
+import type { HypothesisChange } from './hypothesisChange';
 import type { HypothesisStatus } from './hypothesisStatus';
 import type { JournalRecordRef } from './journalRecordRef';
+import type { NextCheck } from './nextCheck';
 
 export interface Hypothesis {
   branch?: HypothesisBranch;
@@ -17,9 +19,13 @@ export interface Hypothesis {
      */
   confidence_bp?: number;
   contradicting: JournalRecordRef[];
+  /** Что меняло уверенность: версии вывода и решения людей по возрастанию времени. */
+  history: HypothesisChange[];
   hypothesis_id: string;
-  /** Что измерить, чтобы проверить гипотезу. */
+  /** Что измерить, чтобы проверить гипотезу (устарело: next_check). */
   measurement_hint?: string;
+  /** Что проверить следующим: проверка, что она разблокирует, сколько изделий может исключить. */
+  next_check?: NextCheck;
   statement?: string;
   status: HypothesisStatus;
   supporting: JournalRecordRef[];

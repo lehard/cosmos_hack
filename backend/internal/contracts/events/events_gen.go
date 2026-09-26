@@ -1394,6 +1394,40 @@ const DecisionPresentationResolvedV1ResolutionAcceptWithConcession DecisionPrese
 const DecisionPresentationResolvedV1ResolutionInsufficientData DecisionPresentationResolvedV1Resolution = "insufficient_data"
 const DecisionPresentationResolvedV1ResolutionReject DecisionPresentationResolvedV1Resolution = "reject"
 
+// Пересмотр решения на закрывающей точке, принятого до новых данных (FR-32,
+// FR-146, AD-5, Д-81): новая запись поверх прежней, прежняя не меняется. «Оставить
+// в силе» — приёмка подтверждена на текущем состоянии; «отозвать приёмку» —
+// основание приёмки не держится: блок изделия человеком, качество «не проверено»,
+// исправление результата контроля в учётной системе по решению человека (AD-7).
+type DecisionPresentationReviewedV1 struct {
+	// Закрывающая точка пересматриваемого решения: `ZT-1`…`ZT-6`, `ZT-R`, `ZT-V`.
+	ClosingPoint string `json:"closing_point"`
+
+	// Новые факты, которые рассмотрены при пересмотре (причины метки «принято до
+	// новых данных»).
+	NewFactIds []UUID `json:"new_fact_ids"`
+
+	// Исход пересмотра: оставить решение в силе / отозвать приёмку.
+	Outcome DecisionPresentationReviewedV1Outcome `json:"outcome"`
+
+	// Номер предъявления пересматриваемого решения.
+	PresentationNo int `json:"presentation_no"`
+
+	// Основание пересмотра: код и текст.
+	Reason Reason `json:"reason"`
+
+	// Пересматриваемое решение (decision.presentation.resolved).
+	ReviewedEventID UUID `json:"reviewed_event_id"`
+
+	// Шаг точки предъявления пересматриваемого решения.
+	StepKey StepKey `json:"step_key"`
+}
+
+type DecisionPresentationReviewedV1Outcome string
+
+const DecisionPresentationReviewedV1OutcomeRevoked DecisionPresentationReviewedV1Outcome = "revoked"
+const DecisionPresentationReviewedV1OutcomeUpheld DecisionPresentationReviewedV1Outcome = "upheld"
+
 // Остановка точки процесса снята — снимает только уполномоченный; после снятия —
 // «точка чистоты»: первые N изделий под усиленным контролем (FR-49).
 type DecisionProcessHoldReleasedV1 struct {
@@ -1543,6 +1577,15 @@ const DictIncidentActionBlock DictIncidentAction = "block"
 const DictIncidentActionCheck DictIncidentAction = "check"
 const DictIncidentActionObserve DictIncidentAction = "observe"
 const DictIncidentActionRelease DictIncidentAction = "release"
+
+type DictInvestigationStage string
+
+const DictInvestigationStageActionAssigned DictInvestigationStage = "action_assigned"
+const DictInvestigationStageCauseConfirmed DictInvestigationStage = "cause_confirmed"
+const DictInvestigationStageClosed DictInvestigationStage = "closed"
+const DictInvestigationStageEffectivenessCheck DictInvestigationStage = "effectiveness_check"
+const DictInvestigationStageHypothesis DictInvestigationStage = "hypothesis"
+const DictInvestigationStageScopeDefined DictInvestigationStage = "scope_defined"
 
 type DictItemSummary string
 
@@ -3007,6 +3050,10 @@ type IncidentAnalysisScopedV1 struct {
 // обязателен ответ «чем проверили» (FR-59). Необратимое инженерное решение
 // (AD-27).
 type IncidentCauseConcludedV1 struct {
+	// Ветка причины: почему возник (why_made) или почему не обнаружили раньше
+	// (why_missed). Нет — why_made.
+	Branch *IncidentCauseConcludedV1Branch `json:"branch,omitempty,omitzero"`
+
 	// Категория подтверждённой причины.
 	Category *IncidentCauseConcludedV1Category `json:"category,omitempty,omitzero"`
 
@@ -3025,6 +3072,11 @@ type IncidentCauseConcludedV1 struct {
 	// Чем проверили.
 	Verification string `json:"verification"`
 }
+
+type IncidentCauseConcludedV1Branch string
+
+const IncidentCauseConcludedV1BranchWhyMade IncidentCauseConcludedV1Branch = "why_made"
+const IncidentCauseConcludedV1BranchWhyMissed IncidentCauseConcludedV1Branch = "why_missed"
 
 type IncidentCauseConcludedV1Category string
 
@@ -3154,9 +3206,18 @@ type IncidentIncidentClosedV1 struct {
 	// Размер области при создании.
 	InitialSize int `json:"initial_size"`
 
+	// Что закрыто: область риска (risk_scope, по умолчанию) или расследование целиком
+	// (investigation — обе причины отвечены, эффективность мер проверена).
+	Scope *IncidentIncidentClosedV1Scope `json:"scope,omitempty,omitzero"`
+
 	// Итог.
 	Summary *string `json:"summary,omitempty,omitzero"`
 }
+
+type IncidentIncidentClosedV1Scope string
+
+const IncidentIncidentClosedV1ScopeInvestigation IncidentIncidentClosedV1Scope = "investigation"
+const IncidentIncidentClosedV1ScopeRiskScope IncidentIncidentClosedV1Scope = "risk_scope"
 
 // Инцидент открыт — связанная группа сигналов и несоответствий с общей
 // предполагаемой причиной; вычисляет межизделийная стадия функциями analysis

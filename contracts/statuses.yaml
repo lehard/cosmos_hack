@@ -111,6 +111,15 @@ dictionaries:
       - {code: acknowledged, label: "Подтверждено 1С",                  tone: success}
       - {code: rejected,     label: "Ошибка обмена",                    tone: danger}
       - {code: quarantined,  label: "В карантине — нужна переотправка", tone: danger}
+  investigation_stage:
+    title: "Стадия расследования инцидента (стол технолога): область → гипотезы → причина → меры → проверка эффективности → закрыто"
+    values:
+      - {code: scope_defined,       label: "Область определена",       tone: info}
+      - {code: hypothesis,          label: "Проверка гипотез",         tone: attention}
+      - {code: cause_confirmed,     label: "Причина установлена",      tone: info}
+      - {code: action_assigned,     label: "Меры назначены",           tone: info}
+      - {code: effectiveness_check, label: "Проверка эффективности",   tone: attention}
+      - {code: closed,              label: "Расследование закрыто",    tone: muted}
   item_summary:
     title: "Сводный статус изделия для списков и карты (словарь продукта «Статусы изделия»); вычисляется из шести осей, сам осью не является"
     values:

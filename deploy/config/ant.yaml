@@ -65,6 +65,10 @@ defaults:
   # если onec есть в integrations.enabled; роль outbox отправляет, роль stands
   # держит stand 1С (/stand/1c/). Реальная 1С — сменой base_url.
   erp:
+    # Какая из установленных учётных систем ведёт учётный обмен (onec | galaktika;
+    # пусто — galaktika, если она в integrations.enabled, иначе onec). Эпик 43:
+    # переключение на Галактику — ANT_ERP_LEDGER=galaktika и перезапуск ant.
+    ledger: ""
     onec:
       base_url: "http://127.0.0.1:8491/stand/1c/erp" # stand 1С роли stands на этом хосте
       user: ""
@@ -77,28 +81,31 @@ defaults:
       pull_every: 30s # опрос заданий, номенклатуры и партий
       retry_max: 8    # попыток при транспортных ошибках: 1 с, 5 с, 30 с, 2 мин, 10 мин, далее 30 мин; затем карантин
     # Галактика ERP (эпик 31, gal.qc.v1): работает вместо 1С, если galaktika есть
-    # в integrations.enabled (одна учётная система на экземпляр, docs/new-adapter.md).
+    # в integrations.enabled и её выбирает erp.ledger (одна учётная система на
+    # экземпляр, docs/new-adapter.md). Stand Галактики (эпик 43) — роль stands:
+    # обрабатывает тот же каталог обмена (том exchange в compose) и REST-фасад.
     galaktika:
       transport: exchange-dir # exchange-dir | rest-facade
       dir: /var/lib/ant/exchange/galaktika # out/ ack/ in/ in-ack/ about.xml
-      base_url: ""    # для rest-facade: http(s)://‹хост›/galaktika/esb/v1
+      base_url: ""    # для rest-facade: http(s)://‹хост›/galaktika/esb/v1; пусто со stand: true — /stand/galaktika/esb/v1 этого хоста
       node: ant       # наш узел обмена
       peer: ""        # узел Галактики; пусто — из about
       database: ""    # база Галактики для внешних ID; пусто — из about
       enterprise: ENT01
       user: ""
       password_file: "" # секрет — только файлом
-      stand: false    # stand Галактики — эпик 43
+      stand: false    # true — на месте Галактики stand роли stands (эпик 43; в prod запрещён)
       timeout: 10s
       poll: 1s        # опрос очереди исходящих
       recheck: 5m     # сверка about
       pull_every: 30s # опрос входящих пакетов
       retry_max: 8    # для exchange-dir: ожидание квитанции ≈ 70 мин, затем карантин
   # Канал MES (эпик 31, B2MML-JSON mes.isa95.v1): работает, если mes есть в
-  # integrations.enabled и задан base_url; stand MES — эпик 43.
+  # integrations.enabled и задан base_url (или stand: true — stand MES роли
+  # stands, эпик 43: /stand/mes/b2mml, страница /stand/mes/).
   mes:
     b2mml:
-      base_url: ""    # http(s)://‹хост›/b2mml
+      base_url: ""    # http(s)://‹хост›/b2mml; пусто со stand: true — stand этого хоста
       logical_id: ant
       user: ""
       password_file: ""
@@ -164,7 +171,19 @@ profiles:
       synchronous_commit: "off"
     # integrations.enabled — список stand-ов заполняют эпики интеграций.
     integrations:
-      enabled: [onec, skud] # эпик 30: обмен с stand-ом 1С; эпик 37: stand СКУД (роли outbox и stands)
+      # эпик 30: обмен с stand-ом 1С; эпик 37: stand СКУД; эпик 43: stand-ы
+      # Галактики и MES (роли outbox и stands).
+      enabled: [onec, skud, galaktika, mes]
+    # Эпик 43: учётный обмен ведёт 1С; Галактика установлена stand-ом —
+    # «Проверить соединение» работает, переключение — ANT_ERP_LEDGER=galaktika.
+    erp:
+      ledger: onec
+      galaktika:
+        stand: true
+    # Эпик 43: блоки ОТК уходят в stand MES (mes.hold.requested → ConfirmBOD).
+    mes:
+      b2mml:
+        stand: true
 
   # Нагрузочный прогон: больше партиций и параллелизма, ant-worker ×N (FR-107).
   load:

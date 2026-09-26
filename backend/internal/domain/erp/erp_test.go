@@ -176,6 +176,24 @@ func TestInspectionResult(t *testing.T) {
 	}
 }
 
+// Д-81: отзыв приёмки — новая версия результата контроля той же точки
+// («мало данных»); «оставить в силе» учёт не меняет.
+func TestReviewedPresentation(t *testing.T) {
+	b := Books{Subject: item}
+	r := rec(catalog.DecisionPresentationResolved, item, ev.DecisionPresentationResolvedV1{StepKey: "welding.zt3_acceptance", ClosingPoint: "ZT-3", Resolution: "accept",
+		PresentationNo: 1, MethodEventIds: []ev.UUID{}})
+	ds, b := plan(t, b, r, "", 1)
+	up := rec(catalog.DecisionPresentationReviewed, item, ev.DecisionPresentationReviewedV1{ReviewedEventID: ev.UUID(r.EventID), StepKey: "welding.zt3_acceptance",
+		ClosingPoint: "ZT-3", PresentationNo: 1, Outcome: ev.DecisionPresentationReviewedV1OutcomeUpheld, NewFactIds: []ev.UUID{}, Reason: ev.Reason{Text: "в допуске"}})
+	plan(t, b, up, "", 0)
+	rv := rec(catalog.DecisionPresentationReviewed, item, ev.DecisionPresentationReviewedV1{ReviewedEventID: ev.UUID(r.EventID), StepKey: "welding.zt3_acceptance",
+		ClosingPoint: "ZT-3", PresentationNo: 1, Outcome: ev.DecisionPresentationReviewedV1OutcomeRevoked, NewFactIds: []ev.UUID{}, Reason: ev.Reason{Text: "ток вне уставки"}})
+	ds2, _ := plan(t, b, rv, "", 1)
+	if ds2[0].Key != ds[0].Key || ds2[0].Data.Resolution == nil || *ds2[0].Data.Resolution != ev.ErpPostingRequestedV1ResolutionInsufficientData {
+		t.Fatalf("отзыв — исправление того же сообщения: %s %+v", ds2[0].Key, ds2[0].Data)
+	}
+}
+
 // Ось «учёт в 1С» меняется только квитанцией; журнал обмена — по записям.
 func TestViews(t *testing.T) {
 	b := Books{Subject: item}

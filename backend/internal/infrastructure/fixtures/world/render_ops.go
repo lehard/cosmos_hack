@@ -603,9 +603,9 @@ func renderOps(c *Ctx) []loader.Response {
 }
 
 // integrations — экран «Интеграции» (ops.integration.list, FR-157; эпик 48):
-// в мире заготовок установлены стенды 1С, КОМПАС-3D, VisionQC, контроля
-// действий оператора и демо-УЦ; Галактика, MES, СКУД и партнёры — «не
-// установлена». Канал 1С — как в erp.channel.list того же шага.
+// в мире заготовок установлены стенды 1С, Галактики и MES (эпик 43),
+// КОМПАС-3D, СКУД (эпик 37), VisionQC, контроля действий оператора и демо-УЦ;
+// партнёры — «не установлена». Канал 1С — как в erp.channel.list того же шага.
 func (c *Ctx) integrations() opsapp.IntegrationList {
 	queued, rejected := int64(0), int64(0)
 	var last time.Time
@@ -654,10 +654,17 @@ func (c *Ctx) integrations() opsapp.IntegrationList {
 	// Эпик 37: СКУД — stand роли stands (журнал проходов skud.v1, кнопки проходов на /stand/skud/).
 	skud := stand("skud", "http://stands:8491/stand/skud/api/v1")
 	skud.Detail = ptr("Турникеты зон цехов: проходы сотрудников, присутствие на постах")
+	// Эпик 43: Галактика — stand роли stands за каталогом обмена (учётный
+	// обмен ведёт 1С, переключение — erp.ledger); MES — stand роли stands,
+	// блоки ОТК уходят в него (mes.hold.requested → ConfirmBOD).
+	gal := stand("galaktika", "file:///var/lib/ant/exchange/galaktika")
+	gal.Detail = ptr("Галактика ERP 9.x (stand): каталог обмена gal.qc.v1, квитанции GalAck; учётный обмен сейчас ведёт 1С")
+	mes := stand("mes", "http://stands:8491/stand/mes/b2mml")
+	mes.Detail = ptr("MES цеха (stand): блоки ОТК по B2MML, заблокированный экземпляр не получает следующей операции")
 	ca := stand("ca", "https://ca.stand/ocsp")
 	ca.Detail = ptr("Демо-УЦ: выпуск и отзыв сертификатов mTLS, OCSP")
 	return opsapp.IntegrationList{Profile: "fixtures", Items: []opsapp.IntegrationEntry{
-		onec, absent("galaktika"), absent("mes"), stand("kompas", "file:///var/lib/ant/exchange/kompas"), skud,
+		onec, gal, mes, stand("kompas", "file:///var/lib/ant/exchange/kompas"), skud,
 		ca, stand("visionqc", "http://stands:8090/visionqc"), stand("operatorvision", "http://stands:8090/operatorvision"), absent("partner"),
 	}}
 }

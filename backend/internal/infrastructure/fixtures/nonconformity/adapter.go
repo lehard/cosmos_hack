@@ -111,6 +111,11 @@ func (Adapter) ResolvePresentation(ctx context.Context, itemID string, in app.Re
 	return decide(ctx, "nonconformity.presentation.resolve", "item", itemID, in.CommandMeta())
 }
 
+// ReviewPresentation — пересмотр решения на точке (nonconformity.presentation.review).
+func (Adapter) ReviewPresentation(ctx context.Context, itemID string, in app.ReviewPresentation) (platform.Receipt, error) {
+	return decide(ctx, "nonconformity.presentation.review", "item", itemID, in.CommandMeta())
+}
+
 // ResolveLot — решение по партии (nonconformity.lot.resolve).
 func (Adapter) ResolveLot(ctx context.Context, lotID string, in app.ResolveLot) (platform.Receipt, error) {
 	return decide(ctx, "nonconformity.lot.resolve", "lot", lotID, in.CommandMeta())

@@ -704,6 +704,28 @@ func summaryOf(r kernel.Record) string {
 		return "Несоответствие зарегистрировано правилом (окно нарушения специального процесса)"
 	case catalog.DecisionCleanPointAssigned:
 		return "Точка чистоты: усиленный контроль"
+	case catalog.EquipmentDeviationDetected:
+		var d struct {
+			EquipmentID string `json:"equipment_id"`
+			Parameter   string `json:"parameter"`
+		}
+		_ = json.Unmarshal(r.Data, &d)
+		out := "Отклонение режима оборудования " + d.EquipmentID
+		if d.Parameter != "" {
+			out += ": " + strings.ToLower(parameterName(d.Parameter))
+		}
+		return out
+	case catalog.DecisionPresentationResolved:
+		var d dom.PresentationResolvedData
+		_ = json.Unmarshal(r.Data, &d)
+		return "Решение на точке " + d.ClosingPoint + ": " + resolutionLabel(d.Resolution)
+	case catalog.DecisionPresentationReviewed:
+		var d dom.PresentationReviewedData
+		_ = json.Unmarshal(r.Data, &d)
+		if d.Outcome == dom.ReviewRevoked {
+			return "Пересмотр на точке " + d.ClosingPoint + ": приёмка отозвана"
+		}
+		return "Пересмотр на точке " + d.ClosingPoint + ": решение оставлено в силе"
 	case catalog.IncidentMembershipChanged:
 		return "Статус в области риска инцидента изменён"
 	}

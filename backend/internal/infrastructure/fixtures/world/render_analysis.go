@@ -2,6 +2,7 @@ package world
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -12,8 +13,9 @@ import (
 // «Возможные обстоятельства», не «причина»; уверенность ≠ вероятность вины;
 // «под подозрением» ≠ брак (NFR-UI-4, FR-58…FR-62).
 
-func jref(e *Event) analysisapp.JournalRecordRef {
-	r := analysisapp.JournalRecordRef{EventID: e.ID, EventType: e.Type, OccurredAt: e.Occurred}
+// jref — ссылка на запись журнала с текстом для людей и источником словами.
+func (c *Ctx) jref(e *Event) analysisapp.JournalRecordRef {
+	r := analysisapp.JournalRecordRef{EventID: e.ID, EventType: e.Type, OccurredAt: e.Occurred, Text: optStr(e.Summary), SourceLabel: optStr(c.M.sourceLabel(e))}
 	if v := e.Params["outcome"]; v != "" {
 		r.Variant = ptr(v)
 	}
@@ -53,11 +55,22 @@ func renderAnalysis(c *Ctx) []loader.Response {
 		if !in.Spec.Closed.IsZero() && !in.Spec.Closed.Time().After(c.T) {
 			st = "closed"
 		}
-		incs.Items = append(incs.Items, analysisapp.IncidentSummary{IncidentID: in.Spec.ID, Label: in.Spec.Label, CommonFactor: factorRef(in), Size: v.Size(), InitialSize: in.Versions[0].Size(), ScopeVersion: v.Spec.V, Status: st, OpenedAt: in.Spec.Opened.Time()})
+		incs.Items = append(incs.Items, analysisapp.IncidentSummary{IncidentID: in.Spec.ID, Label: in.Spec.Label, CommonFactor: c.factorLabeled(in), Size: v.Size(), InitialSize: in.Versions[0].Size(), ScopeVersion: v.Spec.V, Status: st, OpenedAt: in.Spec.Opened.Time(),
+			IncidentLink: c.incidentLink(in), InvestigationState: c.investigationState(in, v)})
 		out = append(out, resp("analysis.risk_scope.read", c.riskScope(in, v), "incident_id", in.Spec.ID))
 	}
 	out = append(out, resp("analysis.incident.list", incs))
 	return out
+}
+
+// factorLabeled — общий фактор с названием из справочника оборудования или партий.
+func (c *Ctx) factorLabeled(in *Incident) *analysisapp.FactorRef {
+	f := factorRef(in)
+	if f == nil {
+		return nil
+	}
+	f.Label = c.factorValueLabel(f.Factor, f.Value)
+	return f
 }
 
 func factorRef(in *Incident) *analysisapp.FactorRef {
@@ -102,7 +115,7 @@ func (c *Ctx) circumstances(n *NC) analysisapp.Circumstances {
 		default:
 			continue
 		}
-		rec := analysisapp.CircumstanceRecord{JournalRecordRef: jref(e), Lane: lane, JournalSeq: ptr(e.Seq)}
+		rec := analysisapp.CircumstanceRecord{JournalRecordRef: c.jref(e), Lane: lane, JournalSeq: ptr(e.Seq)}
 		if sk := sourceKindOf(e); sk != "" {
 			rec.SourceKind = ptr(sk)
 		}
@@ -129,6 +142,7 @@ func (c *Ctx) circumstances(n *NC) analysisapp.Circumstances {
 	if h := c.hypAt(n); h != nil {
 		ci.ConclusionIsCategorical = h.Categorical
 	}
+	ci.Lanes = c.laneQualities(n, it)
 	return ci
 }
 
@@ -144,7 +158,7 @@ func (c *Ctx) hypotheses(n *NC) analysisapp.Hypotheses {
 		out := []analysisapp.JournalRecordRef{}
 		for _, e := range c.Visible() {
 			if pred(e) && len(out) < 6 {
-				out = append(out, jref(e))
+				out = append(out, c.jref(e))
 			}
 		}
 		return out
@@ -163,12 +177,16 @@ func (c *Ctx) hypotheses(n *NC) analysisapp.Hypotheses {
 				status = "rejected"
 			}
 		}
-		x := analysisapp.Hypothesis{HypothesisID: fmt.Sprintf("HYP-%s-%s", n.ID, cat), Category: cat, Branch: ptr("why_made"), Statement: ptr(stmt), Status: status, Supporting: sp, Contradicting: con}
+		x := analysisapp.Hypothesis{HypothesisID: fmt.Sprintf("HYP-%s-%s", n.ID, cat), Category: cat, Branch: ptr("why_made"), Statement: ptr(stmt), Status: status, Supporting: sp, Contradicting: con,
+			History: c.hypothesisHistory(n, cat)}
 		if strength != "not_assessable" {
 			x.ConfidenceBP = ptr(conf)
 		}
 		if hint != "" {
 			x.MeasurementHint = ptr(hint)
+		}
+		if status == "proposed_by_system" {
+			x.NextCheck = c.nextCheck(n, cat)
 		}
 		hs.Hypotheses = append(hs.Hypotheses, x)
 	}
@@ -184,6 +202,10 @@ func (c *Ctx) hypotheses(n *NC) analysisapp.Hypotheses {
 		sup(func(e *Event) bool {
 			return e.Type == "inspection.result.recorded" && strings.Contains(e.Summary, "теле кольца")
 		}), []analysisapp.JournalRecordRef{})
+	// Вторая причина (кейс §2.3): «почему не остановили раньше».
+	if w := c.whyMissedHypothesis(n); w != nil {
+		hs.Hypotheses = append(hs.Hypotheses, *w)
+	}
 	return hs
 }
 
@@ -257,14 +279,65 @@ func (c *Ctx) groups() []ncGroup {
 		if allCause {
 			inv = "cause_confirmed"
 		}
-		g := ncGroup{row: analysisapp.NcGroup{GroupKey: strings.ReplaceAll(k, "|", "."), DefectType: a.defect, Operation: a.op, Equipment: a.eq, NCCount: len(a.ncs), NCIDs: []string{}, Investigation: inv, LastFoundAt: last}}
+		g := ncGroup{row: analysisapp.NcGroup{GroupKey: strings.ReplaceAll(k, "|", "."), DefectType: a.defect, Operation: a.op, Equipment: a.eq, NCCount: len(a.ncs), NCIDs: []string{}, Investigation: inv, LastFoundAt: last,
+			DefectTypeLabel: defectLabel(a.defect), OperationLabel: c.nodeName(a.op), EquipmentLabel: c.factorValueLabel("machine", a.eq)}}
 		for _, n := range a.ncs {
 			g.row.NCIDs = append(g.row.NCIDs, n.ID)
 		}
+		g.row.IncidentID = c.groupIncident(a.ncs)
 		g.factors = analysisapp.CommonFactors{GroupKey: g.row.GroupKey, GroupLabel: fmt.Sprintf("%s × %s × %s", defectTitle(a.defect), a.op, a.eq), NCCount: len(a.ncs), Rows: c.factorRows(a.ncs)}
 		out = append(out, g)
 	}
 	return out
+}
+
+// factorValueLabel — значение фактора словами из справочников мира:
+// оборудование — справочник оборудования, партия — справочник партий,
+// исполнитель — справочник людей (политика). Нет названия — nil.
+func (c *Ctx) factorValueLabel(factor, value string) *string {
+	if value == "" {
+		return nil
+	}
+	for _, l := range c.M.Spec.Lots {
+		if l.ID == value {
+			return ptr("Партия " + l.Label)
+		}
+	}
+	switch factor {
+	case "machine", "tool", "fixture":
+		return nameOf(c.M.names.Equipment, value)
+	case "performer":
+		if n := c.M.personName(value); n != value {
+			return ptr(n)
+		}
+	}
+	return nil
+}
+
+// groupIncident — расследование группы: инцидент, открытый по несоответствию
+// группы, иначе инцидент, к которому относится несоответствие (изделие в области).
+func (c *Ctx) groupIncident(ncs []*NC) *string {
+	var visible []*Incident
+	for _, in := range c.M.Incidents {
+		if in.VersionAt(c.T) != nil {
+			visible = append(visible, in)
+		}
+	}
+	for _, in := range visible {
+		for _, n := range ncs {
+			if in.Spec.Trigger == n.ID {
+				return ptr(in.Spec.ID)
+			}
+		}
+	}
+	for _, in := range visible {
+		for _, n := range ncs {
+			if slices.Contains(c.incidentNCs(in), n.ID) {
+				return ptr(in.Spec.ID)
+			}
+		}
+	}
+	return nil
 }
 
 // weldBefore — последнее выполнение сварки изделия, начатое не позже t.
@@ -323,6 +396,7 @@ func (c *Ctx) factorRows(ncs []*NC) []analysisapp.CommonFactorRow {
 		row := analysisapp.CommonFactorRow{Factor: f, Matches: bn, DistinctValues: len(m)}
 		if best != "" {
 			row.Value = ptr(best)
+			row.ValueLabel = c.factorValueLabel(f, best)
 		} else {
 			row.Matches = 0
 		}
@@ -333,7 +407,8 @@ func (c *Ctx) factorRows(ncs []*NC) []analysisapp.CommonFactorRow {
 
 // riskScope — область риска с версиями (FR-61, FR-62): «тающая» область 34 → 13 → 6.
 func (c *Ctx) riskScope(in *Incident, v *ScopeState) analysisapp.RiskScope {
-	rs := analysisapp.RiskScope{IncidentID: in.Spec.ID, IncidentLabel: in.Spec.Label, CommonFactor: factorRef(in), Versions: []analysisapp.ScopeVersion{}, Items: []analysisapp.ScopeItem{}, BasisSeq: c.EntitySeq(in.Spec.ID)}
+	rs := analysisapp.RiskScope{IncidentID: in.Spec.ID, IncidentLabel: in.Spec.Label, CommonFactor: c.factorLabeled(in), Versions: []analysisapp.ScopeVersion{}, Items: []analysisapp.ScopeItem{}, BasisSeq: c.EntitySeq(in.Spec.ID),
+		IncidentLink: c.incidentLink(in)}
 	if c.M.anchor != nil && in.Spec.ID == "RS-01" {
 		w := firstWeld(c.M.anchor)
 		rs.LastKnownGood = &analysisapp.KnownGood{Label: c.M.anchor.Label + " — последняя подтверждённо годная сварка", At: w.To}
@@ -359,6 +434,7 @@ func (c *Ctx) riskScope(in *Incident, v *ScopeState) analysisapp.RiskScope {
 			}
 		}
 		x.Breakdown = c.breakdown(sv, sv.Spec.At.Time())
+		x.ScopeVersionDiff = c.versionDiff(in, i)
 		rs.Versions = append(rs.Versions, x)
 	}
 	for _, id := range sortedKeys(v.Status) {

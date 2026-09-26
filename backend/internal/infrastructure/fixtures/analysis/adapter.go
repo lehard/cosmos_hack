@@ -5,6 +5,7 @@ import (
 
 	app "ant/internal/application/analysis"
 	"ant/internal/application/platform"
+	"ant/internal/contracts/errcodes"
 )
 
 // Adapter — реализация fixtures ведущих портов модуля analysis (AD-36):
@@ -99,8 +100,25 @@ func (Adapter) ScopeAnalysis(ctx context.Context, incidentID string, in app.Scop
 	return decide(ctx, "analysis.analysis.scope", "incident", incidentID, in.CommandMeta())
 }
 
-// CloseIncident — закрыть инцидент (analysis.incident.close).
+// CloseIncident — закрыть инцидент (analysis.incident.close). Закрыть
+// расследование (scope=investigation) на заготовках нельзя, пока в шапке
+// инцидента на шаге курсора есть блокеры (close_blockers) — отказ тем же
+// кодом, что у live (422 incident.cause_branch_open, incident.effectiveness_unchecked).
 func (Adapter) CloseIncident(ctx context.Context, incidentID string, in app.CloseIncident) (platform.Receipt, error) {
+	if in.Scope == "investigation" {
+		list, err := respond[app.IncidentList](ctx, "analysis.incident.list", nil, &platform.Moment{})
+		if err != nil {
+			return platform.Receipt{}, err
+		}
+		for _, x := range list.Items {
+			if x.IncidentID == incidentID && len(x.CloseBlockers) > 0 {
+				b := x.CloseBlockers[0]
+				e := platform.Fail(errcodes.Code(b.Code), "incident_id", incidentID)
+				e.Detail = b.Text
+				return platform.Receipt{}, e
+			}
+		}
+	}
 	return decide(ctx, "analysis.incident.close", "incident", incidentID, in.CommandMeta())
 }
 

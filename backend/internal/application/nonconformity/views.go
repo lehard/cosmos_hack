@@ -37,6 +37,8 @@ type NCRecordRef struct {
 	// Reading — числа режима оборудования (совместимое дополнение): у
 	// equipment.deviation.detected и equipment.cycle.summarized.
 	Reading *NCParameterReading `json:"reading,omitempty" doc:"Параметр режима числами: уставка и наблюдённые значения (отклонение режима, сводка цикла)."`
+	// Absent — отметка «данных не было» (совместимое дополнение, Д-81).
+	Absent bool `json:"absent,omitempty" doc:"Отметка «данных не было»: на момент решения записей этого источника не было; event_id — запись о потере связи источника или первая его запись, пришедшая позже."`
 }
 
 // NCParameterReading — параметр режима числами (AD-4: целые с масштабом, без
@@ -255,6 +257,29 @@ type NCPresentationView struct {
 	MethodResults []NCRecordRef         `json:"method_results" doc:"Результаты методов контроля, на которых решение (как happened.after в карточке НС)."`
 	Review        *NCPresentationReview `json:"review,omitempty" doc:"Пересмотр решения, принятого до новых данных (строка очереди kind = review)."`
 	BasisSeq      int64                 `json:"basis_seq" doc:"seq, на котором построен ответ (basis_seq команды, AD-39)."`
+	// Recommendation, Actions — совместимые дополнения (Д-81, стол контролёра).
+	Recommendation *NCRecommendation      `json:"recommendation,omitempty" doc:"Рекомендация системы — отдельно от политики: что система предлагает и почему; решает человек."`
+	Actions        []NCPresentationAction `json:"actions,omitempty" doc:"Решения на экране: только их показывает интерфейс — доступность для вошедшего, почему, и последствия, вычисленные сервером."`
+}
+
+// NCRecommendation — рекомендация системы на точке (FR-50 режим 3: предлагает — человек утверждает).
+type NCRecommendation struct {
+	Outcome string   `json:"outcome" enum:"accept,accept_with_concession,reject,insufficient_data,upheld,revoked" doc:"Рекомендуемый исход: решение на точке или исход пересмотра."`
+	Why     []string `json:"why" doc:"Почему система это предлагает — словами."`
+}
+
+// NCPresentationAction — решение на экране точки предъявления или пересмотра:
+// операция, её параметр (resolution или outcome), доступность для вошедшего и
+// последствия, вычисленные из состояния изделия и политики.
+type NCPresentationAction struct {
+	Operation    string   `json:"operation" enum:"nonconformity.presentation.resolve,nonconformity.presentation.review" doc:"Операция API."`
+	Resolution   *string  `json:"resolution,omitempty" enum:"accept,accept_with_concession,reject,insufficient_data" doc:"resolution команды nonconformity.presentation.resolve."`
+	Outcome      *string  `json:"outcome,omitempty" enum:"upheld,revoked" doc:"outcome команды nonconformity.presentation.review."`
+	Label        string   `json:"label" doc:"Надпись кнопки: действие и направление."`
+	Allowed      bool     `json:"allowed" doc:"Пройдёт гарды для вошедшего (полномочие точки, разделение обязанностей, блок, результаты методов)."`
+	WhyAvailable string   `json:"why_available" doc:"Почему доступно или почему нет — словами."`
+	Consequences []string `json:"consequences" doc:"Что произойдёт: изделие, маршрут, блокировка, область риска, 1С, история."`
+	PolicyRef    *string  `json:"policy_ref,omitempty" doc:"Основание в политике: полномочие точки или правило подписи."`
 }
 
 // NCPresentationPoint — точка предъявления: поля команды решения и подписи для людей.
@@ -275,6 +300,8 @@ type NCPresentationReview struct {
 	Decision        NCRecordRef   `json:"decision" doc:"Прежнее решение на точке (автор, время)."`
 	KnownAtDecision []NCRecordRef `json:"known_at_decision" doc:"Что было в основании при подписи (результаты методов решения)."`
 	NewFacts        []NCRecordRef `json:"new_facts" doc:"Что пришло после решения (с числами режима reading, если есть)."`
+	// WhySignificant — совместимое дополнение (Д-81).
+	WhySignificant []string `json:"why_significant,omitempty" doc:"Почему именно эти факты значимы: связь с операцией до приёмки, уставка, специальный процесс, чего не было при подписи."`
 }
 
 // NCSummary — несоответствие в списке.

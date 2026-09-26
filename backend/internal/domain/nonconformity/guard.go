@@ -19,6 +19,7 @@ const (
 	ActRecheck            = "nonconformity.recheck.request"
 	ActIsolate            = "nonconformity.item.isolate"
 	ActPresentation       = "nonconformity.presentation.resolve"
+	ActPresentationReview = "nonconformity.presentation.review"
 	ActLot                = "nonconformity.lot.resolve"
 	ActDisposition        = "nonconformity.disposition.set"
 	ActVerify             = "nonconformity.disposition.verify"
@@ -78,6 +79,8 @@ func Guard(s State, env Env, up Upstream, cmd kernel.Command) error {
 		}
 	case PresentationResolvedData:
 		return guardPresentation(s, env, up, cmd, p)
+	case PresentationReviewedData:
+		return GuardReview(s, cmd.Actor, p)
 	case DispositionSetData:
 		n, err := s.mustNC(p.NCID)
 		if err != nil {
@@ -173,19 +176,8 @@ func guardPresentation(s State, env Env, up Upstream, cmd kernel.Command, p Pres
 	if !accept {
 		return nil
 	}
-	if s.InterventionOpen {
-		return kernel.Refuse(errcodes.NonconformityInterventionOpen)
-	}
-	if s.Blocked() {
-		return kernel.Refuse(errcodes.NonconformityItemBlocked)
-	}
-	for _, n := range s.NCs {
-		// Открытое несоответствие без исполняемого решения — изделие не
-		// принимается (снятие блока ≠ годность, AD-30).
-		decided := (n.Status == StatusDispositionSet && n.Executed) || n.Status == StatusVerified || s.Covered(n)
-		if n.Open() && !decided {
-			return kernel.Refuse(errcodes.NonconformityItemBlocked)
-		}
+	if err := acceptableNow(s); err != nil {
+		return err
 	}
 	for _, id := range p.MethodEventIDs {
 		if !slices.Contains(s.Inspections, id) {
@@ -207,6 +199,75 @@ func guardPresentation(s State, env Env, up Upstream, cmd kernel.Command, p Pres
 		return kernel.Refuse(errcodes.NonconformityConcessionRequired, "decision", "Принять по разрешению на отклонение")
 	}
 	return nil
+}
+
+// acceptableNow — изделие можно признать годным на текущем состоянии: нет
+// открытого вмешательства, блока и открытого несоответствия без исполняемого
+// решения (снятие блока ≠ годность, AD-30). Общая часть гардов «принять» и
+// «оставить приёмку в силе» (Д-81).
+func acceptableNow(s State) error {
+	if s.InterventionOpen {
+		return kernel.Refuse(errcodes.NonconformityInterventionOpen)
+	}
+	if s.Blocked() {
+		return kernel.Refuse(errcodes.NonconformityItemBlocked)
+	}
+	for _, n := range s.NCs {
+		decided := (n.Status == StatusDispositionSet && n.Executed) || n.Status == StatusVerified || s.Covered(n)
+		if n.Open() && !decided {
+			return kernel.Refuse(errcodes.NonconformityItemBlocked)
+		}
+	}
+	return nil
+}
+
+// GuardReview — гард пересмотра решения на точке (FR-32, FR-146, Д-81):
+// пересматривается записанное решение изделия; основание обязательно;
+// отозвать можно только приёмку и один раз; «оставить в силе» приёмку —
+// только если она прошла бы сейчас (разделение обязанностей FR-56 и
+// acceptableNow): при значимых новых фактах путь — несоответствие и
+// разрешение на отклонение, а не подтверждение прежней подписи. Отзыв —
+// защитное направление, других условий нет. Полномочие точки проверяет api.
+func GuardReview(s State, actor string, p PresentationReviewedData) error {
+	var pr *Presentation
+	for i := range s.Presentations {
+		if s.Presentations[i].ResolvedEventID != "" && s.Presentations[i].ResolvedEventID == p.ReviewedEventID {
+			pr = &s.Presentations[i]
+		}
+	}
+	if pr == nil {
+		return reviewRefusal(s.ItemID, "решения "+p.ReviewedEventID+" на точке предъявления у изделия нет")
+	}
+	if strings.TrimSpace(p.Reason.Text) == "" {
+		return reviewRefusal(s.ItemID, "не указано основание пересмотра")
+	}
+	if pr.Revoked() {
+		return reviewRefusal(s.ItemID, "приёмка на точке "+pr.ClosingPoint+" уже отозвана")
+	}
+	switch p.Outcome {
+	case ReviewRevoked:
+		if !pr.Accepted() {
+			return reviewRefusal(s.ItemID, "решение на точке — не приёмка, отзывать нечего")
+		}
+	case ReviewUpheld:
+		if !pr.Accepted() {
+			return nil
+		}
+		if actor != "" && s.Participant(actor) {
+			return kernel.Refuse(errcodes.AccessSeparationOfDuties)
+		}
+		return acceptableNow(s)
+	default:
+		return reviewRefusal(s.ItemID, "исход «"+p.Outcome+"» неизвестен")
+	}
+	return nil
+}
+
+// reviewRefusal — отказ пересмотра с пояснением по-русски (шаблон кода
+// invalid_transition говорит о несоответствии, а здесь — решение на точке).
+func reviewRefusal(itemID, why string) error {
+	return &kernel.Refusal{Code: errcodes.NonconformityInvalidTransition,
+		Params: map[string]string{"action": "пересмотреть решение", "nc_id": itemID, "status": why}, Detail: "Пересмотр невозможен: " + why}
 }
 
 func blockerText(code string) string {

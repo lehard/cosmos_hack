@@ -224,6 +224,23 @@ type IncidentSpec struct {
 	Versions       []ScopeVersion `yaml:"versions"`
 	Closed         T              `yaml:"closed"`
 	CauseConfirmed T              `yaml:"cause_confirmed"`
+	// WhyMissed — вторая причина (кейс §2.3): почему не остановили раньше.
+	WhyMissed *WhyMissedSpec `yaml:"why_missed"`
+}
+
+// WhyMissedSpec — гипотеза и вывод ветки why_missed «почему не остановили
+// раньше»: у ведущего несоответствия инцидента, с доводами и проверкой.
+type WhyMissedSpec struct {
+	Category     string   `yaml:"category"`
+	Proposed     T        `yaml:"proposed"`
+	ConfidenceBP int      `yaml:"confidence_bp"`
+	Statement    string   `yaml:"statement"`
+	Supporting   []string `yaml:"supporting"`
+	Check        string   `yaml:"check"`
+	Unlocks      string   `yaml:"unlocks"`
+	Confirmed    T        `yaml:"confirmed"`
+	By           string   `yaml:"by"`
+	Verification string   `yaml:"verification"`
 }
 
 // ScopeVersion — версия области риска: правило построения и основание.

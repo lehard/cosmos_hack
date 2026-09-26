@@ -326,6 +326,27 @@ func Reduce(s State, r kernel.Record, env Env, up Upstream) State {
 			// качества по решению на точке ведёт quality: он читает
 			// decision.presentation.resolved сам (эпик 20).
 		}
+	case catalog.DecisionPresentationReviewed:
+		// Д-81: пересмотр — новая запись; прежнее решение остаётся в журнале.
+		var d PresentationReviewedData
+		if decode(r, &d) {
+			s.decision(r, "", "Пересмотр решения на точке "+d.ClosingPoint+": "+d.Outcome)
+			found := false
+			for i := range s.Presentations {
+				p := &s.Presentations[i]
+				if p.ResolvedEventID != "" && p.ResolvedEventID == d.ReviewedEventID {
+					p.ReviewEventID, p.ReviewOutcome, found = r.EventID, d.Outcome, true
+				}
+			}
+			if found && d.Outcome == ReviewRevoked {
+				// Отзыв приёмки ≠ «не годно»: несоответствие не создаётся,
+				// решение по изделию не меняется; блок человека (снимает
+				// уполномоченный) и качество «не проверено» — годность не доказана.
+				s.addSource(ContainmentSource{Key: r.EventID, Level: string(statuses.ContainmentItemHold), By: ByHuman, At: r.OccurredAt,
+					Reason: "Приёмка " + d.ClosingPoint + " отозвана при пересмотре: " + d.Reason.Text})
+				s.effect(Effect{Kind: "set_quality", Value: string(statuses.QualityNotInspected)}, r)
+			}
+		}
 	case catalog.DecisionReworkLimitWaived:
 		var d ReworkWaivedData
 		if decode(r, &d) {
