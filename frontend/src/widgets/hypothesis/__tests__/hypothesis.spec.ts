@@ -115,6 +115,24 @@ describe('гипотезы причины', () => {
     expect(w.emitted('assign')?.[0]).toEqual(['improve_detection', { title: 'Второй ракурс камеры на КТ-2', action_type: 'corrective_action', metric: '', success_criterion: '0 пропусков прожога за 14 дней', window_days: 14 }])
   })
 
+  it('итог: по каждой причине — подтверждённый вывод или «вывода пока нет», число мер; переходы к мерам и техпроцессу', async () => {
+    const m = weldHypotheses()
+    m.hypotheses[2] = { ...m.hypotheses[2]!, status: 'confirmed', statement: 'Оборудование: режим ИС-2 вне уставки' }
+    const w = mount(HypothesisView, { props: { model: m, actions: [] }, global: { plugins: [createPinia(), i18n] } })
+    const o = w.find('[data-testid="outcome"]')
+    expect(o.find('[data-branch="why_made"]').attributes('data-done')).toBe('true')
+    expect(o.find('[data-branch="why_made"]').text()).toContain('Оборудование: режим ИС-2 вне уставки')
+    expect(o.find('[data-branch="why_missed"]').text()).toContain('вывода пока нет')
+    await w.find('[data-go="process"]').trigger('click')
+    expect(w.emitted('go')?.[0]).toEqual(['process'])
+  })
+
+  it('без инцидента (мер нет в контексте) — итога и переходов нет', () => {
+    const w = mount(HypothesisView, { props: { model: weldHypotheses() }, global: { plugins: [createPinia(), i18n] } })
+    expect(w.find('[data-testid="outcome"]').exists()).toBe(false)
+    expect(w.find('[data-testid="next-sections"]').exists()).toBe(false)
+  })
+
   it('ошибка исполнителя — только после расследования и объяснения работника', () => {
     const perf = mountView().find('article[data-category="performer"]')
     expect(perf.find('[data-testid="performer-note"]').text()).toContain('письменного объяснения работника')

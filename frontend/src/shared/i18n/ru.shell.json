@@ -343,6 +343,11 @@
         "requestCheck": "Запросить проверку",
         "supportLine": "Доводов «за»: {pro} · «против»: {con}",
         "moreTitle": "Доводы, уверенность, что меняло вывод",
+        "outcomeTitle": "Итог расследования: две причины и меры",
+        "noConclusion": "вывода пока нет",
+        "measuresCount": "мер: {n}",
+        "toActions": "К мерам и эффективности",
+        "toProcess": "К техпроцессу",
         "couldExclude": "может исключить {n} из {of} изделий области",
         "historyTitle": "Что меняло уверенность ({n})",
         "confidenceNow": "уверенность {value}"

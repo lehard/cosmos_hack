@@ -51,6 +51,8 @@ const emit = defineEmits<{
   'select-record': [eventId: string]
   /** Открыть похожий случай. */
   'open-case': [c: SimilarCase]
+  /** Перейти в раздел стола: меры и эффективность / техпроцессы. */
+  go: [tab: 'actions' | 'process']
   /** Назначить меру по причине: направление — по ветке. */
   assign: [direction: 'prevent_occurrence' | 'improve_detection', input: AssignInput]
 }>()
@@ -83,6 +85,8 @@ const byBranch = computed(() => {
 /** Уверенность вывода 0…1 для шкалы; null — сервер не дал. */
 /** Направление мер причины: почему возник → предотвратить появление, почему пропустили → улучшить обнаружение. */
 const DIRECTION: Record<Branch, 'prevent_occurrence' | 'improve_detection'> = { why_made: 'prevent_occurrence', why_missed: 'improve_detection' }
+/** Итог по причинам: подтверждённая гипотеза ветки; нет — вывода пока нет. */
+const confirmedOf = (b: Branch) => byBranch.value[b].find((h) => h.status === 'confirmed') ?? null
 const actionsOf = (b: Branch) => (props.actions ?? []).filter((a) => a.direction === DIRECTION[b])
 const confidence = (h: Hypothesis) => (h.confidence_bp == null ? null : Math.min(Math.max(h.confidence_bp / 10_000, 0), 1))
 
@@ -148,6 +152,17 @@ function caseLine(c: SimilarCase): string {
       <strong>{{ t('widgets.analysis.missing.title') }}:</strong>
       <span v-for="m in model.missing_information" :key="m" class="chip-text">{{ t(`widgets.analysis.missing.${codeToKey(m)}`) }}</span>
     </p>
+
+    <!-- Итог расследования: две причины → меры → техпроцесс; без обеих причин расследование не закрыть. -->
+    <section v-if="actions" class="outcome" data-testid="outcome">
+      <p class="outcome-title">{{ t('widgets.analysis.hypothesis.outcomeTitle') }}</p>
+      <p v-for="b in BRANCHES" :key="`o-${b}`" class="outcome-row ant-wrap" :data-branch="b" :data-done="confirmedOf(b) ? 'true' : undefined">
+        <span class="outcome-q">{{ t(BRANCH_TITLE[b]) }}:</span>
+        <strong v-if="confirmedOf(b)">{{ confirmedOf(b)!.statement || category(confirmedOf(b)!.category) }}</strong>
+        <span v-else class="muted">{{ t('widgets.analysis.hypothesis.noConclusion') }}</span>
+        <span class="muted"> · {{ t('widgets.analysis.hypothesis.measuresCount', { n: actionsOf(b).length }) }}</span>
+      </p>
+    </section>
 
     <section v-for="b in BRANCHES" :key="b" class="branch" :data-branch="b" data-testid="branch">
       <h4 class="branch-title">{{ t(BRANCH_TITLE[b]) }}</h4>
@@ -259,6 +274,11 @@ function caseLine(c: SimilarCase): string {
         @assign="(input) => emit('assign', DIRECTION[b], input)"
       />
     </section>
+
+    <nav v-if="actions" class="next-sections" data-testid="next-sections">
+      <button type="button" class="go" data-go="actions" @click="emit('go', 'actions')">{{ t('widgets.analysis.hypothesis.toActions') }} →</button>
+      <button type="button" class="go" data-go="process" @click="emit('go', 'process')">{{ t('widgets.analysis.hypothesis.toProcess') }} →</button>
+    </nav>
 
     <section class="similar" data-testid="similar-cases">
       <h4>{{ t('ncCard.similarCases.title') }}</h4>
@@ -434,6 +454,50 @@ p {
 .next-unlocks {
   color: var(--ant-text-2);
   font-size: var(--ant-fs-meta);
+}
+
+.outcome {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ant-space-1);
+  padding: var(--ant-space-3);
+  border: 1px solid var(--ant-border);
+  border-radius: var(--ant-radius-md);
+  background: var(--ant-surface-subtle);
+}
+
+.outcome-title {
+  font-weight: var(--ant-fw-bold);
+}
+
+.outcome-row {
+  padding-left: var(--ant-space-3);
+  border-left: 3px solid var(--ant-status-attention);
+}
+
+.outcome-row[data-done] {
+  border-left-color: var(--ant-status-success);
+}
+
+.outcome-q {
+  color: var(--ant-text-2);
+}
+
+.next-sections {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ant-space-2);
+}
+
+.go {
+  padding: var(--ant-space-1) var(--ant-space-3);
+  border: 1px solid var(--ant-accent);
+  border-radius: var(--ant-radius-md);
+  background: var(--ant-accent-soft);
+  color: var(--ant-accent);
+  font: inherit;
+  font-weight: var(--ant-fw-bold);
+  cursor: pointer;
 }
 
 .support {
