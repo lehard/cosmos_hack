@@ -14,11 +14,33 @@ type RegisterPerson struct {
 	OrgUnit     string `json:"org_unit,omitempty" maxLength:"256"`
 }
 
-// ActivateAccount — активировать учётную запись с начальной ролью (access.account.activated, FR-128).
+// ActivateAccount — активировать учётную запись с начальной ролью (access.account.activated, FR-128):
+// заявку на регистрацию (логин из заявки) или новую учётную запись, заведённую
+// администратором (логин и начальный пароль).
 type ActivateAccount struct {
 	platform.CommandHeader
 	Login         string `json:"login" minLength:"1" maxLength:"128"`
 	InitialRoleID string `json:"initial_role_id,omitempty" maxLength:"64"`
+	// Scope — область начальной роли; пусто — всё предприятие.
+	Scope string `json:"scope,omitempty" maxLength:"256" doc:"Область начальной роли (здание → цех → участок → рабочее место); пусто — всё предприятие."`
+	// Password — начальный пароль учётной записи, которую заводит администратор
+	// (заявки нет); у заявки пароль задал сам сотрудник.
+	Password string `json:"password,omitempty" maxLength:"256" doc:"Начальный пароль, если учётную запись заводит администратор без заявки (хранится только хеш argon2id)."`
+}
+
+// AccountRequest — заявка на регистрацию (access.account.request, FR-128):
+// учётная запись ждёт активации администратором с назначением роли.
+type AccountRequest struct {
+	Login       string `json:"login" pattern:"^[a-z0-9._-]{3,64}$" doc:"Логин: латиница в нижнем регистре, цифры, «.», «_», «-»."`
+	Password    string `json:"password" minLength:"8" maxLength:"256" doc:"Пароль (на сервере — только хеш argon2id)."`
+	DisplayName string `json:"display_name" minLength:"1" maxLength:"128" doc:"Отображаемое имя (условное)."`
+}
+
+// AccountRequestResult — принятая заявка: псевдоним сотрудника и состояние.
+type AccountRequestResult struct {
+	Login    string `json:"login"`
+	PersonID string `json:"person_id" doc:"Псевдоним, под которым администратор активирует учётную запись."`
+	Status   string `json:"status" enum:"pending" doc:"Ждёт активации администратором."`
 }
 
 // GrantPolicy — выдать роль, полномочие или цифровое клеймо (policy.role.assigned,

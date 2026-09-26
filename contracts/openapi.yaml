@@ -386,6 +386,46 @@ components:
       required:
         - items
       type: object
+    AccountRequest:
+      additionalProperties: false
+      properties:
+        display_name:
+          description: Отображаемое имя (условное).
+          maxLength: 128
+          minLength: 1
+          type: string
+        login:
+          description: "Логин: латиница в нижнем регистре, цифры, «.», «_», «-»."
+          pattern: ^[a-z0-9._-]{3,64}$
+          type: string
+        password:
+          description: Пароль (на сервере — только хеш argon2id).
+          maxLength: 256
+          minLength: 8
+          type: string
+      required:
+        - login
+        - password
+        - display_name
+      type: object
+    AccountRequestResult:
+      additionalProperties: false
+      properties:
+        login:
+          type: string
+        person_id:
+          description: Псевдоним, под которым администратор активирует учётную запись.
+          type: string
+        status:
+          description: Ждёт активации администратором.
+          enum:
+            - pending
+          type: string
+      required:
+        - login
+        - person_id
+        - status
+      type: object
     AcknowledgeTask:
       additionalProperties: false
       properties:
@@ -453,11 +493,19 @@ components:
           maxLength: 128
           minLength: 1
           type: string
+        password:
+          description: Начальный пароль, если учётную запись заводит администратор без заявки (хранится только хеш argon2id).
+          maxLength: 256
+          type: string
         policy_seq:
           description: Версия политики, по которой показаны права (policy_seq сеанса); изменилась — 409 journal.stale_policy (AD-39).
           format: int64
           minimum: 0
           type: integer
+        scope:
+          description: Область начальной роли (здание → цех → участок → рабочее место); пусто — всё предприятие.
+          maxLength: 256
+          type: string
         signature:
           $ref: "#/components/schemas/DsseEnvelope"
           description: "Подписанный пакет DSSE для операций с уровнем подписи ≥ 1 (AD-10, AD-13, AD-14): подписывает агент токена, сервер сверяет отпечаток."
@@ -14599,6 +14647,43 @@ paths:
         critical: false
         id: access.persona.list
         owner: access
+  /api/v1/auth/registration:
+    post:
+      description: "FR-128: сотрудник сам подаёт заявку (логин, пароль, имя); учётная запись ждёт активации администратором с назначением роли (access.account.activate). Пароль хранится только хешем argon2id; частота заявок ограничена."
+      operationId: access.account.request
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccountRequest"
+        required: true
+      responses:
+        "202":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountRequestResult"
+          description: Accepted
+          headers:
+            Ant-Backend:
+              schema:
+                $ref: "#/components/schemas/BackendMode"
+                description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Error
+      summary: Заявка на регистрацию
+      tags:
+        - access
+      x-ant-action:
+        class: record
+        critical: false
+        id: access.account.request
+        owner: access
+        subject: policy
   /api/v1/auth/session:
     delete:
       description: Закрыть сеанс веба (FR-128).
@@ -14662,7 +14747,7 @@ paths:
         id: access.session.read
         owner: access
     post:
-      description: FR-128. Вход демо-персоной (persona_id, только профили fixtures и demo) или по логину. Пароль пока необязателен (демо-трек); после эпика 08 — обязателен для входа по логину (сеанс scs, argon2id). Ответ ставит cookie сеанса.
+      description: FR-128. Вход по логину и паролю (argon2id, сеанс scs в Postgres, ограничение частоты, блокировка после N неудач; неудача — access.login_failed и событие security.auth.failed) или демо-персоной (persona_id, только профили fixtures и demo, без пароля). Ответ ставит cookie сеанса.
       operationId: access.session.create
       requestBody:
         content:

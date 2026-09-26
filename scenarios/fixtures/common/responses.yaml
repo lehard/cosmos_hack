@@ -4,37 +4,37 @@ format: 1
 default_scenario: flange-bad-day
 responses:
   - op: access.persona.list
-    body: {"items":[{"id":"W21","name":"Сварщик W21","role":{"id":"performer","title":"Исполнитель"},"scope":"ent01/b1/wc"},{"id":"W22","name":"Сварщик W22","role":{"id":"performer","title":"Исполнитель"},"scope":"ent01/b1/wc"},{"id":"INS-01","name":"Контролёр ОТК 1","role":{"id":"quality_inspector","title":"Контролёр качества"},"scope":"ent01/b1"},{"id":"INS-02","name":"Контролёр ОТК 2","role":{"id":"quality_inspector","title":"Контролёр качества"},"scope":"ent01/b1"},{"id":"HQC-01","name":"Начальник ОТК","role":{"id":"head_of_qc","title":"Начальник ОТК","inherits":["quality_inspector"]},"scope":"ent01"},{"id":"TEC-01","name":"Технолог","role":{"id":"technologist","title":"Технолог"},"scope":"ent01"},{"id":"CWL-01","name":"Главный сварщик","role":{"id":"chief_welder","title":"Главный сварщик","inherits":["technologist"]},"scope":"ent01"},{"id":"FOR-MC","name":"Мастер механического цеха","role":{"id":"site_foreman","title":"Мастер участка"},"scope":"ent01/b1/mc"},{"id":"FOR-WC","name":"Мастер сварочного цеха","role":{"id":"site_foreman","title":"Мастер участка"},"scope":"ent01/b1/wc"},{"id":"FOR-AC","name":"Мастер сборочно-испытательного цеха","role":{"id":"site_foreman","title":"Мастер участка"},"scope":"ent01/b1/ac"},{"id":"STK-51","name":"Кладовщик","role":{"id":"storekeeper","title":"Кладовщик","inherits":["performer"]},"scope":"ent01/b1"},{"id":"NDT-61","name":"Дефектоскопист","role":{"id":"ndt_specialist","title":"Дефектоскопист","inherits":["performer"]},"scope":"ent01/b1/ndt"},{"id":"CR-71","name":"Представитель заказчика","role":{"id":"customer_representative","title":"Представитель заказчика (ВП / ПЗ)"},"scope":"ent01"},{"id":"ADM-01","name":"Администратор безопасности","role":{"id":"administrator","title":"Администратор (безопасности)"},"scope":"ent01"},{"id":"A31","name":"Сборщик A31","role":{"id":"performer","title":"Исполнитель"},"scope":"ent01/b1/ac"},{"id":"T41","name":"Испытатель T41","role":{"id":"performer","title":"Исполнитель"},"scope":"ent01/b1/ac"},{"id":"O17","name":"Оператор ЧПУ O17","role":{"id":"performer","title":"Исполнитель"},"scope":"ent01/b1/mc"},{"id":"O18","name":"Оператор ЧПУ O18","role":{"id":"performer","title":"Исполнитель"},"scope":"ent01/b1/mc"},{"id":"PM-01","name":"Руководитель производства","role":{"id":"production_manager","title":"Руководитель производства"},"scope":"ent01"},{"id":"AUD-01","name":"Аудитор ИБ","role":{"id":"security_auditor","title":"Аудитор ИБ"},"scope":"ent01"}]}
+    body: {"items":[{"id":"W21","name":"Сварщик W21","role":{"id":"performer","title":"Исполнитель","inherits":["staff"]},"scope":"ent01/b1/wc"},{"id":"W22","name":"Сварщик W22","role":{"id":"performer","title":"Исполнитель","inherits":["staff"]},"scope":"ent01/b1/wc"},{"id":"INS-01","name":"Контролёр ОТК 1","role":{"id":"quality_inspector","title":"Контролёр качества","inherits":["staff"]},"scope":"ent01/b1"},{"id":"INS-02","name":"Контролёр ОТК 2","role":{"id":"quality_inspector","title":"Контролёр качества","inherits":["staff"]},"scope":"ent01/b1"},{"id":"HQC-01","name":"Начальник ОТК","role":{"id":"head_of_qc","title":"Начальник ОТК","inherits":["quality_inspector"]},"scope":"ent01"},{"id":"TEC-01","name":"Технолог","role":{"id":"technologist","title":"Технолог","inherits":["staff"]},"scope":"ent01"},{"id":"CWL-01","name":"Главный сварщик","role":{"id":"chief_welder","title":"Главный сварщик","inherits":["technologist"]},"scope":"ent01"},{"id":"FOR-MC","name":"Мастер механического цеха","role":{"id":"site_foreman","title":"Мастер участка","inherits":["staff"]},"scope":"ent01/b1/mc"},{"id":"FOR-WC","name":"Мастер сварочного цеха","role":{"id":"site_foreman","title":"Мастер участка","inherits":["staff"]},"scope":"ent01/b1/wc"},{"id":"FOR-AC","name":"Мастер сборочно-испытательного цеха","role":{"id":"site_foreman","title":"Мастер участка","inherits":["staff"]},"scope":"ent01/b1/ac"},{"id":"STK-51","name":"Кладовщик","role":{"id":"storekeeper","title":"Кладовщик","inherits":["performer"]},"scope":"ent01/b1"},{"id":"NDT-61","name":"Дефектоскопист","role":{"id":"ndt_specialist","title":"Дефектоскопист","inherits":["performer"]},"scope":"ent01/b1/ndt"},{"id":"CR-71","name":"Представитель заказчика","role":{"id":"customer_representative","title":"Представитель заказчика (ВП / ПЗ)","inherits":["employee"]},"scope":"ent01"},{"id":"ADM-01","name":"Администратор безопасности","role":{"id":"administrator","title":"Администратор (безопасности)","inherits":["staff"]},"scope":"ent01"},{"id":"A31","name":"Сборщик A31","role":{"id":"performer","title":"Исполнитель","inherits":["staff"]},"scope":"ent01/b1/ac"},{"id":"T41","name":"Испытатель T41","role":{"id":"performer","title":"Исполнитель","inherits":["staff"]},"scope":"ent01/b1/ac"},{"id":"O17","name":"Оператор ЧПУ O17","role":{"id":"performer","title":"Исполнитель","inherits":["staff"]},"scope":"ent01/b1/mc"},{"id":"O18","name":"Оператор ЧПУ O18","role":{"id":"performer","title":"Исполнитель","inherits":["staff"]},"scope":"ent01/b1/mc"},{"id":"PM-01","name":"Руководитель производства","role":{"id":"production_manager","title":"Руководитель производства","inherits":["staff"]},"scope":"ent01"},{"id":"AUD-01","name":"Аудитор ИБ","role":{"id":"security_auditor","title":"Аудитор ИБ","inherits":["staff"]},"scope":"ent01"}]}
   - op: access.session.read
     params: {"persona":"W21"}
-    body: {"user":{"id":"W21","name":"Сварщик W21"},"role":{"id":"performer","title":"Исполнитель"},"scope":"ent01/b1/wc","shift":{"id":"SHIFT-1","title":"Первая смена 08:00–16:30"},"workplace":{"id":"WP-WELD-2","title":"Пост сварки 2 (источник ИС-2)"},"policy_seq":0,"demo":true}
+    body: {"user":{"id":"W21","name":"Сварщик W21"},"role":{"id":"performer","title":"Исполнитель","inherits":["staff"]},"scope":"ent01/b1/wc","shift":{"id":"SHIFT-1","title":"Первая смена 08:00–16:30"},"workplace":{"id":"WP-WELD-2","title":"Пост сварки 2 (источник ИС-2)"},"policy_seq":0,"demo":true}
   - op: access.session.read
     params: {"persona":"W22"}
-    body: {"user":{"id":"W22","name":"Сварщик W22"},"role":{"id":"performer","title":"Исполнитель"},"scope":"ent01/b1/wc","shift":{"id":"SHIFT-2","title":"Вторая смена 16:30–01:00"},"workplace":{"id":"WP-WELD-2","title":"Пост сварки 2 (источник ИС-2)"},"policy_seq":0,"demo":true}
+    body: {"user":{"id":"W22","name":"Сварщик W22"},"role":{"id":"performer","title":"Исполнитель","inherits":["staff"]},"scope":"ent01/b1/wc","shift":{"id":"SHIFT-2","title":"Вторая смена 16:30–01:00"},"workplace":{"id":"WP-WELD-2","title":"Пост сварки 2 (источник ИС-2)"},"policy_seq":0,"demo":true}
   - op: access.session.read
     params: {"persona":"INS-01"}
-    body: {"user":{"id":"INS-01","name":"Контролёр ОТК 1"},"role":{"id":"quality_inspector","title":"Контролёр качества"},"scope":"ent01/b1","shift":{"id":"SHIFT-1","title":"Первая смена 08:00–16:30"},"workplace":{"id":"WP-QC-WC","title":"Пост ОТК сварочного цеха"},"policy_seq":0,"demo":true}
+    body: {"user":{"id":"INS-01","name":"Контролёр ОТК 1"},"role":{"id":"quality_inspector","title":"Контролёр качества","inherits":["staff"]},"scope":"ent01/b1","shift":{"id":"SHIFT-1","title":"Первая смена 08:00–16:30"},"workplace":{"id":"WP-QC-WC","title":"Пост ОТК сварочного цеха"},"policy_seq":0,"demo":true}
   - op: access.session.read
     params: {"persona":"INS-02"}
-    body: {"user":{"id":"INS-02","name":"Контролёр ОТК 2"},"role":{"id":"quality_inspector","title":"Контролёр качества"},"scope":"ent01/b1","shift":{"id":"SHIFT-1","title":"Первая смена 08:00–16:30"},"workplace":{"id":"WP-QC-AC","title":"Пост ОТК сборочно-испытательного цеха"},"policy_seq":0,"demo":true}
+    body: {"user":{"id":"INS-02","name":"Контролёр ОТК 2"},"role":{"id":"quality_inspector","title":"Контролёр качества","inherits":["staff"]},"scope":"ent01/b1","shift":{"id":"SHIFT-1","title":"Первая смена 08:00–16:30"},"workplace":{"id":"WP-QC-AC","title":"Пост ОТК сборочно-испытательного цеха"},"policy_seq":0,"demo":true}
   - op: access.session.read
     params: {"persona":"HQC-01"}
     body: {"user":{"id":"HQC-01","name":"Начальник ОТК"},"role":{"id":"head_of_qc","title":"Начальник ОТК","inherits":["quality_inspector"]},"scope":"ent01","policy_seq":0,"demo":true}
   - op: access.session.read
     params: {"persona":"TEC-01"}
-    body: {"user":{"id":"TEC-01","name":"Технолог"},"role":{"id":"technologist","title":"Технолог"},"scope":"ent01","policy_seq":0,"demo":true}
+    body: {"user":{"id":"TEC-01","name":"Технолог"},"role":{"id":"technologist","title":"Технолог","inherits":["staff"]},"scope":"ent01","policy_seq":0,"demo":true}
   - op: access.session.read
     params: {"persona":"CWL-01"}
     body: {"user":{"id":"CWL-01","name":"Главный сварщик"},"role":{"id":"chief_welder","title":"Главный сварщик","inherits":["technologist"]},"scope":"ent01","policy_seq":0,"demo":true}
   - op: access.session.read
     params: {"persona":"FOR-MC"}
-    body: {"user":{"id":"FOR-MC","name":"Мастер механического цеха"},"role":{"id":"site_foreman","title":"Мастер участка"},"scope":"ent01/b1/mc","shift":{"id":"SHIFT-1","title":"Первая смена 08:00–16:30"},"policy_seq":0,"demo":true}
+    body: {"user":{"id":"FOR-MC","name":"Мастер механического цеха"},"role":{"id":"site_foreman","title":"Мастер участка","inherits":["staff"]},"scope":"ent01/b1/mc","shift":{"id":"SHIFT-1","title":"Первая смена 08:00–16:30"},"policy_seq":0,"demo":true}
   - op: access.session.read
     params: {"persona":"FOR-WC"}
-    body: {"user":{"id":"FOR-WC","name":"Мастер сварочного цеха"},"role":{"id":"site_foreman","title":"Мастер участка"},"scope":"ent01/b1/wc","shift":{"id":"SHIFT-1","title":"Первая смена 08:00–16:30"},"policy_seq":0,"demo":true}
+    body: {"user":{"id":"FOR-WC","name":"Мастер сварочного цеха"},"role":{"id":"site_foreman","title":"Мастер участка","inherits":["staff"]},"scope":"ent01/b1/wc","shift":{"id":"SHIFT-1","title":"Первая смена 08:00–16:30"},"policy_seq":0,"demo":true}
   - op: access.session.read
     params: {"persona":"FOR-AC"}
-    body: {"user":{"id":"FOR-AC","name":"Мастер сборочно-испытательного цеха"},"role":{"id":"site_foreman","title":"Мастер участка"},"scope":"ent01/b1/ac","shift":{"id":"SHIFT-1","title":"Первая смена 08:00–16:30"},"policy_seq":0,"demo":true}
+    body: {"user":{"id":"FOR-AC","name":"Мастер сборочно-испытательного цеха"},"role":{"id":"site_foreman","title":"Мастер участка","inherits":["staff"]},"scope":"ent01/b1/ac","shift":{"id":"SHIFT-1","title":"Первая смена 08:00–16:30"},"policy_seq":0,"demo":true}
   - op: access.session.read
     params: {"persona":"STK-51"}
     body: {"user":{"id":"STK-51","name":"Кладовщик"},"role":{"id":"storekeeper","title":"Кладовщик","inherits":["performer"]},"scope":"ent01/b1","shift":{"id":"SHIFT-1","title":"Первая смена 08:00–16:30"},"workplace":{"id":"WP-VK-1","title":"Пост входного контроля 1"},"policy_seq":0,"demo":true}
@@ -43,28 +43,28 @@ responses:
     body: {"user":{"id":"NDT-61","name":"Дефектоскопист"},"role":{"id":"ndt_specialist","title":"Дефектоскопист","inherits":["performer"]},"scope":"ent01/b1/ndt","shift":{"id":"SHIFT-1","title":"Первая смена 08:00–16:30"},"policy_seq":0,"demo":true}
   - op: access.session.read
     params: {"persona":"CR-71"}
-    body: {"user":{"id":"CR-71","name":"Представитель заказчика"},"role":{"id":"customer_representative","title":"Представитель заказчика (ВП / ПЗ)"},"scope":"ent01","policy_seq":0,"demo":true}
+    body: {"user":{"id":"CR-71","name":"Представитель заказчика"},"role":{"id":"customer_representative","title":"Представитель заказчика (ВП / ПЗ)","inherits":["employee"]},"scope":"ent01","policy_seq":0,"demo":true}
   - op: access.session.read
     params: {"persona":"ADM-01"}
-    body: {"user":{"id":"ADM-01","name":"Администратор безопасности"},"role":{"id":"administrator","title":"Администратор (безопасности)"},"scope":"ent01","policy_seq":0,"demo":true}
+    body: {"user":{"id":"ADM-01","name":"Администратор безопасности"},"role":{"id":"administrator","title":"Администратор (безопасности)","inherits":["staff"]},"scope":"ent01","policy_seq":0,"demo":true}
   - op: access.session.read
     params: {"persona":"A31"}
-    body: {"user":{"id":"A31","name":"Сборщик A31"},"role":{"id":"performer","title":"Исполнитель"},"scope":"ent01/b1/ac","shift":{"id":"SHIFT-1","title":"Первая смена 08:00–16:30"},"workplace":{"id":"WP-ASM-1","title":"Пост сборки 1"},"policy_seq":0,"demo":true}
+    body: {"user":{"id":"A31","name":"Сборщик A31"},"role":{"id":"performer","title":"Исполнитель","inherits":["staff"]},"scope":"ent01/b1/ac","shift":{"id":"SHIFT-1","title":"Первая смена 08:00–16:30"},"workplace":{"id":"WP-ASM-1","title":"Пост сборки 1"},"policy_seq":0,"demo":true}
   - op: access.session.read
     params: {"persona":"T41"}
-    body: {"user":{"id":"T41","name":"Испытатель T41"},"role":{"id":"performer","title":"Исполнитель"},"scope":"ent01/b1/ac","shift":{"id":"SHIFT-1","title":"Первая смена 08:00–16:30"},"workplace":{"id":"WP-LEAK-1","title":"Стенд герметичности"},"policy_seq":0,"demo":true}
+    body: {"user":{"id":"T41","name":"Испытатель T41"},"role":{"id":"performer","title":"Исполнитель","inherits":["staff"]},"scope":"ent01/b1/ac","shift":{"id":"SHIFT-1","title":"Первая смена 08:00–16:30"},"workplace":{"id":"WP-LEAK-1","title":"Стенд герметичности"},"policy_seq":0,"demo":true}
   - op: access.session.read
     params: {"persona":"O17"}
-    body: {"user":{"id":"O17","name":"Оператор ЧПУ O17"},"role":{"id":"performer","title":"Исполнитель"},"scope":"ent01/b1/mc","shift":{"id":"SHIFT-1","title":"Первая смена 08:00–16:30"},"workplace":{"id":"WP-CNC-1","title":"Пост ЧПУ 1"},"policy_seq":0,"demo":true}
+    body: {"user":{"id":"O17","name":"Оператор ЧПУ O17"},"role":{"id":"performer","title":"Исполнитель","inherits":["staff"]},"scope":"ent01/b1/mc","shift":{"id":"SHIFT-1","title":"Первая смена 08:00–16:30"},"workplace":{"id":"WP-CNC-1","title":"Пост ЧПУ 1"},"policy_seq":0,"demo":true}
   - op: access.session.read
     params: {"persona":"O18"}
-    body: {"user":{"id":"O18","name":"Оператор ЧПУ O18"},"role":{"id":"performer","title":"Исполнитель"},"scope":"ent01/b1/mc","shift":{"id":"SHIFT-2","title":"Вторая смена 16:30–01:00"},"workplace":{"id":"WP-CNC-1","title":"Пост ЧПУ 1"},"policy_seq":0,"demo":true}
+    body: {"user":{"id":"O18","name":"Оператор ЧПУ O18"},"role":{"id":"performer","title":"Исполнитель","inherits":["staff"]},"scope":"ent01/b1/mc","shift":{"id":"SHIFT-2","title":"Вторая смена 16:30–01:00"},"workplace":{"id":"WP-CNC-1","title":"Пост ЧПУ 1"},"policy_seq":0,"demo":true}
   - op: access.session.read
     params: {"persona":"PM-01"}
-    body: {"user":{"id":"PM-01","name":"Руководитель производства"},"role":{"id":"production_manager","title":"Руководитель производства"},"scope":"ent01","policy_seq":0,"demo":true}
+    body: {"user":{"id":"PM-01","name":"Руководитель производства"},"role":{"id":"production_manager","title":"Руководитель производства","inherits":["staff"]},"scope":"ent01","policy_seq":0,"demo":true}
   - op: access.session.read
     params: {"persona":"AUD-01"}
-    body: {"user":{"id":"AUD-01","name":"Аудитор ИБ"},"role":{"id":"security_auditor","title":"Аудитор ИБ"},"scope":"ent01","policy_seq":0,"demo":true}
+    body: {"user":{"id":"AUD-01","name":"Аудитор ИБ"},"role":{"id":"security_auditor","title":"Аудитор ИБ","inherits":["staff"]},"scope":"ent01","policy_seq":0,"demo":true}
   - op: access.desk.read
     params: {"role":"administrator"}
     body: {"density":"comfortable","role":"administrator","tabs":[{"id":"scenarios","layout":"main-side","slots":[{"area":"main","id":"console","widget":"scenario-console"},{"area":"right","id":"board","widget":"verification-board"}],"title_key":"desks.testScenarios"},{"id":"access","layout":"single","slots":[{"area":"main","id":"access","widget":"access-admin"}],"title_key":"desks.access"},{"id":"sources","layout":"main-side","slots":[{"area":"main","id":"sources","widget":"sources"},{"area":"right","id":"quarantine","slice":{"view":"summary"},"widget":"quarantine"}],"title_key":"desks.sources"},{"id":"components","layout":"single","slots":[{"area":"main","id":"health","widget":"system-health"}],"title_key":"desks.components"}],"title_key":"desks.testScenarios","version":1}

@@ -34,7 +34,8 @@ type Options struct {
 	Now func() time.Time
 }
 
-// Demo — IdentityProvider демо-трека (заметка эпика 08): вход демо-персоной
+// Demo — IdentityProvider без базы данных (ключ identity_provider = demo;
+// выгрузка OpenAPI, тесты, запуск без Postgres): вход демо-персоной
 // без пароля; сеанс — подписанный токен в cookie ant_session
 // (‹base64url(claims)›.‹base64url(HMAC)›), без хранилища сеансов: токен
 // проверяется подписью и сроком, выход заносит сеанс в список отозванных до
@@ -152,6 +153,7 @@ func (d *Demo) principal(c claims) platform.Principal {
 	if pp, ok := d.dir.Persona(c.PersonID); ok {
 		p.Name = pp.Name
 	}
+	p.Roles = d.dir.Hierarchy().Closure(c.Role)
 	return p
 }
 

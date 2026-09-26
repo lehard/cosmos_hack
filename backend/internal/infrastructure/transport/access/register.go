@@ -2,7 +2,10 @@ package access
 
 import (
 	"context"
+	"net"
 	"net/http"
+
+	"github.com/danielgtaylor/huma/v2"
 
 	app "ant/internal/application/access"
 	"ant/internal/application/platform"
@@ -36,29 +39,46 @@ func Register(api *httpapi.API, q app.Queries, c app.Commands, gate *app.Gate) {
 			return httpapi.OK(v), err
 		})
 
-	type sessionCreateIn struct {
-		Body app.SessionCreate
-	}
 	type sessionCreateOut struct {
 		httpapi.Meta
 		SetCookie http.Cookie `header:"Set-Cookie" doc:"Cookie сеанса веба (HttpOnly, SameSite=Strict)."`
 		Body      app.Session
 	}
 	r := httpapi.Post("/auth/session", "Войти",
-		"FR-128. Вход демо-персоной (persona_id, только профили fixtures и demo) или по логину. Пароль пока необязателен (демо-трек); "+
-			"после эпика 08 — обязателен для входа по логину (сеанс scs, argon2id). Ответ ставит cookie сеанса.")
+		"FR-128. Вход по логину и паролю (argon2id, сеанс scs в Postgres, ограничение частоты, блокировка после N неудач; "+
+			"неудача — access.login_failed и событие security.auth.failed) или демо-персоной (persona_id, только профили fixtures и demo, без пароля). "+
+			"Ответ ставит cookie сеанса.")
 	r.Status = http.StatusCreated
 	r.NoCommandMeta = true
 	httpapi.Register(api, r,
 		platform.Action{ID: "access.session.create", Class: platform.ClassRecord, Owner: "access", Anonymous: true},
 		func(ctx context.Context, in *sessionCreateIn) (*sessionCreateOut, error) {
-			s, token, err := c.OpenSession(ctx, in.Body)
+			s, token, err := c.OpenSession(app.WithClientIP(ctx, in.clientIP), in.Body)
 			if err != nil {
 				return nil, err
 			}
 			out := &sessionCreateOut{SetCookie: http.Cookie{Name: httpapi.SessionCookie, Value: token, Path: "/", HttpOnly: true, SameSite: http.SameSiteStrictMode}}
 			out.Body = s
 			return out, nil
+		})
+
+	type registrationOut struct {
+		httpapi.Meta
+		Body app.AccountRequestResult
+	}
+	reg := httpapi.Post("/auth/registration", "Заявка на регистрацию",
+		"FR-128: сотрудник сам подаёт заявку (логин, пароль, имя); учётная запись ждёт активации администратором с назначением роли "+
+			"(access.account.activate). Пароль хранится только хешем argon2id; частота заявок ограничена.")
+	reg.Status = http.StatusAccepted
+	reg.NoCommandMeta = true
+	httpapi.Register(api, reg,
+		platform.Action{ID: "access.account.request", Class: platform.ClassRecord, Owner: "access", Subject: "policy", Anonymous: true},
+		func(ctx context.Context, in *registrationIn) (*registrationOut, error) {
+			v, err := c.RequestAccount(app.WithClientIP(ctx, in.clientIP), in.Body)
+			if err != nil {
+				return nil, err
+			}
+			return &registrationOut{Body: v}, nil
 		})
 
 	d := httpapi.Delete("/auth/session", "Выйти", "Закрыть сеанс веба (FR-128).")
@@ -125,4 +145,39 @@ func Register(api *httpapi.API, q app.Queries, c app.Commands, gate *app.Gate) {
 			v, err := gate.Explain(ctx, platform.PrincipalFrom(ctx), in.Action, platform.ObjectRef{Kind: string(in.Subject), ID: in.ID})
 			return httpapi.OK(v), err
 		})
+}
+
+// sessionCreateIn — тело входа и адрес клиента (ограничение частоты попыток,
+// событие security.auth.failed; AD-15).
+type sessionCreateIn struct {
+	Body     app.SessionCreate
+	clientIP string
+}
+
+// Resolve запоминает адрес клиента (huma.Resolver).
+func (in *sessionCreateIn) Resolve(ctx huma.Context) []error {
+	in.clientIP = clientIP(ctx)
+	return nil
+}
+
+// registrationIn — заявка на регистрацию и адрес клиента.
+type registrationIn struct {
+	Body     app.AccountRequest
+	clientIP string
+}
+
+// Resolve запоминает адрес клиента (huma.Resolver).
+func (in *registrationIn) Resolve(ctx huma.Context) []error {
+	in.clientIP = clientIP(ctx)
+	return nil
+}
+
+// clientIP — адрес клиента без порта. Заголовкам прокси не доверяем: ant
+// слушает напрямую или за своим обратным прокси (AD-25).
+func clientIP(ctx huma.Context) string {
+	addr := ctx.RemoteAddr()
+	if host, _, err := net.SplitHostPort(addr); err == nil {
+		return host
+	}
+	return addr
 }

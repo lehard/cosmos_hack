@@ -635,6 +635,11 @@ type PolicySeed struct {
 	// Виды контроля для клейм.
 	StampKinds []string `json:"stamp_kinds"`
 
+	// Роль субъекта без сеанса (edge-агент, станок, stand, анализатор): подлинность
+	// его сообщений — подпись пакета (AD-10), а не сеанс; обычно только приём фактов
+	// (эпик 08).
+	UnauthenticatedRole *string `json:"unauthenticated_role,omitempty,omitzero"`
+
 	// Версия.
 	Version int `json:"version"`
 }
