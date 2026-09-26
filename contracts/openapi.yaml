@@ -9315,6 +9315,53 @@ components:
         - unit
         - scale
       type: object
+    NCPresentationAction:
+      additionalProperties: false
+      properties:
+        allowed:
+          description: Пройдёт гарды для вошедшего (полномочие точки, разделение обязанностей, блок, результаты методов).
+          type: boolean
+        consequences:
+          description: "Что произойдёт: изделие, маршрут, блокировка, область риска, 1С, история."
+          items:
+            type: string
+          type: array
+        label:
+          description: "Надпись кнопки: действие и направление."
+          type: string
+        operation:
+          description: Операция API.
+          enum:
+            - nonconformity.presentation.resolve
+            - nonconformity.presentation.review
+          type: string
+        outcome:
+          description: outcome команды nonconformity.presentation.review.
+          enum:
+            - upheld
+            - revoked
+          type: string
+        policy_ref:
+          description: "Основание в политике: полномочие точки или правило подписи."
+          type: string
+        resolution:
+          description: resolution команды nonconformity.presentation.resolve.
+          enum:
+            - accept
+            - accept_with_concession
+            - reject
+            - insufficient_data
+          type: string
+        why_available:
+          description: Почему доступно или почему нет — словами.
+          type: string
+      required:
+        - operation
+        - label
+        - allowed
+        - why_available
+        - consequences
+      type: object
     NCPresentationContext:
       additionalProperties: false
       properties:
@@ -9406,6 +9453,11 @@ components:
           items:
             $ref: "#/components/schemas/NCRecordRef"
           type: array
+        why_significant:
+          description: "Почему именно эти факты значимы: связь с операцией до приёмки, уставка, специальный процесс, чего не было при подписи."
+          items:
+            type: string
+          type: array
       required:
         - decision
         - known_at_decision
@@ -9414,6 +9466,11 @@ components:
     NCPresentationView:
       additionalProperties: false
       properties:
+        actions:
+          description: "Решения на экране: только их показывает интерфейс — доступность для вошедшего, почему, и последствия, вычисленные сервером."
+          items:
+            $ref: "#/components/schemas/NCPresentationAction"
+          type: array
         basis_seq:
           description: seq, на котором построен ответ (basis_seq команды, AD-39).
           format: int64
@@ -9430,6 +9487,9 @@ components:
           type: array
         presentation:
           $ref: "#/components/schemas/NCPresentationPoint"
+        recommendation:
+          $ref: "#/components/schemas/NCRecommendation"
+          description: "Рекомендация системы — отдельно от политики: что система предлагает и почему; решает человек."
         review:
           $ref: "#/components/schemas/NCPresentationReview"
           description: Пересмотр решения, принятого до новых данных (строка очереди kind = review).
@@ -9454,9 +9514,34 @@ components:
       required:
         - text
       type: object
+    NCRecommendation:
+      additionalProperties: false
+      properties:
+        outcome:
+          description: "Рекомендуемый исход: решение на точке или исход пересмотра."
+          enum:
+            - accept
+            - accept_with_concession
+            - reject
+            - insufficient_data
+            - upheld
+            - revoked
+          type: string
+        why:
+          description: Почему система это предлагает — словами.
+          items:
+            type: string
+          type: array
+      required:
+        - outcome
+        - why
+      type: object
     NCRecordRef:
       additionalProperties: false
       properties:
+        absent:
+          description: "Отметка «данных не было»: на момент решения записей этого источника не было; event_id — запись о потере связи источника или первая его запись, пришедшая позже."
+          type: boolean
         author:
           description: Псевдоним автора решения или подписанта.
           type: string
@@ -13759,6 +13844,55 @@ components:
           type: string
       required:
         - failure_event_id
+        - command_id
+        - basis_seq
+        - policy_seq
+      type: object
+    ReviewPresentation:
+      additionalProperties: false
+      properties:
+        basis_seq:
+          description: "seq, на котором клиент видел объект (basis_seq из ответа чтения): после него в потоках гарда не должно быть новых записей guard_relevant, иначе 409 journal.stale_state (AD-39)."
+          format: int64
+          minimum: 0
+          type: integer
+        command_id:
+          description: UUIDv7 клиента; повтор с тем же id возвращает прежний ответ (AD-7). У подписанной команды — event_id пакета.
+          format: uuid
+          type: string
+        new_fact_ids:
+          description: Рассмотренные новые факты (review.new_facts); пусто — все новые факты пересмотра.
+          items:
+            type: string
+          type: array
+        outcome:
+          description: upheld — оставить в силе; revoked — отозвать приёмку.
+          enum:
+            - upheld
+            - revoked
+          type: string
+        policy_seq:
+          description: Версия политики, по которой показаны права (policy_seq сеанса); изменилась — 409 journal.stale_policy (AD-39).
+          format: int64
+          minimum: 0
+          type: integer
+        reason:
+          $ref: "#/components/schemas/NCReason"
+          description: Основание пересмотра.
+        reviewed_event_id:
+          description: Пересматриваемое решение — review.decision.event_id из nonconformity.presentation.read.
+          type: string
+        signature:
+          $ref: "#/components/schemas/DsseEnvelope"
+          description: "Подписанный пакет DSSE для операций с уровнем подписи ≥ 1 (AD-10, AD-13, AD-14): подписывает агент токена, сервер сверяет отпечаток."
+        workplace_id:
+          description: Рабочее место сеанса (барьер 2, AD-15).
+          maxLength: 128
+          type: string
+      required:
+        - reviewed_event_id
+        - outcome
+        - reason
         - command_id
         - basis_seq
         - policy_seq
@@ -22901,6 +23035,58 @@ paths:
           - item_blocked
           - intervention_open
         id: nonconformity.presentation.resolve
+        owner: nonconformity
+        signature_level: 2
+        subject: item
+  /api/v1/items/{item_id}/presentations/review:
+    post:
+      description: "FR-32, FR-146, Д-81: решение, принятое до новых данных, пересматривается новой записью — «оставить в силе» (только если приёмка прошла бы сейчас) или «отозвать приёмку» (блок изделия человеком, качество «не проверено», исправление результата контроля в 1С по решению человека). Прежняя запись не меняется; вторая подпись по политике не требуется."
+      operationId: nonconformity.presentation.review
+      parameters:
+        - in: path
+          name: item_id
+          required: true
+          schema:
+            maxLength: 128
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReviewPresentation"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Receipt"
+          description: OK
+          headers:
+            Ant-Backend:
+              schema:
+                $ref: "#/components/schemas/BackendMode"
+                description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Error
+      summary: Пересмотреть решение на точке предъявления
+      tags:
+        - nonconformity
+      x-ant-action:
+        ca_group: product_decision
+        class: permissive
+        critical: true
+        emits:
+          - decision.presentation.reviewed
+        guards:
+          - separation_of_duties
+          - item_blocked
+          - intervention_open
+        id: nonconformity.presentation.review
         owner: nonconformity
         signature_level: 2
         subject: item

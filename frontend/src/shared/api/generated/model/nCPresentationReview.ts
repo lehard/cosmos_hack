@@ -11,4 +11,6 @@ export interface NCPresentationReview {
   known_at_decision: NCRecordRef[];
   /** Что пришло после решения (с числами режима reading, если есть). */
   new_facts: NCRecordRef[];
+  /** Почему именно эти факты значимы: связь с операцией до приёмки, уставка, специальный процесс, чего не было при подписи. */
+  why_significant?: string[];
 }

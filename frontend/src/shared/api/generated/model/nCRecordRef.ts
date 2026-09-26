@@ -8,6 +8,8 @@ import type { NCRecordRefParams } from './nCRecordRefParams';
 import type { NCRecordRefSourceKind } from './nCRecordRefSourceKind';
 
 export interface NCRecordRef {
+  /** Отметка «данных не было»: на момент решения записей этого источника не было; event_id — запись о потере связи источника или первая его запись, пришедшая позже. */
+  absent?: boolean;
   /** Псевдоним автора решения или подписанта. */
   author?: string;
   event_id: string;
