@@ -28,7 +28,7 @@
 |---|---|
 | Онлайн-демо — работает без установки | <https://main.coopenomics.world/> |
 | Скринкасты | [папка с роликами на Google Диске](https://drive.google.com/drive/folders/1KHaW8OrHoSdArqbAYhVbvDC0NDHx3q_L?usp=sharing) |
-| Техническая презентация — 12 слайдов со ссылками на доказательства | [presentation.md](presentation.md) |
+| Техническая презентация: проблема, идея, история показа, архитектура, масштаб и ключевые отличия | [presentation.md](presentation.md), [«Чем решение выделяется»](presentation.md#чем-решение-выделяется) |
 | Сценарии показа и главная история | [guides/demo_scenarios.md](guides/demo_scenarios.md) |
 | Запуск у себя, вход, материалы защиты | [README.md](../README.md) |
 
