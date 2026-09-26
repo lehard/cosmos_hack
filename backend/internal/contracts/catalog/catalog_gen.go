@@ -228,6 +228,8 @@ const (
 	IncidentIncidentOpened Type = "incident.incident.opened"
 	// Изделие в области проверено
 	IncidentItemAssessed Type = "incident.item.assessed"
+	// Записан результат измерения для проверки гипотезы
+	IncidentMeasurementRecorded Type = "incident.measurement.recorded"
 	// Запрошено измерение для проверки гипотезы
 	IncidentMeasurementRequested Type = "incident.measurement.requested"
 	// Статус изделия в инциденте изменён
@@ -554,6 +556,7 @@ var types = [...]Info{
 	{Type: IncidentIncidentClosed, Title: "Инцидент закрыт", Family: "incident", Emitter: "analysis", Role: "api", Kind: "decision", Stream: "incident", Axis: "none", ActionClass: "record", Critical: false, CAGroup: "", GuardRelevant: true, PublishStage: false, Provenance: []string{"personal", "paper", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: IncidentIncidentOpened, Title: "Инцидент открыт", Family: "incident", Emitter: "analysis", Role: "crossitem", Kind: "reaction", Stream: "incident", Axis: "none", ActionClass: "record", Critical: false, CAGroup: "", GuardRelevant: true, PublishStage: false, Provenance: []string{"server_attested"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: IncidentItemAssessed, Title: "Изделие в области проверено", Family: "incident", Emitter: "analysis", Role: "api", Kind: "decision", Stream: "incident", Axis: "none", ActionClass: "permissive", Critical: true, CAGroup: "risk_scope", GuardRelevant: true, PublishStage: false, Provenance: []string{"personal", "paper", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
+	{Type: IncidentMeasurementRecorded, Title: "Записан результат измерения для проверки гипотезы", Family: "incident", Emitter: "analysis", Role: "api", Kind: "decision", Stream: "incident", Axis: "none", ActionClass: "record", Critical: false, CAGroup: "", GuardRelevant: false, PublishStage: false, Provenance: []string{"personal", "paper", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: IncidentMeasurementRequested, Title: "Запрошено измерение для проверки гипотезы", Family: "incident", Emitter: "analysis", Role: "api", Kind: "decision", Stream: "incident", Axis: "none", ActionClass: "record", Critical: false, CAGroup: "", GuardRelevant: false, PublishStage: false, Provenance: []string{"personal", "paper", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: IncidentMembershipChanged, Title: "Статус изделия в инциденте изменён", Family: "incident", Emitter: "analysis", Role: "crossitem", Kind: "reaction", Stream: "item", Axis: "incident", ActionClass: "protective", Critical: false, CAGroup: "", GuardRelevant: true, PublishStage: false, Provenance: []string{"server_attested"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: IncidentOperatorErrorConfirmed, Title: "Ошибка исполнителя подтверждена", Family: "incident", Emitter: "analysis", Role: "api", Kind: "decision", Stream: "incident", Axis: "none", ActionClass: "irreversible", Critical: true, CAGroup: "cause", GuardRelevant: true, PublishStage: false, Provenance: []string{"personal", "paper", "scenario"}, Versions: []int{1}, CurrentVersion: 1},

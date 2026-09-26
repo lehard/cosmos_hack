@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"maps"
 	"slices"
 	"strings"
 	"time"
@@ -106,9 +107,26 @@ func (s *Service) AdmitWorkplace(ctx context.Context, workplaceID string, in Adm
 	}
 	adm.ChecksEventIds = checks
 	stream := "workplace:" + wp.ID
-	recs := []itemapp.Record{
-		{Type: catalog.AccessWorkplaceAdmitted, Stream: stream, Data: adm, Meta: meta, Actor: actor, OccurredAt: now, SignatureLevel: 2},
+	// Перевод на другой пост (Д-85: W21 с ИС-1 на ИС-2 и обратно): сотрудник
+	// работает на одном посту — открытый допуск на прежнем снимается той же
+	// пачкой, ключ извлекается вместе с ним.
+	var recs []itemapp.Record
+	for _, other := range slices.Sorted(maps.Keys(pr.Sessions)) {
+		cur := pr.Sessions[other]
+		if other == wp.ID || cur.PersonID != actor {
+			continue
+		}
+		om := meta
+		om.WorkplaceID = other
+		os := "workplace:" + other
+		recs = append(recs, itemapp.Record{Type: catalog.AccessWorkplaceReleased, Stream: os, Meta: om, Actor: actor, OccurredAt: now, SignatureLevel: 2,
+			Data: ev.AccessWorkplaceReleasedV1{WorkplaceID: ev.ObjectID(other), WorkplaceSessionID: ev.UUID(cur.SessionID)}})
+		if t, ok := pr.Token(other); ok && t.PersonID == actor {
+			recs = append(recs, itemapp.Record{Type: catalog.AccessTokenPresenceChanged, Stream: os, Meta: om, Actor: actor, OccurredAt: now,
+				Data: ev.AccessTokenPresenceChangedV1{PersonID: ev.PersonRef(actor), WorkplaceID: ev.ObjectID(other), Present: false}})
+		}
 	}
+	recs = append(recs, itemapp.Record{Type: catalog.AccessWorkplaceAdmitted, Stream: stream, Data: adm, Meta: meta, Actor: actor, OccurredAt: now, SignatureLevel: 2})
 	if t, ok := pr.Token(wp.ID); !ok || t.PersonID != actor {
 		recs = append(recs, itemapp.Record{Type: catalog.AccessTokenPresenceChanged, Stream: stream, Meta: meta, Actor: actor, OccurredAt: now,
 			Data: ev.AccessTokenPresenceChangedV1{PersonID: ev.PersonRef(actor), WorkplaceID: ev.ObjectID(wp.ID), Present: true}})

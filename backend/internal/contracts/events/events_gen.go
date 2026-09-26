@@ -3286,6 +3286,41 @@ type IncidentItemAssessedV1Assessment string
 const IncidentItemAssessedV1AssessmentConfirmed IncidentItemAssessedV1Assessment = "confirmed"
 const IncidentItemAssessedV1AssessmentExcluded IncidentItemAssessedV1Assessment = "excluded"
 
+// Записан результат измерения, запрошенного для проверки гипотезы (контрольный
+// образец, замер режима, рентген): исполнитель измерения (лаборатория,
+// дефектоскопист) записывает итог — подтверждает гипотезу, опровергает или не
+// позволяет оценить; уверенность гипотезы пересчитывается, вывод о причине
+// остаётся решением человека (FR-59, FR-135).
+type IncidentMeasurementRecordedV1 struct {
+	// Материалы: протокол, кадры.
+	EvidenceRefs []string `json:"evidence_refs,omitempty,omitzero"`
+
+	// Проверяемая гипотеза.
+	HypothesisID ObjectID `json:"hypothesis_id"`
+
+	// Инцидент.
+	IncidentID ObjectID `json:"incident_id"`
+
+	// Несоответствия.
+	NcIds []ObjectID `json:"nc_ids,omitempty,omitzero"`
+
+	// Итог для гипотезы: подтверждает, опровергает, оценить нельзя.
+	Outcome IncidentMeasurementRecordedV1Outcome `json:"outcome"`
+
+	// Запрос измерения (incident.measurement.requested), на который это ответ; нет —
+	// последний запрос по гипотезе.
+	RequestEventID *ObjectID `json:"request_event_id,omitempty,omitzero"`
+
+	// Результат словами: что измерено, значение против уставки, находки.
+	Result string `json:"result"`
+}
+
+type IncidentMeasurementRecordedV1Outcome string
+
+const IncidentMeasurementRecordedV1OutcomeInconclusive IncidentMeasurementRecordedV1Outcome = "inconclusive"
+const IncidentMeasurementRecordedV1OutcomeRefutes IncidentMeasurementRecordedV1Outcome = "refutes"
+const IncidentMeasurementRecordedV1OutcomeSupports IncidentMeasurementRecordedV1Outcome = "supports"
+
 // Запрошено измерение для проверки гипотезы — технолог просит измерить
 // (контрольный образец, рентген, замер режима); задачу исполнителю ставит
 // notifications по этой записи; вывод о причине не меняется до решения человека

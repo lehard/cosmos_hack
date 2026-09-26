@@ -149,8 +149,17 @@ func TestShowIncidentScope(t *testing.T) {
 	if size(rs) != 34 || rs.LastKnownGood == nil || !strings.Contains(rs.LastKnownGood.Label, "F-202") {
 		t.Fatalf("v1: %d изделий, отсчёт %+v", size(rs), rs.LastKnownGood)
 	}
-	if len(rs.NarrowOptions) != 1 || len(rs.NarrowOptions[0].ItemIDs) != 21 || !slices.Contains(rs.NarrowOptions[0].ItemIDs, item("F-001")) {
-		t.Fatalf("предложения сужения v1: %+v", rs.NarrowOptions)
+	opt := func(rs appanalysis.RiskScope, what string) *appanalysis.NarrowOption {
+		for i := range rs.NarrowOptions {
+			if strings.Contains(rs.NarrowOptions[i].Label, what) {
+				return &rs.NarrowOptions[i]
+			}
+		}
+		return nil
+	}
+	is1 := opt(rs, "на IS-1")
+	if is1 == nil || len(is1.ItemIDs) != 21 || !slices.Contains(is1.ItemIDs, item("F-001")) {
+		t.Fatalf("предложение сужения по ИС-1: %+v", is1)
 	}
 	tec := analysistest.Principal(ctx, "TEC-01")
 	narrow := func(rs appanalysis.RiskScope, items, evidence []string, reason string) {
@@ -163,7 +172,7 @@ func TestShowIncidentScope(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	o := rs.NarrowOptions[0]
+	o := *is1
 	var ev []string
 	for _, e := range o.Evidence {
 		ev = append(ev, e.EventID)
@@ -180,11 +189,21 @@ func TestShowIncidentScope(t *testing.T) {
 	if err := w.Settle(ctx); err != nil {
 		t.Fatal(err)
 	}
+	// Предложение второго сужения — по опоздавшему журналу (основание — EV-WS2-0918).
 	var pre []string
 	for i := 121; i <= 127; i++ {
 		pre = append(pre, item("F-"+strconv.Itoa(i)))
 	}
-	narrow(scope(), pre, []string{byLabel["EV-WS2-0918"]}, "Опоздавший журнал ИС-2: ток впервые вне уставки в Пт 18:40")
+	rs = scope()
+	drift := opt(rs, "до выхода")
+	if drift == nil || !slices.Equal(drift.ItemIDs, pre) || drift.Evidence[0].EventID != byLabel["EV-WS2-0918"] {
+		t.Fatalf("предложение сужения по опоздавшему журналу: %+v", rs.NarrowOptions)
+	}
+	ev = nil
+	for _, e := range drift.Evidence {
+		ev = append(ev, e.EventID)
+	}
+	narrow(rs, drift.ItemIDs, ev, drift.ReasonText)
 	rs = scope()
 	var left []string
 	for _, it := range rs.Items {
@@ -197,4 +216,3 @@ func TestShowIncidentScope(t *testing.T) {
 		t.Fatalf("v3: %d изделий %v, ждали %v", size(rs), left, want)
 	}
 }
-

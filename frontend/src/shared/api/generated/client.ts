@@ -281,6 +281,7 @@ import type {
   ReceiveMovement,
   RecordAssembly,
   RecordHypothesis,
+  RecordMeasurement,
   RecordPresentation,
   RecordRelease,
   RecordSignature,
@@ -18382,6 +18383,127 @@ export const useAnalysisMeasurementRequest = <TError = globalThis.Error & { info
         TContext
       > => {
       return useMutation(getAnalysisMeasurementRequestMutationOptions(options), queryClient);
+    }
+
+export type analysisMeasurementRecordResponse200 = {
+  data: Receipt
+  status: 200
+}
+
+export type analysisMeasurementRecordResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type analysisMeasurementRecordResponseSuccess = (analysisMeasurementRecordResponse200) & {
+  headers: Headers;
+};
+export type analysisMeasurementRecordResponseError = (analysisMeasurementRecordResponseDefault) & {
+  headers: Headers;
+};
+
+export const getAnalysisMeasurementRecordUrl = (ncId: string,) => {
+
+
+
+
+  return `/api/v1/nonconformities/${ncId}/measurements/result`
+}
+
+/**
+ * FR-59: исполнитель измерения (лаборатория, дефектоскопист) записывает итог проверки гипотезы — incident.measurement.recorded; уверенность гипотезы пересчитывается, причину подтверждает человек.
+ * @summary Записать результат измерения
+ */
+export const analysisMeasurementRecord = async (ncId: string,
+    recordMeasurement: RecordMeasurement, options?: RequestInit): Promise<analysisMeasurementRecordResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getAnalysisMeasurementRecordUrl(ncId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(recordMeasurement)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: analysisMeasurementRecordResponseError['data'], status?: number} = new globalThis.Error();
+    const data : analysisMeasurementRecordResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: analysisMeasurementRecordResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as analysisMeasurementRecordResponseSuccess
+}
+
+
+
+
+
+export const getAnalysisMeasurementRecordMutationKey = () => ['analysisMeasurementRecord'] as const;
+
+export const getAnalysisMeasurementRecordMutationOptions = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof analysisMeasurementRecord>>, TError,AnalysisMeasurementRecordMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof analysisMeasurementRecord>>, TError,AnalysisMeasurementRecordMutationVariables, TContext> => {
+
+const mutationKey = getAnalysisMeasurementRecordMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof analysisMeasurementRecord>>, AnalysisMeasurementRecordMutationVariables> = (props) => {
+          const {ncId,data} = props ?? {};
+
+          return  analysisMeasurementRecord(ncId,data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AnalysisMeasurementRecordMutationResult = NonNullable<Awaited<ReturnType<typeof analysisMeasurementRecord>>>
+    export type AnalysisMeasurementRecordMutationBody = RecordMeasurement
+    export type AnalysisMeasurementRecordMutationError = globalThis.Error & { info?: Problem; status?: number }
+    export type AnalysisMeasurementRecordMutationVariables = {ncId: string;data: RecordMeasurement}
+
+    /**
+ * @summary Записать результат измерения
+ */
+export const useAnalysisMeasurementRecord = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof analysisMeasurementRecord>>, TError,AnalysisMeasurementRecordMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof analysisMeasurementRecord>>,
+        TError,
+        AnalysisMeasurementRecordMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAnalysisMeasurementRecordMutationOptions(options), queryClient);
     }
 
 export type analysisSimilarListResponse200 = {

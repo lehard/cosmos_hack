@@ -761,6 +761,8 @@ export * from './recordAssemblyBindingMethod';
 export * from './recordHypothesis';
 export * from './recordHypothesisBranch';
 export * from './recordHypothesisCategory';
+export * from './recordMeasurement';
+export * from './recordMeasurementOutcome';
 export * from './recordPresentation';
 export * from './recordPresentationPresentedTo';
 export * from './recordRelease';
