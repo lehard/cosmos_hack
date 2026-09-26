@@ -59,6 +59,31 @@ type Bundle struct {
 // event_id; реакции в свёртку не входят (AD-3). Одинаково вызывают воркер,
 // воспроизведение, заготовки при регрессии и верификатор (AD-9).
 func Fold(b Bundle, input []kernel.Record) (Snapshot, []kernel.Reaction) {
+	in := SortInput(input)
+	var s Snapshot
+	// Слот — единица сравнения и reaction_id = UUIDv5(слот ‖ версия) (AD-3):
+	// в итоге свёртки на слот одна реакция — вычисленная последней.
+	bySlot := map[string]kernel.Reaction{}
+	for _, r := range in {
+		var out kernel.Output
+		s, out = Step(s, b, r)
+		for _, re := range out.Reactions {
+			bySlot[re.Slot.Key()] = re
+		}
+	}
+	for _, re := range decisionsBeforeNewData(in) {
+		bySlot[re.Slot.Key()] = re
+	}
+	keys := slices.Sorted(maps.Keys(bySlot))
+	reactions := make([]kernel.Reaction, 0, len(keys))
+	for _, k := range keys {
+		reactions = append(reactions, bySlot[k])
+	}
+	return s, reactions
+}
+
+// SortInput упорядочивает вход изделия: occurred_at → received_at → event_id (AD-5).
+func SortInput(input []kernel.Record) []kernel.Record {
 	in := slices.Clone(input)
 	slices.SortStableFunc(in, func(x, y kernel.Record) int {
 		switch {
@@ -69,21 +94,7 @@ func Fold(b Bundle, input []kernel.Record) (Snapshot, []kernel.Reaction) {
 		}
 		return 0
 	})
-	var s Snapshot
-	bySlot := map[string]kernel.Reaction{}
-	for _, r := range in {
-		var out kernel.Output
-		s, out = Step(s, b, r)
-		for _, re := range out.Reactions {
-			bySlot[re.Slot.Key()+"\x1f"+string(re.Type)] = re
-		}
-	}
-	keys := slices.Sorted(maps.Keys(bySlot))
-	reactions := make([]kernel.Reaction, 0, len(keys))
-	for _, k := range keys {
-		reactions = append(reactions, bySlot[k])
-	}
-	return s, reactions
+	return in
 }
 
 // Step — один шаг свёртки: Reduce всех модулей по порядку композиции, затем
@@ -179,3 +190,8 @@ func (s *Snapshot) analysisUp() analysis.Upstream {
 func (s *Snapshot) notificationsUp() notifications.Upstream {
 	return notifications.Upstream{Item: &s.Item, Process: &s.Process, Vision: &s.Vision, Quality: &s.Quality, Machinelogs: &s.Machinelogs, Documents: &s.Documents, Nonconformity: &s.Nonconformity, Analysis: &s.Analysis}
 }
+
+// Folder — сигнатура свёртки изделия. Воркер, запросы на момент и
+// пересборка принимают её параметром: по умолчанию — Fold; тесты подставляют
+// свёртку с модулем-пустышкой (domain/engine/enginetest).
+type Folder func(b Bundle, input []kernel.Record) (Snapshot, []kernel.Reaction)
