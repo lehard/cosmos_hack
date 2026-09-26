@@ -13,7 +13,9 @@ import { describeRecord, isOpen, recordColor, recordLabel, sortByTime, sortHypot
 import { codeToKey } from '@/shared/i18n'
 import { naiveSizeOf, type Density } from '@/shared/config/widget'
 import { useMomentStore } from '@/shared/model/moment'
+import type { CorrectiveActionView } from '@/shared/api/generated/model'
 import { ActionButton } from '@/shared/ui'
+import BranchActions, { type AssignInput } from './BranchActions.vue'
 
 const props = withDefaults(
   defineProps<{
@@ -29,8 +31,14 @@ const props = withDefaults(
     canMeasure?: boolean
     /** Команда отправляется — формы выключены. */
     busy?: boolean
+    /** Меры инцидента (обе причины); null — мер не показывать (нет инцидента). */
+    actions?: readonly CorrectiveActionView[] | null
+    /** Право назначить меру (`analysis.action.assign`). */
+    canAssign?: boolean
+    /** Ответственный за новую меру — имя из сеанса. */
+    ownerName?: string | null
   }>(),
-  { density: 'compact', fromFactor: null, canConfirm: true, canReject: true, canMeasure: true, busy: false },
+  { density: 'compact', fromFactor: null, canConfirm: true, canReject: true, canMeasure: true, busy: false, actions: null, canAssign: false, ownerName: null },
 )
 const emit = defineEmits<{
   /** Подтвердить причину: чем проверили и основание. */
@@ -43,6 +51,8 @@ const emit = defineEmits<{
   'select-record': [eventId: string]
   /** Открыть похожий случай. */
   'open-case': [c: SimilarCase]
+  /** Назначить меру по причине: направление — по ветке. */
+  assign: [direction: 'prevent_occurrence' | 'improve_detection', input: AssignInput]
 }>()
 
 const { t, n, d } = useI18n()
@@ -71,6 +81,9 @@ const byBranch = computed(() => {
   return out
 })
 /** Уверенность вывода 0…1 для шкалы; null — сервер не дал. */
+/** Направление мер причины: почему возник → предотвратить появление, почему пропустили → улучшить обнаружение. */
+const DIRECTION: Record<Branch, 'prevent_occurrence' | 'improve_detection'> = { why_made: 'prevent_occurrence', why_missed: 'improve_detection' }
+const actionsOf = (b: Branch) => (props.actions ?? []).filter((a) => a.direction === DIRECTION[b])
 const confidence = (h: Hypothesis) => (h.confidence_bp == null ? null : Math.min(Math.max(h.confidence_bp / 10_000, 0), 1))
 
 const label = (r: JournalRecordRef) => recordLabel(r, t)
@@ -227,6 +240,17 @@ function caseLine(c: SimilarCase): string {
           </form>
         </footer>
       </article>
+
+      <BranchActions
+        v-if="actions"
+        :direction="DIRECTION[b]"
+        :actions="actionsOf(b)"
+        :can-assign="canAssign"
+        :busy="busy"
+        :owner-name="ownerName"
+        :density="density"
+        @assign="(input) => emit('assign', DIRECTION[b], input)"
+      />
     </section>
 
     <section class="similar" data-testid="similar-cases">

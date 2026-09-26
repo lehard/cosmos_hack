@@ -15,6 +15,9 @@ import { NAlert } from 'naive-ui'
 import { FACTOR_TEXT, hypothesesState, useAnalysisCommands, useAnalysisFocusStore, useCan, type Hypothesis } from '@/entities/incident'
 import type { WidgetProps } from '@/shared/config/widget'
 import { useProblemText } from '@/shared/i18n/problem'
+import { useSession } from '@/entities/session'
+import { useCorrectiveActions } from '@/entities/suggestion'
+import type { AssignInput } from './BranchActions.vue'
 import { WidgetFrame } from '@/shared/ui'
 import { useHypothesesSource } from '../model/source'
 import HypothesisView from './HypothesisView.vue'
@@ -30,7 +33,7 @@ const state = computed(() => (data.value ? hypothesesState(data.value) : 'normal
 
 const can = useCan()
 const cmd = useAnalysisCommands()
-const mutations = [cmd.concludeCause, cmd.rejectHypothesis, cmd.requestMeasurement]
+const mutations = [cmd.concludeCause, cmd.rejectHypothesis, cmd.requestMeasurement, cmd.assignAction]
 const busy = computed(() => mutations.some((m) => m.isPending.value))
 const lastError = computed(() => mutations.map((m) => m.error.value).find(Boolean) ?? null)
 const sent = computed(() => mutations.some((m) => m.isSuccess.value))
@@ -40,6 +43,29 @@ const canReject = computed(() => can('analysis.hypothesis.reject', 'nonconformit
 const canMeasure = computed(() => can('analysis.measurement.request', 'nonconformity', src.ncId.value))
 
 const basisSeq = () => src.basisSeq.value ?? 0
+
+/** Меры инцидента по двум причинам (FR-64); назначает технолог — ответственный он сам. */
+const measures = useCorrectiveActions()
+const actions = computed(() => (src.incidentId.value ? (measures.data.value?.data?.items ?? []).filter((a) => a.incident_id === src.incidentId.value) : null))
+const session = useSession()
+const me = computed(() => session.data.value?.data?.user ?? null)
+const canAssign = computed(() => Boolean(src.incidentId.value && me.value) && can('analysis.action.assign', 'incident', src.incidentId.value))
+
+function assign(direction: 'prevent_occurrence' | 'improve_detection', input: AssignInput): void {
+  if (!src.incidentId.value || !me.value) return
+  reset()
+  cmd.assignAction.mutate({
+    incidentId: src.incidentId.value,
+    body: {
+      title: input.title,
+      action_type: input.action_type,
+      direction,
+      owner_id: me.value.id,
+      effectiveness_plan: { metric: input.metric || undefined, success_criterion: input.success_criterion, window_days: input.window_days },
+      basis_seq: basisSeq(),
+    },
+  })
+}
 const reset = () => mutations.forEach((m) => m.reset())
 
 function confirm(h: Hypothesis, input: { verification: string; reason: string }): void {
@@ -108,6 +134,10 @@ const fromFactor = computed(() => {
       @reject="reject"
       @request-measurement="measure"
       @select-record="(id) => (focus.eventId = id)"
+      :actions="actions"
+      :can-assign="canAssign"
+      :owner-name="me?.name ?? null"
+      @assign="assign"
     />
   </WidgetFrame>
 </template>

@@ -92,6 +92,29 @@ describe('гипотезы причины', () => {
     expect(eq.find('[data-testid="history"]').text()).toContain('уверенность 0,85')
   })
 
+  it('меры по двум причинам: список своего направления, «Назначить меру» — с обязательным критерием успеха и окном', async () => {
+    const action = (id: string, direction: 'prevent_occurrence' | 'improve_detection', title: string) =>
+      ({ action_id: id, action_type: 'corrective_action', direction, title, status: 'assigned', incident_id: 'RS-01', owner: 'TEC-01', assigned_at: '2026-09-23T10:00:00Z', basis_seq: 1, cycle: 1, flags: [], history: [], plan: {} }) as never
+    const w = mount(HypothesisView, {
+      props: { model: weldHypotheses(), actions: [action('A1', 'prevent_occurrence', 'Ремонт регулятора ИС-2'), action('A2', 'improve_detection', 'Буфер журнала на шлюзе')], canAssign: true, ownerName: 'Е. Орлова' },
+      global: { plugins: [createPinia(), i18n] },
+    })
+    const made = w.find('[data-branch="why_made"] [data-testid="branch-actions"]')
+    const missed = w.find('[data-branch="why_missed"] [data-testid="branch-actions"]')
+    expect(made.text()).toContain('Ремонт регулятора ИС-2')
+    expect(made.text()).not.toContain('Буфер журнала')
+    expect(missed.text()).toContain('Буфер журнала на шлюзе')
+    await missed.find('[data-testid="assign-open"]').trigger('click')
+    const form = () => w.find('[data-branch="why_missed"] [data-testid="assign-form"]')
+    expect(form().find('[data-testid="assign-missing"]').text()).toContain('критерий успеха')
+    await form().find('[data-testid="assign-title"] input').setValue('Второй ракурс камеры на КТ-2')
+    await form().find('[data-testid="assign-success"] input').setValue('0 пропусков прожога за 14 дней')
+    expect(form().find('[data-testid="assign-missing"]').exists()).toBe(false)
+    expect(form().text()).toContain('Ответственный: Е. Орлова')
+    await form().trigger('submit')
+    expect(w.emitted('assign')?.[0]).toEqual(['improve_detection', { title: 'Второй ракурс камеры на КТ-2', action_type: 'corrective_action', metric: '', success_criterion: '0 пропусков прожога за 14 дней', window_days: 14 }])
+  })
+
   it('ошибка исполнителя — только после расследования и объяснения работника', () => {
     const perf = mountView().find('article[data-category="performer"]')
     expect(perf.find('[data-testid="performer-note"]').text()).toContain('письменного объяснения работника')
