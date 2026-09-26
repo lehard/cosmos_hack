@@ -1,0 +1,20 @@
+{
+  "name": "after-profile-switch-gost",
+  "title": "После смены профиля подписано только ГОСТ — отвергнуто: понижение профиля",
+  "seq": 151,
+  "committed_at": "2026-09-21T10:31:00.000Z",
+  "envelope": {
+    "payloadType": "application/vnd.ant.event+json; v=1",
+    "payload": "eyJjYXVzYXRpb25faWQiOm51bGwsImNvbW1hbmQiOnsiYmFzaXNfc2VxIjowLCJjbGllbnRfc2lnbmVkX2F0IjoiMjAyNi0wOS0yMVQxMDozMTowMC4wMDBaIiwiY29tbWFuZF9pZCI6IjAxOTI5YTJiLTdjM2QtN2U0Zi04YTViLTAwMDAwMDAwMDE1MSIsImd1YXJkX3N0cmVhbXMiOltdLCJwb2xpY3lfc2VxIjowLCJzaWduYXR1cmVfbGV2ZWwiOjJ9LCJjb3JyZWxhdGlvbl9pZCI6IjAxOTI5YTJiLTdjM2QtN2U0Zi04YTViLTAwMDAwMDAwMDE1MSIsImRhdGEiOnsiaXRlbV9pZCI6IkVOVDAxOkYtMDAxIiwib3V0Y29tZSI6ImFjY2VwdCJ9LCJldmVudF9pZCI6IjAxOTI5YTJiLTdjM2QtN2U0Zi04YTViLTAwMDAwMDAwMDE1MSIsImV2ZW50X3R5cGUiOiJpbnNwZWN0aW9uLnJlc3VsdC5yZWNvcmRlZCIsImludGVncml0eSI6eyJjcnlwdG9fcHJvZmlsZSI6Imdvc3QiLCJmb3JtYXRfdmVyc2lvbiI6MSwic2lnbmVycyI6WyJpbnMtMDFAMSJdfSwiaXRlbV9pZCI6IkVOVDAxOkYtMDAxIiwib2NjdXJyZWRfYXQiOiIyMDI2LTA5LTIxVDEwOjMxOjAwLjAwMFoiLCJzY2hlbWFfdmVyc2lvbiI6MSwic291cmNlX2lkIjoiSU5TLTAxIiwic291cmNlX2tpbmQiOiJtYW51YWxfZW50cnkifQ==",
+    "signatures": [
+      {
+        "keyid": "ins-01@1",
+        "sig": "Pl8dPrUKzcsKHIYVpgY0lgz7aAXAK9DIj+wOCN1vKX0mUCvz+Rak9LWynGGEYVQS6RZrHERoMCtNnd69q7XPpQ=="
+      }
+    ]
+  },
+  "expected": {
+    "status": "rejected",
+    "reason": "signing.profile_downgrade"
+  }
+}

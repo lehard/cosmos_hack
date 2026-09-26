@@ -67,4 +67,41 @@ func Register(api *httpapi.API, q app.Queries, c app.Commands) {
 		}) (platform.Receipt, error) {
 			return c.RevokeKey(ctx, in.KeyRef, in.Body)
 		})
+
+	httpapi.Do(api, httpapi.Post("/crypto-profiles", "Сменить криптопрофиль",
+		"AD-32, FR-76, кейс §6.3: обязательный профиль для классов пакетов с позиции журнала. Только повышение (gost → hybrid); "+
+			"понижение отвергается (signing.profile_downgrade). Старые подписи не трогаются и проверяются по профилю на момент подписи."),
+		platform.Action{ID: "signing.profile.register", Class: platform.ClassProtective, Critical: true, CAGroup: "admin_security", Owner: owner,
+			Emits: []catalog.Type{catalog.KeyProfileRegistered}, SignatureLevel: 2},
+		func(ctx context.Context, in *struct{ Body app.RegisterProfile }) (platform.Receipt, error) {
+			return c.RegisterProfile(ctx, in.Body)
+		})
+
+	httpapi.Do(api, httpapi.Post("/shift-reports", "Сдать сменный рапорт",
+		"FR-66 (уровень 3), FR-81, AD-12, AD-14: подпись агента над корнем дерева Меркла RFC 6962 отпечатков подписей смены из его локального журнала; "+
+			"сервер строит тот же корень по своему журналу и сверяет, расхождение — тревога agent_journal_mismatch. Конверт — в поле signature (класс shift-report)."),
+		platform.Action{ID: "signing.shift_report.submit", Class: platform.ClassRecord, Owner: owner,
+			Emits: []catalog.Type{catalog.KeyShiftReportRecorded}, SignatureLevel: 3},
+		func(ctx context.Context, in *struct{ Body app.SubmitShiftReport }) (platform.Receipt, error) {
+			return c.SubmitShiftReport(ctx, in.Body)
+		})
+
+	httpapi.Read(api, httpapi.Get("/paper/qr", "QR печатной рамки",
+		"FR-139, AD-12, Д-30: QR ant:doc:‹id›:‹отпечаток› картинкой SVG для распечатки документа или листа решения; рисует сервер. "+
+			"Печатная рамка в отрисовку документа не входит — отпечаток от неё не зависит."),
+		platform.Action{ID: "signing.paper.qr", Owner: owner},
+		func(ctx context.Context, in *struct {
+			Text string `query:"text" required:"true" maxLength:"256" doc:"ant:doc:‹id›:‹отпечаток›."`
+		}, _ platform.Moment) (app.PaperQRView, error) {
+			return q.PaperQR(ctx, in.Text)
+		})
+
+	r := httpapi.Post("/paper/scans", "Прочитать QR со скана",
+		"FR-139, AD-43: QR со скана подписанной распечатки и сверка с ожидаемым документом — скан с чужим QR не принимается (signing.qr_mismatch). "+
+			"Окончательная проверка — при заверении бумажной подписи.")
+	r.ReadByPost = true
+	httpapi.Read(api, r, platform.Action{ID: "signing.paper.scan", Owner: owner},
+		func(ctx context.Context, in *struct{ Body app.ScanRead }, _ platform.Moment) (app.ScanView, error) {
+			return q.ReadScan(ctx, in.Body)
+		})
 }

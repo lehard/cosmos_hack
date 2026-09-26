@@ -129,6 +129,7 @@ var dataTypes = [...]DataType{
 	{Type: "key.profile.registered", Version: 1, New: func() any { return new(KeyProfileRegisteredV1) }},
 	{Type: "key.registration.recorded", Version: 1, New: func() any { return new(KeyRegistrationRecordedV1) }},
 	{Type: "key.revocation.recorded", Version: 1, New: func() any { return new(KeyRevocationRecordedV1) }},
+	{Type: "key.shift_report.recorded", Version: 1, New: func() any { return new(KeyShiftReportRecordedV1) }},
 	{Type: "material.object.stored", Version: 1, New: func() any { return new(MaterialObjectStoredV1) }},
 	{Type: "mes.hold.requested", Version: 1, New: func() any { return new(MesHoldRequestedV1) }},
 	{Type: "mes.hold.responded", Version: 1, New: func() any { return new(MesHoldRespondedV1) }},

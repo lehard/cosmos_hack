@@ -318,6 +318,8 @@ channels:
         $ref: "#/components/messages/key.registration.recorded.v1"
       key.revocation.recorded.v1:
         $ref: "#/components/messages/key.revocation.recorded.v1"
+      key.shift_report.recorded.v1:
+        $ref: "#/components/messages/key.shift_report.recorded.v1"
   time:
     address: journal/time
     title: "Журнал: семейство time"
@@ -866,6 +868,7 @@ operations:
       - $ref: "#/channels/key/messages/key.profile.registered.v1"
       - $ref: "#/channels/key/messages/key.registration.recorded.v1"
       - $ref: "#/channels/key/messages/key.revocation.recorded.v1"
+      - $ref: "#/channels/key/messages/key.shift_report.recorded.v1"
   journal.time:
     action: send
     title: ant записывает записи семейства time
@@ -3765,6 +3768,29 @@ components:
       x-ant-axis: none
       x-ant-action-class: protective
       x-ant-critical: true
+      x-ant-current: true
+    key.shift_report.recorded.v1:
+      name: key.shift_report.recorded.v1
+      title: Сменный рапорт записан
+      summary: Сменный рапорт записан — подпись уровня 3 над корнем дерева Меркла отпечатков подписей смены из локального журнала агента токена и итог сверки с журналом сервера; расхождение — тревога agent_journal_mismatch (FR-66, FR-81, AD-12, AD-14).
+      contentType: application/json
+      payload:
+        allOf:
+          - $ref: ./common/envelope.v1.json
+          - type: object
+            properties:
+              event_type:
+                const: key.shift_report.recorded
+              schema_version:
+                const: 1
+              data:
+                $ref: ./key/key.shift_report.recorded.v1.json
+      x-ant-kind: decision
+      x-ant-emitter: signing
+      x-ant-stream: key
+      x-ant-axis: none
+      x-ant-action-class: record
+      x-ant-critical: false
       x-ant-current: true
     time.clock.mode_set.v1:
       name: time.clock.mode_set.v1
