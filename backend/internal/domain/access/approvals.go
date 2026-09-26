@@ -77,7 +77,7 @@ type ApprovalStage struct {
 	StampKind           string   `json:"stamp_kind,omitempty"`
 	Quorum              string   `json:"quorum"`
 	K                   int      `json:"k,omitempty"`
-	Required            int      `json:"required"`
+	Required            int      `json:"required_count"`
 	SignatureLevel      int      `json:"signature_level"`
 	PaperAllowed        bool     `json:"paper_allowed"`
 	AttesterAuthorityID string   `json:"attester_authority_id,omitempty"`

@@ -403,7 +403,7 @@ type ApprovalStage struct {
 	Quorum DocumentVersionDraftedV1RequiredApprovalsElemQuorum `json:"quorum"`
 
 	// Сколько засчитанных подписей нужно на этапе.
-	Required *int `json:"required,omitempty,omitzero"`
+	RequiredCount *int `json:"required_count,omitempty,omitzero"`
 
 	// Роль подписанта этапа по политике (с наследованием), если этап задан ролью.
 	Role *Code `json:"role,omitempty,omitzero"`

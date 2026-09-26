@@ -102,7 +102,7 @@ func stageLine(st any) string {
 	if k := text(lookup(st, "stamp_kind")); k != Empty {
 		parts = append(parts, "клеймо «"+k+"»")
 	}
-	parts = append(parts, "уровень "+text(lookup(st, "signature_level")), "подписей "+text(lookup(st, "required")))
+	parts = append(parts, "уровень "+text(lookup(st, "signature_level")), "подписей "+text(lookup(st, "required_count")))
 	if lookup(st, "by_source") == true {
 		parts = append(parts, "закрывается решением-источником")
 	}
