@@ -1,6 +1,5 @@
 /**
- * Виджет «posts» — публичный вход (FSD). Заготовка оболочки (эпик 03);
- * наполняет эпик 10 «Живая карта и стол руководителя». Оболочка грузит его через
- * widgets/registry.ts и передаёт WidgetProps (shared/config/widget.ts).
+ * Виджет «posts» — публичный вход (FSD): панель «Посты» под живой картой (FR-6),
+ * эпик 10. Оболочка грузит его через widgets/registry.ts и передаёт WidgetProps.
  */
 export { default } from './ui/PostsWidget.vue'

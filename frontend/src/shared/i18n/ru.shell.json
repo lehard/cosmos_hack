@@ -121,5 +121,10 @@
         "investigation": "@:ncCard.twoStatuses.investigation"
       }
     }
+  },
+  "mapWidgets": {
+    "posts": {
+      "absent": "Нет на месте — ключ не вставлен"
+    }
   }
 }

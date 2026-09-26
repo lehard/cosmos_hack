@@ -59,7 +59,7 @@ const noManualHttp = {
 }
 
 export default defineConfig(
-  { ignores: ['dist/**', '.npm-cache/**', 'node_modules/**', 'src/shared/api/generated/**'] },
+  { ignores: ['dist/**', '.npm-cache/**', 'node_modules/**', 'src/shared/api/generated/**', 'src/shared/contracts/**'] },
   js.configs.recommended,
   tseslint.configs.recommended,
   // essential — правила корректности; оформление не навязываем линтером.

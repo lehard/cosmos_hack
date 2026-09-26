@@ -3,8 +3,10 @@
 import { readdirSync, readFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { flushPromises, mount } from '@vue/test-utils'
+import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createPinia } from 'pinia'
 import { describe, expect, it, vi } from 'vitest'
+import { createMemoryHistory, createRouter } from 'vue-router'
 import { parse } from 'yaml'
 import { LAYOUT_AREAS, type Desk } from '@/entities/desk'
 import { i18n } from '@/shared/i18n'
@@ -14,7 +16,10 @@ const DESKS = resolve(__dirname, '../../../../../normative/desks')
 const files = readdirSync(DESKS).filter((f) => f.endsWith('.yaml'))
 
 async function render(tab: Desk['tabs'][number], density: Desk['density']) {
-  const w = mount(DeskTabView, { props: { tab, density }, global: { plugins: [createPinia(), i18n] } })
+  // Наполненные виджеты читают сервер через Vue Query и ведут в детали роутером.
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  const router = createRouter({ history: createMemoryHistory(), routes: [{ path: '/', component: { template: '<div />' } }] })
+  const w = mount(DeskTabView, { props: { tab, density }, global: { plugins: [createPinia(), i18n, router, [VueQueryPlugin, { queryClient }]] } })
   await vi.dynamicImportSettled()
   await flushPromises()
   return w
@@ -37,7 +42,10 @@ describe('столы ролей из yaml', () => {
           const el = w.find(`[data-slot="${slot.id}"]`)
           expect(el.exists(), `слот ${slot.id}`).toBe(true)
           expect(el.attributes('data-widget')).toBe(slot.widget)
-          expect(el.attributes('data-state')).toBe('normal')
+          // Состояние данных — дело виджета (без сервера наполненный виджет в «ошибке
+          // входа»); здесь важно, что это виджет из реестра, а не рамка «неизвестный виджет».
+          expect(el.attributes('data-state')).toBeDefined()
+          expect(el.text()).not.toContain('стол роли ссылается на то, чего нет в реестре')
         }
       })
     }
