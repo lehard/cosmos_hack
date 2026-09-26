@@ -38,6 +38,15 @@ func (c *Ctx) tasksFor(role string) []*Task {
 	return out
 }
 
+// nodeName — имя узла BPMN действующей версии по step_key (AlertEntry.node_name);
+// узла нет или у него нет имени — nil (фронт показывает step_key).
+func (c *Ctx) nodeName(stepKey string) *string {
+	if n := c.M.Bpmn[stepKey]; n != nil && n.Name != "" {
+		return ptr(n.Name)
+	}
+	return nil
+}
+
 func (c *Ctx) alerts() notifapp.AlertList {
 	al := notifapp.AlertList{Items: []notifapp.AlertEntry{}}
 	add := func(id string, at time.Time, kind string, f func(*notifapp.AlertEntry)) {
@@ -53,13 +62,13 @@ func (c *Ctx) alerts() notifapp.AlertList {
 			continue
 		}
 		add("AL-"+s.ID, s.Alert.Time(), "anomaly", func(a *notifapp.AlertEntry) {
-			a.Node, a.Anomaly = ptr("welding.weld"), ptr("downtime_over_threshold")
+			a.Node, a.NodeName, a.Anomaly = ptr("welding.weld"), c.nodeName("welding.weld"), ptr("downtime_over_threshold")
 			a.Ref = &platform.DrillRef{Entity: platform.EntityEquipment, ID: s.Equipment}
 		})
 	}
 	for _, h := range c.M.Spec.ProcessHolds {
 		add("AL-HOLD-"+h.Equipment, h.Set.Time(), "anomaly", func(a *notifapp.AlertEntry) {
-			a.Node, a.Anomaly = ptr("welding.weld"), ptr("downtime_over_threshold")
+			a.Node, a.NodeName, a.Anomaly = ptr("welding.weld"), c.nodeName("welding.weld"), ptr("downtime_over_threshold")
 			a.Ref = &platform.DrillRef{Entity: platform.EntityEquipment, ID: h.Equipment}
 		})
 	}

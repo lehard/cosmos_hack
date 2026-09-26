@@ -49,6 +49,7 @@ type AlertEntry struct {
 	Item           *string            `json:"item,omitempty" doc:"Изделие (просроченная изоляция, не перемещено в изолятор)."`
 	Gate           *string            `json:"gate,omitempty" doc:"Точка предъявления."`
 	Node           *string            `json:"node,omitempty" doc:"Узел (step_key) аномалии."`
+	NodeName       *string            `json:"node_name,omitempty" doc:"Имя узла — name элемента BPMN действующей версии процесса (для подписи вместо step_key); нет — показывать node."`
 	Anomaly        *string            `json:"anomaly,omitempty" doc:"Вид аномалии узла (queue_above_norm, wait_above_norm, downtime_over_threshold, output_spike, defect_rate_out_of_control)."`
 	Target         *string            `json:"target,omitempty" doc:"Эскалация: цель."`
 	OverdueMinutes *int               `json:"overdue_minutes,omitempty" minimum:"0"`

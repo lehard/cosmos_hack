@@ -775,6 +775,9 @@ components:
         node:
           description: Узел (step_key) аномалии.
           type: string
+        node_name:
+          description: Имя узла — name элемента BPMN действующей версии процесса (для подписи вместо step_key); нет — показывать node.
+          type: string
         operations:
           format: int64
           minimum: 0
@@ -9975,6 +9978,61 @@ components:
         - policy_seq
         - items
       type: object
+    PersonCard:
+      additionalProperties: false
+      properties:
+        display_name:
+          type: string
+        org_unit:
+          type: string
+        person_id:
+          description: Псевдоним сотрудника.
+          type: string
+        policy_seq:
+          description: Версия политики, на которой построен ответ (AD-39).
+          format: int64
+          minimum: 0
+          type: integer
+        posts:
+          description: Текущие посты сотрудника.
+          items:
+            $ref: "#/components/schemas/PersonPost"
+          type: array
+        qualifications:
+          items:
+            $ref: "#/components/schemas/AccessQualification"
+          type: array
+        roles:
+          items:
+            $ref: "#/components/schemas/AccessRoleGrant"
+          type: array
+      required:
+        - person_id
+        - display_name
+        - roles
+        - qualifications
+        - posts
+        - policy_seq
+      type: object
+    PersonPost:
+      additionalProperties: false
+      properties:
+        assignee_role:
+          enum:
+            - performer
+            - quality_inspector
+          type: string
+        shift_id:
+          type: string
+        station:
+          description: Пост — подпись.
+          type: string
+        workplace_id:
+          type: string
+      required:
+        - workplace_id
+        - station
+      type: object
     PortSetting:
       additionalProperties: false
       properties:
@@ -15844,6 +15902,135 @@ components:
         - inspection_event_id
         - outcome
         - at
+      type: object
+    WorkplaceAssignee:
+      additionalProperties: false
+      properties:
+        assignee_role:
+          enum:
+            - performer
+            - quality_inspector
+          type: string
+        person_display:
+          description: Отображаемое имя (условное).
+          type: string
+        person_id:
+          description: Псевдоним сотрудника.
+          type: string
+        qualification_ok:
+          description: Квалификация действует на дату (FR-80); для контролёра — всегда true.
+          type: boolean
+        shift_id:
+          type: string
+      required:
+        - person_id
+        - person_display
+        - shift_id
+        - assignee_role
+        - qualification_ok
+      type: object
+    WorkplaceCard:
+      additionalProperties: false
+      properties:
+        assigned:
+          $ref: "#/components/schemas/PostPerson"
+          description: Нет — никто не назначен.
+        assignments:
+          description: Назначения текущей смены поста.
+          items:
+            $ref: "#/components/schemas/WorkplaceAssignee"
+          type: array
+        current_item:
+          $ref: "#/components/schemas/PostItem"
+          description: Нет — на посту нет изделия.
+        presence:
+          description: На месте; по СКУД на месте, но ключ не вставлен; ключ вставлен, а владельца нет в зоне; нет ни в зоне, ни ключа; никто не назначен; неизвестно.
+          enum:
+            - present
+            - key_missing
+            - owner_absent
+            - absent
+            - not_assigned
+            - unknown
+          type: string
+        scope:
+          description: "Область поста: здание → цех → участок → рабочее место."
+          type: string
+        shift_id:
+          description: Смена, назначения которой показаны; пусто — назначений нет.
+          type: string
+        station:
+          description: Участок (пост) — подпись.
+          type: string
+        workplace_id:
+          type: string
+        workshop:
+          description: Цех (FR-130).
+          type: string
+      required:
+        - assignments
+        - workplace_id
+        - station
+        - presence
+      type: object
+    WorkplaceEvent:
+      additionalProperties: false
+      properties:
+        at:
+          description: Когда произошло (occurred_at).
+          format: date-time
+          type: string
+        event_type:
+          description: Тип записи журнала.
+          type: string
+        kind:
+          description: Вид события поста.
+          enum:
+            - assigned
+            - cleared
+            - token_in
+            - token_out
+            - admitted
+            - released
+            - revoked
+            - presence_deviation
+          type: string
+        person_display:
+          description: Отображаемое имя сотрудника.
+          type: string
+        person_id:
+          description: Сотрудник, если известен.
+          type: string
+        reason:
+          description: "Основание: текст снятия назначения, причина снятия допуска, вид отклонения присутствия."
+          type: string
+        seq:
+          description: seq записи журнала.
+          format: int64
+          minimum: 0
+          type: integer
+        shift_id:
+          type: string
+      required:
+        - seq
+        - at
+        - event_type
+        - kind
+      type: object
+    WorkplaceHistory:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: "#/components/schemas/WorkplaceEvent"
+          type: array
+        next_cursor:
+          type: string
+        workplace_id:
+          type: string
+      required:
+        - workplace_id
+        - items
       type: object
 info:
   description: "HTTP API системы ant — доверенная система контроля качества. Сгенерировано из операций Huma (backend/internal/infrastructure/transport); руками не править (AD-20). Каждая операция несёт x-ant-action: id (он же operationId, ключ прав Casbin и @casl), класс (AD-27), критичность (AD-28), модуль-владелец (AD-40), гарды (AD-39), эмитируемые типы записей журнала. Чтение принимает axis и as_of (AD-21, AD-22); команды — command_id, basis_seq, policy_seq (AD-7, AD-39); режим fixtures | live — в заголовке ответа Ant-Backend (AD-36); ошибки — RFC 9457 problem+json с кодом из contracts/errors.yaml."
@@ -25483,6 +25670,69 @@ paths:
         owner: access
         signature_level: 2
         subject: policy
+  /api/v1/persons/{person_id}/card:
+    get:
+      description: "UI-16, FR-80, FR-81: окно «Сотрудник» — имя, подразделение, роли в областях, квалификации со сроками, текущие посты. Без логина и состояния учётной записи (их отдаёт access.person.read администратору)."
+      operationId: access.person.card
+      parameters:
+        - description: Псевдоним сотрудника.
+          in: path
+          name: person_id
+          required: true
+          schema:
+            description: Псевдоним сотрудника.
+            maxLength: 64
+            type: string
+        - description: "Ось момента: occurred — «как было» (по умолчанию), recorded — «что мы знали» (AD-37)."
+          explode: false
+          in: query
+          name: axis
+          schema:
+            $ref: "#/components/schemas/Axis"
+            description: "Ось момента: occurred — «как было» (по умолчанию), recorded — «что мы знали» (AD-37)."
+        - description: "Момент (RFC 3339 UTC); пусто — «сейчас». Задан — воспроизведение: команды выключены (AD-21)."
+          explode: false
+          in: query
+          name: as_of
+          schema:
+            description: "Момент (RFC 3339 UTC); пусто — «сейчас». Задан — воспроизведение: команды выключены (AD-21)."
+            format: date-time
+            type: string
+        - description: "Прогон сценария: данные в его пространстве имён (AD-38)."
+          explode: false
+          in: query
+          name: run_id
+          schema:
+            description: "Прогон сценария: данные в его пространстве имён (AD-38)."
+            maxLength: 128
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PersonCard"
+          description: OK
+          headers:
+            Ant-Backend:
+              schema:
+                $ref: "#/components/schemas/BackendMode"
+                description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Error
+      summary: Карточка сотрудника
+      tags:
+        - access
+      x-ant-action:
+        class: read
+        critical: false
+        id: access.person.card
+        owner: access
+        subject: policy
   /api/v1/persons/{person_id}/qualifications:
     post:
       description: "FR-80: квалификация с областью и сроком."
@@ -28905,6 +29155,69 @@ paths:
         id: access.workplace.list
         owner: access
         subject: workplace
+  /api/v1/workplaces/{workplace_id}:
+    get:
+      description: "UI-16, FR-6, FR-81: карточка окна «Пост» — строка панели «Посты» (кто назначен, на месте ли, текущее изделие) и назначения текущей смены поста. Права — в области роли (пост — место операции, барьер 3)."
+      operationId: access.workplace.read
+      parameters:
+        - description: Пост (рабочее место).
+          in: path
+          name: workplace_id
+          required: true
+          schema:
+            description: Пост (рабочее место).
+            maxLength: 128
+            type: string
+        - description: "Ось момента: occurred — «как было» (по умолчанию), recorded — «что мы знали» (AD-37)."
+          explode: false
+          in: query
+          name: axis
+          schema:
+            $ref: "#/components/schemas/Axis"
+            description: "Ось момента: occurred — «как было» (по умолчанию), recorded — «что мы знали» (AD-37)."
+        - description: "Момент (RFC 3339 UTC); пусто — «сейчас». Задан — воспроизведение: команды выключены (AD-21)."
+          explode: false
+          in: query
+          name: as_of
+          schema:
+            description: "Момент (RFC 3339 UTC); пусто — «сейчас». Задан — воспроизведение: команды выключены (AD-21)."
+            format: date-time
+            type: string
+        - description: "Прогон сценария: данные в его пространстве имён (AD-38)."
+          explode: false
+          in: query
+          name: run_id
+          schema:
+            description: "Прогон сценария: данные в его пространстве имён (AD-38)."
+            maxLength: 128
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkplaceCard"
+          description: OK
+          headers:
+            Ant-Backend:
+              schema:
+                $ref: "#/components/schemas/BackendMode"
+                description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Error
+      summary: Пост
+      tags:
+        - access
+      x-ant-action:
+        class: read
+        critical: false
+        id: access.workplace.read
+        owner: access
+        subject: workplace
   /api/v1/workplaces/{workplace_id}/admission:
     post:
       description: "Барьер 2 (AD-15, FR-83): СКУД в зоне ∧ роль в области места ∧ квалификация на дату ∧ назначение в смене ∧ токен и PIN."
@@ -29008,6 +29321,87 @@ paths:
         id: access.operator.report_deviation
         owner: access
         signature_level: 1
+        subject: workplace
+  /api/v1/workplaces/{workplace_id}/history:
+    get:
+      description: "UI-16, FR-81, FR-83, FR-84: события поста, новые сверху — назначение и снятие, токен вставлен и извлечён, допуск открыт, завершён, снят, отклонение присутствия. Без доступа ко всему журналу (journal.entry.list)."
+      operationId: access.workplace.history
+      parameters:
+        - description: Пост (рабочее место).
+          in: path
+          name: workplace_id
+          required: true
+          schema:
+            description: Пост (рабочее место).
+            maxLength: 128
+            type: string
+        - description: "Ось момента: occurred — «как было» (по умолчанию), recorded — «что мы знали» (AD-37)."
+          explode: false
+          in: query
+          name: axis
+          schema:
+            $ref: "#/components/schemas/Axis"
+            description: "Ось момента: occurred — «как было» (по умолчанию), recorded — «что мы знали» (AD-37)."
+        - description: "Момент (RFC 3339 UTC); пусто — «сейчас». Задан — воспроизведение: команды выключены (AD-21)."
+          explode: false
+          in: query
+          name: as_of
+          schema:
+            description: "Момент (RFC 3339 UTC); пусто — «сейчас». Задан — воспроизведение: команды выключены (AD-21)."
+            format: date-time
+            type: string
+        - description: "Прогон сценария: данные в его пространстве имён (AD-38)."
+          explode: false
+          in: query
+          name: run_id
+          schema:
+            description: "Прогон сценария: данные в его пространстве имён (AD-38)."
+            maxLength: 128
+            type: string
+        - description: Курсор следующей страницы из ответа; пусто — первая страница.
+          explode: false
+          in: query
+          name: cursor
+          schema:
+            description: Курсор следующей страницы из ответа; пусто — первая страница.
+            maxLength: 512
+            type: string
+        - description: Размер страницы (по умолчанию 50).
+          explode: false
+          in: query
+          name: limit
+          schema:
+            description: Размер страницы (по умолчанию 50).
+            format: int64
+            maximum: 500
+            minimum: 0
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkplaceHistory"
+          description: OK
+          headers:
+            Ant-Backend:
+              schema:
+                $ref: "#/components/schemas/BackendMode"
+                description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Error
+      summary: История поста
+      tags:
+        - access
+      x-ant-action:
+        class: read
+        critical: false
+        id: access.workplace.history
+        owner: access
         subject: workplace
   /api/v1/workplaces/{workplace_id}/inspection-requests:
     post:

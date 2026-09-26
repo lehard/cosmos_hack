@@ -148,3 +148,63 @@ type PostRow struct {
 type PostList struct {
 	Items []PostRow `json:"items"`
 }
+
+// WorkplaceCard — карточка поста (access.workplace.read, UI-16; FR-6, FR-81):
+// строка панели «Посты» и назначения текущей смены поста. Минимальные данные
+// для окна «Пост» у руководителя и мастера — без журнала и учётных записей.
+type WorkplaceCard struct {
+	PostRow
+	Scope       string              `json:"scope,omitempty" doc:"Область поста: здание → цех → участок → рабочее место."`
+	ShiftID     string              `json:"shift_id,omitempty" doc:"Смена, назначения которой показаны; пусто — назначений нет."`
+	Assignments []WorkplaceAssignee `json:"assignments" doc:"Назначения текущей смены поста."`
+}
+
+// WorkplaceAssignee — назначенный на пост в смене (FR-81).
+type WorkplaceAssignee struct {
+	PersonID        string `json:"person_id" doc:"Псевдоним сотрудника."`
+	PersonDisplay   string `json:"person_display" doc:"Отображаемое имя (условное)."`
+	ShiftID         string `json:"shift_id"`
+	AssigneeRole    string `json:"assignee_role" enum:"performer,quality_inspector"`
+	QualificationOK bool   `json:"qualification_ok" doc:"Квалификация действует на дату (FR-80); для контролёра — всегда true."`
+}
+
+// WorkplaceEvent — событие поста в истории (access.workplace.history): назначение
+// и снятие, токен вставлен и извлечён, допуск открыт, завершён, снят, отклонение присутствия.
+type WorkplaceEvent struct {
+	Seq           int64     `json:"seq" minimum:"0" doc:"seq записи журнала."`
+	At            time.Time `json:"at" doc:"Когда произошло (occurred_at)."`
+	EventType     string    `json:"event_type" doc:"Тип записи журнала."`
+	Kind          string    `json:"kind" enum:"assigned,cleared,token_in,token_out,admitted,released,revoked,presence_deviation" doc:"Вид события поста."`
+	PersonID      string    `json:"person_id,omitempty" doc:"Сотрудник, если известен."`
+	PersonDisplay string    `json:"person_display,omitempty" doc:"Отображаемое имя сотрудника."`
+	ShiftID       string    `json:"shift_id,omitempty"`
+	Reason        string    `json:"reason,omitempty" doc:"Основание: текст снятия назначения, причина снятия допуска, вид отклонения присутствия."`
+}
+
+// WorkplaceHistory — история поста, новые сверху.
+type WorkplaceHistory struct {
+	WorkplaceID string           `json:"workplace_id"`
+	Items       []WorkplaceEvent `json:"items"`
+	NextCursor  string           `json:"next_cursor,omitempty"`
+}
+
+// PersonPost — пост, на который сотрудник назначен в текущей смене поста.
+type PersonPost struct {
+	WorkplaceID  string `json:"workplace_id"`
+	Station      string `json:"station" doc:"Пост — подпись."`
+	ShiftID      string `json:"shift_id,omitempty"`
+	AssigneeRole string `json:"assignee_role,omitempty" enum:"performer,quality_inspector"`
+}
+
+// PersonCard — карточка сотрудника для окна «Сотрудник» (access.person.card,
+// UI-16): имя, подразделение, роли, квалификации и текущие посты — без логина
+// и состояния учётной записи (их видит только администратор, access.person.read).
+type PersonCard struct {
+	PersonID       string                `json:"person_id" doc:"Псевдоним сотрудника."`
+	DisplayName    string                `json:"display_name"`
+	OrgUnit        string                `json:"org_unit,omitempty"`
+	Roles          []AccessRoleGrant     `json:"roles"`
+	Qualifications []AccessQualification `json:"qualifications"`
+	Posts          []PersonPost          `json:"posts" doc:"Текущие посты сотрудника."`
+	PolicySeq      int64                 `json:"policy_seq" minimum:"0" doc:"Версия политики, на которой построен ответ (AD-39)."`
+}

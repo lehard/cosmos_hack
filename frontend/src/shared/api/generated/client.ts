@@ -38,6 +38,7 @@ import type {
   AccessPermissionExplainParams,
   AccessPermissionListParams,
   AccessPerson,
+  AccessPersonCardParams,
   AccessPersonList,
   AccessPersonListParams,
   AccessPersonReadParams,
@@ -47,7 +48,9 @@ import type {
   AccessRoleListParams,
   AccessStampList,
   AccessStampListParams,
+  AccessWorkplaceHistoryParams,
   AccessWorkplaceListParams,
+  AccessWorkplaceReadParams,
   AccountRequest,
   AccountRequestResult,
   AcknowledgeTask,
@@ -233,6 +236,7 @@ import type {
   PassportExtractView,
   PauseOperation,
   PermissionList,
+  PersonCard,
   PostList,
   PrintAccepted,
   PrintPaper,
@@ -380,7 +384,9 @@ import type {
   VisionExampleListParams,
   VisionObservationReadParams,
   VisionPassportReadParams,
-  WaiveReworkLimit
+  WaiveReworkLimit,
+  WorkplaceCard,
+  WorkplaceHistory
 } from './model';
 
 
@@ -20958,6 +20964,129 @@ export const useAccessAccountActivate = <TError = globalThis.Error & { info?: Pr
       return useMutation(getAccessAccountActivateMutationOptions(options), queryClient);
     }
 
+export type accessPersonCardResponse200 = {
+  data: PersonCard
+  status: 200
+}
+
+export type accessPersonCardResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type accessPersonCardResponseSuccess = (accessPersonCardResponse200) & {
+  headers: Headers;
+};
+export type accessPersonCardResponseError = (accessPersonCardResponseDefault) & {
+  headers: Headers;
+};
+
+export const getAccessPersonCardUrl = (personId: string,
+    params?: AccessPersonCardParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/persons/${personId}/card?${stringifiedParams}` : `/api/v1/persons/${personId}/card`
+}
+
+/**
+ * UI-16, FR-80, FR-81: окно «Сотрудник» — имя, подразделение, роли в областях, квалификации со сроками, текущие посты. Без логина и состояния учётной записи (их отдаёт access.person.read администратору).
+ * @summary Карточка сотрудника
+ */
+export const accessPersonCard = async (personId: string,
+    params?: AccessPersonCardParams, options?: RequestInit): Promise<accessPersonCardResponseSuccess> => {
+
+  const res = await fetch(getAccessPersonCardUrl(personId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: accessPersonCardResponseError['data'], status?: number} = new globalThis.Error();
+    const data : accessPersonCardResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: accessPersonCardResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as accessPersonCardResponseSuccess
+}
+
+
+
+
+
+export const getAccessPersonCardQueryKey = (personId: MaybeRefOrGetter<string>,
+    params?: MaybeRefOrGetter<AccessPersonCardParams>,) => {
+    return [
+    'api','v1','persons',personId,'card', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getAccessPersonCardQueryOptions = <TData = Awaited<ReturnType<typeof accessPersonCard>>, TError = globalThis.Error & { info?: Problem; status?: number }>(personId: MaybeRefOrGetter<string>,
+    params?: MaybeRefOrGetter<AccessPersonCardParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof accessPersonCard>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getAccessPersonCardQueryKey(personId,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof accessPersonCard>>> = ({ signal }) => accessPersonCard(toValue(personId),toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: computed(() => toValue(personId) !== null && toValue(personId) !== undefined), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof accessPersonCard>>, TError, TData>
+}
+
+export type AccessPersonCardQueryResult = NonNullable<Awaited<ReturnType<typeof accessPersonCard>>>
+export type AccessPersonCardQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Карточка сотрудника
+ */
+
+export function useAccessPersonCard<TData = Awaited<ReturnType<typeof accessPersonCard>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ personId: MaybeRefOrGetter<string>,
+    params?: MaybeRefOrGetter<AccessPersonCardParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof accessPersonCard>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getAccessPersonCardQueryOptions(personId,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+
 export type accessQualificationGrantResponse200 = {
   data: Receipt
   status: 200
@@ -28702,6 +28831,129 @@ export function useAccessWorkplaceList<TData = Awaited<ReturnType<typeof accessW
 
 
 
+export type accessWorkplaceReadResponse200 = {
+  data: WorkplaceCard
+  status: 200
+}
+
+export type accessWorkplaceReadResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type accessWorkplaceReadResponseSuccess = (accessWorkplaceReadResponse200) & {
+  headers: Headers;
+};
+export type accessWorkplaceReadResponseError = (accessWorkplaceReadResponseDefault) & {
+  headers: Headers;
+};
+
+export const getAccessWorkplaceReadUrl = (workplaceId: string,
+    params?: AccessWorkplaceReadParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/workplaces/${workplaceId}?${stringifiedParams}` : `/api/v1/workplaces/${workplaceId}`
+}
+
+/**
+ * UI-16, FR-6, FR-81: карточка окна «Пост» — строка панели «Посты» (кто назначен, на месте ли, текущее изделие) и назначения текущей смены поста. Права — в области роли (пост — место операции, барьер 3).
+ * @summary Пост
+ */
+export const accessWorkplaceRead = async (workplaceId: string,
+    params?: AccessWorkplaceReadParams, options?: RequestInit): Promise<accessWorkplaceReadResponseSuccess> => {
+
+  const res = await fetch(getAccessWorkplaceReadUrl(workplaceId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: accessWorkplaceReadResponseError['data'], status?: number} = new globalThis.Error();
+    const data : accessWorkplaceReadResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: accessWorkplaceReadResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as accessWorkplaceReadResponseSuccess
+}
+
+
+
+
+
+export const getAccessWorkplaceReadQueryKey = (workplaceId: MaybeRefOrGetter<string>,
+    params?: MaybeRefOrGetter<AccessWorkplaceReadParams>,) => {
+    return [
+    'api','v1','workplaces',workplaceId, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getAccessWorkplaceReadQueryOptions = <TData = Awaited<ReturnType<typeof accessWorkplaceRead>>, TError = globalThis.Error & { info?: Problem; status?: number }>(workplaceId: MaybeRefOrGetter<string>,
+    params?: MaybeRefOrGetter<AccessWorkplaceReadParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof accessWorkplaceRead>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getAccessWorkplaceReadQueryKey(workplaceId,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof accessWorkplaceRead>>> = ({ signal }) => accessWorkplaceRead(toValue(workplaceId),toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: computed(() => toValue(workplaceId) !== null && toValue(workplaceId) !== undefined), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof accessWorkplaceRead>>, TError, TData>
+}
+
+export type AccessWorkplaceReadQueryResult = NonNullable<Awaited<ReturnType<typeof accessWorkplaceRead>>>
+export type AccessWorkplaceReadQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Пост
+ */
+
+export function useAccessWorkplaceRead<TData = Awaited<ReturnType<typeof accessWorkplaceRead>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ workplaceId: MaybeRefOrGetter<string>,
+    params?: MaybeRefOrGetter<AccessWorkplaceReadParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof accessWorkplaceRead>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getAccessWorkplaceReadQueryOptions(workplaceId,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+
 export type accessWorkplaceAdmitResponse200 = {
   data: Receipt
   status: 200
@@ -28943,6 +29195,129 @@ export const useAccessOperatorReportDeviation = <TError = globalThis.Error & { i
       > => {
       return useMutation(getAccessOperatorReportDeviationMutationOptions(options), queryClient);
     }
+
+export type accessWorkplaceHistoryResponse200 = {
+  data: WorkplaceHistory
+  status: 200
+}
+
+export type accessWorkplaceHistoryResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type accessWorkplaceHistoryResponseSuccess = (accessWorkplaceHistoryResponse200) & {
+  headers: Headers;
+};
+export type accessWorkplaceHistoryResponseError = (accessWorkplaceHistoryResponseDefault) & {
+  headers: Headers;
+};
+
+export const getAccessWorkplaceHistoryUrl = (workplaceId: string,
+    params?: AccessWorkplaceHistoryParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/workplaces/${workplaceId}/history?${stringifiedParams}` : `/api/v1/workplaces/${workplaceId}/history`
+}
+
+/**
+ * UI-16, FR-81, FR-83, FR-84: события поста, новые сверху — назначение и снятие, токен вставлен и извлечён, допуск открыт, завершён, снят, отклонение присутствия. Без доступа ко всему журналу (journal.entry.list).
+ * @summary История поста
+ */
+export const accessWorkplaceHistory = async (workplaceId: string,
+    params?: AccessWorkplaceHistoryParams, options?: RequestInit): Promise<accessWorkplaceHistoryResponseSuccess> => {
+
+  const res = await fetch(getAccessWorkplaceHistoryUrl(workplaceId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: accessWorkplaceHistoryResponseError['data'], status?: number} = new globalThis.Error();
+    const data : accessWorkplaceHistoryResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: accessWorkplaceHistoryResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as accessWorkplaceHistoryResponseSuccess
+}
+
+
+
+
+
+export const getAccessWorkplaceHistoryQueryKey = (workplaceId: MaybeRefOrGetter<string>,
+    params?: MaybeRefOrGetter<AccessWorkplaceHistoryParams>,) => {
+    return [
+    'api','v1','workplaces',workplaceId,'history', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getAccessWorkplaceHistoryQueryOptions = <TData = Awaited<ReturnType<typeof accessWorkplaceHistory>>, TError = globalThis.Error & { info?: Problem; status?: number }>(workplaceId: MaybeRefOrGetter<string>,
+    params?: MaybeRefOrGetter<AccessWorkplaceHistoryParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof accessWorkplaceHistory>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getAccessWorkplaceHistoryQueryKey(workplaceId,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof accessWorkplaceHistory>>> = ({ signal }) => accessWorkplaceHistory(toValue(workplaceId),toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: computed(() => toValue(workplaceId) !== null && toValue(workplaceId) !== undefined), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof accessWorkplaceHistory>>, TError, TData>
+}
+
+export type AccessWorkplaceHistoryQueryResult = NonNullable<Awaited<ReturnType<typeof accessWorkplaceHistory>>>
+export type AccessWorkplaceHistoryQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary История поста
+ */
+
+export function useAccessWorkplaceHistory<TData = Awaited<ReturnType<typeof accessWorkplaceHistory>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ workplaceId: MaybeRefOrGetter<string>,
+    params?: MaybeRefOrGetter<AccessWorkplaceHistoryParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof accessWorkplaceHistory>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getAccessWorkplaceHistoryQueryOptions(workplaceId,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
 
 export type accessOperatorRequestInspectionResponse200 = {
   data: Receipt

@@ -297,5 +297,6 @@ func renderWorkplaces(c *Ctx) []loader.Response {
 		}
 		list.Items = append(list.Items, row)
 	}
-	return []loader.Response{resp("access.workplace.list", list)}
+	out := []loader.Response{resp("access.workplace.list", list)}
+	return append(out, renderPostCards(c, list, dayShift)...)
 }

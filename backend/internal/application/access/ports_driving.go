@@ -2,6 +2,7 @@ package access
 
 import (
 	"context"
+	"strconv"
 
 	"ant/internal/application/platform"
 )
@@ -18,6 +19,12 @@ type Queries interface {
 	Desks(ctx context.Context) (Desk, error)
 	// Workplaces — посты для панели «Посты» (access.workplace.list, FR-6, FR-81).
 	Workplaces(ctx context.Context, workshop string, m platform.Moment) (PostList, error)
+	// WorkplaceCard — карточка поста (access.workplace.read, UI-16).
+	WorkplaceCard(ctx context.Context, workplaceID string, m platform.Moment) (WorkplaceCard, error)
+	// WorkplaceHistory — история поста, новые сверху (access.workplace.history, UI-16).
+	WorkplaceHistory(ctx context.Context, workplaceID string, m platform.Moment, p platform.Page) (WorkplaceHistory, error)
+	// PersonCard — карточка сотрудника без учётной записи (access.person.card, UI-16).
+	PersonCard(ctx context.Context, personID string, m platform.Moment) (PersonCard, error)
 	AdminQueries
 }
 
@@ -51,6 +58,36 @@ func (Unimplemented) Desks(context.Context) (Desk, error) {
 
 func (Unimplemented) Workplaces(context.Context, string, platform.Moment) (PostList, error) {
 	return PostList{}, platform.NotImplemented("access.workplace.list")
+}
+
+func (Unimplemented) WorkplaceCard(context.Context, string, platform.Moment) (WorkplaceCard, error) {
+	return WorkplaceCard{}, platform.NotImplemented("access.workplace.read")
+}
+
+func (Unimplemented) WorkplaceHistory(context.Context, string, platform.Moment, platform.Page) (WorkplaceHistory, error) {
+	return WorkplaceHistory{}, platform.NotImplemented("access.workplace.history")
+}
+
+func (Unimplemented) PersonCard(context.Context, string, platform.Moment) (PersonCard, error) {
+	return PersonCard{}, platform.NotImplemented("access.person.card")
+}
+
+// PageOf — страница списка: курсор — смещение (десятичное), по умолчанию 50.
+func PageOf[T any](items []T, p platform.Page) ([]T, string) {
+	off, _ := strconv.Atoi(p.Cursor)
+	if off < 0 || off > len(items) {
+		off = len(items)
+	}
+	limit := p.Limit
+	if limit <= 0 {
+		limit = 50
+	}
+	end := min(off+limit, len(items))
+	next := ""
+	if end < len(items) {
+		next = strconv.Itoa(end)
+	}
+	return items[off:end], next
 }
 
 func (Unimplemented) OpenSession(context.Context, SessionCreate) (Session, string, error) {
