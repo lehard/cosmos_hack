@@ -18,29 +18,22 @@ beforeEach(() => {
 const mountView = () => mount(CommonFactorsView, { props: { model: weldFactors() }, global: { plugins: [pinia, i18n] } })
 
 describe('общие факторы', () => {
-  it('фразами: общий для всех — первым и выделен, дальше по убыванию', () => {
+  it('что объединяет случаи — совпадения фишками «значение · k/n», общий для всех первым; «совпадение — не причина»', () => {
     const w = mountView()
-    const rows = w.findAll('li.row')
-    expect(rows.map((r) => r.attributes('data-factor'))).toEqual(['machine', 'program', 'fixture', 'material_batch', 'performer', 'tool'])
-    expect(rows[0]!.attributes('data-kind')).toBe('all')
-    expect(rows[0]!.text()).toContain('Станок: Сварочный источник ИС-3')
-    expect(rows[0]!.find('[data-testid="how-many"]').text()).toBe('у всех 3')
-    expect(w.find('.lead').text()).toBe('Что общего у несоответствий — всего 3')
+    const chips = w.findAll('li.chip')
+    expect(chips.map((c) => c.attributes('data-factor'))).toEqual(['machine', 'program', 'fixture', 'material_batch'])
+    expect(chips[0]!.attributes('data-kind')).toBe('all')
+    expect(chips[0]!.text()).toContain('Станок: Сварочный источник ИС-3')
+    expect(chips[0]!.find('[data-testid="how-many"]').text()).toBe('3/3')
+    expect(w.find('li.chip[data-factor="fixture"] [data-testid="how-many"]').text()).toBe('2/3')
+    expect(w.find('.lead').text()).toContain('Что объединяет случаи')
     expect(w.text()).toContain('обстоятельство, а не причина')
   })
 
-  it('«сварщики разные»: значения не совпадают — без значения, со словами', () => {
-    const performer = mountView().find('li[data-factor="performer"]')
-    expect(performer.attributes('data-kind')).toBe('varies')
-    expect(performer.find('[data-testid="how-many"]').text()).toBe('не совпадает: вариантов — 3')
-    const fixture = mountView().find('li[data-factor="fixture"]')
-    expect(fixture.text()).toContain('Оснастка: Приспособление П-7')
-    expect(fixture.find('[data-testid="how-many"]').text()).toBe('у 2 из 3')
-  })
-
-  it('неизвестный фактор — «данных нет»; кнопок-пустышек нет', () => {
+  it('не совпадает и нет данных — одной строкой; кнопок-пустышек нет', () => {
     const w = mountView()
-    expect(w.find('li[data-factor="tool"] [data-testid="how-many"]').text()).toBe('неизвестно — данных нет')
+    expect(w.find('[data-testid="differs"]').text()).toBe('Не совпадает: исполнитель')
+    expect(w.find('[data-testid="unknown"]').text()).toBe('Нет данных: инструмент')
     expect(w.find('button').exists()).toBe(false)
   })
 })
@@ -55,6 +48,6 @@ describe('виджет общих факторов через API', () => {
     })
     const w = await mountWidget(CommonFactorsWidget, { widgetId: 'common-factors', titleKey: 'desks.commonFactors' })
     expect(calls.map((c) => c.path)).toContain('/api/v1/analysis/groups/burn_through|welding|IS-3/common-factors')
-    expect(w.find('li.row').attributes('data-factor')).toBe('machine')
+    expect(w.find('li.chip').attributes('data-factor')).toBe('machine')
   })
 })

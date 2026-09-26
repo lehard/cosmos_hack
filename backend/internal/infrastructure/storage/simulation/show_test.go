@@ -2,6 +2,7 @@ package simulation
 
 import (
 	"context"
+	"fmt"
 	"path/filepath"
 	"slices"
 	"sync"
@@ -132,10 +133,13 @@ func TestShowRunManual(t *testing.T) {
 			continue
 		}
 		w := *st.Waiting
-		if n := len(stops); n > 0 && stops[n-1] == w.Op+" "+w.Object {
+		// Остановка — шаг прогона (Action): две подряд одинаковые операции над
+		// одним объектом (два сужения области) — разные остановки.
+		key := fmt.Sprintf("%d %s %s", w.Action, w.Op, w.Object)
+		if n := len(stops); n > 0 && stops[n-1] == key {
 			continue
 		}
-		stops = append(stops, w.Op+" "+w.Object)
+		stops = append(stops, key)
 		// пока человек не нажал — прогон стоит, часы стоят
 		if pressed := d.pressed(w.Op, w.Object, st.Consumed); pressed {
 			// нажато раньше, чем прогон дошёл до шага: засчитывается без ожидания
@@ -169,17 +173,19 @@ func TestShowRunManual(t *testing.T) {
 	}
 	// Пульт: по умолчанию только сценарии показа; остановок — все решения живой части.
 	sl, err := svc.Scenarios(ctx, false)
-	if err != nil || len(sl.Items) != 1 || sl.Items[0].ScenarioID != "SHOW-IS2" || sl.Items[0].Decisions != 23 {
+	if err != nil || len(sl.Items) != 1 || sl.Items[0].ScenarioID != "SHOW-IS2" || sl.Items[0].Decisions != 27 {
 		t.Errorf("пульт показа: %+v %v", sl.Items, err)
 	}
 	if all, _ := svc.Scenarios(ctx, true); len(all.Items) < 40 {
 		t.Errorf("весь каталог: %d", len(all.Items))
 	}
-	// Остановок 23: 3 приёма + 2 допуска + 4 сварки × («Начать», «Выполнено») + 3 ЗТ-3 +
-	// НС, изоляция, доп. проверка, изолятор, остановка ИС-2, причина, переделка; ранний
-	// приём Ф-002 закрылся без ожидания, но остановкой в плане остался.
-	if len(stops) != 23 {
-		t.Errorf("остановок %d, ждали 23: %v", len(stops), stops)
+	// Остановок 27: 3 приёма + 3 допуска (ИС-1 для Ф-001, ИС-2 для Ф-002 и Ф-003, снова
+	// ИС-1) + 4 сварки × («Начать», «Выполнено») + 3 ЗТ-3 + НС, изоляция, доп. проверка,
+	// изолятор, остановка ИС-2, два сужения области (ИС-1; до выхода тока по опоздавшему
+	// журналу), запрос проверки гипотезы, причина, переделка; ранний приём Ф-002 закрылся
+	// без ожидания, но остановкой в плане остался.
+	if len(stops) != 27 {
+		t.Errorf("остановок %d, ждали 27: %v", len(stops), stops)
 	}
 	for _, op := range d.auto {
 		if !slices.Contains([]string{"access.operator.confirm_step", "item.presentation.record"}, op) {

@@ -47,11 +47,11 @@ const text = computed(() => {
 <template>
   <NTooltip>
     <template #trigger>
-      <span class="integrity" :data-status="status" :data-live-off="liveOff || undefined" data-testid="integrity">
+      <span class="integrity" tabindex="0" :aria-label="t('common.header.integrity')" :data-status="status" :data-live-off="liveOff || undefined" data-testid="integrity">
         <span class="dot" :style="dotStyle" />
-        {{ t('common.header.integrity') }}
       </span>
     </template>
+    <strong>{{ t('common.header.integrity') }}</strong><br />
     <span class="ant-wrap">{{ text }} · {{ t('common.header.integrityServerSide') }}</span>
     <template v-if="liveOff"><br /><span class="ant-wrap">{{ t('shell.header.liveOff') }}</span></template>
   </NTooltip>
@@ -63,7 +63,9 @@ const text = computed(() => {
   gap: 6px;
   align-items: center;
   white-space: nowrap;
+  padding: 6px;
   font-size: var(--ant-fs-sm);
+  cursor: help;
 }
 
 .dot {

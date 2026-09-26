@@ -2,10 +2,14 @@ package analysis
 
 import (
 	"context"
+	"fmt"
+	"maps"
 	"slices"
 	"strings"
+	"time"
 
 	"ant/internal/application/platform"
+	"ant/internal/contracts/catalog"
 	dom "ant/internal/domain/analysis"
 )
 
@@ -93,6 +97,17 @@ func (s *Service) Hypotheses(ctx context.Context, ncID string, m platform.Moment
 			Status: status(h.ID, h.Category, "proposed_by_system"), ConfidenceBP: h.ConfidenceBP,
 			Supporting: refs.of(h.Supporting), Contradicting: refs.of(h.Contradicting), MeasurementHint: strp(h.MeasurementHint),
 			History: hypothesisHistory(n, h.ID, h.Category), NextCheck: nextCheck(h, inc)}
+		// Результат измерения: уверенность пересчитана, проверка выполнена.
+		if r := measured(n, h.ID); r != nil {
+			prev := 0
+			if h.ConfidenceBP != nil {
+				prev = *h.ConfidenceBP
+			}
+			if bp, ok := resultConfidence(r.Outcome, prev); ok {
+				x.ConfidenceBP = &bp
+				x.NextCheck = nil
+			}
+		}
 		out.Hypotheses = append(out.Hypotheses, x)
 	}
 	for _, h := range n.Hypotheses {
@@ -347,7 +362,7 @@ func (s *Service) RiskScope(ctx context.Context, incidentID string, m platform.M
 	if v.WindowStart != nil && v.WindowEnd != nil {
 		out.Window = &TimeWindow{Start: *v.WindowStart, End: *v.WindowEnd}
 		if v.KnownGoodItem != "" {
-			out.LastKnownGood = &KnownGood{Label: dom.LocalID(v.KnownGoodItem) + " — последняя подтверждённо годная деталь", At: *v.WindowStart}
+			out.LastKnownGood = &KnownGood{Label: s.itemLabel(ctx, v.KnownGoodItem) + " — последняя подтверждённо годная деталь", At: *v.WindowStart}
 		}
 	}
 	for _, x := range versionsAt(v, m) {
@@ -362,6 +377,7 @@ func (s *Service) RiskScope(ctx context.Context, incidentID string, m platform.M
 	if n := len(out.Versions); n > 0 {
 		current = out.Versions[n-1].ScopeVersion
 	}
+	var views []ItemView
 	ids := make([]string, 0, len(v.Members))
 	for id := range v.Members {
 		ids = append(ids, id)
@@ -376,10 +392,180 @@ func (s *Service) RiskScope(ctx context.Context, incidentID string, m platform.M
 		if err != nil {
 			return RiskScope{}, err
 		}
-		out.Items = append(out.Items, ScopeItem{ItemID: id, Label: dom.LocalID(id), Known: mem.Status, Action: mem.Action,
+		out.Items = append(out.Items, ScopeItem{ItemID: id, Label: labelOf(iv), Known: mem.Status, Action: mem.Action,
 			Location: dom.Location(iv.State, v.StepKey)})
+		if mem.Status != dom.StatusExcluded && mem.Status != dom.StatusConfirmed {
+			views = append(views, iv)
+		}
 	}
+	out.NarrowOptions = s.narrowOptions(ctx, v, views)
 	return out, nil
+}
+
+// driftOption — сужение по времени выхода режима (FR-61, опоздавшие данные):
+// журнал оборудования инцидента показал первое отклонение; изделия области
+// «под подозрением», выполненные на нём и законченные раньше, с записями
+// журнала за выполнение и без отклонений, — «исключить выполненные до выхода
+// тока из уставки». Основание — запись первого отклонения и записи журнала
+// этих выполнений. Отклонений нет — предложения нет.
+func (s *Service) driftOption(ctx context.Context, v dom.IncidentRecord, views []ItemView) []NarrowOption {
+	var first *dom.EquipmentEvent
+	for _, iv := range views {
+		for _, e := range append(slices.Clone(iv.Equipment), iv.State.Equipment...) {
+			// Первое отклонение; в ту же минуту — запись отклонения, а не сводка цикла.
+			if e.EquipmentID == v.FactorValue && e.Deviation && (first == nil || e.OccurredAt.Before(first.OccurredAt) ||
+				e.OccurredAt.Equal(first.OccurredAt) && e.EventType == string(catalog.EquipmentDeviationDetected)) {
+				x := e
+				first = &x
+			}
+		}
+	}
+	if first == nil {
+		return nil
+	}
+	o := NarrowOption{Evidence: []JournalRecordRef{markRef(dom.Mark{EventID: first.EventID, EventType: first.EventType, Variant: first.Variant,
+		OccurredAt: first.OccurredAt, Params: first.Params})}}
+	seen := map[string]bool{first.EventID: true}
+	for _, iv := range views {
+		var run *dom.Run
+		for i := range iv.State.Runs {
+			if r := &iv.State.Runs[i]; r.StepKey == v.StepKey && r.Equipment != "" {
+				run = r
+			}
+		}
+		if run == nil || run.Equipment != v.FactorValue || run.Finished == nil || !run.Finished.Before(first.OccurredAt) {
+			continue
+		}
+		var ev []JournalRecordRef
+		ok := false
+		for _, e := range append(slices.Clone(iv.Equipment), iv.State.Equipment...) {
+			if e.EquipmentID != run.Equipment || e.OccurredAt.After(*run.Finished) || (e.EndedAt != nil && e.EndedAt.Before(run.Started)) ||
+				(e.EndedAt == nil && e.OccurredAt.Before(run.Started)) {
+				continue
+			}
+			if e.Deviation {
+				ok = false
+				break
+			}
+			ok = true
+			if !seen[e.EventID] {
+				seen[e.EventID] = true
+				ev = append(ev, markRef(dom.Mark{EventID: e.EventID, EventType: e.EventType, Variant: e.Variant, OccurredAt: e.OccurredAt, Params: e.Params}))
+			}
+		}
+		if ok {
+			o.ItemIDs = append(o.ItemIDs, iv.ItemID)
+			o.Evidence = append(o.Evidence, ev...)
+		}
+	}
+	if len(o.ItemIDs) == 0 {
+		return nil
+	}
+	name := v.FactorValue
+	if s.cfg.Names != nil {
+		if l, ok := s.cfg.Names.FactorLabel(ctx, dom.FactorMachine, name); ok {
+			name = l
+		}
+	}
+	at := first.OccurredAt.UTC().Format("02.01.2006 15:04 UTC")
+	o.Label = fmt.Sprintf("Исключить выполненные на %s до выхода режима из уставки (%d) — журнал %s", name, len(o.ItemIDs), name)
+	o.ReasonText = fmt.Sprintf("Журнал %s: режим впервые вне уставки %s; выполнения на %s до этого — в уставке", name, at, name)
+	return []NarrowOption{o}
+}
+
+// labelOf — метка изделия из проекции разбора; нет — номер из id.
+func labelOf(iv ItemView) string {
+	if iv.Label != "" {
+		return iv.Label
+	}
+	return dom.LocalID(iv.ItemID)
+}
+
+// itemLabel — метка изделия по id (проекция разбора; нет — номер из id).
+func (s *Service) itemLabel(ctx context.Context, id string) string {
+	iv, err := s.item(ctx, id)
+	if err != nil {
+		return dom.LocalID(id)
+	}
+	iv.ItemID = id
+	return labelOf(iv)
+}
+
+// narrowOptions — сужение по оборудованию (FR-61): изделия области «под
+// подозрением», выполненные на шаге инцидента другим оборудованием, чей
+// журнал за эти выполнения есть и весь в уставке, — «исключить сваренные на
+// ИС-1». Основание — те же записи журнала; без журнала или с отклонением
+// предложения нет (гард incident.basis_required).
+func (s *Service) narrowOptions(ctx context.Context, v dom.IncidentRecord, views []ItemView) []NarrowOption {
+	if v.Factor != dom.FactorMachine || v.FactorValue == "" {
+		return nil
+	}
+	type group struct {
+		items    []string
+		evidence []JournalRecordRef
+		seen     map[string]bool
+		bad      bool
+	}
+	groups := map[string]*group{}
+	for _, iv := range views {
+		var run *dom.Run
+		for i := range iv.State.Runs {
+			if r := &iv.State.Runs[i]; r.StepKey == v.StepKey && r.Equipment != "" {
+				run = r
+			}
+		}
+		if run == nil || run.Equipment == v.FactorValue {
+			continue
+		}
+		g := groups[run.Equipment]
+		if g == nil {
+			g = &group{seen: map[string]bool{}}
+			groups[run.Equipment] = g
+		}
+		g.items = append(g.items, iv.ItemID)
+		end := run.Started.Add(24 * time.Hour)
+		if run.Finished != nil {
+			end = *run.Finished
+		}
+		found := false
+		for _, e := range append(slices.Clone(iv.Equipment), iv.State.Equipment...) {
+			if e.EquipmentID != run.Equipment || e.OccurredAt.After(end) || (e.EndedAt != nil && e.EndedAt.Before(run.Started)) ||
+				(e.EndedAt == nil && e.OccurredAt.Before(run.Started)) {
+				continue
+			}
+			found = true
+			g.bad = g.bad || e.Deviation
+			if !g.seen[e.EventID] {
+				g.seen[e.EventID] = true
+				g.evidence = append(g.evidence, markRef(dom.Mark{EventID: e.EventID, EventType: e.EventType, Variant: e.Variant, OccurredAt: e.OccurredAt, Params: e.Params}))
+			}
+		}
+		g.bad = g.bad || !found
+	}
+	out := s.driftOption(ctx, v, views)
+	for _, eq := range slices.Sorted(maps.Keys(groups)) {
+		g := groups[eq]
+		if g.bad || len(g.items) == 0 {
+			continue
+		}
+		name, common := eq, v.FactorValue
+		if s.cfg.Names != nil {
+			if l, ok := s.cfg.Names.FactorLabel(ctx, dom.FactorMachine, eq); ok {
+				name = l
+			}
+			if l, ok := s.cfg.Names.FactorLabel(ctx, dom.FactorMachine, common); ok {
+				common = l
+			}
+		}
+		slices.SortFunc(g.evidence, func(a, b JournalRecordRef) int { return a.OccurredAt.Compare(b.OccurredAt) })
+		out = append(out, NarrowOption{
+			Label:      fmt.Sprintf("Исключить выполненные на %s (%d) — журнал в уставке", name, len(g.items)),
+			ItemIDs:    g.items,
+			Evidence:   g.evidence,
+			ReasonText: fmt.Sprintf("Журнал %s за выполнения этих изделий непрерывный и в уставке; общий фактор — %s", name, common),
+		})
+	}
+	return out
 }
 
 // versionsAt — версии области на момент: «что мы знали» — по времени записи версии.
@@ -426,7 +612,8 @@ func measureLabel(a dom.ActionRecord) string {
 // circumstanceRecord — строка дорожки разбора с переходом к записи журнала и
 // связанными записями (то же выполнение операции).
 func circumstanceRecord(mk dom.Mark, all []dom.Mark) CircumstanceRecord {
-	r := CircumstanceRecord{JournalRecordRef: markRef(mk), Lane: mk.Lane, EndedAt: mk.EndedAt, EvidenceRefs: mk.Evidence, SourceKind: strp(mk.SourceKind)}
+	r := CircumstanceRecord{JournalRecordRef: markRef(mk), Lane: mk.Lane, EndedAt: mk.EndedAt, EvidenceRefs: mk.Evidence, SourceKind: strp(mk.SourceKind),
+		ReceivedAt: mk.ReceivedAt}
 	if mk.Seq > 0 {
 		seq := mk.Seq
 		r.JournalSeq = &seq

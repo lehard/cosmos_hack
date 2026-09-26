@@ -36,6 +36,8 @@ type ItemView struct {
 	// null — выполнений с профилем нет (оборудование не оценивается), [] —
 	// профили есть, событий нет («журнала оборудования нет»).
 	Equipment []dom.EquipmentEvent `json:"equipment"`
+	// Label — метка изделия для людей (Ф-001 с бирки, DM-код), как в задачах.
+	Label string `json:"label,omitempty"`
 }
 
 // Register подключает проекции analysis к реестру движка (одна строка в
@@ -72,7 +74,8 @@ func circumstancesView(itemID string, s engine.Snapshot, _ []kernel.Reaction) (a
 	if len(a.Marks) == 0 && len(a.Runs) == 0 && len(a.Cases) == 0 && len(a.Incidents) == 0 && len(a.Equipment) == 0 {
 		return nil, nil
 	}
-	return ItemView{ItemID: itemID, BasisSeq: s.BasisSeq, State: a, Equipment: dom.EquipmentFromProfiles(s.Machinelogs)}, nil
+	return ItemView{ItemID: itemID, BasisSeq: s.BasisSeq, State: a, Equipment: dom.EquipmentFromProfiles(s.Machinelogs),
+		Label: s.Item.DisplayLabel(itemID)}, nil
 }
 
 func stepIncident(key string, prev json.RawMessage, r kernel.Record) (json.RawMessage, error) {

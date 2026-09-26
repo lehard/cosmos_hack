@@ -4,6 +4,9 @@
 
 **Полный машинный перечень** всех зависимостей с лицензиями — `docs/licenses/go.csv` и `docs/licenses/npm.csv`, их обновляет `make licenses` (`go-licenses` + `license-checker-rseidelsohn`). Этот документ — человеческое пояснение к нему; при расхождении прав перечень.
 
+
+**Лицензия проекта.** «Главный» распространяется на условиях GNU GPL v3 — файл [`LICENSE`](../LICENSE) в корне; выбор согласован со встроенной библиотекой GoGOST (GPLv3). Иллюстрации камер (TIG Aluminium 5083) — CC BY-SA 4.0, см. [`images/vision-demo/ATTRIBUTION.md`](images/vision-demo/ATTRIBUTION.md).
+
 ## 1. Что написано командой
 
 Весь код в `backend/internal/**` (домен, сценарии приложения, адаптеры, stand-ы внешних систем), точки входа `backend/cmd/*` (`ant`, `keeper`, `verifier`, `token-agent`, `edge-agent`, `demo-signer`, `tamper`), фронтенд `frontend/src/**`, расширение браузера `extension/`, контракты `contracts/**`, нормативный слой `normative/**`, сценарии `scenarios/**`, сборка и развёртывание `deploy/**`, `Makefile`, документация `docs/**`. Генераторы и линтеры проекта — `backend/tools/**`.

@@ -102,6 +102,47 @@ type MeasurementRecord struct {
 	Assignee     string    `json:"assignee,omitempty"`
 	At           time.Time `json:"at"`
 	EventID      string    `json:"event_id"`
+	// Result — записанный результат измерения (incident.measurement.recorded).
+	Result *MeasurementResult `json:"result,omitempty"`
+}
+
+// MeasurementResult — итог измерения для гипотезы.
+type MeasurementResult struct {
+	Outcome string    `json:"outcome"`
+	Text    string    `json:"text"`
+	At      time.Time `json:"at"`
+	EventID string    `json:"event_id"`
+	Actor   string    `json:"actor,omitempty"`
+}
+
+// Результат измерения для гипотезы.
+const (
+	MeasurementSupports     = "supports"
+	MeasurementRefutes      = "refutes"
+	MeasurementInconclusive = "inconclusive"
+)
+
+// withResult — результат измерения к своему запросу (request_event_id; нет —
+// последний запрос по гипотезе без результата).
+func withResult(ms []MeasurementRecord, r kernel.Record) []MeasurementRecord {
+	d, ok := decodeAs[struct {
+		HypothesisID   string `json:"hypothesis_id"`
+		RequestEventID string `json:"request_event_id"`
+		Outcome        string `json:"outcome"`
+		Result         string `json:"result"`
+	}](r)
+	if !ok {
+		return ms
+	}
+	out := slices.Clone(ms)
+	for i := len(out) - 1; i >= 0; i-- {
+		m := &out[i]
+		if (d.RequestEventID != "" && m.EventID == d.RequestEventID) || (d.RequestEventID == "" && m.HypothesisID == d.HypothesisID && m.Result == nil) {
+			m.Result = &MeasurementResult{Outcome: d.Outcome, Text: d.Result, At: r.OccurredAt, EventID: r.EventID, Actor: r.Actor}
+			break
+		}
+	}
+	return out
 }
 
 // ActionRecord — мера по инциденту (FR-64): assigned → implemented → effective | failed.
@@ -333,6 +374,8 @@ func StepIncident(key string, v IncidentRecord, r kernel.Record) IncidentRecord 
 		v.Hypotheses = append(slices.Clone(v.Hypotheses), humanHypothesisOf(r))
 	case catalog.IncidentMeasurementRequested:
 		v.Measurements = append(slices.Clone(v.Measurements), measurementOf(r))
+	case catalog.IncidentMeasurementRecorded:
+		v.Measurements = withResult(v.Measurements, r)
 	case catalog.IncidentActionAssigned:
 		d, _ := kernel.Decode[ev.IncidentActionAssignedV1](r)
 		v.Actions = append(slices.Clone(v.Actions), ActionRecord{ActionID: string(d.ActionID), ActionType: string(d.ActionType),
@@ -476,7 +519,7 @@ func NCKeys(r kernel.Record) []string {
 		if ok && d.NcID != "" {
 			return []string{d.NcID}
 		}
-	case catalog.IncidentHypothesisRecorded, catalog.IncidentCauseConcluded, catalog.IncidentMeasurementRequested:
+	case catalog.IncidentHypothesisRecorded, catalog.IncidentCauseConcluded, catalog.IncidentMeasurementRequested, catalog.IncidentMeasurementRecorded:
 		d, _ := decodeAs[struct {
 			NCIDs []string `json:"nc_ids"`
 		}](r)
@@ -515,6 +558,8 @@ func StepNC(key string, v NCRecord, r kernel.Record) NCRecord {
 	case catalog.IncidentMeasurementRequested:
 		v.Measurements = append(slices.Clone(v.Measurements), measurementOf(r))
 		v.IncidentIDs = appendUnique(slices.Clone(v.IncidentIDs), incidentOf(r))
+	case catalog.IncidentMeasurementRecorded:
+		v.Measurements = withResult(v.Measurements, r)
 	}
 	return v
 }

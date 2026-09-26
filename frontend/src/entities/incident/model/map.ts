@@ -30,6 +30,8 @@ const ref = (r: ApiRecordRef): JournalRecordRef => ({
   params: r.params ?? {},
   text: r.text ?? null,
   source_label: r.source_label ?? null,
+  // received_at — поле «Бэкенда для интерфейса» (fix/process-tasks); до перегенерации клиента читаем мягко.
+  received_at: (r as ApiRecordRef & { received_at?: string }).received_at ?? null,
 })
 
 /** Разбор обстоятельств (`analysis.circumstances.read`). */
@@ -115,6 +117,13 @@ export const toRiskScopeModel = (a: RiskScope): RiskScopeModel => ({
   shipped_to_partners: a.shipped_to_partners ?? 0,
   nc_ids: a.nc_ids ?? [],
   primary_nc_id: a.primary_nc_id ?? null,
+  // narrow_options — поле fix/process-tasks; до перегенерации клиента читаем мягко.
+  narrow_options: ((a as RiskScope & { narrow_options?: { label: string; item_ids: string[]; evidence?: ApiRecordRef[]; reason_text: string }[] }).narrow_options ?? []).map((o) => ({
+    label: o.label,
+    item_ids: o.item_ids,
+    evidence: (o.evidence ?? []).map(ref),
+    reason_text: o.reason_text,
+  })),
 })
 
 /**

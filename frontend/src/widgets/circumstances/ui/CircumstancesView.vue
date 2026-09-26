@@ -11,7 +11,7 @@
  * Компонент только показывает переданные данные (props) — источник данных
  * подключает контейнер виджета.
  */
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { NAlert } from 'naive-ui'
 import {
@@ -39,7 +39,15 @@ import { codeToKey } from '@/shared/i18n'
 import type { Density } from '@/shared/config/widget'
 import { ActionButton } from '@/shared/ui'
 
-const props = withDefaults(defineProps<{ model: CircumstancesModel; density?: Density }>(), { density: 'compact' })
+const props = withDefaults(
+  defineProps<{
+    model: CircumstancesModel
+    density?: Density
+    /** Сразу все записи, а не только ключевые события. */
+    initialShowAll?: boolean
+  }>(),
+  { initialShowAll: false, density: 'compact' },
+)
 /** Выбранная запись (`event_id`) — двусторонняя привязка. */
 const selected = defineModel<string | null>('selected', { default: null })
 const emit = defineEmits<{
@@ -55,6 +63,25 @@ const { t, te, d } = useI18n()
 const label = (r: JournalRecordRef): string => recordLabel(r, t)
 
 const records = computed(() => sortByTime(props.model.records))
+
+/**
+ * Ключевые события (по умолчанию): границы окна возникновения, начало и конец
+ * операции, отклонения, находки, «оценка невозможна», опоздавшие записи; всё
+ * остальное — «Показать все записи».
+ */
+const showAll = ref(props.initialShowAll)
+/** Опоздание записи, мс: пришла позже, чем произошла (received_at), больше 5 минут; иначе — пометка параметра late. */
+const lateMs = (r: CircumstanceRecord) => (r.received_at ? Date.parse(r.received_at) - Date.parse(r.occurred_at) : 0)
+const isLate = (r: CircumstanceRecord) => lateMs(r) > 5 * 60_000 || String(r.params?.late ?? '') === 'true'
+function isKey(r: CircumstanceRecord): boolean {
+  const w = props.model.window
+  if (w && (r.event_id === w.lower_bound_event_id || r.event_id === w.upper_bound_event_id)) return true
+  if (props.model.operation && r.params?.operation_run_id === props.model.operation.operation_run_id && r.event_type.startsWith('operation.run.')) return true
+  const tone = describeRecord(r).tone
+  return tone === 'deviation' || tone === 'finding' || tone === 'unable' || isLate(r)
+}
+const keyCount = computed(() => records.value.filter(isKey).length)
+const shown = computed(() => (showAll.value || keyCount.value === 0 ? records.value : records.value.filter(isKey)))
 const incoming = computed(() => isIncomingDefect(props.model))
 const summary = computed(() => phaseSummary(props.model))
 const linked = computed(() => linkedIds(records.value, selected.value))
@@ -87,7 +114,7 @@ interface Mark {
 /** Отметки дорожки с ярусами подписей. */
 const lanes = computed(() =>
   CIRCUMSTANCE_LANES.map((lane) => {
-    const rs = records.value.filter((r) => r.lane === lane)
+    const rs = shown.value.filter((r) => r.lane === lane)
     const texts = rs.map(label)
     const lefts = rs.map((r) => scale.value.pos(r.occurred_at))
     const widths = texts.map((s) => Math.min(45, s.length * 0.8 + 3))
@@ -245,7 +272,7 @@ const missingText = (code: string) => t(`widgets.analysis.missing.${codeToKey(co
             @click="toggle(m.r.event_id)"
           >
             <span class="shape" :data-shape="m.tone" aria-hidden="true" />
-            <span class="text">{{ m.text }}</span>
+            <span class="text">{{ m.text }}<template v-if="isLate(m.r)"> · <span class="late-mark" data-testid="late-mark">{{ lateMs(m.r) > 5 * 60_000 ? t('widgets.analysis.circumstances.lateBy', { duration: duration(lateMs(m.r)) }) : t('widgets.analysis.circumstances.lateMark') }}</span></template></span>
           </button>
         </div>
       </template>
@@ -264,6 +291,9 @@ const missingText = (code: string) => t(`widgets.analysis.missing.${codeToKey(co
       </div>
     </div>
 
+    <button v-if="keyCount > 0 && keyCount < records.length" type="button" class="show-all" data-testid="show-all" @click="showAll = !showAll">
+      {{ showAll ? t('widgets.analysis.circumstances.onlyKey') : t('widgets.analysis.circumstances.showAll', { n: records.length }) }}
+    </button>
     <p v-if="model.window" class="window-legend" data-testid="window-legend">
       <span class="swatch" aria-hidden="true" />
       <strong>{{ t('ncCard.causalWindow.title') }}:</strong>
@@ -692,6 +722,22 @@ const missingText = (code: string) => t(`widgets.analysis.missing.${codeToKey(co
   padding: 1px 8px;
   border-radius: var(--ant-radius-lg);
   background: var(--ant-n-100);
+}
+
+.show-all {
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ant-accent);
+  font: inherit;
+  font-size: var(--ant-fs-meta);
+  cursor: pointer;
+}
+
+.late-mark {
+  color: var(--ant-status-attention-text);
+  font-weight: var(--ant-fw-bold);
 }
 
 /* Свёрнутый промежуток без событий. */

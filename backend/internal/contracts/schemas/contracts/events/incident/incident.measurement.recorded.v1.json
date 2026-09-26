@@ -1,0 +1,58 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/incident/incident.measurement.recorded.v1.json",
+  "title": "IncidentMeasurementRecordedV1",
+  "description": "Записан результат измерения, запрошенного для проверки гипотезы (контрольный образец, замер режима, рентген): исполнитель измерения (лаборатория, дефектоскопист) записывает итог — подтверждает гипотезу, опровергает или не позволяет оценить; уверенность гипотезы пересчитывается, вывод о причине остаётся решением человека (FR-59, FR-135).",
+  "type": "object",
+  "properties": {
+    "incident_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Инцидент."
+    },
+    "nc_ids": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/object_id",
+        "description": "Несоответствие."
+      },
+      "description": "Несоответствия.",
+      "uniqueItems": true
+    },
+    "hypothesis_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Проверяемая гипотеза."
+    },
+    "request_event_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Запрос измерения (incident.measurement.requested), на который это ответ; нет — последний запрос по гипотезе."
+    },
+    "outcome": {
+      "type": "string",
+      "enum": [
+        "supports",
+        "refutes",
+        "inconclusive"
+      ],
+      "description": "Итог для гипотезы: подтверждает, опровергает, оценить нельзя."
+    },
+    "result": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Результат словами: что измерено, значение против уставки, находки."
+    },
+    "evidence_refs": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 512
+      },
+      "description": "Материалы: протокол, кадры."
+    }
+  },
+  "required": [
+    "incident_id",
+    "hypothesis_id",
+    "outcome",
+    "result"
+  ]
+}

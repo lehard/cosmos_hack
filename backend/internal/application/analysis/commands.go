@@ -41,6 +41,17 @@ type RequestMeasurement struct {
 	AssigneeID   string `json:"assignee_id,omitempty" doc:"Кому (псевдоним); пусто — по правилу."`
 }
 
+// RecordMeasurement — результат измерения для проверки гипотезы
+// (incident.measurement.recorded): исполнитель измерения записывает итог.
+type RecordMeasurement struct {
+	platform.CommandHeader
+	HypothesisID   string   `json:"hypothesis_id"`
+	RequestEventID string   `json:"request_event_id,omitempty" doc:"Запрос измерения; пусто — последний запрос по гипотезе."`
+	Outcome        string   `json:"outcome" enum:"supports,refutes,inconclusive" doc:"Итог для гипотезы: подтверждает, опровергает, оценить нельзя."`
+	Result         string   `json:"result" minLength:"1" maxLength:"1000" doc:"Результат словами: что измерено, значение против уставки, находки."`
+	EvidenceRefs   []string `json:"evidence_refs,omitempty" doc:"Материалы: протокол, кадры."`
+}
+
 // ChangeScope — сузить или расширить область риска (incident.scope.narrowed /
 // expanded, FR-61): каждая правка — новая версия с основанием.
 type ChangeScope struct {

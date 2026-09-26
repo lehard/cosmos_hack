@@ -80,6 +80,9 @@ const deviationItem = ref<string | null>(null)
 const inspectionItem = ref<string | null>(null)
 const itemChoice = computed(() => props.items.map((i) => ({ label: i.label, value: i.item_id })))
 const actionsOff = computed(() => !props.canAct || !props.workplace || props.busy)
+/** Очередь выбранной операции — карточками. */
+const queue = computed(() => props.candidates)
+const currentStepName = computed(() => props.operations.find((o) => o.stepKey === props.stepKey)?.name ?? '')
 
 function warningText(w: TerminalWarning): string {
   switch (w.kind) {
@@ -134,66 +137,62 @@ function submitInspection(): void {
 
 <template>
   <div class="terminal" data-testid="terminal">
-    <div class="line" data-testid="workplace">
-      <strong class="ant-wrap">{{ workplace ? t('common.header.workplace', { workplace: workplace.title }) : t('widgets.shopFloor.terminal.noWorkplace') }}</strong>
-      <span v-if="shiftTitle" class="ant-muted ant-wrap">· {{ t('common.words.shift') }}: {{ shiftTitle }}</span>
-    </div>
-    <p v-if="!workplace" class="no-post ant-wrap" data-testid="no-post">{{ t('widgets.shopFloor.terminal.noPostHint') }}</p>
-    <p v-else class="ant-muted ant-wrap">{{ t('terminal.onlyOwnWorkplace') }}</p>
+    <!-- Не на посту — всё скажет допуск выше; здесь ничего лишнего. -->
+    <template v-if="workplace">
+      <p class="meta" data-testid="workplace">
+        {{ t('common.header.workplace', { workplace: workplace.title }) }}<template v-if="shiftTitle"> · {{ t('common.words.shift') }}: {{ shiftTitle }}</template>
+      </p>
 
-    <NAlert v-if="result" type="success" :bordered="false" data-testid="result">{{ result }}</NAlert>
-    <NAlert v-if="error" type="error" :bordered="false" data-testid="command-error">{{ problemText(error) }}</NAlert>
+      <NAlert v-if="error" type="error" :bordered="false" data-testid="command-error">{{ problemText(error) }}</NAlert>
+      <p v-else-if="result" class="meta ok" data-testid="result">{{ result }}</p>
+      <p v-for="(w, i) in warnings" :key="i" class="warn" :data-warning="w.kind" data-testid="warnings">{{ warningText(w) }}</p>
 
-    <div v-if="warnings.length" class="stack" data-testid="warnings">
-      <NAlert v-for="(w, i) in warnings" :key="i" :type="w.kind === 'unusable' ? 'error' : 'warning'" :bordered="false" :data-warning="w.kind">
-        {{ warningText(w) }}
-      </NAlert>
-    </div>
-
-    <!-- Текущая операция: что идёт, сколько против нормы, большая кнопка «остановить». -->
-    <SectionPanel v-if="workplace" :title="t('widgets.shopFloor.terminal.currentOperation')" variant="subtle" data-testid="current-run">
-      <template v-if="run">
-        <div class="line">
-          <strong class="ant-wrap">{{ runStep?.name ?? run.step_key }}</strong>
-          <ActionButton
-            text
-            type="primary"
-            :size="size"
-            :label="items.find((i) => i.item_id === run!.item_id)?.label ?? run.item_id"
-            :hint="t('common.actions.openPassport')"
-            @click="emit('open', run.item_id)"
-          />
-          <span v-if="runMinutes !== null" :class="{ over: runOver }">{{ t('widgets.shopFloor.station.runFor', { time: formatMinutes(t, runMinutes) }) }}</span>
-          <span class="ant-muted">{{ runNorm }}</span>
-          <NTag v-if="runOver" size="small" type="error" :bordered="false">{{ t('widgets.shopFloor.station.overNorm') }}</NTag>
+      <!-- Идёт операция: одна главная вещь и одна кнопка. -->
+      <section v-if="run" class="card now" data-testid="current-run">
+        <p class="quiet">Идёт</p>
+        <p class="title">{{ runStep?.name ?? run.step_key }} · {{ items.find((i) => i.item_id === run!.item_id)?.label ?? run.item_id }}</p>
+        <p class="quiet" :class="{ over: runOver }">
+          <template v-if="runMinutes !== null">{{ t('widgets.shopFloor.station.runFor', { time: formatMinutes(t, runMinutes) }) }} · </template>{{ runNorm }}
+        </p>
+        <div class="row">
+          <button type="button" class="go primary" :disabled="actionsOff || !!run.finished_at" data-testid="stop" @click="emit('finish', 'completed')">Выполнено</button>
+          <button type="button" class="link" :disabled="actionsOff || !!run.finished_at" data-testid="interrupt" @click="panel = 'finish'">Прервать…</button>
         </div>
-        <p v-if="runOver" class="ant-wrap" data-testid="over-hint">{{ t('widgets.shopFloor.terminal.overNormHint') }}</p>
-        <ActionButton type="warning" :size="size" block :disabled="actionsOff || !!run.finished_at" :label="t('terminal.stopOperation')" data-testid="stop" @click="panel = 'finish'" />
+      </section>
+
+      <!-- Нет операции: очередь — карточки «Начать». -->
+      <template v-else>
+        <p class="head">{{ queue.length ? 'Можно начинать' : 'Очередь пуста' }}</p>
+        <div v-if="operations.length > 1" class="row">
+          <button v-for="o in operations" :key="o.stepKey" type="button" class="tab" :data-on="o.stepKey === stepKey || undefined" @click="emit('update:stepKey', o.stepKey)">{{ o.name }}</button>
+        </div>
+        <NAlert v-if="itemsError" type="error" :bordered="false">{{ problemText(itemsError) }}</NAlert>
+        <ul v-else-if="queue.length" class="cards" data-testid="queue">
+          <li v-for="c in queue" :key="c.row.item_id" class="card" :data-blocked="c.blocked || undefined">
+            <p class="title">{{ c.row.label }}</p>
+            <p class="quiet">{{ currentStepName }}</p>
+            <p v-if="c.blocked" class="quiet">{{ t('terminal.inspectionFirst') }}</p>
+            <button v-else type="button" class="go" :disabled="actionsOff" data-testid="open-start" @click="emit('start', c.row.item_id)">{{ t('terminal.startOperation') }} →</button>
+          </li>
+        </ul>
       </template>
-      <EmptyState v-else compact :title="t('widgets.shopFloor.station.noRun')" />
-    </SectionPanel>
 
-    <!-- Действия — большими кнопками, форма — в правом окне. -->
-    <section class="actions" data-testid="actions">
-      <ActionButton type="primary" :size="size" block :disabled="actionsOff || !!run" :label="t('terminal.startOperation')" data-testid="open-start" @click="panel = 'start'" />
-      <ActionButton type="warning" secondary :size="size" block :disabled="actionsOff" :label="t('terminal.reportDeviation')" data-testid="open-deviation" @click="panel = 'deviation'" />
-      <ActionButton type="primary" secondary :size="size" block :disabled="actionsOff || !stepKey" :label="t('terminal.requestInspection')" data-testid="open-inspection" @click="panel = 'inspection'" />
-    </section>
-    <p v-if="offReason" class="ant-muted ant-wrap" data-testid="off-reason">{{ offReason }}</p>
-    <p v-else-if="run" class="ant-muted ant-wrap">{{ t('widgets.shopFloor.terminal.finishFirst') }}</p>
-
-    <!-- Изделия у поста: статус и перемещение в изолятор (FR-55). -->
-    <SectionPanel v-if="workplace" :title="t('terminal.currentItems')" variant="subtle" data-testid="items">
-      <EmptyState v-if="!items.length" compact :title="t('empty.noRecords')" />
-      <div v-for="i in items" :key="i.item_id" class="stack" :data-item="i.item_id">
-        <div class="line">
-          <ActionButton text type="primary" :size="size" :label="i.label" :hint="t('common.actions.openPassport')" @click="emit('open', i.item_id)" />
-          <StatusTag v-if="i.row" axis="position" :code="i.row.status.position" />
+      <!-- Изделия у поста, которым нужно в изолятор (FR-55). -->
+      <section v-if="items.length" class="block" data-testid="items">
+        <p class="quiet">{{ t('terminal.currentItems') }}</p>
+        <div v-for="i in items" :key="i.item_id" class="row" :data-item="i.item_id">
+          <button type="button" class="link" @click="emit('open', i.item_id)">{{ i.label }}</button>
           <SummaryTag v-if="i.row && i.row.status.summary !== 'in_process'" :code="i.row.status.summary" />
+          <IsolatorMoveConfirm :item-id="i.item_id" :can-act="canAct && !!workplace" :density="density" />
         </div>
-        <IsolatorMoveConfirm :item-id="i.item_id" :can-act="canAct && !!workplace" :density="density" />
-      </div>
-    </SectionPanel>
+      </section>
+
+      <p class="row quiet" data-testid="actions">
+        <button type="button" class="link" :disabled="actionsOff" data-testid="open-deviation" @click="panel = 'deviation'">{{ t('terminal.reportDeviation') }}</button>
+        <span>·</span>
+        <button type="button" class="link" :disabled="actionsOff || !stepKey" data-testid="open-inspection" @click="panel = 'inspection'">{{ t('terminal.requestInspection') }}</button>
+      </p>
+    </template>
 
     <RecordDrawer :show="!!panel" :kind-label="panel ? t(PANEL_TITLE[panel]) : ''" :subtitle="workplace?.title ?? ''" data-testid="terminal-drawer" @close="panel = null">
       <div class="stack form" :data-panel="panel ?? undefined">
@@ -269,47 +268,143 @@ function submitInspection(): void {
 </template>
 
 <style scoped>
-.terminal,
-.stack {
+.terminal {
   display: flex;
   flex-direction: column;
-  gap: var(--ant-gap);
+  gap: var(--ant-space-4);
   min-width: 0;
 }
 
-.stack {
-  gap: var(--ant-space-2);
+p {
+  margin: 0;
 }
 
-.line {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--ant-space-1) var(--ant-space-2);
-  align-items: center;
-  min-width: 0;
+.head {
+  font-size: var(--ant-fs-title);
+}
+
+.meta,
+.quiet {
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-meta);
+}
+
+.ok {
+  color: var(--ant-status-success-text);
+}
+
+.warn {
+  color: var(--ant-status-attention-text);
 }
 
 .over {
   color: var(--ant-status-danger-text);
 }
 
-/* Большие кнопки действий — сеткой, переносятся, без горизонтальной прокрутки. */
-.actions {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: var(--ant-space-3);
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ant-space-2) var(--ant-space-3);
+  align-items: center;
 }
 
-.no-post {
+.block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ant-space-2);
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--ant-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ant-space-1);
   padding: var(--ant-space-3) var(--ant-space-4);
-  border-left: 4px solid var(--ant-status-attention);
-  border-radius: 0 var(--ant-radius-md) var(--ant-radius-md) 0;
-  background: var(--ant-status-attention-soft);
-  color: var(--ant-status-attention-text);
+  border: 1px solid var(--ant-border);
+  border-left: 4px solid var(--ant-accent);
+  border-radius: var(--ant-radius-md);
+  background: var(--ant-surface);
+}
+
+.card[data-blocked] {
+  border-left-color: var(--ant-border);
+}
+
+.now {
+  border-left-color: var(--ant-status-success);
+}
+
+.title {
+  font-size: var(--ant-fs-title);
   font-weight: var(--ant-fw-bold);
+}
+
+.go,
+.link,
+.tab {
+  font: inherit;
+  cursor: pointer;
+}
+
+.go {
+  align-self: flex-start;
+  margin-top: var(--ant-space-2);
+  padding: var(--ant-space-1) var(--ant-space-3);
+  border: 1px solid var(--ant-accent);
+  border-radius: var(--ant-radius-md);
+  background: var(--ant-accent-soft);
+  color: var(--ant-accent);
+  font-weight: var(--ant-fw-bold);
+}
+
+.go.primary {
+  background: var(--ant-accent);
+  color: var(--ant-surface);
+}
+
+.go:hover {
+  background: var(--ant-surface-hover);
+  color: var(--ant-accent);
+}
+
+.link,
+.tab {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ant-accent);
+}
+
+.tab {
+  color: var(--ant-text-2);
+}
+
+.tab[data-on] {
+  color: var(--ant-text);
+  font-weight: var(--ant-fw-bold);
+}
+
+.go:disabled,
+.link:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 .form {
   gap: var(--ant-space-4);
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ant-space-2);
 }
 </style>

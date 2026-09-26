@@ -24,6 +24,8 @@ const props = defineProps<{
   itemId: string
   /** seq, на котором показан паспорт (AD-39). */
   basisSeq: number
+  /** Куда принимать — по процессу (место шага из задачи); задано — выбора нет. */
+  toLocationId?: string | null
 }>()
 
 const OPERATION = 'process.movement.receive'
@@ -60,9 +62,10 @@ const options = computed(() =>
     .map((l) => ({ label: l.name, value: l.location_id, kind: l.kind })),
 )
 watch(
-  ownWorkshop,
-  (w) => {
-    if (!toLocation.value && w) toLocation.value = w.location_id
+  () => [props.toLocationId, ownWorkshop.value] as const,
+  ([fixed, w]) => {
+    if (fixed) toLocation.value = fixed
+    else if (!toLocation.value && w) toLocation.value = w.location_id
   },
   { immediate: true },
 )
@@ -105,7 +108,8 @@ async function confirm(): Promise<void> {
 
     <div v-if="open" class="form ant-box">
       <strong class="title ant-ellipsis">{{ t('receiveAction.title') }}</strong>
-      <FormField :label="t('receiveAction.place')" required>
+      <p v-if="toLocationId" class="ant-muted ant-wrap" data-testid="receive-place-fixed">{{ t('receiveAction.place') }}: {{ placeName }}</p>
+      <FormField v-else :label="t('receiveAction.place')" required>
         <NSelect v-model:value="toLocation" :options="options" filterable data-testid="receive-place" />
       </FormField>
       <FormField :label="t('widgets.shopFloor.isolator.inspection')">

@@ -10,8 +10,8 @@ import { incomingCircumstances, ncGroups, weldCircumstances } from '@/entities/i
 import CircumstancesView from '../ui/CircumstancesView.vue'
 import CircumstancesWidget from '../ui/CircumstancesWidget.vue'
 
-const mountView = (model = weldCircumstances()) =>
-  mount(CircumstancesView, { props: { model, selected: null, 'onUpdate:selected': () => {} }, global: { plugins: [createPinia(), i18n] } })
+const mountView = (model = weldCircumstances(), initialShowAll = true) =>
+  mount(CircumstancesView, { props: { model, selected: null, initialShowAll, 'onUpdate:selected': () => {} }, global: { plugins: [createPinia(), i18n] } })
 
 const leftOf = (w: ReturnType<typeof mountView>, id: string) => (w.find(`[data-event="${id}"]`).attributes('style') ?? '').match(/left: ([\d.]+)%/)?.[1]
 
@@ -47,6 +47,26 @@ describe('разбор обстоятельств', () => {
     const w = mountView(m)
     expect(w.findAll('[data-testid="gap-band"]').length).toBeGreaterThan(0)
     expect(w.find('[data-testid="gap-band"]').text()).toContain('без событий')
+  })
+
+  it('по умолчанию — только ключевые события; «Показать все записи» — остальные; опоздавшая запись помечена', async () => {
+    const m = weldCircumstances()
+    m.records = m.records.map((r) => (r.lane === 'equipment' ? { ...r, params: { ...r.params, late: 'true' } } : r))
+    const w = mountView(m, false)
+    const all = m.records.length
+    const shown = w.findAll('button.mark').length
+    expect(shown).toBeLessThan(all)
+    expect(w.findAll('[data-testid="late-mark"]').length).toBeGreaterThan(0)
+    await w.find('[data-testid="show-all"]').trigger('click')
+    expect(w.findAll('button.mark').length).toBe(all)
+  })
+
+  it('опоздание по времени получения — «пришло с опозданием на …»', () => {
+    const m = weldCircumstances()
+    const r0 = m.records.find((r) => r.lane === 'equipment')!
+    m.records = m.records.map((r) => (r === r0 ? { ...r, received_at: new Date(Date.parse(r.occurred_at) + 83 * 60_000).toISOString() } : r))
+    const w = mountView(m)
+    expect(w.find(`[data-event="${r0.event_id}"] [data-testid="late-mark"]`).text()).toBe('пришло с опозданием на 1\u00a0ч 23\u00a0мин')
   })
 
   it('дорожки синхронны: одно время — одна позиция на всех дорожках', () => {

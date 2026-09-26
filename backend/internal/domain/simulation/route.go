@@ -254,6 +254,10 @@ func (g *gen) item(p *ItemPlan) {
 		g.fail("изделие %s: маршрут до %s без сварки (weld)", p.ID, p.Until)
 		return
 	}
+	if p.Entry == "weld" {
+		g.briefWeld(p, until)
+		return
+	}
 	at := g.times(p)
 	for i := 1; i <= until; i++ {
 		if !at[Stages[i]].After(at[Stages[i-1]]) && !at[Stages[i]].Equal(at[Stages[i-1]]) {
@@ -494,6 +498,68 @@ func (g *gen) item(p *ItemPlan) {
 			decide(s, t, "item.release.record", "storekeeper", r.Storekeeper, itemParam,
 				map[string]any{"after_rework": false, "warehouse_id": "WH-FG"})
 		}
+	}
+}
+
+// briefWeld — короткая история изделия (ItemPlan.Entry = "weld"): регистрация
+// со входом в процесс на подготовке кромок, сварка фактами источника поста
+// (operation.run.started / finished и сводки тока по дуге), КТ-3 — если
+// Until его включает. Время регистрации — за 30 мин до сварки.
+func (g *gen) briefWeld(p *ItemPlan, until int) {
+	w := g.b.World
+	r := w.Route
+	if p.Weld == nil || until < stageIndex("weld") {
+		g.fail("изделие %s: короткая история (entry: weld) без сварки", p.ID)
+		return
+	}
+	line, ln := g.lineOf(p.Weld.Station)
+	if line == "" {
+		g.fail("изделие %s: сварочный пост %s не привязан к линии", p.ID, p.Weld.Station)
+		return
+	}
+	lots := g.orderLots(p.Order)
+	blank := p.BlankLot
+	if blank == "" {
+		blank = lots["blank"]
+	}
+	start := g.t(p.Weld.At)
+	m := p.Weld.Minutes
+	if m == 0 {
+		m = r.WeldMin
+	}
+	end := start.Add(time.Duration(m) * time.Minute)
+	at := map[string]time.Time{"launch": start.Add(-30 * time.Minute), "weld": start, "kt3": end.Add(5 * time.Minute)}
+	it := &ItemTruth{ID: p.ID, Order: p.Order, Stages: map[string]time.Time{}, Until: p.Until, Line: line}
+	g.items[p.ID] = it
+	g.act(Action{Kind: ActionDecision, At: at["launch"], Scenario: "route", Label: p.ID + "/register", Operation: "item.item.register",
+		Role: "storekeeper", Actor: g.ids.Person(r.Storekeeper), Binds: p.ID, Item: p.ID,
+		Body: map[string]any{"item_type_id": w.ItemType, "item_revision": w.ItemRevision, "order_id": "{local:" + p.Order + "}",
+			"lot_ids": []any{"{local:" + blank + "}"}, "entry_step_key": "welding.edge_prep"}})
+	it.Stages["launch"] = at["launch"]
+	g.recordWeld(p, at)
+	it.Stages["weld"] = start
+	wt := g.weldTruth(p.ID)
+	runID := "{local:SV-" + num(p.ID) + "-1}"
+	rnd := NewRand(g.seed, "route/"+p.ID)
+	eq := g.ids.Equipment(p.Weld.Station)
+	g.add(&draft{at: start, source: ln.WeldingSource, typ: "operation.run.started", item: p.ID, label: p.ID + "/weld/started", scenario: "route",
+		data: map[string]any{"operation_run_id": runID, "operation_code": "SV", "step_key": "welding.weld", "equipment_id": eq,
+			"station_id": "ST-WELD", "operator_id": g.ids.Person(p.Weld.Welder), "program_ref": r.Program, "operation_started_at": FormatTime(start)}})
+	g.weldCycles(wt, ln.WeldingSource, runID, rnd, true)
+	g.add(&draft{at: end, source: ln.WeldingSource, typ: "operation.run.finished", item: p.ID, label: p.ID + "/weld/finished", scenario: "route",
+		data: map[string]any{"operation_run_id": runID, "completion": "completed", "operation_started_at": FormatTime(start), "operation_finished_at": FormatTime(end)}})
+	if until >= stageIndex("kt3") {
+		zones := []any{}
+		for _, z := range []string{"U1", "U2", "U3", "U4", "U5", "U6", "U7", "U8"} {
+			zones = append(zones, g.ids.Zone(z))
+		}
+		g.add(&draft{at: at["kt3"], source: "cam-kt3-a", typ: "inspection.result.recorded", item: p.ID, label: p.ID + "/kt3", scenario: "route",
+			data: map[string]any{"observation_id": "{local:KT3-" + p.ID + "}", "method": "camera", "phase": "after_operation",
+				"step_key": "welding.kt3_camera", "inspection_point": "KT-3", "operation_run_id": runID, "zone_ids": zones,
+				"outcome": "no_defect_indicated", "processing_state": "completed", "analyzer_confidence_bp": rnd.Between(9300, 9700),
+				"observation_quality_bp": rnd.Between(8800, 9500),
+				"versions":               map[string]any{"analyzer_version": "vqc-weld 2.3.1", "contract_version": "1.0", "recipe_ref": "kt3-weld@1", "item_revision": w.ItemRevision}}})
+		it.Stages["kt3"] = at["kt3"]
 	}
 }
 

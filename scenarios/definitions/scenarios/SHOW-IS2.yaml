@@ -146,6 +146,28 @@ steps:
     component_type_id: FL-100.01.002
     position: R-003
     quantity: 1
+- at: '2026-09-21T07:40:00+03:00'
+  label: SHOW/plan-W21-WP-WELD-1
+  note: 'История: план смены — мастер FOR-WC назначает сварщика W21 на пост ИС-1 (смена SHIFT-1)'
+  decision: access.assignment.set
+  role: MASTER
+  actor: MST-02
+  body:
+    workplace_id: WP-WELD-1
+    shift_id: SHIFT-1
+    person_id: '{person:WLD-02}'
+    assignee_role: performer
+- at: '2026-09-21T07:41:00+03:00'
+  label: SHOW/plan-W21-WP-WELD-2
+  note: 'История: план смены — мастер FOR-WC назначает сварщика W21 на пост ИС-2 (смена SHIFT-1)'
+  decision: access.assignment.set
+  role: MASTER
+  actor: MST-02
+  body:
+    workplace_id: WP-WELD-2
+    shift_id: SHIFT-1
+    person_id: '{person:WLD-02}'
+    assignee_role: performer
 - at: '2026-09-21T08:00:00+03:00'
   system: 'Начало показа: часы прогона идут, партия Ф-001…Ф-003 на входе сварочного цеха, у мастера FOR-WC — задачи «принять»'
 - at: '2026-09-21T08:01:00+03:00'
@@ -200,23 +222,23 @@ steps:
     inspection_on_receipt: no_damage
     step_key: welding.receive
 - at: '2026-09-21T08:08:00+03:00'
-  label: SHOW/admit-WP-WELD-2
-  note: 'Сварщик W21: допуск к посту ИС-2'
+  label: SHOW/admit-WP-WELD-1-am
+  note: 'Сварщик W21: допуск к посту ИС-1'
   decision: access.workplace.admit
   role: PERFORMER
   actor: WLD-02
   stop: true
   params:
-    workplace_id: WP-WELD-2
+    workplace_id: WP-WELD-1
   body:
     shift_id: SHIFT-1
 - at: '2026-09-21T08:15:00+03:00'
   label: SHOW/weld-SV-001-1
-  note: 'Сварщик W21: Ф-001 «Начать» на ИС-2 — ток 158–163 А, в уставке 160 ± 10'
+  note: 'Сварщик W21: Ф-001 «Начать» на ИС-1 — ток 158–163 А, в уставке 160 ± 10'
   weld:
     item: F-001
     run: SV-001-1
-    station: WS-2
+    station: WS-1
     welder: WLD-02
     minutes: 40
     current:
@@ -293,6 +315,17 @@ steps:
     method_event_ids:
     - '{event:F-001/kt3}'
     - '{event:F-001/xray}'
+- at: '2026-09-21T09:16:00+03:00'
+  label: SHOW/admit-WP-WELD-2
+  note: 'Сварщик W21: допуск к посту ИС-2 (Ф-002 и Ф-003 — на ИС-2)'
+  decision: access.workplace.admit
+  role: PERFORMER
+  actor: WLD-02
+  stop: true
+  params:
+    workplace_id: WP-WELD-2
+  body:
+    shift_id: SHIFT-1
 - at: '2026-09-21T09:20:00+03:00'
   label: SHOW/weld-SV-002-1
   note: 'Сварщик W21: Ф-002 «Начать» на ИС-2 — ПОЛОМКА: ток уходит в 176–182 А (вторая сварка партии)'
@@ -508,7 +541,127 @@ steps:
     workplace_id: WP-WELD-1
   body:
     shift_id: SHIFT-1
+- at: '2026-09-21T11:14:00+03:00'
+  ref: Е-112
+  label: SHOW/narrow-IS1
+  note: 'Технолог TEC-01: «Сузить область» — исключить сваренные на ИС-1 (журнал ИС-1 в уставке): 34 → 13'
+  decision: analysis.scope.narrow
+  role: TECHNOLOGIST
+  actor: TECH-01
+  stop: true
+  params:
+    incident_id: '{ref:INC-IS2}'
+  body:
+    item_ids:
+    - '{item:F-101}'
+    - '{item:F-102}'
+    - '{item:F-103}'
+    - '{item:F-104}'
+    - '{item:F-105}'
+    - '{item:F-106}'
+    - '{item:F-107}'
+    - '{item:F-108}'
+    - '{item:F-109}'
+    - '{item:F-110}'
+    - '{item:F-111}'
+    - '{item:F-112}'
+    - '{item:F-113}'
+    - '{item:F-114}'
+    - '{item:F-115}'
+    - '{item:F-116}'
+    - '{item:F-117}'
+    - '{item:F-118}'
+    - '{item:F-119}'
+    - '{item:F-120}'
+    - '{item:F-001}'
+    evidence_event_ids:
+    - '{event:F-101/weld/0916-0510}'
+    - '{event:F-102/weld/0916-0610}'
+    - '{event:F-103/weld/0916-0710}'
+    - '{event:F-104/weld/0916-0810}'
+    - '{event:F-105/weld/0916-1010}'
+    - '{event:F-106/weld/0916-1110}'
+    - '{event:F-107/weld/0916-1210}'
+    - '{event:F-108/weld/0917-0510}'
+    - '{event:F-109/weld/0917-0610}'
+    - '{event:F-110/weld/0917-0710}'
+    - '{event:F-111/weld/0917-0810}'
+    - '{event:F-112/weld/0917-1010}'
+    - '{event:F-113/weld/0917-1110}'
+    - '{event:F-114/weld/0917-1210}'
+    - '{event:F-115/weld/0918-0510}'
+    - '{event:F-116/weld/0918-0610}'
+    - '{event:F-117/weld/0918-0710}'
+    - '{event:F-118/weld/0918-0810}'
+    - '{event:F-119/weld/0918-1010}'
+    - '{event:F-120/weld/0918-1110}'
+    - '{event:F-001/kt3}'
+    reason:
+      code: equipment_log_in_setpoint
+      text: Журнал ИС-1 за выполнения непрерывный и в уставке; общий фактор — ИС-2
+- at: '2026-09-21T11:16:00+03:00'
+  ref: Е-42, Е-43
+  note: >-
+    Опоздавший журнал ИС-2: шлюз ШЛ-2 копил записи с Пт 18:00 (обрыв связи) и досылает
+    пачку: ток вне уставки с Пт 18:40 — сварки Ф-128…Ф-131 прошлой смены.
+  stream:
+    source: is-2
+    equipment: WS-2
+    from: "2026-09-18T18:00:00+03:00"
+    to: "2026-09-21T08:00:00+03:00"
+    records: 40
+    deliver: "2026-09-21T11:16:00+03:00"
+    deliver_span_s: 5
+    deviations:
+      - {at: "2026-09-18T18:40:00+03:00", run: SV-128-1, parameter: current, value: 178, unit: A, label: EV-WS2-0918}
+      - {at: "2026-09-18T19:40:00+03:00", run: SV-129-1, parameter: current, value: 179, unit: A}
+      - {at: "2026-09-21T06:10:00+03:00", run: SV-130-1, parameter: current, value: 177, unit: A}
+      - {at: "2026-09-21T07:00:00+03:00", run: SV-131-1, parameter: current, value: 180, unit: A}
+- at: '2026-09-21T11:18:00+03:00'
+  ref: Е-112
+  label: SHOW/narrow-drift
+  note: 'Технолог TEC-01: «Сузить область» — исключить сваренные на ИС-2 до выхода тока из уставки (опоздавший журнал): 13 → 6'
+  decision: analysis.scope.narrow
+  role: TECHNOLOGIST
+  actor: TECH-01
+  stop: true
+  params:
+    incident_id: '{ref:INC-IS2}'
+  body:
+    item_ids:
+    - '{item:F-121}'
+    - '{item:F-122}'
+    - '{item:F-123}'
+    - '{item:F-124}'
+    - '{item:F-125}'
+    - '{item:F-126}'
+    - '{item:F-127}'
+    evidence_event_ids:
+    - '{event:EV-WS2-0918}'
+    - '{event:F-121/weld/0916-0540}'
+    - '{event:F-122/weld/0916-0840}'
+    - '{event:F-123/weld/0916-1140}'
+    - '{event:F-124/weld/0917-0540}'
+    - '{event:F-125/weld/0917-0840}'
+    - '{event:F-126/weld/0917-1140}'
+    - '{event:F-127/weld/0918-0740}'
+    reason:
+      code: late_equipment_log
+      text: 'Опоздавший журнал ИС-2: ток впервые вне уставки в Пт 18:40; сварки на ИС-2 до этого — в уставке'
 - at: '2026-09-21T11:20:00+03:00'
+  ref: Е-111
+  label: SHOW/measure
+  note: 'Технолог TEC-01: «Запросить проверку» гипотезы «оборудование ИС-2» — контрольный образец на ИС-2 при 160 А'
+  decision: analysis.measurement.request
+  role: TECHNOLOGIST
+  actor: TECH-01
+  stop: true
+  params:
+    nc_id: '{ref:NC-F003}'
+  body:
+    hypothesis_id: '{ref:HYP-EQ}'
+    what: Контрольный образец на ИС-2 при уставке 160 А
+- at: '2026-09-21T11:50:00+03:00'
   ref: П-04
   label: SHOW/cause
   note: 'Технолог TEC-01: подтвердить причину — оборудование ИС-2 (дрейф регулятора тока)'
@@ -527,7 +680,7 @@ steps:
       code: equipment_drift
       text: Ток ИС-2 вне уставки на сварках Ф-002 и Ф-003; на Ф-001 ток в уставке
     verification: журнал тока ИС-2, КТ-3
-- at: '2026-09-21T11:25:00+03:00'
+- at: '2026-09-21T11:55:00+03:00'
   ref: Е-94
   label: SHOW/rework-F-003
   note: 'Технолог TEC-01: решение по Ф-003 — «Переделка» → 1С «перевод в брак (переделка)»'
@@ -543,7 +696,7 @@ steps:
     reason:
       code: rework_per_tp
       text: Переварка участка У2 по ТП на ИС-1
-- at: '2026-09-21T11:30:00+03:00'
+- at: '2026-09-21T12:00:00+03:00'
   label: SHOW/weld-SV-003-2
   note: 'Сварщик W21: Ф-003 «Начать» на ИС-1 — переварка, новое выполнение со ссылкой на SV-003-1'
   weld:
@@ -554,7 +707,7 @@ steps:
     minutes: 40
     rework_of: SV-003-1
     no_confirm: true
-- at: '2026-09-21T11:40:00+03:00'
+- at: '2026-09-21T12:10:00+03:00'
   ref: Е-45
   label: F-002/xray
   note: 'Доп. проверка Ф-002 — рентген: признаков нет'
@@ -572,7 +725,7 @@ steps:
     processing_state: completed
     inspector_id: '{person:NDT-01}'
     conclusion_ref: РК-0921-02
-- at: '2026-09-21T11:42:00+03:00'
+- at: '2026-09-21T12:12:00+03:00'
   ref: Е-44
   label: F-002/kt3-2
   fact: inspection.result.recorded
@@ -605,7 +758,7 @@ steps:
       camera_config: angle-1
       item_revision: Б
   note: 'Доп. проверка Ф-002: повторный кадр КТ-3 — признаков нет, качество 0,90'
-- at: '2026-09-21T12:20:00+03:00'
+- at: '2026-09-21T12:50:00+03:00'
   ref: Е-44
   label: F-003/kt3-2
   fact: inspection.result.recorded
@@ -630,7 +783,7 @@ steps:
       camera_config: angle-1
       item_revision: Б
   note: 'КТ-3 F-003: признаков нет'
-- at: '2026-09-21T12:25:00+03:00'
+- at: '2026-09-21T12:55:00+03:00'
   ref: Е-45
   label: F-003/xray
   note: 'Рентген Ф-003 после переварки: признаков нет'
@@ -648,7 +801,7 @@ steps:
     processing_state: completed
     inspector_id: '{person:NDT-01}'
     conclusion_ref: РК-0921-03
-- at: '2026-09-21T12:30:00+03:00'
+- at: '2026-09-21T13:00:00+03:00'
   ref: Е-47
   label: SHOW/zt3-F-003
   note: 'Контролёр INS-01: ЗТ-3 F-003 «Принять и передать»'
@@ -667,7 +820,7 @@ steps:
     method_event_ids:
     - '{event:F-003/kt3-2}'
     - '{event:F-003/xray}'
-- at: '2026-09-21T12:35:00+03:00'
+- at: '2026-09-21T13:05:00+03:00'
   ref: Е-47
   label: SHOW/zt3-F-002
   note: 'Контролёр INS-01: ЗТ-3 F-002 «Принять и передать»'
@@ -686,7 +839,7 @@ steps:
     method_event_ids:
     - '{event:F-002/kt3-2}'
     - '{event:F-002/xray}'
-- at: '2026-09-21T12:40:00+03:00'
+- at: '2026-09-21T13:10:00+03:00'
   system: 'Партия прошла ЗТ-3; паспорт Ф-003: переделка — новое выполнение SV-003-2 со ссылкой на SV-003-1'
 outcome:
 - Ф-001 — ЗТ-3 принята; Ф-002 — после доп. проверки принята; Ф-003 — прожог У2, НС, изоляция, причина — оборудование ИС-2, переделка на ИС-1, ЗТ-3 принята

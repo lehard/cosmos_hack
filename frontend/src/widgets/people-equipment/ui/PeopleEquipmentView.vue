@@ -31,6 +31,8 @@ const emit = defineEmits<{
   workplace: [workplaceId: string]
   /** Сотрудник — окно сотрудника. */
   person: [personId: string]
+  /** Пост без исполнителя — окно назначения с кандидатами по квалификации. */
+  assign: [workplaceId: string, station: string]
 }>()
 const { t, d } = useI18n()
 const problemText = useProblemText()
@@ -83,7 +85,10 @@ const qualType = (s: string) => (s === 'valid' ? 'success' : s === 'expiring' ? 
             </th>
             <td>
               <ActionButton v-if="p.post.assigned" text type="primary" :label="p.post.assigned.display" data-testid="open-person" @click="emit('person', p.post.assigned.person_id)" />
-              <span v-else class="ant-wrap">{{ t('liveMap.posts.notAssigned') }}</span>
+              <template v-else>
+                <span class="ant-wrap">{{ t('liveMap.posts.notAssigned') }}</span>
+                <ActionButton size="small" type="primary" secondary :label="t('widgets.shopFloor.now.act.unassigned')" data-testid="assign-post" @click="emit('assign', p.post.workplace_id, p.post.station)" />
+              </template>
             </td>
             <td>
               <NTag size="small" :bordered="false" :type="presenceTagType(p.post.presence)"><span class="ant-wrap">{{ t(PRESENCE_TEXT[p.post.presence]) }}</span></NTag>

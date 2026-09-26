@@ -34,8 +34,7 @@ const who = (e: PlanEntry) => [roleText(e.role), e.persona].filter(Boolean).join
     <div class="plan">
       <p v-if="wait" class="wait ant-wrap" data-testid="plan-wait">
         <strong>{{ t('widgets.scenarios.plan.waitingNow') }}</strong>
-        {{ roleText(wait.role) }} — {{ wait.what }}<template v-if="wait.object"> ({{ wait.object }})</template
-        ><template v-if="wait.persona"> · <span class="meta">{{ wait.persona }}</span></template>
+        {{ roleText(wait.role) }} — {{ String(wait.what).replace(/^[^:«]*:\s*/, '') }}
       </p>
       <p v-else-if="plan.state === 'running'" class="meta ant-wrap" data-testid="plan-machines">{{ t('widgets.scenarios.plan.machinesGo') }}</p>
 
