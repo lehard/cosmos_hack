@@ -360,9 +360,11 @@ func TestSpineFlow(t *testing.T) {
 		t.Fatalf("карта v2: %s %+v", v.Status, v.Route[1].Signatures)
 	}
 
-	// Счётчик FR-65 и паспортная проекция.
+	// Счётчик FR-65 и паспортная проекция. Решение «ремонт» по каталогу (эпик 44)
+	// оформляет ещё и разрешение на отклонение — документ по событию-триггеру.
 	list, err := w.docs.Documents(context.Background(), platform.DrillRef{Entity: platform.EntityItem, ID: item}, platform.Moment{}, platform.Page{})
-	if err != nil || list.CollectedFromHistory == nil || *list.CollectedFromHistory != 3 || *list.ManualEntries != 0 {
+	if err != nil || list.CollectedFromHistory == nil || *list.CollectedFromHistory != 4 || *list.ManualEntries != 0 ||
+		!slices.ContainsFunc(list.Items, func(d app.DocumentSummary) bool { return strings.HasPrefix(d.Template, "concession@") }) {
 		t.Fatalf("документы изделия: %+v %v", list, err)
 	}
 

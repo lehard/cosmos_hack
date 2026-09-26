@@ -75,6 +75,9 @@ type Template struct {
 	Summary []Field             `json:"summary,omitempty"`
 	Route   []access.RouteStage `json:"route,omitempty"`
 	Layout  []Section           `json:"layout,omitempty"`
+	// Trigger — запись журнала изделия, по которой документ оформляется сам
+	// (построитель event_record, эпик 44).
+	Trigger *Trigger `json:"trigger,omitempty"`
 }
 
 // Ref — template_ref: `‹id›@‹версия›` (нет версии — 1).

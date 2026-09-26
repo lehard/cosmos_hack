@@ -159,6 +159,8 @@ type DocContext struct {
 	SourceEvent string   `json:"source_event,omitempty"`
 	// CustomerAcceptance — продукция с приёмкой представителя заказчика (режим 5).
 	CustomerAcceptance bool `json:"customer_acceptance,omitempty"`
+	// Rows — записи-триггеры документа по событию (эпик 44, triggered.go).
+	Rows []EventRow `json:"rows,omitempty"`
 }
 
 // Current — последняя версия (nil — версии нет).

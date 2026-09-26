@@ -1564,7 +1564,8 @@
       "process_version": "Версия процесса",
       "workplace": "Пост и смена",
       "policy": "Права",
-      "concession": "Разрешение"
+      "concession": "Разрешение",
+      "other": "Прочее"
     },
     "kinds": {
       "incomingRegister": "Журнал входного контроля",
@@ -1603,7 +1604,10 @@
       "policyGrant": "Выдача прав",
       "controllerAssignment": "Назначение контролёра",
       "passportExtract": "Выписка паспорта",
-      "serviceAct": "Служебный акт"
+      "serviceAct": "Служебный акт",
+      "deviceCommissioningAct": "Акт ввода устройства",
+      "restoreAct": "Акт восстановления",
+      "partnerRegistrationAct": "Регистрация партнёра"
     }
   },
 
