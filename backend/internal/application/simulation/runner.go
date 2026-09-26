@@ -37,10 +37,16 @@ func (s *Service) Loop(ctx context.Context, every time.Duration) error {
 			if err != nil {
 				continue
 			}
+			// Прогоны идут по очереди (AD-38): шагает только последний начатый;
+			// прежний, если завис, не забирает допуски и время нового.
+			var cur *RunState
 			for _, r := range runs {
-				if r.State == StateRunning || r.State == StateWaiting {
-					_ = s.Step(ctx, r.RunID)
+				if (r.State == StateRunning || r.State == StateWaiting) && (cur == nil || r.StartedAt.After(cur.StartedAt)) {
+					cur = r
 				}
+			}
+			if cur != nil {
+				_ = s.Step(ctx, cur.RunID)
 			}
 		}
 	}
