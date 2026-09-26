@@ -1,8 +1,8 @@
 package nonconformity
 
 import (
-	"ant/internal/contracts/statuses"
 	ev "ant/internal/contracts/events"
+	"ant/internal/contracts/statuses"
 	"ant/internal/domain/kernel"
 )
 
