@@ -1,0 +1,74 @@
+# =============================================================================
+# Справочник: источники событий (source_id) — кто порождает строки потоков
+# и кто их подписывает. Форма — из спайна соседей (source_id + event_id + source_seq);
+# имена — наши.
+#
+# sign_via (кто ставит подпись; в файлах потоков подписей НЕТ — события неподписанные):
+#   edge-agent — устройство: ключ устройства в edge-агенте (камеры, станки, стенд, ключ,
+#                сварочные источники через шлюзы ШЛ-1/ШЛ-2, рентген-лаборатория);
+#   stand      — шлюз внешней системы (stand 1С, импорт файла КОМПАС);
+#   terminal   — ручной ввод исполнителя на терминале рабочего места (уровень подписи 1):
+#                в автосверке подписывает demo-signer под персоной из payload.operator_id,
+#                в интерактивном режиме — агент токена этого человека. [П] — вопрос соседям.
+# source_kind — вид источника факта: manual_entry / machine / sensor / camera / external_system / import.
+# source_seq ведётся на каждый source_id отдельно, с 1 в каждом прогоне.
+# В прогоне соседи добавляют префикс прогона: ‹run_id›/‹source_id› (AD-38 спайна).
+# Характеристики устройств — [ПП], см. equipment.yaml.
+# =============================================================================
+
+meta:
+  kind: reference.sources
+  version: "0.1-draft"
+  valid_from: "2026-09-01"
+
+sources:
+  # ---- внешние системы и импорт ----
+  - {source_id: ERP-1C,     source_kind: external_system, sign_via: stand,      system: "1С (stand)", latency_s: 3}
+  - {source_id: CAD-KOMPAS, source_kind: import,          sign_via: stand,      system: "КОМПАС-3D (файл условной сборки)", latency_s: 5}
+  # ---- терминалы рабочих мест (ручной ввод, уровень подписи 1) ----
+  - {source_id: TERM-IQC,  source_kind: manual_entry, sign_via: terminal, workplace: WP-IQC,    latency_s: 1}
+  - {source_id: TERM-STK,  source_kind: manual_entry, sign_via: terminal, workplace: WP-STK,    latency_s: 1}
+  - {source_id: TERM-MC-1, source_kind: manual_entry, sign_via: terminal, workplace: WP-MC-CNC, latency_s: 1}
+  - {source_id: TERM-MC,   source_kind: manual_entry, sign_via: terminal, workplace: WP-MC-MST, latency_s: 1}
+  - {source_id: TERM-WS-1, source_kind: manual_entry, sign_via: terminal, workplace: WP-WC-P1,  latency_s: 1}
+  - {source_id: TERM-WS-2, source_kind: manual_entry, sign_via: terminal, workplace: WP-WC-P2,  latency_s: 1}
+  - {source_id: TERM-WC,   source_kind: manual_entry, sign_via: terminal, workplace: WP-WC-MST, latency_s: 1}
+  - {source_id: TERM-ASM,  source_kind: manual_entry, sign_via: terminal, workplace: WP-AC-ASM, latency_s: 1}
+  - {source_id: TERM-LT,   source_kind: manual_entry, sign_via: terminal, workplace: WP-AC-LT,  latency_s: 1}
+  - {source_id: TERM-AC,   source_kind: manual_entry, sign_via: terminal, workplace: WP-AC-MST, latency_s: 1}
+  - {source_id: TERM-QC,   source_kind: manual_entry, sign_via: terminal, workplace: WP-QC-FQC, latency_s: 1}
+  # ---- станки, приборы, стенды (через edge-агент) ----
+  - {source_id: CNC-1, source_kind: machine,         sign_via: edge-agent, equipment_id: CNC-1, edge_agent: EA-MC,  latency_s: 1,
+     note: "журнал станка и пульта — без номера выполнения и без исполнителя; привязку делает стадия AD-29 по интервалу выполнения (S16 — неоднозначно)"}
+  - {source_id: CMM-1, source_kind: machine,         sign_via: edge-agent, equipment_id: CMM-1, edge_agent: EA-MC,  latency_s: 2,
+     note: "S15: Пн 21.09 08:00–10:15 часы КИМ-1 спешат на 7 мин; occurred_at — по часам источника, source_seq — по порядку записей"}
+  - {source_id: WS-1,  source_kind: machine,         sign_via: edge-agent, equipment_id: WS-1,  edge_agent: GW-1,   latency_s: 1}
+  - {source_id: WS-2,  source_kind: machine,         sign_via: edge-agent, equipment_id: WS-2,  edge_agent: GW-2,   latency_s: 1,
+     note: "ШЛ-2 копит журнал при обрыве связи и досылает пачкой (S07); source_seq — сквозной номер ИС-2"}
+  - {source_id: TW-1,  source_kind: sensor,          sign_via: edge-agent, equipment_id: TW-1,  edge_agent: EA-AC,  latency_s: 1}
+  - {source_id: TW-2,  source_kind: sensor,          sign_via: edge-agent, equipment_id: TW-2,  edge_agent: EA-AC,  latency_s: 1,
+     note: "S18: контрольный ключ ОТК — проверка момента после записи непроверенным КЛ-1"}
+  - {source_id: LT-1,  source_kind: machine,         sign_via: edge-agent, equipment_id: LT-1,  edge_agent: EA-AC,  latency_s: 2}
+  - {source_id: XR-1,  source_kind: external_system, sign_via: edge-agent, equipment_id: XR-1,  edge_agent: EA-NDT, latency_s: 5,
+     note: "заключения РК лаборатории НК; подписант заключения — дефектоскопист (payload.inspector_id)"}
+  # ---- камеры VisionQC и OperatorVision (через edge-агент КТ) ----
+  - {source_id: CAM-IQC,  source_kind: camera, sign_via: edge-agent, equipment_id: CAM-IQC,  edge_agent: EA-KT1, latency_s: 2}
+  - {source_id: CAM-MO,   source_kind: camera, sign_via: edge-agent, equipment_id: CAM-MO,   edge_agent: EA-KT2, latency_s: 2}
+  - {source_id: CAM-WS-1, source_kind: camera, sign_via: edge-agent, equipment_id: CAM-WS-1, edge_agent: EA-KT3, latency_s: 2}
+  - {source_id: CAM-WS-2, source_kind: camera, sign_via: edge-agent, equipment_id: CAM-WS-2, edge_agent: EA-KT3, latency_s: 2}
+  - {source_id: CAM-UV,   source_kind: camera, sign_via: edge-agent, equipment_id: CAM-UV,   edge_agent: EA-KT4, latency_s: 2}
+  - {source_id: CAM-ASM,  source_kind: camera, sign_via: edge-agent, equipment_id: CAM-ASM,  edge_agent: EA-KT4, latency_s: 2}
+  - {source_id: CAM-FQC,  source_kind: camera, sign_via: edge-agent, equipment_id: CAM-FQC,  edge_agent: EA-KT5, latency_s: 2}
+  - {source_id: OV-ASM,   source_kind: camera, sign_via: edge-agent, equipment_id: OV-ASM,   edge_agent: EA-KT4, latency_s: 1}
+
+edge_agents:                                  # [П] имена краевых агентов; GW-1/GW-2 — шлюзы сварочных источников из сценариев
+  - {id: GW-1,   display: "ШЛ-1"}
+  - {id: GW-2,   display: "ШЛ-2"}
+  - {id: EA-MC,  display: "edge-агент механического цеха"}
+  - {id: EA-AC,  display: "edge-агент сборочно-испытательного цеха"}
+  - {id: EA-NDT, display: "edge-агент лаборатории НК"}
+  - {id: EA-KT1, display: "край КТ-1"}
+  - {id: EA-KT2, display: "край КТ-2"}
+  - {id: EA-KT3, display: "край КТ-3"}
+  - {id: EA-KT4, display: "край КТ-4 / КТ-СР / OperatorVision"}
+  - {id: EA-KT5, display: "край КТ-5"}

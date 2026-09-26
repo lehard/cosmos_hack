@@ -1,0 +1,86 @@
+# =============================================================================
+# Справочник: уставки режимов, нормы, лимиты, сроки, пороги карты.
+# Источник: scenarios-flange.md §2.4, §2.7, S13; flange-process-bpmn.md §3, §5.
+# ВСЕ значения — проектные предположения [ПП] или наши допущения [П].
+# Главное число истории: ток сварки 160 ± 10 А (ИС-2 «уплыл» до 182 А).
+# =============================================================================
+
+meta:
+  kind: reference.setpoints
+  version: "0.1-draft"
+  valid_from: "2026-09-01"
+
+welding_programs:
+  - id: PS-4
+    display: "ПС-4 — сварка кольца с фланцем"   # одна программа для всех сварок (scenarios-flange.md §2.7) [П]
+    applies_to_link: W-1
+    setpoints:
+      welding_current_a:  {nominal: 160, tolerance: 10, unit: A}          # [ПП] ГЛАВНАЯ УСТАВКА: 150…170 А
+      arc_voltage_v:      {nominal: 14.0, tolerance: 1.0, unit: V}        # [ПП]
+      wire_feed_m_min:    {nominal: 6.0, tolerance: 0.5, unit: "m/min"}   # [ПП]
+      gas_flow_l_min:     {nominal: 12, tolerance: 2, unit: "l/min"}      # [ПП] аргон
+      travel_speed_mm_min: {nominal: 250, tolerance: 30, unit: "mm/min"}  # [ПП]
+    segments: [U1, U2, U3, U4, U5, U6, U7, U8]
+    special_process: true                     # нарушение режима = нарушение ТП, даже без дефекта (FR-151 соседей)
+    reaction_rule: R-12
+
+machining:
+  program: {id: UP-FL-100-01, revision: "3"}  # [П]
+  norm_min: {min: 40, base: 60, max: 90}      # [ПП] flange-process-bpmn.md §3 M1
+  scenario_duration_min: 50                   # [П] длительность цикла в прогонах; у эталона F-001 — 62 мин (передано станком)
+  spindle_load_warning_pct: 110               # [ПП]
+
+cmm_characteristics:                          # 5 размеров КТ-2 (S01: «5 размеров, все в допуске») [ПП]
+  - {id: D1,  display: "Наружный диаметр фланца", nominal: 320.00, tol_minus: 0.10, tol_plus: 0.10, unit: mm}
+  - {id: D2,  display: "Диаметр отверстия",       nominal: 250.00, tol_minus: 0.00, tol_plus: 0.05, unit: mm}
+  - {id: H1,  display: "Толщина фланца",          nominal: 12.00,  tol_minus: 0.05, tol_plus: 0.05, unit: mm}
+  - {id: F1,  display: "Плоскостность торца",     nominal: 0.00,   tol_minus: 0.00, tol_plus: 0.05, unit: mm}
+  - {id: P1,  display: "Позиция отверстий крепежа (12 шт.)", nominal: 0.00, tol_minus: 0.00, tol_plus: 0.10, unit: mm}
+
+tightening:                                   # J-1: 12 болтов, крест-накрест, 3 прохода [ПП]
+  torque_nm: {nominal: 8.0, tolerance_pct: 10}   # [ПП] для М6
+  valve_torque_nm: {nominal: 12.0, tolerance_pct: 10, joint: J-2, locking: lockwire}   # волна 2 [ПП] клапан КВД в штуцер крышки
+  passes_pct: [30, 70, 100]
+  angle_deg: {min: 20, max: 40}               # [ПП]
+  paint_mark_required: true
+
+leak_test:                                    # стенд СТ-1 [ПП]
+  test_pressure_mpa: 0.15
+  hold_time_min: 30
+  leak_rate_norm_pa_m3_s: 1.0e-06
+  background_max_pa_m3_s: 5.0e-09
+  retest_limit: 2                             # повтор недостоверного испытания ≤ 2
+
+windows_and_limits:
+  edge_prep_to_weld_max_h: 8                  # окно от подготовки кромок до сварки ≤ 8 ч [ПП]
+  edge_etching_max: 3                         # травление кромок ≤ 3 раз [ПП]
+  weld_segment_rework_max: 3                  # переделка участка шва по ТП ≤ 3 раз [ПП]; 2-я и 3-я — с согласия главного сварщика; дальше — только ремонт по разрешению на отклонение или списание
+  machining_rework_max: 1                     # [ПП]
+  reassembly_max: 2                           # [ПП]
+  anchor_rule: "область риска считается от последней подтверждённо годной сварки на участке (S05: Ф-006, Пн 21.09 14:55)"
+
+deadlines:
+  nc_disposition_working_days: 3              # срок решения по несоответствию [П]
+  source_silence_alert_min: 15                # «нет данных от ИС-2 15 минут» (S07) [П]
+  camera_result_timeout_min: 10               # [ПП]
+  seal_out_of_stock_max_h: 4                  # правило R-21, S13 (по желанию) [ПП]
+
+observation_quality:
+  scale: "0…1, отдельно от уверенности анализатора"
+  thresholds_by_recipe: "см. inspection-recipes.yaml (КТ-3 — 0,6)"
+
+gate_waiting:                                 # S13, пороги flange-process-bpmn.md §5.3 [П]
+  controller_work_min_per_item: 10
+  wait_norm_min: 30
+  wait_due_min: 60
+  escalation_after_min: {reminder: 30, master: 60, qc_head: 120}
+  escalation_targets: {reminder: "контролёр поста", master: "мастер участка", qc_head: "начальник ОТК"}
+
+queue_colors:                                 # цвет счётчика очереди (не цвет деталей!) [ПП]
+  ZT-3: {ok_max: 2, attention_max: 4}         # 5 и больше — «плохо» (S13)
+  xray: {ok_max: 4, attention_max: 8}
+  leak_stand: {ok_max: 2, attention_max: 5}
+  gate_wait_min: {ok_lt: 30, attention_lt: 60}
+
+comparison:
+  min_comparable_runs_per_worker: 10          # «≥ 10 для сравнения» [П]

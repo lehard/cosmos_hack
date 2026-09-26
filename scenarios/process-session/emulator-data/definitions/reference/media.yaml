@@ -1,0 +1,162 @@
+# =============================================================================
+# Справочник: материалы к записям (evidence_refs[].media_id).
+# Правило (кейс §5.4): никаких фиктивных снимков изделия. Снимков изделий в наборе НЕТ.
+# У каждой записи, где материалы бывают, ссылка есть всегда — пустых полей нет:
+#   кадр камеры (КТ-1…КТ-5)  → «материал не предоставлен»; если класс дефекта есть в открытом
+#                              наборе — ещё и ИЛЛЮСТРАЦИЯ класса (источник, лицензия, пометка);
+#   рентген (РК)             → заключение как документ; снимок в центр не передаётся;
+#   OperatorVision           → «видео не передаётся», только событие.
+# Источник иллюстраций: research/open-defect-datasets.md (TIG Aluminium 5083, п. 3.1; шаблон подписи).
+# Файлы иллюстраций и учёт (путь в наборе, изменения, лицензия): repo-pack/docs/images/vision-demo/ATTRIBUTION.md.
+# Проверка: tools/check.py, пункт 28.
+# =============================================================================
+
+meta:
+  kind: reference.media
+  version: "0.1-draft"
+  valid_from: "2026-09-01"
+  allowed_kinds: [not_provided, illustration, document, event_only]   # вида «снимок изделия» (photo, captured) нет
+  rule: "никаких фиктивных снимков изделия (кейс §5.4); иллюстрация — только с источником, лицензией и пометкой «не относится к изделию»"
+
+media:
+  - id: MED-NP-CAMERA-FRAME
+    kind: not_provided
+    display: "Материал не предоставлен"
+    applies_to: "кадры камер КТ-1…КТ-5 (inspection.result, method = camera) — все"
+    source: "имитатор: снимков изделий в наборе нет; результат камеры — только данные анализатора"
+    license: null
+    notice: "материал не предоставлен"
+    relates_to_item: true            # ссылка про это изделие: материала по нему нет
+    ui: "в карточке — строка «Материал не предоставлен», без картинки-заглушки"
+
+  - id: MED-ILL-TIG5083-BURN-THROUGH
+    kind: illustration
+    display: "Иллюстрация класса «прожог» (burn through)"
+    applies_to: "кадры камер КТ-3 (CAM-WS-1, CAM-WS-2) с дефектом класса burn_through — вторая ссылка после «материал не предоставлен»"
+    defect_type: burn_through
+    dataset_class: "burn through"
+    source_dataset: "TIG Aluminium 5083"
+    authors: "D. Bacioiu, G. Melton, M. Papaelias, R. Shaw (University of Birmingham)"
+    dataset_url: "https://www.kaggle.com/datasets/danielbacioiu/tig-aluminium-5083"
+    article: "https://doi.org/10.1016/j.jmapro.2019.07.020"
+    license: "CC BY-SA 4.0"
+    license_url: "https://creativecommons.org/licenses/by-sa/4.0/"
+    original_file: "al5083/train/170906-144958-Al 2mm/frame_01955.png"   # путь в архиве набора; метка 1 = burn through (al5083/README)
+    file: "repo-pack/docs/images/vision-demo/vision_burnthrough.png"      # учёт: vision-demo/ATTRIBUTION.md
+    sha256: "b81861cd62d84b8a29972eac47cebec928b3e636cc1a1486ff934c56c2d300ee"
+    changes: "без изменений (исходный кадр 800×974); разметку рисует интерфейс"
+    captured_at: "неизвестно"
+    item: "не относится к изделию"
+    control_point: "не относится"
+    relates_to_item: false
+    notice: "ИЛЛЮСТРАЦИЯ, не относится к изделию"
+    caption: "Иллюстрация. Источник: TIG Aluminium 5083 — D. Bacioiu, G. Melton, M. Papaelias, R. Shaw (University of Birmingham), kaggle.com/datasets/danielbacioiu/tig-aluminium-5083, лицензия CC BY-SA 4.0. Кадр снят во время сварки (HDR). Изменений нет. Изображение не относится к изделиям РКК «Энергия» и не является результатом промышленной валидации."
+    limitations:
+      - "кадр во время TIG-сварки, а не готовый шов после операции"
+      - "сплав 5083 (Al-Mg), а не АМг6 фланца — близкий класс сплава, не тот же материал"
+      - "класс показан для понимания, по картинке ничего не решают"
+    classes_not_in_dataset: [porosity, undercut, base_metal_pore]    # для них — только «материал не предоставлен»
+
+  - id: MED-ILL-TIG5083-GOOD-WELD
+    kind: illustration
+    display: "Иллюстрация: шов без дефекта (good weld)"
+    applies_to: "экран VisionQC КТ-3 — образец нормы для сравнения; потоки эмулятора на неё пока не ссылаются"
+    defect_type: null                # дефекта нет
+    dataset_class: "good weld"
+    source_dataset: "TIG Aluminium 5083"
+    authors: "D. Bacioiu, G. Melton, M. Papaelias, R. Shaw (University of Birmingham)"
+    dataset_url: "https://www.kaggle.com/datasets/danielbacioiu/tig-aluminium-5083"
+    article: "https://doi.org/10.1016/j.jmapro.2019.07.020"
+    license: "CC BY-SA 4.0"
+    license_url: "https://creativecommons.org/licenses/by-sa/4.0/"
+    original_file: "al5083/train/170905-115602-Al 2mm/frame_00627.png"   # метка 0 = good weld
+    file: "repo-pack/docs/images/vision-demo/vision_normal.png"
+    sha256: "bced32ded47ed90491dcccad25b8faa087b2ba0ed69cbd28c0a5662dd0a1d732"
+    changes: "без изменений (исходный кадр 800×974)"
+    captured_at: "неизвестно"
+    item: "не относится к изделию"
+    control_point: "не относится"
+    relates_to_item: false
+    notice: "ИЛЛЮСТРАЦИЯ, не относится к изделию"
+    caption: "Иллюстрация. Источник: TIG Aluminium 5083 — D. Bacioiu, G. Melton, M. Papaelias, R. Shaw (University of Birmingham), kaggle.com/datasets/danielbacioiu/tig-aluminium-5083, лицензия CC BY-SA 4.0. Кадр снят во время сварки (HDR). Изменений нет. Изображение не относится к изделиям РКК «Энергия» и не является результатом промышленной валидации."
+    limitations:
+      - "кадр во время TIG-сварки, а не готовый шов после операции"
+      - "сплав 5083 (Al-Mg), а не АМг6 фланца — близкий класс сплава, не тот же материал"
+      - "класс показан для понимания, по картинке ничего не решают"
+
+  - id: MED-ILL-TIG5083-CONTAMINATION
+    kind: illustration
+    display: "Иллюстрация класса «загрязнение» (contamination)"
+    applies_to: "экран VisionQC КТ-3 — второй сигнал; потоки эмулятора на неё пока не ссылаются"
+    defect_type: null                # в таксономии дефектов эмулятора класса contamination нет; класс набора — в dataset_class
+    dataset_class: "contamination"
+    source_dataset: "TIG Aluminium 5083"
+    authors: "D. Bacioiu, G. Melton, M. Papaelias, R. Shaw (University of Birmingham)"
+    dataset_url: "https://www.kaggle.com/datasets/danielbacioiu/tig-aluminium-5083"
+    article: "https://doi.org/10.1016/j.jmapro.2019.07.020"
+    license: "CC BY-SA 4.0"
+    license_url: "https://creativecommons.org/licenses/by-sa/4.0/"
+    original_file: "al5083/train/170904-112347-Al 2mm/frame_02510.png"   # метка 2 = contamination
+    file: "repo-pack/docs/images/vision-demo/vision_contamination.png"
+    sha256: "b81cb0576e86b3d5117120848b4b8a638c1b1ce143d5b145bd2db20f0c824f6e"
+    changes: "без изменений (исходный кадр 800×974)"
+    captured_at: "неизвестно"
+    item: "не относится к изделию"
+    control_point: "не относится"
+    relates_to_item: false
+    notice: "ИЛЛЮСТРАЦИЯ, не относится к изделию"
+    caption: "Иллюстрация. Источник: TIG Aluminium 5083 — D. Bacioiu, G. Melton, M. Papaelias, R. Shaw (University of Birmingham), kaggle.com/datasets/danielbacioiu/tig-aluminium-5083, лицензия CC BY-SA 4.0. Кадр снят во время сварки (HDR). Изменений нет. Изображение не относится к изделиям РКК «Энергия» и не является результатом промышленной валидации."
+    limitations:
+      - "кадр во время TIG-сварки, а не готовый шов после операции"
+      - "сплав 5083 (Al-Mg), а не АМг6 фланца — близкий класс сплава, не тот же материал"
+      - "класс показан для понимания, по картинке ничего не решают"
+
+  - id: MED-ILL-TIG5083-BAD-OBSERVATION
+    kind: illustration
+    display: "Иллюстрация плохого кадра: пересвет и блик, признак неразличим"
+    applies_to: "экран VisionQC КТ-3 — пример кадра, по которому оценка невозможна (ср. блик Ф-025, S04); потоки эмулятора на неё пока не ссылаются"
+    defect_type: null                # признак на кадре неразличим
+    dataset_class: "burn through (в исходнике)"
+    source_dataset: "TIG Aluminium 5083"
+    authors: "D. Bacioiu, G. Melton, M. Papaelias, R. Shaw (University of Birmingham)"
+    dataset_url: "https://www.kaggle.com/datasets/danielbacioiu/tig-aluminium-5083"
+    article: "https://doi.org/10.1016/j.jmapro.2019.07.020"
+    license: "CC BY-SA 4.0"
+    license_url: "https://creativecommons.org/licenses/by-sa/4.0/"
+    derived_from: MED-ILL-TIG5083-BURN-THROUGH
+    original_file: "al5083/train/170906-144958-Al 2mm/frame_01955.png"   # тот же исходный кадр, что у BURN-THROUGH
+    file: "repo-pack/docs/images/vision-demo/vision_bad_observation.png"
+    sha256: "130688764b9ae9850f19f67f40970cc5350eef98a165c6a08b6c3751325751b8"
+    changes: "производная: размытие по Гауссу 5 px, контраст ×0,5, боковой пересвет справа (до +0,50), блик над зоной шва (до 97 %), мягкое насыщение; размер 800×974; распространяется под CC BY-SA 4.0"
+    captured_at: "неизвестно"
+    item: "не относится к изделию"
+    control_point: "не относится"
+    relates_to_item: false
+    notice: "ИЛЛЮСТРАЦИЯ, не относится к изделию"
+    caption: "Иллюстрация. Источник: TIG Aluminium 5083 — D. Bacioiu, G. Melton, M. Papaelias, R. Shaw (University of Birmingham), kaggle.com/datasets/danielbacioiu/tig-aluminium-5083, лицензия CC BY-SA 4.0. Кадр снят во время сварки (HDR). Производная: размытие, снижение контраста, боковой пересвет и блик; признак дефекта неразличим. Изображение не относится к изделиям РКК «Энергия» и не является результатом промышленной валидации."
+    limitations:
+      - "кадр во время TIG-сварки, а не готовый шов после операции"
+      - "сплав 5083 (Al-Mg), а не АМг6 фланца — близкий класс сплава, не тот же материал"
+      - "класс показан для понимания, по картинке ничего не решают"
+
+  - id: MED-DOC-XR-CONCLUSION
+    kind: document
+    display: "Заключение по рентгенографическому контролю (документ)"
+    applies_to: "результаты рентгена (inspection.result, method = xray): шов КТ-3, выборка колец на входе, кольца со склада"
+    source: "лаборатория НК, дефектоскопист Д-01 (II уровень); номер заключения — в поле document_no ссылки"
+    license: null                    # внутренний документ предприятия, не открытый материал
+    notice: "документ; снимок РК в центр не передаётся"
+    image_transferred: false
+    relates_to_item: true
+    ui: "в карточке — номер заключения и итог; ссылка «снимок у лаборатории НК», картинки нет"
+
+  - id: MED-OV-EVENT-ONLY
+    kind: event_only
+    display: "OperatorVision: видео не передаётся, только событие"
+    applies_to: "operator_action.detected (OV-ASM)"
+    source: "OperatorVision на посту сборки: видео и скелет позы остаются на краю"
+    license: null
+    notice: "видео не передаётся"
+    video_transferred: false
+    relates_to_item: true
+    ui: "в карточке — текст события (что увидено, чего ждали, уверенность), без кадра"

@@ -1,0 +1,124 @@
+# =============================================================================
+# Справочник: классы дефектов (классификатор) и методы, которые их видят.
+# Источник: scenarios-flange.md §2.7; cameras-project-draft.md §4, §6; docs/plan.md §3.
+# Коды (defect_type) — как в scenarios-flange-expected.yaml. Тяжесть — по смыслу
+# ГОСТ 15467 (критический / значительный / малозначительный); значения условные [П].
+# «Какой метод видит класс» — проектное предположение [ПП].
+# Код, которого здесь нет (например spatter_x в S12), принимается как «неизвестно (исходное значение)» с флагом.
+# =============================================================================
+
+meta:
+  kind: reference.defect_classes
+  version: "0.1.1-draft"   # v0.3.1: класс «скол», поле author_class — пять классов автора кейса (сессия 25.09)
+  valid_from: "2026-09-01"
+
+author_classes:          # пять классов, которые назвал автор кейса; разрез аналитики «дефекты по классам»
+  - {id: weld,     display: "сварочные швы"}
+  - {id: chip,     display: "сколы"}
+  - {id: dent,     display: "вмятины"}
+  - {id: scratch,  display: "царапины"}
+  - {id: geometry, display: "геометрия после обработки на станке"}
+
+severity_levels:
+  - {id: critical, display: "критический"}
+  - {id: major,    display: "значительный"}
+  - {id: minor,    display: "малозначительный"}
+
+methods:
+  - {id: camera,    display: "камера (VisionQC), только поверхность"}
+  - {id: xray,      display: "рентген (РК), внутренние дефекты шва и зона снимка"}
+  - {id: cmm,       display: "КИМ, размеры и допуски"}
+  - {id: leak_test, display: "стенд с течеискателем, герметичность"}
+  - {id: documents, display: "проверка документов поставщика"}
+  - {id: visual,    display: "осмотр человеком"}
+  - {id: torque,    display: "ключ с записью момента"}
+
+classes:
+  - id: burn_through
+    display: "прожог"
+    author_class: weld
+    applies_to: weld
+    default_severity: major
+    detected_by: {camera: "лицевая сторона", xray: "лицевая сторона и корень шва"}
+    note: "прожог в корне шва камера не видит — только рентген (Ф-021 У5, Ф-023 У3 в S05) [ПП]"
+    reaction_rule: R-07
+  - id: porosity
+    display: "поры в шве"
+    author_class: weld
+    applies_to: weld
+    default_severity: major
+    detected_by: {camera: "только выходящие на поверхность", xray: "внутренние"}
+  - id: undercut
+    display: "подрез"
+    author_class: weld
+    applies_to: weld
+    default_severity: major
+    detected_by: {camera: "да", xray: "частично"}
+    reaction_rule: R-07
+  - id: base_metal_pore
+    display: "пора в основном металле"
+    applies_to: [ring_body, flange_body]
+    default_severity: major
+    detected_by: {xray: "в зоне снимка"}
+    blind_methods: [camera]                   # КТ-1 внутренние поры не видит (S02): пропуск на входе — «метод не видит класс», не ошибка модели
+  - id: missing_torque_mark
+    display: "нет метки затяжки"
+    applies_to: bolted_joint
+    default_severity: minor
+    detected_by: {camera: "да (КТ-4)"}
+    note: "момент затяжки камера не видит — только ключ TW-1"
+  - id: missing_fastener
+    display: "нет крепежа"
+    applies_to: bolted_joint
+    default_severity: critical
+    detected_by: {camera: "да (КТ-4)"}
+    reaction_rule: R-15
+  - id: scratch
+    display: "царапина"
+    author_class: scratch
+    applies_to: surface
+    default_severity: minor
+    detected_by: {camera: "да"}
+  - id: dent
+    display: "вмятина (забоина)"
+    author_class: dent
+    applies_to: surface
+    default_severity: minor
+    detected_by: {camera: "да"}
+  - id: chip
+    display: "скол"
+    author_class: chip
+    applies_to: surface
+    default_severity: minor
+    detected_by: {camera: "да (КТ-2, косой свет; кромка)", visual: "да, с лупой"}
+    note: "v0.3.1, фон S08: скол на кромке под сварку после станка — до сварки, пока его видно [ПП]"
+  - id: spatter
+    display: "брызги металла"
+    author_class: weld
+    applies_to: weld_area
+    default_severity: minor
+    detected_by: {camera: "да"}
+  - id: crater
+    display: "кратер"
+    author_class: weld
+    applies_to: weld
+    default_severity: minor
+    detected_by: {camera: "да"}
+  - id: foreign_object
+    display: "посторонний предмет (FOD), стружка, масло"
+    applies_to: seal_groove
+    default_severity: major
+    detected_by: {camera: "да (КТ-СР, УФ)", visual: "да"}
+  - id: dimension_out_of_tolerance
+    display: "размер вне допуска"
+    author_class: geometry
+    applies_to: flange
+    default_severity: major
+    detected_by: {cmm: "да"}
+    measurable: true
+  - id: leak
+    display: "течь"
+    applies_to: assembly
+    default_severity: critical
+    detected_by: {leak_test: "да"}
+    measurable: true

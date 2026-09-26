@@ -1,0 +1,41 @@
+# =============================================================================
+# Срез файла process/scenarios-flange-expected.yaml — БЕЗ изменений (наши имена, как есть).
+# Источник истины — исходный файл; этот файл пересобирается tools/split_expected.py.
+# Общие словари и ID — expected/_common.yaml; главная история — expected/main-story.yaml.
+# Времена здесь — МСК (+03:00), как в исходнике; в потоках и определениях — UTC.
+# =============================================================================
+
+scenarios:
+  S10A:
+    title: "Переделка шва — новое выполнение операции; переделка помогает не всем"
+    case: {other: ["§4.3 повторная обработка", "§4.6 новый ID повторного выполнения", "§5.2 повторные операции"]}
+    run: main_story
+    checkpoints:
+      - at: "2026-09-24T16:30:00+03:00"
+        label: "конец главной истории"
+        expect:
+          - {id: S10A-01, what: "переварки — новые выполнения со ссылкой на прежние", subject: run/*, filter: {date: "2026-09-24", operation: welding}, field: rework_links, op: set_eq, value: {SV-017-2: SV-017-1, SV-023-2: SV-023-1, SV-025-2: SV-025-1, SV-015-2: SV-015-1, SV-021-2: SV-021-1}}
+          - {id: S10A-02, what: "переварка на ИС-1, ток в уставке", subject: run/SV-017-2, field: {equipment: WS-1, current_in_setpoint: true}, op: eq, value: true}
+          - {id: S10A-03, what: "счётчик переделок участков шва по ТП после переварки — 1 из 3", subject: item/F-017, field: rework_counter, op: eq, value: {U1: 1, U2: 1, U3: 1, U4: 1, U5: 1, U6: 1, U7: 1, U8: 1, limit: 3}}
+          - {id: S10A-04, what: "у 4 фланцев переделка принята: камера и рентген чистые, ЗТ-3 пройдена повторно; дальше — по маршруту", subject: item/*, filter: {items: [F-015, F-017, F-023, F-025]}, field: {disposition_verified: true, status: in_progress}, op: eq, value: true}
+          - {id: S10A-05, what: "Ф-021 — новый дефект в новом шве, НС-06", subject: nc/NC-06, field: {item: F-021, zone: U5, type: porosity, run: SV-021-2}, op: eq, value: true}
+          - {id: S10A-06, what: "повторная переделка того же участка не назначена без главного сварщика", subject: item/F-021, field: auto_rework_assigned, op: eq, value: false}
+          - {id: S10A-07, what: "новое решение по Ф-021 — списать; прежнее «переделка» сохранено и связано", subject: item/F-021, field: dispositions, op: eq, value: [{type: rework, at: "2026-09-23T15:30:00+03:00"}, {type: scrap, at: "2026-09-24T15:30:00+03:00", signers: [CHW-01, TECH-01], supersedes: rework}]}
+          - {id: S10A-08, what: "итог по шести фланцам инцидента", subject: risk_scope/RS-01, field: items_outcome, op: eq, value: {rework_verified: [F-015, F-017, F-023, F-025], scrapped: [F-021], in_rework: [F-019]}}
+          - {id: S10A-09, what: "в 1С «возврат из брака в производство» ×4 — на повторной ЗТ-3, каждое после своей подписи, подтверждено [П]", subject: erp/postings, filter: {type: rework_return_to_production}, field: {items: [F-015, F-017, F-023, F-025], gate: ZT-3, presentation_no: 2, sent_before_gate_signature: 0, ack_status: acked}, op: eq, value: true}
+          - {id: S10A-10, what: "блокировка Ф-021 и новый дефект НС-06 в 1С НЕ уходят: до нового решения по Ф-021 в 1С ничего", subject: erp/postings, filter: {item: F-021, between: ["2026-09-24T14:35:00+03:00", "2026-09-24T15:29:00+03:00"]}, field: count, op: eq, value: 0}
+          - {id: S10A-11, what: "в 1С «перевод в брак (списание)» по Ф-021, подтверждено", subject: erp/postings, filter: {type: scrap_transfer_writeoff, item: F-021}, field: ack_status, op: eq, value: acked}
+          - {id: S10A-12, what: "О-8: +5 повторных выполнений сварки, +5 изделий с повтором", subject: metric/O-8, field: {repeated_runs: 5, items_with_repeat: 5}, op: delta, value: true, baseline: "2026-09-24T07:59:00+03:00"}
+          - {id: S10A-13, what: "ЗТ-3 не с первого предъявления у 5 изделий; Р-5 +5", subject: metric/D-3, filter: {gate: ZT-3}, field: not_first_pass_items, op: contains, value: [F-015, F-017, F-021, F-023, F-025]}
+          - {id: S10A-14, what: "в паспорте Ф-017 две связанные сварки", subject: item/F-017, field: welding_runs, op: eq, value: [SV-017-1, SV-017-2]}
+          - {id: S10A-15, what: "переварка шла на посту линии 1: с неё пять фланцев идут по линии 1", subject: item/*, filter: {items: [F-015, F-017, F-021, F-023, F-025], from: "2026-09-24T08:00:00+03:00"}, field: line_id, op: eq, value: L-FL-1}
+          - {id: S10A-16, what: "дефекты по линиям за главную историю: линия 2 — 4 (до переделки), линия 1 — 1 (НС-06 в новом шве Ф-021)", subject: metric/O-4, filter: {cut: line, station: welding, window: main_story}, field: confirmed_defects_by_line, op: eq, value: {L-FL-1: 1, L-FL-2: 4}}
+          - {id: S10A-17, what: "перед каждой переваркой — выборка (удаление шва, новое выполнение WL-…, С-03 в среду вечером) и контроль выборки ОТК-1 до заварки (узлы WL1 → WL2 → WLG → WL3)", subject: run/*, filter: {runs: [SV-017-2, SV-023-2, SV-025-2, SV-015-2, SV-021-2]}, field: preceded_by, op: eq, value: {excavation: WL1, excavation_check: {by: QC-01, result: clean}, chief_welder_approval: not_needed_first_rework}}
+          - {id: S10A-18, what: "v0.3.1, MES: новый сигнал по Ф-021 (РК-0924-04) — «не выдавать в работу» в Чт 14:31; после «списать» (15:30) «можно выдавать» не уходит", subject: mes/postings, filter: {item: F-021, after: "2026-09-24T00:00:00+03:00"}, field: sequence, op: eq, value: [{type: hold, at: "2026-09-24T14:31:00+03:00", basis: "signal:xr/F-021/RK-0924-04"}]}
+          - {id: S10A-19, what: "сверка 26.09, А-4 — О-4 по видам дефекта, место обнаружения — сварочный участок (КТ-3 и рентген): прожог — 3 (НС-01 У2, НС-02 У5, НС-03 У3), поры — 2 (НС-02 У6, НС-06 У5). Поры в теле кольца (НС-04, НС-05) — в строке «входной брак», в сварке их нет", subject: metric/O-4, filter: {cut: defect_type, station: welding, window: main_story}, field: {welding_detected: {burn_through: 3, porosity: 2}, incoming_row: {base_metal_pore: 2}}, op: eq, value: true}
+          - {id: S10A-20, what: "сверка 26.09, А-18 — О-2, итог по изделию для шести фланцев инцидента: переделка проверена — 4, в переделке — 1 (Ф-019), списано — 1 (Ф-021). Ф-021 учтён в «списано» один раз, в корзине «переделка» его нет; его переварка SV-021-2 учтена в О-8 (S10A-12)", subject: metric/O-2, filter: {incident: RS-01, cut: item_outcome}, field: {rework_verified: [F-015, F-017, F-023, F-025], in_rework: [F-019], scrapped: [F-021]}, op: eq, value: true}
+    must_not:
+      - {id: S10A-N1, what: "переделка не создаёт новое изделие: О-1 и О-2 не удваиваются", subject: metric/O-2, filter: {incident: RS-01}, field: items, op: eq, value: 6}
+      - {id: S10A-N2, what: "«возврат из брака в производство» не раньше чистого рентгена и подписи повторной ЗТ-3", subject: erp/postings, filter: {type: rework_return_to_production}, field: {sent_before_xray_clean: 0, sent_before_gate_signature: 0}, op: eq, value: true}
+      - {id: S10A-N3, what: "нет второго «перевода в брак (переделка)» по тем же изделиям", subject: erp/postings, filter: {type: scrap_transfer_rework}, field: count, op: eq, value: 1}
+      - {id: S10A-N4, what: "«выпуск годного» по фланцам инцидента в главной истории не уходит: до ЗТ-6 (сборка, испытание, окончательный контроль) они не дошли", subject: erp/postings, filter: {type: release_good, items: [F-015, F-017, F-019, F-021, F-023, F-025]}, field: count, op: eq, value: 0}

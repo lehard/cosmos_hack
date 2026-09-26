@@ -1,0 +1,31 @@
+# =============================================================================
+# Срез файла process/scenarios-flange-expected.yaml — БЕЗ изменений (наши имена, как есть).
+# Источник истины — исходный файл; этот файл пересобирается tools/split_expected.py.
+# Общие словари и ID — expected/_common.yaml; главная история — expected/main-story.yaml.
+# Времена здесь — МСК (+03:00), как в исходнике; в потоках и определениях — UTC.
+# =============================================================================
+
+scenarios:
+  S15:
+    title: "Сдвиг часов источника: часы КИМ-1 спешат на 7 минут"
+    case: {other: ["§4.6 расхождения времени источников", "§5.2 происхождение показателя времени"]}
+    run: main_story   # фон, Пн 21.09 08:25–10:15; в 4 минуты не входит
+    checkpoints:
+      - at: "2026-09-21T08:26:00+03:00"
+        label: "первая запись «из будущего»"
+        expect:
+          - {id: S15-01, what: "время события КИМ-1 позже времени приёма на 6 мин 58 с — система видит, что часы источника спешат, и сообщает администратору", subject: source/CMM-1, field: {clock_offset_s: 420, detected_at: "2026-09-21T08:25:02+03:00", rule: "occurred_at позже received_at больше чем на 30 с", alert_to: ADM-01}, op: eq, value: true}
+          - {id: S15-02, what: "исходное время записи сохранено как есть; рядом — исправленное по правилу время с пометкой", subject: event/cmm/F-007, field: {occurred_at: "2026-09-21T08:32:00+03:00", corrected_occurred_at: "2026-09-21T08:25:00+03:00", time_corrected: {rule: source_clock_offset, offset_s: 420}}, op: eq, value: true}
+      - at: "2026-09-21T10:35:00+03:00"
+        label: "после синхронизации часов"
+        expect:
+          - {id: S15-03, what: "исправлено 5 записей КИМ-1 (Ф-007…Ф-011), у каждой одна и та же пометка", subject: ingest, filter: {source: CMM-1, date: "2026-09-21"}, field: time_corrected_count, op: eq, value: 5}
+          - {id: S15-04, what: "порядок записей источника по source_seq не нарушен — «соврали часы» не значит «нарушили порядок»; ничего не переставлено", subject: ingest, filter: {source: CMM-1}, field: {out_of_order: 0, ordered_by: source_seq}, op: eq, value: true}
+          - {id: S15-05, what: "в истории Ф-007…Ф-011 протокол КИМ по исправленному времени стоит до подписи ЗТ-2", subject: item/*, filter: {items: [F-007, F-008, F-009, F-010, F-011]}, field: timeline_order, op: before, value: [inspection_cmm@corrected, gate_ZT-2]}
+          - {id: S15-06, what: "администратор синхронизировал часы КИМ-1 в 10:15; следующая запись (Ф-013, 10:30) — без поправки", subject: source/CMM-1, field: {clock_synced_by: ADM-01, clock_synced_at: "2026-09-21T10:15:00+03:00", next_record_corrected: false}, op: eq, value: true}
+          - {id: S15-07, what: "Н-5: «время исправлено по правилу» — 5 записей, источник КИМ-1, сдвиг +7 мин", subject: metric/N-5, field: time_corrected, op: eq, value: {records: 5, source: CMM-1, offset: "+7 мин"}}
+    must_not:
+      - {id: S15-N1, what: "решения ЗТ-2 по Ф-007…Ф-011 не получили метку «пересмотрите»: по исправленному времени КИМ был до подписи", subject: gate/ZT-2/*, filter: {items: [F-007, F-008, F-009, F-010, F-011]}, field: review_flag, op: eq, value: none}
+      - {id: S15-N2, what: "записи со сдвигом не ушли в карантин и не отброшены", subject: quarantine, filter: {source: CMM-1}, field: count, op: eq, value: 0}
+      - {id: S15-N3, what: "исходное occurred_at не перезаписано", subject: event/cmm/F-007, field: occurred_at_overwritten, op: eq, value: false}
+      - {id: S15-N4, what: "нет отрицательных интервалов «КИМ → ЗТ-2» в показателях ожидания", subject: metric/D-1, filter: {items: [F-007, F-008, F-009, F-010, F-011]}, field: negative_intervals, op: eq, value: 0}

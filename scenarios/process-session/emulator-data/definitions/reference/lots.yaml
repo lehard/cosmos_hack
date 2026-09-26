@@ -1,0 +1,143 @@
+# =============================================================================
+# Справочник: поставщики и партии. Источник: scenarios-flange.md §2.3, §6.1.
+# Поставщики, плавки, сертификаты, количества — условные [П]/[ПП]. Не данные «Энергии».
+# Здесь — что партия ДОЛЖНА содержать (карточка из 1С). Факты поступления, входного
+# контроля и выдачи — события в потоках (erp.batch_received, batch.registered,
+# inspection.result, decision.gate_passed ЗТ-1, batch.issued).
+# Итог входного контроля здесь НЕ записан: это результат прогона, а не справочник.
+# =============================================================================
+
+meta:
+  kind: reference.lots
+  version: "0.1-draft"
+  valid_from: "2026-09-07"
+
+suppliers:
+  - {id: SUP-1, display: "Поставщик-1", role: "заготовки фланца", external_ids: {erp_1c: ctr-0b19-0001}}   # [П]
+  - {id: SUP-2, display: "Поставщик-2", role: "кольца (патрубки)", external_ids: {erp_1c: ctr-0b19-0002}}  # [П]
+  - {id: SUP-3, display: "Поставщик-3", role: "кольца (патрубки), партия П-117", external_ids: {erp_1c: ctr-0b19-0003},
+     note: "договор поставки НЕ внесён в таблицу соответствий до Ср 23.09 16:10 → ошибка 1С 422 (S02, I1-03)"}
+  - {id: SUP-4, display: "Поставщик-4", role: "крышки", external_ids: {erp_1c: ctr-0b19-0004}}            # [П]
+  - {id: SUP-5, display: "Поставщик-5", role: "уплотнения", external_ids: {erp_1c: ctr-0b19-0005}}        # [П]
+  - {id: SUP-6, display: "Поставщик-6", role: "крепёж", external_ids: {erp_1c: ctr-0b19-0006}}            # [П]
+  - {id: SUP-7, display: "Поставщик-7", role: "сварочная проволока", external_ids: {erp_1c: ctr-0b19-0007}} # [П]
+  - {id: SUP-8, display: "Поставщик-8", role: "клапаны выравнивания давления (установка оборудования)", external_ids: {erp_1c: ctr-0b19-0008}}  # [П] волна 2
+
+lots:
+  # ---- Главный заказ ORD-0917 (scenarios-flange.md §2.3) ----
+  - id: LOT-ZF-201
+    display: "ЗФ-201"
+    item_type_id: FL-100-FLANGE
+    content: "заготовки фланца"
+    qty: 42                                   # 40 + 2 запаса
+    supplier_id: SUP-1
+    heat_no: "5512"                           # [ПП] плавка
+    certificate_no: "C-201"                   # сертификат С-201
+    arrives_at: "2026-09-17T05:00:00.000Z"    # Чт 17.09 08:00 МСК [П]
+    external_ids: {erp_1c: rcp-3f44-0201}     # [П]
+    instances: {range: "F-001..F-040", note: "номер заготовки = номер будущего изделия; 2 запасные — F-041, F-042 не маркируются [П]"}
+  - id: LOT-R-116
+    display: "П-116"
+    item_type_id: FL-100-RING
+    content: "кольца К-001…К-033"
+    qty: 33
+    supplier_id: SUP-2
+    certificate_no: "C-116"
+    arrives_at: "2026-09-17T05:00:00.000Z"
+    external_ids: {erp_1c: rcp-3f44-0116}     # [П]
+    instances: {range: "R-001..R-033", display_range: "К-001…К-033"}
+  - id: LOT-R-117
+    display: "П-117"
+    item_type_id: FL-100-RING
+    content: "кольца К-101…К-110"
+    qty: 10
+    supplier_id: SUP-3
+    certificate_no: "C-117"
+    arrives_at: "2026-09-22T05:00:00.000Z"    # Вт 22.09 08:00 МСК (S02)
+    external_ids: {erp_1c: rcp-3f44-0117}     # scenarios-flange.md §6.1
+    instances: {range: "R-101..R-110", display_range: "К-101…К-110"}
+    note: "внутренние поры камера КТ-1 не видит — входной контроль «годна» по документам и камере (S02)"
+  - id: LOT-C-301
+    display: "КР-301"
+    item_type_id: FL-100-COVER
+    content: "крышки КР-001…КР-040"
+    qty: 40
+    supplier_id: SUP-4
+    certificate_no: "C-301"                   # [П]
+    arrives_at: "2026-09-17T05:00:00.000Z"
+    external_ids: {erp_1c: rcp-3f44-0301}     # [П]
+    instances: {range: "C-001..C-040", display_range: "КР-001…КР-040"}
+  - id: LOT-SL-401
+    display: "УП-401"
+    item_type_id: FL-100-SEAL
+    content: "уплотнения"
+    qty: 50
+    supplier_id: SUP-5
+    certificate_no: "C-401"                   # [П]
+    shelf_life_until: "2027-03-31"            # [П]
+    arrives_at: "2026-09-17T05:00:00.000Z"
+    external_ids: {erp_1c: rcp-3f44-0401}     # [П]
+  - id: LOT-FS-501
+    display: "КП-501"
+    item_type_id: FL-100-FASTENER
+    content: "болты с шайбами"                # размер — см. products.yaml (М6×20 по КОМПАС-файлу)
+    qty: 500
+    supplier_id: SUP-6
+    certificate_no: "C-501"                   # [П]
+    arrives_at: "2026-09-17T05:00:00.000Z"
+    external_ids: {erp_1c: rcp-3f44-0501}     # [П]
+  - id: LOT-W-88
+    display: "П-88"
+    item_type_id: WELD-WIRE
+    content: "сварочная проволока"
+    qty_kg: 20                                # [П]
+    supplier_id: SUP-7
+    certificate_no: "C-088"                   # [П]
+    arrives_at: "2026-09-17T05:00:00.000Z"    # [П]; на участке — с Пн 21.09 08:00
+    external_ids: {erp_1c: rcp-3f44-0088}     # [П]
+  - id: LOT-V-601                             # волна 2 [П]: установка оборудования (кейс §1.1, ред-тим строка 20)
+    display: "КВ-601"
+    item_type_id: FL-100-VALVE
+    content: "клапаны выравнивания давления КВД [ПП], заводские номера V-001…V-040"
+    qty: 40
+    supplier_id: SUP-8
+    certificate_no: "C-601"                   # [П]
+    arrives_at: "2026-09-17T05:00:00.000Z"
+    external_ids: {erp_1c: rcp-3f44-0601}     # [П]
+    instances: {range: "V-001..V-040", note: "номер клапана — заводской, маркировку не наносим; сканируют до установки (Е-51) [П]"}
+
+  # ---- Фоновый заказ ORD-0911 (прошлая неделя) — все значения [П] ----
+  - {id: LOT-ZF-111, display: "ЗФ-111", item_type_id: FL-100-FLANGE, content: "заготовки фланца", qty: 24, supplier_id: SUP-1,
+     heat_no: "5498", certificate_no: "C-111", arrives_at: "2026-09-08T05:00:00.000Z", instances: {range: "F-201..F-224"}}
+  - {id: LOT-R-108, display: "П-108", item_type_id: FL-100-RING, content: "кольца К-301…К-324", qty: 24, supplier_id: SUP-2,
+     certificate_no: "C-108", arrives_at: "2026-09-08T05:00:00.000Z", instances: {range: "R-301..R-324", display_range: "К-301…К-324"}}
+  - {id: LOT-C-211, display: "КР-211", item_type_id: FL-100-COVER, content: "крышки КР-201…КР-224", qty: 24, supplier_id: SUP-4,
+     certificate_no: "C-211", arrives_at: "2026-09-08T05:00:00.000Z", instances: {range: "C-201..C-224", display_range: "КР-201…КР-224"}}
+  - {id: LOT-SL-391, display: "УП-391", item_type_id: FL-100-SEAL, content: "уплотнения", qty: 30, supplier_id: SUP-5,
+     certificate_no: "C-391", shelf_life_until: "2027-02-28", arrives_at: "2026-09-08T05:00:00.000Z"}
+  - {id: LOT-FS-481, display: "КП-481", item_type_id: FL-100-FASTENER, content: "болты с шайбами", qty: 300, supplier_id: SUP-6,
+     certificate_no: "C-481", arrives_at: "2026-09-08T05:00:00.000Z"}
+  - {id: LOT-W-87, display: "П-87", item_type_id: WELD-WIRE, content: "сварочная проволока (до П-88)", qty_kg: 20, supplier_id: SUP-7,
+     certificate_no: "C-087", arrives_at: "2026-09-08T05:00:00.000Z"}
+  - {id: LOT-V-591, display: "КВ-591", item_type_id: FL-100-VALVE, content: "клапаны КВД для фонового заказа", qty: 24, supplier_id: SUP-8,
+     certificate_no: "C-591", arrives_at: "2026-09-08T05:00:00.000Z", instances: {range: "V-201..V-224"}}   # волна 2 [П]
+
+  # ---- Отдельный прогон S10B — [П] ----
+  - {id: LOT-R-119, display: "П-119", item_type_id: FL-100-RING, content: "кольца для прогона S10-Б", qty: 5, supplier_id: SUP-2,
+     certificate_no: "C-119", arrives_at: "2026-09-28T04:40:00.000Z", instances: {range: "R-901..R-905"},
+     note: "S10B: F-090 получает заготовку-запас из ЗФ-201 (F-090 вместо F-041) и кольцо R-901 [П]; нестандартные случаи — R-902, R-903 (S19: F-037, F-038), R-904 (S18: F-042)"}
+
+  # ---- Отдельный прогон S14 «общий фактор — один сварщик» (волна 2) — [П] ----
+  - {id: LOT-ZF-202, display: "ЗФ-202", item_type_id: FL-100-FLANGE, content: "заготовки фланца для ЗП-0929", qty: 14, supplier_id: SUP-1,
+     heat_no: "5530", certificate_no: "C-202", arrives_at: "2026-09-24T07:10:00.000Z", instances: {range: "F-301..F-312"},
+     note: "только в standalone-прогоне S14; 2 запасные не маркируются"}
+  - {id: LOT-R-118, display: "П-118", item_type_id: FL-100-RING, content: "кольца К-401…К-412", qty: 12, supplier_id: SUP-2,
+     certificate_no: "C-118", arrives_at: "2026-09-24T07:10:00.000Z", instances: {range: "R-401..R-412", display_range: "К-401…К-412"},
+     note: "только в standalone-прогоне S14"}
+
+# Кольца партии П-117 выданы в сварку трём фланцам (S02):
+ring_assignment_notes:
+  - "F-019 ← R-101, F-027 ← R-102, F-029 ← R-103; R-104…R-110 — на складе, затем возврат поставщику"
+  - "Остальные фланцы F-001…F-036 получают R-001…R-033 по порядку номеров (без F-019, F-027, F-029) [П]"
+  - "F-221…F-224 ← R-321…R-324 (партия П-108) [П]"
+  - "Нестандартные случаи (отдельные миры) [П]: S20 — F-031…F-033 ← R-028…R-030 (П-116); S21 — F-034 ← R-107 (П-117, из тары П-116, до блокировки), F-035 ← R-032, F-036 ← R-033 (П-116; R-108 при выдаче отклонено — партия заблокирована)"

@@ -1,0 +1,48 @@
+# =============================================================================
+# Срез файла process/scenarios-flange-expected.yaml — БЕЗ изменений (наши имена, как есть).
+# Источник истины — исходный файл; этот файл пересобирается tools/split_expected.py.
+# Общие словари и ID — expected/_common.yaml; главная история — expected/main-story.yaml.
+# Времена здесь — МСК (+03:00), как в исходнике; в потоках и определениях — UTC.
+# =============================================================================
+
+scenarios:
+  S07:
+    title: "Позднее событие — опоздавший журнал ИС-2 пересматривает вывод"
+    case: {s4_2: ["поздняя доставка"], s5_1: ["Задержка"], other: ["§4.6 задержки и порядок", "§5.2 обновление после позднего события"]}
+    run: main_story
+    checkpoints:
+      - at: "2026-09-22T10:06:00+03:00"
+        label: "связь пропала"
+        expect:
+          - {id: S07-01, what: "через 15 минут — «нет данных от ИС-2», уведомление администратору", subject: source/WS-2, field: {status: no_connection, alert_to: ADM-01, alert_at: "2026-09-22T10:05:00+03:00"}, op: eq, value: true}
+          - {id: S07-10, what: "«Сбой оборудования» (узел EQ3): вместе с задачей администратору — вопрос мастеру М-02 «остановить пост ИС-2?»; ответа нет, пост не остановлен (это вопрос расследования)", subject: source/WS-2, field: {master_question: {to: MST-02, at: "2026-09-22T10:05:00+03:00", text: "остановить пост ИС-2?", answer: none}, stopped: false}, op: eq, value: true}
+      - at: "2026-09-22T23:00:00+03:00"
+        label: "конец вторника: журнала ИС-2 нет"
+        expect:
+          - {id: S07-11, what: "у сварок ИС-2 без журнала итог режима — «оценка режима невозможна», а не «в норме»", subject: run/*, filter: {runs: [SV-015-1, SV-019-1, SV-021-1], at: "2026-09-22T23:00:00+03:00"}, field: mode_assessment, op: eq, value: unable_to_assess}
+      - at: "2026-09-23T12:10:00+03:00"
+        label: "после опоздавшей пачки"
+        expect:
+          - {id: S07-02, what: "ключевая запись встала на своё время", subject: event/EV-WS2-0412, field: {occurred_at: "2026-09-22T10:20:14+03:00", received_at: "2026-09-23T12:05:07+03:00", late: true, current_a: 176, run: SV-015-1}, op: eq, value: true}
+          - {id: S07-03, what: "в истории Ф-017 журнал ИС-2 стоит раньше наблюдения камеры", subject: item/F-017, field: timeline_order, op: before, value: [machine_parameters@10:42, inspection@11:05]}
+          - {id: S07-04, what: "сигналы «нарушение режима» по пяти сваркам со временем события", subject: run/*, field: out_of_setpoint_runs, op: set_eq, value: [SV-015-1, SV-021-1, SV-023-1, SV-025-1, SV-017-1]}
+          - {id: S07-05, what: "гипотезы НС-01 — новая версия с пометкой, старая сохранена", subject: hypothesis/NC-01, field: {versions: 2, v2_revised_due_to: EV-WS2-0412, v1_visible: true}, op: eq, value: true}
+          - {id: S07-06, what: "на подписанной ЗТ-3 Ф-015 (итог «годно при неполных данных») — метка «принято до новых данных — пересмотрите» (decision.review_flagged [П])", subject: gate/ZT-3/F-015, field: review_flag, op: eq, value: {event: decision.review_flagged, original_decision: accepted_incomplete_data, label: "принято до новых данных — пересмотрите", due_to: EV-WS2-0412, task_to: QC-01}}
+          - {id: S07-07, what: "показатели прошлых дней пересчитаны с пометкой", subject: metric/runs_out_of_setpoint, field: by_day, op: eq, value: {"2026-09-22": {before: 0, after: 2}, "2026-09-23": {before: 0, after: 3}, recalculated_due_to: EV-WS2-0412}}
+          - {id: S07-08, what: "Н-5: опоздавших 928, наибольшая задержка ≈ 26 ч", subject: metric/N-5, field: {late_events: 928, max_delay_h_gte: 26}, op: eq, value: true}
+          - {id: S07-14, what: "сверка 26.09, А-17 — О-11, журнал изменений показателя «сварки вне режима»: за Вт 22.09 0 → 2, за Ср 23.09 0 → 3 — из-за опоздавшей записи EV-WS2-0412; пересчитала система в 12:05 (время приёма пачки); совпадает с S07-07", subject: metric/O-11, filter: {metric: runs_out_of_setpoint}, field: {metric: runs_out_of_setpoint, by_day: {"2026-09-22": {before: 0, after: 2}, "2026-09-23": {before: 0, after: 3}}, due_to: EV-WS2-0412, by: system, at: "2026-09-23T12:05:00+03:00"}, op: eq, value: true}
+      - at: "2026-09-23T14:10:00+03:00"
+        label: "пересмотр человеком"
+        expect:
+          - {id: S07-09, what: "пересмотр ЗТ-3 — новая запись ОТК-1 (decision.review_completed [П]) с итогом «отозвано»: блок изделия, изделие в инциденте RS-01; исходная подпись сохранена", subject: gate/ZT-3/F-015, field: {original_decision_kept: true, review_record_author: QC-01, review_event: decision.review_completed, outcome: revoked, incident: RS-01}, op: eq, value: true}
+      - at: "2026-09-24T16:30:00+03:00"
+        label: "конец главной истории: нормы шагов и карта дефицита данных"
+        expect:
+          - {id: S07-12, what: "нормы шагов (process/step-norms.yaml): за всю главную историю одна задержка — ЗТ-3 по Ф-015 во вторник ждала 120 мин при сроке 60 (журнала ИС-2 нет, итог «годно при неполных данных»); эскалация по ней — напоминание ОТК-1 в 14:00, мастеру М-02 в 14:30; до начальника ОТК не дошло: подпись в 15:30 ровно на пороге. Ещё 6 раз сработало только напоминание контролёру (ожидание 30–60 мин, в сроке): ЗТ-1 трёх партий в Чт 17.09, ЗТ-3 Ф-001…Ф-003 в Пн 21.09, ЗТ-6 Ф-001 и ЗТ-5 Ф-010 в Ср 23.09", subject: norms/main_story, filter: {window: main_story}, field: norm_delays, op: eq, value: {delays: [{step: W5, object: F-015, presentation_no: 1, value: 120, unit: min}], escalations: {"K3@2026-09-23T10:00:00+03:00": {levels: {reminder: "2026-09-23T10:00:00+03:00"}, closed_at: "2026-09-23T10:15:00+03:00"}, "T2@2026-09-23T12:15:00+03:00": {levels: {reminder: "2026-09-23T12:15:00+03:00"}, closed_at: "2026-09-23T12:30:00+03:00"}, "V3@2026-09-17T10:32:00+03:00": {levels: {reminder: "2026-09-17T10:32:00+03:00"}, closed_at: "2026-09-17T10:42:00+03:00"}, "V3@2026-09-17T12:13:00+03:00": {levels: {reminder: "2026-09-17T12:13:00+03:00"}, closed_at: "2026-09-17T12:19:00+03:00"}, "V3@2026-09-17T13:02:00+03:00": {levels: {reminder: "2026-09-17T13:02:00+03:00"}, closed_at: "2026-09-17T13:15:00+03:00"}, "W5@2026-09-21T13:30:00+03:00": {levels: {reminder: "2026-09-21T13:30:00+03:00"}, closed_at: "2026-09-21T14:40:00+03:00"}, "W5@2026-09-22T14:00:00+03:00": {levels: {reminder: "2026-09-22T14:00:00+03:00", master: "2026-09-22T14:30:00+03:00"}, closed_at: "2026-09-22T15:30:00+03:00"}}}}
+          - {id: S07-13, what: "карта дефицита данных (Н-6 [П], главная история и S14): первое место — журнал режима аппарата: мешал 4 раза (приёмка ЗТ-3 Ф-015, сужение круга 13 → 6, серый Ф-019, причина НС-01), цена — 12,83 изделие-часа, 1 лишнее решение, причина позже на 0,95 ч; закрывает ступень 3 — журнал аппарата онлайн. Дальше: техника сварки (S14), выборочный рентген колец, качество кадра, инструмент на посту, часы источника, номер выполнения; снимок изделия выводу не помешал ни разу", subject: metric/N-6, filter: {runs: [main_story, S13, S14]}, field: {rating: [{rank: 1, gap: GAP-WELD-LOG, hindered: 4, item_hours: 12.83, extra_checks: 1, conclusion_delay_h: 0.95, closes_step: 3}, {rank: 2, gap: GAP-TORCH, hindered: 2, item_hours: 5.05, extra_checks: 5, conclusion_delay_h: 0.0, closes_step: 4}, {rank: 3, gap: GAP-RING-SAMPLE, hindered: 1, item_hours: 1.33, extra_checks: 4, conclusion_delay_h: 0.0, closes_step: 4}, {rank: 4, gap: GAP-FRAME-QUALITY, hindered: 1, item_hours: 0.25, extra_checks: 1, conclusion_delay_h: 0.0, closes_step: 4}, {rank: 5, gap: GAP-TOOL, hindered: 1, item_hours: 0.18, extra_checks: 0, conclusion_delay_h: 0.0, closes_step: 1}, {rank: 6, gap: GAP-CLOCK, hindered: 1, item_hours: 0.0, extra_checks: 0, conclusion_delay_h: 0.0, closes_step: 2}, {rank: 7, gap: GAP-RUN-ID, hindered: 1, item_hours: 0.0, extra_checks: 0, conclusion_delay_h: 0.0, closes_step: 2}, {rank: 8, gap: GAP-PHOTO, hindered: 0, item_hours: 0.0, extra_checks: 0, conclusion_delay_h: 0.0, closes_step: 3}]}, op: eq, value: true, note: "разметка случаев — emulator-data/definitions/reference/data-gaps.yaml; цену считает tools/gaps.py"}
+    must_not:
+      - {id: S07-N1, what: "опоздавшие не датированы временем получения", subject: ingest, filter: {batch: GW-2@2026-09-23T12:05}, field: ordered_by_received_at, op: eq, value: false}
+      - {id: S07-N2, what: "подтверждение НС-01 не изменено", subject: nc/NC-01, field: "decisions[0].changed", op: eq, value: false}
+      - {id: S07-N3, what: "ЗТ-3 Ф-015 не отменена автоматически", subject: gate/ZT-3/F-015, field: auto_revoked, op: eq, value: false}
+      - {id: S07-N4, what: "в 1С ничего не отправлено повторно из-за пересчёта", subject: erp/postings, filter: {caused_by: recalculation}, field: count, op: eq, value: 0}
+      - {id: S07-N5, what: "сверка 26.09, А-16 — опоздавшая пачка ИС-2 не изменила О-1, О-2, О-3, О-8, О-10: снимок в 12:04 и в 12:10 один и тот же. Изменились только режим сварок (S07-04, S07-07), версии гипотез (S07-05), круг RS-01 v3 (S05-11) и метка на ЗТ-3 Ф-015 (S07-06)", subject: metric/*, filter: {metrics: [O-1, O-2, O-3, O-8, O-10], window: main_story}, field: snapshot, op: unchanged, baseline: "2026-09-23T12:04:00+03:00", value: {O-1.items: 51, O-2.items: 1, O-3.ladder: {observations: 4, unique_defects: 3, confirmed_defects: 1}, O-8.repeated_runs: 0, O-10.confirmed_errors: 0}}

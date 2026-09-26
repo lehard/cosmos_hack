@@ -1,0 +1,157 @@
+# =============================================================================
+# Справочник: предприятие, цеха, участки, рабочие места, склады, посты ЗТ,
+# узлы процесса и контрольные точки. Источник: scenarios-flange.md §2.4,
+# flange-process-bpmn.md §3–5, process-events-catalog.md §1.
+# Иерархия областей: здание → цех → участок → рабочее место (путь area_path).
+# Все названия и коды условные [П]. Не данные «Энергии».
+# =============================================================================
+
+meta:
+  kind: reference.sites
+  version: "0.1-draft"
+  valid_from: "2026-09-01"
+
+enterprise:
+  id: ENT-DEMO                                # код предприятия [П]
+  display: "Условное предприятие (демо)"
+  timezone: "Europe/Moscow"                   # все времена в потоках — UTC; на экране — МСК (+03:00)
+
+buildings:
+  - {id: B1, display: "Корпус 1"}             # [П]
+
+shops:                                        # цеха = дорожки BPMN
+  - {id: SK,  display: "Склад и входной контроль (СК)", area_path: B1/SK,  warehouse_id: WH-SK}
+  - {id: MC,  display: "Механический цех (МЦ)",        area_path: B1/MC,  warehouse_id: WH-MC}
+  - {id: WC,  display: "Сварочный цех (СЦ)",           area_path: B1/WC,  warehouse_id: WH-WC}
+  - {id: AC,  display: "Сборочно-испытательный цех (СИЦ)", area_path: B1/AC, warehouse_id: WH-AC}
+  - {id: QC,  display: "ОТК и выпуск",                 area_path: B1/QC,  warehouse_id: WH-FG}
+  - {id: NDT, display: "Лаборатория НК (рентген)",     area_path: B1/NDT}
+
+warehouses:                                   # склады 1С (scenarios-flange.md §6.1)
+  - {id: WH-SK, display: "Склад покупных и входного контроля", external_ids: {erp_1c: wh-0000-sk}}   # [П]
+  - {id: WH-MC, display: "Механический цех",                 external_ids: {erp_1c: wh-0000-mc}}   # [П]
+  - {id: WH-WC, display: "Сварочный цех",                    external_ids: {erp_1c: wh-0000-wc}}   # [П]
+  - {id: WH-AC, display: "Сборочно-испытательный цех",       external_ids: {erp_1c: wh-0000-ac}}   # [П]
+  - {id: WH-FG, display: "Готовая продукция",                external_ids: {erp_1c: wh-0000-fg}}   # [П]
+
+# Линии [П] — кейс §1.4, §4.3, §4.4 (поле line_id), §2.4 (дефекты по линиям), интерфейс «состояние линии».
+# Две линии ФЛ-100 расходятся только на сварке: у каждой свой сварочный пост. Остальные участки
+# (входной контроль, ЧПУ и КИМ, пост ЗТ-3 с камерами КТ-3, рентген, сборка, стенд, окончательный
+# контроль, изоляторы, кладовые) — общие для обеих линий.
+# line_id в событии (конверт): источники поста — линия поста; событие по фланцу с момента запуска —
+# линия поста его последней сварки (до первой сварки — по плану запуска); переварка на посту другой
+# линии переводит фланец на эту линию. 1С, КОМПАС, партии и компоненты на складе и общее оборудование
+# без item_id — без линии.
+lines:
+  - id: L-FL-1
+    display: "Линия ФЛ-100 № 1"
+    own_stations: [ST-WC-P1]                 # сварочный пост 1, источник ИС-1 (WS-1), шлюз ШЛ-1
+    item_type_id: FL-100-ASSY
+  - id: L-FL-2
+    display: "Линия ФЛ-100 № 2"
+    own_stations: [ST-WC-P2]                 # сварочный пост 2, источник ИС-2 (WS-2), шлюз ШЛ-2
+    item_type_id: FL-100-ASSY
+shared_stations: [ST-IQC, ST-MC-CNC, ST-MC-CMM, ST-WC-ZT3, ST-NDT, ST-AC-ASM, ST-AC-LT, ST-QC-FQC,
+                  ST-ISO-WC, ST-ISO-AC, ST-TRANSIT-MC-WC, ST-TRANSIT-WC-AC]   # общие участки обеих линий
+
+stations:                                     # участки / посты; station_id в событиях
+  - {id: ST-IQC,     shop: SK,  display: "Стол входного контроля",         area_path: B1/SK/IQC}
+  - {id: ST-MC-CNC,  shop: MC,  display: "Участок ЧПУ (ЧПУ-1)",            area_path: B1/MC/CNC}
+  - {id: ST-MC-CMM,  shop: MC,  display: "КИМ-1 (общая на цех)",           area_path: B1/MC/CMM}
+  - {id: ST-WC-P1,   shop: WC,  display: "Сварочный пост 1 (ИС-1)",        area_path: B1/WC/P1, line_id: L-FL-1}
+  - {id: ST-WC-P2,   shop: WC,  display: "Сварочный пост 2 (ИС-2)",        area_path: B1/WC/P2, line_id: L-FL-2}
+  - {id: ST-WC-ZT3,  shop: WC,  display: "Пост ЗТ-3 (приёмка ОТК после сварки)", area_path: B1/WC/ZT3}
+  - {id: ST-NDT,     shop: NDT, display: "Рентген РК-1",                   area_path: B1/NDT/XR}
+  - {id: ST-AC-ASM,  shop: AC,  display: "Сборочное место",                area_path: B1/AC/ASM}
+  - {id: ST-AC-LT,   shop: AC,  display: "Стенд герметичности СТ-1",       area_path: B1/AC/LT}
+  - {id: ST-QC-FQC,  shop: QC,  display: "Окончательный контроль ОТК (КТ-5)", area_path: B1/QC/FQC}
+  - {id: ST-ISO-WC,  shop: WC,  display: "Изолятор сварочного цеха",       area_path: B1/WC/ISO}   # изолятор — место в цехе, не склад 1С [П]
+  - {id: ST-ISO-AC,  shop: AC,  display: "Изолятор СИЦ",                   area_path: B1/AC/ISO}
+  - {id: ST-TRANSIT-MC-WC, shop: MC, display: "Межцеховая кладовая МЦ → СЦ", area_path: B1/MC/TR}
+  - {id: ST-TRANSIT-WC-AC, shop: WC, display: "Межцеховая кладовая СЦ → СИЦ", area_path: B1/WC/TR}
+
+workplaces:                                   # рабочие места с терминалами (источники ручного ввода)
+  - {id: WP-IQC,    station: ST-IQC,    terminal_source_id: TERM-IQC}
+  - {id: WP-STK,    station: ST-IQC,    terminal_source_id: TERM-STK}
+  - {id: WP-MC-CNC, station: ST-MC-CNC, terminal_source_id: TERM-MC-1}
+  - {id: WP-MC-MST, station: ST-MC-CNC, terminal_source_id: TERM-MC}
+  - {id: WP-WC-P1,  station: ST-WC-P1,  terminal_source_id: TERM-WS-1}
+  - {id: WP-WC-P2,  station: ST-WC-P2,  terminal_source_id: TERM-WS-2}
+  - {id: WP-WC-MST, station: ST-WC-ZT3, terminal_source_id: TERM-WC}
+  - {id: WP-AC-ASM, station: ST-AC-ASM, terminal_source_id: TERM-ASM}
+  - {id: WP-AC-LT,  station: ST-AC-LT,  terminal_source_id: TERM-LT}
+  - {id: WP-AC-MST, station: ST-AC-ASM, terminal_source_id: TERM-AC}
+  - {id: WP-QC-FQC, station: ST-QC-FQC, terminal_source_id: TERM-QC}
+
+# Узлы BPMN (flange-process-bpmn.md §3) — для живой карты и step_key.
+bpmn_nodes:
+  - {id: V3,  display: "ЗТ-1 Приёмка партии ОТК", gate: ZT-1}
+  - {id: M1,  display: "Мехобработка на ЧПУ", operation_code: M1}
+  - {id: M2,  display: "КТ-2 Камера, косой свет", checkpoint_id: CP-MO}
+  - {id: M3,  display: "КТ-2 КИМ", checkpoint_id: CP-MO}
+  - {id: M4,  display: "ЗТ-2 Приёмка ОТК", gate: ZT-2}
+  - {id: W1,  display: "Подготовка кромок", operation_code: W1}
+  - {id: WJ,  display: "Скан фланца и кольца: сварной узел", event: assembly.component_linked}
+  - {id: W2,  display: "Сварка фланца с кольцом", operation_code: W2, special_process: true}
+  - {id: WW,  display: "Кромки готовы, ждёт сварку (таймер WT 8 ч)", timer: {id: WT, duration: PT8H, event: welding.edge_window_expired}}
+  - {id: WRX, display: "Удалить шов, снять кольцо: кольцо — в претензию", event: assembly.component_unlinked}
+  - {id: W3,  display: "КТ-3 Камера на шов", checkpoint_id: CP-WELD}
+  - {id: W4,  display: "КТ-3 Рентген шва (обязателен)", checkpoint_id: CP-WELD, method: xray, queue: true, bottleneck: 1}
+  - {id: W5,  display: "ЗТ-3 Приёмка ОТК", gate: ZT-3, post_station: ST-WC-ZT3}
+  - {id: WZ2, display: "Годно при неполных данных", gate: ZT-3, decision: accept_incomplete_data}
+  - {id: R2,  display: "Пересмотр приёмки ОТК: подтвердить или отозвать", process: review}
+  - {id: A1,  display: "Установка уплотнения", operation_code: ASM, step: seal_install}
+  - {id: A2,  display: "КТ-СР Камера зоны перед крышкой (УФ; развитие)", checkpoint_id: CP-ASM-ZONE}
+  - {id: A3,  display: "ЗТ-СР Скрытые работы: предъявление зоны ОТК, счёт инструмента", gate: ZT-SR}
+  - {id: A4,  display: "Установка крышки", operation_code: ASM, step: cover_install, closes_access_to_zone: SEAL-GROOVE}
+  - {id: A5,  display: "Установка крепежа", operation_code: ASM, step: fasteners_install}
+  - {id: A6,  display: "Затяжка по схеме", operation_code: ASM, step: tightening}
+  - {id: A8,  display: "КТ-4 Камера сборки", checkpoint_id: CP-ASM}
+  - {id: AO,  display: "Установка оборудования: клапан выравнивания давления на крышку", operation_code: EQ}
+  - {id: A9,  display: "ЗТ-4 Приёмка сборки ОТК", gate: ZT-4}
+  - {id: T1,  display: "Испытание на герметичность", operation_code: T1, checkpoint_id: CP-LEAK, queue: true, bottleneck: 2}
+  - {id: T2,  display: "ЗТ-5 Протокол испытаний", gate: ZT-5}
+  - {id: K2,  display: "КТ-5 Камера окончательного контроля", checkpoint_id: CP-FQC}
+  - {id: K3,  display: "ЗТ-6 Окончательный контроль ОТК", gate: ZT-6}
+  - {id: N2,  display: "ЗТ-Р Решение по изделию", gate: ZT-R}
+
+# Процессы схемы v0.2 и ключи их экземпляров [П] (bpmn-v02-changes.md). Общих фишек нет: изделие связано с партией
+# сканом при выдаче, с инцидентом — статусом блока и сообщением о решении. В данных: _sim.process в строке потока,
+# process_ref в шаге человека (README §2).
+bpmn_processes:
+  - {id: order,    display: "Заказ из 1С",                        instance_key: "order/<order_id>",   start: "S0 — erp.order_received (Е-01)"}
+  - {id: lot,      display: "Партия: входной контроль и склад",   instance_key: "lot/<lot_id>",       start: "S1 — erp.batch_received (Е-03)",
+     note: "входной контроль, маркировка деталей до запуска, склад; выдача (batch.issued) — сообщение изделиям (V5/V6/V7)"}
+  - {id: item,     display: "Фланец люка в сборе — одно изделие", instance_key: "item/<item_id>",     start: "F0/V5 — item.registered (Е-09), выдача заготовки",
+     note: "кольцо (V6) — после приёмки фланца сварочным цехом; комплект (V7) — после приёмки сборкой или заранее по сменному заданию (S13)"}
+  - {id: incident, display: "Инцидент: круг подозреваемых",       instance_key: "incident/<risk_scope_ref>", start: "I0 — реакция движка (Е-110)"}
+  - {id: review,   display: "Пересмотр подписанной приёмки",      instance_key: "review/<gate>/<item_id>",   start: "R0 — реакция движка decision.review_flagged (Е-122)"}
+  - {id: nc,       display: "Решение по несоответствию (Н)",      instance_key: "nc/<nc_ref>",        start: "N0 — вызов из изделия, партии или инцидента"}
+  - {id: hold,     display: "Удержание изделия или партии: статус и MES (схема v0.3.1)", instance_key: "hold/<item_id|lot_id>/<основание>", start: "HS0 — сообщение Msg_HoldSet от SG2, I2, R3, A7H, N1 (реакция движка)",
+     note: "в потоках и шагах нет; ожидаемые сообщения MES — definitions/scenarios/*.yaml → mes_outbox_expected [П]"}
+
+# Контрольные точки (КТ) — checkpoint_id в inspection.result. Карты контроля — inspection-recipes.yaml.
+checkpoints:
+  - {id: CP-IQC,      display: "КТ-1 Входной контроль", station: ST-IQC}
+  - {id: CP-MO,       display: "КТ-2 После мехобработки (камера + КИМ)", station: ST-MC-CNC}
+  - {id: CP-WELD,     display: "КТ-3 После сварки (камера 2 ракурса + рентген)", station: ST-WC-ZT3}
+  - {id: CP-ASM-ZONE, display: "КТ-СР Зона перед крышкой, скрытые работы (УФ)", station: ST-AC-ASM}
+  - {id: CP-ASM,      display: "КТ-4 После сборки", station: ST-AC-ASM}
+  - {id: CP-LEAK,     display: "Стенд герметичности", station: ST-AC-LT}
+  - {id: CP-FQC,      display: "КТ-5 Окончательный контроль", station: ST-QC-FQC}
+
+# Закрывающие точки (ЗТ): деталь стоит, пока человек не подпишет решение.
+gates:
+  - {id: ZT-1, display: "ЗТ-1", node: V3, signers: [QC]}
+  - {id: ZT-2, display: "ЗТ-2", node: M4, signers: [QC]}
+  - {id: ZT-3, display: "ЗТ-3", node: W5, signers: [QC], extra_signer_on_weld_rework: CHIEF_WELDER,
+     note: "главный сварщик согласует вторую и третью переделку участка шва по ТП"}
+  - {id: ZT-SR, display: "ЗТ-СР (скрытые работы перед крышкой)", node: A3, signers: [QC]}   # схема v0.3: точка скрытых работ перед крышкой
+  - {id: ZT-4, display: "ЗТ-4 (приёмка сборки)", node: A9, signers: [QC]}
+  - {id: ZT-5, display: "ЗТ-5", node: T2, signers: [TESTER, QC], optional_signer: CUSTOMER_REP}
+  - {id: ZT-6, display: "ЗТ-6", node: K3, signers: [QC, CUSTOMER_REP]}
+  - {id: ZT-R, display: "ЗТ-Р", node: N2, signers: "по маршруту решения: технолог / комиссия; ремонт и «как есть» — все подписи разрешения на отклонение"}
+
+transport:
+  intershop_runs_msk: ["07:50", "10:00", "14:00", "16:00"]   # [П] рейсы межцехового транспорта; в BPMN — «2 рейса в смену»
+  in_transit_min: 10                                           # [ПП]

@@ -1,0 +1,64 @@
+# =============================================================================
+# Справочник: люди (условные псевдонимы) и роли.
+# Источник: scenarios-flange.md §2.5; scenarios-flange-expected.yaml (ids.people).
+# id — машинный ASCII-ID (как в файле ожиданий); display — как на экране (кириллица).
+# Это псевдонимы, не реальные люди. Соответствие человеку — вне прогонов.
+# Смены и назначения — calendar.yaml; допуски, аттестации, клейма — qualifications.yaml.
+# =============================================================================
+
+meta:
+  kind: reference.people
+  version: "0.1-draft"
+  valid_from: "2026-09-01"
+
+roles:                                        # имена ролей — как в scenarios-flange-expected.yaml (stops_for_human_decision, S13)
+  # пять ролей кейса
+  - {id: QC,            display: "Контролёр ОТК"}
+  - {id: TECHNOLOGIST,  display: "Технолог"}
+  - {id: MASTER,        display: "Мастер участка"}
+  - {id: MANAGER,       display: "Руководитель производства"}
+  - {id: DATA_ADMIN,    display: "Администратор данных"}
+  # дополнительные (исполнители, подписанты)
+  - {id: QC_HEAD,       display: "Начальник ОТК"}
+  - {id: CHIEF_WELDER,  display: "Главный сварщик"}
+  - {id: COMMISSION,    display: "Комиссия по несоответствию (технолог + начальник ОТК + главный сварщик)", composite: true,
+     members_default: [TECH-01, QC-HEAD-01, CHW-01]}
+  - {id: CUSTOMER_REP,  display: "Представитель заказчика (ПЗ)"}
+  - {id: CNC_OPERATOR,  display: "Оператор ЧПУ"}
+  - {id: CMM_OPERATOR,  display: "Оператор КИМ"}
+  - {id: WELDER,        display: "Сварщик"}
+  - {id: ASSEMBLER,     display: "Сборщик"}
+  - {id: TESTER,        display: "Испытатель"}
+  - {id: NDT_INSPECTOR, display: "Дефектоскопист (рентген)"}
+  - {id: STOREKEEPER,   display: "Кладовщик"}
+  - {id: MARKING_OPERATOR, display: "Оператор маркировки"}
+
+people:
+  - {id: OP-CNC-11,  display: "О-11",    roles: [CNC_OPERATOR],  shop: MC,  default_shift: A}
+  - {id: OP-CNC-12,  display: "О-12",    roles: [CNC_OPERATOR],  shop: MC,  default_shift: B}
+  - {id: OP-CMM-01,  display: "К-01",    roles: [CMM_OPERATOR],  shop: MC,  default_shift: A}
+  - {id: WLD-02,     display: "С-02",    roles: [WELDER],        shop: WC,  default_shift: A,
+     note: "неделя 21–25.09 — смена А; неделя 14–18.09 — смена Б [П]; работает на свободном посту (ИС-1 и ИС-2)"}
+  - {id: WLD-03,     display: "С-03",    roles: [WELDER],        shop: WC,  default_shift: B,
+     note: "неделя 21–25.09 — смена Б; неделя 14–18.09 — смена А [П]"}
+  - {id: ASM-01,     display: "Сб-01",   roles: [ASSEMBLER],     shop: AC,  default_shift: A}
+  - {id: TST-01,     display: "И-01",    roles: [TESTER],        shop: AC,  default_shift: A}
+  - {id: NDT-01,     display: "Д-01",    roles: [NDT_INSPECTOR], shop: NDT, default_shift: A}
+  - {id: QC-01,      display: "ОТК-1",   roles: [QC],            shop: WC,  default_shift: A, scope_note: "сварка, мехобработка; пост ЗТ-3"}
+  - {id: QC-02,      display: "ОТК-2",   roles: [QC],            shop: AC,  default_shift: A, scope_note: "вход, сборка, выпуск; ЗТ-4"}
+  - {id: QC-HEAD-01, display: "НОТК-01", roles: [QC_HEAD, COMMISSION], shop: QC}
+  - {id: TECH-01,    display: "Т-01",    roles: [TECHNOLOGIST, COMMISSION]}
+  - {id: CHW-01,     display: "ГС-01",   roles: [CHIEF_WELDER, COMMISSION]}
+  - {id: MST-01,     display: "М-01",    roles: [MASTER],        shop: MC,  default_shift: A}
+  - {id: MST-02,     display: "М-02",    roles: [MASTER],        shop: WC,  default_shift: A}
+  - {id: MST-03,     display: "М-03",    roles: [MASTER],        shop: AC,  default_shift: A}
+  - {id: STK-01,     display: "Кл-01",   roles: [STOREKEEPER],   shop: SK,  default_shift: A}
+  - {id: CR-01,      display: "ПЗ-01",   roles: [CUSTOMER_REP],  note: "приходит по извещению"}
+  - {id: ADM-01,     display: "А-01",    roles: [DATA_ADMIN]}
+  - {id: MGR-01,     display: "Руководитель производства", roles: [MANAGER], note: "[П] в сценариях без ID; нужен для стола руководителя"}
+  - {id: MRK-01,     display: "Оператор маркировки", roles: [MARKING_OPERATOR], shop: SK, default_shift: A,
+     note: "[П] в сценариях без ID (Е-07). Волна 2: бирка на таре — на складе; перемаркировка кодом DataMatrix — в МЦ после мехобработки (терминал TERM-MC)"}
+
+privacy:
+  - "Исполнитель определяется по входу на терминал, не по лицу (OperatorVision без распознавания лиц)"
+  - "Гипотезы о действиях людей не попадают в показатели по людям (О-10) без подтверждённого решения"

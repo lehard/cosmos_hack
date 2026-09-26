@@ -1,0 +1,332 @@
+# =============================================================================
+# Определение сценария. Генерируется tools/generate.py — руками не править (правьте генератор).
+# Имена событий, действий и полей — НАШИ (process-events-catalog.md, scenarios-flange*.{md,yaml}).
+# [П] — имя или значение предварительное (нет в каталоге) / наше допущение; [ПП] — проектное предположение.
+# Время: at — UTC (RFC 3339, мс); at_msk — то же в МСК для чтения.
+# human_steps.mode: stop — сценарий ждёт решения на столе роли (интерактивный режим; в автосверке подписывает
+#   demo-signer); auto — demo-signer подписывает сам в указанное доменное время.
+# expect: accepted | refused[:код] — ожидаемый ответ системы на шаг (проверка отказов по правам и правилам).
+# =============================================================================
+
+id: S02
+title: Входной брак — пора в металле кольца (партия П-117)
+goal: '«Где нашли» ≠ «где возникло»: рентген после сварки находит пору в теле кольца — входной брак поставщика; сварщик и источник ни при чём.'
+case:
+  s4_2:
+  - входной дефект
+  s5_1:
+  - Входной брак
+  other:
+  - §5.2 входной брак отдельно
+kind: slice_of_main_story
+run: main_story (MS-1)
+stream: streams/main-story.jsonl
+slice: streams/S02.jsonl
+slice_lines: 150
+seed: 20260921
+window_msk:
+- 2026-09-22 08:00
+- 2026-09-23 16:11
+items:
+- F-019
+- F-027
+- F-029
+- R-101
+- R-102
+- R-103
+- R-104
+- R-105
+- R-106
+erp_postings_expected:
+- issue_to_production (кольца R-101…R-103)
+- return_to_supplier ×1 (7 колец; 422 → соответствие ID → acked)
+erp_note: Сообщения 1С — по словарю scenarios-flange-expected.yaml (erp_posting_type). Полный список с ответами stand-а — I1.yaml → erp_outbox_expected (для S13 и S10B — в их файлах).
+  «Выпуск годного» — только после ЗТ-6.
+expected: expected/S02.yaml
+human_steps_ref: definitions/scenarios/main-story.yaml
+human_steps:
+- step_id: MS1-H0195
+  label: ZT-1/LOT-R-117
+  at: '2026-09-22T08:07:00.000Z'
+  at_msk: '2026-09-22 11:07:00'
+  mode: auto
+  role: QC
+  persona: QC-02
+  action: decision.gate_passed
+  catalog_ref: E-08
+  subject:
+    gate: ZT-1
+    lot_id: LOT-R-117
+  process_ref: lot/LOT-R-117
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - iqc/LOT-R-117/documents
+    - iqc/LOT-R-117/lab
+    - iqc/LOT-R-117/xr-sample
+    - …
+  expect: accepted
+  scenarios:
+  - S02
+- step_id: MS1-H0237
+  label: S02/confirm-NC-04
+  at: '2026-09-23T10:50:00.000Z'
+  at_msk: '2026-09-23 13:50:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.signal_confirmed
+  catalog_ref: E-90
+  subject:
+    item_id: F-019
+    signal_basis_labels:
+    - xr/F-019/RK-0923-07
+    nc_ref: NC-04
+  process_ref: signal/SG-xr-F-019-RK-0923-07
+  process_links:
+  - item/F-019
+  - nc/NC-04
+  - incident/RS-02
+  params:
+    defect_type: base_metal_pore
+    zone: RING-BODY
+    severity: major
+    reason: пора 1,2 мм в теле кольца вне зоны нагрева
+  expect: accepted
+  scenarios:
+  - S02
+- step_id: MS1-H0241
+  label: S02/exclude-F-027
+  at: '2026-09-23T11:25:00.000Z'
+  at_msk: '2026-09-23 14:25:00'
+  mode: auto
+  role: TECHNOLOGIST
+  persona: TECH-01
+  action: risk_scope.item_assessed
+  catalog_ref: E-113
+  subject:
+    risk_scope_ref: RS-02
+    item_id: F-027
+  process_ref: incident/RS-02
+  process_links:
+  - item/F-027
+  params:
+    result: excluded
+    basis_labels:
+    - xr/F-027/RK-0923-12
+    holds_released: containment.hold_released (Е-116 [П], узел I5)
+  expect: accepted
+  scenarios:
+  - S02
+- step_id: MS1-H0242
+  label: S02/exclude-F-029
+  at: '2026-09-23T11:45:00.000Z'
+  at_msk: '2026-09-23 14:45:00'
+  mode: auto
+  role: TECHNOLOGIST
+  persona: TECH-01
+  action: risk_scope.item_assessed
+  catalog_ref: E-113
+  subject:
+    risk_scope_ref: RS-02
+    item_id: F-029
+  process_ref: incident/RS-02
+  process_links:
+  - item/F-029
+  params:
+    result: excluded
+    basis_labels:
+    - xr/F-029/RK-0923-13
+    holds_released: containment.hold_released (Е-116 [П], узел I5)
+  expect: accepted
+  scenarios:
+  - S02
+- step_id: MS1-H0243
+  label: S02/recheck-rings
+  at: '2026-09-23T11:50:00.000Z'
+  at_msk: '2026-09-23 14:50:00'
+  mode: auto
+  role: QC
+  persona: QC-02
+  action: decision.recheck_requested
+  catalog_ref: E-92
+  subject:
+    lot_id: LOT-R-117
+    items:
+    - R-105
+    - R-106
+  process_ref: incident/RS-02
+  process_links:
+  - lot/LOT-R-117
+  params:
+    method: xray
+    sampling: выборка со склада; К-104 уже было в выборке на входе (Вт 10:39, чисто) — его не повторяем
+  expect: accepted
+  scenarios:
+  - S02
+- step_id: MS1-H0244
+  label: S02/confirm-NC-05
+  at: '2026-09-23T12:25:00.000Z'
+  at_msk: '2026-09-23 15:25:00'
+  mode: auto
+  role: QC
+  persona: QC-02
+  action: decision.signal_confirmed
+  catalog_ref: E-90
+  subject:
+    item_id: R-105
+    signal_basis_labels:
+    - xr/R-105/RK-0923-11
+    nc_ref: NC-05
+  process_ref: signal/SG-xr-R-105-RK-0923-11
+  process_links:
+  - lot/LOT-R-117
+  - nc/NC-05
+  - incident/RS-02
+  params:
+    defect_type: base_metal_pore
+    zone: RING-BODY
+    reason: пора 0,9 мм в теле кольца
+  expect: accepted
+  scenarios:
+  - S02
+- step_id: MS1-H0254
+  label: S02/cause
+  at: '2026-09-23T12:40:00.000Z'
+  at_msk: '2026-09-23 15:40:00'
+  mode: auto
+  role: TECHNOLOGIST
+  persona: TECH-01
+  signers:
+  - TECH-01
+  - QC-HEAD-01
+  action: cause.confirmed
+  catalog_ref: П-04
+  subject:
+    nc_refs:
+    - NC-04
+    - NC-05
+  process_ref: cause/RS-02
+  process_links:
+  - incident/RS-02
+  - nc/NC-04
+  - nc/NC-05
+  params:
+    category: incoming
+    supplier_id: SUP-3
+    lot_id: LOT-R-117
+    verified_by: две находки в теле колец одной партии, зоны без операций
+    basis_labels:
+    - xr/F-019/RK-0923-07
+    - xr/R-105/RK-0923-11
+  expect: accepted
+  scenarios:
+  - S02
+- step_id: MS1-H0255
+  label: S02/return
+  at: '2026-09-23T12:45:00.000Z'
+  at_msk: '2026-09-23 15:45:00'
+  mode: auto
+  role: TECHNOLOGIST
+  persona: TECH-01
+  action: decision.disposition_set
+  catalog_ref: E-94
+  subject:
+    lot_id: LOT-R-117
+    items:
+    - R-104
+    - R-105
+    - R-106
+    - R-107
+    - R-108
+    - R-109
+    - R-110
+    nc_refs:
+    - NC-04
+    - NC-05
+  process_ref: nc/NC-04
+  process_links:
+  - lot/LOT-R-117
+  - incident/RS-02
+  params:
+    disposition: return_to_supplier
+    qty: 7
+    claim_basis_labels:
+    - xr/F-019/RK-0923-07
+    - xr/R-105/RK-0923-11
+  expect: accepted
+  scenarios:
+  - I1
+  - S02
+- step_id: MS1-H0257
+  label: S02/capa
+  at: '2026-09-23T12:50:00.000Z'
+  at_msk: '2026-09-23 15:50:00'
+  mode: auto
+  role: QC_HEAD
+  persona: QC-HEAD-01
+  action: capa.action_assigned
+  catalog_ref: П-05
+  subject:
+    nc_refs:
+    - NC-04
+    - NC-05
+  process_ref: cause/RS-02
+  process_links:
+  - nc/NC-04
+  - nc/NC-05
+  params:
+    kind: improve_detection
+    lot_id: LOT-R-117
+    text: 'выборочный рентген 1 кольца из партии на входе [ПП] пору не поймал (в выборку попало чистое К-104): выборка чистая ≠ вся партия чистая. Для колец Поставщика-3 — рентген каждого
+      кольца до сварки, пока три партии подряд не будут чистыми [П]'
+    owner: QC-HEAD-01
+    due: '2026-10-09'
+    effectiveness_plan:
+      metric: поры в теле кольца, найденные после сварки
+      baseline: 2
+      window: следующие 3 партии колец
+      success: 0
+      on_fail: мера снова открыта, разбор заново
+    basis_labels:
+    - S02/cause
+  expect: accepted
+  scenarios:
+  - S02
+- step_id: MS1-H0258
+  label: S02/id-map
+  at: '2026-09-23T13:10:00.000Z'
+  at_msk: '2026-09-23 16:10:00'
+  mode: auto
+  role: DATA_ADMIN
+  persona: ADM-01
+  action: erp.id_map_added
+  catalog_ref: '[П] нет в каталоге'
+  subject:
+    system: erp_1c
+    entity: supplier_contract
+    internal: SUP-3
+  process_ref: null
+  params:
+    external: dog-0b19-0003-2026
+    then: повторить отправку с тем же номером сообщения
+  expect: accepted
+  scenarios:
+  - I1
+  - S02
+stand_faults:
+- id: FAULT-1C-422-LOT-R-117
+  system: erp_1c
+  scenarios:
+  - S02
+  - I1
+  match:
+    posting_type: return_to_supplier
+    lot_id: LOT-R-117
+  response:
+    http_status: 422
+    text: не найден договор с контрагентом ctr-0b19-0003
+  active_until_step: S02/id-map
+  expected_behavior: ошибка данных → без автоповтора, задача А-01; после соответствия — повтор с тем же номером; подтверждение Ср 23.09 16:11
+  retry_ack_at: '2026-09-23T13:11:00.000Z'

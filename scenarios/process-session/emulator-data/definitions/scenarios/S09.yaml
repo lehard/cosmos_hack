@@ -1,0 +1,179 @@
+# =============================================================================
+# Определение сценария. Генерируется tools/generate.py — руками не править (правьте генератор).
+# Имена событий, действий и полей — НАШИ (process-events-catalog.md, scenarios-flange*.{md,yaml}).
+# [П] — имя или значение предварительное (нет в каталоге) / наше допущение; [ПП] — проектное предположение.
+# Время: at — UTC (RFC 3339, мс); at_msk — то же в МСК для чтения.
+# human_steps.mode: stop — сценарий ждёт решения на столе роли (интерактивный режим; в автосверке подписывает
+#   demo-signer); auto — demo-signer подписывает сам в указанное доменное время.
+# expect: accepted | refused[:код] — ожидаемый ответ системы на шаг (проверка отказов по правам и правилам).
+# =============================================================================
+
+id: S09
+title: Подмена записи — обнаружена (три атаки)
+goal: 'Запись нельзя тихо переписать: 1) правку записи в обход системы находит проверка звеньев цепочки; 2) правку с пересчётом цепочки («как администратор БД») — подпись источника и
+  контрольная отметка вне базы; 3) правку представления — сверка с журналом, представление пересобирается из журнала. Разбор — Чт 07:45.'
+case:
+  s4_2:
+  - контрольное изменение записи
+  s5_1:
+  - Изменение данных
+  other:
+  - §3.4
+kind: slice_of_main_story
+run: main_story (MS-1)
+stream: streams/main-story.jsonl
+slice: streams/S09.jsonl
+slice_lines: 2
+seed: 20260921
+window_msk:
+- 2026-09-23 16:30
+- 2026-09-24 07:45
+items:
+- F-019
+- F-023
+erp_postings_expected:
+- ничего
+erp_note: Сообщения 1С — по словарю scenarios-flange-expected.yaml (erp_posting_type). Полный список с ответами stand-а — I1.yaml → erp_outbox_expected (для S13 и S10B — в их файлах).
+  «Выпуск годного» — только после ЗТ-6.
+expected: expected/S09.yaml
+human_steps_ref: definitions/scenarios/main-story.yaml
+human_steps:
+- step_id: MS1-H0260
+  label: S09/check
+  at: '2026-09-23T13:31:00.000Z'
+  at_msk: '2026-09-23 16:31:00'
+  mode: auto
+  role: DATA_ADMIN
+  persona: ADM-01
+  action: integrity.check_requested
+  catalog_ref: '[П] нет в каталоге'
+  subject:
+    scope: journal
+  process_ref: null
+  params:
+    trigger: button
+  expect: accepted
+  optional: true
+  scenarios:
+  - S09
+  note: если проверка целостности у соседей идёт по расписанию — шаг не нужен
+- step_id: MS1-H0261
+  label: S09/update-refused
+  at: '2026-09-23T13:35:00.000Z'
+  at_msk: '2026-09-23 16:35:00'
+  mode: auto
+  role: DATA_ADMIN
+  persona: ADM-01
+  action: event.corrected
+  catalog_ref: E-100
+  subject:
+    target_label: EV-WS2-0412
+    method: update_in_place
+  process_ref: null
+  params:
+    field: payload.value
+    from: 166
+    to: 176
+    reason: попытка вернуть значение правкой записи
+  expect: refused
+  scenarios:
+  - S09
+  note: 'ожидается отказ: «исправление — только новой записью (event.corrected)»; правки на месте нет'
+- step_id: MS1-H0262
+  label: S09/check-2
+  at: '2026-09-23T13:51:00.000Z'
+  at_msk: '2026-09-23 16:51:00'
+  mode: auto
+  role: DATA_ADMIN
+  persona: ADM-01
+  action: integrity.check_requested
+  catalog_ref: Е-105 [П]
+  subject:
+    scope: journal_and_anchors
+  process_ref: null
+  params:
+    trigger: button
+  expect: accepted
+  optional: true
+  scenarios:
+  - S09
+  note: если сверка с контрольными отметками идёт по расписанию — шаг не нужен
+- step_id: MS1-H0263
+  label: S09/check-3
+  at: '2026-09-23T14:01:00.000Z'
+  at_msk: '2026-09-23 17:01:00'
+  mode: auto
+  role: DATA_ADMIN
+  persona: ADM-01
+  action: integrity.check_requested
+  catalog_ref: Е-105 [П]
+  subject:
+    scope: projections
+  process_ref: null
+  params:
+    trigger: button
+  expect: accepted
+  optional: true
+  scenarios:
+  - S09
+  note: если сверка представлений идёт по расписанию — шаг не нужен
+- step_id: MS1-H0264
+  label: S09/resolved
+  at: '2026-09-24T04:45:00.000Z'
+  at_msk: '2026-09-24 07:45:00'
+  mode: auto
+  role: QC_HEAD
+  persona: QC-HEAD-01
+  signers:
+  - QC-HEAD-01
+  - ADM-01
+  action: integrity.violation_resolved
+  catalog_ref: Е-103 [П]
+  subject:
+    targets:
+    - EV-WS2-0412
+    - xr/F-019/RK-0923-07
+  process_ref: null
+  params:
+    authentic_version: версия, с которой сходится подпись источника (из реплики или резервной копии; способ — у соседей)
+    result:
+      EV-WS2-0412: подлинное значение 176 А; подменённое 166 А отвергнуто
+      xr/F-019/RK-0923-07: подлинное заключение — пора 1,2 мм в теле кольца; подмена отвергнута
+    flags_removed: «основание под вопросом» снято с зависимых выводов; изделия снова могут проходить ЗТ
+    projection_F-023: пересобрано из журнала в Ср 17:01, отдельного разбора не нужно
+  expect: accepted
+  scenarios:
+  - S09
+tamper_actions:
+- id: TAMPER-EV-WS2-0412
+  scenario: S09
+  at: '2026-09-23T13:30:00.000Z'
+  tool: cmd/tamper (только профили fixtures/demo; прямое подключение к БД в обход системы)
+  target_label: EV-WS2-0412
+  field: payload.value
+  from: 176
+  to: 166
+  expected: нарушение звена цепочки на этой записи; журнал критических действий; уведомления ADM-01, QC-HEAD-01
+- id: TAMPER-RECHAIN-RK-0923-07
+  scenario: S09
+  at: '2026-09-23T13:50:00.000Z'
+  tool: 'cmd/tamper (только профили fixtures/demo; «администратор БД»: прямое подключение к БД)'
+  method: update_and_rechain
+  target_label: xr/F-019/RK-0923-07
+  field: payload.defects
+  from: пора 1,2 мм в теле кольца (base_metal_pore, RING-BODY)
+  to: []
+  also: пересчитаны звенья цепочки от этой записи до конца журнала — простая проверка звеньев проходит
+  expected: 'нарушение найдено: подпись источника (edge-агент EA-NDT) не сходится с изменённым содержимым; голова цепочки не совпадает с контрольной отметкой, которую хранитель держит
+    вне базы (16:45) [П]; журнал критических действий; уведомления ADM-01, QC-HEAD-01'
+- id: TAMPER-PROJECTION-F-023
+  scenario: S09
+  at: '2026-09-23T14:00:00.000Z'
+  tool: cmd/tamper (только профили fixtures/demo; прямое изменение таблицы представлений)
+  method: projection_update
+  target: 'projection: item_status / F-023'
+  field: status
+  from: rework
+  to: accepted
+  expected: 'сверка представлений с журналом: пересборка даёт «в переделке», в таблице «годно» → расхождение; представление пересобрано из журнала; журнал событий не тронут; F-023 никуда
+    не двинулся'

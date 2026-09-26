@@ -1,0 +1,1079 @@
+# =============================================================================
+# ЧЕРНОВИК ожиданий для табло проверки «ожидалось → получилось»
+# Сценарии на фланце люка гермокорпуса. Человеческое описание — scenarios-flange.md.
+#
+# ВАЖНО:
+#  1. Имена событий, полей, статусов, кодов ошибок и видов сообщений 1С взяты
+#     из НАШЕГО каталога (process-events-catalog.md) и docs/plan.md §4–6.
+#     ОКОНЧАТЕЛЬНЫЕ имена задаёт контракт соседей (их FR-27, FR-28, FR-90, FR-91).
+#     Здесь — смысл проверок, а не контракт.
+#  2. Ожидания хранятся ОТДЕЛЬНО от входных событий (кейс §5.1). События
+#     генерирует имитатор соседей по таблицам scenarios-flange.md.
+#  3. Все числа, ID, даты, режимы — условные ([П] допущение, [ПП] проектное
+#     предположение). Это не данные «Энергии».
+# =============================================================================
+
+meta:
+  id: flange-scenarios-expected
+  version: "0.3.2-draft"          # 0.3.2 + S04 «следующее лучшее наблюдение» 26.09: +10 утверждений S04-11…S04-17, S04-N5…N7 (профили съёмки карты RCP-CP-WELD@3, предложение ≠ решение, лимит пересъёмок, «класс камере не виден → рентген»); 0.3.2 + сверка аналитики 26.09 (deliverables/metrics-audit.md): +28 утверждений О-1…О-11 (А-1…А-20), корзина О-9 «приостановлено по качеству», S05-16 перенесено в точку 12:30; 0.3.2 — нестандартные случаи S18–S22 (решение пользователя 26.09; схема v0.3.2): допуск и поверка на дату операции, смена ревизии КД посреди партии, нечитаемая маркировка и перепутанные детали, смешение партий, попытка вернуть списанное; 0.3.1 — решения пользователя 26.09: MES-удержание сразу и снятие человеком, плоскость после сварки, выборочный рентген колец на входе, фон по классам автора; 0.2 — волна 1 правок по ред-тиму (1С в S10, линии, результат контроля [П]); 0.2.1 — доводка под схему процесса v0.2; 0.3 — волна 2: S14–S17, три атаки в S09, установка оборудования и перемаркировка в S01; сверено со схемой v0.3 (ЗТ-СР, КТ-СР, сигнал, разбор причин, сбой оборудования)
+  created: "2026-09-25"
+  status: "черновик, пользователь не утвердил"
+  human_doc: "process/scenarios-flange.md"
+  process_doc: "process/flange-process-bpmn.md (схема v0.3.2), process/bpmn-v032-changes.md, process/bpmn-v031-changes.md, process/bpmn-v03-changes.md"
+  timezone: "+03:00"
+  event_contract_version: "1.0"        # версия контракта сообщений
+  analyzer_version: "vqc-weld 2.3.1"    # версия анализатора камер — отдельное поле, не смешивать
+  terms:
+    concession: "разрешение на отклонение (ГОСТ Р ИСО 9000 п. 3.12.5) — для «ремонт» и «как есть» по изготовленному изделию"
+    rework: "переделка по ТП — возврат к требованиям КД; переделка участка шва — не больше 3 раз, вторая и третья — с согласия главного сварщика [ПП]"
+    repair: "ремонт — только по разрешению на отклонение (все подписи, включая ПЗ); после ремонта изделие годно по разрешению, а не «годно»"
+
+# -----------------------------------------------------------------------------
+# Формат одного утверждения (предложение; соседи вправе заменить)
+#   id:       уникальный код проверки
+#   what:     что проверяем, по-русски (выводится на табло)
+#   subject:  объект: item/<id>, nc/<id>, risk_scope/<id>, run/<id>, event/<id>,
+#             hypothesis/<nc>, erp/postings, ingest, quarantine, integrity,
+#             audit/critical_actions, metric/<код>, source/<id>, gate/<ЗТ>/<item>,
+#             gate/<ЗТ> (вся точка), map/node/<узел BPMN>, map/lines (состояние линий),
+#             escalation/<ЗТ>@<дата>, post/<ЗТ>, people/<id>, document/<вид>@<основание>,
+#             erp/control_results (ПРЕДЛОЖЕНИЕ [П] «результат контроля», ждёт решения соседей),
+#             S18–S22: order/<заказ>, lot/<партия>, genealogy/<партия>, checkpoint/<КТ>, post/<рабочее место>, mes/postings
+#   field:    поле или вычисляемое свойство
+#   op:       eq | ne | gte | lte | in | set_eq | contains | not_contains |
+#             exists | not_exists | delta | unchanged | before
+#   value:    ожидаемое значение
+#   filter:   (необязательно) условия выборки
+#   baseline: (для delta/unchanged) момент или контрольная точка «до»
+# Раздел must_not — то, чего НЕ должно случиться; формат тот же.
+#   proposal: (необязательно) утверждение по нашему ПРЕДЛОЖЕНИЮ, которое ждёт решения соседей;
+#             на табло показывать «ждёт решения соседей», а не «не выполнено».
+# -----------------------------------------------------------------------------
+
+dictionaries:
+  item_status:        # статус изделия (из docs/plan.md §6)
+    in_progress: "в работе"
+    on_hold: "придержано: сигнал на рассмотрении или блок области риска"
+    isolated: "изолировано, ждёт решения"
+    rework: "в переделке"
+    accepted: "годно"
+    accepted_with_deviation: "годно по разрешению на отклонение (≠ годно)"
+    scrapped: "списано"
+    returned_to_supplier: "возвращено поставщику"
+  nc_status: [signal, under_review, rejected, recheck_requested, confirmed, isolated, disposition_set, disposition_verified, closed]
+  inspection_result: {defect_found: "признаки обнаружены", no_defect_found: "признаков нет", unable_to_assess: "оценка невозможна"}
+  risk_group: {confirmed: "подтверждено (красный)", suspected: "под подозрением, не брак (жёлтый)", excluded: "исключено из инцидента (зелёный)", unknown: "нет данных (серый)"}
+  cause_category: {incoming: "входной брак", equipment: "оборудование", operator_procedure: "отклонение от процедуры (техники выполнения)", handling: "перемещение и хранение", undetermined: "не установлено"}
+  hypothesis_strength: [not_assessable, weak, possible, strong]
+  disposition: {rework: "переделка по ТП", repair: "ремонт (нужно разрешение на отклонение)", use_as_is: "как есть (нужно разрешение на отклонение)", scrap: "списать", return_to_supplier: "вернуть поставщику", component_replacement: "замена компонента (схема v0.2, итог NCR) [П]"}
+  gate_decision:      # итог на ЗТ (схема v0.2)
+    accepted: "годно"
+    accepted_incomplete_data: "годно при неполных данных [П]: только ЗТ-3 (узел WZ2); чего не хватает — записано; пришли данные — метка «пересмотрите» (decision.review_flagged); после переделки не ставится"
+    accepted_with_deviation: "годно по разрешению на отклонение (≠ годно)"
+    nonconforming: "не годно → решение по несоответствию (Н)"
+  review_outcome:     # пересмотр подписанной приёмки (схема v0.2, процесс «Пересмотр приёмки» R0…RZ2) [П]
+    confirmed: "прежнее решение подтверждено, метка снята"
+    revoked: "приёмка отозвана: блок изделия, изделие — в инцидент; исходная подпись остаётся"
+  erp_posting_type:   # виды учётных сообщений в 1С [П — окончательные у соседей]
+    issue_to_production: "принято в работу"
+    transfer: "перемещение между цехами (складами)"
+    scrap_transfer_rework: "перевод в брак (переделка)"
+    scrap_transfer_writeoff: "перевод в брак (списание)"
+    return_to_supplier: "возврат поставщику"
+    rework_return_to_production: "возврат из брака в производство [П]: переделка выполнена и проверена на повторной ЗТ (схема v0.2: ЗТ-2, ЗТ-3, ЗТ-4, ЗТ-6 — узлы MRE, WRE, ARE, KRE); документ 1С — с соседями (ERP: выпуск по «Производству без заказа» на исправление брака и разблокировка серии; 1С:MES: закрытие «Этапа производства» на исправление брака)"
+    release_good: "выпуск годного — только после подписанной ЗТ-6 (признак after_rework: true — после переделки)"
+    # блокировка («заблокирован»), сигнал, новый дефект до решения ЗТ-Р в 1С не уходят — не учётные движения.
+    # Изделие в «переводе в брак (переделка)» выходит из брака только «возвратом из брака в производство».
+  erp_ack: {acked: "подтверждено", error_retryable: "временная ошибка, повтор", error_final: "ошибка данных, без автоповтора", dead: "не доставлено"}
+  erp_control_result:   # ПРЕДЛОЖЕНИЕ [П], ждёт решения соседей: «отправка результата контроля» (кейс §3.3)
+    when: "после каждой подписанной ЗТ (ЗТ-1 по партии, ЗТ-2…ЗТ-6 по изделию) и после решения ЗТ-Р; одно сообщение на одно решение"
+    result: {accepted: "годно", accepted_with_deviation: "годно по разрешению на отклонение", nonconforming: "не годно: несоответствие, с решением по изделию"}
+    fields: [message_id, contract_version, gate, presentation_no, item_or_lot, order, nomenclature, line_id, result, nc_refs, defects_summary, disposition, concession_no, decided_at, signers, basis_refs]
+    not_included: [signal, hypothesis, inspection_frame, machine_log, risk_scope]
+    note: "не держит изделие и не заменяет учётное движение; ответ 1С — как у учётных сообщений (подтверждение / ошибка / повтор)"
+  lines:              # справочник линий [П]: emulator-data/definitions/reference/sites.yaml → lines
+    L-FL-1: "Линия ФЛ-100 № 1 — свой сварочный пост 1 (ИС-1); остальные участки общие"
+    L-FL-2: "Линия ФЛ-100 № 2 — свой сварочный пост 2 (ИС-2); остальные участки общие"
+    # line_id события: пост — линия поста; фланец с запуска — линия поста его последней сварки
+    # (до первой — по плану запуска); 1С, партии на складе, общее оборудование без изделия — без линии.
+  mes_message:            # сообщения в MES (схема v0.3.1, процесс «Удержание») [П — окончательные у соседей]
+    hold: "не выдавать в работу — сразу, как только изделие или партия придержаны (правило при сигнале, круг инцидента, отзыв приёмки, поиск инструмента, изоляция); один раз на объект"
+    release: "можно выдавать — только по решению человека (отклонение сигнала, исключение из круга, решение на ЗТ, решение по несоответствию) и только когда оснований не осталось; списанным и возвращённым не уходит"
+    not_included: [hypothesis, cause, inspection_frame, operator_assessment]
+  author_defect_class:    # пять классов автора кейса (сессия 25.09) — разрез аналитики «дефекты по классам»; справочник defect-classes.yaml → author_class
+    weld: "сварочные швы (прожог, поры, подрез …)"
+    chip: "сколы"
+    dent: "вмятины"
+    scratch: "царапины"
+    geometry: "геометрия после обработки на станке (размер вне допуска)"
+  quarantine_code: {E_MISSING_FIELD: "нет обязательного поля", E_UNSUPPORTED_VERSION: "неизвестная версия", E_UNKNOWN_ENUM: "неизвестное значение перечисления"}
+  critical_action_code:   # не карантин: запись в журнал критических действий (S06)
+    E_ID_CONFLICT: "тот же номер, другое содержимое: первая версия записи остаётся, вторая — в журнал критических действий, администратору уведомление"
+  refusal_code:           # отказы API на шагах людей (S08, S09, S10B, S14) [П — окончательные у соседей]
+    E_REWORK_LIMIT: "лимит переделок исчерпан"
+    E_PERMIT_REQUIRED: "нужно разрешение на отклонение"
+    E_EXPLANATION_REQUIRED: "«ошибку исполнителя» нельзя записать без письменного объяснения работника (S14)"
+    E_INSTRUMENT_NOT_VERIFIED: "в основании ЗТ — запись средства без поверки на дату (S18)"
+    E_ITEM_SCRAPPED: "изделие списано: статус конечный, в маршрут не вернуть (S22)"
+  # ---- нестандартные случаи S18–S22 (схема v0.3.2) [П] ----
+  precondition_code:      # условие шага не выполнено: Е-13 и запись в журнал критических действий
+    E_QUALIFICATION_EXPIRED: "допуск исполнителя истёк на дату операции — система предлагает исполнителя с допуском (S18)"
+    E_INSTRUMENT_NOT_VERIFIED: "средство измерения не поверено на дату записи — результат «недостоверно» (Е-128), в основание ЗТ не идёт (S18)"
+    E_ITEM_MISMATCH: "на посту не то изделие: ожидалось по заданию одно, прочитано другое — стоп и выяснение (S20)"
+    E_ITEM_NOT_IDENTIFIED: "код не читается — ручной ввод с подтверждением второго человека или перемаркировка по процедуре (S20)"
+    E_LOT_BLOCKED: "компонент из заблокированной партии — выдача не проходит (S21)"
+    E_ITEM_SCRAPPED: "изделие списано — работу начать нельзя (S22)"
+  wip_decision:           # решение по заделу при смене ревизии КД (S19, узел OC3)
+    rework_to_new_revision: "доработать до новой ревизии по ТП новой ревизии"
+    keep_old_with_concession: "оставить по старой ревизии — только по разрешению на отклонение (подпись ПЗ)"
+    scrap: "списать — в 1С «перевод в брак (списание)»"
+  scan_result: {ok: "код прочитан, совпал", unreadable: "код не читается", mismatch: "прочитан не тот номер, что ожидался"}   # Е-126 item.scanned
+  # ---- волна 2 ----
+  binding_level:          # уровень привязки события к выполнению операции (кейс §4.6) [П] — S16
+    exact: "номер выполнения есть в самом событии"
+    by_interval: "по интервалу выполнения на этом оборудовании — один кандидат"
+    ambiguous: "несколько кандидатов; выводы, которые от привязки зависят, — «не установлено»"
+    none: "кандидатов нет"
+  time_correction:        # сдвиг часов источника (кейс §4.6) [П] — S15
+    rule: "occurred_at позже received_at больше чем на 30 с → часы источника спешат; сдвиг = медиана (occurred_at − received_at) по записям источника + обычная задержка доставки; исправленное время = occurred_at − сдвиг"
+    keeps: "исходное occurred_at не меняется; исправленное время — производная запись с правилом и сдвигом (event.time_corrected [П])"
+    boundary: "часы, которые отстают, выглядят как задержка доставки; их ловит сверка времени edge-агентом [ПП]"
+  integrity_attack:       # три атаки подмены (S09) [П]
+    update_in_place: "правка записи в обход системы — не сходится звено цепочки"
+    update_and_rechain: "правка с пересчётом цепочки («администратор БД») — звенья сходятся, но не сходятся подпись источника и контрольная отметка вне базы"
+    projection_update: "правка представления (изменяемой таблицы) — расходится с пересборкой из журнала; представление пересобирается, журнал не тронут"
+
+ids:   # экран (кириллица) → файлы (латиница) [П]
+  items: {"Ф-001…Ф-040": "F-001…F-040", "Ф-042 (S18, взамен Ф-021)": "F-042", "Ф-201…Ф-224": "F-201…F-224", "Ф-090": "F-090", "Ф-301…Ф-312 (S14)": "F-301…F-312", "КО-14-1…3 (S14)": "CS-141…CS-143"}
+  valves: {"КВД V-001…V-040": "V-001…V-040 (партия КВ-601)", "V-201…V-224": "фоновый заказ (КВ-591)"}
+  rings: {"К-001…К-033": "R-001…R-033", "К-101…К-110": "R-101…R-110", "К-901…К-905 (П-119)": "R-901…R-905"}
+  lots: {"ЗФ-201": LOT-ZF-201, "П-116": LOT-R-116, "П-117": LOT-R-117, "КР-301": LOT-C-301, "УП-401": LOT-SL-401, "КП-501": LOT-FS-501, "П-88": LOT-W-88, "КВ-601": LOT-V-601, "ЗФ-202 (S14)": LOT-ZF-202, "П-118 (S14)": LOT-R-118, "П-119 (S10B, S18, S19)": LOT-R-119}
+  people: {"С-02": WLD-02, "С-03": WLD-03, "ОТК-1": QC-01, "ОТК-2": QC-02, "НОТК-01": QC-HEAD-01, "Т-01": TECH-01, "ГС-01": CHW-01, "М-01": MST-01, "М-02": MST-02, "М-03": MST-03, "Сб-01": ASM-01, "И-01": TST-01, "Кл-01": STK-01, "Д-01": NDT-01, "ПЗ-01": CR-01, "А-01": ADM-01, "О-11": OP-CNC-11}
+  equipment: {"ИС-1": WS-1, "ИС-2": WS-2, "ШЛ-2": GW-2, "КЛ-1": TW-1, "КЛ-2 (контрольный, S18)": TW-2, "СТ-1": LT-1, "OperatorVision сборки": OV-ASM, "ЧПУ-1": CNC-1, "КИМ-1": CMM-1}
+  lines: {"Линия ФЛ-100 № 1": L-FL-1, "Линия ФЛ-100 № 2": L-FL-2}
+  documents: {"ИИ-ФЛ-100-07 (S19, извещение об изменении КД)": CN-FL-100-07, "РО-0928-01 (S19, разрешение на отклонение)": RO-0928-01}
+  orders: {"ЗП-0917": ORD-0917, "ЗП-0911": ORD-0911, "ЗП-0929 (S14)": ORD-0929}
+  bpmn_nodes: {"W4 рентген (обязателен)": W4, "W5 ЗТ-3": W5, "WZ2 годно при неполных данных": WZ2, "T1 стенд": T1, "R1 метка «пересмотрите»": R1, "R2 пересмотр приёмки": R2, "I7 решение — изделиям": I7}   # узлы схемы v0.2, flange-process-bpmn.md
+  process_instances:  # схема v0.2: у каждого процесса свои экземпляры [П]; в данных — _sim.process / process_ref (emulator-data README §2)
+    order: "order/ORD-0917 — «Заказ из 1С», старт Е-01"
+    lot: "lot/LOT-R-117 — «Партия», старт Е-03"
+    item: "item/F-017 — «Фланец в сборе», старт Е-09 (выдача заготовки)"
+    incident: "incident/RS-01 — «Инцидент»"
+    review: "review/ZT-3/F-015 — «Пересмотр приёмки»"
+    nc: "nc/NC-G1 — «Решение по несоответствию (Н)»"
+  zones: {"У1…У8": "U1…U8", "тело кольца": RING-BODY, "кромка под сварку": EDGE, "канавка уплотнения": SEAL-GROOVE, "клапан на крышке": VALVE, "маркировка": MARKING}
+  runs: "СВ-017-1 → SV-017-1 (сварка Ф-017, выполнение 1); СВ-017-2 → SV-017-2 (переварка); МО-004-1 → MO-004-1 (мехобработка); УО-001-1 → EQ-001-1 (установка оборудования)"
+
+main_story:
+  id: MS-1
+  name: "Плохой день ИС-2"
+  window: {from: "2026-09-17T08:00:00+03:00", to: "2026-09-24T16:30:00+03:00"}
+  order: [S01, S16, S15, S07, S08, S11, S12, S17, S03, S05, S06, S04, S02, S09, S10A]
+  in_4_minutes: [S01, S03, S05, S07, S06, S04, S02, S09]
+  standalone: [S10B, S13, S14, S18, S19, S20, S21, S22]      # S18–S21 — короткие прогоны в своих мирах, S22 — продолжение S10B; S06 и S12 можно прогонять и отдельно; S13 — Пт 25.09, после главной истории; S14 — свой мир, Вт 29.09 – Ср 30.09
+  stops_for_human_decision:    # сценарий ждёт решения на рабочем столе роли (FR-129 соседей)
+    - {at: "2026-09-23T11:08:00+03:00", role: QC, action: "подтвердить сигнал Ф-017"}
+    - {at: "2026-09-23T11:45:00+03:00", role: TECHNOLOGIST, action: "сузить круг RS-01 до 13"}
+    - {at: "2026-09-23T12:15:00+03:00", role: TECHNOLOGIST, action: "сузить круг RS-01 до 6"}
+    - {at: "2026-09-23T15:30:00+03:00", role: COMMISSION, action: "решение по инциденту: переделка ×6"}
+    - {at: "2026-09-23T16:20:00+03:00", role: TECHNOLOGIST, action: "подтвердить причину по КО-7"}
+    - {at: "2026-09-24T15:30:00+03:00", role: CHIEF_WELDER, action: "новое решение по Ф-021"}
+
+scenarios:
+
+  # ---------------------------------------------------------------------------
+  S01:
+    title: "Нормальное изготовление — эталонный фланец Ф-001"
+    case: {s4_2: ["нормальное изготовление"], s5_1: ["Нормальное производство"], other: ["§1.5", "§5.2 происхождение времени"]}
+    run: main_story
+    checkpoints:
+      - at: "2026-09-23T10:35:00+03:00"
+        label: "после выпуска Ф-001"
+        expect:
+          - {id: S01-01, what: "Ф-001 — годно", subject: item/F-001, field: status, op: eq, value: accepted}
+          - {id: S01-02, what: "пройдены 6 ЗТ, все с первого предъявления", subject: item/F-001, field: gates_passed_first_time, op: set_eq, value: [ZT-1, ZT-2, ZT-3, ZT-4, ZT-5, ZT-6]}
+          - {id: S01-03, what: "у каждой ЗТ есть подпись человека (агент токена или бумага с QR, заверенная вторым сотрудником, FR-139)", subject: item/F-001, field: gates_without_signer, op: eq, value: 0}
+          - {id: S01-04, what: "несоответствий нет", subject: item/F-001, field: nc_count, op: eq, value: 0}
+          - {id: S01-05, what: "генеалогия собрана (волна 2: с клапаном КВД V-001)", subject: item/F-001, field: components, op: set_eq, value: [flange_from:LOT-ZF-201, R-001, C-001, LOT-SL-401, LOT-FS-501, V-001]}
+          - {id: S01-06, what: "журнал ИС-2 при сварке в уставке", subject: run/SV-001-1, field: current_a_range, op: eq, value: [158, 163]}
+          - {id: S01-07, what: "камера КТ-3: признаков нет при хорошем качестве", subject: run/SV-001-1, field: cp_weld_result, op: eq, value: {inspection_result: no_defect_found, observation_quality_min: 0.93}}
+          - {id: S01-08, what: "все шаги оператора подтверждены", subject: item/F-001, field: unconfirmed_steps, op: eq, value: 0}
+          - {id: S01-09, what: "мехобработка: длительность передана станком, смысл — активная обработка", subject: run/MO-001-1, field: duration, op: eq, value: {value_min: 62, source: reported, meaning: active}}
+          - {id: S01-10, what: "сварка: длительность вычислена системой", subject: run/SV-001-1, field: duration, op: eq, value: {value_min: 45, source: computed, meaning: active}}
+          - {id: S01-11, what: "в 1С ушло 6 учётных событий по Ф-001", subject: erp/postings, filter: {item: F-001}, field: types, op: set_eq, value: [issue_to_production, issue_to_production, issue_to_production, transfer, transfer, release_good]}
+          - {id: S01-12, what: "все сообщения 1С подтверждены", subject: erp/postings, filter: {item: F-001}, field: ack_status, op: eq, value: acked}
+          - {id: S01-13, what: "Ф-001 доступен как эталон для сравнения", subject: item/F-001, field: reference_for_comparison, op: eq, value: true}
+          - {id: S01-14, what: "Ф-001 идёт по линии 2 (сварен на посту 2): у всех его событий после запуска — линия L-FL-2", subject: item/F-001, field: events_line_ids, op: set_eq, value: [L-FL-2]}
+          - {id: S01-15, what: "установка оборудования (кейс §1.1, узел AO) — отдельное выполнение EQ-001-1 после затяжки крепежа: клапан V-001 отсканирован до установки, затяжка J-2 в норме (12 Н·м ± 10 %), контровка подтверждена; основание ЗТ-4 включает журнал ключа по J-2", subject: run/EQ-001-1, field: {operation: EQ, item: F-001, component: V-001, after_step: tightening, torque_J-2_in_tolerance: true, lockwire_confirmed: true, gate_basis: ZT-4}, op: eq, value: true}
+          - {id: S01-16, what: "перемаркировка (узел MK): до мехобработки — бирка с QR на таре TAG:F-001, после станка — код DM:F-001 на нерабочей поверхности; ОТК сверил на ЗТ-2 (номер совпал, код читается)", subject: item/F-001, field: marking_history, op: eq, value: [{carrier: tag_qr, value: "TAG:F-001"}, {carrier: dpm_datamatrix, value: "DM:F-001", reason: remark_after_machining, verified_at_gate: ZT-2, result: match}]}
+          - {id: S01-17, what: "на КИМ номер фланца выбран из списка ожидаемых изделий, а не введён руками", subject: event/cmm/F-001, field: item_identification.method, op: eq, value: pick_from_expected_list}
+          - {id: S01-19, what: "лабораторный контроль образцов по плану на входе (узел VL, [ПП]): ЗФ-201 — химсостав, мехсвойства, УЗК; П-116 — химсостав и мехсвойства; объём колец — выборочный рентген 1 кольца из партии (узел VX, v0.3.1, [ПП]): К-001 чисто", subject: lot/*, filter: {lots: [LOT-ZF-201, LOT-R-116]}, field: lab, op: eq, value: {LOT-ZF-201: {result: no_defect_found, tests: [chemical_composition, mechanical_properties, ultrasonic_per_kd]}, LOT-R-116: {result: no_defect_found, tests: [chemical_composition, mechanical_properties], volumetric_control: xray_sample_1_per_lot, xray_sample: {ring: R-001, result: no_defect_found}}}}
+          - {id: S01-20, what: "при приёме цехом (Е-31) у Ф-001 — поле «повреждения: нет» (МЦ → СЦ и СЦ → СИЦ)", subject: item/F-001, field: receipts_damage, op: eq, value: {MC->WC: none, WC->AC: none}}
+          - {id: S01-21, what: "в начале — состав и ревизия КД из КОМПАС (Е-02, узел OD): 6 позиций с клапаном, связи W-1, J-1, S-1, J-2, геометрии нет — сказано явно", subject: event/import/kompas-FL-100, field: {revision: B, components: 6, links: [W-1, J-1, S-1, J-2], geometry: null}, op: eq, value: true}
+          - {id: S01-22, what: "на ЗТ-СР (скрытые работы) ОТК-2 посчитал инструмент, заходивший в полость: всё вышло", subject: gate/ZT-SR/F-001, field: tools_counted, op: eq, value: {entered_cavity: 2, returned: 2}}
+          - {id: S01-18, what: "у каждой ЗТ Ф-001 подписант не выполнял операцию, которую принимает", subject: item/F-001, field: gates_signed_by_performer, op: eq, value: 0}
+          - {id: S01-23, what: "v0.3.1, узел WP: плоскость уплотнительной поверхности Ф-001 после сварки измерена до ЗТ-3 (плита со щупом [ПП]) — в допуске 0,05 мм; запись — в основании ЗТ-3", subject: run/SV-001-1, field: flatness, op: eq, value: {label: flat/SV-001-1, method: plate_and_feeler, tol_mm: 0.05, result: in_tolerance, before: ZT-3, in_gate_basis: true}}
+          - {id: S01-24, what: "v0.3.1: у каждой сварки главной истории, дошедшей до рентгена, плоскость измерена до ЗТ-3 — 50 записей, все в допуске; ни одна ЗТ-3 не подписана без записи плоскости", subject: run/*, filter: {operation: W2, run: main_story}, field: {flatness_records: 50, out_of_tolerance: 0, gates_ZT-3_without_flatness: 0}, op: eq, value: true}
+          - {id: S01-25, what: "сверка 26.09, А-10 — О-7 по изделию Ф-001 («вычислено системой», активная работа): мехобработка 63 мин, сварка 45, сборка 75 (установка клапана 5 мин идёт внутри сборки и второй раз не прибавляется), испытание 60 — всего 243 мин; полное время от выдачи заготовки (Пт 18.09 08:30) до выпуска (Ср 23.09 10:30) — 7320 мин (5 сут 2 ч, календарных); 7077 мин изделие не было в операции — это ожидание (Д-1), контроль и нерабочее время. У мехобработки станок передал 62 мин (S01-09) — в сумму не идёт: метка другая", subject: metric/O-7, filter: {item: F-001}, field: {runs_min: {AS-001-1: 75, EQ-001-1: 5, HT-001-1: 60, MO-001-1: 63, SV-001-1: 45}, nested_not_added: [EQ-001-1], active_work_min: 243, lead_time_min: 7320, not_in_operation_min: 7077, source: computed}, op: eq, value: true}
+    must_not:
+      - {id: S01-N1, what: "нет сигналов по Ф-001", subject: item/F-001, field: signals_count, op: eq, value: 0}
+      - {id: S01-N2, what: "в 1С не ушли наблюдения, журналы, движения внутри цеха", subject: erp/postings, filter: {item: F-001}, field: types, op: not_contains, value: [inspection, machine_log, internal_move]}
+      - {id: S01-N3, what: "«учтено в 1С» не раньше подтверждения", subject: item/F-001, field: erp_accounted_before_ack, op: eq, value: false}
+      - {id: S01-N4, what: "сверка 26.09, А-11 — в О-7 нет строки, где сложены длительности с разными метками: «передано» мехобработки (S01-09, 62 мин) и «вычислено» сварки (S01-10) не складываются; сумма по изделию (S01-25) — только из «вычислено системой» (З-9)", subject: metric/O-7, field: rows_mixing_labels, op: eq, value: 0}
+
+  # ---------------------------------------------------------------------------
+  S02:
+    title: "Входной брак — пора в металле кольца (партия П-117)"
+    case: {s4_2: ["входной дефект"], s5_1: ["Входной брак"], other: ["§5.2 входной брак отдельно"]}
+    run: main_story
+    checkpoints:
+      - at: "2026-09-23T16:15:00+03:00"
+        label: "после возврата партии"
+        expect:
+          - {id: S02-01, what: "НС-04 по Ф-019: зона — тело кольца", subject: nc/NC-04, field: {item: F-019, zone: RING-BODY, defect_type: base_metal_pore}, op: eq, value: true}
+          - {id: S02-02, what: "НС-04 подтверждено контролёром", subject: nc/NC-04, field: status_path, op: contains, value: [signal, confirmed]}
+          - {id: S02-03, what: "гипотеза — входной брак, затем причина подтверждена", subject: nc/NC-04, field: cause, op: eq, value: {category: incoming, status: confirmed, lot: LOT-R-117, supplier: SUP-3}}
+          - {id: S02-04, what: "сварщик не указан как кандидат", subject: hypothesis/NC-04, field: operator_candidates, op: eq, value: []}
+          - {id: S02-05, what: "область по партии RS-02: 3 изделия, итог 1 подтверждено, 2 исключено", subject: risk_scope/RS-02, field: final_groups, op: eq, value: {confirmed: [F-019], excluded: [F-027, F-029], suspected: [], unknown: []}}
+          - {id: S02-06, what: "исключение Ф-027 и Ф-029 — по заключениям рентгена", subject: risk_scope/RS-02, field: exclusion_basis, op: contains, value: [xray:F-027, xray:F-029]}
+          - {id: S02-07, what: "второе кольцо с порой на складе — НС-05", subject: nc/NC-05, field: {item: R-105, cause_category: incoming}, op: eq, value: true}
+          - {id: S02-08, what: "в 1С один возврат поставщику на 7 колец", subject: erp/postings, filter: {type: return_to_supplier}, field: {count: 1, qty: 7, lot: LOT-R-117}, op: eq, value: true}
+          - {id: S02-09, what: "возврат подтверждён после ошибки 422 и исправления ID", subject: erp/postings, filter: {type: return_to_supplier}, field: ack_history, op: eq, value: [error_final, acked]}
+          - {id: S02-10, what: "пропуск на КТ-1 помечен «метод не видит этот класс»", subject: nc/NC-04, field: escape_classification, op: eq, value: method_blind_not_model_error}
+          - {id: S02-11, what: "Р-4: +1 несоответствующая партия у Поставщика-3", subject: metric/R-4, filter: {supplier: SUP-3}, field: nonconforming_lots, op: delta, value: 1, baseline: "2026-09-23T13:39:00+03:00"}
+          - {id: S02-12, what: "О-6: входной брак — подтверждено +2", subject: metric/O-6, filter: {row: incoming, column: confirmed}, field: count, op: delta, value: 2, baseline: "2026-09-23T13:39:00+03:00"}
+          - {id: S02-13, what: "разбор причин (отдельный экземпляр по RS-02) → мера «улучшить обнаружение»: следующие партии колец Поставщика-3 — рентген до сварки [П]; у меры есть план проверки результативности; «назначено» ≠ «результативно», расследование открыто", subject: capa/NC-04, field: {kind: improve_detection, owner: QC-HEAD-01, due: "2026-10-09", effectiveness_plan_present: true, status: assigned, investigation: open}, op: eq, value: true}
+          - {id: S02-14, what: "v0.3.1, узел VX: на входе П-117 — выборочный рентген 1 кольца из партии [ПП] (Вт 10:39): в выборке К-104, пора не найдена; ЗТ-1 — «годна»", subject: lot/LOT-R-117, field: incoming_xray_sample, op: eq, value: {ring: R-104, conclusion: RK-0922-IQC, result: no_defect_found, sample_size: 1, lot_qty: 10, in_gate_basis: ZT-1}}
+          - {id: S02-15, what: "выборка чистая ≠ вся партия чистая: пору нашёл рентген шва Ф-019 в кольце К-101, которого в выборке не было; пропуск на входе помечен «граница выборочного контроля», а не ошибка метода", subject: nc/NC-04, field: sampling_escape, op: eq, value: {incoming_sample: [R-104], sample_result: no_defect_found, defective_ring: R-101, ring_in_sample: false, classification: sampling_limit}}
+          - {id: S02-16, what: "MES (узел IM): Ср 13:55 — «не выдавать в работу» по Ф-027, Ф-029 и партии П-117 (кольца К-104…К-110 на складе); Ф-019 уже придержан — второго сообщения нет", subject: mes/postings, filter: {type: hold, basis: "risk_scope:RS-02"}, field: targets, op: set_eq, value: [F-027, F-029, LOT-R-117]}
+          - {id: S02-17, what: "MES (узел IMR): «можно выдавать» по Ф-027 (14:25) и Ф-029 (14:45) — по исключению Т-01; партия П-117 возвращена поставщику — «можно выдавать» не уходит, удержание остаётся", subject: mes/postings, filter: {basis: "risk_scope:RS-02"}, field: {releases: {F-027: S02/exclude-F-027, F-029: S02/exclude-F-029}, held_at_end: [LOT-R-117]}, op: eq, value: true}
+    must_not:
+      - {id: S02-N1, what: "входной брак не попадает в дефекты сварочного участка", subject: metric/O-4, filter: {station: welding, origin: station}, field: includes_nc, op: not_contains, value: [NC-04, NC-05]}
+      - {id: S02-N2, what: "нет гипотезы «процедура» по С-03 для НС-04", subject: hypothesis/NC-04, field: categories, op: not_contains, value: [operator_procedure]}
+      - {id: S02-N3, what: "О-10 не меняется", subject: metric/O-10, field: all, op: unchanged, baseline: "2026-09-23T13:39:00+03:00"}
+      - {id: S02-N4, what: "Ф-019 целиком поставщику не возвращается", subject: item/F-019, field: status, op: ne, value: returned_to_supplier}
+      - {id: S02-N5, what: "входной брак не записан на линию как место возникновения", subject: metric/O-4, filter: {cut: line, origin: line}, field: includes_nc, op: not_contains, value: [NC-04, NC-05]}
+
+  # ---------------------------------------------------------------------------
+  S03:
+    title: "Новый дефект после сварки — прожог на Ф-017"
+    case: {s4_2: ["дефект после операции"], s5_1: ["Новый дефект", "Решение пользователя (подтверждение)"], other: ["§2.3", "§5.4"]}
+    run: main_story
+    checkpoints:
+      - at: "2026-09-23T11:25:00+03:00"
+        label: "после изоляции Ф-017"
+        expect:
+          - {id: S03-01, what: "сигнал, затем НС-01 подтверждено ОТК-1", subject: nc/NC-01, field: status_path, op: contains, value: [signal, confirmed, isolated]}
+          - {id: S03-02, what: "подтверждение — отдельная запись с автором и причиной", subject: nc/NC-01, field: "decisions[0]", op: eq, value: {type: signal_confirmed, author: QC-01, at: "2026-09-23T11:08:00+03:00", reason_present: true}}
+          - {id: S03-03, what: "Ф-017 изолирован, физически перемещён", subject: item/F-017, field: {status: isolated, physically_moved: true}, op: eq, value: true}
+          - {id: S03-04, what: "срок решения — 3 рабочих дня", subject: nc/NC-01, field: disposition_due, op: eq, value: "2026-09-28"}
+          - {id: S03-05, what: "последняя чистая проверка зоны — КТ-2 до сварки", subject: nc/NC-01, field: last_clean_observation, op: eq, value: {checkpoint: CP-MO, zone: EDGE, quality: 0.93}}
+          - {id: S03-06, what: "окно возникновения: сварка SV-017-1 и перемещение", subject: nc/NC-01, field: origin_window_candidates, op: set_eq, value: [run:SV-017-1, move:MC->WC]}
+          - {id: S03-07, what: "гипотезы v1: причина не установлена, оборудование не оценить", subject: hypothesis/NC-01, filter: {version: 1}, field: {overall: undetermined, equipment: not_assessable, operator_procedure: possible}, op: eq, value: true}
+          - {id: S03-08, what: "перечислено, чего не хватает", subject: hypothesis/NC-01, filter: {version: 1}, field: missing_info, op: contains, value: ["журнал параметров WS-2 10:40–11:00", "рентген F-017"]}
+          - {id: S03-09, what: "ручное действие С-02 — в обстоятельствах с пометкой «не вина»", subject: nc/NC-01, field: circumstances, op: contains, value: [{type: manual_override, operator: WLD-02, label: "обстоятельство, не вина"}]}
+          - {id: S03-10, what: "сравнение с эталоном Ф-001 доступно", subject: nc/NC-01, field: reference_item, op: eq, value: F-001}
+          - {id: S03-11, what: "задержка обнаружения 5 мин после операции", subject: metric/D-4, filter: {nc: NC-01}, field: detection_delay_min, op: eq, value: 5}
+          - {id: S03-12, what: "О-2 +1", subject: metric/O-2, field: items, op: delta, value: 1, baseline: "2026-09-23T11:04:00+03:00"}
+          - {id: S03-13, what: "лесенка О-3: наблюдения +2, уникальные +1, подтверждённые +1", subject: metric/O-3, field: ladder, op: delta, value: {observations: 2, unique_defects: 1, confirmed_defects: 1, items: 1}, baseline: "2026-09-23T11:04:00+03:00"}
+          - {id: S03-14, what: "нет фото — честная надпись или иллюстрация с пометкой", subject: nc/NC-01, field: evidence_display, op: in, value: [illustration_labeled, material_not_provided]}
+          - {id: S03-15, what: "v0.3.1: «не выдавать в работу» по Ф-017 ушло в MES сразу при удержании по правилу R-07 (Ср 11:06) — до подтверждения ОТК (11:08) и до изоляции (11:20)", subject: mes/postings, filter: {item: F-017, type: hold}, field: {at: "2026-09-23T11:06:00+03:00", basis: "signal:kt3/SV-017-1/CAM-WS-1", before_steps: [S03/confirm-NC-01, S03/isolate]}, op: eq, value: true}
+          - {id: S03-16, what: "§5.4, материалы: у кадра прожога Ф-017 — «материал не предоставлен» (снимков изделия в данных нет) и ИЛЛЮСТРАЦИЯ класса «прожог» из открытого набора TIG Aluminium 5083 (CC BY-SA 4.0) с пометкой «не относится к изделию»; фиктивного снимка изделия нет", subject: event/kt3/SV-017-1/CAM-WS-1, field: evidence_refs, op: eq, value: [{media_id: MED-NP-CAMERA-FRAME, kind: not_provided}, {media_id: MED-ILL-TIG5083-BURN-THROUGH, kind: illustration, defect_type: burn_through, relates_to_item: false, notice: "ИЛЛЮСТРАЦИЯ, не относится к изделию"}], note: "справочник emulator-data/definitions/reference/media.yaml: источник, авторы, лицензия, подпись"}
+          - {id: S03-18, what: "сверка 26.09, А-17 — О-11, журнал изменений О-2: было 0 → стало 1, из-за подтверждения сигнала Ф-017 (шаг S03/confirm-NC-01), ОТК-1, Ср 11:08", subject: metric/O-11, filter: {metric: O-2, window: main_story}, field: {metric: O-2, before: 0, after: 1, due_to: S03/confirm-NC-01, by: QC-01, at: "2026-09-23T11:08:00+03:00"}, op: eq, value: true}
+      - at: "2026-09-24T16:30:00+03:00"
+        label: "конец главной истории: материалы у всех записей"
+        expect:
+          - {id: S03-17, what: "§5.4, материалы по всей главной истории (без дублей): у 409 результатов камер — «материал не предоставлен», у 2 из них (Ф-017, два ракурса) — ещё иллюстрация класса с лицензией; у 55 результатов рентгена — заключение как документ, снимок не передаётся; у события OperatorVision — «видео не передаётся»; пустых ссылок и снимков изделия — 0", subject: ingest/evidence_refs, filter: {run: main_story, duplicates: excluded}, field: {camera_not_provided: 409, camera_illustrations: 2, illustration_items: [F-017], xray_documents: 55, operator_vision_event_only: 1, empty_evidence_refs: 0, item_images: 0}, op: eq, value: true}
+    must_not:
+      - {id: S03-N1, what: "нет «ошибки исполнителя»", subject: nc/NC-01, field: cause, op: ne, value: {category: operator_procedure, status: confirmed}}
+      - {id: S03-N2, what: "О-10 не меняется", subject: metric/O-10, field: all, op: unchanged, baseline: "2026-09-23T11:04:00+03:00"}
+      - {id: S03-N3, what: "в 1С ничего не ушло", subject: erp/postings, filter: {item: F-017, between: ["2026-09-23T11:00:00+03:00", "2026-09-23T11:25:00+03:00"]}, field: count, op: eq, value: 0}
+      - {id: S03-N4, what: "нет автоматического решения по изделию", subject: nc/NC-01, field: dispositions_by_system, op: eq, value: 0}
+      - {id: S03-N5, what: "в сообщении MES нет гипотез, причин, кадров и оценки людей — только объект, основание и уровень", subject: mes/postings, filter: {item: F-017}, field: contains_types, op: not_contains, value: [hypothesis, cause, inspection_frame, operator_assessment]}
+
+  # ---------------------------------------------------------------------------
+  S04:
+    title: "Недостаток сведений — блик на Ф-025 и потерянные данные Ф-019"
+    case: {s4_2: ["недостаток сведений для вывода"], s5_1: ["Неопределённость"], other: ["§4.5 плохое наблюдение ≠ годность", "§4.6 явное «неизвестно»"]}
+    run: main_story
+    checkpoints:
+      - at: "2026-09-23T12:41:00+03:00"
+        label: "Ф-025: кадр с бликом"
+        expect:
+          - {id: S04-01, what: "исходный результат сохранён как есть", subject: event/CAM-WS-1@2026-09-23T12:40, field: {inspection_result: no_defect_found, confidence: 0.91, observation_quality: 0.34}, op: eq, value: true}
+          - {id: S04-02, what: "производный результат — оценка невозможна (качество ниже порога 0,6)", subject: item/F-025, field: derived_result_cp_weld, op: eq, value: {result: unable_to_assess, zones: [U6, U7], reason: "качество 0,34 < 0,6: блик, зона закрыта прижимом"}}
+          - {id: S04-03, what: "Ф-025 не годен и не брак — ждёт", subject: item/F-025, field: status, op: eq, value: on_hold}
+          # «Следующее лучшее наблюдение» (камера) [П]: профиль — только из допущенных в карте RCP-CP-WELD@3
+          # (emulator-data/definitions/reference/inspection-recipes.yaml → capture_profiles); предложение ≠ решение
+          - {id: S04-11, what: "система предложила следующее наблюдение — это предложение, не решение", subject: item/F-025, field: proposals, op: contains, value: [{proposal_ref: PR-F025-01, event: analysis.check_suggested, type: additional_check, kind: next_observation, voice: "инженерная справка", zones: [U6, U7], uncertainty_reasons: [glare, zone_occluded_by_clamp], capture_profile: KT3-SIDE, profile_reason: "отделить блик от геометрии", person_actions: ["снять прижим"], decides: QC, status: open}]}
+      - at: "2026-09-23T12:51:00+03:00"
+        label: "Ф-021: корень шва камере не виден"
+        expect:
+          - {id: S04-16, what: "прожог в корне Ф-021 нашёл рентген; чистый кадр камеры 12:35 для корня — «этим методом не проверяется», а не «признаков нет»", subject: item/F-021, field: {root_burn_through: {found_by: event/XR-1@2026-09-23T12:50, conclusion_no: RK-0923-08, zone: U5, side: root}, camera_frame: {event: event/CAM-WS-1@2026-09-23T12:35, for_root: not_applicable_to_method}}, op: eq, value: true}
+          - {id: S04-17, what: "класс камере не виден — следующее наблюдение рентген, пересъёмка не предлагается", subject: item/F-021, field: next_observation_rule, op: eq, value: {defect_class: "burn_through (корень шва)", camera_blind: true, basis: "RCP-CP-WELD@3 → blind_classes", proposed_method: xray, camera_reshoot_proposed: false}}
+      - at: "2026-09-23T13:00:00+03:00"
+        label: "Ф-025: повторный кадр"
+        expect:
+          - {id: S04-04, what: "назначена повторная съёмка", subject: item/F-025, field: decisions, op: contains, value: [{type: recheck_requested, author: QC-01, method: camera_reshoot}]}
+          - {id: S04-05, what: "повторный кадр хорошего качества, признаков нет → проверка камерой пройдена", subject: item/F-025, field: cp_weld_final, op: eq, value: {result: no_defect_found, observation_quality: 0.88}}
+          - {id: S04-06, what: "отметка «с первого раза, но с доп. проверкой»", subject: metric/D-3, filter: {item: F-025, checkpoint: CP-WELD}, field: bucket, op: eq, value: first_pass_with_recheck}
+          - {id: S04-07, what: "корзина «оценка невозможна» +1", subject: metric/O-1, field: unable_to_assess, op: delta, value: 1, baseline: "2026-09-23T12:39:00+03:00"}
+          - {id: S04-12, what: "у события «назначена повторная съёмка» — причина неопределённости, профиль, почему он, чьё предложение, кто назначил, лимит", subject: item/F-025, field: decisions, op: contains, value: [{type: recheck_requested, author: QC-01, method: camera_reshoot, uncertainty_reasons: [glare, zone_occluded_by_clamp], capture_profile: KT3-SIDE, profile_reason: "отделить блик от геометрии", proposal_ref: PR-F025-01, proposal_status: accepted, assigned_by: {kind: person, persona: QC-01}, reshoot_no: 1, reshoot_limit: 2}]}
+          - {id: S04-13, what: "профиль пересъёмки — только из допущенных профилей карты RCP-CP-WELD@3: штатный, боковой свет, второй ракурс, увеличенная зона", subject: item/F-025, filter: {decision: recheck_requested, method: camera_reshoot}, field: capture_profile, op: in, value: [KT3-STD, KT3-SIDE, KT3-VIEW2, KT3-ZOOM]}
+          - {id: S04-14, what: "второй кадр ссылается на первый", subject: event/CAM-WS-1@2026-09-23T12:55, field: {trigger: reshoot, capture_profile: KT3-SIDE, reshoot_no: 1, zones_inspected: [U6, U7], prior_observation: event/CAM-WS-1@2026-09-23T12:40}, op: eq, value: true}
+          - {id: S04-15, what: "вывод «признаков нет» по КТ-3 сделан на основании двух наблюдений", subject: item/F-025, field: cp_weld_final/basis, op: eq, value: {observations: 2, by_zone: [{zones: [U1, U2, U3, U4, U5, U8], observation: event/CAM-WS-1@2026-09-23T12:40, capture_profile: KT3-STD}, {zones: [U6, U7], observation: event/CAM-WS-1@2026-09-23T12:55, capture_profile: KT3-SIDE}], text: "признаков нет — вывод по двум наблюдениям: кадр 12:40 (штатный) и пересъёмка 12:55 (боковой свет)"}}
+      - at: "2026-09-23T12:16:00+03:00"
+        label: "Ф-019: серая"
+        expect:
+          - {id: S04-08, what: "в круге RS-01 версии 3 Ф-019 — «нет данных»", subject: risk_scope/RS-01, filter: {version: 3}, field: group_of/F-019, op: eq, value: unknown}
+          - {id: S04-09, what: "явно сказано, чего не хватает", subject: run/SV-019-1, field: missing_info, op: contains, value: ["параметры WS-2 2026-09-22 16:40–17:15"]}
+          - {id: S04-10, what: "потеря у источника учтена", subject: metric/N-5, field: lost_at_source, op: eq, value: {records: 35, window: ["2026-09-22T16:40:00+03:00", "2026-09-22T17:15:00+03:00"], source: GW-2}}
+    must_not:
+      - {id: S04-N1, what: "кадр с качеством 0,34 не даёт «годно»", subject: item/F-025, field: accepted_by_frame_quality_below_threshold, op: eq, value: false}
+      - {id: S04-N2, what: "серая не становится зелёной сама", subject: risk_scope/RS-01, filter: {item: F-019}, field: excluded_without_basis, op: eq, value: false}
+      - {id: S04-N3, what: "ток для Ф-019 не «дорисован»", subject: run/SV-019-1, field: interpolated_parameters, op: eq, value: false}
+      - {id: S04-N4, what: "«оценка невозможна» не в годных и не в браке", subject: metric/O-1, field: unable_counted_as_good_or_defect, op: eq, value: false}
+      - {id: S04-N5, what: "предложение системы само пересъёмку не назначает: кадр 12:55 — только по решению ОТК-1", subject: item/F-025, field: proposal_executed_without_decision, op: eq, value: false}
+      - {id: S04-N6, what: "пересъёмка не выходит за карту и лимит: профиля вне RCP-CP-WELD@3 и третьей пересъёмки участка нет", subject: checkpoint/CP-WELD, field: reshoot_outside_recipe_or_over_limit, op: eq, value: false}
+      - {id: S04-N7, what: "для корня шва и внутренних пор пересъёмка не предлагается (Ф-021, Ф-023)", subject: item/F-021, filter: {items: [F-021, F-023]}, field: proposals, op: not_contains, value: [{kind: next_observation, method: camera_reshoot}]}
+
+  # ---------------------------------------------------------------------------
+  S05:
+    title: "Событие оборудования — ток ИС-2 вне уставки, тающая область 34 → 13 → 6"
+    case: {s4_2: ["отклонение оборудования"], s5_1: ["Событие станка"], other: ["§2.3", "§5.2 сравнение сопоставимых работ", "§5.2 незавершённые операции"]}
+    run: main_story
+    checkpoints:
+      - at: "2026-09-23T11:11:00+03:00"
+        label: "версия 1"
+        expect:
+          - {id: S05-01, what: "круг RS-01 v1 = 34", subject: risk_scope/RS-01, filter: {version: 1}, field: size, op: eq, value: 34}
+          - {id: S05-02, what: "цвета v1: 1 подтверждено, 33 под подозрением", subject: risk_scope/RS-01, filter: {version: 1}, field: groups_count, op: eq, value: {confirmed: 1, suspected: 33, excluded: 0, unknown: 0}}
+          - {id: S05-03, what: "где детали v1", subject: risk_scope/RS-01, filter: {version: 1}, field: locations_count, op: eq, value: {welding_station: 21, interdept_storage: 8, assembly: 4, leak_test: 1}}
+          - {id: S05-04, what: "основание v1: общие факторы и отсчёт от Ф-006", subject: risk_scope/RS-01, filter: {version: 1}, field: basis, op: eq, value: {factors: [WLD-02, WS-2, LOT-W-88], anchor_item: F-006, anchor_time: "2026-09-21T14:55:00+03:00", author: system}}
+          - {id: S05-05, what: "детали фонового заказа тоже в круге", subject: risk_scope/RS-01, filter: {version: 1}, field: items, op: contains, value: [F-221, F-222, F-223, F-224]}
+          - {id: S05-06, what: "33 изделия придержаны, задачи мастерам созданы", subject: risk_scope/RS-01, filter: {version: 1}, field: {holds: 33, tasks_to: [MST-02, MST-03, STK-01]}, op: eq, value: true}
+      - at: "2026-09-23T11:13:00+03:00"
+        label: "остановка ИС-2"
+        expect:
+          - {id: S05-07, what: "ИС-2 остановлен человеком по предложению системы", subject: source/WS-2, field: process_hold, op: eq, value: {set_by: MST-02, at: "2026-09-23T11:12:00+03:00", proposed_by: system}}
+          - {id: S05-38, what: "состояние линий: у линии 2 сварочный пост стоит (остановка ИС-2 по качеству), линия 1 работает; общие участки — у обеих", subject: map/lines, field: {L-FL-1: {welding_post: ST-WC-P1, state: running}, L-FL-2: {welding_post: ST-WC-P2, state: stopped, reason: quality_hold, since: "2026-09-23T11:12:00+03:00"}}, op: eq, value: true}
+      - at: "2026-09-23T11:46:00+03:00"
+        label: "версия 2"
+        expect:
+          - {id: S05-08, what: "v2 = 13, сузил технолог", subject: risk_scope/RS-01, filter: {version: 2}, field: {size: 13, author: TECH-01}, op: eq, value: true}
+          - {id: S05-09, what: "исключены все 21 сварка на ИС-1", subject: risk_scope/RS-01, filter: {version: 2}, field: excluded_count, op: eq, value: 21}
+          - {id: S05-10, what: "основание v2 раскрывается по кнопке «почему?»", subject: risk_scope/RS-01, filter: {version: 2}, field: basis_refs, op: contains, value: ["журнал WS-1 непрерывный, в уставке", "CP-WELD no_defect_found при качестве ≥ 0,6", "WLD-02 и LOT-W-88 на WS-1 без отклонений"]}
+      - at: "2026-09-23T12:16:00+03:00"
+        label: "версия 3 после позднего журнала"
+        expect:
+          - {id: S05-11, what: "v3 = 6", subject: risk_scope/RS-01, filter: {version: 3}, field: size, op: eq, value: 6}
+          - {id: S05-12, what: "состав v3", subject: risk_scope/RS-01, filter: {version: 3}, field: items, op: set_eq, value: [F-015, F-017, F-019, F-021, F-023, F-025]}
+          - {id: S05-13, what: "цвета v3", subject: risk_scope/RS-01, filter: {version: 3}, field: groups_count, op: eq, value: {confirmed: 1, suspected: 4, unknown: 1, excluded: 28}}
+          - {id: S05-14, what: "пометка о пересчёте из-за позднего события", subject: risk_scope/RS-01, filter: {version: 3}, field: recalculated_due_to, op: eq, value: EV-WS2-0412}
+          - {id: S05-15, what: "исключены 7 сварок ИС-2 до Вт 10:20", subject: risk_scope/RS-01, filter: {version: 3}, field: newly_excluded, op: set_eq, value: [F-008, F-010, F-012, F-014, F-016, F-221, F-222]}
+      - at: "2026-09-23T12:30:00+03:00"
+        label: "сборка Ф-015 приостановлена блоком по качеству (сверка 26.09: пауза в данных — 12:25, утверждение S05-16 перенесено из точки 12:16)"
+        expect:
+          - {id: S05-16, what: "сборка Ф-015 приостановлена — незавершённая операция", subject: metric/O-9, field: items, op: contains, value: [{item: F-015, operation: assembly, reason: quality_block}]}
+          - {id: S05-48, what: "сверка 26.09, А-12 — О-9, корзина «приостановлено по качеству» (новая, решение 26.09): сборка Ф-015 (AS-015-1) остановлена в 12:25 с причиной quality_block — изделие придержано по кругу RS-01; это не «зависло» (сколько бы ни стояло) и не «прервано»; «зависших» — 0", subject: metric/O-9, filter: {at: "2026-09-23T12:30:00+03:00"}, field: {quality_hold: [AS-015-1], stuck: [], aborted: []}, op: eq, value: true}
+      - at: "2026-09-23T13:31:00+03:00"
+        label: "таблица общих факторов"
+        expect:
+          - {id: S05-17, what: "НС-02 (Ф-021, С-03): два дефекта в одном заключении", subject: nc/NC-02, field: defects, op: set_eq, value: [{zone: U5, type: burn_through, side: root}, {zone: U6, type: porosity}]}
+          - {id: S05-18, what: "НС-03 (Ф-023, С-02): прожог в корне У3", subject: nc/NC-03, field: defects, op: set_eq, value: [{zone: U3, type: burn_through, side: root}]}
+          - {id: S05-19, what: "общие факторы: источник 3/3, сварщики разные", subject: hypothesis/NC-01, filter: {version: 3}, field: common_factors, op: eq, value: {source: "3/3", program: "3/3", current_out_of_setpoint: "3/3", welders: [WLD-02, WLD-03], manual_action_near_defect: "1/3"}}
+          - {id: S05-20, what: "гипотеза про сварщика слабеет, про источник — сильная", subject: hypothesis/NC-01, field: strength_history, op: eq, value: {equipment: [not_assessable, strong, strong], operator_procedure: [possible, possible, weak]}}
+          - {id: S05-21, what: "каждая версия гипотез хранит причину пересмотра", subject: hypothesis/NC-01, field: revised_due_to, op: eq, value: {v2: EV-WS2-0412, v3: [NC-02, NC-03]}}
+          - {id: S05-49, what: "сверка 26.09, А-5 — О-5 в 13:31: НС-01, НС-02, НС-03 — «есть только гипотеза» (версия про ИС-2 сильная, S05-20), в «причина подтверждена» их нет; «разбор не начат» — 0: гипотезы система пишет сразу при подтверждении (S03-07)", subject: metric/O-5, filter: {at: "2026-09-23T13:31:00+03:00"}, field: {cause_confirmed: [], hypothesis_only: [NC-01, NC-02, NC-03], undetermined: [], not_needed_by_policy: [], not_started: [], confirmed_category: {}}, op: eq, value: true}
+          - {id: S05-50, what: "сверка 26.09, А-7 — О-6 в 13:31: «оборудование × гипотеза» — 3 (НС-01…03), «оборудование × подтверждено» — 0; весь столбец «подтверждено» пока пуст", subject: metric/O-6, filter: {at: "2026-09-23T13:31:00+03:00"}, field: {hypothesis: {equipment: [NC-01, NC-02, NC-03]}, confirmed: {incoming: 0, equipment: 0, operator_procedure: 0, handling: 0, undetermined: 0}}, op: eq, value: true}
+      - at: "2026-09-23T16:45:00+03:00"
+        label: "решение по инциденту и причина"
+        expect:
+          - {id: S05-22, what: "итог круга: 6 подтверждено, 28 исключено, сокращение 82 %", subject: risk_scope/RS-01, field: {final_confirmed: 6, final_excluded: 28, reduction_pct: 82, status: closed}, op: eq, value: true}
+          - {id: S05-23, what: "групповое несоответствие на 6 изделий", subject: nc/NC-G1, field: items, op: set_eq, value: [F-015, F-017, F-019, F-021, F-023, F-025]}
+          - {id: S05-24, what: "решение — переделка ×6, подписала комиссия; решение пришло каждому из шести изделий: Ф-015 — в сборке (блок «Сборка» прерван, дальше возврат в сварку), пятерым — в сварке", subject: nc/NC-G1, field: disposition, op: eq, value: {type: rework, count: 6, signers: [TECH-01, QC-HEAD-01, CHW-01], delivered_to_items: {F-015: BA, F-017: BW, F-019: BW, F-021: BW, F-023: BW, F-025: BW}}}
+          - {id: S05-25, what: "в 1С «перевод в брак (переделка)» по 6 изделиям, подтверждено", subject: erp/postings, filter: {type: scrap_transfer_rework, at: "2026-09-23T15:30:00+03:00"}, field: {items_count: 6, ack_status: acked}, op: eq, value: true}
+          - {id: S05-26, what: "Ф-015 возвращён в сварочный цех — перемещение в 1С", subject: erp/postings, filter: {type: transfer, item: F-015, route: AC->WC}, field: ack_status, op: eq, value: acked}
+          - {id: S05-27, what: "причина подтверждена: оборудование ИС-2, проверено образцом КО-7", subject: nc/NC-G1, field: cause, op: eq, value: {category: equipment, equipment: WS-2, status: confirmed, verified_by: "контрольный образец CS-07 + журнал", signers: [TECH-01, CHW-01]}}
+          - {id: S05-28, what: "та же причина у НС-01…03", subject: nc/NC-01, field: cause.category, op: eq, value: equipment}
+          - {id: S05-29, what: "О-2 = 6 изделий из инцидента", subject: metric/O-2, filter: {incident: RS-01}, field: items, op: eq, value: 6}
+          - {id: S05-30, what: "подтверждённых дефектов сварки — 4 на 3 изделиях", subject: metric/O-3, filter: {incident: RS-01}, field: {confirmed_defects: 4, items_with_defects: 3}, op: eq, value: true}
+          - {id: S05-31, what: "у сварщиков подтверждённых ошибок 0", subject: metric/O-10, field: confirmed_errors, op: eq, value: {WLD-02: 0, WLD-03: 0}}
+          - {id: S05-32, what: "сопоставимых сварок у каждого ≥ 10", subject: metric/O-10, field: comparable_runs, op: gte, value: {WLD-02: 10, WLD-03: 10}}
+          - {id: S05-33, what: "простой ИС-2 с причиной «остановка по качеству»", subject: metric/D-2, filter: {equipment: WS-2}, field: reason, op: eq, value: quality_hold}
+          - {id: S05-34, what: "задержка обнаружения: все до сборки", subject: metric/D-4, field: by_nc, op: eq, value: {NC-01: "5 мин", NC-03: "≈ 4 ч", NC-02: "≈ 16 ч"}}
+          - {id: S05-35, what: "статус инцидента: изделия решены, расследование открыто", subject: risk_scope/RS-01, field: incident_status, op: eq, value: {items: decided, investigation: open}}
+          - {id: S05-36, what: "акт о браке на 6 изделий собран из истории: состав, основание и подписи взяты из записей; ручного ввода 0", subject: document/defect_act@NC-G1, field: {items: [F-015, F-017, F-019, F-021, F-023, F-025], basis_refs: [nc/NC-G1, risk_scope/RS-01, decision/S05-disposition-rework], signers_from_records: [TECH-01, QC-HEAD-01, CHW-01], manual_input_fields: 0}, op: eq, value: true}
+          - {id: S05-37, what: "дефекты по линиям: все 4 подтверждённых дефекта сварки инцидента — на линии 2, на линии 1 — 0", subject: metric/O-4, filter: {cut: line, station: welding, incident: RS-01}, field: confirmed_defects_by_line, op: eq, value: {L-FL-1: 0, L-FL-2: 4}}
+          - {id: S05-39, what: "время разбора [П, новый показатель Д-5]: по НС-01 от сигнала (Ср 11:06) до решения по изделию (15:30) — 4 ч 24 мин, до подтверждённой причины (16:20) — 5 ч 14 мин", subject: metric/D-5, filter: {nc: NC-01}, field: {to_disposition_min: 264, to_confirmed_cause_min: 314}, op: eq, value: true, note: "Д-5 [П] — в analytics-catalog.md §3 (с 26.09); плитка «б» — S05-44"}
+          - {id: S05-40, what: "v0.3.1: RS-01 v1 — «не выдавать в работу» в MES по 33 изделиям в Ср 11:10 (Ф-017 уже с 11:06 — второго сообщения нет)", subject: mes/postings, filter: {type: hold, basis: "risk_scope:RS-01"}, field: {count: 33, at: "2026-09-23T11:10:00+03:00"}, op: eq, value: true}
+          - {id: S05-41, what: "сужение круга снимает удержание человеком: «можно выдавать» по 21 изделию в 11:45 и по 7 в 12:15 — каждое по шагу Т-01; у серого Ф-019 удержание остаётся", subject: mes/postings, filter: {type: release, action: risk_scope.narrowed}, field: {"11:45": {count: 21, step: S05/v2}, "12:15": {count: 7, step: S05/v3, not_released: [F-019]}}, op: eq, value: true}
+          - {id: S05-42, what: "решение комиссии 15:30 «переделка»: «можно выдавать» по шести изделиям — по одному сообщению на изделие (у Ф-019 снято сразу три основания: сигнал, RS-01, RS-02)", subject: mes/postings, filter: {type: release, step: S05/disposition-rework}, field: items, op: set_eq, value: [F-015, F-017, F-019, F-021, F-023, F-025]}
+          - {id: S05-47, what: "«тающая область»: у каждой из 28 исключённых деталей RS-01 своё «почему?» — ссылки на её записи: 21 сварка на ИС-1 — кадр КТ-3 этой сварки и сводки журнала ИС-1 за неё; 7 сварок ИС-2 до Вт 10:20 — кадр КТ-3 и сводки журнала ИС-2 за неё (пришли опоздавшей пачкой); деталей без своих оснований — 0", subject: risk_scope/RS-01, field: {excluded_v2: [F-007, F-009, F-011, F-013, F-018, F-020, F-022, F-024, F-026, F-027, F-028, F-029, F-030, F-031, F-032, F-033, F-034, F-035, F-036, F-223, F-224], excluded_v3: [F-008, F-010, F-012, F-014, F-016, F-221, F-222], items_with_own_basis: 28, items_without_own_basis: 0}, op: eq, value: true}
+          - {id: S05-51, what: "сверка 26.09, А-2 — О-2 раздельно: производственное — 6 (НС-Г1, круг RS-01); входной брак — Ф-019 (НС-04). Ф-019 стоит в обеих колонках, в итоге О-2 он один: итог 6, а не 7 — колонки в сумме больше итога, это подписано на экране. Кольцо К-105 (НС-05, на складе) — компонент, идёт в Р-4, а не в О-2", subject: metric/O-2, filter: {window: main_story, at: "2026-09-23T16:45:00+03:00"}, field: {production: [F-015, F-017, F-019, F-021, F-023, F-025], incoming: [F-019], total: 6, components_to_R-4: [R-105]}, op: eq, value: true}
+          - {id: S05-52, what: "сверка 26.09, А-3 — лесенка О-3 по RS-01: ④ изделий с подтверждённым дефектом сварки — 3 (Ф-017, Ф-021, Ф-023) при О-2 = 6; ④ ≤ О-2, это разные показатели. Разница — Ф-015, Ф-019, Ф-025: несоответствие по нарушению режима специального процесса, дефект сварки не найден (у Ф-015 и Ф-025 ток вне уставки по журналу, у Ф-019 журнал за сварку потерян; пора Ф-019 — входной брак НС-04, в лесенку RS-01 не идёт). Подпись на экране — «несоответствие без найденного дефекта»", subject: metric/O-3, filter: {incident: RS-01}, field: {confirmed_defects: 4, items_with_defects: 3, items_with_defects_list: [F-017, F-021, F-023], O-2: 6, nc_without_found_defect: [F-015, F-019, F-025]}, op: eq, value: true}
+          - {id: S05-53, what: "сверка 26.09, А-5 — О-5 в 16:45: «причина подтверждена» — НС-01…НС-03 (оборудование ИС-2) и НС-04, НС-05 (входной брак); «только гипотеза» — 0. НС-Г1 — решение по группе изделий, отдельным случаем не считается (так же НС-14Г в S14-22)", subject: metric/O-5, filter: {at: "2026-09-23T16:45:00+03:00"}, field: {cause_confirmed: [NC-01, NC-02, NC-03, NC-04, NC-05], hypothesis_only: [], undetermined: [], not_needed_by_policy: [], not_started: [], confirmed_category: {NC-01: equipment, NC-02: equipment, NC-03: equipment, NC-04: incoming, NC-05: incoming}}, op: eq, value: true}
+          - {id: S05-54, what: "сверка 26.09, А-7 — О-6 в 16:45: «оборудование × подтверждено» — 3 (НС-01…03, в 13:31 было 0); из столбца «гипотеза» они ушли, прежние версии гипотез остались в журнале; «входной брак × подтверждено» — 2 (S02-12)", subject: metric/O-6, filter: {at: "2026-09-23T16:45:00+03:00"}, field: {hypothesis: {equipment: []}, confirmed: {incoming: 2, equipment: 3, operator_procedure: 0, handling: 0, undetermined: 0}}, op: eq, value: true}
+          - {id: S05-55, what: "сверка 26.09, А-12 — О-9 по шести изделиям RS-01 в 16:45: сборка Ф-015 — в корзине «прервано» (итог «прервана» в 15:55 по решению комиссии, повтора сборки ещё нет); «приостановлено по качеству» и «зависло» — пусто", subject: metric/O-9, filter: {items: [F-015, F-017, F-019, F-021, F-023, F-025], at: "2026-09-23T16:45:00+03:00"}, field: {quality_hold: [], stuck: [], aborted: [AS-015-1]}, op: eq, value: true}
+      - at: "2026-09-24T16:30:00+03:00"
+        label: "стол руководителя: «быстрее нашли — сохранили основания — не повторили брак» (период — главная история, Чт 17.09 08:00 – Чт 24.09 16:30)"
+        expect:
+          - {id: S05-43, what: "плитка «а» — задержка обнаружения (Д-4, «определено системой»): от завершения операции до первого наблюдения с признаками — НС-01 5 мин, НС-06 60 мин, НС-03 3 ч 55 мин, НС-02 16 ч 25 мин; медиана ≈ 2 ч 28 мин (147,5); входной брак (НС-04, НС-05) — отдельно: места возникновения на участке нет", subject: metric/D-4, filter: {window: main_story, tile: manager_desk}, field: {by_nc_min: {NC-01: 5, NC-02: 985, NC-03: 235, NC-06: 60}, median_min: 147.5, max_min: 985, incoming_separately: [NC-04, NC-05]}, op: eq, value: true}
+          - {id: S05-44, what: "плитка «б» — время разбора (Д-5 [П], «определено системой»): от сигнала до решения по изделию — медиана 2 ч 4 мин; до подтверждённой причины — медиана 3 ч 9 мин; без подтверждённой причины к концу истории — НС-06 (поры в новом шве Ф-021)", subject: metric/D-5, filter: {window: main_story, tile: manager_desk}, field: {by_nc: {NC-01: {to_disposition_min: 264, to_confirmed_cause_min: 314}, NC-02: {to_disposition_min: 159, to_confirmed_cause_min: 209}, NC-03: {to_disposition_min: 139, to_confirmed_cause_min: 189}, NC-04: {to_disposition_min: 109, to_confirmed_cause_min: 119}, NC-05: {to_disposition_min: 29, to_confirmed_cause_min: 24}, NC-06: {to_disposition_min: 59, to_confirmed_cause_min: null}}, median_to_disposition_min: 124.0, median_to_confirmed_cause_min: 189, without_confirmed_cause: [NC-06]}, op: eq, value: true}
+          - {id: S05-45, what: "плитка «в» — доля выводов с полными основаниями: 165 из 165 (100 %) — у каждого решения по сигналу, на ЗТ, по кругу, по изделию, по причине и мере есть ссылки, и все ведут к записям потока (прямо или через прежние решения)", subject: metric/N-7, filter: {window: main_story, tile: manager_desk}, field: {conclusions: 165, with_full_basis: 165, share_pct: 100.0}, op: eq, value: true}
+          - {id: S05-46, what: "плитка «г» — повторный брак после меры: одна мера с окном наблюдения — «улучшить обнаружение» по кольцам Поставщика-3 (S02): окно — 3 следующие партии, пришло 0, повторов 0, окно не закрыто («назначено» ≠ «результативно»); по RS-01 причина подтверждена, мера ещё не назначена (расследование открыто)", subject: metric/N-3, filter: {window: main_story, tile: manager_desk}, field: {measures: [{measure: S02/capa, window_unit: lot, window_needed: 3, observed: 0, repeats: 0, closed: false}], causes_without_measure: [cause/RS-01]}, op: eq, value: true}
+          - {id: S05-56, what: "сверка 26.09, А-1 — О-1 за главную историю: проверено 51 фланец (в окне есть хотя бы один понятный результат контроля); проверены по всему маршруту (КТ-2, КТ-3, КТ-4, стенд, окончательный) — 12, все 12 выпущены; только «оценка невозможна» или «нет данных» — 0. Ф-025 — среди проверенных (после пересъёмки), его кадр с бликом — один раз в корзине «оценка невозможна» (S04-07)", subject: metric/O-1, filter: {window: main_story}, field: {items_inspected: 51, full_route: 12, only_unable_or_no_data: 0, unable_to_assess_observations: [F-025]}, op: eq, value: true}
+          - {id: S05-57, what: "сверка 26.09, А-5 — О-5 в конце истории: «причина подтверждена» — НС-01…НС-05; «есть только гипотеза» — НС-06 (поры в новом шве Ф-021); «разбор не начат» — 0; доля установленных — 5 из 6", subject: metric/O-5, filter: {window: main_story}, field: {cause_confirmed: [NC-01, NC-02, NC-03, NC-04, NC-05], hypothesis_only: [NC-06], undetermined: [], not_needed_by_policy: [], not_started: [], confirmed_category: {NC-01: equipment, NC-02: equipment, NC-03: equipment, NC-04: incoming, NC-05: incoming}}, op: eq, value: true}
+          - {id: S05-58, what: "сверка 26.09, А-9 — О-7 сварка за главную историю («вычислено системой», «активная работа»): первые выполнения — 40, медиана 40 мин, 90-й процентиль 45; по участку: пост 1 — 23 (40 / 40), пост 2 — 17 (40 / 45); по исполнителю: С-02 — 22 (40 / 45), С-03 — 18 (40 / 45); по смене: А — 22, Б — 18 (обе 40 / 45). Переварки Чт 24.09 — отдельной строкой «повторы»: 5 (40 / 40)", subject: metric/O-7, filter: {operation: W2, window: main_story}, field: {labels: {source: computed, meaning: active}, first_runs: {all: {runs: 40, median_min: 40, p90_min: 45}, by_station: {ST-WC-P1: {runs: 23, median_min: 40, p90_min: 40}, ST-WC-P2: {runs: 17, median_min: 40, p90_min: 45}}, by_operator: {WLD-02: {runs: 22, median_min: 40, p90_min: 45}, WLD-03: {runs: 18, median_min: 40, p90_min: 45}}, by_shift: {A: {runs: 22, median_min: 40, p90_min: 45}, B: {runs: 18, median_min: 40, p90_min: 45}}}, repeats: {runs: 5, median_min: 40, p90_min: 40}}, op: eq, value: true}
+          - {id: S05-59, what: "сверка 26.09, А-14 — О-10, срез «станок» по сопоставимой сварке в окне инцидента (после Ф-006, Пн 14:55 — до создания круга, Ср 11:10): ИС-2 — сварок с подтверждённым дефектом 3 из 13 (4 дефекта), ИС-1 — 0 из 21. Люди: сопоставимых сварок у С-02 — 16, у С-03 — 18, подтверждённых ошибок — 0 у обоих. Дефекты — в столбце аппарата, а не в строке человека", subject: metric/O-10, filter: {cut: equipment, incident: RS-01}, field: {by_equipment: {WS-1: {welds: 21, welds_with_confirmed_defects: 0, confirmed_defects: 0}, WS-2: {welds: 13, welds_with_confirmed_defects: 3, confirmed_defects: 4}}, comparable_runs_by_person: {WLD-02: 16, WLD-03: 18}, confirmed_errors_by_person: {WLD-02: 0, WLD-03: 0}}, op: eq, value: true}
+          - {id: S05-60, what: "сверка 26.09, А-19 — происхождение времени стоит в поле, а не только в тексте: у Д-4 и Д-5 time_origin: computed («определено системой»); у О-7 мехобработки MO-001-1 — reported (передано станком, S01-09)", subject: metric/*, filter: {window: main_story, tile: manager_desk}, field: {D-4: {time_origin: computed}, D-5: {time_origin: computed}, O-7@MO-001-1: {time_origin: reported}}, op: eq, value: true}
+          - {id: S05-61, what: "сверка 26.09, А-20 — повторяемость проблемы (Д-6 [П], определение соседей: один вид дефекта на одной операции или одном оборудовании за период): прожог на сварке — 3 (НС-01, НС-02 У5, НС-03), все на ИС-2; поры на сварке — 2 (НС-02 У6 на ИС-2, НС-06 на ИС-1). Рядом — повтор после меры (Н-3): 0 (S05-46). Это два разных показателя", subject: metric/D-6, filter: {window: main_story}, field: {by_operation: {burn_through@W2: 3, porosity@W2: 2}, by_equipment: {burn_through@WS-2: 3, porosity@WS-1: 1, porosity@WS-2: 1}, recurring: [burn_through@W2, burn_through@WS-2, porosity@W2]}, op: eq, value: true}
+    must_not:
+      - {id: S05-N1, what: "ни одного исключения без основания", subject: risk_scope/RS-01, field: exclusions_without_basis, op: eq, value: 0}
+      - {id: S05-N2, what: "«под подозрением» не в браке", subject: metric/O-2, field: counts_suspected, op: eq, value: false}
+      - {id: S05-N3, what: "контролёр не может сузить круг", subject: audit/critical_actions, filter: {actor: QC-01, action: risk_scope.narrowed}, field: result, op: eq, value: denied}
+      - {id: S05-N4, what: "система сама не назначает решение по изделию", subject: nc/NC-G1, field: dispositions_by_system, op: eq, value: 0}
+      - {id: S05-N5, what: "в 1С ничего при создании и сужении круга", subject: erp/postings, filter: {between: ["2026-09-23T11:10:00+03:00", "2026-09-23T15:29:00+03:00"], incident: RS-01}, field: count, op: eq, value: 0}
+      - {id: S05-N6, what: "«ошибка исполнителя» не поставлена", subject: metric/O-6, filter: {row: operator_procedure, column: confirmed}, field: count, op: delta, value: 0, baseline: "2026-09-23T11:04:00+03:00"}
+      - {id: S05-N7, what: "система сама удержание не снимает: «можно выдавать» без шага человека — 0", subject: mes/postings, filter: {type: release}, field: without_human_step, op: eq, value: 0}
+
+  # ---------------------------------------------------------------------------
+  S06:
+    title: "Повторная доставка — дубли не считаются дважды"
+    case: {s4_2: ["повторная доставка"], s5_1: ["Повтор"], other: ["§4.5 связывание наблюдений", "§5.2 дефекты ≠ изделия"]}
+    run: main_story   # можно отдельно: повторно отправить ту же пачку и сравнить снимки показателей
+    checkpoints:
+      - at: "2026-09-23T12:07:00+03:00"
+        label: "после пачки ИС-2"
+        expect:
+          - {id: S06-01, what: "у Ф-017 один дефект с двумя наблюдениями (два ракурса)", subject: item/F-017, field: {defects_at_U2: 1, observations_of_defect: 2}, op: eq, value: true}
+          - {id: S06-02, what: "повтор сообщения камеры — «повтор, состояние не изменилось»", subject: ingest, filter: {source: CAM-WS-1, at: "2026-09-23T11:05:40+03:00"}, field: outcome, op: eq, value: duplicate}
+          - {id: S06-03, what: "из пачки ИС-2 отсеяно 312 повторов, принято 928", subject: ingest, filter: {source: GW-2, batch_received_at: "2026-09-23T12:05:00+03:00"}, field: {received: 1240, duplicates: 312, accepted: 928}, op: eq, value: true}
+          - {id: S06-04, what: "Н-5: дублей отсеяно +313", subject: metric/N-5, field: duplicates_filtered, op: delta, value: 313, baseline: "2026-09-23T11:04:00+03:00"}
+      - at: "standalone"
+        label: "отдельный прогон: повторная отправка той же пачки"
+        expect:
+          - {id: S06-05, what: "все показатели, кроме счётчика дублей, не изменились", subject: metric/*, field: all_except_N-5.duplicates_filtered, op: unchanged, baseline: "до повторной отправки"}
+          - {id: S06-06, what: "тот же номер, другое содержимое → конфликт в журнал критических действий", subject: audit/critical_actions, filter: {code: E_ID_CONFLICT}, field: count, op: delta, value: 1, baseline: "до повторной отправки"}
+    must_not:
+      - {id: S06-N1, what: "число уникальных дефектов не растёт от дублей", subject: metric/O-3, field: unique_defects, op: delta, value: 0, baseline: "до повторной отправки"}
+      - {id: S06-N2, what: "дубль события — не повтор операции", subject: metric/O-8, field: repeated_runs, op: delta, value: 0, baseline: "до повторной отправки"}
+      - {id: S06-N3, what: "нет второго сигнала по Ф-017", subject: item/F-017, field: signals_at_U2, op: eq, value: 1}
+
+  # ---------------------------------------------------------------------------
+  S07:
+    title: "Позднее событие — опоздавший журнал ИС-2 пересматривает вывод"
+    case: {s4_2: ["поздняя доставка"], s5_1: ["Задержка"], other: ["§4.6 задержки и порядок", "§5.2 обновление после позднего события"]}
+    run: main_story
+    checkpoints:
+      - at: "2026-09-22T10:06:00+03:00"
+        label: "связь пропала"
+        expect:
+          - {id: S07-01, what: "через 15 минут — «нет данных от ИС-2», уведомление администратору", subject: source/WS-2, field: {status: no_connection, alert_to: ADM-01, alert_at: "2026-09-22T10:05:00+03:00"}, op: eq, value: true}
+          - {id: S07-10, what: "«Сбой оборудования» (узел EQ3): вместе с задачей администратору — вопрос мастеру М-02 «остановить пост ИС-2?»; ответа нет, пост не остановлен (это вопрос расследования)", subject: source/WS-2, field: {master_question: {to: MST-02, at: "2026-09-22T10:05:00+03:00", text: "остановить пост ИС-2?", answer: none}, stopped: false}, op: eq, value: true}
+      - at: "2026-09-22T23:00:00+03:00"
+        label: "конец вторника: журнала ИС-2 нет"
+        expect:
+          - {id: S07-11, what: "у сварок ИС-2 без журнала итог режима — «оценка режима невозможна», а не «в норме»", subject: run/*, filter: {runs: [SV-015-1, SV-019-1, SV-021-1], at: "2026-09-22T23:00:00+03:00"}, field: mode_assessment, op: eq, value: unable_to_assess}
+      - at: "2026-09-23T12:10:00+03:00"
+        label: "после опоздавшей пачки"
+        expect:
+          - {id: S07-02, what: "ключевая запись встала на своё время", subject: event/EV-WS2-0412, field: {occurred_at: "2026-09-22T10:20:14+03:00", received_at: "2026-09-23T12:05:07+03:00", late: true, current_a: 176, run: SV-015-1}, op: eq, value: true}
+          - {id: S07-03, what: "в истории Ф-017 журнал ИС-2 стоит раньше наблюдения камеры", subject: item/F-017, field: timeline_order, op: before, value: [machine_parameters@10:42, inspection@11:05]}
+          - {id: S07-04, what: "сигналы «нарушение режима» по пяти сваркам со временем события", subject: run/*, field: out_of_setpoint_runs, op: set_eq, value: [SV-015-1, SV-021-1, SV-023-1, SV-025-1, SV-017-1]}
+          - {id: S07-05, what: "гипотезы НС-01 — новая версия с пометкой, старая сохранена", subject: hypothesis/NC-01, field: {versions: 2, v2_revised_due_to: EV-WS2-0412, v1_visible: true}, op: eq, value: true}
+          - {id: S07-06, what: "на подписанной ЗТ-3 Ф-015 (итог «годно при неполных данных») — метка «принято до новых данных — пересмотрите» (decision.review_flagged [П])", subject: gate/ZT-3/F-015, field: review_flag, op: eq, value: {event: decision.review_flagged, original_decision: accepted_incomplete_data, label: "принято до новых данных — пересмотрите", due_to: EV-WS2-0412, task_to: QC-01}}
+          - {id: S07-07, what: "показатели прошлых дней пересчитаны с пометкой", subject: metric/runs_out_of_setpoint, field: by_day, op: eq, value: {"2026-09-22": {before: 0, after: 2}, "2026-09-23": {before: 0, after: 3}, recalculated_due_to: EV-WS2-0412}}
+          - {id: S07-08, what: "Н-5: опоздавших 928, наибольшая задержка ≈ 26 ч", subject: metric/N-5, field: {late_events: 928, max_delay_h_gte: 26}, op: eq, value: true}
+          - {id: S07-14, what: "сверка 26.09, А-17 — О-11, журнал изменений показателя «сварки вне режима»: за Вт 22.09 0 → 2, за Ср 23.09 0 → 3 — из-за опоздавшей записи EV-WS2-0412; пересчитала система в 12:05 (время приёма пачки); совпадает с S07-07", subject: metric/O-11, filter: {metric: runs_out_of_setpoint}, field: {metric: runs_out_of_setpoint, by_day: {"2026-09-22": {before: 0, after: 2}, "2026-09-23": {before: 0, after: 3}}, due_to: EV-WS2-0412, by: system, at: "2026-09-23T12:05:00+03:00"}, op: eq, value: true}
+      - at: "2026-09-23T14:10:00+03:00"
+        label: "пересмотр человеком"
+        expect:
+          - {id: S07-09, what: "пересмотр ЗТ-3 — новая запись ОТК-1 (decision.review_completed [П]) с итогом «отозвано»: блок изделия, изделие в инциденте RS-01; исходная подпись сохранена", subject: gate/ZT-3/F-015, field: {original_decision_kept: true, review_record_author: QC-01, review_event: decision.review_completed, outcome: revoked, incident: RS-01}, op: eq, value: true}
+      - at: "2026-09-24T16:30:00+03:00"
+        label: "конец главной истории: нормы шагов и карта дефицита данных"
+        expect:
+          - {id: S07-12, what: "нормы шагов (process/step-norms.yaml): за всю главную историю одна задержка — ЗТ-3 по Ф-015 во вторник ждала 120 мин при сроке 60 (журнала ИС-2 нет, итог «годно при неполных данных»); эскалация по ней — напоминание ОТК-1 в 14:00, мастеру М-02 в 14:30; до начальника ОТК не дошло: подпись в 15:30 ровно на пороге. Ещё 6 раз сработало только напоминание контролёру (ожидание 30–60 мин, в сроке): ЗТ-1 трёх партий в Чт 17.09, ЗТ-3 Ф-001…Ф-003 в Пн 21.09, ЗТ-6 Ф-001 и ЗТ-5 Ф-010 в Ср 23.09", subject: norms/main_story, filter: {window: main_story}, field: norm_delays, op: eq, value: {delays: [{step: W5, object: F-015, presentation_no: 1, value: 120, unit: min}], escalations: {"K3@2026-09-23T10:00:00+03:00": {levels: {reminder: "2026-09-23T10:00:00+03:00"}, closed_at: "2026-09-23T10:15:00+03:00"}, "T2@2026-09-23T12:15:00+03:00": {levels: {reminder: "2026-09-23T12:15:00+03:00"}, closed_at: "2026-09-23T12:30:00+03:00"}, "V3@2026-09-17T10:32:00+03:00": {levels: {reminder: "2026-09-17T10:32:00+03:00"}, closed_at: "2026-09-17T10:42:00+03:00"}, "V3@2026-09-17T12:13:00+03:00": {levels: {reminder: "2026-09-17T12:13:00+03:00"}, closed_at: "2026-09-17T12:19:00+03:00"}, "V3@2026-09-17T13:02:00+03:00": {levels: {reminder: "2026-09-17T13:02:00+03:00"}, closed_at: "2026-09-17T13:15:00+03:00"}, "W5@2026-09-21T13:30:00+03:00": {levels: {reminder: "2026-09-21T13:30:00+03:00"}, closed_at: "2026-09-21T14:40:00+03:00"}, "W5@2026-09-22T14:00:00+03:00": {levels: {reminder: "2026-09-22T14:00:00+03:00", master: "2026-09-22T14:30:00+03:00"}, closed_at: "2026-09-22T15:30:00+03:00"}}}}
+          - {id: S07-13, what: "карта дефицита данных (Н-6 [П], главная история и S14): первое место — журнал режима аппарата: мешал 4 раза (приёмка ЗТ-3 Ф-015, сужение круга 13 → 6, серый Ф-019, причина НС-01), цена — 12,83 изделие-часа, 1 лишнее решение, причина позже на 0,95 ч; закрывает ступень 3 — журнал аппарата онлайн. Дальше: техника сварки (S14), выборочный рентген колец, качество кадра, инструмент на посту, часы источника, номер выполнения; снимок изделия выводу не помешал ни разу", subject: metric/N-6, filter: {runs: [main_story, S13, S14]}, field: {rating: [{rank: 1, gap: GAP-WELD-LOG, hindered: 4, item_hours: 12.83, extra_checks: 1, conclusion_delay_h: 0.95, closes_step: 3}, {rank: 2, gap: GAP-TORCH, hindered: 2, item_hours: 5.05, extra_checks: 5, conclusion_delay_h: 0.0, closes_step: 4}, {rank: 3, gap: GAP-RING-SAMPLE, hindered: 1, item_hours: 1.33, extra_checks: 4, conclusion_delay_h: 0.0, closes_step: 4}, {rank: 4, gap: GAP-FRAME-QUALITY, hindered: 1, item_hours: 0.25, extra_checks: 1, conclusion_delay_h: 0.0, closes_step: 4}, {rank: 5, gap: GAP-TOOL, hindered: 1, item_hours: 0.18, extra_checks: 0, conclusion_delay_h: 0.0, closes_step: 1}, {rank: 6, gap: GAP-CLOCK, hindered: 1, item_hours: 0.0, extra_checks: 0, conclusion_delay_h: 0.0, closes_step: 2}, {rank: 7, gap: GAP-RUN-ID, hindered: 1, item_hours: 0.0, extra_checks: 0, conclusion_delay_h: 0.0, closes_step: 2}, {rank: 8, gap: GAP-PHOTO, hindered: 0, item_hours: 0.0, extra_checks: 0, conclusion_delay_h: 0.0, closes_step: 3}]}, op: eq, value: true, note: "разметка случаев — emulator-data/definitions/reference/data-gaps.yaml; цену считает tools/gaps.py"}
+    must_not:
+      - {id: S07-N1, what: "опоздавшие не датированы временем получения", subject: ingest, filter: {batch: GW-2@2026-09-23T12:05}, field: ordered_by_received_at, op: eq, value: false}
+      - {id: S07-N2, what: "подтверждение НС-01 не изменено", subject: nc/NC-01, field: "decisions[0].changed", op: eq, value: false}
+      - {id: S07-N3, what: "ЗТ-3 Ф-015 не отменена автоматически", subject: gate/ZT-3/F-015, field: auto_revoked, op: eq, value: false}
+      - {id: S07-N4, what: "в 1С ничего не отправлено повторно из-за пересчёта", subject: erp/postings, filter: {caused_by: recalculation}, field: count, op: eq, value: 0}
+      - {id: S07-N5, what: "сверка 26.09, А-16 — опоздавшая пачка ИС-2 не изменила О-1, О-2, О-3, О-8, О-10: снимок в 12:04 и в 12:10 один и тот же. Изменились только режим сварок (S07-04, S07-07), версии гипотез (S07-05), круг RS-01 v3 (S05-11) и метка на ЗТ-3 Ф-015 (S07-06)", subject: metric/*, filter: {metrics: [O-1, O-2, O-3, O-8, O-10], window: main_story}, field: snapshot, op: unchanged, baseline: "2026-09-23T12:04:00+03:00", value: {O-1.items: 51, O-2.items: 1, O-3.ladder: {observations: 4, unique_defects: 3, confirmed_defects: 1}, O-8.repeated_runs: 0, O-10.confirmed_errors: 0}}
+
+  # ---------------------------------------------------------------------------
+  S08:
+    title: "Решение контролёра — ложное срабатывание отклонено (Ф-002)"
+    case: {s4_2: ["решение контролёра"], s5_1: ["Решение пользователя"], other: ["§4.5 исходный результат, рассмотрение, итог — раздельно", "§5.2 обновление после отклонения"]}
+    run: main_story   # фон, в 4 минуты не входит
+    checkpoints:
+      - at: "2026-09-22T11:45:00+03:00"
+        label: "после отклонения"
+        expect:
+          - {id: S08-01, what: "исходный сигнал сохранён без изменений", subject: item/F-002, field: signals, op: contains, value: [{checkpoint: CP-ASM, zone: BOLT-7, type: missing_torque_mark, confidence: 0.55, changed: false}]}
+          - {id: S08-02, what: "решение — отдельная запись с автором и причиной", subject: item/F-002, field: decisions, op: contains, value: [{type: signal_rejected, author: QC-02, at: "2026-09-22T11:35:00+03:00", reason: "метка есть, закрыта тенью от шайбы; момент по ключу в норме"}]}
+          - {id: S08-03, what: "ЗТ-4 пройдена с первого предъявления", subject: gate/ZT-4/F-002, field: first_pass, op: eq, value: true}
+          - {id: S08-04, what: "Н-4: ложных тревог КТ-4 +1", subject: metric/N-4, filter: {checkpoint: CP-ASM}, field: false_alarms, op: delta, value: 1, baseline: "2026-09-22T11:19:00+03:00"}
+          - {id: S08-05, what: "кадр помечен кандидатом для настройки модели", subject: item/F-002, field: model_tuning_candidate, op: eq, value: true}
+          - {id: S08-06, what: "рядом с сигналом (Е-80) — удержание по правилу (Е-84): правило R-16 [П], уровень «доп. проверка»", subject: item/F-002, field: holds, op: contains, value: [{event: containment.hold_applied, rule: R-16, level: extra_check, at: "2026-09-22T11:21:00+03:00"}]}
+          - {id: S08-07, what: "отклонение контролёром снимает удержание тем же решением (Е-116): удержание снято в 11:35, автор ОТК-2", subject: item/F-002, field: holds, op: contains, value: [{event: containment.hold_released, by: QC-02, at: "2026-09-22T11:35:00+03:00", with_decision: signal_rejected}]}
+          - {id: S08-08, what: "v0.3.1, MES: «не выдавать в работу» по Ф-002 при удержании R-16 (Вт 11:21), «можно выдавать» — по отклонению ОТК-2 (11:35)", subject: mes/postings, filter: {item: F-002}, field: sequence, op: eq, value: [{type: hold, at: "2026-09-22T11:21:00+03:00"}, {type: release, at: "2026-09-22T11:35:00+03:00", step: S08/reject, by: QC-02}]}
+          - {id: S08-15, what: "сверка 26.09, А-17 — О-11: в журнале Н-4 запись «ложные тревоги КТ-4: 0 → 1, из-за отклонения сигнала Ф-002 (S08/reject), ОТК-2, Вт 11:35»; записи для О-2 нет — отклонение О-2 не меняет", subject: metric/O-11, filter: {metric: N-4, checkpoint: CP-ASM}, field: {metric: N-4, checkpoint: CP-ASM, before: 0, after: 1, due_to: S08/reject, by: QC-02, at: "2026-09-22T11:35:00+03:00", O-2_entry: false}, op: eq, value: true}
+      - at: "2026-09-14T17:00:00+03:00"
+        label: "фон v0.3.1: сигналы по классам автора (фланцы фонового заказа, 09–14.09)"
+        expect:
+          - {id: S08-09, what: "скол 0,8 мм на кромке после станка (КТ-2, Ф-203, Ср 09.09 10:48) → ОТК-1 подтвердил → ЗТ-2 «вернуть на доработку по ТП» → зачистка МО-203-2 → КТ-2 чисто → ЗТ-2 №2 «годно»", subject: item/F-203, field: {signal: {class: chip, zone: EDGE, source: CAM-MO}, decision: signal_confirmed, gates: [{gate: ZT-2, decision: return_for_rework}, {gate: ZT-2, presentation: 2, decision: accept}], rework_run: MO-203-2}, op: eq, value: true}
+          - {id: S08-10, what: "геометрия: КИМ, Ф-219 (Чт 10.09 13:25) — D1 = 320,14 при 320 ± 0,10 → ОТК-1 подтвердил (КИМ с действующей калибровкой, припуск есть) → ЗТ-2 «вернуть на доработку по ТП» → доточка МО-219-2 на ЧПУ → КИМ в допуске → ЗТ-2 №2 «годно»", subject: item/F-219, field: {signal: {class: dimension_out_of_tolerance, char: D1, actual: 320.14}, decision: signal_confirmed, gates: [{gate: ZT-2, decision: return_for_rework}, {gate: ZT-2, presentation: 2, decision: accept}], rework_run: MO-219-2, remeasure: cmm/F-219/after-rework}, op: eq, value: true}
+          - {id: S08-11, what: "«вмятина» при приёме сварочным цехом (Ф-206, Ср 09.09 16:10; источник — перемещение) → ОТК-1 отклонил: след тары на защитной плёнке", subject: item/F-206, field: {signal: {class: dent, source: movement, node: W0S}, decision: signal_rejected, reason_present: true}, op: eq, value: true}
+          - {id: S08-12, what: "«царапина» при приёме сборочным цехом (Ф-213, Пн 14.09 16:10) → ОТК-2 отклонил: под УФ — след СОЖ [ПП]", subject: item/F-213, field: {signal: {class: scratch, source: movement, node: A0S}, decision: signal_rejected, reason_present: true}, op: eq, value: true}
+          - {id: S08-13, what: "аналитика «дефекты по классам автора» (конец главной истории): видны все пять классов — сигналы, подтверждено, отклонено", subject: metric/O-4, filter: {cut: author_class, window: main_story}, field: rows, op: eq, value: {weld: {confirmed_defects: 5}, chip: {signals: 1, confirmed: 1, rejected: 0}, dent: {signals: 1, confirmed: 0, rejected: 1}, scratch: {signals: 1, confirmed: 0, rejected: 1}, geometry: {signals: 1, confirmed: 1, rejected: 0}}}
+          - {id: S08-14, what: "MES по фону: четыре «не выдавать» в момент удержания и четыре «можно выдавать» — по решениям ЗТ-2 «доработка по ТП» (скол, геометрия) и по двум отклонениям (вмятина, царапина)", subject: mes/postings, filter: {items: [F-203, F-219, F-206, F-213]}, field: {holds: 4, releases: 4, release_steps: [ZT-2/F-203, ZT-2/F-219, S08/bg/reject-dent, S08/bg/reject-scratch]}, op: eq, value: true}
+    must_not:
+      - {id: S08-N1, what: "несоответствие не создано; О-2 не изменился", subject: metric/O-2, field: items, op: delta, value: 0, baseline: "2026-09-22T11:19:00+03:00"}
+      - {id: S08-N2, what: "отклонение без причины не принимается", subject: api/decisions, filter: {type: signal_rejected, reason: ""}, field: result, op: eq, value: refused}
+      - {id: S08-N3, what: "фон не трогает главную историю: фоновые сигналы — до Чт 17.09, на фланцах Ф-203, Ф-206, Ф-213, Ф-219; в круги RS-01 и RS-02 они не входят", subject: item/*, filter: {items: [F-203, F-206, F-213, F-219]}, field: {risk_scopes: RS-01+RS-02, signals_from: "2026-09-17T00:00:00+03:00"}, op: eq, value: {in_risk_scopes: 0, signals_from_2026-09-17: 0}}
+      - {id: S08-N4, what: "доработка по ТП после скола и геометрии — без изолятора и без 1С (лёгкий возврат); отклонённые сигналы — не брак (О-2 без изменений)", subject: erp/postings, filter: {items: [F-203, F-206, F-213, F-219]}, field: types, op: not_contains, value: [scrap_transfer_rework, scrap_transfer_writeoff, rework_return_to_production]}
+
+  # ---------------------------------------------------------------------------
+  S09:
+    title: "Подмена записи — обнаружена"
+    case: {s4_2: ["контрольное изменение записи"], s5_1: ["Изменение данных"], other: ["§3.4"]}
+    run: main_story
+    tamper: {at: "2026-09-23T16:30:00+03:00", target: EV-WS2-0412, field: current_a, from: 176, to: 166, method: "прямое изменение в базе в обход программы"}
+    checkpoints:
+      - at: "2026-09-23T16:40:00+03:00"
+        label: "после проверки целостности"
+        expect:
+          - {id: S09-01, what: "нарушение найдено на этой записи", subject: integrity, field: broken_at, op: eq, value: {event: EV-WS2-0412, source: WS-2, occurred_at: "2026-09-22T10:20:14+03:00"}}
+          - {id: S09-02, what: "красная полоса на всех экранах", subject: ui/banner, field: text, op: contains, value: "Нарушение целостности: запись EV-WS2-0412"}
+          - {id: S09-03, what: "запись в журнале критических действий, уведомлены А-01 и НОТК-01", subject: audit/critical_actions, filter: {type: integrity_violation}, field: {count: 1, notified: [ADM-01, QC-HEAD-01]}, op: eq, value: true}
+          - {id: S09-04, what: "исправление через программу — отказ, только новой записью", subject: api/events/EV-WS2-0412, filter: {method: update}, field: result, op: eq, value: {refused: true, hint: "исправление — только новой записью (event.corrected)"}}
+          - {id: S09-05, what: "зависимые выводы помечены «основание под вопросом» [П]", subject: integrity, field: flagged_dependents, op: contains, value: [risk_scope/RS-01@v3, hypothesis/NC-01@v2, nc/NC-G1.cause]}
+      - at: "2026-09-23T17:10:00+03:00"
+        label: "после атак 2 и 3 (волна 2)"
+        expect:
+          - {id: S09-06, what: "атака 2 — «администратор БД» правит заключение РК Ф-019 (пора → «дефектов нет») и пересчитывает цепочку: звенья сходятся, но не сходятся подпись источника и контрольная отметка вне базы → нарушение найдено", subject: integrity, filter: {attack: TAMPER-RECHAIN-RK-0923-07}, field: {broken_at: xr/F-019/RK-0923-07, chain_links_consistent: true, detected_by: [source_signature, external_anchor]}, op: eq, value: true}
+          - {id: S09-07, what: "атака 3 — правка представления «статус Ф-023» («в переделке» → «годно»): сверка с журналом нашла расхождение, представление пересобрано из журнала, журнал не тронут", subject: integrity, filter: {attack: TAMPER-PROJECTION-F-023}, field: {projection: item_status, item: F-023, stored: accepted, rebuilt_from_journal: rework, restored: true, journal_changed: false}, op: eq, value: true}
+          - {id: S09-08, what: "в журнале критических действий три нарушения целостности, по каждому уведомлены А-01 и НОТК-01", subject: audit/critical_actions, filter: {type: integrity_violation, at_to: "2026-09-23T17:10:00+03:00"}, field: {count: 3, notified: [ADM-01, QC-HEAD-01]}, op: eq, value: true}
+          - {id: S09-09, what: "выводы, которые опираются на заключение РК Ф-019, помечены «основание под вопросом»: НС-04, область RS-02, причина «входной брак», основание претензии", subject: integrity, filter: {attack: TAMPER-RECHAIN-RK-0923-07}, field: flagged_dependents, op: contains, value: [nc/NC-04, risk_scope/RS-02, cause/NC-04, claim/LOT-R-117]}
+      - at: "2026-09-24T07:50:00+03:00"
+        label: "разбор подмен"
+        expect:
+          - {id: S09-10, what: "разбор — новая запись НОТК-01 и А-01: подлинная версия та, с которой сходится подпись источника; метки «основание под вопросом» сняты", subject: integrity, field: {resolved_by: [QC-HEAD-01, ADM-01], resolved_at: "2026-09-24T07:45:00+03:00", authentic: {EV-WS2-0412: 176, xr/F-019/RK-0923-07: base_metal_pore}, dependents_flag_removed: true}, op: eq, value: true}
+    must_not:
+      - {id: S09-N1, what: "круг не пересчитан по подменённому значению", subject: risk_scope/RS-01, field: size_after_tamper, op: eq, value: 6}
+      - {id: S09-N2, what: "решения людей и подтверждённые сообщения 1С не отменены автоматически", subject: erp/postings, filter: {caused_by: integrity_violation}, field: count, op: eq, value: 0}
+      - {id: S09-N3, what: "Ф-023 не двинулся по подменённому статусу «годно»: ЗТ и передачи — только по журналу", subject: item/F-023, filter: {between: ["2026-09-23T17:00:00+03:00", "2026-09-24T07:59:00+03:00"]}, field: {gates_passed: 0, moves: 0}, op: eq, value: true}
+      - {id: S09-N4, what: "до разбора ни одна ЗТ по изделиям с затронутыми записями (Ф-015, Ф-019) не подписана", subject: gate/*, filter: {items: [F-015, F-019], between: ["2026-09-23T16:30:00+03:00", "2026-09-24T07:45:00+03:00"]}, field: passed, op: eq, value: 0}
+      - {id: S09-N5, what: "претензия поставщику и «возврат поставщику» в 1С не отменены из-за подменённого заключения", subject: erp/postings, filter: {type: return_to_supplier}, field: cancelled, op: eq, value: false}
+
+  # ---------------------------------------------------------------------------
+  S10A:
+    title: "Переделка шва — новое выполнение операции; переделка помогает не всем"
+    case: {other: ["§4.3 повторная обработка", "§4.6 новый ID повторного выполнения", "§5.2 повторные операции"]}
+    run: main_story
+    checkpoints:
+      - at: "2026-09-24T16:30:00+03:00"
+        label: "конец главной истории"
+        expect:
+          - {id: S10A-01, what: "переварки — новые выполнения со ссылкой на прежние", subject: run/*, filter: {date: "2026-09-24", operation: welding}, field: rework_links, op: set_eq, value: {SV-017-2: SV-017-1, SV-023-2: SV-023-1, SV-025-2: SV-025-1, SV-015-2: SV-015-1, SV-021-2: SV-021-1}}
+          - {id: S10A-02, what: "переварка на ИС-1, ток в уставке", subject: run/SV-017-2, field: {equipment: WS-1, current_in_setpoint: true}, op: eq, value: true}
+          - {id: S10A-03, what: "счётчик переделок участков шва по ТП после переварки — 1 из 3", subject: item/F-017, field: rework_counter, op: eq, value: {U1: 1, U2: 1, U3: 1, U4: 1, U5: 1, U6: 1, U7: 1, U8: 1, limit: 3}}
+          - {id: S10A-04, what: "у 4 фланцев переделка принята: камера и рентген чистые, ЗТ-3 пройдена повторно; дальше — по маршруту", subject: item/*, filter: {items: [F-015, F-017, F-023, F-025]}, field: {disposition_verified: true, status: in_progress}, op: eq, value: true}
+          - {id: S10A-05, what: "Ф-021 — новый дефект в новом шве, НС-06", subject: nc/NC-06, field: {item: F-021, zone: U5, type: porosity, run: SV-021-2}, op: eq, value: true}
+          - {id: S10A-06, what: "повторная переделка того же участка не назначена без главного сварщика", subject: item/F-021, field: auto_rework_assigned, op: eq, value: false}
+          - {id: S10A-07, what: "новое решение по Ф-021 — списать; прежнее «переделка» сохранено и связано", subject: item/F-021, field: dispositions, op: eq, value: [{type: rework, at: "2026-09-23T15:30:00+03:00"}, {type: scrap, at: "2026-09-24T15:30:00+03:00", signers: [CHW-01, TECH-01], supersedes: rework}]}
+          - {id: S10A-08, what: "итог по шести фланцам инцидента", subject: risk_scope/RS-01, field: items_outcome, op: eq, value: {rework_verified: [F-015, F-017, F-023, F-025], scrapped: [F-021], in_rework: [F-019]}}
+          - {id: S10A-09, what: "в 1С «возврат из брака в производство» ×4 — на повторной ЗТ-3, каждое после своей подписи, подтверждено [П]", subject: erp/postings, filter: {type: rework_return_to_production}, field: {items: [F-015, F-017, F-023, F-025], gate: ZT-3, presentation_no: 2, sent_before_gate_signature: 0, ack_status: acked}, op: eq, value: true}
+          - {id: S10A-10, what: "блокировка Ф-021 и новый дефект НС-06 в 1С НЕ уходят: до нового решения по Ф-021 в 1С ничего", subject: erp/postings, filter: {item: F-021, between: ["2026-09-24T14:35:00+03:00", "2026-09-24T15:29:00+03:00"]}, field: count, op: eq, value: 0}
+          - {id: S10A-11, what: "в 1С «перевод в брак (списание)» по Ф-021, подтверждено", subject: erp/postings, filter: {type: scrap_transfer_writeoff, item: F-021}, field: ack_status, op: eq, value: acked}
+          - {id: S10A-12, what: "О-8: +5 повторных выполнений сварки, +5 изделий с повтором", subject: metric/O-8, field: {repeated_runs: 5, items_with_repeat: 5}, op: delta, value: true, baseline: "2026-09-24T07:59:00+03:00"}
+          - {id: S10A-13, what: "ЗТ-3 не с первого предъявления у 5 изделий; Р-5 +5", subject: metric/D-3, filter: {gate: ZT-3}, field: not_first_pass_items, op: contains, value: [F-015, F-017, F-021, F-023, F-025]}
+          - {id: S10A-14, what: "в паспорте Ф-017 две связанные сварки", subject: item/F-017, field: welding_runs, op: eq, value: [SV-017-1, SV-017-2]}
+          - {id: S10A-15, what: "переварка шла на посту линии 1: с неё пять фланцев идут по линии 1", subject: item/*, filter: {items: [F-015, F-017, F-021, F-023, F-025], from: "2026-09-24T08:00:00+03:00"}, field: line_id, op: eq, value: L-FL-1}
+          - {id: S10A-16, what: "дефекты по линиям за главную историю: линия 2 — 4 (до переделки), линия 1 — 1 (НС-06 в новом шве Ф-021)", subject: metric/O-4, filter: {cut: line, station: welding, window: main_story}, field: confirmed_defects_by_line, op: eq, value: {L-FL-1: 1, L-FL-2: 4}}
+          - {id: S10A-17, what: "перед каждой переваркой — выборка (удаление шва, новое выполнение WL-…, С-03 в среду вечером) и контроль выборки ОТК-1 до заварки (узлы WL1 → WL2 → WLG → WL3)", subject: run/*, filter: {runs: [SV-017-2, SV-023-2, SV-025-2, SV-015-2, SV-021-2]}, field: preceded_by, op: eq, value: {excavation: WL1, excavation_check: {by: QC-01, result: clean}, chief_welder_approval: not_needed_first_rework}}
+          - {id: S10A-18, what: "v0.3.1, MES: новый сигнал по Ф-021 (РК-0924-04) — «не выдавать в работу» в Чт 14:31; после «списать» (15:30) «можно выдавать» не уходит", subject: mes/postings, filter: {item: F-021, after: "2026-09-24T00:00:00+03:00"}, field: sequence, op: eq, value: [{type: hold, at: "2026-09-24T14:31:00+03:00", basis: "signal:xr/F-021/RK-0924-04"}]}
+          - {id: S10A-19, what: "сверка 26.09, А-4 — О-4 по видам дефекта, место обнаружения — сварочный участок (КТ-3 и рентген): прожог — 3 (НС-01 У2, НС-02 У5, НС-03 У3), поры — 2 (НС-02 У6, НС-06 У5). Поры в теле кольца (НС-04, НС-05) — в строке «входной брак», в сварке их нет", subject: metric/O-4, filter: {cut: defect_type, station: welding, window: main_story}, field: {welding_detected: {burn_through: 3, porosity: 2}, incoming_row: {base_metal_pore: 2}}, op: eq, value: true}
+          - {id: S10A-20, what: "сверка 26.09, А-18 — О-2, итог по изделию для шести фланцев инцидента: переделка проверена — 4, в переделке — 1 (Ф-019), списано — 1 (Ф-021). Ф-021 учтён в «списано» один раз, в корзине «переделка» его нет; его переварка SV-021-2 учтена в О-8 (S10A-12)", subject: metric/O-2, filter: {incident: RS-01, cut: item_outcome}, field: {rework_verified: [F-015, F-017, F-023, F-025], in_rework: [F-019], scrapped: [F-021]}, op: eq, value: true}
+    must_not:
+      - {id: S10A-N1, what: "переделка не создаёт новое изделие: О-1 и О-2 не удваиваются", subject: metric/O-2, filter: {incident: RS-01}, field: items, op: eq, value: 6}
+      - {id: S10A-N2, what: "«возврат из брака в производство» не раньше чистого рентгена и подписи повторной ЗТ-3", subject: erp/postings, filter: {type: rework_return_to_production}, field: {sent_before_xray_clean: 0, sent_before_gate_signature: 0}, op: eq, value: true}
+      - {id: S10A-N3, what: "нет второго «перевода в брак (переделка)» по тем же изделиям", subject: erp/postings, filter: {type: scrap_transfer_rework}, field: count, op: eq, value: 1}
+      - {id: S10A-N4, what: "«выпуск годного» по фланцам инцидента в главной истории не уходит: до ЗТ-6 (сборка, испытание, окончательный контроль) они не дошли", subject: erp/postings, filter: {type: release_good, items: [F-015, F-017, F-019, F-021, F-023, F-025]}, field: count, op: eq, value: 0}
+
+  S10B:
+    title: "Лимит переделок участка шва — отдельный прогон на Ф-090"
+    case: {other: ["§4.3 повторная обработка", "лимит переделок из BPMN"]}
+    run: standalone
+    precondition: "У4 фланца Ф-090 уже переделан по ТП 3 раза: SV-090-2, SV-090-3, SV-090-4"
+    checkpoints:
+      - at: "end"
+        label: "после попытки пятого выполнения"
+        expect:
+          - {id: S10B-01, what: "лимит достигнут, запуск заблокирован", subject: item/F-090, field: {event: rework.limit_reached, zone: U4, count: 3, limit: 3, start_of_SV-090-5: blocked}, op: eq, value: true}
+          - {id: S10B-02, what: "запись в журнале критических действий, задача технологу", subject: audit/critical_actions, filter: {item: F-090}, field: count, op: gte, value: 1}
+          - {id: S10B-03, what: "«переделка» сверх лимита — отказ", subject: api/decisions, filter: {item: F-090, type: rework}, field: result, op: eq, value: {refused: true, code: E_REWORK_LIMIT}, note: "проверка движка полномочий соседей; в схеме v0.2 N2 переделку сверх лимита не предлагает, а выбранную — развилка итога WNG вернёт в решение"}
+          - {id: S10B-04, what: "«ремонт» без разрешения на отклонение — отказ", subject: api/decisions, filter: {item: F-090, type: repair, concession: null}, field: result, op: eq, value: {refused: true, code: E_PERMIT_REQUIRED}}
+          - {id: S10B-05, what: "доступны только два варианта", subject: item/F-090, field: allowed_dispositions, op: set_eq, value: [repair_with_concession, scrap]}
+          - {id: S10B-06, what: "перед каждой переделкой У4 — выборка и контроль выборки; второе и третье исправление — согласие главного сварщика отдельной записью (Е-99 [П], узел WLA) после контроля выборки", subject: item/F-090, field: rework_chain, op: eq, value: {SV-090-2: [WL1, WL2, WL3], SV-090-3: [WL1, WL2, rework.chief_welder_approved, WL3], SV-090-4: [WL1, WL2, rework.chief_welder_approved, WL3]}}
+          - {id: S10B-07, what: "попытка четвёртого исправления: выборка и контроль сделаны, заварка остановлена на развилке «какое исправление участка?» (WLG) — лимит", subject: item/F-090, field: {blocked_at: WLG, after: [WL1, WL2], run_blocked: SV-090-5}, op: eq, value: true}
+          - {id: S10B-08, what: "v0.3.1, MES: четыре сигнала — четыре «не выдавать»; три «можно выдавать» — по решениям «переделка» 1–3; после «списать» удержание остаётся", subject: mes/postings, filter: {item: F-090}, field: {holds: 4, releases: 3, release_steps: [S10B/rework-1, S10B/rework-2, S10B/rework-3], held_at_end: true}, op: eq, value: true}
+
+  # ---------------------------------------------------------------------------
+  S11:
+    title: "«Забыли прокладку» — шаг остановлен до брака (Ф-003)"
+    case: {other: ["§4.3 действия: пропуск шага", "OperatorVision: действия и сопоставление с маршрутом"]}
+    run: main_story   # фон, в скринкасте
+    checkpoints:
+      - at: "2026-09-22T12:15:00+03:00"
+        label: "после установки крышки"
+        expect:
+          - {id: S11-01, what: "замеченное действие записано как гипотеза с уверенностью", subject: item/F-003, field: operator_actions_detected, op: contains, value: [{source: OV-ASM, deviation: step_skipped, expected_step: seal_install, confidence: 0.78}]}
+          - {id: S11-02, what: "шаг «установка крышки» остановлен до брака", subject: item/F-003, field: step_blocks, op: contains, value: [{step: cover_install, reason: "нет подтверждения установки уплотнения и предъявления зоны", at: "2026-09-22T11:50:06+03:00"}]}
+          - {id: S11-03, what: "дальше по порядку: уплотнение → зона чистая → ЗТ-СР (скрытые работы) → крышка", subject: item/F-003, field: step_order, op: eq, value: [seal_install, zone_check_uv, zt_sr, cover_install]}
+          - {id: S11-04, what: "сборщик определён по учётной записи терминала", subject: item/F-003, field: operator_identification, op: eq, value: terminal_login}
+          - {id: S11-05, what: "без OperatorVision шаг блокируется по порядку маршрута", subject: item/F-003, field: block_without_vision, op: eq, value: true, note: "проверка варианта с выключенным модулем"}
+          - {id: S11-06, what: "материалы события OperatorVision — только ссылка «видео не передаётся» (MED-OV-EVENT-ONLY): кадра и видео нет, есть только событие", subject: event/S11/ov-detected, field: evidence_refs, op: eq, value: [{media_id: MED-OV-EVENT-ONLY, kind: event_only, video_transferred: false}]}
+    must_not:
+      - {id: S11-N1, what: "нет сигнала о дефекте и несоответствия; изделие не изолировано", subject: item/F-003, field: {signals: 0, nc_count: 0, status_isolated: false}, op: eq, value: true}
+      - {id: S11-N2, what: "событие не идёт в показатели по людям", subject: metric/O-10, field: all, op: unchanged, baseline: "2026-09-22T11:44:00+03:00"}
+      - {id: S11-N3, what: "видео наружу не передаётся, лица не распознаются", subject: item/F-003, field: {video_transferred: false, face_recognition: false}, op: eq, value: true}
+
+  # ---------------------------------------------------------------------------
+  S12:
+    title: "Некорректные сообщения — карантин с кодами"
+    case: {other: ["§4.7 контракты и версии", "версия контракта ≠ версия анализатора"]}
+    run: main_story   # фон Вт 14:00; можно отдельно
+    inputs_note: "шесть сообщений описаны в scenarios-flange.md, S12"
+    checkpoints:
+      - at: "2026-09-22T14:35:00+03:00"
+        label: "после разбора карантина"
+        expect:
+          - {id: S12-01, what: "в карантине 3 сообщения с кодами", subject: quarantine, filter: {at_from: "2026-09-22T14:00:00+03:00"}, field: codes, op: set_eq, value: [E_MISSING_FIELD, E_UNSUPPORTED_VERSION, E_UNKNOWN_ENUM]}
+          - {id: S12-02, what: "у каждого — поле или значение, источник, время", subject: quarantine, field: details, op: contains, value: [{code: E_MISSING_FIELD, field: item_id}, {code: E_UNSUPPORTED_VERSION, value: "9.0"}, {code: E_UNKNOWN_ENUM, field: inspection_result, value: maybe}]}
+          - {id: S12-03, what: "новое необязательное поле принято и сохранено", subject: ingest, filter: {schema_version: "1.1"}, field: {outcome: accepted, extra_field_kept: lens_temp_c}, op: eq, value: true}
+          - {id: S12-04, what: "неизвестный класс дефекта в некритичном поле — принят с флагом", subject: ingest, filter: {defect_type: spatter_x}, field: {outcome: accepted, value_stored_as: "неизвестно (spatter_x)", flag: unknown_enum}, op: eq, value: true}
+          - {id: S12-05, what: "исправленное сообщение из карантина принято ровно один раз", subject: quarantine, filter: {code: E_MISSING_FIELD}, field: {reprocessed_by: ADM-01, accepted_times: 1}, op: eq, value: true}
+          - {id: S12-06, what: "Н-5: в карантине +3", subject: metric/N-5, field: quarantined, op: delta, value: 3, baseline: "2026-09-22T13:59:00+03:00"}
+    must_not:
+      - {id: S12-N1, what: "показатели качества не изменились от сообщений 1–3", subject: metric/*, field: quality_metrics, op: unchanged, baseline: "2026-09-22T13:59:00+03:00"}
+      - {id: S12-N2, what: "«maybe» не превратилось в «признаков нет»", subject: ingest, filter: {inspection_result: maybe}, field: stored_as_no_defect, op: eq, value: false}
+      - {id: S12-N3, what: "номер изделия не угадан без человека", subject: quarantine, filter: {code: E_MISSING_FIELD}, field: auto_bound_item, op: eq, value: false}
+
+  # ---------------------------------------------------------------------------
+  S13:
+    title: "«Специалист заснул» — очередь на ЗТ-3 без решения, эскалация, перераспределение"
+    case: {other: ["§2.4 дополнительно: ожидание и простой", "§1.2 мастер — задержки; руководитель — время обработки", "§5.2 изделия на ЗТ без подписи (О-9)", "соседи: FR-5, FR-105, FR-129, FR-8, FR-19, FR-57, FR-81, FR-56, SM-C1, SM-C2"]}
+    run: standalone   # Пт 25.09, смена А, после главной истории; для показа FR-5 можно гонять отдельно
+    precondition: "2026-09-25 08:00: на ЗТ-3 ждут F-024, F-030, F-031, F-032 (КТ-3 и РК чистые, предъявлены в Чт после 16:00); заключения РК по F-033, F-034, F-035 выйдут в 09:20, по F-036, F-223, F-224 — в 10:20; в сборке F-028, на стенде LT-1 — F-026; пост ЗТ-3 — QC-01; все 10 фланцев сварены на WS-1 и исключены из RS-01 в среду"
+    clock_note: "имитатор не присылает решений QC-01 с 08:15 до 11:30; часы сценария идут, пока решения нет (FR-129): ожидание — предмет проверки"
+    params: {work_min_per_item: 10, wait_norm_min: 30, wait_due_min: 60, escalation_after_min: {reminder: 30, master: 60, qc_head: 120}, queue_color: {ok_max: 2, attention_max: 4}, waiting_counted: "только рабочие часы смены, в которой у ЗТ-3 есть контролёр", rule_R-21_seal_limit_h: 4}
+    human_decisions:
+      - {at: "2026-09-25T10:40:00+03:00", role: MASTER, who: MST-02, action: "выбрать вариант перераспределения"}
+      - {at: "2026-09-25T10:45:00+03:00", role: QC_HEAD, who: QC-HEAD-01, action: "согласовать назначение QC-02 на ЗТ-3"}
+      - {at: "2026-09-25T11:00:00+03:00", role: QC, who: QC-02, action: "решения ЗТ-3 по F-030…F-034, по одному"}
+      - {at: "2026-09-25T11:40:00+03:00", role: QC, who: QC-01, action: "решения ЗТ-3 по F-035, F-036, F-223, F-224, по одному"}
+    checkpoints:
+      - at: "2026-09-25T10:30:00+03:00"
+        label: "разгар: 9 фланцев ждут"
+        expect:
+          - {id: S13-01, what: "на ЗТ-3 без подписи стоят 9 фланцев двух заказов", subject: gate/ZT-3, field: queue, op: set_eq, value: [F-030, F-031, F-032, F-033, F-034, F-035, F-036, F-223, F-224]}
+          - {id: S13-02, what: "живая карта: узел ЗТ-3 — ограничение линии и аномалия «ожидание выше срока» (FR-5)", subject: map/node/W5, field: {constraint: true, anomaly: wait_over_due, anomaly_since: "2026-09-25T09:00:00+03:00", queue_color: bad}, op: eq, value: true}
+          - {id: S13-03, what: "эскалация по уровням: напоминание → мастер → начальник ОТК", subject: "escalation/ZT-3@2026-09-25", field: levels, op: eq, value: [{level: reminder, to: QC-01, at: "2026-09-25T08:30:00+03:00"}, {level: master, to: MST-02, at: "2026-09-25T09:00:00+03:00"}, {level: qc_head, to: QC-HEAD-01, at: "2026-09-25T10:00:00+03:00"}]}
+          - {id: S13-04, what: "цена задержки в 10:20 посчитана сама", subject: "escalation/ZT-3@2026-09-25", filter: {at: "2026-09-25T10:20:00+03:00"}, field: delay_cost, op: eq, value: {overdue_min: 80, items_waiting: 9, by_order: {ORD-0917: 7, ORD-0911: 2}, wait_over_norm_item_min: 420, stops_forecast: [{object: assembly_post, at: "10:30"}, {object: LT-1, at: "12:00"}], release_shift_min_gte: 110}}
+          - {id: S13-05, what: "подтверждение мастера записано, но сроки не остановило", subject: "escalation/ZT-3@2026-09-25", field: {ack_by: MST-02, ack_at: "2026-09-25T09:05:00+03:00", next_level_fired_at: "2026-09-25T10:00:00+03:00"}, op: eq, value: true}
+          - {id: S13-06, what: "варианты перераспределения с прогнозом: система предлагает, человек выбирает", subject: "escalation/ZT-3@2026-09-25", field: options, op: contains, value: [{option: second_controller, who: QC-02, queue_empty_forecast: "≈ 12:15"}, {option: next_shift, earliest: "2026-09-28T08:00:00+03:00", reason: "в смене Б контролёра ЗТ-3 нет"}]}
+          - {id: S13-18, what: "сверка 26.09, А-13 — О-9 по девяти фланцам очереди на ЗТ-3: незавершённых операций 0 — всё сварено и проверено, ждут подписи. «Ждёт подписи» — строка «стоят на ЗТ без подписи» рядом с О-9 (9, S13-01), а не «операция зависла»", subject: metric/O-9, filter: {items: [F-030, F-031, F-032, F-033, F-034, F-035, F-036, F-223, F-224], at: "2026-09-25T10:30:00+03:00"}, field: {in_progress: [], stuck: [], quality_hold: [], aborted: []}, op: eq, value: true}
+      - at: "2026-09-25T11:00:00+03:00"
+        label: "перераспределение"
+        expect:
+          - {id: S13-07, what: "ОТК-2 на ЗТ-3: запросил мастер, согласовал начальник ОТК; проверены допуск и «не участвовала в изготовлении»; запись в журнале критических действий", subject: post/ZT-3, field: assignment_changes, op: contains, value: [{assignee: QC-02, from: "2026-09-25T10:45:00+03:00", requested_by: MST-02, approved_by: QC-HEAD-01, qualification_checked: true, not_involved_in_manufacture: true, critical_log: true}]}
+      - at: "2026-09-25T13:00:00+03:00"
+        label: "очередь разобрана"
+        expect:
+          - {id: S13-08, what: "эскалация закрыта сама в 12:10 — очередь пуста; ЗТ-3 больше не ограничение линии", subject: "escalation/ZT-3@2026-09-25", field: {closed_at: "2026-09-25T12:10:00+03:00", reason: queue_cleared, W5_constraint_after_close: false}, op: eq, value: true}
+          - {id: S13-09, what: "10 решений на ЗТ-3 — каждое по одному фланцу и с подписью", subject: gate/ZT-3, filter: {date: "2026-09-25"}, field: decisions_by_signer, op: eq, value: {QC-01: [F-024, F-035, F-036, F-223, F-224], QC-02: [F-030, F-031, F-032, F-033, F-034]}}
+          - {id: S13-10, what: "Д-1 «ждёт подписи на ЗТ»: 9 из 10 позже срока, максимум 200 мин у F-032, сверх нормы 1010 фланце-минут; ночь не считается", subject: metric/D-1, filter: {gate: ZT-3, kind: waiting_for_gate_signature, date: "2026-09-25"}, field: {decisions: 10, over_due: 9, median_min: 135, max_min: 200, max_item: F-032, over_norm_sum_min: 1010, carryover_counted_from: "2026-09-25T08:00:00+03:00"}, op: eq, value: true}
+          - {id: S13-11, what: "Д-2: простой стенда и поста сборки, причина «нет детали»", subject: metric/D-2, filter: {date: "2026-09-25"}, field: idle, op: contains, value: [{object: LT-1, from: "12:00", to: "12:45", reason: no_part}, {object: assembly_post, from: "10:30", to: "11:20", reason: no_part}]}
+          - {id: S13-12, what: "пропускная способность ЗТ-3: 0 решений за 2 ч 45 мин, затем 9 за 1 ч 10 мин", subject: map/node/W5, field: throughput_windows, op: eq, value: [{from: "08:15", to: "11:00", decisions: 0}, {from: "11:00", to: "12:10", decisions: 9}]}
+          - {id: S13-13, what: "ожидание — не возврат: все 10 прошли ЗТ-3 с первого предъявления", subject: metric/D-3, filter: {gate: ZT-3, date: "2026-09-25"}, field: first_pass_items, op: eq, value: 10}
+          - {id: S13-14, what: "в 1С — 10 «перемещений СЦ → СИЦ», каждое после своей подписи", subject: erp/postings, filter: {type: transfer, route: "WC->AC", date: "2026-09-25"}, field: {count: 10, sent_before_gate_signature: 0}, op: eq, value: true}
+          - {id: S13-15, what: "по желанию: правило R-21 заблокировало уплотнение под F-031 (4 ч вне склада) и выдало новое; не списано, фланец не тронут", subject: item/F-031, field: seal_issues, op: eq, value: [{lot: LOT-SL-401, issued_at: "08:10", blocked_at: "12:10", rule: R-21, action: block_and_reissue, scrapped: false}, {lot: LOT-SL-401, issued_at: "12:15"}]}
+          - {id: S13-16, what: "нормы шагов (process/step-norms.yaml), окно Пт 08:00–13:00: задержки — ожидание на ЗТ-3 у 9 фланцев (90–200 мин при сроке 60) и ожидание рентгена у 6 (56,6–66,3 ч при пороге 24 ч: рентген — узкое место № 1, до 10:20 — ограничение линии); операции, сборка, стенд и перемещения — в норме; эскалация ЗТ-3 — 08:30, 09:00, 10:00, закрыта в 12:10", subject: norms/S13, filter: {window: "2026-09-25 08:00–13:00"}, field: norm_delays, op: eq, value: {delays: [{step: W4, object: F-033, value: 57.8, unit: h}, {step: W4, object: F-034, value: 57.2, unit: h}, {step: W4, object: F-035, value: 56.6, unit: h}, {step: W4, object: F-036, value: 64.4, unit: h}, {step: W4, object: F-223, value: 66.3, unit: h}, {step: W4, object: F-224, value: 59.5, unit: h}, {step: W5, object: F-030, presentation_no: 1, value: 180, unit: min}, {step: W5, object: F-031, presentation_no: 1, value: 190, unit: min}, {step: W5, object: F-032, presentation_no: 1, value: 200, unit: min}, {step: W5, object: F-033, presentation_no: 1, value: 130, unit: min}, {step: W5, object: F-034, presentation_no: 1, value: 140, unit: min}, {step: W5, object: F-035, presentation_no: 1, value: 140, unit: min}, {step: W5, object: F-036, presentation_no: 1, value: 90, unit: min}, {step: W5, object: F-223, presentation_no: 1, value: 100, unit: min}, {step: W5, object: F-224, presentation_no: 1, value: 110, unit: min}], escalations: {"W5@2026-09-25T08:30:00+03:00": {levels: {reminder: "2026-09-25T08:30:00+03:00", master: "2026-09-25T09:00:00+03:00", qc_head: "2026-09-25T10:00:00+03:00"}, closed_at: "2026-09-25T12:10:00+03:00"}}}}
+          - {id: S13-17, what: "карта дефицита данных: у S13 случаев нет — предъявления и заключения пришли, решения не было; «нет решения» ≠ «нет данных»", subject: metric/N-6, filter: {run: S13}, field: {data_gap_cases: 0}, op: eq, value: true}
+    must_not:
+      - {id: S13-N1, what: "ни один фланец не прошёл ЗТ-3 без подписи; нет «принято по истечении срока» и подписи пачкой", subject: gate/ZT-3, filter: {date: "2026-09-25"}, field: {passed_without_signature: 0, auto_accept_on_timeout: 0, batch_signatures: 0}, op: eq, value: true}
+      - {id: S13-N2, what: "среди вариантов нет «пропустить без подписи»", subject: "escalation/ZT-3@2026-09-25", field: options, op: not_contains, value: [auto_pass, pass_without_signature, batch_accept]}
+      - {id: S13-N3, what: "нет рейтинга, «простоя контролёра» и записи «нарушение» на ОТК-1; О-10 не меняется", subject: people/QC-01, field: {rating: none, idle_metric: none, violation_records: 0, O-10_changed: false}, op: eq, value: true}
+      - {id: S13-N4, what: "«нет решения» ≠ «нет данных»: Е-82 нет, Н-5 не меняется", subject: metric/N-5, field: all, op: unchanged, baseline: "2026-09-25T07:59:00+03:00"}
+      - {id: S13-N5, what: "это не инцидент качества: нет сигналов, несоответствий и цветов области риска", subject: item/*, filter: {items: [F-024, F-030, F-031, F-032, F-033, F-034, F-035, F-036, F-223, F-224]}, field: {signals: 0, nc_count: 0, incident_color: none}, op: eq, value: true}
+
+  # ---------------------------------------------------------------------------
+  S14:
+    title: "Общий фактор — один сварщик: система не ставит «ошибку исполнителя» сама"
+    case: {other: ["§2.3 обоснованность выводов", "§5.2 подтверждённые ошибки отдельно от гипотез", "§5.2 сравнение сопоставимых работ", "вопрос жюри «а если бы виноват был человек?» (матрица приёмки, В1)", "путь схемы v0.3: сигнал → инцидент «сварщик» → Н → разбор причин → CA4 → мера → окно → закрыт"]}
+    run: standalone   # свой мир, seed 20260929; в главную историю не входит
+    precondition: "ЗП-0929: 20 фланцев F-301…F-320. Вт 29.09 оба сварщика в смене А (С-03 подменяет) и по очереди на постах 1 и 2; программа PS-4, проволока LOT-W-88; ИС-1 и ИС-2 исправны, журналы в уставке. Ср 30.09 и Чт 01.10 С-03 тоже в смене А"
+    checkpoints:
+      - at: "2026-09-29T10:20:00+03:00"
+        label: "первый подрез"
+        expect:
+          - {id: S14-01, what: "подрез У3 на Ф-304 (С-03, ИС-2): сигнал → удержание по правилу R-07 → НС-141 подтверждено ОТК-1 → изолировано; общего фактора ещё нет — решение на своей ЗТ", subject: nc/NC-141, field: {item: F-304, zone: U3, type: undercut, run: SV-304-1, status_path: [signal, confirmed, isolated], incident: none}, op: eq, value: true}
+          - {id: S14-02, what: "гипотезы v1: техника выполнения — возможна; оборудование — слабая (журнал ИС-2 в уставке); подготовка кромок и материал — слабые; итог — «причина не установлена»", subject: hypothesis/NC-141, filter: {version: 1}, field: {operator_procedure: possible, equipment: weak, edge_prep: weak, material: weak, overall: undetermined}, op: eq, value: true}
+      - at: "2026-09-29T11:10:00+03:00"
+        label: "второй подрез — инцидент по общему фактору «сварщик»"
+        expect:
+          - {id: S14-03, what: "подрез У6 на Ф-306 (С-03, ИС-1) — НС-142", subject: nc/NC-142, field: {item: F-306, zone: U6, type: undercut, run: SV-306-1}, op: eq, value: true}
+          - {id: S14-04, what: "инцидент RS-14 по общему фактору «сварщик С-03» (2 из 2, аппараты разные): круг — швы С-03 за смену (Ф-302, Ф-304, Ф-306 и дальше по мере сварки), чистые придержаны на месте", subject: risk_scope/RS-14, filter: {version: 1}, field: {factor: {welder: WLD-03}, basis: [NC-141, NC-142], items: [F-302, F-304, F-306], future_welds_of_factor_join: true, holds: [F-302]}, op: eq, value: true}
+          - {id: S14-05, what: "остановку поста система не предлагает (журналы ИС-1 и ИС-2 в уставке); подсказки проверок — «сначала аппараты»: журналы, сравнение с С-02, осмотр швов в круге, контрольный образец", subject: risk_scope/RS-14, field: {stop_proposed: false, check_suggestions_order: [source_logs, comparison_with_other_welder, visual_template_in_scope, control_sample]}, op: eq, value: true}
+          - {id: S14-06, what: "гипотезы v2: общий фактор — сварщик (2 из 2), аппараты разные; техника — возможна, оборудование — слабая", subject: hypothesis/NC-141, filter: {version: 2}, field: {common_factors: {welder: "2/2", sources: [WS-2, WS-1]}, operator_procedure: possible, equipment: weak, revised_due_to: NC-142}, op: eq, value: true}
+      - at: "2026-09-29T12:15:00+03:00"
+        label: "чистый шов С-03 исключён из круга"
+        expect:
+          - {id: S14-07, what: "Ф-302 проверен в круге (осмотр с шаблоном и рентген — чисто) и исключён технологом с основанием; удержание снято; ЗТ-3 — после исключения", subject: risk_scope/RS-14, filter: {item: F-302}, field: {result: excluded, by: TECH-01, basis: [vt/F-302, xr/F-302/RK-0929-02], hold_released: true, gate_ZT-3_after: true}, op: eq, value: true}
+      - at: "2026-09-29T14:40:00+03:00"
+        label: "третий подрез; все 12 швов сварены — таблица «что общего»"
+        expect:
+          - {id: S14-08, what: "подрез У2 на Ф-310 (С-03, ИС-1) — НС-143, основание в открытый RS-14 («3 из 3»)", subject: nc/NC-143, field: {item: F-310, zone: U2, type: undercut, run: SV-310-1, incident: RS-14}, op: eq, value: true}
+          - {id: S14-09, what: "таблица «что общего»: сварщик 3 из 3, аппараты разные; программа, проволока и смена — общие у всех швов дня, в том числе у чистых; ток в уставке", subject: hypothesis/NC-141, filter: {version: 3}, field: common_factors, op: eq, value: {welder: {WLD-03: "3/3"}, sources: {WS-1: 2, WS-2: 1}, program: "3/3 (и 9/9 у чистых)", wire: "3/3 (и 9/9 у чистых)", shift: "3/3 (весь день — смена А)", current_in_setpoint: "3/3", manual_actions: "0/3"}}
+          - {id: S14-10, what: "у второго сварщика на тех же постах, той же программой и проволокой — 6 швов из 6 чистые", subject: people/WLD-02, filter: {date: "2026-09-29"}, field: {welds: 6, sources: [WS-1, WS-2], defects: 0}, op: eq, value: true}
+          - {id: S14-11, what: "гипотезы v3: «отклонение от техники выполнения» — сильная; оборудование и материал — слабые; на экране подпись «гипотеза — не ошибка исполнителя»", subject: hypothesis/NC-141, filter: {version: 3}, field: {operator_procedure: strong, equipment: weak, material: weak, label: "гипотеза; «ошибку исполнителя» записывает только комиссия после объяснения работника"}, op: eq, value: true}
+      - at: "2026-09-29T16:10:00+03:00"
+        label: "решение по инциденту"
+        expect:
+          - {id: S14-12, what: "9 чистых фланцев (6 у С-02, 3 у С-03) прошли ЗТ-3 с первого предъявления; чистые швы С-03 — после исключения из круга", subject: gate/ZT-3, filter: {date: "2026-09-29"}, field: {accepted: [F-301, F-302, F-303, F-305, F-307, F-308, F-309, F-311, F-312], first_pass: 9, after_exclusion: [F-302, F-308, F-312]}, op: eq, value: true}
+          - {id: S14-13, what: "рентген у трёх фланцев подтвердил тот же подрез, других дефектов нет", subject: item/*, filter: {items: [F-304, F-306, F-310]}, field: xray_defect_types, op: eq, value: [undercut]}
+          - {id: S14-14, what: "групповое несоответствие НС-14Г на 3 изделия и решение «переделка» (через Н) — подписала комиссия; в 1С одно «перевод в брак (переделка)» на 3 изделия", subject: nc/NC-14G, field: {items: [F-304, F-306, F-310], disposition: rework, signers: [TECH-01, QC-HEAD-01, CHW-01], erp_messages: 1}, op: eq, value: true}
+          - {id: S14-15, what: "круг RS-14 закрыт: было 6, подтверждено 3, исключено 3; «Изделия: решено · Расследование: открыто»", subject: risk_scope/RS-14, field: {final_confirmed: 3, final_excluded: 3, status: closed, incident_status: {items: decided, investigation: open}}, op: eq, value: true}
+          - {id: S14-16, what: "журналы ИС-1 и ИС-2 весь день в уставке; источники не остановлены", subject: source/*, filter: {items: [WS-1, WS-2], date: "2026-09-29"}, field: {current_in_setpoint: true, process_hold: none}, op: eq, value: true}
+          - {id: S14-33, what: "сверка 26.09, А-6 — О-5 в Вт 16:10: НС-141…НС-143 — «есть только гипотеза» (версия «техника выполнения» сильная, S14-11), в «причина подтверждена» их нет", subject: metric/O-5, filter: {at: "2026-09-29T16:10:00+03:00"}, field: {cause_confirmed: [], hypothesis_only: [NC-141, NC-142, NC-143], undetermined: [], not_needed_by_policy: [], not_started: [], confirmed_category: {}}, op: eq, value: true}
+      - at: "2026-09-30T09:15:00+03:00"
+        label: "проверка версии контрольными образцами"
+        expect:
+          - {id: S14-17, what: "разбор причин (отдельный экземпляр по RS-14): контрольные образцы под наблюдением ГС-01 — CS-141 «как обычно» — подрез, угол горелки ≈ 45° при 70–80° по карте [ПП]; CS-142 по карте — чисто", subject: run/*, filter: {runs: [SV-CS141-1, SV-CS142-1]}, field: results, op: eq, value: {SV-CS141-1: defect_found, SV-CS142-1: no_defect_found}}
+          - {id: S14-18, what: "попытка записать «ошибку исполнителя» до объяснения работника — отказ [П: E_EXPLANATION_REQUIRED]", subject: api/decisions, filter: {type: cause_confirmed, operator_error: true, at: "2026-09-30T09:10:00+03:00"}, field: result, op: eq, value: {refused: true, code: E_EXPLANATION_REQUIRED}}
+      - at: "2026-09-30T11:15:00+03:00"
+        label: "объяснение работника и решение комиссии (узел CA4)"
+        expect:
+          - {id: S14-19, what: "письменное объяснение работника (cause.explanation_recorded [П]) записано до решения комиссии; автор — С-03, принял НОТК-01", subject: cause/RS-14, field: worker_explanation, op: eq, value: {author: WLD-03, form: written, at: "2026-09-30T09:30:00+03:00", received_by: QC-HEAD-01}}
+          - {id: S14-20, what: "комиссия подтвердила причину «отклонение от техники выполнения» с ответом «чем проверили» и сопутствующим обстоятельством (новая горелка); «ошибка исполнителя» записана только сейчас", subject: cause/RS-14, field: cause, op: eq, value: {category: operator_procedure, status: confirmed, signers: [TECH-01, QC-HEAD-01, CHW-01], verified_by_present: true, contributing_factors: ["новая горелка с другим держателем"], operator_error: {confirmed: true, person: WLD-03, explanation_ref: S14/explanation}}}
+          - {id: S14-21, what: "О-10 после решения комиссии: у С-03 подтверждённые ошибки на 3 швах из 6 сопоставимых за Вт; у С-02 — 0; рядом пометка «мало сопоставимых работ (6 < 10), вывод предварительный» (решение 26.09, S14-35)", subject: metric/O-10, filter: {date: "2026-09-29"}, field: confirmed_errors, op: eq, value: {WLD-03: 3, WLD-02: 0}}
+          - {id: S14-22, what: "О-6: «исполнитель — подтверждено» +3 (НС-141…НС-143)", subject: metric/O-6, filter: {row: operator_procedure, column: confirmed}, field: count, op: delta, value: 3, baseline: "2026-09-30T10:59:00+03:00"}
+          - {id: S14-34, what: "сверка 26.09, А-6 — О-5 в Ср 11:15, после решения комиссии: НС-141…НС-143 — «причина подтверждена», категория «исполнитель (отклонение от техники выполнения)»", subject: metric/O-5, filter: {at: "2026-09-30T11:15:00+03:00"}, field: {cause_confirmed: [NC-141, NC-142, NC-143], hypothesis_only: [], undetermined: [], not_needed_by_policy: [], not_started: [], confirmed_category: {NC-141: operator_procedure, NC-142: operator_procedure, NC-143: operator_procedure}}, op: eq, value: true}
+          - {id: S14-35, what: "сверка 26.09, А-15 — О-10 за Вт 29.09: сопоставимых сварок у С-03 — 6, у С-02 — 6, меньше минимума 10 [П]. Сравнение показывается с пометкой «мало сопоставимых работ (6 < 10), вывод предварительный» (решение 26.09): подтверждённые ошибки С-03 — 3, С-02 — 0 (S14-21)", subject: metric/O-10, filter: {date: "2026-09-29"}, field: {comparable_runs: {WLD-02: 6, WLD-03: 6}, min_runs: 10, note_by_person: {WLD-02: "мало сопоставимых работ (6 < 10), вывод предварительный", WLD-03: "мало сопоставимых работ (6 < 10), вывод предварительный"}}, op: eq, value: true}
+      - at: "2026-09-30T13:05:00+03:00"
+        label: "мера назначена и внедрена"
+        expect:
+          - {id: S14-23, what: "мера — внеочередная проверка навыка, инструктаж, проверка держателя горелки; план проверки результативности — первые 8 новых швов С-03; это не наказание", subject: capa/RS-14, field: {actions: [skill_check, instruction, torch_holder], effectiveness_plan: {window: "первые 8 новых швов С-03 после меры", success: "0 подрезов"}, not_a_penalty: true}, op: eq, value: true}
+          - {id: S14-24, what: "мера внедрена (проверка навыка сдана: образец CS-143 чистый), окно наблюдения открыто — «внедрено» ≠ «результативно»", subject: metric/N-3, filter: {capa: RS-14, at: "2026-09-30T13:05:00+03:00"}, field: {implemented: true, effectiveness: pending}, op: eq, value: true}
+      - at: "2026-10-01T09:05:00+03:00"
+        label: "переделка трёх участков после проверки навыка"
+        expect:
+          - {id: S14-25, what: "переделка по ТП у Ф-304, Ф-306, Ф-310: выборка по снимку → контроль выборки ОТК-1 → заварка участка (С-03, после проверки навыка) → рентген → ЗТ-3 второе предъявление; в 1С «возврат из брака в производство» ×3 [П]", subject: item/*, filter: {items: [F-304, F-306, F-310]}, field: {rework_chain: [WL1, WL2, WL3], welder: WLD-03, gate_ZT-3_presentation: 2, erp: rework_return_to_production}, op: eq, value: true}
+      - at: "2026-10-01T16:10:00+03:00"
+        label: "окно наблюдения закрыто, разбор закрыт"
+        expect:
+          - {id: S14-26, what: "окно наблюдения: первые 8 новых швов С-03 после меры (Ф-313…Ф-320, оба поста) — без подреза по камере и рентгену; мера результативна (П-07)", subject: capa/RS-14, field: {window_items: [F-313, F-314, F-315, F-316, F-317, F-318, F-319, F-320], undercuts: 0, effectiveness: confirmed, at: "2026-10-01T16:00:00+03:00"}, op: eq, value: true}
+          - {id: S14-27, what: "разбор закрыт (cause.investigation_closed [П], узел CA9): «Расследование: закрыто»; Н-3 — мера результативна", subject: cause/RS-14, field: {status: closed, at: "2026-10-01T16:05:00+03:00", metric_N-3: effective}, op: eq, value: true}
+          - {id: S14-28, what: "v0.3.1, MES: «не выдавать» — Ф-304 (10:06) и Ф-306 (10:56) по сигналам, Ф-302 (11:02) по кругу RS-14, Ф-308 (11:40), Ф-310 (13:40), Ф-312 (14:30) — по окончании сварки С-03", subject: mes/postings, filter: {type: hold}, field: items_at, op: eq, value: {F-304: "10:06", F-306: "10:56", F-302: "11:02", F-308: "11:40", F-310: "13:40", F-312: "14:30"}}
+          - {id: S14-29, what: "«можно выдавать»: Ф-302, Ф-308, Ф-312 — по исключению технологом; Ф-304, Ф-306, Ф-310 — по решению комиссии «переделка» (16:00); к концу прогона удержаний нет", subject: mes/postings, filter: {type: release}, field: {S14/exclude-F-302: [F-302], S14/exclude-F-308: [F-308], S14/exclude-F-312: [F-312], S14/disposition-rework: [F-304, F-306, F-310], held_at_end: []}, op: eq, value: true}
+          - {id: S14-30, what: "плитка «г» на S14 — повторный брак после меры: окно — первые 8 новых швов С-03 после внедрения меры (Ф-313…Ф-320), повторов 0, мера признана результативной", subject: metric/N-3, filter: {run: S14, tile: manager_desk}, field: {window_items: [F-313, F-314, F-315, F-316, F-317, F-318, F-319, F-320], observed: 8, repeats: 0, closed: true}, op: eq, value: true}
+          - {id: S14-31, what: "«тающая область» RS-14: у каждой исключённой детали своё «почему?» — осмотр с шаблоном и рентген этого фланца", subject: risk_scope/RS-14, field: exclusion_basis, op: eq, value: {F-302: [vt/F-302, xr/F-302/RK-0929-02], F-308: [vt/F-308, xr/F-308/RK-0929-08], F-312: [vt/F-312, xr/F-312/RK-0929-12]}}
+          - {id: S14-32, what: "карта дефицита данных: в S14 не хватило данных о технике сварки (положение горелки не измеряется) — 2 случая: чистые швы С-03 5,05 изделие-часа стояли в круге и 3 лишних осмотра с шаблоном; для причины — 2 контрольных образца", subject: metric/N-6, filter: {run: S14}, field: {data_gap_cases: [{id: DG-05, hindered: risk_scope_narrowing, item_hours: 5.05, extra_checks: 3}, {id: DG-06, hindered: cause, item_hours: 0.0, extra_checks: 2}]}, op: eq, value: true}
+          - {id: S14-36, what: "сверка 26.09, А-20 — повторяемость проблемы (Д-6 [П]): подрез на сварке — 3 (НС-141…НС-143); по оборудованию — ИС-1 2, ИС-2 1. Рядом — повтор после меры (Н-3): 0 (S14-30). Это два разных показателя", subject: metric/D-6, filter: {run: S14}, field: {by_operation: {undercut@W2: 3}, by_equipment: {undercut@WS-1: 2, undercut@WS-2: 1}, recurring: [undercut@W2, undercut@WS-1]}, op: eq, value: true}
+    must_not:
+      - {id: S14-N1, what: "до решения комиссии «ошибки исполнителя» нет: О-10 у С-03 = 0 в Вт 16:10 и в Ср 10:59, хотя версия «техника» сильная", subject: metric/O-10, filter: {at: ["2026-09-29T16:10:00+03:00", "2026-09-30T10:59:00+03:00"]}, field: confirmed_errors.WLD-03, op: eq, value: 0}
+      - {id: S14-N2, what: "система не предлагает взыскания, «рейтинг» и запись «нарушение»", subject: people/WLD-03, field: {penalty_suggested: false, rating: none, violation_records: 0}, op: eq, value: true}
+      - {id: S14-N3, what: "ИС-1 и ИС-2 не остановлены: журналы в норме, «сломался источник» не выдумывается", subject: audit/critical_actions, filter: {action: process_hold.set, run: S14}, field: count, op: eq, value: 0}
+      - {id: S14-N4, what: "гипотеза про сварщика не попадает в показатели по людям до подтверждения", subject: metric/O-10, field: counts_hypotheses, op: eq, value: false}
+      - {id: S14-N5, what: "в 1С не уходят гипотезы, причина, объяснение работника и мера", subject: erp/postings, filter: {run: S14}, field: types, op: not_contains, value: [hypothesis, cause, worker_explanation, capa]}
+      - {id: S14-N6, what: "чистые швы С-03 не прошли ЗТ-3, пока были в круге без проверки", subject: gate/ZT-3, filter: {items: [F-302, F-308, F-312]}, field: passed_while_suspected, op: eq, value: 0}
+      - {id: S14-N7, what: "сверка 26.09, А-8 — в О-6 у столбца «гипотеза» нет разреза по конкретному сварщику: сильная версия «техника» в Вт 16:10 видна только как категория причины, без имени С-03 (З-6)", subject: metric/O-6, filter: {column: hypothesis, at: "2026-09-29T16:10:00+03:00"}, field: cut_by_person, op: not_exists}
+
+  # ---------------------------------------------------------------------------
+  S15:
+    title: "Сдвиг часов источника: часы КИМ-1 спешат на 7 минут"
+    case: {other: ["§4.6 расхождения времени источников", "§5.2 происхождение показателя времени"]}
+    run: main_story   # фон, Пн 21.09 08:25–10:15; в 4 минуты не входит
+    checkpoints:
+      - at: "2026-09-21T08:26:00+03:00"
+        label: "первая запись «из будущего»"
+        expect:
+          - {id: S15-01, what: "время события КИМ-1 позже времени приёма на 6 мин 58 с — система видит, что часы источника спешат, и сообщает администратору", subject: source/CMM-1, field: {clock_offset_s: 420, detected_at: "2026-09-21T08:25:02+03:00", rule: "occurred_at позже received_at больше чем на 30 с", alert_to: ADM-01}, op: eq, value: true}
+          - {id: S15-02, what: "исходное время записи сохранено как есть; рядом — исправленное по правилу время с пометкой", subject: event/cmm/F-007, field: {occurred_at: "2026-09-21T08:32:00+03:00", corrected_occurred_at: "2026-09-21T08:25:00+03:00", time_corrected: {rule: source_clock_offset, offset_s: 420}}, op: eq, value: true}
+      - at: "2026-09-21T10:35:00+03:00"
+        label: "после синхронизации часов"
+        expect:
+          - {id: S15-03, what: "исправлено 5 записей КИМ-1 (Ф-007…Ф-011), у каждой одна и та же пометка", subject: ingest, filter: {source: CMM-1, date: "2026-09-21"}, field: time_corrected_count, op: eq, value: 5}
+          - {id: S15-04, what: "порядок записей источника по source_seq не нарушен — «соврали часы» не значит «нарушили порядок»; ничего не переставлено", subject: ingest, filter: {source: CMM-1}, field: {out_of_order: 0, ordered_by: source_seq}, op: eq, value: true}
+          - {id: S15-05, what: "в истории Ф-007…Ф-011 протокол КИМ по исправленному времени стоит до подписи ЗТ-2", subject: item/*, filter: {items: [F-007, F-008, F-009, F-010, F-011]}, field: timeline_order, op: before, value: [inspection_cmm@corrected, gate_ZT-2]}
+          - {id: S15-06, what: "администратор синхронизировал часы КИМ-1 в 10:15; следующая запись (Ф-013, 10:30) — без поправки", subject: source/CMM-1, field: {clock_synced_by: ADM-01, clock_synced_at: "2026-09-21T10:15:00+03:00", next_record_corrected: false}, op: eq, value: true}
+          - {id: S15-07, what: "Н-5: «время исправлено по правилу» — 5 записей, источник КИМ-1, сдвиг +7 мин", subject: metric/N-5, field: time_corrected, op: eq, value: {records: 5, source: CMM-1, offset: "+7 мин"}}
+    must_not:
+      - {id: S15-N1, what: "решения ЗТ-2 по Ф-007…Ф-011 не получили метку «пересмотрите»: по исправленному времени КИМ был до подписи", subject: gate/ZT-2/*, filter: {items: [F-007, F-008, F-009, F-010, F-011]}, field: review_flag, op: eq, value: none}
+      - {id: S15-N2, what: "записи со сдвигом не ушли в карантин и не отброшены", subject: quarantine, filter: {source: CMM-1}, field: count, op: eq, value: 0}
+      - {id: S15-N3, what: "исходное occurred_at не перезаписано", subject: event/cmm/F-007, field: occurred_at_overwritten, op: eq, value: false}
+      - {id: S15-N4, what: "нет отрицательных интервалов «КИМ → ЗТ-2» в показателях ожидания", subject: metric/D-1, filter: {items: [F-007, F-008, F-009, F-010, F-011]}, field: negative_intervals, op: eq, value: 0}
+
+  # ---------------------------------------------------------------------------
+  S16:
+    title: "Ненадёжная привязка события к выполнению операции (Ф-004 / Ф-005)"
+    case: {other: ["§4.6 ненадёжная идентификация операции — явно", "§4.3 действия: изменение режима"]}
+    run: main_story   # фон, Пт 18.09 13:50; в 4 минуты не входит
+    checkpoints:
+      - at: "2026-09-18T15:30:00+03:00"
+        label: "после ЗТ-2 по Ф-005"
+        expect:
+          - {id: S16-01, what: "запись пульта ЧПУ-1 (подача 120 % на 80 с) хранится с уровнем привязки «неоднозначно»: два кандидата, основания названы", subject: event/S16/cnc-feed-override, field: run_binding, op: eq, value: {level: ambiguous, candidates: [MO-004-1, MO-005-1], probable: MO-005-1, basis: ["отметки терминала: MO-004-1 закрыт в 13:51:10, MO-005-1 открыт в 13:50:00 — перекрытие 70 с", "цикл станка начат в 13:50:30 — вероятнее MO-005-1"]}}
+          - {id: S16-02, what: "исполнитель у обоих кандидатов один — О-11 (вход на терминал): вывод «кто работал на станке» от неоднозначности не зависит", subject: event/S16/cnc-feed-override, field: operator_binding, op: eq, value: {level: by_terminal_login, operator: OP-CNC-11, same_for_all_candidates: true}}
+          - {id: S16-03, what: "зависимый вывод «было ли ручное изменение режима при обработке этой детали» у Ф-004 и Ф-005 — «не установлено: привязка неоднозначна»", subject: run/*, filter: {runs: [MO-004-1, MO-005-1]}, field: manual_mode_change, op: eq, value: {status: undetermined, reason: ambiguous_binding}}
+          - {id: S16-04, what: "независимые выводы не задеты: КИМ в допуске, КТ-2 без признаков, ЗТ-2 по обоим — с первого предъявления", subject: item/*, filter: {items: [F-004, F-005]}, field: {cmm_in_tolerance: true, cp_mo_camera: no_defect_found, gate_ZT-2_first_pass: true}, op: eq, value: true}
+          - {id: S16-05, what: "Н-5: «событий с неоднозначной привязкой» +1; у станка ЧПУ-1 изменение режима посчитано один раз", subject: metric/N-5, field: {ambiguous_bindings: 1, machine_mode_changes_CNC-1: 1}, op: eq, value: true}
+    must_not:
+      - {id: S16-N1, what: "запись не приписана одному выполнению «на глаз» и не раздвоена на два", subject: run/*, filter: {runs: [MO-004-1, MO-005-1]}, field: mode_changes_bound_as_fact, op: eq, value: 0}
+      - {id: S16-N2, what: "из-за неоднозначности нет ни сигнала, ни несоответствия, ни блока изделий", subject: item/*, filter: {items: [F-004, F-005]}, field: {signals: 0, nc_count: 0, holds: 0}, op: eq, value: true}
+      - {id: S16-N3, what: "в показатели по людям (О-10) событие не идёт", subject: metric/O-10, field: all, op: unchanged, baseline: "2026-09-18T13:49:00+03:00"}
+
+  # ---------------------------------------------------------------------------
+  S17:
+    title: "Исполнитель честно отметил пропуск обязательной проверки (Ф-006)"
+    case: {other: ["§4.3 действия: пропуски проверки", "§3.2 CriticalActions — журнал критических действий", "критерий Т3: логирование критических действий операторов"]}
+    run: main_story   # фон, Ср 23.09 08:11–08:30; в 4 минуты не входит
+    checkpoints:
+      - at: "2026-09-23T08:12:00+03:00"
+        label: "пропуск отмечен"
+        expect:
+          - {id: S17-01, what: "отметка пропуска (Е-21) — в журнале критических действий: кто (Сб-01), какая проверка, причина «щуп 0,05 мм не найден на рабочем месте»", subject: audit/critical_actions, filter: {item: F-006, action: check_skipped}, field: {count: 1, actor: ASM-01, check: seal_seating_check, reason_present: true, source: operator_marked}, op: eq, value: true}
+          - {id: S17-02, what: "по этой проверке — «нет данных» (Е-82), а не «годно»", subject: item/F-006, field: check_status/seal_seating_check, op: eq, value: {status: missing, reason: skipped_by_operator}}
+          - {id: S17-03, what: "«Сбой оборудования, пропуск проверки» (узел EQ8): шаг заблокирован, задачи мастеру М-03 и ОТК-2; ЗТ-СР по Ф-006 закрыта, пока проверки нет", subject: gate/ZT-SR/F-006, field: {blocked_until_check: true, tasks_to: [MST-03, QC-02]}, op: eq, value: true}
+      - at: "2026-09-23T08:35:00+03:00"
+        label: "проверка сделана, ЗТ-СР пройдена"
+        expect:
+          - {id: S17-04, what: "проверка выполнена в 08:22 (щуп принёс мастер) — отдельная запись со ссылкой на отметку пропуска; «нет данных» закрыто", subject: item/F-006, field: check_status/seal_seating_check, op: eq, value: {status: done, at: "2026-09-23T08:22:00+03:00", closes: S17/check-skipped}}
+          - {id: S17-05, what: "ЗТ-СР пройдена в 08:30 — после проверки; отметка пропуска осталась в истории", subject: gate/ZT-SR/F-006, field: {passed_at: "2026-09-23T08:30:00+03:00", skip_record_kept: true}, op: eq, value: true}
+    must_not:
+      - {id: S17-N1, what: "честная отметка — не «нарушение»: нет записи «нарушение», «ошибки исполнителя» и рейтинга; О-10 не меняется", subject: people/ASM-01, field: {violation_records: 0, operator_error: 0, rating: none, O-10_changed: false}, op: eq, value: true}
+      - {id: S17-N2, what: "честно отметивший не хуже промолчавшего: за саму отметку человеку ничего не начисляется — итог для него такой же, как если бы пропуск нашёл контроль полноты (Е-82)", subject: people/ASM-01, field: penalty_for_self_report, op: eq, value: false}
+      - {id: S17-N3, what: "пропуск проверки — не дефект изделия: нет сигнала и несоответствия", subject: item/F-006, field: {signals: 0, nc_count: 0}, op: eq, value: true}
+      - {id: S17-N4, what: "ЗТ-СР не пройдена раньше проверки", subject: gate/ZT-SR/F-006, field: passed_before_check, op: eq, value: false}
+
+  # ---------------------------------------------------------------------------
+  # Нестандартные случаи S18–S22 (решение пользователя 26.09; схема v0.3.2). Отдельные короткие прогоны,
+  # главную историю не трогают. Чем мир прогона отличается — scenarios-flange.md §14 и definitions/scenarios/<ID>.yaml.
+  # ---------------------------------------------------------------------------
+  S18:
+    title: "Истёк допуск на дату операции: удостоверение сварщика и поверка ключа (Ф-042)"
+    case: {other: ["§4.3 условия выполнения операции", "§3.2 журнал критических действий", "§3.4 права и разграничение", "критерий О1: допуск к особому процессу, поверка средств измерений"]}
+    run: S18   # отдельный прогон, мир S18: Пт 02.10 – Пн 05.10; Ф-042 взамен списанного Ф-021
+    checkpoints:
+      - at: "2026-10-05T08:26:00+03:00"
+        label: "старт сварки С-03 отклонён, пост переназначен"
+        expect:
+          - {id: S18-01, what: "попытка С-03 начать сварку Ф-042 в 08:20 отклонена: удостоверение НАКС-УСЛ-0003 действовало до 02.10.2026 — условие допуска на дату операции не выполнено (Е-13)", subject: event/S18/start-refused, field: {precondition_failed: E_QUALIFICATION_EXPIRED, qualification: Q-WLD-03, valid_until: "2026-10-02", operation_started: false}, op: eq, value: true}
+          - {id: S18-02, what: "в журнале критических действий — попытка: кто (С-03), где (пост 2), по какому изделию, какое условие не выполнено", subject: audit/critical_actions, filter: {item: F-042, code: E_QUALIFICATION_EXPIRED}, field: {count: 1, actor: WLD-03, station: ST-WC-P2}, op: eq, value: true}
+          - {id: S18-03, what: "система предложила исполнителя с действующим допуском на эту операцию — С-02 (удостоверение до 01.03.2027, смена А); мастер М-02 переназначил пост в 08:25", subject: post/ST-WC-P2, field: {suggested: [WLD-02], reassigned_by: MST-02, reassigned_at: "2026-10-05T08:25:00+03:00"}, op: eq, value: true}
+      - at: "2026-10-05T10:55:00+03:00"
+        label: "шов сварил С-02, ЗТ-3 пройдена"
+        expect:
+          - {id: S18-04, what: "выполнение SV-042-1 (08:40–09:20) — одно, исполнитель С-02; у отклонённой попытки нет ни конца, ни кадров КТ-3, ни сводок источника", subject: run/SV-042-1, field: {operator: WLD-02, started_at: "2026-10-05T08:40:00+03:00", refused_attempts: 1}, op: eq, value: true}
+          - {id: S18-05, what: "ЗТ-3 по Ф-042 в 10:50 — годно; в основании — кадр КТ-3, рентген RK-1005-01 и плоскость по выполнению С-02", subject: gate/ZT-3/F-042, field: {decision: accepted, basis: ["kt3/SV-042-1/CAM-WS-1", "xr/F-042/RK-1005-01", "flat/SV-042-1"]}, op: eq, value: true}
+      - at: "2026-10-05T12:30:00+03:00"
+        label: "моменты записаны непроверенным ключом"
+        expect:
+          - {id: S18-06, what: "записи ключа КЛ-1 — затяжка 12 болтов (12:10) и клапана J-2 (12:15) — помечены «недостоверно: средство не поверено на дату»: поверка КЛ-1 кончилась 02.10.2026 (Е-128)", subject: event/*, filter: {labels: ["torque/F-042", "torque/F-042/J-2"]}, field: {validity: invalid, reason: instrument_not_verified, instrument: TW-1, verification_valid_until: "2026-10-02"}, op: eq, value: true}
+          - {id: S18-07, what: "попытка подписать ЗТ-4 на этих записях в 12:25 — отказ E_INSTRUMENT_NOT_VERIFIED; ОТК-2 назначил доп. контроль: момент — поверенным ключом КЛ-2", subject: gate/ZT-4/F-042, field: {refused: E_INSTRUMENT_NOT_VERIFIED, then: recheck, method: "контрольный ключ TW-2"}, op: eq, value: true}
+      - at: "2026-10-05T13:20:00+03:00"
+        label: "ЗТ-4 по контролю ключом КЛ-2"
+        expect:
+          - {id: S18-08, what: "ОТК-2 проверил моменты ключом КЛ-2 (поверен до 01.04.2027): 12 болтов и J-2 в норме; ЗТ-4 подписана в 13:15 — в основании КТ-4 и записи КЛ-2, записей КЛ-1 нет", subject: gate/ZT-4/F-042, field: {decision: accepted, at: "2026-10-05T13:15:00+03:00", basis: ["kt4/F-042", "torque-check/F-042", "torque-check/F-042/J-2"], invalidated_in_basis: 0}, op: eq, value: true}
+          - {id: S18-09, what: "у ключа КЛ-1 в карточке оборудования — «поверка просрочена с 03.10»: его новые записи в основание ЗТ не идут до новой поверки; мастеру М-03 — задача сдать ключ на поверку", subject: source/TW-1, field: {verification_status: expired, since: "2026-10-03", task_to: MST-03}, op: eq, value: true}
+    must_not:
+      - {id: S18-N1, what: "сварка не начата по записи С-03 и ему не приписана; в показателях по людям (О-10) попытки нет: это условие допуска, а не ошибка исполнителя", subject: people/WLD-03, field: {weld_runs: 0, operator_error: 0, O-10_changed: false}, op: eq, value: true}
+      - {id: S18-N2, what: "записи КЛ-1 не удалены и не переписаны: лежат в истории Ф-042 с пометкой «недостоверно»", subject: event/*, filter: {labels: ["torque/F-042", "torque/F-042/J-2"]}, field: {deleted: false, overwritten: false}, op: eq, value: true}
+      - {id: S18-N3, what: "нет сигнала о дефекте, несоответствия и удержания: просроченный допуск и просроченная поверка — не брак изделия", subject: item/F-042, field: {signals: 0, nc_count: 0, holds: 0}, op: eq, value: true}
+      - {id: S18-N4, what: "в 1С ничего сверх обычного: отказ, «недостоверно» и повторный контроль не уходят", subject: erp/postings, filter: {run: S18}, field: types, op: set_eq, value: [issue_to_production, transfer]}
+
+  # ---------------------------------------------------------------------------
+  S19:
+    title: "Изменили КД посреди партии: ревизия «Б» → «В» (извещение ИИ-ФЛ-100-07)"
+    case: {other: ["§4.6 версии: ревизия КД у каждого изделия", "§3.3 КОМПАС-3D и 1С", "AI_ADMISSION: новая ревизия — ручной контроль до допуска", "критерий О1: задел при изменении КД"]}
+    run: S19   # отдельный прогон, мир S19: остаток ЗП-0917, Пт 25.09 – Пн 28.09
+    checkpoints:
+      - at: "2026-09-28T12:47:00+03:00"
+        label: "извещение принято, задел придержан"
+        expect:
+          - {id: S19-01, what: "из КОМПАС пришла ревизия «В» с извещением ИИ-ФЛ-100-07 (отверстие D2 250 → 252 [П]); новые запуски — только по «В»; ревизия «Б» осталась в истории", subject: order/ORD-0917, field: {kd_revision_current: V, previous: B, change_notice: CN-FL-100-07, new_launches_revision: V}, op: eq, value: true}
+          - {id: S19-02, what: "система сама составила задел — начатые по «Б»: Ф-037 и Ф-038 (сварены, ЗТ-3 пройдена), Ф-039 (мехобработан, ЗТ-2 пройдена); не запущенный Ф-040 в задел не входит", subject: order/ORD-0917, field: wip_list, op: set_eq, value: [F-037, F-038, F-039]}
+          - {id: S19-03, what: "задел придержан до решения: в MES «не выдавать в работу» по трём изделиям в 12:46 (узел OC2)", subject: mes/postings, filter: {run: S19, type: hold}, field: {items: [F-037, F-038, F-039], at: "2026-09-28T12:46:00+03:00", basis: "kd_change:CN-FL-100-07"}, op: eq, value: true}
+          - {id: S19-04, what: "карта контроля КТ-2 для ревизии «В» — «ручной контроль»: допущенный контур ИИ есть только для «Б» (AI_ADMISSION)", subject: checkpoint/CP-MO, filter: {kd_revision: V}, field: {mode: manual, ai_admission: not_admitted}, op: eq, value: true}
+      - at: "2026-09-28T13:50:00+03:00"
+        label: "решение по каждому изделию задела"
+        expect:
+          - {id: S19-05, what: "по каждому изделию — своё решение технолога с причиной: Ф-039 — доработать до «В»; Ф-037 — оставить по «Б» по разрешению (уплотнение старой конструкции — одно); Ф-038 — списать", subject: order/ORD-0917, field: wip_decisions, op: eq, value: {F-039: rework_to_new_revision, F-037: keep_old_with_concession, F-038: scrap}}
+          - {id: S19-06, what: "разрешение на отклонение РО-0928-01 по Ф-037 подписали Т-01, НОТК-01 и ПЗ-01; только после подписей — в MES «можно выдавать»", subject: document/permit@RO-0928-01, field: {signers: [TECH-01, QC-HEAD-01, CR-01], scope: [F-037], mes_release_after_signing: true}, op: eq, value: true}
+          - {id: S19-07, what: "в 1С одно новое сообщение — «перевод в брак (списание)» по Ф-038; по доработке и по разрешению — ничего", subject: erp/postings, filter: {run: S19, after: "2026-09-28T12:40:00+03:00"}, field: {scrap_transfer_writeoff: [F-038], scrap_transfer_rework: 0, other_types: 0}, op: eq, value: true}
+      - at: "2026-09-28T16:00:00+03:00"
+        label: "Ф-039 доработан, Ф-040 запущен по «В»"
+        expect:
+          - {id: S19-08, what: "Ф-039 доработан до «В»: новое выполнение МО-039-2 со ссылкой на МО-039-1 (УП ред. 4), КИМ по D2 = 252,00 — в допуске, ЗТ-2 №2 в 14:55", subject: item/F-039, field: {rework_run: MO-039-2, rework_of: MO-039-1, cmm_D2_nominal: 252.0, gate: "ZT-2#2", kd_revision: V}, op: eq, value: true}
+          - {id: S19-09, what: "паспорт каждого изделия хранит, по какой ревизии сделано: Ф-037 — «Б» по разрешению РО-0928-01; Ф-038 — «Б», списан; Ф-039 — «Б → В», доработан по ИИ-ФЛ-100-07; Ф-040 — «В»", subject: item/*, field: kd_revision, op: eq, value: {F-037: "B (RO-0928-01)", F-038: "B (scrapped)", F-039: "B->V (CN-FL-100-07)", F-040: V}}
+          - {id: S19-10, what: "Ф-040 запущен в 14:05 по «В» (ТП ред. 4); КТ-2 у Ф-039 и Ф-040 — осмотр контролёром, кадров камеры КТ-2 в основании ЗТ-2 нет", subject: item/F-040, field: {kd_revision: V, tp_revision: 4, kt2: manual, camera_in_basis: false}, op: eq, value: true}
+    must_not:
+      - {id: S19-N1, what: "задел не выходит из удержания без шага человека; после «списать» по Ф-038 «можно выдавать» не уходит", subject: mes/postings, filter: {run: S19}, field: {release_without_human_step: 0, release_after_scrap: 0, held_at_end: [F-038]}, op: eq, value: true}
+      - {id: S19-N2, what: "Ф-037 не идёт дальше по «Б» до подписанного разрешения", subject: item/F-037, field: released_before_permit, op: eq, value: false}
+      - {id: S19-N3, what: "задел не переписан на «В» задним числом: у Ф-037 и Ф-038 в истории — ревизия «Б»", subject: item/*, filter: {items: [F-037, F-038]}, field: kd_revision_rewritten, op: eq, value: false}
+      - {id: S19-N4, what: "смена ревизии — не несоответствие: нет сигналов, НС и «перевода в брак (переделка)»", subject: order/ORD-0917, field: {signals: 0, nc_count: 0, scrap_transfer_rework: 0}, op: eq, value: true}
+
+  # ---------------------------------------------------------------------------
+  S20:
+    title: "Маркировка не читается, детали перепутали (Ф-031, Ф-032, Ф-033)"
+    case: {other: ["§4.6 ненадёжная идентификация объекта — явно", "§4.6 уникальные ID, сборка ↔ компоненты", "§3.2 журнал критических действий"]}
+    run: S20   # отдельный прогон, мир S20: Вт 29.09 – Ср 30.09, пост 1
+    checkpoints:
+      - at: "2026-09-30T08:13:00+03:00"
+        label: "на посту не тот фланец"
+        expect:
+          - {id: S20-01, what: "скан на посту 1 в 08:12: ожидался Ф-031 (сменное задание, бирка тары), прочитан Ф-033 — шаг «сварной узел» остановлен (Е-13), сварка не начата", subject: event/S20/scan-mismatch, field: {expected: F-031, decoded: F-033, precondition_failed: E_ITEM_MISMATCH, step_blocked: WJ}, op: eq, value: true}
+          - {id: S20-02, what: "запись в журнале критических действий и задача мастеру М-02 «выяснить»", subject: audit/critical_actions, filter: {code: E_ITEM_MISMATCH}, field: {count: 1, station: ST-WC-P1, task_to: MST-02}, op: eq, value: true}
+      - at: "2026-09-30T08:41:00+03:00"
+        label: "выяснено, сварка своего фланца"
+        expect:
+          - {id: S20-03, what: "мастер нашёл Ф-031 в таре «Ф-033» (скан 08:20) и записал выяснение: фланцы положили в тару друг друга при приёмке; перепривязывать нечего — ошибочных записей не было", subject: item/F-031, field: {resolution: swap_found, resolved_by: MST-02, events_rebound: 0}, op: eq, value: true}
+          - {id: S20-04, what: "сварка Ф-031 — только после выяснения: скан фланца и кольца К-028 в 08:30, начало сварки в 08:40", subject: run/SV-031-1, field: {link_at: "2026-09-30T08:30:00+03:00", started_at: "2026-09-30T08:40:00+03:00", after_step: S20/swap-resolved}, op: eq, value: true}
+      - at: "2026-09-30T09:31:00+03:00"
+        label: "код не читается"
+        expect:
+          - {id: S20-05, what: "скан Ф-032 в 09:25 — «код не читается»: запись без номера изделия, привязка «не установлена», шаг остановлен (Е-13)", subject: event/S20/scan-unreadable, field: {read_result: unreadable, item_id: null, binding: none, precondition_failed: E_ITEM_NOT_IDENTIFIED}, op: eq, value: true}
+          - {id: S20-06, what: "номер Ф-032 ввёл сварщик и подтвердил второй человек — мастер М-02 (бирка тары, сопроводительная карта, кольцо К-029); надёжность привязки — «вручную, подтверждено»", subject: item/F-032, field: {binding: manual_confirmed, entered_by: WLD-02, confirmed_by: MST-02}, op: eq, value: true}
+      - at: "2026-09-30T12:25:00+03:00"
+        label: "перемаркировка и ЗТ-3"
+        expect:
+          - {id: S20-07, what: "Ф-032 перемаркирован по процедуре в 11:05 (новый код на резервном месте по КД, читается, свидетель ОТК-1); ЗТ-3 в 12:20 сверила маркировку", subject: gate/ZT-3/F-032, field: {marking_check: match, basis_label: remark2/F-032}, op: eq, value: true}
+    must_not:
+      - {id: S20-N1, what: "история не смешана: в истории Ф-031 нет записей Ф-033 и наоборот; каждое выполнение сварки — по своему фланцу", subject: item/*, filter: {items: [F-031, F-033]}, field: foreign_events, op: eq, value: 0}
+      - {id: S20-N2, what: "номер, введённый одним человеком без подтверждения второго, привязку не даёт", subject: item/F-032, field: single_person_manual_binding, op: eq, value: false}
+      - {id: S20-N3, what: "нет сигнала, несоответствия и лишних сообщений в 1С: перепутанная тара и нечитаемый код — не брак", subject: erp/postings, filter: {run: S20}, field: types, op: set_eq, value: [issue_to_production, transfer]}
+
+  # ---------------------------------------------------------------------------
+  S21:
+    title: "Смешение партий: кольца П-116 и П-117 (после претензии)"
+    case: {other: ["§4.6 сборка ↔ компоненты (генеалогия)", "§4.2 входной дефект: круг по партии", "§3.2 журнал критических действий", "критерий О1: прослеживаемость партий"]}
+    run: S21   # отдельный прогон, мир S21: Чт 17.09 – Чт 24.09; кольца К-107, К-108 (П-117) — в таре П-116
+    checkpoints:
+      - at: "2026-09-22T16:02:00+03:00"
+        label: "К-107 выдано под Ф-034"
+        expect:
+          - {id: S21-01, what: "кольцо под Ф-034 взяли из тары П-116, но скан кольца показал К-107 партии П-117; партия тогда годна — выдано; генеалогия: Ф-034 ← К-107 (П-117) — по коду кольца, а не по бирке тары", subject: item/F-034, field: {ring: R-107, ring_lot: LOT-R-117, lot_by: component_scan}, op: eq, value: true}
+      - at: "2026-09-23T16:10:00+03:00"
+        label: "претензия и круг по партии"
+        expect:
+          - {id: S21-02, what: "после претензии (Ср 15:45, Т-01 и НОТК-01) партия П-117 заблокирована: в MES «не выдавать» по партии; в 1С — «возврат поставщику» 9 колец (К-107 уже в изделии)", subject: lot/LOT-R-117, field: {status: blocked, erp_return_qty: 9, mes_hold: true}, op: eq, value: true}
+          - {id: S21-03, what: "по генеалогии Ф-034 попал в круг по партии RS-21 и придержан (в MES «не выдавать» в 15:46; узлы VRG → VI → I0 схемы v0.3.2)", subject: risk_scope/RS-21, field: {basis: LOT-R-117, items: [F-034], item_hold_at: "2026-09-23T15:46:00+03:00"}, op: eq, value: true}
+          - {id: S21-04, what: "Т-01 исключил Ф-034 в 16:00: рентген шва и тела кольца в зоне снимка RK-0923-21 — чисто; в MES «можно выдавать»; круг закрыт", subject: risk_scope/RS-21, field: {excluded: [F-034], basis: ["xr/F-034/RK-0923-21"], closed: true}, op: eq, value: true}
+      - at: "2026-09-24T08:30:00+03:00"
+        label: "К-108 при выдаче отклонено"
+        expect:
+          - {id: S21-05, what: "Чт 08:10 скан кольца при выдаче под Ф-036: К-108, партия П-117 — «партия заблокирована», выдача не прошла (Е-13); запись в журнале критических действий; задача ОТК-2", subject: event/S21/scan-R-108-blocked, field: {precondition_failed: E_LOT_BLOCKED, issued: false, task_to: QC-02}, op: eq, value: true}
+          - {id: S21-06, what: "ОТК-2 проверил тару П-116 сканом: К-031, К-033 — П-116; К-108 — в изолятор к остатку партии до отгрузки; под Ф-036 выдано К-033", subject: lot/LOT-R-116, field: {tare_scanned: [R-031, R-033], foreign_found: [R-108], issued_to_F-036: R-033}, op: eq, value: true}
+          - {id: S21-07, what: "по запросу генеалогии система показывает, куда уже ушли кольца П-117 из этой тары: К-107 → Ф-034 (проверен и исключён в RS-21)", subject: genealogy/LOT-R-117, field: in_items, op: eq, value: {F-034: R-107}}
+    must_not:
+      - {id: S21-N1, what: "К-108 не выдано и не привязано к Ф-036", subject: item/F-036, field: {ring: R-033, R-108_linked: false}, op: eq, value: true}
+      - {id: S21-N2, what: "Ф-034 не исключён из круга без основания и не пропущен дальше без решения", subject: risk_scope/RS-21, field: {excluded_without_basis: 0, unassessed_at_close: 0}, op: eq, value: true}
+      - {id: S21-N3, what: "в 1С по отклонённой выдаче ничего; одно «возврат поставщику»", subject: erp/postings, filter: {run: S21}, field: {return_to_supplier: 1, issue_to_production_R-108: 0}, op: eq, value: true}
+
+  # ---------------------------------------------------------------------------
+  S22:
+    title: "Попытка вернуть в работу списанную деталь (Ф-090)"
+    case: {other: ["§4.3 повторная обработка: конечный статус", "§3.4 права: отказ по правилу", "§3.2 журнал критических действий"]}
+    run: S10B   # продолжение прогона S10B: S22.jsonl подаётся после S10B.jsonl, Вт 29.09
+    checkpoints:
+      - at: "2026-09-29T08:35:00+03:00"
+        label: "попытки вернуть отклонены"
+        expect:
+          - {id: S22-01, what: "скан списанного Ф-090 на посту 1 в 08:20 — «изделие списано»: работу начать нельзя (Е-13 E_ITEM_SCRAPPED)", subject: event/S22/scan-F-090, field: {precondition_failed: E_ITEM_SCRAPPED, item_status: scrapped, operation_started: false}, op: eq, value: true}
+          - {id: S22-02, what: "решение «переделка» по списанному Ф-090 в 08:30 — отказ E_ITEM_SCRAPPED: «списано» — конечный статус, в маршрут не вернуть", subject: item/F-090, filter: {step: S22/rework-refused}, field: {refused: E_ITEM_SCRAPPED, status: scrapped}, op: eq, value: true}
+          - {id: S22-03, what: "в журнале критических действий — обе попытки: скан на посту (С-02) и решение (Т-01)", subject: audit/critical_actions, filter: {item: F-090, code: E_ITEM_SCRAPPED}, field: {count: 2, actors: [WLD-02, TECH-01]}, op: eq, value: true}
+      - at: "2026-09-29T13:05:00+03:00"
+        label: "образец на разрушающий контроль"
+        expect:
+          - {id: S22-04, what: "отдельное решение Т-01 и НОТК-01 в 09:00: Ф-090 — образец на разрушающий контроль (макрошлиф У4); статус «списано — образец», в маршрут не возвращается", subject: item/F-090, field: {status: scrapped_sample, route_return: false, decided_by: [TECH-01, QC-HEAD-01]}, op: eq, value: true}
+          - {id: S22-05, what: "макрошлиф У4 в 13:00: подрез 0,6 мм, провар корня полный — основание для разбора причин по НС-87…НС-90, а не новый сигнал", subject: event/S22/macro-U4, field: {defect: undercut, depth_mm: 0.6, used_as: cause_evidence, signal: none}, op: eq, value: true}
+    must_not:
+      - {id: S22-N1, what: "по Ф-090 после списания нет работы: ни выполнения, ни выдачи, ни ЗТ", subject: item/F-090, filter: {after: "2026-09-28T15:30:00+03:00"}, field: {runs: 0, issues: 0, gates: 0}, op: eq, value: true}
+      - {id: S22-N2, what: "в 1С ничего нового: Ф-090 уже списан в S10B; «возврат из брака в производство» не уходит", subject: erp/postings, filter: {run: S22}, field: count, op: eq, value: 0}
+      - {id: S22-N3, what: "в MES «можно выдавать» по Ф-090 не уходит — удержание списанного остаётся", subject: mes/postings, filter: {item: F-090, type: release}, field: count, op: eq, value: 0}
+
+  # ---------------------------------------------------------------------------
+  I1:
+    title: "Обмен с 1С: задание, результаты на ЗТ, подтверждения, ошибка и повтор, ID"
+    case: {other: ["§5.3 интеграционные данные", "§3.3 интеграции"]}
+    run: main_story
+    checkpoints:
+      - at: "2026-09-24T16:30:00+03:00"
+        label: "конец главной истории"
+        expect:
+          - {id: I1-01, what: "задание из 1С принято, связано с внутренним ID", subject: erp/inbound, filter: {message: 1c-in-000314}, field: {type: order_received, external: ord-5c2b-0917, internal: ORD-0917, qty: 40}, op: eq, value: true}
+          - {id: I1-02, what: "выпуск годного Ф-001: 503 → повтор с тем же номером → подтверждено", subject: erp/postings, filter: {type: release_good, item: F-001}, field: {ack_history: [error_retryable, acked], same_message_id_on_retry: true}, op: eq, value: true}
+          - {id: I1-03, what: "возврат поставщику: 422 → без автоповтора → задача А-01 → соответствие добавлено → подтверждено", subject: erp/postings, filter: {type: return_to_supplier}, field: {ack_history: [error_final, acked], auto_retry_after_4xx: false, fixed_by: ADM-01}, op: eq, value: true}
+          - {id: I1-04, what: "таблица соответствий пополнилась договором поставщика", subject: erp/id_map, filter: {entity: supplier_contract, internal: SUP-3}, field: exists, op: eq, value: true}
+          - {id: I1-05, what: "итог для защиты: 6 в брак (переделка) и 1 возврат поставщику", subject: erp/postings, filter: {date: "2026-09-23"}, field: {scrap_transfer_rework_items: 6, return_to_supplier_docs: 1}, op: eq, value: true}
+          - {id: I1-06, what: "все отправленные сообщения в итоге подтверждены", subject: erp/postings, filter: {window: main_story}, field: not_acked, op: eq, value: 0}
+          - {id: I1-07, what: "у каждого сообщения в 1С есть ответ (подтверждение или ошибка); «учтено в 1С» — только по подтверждению; отправка не держит изделие", subject: erp/postings, filter: {window: main_story}, field: {without_response: 0, accounted_before_ack: 0, item_held_by_sending: 0}, op: eq, value: true}
+          - {id: I1-08, proposal: "ждёт решения соседей", what: "[П] результат контроля уходит после каждой подписанной ЗТ по изделию: по Ф-001 — ЗТ-2…ЗТ-6, итог «годно»", subject: erp/control_results, filter: {item: F-001}, field: {gates: [ZT-2, ZT-3, ZT-4, ZT-5, ZT-6], result: accepted, line_id: L-FL-2}, op: eq, value: true}
+          - {id: I1-09, proposal: "ждёт решения соседей", what: "[П] результат контроля по решению ЗТ-Р: НС-И1, 6 изделий, «не годно», решение «переделка», подписи комиссии", subject: erp/control_results, filter: {nc: NC-G1}, field: {items_count: 6, result: nonconforming, disposition: rework, signers: [TECH-01, QC-HEAD-01, CHW-01]}, op: eq, value: true}
+          - {id: I1-10, what: "v0.3.1, MES: по каждому придержанному изделию и партии «не выдавать в работу» ушло в момент удержания — 43 сообщения; «можно выдавать» — 41, каждое по шагу человека; к концу истории придержаны Ф-021 (списан) и партия П-117 (возвращена)", subject: mes/postings, filter: {window: main_story}, field: {holds: 43, releases: 41, held_at_end: [F-021, LOT-R-117]}, op: eq, value: true}
+          - {id: I1-11, what: "у каждого изделия с сигналом (шаг подтверждения или отклонения) «не выдавать» ушло не позже решения по сигналу; по одному объекту — не больше одного «не выдавать» подряд", subject: mes/postings, filter: {window: main_story}, field: {signals_without_hold: 0, double_holds: 0}, op: eq, value: true}
+    must_not:
+      - {id: I1-N1, what: "в 1С не уходят сигналы, наблюдения, журналы, гипотезы, движения внутри цеха", subject: erp/postings, field: types, op: not_contains, value: [signal, inspection, machine_log, hypothesis, internal_move, risk_scope]}
+      - {id: I1-N2, what: "при воспроизведении истории в 1С ничего не отправляется", subject: erp/postings, filter: {caused_by: replay}, field: count, op: eq, value: 0}
+      - {id: I1-N3, what: "повтор не проводит документ дважды", subject: erp/documents, field: duplicates_by_message_id, op: eq, value: 0}
+      - {id: I1-N4, what: "«выпуск годного» не уходит раньше подписанной ЗТ-6", subject: erp/postings, filter: {type: release_good}, field: sent_before_gate_ZT-6, op: eq, value: 0}
+      - {id: I1-N5, proposal: "ждёт решения соседей", what: "[П] в результат контроля не попадают сигналы, гипотезы, кадры, журналы и круг подозреваемых", subject: erp/control_results, field: contains_types, op: not_contains, value: [signal, hypothesis, inspection_frame, machine_log, risk_scope]}
+      - {id: I1-N6, what: "в MES не уходят гипотезы, причины, кадры и оценка людей; удержание и снятие в 1С не уходят", subject: mes/postings, field: contains_types, op: not_contains, value: [hypothesis, cause, inspection_frame, operator_assessment, erp_posting]}
+      - {id: I1-N7, what: "«можно выдавать» не уходит без решения человека и после «списать» или «вернуть поставщику»", subject: mes/postings, filter: {type: release}, field: {without_human_step: 0, after_scrap_or_return: 0}, op: eq, value: true}
+
+# -----------------------------------------------------------------------------
+# Срез «пять ролей» в конце главной истории (Чт 24.09 16:30) — для кадра и проверки
+# -----------------------------------------------------------------------------
+role_views:
+  at: "2026-09-24T16:30:00+03:00"
+  peak_at: "2026-09-23T13:45:00+03:00"
+  master_MST-02:
+    peak: {problem_source: WS-2, source_stopped_since: "2026-09-23T11:12:00+03:00", suspected: 2, unknown: 1, confirmed: 3, blocked: 6}
+    end: {source_stopped: true, suspected: 0, rework_verified: 4, in_rework: 1, scrapped: 1, rings_to_return: 7}
+  qc_QC-01:
+    peak: {queue: 5, items: ["сигнал РК по F-019", "ЗТ-3 F-015 «пересмотрите»", NC-01, NC-02, NC-03], disposition_due: "2026-09-28"}
+  technologist_TECH-01:
+    peak: {shows: [before_after, reference_F-001, source_log_vs_setpoint, common_factors, hypothesis_versions, risk_scope_versions]}
+    end: {cause_confirmed: equipment, investigation: open}
+  manager:
+    end: {first_pass_ZT-3: "ниже, чем у фонового заказа (100 %)", repeated_runs_delta: 5, active_system_problems: 1, confirmed_welder_errors: 0, incoming_lots_nonconforming: 1, weld_defects_by_line: {L-FL-1: 1, L-FL-2: 4}}
+  admin_ADM-01:
+    end: {gateway_offline: ["2026-09-22T09:50:00+03:00", "2026-09-23T12:05:00+03:00"], received: 1240, duplicates_filtered: 312, late_accepted: 928, lost_at_source: 35, quarantined: 3, erp_errors: {"503": retried_ok, "422": fixed_id_map}, integrity_violations: 3, integrity_resolved_at: "2026-09-24T07:45:00+03:00", clock_skew: {CMM-1: "+7 мин, 5 записей исправлено по правилу, часы синхронизированы Пн 21.09 10:15"}, ambiguous_bindings: 1, sources_online: all}   # волна 2: три атаки подмены (S09), сдвиг часов (S15), неоднозначная привязка (S16)
+
+# -----------------------------------------------------------------------------
+# Итог главного потока (для одной строки табло «Плохой день ИС-2»)
+# -----------------------------------------------------------------------------
+main_story_totals:
+  at: "2026-09-24T16:30:00+03:00"
+  risk_scope_RS-01: {v1: 34, v2: 13, v3: 6, reduction_pct: 82}
+  items_with_confirmed_nc_in_incident: 6
+  confirmed_weld_defects: 5          # 4 до переделки (У2, У5, У6, У3) + 1 в новом шве Ф-021 (У5)
+  incoming_nc: [NC-04, NC-05]        # не входят в дефекты сварочного участка
+  confirmed_weld_defects_by_line: {L-FL-1: 1, L-FL-2: 4}
+  erp: {scrap_transfer_rework_items: 6, return_to_supplier_docs: 1, rework_return_to_production: 4, release_good_after_rework: 0, scrap_transfer_writeoff: 1}   # «выпуск годного» по переделанным — после ЗТ-6, за рамками главной истории
+  confirmed_errors_by_welder: {WLD-02: 0, WLD-03: 0}
+  cause: {RS-01: equipment/WS-2, RS-02: incoming/LOT-R-117}
+  # волна 2 (фон главной истории)
+  integrity_attacks_detected: 3          # S09: правка записи, правка с пересчётом цепочки, правка представления
+  time_corrected_records: 5              # S15: КИМ-1 +7 мин
+  ambiguous_run_bindings: 1              # S16
+  operator_checks_self_reported: 1       # S17: пропуск проверки отмечен исполнителем, запись в журнале критических действий
+  equipment_install_runs_main_week: 7    # установка оборудования EQ: Ф-001…Ф-006, Ф-010 (у Ф-015 сборка остановлена до крышки)
+  # v0.3.1 (решения пользователя 26.09)
+  mes: {holds: 43, releases: 41, held_at_end: [F-021, LOT-R-117]}   # «не выдавать» — в момент удержания; «можно выдавать» — только по шагу человека
+  flatness_after_welding: {records: 50, out_of_tolerance: 0}          # узел WP: у каждой сварки, дошедшей до рентгена
+  incoming_xray_samples: {LOT-R-108: R-301, LOT-R-116: R-001, LOT-R-117: R-104}   # узел VX: 1 кольцо из партии, все чистые; пора П-117 — в К-101 и К-105
+  author_defect_classes: {weld: {confirmed_defects: 5}, chip: {signals: 1, confirmed: 1}, dent: {signals: 1, rejected: 1}, scratch: {signals: 1, rejected: 1}, geometry: {signals: 1, confirmed: 1}}

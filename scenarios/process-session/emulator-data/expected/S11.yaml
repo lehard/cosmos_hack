@@ -1,0 +1,26 @@
+# =============================================================================
+# Срез файла process/scenarios-flange-expected.yaml — БЕЗ изменений (наши имена, как есть).
+# Источник истины — исходный файл; этот файл пересобирается tools/split_expected.py.
+# Общие словари и ID — expected/_common.yaml; главная история — expected/main-story.yaml.
+# Времена здесь — МСК (+03:00), как в исходнике; в потоках и определениях — UTC.
+# =============================================================================
+
+scenarios:
+  S11:
+    title: "«Забыли прокладку» — шаг остановлен до брака (Ф-003)"
+    case: {other: ["§4.3 действия: пропуск шага", "OperatorVision: действия и сопоставление с маршрутом"]}
+    run: main_story   # фон, в скринкасте
+    checkpoints:
+      - at: "2026-09-22T12:15:00+03:00"
+        label: "после установки крышки"
+        expect:
+          - {id: S11-01, what: "замеченное действие записано как гипотеза с уверенностью", subject: item/F-003, field: operator_actions_detected, op: contains, value: [{source: OV-ASM, deviation: step_skipped, expected_step: seal_install, confidence: 0.78}]}
+          - {id: S11-02, what: "шаг «установка крышки» остановлен до брака", subject: item/F-003, field: step_blocks, op: contains, value: [{step: cover_install, reason: "нет подтверждения установки уплотнения и предъявления зоны", at: "2026-09-22T11:50:06+03:00"}]}
+          - {id: S11-03, what: "дальше по порядку: уплотнение → зона чистая → ЗТ-СР (скрытые работы) → крышка", subject: item/F-003, field: step_order, op: eq, value: [seal_install, zone_check_uv, zt_sr, cover_install]}
+          - {id: S11-04, what: "сборщик определён по учётной записи терминала", subject: item/F-003, field: operator_identification, op: eq, value: terminal_login}
+          - {id: S11-05, what: "без OperatorVision шаг блокируется по порядку маршрута", subject: item/F-003, field: block_without_vision, op: eq, value: true, note: "проверка варианта с выключенным модулем"}
+          - {id: S11-06, what: "материалы события OperatorVision — только ссылка «видео не передаётся» (MED-OV-EVENT-ONLY): кадра и видео нет, есть только событие", subject: event/S11/ov-detected, field: evidence_refs, op: eq, value: [{media_id: MED-OV-EVENT-ONLY, kind: event_only, video_transferred: false}]}
+    must_not:
+      - {id: S11-N1, what: "нет сигнала о дефекте и несоответствия; изделие не изолировано", subject: item/F-003, field: {signals: 0, nc_count: 0, status_isolated: false}, op: eq, value: true}
+      - {id: S11-N2, what: "событие не идёт в показатели по людям", subject: metric/O-10, field: all, op: unchanged, baseline: "2026-09-22T11:44:00+03:00"}
+      - {id: S11-N3, what: "видео наружу не передаётся, лица не распознаются", subject: item/F-003, field: {video_transferred: false, face_recognition: false}, op: eq, value: true}

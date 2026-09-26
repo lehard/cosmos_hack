@@ -1,0 +1,553 @@
+# =============================================================================
+# Определение сценария. Генерируется tools/generate.py — руками не править (правьте генератор).
+# Имена событий, действий и полей — НАШИ (process-events-catalog.md, scenarios-flange*.{md,yaml}).
+# [П] — имя или значение предварительное (нет в каталоге) / наше допущение; [ПП] — проектное предположение.
+# Время: at — UTC (RFC 3339, мс); at_msk — то же в МСК для чтения.
+# human_steps.mode: stop — сценарий ждёт решения на столе роли (интерактивный режим; в автосверке подписывает
+#   demo-signer); auto — demo-signer подписывает сам в указанное доменное время.
+# expect: accepted | refused[:код] — ожидаемый ответ системы на шаг (проверка отказов по правам и правилам).
+# =============================================================================
+
+id: S19
+title: 'Изменили КД посреди партии: ревизия «Б» → «В»'
+goal: 'Извещение ИИ-ФЛ-100-07: новые изделия — по ревизии «В»; задел придержан, по каждому решает человек: Ф-039 — доработать до «В», Ф-037 — оставить по «Б» по разрешению на отклонение,
+  Ф-038 — списать. Изделие хранит, по какой ревизии сделано. Карта контроля для «В» — ручной контроль, пока нет допуска ИИ. В 1С — только «перевод в брак (списание)».'
+case:
+  other:
+  - '§4.6 версии: ревизия КД у изделия'
+  - §3.3 КОМПАС-3D и 1С
+  - 'AI_ADMISSION: новая ревизия — ручной контроль'
+  - 'критерий О1: работа с заделом при изменении КД'
+kind: run
+run: standalone
+stream: streams/S19.jsonl
+seed: 20261019
+window_msk:
+- 2026-09-25 07:30
+- 2026-09-28 16:00
+items:
+- F-037
+- F-038
+- F-039
+- F-040
+erp_postings_expected:
+- issue_to_production (заготовки ×4, кольца ×2)
+- transfer MC→WC ×2
+- scrap_transfer_writeoff ×1 (F-038)
+- доработка до новой ревизии и «по разрешению» в 1С не уходят
+erp_note: Сообщения 1С — по словарю scenarios-flange-expected.yaml (erp_posting_type). Полный список с ответами stand-а — I1.yaml → erp_outbox_expected (для S13 и S10B — в их файлах).
+  «Выпуск годного» — только после ЗТ-6.
+expected: expected/S19.yaml
+precondition: 'мир S19 [П]: остаток заказа ЗП-0917; Ф-037 и Ф-038 сварены по «Б» в Пн 28.09 утром, Ф-039 мехобработан по «Б» и ждёт рейса, Ф-040 не запущен; уплотнений старой конструкции
+  УП-401 — одно'
+new_events_p:
+- kd.wip_decision (Е-127 [П], шаг человека) — решение по заделу
+- permit.approved (Е-95) — разрешение на отклонение
+- удержание задела по извещению (узел OC2, реакция) — в MES «не выдавать» сразу
+human_steps:
+- step_id: S19-H0001
+  label: ZT-1/LOT-ZF-201
+  at: '2026-09-25T04:55:00.000Z'
+  at_msk: '2026-09-25 07:55:00'
+  mode: auto
+  role: QC
+  persona: QC-02
+  action: decision.gate_passed
+  catalog_ref: E-08
+  subject:
+    gate: ZT-1
+    lot_id: LOT-ZF-201
+  process_ref: lot/LOT-ZF-201
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - iqc/LOT-ZF-201/documents
+    - iqc/LOT-ZF-201/lab
+    - iqc/F-037/kt1
+    - …
+  expect: accepted
+  scenarios:
+  - S19
+- step_id: S19-H0002
+  label: ZT-1/LOT-R-119
+  at: '2026-09-25T05:16:00.000Z'
+  at_msk: '2026-09-25 08:16:00'
+  mode: auto
+  role: QC
+  persona: QC-02
+  action: decision.gate_passed
+  catalog_ref: E-08
+  subject:
+    gate: ZT-1
+    lot_id: LOT-R-119
+  process_ref: lot/LOT-R-119
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - iqc/LOT-R-119/documents
+    - iqc/LOT-R-119/lab
+    - iqc/LOT-R-119/xr-sample
+    - …
+  expect: accepted
+  scenarios:
+  - S19
+- step_id: S19-H0003
+  label: ZT-1/LOT-W-88
+  at: '2026-09-25T05:32:00.000Z'
+  at_msk: '2026-09-25 08:32:00'
+  mode: auto
+  role: QC
+  persona: QC-02
+  action: decision.gate_passed
+  catalog_ref: E-08
+  subject:
+    gate: ZT-1
+    lot_id: LOT-W-88
+  process_ref: lot/LOT-W-88
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - iqc/LOT-W-88/documents
+  expect: accepted
+  scenarios:
+  - S19
+- step_id: S19-H0004
+  label: ZT-2/F-037
+  at: '2026-09-25T07:00:00.000Z'
+  at_msk: '2026-09-25 10:00:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-19
+  subject:
+    gate: ZT-2
+    item_id: F-037
+  process_ref: item/F-037
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt2/F-037
+    - cmm/F-037
+    marking_check:
+      previous: TAG:F-037
+      current: DM:F-037
+      result: match
+      readable: true
+      basis_label: remark/F-037
+  expect: accepted
+  scenarios:
+  - S19
+- step_id: S19-H0005
+  label: ZT-2/F-038
+  at: '2026-09-25T07:55:00.000Z'
+  at_msk: '2026-09-25 10:55:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-19
+  subject:
+    gate: ZT-2
+    item_id: F-038
+  process_ref: item/F-038
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt2/F-038
+    - cmm/F-038
+    marking_check:
+      previous: TAG:F-038
+      current: DM:F-038
+      result: match
+      readable: true
+      basis_label: remark/F-038
+  expect: accepted
+  scenarios:
+  - S19
+- step_id: S19-H0006
+  label: ZT-2/F-039
+  at: '2026-09-25T08:50:00.000Z'
+  at_msk: '2026-09-25 11:50:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-19
+  subject:
+    gate: ZT-2
+    item_id: F-039
+  process_ref: item/F-039
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt2/F-039
+    - cmm/F-039
+    marking_check:
+      previous: TAG:F-039
+      current: DM:F-039
+      result: match
+      readable: true
+      basis_label: remark/F-039
+  expect: accepted
+  scenarios:
+  - S19
+- step_id: S19-H0007
+  label: ZT-3/F-037
+  at: '2026-09-28T08:00:00.000Z'
+  at_msk: '2026-09-28 11:00:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-47
+  subject:
+    gate: ZT-3
+    item_id: F-037
+  process_ref: item/F-037
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt3/SV-037-1/CAM-WS-1
+    - xr/F-037/RK-0928-41
+    - flat/SV-037-1
+  expect: accepted
+  scenarios:
+  - S19
+- step_id: S19-H0008
+  label: ZT-3/F-038
+  at: '2026-09-28T08:15:00.000Z'
+  at_msk: '2026-09-28 11:15:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-47
+  subject:
+    gate: ZT-3
+    item_id: F-038
+  process_ref: item/F-038
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt3/SV-038-1/CAM-WS-1
+    - xr/F-038/RK-0928-42
+    - flat/SV-038-1
+  expect: accepted
+  scenarios:
+  - S19
+- step_id: S19-H0009
+  label: S19/wip-F-039
+  at: '2026-09-28T10:30:00.000Z'
+  at_msk: '2026-09-28 13:30:00'
+  mode: stop
+  role: TECHNOLOGIST
+  persona: TECH-01
+  action: kd.wip_decision
+  catalog_ref: Е-127 [П]
+  subject:
+    order_id: ORD-0917
+    item_id: F-039
+    change_notice: CN-FL-100-07
+  process_ref: order/ORD-0917
+  process_links:
+  - item/F-039
+  params:
+    decision: rework_to_new_revision
+    state: мехобработан по «Б», ЗТ-2 пройдена, в механическом цехе
+    how: расточить D2 с 250,00 до 252,00 по ТП ред. 4 (УП ред. 4), КИМ, повторная ЗТ-2
+    revision_after: V
+    basis_labels:
+    - import/kompas-FL-100@V
+    - ZT-2/F-039
+  expect: accepted
+  scenarios:
+  - S19
+- step_id: S19-H0010
+  label: S19/wip-F-037
+  at: '2026-09-28T10:32:00.000Z'
+  at_msk: '2026-09-28 13:32:00'
+  mode: auto
+  role: TECHNOLOGIST
+  persona: TECH-01
+  action: kd.wip_decision
+  catalog_ref: Е-127 [П]
+  subject:
+    order_id: ORD-0917
+    item_id: F-037
+    change_notice: CN-FL-100-07
+  process_ref: order/ORD-0917
+  process_links:
+  - item/F-037
+  params:
+    decision: keep_old_with_concession
+    state: сварен по «Б», ЗТ-3 пройдена
+    why: D2 после сварки не растачивают; уплотнение старой конструкции (УП-401) на складе — одно, хватает на одно изделие
+    needs: разрешение на отклонение с подписью ПЗ
+    revision_after: B
+    basis_labels:
+    - import/kompas-FL-100@V
+    - ZT-3/F-037
+  expect: accepted
+  scenarios:
+  - S19
+- step_id: S19-H0011
+  label: S19/wip-F-038
+  at: '2026-09-28T10:34:00.000Z'
+  at_msk: '2026-09-28 13:34:00'
+  mode: auto
+  role: TECHNOLOGIST
+  persona: TECH-01
+  signers:
+  - TECH-01
+  - QC-HEAD-01
+  action: kd.wip_decision
+  catalog_ref: Е-127 [П]
+  subject:
+    order_id: ORD-0917
+    item_id: F-038
+    change_notice: CN-FL-100-07
+  process_ref: order/ORD-0917
+  process_links:
+  - item/F-038
+  params:
+    decision: scrap
+    state: сварен по «Б», ЗТ-3 пройдена
+    why: доработать до «В» нельзя — D2 после сварки не растачивают; оставить по «Б» нельзя — второго уплотнения старой конструкции нет
+    basis_labels:
+    - import/kompas-FL-100@V
+    - ZT-3/F-038
+  expect: accepted
+  scenarios:
+  - S19
+- step_id: S19-H0012
+  label: S19/permit-F-037
+  at: '2026-09-28T10:45:00.000Z'
+  at_msk: '2026-09-28 13:45:00'
+  mode: auto
+  role: TECHNOLOGIST
+  persona: TECH-01
+  signers:
+  - TECH-01
+  - QC-HEAD-01
+  - CR-01
+  action: permit.approved
+  catalog_ref: E-95
+  subject:
+    order_id: ORD-0917
+    item_id: F-037
+    permit_no: RO-0928-01
+  process_ref: order/ORD-0917
+  process_links:
+  - item/F-037
+  params:
+    display_no: РО-0928-01 [П]
+    what: Ф-037 — по ревизии «Б» (D2 = 250,00) с уплотнением УП-401 старой конструкции
+    scope: только Ф-037
+    reason: 'извещение ИИ-ФЛ-100-07: задел, доработка невозможна'
+    basis_labels:
+    - S19/wip-F-037
+  expect: accepted
+  scenarios:
+  - S19
+- step_id: S19-H0013
+  label: ZT-2#2/F-039
+  at: '2026-09-28T11:55:00.000Z'
+  at_msk: '2026-09-28 14:55:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-19
+  subject:
+    gate: ZT-2
+    item_id: F-039
+  process_ref: item/F-039
+  params:
+    decision: accept
+    presentation_no: 2
+    basis_labels:
+    - kt2-manual/F-039
+    - cmm/F-039/rev-V
+    marking_check:
+      previous: TAG:F-039
+      current: DM:F-039
+      result: match
+      readable: true
+      basis_label: remark/F-039
+    kd_revision: V
+    revision_history: 'Б → В: доработано по ИИ-ФЛ-100-07'
+  expect: accepted
+  scenarios:
+  - S19
+- step_id: S19-H0014
+  label: ZT-2/F-040
+  at: '2026-09-28T12:55:00.000Z'
+  at_msk: '2026-09-28 15:55:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-19
+  subject:
+    gate: ZT-2
+    item_id: F-040
+  process_ref: item/F-040
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt2-manual/F-040
+    - cmm/F-040
+    marking_check:
+      previous: TAG:F-040
+      current: DM:F-040
+      result: match
+      readable: true
+      basis_label: remark/F-040
+    kd_revision: V
+  expect: accepted
+  scenarios:
+  - S19
+erp_outbox_note: Ожидаемые учётные сообщения в 1С и ответы stand-а. Вывод движка — в потоки не входит; выведено генератором из фактов и шагов людей прогона [П]. Весь прогон.
+erp_outbox_counts:
+  issue_to_production: 6
+  scrap_transfer_writeoff: 1
+  transfer: 2
+erp_outbox_expected:
+- msg_no: 1
+  at_msk: '2026-09-25 08:30:00'
+  type: issue_to_production
+  item_id: F-037
+  lot_id: LOT-ZF-201
+  what: заготовка фланца
+  basis: reg/F-037
+  response: acked
+- msg_no: 2
+  at_msk: '2026-09-25 08:31:00'
+  type: issue_to_production
+  item_id: F-038
+  lot_id: LOT-ZF-201
+  what: заготовка фланца
+  basis: reg/F-038
+  response: acked
+- msg_no: 3
+  at_msk: '2026-09-25 08:32:00'
+  type: issue_to_production
+  item_id: F-039
+  lot_id: LOT-ZF-201
+  what: заготовка фланца
+  basis: reg/F-039
+  response: acked
+- msg_no: 4
+  at_msk: '2026-09-28 08:00:00'
+  type: transfer
+  item_id: F-037
+  route: MC->WC
+  basis: mv/F-037/MC-WC.received
+  response: acked
+- msg_no: 5
+  at_msk: '2026-09-28 08:00:00'
+  type: transfer
+  item_id: F-038
+  route: MC->WC
+  basis: mv/F-038/MC-WC.received
+  response: acked
+- msg_no: 6
+  at_msk: '2026-09-28 08:05:00'
+  type: issue_to_production
+  lot_id: LOT-R-119
+  items:
+  - F-037
+  components:
+  - R-902
+  what: кольца в сварку
+  basis: issue/ring/F-037
+  response: acked
+- msg_no: 7
+  at_msk: '2026-09-28 08:06:00'
+  type: issue_to_production
+  lot_id: LOT-R-119
+  items:
+  - F-038
+  components:
+  - R-903
+  what: кольца в сварку
+  basis: issue/ring/F-038
+  response: acked
+- msg_no: 8
+  at_msk: '2026-09-28 13:34:00'
+  type: scrap_transfer_writeoff
+  items:
+  - F-038
+  why: задел при смене ревизии КД (S19)
+  basis: S19/wip-F-038
+  response: acked
+- msg_no: 9
+  at_msk: '2026-09-28 14:05:00'
+  type: issue_to_production
+  item_id: F-040
+  lot_id: LOT-ZF-201
+  what: заготовка фланца
+  basis: reg/F-040
+  response: acked
+mes_outbox_note: 'Ожидаемые сообщения в MES (схема v0.3.1, процесс «Удержание»; вывод движка, в потоки не входит) [П]: «не выдавать в работу» — в момент удержания (правило при сигнале,
+  круг, отзыв приёмки), один раз на объект; «можно выдавать» — только по шагу человека, когда оснований не осталось. Гипотез, причин и кадров нет. Кольцо на складе держит удержание партии.'
+mes_outbox_counts:
+  hold: 3
+  release: 2
+mes_held_at_end:
+- F-038
+mes_outbox_expected:
+- msg_no: 1
+  at_msk: '2026-09-28 12:46:00'
+  type: hold
+  item_id: F-037
+  text: не выдавать в работу
+  basis: kd_change:CN-FL-100-07
+  node: OC2
+  set_by: system
+- msg_no: 2
+  at_msk: '2026-09-28 12:46:00'
+  type: hold
+  item_id: F-038
+  text: не выдавать в работу
+  basis: kd_change:CN-FL-100-07
+  node: OC2
+  set_by: system
+- msg_no: 3
+  at_msk: '2026-09-28 12:46:00'
+  type: hold
+  item_id: F-039
+  text: не выдавать в работу
+  basis: kd_change:CN-FL-100-07
+  node: OC2
+  set_by: system
+- msg_no: 4
+  at_msk: '2026-09-28 13:30:00'
+  type: release
+  item_id: F-039
+  text: можно выдавать
+  released_bases:
+  - kd_change:CN-FL-100-07
+  decision_step: S19/wip-F-039
+  decided_by: TECH-01
+  action: kd.wip_decision
+- msg_no: 5
+  at_msk: '2026-09-28 13:45:00'
+  type: release
+  item_id: F-037
+  text: можно выдавать
+  released_bases:
+  - kd_change:CN-FL-100-07
+  decision_step: S19/permit-F-037
+  decided_by: TECH-01
+  action: permit.approved

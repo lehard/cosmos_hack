@@ -1,0 +1,144 @@
+# =============================================================================
+# Справочник: типы событий и действий, которые используются в потоках и шагах людей.
+# ИМЕНА — НАШИ: process-events-catalog.md (номера Е-…, П-…) и scenarios-flange*.{md,yaml}.
+# Имена соседей (семейство.сущность.действие) сюда НЕ переводим: их контракт ещё не
+# зафиксирован, сведение — одним шагом позже (таблица соответствия).
+#   layer: Ф — факт из цеха; В — вывод системы; Р — решение человека; И — обмен с 1С.
+#   where: stream — строка потока (исходное событие);
+#          human_step — шаг человека (definitions/scenarios, выполняет роль или demo-signer);
+#          reaction — вывод движка соседей; в потоках НЕТ, проверяется только в expected.
+# [П] — имя предварительное: в каталоге его нет (добавлено сценариями или этим набором).
+# =============================================================================
+
+meta:
+  kind: reference.event_types
+  version: "0.1-draft"
+  valid_from: "2026-09-01"
+  contract_version: "1.0"
+
+stream:                                        # исходные события (строки JSONL)
+  - {type: erp.order_received,          catalog: E-01, layer: И, source: ERP-1C}
+  - {type: erp.nomenclature_synced,     catalog: E-02, layer: И, source: ERP-1C}
+  - {type: assembly.structure_imported, catalog: E-02, layer: И, source: CAD-KOMPAS}
+  - {type: erp.batch_received,          catalog: E-03, layer: И, source: ERP-1C}
+  - {type: batch.registered,            catalog: E-04, layer: Ф}
+  - {type: inspection.result,           catalog: [E-05, E-06, E-17, E-18, E-44, E-45, E-52, E-54, E-62, E-70], layer: Ф,
+     note: "единый тип «результат контроля» с полем method: camera | cmm | xray | leak_test | documents | visual"}
+  - {type: item.marked,                 catalog: E-07, layer: Ф}
+  - {type: item.registered,             catalog: E-09, layer: Ф}
+  - {type: operation.started,           catalog: [E-10, E-40, E-60], layer: Ф,
+     note: "operation_code: M1, W2, ASM, EQ (установка оборудования, узел AO), WL1 (выборка, узел WL1), T1"}
+  - {type: operation.paused,            catalog: E-11, layer: Ф}
+  - {type: operation.resumed,           catalog: E-11, layer: Ф}
+  - {type: operation.finished,          catalog: E-12, layer: Ф}
+  - {type: machine.state,               catalog: [E-14, E-15, E-16, E-43], layer: Ф,
+     note: "state: running | idle | stopped | warning | alarm; ток вне уставки — state warning, code WELD_CURRENT_HIGH"}
+  - {type: machine.parameters,          catalog: [E-42, E-53, E-61], layer: Ф,
+     note: "сводка на окно (сварка — 60 с), затяжка (ключ TW-1), журнал стенда"}
+  - {type: operator.action,             catalog: [E-20, E-21, E-22, E-23], layer: Ф,
+     note: "action_type: mode_change | check_skipped | manual_override | confirmation; idle_reported [П] — S13, пост сборки «нет детали»; check_skipped — S17 (исполнитель сам отметил пропуск); mode_change с пульта ЧПУ без номера выполнения и исполнителя — S16"}
+  - {type: operator_action.detected,    catalog: E-24, layer: Ф, note: "OperatorVision — гипотеза о действии"}
+  - {type: movement.sent,               catalog: E-30, layer: Ф}
+  - {type: movement.received,           catalog: E-31, layer: Р, note: "подпись принимающего мастера уровня 1 — идёт в потоке как ручной ввод"}
+  - {type: movement.isolator_confirmed, catalog: E-93, layer: Ф}
+  - {type: assembly.component_linked,   catalog: [E-41, E-51], layer: Ф, note: "Е-41 — скан фланца и кольца до подготовки кромок (узел WJ схемы v0.2)"}
+  - {type: assembly.component_unlinked, catalog: E-49, layer: Ф, note: "[П] компонент снят с изделия (узел WRX): Ф-019, Чт 24.09 — кольцо R-101 в претензию"}
+  - {type: batch.issued,                catalog: E-50, layer: Ф, note: "выдача крепежа, крышки, уплотнения, колец, проволоки"}
+  - {type: item.presented,              catalog: E-72, layer: Ф}
+  - {type: item.released,               catalog: E-74, layer: Ф}
+  # ---- нестандартные случаи S18–S22 [П] ----
+  - {type: item.scanned,                catalog: "E-126 [П]", layer: Ф,
+     note: "скан кода изделия или компонента на посту и при выдаче: read_result ok | unreadable | mismatch; expected_* — что ждали по заданию, decoded — что прочитано. S20 (не тот фланец, код не читается), S21 (кольцо заблокированной партии при выдаче), S22 (списанный фланец на посту)"}
+
+human_step:                                    # решения людей (в потоки не входят)
+  - {action: decision.gate_passed,        catalog: [E-08, E-19, E-47, E-55, E-63, E-73], layer: Р,
+     note: "params.decision: accept | accept_incomplete_data [П] (ЗТ-3, «годно при неполных данных», узел WZ2 — S07, F-015)"}
+  - {action: decision.signal_confirmed,   catalog: E-90, layer: Р}
+  - {action: decision.signal_rejected,    catalog: E-91, layer: Р}
+  - {action: decision.recheck_requested,  catalog: E-92, layer: Р,
+     note: "[П] S04: для пересъёмки камерой (method camera_reshoot) — uncertainty_reasons, recipe_id + capture_profile (только из capture_profiles карты), profile_reason, person_actions, prior_observation_label, assigned_by (person | rule), reshoot_no ≤ reshoot_limit, proposal (Е-79, голос — блок «инженерная справка»; предложение ≠ решение)"}
+  - {action: decision.item_isolated,      catalog: E-93, layer: Р}
+  - {action: decision.disposition_set,    catalog: E-94, layer: Р}
+  - {action: decision.disposition_verified, catalog: E-96, layer: Р}
+  - {action: event.corrected,             catalog: E-100, layer: Р}
+  - {action: item.binding_corrected,      catalog: E-101, layer: Р}
+  - {action: risk_scope.narrowed,         catalog: E-112, layer: Р}
+  - {action: risk_scope.item_assessed,    catalog: E-113, layer: Р}
+  - {action: process_hold.set,            catalog: E-114, layer: Р}
+  - {action: risk_scope.closed,           catalog: E-115, layer: Р}
+  - {action: cause.confirmed,             catalog: П-04, layer: Р}
+  - {action: decision.review_completed,   catalog: E-123, layer: Р, note: "[П] S07: пересмотр подписанной ЗТ-3 завершён новой записью (итог revoked — приёмка отозвана; исходная подпись остаётся); узел R2. Прежнее имя — decision.gate_reviewed"}
+  - {action: intervention.opened,         catalog: E-120, layer: Р, note: "S05: Ф-015 — вскрытие при возврате в сварку (узел B1), уплотнение уже стояло"}
+  - {action: containment.hold_released,   catalog: E-116, layer: Р, note: "[П] блок снят человеком (узел I5); в прогонах — внутри шагов сужения и исключения (params.holds_released), отдельным шагом не используется"}
+  - {action: erp.id_map_added,            catalog: "[П]", layer: Р, note: "S02 / I1: А-01 добавляет соответствие договора поставщика"}
+  - {action: integrity.check_requested,   catalog: "E-105 [П]", layer: Р, note: "S09: проверка целостности по кнопке (если не по расписанию); волна 2 — ещё сверка с контрольными отметками и сверка представлений"}
+  - {action: escalation.acknowledged,     catalog: "[П]", layer: Р, note: "S13"}
+  - {action: post.assignment_requested,   catalog: "[П]", layer: Р, note: "S13"}
+  - {action: post.assignment_changed,     catalog: "[П]", layer: Р, note: "S13"}
+  # ---- волна 2 ----
+  - {action: source.clock_synced,         catalog: "E-88 [П]", layer: Р, note: "S15: А-01 синхронизировал часы КИМ-1"}
+  - {action: integrity.violation_resolved, catalog: "E-103 [П]", layer: Р, note: "S09: разбор подмен — подлинная версия та, с которой сходится подпись источника"}
+  - {action: capa.action_assigned,        catalog: П-05, layer: Р, note: "мера с планом проверки результативности: S02 (улучшить обнаружение), S14 (проверка навыка, инструктаж)"}
+  - {action: capa.action_implemented,     catalog: П-06, layer: Р, note: "S14: мера внедрена; результативность проверяется отдельно"}
+  - {action: cause.explanation_recorded,  catalog: "П-09 [П]", layer: Р, note: "S14: письменное объяснение работника — без него версия «исполнитель» не станет причиной (узел CA4)"}
+  - {action: capa.effectiveness_confirmed, catalog: П-07, layer: Р, note: "S14: окно наблюдения — 8 швов С-03 без подреза"}
+  - {action: cause.investigation_closed,  catalog: "П-10 [П]", layer: Р, note: "S14: «Расследование: закрыто» (узел CA9)"}
+  - {action: rework.chief_welder_approved, catalog: "Е-99 [П]", layer: Р, note: "S10B: согласие главного сварщика на второе и третье исправление участка (узел WLA)"}
+  # ---- нестандартные случаи S18–S22 [П] ----
+  - {action: kd.wip_decision,             catalog: "E-127 [П]", layer: Р, note: "S19: решение по заделу при смене ревизии КД — rework_to_new_revision | keep_old_with_concession | scrap (узел OC3 схемы v0.3.2)"}
+  - {action: permit.approved,             catalog: E-95, layer: Р, note: "разрешение на отклонение действует после всех подписей (S19: оставить Ф-037 по ревизии «Б», узел OC4)"}
+  - {action: item.sample_designated,      catalog: "E-129 [П]", layer: Р, note: "S22: списанное изделие — образец на разрушающий контроль; в маршрут не возвращается"}
+
+reaction:                                      # выводы движка — только в expected
+  - {type: quality.signal_raised,        catalog: E-80}
+  - {type: quality.observation_linked,   catalog: E-81}
+  - {type: quality.inspection_missing,   catalog: E-82}
+  - {type: nc.draft_created,             catalog: E-83}
+  - {type: containment.hold_applied,     catalog: E-84}
+  - {type: analysis.hypotheses_updated,  catalog: E-85}
+  - {type: checkpoint.mode_changed,      catalog: E-86, note: "в прогонах не используется"}
+  - {type: operation.precondition_failed, catalog: E-13}
+  - {type: rework.limit_reached,         catalog: E-46, note: "лимит переделок участка шва по ТП (≤ 3)"}
+  - {type: decision.review_flagged,      catalog: E-122, note: "[П] метка «принято до новых данных — пересмотрите» на подписанном решении (узел R1); S07 — Ср 12:06, ЗТ-3 F-015"}
+  - {type: welding.edge_window_expired,  catalog: E-48, note: "[П] окно кромок 8 ч истекло (таймер WT на узле WW); в прогонах не используется — только вариант S13"}
+  - {type: item.inspection_summary,      catalog: E-71}
+  - {type: nc.disposition_overdue,       catalog: E-97}
+  - {type: risk_scope.created,           catalog: E-110}
+  - {type: risk_scope.expanded,          catalog: E-111}
+  - {type: quality.escape_recorded,      catalog: П-01}
+  - {type: erp.posting_sent,             catalog: "И", note: "исходящее учётное сообщение в 1С (только на ЗТ)"}
+  - {type: integration.ack,              catalog: E-75, note: "ответ stand 1С; сбои задаются stand_faults в определениях"}
+  - {type: integration.error,            catalog: E-75}
+  - {type: gate.wait_overdue,            catalog: "[П]", note: "S13: срок ожидания на ЗТ; уровни reminder / master / qc_head"}
+  - {type: escalation.closed,            catalog: "[П]", note: "S13: очередь разобрана"}
+  # ---- волна 2 ----
+  - {type: source.clock_offset_detected, catalog: "E-87 [П]", note: "S15: время события позже времени приёма — часы источника спешат"}
+  - {type: event.time_corrected,         catalog: "E-89 [П]", note: "S15: исправленное время по правилу; исходное occurred_at не меняется"}
+  - {type: integrity.violation_detected, catalog: "E-102 [П]", note: "S09: три атаки — правка записи, правка с пересчётом цепочки, правка представления"}
+  - {type: projection.rebuilt,           catalog: "E-104 [П]", note: "S09: представление пересобрано из журнала после расхождения"}
+  - {type: analysis.check_suggested,     catalog: "E-79 [П]", note: "схема v0.3: подсказка «какая проверка следующей» (IQ, CA3); S14 — «сначала аппараты». Одно событие на оба вида предложения (PROPOSALS.md §4): тип 7 «следующая проверка» — вопрос разбора; тип 2 «дополнительная проверка», kind next_observation — следующее наблюдение по изделию (S04: пересъёмка по профилю карты; класс камере не виден → рентген)"}
+  - {type: mes.hold_sent,                catalog: "E-77 [П]", note: "схема v0.3: удержание «не выдавать в работу» в MES (IM); в прогонах не используется"}
+  - {type: movement.location_unknown,    catalog: "E-32 [П]", note: "схема v0.3: розыск «нет скана места 4 ч» [ПП]; в прогонах не используется"}
+  - {type: nc.cases_merged,              catalog: "E-124 [П]", note: "схема v0.3: дела по изделию сведены в одно решение (ND); в прогонах не используется"}
+  # ---- нестандартные случаи S18–S22 [П] ----
+  - {type: inspection.result_invalidated, catalog: "E-128 [П]", note: "S18: результат средства без поверки на дату — «недостоверно», в основание ЗТ не идёт; нужен повторный замер поверенным средством"}
+
+quarantine_codes:                              # рабочие коды (scenarios-flange-expected.yaml, dictionaries.quarantine_code)
+  - {code: E_MISSING_FIELD,       display: "нет обязательного поля"}
+  - {code: E_UNSUPPORTED_VERSION, display: "неизвестная версия"}
+  - {code: E_UNKNOWN_ENUM,        display: "неизвестное значение перечисления"}
+critical_action_codes:                         # не карантин: запись в журнал критических действий (S06; dictionaries.critical_action_code)
+  - {code: E_ID_CONFLICT,         display: "тот же номер, другое содержимое: первая версия остаётся, вторая — в журнал критических действий, администратору уведомление"}
+refusal_codes:                                 # отказы API (docs/plan.md §6; S10B)
+  - {code: E_REWORK_LIMIT,    display: "лимит переделок исчерпан"}
+  - {code: E_PERMIT_REQUIRED, display: "нужно разрешение на отклонение"}
+  - {code: E_EXPLANATION_REQUIRED, display: "«ошибку исполнителя» нельзя записать без письменного объяснения работника [П] (S14)"}
+  - {code: E_INSTRUMENT_NOT_VERIFIED, display: "в основании ЗТ — запись средства без поверки на дату [П] (S18)"}
+  - {code: E_ITEM_SCRAPPED,        display: "изделие списано: статус конечный, в маршрут не вернуть [П] (S22)"}
+precondition_codes:                            # [П] условия шага, реакция Е-13 и запись в журнал критических действий (S18–S22)
+  - {code: E_QUALIFICATION_EXPIRED, display: "допуск исполнителя истёк на дату операции (S18)"}
+  - {code: E_INSTRUMENT_NOT_VERIFIED, display: "средство измерения не поверено на дату записи — результат «недостоверно» (S18)"}
+  - {code: E_ITEM_MISMATCH,        display: "на посту не то изделие: ожидалось по заданию одно, прочитано другое (S20)"}
+  - {code: E_ITEM_NOT_IDENTIFIED,  display: "код изделия не читается — нужен ручной ввод с подтверждением второго или перемаркировка (S20)"}
+  - {code: E_LOT_BLOCKED,          display: "компонент из заблокированной партии — выдача не проходит (S21)"}
+  - {code: E_ITEM_SCRAPPED,        display: "изделие списано — работу по нему начать нельзя (S22)"}

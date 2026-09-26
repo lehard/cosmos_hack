@@ -1,0 +1,46 @@
+# =============================================================================
+# Срез файла process/scenarios-flange-expected.yaml — БЕЗ изменений (наши имена, как есть).
+# Источник истины — исходный файл; этот файл пересобирается tools/split_expected.py.
+# Общие словари и ID — expected/_common.yaml; главная история — expected/main-story.yaml.
+# Времена здесь — МСК (+03:00), как в исходнике; в потоках и определениях — UTC.
+# =============================================================================
+
+scenarios:
+  S01:
+    title: "Нормальное изготовление — эталонный фланец Ф-001"
+    case: {s4_2: ["нормальное изготовление"], s5_1: ["Нормальное производство"], other: ["§1.5", "§5.2 происхождение времени"]}
+    run: main_story
+    checkpoints:
+      - at: "2026-09-23T10:35:00+03:00"
+        label: "после выпуска Ф-001"
+        expect:
+          - {id: S01-01, what: "Ф-001 — годно", subject: item/F-001, field: status, op: eq, value: accepted}
+          - {id: S01-02, what: "пройдены 6 ЗТ, все с первого предъявления", subject: item/F-001, field: gates_passed_first_time, op: set_eq, value: [ZT-1, ZT-2, ZT-3, ZT-4, ZT-5, ZT-6]}
+          - {id: S01-03, what: "у каждой ЗТ есть подпись человека (агент токена или бумага с QR, заверенная вторым сотрудником, FR-139)", subject: item/F-001, field: gates_without_signer, op: eq, value: 0}
+          - {id: S01-04, what: "несоответствий нет", subject: item/F-001, field: nc_count, op: eq, value: 0}
+          - {id: S01-05, what: "генеалогия собрана (волна 2: с клапаном КВД V-001)", subject: item/F-001, field: components, op: set_eq, value: [flange_from:LOT-ZF-201, R-001, C-001, LOT-SL-401, LOT-FS-501, V-001]}
+          - {id: S01-06, what: "журнал ИС-2 при сварке в уставке", subject: run/SV-001-1, field: current_a_range, op: eq, value: [158, 163]}
+          - {id: S01-07, what: "камера КТ-3: признаков нет при хорошем качестве", subject: run/SV-001-1, field: cp_weld_result, op: eq, value: {inspection_result: no_defect_found, observation_quality_min: 0.93}}
+          - {id: S01-08, what: "все шаги оператора подтверждены", subject: item/F-001, field: unconfirmed_steps, op: eq, value: 0}
+          - {id: S01-09, what: "мехобработка: длительность передана станком, смысл — активная обработка", subject: run/MO-001-1, field: duration, op: eq, value: {value_min: 62, source: reported, meaning: active}}
+          - {id: S01-10, what: "сварка: длительность вычислена системой", subject: run/SV-001-1, field: duration, op: eq, value: {value_min: 45, source: computed, meaning: active}}
+          - {id: S01-11, what: "в 1С ушло 6 учётных событий по Ф-001", subject: erp/postings, filter: {item: F-001}, field: types, op: set_eq, value: [issue_to_production, issue_to_production, issue_to_production, transfer, transfer, release_good]}
+          - {id: S01-12, what: "все сообщения 1С подтверждены", subject: erp/postings, filter: {item: F-001}, field: ack_status, op: eq, value: acked}
+          - {id: S01-13, what: "Ф-001 доступен как эталон для сравнения", subject: item/F-001, field: reference_for_comparison, op: eq, value: true}
+          - {id: S01-14, what: "Ф-001 идёт по линии 2 (сварен на посту 2): у всех его событий после запуска — линия L-FL-2", subject: item/F-001, field: events_line_ids, op: set_eq, value: [L-FL-2]}
+          - {id: S01-15, what: "установка оборудования (кейс §1.1, узел AO) — отдельное выполнение EQ-001-1 после затяжки крепежа: клапан V-001 отсканирован до установки, затяжка J-2 в норме (12 Н·м ± 10 %), контровка подтверждена; основание ЗТ-4 включает журнал ключа по J-2", subject: run/EQ-001-1, field: {operation: EQ, item: F-001, component: V-001, after_step: tightening, torque_J-2_in_tolerance: true, lockwire_confirmed: true, gate_basis: ZT-4}, op: eq, value: true}
+          - {id: S01-16, what: "перемаркировка (узел MK): до мехобработки — бирка с QR на таре TAG:F-001, после станка — код DM:F-001 на нерабочей поверхности; ОТК сверил на ЗТ-2 (номер совпал, код читается)", subject: item/F-001, field: marking_history, op: eq, value: [{carrier: tag_qr, value: "TAG:F-001"}, {carrier: dpm_datamatrix, value: "DM:F-001", reason: remark_after_machining, verified_at_gate: ZT-2, result: match}]}
+          - {id: S01-17, what: "на КИМ номер фланца выбран из списка ожидаемых изделий, а не введён руками", subject: event/cmm/F-001, field: item_identification.method, op: eq, value: pick_from_expected_list}
+          - {id: S01-19, what: "лабораторный контроль образцов по плану на входе (узел VL, [ПП]): ЗФ-201 — химсостав, мехсвойства, УЗК; П-116 — химсостав и мехсвойства; объём колец — выборочный рентген 1 кольца из партии (узел VX, v0.3.1, [ПП]): К-001 чисто", subject: lot/*, filter: {lots: [LOT-ZF-201, LOT-R-116]}, field: lab, op: eq, value: {LOT-ZF-201: {result: no_defect_found, tests: [chemical_composition, mechanical_properties, ultrasonic_per_kd]}, LOT-R-116: {result: no_defect_found, tests: [chemical_composition, mechanical_properties], volumetric_control: xray_sample_1_per_lot, xray_sample: {ring: R-001, result: no_defect_found}}}}
+          - {id: S01-20, what: "при приёме цехом (Е-31) у Ф-001 — поле «повреждения: нет» (МЦ → СЦ и СЦ → СИЦ)", subject: item/F-001, field: receipts_damage, op: eq, value: {MC->WC: none, WC->AC: none}}
+          - {id: S01-21, what: "в начале — состав и ревизия КД из КОМПАС (Е-02, узел OD): 6 позиций с клапаном, связи W-1, J-1, S-1, J-2, геометрии нет — сказано явно", subject: event/import/kompas-FL-100, field: {revision: B, components: 6, links: [W-1, J-1, S-1, J-2], geometry: null}, op: eq, value: true}
+          - {id: S01-22, what: "на ЗТ-СР (скрытые работы) ОТК-2 посчитал инструмент, заходивший в полость: всё вышло", subject: gate/ZT-SR/F-001, field: tools_counted, op: eq, value: {entered_cavity: 2, returned: 2}}
+          - {id: S01-18, what: "у каждой ЗТ Ф-001 подписант не выполнял операцию, которую принимает", subject: item/F-001, field: gates_signed_by_performer, op: eq, value: 0}
+          - {id: S01-23, what: "v0.3.1, узел WP: плоскость уплотнительной поверхности Ф-001 после сварки измерена до ЗТ-3 (плита со щупом [ПП]) — в допуске 0,05 мм; запись — в основании ЗТ-3", subject: run/SV-001-1, field: flatness, op: eq, value: {label: flat/SV-001-1, method: plate_and_feeler, tol_mm: 0.05, result: in_tolerance, before: ZT-3, in_gate_basis: true}}
+          - {id: S01-24, what: "v0.3.1: у каждой сварки главной истории, дошедшей до рентгена, плоскость измерена до ЗТ-3 — 50 записей, все в допуске; ни одна ЗТ-3 не подписана без записи плоскости", subject: run/*, filter: {operation: W2, run: main_story}, field: {flatness_records: 50, out_of_tolerance: 0, gates_ZT-3_without_flatness: 0}, op: eq, value: true}
+          - {id: S01-25, what: "сверка 26.09, А-10 — О-7 по изделию Ф-001 («вычислено системой», активная работа): мехобработка 63 мин, сварка 45, сборка 75 (установка клапана 5 мин идёт внутри сборки и второй раз не прибавляется), испытание 60 — всего 243 мин; полное время от выдачи заготовки (Пт 18.09 08:30) до выпуска (Ср 23.09 10:30) — 7320 мин (5 сут 2 ч, календарных); 7077 мин изделие не было в операции — это ожидание (Д-1), контроль и нерабочее время. У мехобработки станок передал 62 мин (S01-09) — в сумму не идёт: метка другая", subject: metric/O-7, filter: {item: F-001}, field: {runs_min: {AS-001-1: 75, EQ-001-1: 5, HT-001-1: 60, MO-001-1: 63, SV-001-1: 45}, nested_not_added: [EQ-001-1], active_work_min: 243, lead_time_min: 7320, not_in_operation_min: 7077, source: computed}, op: eq, value: true}
+    must_not:
+      - {id: S01-N1, what: "нет сигналов по Ф-001", subject: item/F-001, field: signals_count, op: eq, value: 0}
+      - {id: S01-N2, what: "в 1С не ушли наблюдения, журналы, движения внутри цеха", subject: erp/postings, filter: {item: F-001}, field: types, op: not_contains, value: [inspection, machine_log, internal_move]}
+      - {id: S01-N3, what: "«учтено в 1С» не раньше подтверждения", subject: item/F-001, field: erp_accounted_before_ack, op: eq, value: false}
+      - {id: S01-N4, what: "сверка 26.09, А-11 — в О-7 нет строки, где сложены длительности с разными метками: «передано» мехобработки (S01-09, 62 мин) и «вычислено» сварки (S01-10) не складываются; сумма по изделию (S01-25) — только из «вычислено системой» (З-9)", subject: metric/O-7, field: rows_mixing_labels, op: eq, value: 0}

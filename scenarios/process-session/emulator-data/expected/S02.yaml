@@ -1,0 +1,39 @@
+# =============================================================================
+# Срез файла process/scenarios-flange-expected.yaml — БЕЗ изменений (наши имена, как есть).
+# Источник истины — исходный файл; этот файл пересобирается tools/split_expected.py.
+# Общие словари и ID — expected/_common.yaml; главная история — expected/main-story.yaml.
+# Времена здесь — МСК (+03:00), как в исходнике; в потоках и определениях — UTC.
+# =============================================================================
+
+scenarios:
+  S02:
+    title: "Входной брак — пора в металле кольца (партия П-117)"
+    case: {s4_2: ["входной дефект"], s5_1: ["Входной брак"], other: ["§5.2 входной брак отдельно"]}
+    run: main_story
+    checkpoints:
+      - at: "2026-09-23T16:15:00+03:00"
+        label: "после возврата партии"
+        expect:
+          - {id: S02-01, what: "НС-04 по Ф-019: зона — тело кольца", subject: nc/NC-04, field: {item: F-019, zone: RING-BODY, defect_type: base_metal_pore}, op: eq, value: true}
+          - {id: S02-02, what: "НС-04 подтверждено контролёром", subject: nc/NC-04, field: status_path, op: contains, value: [signal, confirmed]}
+          - {id: S02-03, what: "гипотеза — входной брак, затем причина подтверждена", subject: nc/NC-04, field: cause, op: eq, value: {category: incoming, status: confirmed, lot: LOT-R-117, supplier: SUP-3}}
+          - {id: S02-04, what: "сварщик не указан как кандидат", subject: hypothesis/NC-04, field: operator_candidates, op: eq, value: []}
+          - {id: S02-05, what: "область по партии RS-02: 3 изделия, итог 1 подтверждено, 2 исключено", subject: risk_scope/RS-02, field: final_groups, op: eq, value: {confirmed: [F-019], excluded: [F-027, F-029], suspected: [], unknown: []}}
+          - {id: S02-06, what: "исключение Ф-027 и Ф-029 — по заключениям рентгена", subject: risk_scope/RS-02, field: exclusion_basis, op: contains, value: [xray:F-027, xray:F-029]}
+          - {id: S02-07, what: "второе кольцо с порой на складе — НС-05", subject: nc/NC-05, field: {item: R-105, cause_category: incoming}, op: eq, value: true}
+          - {id: S02-08, what: "в 1С один возврат поставщику на 7 колец", subject: erp/postings, filter: {type: return_to_supplier}, field: {count: 1, qty: 7, lot: LOT-R-117}, op: eq, value: true}
+          - {id: S02-09, what: "возврат подтверждён после ошибки 422 и исправления ID", subject: erp/postings, filter: {type: return_to_supplier}, field: ack_history, op: eq, value: [error_final, acked]}
+          - {id: S02-10, what: "пропуск на КТ-1 помечен «метод не видит этот класс»", subject: nc/NC-04, field: escape_classification, op: eq, value: method_blind_not_model_error}
+          - {id: S02-11, what: "Р-4: +1 несоответствующая партия у Поставщика-3", subject: metric/R-4, filter: {supplier: SUP-3}, field: nonconforming_lots, op: delta, value: 1, baseline: "2026-09-23T13:39:00+03:00"}
+          - {id: S02-12, what: "О-6: входной брак — подтверждено +2", subject: metric/O-6, filter: {row: incoming, column: confirmed}, field: count, op: delta, value: 2, baseline: "2026-09-23T13:39:00+03:00"}
+          - {id: S02-13, what: "разбор причин (отдельный экземпляр по RS-02) → мера «улучшить обнаружение»: следующие партии колец Поставщика-3 — рентген до сварки [П]; у меры есть план проверки результативности; «назначено» ≠ «результативно», расследование открыто", subject: capa/NC-04, field: {kind: improve_detection, owner: QC-HEAD-01, due: "2026-10-09", effectiveness_plan_present: true, status: assigned, investigation: open}, op: eq, value: true}
+          - {id: S02-14, what: "v0.3.1, узел VX: на входе П-117 — выборочный рентген 1 кольца из партии [ПП] (Вт 10:39): в выборке К-104, пора не найдена; ЗТ-1 — «годна»", subject: lot/LOT-R-117, field: incoming_xray_sample, op: eq, value: {ring: R-104, conclusion: RK-0922-IQC, result: no_defect_found, sample_size: 1, lot_qty: 10, in_gate_basis: ZT-1}}
+          - {id: S02-15, what: "выборка чистая ≠ вся партия чистая: пору нашёл рентген шва Ф-019 в кольце К-101, которого в выборке не было; пропуск на входе помечен «граница выборочного контроля», а не ошибка метода", subject: nc/NC-04, field: sampling_escape, op: eq, value: {incoming_sample: [R-104], sample_result: no_defect_found, defective_ring: R-101, ring_in_sample: false, classification: sampling_limit}}
+          - {id: S02-16, what: "MES (узел IM): Ср 13:55 — «не выдавать в работу» по Ф-027, Ф-029 и партии П-117 (кольца К-104…К-110 на складе); Ф-019 уже придержан — второго сообщения нет", subject: mes/postings, filter: {type: hold, basis: "risk_scope:RS-02"}, field: targets, op: set_eq, value: [F-027, F-029, LOT-R-117]}
+          - {id: S02-17, what: "MES (узел IMR): «можно выдавать» по Ф-027 (14:25) и Ф-029 (14:45) — по исключению Т-01; партия П-117 возвращена поставщику — «можно выдавать» не уходит, удержание остаётся", subject: mes/postings, filter: {basis: "risk_scope:RS-02"}, field: {releases: {F-027: S02/exclude-F-027, F-029: S02/exclude-F-029}, held_at_end: [LOT-R-117]}, op: eq, value: true}
+    must_not:
+      - {id: S02-N1, what: "входной брак не попадает в дефекты сварочного участка", subject: metric/O-4, filter: {station: welding, origin: station}, field: includes_nc, op: not_contains, value: [NC-04, NC-05]}
+      - {id: S02-N2, what: "нет гипотезы «процедура» по С-03 для НС-04", subject: hypothesis/NC-04, field: categories, op: not_contains, value: [operator_procedure]}
+      - {id: S02-N3, what: "О-10 не меняется", subject: metric/O-10, field: all, op: unchanged, baseline: "2026-09-23T13:39:00+03:00"}
+      - {id: S02-N4, what: "Ф-019 целиком поставщику не возвращается", subject: item/F-019, field: status, op: ne, value: returned_to_supplier}
+      - {id: S02-N5, what: "входной брак не записан на линию как место возникновения", subject: metric/O-4, filter: {cut: line, origin: line}, field: includes_nc, op: not_contains, value: [NC-04, NC-05]}

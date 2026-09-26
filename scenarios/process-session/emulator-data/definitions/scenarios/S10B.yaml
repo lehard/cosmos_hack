@@ -1,0 +1,542 @@
+# =============================================================================
+# Определение сценария. Генерируется tools/generate.py — руками не править (правьте генератор).
+# Имена событий, действий и полей — НАШИ (process-events-catalog.md, scenarios-flange*.{md,yaml}).
+# [П] — имя или значение предварительное (нет в каталоге) / наше допущение; [ПП] — проектное предположение.
+# Время: at — UTC (RFC 3339, мс); at_msk — то же в МСК для чтения.
+# human_steps.mode: stop — сценарий ждёт решения на столе роли (интерактивный режим; в автосверке подписывает
+#   demo-signer); auto — demo-signer подписывает сам в указанное доменное время.
+# expect: accepted | refused[:код] — ожидаемый ответ системы на шаг (проверка отказов по правам и правилам).
+# =============================================================================
+
+id: S10B
+title: Лимит переделок участка шва — отдельный прогон на Ф-090
+goal: 'Жёсткий лимит: у участка У4 уже три переделки по ТП; пятое выполнение (четвёртая переделка) заблокировано; доступны только ремонт по разрешению на отклонение или списание.'
+case:
+  other:
+  - §4.3 повторная обработка
+  - лимит доработок из BPMN
+kind: run
+run: standalone
+stream: streams/S10B.jsonl
+seed: 20260928
+window_msk:
+- 2026-09-28 07:30
+- 2026-09-28 15:30
+items:
+- F-090
+erp_postings_expected:
+- issue_to_production (заготовка, кольцо)
+- transfer MC→WC
+- 'scrap_transfer_rework ×1 (первое решение о переделке; переделки 2–3 — без нового движения: изделие уже числится в браке)'
+- scrap_transfer_writeoff ×1 (итог)
+erp_note: Сообщения 1С — по словарю scenarios-flange-expected.yaml (erp_posting_type). Полный список с ответами stand-а — I1.yaml → erp_outbox_expected (для S13 и S10B — в их файлах).
+  «Выпуск годного» — только после ЗТ-6.
+expected: expected/S10B.yaml
+precondition: 'У4 фланца F-090 уже переделан по ТП 3 раза: SV-090-2, SV-090-3, SV-090-4 (история в том же потоке)'
+human_steps:
+- step_id: S10B-H0001
+  label: ZT-1/LOT-ZF-201
+  at: '2026-09-28T04:59:30.000Z'
+  at_msk: '2026-09-28 07:59:30'
+  mode: auto
+  role: QC
+  persona: QC-02
+  action: decision.gate_passed
+  catalog_ref: E-08
+  subject:
+    gate: ZT-1
+    lot_id: LOT-ZF-201
+  process_ref: lot/LOT-ZF-201
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - iqc/LOT-ZF-201/documents
+    - iqc/LOT-ZF-201/lab
+    - iqc/F-090/kt1
+  expect: accepted
+  scenarios:
+  - S10B
+- step_id: S10B-H0002
+  label: ZT-1/LOT-R-119
+  at: '2026-09-28T05:13:00.000Z'
+  at_msk: '2026-09-28 08:13:00'
+  mode: auto
+  role: QC
+  persona: QC-02
+  action: decision.gate_passed
+  catalog_ref: E-08
+  subject:
+    gate: ZT-1
+    lot_id: LOT-R-119
+  process_ref: lot/LOT-R-119
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - iqc/LOT-R-119/documents
+    - iqc/LOT-R-119/lab
+    - iqc/LOT-R-119/xr-sample
+    - …
+  expect: accepted
+  scenarios:
+  - S10B
+- step_id: S10B-H0003
+  label: ZT-1/LOT-W-88
+  at: '2026-09-28T05:24:00.000Z'
+  at_msk: '2026-09-28 08:24:00'
+  mode: auto
+  role: QC
+  persona: QC-02
+  action: decision.gate_passed
+  catalog_ref: E-08
+  subject:
+    gate: ZT-1
+    lot_id: LOT-W-88
+  process_ref: lot/LOT-W-88
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - iqc/LOT-W-88/documents
+  expect: accepted
+  scenarios:
+  - S10B
+- step_id: S10B-H0004
+  label: ZT-2/F-090
+  at: '2026-09-28T06:30:00.000Z'
+  at_msk: '2026-09-28 09:30:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-19
+  subject:
+    gate: ZT-2
+    item_id: F-090
+  process_ref: item/F-090
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt2/F-090
+    - cmm/F-090
+    marking_check:
+      previous: TAG:F-090
+      current: DM:F-090
+      result: match
+      readable: true
+      basis_label: remark/F-090
+  expect: accepted
+  scenarios:
+  - S10B
+- step_id: S10B-H0005
+  label: S10B/confirm-NC-87
+  at: '2026-09-28T07:50:00.000Z'
+  at_msk: '2026-09-28 10:50:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.signal_confirmed
+  catalog_ref: E-90
+  subject:
+    item_id: F-090
+    signal_basis_labels:
+    - kt3/SV-090-1/CAM-WS-1
+    nc_ref: NC-87
+  process_ref: signal/SG-kt3-SV-090-1-CAM-WS-1
+  process_links:
+  - item/F-090
+  - nc/NC-87
+  params:
+    defect_type: undercut
+    zone: U4
+    severity: major
+    reason: подрез на участке У4
+  expect: accepted
+  scenarios:
+  - S10B
+- step_id: S10B-H0006
+  label: S10B/rework-1
+  at: '2026-09-28T08:00:00.000Z'
+  at_msk: '2026-09-28 11:00:00'
+  mode: auto
+  role: TECHNOLOGIST
+  persona: TECH-01
+  action: decision.disposition_set
+  catalog_ref: E-94
+  subject:
+    item_id: F-090
+    nc_ref: NC-87
+  process_ref: nc/NC-87
+  process_links:
+  - item/F-090
+  params:
+    disposition: rework
+    rework_zones:
+    - U4
+    rework_no: 1
+    reason: переделка участка У4 по ТП
+    basis_labels:
+    - S10B/confirm-NC-87
+  expect: accepted
+  scenarios:
+  - S10B
+- step_id: S10B-H0007
+  label: S10B/confirm-NC-88
+  at: '2026-09-28T08:50:00.000Z'
+  at_msk: '2026-09-28 11:50:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.signal_confirmed
+  catalog_ref: E-90
+  subject:
+    item_id: F-090
+    signal_basis_labels:
+    - kt3/SV-090-2/CAM-WS-1
+    nc_ref: NC-88
+  process_ref: signal/SG-kt3-SV-090-2-CAM-WS-1
+  process_links:
+  - item/F-090
+  - nc/NC-88
+  params:
+    defect_type: undercut
+    zone: U4
+    severity: major
+    reason: подрез на участке У4
+  expect: accepted
+  scenarios:
+  - S10B
+- step_id: S10B-H0008
+  label: S10B/rework-2
+  at: '2026-09-28T09:00:00.000Z'
+  at_msk: '2026-09-28 12:00:00'
+  mode: auto
+  role: TECHNOLOGIST
+  persona: TECH-01
+  action: decision.disposition_set
+  catalog_ref: E-94
+  subject:
+    item_id: F-090
+    nc_ref: NC-88
+  process_ref: nc/NC-88
+  process_links:
+  - item/F-090
+  params:
+    disposition: rework
+    rework_zones:
+    - U4
+    rework_no: 2
+    reason: переделка участка У4 по ТП; согласие главного сварщика — отдельной записью после контроля выборки (узел WLA)
+    basis_labels:
+    - S10B/confirm-NC-88
+  expect: accepted
+  scenarios:
+  - S10B
+- step_id: S10B-H0009
+  label: S10B/chief-welder-approval-2
+  at: '2026-09-28T09:35:00.000Z'
+  at_msk: '2026-09-28 12:35:00'
+  mode: auto
+  role: CHIEF_WELDER
+  persona: CHW-01
+  action: rework.chief_welder_approved
+  catalog_ref: Е-99 [П]
+  subject:
+    item_id: F-090
+    zone: U4
+  process_ref: item/F-090
+  params:
+    rework_no: 2
+    of_limit: 3
+    basis: выборка проконтролирована ОТК-1; переделка участка по ТП, 2-я
+    basis_labels:
+    - wl2/WL-090-2
+  expect: accepted
+  scenarios:
+  - S10B
+- step_id: S10B-H0010
+  label: S10B/confirm-NC-89
+  at: '2026-09-28T10:30:00.000Z'
+  at_msk: '2026-09-28 13:30:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.signal_confirmed
+  catalog_ref: E-90
+  subject:
+    item_id: F-090
+    signal_basis_labels:
+    - kt3/SV-090-3/CAM-WS-1
+    nc_ref: NC-89
+  process_ref: signal/SG-kt3-SV-090-3-CAM-WS-1
+  process_links:
+  - item/F-090
+  - nc/NC-89
+  params:
+    defect_type: undercut
+    zone: U4
+    severity: major
+    reason: подрез на участке У4
+  expect: accepted
+  scenarios:
+  - S10B
+- step_id: S10B-H0011
+  label: S10B/rework-3
+  at: '2026-09-28T10:40:00.000Z'
+  at_msk: '2026-09-28 13:40:00'
+  mode: auto
+  role: TECHNOLOGIST
+  persona: TECH-01
+  action: decision.disposition_set
+  catalog_ref: E-94
+  subject:
+    item_id: F-090
+    nc_ref: NC-89
+  process_ref: nc/NC-89
+  process_links:
+  - item/F-090
+  params:
+    disposition: rework
+    rework_zones:
+    - U4
+    rework_no: 3
+    reason: переделка участка У4 по ТП; согласие главного сварщика — отдельной записью после контроля выборки (узел WLA)
+    basis_labels:
+    - S10B/confirm-NC-89
+  expect: accepted
+  scenarios:
+  - S10B
+- step_id: S10B-H0012
+  label: S10B/chief-welder-approval-3
+  at: '2026-09-28T10:56:00.000Z'
+  at_msk: '2026-09-28 13:56:00'
+  mode: auto
+  role: CHIEF_WELDER
+  persona: CHW-01
+  action: rework.chief_welder_approved
+  catalog_ref: Е-99 [П]
+  subject:
+    item_id: F-090
+    zone: U4
+  process_ref: item/F-090
+  params:
+    rework_no: 3
+    of_limit: 3
+    basis: выборка проконтролирована ОТК-1; переделка участка по ТП, 3-я
+    basis_labels:
+    - wl2/WL-090-3
+  expect: accepted
+  scenarios:
+  - S10B
+- step_id: S10B-H0013
+  label: S10B/confirm-NC-90
+  at: '2026-09-28T11:40:00.000Z'
+  at_msk: '2026-09-28 14:40:00'
+  mode: stop
+  role: QC
+  persona: QC-01
+  action: decision.signal_confirmed
+  catalog_ref: E-90
+  subject:
+    item_id: F-090
+    signal_basis_labels:
+    - kt3/SV-090-4/CAM-WS-1
+    nc_ref: NC-90
+  process_ref: signal/SG-kt3-SV-090-4-CAM-WS-1
+  process_links:
+  - item/F-090
+  - nc/NC-90
+  params:
+    defect_type: undercut
+    zone: U4
+    severity: major
+    reason: подрез на участке У4
+  expect: accepted
+  scenarios:
+  - S10B
+- step_id: S10B-H0014
+  label: S10B/rework-refused
+  at: '2026-09-28T12:15:00.000Z'
+  at_msk: '2026-09-28 15:15:00'
+  mode: stop
+  role: TECHNOLOGIST
+  persona: TECH-01
+  action: decision.disposition_set
+  catalog_ref: E-94
+  subject:
+    item_id: F-090
+    nc_ref: NC-90
+  process_ref: nc/NC-90
+  process_links:
+  - item/F-090
+  params:
+    disposition: rework
+    rework_zones:
+    - U4
+  expect: refused:E_REWORK_LIMIT
+  scenarios:
+  - S10B
+  note: отказ — проверка движка полномочий соседей; в схеме v0.2 N2 переделку сверх лимита не предлагает, а если её выбрать — развилка итога WNG вернёт в решение
+- step_id: S10B-H0015
+  label: S10B/repair-refused
+  at: '2026-09-28T12:20:00.000Z'
+  at_msk: '2026-09-28 15:20:00'
+  mode: stop
+  role: TECHNOLOGIST
+  persona: TECH-01
+  action: decision.disposition_set
+  catalog_ref: E-94
+  subject:
+    item_id: F-090
+    nc_ref: NC-90
+  process_ref: nc/NC-90
+  process_links:
+  - item/F-090
+  params:
+    disposition: repair
+    concession_no: null
+  expect: refused:E_PERMIT_REQUIRED
+  scenarios:
+  - S10B
+- step_id: S10B-H0016
+  label: S10B/scrap
+  at: '2026-09-28T12:30:00.000Z'
+  at_msk: '2026-09-28 15:30:00'
+  mode: stop
+  role: TECHNOLOGIST
+  persona: TECH-01
+  action: decision.disposition_set
+  catalog_ref: E-94
+  subject:
+    item_id: F-090
+    nc_ref: NC-90
+  process_ref: nc/NC-90
+  process_links:
+  - item/F-090
+  params:
+    disposition: scrap
+    reason: лимит переделок участка У4 исчерпан; разрешения на отклонение нет
+    basis_labels:
+    - S10B/confirm-NC-90
+  expect: accepted
+  scenarios:
+  - S10B
+erp_outbox_note: Ожидаемые учётные сообщения в 1С и ответы stand-а. Вывод движка — в потоки не входит; выведено генератором из фактов и шагов людей прогона [П]. Весь прогон.
+erp_outbox_counts:
+  issue_to_production: 2
+  scrap_transfer_rework: 1
+  scrap_transfer_writeoff: 1
+  transfer: 1
+erp_outbox_expected:
+- msg_no: 1
+  at_msk: '2026-09-28 08:05:00'
+  type: issue_to_production
+  item_id: F-090
+  lot_id: LOT-ZF-201
+  what: заготовка фланца
+  basis: reg/F-090
+  response: acked
+- msg_no: 2
+  at_msk: '2026-09-28 09:45:00'
+  type: transfer
+  item_id: F-090
+  route: MC->WC
+  basis: mv/F-090/MC-WC.received
+  response: acked
+- msg_no: 3
+  at_msk: '2026-09-28 09:47:00'
+  type: issue_to_production
+  lot_id: LOT-R-119
+  items:
+  - F-090
+  components:
+  - R-901
+  what: кольца в сварку
+  basis: issue/ring
+  response: acked
+- msg_no: 4
+  at_msk: '2026-09-28 11:00:00'
+  type: scrap_transfer_rework
+  items:
+  - F-090
+  basis: S10B/rework-1
+  response: acked
+- msg_no: 5
+  at_msk: '2026-09-28 15:30:00'
+  type: scrap_transfer_writeoff
+  items:
+  - F-090
+  basis: S10B/scrap
+  response: acked
+mes_outbox_note: 'Ожидаемые сообщения в MES (схема v0.3.1, процесс «Удержание»; вывод движка, в потоки не входит) [П]: «не выдавать в работу» — в момент удержания (правило при сигнале,
+  круг, отзыв приёмки), один раз на объект; «можно выдавать» — только по шагу человека, когда оснований не осталось. Гипотез, причин и кадров нет. Кольцо на складе держит удержание партии.'
+mes_outbox_counts:
+  hold: 4
+  release: 3
+mes_held_at_end:
+- F-090
+mes_outbox_expected:
+- msg_no: 1
+  at_msk: '2026-09-28 10:46:00'
+  type: hold
+  item_id: F-090
+  text: не выдавать в работу
+  basis: signal:kt3/SV-090-1/CAM-WS-1
+  node: SG2
+  set_by: system
+- msg_no: 2
+  at_msk: '2026-09-28 11:00:00'
+  type: release
+  item_id: F-090
+  text: можно выдавать
+  released_bases:
+  - signal:kt3/SV-090-1/CAM-WS-1
+  decision_step: S10B/rework-1
+  decided_by: TECH-01
+  action: decision.disposition_set
+- msg_no: 3
+  at_msk: '2026-09-28 11:46:00'
+  type: hold
+  item_id: F-090
+  text: не выдавать в работу
+  basis: signal:kt3/SV-090-2/CAM-WS-1
+  node: SG2
+  set_by: system
+- msg_no: 4
+  at_msk: '2026-09-28 12:00:00'
+  type: release
+  item_id: F-090
+  text: можно выдавать
+  released_bases:
+  - signal:kt3/SV-090-2/CAM-WS-1
+  decision_step: S10B/rework-2
+  decided_by: TECH-01
+  action: decision.disposition_set
+- msg_no: 5
+  at_msk: '2026-09-28 13:26:00'
+  type: hold
+  item_id: F-090
+  text: не выдавать в работу
+  basis: signal:kt3/SV-090-3/CAM-WS-1
+  node: SG2
+  set_by: system
+- msg_no: 6
+  at_msk: '2026-09-28 13:40:00'
+  type: release
+  item_id: F-090
+  text: можно выдавать
+  released_bases:
+  - signal:kt3/SV-090-3/CAM-WS-1
+  decision_step: S10B/rework-3
+  decided_by: TECH-01
+  action: decision.disposition_set
+- msg_no: 7
+  at_msk: '2026-09-28 14:36:00'
+  type: hold
+  item_id: F-090
+  text: не выдавать в работу
+  basis: signal:kt3/SV-090-4/CAM-WS-1
+  node: SG2
+  set_by: system

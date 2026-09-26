@@ -1,0 +1,156 @@
+# =============================================================================
+# Справочник: изделия, номенклатура, состав сборки, зоны.
+# Источник: process/kompas-assembly-flange.json (условная сборка КОМПАС-3D)
+#           + process/scenarios-flange.md §2.1, §2.7.
+# ВСЕ значения — условные. Это не КД РКК «Энергия».
+#   [П]  — наше допущение, можно пересмотреть;
+#   [ПП] — проектное предположение (на реальном производстве не проверено).
+# Технические ID — ASCII; отображаемые имена (display) — кириллица, как в сценариях.
+# valid_from — дата, с которой запись справочника действует (справочник версионируется).
+# =============================================================================
+
+meta:
+  kind: reference.products
+  version: "0.1-draft"
+  valid_from: "2026-09-01"
+  source_files:
+    - process/kompas-assembly-flange.json
+    - process/scenarios-flange.md
+
+# -----------------------------------------------------------------------------
+# Типы изделий (item_type_id). FL-100-ASSY — экземпляр процесса = один фланец в сборе.
+# Номер фланца = номер изделия (Ф-001 → F-001), scenarios-flange.md §2.1.
+# -----------------------------------------------------------------------------
+item_types:
+  - id: FL-100-ASSY
+    display: "Фланец люка гермокорпуса в сборе"
+    designation: "ФЛ-100.00.000 СБ"          # [П] обозначение КД — условное
+    kd_revision: "B"                          # отображается как «Б»
+    kd_revision_display: "Б"
+    lifecycle_letter: "O1"                    # в КОМПАС-файле — «О1» [П]
+    tp_id: TP-FL-100                          # техпроцесс ТП-ФЛ-100
+    tp_revision: 3                            # «ред. 3» [П]
+    route_id: ROUTE-FL-100@3                  # маршрут BPMN (flange-process-bpmn.md) [П]
+    material: "АМг6"                          # [ПП] сплав — проектное допущение
+    is_process_instance: true
+    external_ids: {erp_1c: nom-7a1e-0001}     # scenarios-flange.md §6.1 (условный ID 1С)
+  - id: FL-100-FLANGE
+    display: "Фланец (деталь)"
+    designation: "ФЛ-100.01.001"              # по КОМПАС-файлу; в scenarios-flange.md — «ФЛ-100.01» [П]
+    kind: detail
+    make_or_buy: make
+    material: "АМг6"                          # [ПП]
+    note: "Экземпляр фланца = экземпляр изделия FL-100-ASSY (F-001…); отдельного ID нет [П]"
+  - id: FL-100-RING
+    display: "Патрубок (кольцо)"
+    designation: "ФЛ-100.01.002"              # в сценариях — «ФЛ-100.02» [П]
+    kind: detail
+    make_or_buy: buy
+    material: "АМг6"                          # [ПП]
+    tracked_as: instance                      # R-001… (К-001…)
+  - id: FL-100-COVER
+    display: "Крышка люка"
+    designation: "ФЛ-100.02.000"              # в сценариях — «ФЛ-100.03» [П]
+    kind: subassembly
+    make_or_buy: buy                          # покупная (партия КР-301); КОМПАС-файл выровнен в волне 2 (ред-тим, строка 30) [П]
+    tracked_as: instance                      # C-001… (КР-001…)
+  - id: FL-100-SEAL
+    display: "Уплотнение кольцевое"
+    designation: "ФЛ-100.00.004"              # в сценариях — «ФЛ-100.04» [П]
+    kind: standard_part
+    make_or_buy: buy
+    material: "резина"                        # [П]
+    tracked_as: lot
+    shelf_life_tracked: true
+  - id: FL-100-FASTENER
+    display: "Болт М6×20 с шайбой (крепёж крышки)"
+    designation: "Болт М6×20 + Шайба 6"       # по КОМПАС-файлу; сценарии §2.3 выровнены (волна 1 ред-тима) [П]
+    kind: fastener
+    make_or_buy: buy
+    tracked_as: lot
+    qty_per_assembly: 12
+  - id: FL-100-VALVE                          # волна 2 [П, ПП]: установка оборудования (кейс §1.1; ред-тим, строка 20)
+    display: "Клапан выравнивания давления КВД"
+    designation: "КВД-6 [ПП]"                 # условное обозначение покупного изделия
+    kind: purchased_equipment
+    make_or_buy: buy
+    tracked_as: instance                      # V-001… — заводской номер, сканируют до установки
+    install: "в штуцер крышки, затяжка 12 Н·м ± 10 % ключом КЛ-1 (соединение J-2), контровка проволокой; операция EQ [ПП]"
+  - id: WELD-WIRE
+    display: "Сварочная проволока"
+    kind: material
+    make_or_buy: buy
+    tracked_as: lot
+    note: "Партии П-87 (прошлая неделя) и П-88 (с Пн 21.09 08:00) [П]"
+  - id: CONTROL-SAMPLE
+    display: "Контрольный образец (сварка)"
+    kind: control_sample
+    note: "КО-7 = CS-07: пробная сварка на ИС-2 в Ср 23.09 16:00 для проверки причины [П]; не изделие заказа. S14: CS-141, CS-142 — проверка версии «техника выполнения», CS-143 — внеочередная проверка навыка С-03 (Ср 30.09)"
+
+# -----------------------------------------------------------------------------
+# Состав сборки (как импортирует адаптер КОМПАС-3D; геометрии нет — явно).
+# -----------------------------------------------------------------------------
+assembly:
+  assembly_id: FL-100.00.000
+  item_type_id: FL-100-ASSY
+  version: "B"
+  geometry: null                              # геометрия не передаётся (kompas-assembly-flange.json)
+  components:
+    - {position: 1, item_type_id: FL-100-FLANGE,   qty: 1,  unit: pcs}
+    - {position: 2, item_type_id: FL-100-RING,     qty: 1,  unit: pcs}
+    - {position: 3, item_type_id: FL-100-COVER,    qty: 1,  unit: pcs}
+    - {position: 4, item_type_id: FL-100-SEAL,     qty: 1,  unit: pcs}
+    - {position: 5, item_type_id: FL-100-FASTENER, qty: 12, unit: pcs}
+    - {position: 6, item_type_id: FL-100-VALVE,    qty: 1,  unit: pcs, note: "в КОМПАС-файле — поз. 7 (там болт и шайба — поз. 5 и 6) [П]"}
+  links:
+    - {id: W-1, type: weld, from: FL-100-FLANGE, to: FL-100-RING, special_process: true,
+       note: "кольцевой шов, аргонодуговая сварка; объект учёта внутри детали — участки шва U1…U8 (лимит переделок по ТП) [ПП]"}
+    - {id: J-1, type: bolted_joint, from: FL-100-COVER, to: FL-100-FLANGE, fasteners: FL-100-FASTENER, qty: 12,
+       tightening_sequence: cross, closes_access_to_zone: SEAL-GROOVE,
+       note: "закрывает доступ к зоне уплотнения — проверка до закрытия обязательна (ЗТ-СР)"}
+    - {id: S-1, type: seal, between: [FL-100-COVER, FL-100-FLANGE], part: FL-100-SEAL,
+       note: "уплотнение ставится до крышки (контроль последовательности шагов, S11)"}
+    - {id: J-2, type: threaded_joint, from: FL-100-VALVE, to: FL-100-COVER, torque_nm: 12.0, tolerance_pct: 10, locking: lockwire,
+       note: "установка оборудования: клапан в штуцер крышки, операция EQ после затяжки J-1 и до камеры КТ-4 (узел AO схемы v0.3) [ПП]"}
+  critical_characteristics:
+    - {id: CC-1, display: "Сварной шов фланца с патрубком, категория I", control: [CP-WELD-CAM, CP-WELD-XR], special_process: welding}
+    - {id: CC-2, display: "Герметичность узла", control: [CP-LEAK]}
+    - {id: CC-3, display: "Момент затяжки крепежа крышки", control: [TW-1, CP-ASM]}
+    - {id: CC-4, display: "Клапан: номер, момент затяжки и контровка", control: [TW-1, CP-ASM]}   # волна 2 [П]
+
+# -----------------------------------------------------------------------------
+# Зоны изделия (ключ дефекта = изделие + зона, без класса дефекта).
+# ASCII-коды — из scenarios-flange-expected.yaml (ids.zones).
+# -----------------------------------------------------------------------------
+zones:
+  weld_segments:                              # шов W-1 по отверстию фланца D2 = 250 мм (setpoints.yaml): π × 250 ≈ 785 мм, 8 участков по ≈ 98 мм [ПП]
+    - {id: U1, display: "У1"}
+    - {id: U2, display: "У2"}
+    - {id: U3, display: "У3"}
+    - {id: U4, display: "У4"}
+    - {id: U5, display: "У5"}
+    - {id: U6, display: "У6"}
+    - {id: U7, display: "У7"}
+    - {id: U8, display: "У8"}
+  seam_diameter_mm: 250                       # [ПП] диаметр шва = отверстие фланца D2 ред. «Б»
+  segment_length_mm: 98.2                     # [ПП] π × 250 / 8; камера КТ-3 — 3 окна по 40 мм на участок (CONTROL_POINT_KT3.md)
+  other:
+    - {id: EDGE,        display: "кромка под сварку (фланец)"}
+    - {id: RING-BODY,   display: "тело кольца (вне шва и вне зоны нагрева)"}
+    - {id: SEAL-GROOVE, display: "канавка уплотнения"}
+    - {id: FACE,        display: "торец фланца"}            # [П] для КТ-2
+    - {id: BORE,        display: "отверстие фланца"}         # [П] для КТ-2
+    - {id: COVER,       display: "крышка (ориентация, внешний вид)"}  # [П] для КТ-4, КТ-5
+    - {id: MARKING,     display: "маркировка DataMatrix на нерабочей поверхности по КД"}    # [П] для КТ-5; код наносят после мехобработки (перемаркировка)
+    - {id: VALVE,       display: "клапан на крышке (номер, контровка)"}   # волна 2 [П] для КТ-4
+    - {id: SAMPLE,      display: "контрольный образец (шов пластины)"}    # волна 2 [П], S14
+  bolts:                                      # «болт 1…12» → BOLT-1…BOLT-12
+    pattern: "BOLT-{1..12}"
+    display_pattern: "болт {1..12}"
+
+# -----------------------------------------------------------------------------
+# Правило сопоставления ID с 1С и КОМПАС (id_mapping_hint из КОМПАС-файла).
+# -----------------------------------------------------------------------------
+id_mapping:
+  rule: "обозначение КД + версия → item_type_id; экземпляры получают заводские номера в нашей системе (F-001…), партии покупных — из 1С"
+  conflict_behavior: "несовпадение обозначений с номенклатурой 1С → отчёт о расхождениях, без автоматического создания"

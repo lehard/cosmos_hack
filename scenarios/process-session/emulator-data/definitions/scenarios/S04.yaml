@@ -1,0 +1,198 @@
+# =============================================================================
+# Определение сценария. Генерируется tools/generate.py — руками не править (правьте генератор).
+# Имена событий, действий и полей — НАШИ (process-events-catalog.md, scenarios-flange*.{md,yaml}).
+# [П] — имя или значение предварительное (нет в каталоге) / наше допущение; [ПП] — проектное предположение.
+# Время: at — UTC (RFC 3339, мс); at_msk — то же в МСК для чтения.
+# human_steps.mode: stop — сценарий ждёт решения на столе роли (интерактивный режим; в автосверке подписывает
+#   demo-signer); auto — demo-signer подписывает сам в указанное доменное время.
+# expect: accepted | refused[:код] — ожидаемый ответ системы на шаг (проверка отказов по правам и правилам).
+# =============================================================================
+
+id: S04
+title: Недостаток сведений — блик на Ф-025 и потерянные данные Ф-019
+goal: 'Не делать категоричных выводов при нехватке данных: высокая уверенность на плохом кадре — не «годно»; потерянный кусок журнала — «нет данных», а не «в норме».'
+case:
+  s4_2:
+  - недостаток сведений для вывода
+  s5_1:
+  - Неопределённость
+  other:
+  - §4.5
+  - §4.6
+kind: slice_of_main_story
+run: main_story (MS-1)
+stream: streams/main-story.jsonl
+slice: streams/S04.jsonl
+slice_lines: 37
+seed: 20260921
+window_msk:
+- 2026-09-22 16:35
+- 2026-09-23 13:25
+items:
+- F-025
+- F-019
+- F-021
+erp_postings_expected:
+- ничего
+erp_note: Сообщения 1С — по словарю scenarios-flange-expected.yaml (erp_posting_type). Полный список с ответами stand-а — I1.yaml → erp_outbox_expected (для S13 и S10B — в их файлах).
+  «Выпуск годного» — только после ЗТ-6.
+expected: expected/S04.yaml
+human_steps_ref: definitions/scenarios/main-story.yaml
+human_steps:
+- step_id: MS1-H0230
+  label: S05/v3
+  at: '2026-09-23T09:15:00.000Z'
+  at_msk: '2026-09-23 12:15:00'
+  mode: stop
+  role: TECHNOLOGIST
+  persona: TECH-01
+  action: risk_scope.narrowed
+  catalog_ref: E-112
+  subject:
+    risk_scope_ref: RS-01
+    to_version: 3
+  process_ref: incident/RS-01
+  params:
+    size_after: 6
+    excluded_items:
+    - F-008
+    - F-010
+    - F-012
+    - F-014
+    - F-016
+    - F-221
+    - F-222
+    unknown_items:
+    - F-019
+    basis:
+    - 'опоздавший журнал ИС-2: ток впервые вышел за уставку во Вт 10:20 (EV-WS2-0412)'
+    - семь сварок до этого — в уставке, записи есть
+    - у F-019 записей нет — «нет данных»
+    recalculated_due_to_label: EV-WS2-0412
+    holds_released: у исключённых — containment.hold_released (Е-116 [П], узел I5); у F-019 блок остаётся
+    per_item_basis:
+      F-008:
+      - kt3/SV-008-1/CAM-WS-1
+      - WS-2/sum/0921-1543
+      - WS-2/sum/0921-1617
+      F-010:
+      - kt3/SV-010-1/CAM-WS-1
+      - WS-2/sum/0921-1733
+      - WS-2/sum/0921-1807
+      F-012:
+      - kt3/SV-012-1/CAM-WS-1
+      - WS-2/sum/0921-2213
+      - WS-2/sum/0921-2247
+      F-014:
+      - kt3/SV-014-1/CAM-WS-1
+      - WS-2/sum/0922-0823
+      - WS-2/sum/0922-0847
+      F-016:
+      - kt3/SV-016-1/CAM-WS-1
+      - WS-2/sum/0922-0923
+      - WS-2/sum/0922-1002
+      F-221:
+      - kt3/SV-221-1/CAM-WS-1
+      - WS-2/sum/0921-1953
+      - WS-2/sum/0921-2027
+      F-222:
+      - kt3/SV-222-1/CAM-WS-1
+      - WS-2/sum/0922-0858
+      - WS-2/sum/0922-0912
+  expect: accepted
+  scenarios:
+  - S04
+  - S05
+  - S07
+- step_id: MS1-H0232
+  label: S05/recheck5
+  at: '2026-09-23T09:30:00.000Z'
+  at_msk: '2026-09-23 12:30:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.recheck_requested
+  catalog_ref: E-92
+  subject:
+    items:
+    - F-015
+    - F-019
+    - F-021
+    - F-023
+    - F-025
+    risk_scope_ref: RS-01
+  process_ref: incident/RS-01
+  process_links:
+  - item/F-015
+  - item/F-019
+  - item/F-021
+  - item/F-023
+  - item/F-025
+  params:
+    methods:
+    - camera
+    - xray
+    zones:
+    - U1
+    - U2
+    - U3
+    - U4
+    - U5
+    - U6
+    - U7
+    - U8
+  expect: accepted
+  scenarios:
+  - S04
+  - S05
+- step_id: MS1-H0233
+  label: S04/reshoot
+  at: '2026-09-23T09:45:00.000Z'
+  at_msk: '2026-09-23 12:45:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.recheck_requested
+  catalog_ref: E-92
+  subject:
+    item_id: F-025
+  process_ref: item/F-025
+  params:
+    method: camera_reshoot
+    zones:
+    - U6
+    - U7
+    instructions: снять прижим, сменить угол света
+    uncertainty_reasons:
+    - glare
+    - zone_occluded_by_clamp
+    uncertainty_text: блик на У6–У7; участок перекрыт прижимом
+    recipe_id: RCP-CP-WELD@3
+    capture_profile: KT3-SIDE
+    profile_reason: 'отделить блик от геометрии: зеркальный блик уходит при смене стороны света, рельеф шва остаётся'
+    person_actions:
+    - снять прижим
+    prior_observation_label: kt3/F-025/recheck-glare
+    assigned_by:
+      kind: person
+      persona: QC-01
+      why_not_rule: 'прижим снимает человек: по правилу край сам не переснимет'
+    reshoot_no: 1
+    reshoot_limit: 2
+    proposal:
+      proposal_ref: PR-F025-01
+      catalog: E-79 [П]
+      type: additional_check
+      kind: next_observation
+      voice: инженерная справка
+      proposed_at: 2026-09-23 12:41
+      status_after: accepted
+    suggested_by: system
+  expect: accepted
+  scenarios:
+  - S04
+noise:
+- 'разрыв source_seq ИС-2: 35 записей Вт 16:40–17:15 не отправлены (см. streams/_manifest.yaml → gaps)'
+- 'кадр F-025 Ср 12:40: inspection_result no_defect_found, confidence 0.91, observation_quality 0.34'
+- 'пересъёмка F-025 Ср 12:55: профиль KT3-SIDE «боковой свет» (RCP-CP-WELD@3), У6–У7, ссылка на кадр 12:40 (prior_observation_event_id)'
+- 'F-021: кадр камеры 12:35 чистый, прожог в корне У5 — рентген RK-0923-08 12:50; пересъёмки для корня нет'

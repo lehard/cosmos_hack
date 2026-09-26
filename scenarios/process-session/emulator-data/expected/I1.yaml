@@ -1,0 +1,35 @@
+# =============================================================================
+# Срез файла process/scenarios-flange-expected.yaml — БЕЗ изменений (наши имена, как есть).
+# Источник истины — исходный файл; этот файл пересобирается tools/split_expected.py.
+# Общие словари и ID — expected/_common.yaml; главная история — expected/main-story.yaml.
+# Времена здесь — МСК (+03:00), как в исходнике; в потоках и определениях — UTC.
+# =============================================================================
+
+scenarios:
+  I1:
+    title: "Обмен с 1С: задание, результаты на ЗТ, подтверждения, ошибка и повтор, ID"
+    case: {other: ["§5.3 интеграционные данные", "§3.3 интеграции"]}
+    run: main_story
+    checkpoints:
+      - at: "2026-09-24T16:30:00+03:00"
+        label: "конец главной истории"
+        expect:
+          - {id: I1-01, what: "задание из 1С принято, связано с внутренним ID", subject: erp/inbound, filter: {message: 1c-in-000314}, field: {type: order_received, external: ord-5c2b-0917, internal: ORD-0917, qty: 40}, op: eq, value: true}
+          - {id: I1-02, what: "выпуск годного Ф-001: 503 → повтор с тем же номером → подтверждено", subject: erp/postings, filter: {type: release_good, item: F-001}, field: {ack_history: [error_retryable, acked], same_message_id_on_retry: true}, op: eq, value: true}
+          - {id: I1-03, what: "возврат поставщику: 422 → без автоповтора → задача А-01 → соответствие добавлено → подтверждено", subject: erp/postings, filter: {type: return_to_supplier}, field: {ack_history: [error_final, acked], auto_retry_after_4xx: false, fixed_by: ADM-01}, op: eq, value: true}
+          - {id: I1-04, what: "таблица соответствий пополнилась договором поставщика", subject: erp/id_map, filter: {entity: supplier_contract, internal: SUP-3}, field: exists, op: eq, value: true}
+          - {id: I1-05, what: "итог для защиты: 6 в брак (переделка) и 1 возврат поставщику", subject: erp/postings, filter: {date: "2026-09-23"}, field: {scrap_transfer_rework_items: 6, return_to_supplier_docs: 1}, op: eq, value: true}
+          - {id: I1-06, what: "все отправленные сообщения в итоге подтверждены", subject: erp/postings, filter: {window: main_story}, field: not_acked, op: eq, value: 0}
+          - {id: I1-07, what: "у каждого сообщения в 1С есть ответ (подтверждение или ошибка); «учтено в 1С» — только по подтверждению; отправка не держит изделие", subject: erp/postings, filter: {window: main_story}, field: {without_response: 0, accounted_before_ack: 0, item_held_by_sending: 0}, op: eq, value: true}
+          - {id: I1-08, proposal: "ждёт решения соседей", what: "[П] результат контроля уходит после каждой подписанной ЗТ по изделию: по Ф-001 — ЗТ-2…ЗТ-6, итог «годно»", subject: erp/control_results, filter: {item: F-001}, field: {gates: [ZT-2, ZT-3, ZT-4, ZT-5, ZT-6], result: accepted, line_id: L-FL-2}, op: eq, value: true}
+          - {id: I1-09, proposal: "ждёт решения соседей", what: "[П] результат контроля по решению ЗТ-Р: НС-И1, 6 изделий, «не годно», решение «переделка», подписи комиссии", subject: erp/control_results, filter: {nc: NC-G1}, field: {items_count: 6, result: nonconforming, disposition: rework, signers: [TECH-01, QC-HEAD-01, CHW-01]}, op: eq, value: true}
+          - {id: I1-10, what: "v0.3.1, MES: по каждому придержанному изделию и партии «не выдавать в работу» ушло в момент удержания — 43 сообщения; «можно выдавать» — 41, каждое по шагу человека; к концу истории придержаны Ф-021 (списан) и партия П-117 (возвращена)", subject: mes/postings, filter: {window: main_story}, field: {holds: 43, releases: 41, held_at_end: [F-021, LOT-R-117]}, op: eq, value: true}
+          - {id: I1-11, what: "у каждого изделия с сигналом (шаг подтверждения или отклонения) «не выдавать» ушло не позже решения по сигналу; по одному объекту — не больше одного «не выдавать» подряд", subject: mes/postings, filter: {window: main_story}, field: {signals_without_hold: 0, double_holds: 0}, op: eq, value: true}
+    must_not:
+      - {id: I1-N1, what: "в 1С не уходят сигналы, наблюдения, журналы, гипотезы, движения внутри цеха", subject: erp/postings, field: types, op: not_contains, value: [signal, inspection, machine_log, hypothesis, internal_move, risk_scope]}
+      - {id: I1-N2, what: "при воспроизведении истории в 1С ничего не отправляется", subject: erp/postings, filter: {caused_by: replay}, field: count, op: eq, value: 0}
+      - {id: I1-N3, what: "повтор не проводит документ дважды", subject: erp/documents, field: duplicates_by_message_id, op: eq, value: 0}
+      - {id: I1-N4, what: "«выпуск годного» не уходит раньше подписанной ЗТ-6", subject: erp/postings, filter: {type: release_good}, field: sent_before_gate_ZT-6, op: eq, value: 0}
+      - {id: I1-N5, proposal: "ждёт решения соседей", what: "[П] в результат контроля не попадают сигналы, гипотезы, кадры, журналы и круг подозреваемых", subject: erp/control_results, field: contains_types, op: not_contains, value: [signal, hypothesis, inspection_frame, machine_log, risk_scope]}
+      - {id: I1-N6, what: "в MES не уходят гипотезы, причины, кадры и оценка людей; удержание и снятие в 1С не уходят", subject: mes/postings, field: contains_types, op: not_contains, value: [hypothesis, cause, inspection_frame, operator_assessment, erp_posting]}
+      - {id: I1-N7, what: "«можно выдавать» не уходит без решения человека и после «списать» или «вернуть поставщику»", subject: mes/postings, filter: {type: release}, field: {without_human_step: 0, after_scrap_or_return: 0}, op: eq, value: true}

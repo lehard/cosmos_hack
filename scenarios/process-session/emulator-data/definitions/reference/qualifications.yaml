@@ -1,0 +1,100 @@
+# =============================================================================
+# Справочник: квалификации, допуски, цифровые клейма, полномочия (стартовая политика).
+# Источник: scenarios-flange.md (S05 «сужать круг может только технолог», S10 лимит
+# переделок участка шва и согласие главного сварщика, S13 допуск ОТК-2 к ЗТ-3), process-events-catalog.md.
+# Все номера удостоверений, сроки и области — условные [П]/[ПП].
+# Действия названы нашими именами событий (process-events-catalog.md).
+# Новые имена без номера в каталоге помечены [П].
+# =============================================================================
+
+meta:
+  kind: reference.qualifications
+  version: "0.1-draft"
+  valid_from: "2026-09-01"
+
+qualifications:                               # проверяются как условия допуска к операции (Е-13)
+  - id: Q-WLD-02
+    person: WLD-02
+    kind: welder_certification
+    process: "аргонодуговая сварка (РАД)"      # [ПП]
+    material: "АМг6"                           # [ПП]
+    thickness_mm: {min: 3, max: 12}            # [ПП]
+    certificate_no: "НАКС-УСЛ-0002"            # условный номер [П]
+    valid_from: "2025-03-01"
+    valid_until: "2027-03-01"
+    personal_stamp: "S02"                      # клеймо сварщика у шва [П]
+  - id: Q-WLD-03
+    person: WLD-03
+    kind: welder_certification
+    process: "аргонодуговая сварка (РАД)"
+    material: "АМг6"
+    thickness_mm: {min: 3, max: 12}
+    certificate_no: "НАКС-УСЛ-0003"
+    valid_from: "2024-10-03"
+    valid_until: "2026-10-02"                  # [П] S18: продление не оформлено — с Пн 05.10 сварка С-03 не допускается (Е-13)
+    personal_stamp: "S03"
+  - {id: Q-NDT-01, person: NDT-01, kind: ndt_level, method: xray, level: "II", valid_until: "2027-06-30"}          # [ПП]
+  - {id: Q-CNC-11, person: OP-CNC-11, kind: operator_admission, equipment: CNC-1, valid_until: "2027-01-01"}      # [П]
+  - {id: Q-CNC-12, person: OP-CNC-12, kind: operator_admission, equipment: CNC-1, valid_until: "2027-01-01"}      # [П]
+  - {id: Q-CMM-01, person: OP-CMM-01, kind: operator_admission, equipment: CMM-1, valid_until: "2027-01-01"}      # [П]
+  - {id: Q-TST-01, person: TST-01, kind: operator_admission, equipment: LT-1, valid_until: "2027-01-01"}          # [П]
+  - {id: Q-ASM-01, person: ASM-01, kind: operator_admission, equipment: TW-1, valid_until: "2027-01-01"}          # [П]
+
+digital_stamps:                               # цифровое клеймо контролёра: вид контроля + область + срок [П]
+  - {id: STAMP-QC-01-MO,   person: QC-01, inspection_kind: after_machining,  area_path: B1/MC, gates: [ZT-2], valid_until: "2027-01-01"}
+  - {id: STAMP-QC-01-WELD, person: QC-01, inspection_kind: weld_acceptance,  area_path: B1/WC, gates: [ZT-3], valid_until: "2027-01-01"}
+  - {id: STAMP-QC-02-IQC,  person: QC-02, inspection_kind: incoming,         area_path: B1/SK, gates: [ZT-1], valid_until: "2027-01-01"}
+  - {id: STAMP-QC-02-ASM,  person: QC-02, inspection_kind: assembly,         area_path: B1/AC, gates: [ZT-4, ZT-5], valid_until: "2027-01-01"}
+  - {id: STAMP-QC-02-FQC,  person: QC-02, inspection_kind: final,            area_path: B1/QC, gates: [ZT-6], valid_until: "2027-01-01"}
+  - id: STAMP-QC-02-WELD
+    person: QC-02
+    inspection_kind: weld_acceptance
+    area_path: B1/WC
+    gates: [ZT-3]
+    valid_until: "2027-01-01"
+    note: "[ПП] допуск ОТК-2 к приёмке сварных швов действует — нужен для перераспределения в S13"
+  - {id: STAMP-QC-HEAD-01, person: QC-HEAD-01, inspection_kind: any, area_path: B1, gates: [ZT-1, ZT-2, ZT-3, ZT-4, ZT-5, ZT-6], valid_until: "2027-01-01"}
+
+authorities:                                  # полномочия (кто — что — где). Проверка прав — у соседей (движок полномочий)
+  - {action: decision.gate_passed,        roles: [QC, QC_HEAD], requires_stamp_for_gate: true, catalog_ref: [E-08, E-19, E-47, E-55, E-63, E-73]}
+  - {action: decision.signal_confirmed,   roles: [QC, QC_HEAD, COMMISSION], catalog_ref: E-90}
+  - {action: decision.signal_rejected,    roles: [QC, QC_HEAD], reason_required: true, catalog_ref: E-91}
+  - {action: decision.recheck_requested,  roles: [QC, QC_HEAD], catalog_ref: E-92}
+  - {action: decision.item_isolated,      roles: [QC, QC_HEAD], catalog_ref: E-93}
+  - {action: decision.disposition_set,    roles: [TECHNOLOGIST, COMMISSION, CHIEF_WELDER], catalog_ref: E-94,
+     notes: ["повторная переделка того же участка шва по ТП (2-я и 3-я) — только с согласия CHIEF_WELDER [ПП]",
+             "больше 3 переделок участка — только ремонт по разрешению на отклонение (все подписи, включая CUSTOMER_REP) или списание",
+             "repair и use_as_is — только со ссылкой на действующее разрешение на отклонение"]}
+  - {action: decision.disposition_verified, roles: [QC], catalog_ref: E-96}
+  - {action: decision.review_completed,   roles: [QC, QC_HEAD], catalog_ref: E-123, note: "[П] пересмотр подписанной приёмки — новая запись; исходная подпись остаётся"}
+  - {action: containment.hold_released,   roles: [TECHNOLOGIST, QC, QC_HEAD], catalog_ref: E-116, note: "[П] блок снимает только человек"}
+  - {action: intervention.opened,         roles: [MASTER], consent_role: QC, catalog_ref: E-120}
+  - {action: kd.wip_decision,              roles: [TECHNOLOGIST, QC_HEAD], catalog_ref: "E-127 [П]",
+     note: "S19: решение по заделу при смене ревизии КД — доработать до новой, оставить по старой по разрешению, списать"}
+  - {action: item.sample_designated,      roles: [TECHNOLOGIST, QC_HEAD], catalog_ref: "E-129 [П]",
+     note: "S22: списанное изделие — образец на разрушающий контроль; в маршрут не возвращается"}
+  - {action: permit.approved,             roles: [TECHNOLOGIST, QC, QC_HEAD, CUSTOMER_REP], catalog_ref: E-95, note: "разрешение на отклонение действует после всех подписей"}
+  - {action: risk_scope.narrowed,         roles: [TECHNOLOGIST], catalog_ref: E-112,
+     note: "в каталоге «технолог или ОТК»; сценарий S05 уточняет: только технолог, попытка ОТК-1 → отказ и запись в журнал критических действий (S05-N3)"}
+  - {action: risk_scope.item_assessed,    roles: [QC, TECHNOLOGIST, COMMISSION], catalog_ref: E-113}
+  - {action: risk_scope.closed,           roles: [TECHNOLOGIST, QC_HEAD], catalog_ref: E-115}
+  - {action: process_hold.set,            roles: [MASTER, TECHNOLOGIST, QC_HEAD], catalog_ref: E-114}
+  - {action: process_hold.released,       roles: [TECHNOLOGIST, QC_HEAD], catalog_ref: E-114}
+  - {action: cause.confirmed,             roles: [TECHNOLOGIST, COMMISSION, CHIEF_WELDER, QC_HEAD], catalog_ref: П-04,
+     note: "«подтверждённая ошибка исполнителя» — только комиссия и только после письменного объяснения работника"}
+  - {action: event.corrected,             roles: [MASTER, QC, DATA_ADMIN], catalog_ref: E-100}
+  - {action: item.binding_corrected,      roles: [QC, MASTER, DATA_ADMIN], catalog_ref: E-101}
+  - {action: erp.id_map_added,            roles: [DATA_ADMIN], catalog_ref: "[П] нет в каталоге (S02 / I1-04)"}
+  - {action: quarantine.reprocessed,      roles: [DATA_ADMIN], catalog_ref: "[П] нет в каталоге (S12, сообщение 6)"}
+  - {action: escalation.acknowledged,     roles: [MASTER, QC_HEAD], catalog_ref: "[П] S13"}
+  - {action: post.assignment_requested,   roles: [MASTER], catalog_ref: "[П] S13"}
+  - {action: post.assignment_changed,     roles: [QC_HEAD, MASTER], catalog_ref: "[П] S13",
+     note: "назначение контролёра на пост ЗТ согласует начальник ОТК; окончание назначения может отметить мастер [П]"}
+
+preconditions_by_date:                        # [П] проверяются на дату операции (Е-13); S18
+  - "сварка (W2): действующее удостоверение сварщика на дату начала — иначе старт отклонён, система предлагает сварщика с допуском"
+  - "результат измерения: средство поверено на дату записи — иначе «недостоверно», в основание ЗТ не идёт (Е-128)"
+
+separation_of_duties:
+  - "Контролёр не принимает на ЗТ изделие, в изготовлении которого участвовал (S13: проверка ОТК-2)"
+  - "Сужение области риска — только технолог (S05)"

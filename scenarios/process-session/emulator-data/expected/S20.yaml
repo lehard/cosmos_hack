@@ -1,0 +1,36 @@
+# =============================================================================
+# Срез файла process/scenarios-flange-expected.yaml — БЕЗ изменений (наши имена, как есть).
+# Источник истины — исходный файл; этот файл пересобирается tools/split_expected.py.
+# Общие словари и ID — expected/_common.yaml; главная история — expected/main-story.yaml.
+# Времена здесь — МСК (+03:00), как в исходнике; в потоках и определениях — UTC.
+# =============================================================================
+
+scenarios:
+  S20:
+    title: "Маркировка не читается, детали перепутали (Ф-031, Ф-032, Ф-033)"
+    case: {other: ["§4.6 ненадёжная идентификация объекта — явно", "§4.6 уникальные ID, сборка ↔ компоненты", "§3.2 журнал критических действий"]}
+    run: S20   # отдельный прогон, мир S20: Вт 29.09 – Ср 30.09, пост 1
+    checkpoints:
+      - at: "2026-09-30T08:13:00+03:00"
+        label: "на посту не тот фланец"
+        expect:
+          - {id: S20-01, what: "скан на посту 1 в 08:12: ожидался Ф-031 (сменное задание, бирка тары), прочитан Ф-033 — шаг «сварной узел» остановлен (Е-13), сварка не начата", subject: event/S20/scan-mismatch, field: {expected: F-031, decoded: F-033, precondition_failed: E_ITEM_MISMATCH, step_blocked: WJ}, op: eq, value: true}
+          - {id: S20-02, what: "запись в журнале критических действий и задача мастеру М-02 «выяснить»", subject: audit/critical_actions, filter: {code: E_ITEM_MISMATCH}, field: {count: 1, station: ST-WC-P1, task_to: MST-02}, op: eq, value: true}
+      - at: "2026-09-30T08:41:00+03:00"
+        label: "выяснено, сварка своего фланца"
+        expect:
+          - {id: S20-03, what: "мастер нашёл Ф-031 в таре «Ф-033» (скан 08:20) и записал выяснение: фланцы положили в тару друг друга при приёмке; перепривязывать нечего — ошибочных записей не было", subject: item/F-031, field: {resolution: swap_found, resolved_by: MST-02, events_rebound: 0}, op: eq, value: true}
+          - {id: S20-04, what: "сварка Ф-031 — только после выяснения: скан фланца и кольца К-028 в 08:30, начало сварки в 08:40", subject: run/SV-031-1, field: {link_at: "2026-09-30T08:30:00+03:00", started_at: "2026-09-30T08:40:00+03:00", after_step: S20/swap-resolved}, op: eq, value: true}
+      - at: "2026-09-30T09:31:00+03:00"
+        label: "код не читается"
+        expect:
+          - {id: S20-05, what: "скан Ф-032 в 09:25 — «код не читается»: запись без номера изделия, привязка «не установлена», шаг остановлен (Е-13)", subject: event/S20/scan-unreadable, field: {read_result: unreadable, item_id: null, binding: none, precondition_failed: E_ITEM_NOT_IDENTIFIED}, op: eq, value: true}
+          - {id: S20-06, what: "номер Ф-032 ввёл сварщик и подтвердил второй человек — мастер М-02 (бирка тары, сопроводительная карта, кольцо К-029); надёжность привязки — «вручную, подтверждено»", subject: item/F-032, field: {binding: manual_confirmed, entered_by: WLD-02, confirmed_by: MST-02}, op: eq, value: true}
+      - at: "2026-09-30T12:25:00+03:00"
+        label: "перемаркировка и ЗТ-3"
+        expect:
+          - {id: S20-07, what: "Ф-032 перемаркирован по процедуре в 11:05 (новый код на резервном месте по КД, читается, свидетель ОТК-1); ЗТ-3 в 12:20 сверила маркировку", subject: gate/ZT-3/F-032, field: {marking_check: match, basis_label: remark2/F-032}, op: eq, value: true}
+    must_not:
+      - {id: S20-N1, what: "история не смешана: в истории Ф-031 нет записей Ф-033 и наоборот; каждое выполнение сварки — по своему фланцу", subject: item/*, filter: {items: [F-031, F-033]}, field: foreign_events, op: eq, value: 0}
+      - {id: S20-N2, what: "номер, введённый одним человеком без подтверждения второго, привязку не даёт", subject: item/F-032, field: single_person_manual_binding, op: eq, value: false}
+      - {id: S20-N3, what: "нет сигнала, несоответствия и лишних сообщений в 1С: перепутанная тара и нечитаемый код — не брак", subject: erp/postings, filter: {run: S20}, field: types, op: set_eq, value: [issue_to_production, transfer]}

@@ -1,0 +1,39 @@
+# =============================================================================
+# Срез файла process/scenarios-flange-expected.yaml — БЕЗ изменений (наши имена, как есть).
+# Источник истины — исходный файл; этот файл пересобирается tools/split_expected.py.
+# Общие словари и ID — expected/_common.yaml; главная история — expected/main-story.yaml.
+# Времена здесь — МСК (+03:00), как в исходнике; в потоках и определениях — UTC.
+# =============================================================================
+
+scenarios:
+  S18:
+    title: "Истёк допуск на дату операции: удостоверение сварщика и поверка ключа (Ф-042)"
+    case: {other: ["§4.3 условия выполнения операции", "§3.2 журнал критических действий", "§3.4 права и разграничение", "критерий О1: допуск к особому процессу, поверка средств измерений"]}
+    run: S18   # отдельный прогон, мир S18: Пт 02.10 – Пн 05.10; Ф-042 взамен списанного Ф-021
+    checkpoints:
+      - at: "2026-10-05T08:26:00+03:00"
+        label: "старт сварки С-03 отклонён, пост переназначен"
+        expect:
+          - {id: S18-01, what: "попытка С-03 начать сварку Ф-042 в 08:20 отклонена: удостоверение НАКС-УСЛ-0003 действовало до 02.10.2026 — условие допуска на дату операции не выполнено (Е-13)", subject: event/S18/start-refused, field: {precondition_failed: E_QUALIFICATION_EXPIRED, qualification: Q-WLD-03, valid_until: "2026-10-02", operation_started: false}, op: eq, value: true}
+          - {id: S18-02, what: "в журнале критических действий — попытка: кто (С-03), где (пост 2), по какому изделию, какое условие не выполнено", subject: audit/critical_actions, filter: {item: F-042, code: E_QUALIFICATION_EXPIRED}, field: {count: 1, actor: WLD-03, station: ST-WC-P2}, op: eq, value: true}
+          - {id: S18-03, what: "система предложила исполнителя с действующим допуском на эту операцию — С-02 (удостоверение до 01.03.2027, смена А); мастер М-02 переназначил пост в 08:25", subject: post/ST-WC-P2, field: {suggested: [WLD-02], reassigned_by: MST-02, reassigned_at: "2026-10-05T08:25:00+03:00"}, op: eq, value: true}
+      - at: "2026-10-05T10:55:00+03:00"
+        label: "шов сварил С-02, ЗТ-3 пройдена"
+        expect:
+          - {id: S18-04, what: "выполнение SV-042-1 (08:40–09:20) — одно, исполнитель С-02; у отклонённой попытки нет ни конца, ни кадров КТ-3, ни сводок источника", subject: run/SV-042-1, field: {operator: WLD-02, started_at: "2026-10-05T08:40:00+03:00", refused_attempts: 1}, op: eq, value: true}
+          - {id: S18-05, what: "ЗТ-3 по Ф-042 в 10:50 — годно; в основании — кадр КТ-3, рентген RK-1005-01 и плоскость по выполнению С-02", subject: gate/ZT-3/F-042, field: {decision: accepted, basis: ["kt3/SV-042-1/CAM-WS-1", "xr/F-042/RK-1005-01", "flat/SV-042-1"]}, op: eq, value: true}
+      - at: "2026-10-05T12:30:00+03:00"
+        label: "моменты записаны непроверенным ключом"
+        expect:
+          - {id: S18-06, what: "записи ключа КЛ-1 — затяжка 12 болтов (12:10) и клапана J-2 (12:15) — помечены «недостоверно: средство не поверено на дату»: поверка КЛ-1 кончилась 02.10.2026 (Е-128)", subject: event/*, filter: {labels: ["torque/F-042", "torque/F-042/J-2"]}, field: {validity: invalid, reason: instrument_not_verified, instrument: TW-1, verification_valid_until: "2026-10-02"}, op: eq, value: true}
+          - {id: S18-07, what: "попытка подписать ЗТ-4 на этих записях в 12:25 — отказ E_INSTRUMENT_NOT_VERIFIED; ОТК-2 назначил доп. контроль: момент — поверенным ключом КЛ-2", subject: gate/ZT-4/F-042, field: {refused: E_INSTRUMENT_NOT_VERIFIED, then: recheck, method: "контрольный ключ TW-2"}, op: eq, value: true}
+      - at: "2026-10-05T13:20:00+03:00"
+        label: "ЗТ-4 по контролю ключом КЛ-2"
+        expect:
+          - {id: S18-08, what: "ОТК-2 проверил моменты ключом КЛ-2 (поверен до 01.04.2027): 12 болтов и J-2 в норме; ЗТ-4 подписана в 13:15 — в основании КТ-4 и записи КЛ-2, записей КЛ-1 нет", subject: gate/ZT-4/F-042, field: {decision: accepted, at: "2026-10-05T13:15:00+03:00", basis: ["kt4/F-042", "torque-check/F-042", "torque-check/F-042/J-2"], invalidated_in_basis: 0}, op: eq, value: true}
+          - {id: S18-09, what: "у ключа КЛ-1 в карточке оборудования — «поверка просрочена с 03.10»: его новые записи в основание ЗТ не идут до новой поверки; мастеру М-03 — задача сдать ключ на поверку", subject: source/TW-1, field: {verification_status: expired, since: "2026-10-03", task_to: MST-03}, op: eq, value: true}
+    must_not:
+      - {id: S18-N1, what: "сварка не начата по записи С-03 и ему не приписана; в показателях по людям (О-10) попытки нет: это условие допуска, а не ошибка исполнителя", subject: people/WLD-03, field: {weld_runs: 0, operator_error: 0, O-10_changed: false}, op: eq, value: true}
+      - {id: S18-N2, what: "записи КЛ-1 не удалены и не переписаны: лежат в истории Ф-042 с пометкой «недостоверно»", subject: event/*, filter: {labels: ["torque/F-042", "torque/F-042/J-2"]}, field: {deleted: false, overwritten: false}, op: eq, value: true}
+      - {id: S18-N3, what: "нет сигнала о дефекте, несоответствия и удержания: просроченный допуск и просроченная поверка — не брак изделия", subject: item/F-042, field: {signals: 0, nc_count: 0, holds: 0}, op: eq, value: true}
+      - {id: S18-N4, what: "в 1С ничего сверх обычного: отказ, «недостоверно» и повторный контроль не уходят", subject: erp/postings, filter: {run: S18}, field: types, op: set_eq, value: [issue_to_production, transfer]}
