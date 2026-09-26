@@ -650,6 +650,20 @@ codes:
     ui_key: errors.generic
     guard: true
     refs: [AD-29, contracts/analyzer-trust-levels.yaml]
+  analyzer.invalid_transition:
+    status: 409
+    title: "Действие с паспортом недоступно в его статусе"
+    detail: "Паспорт {passport_id} в статусе «{status}»: действие «{action}» недоступно"
+    ui_key: errors.generic
+    guard: true
+    refs: [FR-98, FR-101, AD-29]
+  analyzer.admission_route_open:
+    status: 409
+    title: "Протокол допуска не подписан"
+    detail: "Протокол допуска {document_id} не подписан: маршрут подписей не закрыт — паспорт не вводится в действие"
+    ui_key: errors.generic
+    guard: true
+    refs: [FR-98, FR-101, AD-43]
 
   # ── federation (FR-132) ──
   federation.extract_tampered:

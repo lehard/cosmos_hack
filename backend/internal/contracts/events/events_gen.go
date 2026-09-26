@@ -235,6 +235,14 @@ const AnalyzerCheckRecordedV1CheckKindShadowComparison AnalyzerCheckRecordedV1Ch
 // разрешённые и запрещённые автоматические действия; допущенная версия заморожена
 // (FR-98, FR-101, AD-29).
 type AnalyzerPassportAdmittedV1 struct {
+	// Анализатор (внешняя система видеофиксации и её модель), к которому относится
+	// паспорт: например, `vqc-weld`.
+	AnalyzerID *ObjectID `json:"analyzer_id,omitempty,omitzero"`
+
+	// Вид анализатора: визуальный контроль (VisionQC) или контроль действий оператора
+	// (OperatorVision).
+	AnalyzerKind *AnalyzerPassportAdmittedV1AnalyzerKind `json:"analyzer_kind,omitempty,omitzero"`
+
 	// Протокол допуска.
 	DocumentID ObjectID `json:"document_id"`
 
@@ -250,12 +258,20 @@ type AnalyzerPassportAdmittedV1 struct {
 	// Стадия.
 	Stage AnalyzerPassportAdmittedV1Stage `json:"stage"`
 
+	// Название анализатора для людей, например «Визуальный контроль шва (КТ-3)».
+	Title *string `json:"title,omitempty,omitzero"`
+
 	// Уровень доверия (contracts/analyzer-trust-levels.yaml).
 	TrustLevel int `json:"trust_level"`
 
 	// Допущенная конфигурация контура.
 	Versions AnalyzerVersions `json:"versions"`
 }
+
+type AnalyzerPassportAdmittedV1AnalyzerKind string
+
+const AnalyzerPassportAdmittedV1AnalyzerKindOperatorvision AnalyzerPassportAdmittedV1AnalyzerKind = "operatorvision"
+const AnalyzerPassportAdmittedV1AnalyzerKindVisionqc AnalyzerPassportAdmittedV1AnalyzerKind = "visionqc"
 
 type AnalyzerPassportAdmittedV1Stage string
 

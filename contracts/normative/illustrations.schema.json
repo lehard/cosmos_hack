@@ -1,0 +1,61 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/normative/illustrations.schema.json",
+  "title": "IllustrationsCatalog",
+  "description": "Иллюстрации к сигналам VisionQC из открытых наборов (normative/vision/illustrations.v*.yaml; FR-102, PRD §11.12): набор, ссылка, лицензия, автор и соответствие классов набора видам дефектов классификатора. Файлы в репозиторий не кладутся; приложить иллюстрацию можно, только если файл есть офлайн на краю, иначе — только ссылка и метаданные.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 999,
+      "description": "Версия каталога."
+    },
+    "datasets": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Открытые наборы.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Открытый набор изображений.",
+        "properties": {
+          "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,63}$", "description": "Идентификатор набора."},
+          "title": {"type": "string", "maxLength": 256, "description": "Название набора."},
+          "url": {"type": "string", "format": "uri", "description": "Ссылка на набор."},
+          "license": {"type": "string", "maxLength": 64, "description": "Лицензия."},
+          "license_url": {"type": "string", "format": "uri", "description": "Текст лицензии."},
+          "author": {"type": "string", "maxLength": 256, "description": "Автор набора."},
+          "citation": {"type": "string", "maxLength": 1000, "description": "Публикация, которую просит цитировать автор."},
+          "mark": {"type": "string", "maxLength": 64, "description": "Пометка на экране (например, «ИЛЛЮСТРАЦИЯ»)."},
+          "note": {"type": "string", "maxLength": 500, "description": "Оговорка: не относится к изделию, не промышленная валидация."},
+          "classes": {
+            "type": "array",
+            "minItems": 1,
+            "description": "Классы набора и виды дефектов классификатора.",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "description": "Класс набора.",
+              "properties": {
+                "dataset_class": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$", "description": "Класс (каталог) в наборе."},
+                "defect_codes": {
+                  "type": "array",
+                  "uniqueItems": true,
+                  "items": {"type": "string", "pattern": "^[A-Z0-9][A-Z0-9_.-]{0,31}$", "description": "Код вида дефекта."},
+                  "description": "Виды дефектов классификатора, которые иллюстрирует класс; пусто — «признаков нет»."
+                },
+                "sample": {"type": "string", "maxLength": 256, "description": "Относительный путь файла-образца внутри распакованного набора."},
+                "media_type": {"type": "string", "pattern": "^[a-z]+/[A-Za-z0-9.+-]+$", "description": "MIME-тип образца."}
+              },
+              "required": ["dataset_class", "defect_codes", "sample", "media_type"]
+            }
+          }
+        },
+        "required": ["id", "title", "url", "license", "author", "mark", "note", "classes"]
+      }
+    }
+  },
+  "required": ["version", "datasets"]
+}

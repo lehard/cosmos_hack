@@ -51,6 +51,10 @@ const (
 	AccessUnauthenticated Code = "access.unauthenticated"
 	// Не своё рабочее место
 	AccessWrongWorkplace Code = "access.wrong_workplace"
+	// Протокол допуска не подписан
+	AnalyzerAdmissionRouteOpen Code = "analyzer.admission_route_open"
+	// Действие с паспортом недоступно в его статусе
+	AnalyzerInvalidTransition Code = "analyzer.invalid_transition"
 	// Нет допущенного анализатора
 	AnalyzerNoQualifiedAnalyzer Code = "analyzer.no_qualified_analyzer"
 	// Вернуть анализатор может только начальник ОТК
@@ -241,6 +245,8 @@ var codes = [...]Info{
 	{Code: AccessSignatureRequired, Status: 403, Title: "Нужна подпись уполномоченного", Detail: "Не хватает полномочий — нужна подпись: {who}", UIKey: "errors.access.needSignature", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: AccessUnauthenticated, Status: 401, Title: "Нужен вход", Detail: "Сеанс отсутствует или истёк", UIKey: "errors.access.sessionExpired", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: AccessWrongWorkplace, Status: 403, Title: "Не своё рабочее место", Detail: "Подписать можно только на своём рабочем месте: {workplace}", UIKey: "errors.access.wrongWorkplace", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
+	{Code: AnalyzerAdmissionRouteOpen, Status: 409, Title: "Протокол допуска не подписан", Detail: "Протокол допуска {document_id} не подписан: маршрут подписей не закрыт — паспорт не вводится в действие", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
+	{Code: AnalyzerInvalidTransition, Status: 409, Title: "Действие с паспортом недоступно в его статусе", Detail: "Паспорт {passport_id} в статусе «{status}»: действие «{action}» недоступно", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
 	{Code: AnalyzerNoQualifiedAnalyzer, Status: 200, Title: "Нет допущенного анализатора", Detail: "Для карты контроля {recipe_ref} нет допущенного анализатора — контроль ручной", UIKey: "errors.vision.noQualifiedAnalyzer", Quarantine: false, Severity: "warning", Guard: false, Aliases: nil},
 	{Code: AnalyzerReinstateRequiresHeadOfQc, Status: 403, Title: "Вернуть анализатор может только начальник ОТК", Detail: "Вернуть анализатор в работу может только начальник ОТК", UIKey: "errors.vision.returnRequiresHeadOfQc", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
 	{Code: AnalyzerTrustLevelExceeded, Status: 403, Title: "Действие сверх уровня доверия паспорта", Detail: "Уровень доверия {trust_level} не разрешает действие {action}", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
