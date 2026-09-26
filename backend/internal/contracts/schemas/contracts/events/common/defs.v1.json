@@ -647,6 +647,18 @@
       ],
       "description": "Словарь «Состояние исходящего учётного сообщения (не ось: ось меняет только квитанция)»; источник — contracts/statuses.yaml."
     },
+    "dict_investigation_stage": {
+      "type": "string",
+      "enum": [
+        "scope_defined",
+        "hypothesis",
+        "cause_confirmed",
+        "action_assigned",
+        "effectiveness_check",
+        "closed"
+      ],
+      "description": "Словарь «Стадия расследования инцидента (стол технолога)»; источник — contracts/statuses.yaml."
+    },
     "dict_item_summary": {
       "type": "string",
       "enum": [

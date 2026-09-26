@@ -5,12 +5,15 @@
 import type { CausalWindow } from './causalWindow';
 import type { CircumstanceRecord } from './circumstanceRecord';
 import type { CircumstancesMissingInformationItem } from './circumstancesMissingInformationItem';
+import type { LaneQualities } from './laneQualities';
 import type { OperationSpan } from './operationSpan';
 
 export interface Circumstances {
   /** seq, на котором построен ответ (для basis_seq команд, AD-39). */
   basis_seq: number;
   conclusion_is_categorical: boolean;
+  /** Качество данных дорожек: опоздавшие записи и пропуски. Пропуск — «исключать нельзя». */
+  lanes?: LaneQualities;
   missing_information: CircumstancesMissingInformationItem[];
   nc_id: string;
   /** Нет — выполнение операции не установлено. */

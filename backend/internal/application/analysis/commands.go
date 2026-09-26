@@ -16,7 +16,9 @@ type RecordHypothesis struct {
 // (incident.cause.concluded, FR-59; необратимое, критическое — группа cause).
 type ConcludeCause struct {
 	platform.CommandHeader
-	HypothesisID string   `json:"hypothesis_id,omitempty" doc:"Подтверждаемая гипотеза."`
+	HypothesisID string `json:"hypothesis_id,omitempty" doc:"Подтверждаемая гипотеза."`
+	// Branch — ветка причины (кейс §2.3): почему возник / почему не остановили раньше.
+	Branch       string   `json:"branch,omitempty" enum:"why_made,why_missed" doc:"Ветка причины: why_made — почему возник (по умолчанию), why_missed — почему не обнаружили раньше."`
 	NCIDs        []string `json:"nc_ids" minItems:"1"`
 	Conclusion   string   `json:"conclusion" enum:"confirmed,not_established"`
 	Category     string   `json:"category,omitempty" enum:"incoming,equipment,performer,handling,assembly,documentation,not_established"`
@@ -68,6 +70,8 @@ type ScopeAnalysis struct {
 type CloseIncident struct {
 	platform.CommandHeader
 	Summary string `json:"summary,omitempty" maxLength:"4000"`
+	// Scope — что закрыть: область риска (по умолчанию, S05) или расследование целиком.
+	Scope string `json:"scope,omitempty" enum:"risk_scope,investigation" doc:"risk_scope — закрыть область риска (по умолчанию); investigation — закрыть расследование: 422 incident.cause_branch_open, если нет вывода по одной из двух причин, 422 incident.effectiveness_unchecked, если эффективность мер не проверена."`
 }
 
 // AssignAction — назначить корректирующее действие (incident.action.assigned, FR-64).

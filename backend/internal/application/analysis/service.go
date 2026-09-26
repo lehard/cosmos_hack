@@ -27,6 +27,9 @@ type Config struct {
 	Generators []Generator
 	// Line — ограничение линии для генератора «bottleneck»; nil — не подключено.
 	Line LineSource
+	// Names — названия из справочников (имена людей, значения общих факторов);
+	// nil — без названий (author_name, common_factor.label не заполняются).
+	Names Names
 }
 
 // Service — реализация live ведущих портов модуля analysis (AD-36): чтение —

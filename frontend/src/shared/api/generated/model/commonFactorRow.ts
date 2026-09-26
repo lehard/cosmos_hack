@@ -15,4 +15,6 @@ export interface CommonFactorRow {
      * @nullable
      */
   value: string | null;
+  /** Значение словами: оборудование — справочник оборудования, исполнитель — справочник людей, партия — справочник партий. Нет — показать value. */
+  value_label?: string;
 }

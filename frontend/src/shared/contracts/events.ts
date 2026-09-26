@@ -4253,6 +4253,10 @@ category?: ("incoming" | "equipment" | "performer" | "handling" | "assembly" | "
  */
 verification: string
 reason: Reason24
+/**
+ * Ветка причины: почему возник (why_made) или почему не обнаружили раньше (why_missed). Нет — why_made.
+ */
+branch?: ("why_made" | "why_missed")
 }
 /**
  * Причина действия: код и текст.
@@ -4432,6 +4436,10 @@ excluded: number
  * Итог.
  */
 summary?: string
+/**
+ * Что закрыто: область риска (risk_scope, по умолчанию) или расследование целиком (investigation — обе причины отвечены, эффективность мер проверена).
+ */
+scope?: ("risk_scope" | "investigation")
 }
 /**
  * Инцидент открыт — связанная группа сигналов и несоответствий с общей предполагаемой причиной; вычисляет межизделийная стадия функциями analysis (AD-42).

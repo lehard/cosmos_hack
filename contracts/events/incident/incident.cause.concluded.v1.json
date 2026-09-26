@@ -48,6 +48,14 @@
     "reason": {
       "$ref": "../common/defs.v1.json#/definitions/reason",
       "description": "Причина: код и текст."
+    },
+    "branch": {
+      "type": "string",
+      "enum": [
+        "why_made",
+        "why_missed"
+      ],
+      "description": "Ветка причины: почему возник (why_made) или почему не обнаружили раньше (why_missed). Нет — why_made."
     }
   },
   "required": [
