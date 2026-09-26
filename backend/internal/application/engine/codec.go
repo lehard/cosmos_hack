@@ -72,11 +72,19 @@ type envelopeJSON struct {
 	CausationID   *string         `json:"causation_id"`
 	RunID         string          `json:"run_id,omitempty"`
 	ItemID        string          `json:"item_id,omitempty"`
+	ItemRef       *itemRefJSON    `json:"item_ref,omitempty"`
 	Corrects      *correctsJSON   `json:"corrects,omitempty"`
 	Reaction      *ReactionMeta   `json:"reaction,omitempty"`
 	Command       *commandJSON    `json:"command,omitempty"`
 	Integrity     integrityJSON   `json:"integrity"`
 	Data          json.RawMessage `json:"data"`
+}
+
+// itemRefJSON — ссылка источника на изделие через носитель (AD-16, AD-41).
+type itemRefJSON struct {
+	CarrierType         string `json:"carrier_type"`
+	Value               string `json:"value"`
+	IdentificationLevel string `json:"identification_level"`
 }
 
 type correctsJSON struct {
@@ -160,6 +168,16 @@ func (c *Codec) Decode(ctx context.Context, e jc.JournalEntry) (Decoded, error) 
 	}
 	if e.CausationID != nil {
 		r.CausationID = *e.CausationID
+	}
+	// Носитель события (AD-41): по нему стадия разрешает событие без изделия.
+	if e.CarrierRef != nil {
+		r.CarrierRef = *e.CarrierRef
+	}
+	if ej.ItemRef != nil {
+		if r.CarrierRef == "" && ej.ItemRef.Value != "" {
+			r.CarrierRef = ej.ItemRef.CarrierType + ":" + ej.ItemRef.Value
+		}
+		r.IdentificationLevel = ej.ItemRef.IdentificationLevel
 	}
 	if e.BasisSeq != nil {
 		r.BasisSeq = int64(*e.BasisSeq)
