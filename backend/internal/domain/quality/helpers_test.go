@@ -17,7 +17,7 @@ import (
 
 var t0 = time.Date(2026, 9, 26, 8, 0, 0, 0, time.UTC)
 
-func ip(v int) *int    { return &v }
+func ip(v int) *int     { return &v }
 func bptr(v bool) *bool { return &v }
 
 func rule(id string, prio, mode int, m normative.ReactionMapRulesElemMatch, outcome string, cont string, draft bool, task string) normative.ReactionMapRulesElem {
@@ -113,7 +113,7 @@ func (b *builder) camera(outcome string, qualityBP, confBP int, defects ...map[s
 	d := map[string]any{"method": "camera", "phase": "after_operation", "outcome": outcome, "processing_state": "completed",
 		"step_key": "welding.kt3_camera", "inspection_point": "KT-3", "zone_ids": []string{"W-1"},
 		"observation_quality_bp": qualityBP, "analyzer_confidence_bp": confBP,
-		"stages": []map[string]any{{"stage": "localize", "version": "vqc-weld 2.3.1", "confidence_bp": confBP}, {"stage": "classify", "version": "vqc-weld 2.3.1", "confidence_bp": confBP}},
+		"stages":   []map[string]any{{"stage": "localize", "version": "vqc-weld 2.3.1", "confidence_bp": confBP}, {"stage": "classify", "version": "vqc-weld 2.3.1", "confidence_bp": confBP}},
 		"versions": map[string]any{"recipe_ref": "kt3-weld@1", "analyzer_version": "vqc-weld 2.3.1", "contract_version": "1.0"}}
 	if len(defects) > 0 {
 		d["defects"] = defects

@@ -52,7 +52,7 @@ type Request struct {
 
 // Роли исполнителей задач (normative/policy).
 const (
-	roleInspector   = "quality_inspector"
+	roleInspector    = "quality_inspector"
 	roleTechnologist = "technologist"
 )
 

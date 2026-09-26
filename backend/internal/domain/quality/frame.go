@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"ant/internal/contracts/catalog"
-	"ant/internal/contracts/statuses"
 	ev "ant/internal/contracts/events"
+	"ant/internal/contracts/statuses"
 	"ant/internal/domain/item"
 	"ant/internal/domain/kernel"
 	"ant/internal/domain/process"

@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"ant/internal/contracts/catalog"
+	ev "ant/internal/contracts/events"
 	"ant/internal/contracts/normative"
 	"ant/internal/contracts/statuses"
-	ev "ant/internal/contracts/events"
 	"ant/internal/domain/process"
 )
 
