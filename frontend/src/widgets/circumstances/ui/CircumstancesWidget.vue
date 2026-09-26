@@ -1,12 +1,36 @@
 <script setup lang="ts">
-// Заготовка виджета «circumstances» (эпик 03). Эпик 12 заменяет её содержимым,
-// оставаясь в рамке WidgetFrame (четыре состояния, момент, метка fixtures | live).
+/**
+ * Виджет «Разбор обстоятельств» (FR-153) — контейнер: источник данных, рамка с
+ * четырьмя состояниями (AD-21), связь с фокусом разбора (выбранная запись
+ * подсвечивается и из доводов гипотезы).
+ */
+import { computed } from 'vue'
+import { circumstancesState, useAnalysisFocusStore } from '@/entities/incident'
 import type { WidgetProps } from '@/shared/config/widget'
-import { WidgetStub } from '@/shared/ui'
+import { WidgetFrame } from '@/shared/ui'
+import { useCircumstancesSource } from '../model/source'
+import CircumstancesView from './CircumstancesView.vue'
 
-const props = defineProps<WidgetProps>()
+defineProps<WidgetProps>()
+
+const focus = useAnalysisFocusStore()
+const src = useCircumstancesSource()
+const data = computed(() => src.data.value)
+const state = computed(() => (data.value ? circumstancesState(data.value) : 'normal'))
 </script>
 
 <template>
-  <WidgetStub v-bind="props" :epic="12" />
+  <WidgetFrame
+    :title-key="titleKey"
+    :density="density"
+    :mode="src.mode.value"
+    :state="state"
+    :loading="src.isPending.value"
+    :error="src.error.value"
+    :empty="!data"
+    empty-key="empty.noRecords"
+    :data-widget="widgetId"
+  >
+    <CircumstancesView v-if="data" v-model:selected="focus.eventId" :model="data" :density="density" />
+  </WidgetFrame>
 </template>
