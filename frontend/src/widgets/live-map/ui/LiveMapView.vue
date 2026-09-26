@@ -12,6 +12,7 @@ import { computed, ref, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { NDatePicker, NRadioButton, NRadioGroup, NSelect } from 'naive-ui'
 import type { CounterPeriod, LiveMapData, NodeAnomaly, NodeCounters } from '@/entities/live-map'
+import type { ProcessSummary } from '@/shared/api/generated/model'
 import { naiveSizeOf, type Density } from '@/shared/config/widget'
 import { ActionButton, RecordDrawer } from '@/shared/ui'
 import type { DiagramIndex, StepNode } from '../model/bpmn'
@@ -25,13 +26,16 @@ const props = withDefaults(
     period: CounterPeriod
     /** Границы произвольного периода, мс UTC. */
     range?: [number, number] | null
+    /** Процессы предприятия для выбора (UI-11). */
+    processes?: ProcessSummary[]
     density?: Density
   }>(),
-  { range: null, density: 'comfortable' },
+  { range: null, processes: () => [], density: 'comfortable' },
 )
 const emit = defineEmits<{
   'update:period': [period: CounterPeriod]
   'update:range': [range: [number, number] | null]
+  'select-process': [processId: string]
   'select-version': [processVersionId: string]
   'open-item': [itemId: string]
   'open-node': [stepKey: string]
@@ -68,6 +72,13 @@ const otherVersions = computed(() => itemsOfOtherVersions(props.data.items, vers
 const incident = computed(() => props.data.incident ?? null)
 const bottleneck = computed(() => props.data.bottleneck ?? null)
 const reduction = computed(() => (incident.value ? scopeReduction(incident.value) : null))
+
+const processOptions = computed(() =>
+  props.processes.map((p) => ({
+    value: p.process_id,
+    label: [p.name, t('plural.items', { n: p.items_in_work }, p.items_in_work), p.status === 'active' ? '' : t(`liveMap.processStatus.${p.status}`)].filter(Boolean).join(' · '),
+  })),
+)
 
 const versionOptions = computed(() =>
   props.data.versions.map((v) => ({
@@ -114,15 +125,27 @@ function onReady(idx: DiagramIndex) {
         clearable
         @update:value="(v: [number, number] | null) => emit('update:range', v)"
       />
-      <NSelect
-        class="version"
-        :size="naiveSizeOf(density)"
-        :value="versionId"
-        :options="versionOptions"
-        :consistent-menu-width="false"
-        data-testid="version"
-        @update:value="(v: string) => emit('select-version', v)"
-      />
+      <div class="selects">
+        <NSelect
+          v-if="processOptions.length"
+          class="process"
+          :size="naiveSizeOf(density)"
+          :value="data.process_id"
+          :options="processOptions"
+          :consistent-menu-width="false"
+          data-testid="process"
+          @update:value="(v: string) => emit('select-process', v)"
+        />
+        <NSelect
+          class="version"
+          :size="naiveSizeOf(density)"
+          :value="versionId"
+          :options="versionOptions"
+          :consistent-menu-width="false"
+          data-testid="version"
+          @update:value="(v: string) => emit('select-version', v)"
+        />
+      </div>
     </div>
     <p v-if="otherVersions" class="note" data-testid="other-versions">
       {{ t('liveMap.ownVersionNote') }} · {{ t('plural.items', { n: otherVersions }, otherVersions) }}
@@ -213,10 +236,17 @@ function onReady(idx: DiagramIndex) {
   align-items: center;
 }
 
+.selects {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.process,
 .version {
   width: auto;
   min-width: 260px;
-  margin-left: auto;
 }
 
 .note {
