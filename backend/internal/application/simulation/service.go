@@ -652,6 +652,9 @@ func (s *Service) Plan(ctx context.Context, runID string, q PlanQuery) (RunPlan,
 			if a.Item != "" {
 				e.ItemID = expand("{item:" + a.Item + "}")
 			}
+			if a.Operation == opFinish && a.Item != "" {
+				e.ObjectID = e.ItemID // «Выполнено» ждётся по изделию (waitObject)
+			}
 			for _, m := range []map[string]any{a.Params, a.Body} {
 				for _, k := range waitKeys {
 					if x, ok := m[k]; ok && e.ObjectID == "" {

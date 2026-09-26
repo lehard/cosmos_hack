@@ -168,6 +168,11 @@ type RunState struct {
 	// Items, Refs — изделия и объекты системы, узнанные во время прогона.
 	Items map[string]string `json:"items"`
 	Refs  map[string]string `json:"refs"`
+	// Runs — плановый operation_run_id → фактический: выполнение начал
+	// человек на своём столе (терминал выдаёт свой id выполнения). Следующие
+	// события прогона по этому выполнению (сводки тока, КТ-3, рентген, «Выполнено»)
+	// ссылаются на фактическое.
+	Runs map[string]string `json:"runs,omitempty"`
 	// Steps — итоги шагов (решения, сбои stand-ов, подделки) по метке.
 	Steps map[string]StepResult `json:"steps"`
 	// Rows — строки табло по id утверждения; Baselines — значения «до».
