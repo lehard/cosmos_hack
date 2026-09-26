@@ -19,10 +19,12 @@ import (
 // Волна 1 (эпик 02, «Что ожидаем в итоге»): все операции контракта объявлены,
 // у каждой x-ant-action, и любой корректный по схеме вызов отвечает 501
 // problem+json с кодом api.not_implemented — кроме операций, которые общий
-// декоратор (Gate) вычисляет сам. Запросы строятся по схемам спецификации.
+// декоратор (Gate) вычисляет сам. Режим live без ведомых портов (как при
+// выгрузке OpenAPI): режим fixtures отвечает данными мира заготовок, а SSE
+// заготовок не завершается. Запросы строятся по схемам спецификации.
 func TestEveryOperationAnswers501(t *testing.T) {
 	mux := http.NewServeMux()
-	a := buildAPI(mux, apiOptions{mode: platform.ModeFixtures})
+	a := buildAPI(mux, apiOptions{mode: platform.ModeLive})
 	oapi := a.Huma().OpenAPI()
 	reg := oapi.Components.Schemas
 	gateOps := map[string]bool{"access.permission.list": true, "access.permission.explain": true}

@@ -16,6 +16,7 @@ import (
 	"ant/internal/contracts/errcodes"
 	"ant/internal/domain/crossitem"
 	dom "ant/internal/domain/ingest"
+	"ant/internal/domain/kernel"
 )
 
 // header — поля конверта, нужные конвейеру; читаются снисходительно (до
@@ -383,7 +384,7 @@ func (s *Service) checkContract(canon []byte, h header) (dom.Decision, error) {
 // source:‹source_id›.
 func (s *Service) streamOf(info catalog.Info, h header, b dom.Binding) (string, int) {
 	if b.ItemID != "" {
-		return "item:" + b.ItemID, dom.Partition(b.ItemID, s.cfg.Partitions)
+		return "item:" + b.ItemID, kernel.PartitionOf(b.ItemID, s.cfg.Partitions)
 	}
 	if info.Stream == "item" || info.Stream == "" || info.Stream == "global" {
 		return "global", s.cfg.StagePartition

@@ -102,6 +102,17 @@ type Config struct {
 		BatchWait time.Duration `yaml:"batch_wait"`
 	} `yaml:"journal"`
 
+	Stands struct {
+		// Addr — адрес HTTP роли stands: протоколы stand-ов /stand/‹имя›/ и
+		// служебный порт сбоев /stand/_control/ (AD-18, эпик 06).
+		Addr string `yaml:"addr"`
+		// EdgeURL — локальный вход edge-агента для телеметрии stand-а
+		// оборудования; пусто — stand оборудования выключен.
+		EdgeURL string `yaml:"edge_url"`
+		// Interval — период телеметрии stand-а оборудования.
+		Interval time.Duration `yaml:"interval"`
+	} `yaml:"stands"`
+
 	Integrations struct {
 		// Enabled — включённые внешние системы (stand-ы или настоящие адаптеры).
 		Enabled []string `yaml:"enabled"`
@@ -187,6 +198,9 @@ func (c *Config) Validate() error {
 	}
 	if c.Engine.Partitions <= 0 {
 		errs = append(errs, errors.New("engine.partitions должно быть > 0"))
+	}
+	if c.Stands.Interval < 0 {
+		errs = append(errs, errors.New("stands.interval должно быть ≥ 0 (0 — 5 с)"))
 	}
 	if c.Engine.LeaseTTL < 0 {
 		errs = append(errs, errors.New("engine.lease_ttl должно быть ≥ 0 (0 — 10 с)"))

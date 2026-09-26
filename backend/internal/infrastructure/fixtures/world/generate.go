@@ -30,6 +30,18 @@ var InputGlobs = []string{"normative/desks/*.yaml", FixturesDir + "/*/world.yaml
 //go:embed all:input
 var input embed.FS
 
+// Inputs — встроенная копия входов генератора от корня репозитория
+// (normative/policy, normative/desks, …; совпадение с репозиторием проверяет
+// тест генератора). Её же читает вход демо-трека эпика 08 в cmd/ant (каталог
+// политики и столы ролей), пока стартовая политика не приходит из журнала (эпик 05).
+func Inputs() fs.FS {
+	sub, err := fs.Sub(input, "input")
+	if err != nil {
+		panic(err) // каталог input встроен всегда
+	}
+	return sub
+}
+
 func init() {
 	loader.Builtin = func() (*loader.Library, error) {
 		sub, err := fs.Sub(input, "input")

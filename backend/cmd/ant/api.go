@@ -13,6 +13,8 @@ import (
 
 	"ant/cmd/internal/db"
 	"ant/internal/application/platform"
+	"ant/internal/infrastructure/fixtures/loader"
+	storagefx "ant/internal/infrastructure/storage/fixtures"
 	"ant/internal/infrastructure/transport/webui"
 )
 
@@ -50,9 +52,30 @@ func runAPI(ctx context.Context, env *environment) error {
 	mux.HandleFunc("GET /readyz", readyHandler(pool, &started))
 	// Операции всех модулей (AD-20, AD-36); неизвестный путь /api/ — 404 problem+json.
 	opts := apiOptions{mode: platform.Mode(cfg.Ports.Mode), moduleModes: moduleModes(cfg.Ports.Modules)}
-	if modeOf(opts, "journal") == platform.ModeLive {
-		// Живые обновления (SSE) и журнал — на ядре процесса (эпики 04, 07).
+	// Вход демо-персоной, сеанс и стол роли (демо-трек эпика 08).
+	if opts.identity, opts.directory, err = demoIdentity(cfg); err != nil {
+		return err
+	}
+	if modeOf(opts, "journal") == platform.ModeLive || modeOf(opts, "ingest") == platform.ModeLive {
+		// Живые обновления (SSE) и журнал — на ядре процесса (эпики 04, 07);
+		// приём — в журнал ядра (эпик 06). В профиле fixtures с живым приёмом
+		// SSE сливает смену шага курсора и изменения движка (hybrid.go).
 		if opts.journal, err = journalLive(ctx, env); err != nil {
+			return err
+		}
+		if opts.ingest, err = ingestLive(ctx, env); err != nil {
+			return err
+		}
+	}
+	// Курсор мира заготовок — в Postgres, общий для копий api (AD-36, эпик 09).
+	// Схему создаёт migrate; EnsureSchema — для запуска без migrate (make run).
+	// Без модулей на заготовках мир не строится (память, AD-25).
+	if usesFixtures(opts) {
+		cursor := storagefx.New(pool)
+		if err := cursor.EnsureSchema(ctx); err != nil {
+			log.Warn("курсор заготовок: схема не создана — жду migrate", "err", err)
+		}
+		if err := loader.SetCursor(cursor); err != nil {
 			return err
 		}
 	}
@@ -145,6 +168,19 @@ func modeOf(o apiOptions, module string) platform.Mode {
 		return m
 	}
 	return o.mode
+}
+
+// usesFixtures — есть ли модули на заготовках (режим по умолчанию или переопределение).
+func usesFixtures(o apiOptions) bool {
+	if o.mode == platform.ModeFixtures {
+		return true
+	}
+	for _, m := range o.moduleModes {
+		if m == platform.ModeFixtures {
+			return true
+		}
+	}
+	return false
 }
 
 // moduleModes — переопределение режима ведущих портов по модулю (вертикальные

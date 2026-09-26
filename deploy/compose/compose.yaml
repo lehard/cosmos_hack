@@ -1,7 +1,7 @@
 # Демо-стенд ant: `docker compose up` из корня репозитория (AD-25, FR-109).
 #
 # Порядок запуска: secrets-init (пароль БД в том, один раз) → postgres →
-# migrate (разовая роль: схемы journal и engine) → ant (роли api, worker,
+# migrate (разовая роль: схемы journal, engine, ingest, fixtures) → ant (роли api, worker,
 # crossitem, projector в одном процессе — делят пул и LISTEN; фронтенд встроен).
 # ant входит в БД как ant_admin и работает ролью ant_app (SET ROLE, AD-1).
 # Следующие эпики добавляют сюда init (ключи, генезис), отдельные ant-worker ×N

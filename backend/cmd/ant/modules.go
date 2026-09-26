@@ -90,6 +90,12 @@ type apiOptions struct {
 	// machinelogs — live-реализация machinelogs над проекциями (engine.go);
 	// nil — заглушка 501.
 	machinelogs *machinelogsapp.Service
+	// ingest — live-приём над журналом ядра (ingest.go); nil — заглушка 501.
+	ingest *ingestapp.Service
+	// identity, directory — вход демо-персоной и каталог политики (демо-трек
+	// эпика 08, identity.go); nil — разрешающая заглушка без сеансов.
+	identity  accessapp.IdentityProvider
+	directory *accessapp.Directory
 }
 
 // buildAPI собирает HTTP API: общий декоратор (Gate) над портами прав и входа,
@@ -97,9 +103,13 @@ type apiOptions struct {
 // регистрация операций всех модулей. Все модули зарегистрированы заранее
 // (волна 1): эпики модулей меняют реализации портов, а не этот список.
 func buildAPI(mux *http.ServeMux, o apiOptions) *httpapi.API {
-	// Волна 1: разрешающие заглушки прав и входа (эпик 08 заменит адаптеры).
+	// Демо-трек эпика 08: субъект и роль — по сеансу (IdentityProvider), права
+	// — разрешающие (Casbin — эпик 08 во втором слое).
 	ac := permissive.AccessControl{}
-	idp := permissive.Identity{}
+	var idp accessapp.IdentityProvider = permissive.Identity{}
+	if o.identity != nil {
+		idp = o.identity
+	}
 	gate := accessapp.NewGate(ac, nil, nil)
 	a := httpapi.New(mux, httpapi.Config{Mode: o.mode, ModuleModes: o.moduleModes, Gate: gate, Identity: idp})
 	gate.SetCatalog(a.Actions)
@@ -109,7 +119,13 @@ func buildAPI(mux *http.ServeMux, o apiOptions) *httpapi.API {
 		if live == nil {
 			live = journalapp.NewService()
 		}
-		q, c := pick[journalapp.Queries, journalapp.Commands](a.ModeFor("journal"), live, journalfx.New())
+		var fx any = journalfx.New()
+		if o.journal != nil {
+			// Заготовки + живое ядро: SSE присылает и смену шага курсора, и
+			// изменения движка по фактам живого приёма (hybrid.go).
+			fx = withLiveStream(journalfx.New(), o.journal)
+		}
+		q, c := pick[journalapp.Queries, journalapp.Commands](a.ModeFor("journal"), live, fx)
 		journalhttp.Register(a, q, c)
 	}
 	{
@@ -117,7 +133,11 @@ func buildAPI(mux *http.ServeMux, o apiOptions) *httpapi.API {
 		crossitemhttp.Register(a, q, c)
 	}
 	{
-		q, c := pick[ingestapp.Queries, ingestapp.Commands](a.ModeFor("ingest"), ingestapp.NewService(), ingestfx.New())
+		live := o.ingest
+		if live == nil {
+			live = ingestapp.NewService()
+		}
+		q, c := pick[ingestapp.Queries, ingestapp.Commands](a.ModeFor("ingest"), live, ingestfx.New())
 		ingesthttp.Register(a, q, c)
 	}
 	{
@@ -165,8 +185,11 @@ func buildAPI(mux *http.ServeMux, o apiOptions) *httpapi.API {
 		signinghttp.Register(a, q, c)
 	}
 	{
-		q, c := pick[accessapp.Queries, accessapp.Commands](a.ModeFor("access"), accessapp.NewService(), accessfx.New())
-		accesshttp.Register(a, q, c, gate)
+		// Вход, сеанс, стол роли и демо-персоны — живые в обоих режимах (демо-трек
+		// эпика 08); посты и администрирование — заготовки или 501 по режиму.
+		fq, fc := pick[accessapp.Queries, accessapp.Commands](a.ModeFor("access"), accessapp.Unimplemented{}, accessfx.New())
+		live := accessapp.NewService(accessapp.WithFallback(fq, fc), accessapp.WithIdentity(o.identity), accessapp.WithDirectory(o.directory))
+		accesshttp.Register(a, live, live, gate)
 	}
 	{
 		q, c := pick[securityapp.Queries, securityapp.Commands](a.ModeFor("security"), securityapp.NewService(), securityfx.New())
