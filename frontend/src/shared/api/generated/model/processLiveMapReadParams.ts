@@ -19,7 +19,12 @@ from?: string;
  */
 to?: string;
 /**
- * Версия процесса; не задана — действующая.
+ * Процесс (process.process.list, UI-11); не задан — основной процесс.
+ * @maxLength 128
+ */
+process_id?: string;
+/**
+ * Версия процесса; не задана — действующая версия процесса.
  * @maxLength 128
  */
 process_version_id?: string;

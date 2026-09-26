@@ -232,9 +232,11 @@ import type {
   PrintView,
   Problem,
   ProcessBpmn,
+  ProcessList,
   ProcessLiveMapReadParams,
   ProcessNodeCard,
   ProcessNodeReadParams,
+  ProcessProcessListParams,
   ProcessVersion,
   ProcessVersionDiff,
   ProcessVersionDiffParams,
@@ -22279,6 +22281,124 @@ export const useProcessVersionSubmit = <TError = globalThis.Error & { info?: Pro
       > => {
       return useMutation(getProcessVersionSubmitMutationOptions(options), queryClient);
     }
+
+export type processProcessListResponse200 = {
+  data: ProcessList
+  status: 200
+}
+
+export type processProcessListResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type processProcessListResponseSuccess = (processProcessListResponse200) & {
+  headers: Headers;
+};
+export type processProcessListResponseError = (processProcessListResponseDefault) & {
+  headers: Headers;
+};
+
+export const getProcessProcessListUrl = (params?: ProcessProcessListParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/processes?${stringifiedParams}` : `/api/v1/processes`
+}
+
+/**
+ * UI-11, FR-22: процессы для выбора — версии, сгруппированные по главному bpmn:process: действующая версия, число версий, состояние, изделий в работе. Основной процесс — первым.
+ * @summary Процессы
+ */
+export const processProcessList = async (params?: ProcessProcessListParams, options?: RequestInit): Promise<processProcessListResponseSuccess> => {
+
+  const res = await fetch(getProcessProcessListUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: processProcessListResponseError['data'], status?: number} = new globalThis.Error();
+    const data : processProcessListResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: processProcessListResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as processProcessListResponseSuccess
+}
+
+
+
+
+
+export const getProcessProcessListQueryKey = (params?: MaybeRefOrGetter<ProcessProcessListParams>,) => {
+    return [
+    'api','v1','processes', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getProcessProcessListQueryOptions = <TData = Awaited<ReturnType<typeof processProcessList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(params?: MaybeRefOrGetter<ProcessProcessListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof processProcessList>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getProcessProcessListQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof processProcessList>>> = ({ signal }) => processProcessList(toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof processProcessList>>, TError, TData>
+}
+
+export type ProcessProcessListQueryResult = NonNullable<Awaited<ReturnType<typeof processProcessList>>>
+export type ProcessProcessListQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Процессы
+ */
+
+export function useProcessProcessList<TData = Awaited<ReturnType<typeof processProcessList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ params?: MaybeRefOrGetter<ProcessProcessListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof processProcessList>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getProcessProcessListQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
 
 export type accessQualificationListResponse200 = {
   data: AccessQualificationList

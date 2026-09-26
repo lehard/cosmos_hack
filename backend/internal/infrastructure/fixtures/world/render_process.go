@@ -182,7 +182,7 @@ func (c *Ctx) liveMap(cs map[string]*NodeCount, in *Incident) processapp.LiveMap
 		items = append(items, mi)
 	}
 	ver := processapp.MapVersionRef{ProcessVersionID: ProcessVersionID, Label: "v1", IsCurrent: true, Items: inWork}
-	lm := processapp.LiveMap{ProcessVersion: ver, Versions: []processapp.MapVersionRef{ver}, BpmnXML: loader.BlobPrefix + BpmnBlob,
+	lm := processapp.LiveMap{ProcessID: FlangeProcessID, ProcessName: FlangeProcessName, ProcessVersion: ver, Versions: []processapp.MapVersionRef{ver}, BpmnXML: loader.BlobPrefix + BpmnBlob,
 		Counters: c.mapCounters(cs), Items: items, Anomalies: c.anomalies(cs), DataGaps: c.dataGaps(), BasisSeq: c.Seq()}
 	if k, w := c.bottleneck(cs); k != "" {
 		lm.Bottleneck = &processapp.MapBottleneck{StepKey: k, Wait: w}
@@ -237,6 +237,7 @@ func renderProcess(c *Ctx) []loader.Response {
 	}
 	if c.N == 0 {
 		out = append(out, c.versions()...)
+		out = append(out, c.bracket()...)
 	}
 	// Изделий в работе по версии меняется — список версий на каждом шаге.
 	inWork := 0
@@ -246,8 +247,9 @@ func renderProcess(c *Ctx) []loader.Response {
 		}
 	}
 	created := c.M.clk.at(14, 9, 0)
-	sum := processapp.ProcessVersionSummary{VersionID: ProcessVersionID, Label: "v1", Status: "active", Hash: c.M.BpmnDigest, CreatedAt: created, EffectiveFrom: tptr(created), Quorum: &processapp.VersionQuorum{Have: 3, Need: 3}, ItemsInWork: inWork}
+	sum := processapp.ProcessVersionSummary{VersionID: ProcessVersionID, ProcessID: FlangeProcessID, Label: "v1", Status: "active", Hash: c.M.BpmnDigest, CreatedAt: created, EffectiveFrom: tptr(created), Quorum: &processapp.VersionQuorum{Have: 3, Need: 3}, ItemsInWork: inWork}
 	out = append(out, resp("process.version.list", processapp.ProcessVersionList{Items: []processapp.ProcessVersionSummary{sum}}))
+	out = append(out, c.processList(inWork))
 	return out
 }
 

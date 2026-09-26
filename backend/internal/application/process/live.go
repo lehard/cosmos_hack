@@ -144,10 +144,10 @@ func (s *LiveService) items(ctx context.Context, m platform.Moment) ([]ItemView,
 	return out, nil
 }
 
-// version — запись версии по id; пусто — действующая.
+// version — запись версии по id; пусто — действующая версия основного процесса.
 func (s *LiveService) version(ctx context.Context, id string) (VersionRecord, error) {
 	if id == "" {
-		vs, err := s.Library.List(ctx)
+		vs, _, err := s.processVersions(ctx, "")
 		if err != nil {
 			return VersionRecord{}, err
 		}
@@ -283,10 +283,12 @@ func (s *LiveService) LiveMap(ctx context.Context, q LiveMapQuery, m platform.Mo
 	if s.Store == nil || s.Library == nil {
 		return LiveMap{}, platform.NotImplemented("process.live_map.read")
 	}
-	shown, err := s.version(ctx, q.ProcessVersionID)
+	// UI-11: процесс — из параметра или основной; версия — заданная или действующая.
+	shown, err := s.resolve(ctx, q.ProcessID, q.ProcessVersionID)
 	if err != nil {
 		return LiveMap{}, err
 	}
+	proc := ProcessOf(shown)
 	def, err := definition(shown)
 	if err != nil {
 		return LiveMap{}, err
@@ -297,11 +299,24 @@ func (s *LiveService) LiveMap(ctx context.Context, q LiveMapQuery, m platform.Mo
 	}
 	from, to := period(q, m, views)
 	st := stats(views, from, to)
-	lm := LiveMap{BpmnXML: string(shown.XML), Counters: []MapNodeCounters{}, Items: []MapItem{}, Anomalies: []MapNodeAnomaly{}, DataGaps: []string{}}
-	all, err := s.Library.List(ctx)
+	lm := LiveMap{ProcessID: proc.ID, ProcessName: proc.Name, BpmnXML: string(shown.XML), Counters: []MapNodeCounters{}, Items: []MapItem{},
+		Anomalies: []MapNodeAnomaly{}, DataGaps: []string{}}
+	lib, err := s.Library.List(ctx)
 	if err != nil {
 		return LiveMap{}, err
 	}
+	// Только версии и изделия показанного процесса; изделия неизвестных
+	// версий — у основного процесса (как до выбора процесса).
+	all := VersionsOf(lib, proc.ID)
+	if n, ok := Active(all); ok {
+		proc.Name = ProcessOf(n).Name
+		lm.ProcessName = proc.Name
+	}
+	known := map[string]string{}
+	for _, v := range lib {
+		known[v.ID] = ProcessOf(v).ID
+	}
+	isDefault := DefaultProcess(lib) == proc.ID
 	active, _ := Active(all)
 	inWork := map[string]int{}
 	gaps := map[string]bool{}
@@ -311,6 +326,9 @@ func (s *LiveService) LiveMap(ctx context.Context, q LiveMapQuery, m platform.Mo
 			gaps[g.StepKey] = true
 		}
 		if v.Completed || v.Primary == nil {
+			continue
+		}
+		if p, ok := known[v.VersionID]; (ok && p != proc.ID) || (!ok && !isDefault) {
 			continue
 		}
 		inWork[v.VersionID]++
@@ -512,11 +530,12 @@ func (s *LiveService) quorum(ctx context.Context, v VersionRecord) (*VersionQuor
 }
 
 // Versions — версии процесса (process.version.list, FR-22).
-func (s *LiveService) Versions(ctx context.Context, m platform.Moment) (ProcessVersionList, error) {
+// processID — процесс (UI-11); пусто — основной.
+func (s *LiveService) Versions(ctx context.Context, processID string, m platform.Moment) (ProcessVersionList, error) {
 	if s.Library == nil {
 		return ProcessVersionList{}, platform.NotImplemented("process.version.list")
 	}
-	vs, err := s.Library.List(ctx)
+	vs, pid, err := s.processVersions(ctx, processID)
 	if err != nil {
 		return ProcessVersionList{}, err
 	}
@@ -538,7 +557,7 @@ func (s *LiveService) Versions(ctx context.Context, m platform.Moment) (ProcessV
 		if err != nil {
 			return out, err
 		}
-		out.Items = append(out.Items, ProcessVersionSummary{VersionID: v.ID, Label: v.Label, Status: v.Status, Hash: v.Hash, CreatedAt: v.CreatedAt,
+		out.Items = append(out.Items, ProcessVersionSummary{VersionID: v.ID, ProcessID: pid, Label: v.Label, Status: v.Status, Hash: v.Hash, CreatedAt: v.CreatedAt,
 			EffectiveFrom: v.EffectiveFrom, Quorum: q, ItemsInWork: inWork[v.ID]})
 	}
 	return out, nil
@@ -592,7 +611,13 @@ func (s *LiveService) Diff(ctx context.Context, versionID, againstID string, m p
 	if err != nil {
 		return ProcessVersionDiff{}, err
 	}
-	base, err := s.version(ctx, againstID)
+	// Пусто — действующая версия того же процесса (UI-11).
+	var base VersionRecord
+	if againstID != "" {
+		base, err = s.version(ctx, againstID)
+	} else {
+		base, err = s.resolve(ctx, ProcessOf(v).ID, "")
+	}
 	if err != nil {
 		return ProcessVersionDiff{}, err
 	}

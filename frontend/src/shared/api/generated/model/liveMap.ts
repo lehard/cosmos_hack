@@ -21,6 +21,10 @@ export interface LiveMap {
   data_gaps: string[];
   incident?: MapIncident;
   items: MapItem[];
+  /** Процесс показанной версии — id главного bpmn:process (UI-11). */
+  process_id: string;
+  /** Название процесса. */
+  process_name: string;
   process_version: MapVersionRef;
   versions: MapVersionRef[];
 }

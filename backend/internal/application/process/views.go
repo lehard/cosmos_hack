@@ -64,6 +64,8 @@ type MapIncident struct {
 
 // LiveMap — состояние живой карты на момент (AD-22).
 type LiveMap struct {
+	ProcessID      string            `json:"process_id" doc:"Процесс показанной версии — id главного bpmn:process (UI-11)."`
+	ProcessName    string            `json:"process_name" doc:"Название процесса."`
 	ProcessVersion MapVersionRef     `json:"process_version"`
 	Versions       []MapVersionRef   `json:"versions"`
 	BpmnXML        string            `json:"bpmn_xml" doc:"BPMN 2.0 XML показанной версии: BPMNDI, documentation, ant:properties/@stepKey."`
@@ -78,6 +80,8 @@ type LiveMap struct {
 
 // LiveMapQuery — параметры живой карты помимо момента.
 type LiveMapQuery struct {
+	// ProcessID — процесс (UI-11); пусто — основной процесс.
+	ProcessID        string
 	ProcessVersionID string
 	Period           string
 	From, To         *time.Time
@@ -150,6 +154,7 @@ type ProcessVersion struct {
 // ProcessVersionSummary — версия в списке.
 type ProcessVersionSummary struct {
 	VersionID     string         `json:"version_id"`
+	ProcessID     string         `json:"process_id,omitempty" doc:"Процесс версии (UI-11)."`
 	Label         string         `json:"label"`
 	Status        string         `json:"status" enum:"draft,on_approval,active,retired"`
 	Hash          string         `json:"hash,omitempty"`
@@ -162,6 +167,31 @@ type ProcessVersionSummary struct {
 // ProcessVersionList — версии процесса.
 type ProcessVersionList struct {
 	Items []ProcessVersionSummary `json:"items"`
+}
+
+// ── процессы (UI-11) ──
+
+// ProcessVersionRef — действующая версия процесса в списке процессов.
+type ProcessVersionRef struct {
+	VersionID string `json:"version_id"`
+	Label     string `json:"label" doc:"Номер версии для людей (v1, v2…)."`
+}
+
+// ProcessSummary — процесс в списке для выбора (UI-11): версии процесса
+// сгруппированы по главному bpmn:process.
+type ProcessSummary struct {
+	ProcessID     string             `json:"process_id" doc:"id главного bpmn:process; параметр process_id живой карты и списка версий."`
+	Name          string             `json:"name" doc:"Название процесса (имя bpmn:process действующей версии)."`
+	ActiveVersion *ProcessVersionRef `json:"active_version,omitempty" doc:"Действующая версия; нет — ни одна версия не в действии."`
+	Versions      int                `json:"versions" minimum:"0" doc:"Число версий процесса (все статусы)."`
+	Status        string             `json:"status" enum:"active,draft,retired" doc:"active — есть действующая версия; draft — ни одна версия ещё не введена; retired — все введённые выведены."`
+	IsDefault     bool               `json:"is_default" doc:"Основной процесс: его показывают живая карта и список версий без параметра процесса."`
+	ItemsInWork   int                `json:"items_in_work" minimum:"0" doc:"Изделий в работе по всем версиям процесса."`
+}
+
+// ProcessList — процессы для выбора (process.process.list).
+type ProcessList struct {
+	Items []ProcessSummary `json:"items"`
 }
 
 // ProcessDiffEntry — отличие версии от действующей (строки process.diff.*, FR-24):

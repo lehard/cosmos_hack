@@ -25,11 +25,12 @@ func Register(api *httpapi.API, q app.Queries, c app.Commands) {
 			Period           string `query:"period" enum:"shift,day,week,month,custom" doc:"Период счётчиков (FR-3); по умолчанию shift."`
 			From             string `query:"from" format:"date-time" doc:"Начало произвольного периода."`
 			To               string `query:"to" format:"date-time" doc:"Конец произвольного периода."`
-			ProcessVersionID string `query:"process_version_id" maxLength:"128" doc:"Версия процесса; не задана — действующая."`
+			ProcessID        string `query:"process_id" maxLength:"128" doc:"Процесс (process.process.list, UI-11); не задан — основной процесс."`
+			ProcessVersionID string `query:"process_version_id" maxLength:"128" doc:"Версия процесса; не задана — действующая версия процесса."`
 			IncidentID       string `query:"incident_id" maxLength:"128" doc:"Режим инцидента (FR-9)."`
 			httpapi.MomentQuery
 		}, m platform.Moment) (app.LiveMap, error) {
-			lq := app.LiveMapQuery{ProcessVersionID: in.ProcessVersionID, Period: in.Period, IncidentID: in.IncidentID}
+			lq := app.LiveMapQuery{ProcessID: in.ProcessID, ProcessVersionID: in.ProcessVersionID, Period: in.Period, IncidentID: in.IncidentID}
 			if in.From != "" {
 				t, err := time.Parse(time.RFC3339Nano, in.From)
 				if err != nil {
@@ -58,10 +59,20 @@ func Register(api *httpapi.API, q app.Queries, c app.Commands) {
 			return q.Node(ctx, in.VersionID, in.StepKey, m)
 		})
 
+	httpapi.Read(api, httpapi.Get("/processes", "Процессы",
+		"UI-11, FR-22: процессы для выбора — версии, сгруппированные по главному bpmn:process: действующая версия, число версий, состояние, изделий в работе. Основной процесс — первым."),
+		platform.Action{ID: "process.process.list", Owner: owner, Subject: "process_version"},
+		func(ctx context.Context, _ *struct{ httpapi.MomentQuery }, m platform.Moment) (app.ProcessList, error) {
+			return q.Processes(ctx, m)
+		})
+
 	httpapi.Read(api, httpapi.Get("/process/versions", "Версии процесса", "FR-22: черновик → на утверждении → действующая → выведена; кворум, изделия в работе по версии."),
 		platform.Action{ID: "process.version.list", Owner: owner, Subject: "process_version"},
-		func(ctx context.Context, _ *struct{ httpapi.MomentQuery }, m platform.Moment) (app.ProcessVersionList, error) {
-			return q.Versions(ctx, m)
+		func(ctx context.Context, in *struct {
+			ProcessID string `query:"process_id" maxLength:"128" doc:"Процесс (process.process.list, UI-11); не задан — основной процесс."`
+			httpapi.MomentQuery
+		}, m platform.Moment) (app.ProcessVersionList, error) {
+			return q.Versions(ctx, in.ProcessID, m)
 		})
 
 	type versionIn struct {
