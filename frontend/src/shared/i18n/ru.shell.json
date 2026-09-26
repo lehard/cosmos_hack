@@ -344,6 +344,11 @@
         "bottleneck": "узкое место · ожидание {wait}",
         "noSections": "Участки не заданы в схеме процесса",
         "feed": "Что сейчас произошло",
+        "leadBottleneck": "Узкое место — {name}",
+        "leadWait": "ожидание {wait}",
+        "leadOk": "Производство идёт штатно",
+        "bottleneckShort": "узкое место",
+        "anomaliesShort": "отклонений от норм: {n}",
         "status": {
           "normal": "норма",
           "attention": "отклонение",

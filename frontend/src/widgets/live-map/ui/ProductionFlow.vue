@@ -37,7 +37,20 @@ const contained = computed(() => containment(states.value))
 const STATUS_TONE: Record<SectionStatus, string> = { normal: 'success', attention: 'attention', danger: 'danger', unknown: 'muted' }
 const tone = (s: SectionStatus) => `var(--ant-status-${STATUS_TONE[s]})`
 const K = 'widgets.liveMap.flow'
-const MAX_CHIPS = 6
+const MAX_CHIPS = 4
+
+/** Одна фраза о главном: инцидент и локализация → узкое место → «штатно». */
+const bottleneckSection = computed(() => states.value.find((x) => x.bottleneck !== null) ?? null)
+/** Участок без движения — приглушён: пустое не кричит так же, как рабочее. */
+const isIdle = (x: SectionState) => x.inProgress + x.queue + x.items.length === 0 && x.status === 'normal'
+/** Под числом — одна строка: что не так на участке (изделия инцидента → узкое место → отклонения → дефекты). */
+function note(x: SectionState): { text: string; tone: 'danger' | 'attention' } | null {
+  if (x.inScope.length) return { text: t(`${K}.sectionScope`, { m: x.inScope.length, n: x.isolated }), tone: 'danger' }
+  if (x.bottleneck !== null) return { text: t(`${K}.bottleneckShort`), tone: 'attention' }
+  if (x.anomalies.length) return { text: t(`${K}.anomaliesShort`, { n: x.anomalies.length }), tone: 'attention' }
+  if (x.defects) return { text: t(`${K}.defects`, { n: x.defects }), tone: 'attention' }
+  return null
+}
 
 /** Что сейчас произошло: последние события до текущего момента, свежие сверху. */
 const recent = computed(() =>
@@ -50,46 +63,70 @@ const recent = computed(() =>
 
 <template>
   <div class="flow" data-testid="production-flow">
-    <!-- Инцидент: область риска и физическая локализация — одна строка над потоком. -->
-    <section v-if="incident" class="incident" data-testid="flow-incident">
-      <p class="incident-title ant-wrap">{{ incident.label }}</p>
-      <p class="incident-line ant-wrap">
-        <span>{{ t(`${K}.inScope`, { items: t('plural.items', { n: incident.size }, incident.size) }) }}</span>
-        <span v-if="scopePath && scopePath.length > 1" class="path" data-testid="flow-path">{{ scopePath.join(' → ') }}</span>
-        <span v-if="contained.inScope" class="contained" :data-all="contained.isolated === contained.inScope || undefined" data-testid="flow-contained">
-          {{ t(`${K}.contained`, { n: contained.isolated, m: contained.inScope }) }}
-        </span>
+    <!-- Одна фраза о главном. -->
+    <header class="lead">
+      <template v-if="incident">
+        <p class="lead-line ant-wrap" data-testid="flow-incident">
+          <span class="dot danger" aria-hidden="true" />
+          <span class="lead-title">{{ incident.label }}</span>
+          <span class="lead-sep">·</span>
+          <span>{{ t(`${K}.inScope`, { items: t('plural.items', { n: incident.size }, incident.size) }) }}</span>
+          <span v-if="contained.inScope" class="lead-contained" :data-all="contained.isolated === contained.inScope || undefined" data-testid="flow-contained">
+            · {{ t(`${K}.contained`, { n: contained.isolated, m: contained.inScope }) }}
+          </span>
+        </p>
+        <p class="lead-sub">
+          <span v-if="scopePath && scopePath.length > 1" class="path" data-testid="flow-path">{{ scopePath.join(' → ') }}</span>
+          <span v-if="incident.basis" class="ant-wrap"> {{ incident.basis }}</span>
+        </p>
+      </template>
+      <p v-else-if="bottleneckSection" class="lead-line ant-wrap" data-testid="flow-lead">
+        <span class="dot attention" aria-hidden="true" />
+        <span class="lead-title">{{ t(`${K}.leadBottleneck`, { name: bottleneckSection.name }) }}</span>
+        <span v-if="bottleneckSection.bottleneck" class="lead-muted"> · {{ t(`${K}.leadWait`, { wait: bottleneckSection.bottleneck }) }}</span>
       </p>
-      <p v-if="incident.basis" class="meta ant-wrap">{{ incident.basis }}</p>
-    </section>
+      <p v-else class="lead-line" data-testid="flow-lead"><span class="dot normal" aria-hidden="true" /><span class="lead-title">{{ t(`${K}.leadOk`) }}</span></p>
+    </header>
 
-    <!-- Поток: участки в порядке схемы. -->
-    <ol class="sections" :aria-label="t(`${K}.title`)">
-      <li v-for="s in states" :key="s.id" class="section" :data-status="s.status" :data-section="s.id" :style="{ '--tone': tone(s.status) }">
-        <button type="button" class="section-head" :title="t(`${K}.openScheme`)" @click="emit('open-section', s)">
-          <span class="name ant-clamp-2">{{ s.name }}</span>
-          <span class="status"><span class="dot" aria-hidden="true" />{{ t(`${K}.status.${s.status}`) }}</span>
+    <!-- Поток: станции одной линией, слева направо. -->
+    <ol class="stations" :style="{ '--n': Math.max(states.length, 1) }" :aria-label="t(`${K}.title`)">
+      <li
+        v-for="x in states"
+        :key="x.id"
+        class="station"
+        :class="{ idle: isIdle(x) }"
+        :data-status="x.status"
+        :data-section="x.id"
+        :style="{ '--tone': tone(x.status) }"
+      >
+        <button type="button" class="section-head" :title="t(`${K}.openScheme`)" @click="emit('open-section', x)">
+          <span class="name ant-clamp-2">{{ x.name }}</span>
         </button>
-        <p class="main"><strong class="num">{{ s.inProgress }}</strong> {{ t(`${K}.inProgress`) }}</p>
-        <p class="meta">{{ t(`${K}.counts`, { queue: s.queue, passed: s.passed }) }}<template v-if="s.defects"> · {{ t(`${K}.defects`, { n: s.defects }) }}</template></p>
-        <p v-if="s.inScope.length" class="scope-line ant-wrap" data-testid="section-scope">{{ t(`${K}.sectionScope`, { m: s.inScope.length, n: s.isolated }) }}</p>
-        <p v-if="s.bottleneck !== null" class="warn ant-wrap" data-testid="section-bottleneck">{{ t(`${K}.bottleneck`, { wait: s.bottleneck }) }}</p>
-        <p v-for="(a, ai) in s.anomalies" :key="ai" class="warn ant-wrap">{{ a }}</p>
-        <ul v-if="s.items.length" class="chips">
-          <li v-for="it in s.items.slice(0, MAX_CHIPS)" :key="it.item_id">
+        <p class="big"><span class="num">{{ x.inProgress }}</span></p>
+        <p class="caption">{{ t(`${K}.inProgress`) }}</p>
+        <p class="stats">{{ t(`${K}.counts`, { queue: x.queue, passed: x.passed }) }}</p>
+        <p
+          v-if="note(x)"
+          class="note ant-wrap"
+          :data-tone="note(x)!.tone"
+          :title="x.anomalies.join('\n') || undefined"
+          :data-testid="x.inScope.length ? 'section-scope' : x.bottleneck !== null ? 'section-bottleneck' : undefined"
+        >{{ note(x)!.text }}</p>
+        <ul v-if="x.items.length" class="chips">
+          <li v-for="it in x.items.slice(0, MAX_CHIPS)" :key="it.item_id">
             <button type="button" class="chip" :data-incident="it.incident_status || undefined" :data-isolated="it.position === 'isolated' || undefined" @click="emit('open-item', it.item_id)">{{ it.label }}</button>
           </li>
-          <li v-if="s.items.length > MAX_CHIPS" class="more">+{{ s.items.length - MAX_CHIPS }}</li>
+          <li v-if="x.items.length > MAX_CHIPS" class="more">+{{ x.items.length - MAX_CHIPS }}</li>
         </ul>
       </li>
     </ol>
-    <p v-if="!states.length" class="meta">{{ t(`${K}.noSections`) }}</p>
+    <p v-if="!states.length" class="caption">{{ t(`${K}.noSections`) }}</p>
 
-    <!-- Что сейчас произошло. -->
+    <!-- Что сейчас произошло — тихо, ниже. -->
     <section v-if="recent.length" class="feed" data-testid="flow-feed">
       <p class="feed-title">{{ t(`${K}.feed`) }}</p>
       <ul>
-        <li v-for="m in recent" :key="m.mark_id" class="ant-wrap" :data-kind="m.kind"><span class="meta">{{ d(new Date(m.at), 'time') }}</span> {{ m.title }}</li>
+        <li v-for="m in recent" :key="m.mark_id" class="ant-wrap" :data-kind="m.kind"><span class="time">{{ d(new Date(m.at), 'time') }}</span>{{ m.title }}</li>
       </ul>
     </section>
   </div>
@@ -99,133 +136,184 @@ const recent = computed(() =>
 .flow {
   display: flex;
   flex-direction: column;
-  gap: var(--ant-space-6);
+  gap: var(--ant-space-8);
   min-width: 0;
+  padding: var(--ant-space-2) var(--ant-space-2) var(--ant-space-4);
 }
 
 p {
   margin: 0;
 }
 
-.meta {
-  color: var(--ant-text-3);
-  font-size: var(--ant-fs-meta);
-}
-
-.incident {
+/* Одна фраза о главном. */
+.lead {
   display: flex;
   flex-direction: column;
   gap: var(--ant-space-1);
-  padding-left: var(--ant-space-4);
-  border-left: 3px solid var(--ant-status-danger);
 }
 
-.incident-title {
-  font-size: var(--ant-fs-title);
-  font-weight: var(--ant-fw-bold);
-}
-
-.incident-line {
+.lead-line {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--ant-space-1) var(--ant-space-5);
+  gap: var(--ant-space-2);
+  align-items: baseline;
+  font-size: var(--ant-fs-title);
 }
 
-.path {
+.lead-title {
   font-weight: var(--ant-fw-bold);
-  font-variant-numeric: tabular-nums;
 }
 
-.contained {
+.lead-sep,
+.lead-muted,
+.lead-sub {
+  color: var(--ant-text-3);
+}
+
+.lead-sub {
+  padding-left: calc(10px + var(--ant-space-2));
+}
+
+.lead-contained {
   color: var(--ant-status-danger-text);
   font-weight: var(--ant-fw-bold);
 }
 
-.contained[data-all] {
+.lead-contained[data-all] {
   color: var(--ant-status-success-text);
 }
 
-/* Участки — ровные колонки: раскладка не прыгает при изменении чисел. */
-.sections {
+.path {
+  color: var(--ant-text);
+  font-weight: var(--ant-fw-bold);
+  font-variant-numeric: tabular-nums;
+}
+
+.dot {
+  flex: none;
+  align-self: center;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.dot.danger {
+  background: var(--ant-status-danger);
+}
+
+.dot.attention {
+  background: var(--ant-status-attention);
+}
+
+.dot.normal {
+  background: var(--ant-status-success);
+}
+
+/* Поток — одна линия станций; раскладка постоянна, меняются только числа и цвета. */
+.stations {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: var(--ant-space-5);
+  grid-template-columns: repeat(var(--n), minmax(0, 1fr));
+  gap: var(--ant-space-8);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.section {
+@media (max-width: 1100px) {
+  .stations {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  }
+}
+
+.station {
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: var(--ant-space-1);
   min-width: 0;
-  padding-top: var(--ant-space-3);
-  border-top: 3px solid var(--tone);
-  transition: border-color 0.4s ease;
+  padding-top: var(--ant-space-4);
+  border-top: 2px solid var(--tone);
+  transition:
+    border-color 0.6s ease,
+    opacity 0.6s ease;
+}
+
+/* Тонкая стрелка потока между станциями. */
+.station + .station::before {
+  position: absolute;
+  top: -11px;
+  left: calc(-1 * var(--ant-space-8) / 2 - 6px);
+  color: var(--ant-text-3);
+  font-size: 14px;
+  content: '›';
+}
+
+.station.idle {
+  opacity: 0.45;
+}
+
+.station[data-status='normal'] {
+  border-top-color: var(--ant-border-strong);
 }
 
 .section-head {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  align-items: flex-start;
+  align-self: flex-start;
+  min-height: 2.6em;
   padding: 0;
   border: 0;
   background: none;
-  color: inherit;
+  color: var(--ant-text-2);
   font: inherit;
   text-align: left;
   cursor: pointer;
 }
 
-.section-head:hover .name {
-  text-decoration: underline;
+.section-head:hover {
+  color: var(--ant-text);
 }
 
-.name {
-  font-weight: var(--ant-fw-bold);
-}
-
-.status {
-  display: inline-flex;
-  gap: var(--ant-space-1);
-  align-items: center;
-  color: var(--ant-text-2);
-  font-size: var(--ant-fs-meta);
-}
-
-.dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--tone);
-}
-
-.main {
-  margin-top: var(--ant-space-2);
+.big {
+  margin-top: var(--ant-space-3);
+  line-height: 1;
 }
 
 .num {
-  font-size: var(--ant-fs-title);
+  font-size: var(--ant-fs-display);
+  font-weight: var(--ant-fw-bold);
   font-variant-numeric: tabular-nums;
 }
 
-.scope-line {
-  color: var(--ant-status-danger-text);
+.caption {
+  margin-top: var(--ant-space-1);
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-meta);
+}
+
+.stats {
+  margin-top: var(--ant-space-3);
+  color: var(--ant-text-2);
+  font-size: var(--ant-fs-meta);
+  font-variant-numeric: tabular-nums;
+}
+
+.note {
+  margin-top: var(--ant-space-2);
+  font-size: var(--ant-fs-meta);
   font-weight: var(--ant-fw-bold);
 }
 
-.warn {
+.note[data-tone='danger'] {
+  color: var(--ant-status-danger-text);
+}
+
+.note[data-tone='attention'] {
   color: var(--ant-status-attention-text);
-  font-size: var(--ant-fs-meta);
 }
 
 .chips {
   display: flex;
   flex-wrap: wrap;
   gap: var(--ant-space-1) var(--ant-space-2);
-  margin: var(--ant-space-1) 0 0;
+  margin: var(--ant-space-3) 0 0;
   padding: 0;
   list-style: none;
   font-size: var(--ant-fs-meta);
@@ -235,9 +323,13 @@ p {
   padding: 0;
   border: 0;
   background: none;
-  color: var(--ant-accent);
+  color: var(--ant-text-3);
   font: inherit;
   cursor: pointer;
+}
+
+.chip:hover {
+  color: var(--ant-accent);
 }
 
 .chip[data-incident='confirmed'],
@@ -254,22 +346,32 @@ p {
   color: var(--ant-text-3);
 }
 
+/* Что сейчас произошло — тихий список. */
 .feed {
   display: flex;
   flex-direction: column;
-  gap: var(--ant-space-1);
+  gap: var(--ant-space-2);
+  max-width: 720px;
 }
 
 .feed-title {
-  font-weight: var(--ant-fw-bold);
+  color: var(--ant-text-2);
+  font-size: var(--ant-fs-meta);
 }
 
 .feed ul {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--ant-space-1);
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+.time {
+  display: inline-block;
+  min-width: 4.5em;
+  color: var(--ant-text-3);
+  font-variant-numeric: tabular-nums;
 }
 </style>

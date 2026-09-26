@@ -92,7 +92,8 @@ const axisNote = computed(() =>
 <template>
   <div class="timeline" :class="{ 'timeline--compact': compact }" :data-replay="replay || undefined" :data-playing="playing || undefined">
     <div class="controls">
-      <ActionButton :size="size" :type="replay ? 'default' : 'primary'" :disabled="!replay" data-action="live" @click="emit('live')" :label="t('liveMap.playback.now')" />
+      <!-- «Сейчас» — кнопка только в проигрывании (вернуться); вне его — надпись справа, не неактивная кнопка. -->
+      <ActionButton v-if="replay || !compact" :size="size" :type="replay ? 'primary' : 'default'" :disabled="!replay" data-action="live" @click="emit('live')" :label="t('liveMap.playback.now')" />
       <ActionButton
         v-if="!playing"
         :size="size"

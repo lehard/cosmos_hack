@@ -74,6 +74,8 @@ const fill = computed(() => props.tab.slots.some((s) => fills(s.widget)))
 .desk-grid--fill {
   display: flex;
   flex-direction: column;
+  /* Колонка на всю ширину: выравнивание «по началу» от сетки сжимало раздел по содержимому. */
+  align-items: stretch;
   height: 100%;
 }
 

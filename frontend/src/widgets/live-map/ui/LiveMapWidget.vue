@@ -94,7 +94,7 @@ const now = computed(() => (moment.asOf ? Date.parse(moment.asOf) : Date.now()))
     :title-key="titleKey"
     :density="density"
     :mode="mode"
-    :state="state"
+    :state="view === 'flow' ? 'normal' : state"
     :loading="query.isPending.value && !data"
     :error="data ? undefined : query.error.value"
     :data-widget="widgetId"
@@ -196,5 +196,7 @@ const now = computed(() => (moment.asOf ? Date.parse(moment.asOf) : Date.now()))
 
 .flow-timeline {
   margin-top: var(--ant-space-6);
+  padding-top: var(--ant-space-4);
+  border-top: 1px solid var(--ant-border);
 }
 </style>
