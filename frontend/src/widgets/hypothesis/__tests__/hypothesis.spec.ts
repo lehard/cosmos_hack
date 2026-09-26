@@ -29,13 +29,15 @@ describe('гипотезы причины', () => {
     expect(pro).toContain('Ручное изменение режима: подача проволоки 130 %')
     expect(eq.find('.arg[data-side="against"]').text()).toContain('Доводов нет')
     expect(eq.text()).toContain('Уверенность вывода 0,72 — не вероятность вины')
-    expect(eq.text()).toContain('Почему возник')
+    expect(mountView().find('[data-branch="why_made"]').find('article[data-category="equipment"]').exists()).toBe(true)
   })
 
   it('кнопки «подтвердить причину / отклонить / запросить измерение» открывают форму с обязательными полями', async () => {
     const w = mountView()
     const eq = () => w.find('article[data-category="equipment"]')
-    expect(eq().find('[data-testid="request-measurement"]').text()).toBe('Запросить измерение — ток источника ИС-3 на эталонном образце')
+    expect(eq().find('[data-testid="next-check"]').text()).toContain('Что проверить следующим')
+    expect(eq().find('[data-testid="next-check"]').text()).toContain('ток источника ИС-3 на эталонном образце')
+    expect(eq().find('[data-testid="request-measurement"]').text()).toBe('Запросить проверку')
 
     await eq().find('[data-testid="confirm"]').trigger('click')
     expect(eq().find('[data-testid="form-submit"]').attributes('disabled')).toBeDefined()
@@ -54,6 +56,26 @@ describe('гипотезы причины', () => {
     expect((eq().find('[data-testid="form-first"]').element as HTMLTextAreaElement).value).toBe('ток источника ИС-3 на эталонном образце')
     await eq().find('form').trigger('submit')
     expect(w.emitted('request-measurement')?.[0]?.[1]).toEqual({ what: 'ток источника ИС-3 на эталонном образце' })
+  })
+
+  it('две причины: почему возник и почему не остановили; пустая ветка пропуска — так и сказано', () => {
+    const w = mountView()
+    const branches = w.findAll('[data-testid="branch"]')
+    expect(branches.map((b) => b.attributes('data-branch'))).toEqual(['why_made', 'why_missed'])
+    expect(branches[0]!.text()).toContain('Почему возник дефект')
+    expect(branches[0]!.findAll('article.card')).toHaveLength(3)
+    expect(branches[1]!.text()).toContain('Почему контроль не остановил его раньше')
+    expect(branches[1]!.find('[data-testid="branch-empty"]').text()).toContain('Причина пропуска ещё не разобрана')
+  })
+
+  it('гипотеза пропуска — во второй ветке; без подсказки проверки — кнопка измерения в действиях', () => {
+    const m = weldHypotheses()
+    m.hypotheses.push({ ...m.hypotheses[2]!, hypothesis_id: 'h-miss', category: 'documentation', branch: 'why_missed', status: 'recorded', statement: 'КТ-2: камера не видит зону У2', measurement_hint: null })
+    const miss = mount(HypothesisView, { props: { model: m }, global: { plugins: [createPinia(), i18n] } }).find('[data-branch="why_missed"]')
+    expect(miss.find('[data-testid="branch-empty"]').exists()).toBe(false)
+    expect(miss.find('.statement').text()).toBe('КТ-2: камера не видит зону У2')
+    expect(miss.find('[data-testid="next-check"]').exists()).toBe(false)
+    expect(miss.find('[data-testid="request-measurement"]').exists()).toBe(true)
   })
 
   it('ошибка исполнителя — только после расследования и объяснения работника', () => {

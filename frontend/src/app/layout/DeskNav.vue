@@ -40,6 +40,7 @@ const ICONS: Record<string, Component> = {
   causes: FileAnalytics,
   circumstances: History,
   risk: Target,
+  investigation: Target,
   integrity: Shield,
   'critical-actions': Alarm,
   'security-events': Lock,

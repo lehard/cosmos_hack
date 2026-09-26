@@ -51,6 +51,28 @@ const moment = useMomentStore()
 const hypotheses = computed(() => sortHypotheses(props.model.hypotheses))
 const size = computed(() => naiveSizeOf(props.density))
 
+/**
+ * Две причины значимой проблемы (FR-64): почему дефект возник и почему контроль
+ * не остановил его раньше. Гипотеза без ветки — к первой.
+ */
+type Branch = 'why_made' | 'why_missed'
+const BRANCHES: readonly Branch[] = ['why_made', 'why_missed']
+const BRANCH_TITLE: Record<Branch, string> = {
+  why_made: 'widgets.analysis.hypothesis.branchWhyMade',
+  why_missed: 'widgets.analysis.hypothesis.branchWhyMissed',
+}
+const BRANCH_EMPTY: Record<Branch, string> = {
+  why_made: 'empty.noHypotheses',
+  why_missed: 'widgets.analysis.hypothesis.whyMissedEmpty',
+}
+const byBranch = computed(() => {
+  const out: Record<Branch, Hypothesis[]> = { why_made: [], why_missed: [] }
+  for (const h of hypotheses.value) out[h.branch === 'why_missed' ? 'why_missed' : 'why_made'].push(h)
+  return out
+})
+/** Уверенность вывода 0…1 для шкалы; null — сервер не дал. */
+const confidence = (h: Hypothesis) => (h.confidence_bp == null ? null : Math.min(Math.max(h.confidence_bp / 10_000, 0), 1))
+
 const label = (r: JournalRecordRef) => {
   const x = describeRecord(r)
   return x.key ? t(x.key, x.params) : `UNKNOWN(${x.eventType})`
@@ -104,7 +126,6 @@ function caseLine(c: SimilarCase): string {
 
 <template>
   <div class="hypotheses" :class="`density-${density}`" data-testid="hypotheses">
-    <p class="meta" :title="t('hints.signalVsNonconformity')">{{ t('ncCard.hypotheses.version', { version: model.version }) }}</p>
     <p v-if="fromFactor" class="meta" data-testid="from-factor">{{ t('widgets.analysis.hypothesis.fromFactor', { factor: fromFactor }) }}</p>
 
     <NAlert v-if="!model.conclusion_is_categorical" type="warning" :bordered="false" :show-icon="false" class="note" data-testid="not-categorical">
@@ -115,74 +136,95 @@ function caseLine(c: SimilarCase): string {
       <span v-for="m in model.missing_information" :key="m" class="chip-text">{{ t(`widgets.analysis.missing.${codeToKey(m)}`) }}</span>
     </p>
 
-    <p v-if="!hypotheses.length" class="muted">{{ t('empty.noHypotheses') }}</p>
-    <article v-for="h in hypotheses" :key="h.hypothesis_id" class="card" :data-status="h.status" :data-category="h.category">
-      <header class="card-head">
-        <span class="category">{{ t('common.words.hypothesis') }}: {{ category(h.category) }}</span>
-        <span class="status">{{ status(h) }}</span>
-        <span v-if="h.branch" class="branch">{{ t(h.branch === 'why_made' ? 'ncCard.investigation.whyMade' : 'ncCard.investigation.whyMissed') }}</span>
-      </header>
-      <p v-if="h.statement" class="statement">{{ h.statement }}</p>
-      <p v-if="h.confidence_bp != null" class="muted" :title="t('hints.analyzerConfidence')">
-        {{ t('widgets.analysis.hypothesis.confidence', { value: n(h.confidence_bp / 10_000, 'decimal2') }) }}
-      </p>
-      <p v-if="h.category === 'incoming'" class="muted">{{ t('hints.incomingDefect') }}</p>
+    <section v-for="b in BRANCHES" :key="b" class="branch" :data-branch="b" data-testid="branch">
+      <h4 class="branch-title">{{ t(BRANCH_TITLE[b]) }}</h4>
+      <p v-if="!byBranch[b].length" class="branch-empty ant-wrap" data-testid="branch-empty">{{ t(BRANCH_EMPTY[b]) }}</p>
 
-      <div class="args">
-        <section class="arg" data-side="for">
-          <h4>{{ t('ncCard.commonFactors.argumentsFor') }}</h4>
-          <ul v-if="h.supporting.length">
-            <li v-for="r in sortByTime(h.supporting)" :key="r.event_id">
-              <span class="dot" :style="{ background: recordColor(describeRecord(r).tone) }" aria-hidden="true" />
-              <button type="button" class="linklike" @click="emit('select-record', r.event_id)">{{ time(r.occurred_at) }} · {{ label(r) }}</button>
-            </li>
-          </ul>
-          <p v-else class="muted">{{ t('widgets.analysis.hypothesis.noArguments') }}</p>
-        </section>
-        <section class="arg" data-side="against">
-          <h4>{{ t('ncCard.commonFactors.argumentsAgainst') }}</h4>
-          <ul v-if="h.contradicting.length">
-            <li v-for="r in sortByTime(h.contradicting)" :key="r.event_id">
-              <span class="dot" :style="{ background: recordColor(describeRecord(r).tone) }" aria-hidden="true" />
-              <button type="button" class="linklike" @click="emit('select-record', r.event_id)">{{ time(r.occurred_at) }} · {{ label(r) }}</button>
-            </li>
-          </ul>
-          <p v-else class="muted">{{ t('widgets.analysis.hypothesis.noArguments') }}</p>
-        </section>
-      </div>
+      <article v-for="h in byBranch[b]" :key="h.hypothesis_id" class="card" :data-status="h.status" :data-category="h.category">
+        <header class="card-head">
+          <p class="statement ant-wrap">{{ h.statement || category(h.category) }}</p>
+          <span class="status">{{ status(h) }}</span>
+        </header>
+        <p v-if="h.statement" class="kind muted ant-wrap">{{ t('common.words.hypothesis') }} · {{ category(h.category) }}</p>
 
-      <footer v-if="isOpen(h)" class="card-actions">
-        <ActionButton overflow="wrap" :size="size" type="primary" secondary :disabled="!canConfirm || busy || moment.isReplay" data-testid="confirm" @click="openForm(h, 'confirm')" :label="t('decisions.cause.confirmCause')" />
-        <ActionButton overflow="wrap" :size="size" :disabled="!canReject || busy || moment.isReplay" data-testid="reject" @click="openForm(h, 'reject')" :label="t('decisions.cause.rejectHypothesis')" />
-        <ActionButton overflow="wrap" :size="size" :disabled="!canMeasure || busy || moment.isReplay" data-testid="request-measurement" @click="openForm(h, 'measure')" :label="t('decisions.cause.requestMeasurement', { what: h.measurement_hint ?? category(h.category) })" />
-        <p v-if="h.category === 'performer'" class="muted legal" data-testid="performer-note">{{ t('decisions.cause.performerErrorPrerequisites') }}</p>
+        <div v-if="confidence(h) != null" class="confidence" :title="t('hints.analyzerConfidence')" data-testid="confidence">
+          <span class="meter" aria-hidden="true"><span class="meter-fill" :style="{ width: `${confidence(h)! * 100}%` }" /></span>
+          <span class="muted ant-wrap">{{ t('widgets.analysis.hypothesis.confidence', { value: n(confidence(h)!, 'decimal2') }) }}</span>
+        </div>
+        <p v-if="h.category === 'incoming'" class="muted">{{ t('hints.incomingDefect') }}</p>
 
-        <form v-if="form?.id === h.hypothesis_id" class="form" :data-form="form.kind" @submit.prevent="submit(h)">
-          <label>
-            <span>{{ t(FIRST_LABEL[form.kind]) }}</span>
-            <textarea v-model="first" rows="2" required data-testid="form-first" />
-          </label>
-          <label v-if="form.kind === 'confirm'">
-            <span>{{ t('common.words.basis') }}</span>
-            <textarea v-model="second" rows="2" required data-testid="form-second" />
-          </label>
-          <div class="form-actions">
-            <ActionButton overflow="wrap" :size="size" type="primary" attr-type="submit" :disabled="!formReady || busy || moment.isReplay" data-testid="form-submit" :label="t('common.actions.send')" />
-            <ActionButton overflow="wrap" :size="size" quaternary data-testid="form-cancel" @click="form = null" :label="t('common.actions.cancel')" />
-          </div>
-        </form>
-      </footer>
-    </article>
+        <!-- Что проверить следующим: проверка, которая подтвердит или ослабит гипотезу. -->
+        <div v-if="isOpen(h) && h.measurement_hint" class="next" data-testid="next-check">
+          <p class="next-title">{{ t('widgets.analysis.hypothesis.nextCheck') }}</p>
+          <p class="next-text ant-wrap">{{ h.measurement_hint }}</p>
+          <ActionButton overflow="wrap" :size="size" type="primary" :disabled="!canMeasure || busy || moment.isReplay" data-testid="request-measurement" @click="openForm(h, 'measure')" :label="t('widgets.analysis.hypothesis.requestCheck')" />
+        </div>
+
+        <div class="args">
+          <section class="arg" data-side="for">
+            <h5>{{ t('ncCard.commonFactors.argumentsFor') }} · {{ h.supporting.length }}</h5>
+            <ul v-if="h.supporting.length">
+              <li v-for="r in sortByTime(h.supporting)" :key="r.event_id">
+                <span class="dot" :style="{ background: recordColor(describeRecord(r).tone) }" aria-hidden="true" />
+                <button type="button" class="linklike ant-wrap" @click="emit('select-record', r.event_id)">{{ time(r.occurred_at) }} · {{ label(r) }}</button>
+              </li>
+            </ul>
+            <p v-else class="muted">{{ t('widgets.analysis.hypothesis.noArguments') }}</p>
+          </section>
+          <section class="arg" data-side="against">
+            <h5>{{ t('ncCard.commonFactors.argumentsAgainst') }} · {{ h.contradicting.length }}</h5>
+            <ul v-if="h.contradicting.length">
+              <li v-for="r in sortByTime(h.contradicting)" :key="r.event_id">
+                <span class="dot" :style="{ background: recordColor(describeRecord(r).tone) }" aria-hidden="true" />
+                <button type="button" class="linklike ant-wrap" @click="emit('select-record', r.event_id)">{{ time(r.occurred_at) }} · {{ label(r) }}</button>
+              </li>
+            </ul>
+            <p v-else class="muted">{{ t('widgets.analysis.hypothesis.noArguments') }}</p>
+          </section>
+        </div>
+
+        <footer v-if="isOpen(h)" class="card-actions">
+          <ActionButton overflow="wrap" :size="size" type="primary" secondary :disabled="!canConfirm || busy || moment.isReplay" data-testid="confirm" @click="openForm(h, 'confirm')" :label="t('decisions.cause.confirmCause')" />
+          <ActionButton overflow="wrap" :size="size" :disabled="!canReject || busy || moment.isReplay" data-testid="reject" @click="openForm(h, 'reject')" :label="t('decisions.cause.rejectHypothesis')" />
+          <ActionButton
+            v-if="!h.measurement_hint"
+            overflow="wrap"
+            :size="size"
+            :disabled="!canMeasure || busy || moment.isReplay"
+            data-testid="request-measurement"
+            @click="openForm(h, 'measure')"
+            :label="t('decisions.cause.requestMeasurement', { what: category(h.category) })"
+          />
+          <p v-if="h.category === 'performer'" class="muted legal" data-testid="performer-note">{{ t('decisions.cause.performerErrorPrerequisites') }}</p>
+
+          <form v-if="form?.id === h.hypothesis_id" class="form" :data-form="form.kind" @submit.prevent="submit(h)">
+            <label>
+              <span>{{ t(FIRST_LABEL[form.kind]) }}</span>
+              <textarea v-model="first" rows="2" required data-testid="form-first" />
+            </label>
+            <label v-if="form.kind === 'confirm'">
+              <span>{{ t('common.words.basis') }}</span>
+              <textarea v-model="second" rows="2" required data-testid="form-second" />
+            </label>
+            <div class="form-actions">
+              <ActionButton overflow="wrap" :size="size" type="primary" attr-type="submit" :disabled="!formReady || busy || moment.isReplay" data-testid="form-submit" :label="t('common.actions.send')" />
+              <ActionButton overflow="wrap" :size="size" quaternary data-testid="form-cancel" @click="form = null" :label="t('common.actions.cancel')" />
+            </div>
+          </form>
+        </footer>
+      </article>
+    </section>
 
     <section class="similar" data-testid="similar-cases">
       <h4>{{ t('ncCard.similarCases.title') }}</h4>
       <ul v-if="model.similar_cases.length">
         <li v-for="c in model.similar_cases" :key="c.nc_id">
-          <button type="button" class="linklike" @click="emit('open-case', c)">{{ caseLine(c) }}</button>
+          <button type="button" class="linklike ant-wrap" @click="emit('open-case', c)">{{ caseLine(c) }}</button>
         </li>
       </ul>
       <p v-else class="muted">{{ t('empty.noSimilarCases') }}</p>
     </section>
+    <p class="meta" :title="t('hints.signalVsNonconformity')">{{ t('ncCard.hypotheses.version', { version: model.version }) }}</p>
   </div>
 </template>
 
@@ -190,7 +232,8 @@ function caseLine(c: SimilarCase): string {
 .hypotheses {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--ant-space-3);
+  min-width: 0;
   font-size: var(--ant-fs-body);
 }
 
@@ -198,10 +241,7 @@ function caseLine(c: SimilarCase): string {
   font-size: var(--ant-fs-lg);
 }
 
-.meta,
-.muted,
-.missing,
-.statement {
+p {
   margin: 0;
 }
 
@@ -210,30 +250,58 @@ function caseLine(c: SimilarCase): string {
   color: var(--ant-text-3);
 }
 
+.meta {
+  font-size: var(--ant-fs-meta);
+}
+
 .note {
-  padding: 6px 10px;
+  padding: var(--ant-space-2) var(--ant-space-3);
 }
 
 .missing {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: var(--ant-space-2);
   align-items: baseline;
 }
 
 .chip-text {
-  padding: 1px 8px;
-  border-radius: var(--ant-radius-lg);
-  background: var(--ant-n-100);
+  padding: 1px var(--ant-space-2);
+  border-radius: var(--ant-radius-pill);
+  background: var(--ant-surface-subtle);
+}
+
+/* Две причины — две секции. */
+.branch {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ant-space-2);
+  min-width: 0;
+}
+
+.branch-title,
+.similar h4 {
+  margin: 0;
+  font-size: 1em;
+}
+
+.branch-empty {
+  padding: var(--ant-space-2) var(--ant-space-3);
+  border: 1px dashed var(--ant-status-attention);
+  border-radius: var(--ant-radius-md);
+  background: var(--ant-status-attention-soft);
+  color: var(--ant-status-attention-text);
 }
 
 .card {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 8px 10px;
+  gap: var(--ant-space-2);
+  min-width: 0;
+  padding: var(--ant-space-3);
   border: 1px solid var(--ant-border);
   border-radius: var(--ant-radius-md);
+  background: var(--ant-surface);
 }
 
 .card[data-status='rejected'] {
@@ -241,42 +309,91 @@ function caseLine(c: SimilarCase): string {
 }
 
 .card[data-status='confirmed'] {
-  border-color: var(--ant-text);
+  border-color: var(--ant-status-success);
 }
 
 .card-head {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: baseline;
+  gap: var(--ant-space-2);
+  align-items: flex-start;
+  justify-content: space-between;
+  min-width: 0;
 }
 
-.category {
+.statement {
+  min-width: 0;
+  font-size: var(--ant-fs-title);
   font-weight: var(--ant-fw-bold);
 }
 
-.status,
-.branch {
-  padding: 0 6px;
-  border-radius: var(--ant-radius-lg);
-  background: var(--ant-n-100);
+.status {
+  flex: none;
+  padding: 0 var(--ant-space-2);
+  border-radius: var(--ant-radius-pill);
+  background: var(--ant-surface-subtle);
   font-size: var(--ant-fs-xs);
+}
+
+.kind {
+  font-size: var(--ant-fs-meta);
+}
+
+.confidence {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ant-space-2);
+  align-items: center;
+}
+
+.meter {
+  flex: 0 1 160px;
+  height: 8px;
+  overflow: hidden;
+  border-radius: var(--ant-radius-pill);
+  background: var(--ant-surface-subtle);
+}
+
+.meter-fill {
+  display: block;
+  height: 100%;
+  background: var(--ant-accent);
+}
+
+/* Что проверить следующим — главный шаг технолога по гипотезе. */
+.next {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ant-space-1);
+  align-items: flex-start;
+  padding: var(--ant-space-2) var(--ant-space-3);
+  border-left: 4px solid var(--ant-accent);
+  border-radius: var(--ant-radius-md);
+  background: var(--ant-accent-soft);
+}
+
+.next-title {
+  color: var(--ant-text-2);
+  font-size: var(--ant-fs-meta);
+  font-weight: var(--ant-fw-bold);
+}
+
+.next-text {
+  font-weight: var(--ant-fw-bold);
 }
 
 .args {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--ant-space-3);
 }
 
-.arg h4,
-.similar h4 {
-  margin: 0 0 4px;
+.arg h5 {
+  margin: 0 0 var(--ant-space-1);
   font-size: 1em;
 }
 
-.arg[data-side='against'] h4 {
-  color: var(--ant-text-3);
+.arg[data-side='against'] h5 {
+  color: var(--ant-text-2);
 }
 
 .arg ul,
@@ -291,8 +408,9 @@ function caseLine(c: SimilarCase): string {
 
 .arg li {
   display: flex;
-  gap: 6px;
+  gap: var(--ant-space-2);
   align-items: baseline;
+  min-width: 0;
 }
 
 .dot {
@@ -303,6 +421,7 @@ function caseLine(c: SimilarCase): string {
 }
 
 .linklike {
+  min-width: 0;
   padding: 0;
   border: 0;
   background: none;
@@ -319,7 +438,7 @@ function caseLine(c: SimilarCase): string {
 .card-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: var(--ant-space-2);
   align-items: center;
 }
 
@@ -327,9 +446,9 @@ function caseLine(c: SimilarCase): string {
   display: flex;
   flex-basis: 100%;
   flex-direction: column;
-  gap: 6px;
-  padding: 8px;
-  border: 1px solid var(--ant-n-300);
+  gap: var(--ant-space-2);
+  padding: var(--ant-space-2);
+  border: 1px solid var(--ant-border-strong);
   border-radius: var(--ant-radius-md);
   background: var(--ant-surface-subtle);
 }
@@ -341,16 +460,16 @@ function caseLine(c: SimilarCase): string {
 }
 
 .form textarea {
-  font: inherit;
-  padding: 4px 6px;
-  border: 1px solid var(--ant-n-300);
+  padding: var(--ant-space-1) var(--ant-space-2);
+  border: 1px solid var(--ant-border-strong);
   border-radius: var(--ant-radius-sm);
+  font: inherit;
   resize: vertical;
 }
 
 .form-actions {
   display: flex;
-  gap: 6px;
+  gap: var(--ant-space-2);
 }
 
 .legal {
