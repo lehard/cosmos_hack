@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"slices"
 	"strings"
+	"sync"
 
 	app "ant/internal/application/simulation"
 	"ant/internal/infrastructure/transport/httpapi"
@@ -21,7 +22,9 @@ import (
 // имени демо-персоны (заголовок Ant-Demo-Persona, профили fixtures и demo) —
 // с правами, местом сеанса и гардами общего декоратора. Служебных обходов нет.
 type HTTPPort struct {
+	api     *httpapi.API
 	handler http.Handler
+	once    sync.Once
 	routes  map[string]route
 	emits   map[string][]string
 	// ReadPersona — демо-персона сверки (чтение): по умолчанию администратор.
@@ -33,9 +36,15 @@ type route struct {
 }
 
 // NewHTTPPort — порты над API api и обработчиком h (тот же mux, что слушает
-// роль api). Маршруты — из спецификации Huma по operationId.
+// роль api). Маршруты — из спецификации Huma по operationId; собираются при
+// первом обращении, когда все модули уже зарегистрировали свои операции.
 func NewHTTPPort(api *httpapi.API, h http.Handler) *HTTPPort {
-	p := &HTTPPort{handler: h, routes: map[string]route{}, emits: map[string][]string{}, ReadPersona: "ADM-01"}
+	return &HTTPPort{api: api, handler: h, ReadPersona: "ADM-01"}
+}
+
+func (p *HTTPPort) index() {
+	p.routes, p.emits = map[string]route{}, map[string][]string{}
+	api := p.api
 	for path, item := range api.Huma().OpenAPI().Paths {
 		if item.Get != nil {
 			p.routes[item.Get.OperationID] = route{http.MethodGet, path}
@@ -52,7 +61,6 @@ func NewHTTPPort(api *httpapi.API, h http.Handler) *HTTPPort {
 			p.emits[a.ID] = append(p.emits[a.ID], string(t))
 		}
 	}
-	return p
 }
 
 var (
@@ -128,6 +136,7 @@ func (p *HTTPPort) Act(ctx context.Context, persona, operation string, params ma
 // Decided — в журнале прогона после since есть запись, которую эмитит operation
 // (решение принято на столе роли, FR-129).
 func (p *HTTPPort) Decided(ctx context.Context, runID, operation string, since int64) (bool, int64, error) {
+	p.once.Do(p.index)
 	for _, t := range p.emits[operation] {
 		doc, err := p.Read(ctx, "journal.entry.list", map[string]string{"event_type": t, "after_seq": fmt.Sprint(since)}, runID)
 		if err != nil {
@@ -150,6 +159,7 @@ func (p *HTTPPort) Decided(ctx context.Context, runID, operation string, since i
 
 // do — запрос к обработчику API в процессе.
 func (p *HTTPPort) do(ctx context.Context, persona, operation, method string, params map[string]string, body map[string]any) (int, []byte, error) {
+	p.once.Do(p.index)
 	r, ok := p.routes[operation]
 	if !ok {
 		return 0, nil, fmt.Errorf("операции %s нет в API", operation)
