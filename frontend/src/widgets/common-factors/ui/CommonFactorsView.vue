@@ -48,7 +48,7 @@ function howMany(r: CommonFactorRow): string {
     <ul class="rows">
       <li v-for="r in rows" :key="r.factor" class="row" :data-factor="r.factor" :data-kind="kindOf(r)">
         <p class="what ant-wrap">
-          <span class="name">{{ t(FACTOR_TEXT[r.factor]) }}</span><template v-if="r.value !== null && kindOf(r) !== 'varies'">: <span class="value">{{ r.value }}</span></template>
+          <span class="name">{{ t(FACTOR_TEXT[r.factor]) }}</span><template v-if="r.value !== null && kindOf(r) !== 'varies'">: <span class="value">{{ r.value_label || r.value }}</span></template>
         </p>
         <p class="how">
           <span class="bar" aria-hidden="true"><span class="fill" :style="{ width: `${share(r)}%` }" /></span>

@@ -9,7 +9,7 @@
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { NAlert } from 'naive-ui'
-import { describeRecord, isOpen, recordColor, sortByTime, sortHypotheses, type Hypothesis, type HypothesesModel, type JournalRecordRef, type SimilarCase } from '@/entities/incident'
+import { describeRecord, isOpen, recordColor, recordLabel, sortByTime, sortHypotheses, type Hypothesis, type HypothesesModel, type JournalRecordRef, type SimilarCase } from '@/entities/incident'
 import { codeToKey } from '@/shared/i18n'
 import { naiveSizeOf, type Density } from '@/shared/config/widget'
 import { useMomentStore } from '@/shared/model/moment'
@@ -73,10 +73,10 @@ const byBranch = computed(() => {
 /** Уверенность вывода 0…1 для шкалы; null — сервер не дал. */
 const confidence = (h: Hypothesis) => (h.confidence_bp == null ? null : Math.min(Math.max(h.confidence_bp / 10_000, 0), 1))
 
-const label = (r: JournalRecordRef) => {
-  const x = describeRecord(r)
-  return x.key ? t(x.key, x.params) : `UNKNOWN(${x.eventType})`
-}
+const label = (r: JournalRecordRef) => recordLabel(r, t)
+
+/** Что проверить следующим: из ответа сервера (next_check), иначе — подсказка измерения. */
+const nextText = (h: Hypothesis) => h.next_check?.text || h.measurement_hint || null
 const category = (c: string | null) => (c ? t(`statuses.causeCategory.${codeToKey(c)}`) : t('statuses.causeCategory.notEstablished'))
 const status = (h: Hypothesis) => t(`statuses.hypothesis.${codeToKey(h.status)}`)
 const time = (x: string) => d(new Date(x), 'dateTime')
@@ -89,7 +89,7 @@ const second = ref('')
 
 function openForm(h: Hypothesis, kind: FormKind): void {
   form.value = { id: h.hypothesis_id, kind }
-  first.value = kind === 'measure' ? (h.measurement_hint ?? '') : ''
+  first.value = kind === 'measure' ? (nextText(h) ?? '') : ''
   second.value = ''
 }
 
@@ -154,9 +154,13 @@ function caseLine(c: SimilarCase): string {
         <p v-if="h.category === 'incoming'" class="muted">{{ t('hints.incomingDefect') }}</p>
 
         <!-- Что проверить следующим: проверка, которая подтвердит или ослабит гипотезу. -->
-        <div v-if="isOpen(h) && h.measurement_hint" class="next" data-testid="next-check">
+        <div v-if="isOpen(h) && nextText(h)" class="next" data-testid="next-check">
           <p class="next-title">{{ t('widgets.analysis.hypothesis.nextCheck') }}</p>
-          <p class="next-text ant-wrap">{{ h.measurement_hint }}</p>
+          <p class="next-text ant-wrap">{{ nextText(h) }}</p>
+          <p v-if="h.next_check?.could_exclude" class="next-gain ant-wrap" data-testid="next-gain">
+            {{ t('widgets.analysis.hypothesis.couldExclude', { n: h.next_check.could_exclude, of: h.next_check.scope_size }) }}
+          </p>
+          <p v-if="h.next_check?.unlocks_text" class="next-unlocks ant-wrap">{{ h.next_check.unlocks_text }}</p>
           <ActionButton overflow="wrap" :size="size" type="primary" :disabled="!canMeasure || busy || moment.isReplay" data-testid="request-measurement" @click="openForm(h, 'measure')" :label="t('widgets.analysis.hypothesis.requestCheck')" />
         </div>
 
@@ -183,11 +187,21 @@ function caseLine(c: SimilarCase): string {
           </section>
         </div>
 
+        <details v-if="h.history?.length" class="history" data-testid="history">
+          <summary>{{ t('widgets.analysis.hypothesis.historyTitle', { n: h.history.length }) }}</summary>
+          <ol>
+            <li v-for="(c, i) in h.history" :key="i" class="ant-wrap">
+              <span class="muted">{{ time(c.at) }}</span> · {{ c.text }}
+              <template v-if="c.confidence_bp != null"> · {{ t('widgets.analysis.hypothesis.confidenceNow', { value: n(c.confidence_bp / 10_000, 'decimal2') }) }}</template>
+            </li>
+          </ol>
+        </details>
+
         <footer v-if="isOpen(h)" class="card-actions">
           <ActionButton overflow="wrap" :size="size" type="primary" secondary :disabled="!canConfirm || busy || moment.isReplay" data-testid="confirm" @click="openForm(h, 'confirm')" :label="t('decisions.cause.confirmCause')" />
           <ActionButton overflow="wrap" :size="size" :disabled="!canReject || busy || moment.isReplay" data-testid="reject" @click="openForm(h, 'reject')" :label="t('decisions.cause.rejectHypothesis')" />
           <ActionButton
-            v-if="!h.measurement_hint"
+            v-if="!nextText(h)"
             overflow="wrap"
             :size="size"
             :disabled="!canMeasure || busy || moment.isReplay"
@@ -379,6 +393,31 @@ p {
 
 .next-text {
   font-weight: var(--ant-fw-bold);
+}
+
+.next-gain {
+  color: var(--ant-status-success-text);
+  font-weight: var(--ant-fw-bold);
+}
+
+.next-unlocks {
+  color: var(--ant-text-2);
+  font-size: var(--ant-fs-meta);
+}
+
+.history summary {
+  color: var(--ant-text-2);
+  font-size: var(--ant-fs-meta);
+  cursor: pointer;
+}
+
+.history ol {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: var(--ant-space-1) 0 0;
+  padding-left: var(--ant-space-5);
+  font-size: var(--ant-fs-meta);
 }
 
 .args {

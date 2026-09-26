@@ -78,6 +78,20 @@ describe('гипотезы причины', () => {
     expect(miss.find('[data-testid="request-measurement"]').exists()).toBe(true)
   })
 
+  it('«что проверить следующим» от сервера: сколько изделий может исключить; «что меняло уверенность»', () => {
+    const m = weldHypotheses()
+    m.hypotheses[2] = {
+      ...m.hypotheses[2]!,
+      next_check: { text: 'Контрольный образец на ИС-2', measurement_kind: 'control_sample', unlocks_text: 'Подтвердит причину и позволит сузить область', could_exclude: 7, scope_size: 13 },
+      history: [{ at: '2026-09-23T09:15:00Z', confidence_bp: 8500, event_id: 'e1', text: 'Пришёл журнал ИС-2: совпадение 3 из 3' }],
+    }
+    const eq = mount(HypothesisView, { props: { model: m }, global: { plugins: [createPinia(), i18n] } }).find('article[data-category="equipment"]')
+    expect(eq.find('[data-testid="next-check"]').text()).toContain('Контрольный образец на ИС-2')
+    expect(eq.find('[data-testid="next-gain"]').text()).toBe('может исключить 7 из 13 изделий области')
+    expect(eq.find('[data-testid="history"]').text()).toContain('Пришёл журнал ИС-2: совпадение 3 из 3')
+    expect(eq.find('[data-testid="history"]').text()).toContain('уверенность 0,85')
+  })
+
   it('ошибка исполнителя — только после расследования и объяснения работника', () => {
     const perf = mountView().find('article[data-category="performer"]')
     expect(perf.find('[data-testid="performer-note"]').text()).toContain('письменного объяснения работника')

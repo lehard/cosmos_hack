@@ -48,6 +48,29 @@ describe('мои расследования', () => {
     expect(w.find('[data-incident="RS-03"] [data-testid="state"]').text()).toContain('Закрыто')
   })
 
+  it('стадия из словаря, счётчики «что известно», «Дальше:» — текст сервера, общий фактор словами', () => {
+    const w = mount(InvestigationsView, {
+      props: {
+        incidents: [
+          incident('RS-01', {
+            stage: 'hypothesis',
+            counts: { confirmed: 1, suspect: 4, unknown: 1, excluded: 28 },
+            next_step: 'Контрольный образец на ИС-2 при уставке 160 А',
+            common_factor: { factor: 'machine', value: 'IS-2', label: 'Сварочный источник ИС-2' },
+          } as Partial<IncidentSummary>),
+        ],
+        selected: null,
+      },
+      global: { plugins: [createPinia(), i18n] },
+    })
+    expect(w.find('[data-testid="stage"]').text()).toBe('Проверка гипотез')
+    expect(w.find('[data-testid="counts"]').text()).toContain('1 подтверждено')
+    expect(w.find('[data-testid="counts"]').text()).toContain('28 исключено с основанием')
+    expect(w.find('[data-testid="next-step"]').text()).toBe('Дальше: Контрольный образец на ИС-2 при уставке 160 А')
+    expect(w.text()).toContain('Сварочный источник ИС-2')
+    expect(w.text()).not.toContain('IS-2')
+  })
+
   it('виджет: первый открытый инцидент выбран; щелчок — инцидент в фокус разбора', async () => {
     mockApi({ 'GET /api/v1/incidents': { items: [incident('RS-01'), incident('RS-02', { opened_at: '2026-09-23T12:00:00Z' })] } })
     const w = await mountWidget(InvestigationsWidget, { widgetId: 'investigations', titleKey: 'widgets.analysis.investigations.title' })

@@ -18,6 +18,7 @@ import {
   CIRCUMSTANCE_LANES,
   PHASES,
   describeRecord,
+  recordLabel,
   inWindow,
   isIncomingDefect,
   linkedIds,
@@ -49,11 +50,8 @@ const emit = defineEmits<{
 
 const { t, te, d } = useI18n()
 
-/** Подпись записи: текст по ключу или UNKNOWN(тип). */
-function label(r: JournalRecordRef): string {
-  const x = describeRecord(r)
-  return x.key ? t(x.key, x.params) : `UNKNOWN(${x.eventType})`
-}
+/** Подпись записи: текст сервера, иначе по словарю записи; неизвестное — UNKNOWN(тип). */
+const label = (r: JournalRecordRef): string => recordLabel(r, t)
 
 const records = computed(() => sortByTime(props.model.records))
 const incoming = computed(() => isIncomingDefect(props.model))
