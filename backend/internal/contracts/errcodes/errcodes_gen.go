@@ -105,16 +105,22 @@ const (
 	FederationExtractTampered Code = "federation.extract_tampered"
 	// Происхождение не подтверждено
 	FederationExtractUnverifiable Code = "federation.extract_unverifiable"
+	// Мера не в том состоянии
+	IncidentActionState Code = "incident.action_state"
 	// Автоматически исключить нельзя
 	IncidentAutoExcludeForbidden Code = "incident.auto_exclude_forbidden"
 	// Нужно основание
 	IncidentBasisRequired Code = "incident.basis_required"
 	// Инцидент закрыт
 	IncidentClosed Code = "incident.closed"
+	// Нужен план проверки эффективности
+	IncidentEffectivenessPlanRequired Code = "incident.effectiveness_plan_required"
 	// Нужно письменное объяснение работника
 	IncidentExplanationRequired Code = "incident.explanation_required"
 	// Изделия нет в области риска
 	IncidentItemNotInScope Code = "incident.item_not_in_scope"
+	// Предложение уже решено
+	IncidentSuggestionState Code = "incident.suggestion_state"
 	// Слишком большая пачка
 	IngestBatchTooLarge Code = "ingest.batch_too_large"
 	// Подписанные байты не в каноническом виде
@@ -324,11 +330,14 @@ var codes = [...]Info{
 	{Code: ErpUnavailable, Status: 503, Title: "1С недоступна", Detail: "1С недоступна — повтор с тем же номером сообщения через {delay}", UIKey: "errors.integration.erpUnavailable", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: FederationExtractTampered, Status: 422, Title: "Выписка паспорта изменена", Detail: "Выписка паспорта изменена — не принята", UIKey: "errors.federation.extractTampered", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: FederationExtractUnverifiable, Status: 202, Title: "Происхождение не подтверждено", Detail: "Подписи выписки проверить нельзя — принята с пометкой «происхождение не подтверждено»", UIKey: "errors.federation.extractUnverifiable", Quarantine: false, Severity: "warning", Guard: false, Aliases: nil},
+	{Code: IncidentActionState, Status: 409, Title: "Мера не в том состоянии", Detail: "Мера {action_id} сейчас «{status}»: {why}", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
 	{Code: IncidentAutoExcludeForbidden, Status: 403, Title: "Автоматически исключить нельзя", Detail: "Исключить изделие из области риска автоматически нельзя — нужен человек или делегированное правило", UIKey: "errors.decision.autoExcludeForbidden", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
 	{Code: IncidentBasisRequired, Status: 422, Title: "Нужно основание", Detail: "Сужение области риска — только с основанием: доказательство, автор, время", UIKey: "riskScope.basisRequired", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
 	{Code: IncidentClosed, Status: 409, Title: "Инцидент закрыт", Detail: "Инцидент {incident_id} закрыт — область риска и выводы больше не меняются", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
+	{Code: IncidentEffectivenessPlanRequired, Status: 422, Title: "Нужен план проверки эффективности", Detail: "Мера не создаётся без плана проверки эффективности: метрика, базовый уровень, окно наблюдения, критерий успеха ({missing})", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
 	{Code: IncidentExplanationRequired, Status: 422, Title: "Нужно письменное объяснение работника", Detail: "Ошибку исполнителя подтверждает только уполномоченный после письменного объяснения работника (ТК РФ ст. 247); сначала — incident.operator_error.confirmed", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
 	{Code: IncidentItemNotInScope, Status: 409, Title: "Изделия нет в области риска", Detail: "Изделие {item_id} не входит в текущую версию области риска инцидента {incident_id} (или уже исключено)", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
+	{Code: IncidentSuggestionState, Status: 409, Title: "Предложение уже решено", Detail: "Предложение {suggestion_id} сейчас «{status}»: {why}", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
 	{Code: IngestBatchTooLarge, Status: 413, Title: "Слишком большая пачка", Detail: "В пачке {count} сообщений, допустимо {limit}", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: IngestCanonicalFormViolation, Status: 422, Title: "Подписанные байты не в каноническом виде", Detail: "{reason}: повторяющиеся ключи, целые вне ±(2^53−1), строки не в NFC или идентификатор не ASCII", UIKey: "errors.ingest.signatureInvalid", Quarantine: true, Severity: "error", Guard: false, Aliases: nil},
 	{Code: IngestDuplicateConflict, Status: 409, Title: "Тот же номер события, другое содержимое", Detail: "{source_id}/{event_id}: содержимое отличается — конфликт целостности записан в журнал критических действий", UIKey: "errors.ingest.duplicateConflict", Quarantine: false, Severity: "error", Guard: false, Aliases: []string{"E_ID_CONFLICT"}},

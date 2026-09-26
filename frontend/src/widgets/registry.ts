@@ -73,6 +73,8 @@ export const widgetRegistry = {
   'analytics-overview': { titleKey: 'desks.analytics', epic: 15, load: () => import('./analytics-overview') },
   'proposals': { titleKey: 'desks.proposals', epic: 15, load: () => import('./proposals') },
   'data-deficit-map': { titleKey: 'desks.dataDeficit', epic: 15, load: () => import('./data-deficit-map') },
+  // ── эпик 42: Предложения, меры и карта дефицита данных ──
+  'corrective-actions': { titleKey: 'widgets.quality.title', epic: 42, load: () => import('./corrective-actions') },
   // ── эпик 40: Адаптация VisionQC ──
   'vision-adaptation': { titleKey: 'widgets.visionAdaptation.title', epic: 40, load: () => import('./vision-adaptation') },
 } satisfies Record<string, WidgetDefinition>

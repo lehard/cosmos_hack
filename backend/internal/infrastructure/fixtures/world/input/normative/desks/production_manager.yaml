@@ -31,6 +31,12 @@ tabs:
     layout: single
     slots:
       - {id: proposals, area: main, widget: proposals}
+  # Эпик 42 (FR-138): взгляд руководителя по качеству совмещён со столом — меры, их эффективность, организационная память.
+  - id: quality
+    title_key: widgets.quality.tab
+    layout: single
+    slots:
+      - {id: quality, area: main, widget: corrective-actions}
   - id: analytics
     title_key: desks.analytics
     layout: main-side

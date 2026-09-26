@@ -501,6 +501,10 @@ channels:
         $ref: "#/components/messages/incident.action.evaluated.v1"
       incident.suggestion.recorded.v1:
         $ref: "#/components/messages/incident.suggestion.recorded.v1"
+      incident.suggestion.forwarded.v1:
+        $ref: "#/components/messages/incident.suggestion.forwarded.v1"
+      incident.suggestion.resolved.v1:
+        $ref: "#/components/messages/incident.suggestion.resolved.v1"
   analyzer:
     address: journal/analyzer
     title: "Журнал: семейство analyzer"
@@ -1000,6 +1004,8 @@ operations:
       - $ref: "#/channels/incident/messages/incident.action.implemented.v1"
       - $ref: "#/channels/incident/messages/incident.action.evaluated.v1"
       - $ref: "#/channels/incident/messages/incident.suggestion.recorded.v1"
+      - $ref: "#/channels/incident/messages/incident.suggestion.forwarded.v1"
+      - $ref: "#/channels/incident/messages/incident.suggestion.resolved.v1"
   journal.analyzer:
     action: send
     title: ant записывает записи семейства analyzer
@@ -5224,7 +5230,7 @@ components:
     incident.suggestion.recorded.v1:
       name: incident.suggestion.recorded.v1
       title: Предложение записано
-      summary: Предложение записано — предложение генератора (ограничение линии, область риска, кандидат в правило, адаптация VisionQC, карта дефицита данных) с основаниями и ответственным; ничего не применяет само. Недетерминированный генератор — источник факта (AD-3, FR-63).
+      summary: Предложение записано — предложение генератора (ограничение линии, область риска, кандидат в правило, адаптация VisionQC, карта дефицита данных) с основаниями и ответственным; ничего не применяет само; дальше — решения людей incident.suggestion.forwarded и incident.suggestion.resolved. Недетерминированный генератор — источник факта (AD-3, FR-63).
       contentType: application/json
       payload:
         allOf:
@@ -5239,7 +5245,53 @@ components:
                 $ref: ./incident/incident.suggestion.recorded.v1.json
       x-ant-kind: fact
       x-ant-emitter: analysis
-      x-ant-stream: global
+      x-ant-stream: suggestion
+      x-ant-axis: none
+      x-ant-action-class: record
+      x-ant-critical: false
+      x-ant-current: true
+    incident.suggestion.forwarded.v1:
+      name: incident.suggestion.forwarded.v1
+      title: Предложение передано ответственному
+      summary: "Предложение передано ответственному — решение руководителя (UJ-1): задачу ответственному ставит notifications; система сама ничего не меняет (FR-63)."
+      contentType: application/json
+      payload:
+        allOf:
+          - $ref: ./common/envelope.v1.json
+          - type: object
+            properties:
+              event_type:
+                const: incident.suggestion.forwarded
+              schema_version:
+                const: 1
+              data:
+                $ref: ./incident/incident.suggestion.forwarded.v1.json
+      x-ant-kind: decision
+      x-ant-emitter: analysis
+      x-ant-stream: suggestion
+      x-ant-axis: none
+      x-ant-action-class: record
+      x-ant-critical: false
+      x-ant-current: true
+    incident.suggestion.resolved.v1:
+      name: incident.suggestion.resolved.v1
+      title: Решение по предложению
+      summary: "Решение по предложению: принято в работу или отклонено — с основанием. «Принято» не применяет ничего само: изменение нормы — новая версия процесса через кворум, мера — incident.action.assigned (FR-63, FR-64)."
+      contentType: application/json
+      payload:
+        allOf:
+          - $ref: ./common/envelope.v1.json
+          - type: object
+            properties:
+              event_type:
+                const: incident.suggestion.resolved
+              schema_version:
+                const: 1
+              data:
+                $ref: ./incident/incident.suggestion.resolved.v1.json
+      x-ant-kind: decision
+      x-ant-emitter: analysis
+      x-ant-stream: suggestion
       x-ant-axis: none
       x-ant-action-class: record
       x-ant-critical: false

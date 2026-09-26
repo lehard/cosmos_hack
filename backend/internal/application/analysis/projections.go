@@ -49,8 +49,12 @@ func Register(reg *engineapp.Registry) error {
 		Step: stepIncident, Entity: entity(platform.EntityIncident)}); err != nil {
 		return err
 	}
-	return reg.AddGlobal(engineapp.GlobalProjection{Name: ProjectionNC, Writer: dom.Module, Keys: dom.NCKeys,
-		Step: stepNC, Entity: entity(platform.EntityNonconformity)})
+	if err := reg.AddGlobal(engineapp.GlobalProjection{Name: ProjectionNC, Writer: dom.Module, Keys: dom.NCKeys,
+		Step: stepNC, Entity: entity(platform.EntityNonconformity)}); err != nil {
+		return err
+	}
+	// Эпик 42: предложения и корректирующие меры (projections_suggestions.go).
+	return registerSuggestions(reg)
 }
 
 // MustRegister — Register для сборки ролей: ошибка регистрации — ошибка сборки.

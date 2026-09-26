@@ -141,6 +141,10 @@ func runAPI(ctx context.Context, env *environment) error {
 		if opts.analysis, err = analysisLive(ctx, env); err != nil {
 			return err
 		}
+		// Эпик 42: вход генератора «ограничение линии» — счётчики узлов analytics.
+		if opts.analytics != nil {
+			opts.analysis.ConnectLine(analyticsLine{opts.analytics})
+		}
 	}
 	if modeOf(opts, "nonconformity") == platform.ModeLive {
 		if opts.nonconformity, err = nonconformityLive(ctx, env, opts.accessDirectory()); err != nil {

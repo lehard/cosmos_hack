@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://ant.invalid/contracts/events/incident/incident.suggestion.recorded.v1.json",
   "title": "IncidentSuggestionRecordedV1",
-  "description": "Предложение записано — предложение генератора (ограничение линии, область риска, кандидат в правило, адаптация VisionQC, карта дефицита данных) с основаниями и ответственным; ничего не применяет само. Недетерминированный генератор — источник факта (AD-3, FR-63).",
+  "description": "Предложение записано — предложение генератора (ограничение линии, область риска, кандидат в правило, адаптация VisionQC, карта дефицита данных) с основаниями и ответственным; ничего не применяет само; дальше — решения людей incident.suggestion.forwarded и incident.suggestion.resolved. Недетерминированный генератор — источник факта (AD-3, FR-63).",
   "type": "object",
   "properties": {
     "suggestion_id": {
@@ -42,6 +42,39 @@
       },
       "description": "Основания — `event_id` записей, на которые опирается запись.",
       "uniqueItems": true
+    },
+    "title": {
+      "type": "string",
+      "maxLength": 256,
+      "description": "Короткий заголовок предложения для списка."
+    },
+    "responsible_role": {
+      "type": "string",
+      "maxLength": 64,
+      "description": "Роль ответственного (мастер участка, технолог, руководитель производства…), если человек не назначен."
+    },
+    "step_key": {
+      "$ref": "../common/defs.v1.json#/definitions/step_key",
+      "description": "Узел процесса, к которому относится предложение, — ссылка на карту процесса ответственного (FR-63)."
+    },
+    "incident_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Инцидент, к которому относится предложение (область риска)."
+    },
+    "estimate": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Оценка эффекта словами с единицами («детали ждут в среднем 12 мин — около 40 деталей в смену»; «сузило бы область в среднем с 13 до 4 деталей»)."
+    },
+    "missing_kind": {
+      "type": "string",
+      "maxLength": 64,
+      "description": "Вид недостающих сведений (для предложения карты дефицита данных, FR-143) — значение перечисления missing_information разбора."
+    },
+    "dedup_key": {
+      "type": "string",
+      "maxLength": 256,
+      "description": "Ключ повторения: генератор не записывает второе предложение с тем же ключом, пока первое не решено."
     }
   },
   "required": [

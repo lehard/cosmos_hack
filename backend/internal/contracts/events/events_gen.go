@@ -2894,6 +2894,13 @@ type IncidentActionAssignedV1 struct {
 
 	// Владелец.
 	OwnerID PersonRef `json:"owner_id"`
+
+	// Предложение, из которого родилась мера (FR-63), если есть.
+	SuggestionID *ObjectID `json:"suggestion_id,omitempty,omitzero"`
+
+	// Что делается — словами («проверка инструмента каждые 75 циклов», «обучение
+	// сварщиков»); основа организационной памяти (FR-138).
+	Title *string `json:"title,omitempty,omitzero"`
 }
 
 type IncidentActionAssignedV1ActionType string
@@ -3314,28 +3321,75 @@ type IncidentScopeNarrowedV1 struct {
 	ReleaseContainment *bool `json:"release_containment,omitempty,omitzero"`
 }
 
+// Предложение передано ответственному — решение руководителя (UJ-1): задачу
+// ответственному ставит notifications; система сама ничего не меняет (FR-63).
+type IncidentSuggestionForwardedV1 struct {
+	// Пояснение руководителя.
+	Note *string `json:"note,omitempty,omitzero"`
+
+	// Кому передано (псевдоним).
+	ResponsibleID PersonRef `json:"responsible_id"`
+
+	// Роль ответственного: мастер участка — по персоналу, технолог — если нужна новая
+	// версия процесса.
+	ResponsibleRole *string `json:"responsible_role,omitempty,omitzero"`
+
+	// Предложение.
+	SuggestionID ObjectID `json:"suggestion_id"`
+
+	// Заголовок предложения — для задачи ответственному.
+	Title *string `json:"title,omitempty,omitzero"`
+}
+
 // Предложение записано — предложение генератора (ограничение линии, область риска,
 // кандидат в правило, адаптация VisionQC, карта дефицита данных) с основаниями и
-// ответственным; ничего не применяет само. Недетерминированный генератор —
-// источник факта (AD-3, FR-63).
+// ответственным; ничего не применяет само; дальше — решения людей
+// incident.suggestion.forwarded и incident.suggestion.resolved.
+// Недетерминированный генератор — источник факта (AD-3, FR-63).
 type IncidentSuggestionRecordedV1 struct {
 	// Основания — `event_id` записей, на которые опирается запись.
 	Basis []UUID `json:"basis"`
 
+	// Ключ повторения: генератор не записывает второе предложение с тем же ключом,
+	// пока первое не решено.
+	DedupKey *string `json:"dedup_key,omitempty,omitzero"`
+
+	// Оценка эффекта словами с единицами («детали ждут в среднем 12 мин — около 40
+	// деталей в смену»; «сузило бы область в среднем с 13 до 4 деталей»).
+	Estimate *string `json:"estimate,omitempty,omitzero"`
+
 	// Генератор (порт + адаптер).
 	Generator string `json:"generator"`
+
+	// Инцидент, к которому относится предложение (область риска).
+	IncidentID *ObjectID `json:"incident_id,omitempty,omitzero"`
 
 	// Вид предложения.
 	Kind IncidentSuggestionRecordedV1Kind `json:"kind"`
 
+	// Вид недостающих сведений (для предложения карты дефицита данных, FR-143) —
+	// значение перечисления missing_information разбора.
+	MissingKind *string `json:"missing_kind,omitempty,omitzero"`
+
 	// Ответственный.
 	ResponsibleID *PersonRef `json:"responsible_id,omitempty,omitzero"`
+
+	// Роль ответственного (мастер участка, технолог, руководитель производства…),
+	// если человек не назначен.
+	ResponsibleRole *string `json:"responsible_role,omitempty,omitzero"`
 
 	// Суть предложения.
 	Statement string `json:"statement"`
 
+	// Узел процесса, к которому относится предложение, — ссылка на карту процесса
+	// ответственного (FR-63).
+	StepKey *StepKey `json:"step_key,omitempty,omitzero"`
+
 	// Предложение.
 	SuggestionID ObjectID `json:"suggestion_id"`
+
+	// Короткий заголовок предложения для списка.
+	Title *string `json:"title,omitempty,omitzero"`
 }
 
 type IncidentSuggestionRecordedV1Kind string
@@ -3346,6 +3400,25 @@ const IncidentSuggestionRecordedV1KindDataDeficit IncidentSuggestionRecordedV1Ki
 const IncidentSuggestionRecordedV1KindOther IncidentSuggestionRecordedV1Kind = "other"
 const IncidentSuggestionRecordedV1KindReactionRuleCandidate IncidentSuggestionRecordedV1Kind = "reaction_rule_candidate"
 const IncidentSuggestionRecordedV1KindRiskScope IncidentSuggestionRecordedV1Kind = "risk_scope"
+
+// Решение по предложению: принято в работу или отклонено — с основанием. «Принято»
+// не применяет ничего само: изменение нормы — новая версия процесса через кворум,
+// мера — incident.action.assigned (FR-63, FR-64).
+type IncidentSuggestionResolvedV1 struct {
+	// Основание решения.
+	Reason Reason `json:"reason"`
+
+	// Итог: принято в работу / отклонено.
+	Resolution IncidentSuggestionResolvedV1Resolution `json:"resolution"`
+
+	// Предложение.
+	SuggestionID ObjectID `json:"suggestion_id"`
+}
+
+type IncidentSuggestionResolvedV1Resolution string
+
+const IncidentSuggestionResolvedV1ResolutionAccepted IncidentSuggestionResolvedV1Resolution = "accepted"
+const IncidentSuggestionResolvedV1ResolutionRejected IncidentSuggestionResolvedV1Resolution = "rejected"
 
 // Флаг аномалии входа — время из будущего, расхождение часов источника выше
 // порога, нарушение последовательности, неизвестное значение перечисления

@@ -523,6 +523,21 @@ export const errorCatalog = {
     "title": "Инцидент закрыт",
     "uiKey": "errors.generic"
   },
+  "incident.effectiveness_plan_required": {
+    "status": 422,
+    "title": "Нужен план проверки эффективности",
+    "uiKey": "errors.generic"
+  },
+  "incident.action_state": {
+    "status": 409,
+    "title": "Мера не в том состоянии",
+    "uiKey": "errors.generic"
+  },
+  "incident.suggestion_state": {
+    "status": 409,
+    "title": "Предложение уже решено",
+    "uiKey": "errors.generic"
+  },
   "incident.explanation_required": {
     "status": 422,
     "title": "Нужно письменное объяснение работника",

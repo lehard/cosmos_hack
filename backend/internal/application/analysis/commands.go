@@ -78,6 +78,10 @@ type AssignAction struct {
 	OwnerID           string         `json:"owner_id"`
 	DueAt             string         `json:"due_at,omitempty" format:"date-time"`
 	EffectivenessPlan map[string]any `json:"effectiveness_plan"`
+	// Title — что делается словами (эпик 42, FR-138: организационная память).
+	Title string `json:"title,omitempty" maxLength:"256" doc:"Что делается словами — основа организационной памяти."`
+	// SuggestionID — предложение, из которого родилась мера (эпик 42, FR-63).
+	SuggestionID string `json:"suggestion_id,omitempty" maxLength:"128" doc:"Предложение, из которого родилась мера."`
 }
 
 // ImplementAction — отметить действие выполненным (incident.action.implemented).

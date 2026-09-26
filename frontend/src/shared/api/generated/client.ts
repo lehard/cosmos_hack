@@ -57,13 +57,16 @@ import type {
   AdmitPassport,
   AdmitWorkplace,
   AlertList,
+  AnalysisActionListParams,
   AnalysisCircumstancesReadParams,
   AnalysisCommonFactorsReadParams,
+  AnalysisDataDeficitReadParams,
   AnalysisGroupListParams,
   AnalysisHypothesisListParams,
   AnalysisIncidentListParams,
   AnalysisRiskScopeReadParams,
   AnalysisSimilarListParams,
+  AnalysisSuggestionListParams,
   AnalyticsControlChartReadParams,
   AnalyticsMetricDrilldownParams,
   AnalyticsNodeCountersReadParams,
@@ -98,6 +101,7 @@ import type {
   ConfirmNonconformity,
   ConfirmStep,
   ControlChart,
+  CorrectiveActionList,
   CriticalAction,
   CriticalActionList,
   CrossitemBindingListParams,
@@ -106,6 +110,7 @@ import type {
   CrossitemLotReadParams,
   CrossitemTraceReadParams,
   CryptoProfileList,
+  DataDeficitMap,
   DecisionCard,
   DecisionQueue,
   DecisionRequestList,
@@ -143,6 +148,8 @@ import type {
   FederationPartnerListParams,
   FinishOperation,
   FormGroup,
+  ForwardSuggestion,
+  GenerateSuggestions,
   GrantAssessment,
   GrantConcession,
   GrantPolicy,
@@ -304,6 +311,7 @@ import type {
   ResendPosting,
   ResolveLot,
   ResolvePresentation,
+  ResolveSuggestion,
   ResumeOperation,
   RetirePassport,
   RetireVersion,
@@ -355,6 +363,7 @@ import type {
   StoppedItemList,
   SubmitShiftReport,
   SubmitVersion,
+  SuggestionList,
   SwitchSource,
   TaskList,
   TimelineData,
@@ -489,6 +498,124 @@ export function useNotificationsAlertList<TData = Awaited<ReturnType<typeof noti
  ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getNotificationsAlertListQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+
+export type analysisDataDeficitReadResponse200 = {
+  data: DataDeficitMap
+  status: 200
+}
+
+export type analysisDataDeficitReadResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type analysisDataDeficitReadResponseSuccess = (analysisDataDeficitReadResponse200) & {
+  headers: Headers;
+};
+export type analysisDataDeficitReadResponseError = (analysisDataDeficitReadResponseDefault) & {
+  headers: Headers;
+};
+
+export const getAnalysisDataDeficitReadUrl = (params?: AnalysisDataDeficitReadParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/analysis/data-deficit?${stringifiedParams}` : `/api/v1/analysis/data-deficit`
+}
+
+/**
+ * FR-143: по каждому виду недостающих сведений разбора (FR-58) — в скольких расследованиях не хватало, где, какая цифровизация закрыла бы пробел и оценка сужения области риска по уже сделанным сужениям с основаниями; нет оценки — так и сказано.
+ * @summary Карта дефицита данных
+ */
+export const analysisDataDeficitRead = async (params?: AnalysisDataDeficitReadParams, options?: RequestInit): Promise<analysisDataDeficitReadResponseSuccess> => {
+
+  const res = await fetch(getAnalysisDataDeficitReadUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: analysisDataDeficitReadResponseError['data'], status?: number} = new globalThis.Error();
+    const data : analysisDataDeficitReadResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: analysisDataDeficitReadResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as analysisDataDeficitReadResponseSuccess
+}
+
+
+
+
+
+export const getAnalysisDataDeficitReadQueryKey = (params?: MaybeRefOrGetter<AnalysisDataDeficitReadParams>,) => {
+    return [
+    'api','v1','analysis','data-deficit', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getAnalysisDataDeficitReadQueryOptions = <TData = Awaited<ReturnType<typeof analysisDataDeficitRead>>, TError = globalThis.Error & { info?: Problem; status?: number }>(params?: MaybeRefOrGetter<AnalysisDataDeficitReadParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof analysisDataDeficitRead>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getAnalysisDataDeficitReadQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof analysisDataDeficitRead>>> = ({ signal }) => analysisDataDeficitRead(toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof analysisDataDeficitRead>>, TError, TData>
+}
+
+export type AnalysisDataDeficitReadQueryResult = NonNullable<Awaited<ReturnType<typeof analysisDataDeficitRead>>>
+export type AnalysisDataDeficitReadQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Карта дефицита данных
+ */
+
+export function useAnalysisDataDeficitRead<TData = Awaited<ReturnType<typeof analysisDataDeficitRead>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ params?: MaybeRefOrGetter<AnalysisDataDeficitReadParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof analysisDataDeficitRead>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getAnalysisDataDeficitReadQueryOptions(params,options)
 
   const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
@@ -3950,6 +4077,124 @@ export const useNonconformityConcessionRevoke = <TError = globalThis.Error & { i
       > => {
       return useMutation(getNonconformityConcessionRevokeMutationOptions(options), queryClient);
     }
+
+export type analysisActionListResponse200 = {
+  data: CorrectiveActionList
+  status: 200
+}
+
+export type analysisActionListResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type analysisActionListResponseSuccess = (analysisActionListResponse200) & {
+  headers: Headers;
+};
+export type analysisActionListResponseError = (analysisActionListResponseDefault) & {
+  headers: Headers;
+};
+
+export const getAnalysisActionListUrl = (params?: AnalysisActionListParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/corrective-actions?${stringifiedParams}` : `/api/v1/corrective-actions`
+}
+
+/**
+ * FR-64, FR-138: меры с планом проверки эффективности, статус («внедрено» ≠ «эффективно»), флаги — просрочена, не помогла, висит временно усиленный контроль, пора оценить; повторяющиеся проблемы; организационная память — что пробовали и с каким результатом.
+ * @summary Корректирующие меры и взгляд руководителя по качеству
+ */
+export const analysisActionList = async (params?: AnalysisActionListParams, options?: RequestInit): Promise<analysisActionListResponseSuccess> => {
+
+  const res = await fetch(getAnalysisActionListUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: analysisActionListResponseError['data'], status?: number} = new globalThis.Error();
+    const data : analysisActionListResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: analysisActionListResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as analysisActionListResponseSuccess
+}
+
+
+
+
+
+export const getAnalysisActionListQueryKey = (params?: MaybeRefOrGetter<AnalysisActionListParams>,) => {
+    return [
+    'api','v1','corrective-actions', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getAnalysisActionListQueryOptions = <TData = Awaited<ReturnType<typeof analysisActionList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(params?: MaybeRefOrGetter<AnalysisActionListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof analysisActionList>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getAnalysisActionListQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof analysisActionList>>> = ({ signal }) => analysisActionList(toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof analysisActionList>>, TError, TData>
+}
+
+export type AnalysisActionListQueryResult = NonNullable<Awaited<ReturnType<typeof analysisActionList>>>
+export type AnalysisActionListQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Корректирующие меры и взгляд руководителя по качеству
+ */
+
+export function useAnalysisActionList<TData = Awaited<ReturnType<typeof analysisActionList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ params?: MaybeRefOrGetter<AnalysisActionListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof analysisActionList>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getAnalysisActionListQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
 
 export type securityCriticalActionListResponse200 = {
   data: CriticalActionList
@@ -26913,6 +27158,486 @@ export function useJournalStreamSubscribe<TData = Awaited<ReturnType<typeof jour
 
 
 
+
+export type analysisSuggestionListResponse200 = {
+  data: SuggestionList
+  status: 200
+}
+
+export type analysisSuggestionListResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type analysisSuggestionListResponseSuccess = (analysisSuggestionListResponse200) & {
+  headers: Headers;
+};
+export type analysisSuggestionListResponseError = (analysisSuggestionListResponseDefault) & {
+  headers: Headers;
+};
+
+export const getAnalysisSuggestionListUrl = (params?: AnalysisSuggestionListParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/suggestions?${stringifiedParams}` : `/api/v1/suggestions`
+}
+
+/**
+ * FR-63: предложения генераторов (ограничение линии, область риска, кандидаты в правила реакции, адаптация VisionQC, карта дефицита данных) с основаниями, ответственным и историей решений; подключённые генераторы. Ничего не применяется автоматически.
+ * @summary Предложения
+ */
+export const analysisSuggestionList = async (params?: AnalysisSuggestionListParams, options?: RequestInit): Promise<analysisSuggestionListResponseSuccess> => {
+
+  const res = await fetch(getAnalysisSuggestionListUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: analysisSuggestionListResponseError['data'], status?: number} = new globalThis.Error();
+    const data : analysisSuggestionListResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: analysisSuggestionListResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as analysisSuggestionListResponseSuccess
+}
+
+
+
+
+
+export const getAnalysisSuggestionListQueryKey = (params?: MaybeRefOrGetter<AnalysisSuggestionListParams>,) => {
+    return [
+    'api','v1','suggestions', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getAnalysisSuggestionListQueryOptions = <TData = Awaited<ReturnType<typeof analysisSuggestionList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(params?: MaybeRefOrGetter<AnalysisSuggestionListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof analysisSuggestionList>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getAnalysisSuggestionListQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof analysisSuggestionList>>> = ({ signal }) => analysisSuggestionList(toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof analysisSuggestionList>>, TError, TData>
+}
+
+export type AnalysisSuggestionListQueryResult = NonNullable<Awaited<ReturnType<typeof analysisSuggestionList>>>
+export type AnalysisSuggestionListQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Предложения
+ */
+
+export function useAnalysisSuggestionList<TData = Awaited<ReturnType<typeof analysisSuggestionList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ params?: MaybeRefOrGetter<AnalysisSuggestionListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof analysisSuggestionList>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getAnalysisSuggestionListQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+
+export type analysisSuggestionGenerateResponse200 = {
+  data: Receipt
+  status: 200
+}
+
+export type analysisSuggestionGenerateResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type analysisSuggestionGenerateResponseSuccess = (analysisSuggestionGenerateResponse200) & {
+  headers: Headers;
+};
+export type analysisSuggestionGenerateResponseError = (analysisSuggestionGenerateResponseDefault) & {
+  headers: Headers;
+};
+
+export const getAnalysisSuggestionGenerateUrl = () => {
+
+
+
+
+  return `/api/v1/suggestions/generate`
+}
+
+/**
+ * FR-63: прогнать подключённые генераторы; новые предложения записываются фактами incident.suggestion.recorded, уже записанные не повторяются. Квитанция перечисляет event_id новых предложений.
+ * @summary Сформировать предложения
+ */
+export const analysisSuggestionGenerate = async (generateSuggestions: GenerateSuggestions, options?: RequestInit): Promise<analysisSuggestionGenerateResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getAnalysisSuggestionGenerateUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(generateSuggestions)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: analysisSuggestionGenerateResponseError['data'], status?: number} = new globalThis.Error();
+    const data : analysisSuggestionGenerateResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: analysisSuggestionGenerateResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as analysisSuggestionGenerateResponseSuccess
+}
+
+
+
+
+
+export const getAnalysisSuggestionGenerateMutationKey = () => ['analysisSuggestionGenerate'] as const;
+
+export const getAnalysisSuggestionGenerateMutationOptions = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof analysisSuggestionGenerate>>, TError,AnalysisSuggestionGenerateMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof analysisSuggestionGenerate>>, TError,AnalysisSuggestionGenerateMutationVariables, TContext> => {
+
+const mutationKey = getAnalysisSuggestionGenerateMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof analysisSuggestionGenerate>>, AnalysisSuggestionGenerateMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  analysisSuggestionGenerate(data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AnalysisSuggestionGenerateMutationResult = NonNullable<Awaited<ReturnType<typeof analysisSuggestionGenerate>>>
+    export type AnalysisSuggestionGenerateMutationBody = GenerateSuggestions
+    export type AnalysisSuggestionGenerateMutationError = globalThis.Error & { info?: Problem; status?: number }
+    export type AnalysisSuggestionGenerateMutationVariables = {data: GenerateSuggestions}
+
+    /**
+ * @summary Сформировать предложения
+ */
+export const useAnalysisSuggestionGenerate = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof analysisSuggestionGenerate>>, TError,AnalysisSuggestionGenerateMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof analysisSuggestionGenerate>>,
+        TError,
+        AnalysisSuggestionGenerateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAnalysisSuggestionGenerateMutationOptions(options), queryClient);
+    }
+
+export type analysisSuggestionForwardResponse200 = {
+  data: Receipt
+  status: 200
+}
+
+export type analysisSuggestionForwardResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type analysisSuggestionForwardResponseSuccess = (analysisSuggestionForwardResponse200) & {
+  headers: Headers;
+};
+export type analysisSuggestionForwardResponseError = (analysisSuggestionForwardResponseDefault) & {
+  headers: Headers;
+};
+
+export const getAnalysisSuggestionForwardUrl = (suggestionId: string,) => {
+
+
+
+
+  return `/api/v1/suggestions/${suggestionId}/forward`
+}
+
+/**
+ * UJ-1: руководитель передаёт предложение мастеру участка (по персоналу) или технологу (если нужна новая версия процесса); задачу ставит notifications.
+ * @summary Передать предложение ответственному
+ */
+export const analysisSuggestionForward = async (suggestionId: string,
+    forwardSuggestion: ForwardSuggestion, options?: RequestInit): Promise<analysisSuggestionForwardResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getAnalysisSuggestionForwardUrl(suggestionId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(forwardSuggestion)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: analysisSuggestionForwardResponseError['data'], status?: number} = new globalThis.Error();
+    const data : analysisSuggestionForwardResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: analysisSuggestionForwardResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as analysisSuggestionForwardResponseSuccess
+}
+
+
+
+
+
+export const getAnalysisSuggestionForwardMutationKey = () => ['analysisSuggestionForward'] as const;
+
+export const getAnalysisSuggestionForwardMutationOptions = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof analysisSuggestionForward>>, TError,AnalysisSuggestionForwardMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof analysisSuggestionForward>>, TError,AnalysisSuggestionForwardMutationVariables, TContext> => {
+
+const mutationKey = getAnalysisSuggestionForwardMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof analysisSuggestionForward>>, AnalysisSuggestionForwardMutationVariables> = (props) => {
+          const {suggestionId,data} = props ?? {};
+
+          return  analysisSuggestionForward(suggestionId,data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AnalysisSuggestionForwardMutationResult = NonNullable<Awaited<ReturnType<typeof analysisSuggestionForward>>>
+    export type AnalysisSuggestionForwardMutationBody = ForwardSuggestion
+    export type AnalysisSuggestionForwardMutationError = globalThis.Error & { info?: Problem; status?: number }
+    export type AnalysisSuggestionForwardMutationVariables = {suggestionId: string;data: ForwardSuggestion}
+
+    /**
+ * @summary Передать предложение ответственному
+ */
+export const useAnalysisSuggestionForward = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof analysisSuggestionForward>>, TError,AnalysisSuggestionForwardMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof analysisSuggestionForward>>,
+        TError,
+        AnalysisSuggestionForwardMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAnalysisSuggestionForwardMutationOptions(options), queryClient);
+    }
+
+export type analysisSuggestionResolveResponse200 = {
+  data: Receipt
+  status: 200
+}
+
+export type analysisSuggestionResolveResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type analysisSuggestionResolveResponseSuccess = (analysisSuggestionResolveResponse200) & {
+  headers: Headers;
+};
+export type analysisSuggestionResolveResponseError = (analysisSuggestionResolveResponseDefault) & {
+  headers: Headers;
+};
+
+export const getAnalysisSuggestionResolveUrl = (suggestionId: string,) => {
+
+
+
+
+  return `/api/v1/suggestions/${suggestionId}/resolve`
+}
+
+/**
+ * FR-63: принять в работу или отклонить — с основанием. «Принято» ничего не применяет: норма — новая версия процесса через кворум, мера — назначением меры.
+ * @summary Решение по предложению
+ */
+export const analysisSuggestionResolve = async (suggestionId: string,
+    resolveSuggestion: ResolveSuggestion, options?: RequestInit): Promise<analysisSuggestionResolveResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getAnalysisSuggestionResolveUrl(suggestionId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(resolveSuggestion)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: analysisSuggestionResolveResponseError['data'], status?: number} = new globalThis.Error();
+    const data : analysisSuggestionResolveResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: analysisSuggestionResolveResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as analysisSuggestionResolveResponseSuccess
+}
+
+
+
+
+
+export const getAnalysisSuggestionResolveMutationKey = () => ['analysisSuggestionResolve'] as const;
+
+export const getAnalysisSuggestionResolveMutationOptions = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof analysisSuggestionResolve>>, TError,AnalysisSuggestionResolveMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof analysisSuggestionResolve>>, TError,AnalysisSuggestionResolveMutationVariables, TContext> => {
+
+const mutationKey = getAnalysisSuggestionResolveMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof analysisSuggestionResolve>>, AnalysisSuggestionResolveMutationVariables> = (props) => {
+          const {suggestionId,data} = props ?? {};
+
+          return  analysisSuggestionResolve(suggestionId,data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AnalysisSuggestionResolveMutationResult = NonNullable<Awaited<ReturnType<typeof analysisSuggestionResolve>>>
+    export type AnalysisSuggestionResolveMutationBody = ResolveSuggestion
+    export type AnalysisSuggestionResolveMutationError = globalThis.Error & { info?: Problem; status?: number }
+    export type AnalysisSuggestionResolveMutationVariables = {suggestionId: string;data: ResolveSuggestion}
+
+    /**
+ * @summary Решение по предложению
+ */
+export const useAnalysisSuggestionResolve = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof analysisSuggestionResolve>>, TError,AnalysisSuggestionResolveMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof analysisSuggestionResolve>>,
+        TError,
+        AnalysisSuggestionResolveMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAnalysisSuggestionResolveMutationOptions(options), queryClient);
+    }
 
 export type notificationsTaskListResponse200 = {
   data: TaskList
