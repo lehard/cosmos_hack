@@ -38,7 +38,8 @@ func (s *Service) CheckRequest(ctx context.Context, act platform.Action, rq plat
 	}
 	body, err := requestBody(rq.Body)
 	if err != nil {
-		return platform.Signature{}, false, fail(errcodes.ApiValidationFailed, "тело команды не JSON-объект", "field", "body", "reason", err.Error())
+		// Тело не JSON-объект — разбор отвергнет transport (400); подписывать нечего.
+		return platform.Signature{}, true, nil
 	}
 	actor := platform.PrincipalFrom(ctx).PersonID
 	et := signedEventType(rq.Meta.Signature, act.Emits)
