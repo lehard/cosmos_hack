@@ -33,6 +33,8 @@ const (
 	AccessAccountPending Code = "access.account_pending"
 	// Отказ в допуске к рабочему месту
 	AccessAdmissionDenied Code = "access.admission_denied"
+	// Нужно согласование начальника ОТК
+	AccessControllerApprovalRequired Code = "access.controller_approval_required"
 	// Нет полномочий на это действие
 	AccessForbidden Code = "access.forbidden"
 	// Неверный логин или пароль
@@ -41,6 +43,8 @@ const (
 	AccessNoStamp Code = "access.no_stamp"
 	// Нет в зоне по СКУД
 	AccessNotInZone Code = "access.not_in_zone"
+	// Нет действующей квалификации
+	AccessNotQualified Code = "access.not_qualified"
 	// Выдача прав себе
 	AccessSelfGrant Code = "access.self_grant"
 	// Разделение обязанностей
@@ -280,10 +284,12 @@ const (
 var codes = [...]Info{
 	{Code: AccessAccountPending, Status: 403, Title: "Заявка не активирована", Detail: "Учётная запись ещё не активирована администратором", UIKey: "errors.access.accountPending", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: AccessAdmissionDenied, Status: 403, Title: "Отказ в допуске к рабочему месту", Detail: "Не выполнено: {checks}", UIKey: "errors.access.forbidden", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
+	{Code: AccessControllerApprovalRequired, Status: 403, Title: "Нужно согласование начальника ОТК", Detail: "Контролёра на пост {workplace} назначает мастер по согласованию начальника ОТК — нужен закрытый документ «Назначение контролёра на пост»", UIKey: "errors.access.needSignature", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
 	{Code: AccessForbidden, Status: 403, Title: "Нет полномочий на это действие", Detail: "Действие {action_id} над {object} не разрешено политикой", UIKey: "errors.access.forbidden", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: AccessLoginFailed, Status: 401, Title: "Неверный логин или пароль", Detail: "Неверный логин или пароль", UIKey: "errors.access.loginFailed", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: AccessNoStamp, Status: 403, Title: "Нет действующего цифрового клейма", Detail: "Нет действующего цифрового клейма по виду контроля «{kind}»", UIKey: "errors.decision.noStamp", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
 	{Code: AccessNotInZone, Status: 403, Title: "Нет в зоне по СКУД", Detail: "По данным СКУД вы не в зоне {zone}", UIKey: "errors.access.notInZone", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
+	{Code: AccessNotQualified, Status: 409, Title: "Нет действующей квалификации", Detail: "У {person} нет действующей квалификации в области поста {workplace} на {date} — назначить нельзя", UIKey: "errors.decision.qualificationExpired", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
 	{Code: AccessSelfGrant, Status: 403, Title: "Выдача прав себе", Detail: "Расширение собственных прав — только со второй подписью независимой стороны: {who}", UIKey: "errors.access.selfGrant", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
 	{Code: AccessSeparationOfDuties, Status: 403, Title: "Разделение обязанностей", Detail: "Вы участвовали в изготовлении этого изделия — принять его на точке предъявления нельзя", UIKey: "errors.decision.separationOfDuties", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
 	{Code: AccessSignatureRequired, Status: 403, Title: "Нужна подпись уполномоченного", Detail: "Не хватает полномочий — нужна подпись: {who}", UIKey: "errors.access.needSignature", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},

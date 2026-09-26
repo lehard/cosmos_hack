@@ -26,6 +26,14 @@
     "valid_until": {
       "$ref": "../common/defs.v1.json#/definitions/timestamp",
       "description": "Окончание действия; отсутствует — бессрочно."
+    },
+    "document_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Документ «Выдача ролей, полномочий, клейм» с закрытым маршрутом подписей (AD-13, AD-43); отсутствует — обычная выдача одной подписью."
+    },
+    "second_signature_by": {
+      "$ref": "../common/defs.v1.json#/definitions/person_ref",
+      "description": "Вторая подпись независимой стороны (AD-11, PRD §11.16): начальник ОТК, руководитель производства или Аудитор ИБ; не инициатор и не получатель."
     }
   },
   "required": [

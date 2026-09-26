@@ -32,6 +32,7 @@ import type {
   AccessAssignmentListParams,
   AccessAuditParameters,
   AccessAuditReadParams,
+  AccessGrantAssessParams,
   AccessGrantHistory,
   AccessGrantListParams,
   AccessPermissionExplainParams,
@@ -141,6 +142,7 @@ import type {
   FederationPartnerListParams,
   FinishOperation,
   FormGroup,
+  GrantAssessment,
   GrantConcession,
   GrantPolicy,
   GrantQualification,
@@ -8237,6 +8239,124 @@ export const useAccessPolicyGrant = <TError = globalThis.Error & { info?: Proble
       > => {
       return useMutation(getAccessPolicyGrantMutationOptions(options), queryClient);
     }
+
+export type accessGrantAssessResponse200 = {
+  data: GrantAssessment
+  status: 200
+}
+
+export type accessGrantAssessResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type accessGrantAssessResponseSuccess = (accessGrantAssessResponse200) & {
+  headers: Headers;
+};
+export type accessGrantAssessResponseError = (accessGrantAssessResponseDefault) & {
+  headers: Headers;
+};
+
+export const getAccessGrantAssessUrl = (params: AccessGrantAssessParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/grants/assessment?${stringifiedParams}` : `/api/v1/grants/assessment`
+}
+
+/**
+ * AD-11, AD-43, FR-146 (эпик 26): оценка выдачи по эффективным правам — обычная (одной подписью) или привилегированная (сфера ОТК, производства, администраторов и аудита; выдача себе; расширение прав администратора) — и этапы документа «Выдача ролей, полномочий, клейм» с кандидатами на вторую подпись: данные для кнопки «Запросить решение».
+ * @summary Чья подпись нужна для выдачи
+ */
+export const accessGrantAssess = async (params: AccessGrantAssessParams, options?: RequestInit): Promise<accessGrantAssessResponseSuccess> => {
+
+  const res = await fetch(getAccessGrantAssessUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: accessGrantAssessResponseError['data'], status?: number} = new globalThis.Error();
+    const data : accessGrantAssessResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: accessGrantAssessResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as accessGrantAssessResponseSuccess
+}
+
+
+
+
+
+export const getAccessGrantAssessQueryKey = (params?: MaybeRefOrGetter<AccessGrantAssessParams>,) => {
+    return [
+    'api','v1','grants','assessment', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getAccessGrantAssessQueryOptions = <TData = Awaited<ReturnType<typeof accessGrantAssess>>, TError = globalThis.Error & { info?: Problem; status?: number }>(params: MaybeRefOrGetter<AccessGrantAssessParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof accessGrantAssess>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getAccessGrantAssessQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof accessGrantAssess>>> = ({ signal }) => accessGrantAssess(toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof accessGrantAssess>>, TError, TData>
+}
+
+export type AccessGrantAssessQueryResult = NonNullable<Awaited<ReturnType<typeof accessGrantAssess>>>
+export type AccessGrantAssessQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Чья подпись нужна для выдачи
+ */
+
+export function useAccessGrantAssess<TData = Awaited<ReturnType<typeof accessGrantAssess>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ params: MaybeRefOrGetter<AccessGrantAssessParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof accessGrantAssess>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getAccessGrantAssessQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
 
 export type accessPolicyRevokeResponse200 = {
   data: Receipt

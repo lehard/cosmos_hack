@@ -4760,6 +4760,75 @@ components:
         - basis_seq
         - policy_seq
       type: object
+    ExplainAuthority:
+      additionalProperties: false
+      properties:
+        authority_id:
+          type: string
+        scope:
+          type: string
+        title:
+          type: string
+        valid_until:
+          format: date-time
+          type: string
+      required:
+        - authority_id
+        - title
+        - scope
+      type: object
+    ExplainHolder:
+      additionalProperties: false
+      properties:
+        persons:
+          description: Сотрудники с этой ролью (псевдонимы, не больше 20).
+          items:
+            type: string
+          type: array
+        role_id:
+          type: string
+        title:
+          type: string
+      required:
+        - role_id
+        - title
+        - persons
+      type: object
+    ExplainRole:
+      additionalProperties: false
+      properties:
+        role_id:
+          type: string
+        scope:
+          description: Область назначения.
+          type: string
+        title:
+          type: string
+        valid_until:
+          format: date-time
+          type: string
+        via:
+          description: Базовая роль, в которой объявлено действие.
+          type: string
+      required:
+        - role_id
+        - title
+        - scope
+      type: object
+    ExplainStamp:
+      additionalProperties: false
+      properties:
+        inspection_kind:
+          type: string
+        scope:
+          type: string
+        stamp_id:
+          type: string
+      required:
+        - stamp_id
+        - inspection_kind
+        - scope
+      type: object
     Explanation:
       additionalProperties: false
       properties:
@@ -4773,12 +4842,45 @@ components:
           items:
             type: string
           type: array
+        authorities:
+          description: Ваши действующие полномочия — рамки доменных гардов (FR-50, FR-78).
+          items:
+            $ref: "#/components/schemas/ExplainAuthority"
+          type: array
+        card_only:
+          description: "Вы — редкий подписант: доступны только адресованные вам карточки решения (FR-136)."
+          type: boolean
         code:
           description: Код отказа из contracts/errors.yaml.
           type: string
+        granted_by:
+          $ref: "#/components/schemas/ExplainRole"
+          description: "Какая ваша роль разрешает действие: назначенная роль, базовая роль с этим действием, область."
+        place:
+          description: Место операции (область), по которому принято решение (барьер 3).
+          type: string
+        policy_seq:
+          description: Версия политики объяснения (AD-39).
+          format: int64
+          type: integer
         reason:
           description: "Объяснение по-русски: роль, область, полномочие, клеймо, разделение обязанностей."
           type: string
+        roles:
+          description: Ваши действующие роли в областях.
+          items:
+            $ref: "#/components/schemas/ExplainRole"
+          type: array
+        stamps:
+          description: Ваши действующие цифровые клейма (FR-145).
+          items:
+            $ref: "#/components/schemas/ExplainStamp"
+          type: array
+        who_can:
+          description: "Кто может выполнить действие: роли политики и сотрудники с ними."
+          items:
+            $ref: "#/components/schemas/ExplainHolder"
+          type: array
       required:
         - action
         - allowed
@@ -4966,6 +5068,90 @@ components:
         - ref
         - kind
         - label
+      type: object
+    GrantApprovalStage:
+      additionalProperties: false
+      properties:
+        authority_id:
+          type: string
+        by_source:
+          description: Этап закрывается самим запросом (инициатор).
+          type: boolean
+        candidates:
+          description: Кто может подписать (не инициатор и не получатель).
+          items:
+            type: string
+          type: array
+        stage:
+          format: int64
+          type: integer
+        title:
+          type: string
+      required:
+        - stage
+        - title
+        - authority_id
+        - by_source
+        - candidates
+      type: object
+    GrantAssessment:
+      additionalProperties: false
+      properties:
+        admin_expansion:
+          description: Расширяются права администратора или аудита — привилегированная выдача, кто бы её ни делал.
+          type: boolean
+        decision:
+          description: Решение документа (grant:‹вид›:‹что›:‹кому›:‹область›) — поле decision запроса решения.
+          type: string
+        domain:
+          description: "Сфера выдачи (AD-11): обычная, ОТК, производство, администраторы и аудит."
+          enum:
+            - ordinary
+            - qc
+            - production
+            - admin
+          type: string
+        expands:
+          description: "Права, которые добавляет выдача: action:шаблон@область, authority:id@область, stamp:вид@область."
+          items:
+            type: string
+          type: array
+        policy_seq:
+          format: int64
+          type: integer
+        reason:
+          type: string
+        second_authority:
+          description: Полномочие второй подписи; пусто — одной подписью администратора безопасности.
+          type: string
+        second_signer:
+          description: Кто ставит вторую подпись (по-русски).
+          type: string
+        self_grant:
+          description: "Выдача себе: изменение расширяет права инициатора (по эффективным правам)."
+          type: boolean
+        stages:
+          description: Этапы подписей документа выдачи (RequiredApprovals, AD-43).
+          items:
+            $ref: "#/components/schemas/GrantApprovalStage"
+          type: array
+        subject:
+          $ref: "#/components/schemas/DrillRef"
+          description: Объект документа — сотрудник.
+        template:
+          description: Шаблон документа «Выдача ролей, полномочий, клейм» (шаблон@версия).
+          type: string
+      required:
+        - domain
+        - second_signer
+        - self_grant
+        - admin_expansion
+        - expands
+        - reason
+        - decision
+        - stages
+        - subject
+        - policy_seq
       type: object
     GrantConcession:
       additionalProperties: false
@@ -18420,6 +18606,82 @@ paths:
         id: access.policy.grant
         owner: access
         signature_level: 2
+        subject: policy
+  /api/v1/grants/assessment:
+    get:
+      description: "AD-11, AD-43, FR-146 (эпик 26): оценка выдачи по эффективным правам — обычная (одной подписью) или привилегированная (сфера ОТК, производства, администраторов и аудита; выдача себе; расширение прав администратора) — и этапы документа «Выдача ролей, полномочий, клейм» с кандидатами на вторую подпись: данные для кнопки «Запросить решение»."
+      operationId: access.grant.assess
+      parameters:
+        - description: Кому выдаётся.
+          explode: false
+          in: query
+          name: person_id
+          required: true
+          schema:
+            description: Кому выдаётся.
+            maxLength: 64
+            type: string
+        - explode: false
+          in: query
+          name: kind
+          required: true
+          schema:
+            enum:
+              - role
+              - authority
+              - stamp
+            type: string
+        - description: Роль, полномочие или id клейма.
+          explode: false
+          in: query
+          name: subject_id
+          required: true
+          schema:
+            description: Роль, полномочие или id клейма.
+            maxLength: 64
+            type: string
+        - description: Вид контроля клейма.
+          explode: false
+          in: query
+          name: inspection_kind
+          schema:
+            description: Вид контроля клейма.
+            maxLength: 64
+            type: string
+        - description: Область; пусто — всё предприятие.
+          explode: false
+          in: query
+          name: scope
+          schema:
+            description: Область; пусто — всё предприятие.
+            maxLength: 256
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GrantAssessment"
+          description: OK
+          headers:
+            Ant-Backend:
+              schema:
+                $ref: "#/components/schemas/BackendMode"
+                description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Error
+      summary: Чья подпись нужна для выдачи
+      tags:
+        - access
+      x-ant-action:
+        class: read
+        critical: false
+        id: access.grant.assess
+        owner: access
         subject: policy
   /api/v1/grants/revocations:
     post:

@@ -92,7 +92,9 @@ func (j *Journal) SetEpoch(lease string, epoch int64) {
 }
 
 // Append — единственная функция записи (AD-44) в памяти.
-func (j *Journal) Append(_ context.Context, rq appjournal.AppendRequest) (appjournal.AppendResult, error) {
+func (j *Journal) Append(ctx context.Context, rq appjournal.AppendRequest) (appjournal.AppendResult, error) {
+	// Политика субъекта команды из контекста (AD-39) — как в адаптере Postgres.
+	rq = appjournal.WithContextChecks(ctx, rq)
 	j.mu.Lock()
 	defer j.mu.Unlock()
 	if j.FailAppend != nil {

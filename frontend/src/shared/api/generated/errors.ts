@@ -163,6 +163,16 @@ export const errorCatalog = {
     "title": "Выдача прав себе",
     "uiKey": "errors.access.selfGrant"
   },
+  "access.not_qualified": {
+    "status": 409,
+    "title": "Нет действующей квалификации",
+    "uiKey": "errors.decision.qualificationExpired"
+  },
+  "access.controller_approval_required": {
+    "status": 403,
+    "title": "Нужно согласование начальника ОТК",
+    "uiKey": "errors.access.needSignature"
+  },
   "access.not_in_zone": {
     "status": 403,
     "title": "Нет в зоне по СКУД",

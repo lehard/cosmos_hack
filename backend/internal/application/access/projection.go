@@ -2,6 +2,7 @@ package access
 
 import (
 	"context"
+	"slices"
 	"sync"
 	"time"
 
@@ -23,9 +24,14 @@ type Projection struct {
 	// Now — инфраструктурные часы (AD-37); nil — системные.
 	Now func() time.Time
 
-	mu       sync.Mutex
-	cur      accessdom.Policy
-	loaded   bool
+	mu     sync.Mutex
+	cur    accessdom.Policy
+	loaded bool
+	// base, recs — начало свёртки (затравка или пустая политика генезиса) и
+	// применённые записи: политика на любой seq (At) — для права подписанта
+	// на момент подписи (FR-85, AD-9) и истории выдачи прав.
+	base     accessdom.Policy
+	recs     []accessdom.Record
 	lastHead int64
 	lastRead time.Time
 }
@@ -88,9 +94,14 @@ func (p *Projection) refresh(ctx context.Context) error {
 		return nil
 	}
 	next := base.Clone()
-	if !p.loaded && genesis(recs) {
-		// Генезис (эпик 05) записал роли в журнал — затравка не нужна (AD-33).
-		next = accessdom.Policy{Root: p.seed.Root, Unauthenticated: p.seed.Unauthenticated}
+	if !p.loaded {
+		p.base = p.seed
+		if genesis(recs) {
+			// Генезис (эпик 05) записал роли в журнал — затравка не нужна (AD-33);
+			// справочная часть нормативного слоя (сферы, маршрут выдачи) остаётся.
+			p.base = accessdom.Policy{Root: p.seed.Root, Unauthenticated: p.seed.Unauthenticated, Catalog: p.seed.Catalog, Audit: p.seed.Catalog.Audit}
+		}
+		next = p.base.Clone()
 	}
 	for _, r := range recs {
 		if err := next.Apply(r); err != nil {
@@ -98,7 +109,35 @@ func (p *Projection) refresh(ctx context.Context) error {
 		}
 	}
 	p.cur, p.loaded = next, true
+	p.recs = append(p.recs, recs...)
 	return nil
+}
+
+// At — политика на позиции журнала seq (AD-9, FR-85: право подписанта на
+// момент подписи): начало свёртки плюс записи с seq ≤ seq. seq не меньше
+// действующей версии — действующая политика.
+func (p *Projection) At(ctx context.Context, seq int64) (accessdom.Policy, error) {
+	cur, err := p.Policy(ctx)
+	if err != nil {
+		return cur, err
+	}
+	if seq >= cur.Seq || p.log == nil {
+		return cur, nil
+	}
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return accessdom.PolicyAt(p.base, p.recs, seq)
+}
+
+// Records — записи политики, применённые проекцией, по возрастанию seq
+// (история выдачи прав у Аудитора ИБ). Вызывающий их не меняет.
+func (p *Projection) Records(ctx context.Context) ([]accessdom.Record, error) {
+	if _, err := p.Policy(ctx); err != nil {
+		return nil, err
+	}
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return slices.Clone(p.recs), nil
 }
 
 // genesis — журнал начинается с политики генезиса (записи с происхождением genesis, AD-33).

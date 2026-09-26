@@ -83,8 +83,8 @@ func (s *Service) ReinstatePassport(ctx context.Context, passportID string, in R
 	if err != nil {
 		return platform.Receipt{}, err
 	}
-	role := platform.PrincipalFrom(ctx).Role
-	if _, err := dom.GuardReinstate(reg, passportID, in.SuspensionEventID, role); err != nil {
+	p := platform.PrincipalFrom(ctx)
+	if _, err := dom.GuardReinstate(reg, passportID, in.SuspensionEventID, p.Role, p.HasRole(dom.RoleHeadOfQC)); err != nil {
 		return platform.Receipt{}, err
 	}
 	now, err := s.now(ctx)

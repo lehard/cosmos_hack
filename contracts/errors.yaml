@@ -231,6 +231,20 @@ codes:
     ui_key: errors.access.selfGrant
     guard: true
     refs: [FR-85, AD-11, PRD §11.16]
+  access.not_qualified:
+    status: 409
+    title: "Нет действующей квалификации"
+    detail: "У {person} нет действующей квалификации в области поста {workplace} на {date} — назначить нельзя"
+    ui_key: errors.decision.qualificationExpired
+    guard: true
+    refs: [FR-80, FR-81]
+  access.controller_approval_required:
+    status: 403
+    title: "Нужно согласование начальника ОТК"
+    detail: "Контролёра на пост {workplace} назначает мастер по согласованию начальника ОТК — нужен закрытый документ «Назначение контролёра на пост»"
+    ui_key: errors.access.needSignature
+    guard: true
+    refs: [FR-81, PRD §11.18]
   access.not_in_zone:
     status: 403
     title: "Нет в зоне по СКУД"

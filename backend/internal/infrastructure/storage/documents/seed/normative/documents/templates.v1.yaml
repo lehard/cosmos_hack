@@ -218,3 +218,59 @@ templates:
           - {key: requested_at, label: "Дата запроса"}
           - {key: sources,      label: "Основания"}
       - {kind: route, title: "Подписи"}
+  # Эпик 26: «Выдача ролей, полномочий, клейм» (каталог документов спайна). Решение — строка
+  # grant:‹вид›:‹роль|полномочие|клеймо›:‹кому›:‹область› (access.FormatGrantDecision); этап второй подписи выбирает
+  # сфера выдачи (access.Assess по эффективным правам). Маршрут совпадает с grant_route normative/policy (тест).
+  # Выдачу по закрытому маршруту исполняет access.policy.grant с document_id.
+  - id: policy-grant
+    title: "Выдача ролей, полномочий, клейм"
+    class: decision
+    version: 1
+    doc_type: generic
+    subject: policy
+    summary:
+      - {key: subject,      label: "Кому"}
+      - {key: decision,     label: "Что выдаётся"}
+      - {key: requested_by, label: "Инициатор"}
+      - {key: comment,      label: "Основание"}
+    route:
+      - {stage: 1, title: "Начальник ОТК — вторая подпись", authority_id: second_signature_qc, quorum: one, signature_level: 2, paper_allowed: false, separation: [distinct_signers], when: {grant_domains: [qc]}}
+      - {stage: 2, title: "Руководитель производства — вторая подпись", authority_id: second_signature_production, quorum: one, signature_level: 2, paper_allowed: false, separation: [distinct_signers], when: {grant_domains: [production]}}
+      - {stage: 3, title: "Аудитор ИБ — вторая подпись", authority_id: second_signature_audit, quorum: one, signature_level: 2, paper_allowed: false, separation: [distinct_signers], when: {grant_domains: [admin]}}
+    layout:
+      - kind: fields
+        title: "Выдача ролей, полномочий, клейм"
+        fields:
+          - {key: subject,      label: "Кому"}
+          - {key: decision,     label: "Что выдаётся"}
+          - {key: comment,      label: "Основание"}
+          - {key: requested_by, label: "Инициатор (администратор безопасности)"}
+          - {key: requested_at, label: "Дата запроса"}
+      - {kind: route, title: "Вторая подпись независимой стороны"}
+  # Эпик 26 (PRD §11.18, FR-81): «Назначение контролёра на пост» — запрос мастера участка (сам запрос документа) →
+  # согласование пользователя с полномочием начальника ОТК. Решение — quality_inspector:‹кто›@‹смена›, объект — пост.
+  # Назначение по закрытому маршруту исполняет access.assignment.set с approval_document_id.
+  - id: controller-assignment
+    title: "Назначение контролёра на пост"
+    class: decision
+    version: 1
+    doc_type: generic
+    subject: other
+    summary:
+      - {key: subject,      label: "Пост"}
+      - {key: decision,     label: "Кто и в какую смену"}
+      - {key: requested_by, label: "Мастер"}
+      - {key: comment,      label: "Комментарий"}
+    route:
+      - {stage: 1, title: "Начальник ОТК — согласование", role: head_of_qc, authority_id: controller_assignment_approval, quorum: one, signature_level: 2,
+         paper_allowed: false, separation: [distinct_signers]}
+    layout:
+      - kind: fields
+        title: "Назначение контролёра на пост"
+        fields:
+          - {key: subject,      label: "Пост"}
+          - {key: decision,     label: "Кто и в какую смену"}
+          - {key: comment,      label: "Комментарий"}
+          - {key: requested_by, label: "Запросил мастер"}
+          - {key: requested_at, label: "Дата запроса"}
+      - {kind: route, title: "Согласование ОТК"}

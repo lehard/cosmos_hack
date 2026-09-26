@@ -43,7 +43,8 @@ func (l PolicyLog) Since(ctx context.Context, afterSeq int64) ([]accessdom.Recor
 					return nil, err
 				}
 				out = append(out, accessdom.Record{Seq: d.Record.Seq, Type: string(t), Data: d.Record.Data, OccurredAt: d.Record.OccurredAt,
-					Genesis: e.ProvenanceClass == jc.JournalEntryProvenanceClassGenesis})
+					Genesis: e.ProvenanceClass == jc.JournalEntryProvenanceClassGenesis,
+					EventID: d.Record.EventID, Actor: d.Record.Actor, CausationID: d.Record.CausationID})
 				after = int64(e.Seq)
 			}
 			if len(es) < readLimit {

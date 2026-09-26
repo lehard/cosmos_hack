@@ -28,6 +28,7 @@ import (
 	appjournal "ant/internal/application/journal"
 	app "ant/internal/application/security"
 	"ant/internal/contracts/procs"
+	accessdom "ant/internal/domain/access"
 	"ant/internal/domain/engine"
 )
 
@@ -80,6 +81,10 @@ type Input struct {
 	// 05): cmd/verifier вызывает signing.VerifyGenesis с anchor_fingerprint
 	// из trust-anchors. nil — генезиса нет и якорь не закреплён («не проверяемо»).
 	Genesis *GenesisResult
+	// Policy — стартовая политика нормативного слоя (затравка до генезиса) —
+	// начало свёртки политики для проверки прав подписантов (эпик 26); nil —
+	// только политика генезиса из журнала.
+	Policy *accessdom.Policy
 }
 
 // GenesisResult — проверка блока генезиса: записей в блоке, отпечаток,
@@ -200,6 +205,9 @@ func Run(ctx context.Context, in Input) (Report, error) {
 		return Report{}, err
 	}
 	v.genesis()
+	if err := v.authority(ctx); err != nil {
+		return Report{}, err
+	}
 	v.pending()
 	return v.report(), nil
 }

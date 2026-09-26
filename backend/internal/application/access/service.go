@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	itemapp "ant/internal/application/item"
 	"ant/internal/application/platform"
 	"ant/internal/contracts/catalog"
 	"ant/internal/contracts/errcodes"
@@ -35,6 +36,12 @@ type Service struct {
 	creds     CredentialStore
 	hasher    PasswordHasher
 	decisions DecisionWriter
+	// grants — документы выдачи прав (маршрут подписей documents, эпик 26).
+	grants GrantDocuments
+	// live — модуль access в режиме live (панель «Посты», факты исполнителя);
+	// facts — запись фактов исполнителя в журнал.
+	live  bool
+	facts itemapp.Writer
 	// now — доменное «сейчас» (DomainClock, AD-37).
 	now func(ctx context.Context) (time.Time, error)
 }
@@ -272,9 +279,6 @@ func (s *Service) ActivateAccount(ctx context.Context, personID string, in Activ
 	if !personPattern.MatchString(personID) {
 		return platform.Receipt{}, platform.Fail(errcodes.ApiValidationFailed, "field", "person_id", "reason", "псевдоним сотрудника")
 	}
-	if in.InitialRoleID != "" && actor == personID {
-		return platform.Receipt{}, platform.Fail(errcodes.AccessSelfGrant, "who", "вторая подпись независимой стороны")
-	}
 	pol, err := s.policy.Policy(ctx)
 	if err != nil {
 		return platform.Receipt{}, err
@@ -286,6 +290,27 @@ func (s *Service) ActivateAccount(ctx context.Context, personID string, in Activ
 	if in.InitialRoleID != "" {
 		if _, ok := pol.Role(in.InitialRoleID); !ok {
 			return platform.Receipt{}, platform.Fail(errcodes.ApiNotFound, "object", "роль", "id", in.InitialRoleID)
+		}
+		// Начальная роль — обычной выдачей одной подписью; выдача себе и
+		// привилегированная роль (администратор, аудит) — только документом
+		// выдачи со второй подписью независимой стороны (эпик 26, AD-11).
+		if now, err := s.now(ctx); err == nil {
+			withPerson := pol
+			if _, ok := pol.Person(personID); !ok {
+				withPerson = pol.Clone()
+				withPerson.Persons = append(withPerson.Persons, accessdom.Person{ID: personID, Name: personID})
+			}
+			c := accessdom.PolicyChange{Kind: accessdom.ChangeRole, PersonID: personID, SubjectID: in.InitialRoleID, Scope: scope, ValidFrom: now}
+			if a := accessdom.Assess(withPerson, c, actor, now); a.SecondAuthority != "" {
+				code := errcodes.AccessSignatureRequired
+				if a.SelfGrant {
+					code = errcodes.AccessSelfGrant
+				}
+				pe := platform.Fail(code, "who", accessdom.DomainTitle(a.Domain)+" (полномочие "+a.SecondAuthority+")")
+				pe.Detail = a.Reason + ". Активируйте учётную запись с обычной ролью, а эту роль выдайте документом «Выдача ролей, полномочий, клейм» (access.policy.grant)."
+				pe.AllowedActions = slices.Clone(RequestDecisionActions)
+				return platform.Receipt{}, pe
+			}
 		}
 	}
 	cred, found, err := s.creds.Get(ctx, login)
@@ -321,7 +346,7 @@ func (s *Service) ActivateAccount(ctx context.Context, personID string, in Activ
 	}
 	recs = append(recs, Record{Type: catalog.AccessAccountActivated, Stream: "person:" + personID, Data: act})
 	if in.InitialRoleID != "" {
-		recs = append(recs, Record{Type: catalog.PolicyRoleAssigned, Stream: "policy:" + pol.Root,
+		recs = append(recs, Record{Type: catalog.PolicyRoleAssigned, Stream: accessdom.PolicyStream(scope),
 			Data: ev.PolicyRoleAssignedV1{PersonID: ev.PersonRef(personID), RoleID: ev.ObjectID(in.InitialRoleID), Scope: scope, ValidFrom: ev.Timestamp(now)}})
 	}
 	// Учётные данные — до записи в журнал: сбой записи оставит неактивную
@@ -415,8 +440,13 @@ func (s *Service) Roles(ctx context.Context, m platform.Moment) (AccessRoleList,
 		return AccessRoleList{}, err
 	}
 	out := AccessRoleList{Items: []AccessRole{}, Authorities: []AccessAuthority{}, StampKinds: []string{}, PolicySeq: pol.Seq}
-	if fbErr == nil {
-		// Названия полномочий и виды клейм — из запасной реализации (эпик 26 — живые).
+	// Полномочия и виды клейм — из справочной части политики (нормативный слой);
+	// нет её — из запасной реализации.
+	for _, a := range pol.Catalog.Authorities {
+		out.Authorities = append(out.Authorities, AccessAuthority{ID: a.ID, Title: a.Title})
+	}
+	out.StampKinds = append(out.StampKinds, pol.Catalog.StampKinds...)
+	if fbErr == nil && len(out.Authorities) == 0 {
 		out.Authorities, out.StampKinds = fb.Authorities, fb.StampKinds
 	}
 	for _, r := range pol.Roles {
