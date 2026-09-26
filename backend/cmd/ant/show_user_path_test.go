@@ -763,22 +763,47 @@ func (s *showSystem) finish(st *showStop) string {
 	return "задачи: «" + str(t, "title") + "» → терминал «Выполнено»"
 }
 
-// queueRow — строка очереди «Ждут моего решения» по фланцу остановки.
+// queueRows — очередь «Ждут моего решения» (DecisionQueueWidget → useDecisionQueue:
+// sort=risk, прогон стола или ?run= — run_id, если он есть; размер страницы по умолчанию).
+func (s *showSystem) queueRows(persona, run string) []map[string]any {
+	s.t.Helper()
+	q := map[string]string{"sort": "risk"}
+	if run != "" {
+		q["run_id"] = run
+	}
+	return list(s.read(persona, "nonconformity.queue.list", q), "items")
+}
+
+// queueRow — строка очереди по фланцу остановки: и без прогона, и с run_id
+// прогона (стол, открытый с пульта) — строка должна быть в обоих видах.
 func (s *showSystem) queueRow(st *showStop, kinds ...string) map[string]any {
 	s.t.Helper()
-	all := list(s.read(st.Persona, "nonconformity.queue.list", map[string]string{"limit": "200"}), "items")
-	var hits []map[string]any
-	for _, r := range all {
-		if (len(kinds) == 0 || slices.Contains(kinds, str(r, "kind"))) && sameFlange(str(r, "item_label")+" "+str(r, "title"), st.flange()) {
-			hits = append(hits, r)
+	find := func(all []map[string]any) []map[string]any {
+		var hits []map[string]any
+		for _, r := range all {
+			if (len(kinds) == 0 || slices.Contains(kinds, str(r, "kind"))) && sameFlange(str(r, "item_label")+" "+str(r, "title"), st.flange()) {
+				hits = append(hits, r)
+			}
 		}
+		return hits
 	}
-	if len(hits) == 0 {
+	rowsOf := func(all []map[string]any) string {
 		var rows []string
 		for _, r := range all {
 			rows = append(rows, fmt.Sprintf("[%s %s %s «%s»]", str(r, "kind"), str(r, "item_label"), str(r, "item_id"), str(r, "title")))
 		}
-		s.t.Fatalf("%s: в очереди %s нет строки %v по %s; очередь (%d): %s\n%s", st, st.Persona, kinds, st.flange(), len(all), strings.Join(rows, " "), s.itemDiag(st.Item))
+		return fmt.Sprintf("(%d) %s", len(all), strings.Join(rows, " "))
+	}
+	all, run := s.queueRows(st.Persona, ""), s.queueRows(st.Persona, s.runID)
+	hits, hitsRun := find(all), find(run)
+	switch {
+	case len(hits) == 0 && len(hitsRun) == 0:
+		s.t.Fatalf("%s: в очереди %s нет строки %v по %s; без прогона %s; с run_id %s\n%s", st, st.Persona, kinds, st.flange(), rowsOf(all), rowsOf(run), s.itemDiag(st.Item))
+	case len(hits) == 0:
+		s.t.Errorf("%s: строка %v по %s есть в очереди с run_id, но нет без прогона: %s", st, kinds, st.flange(), rowsOf(all))
+		hits = hitsRun
+	case len(hitsRun) == 0:
+		s.t.Errorf("%s: строка %v по %s есть в очереди без прогона, но нет с run_id=%s (стол с пульта): %s", st, kinds, st.flange(), s.runID, rowsOf(run))
 	}
 	if len(hits) > 1 {
 		s.t.Logf("%s: в очереди %d строк по %s, беру первую: %v", st, len(hits), st.flange(), hits)
@@ -795,6 +820,11 @@ func (s *showSystem) resolve(st *showStop) string {
 	item := str(row, "item_id")
 	s.object(st, item, fmt.Sprintf("строка очереди «%s»", str(row, "title")))
 	v := s.read(st.Persona, "nonconformity.presentation.read", map[string]string{"item_id": item})
+	// Окно предъявления, открытое со стола прогона (?run=), — то же предъявление.
+	if code, vr := s.call(st.Persona, "nonconformity.presentation.read", map[string]string{"item_id": item, "run_id": s.runID}, nil); code != 200 ||
+		fmt.Sprint(vr["presentation"]) != fmt.Sprint(v["presentation"]) {
+		s.t.Errorf("%s: окно предъявления с run_id: HTTP %d %v, без прогона %v", st, code, vr["presentation"], v["presentation"])
+	}
 	var act map[string]any
 	for _, a := range list(v, "actions") {
 		if str(a, "operation") == st.Op && str(a, "resolution") == "accept" && a["allowed"] == true {
@@ -900,7 +930,7 @@ func (s *showSystem) recheck(st *showStop) string {
 	row := s.queueRow(st)
 	nc := str(row, "nc_id")
 	if nc == "" {
-		s.t.Fatalf("%s: строка очереди по %s без несоответствия (%s «%s») — карточки с «Доп. проверка» нет", st, st.flange(), str(row, "kind"), str(row, "title"))
+		s.t.Fatalf("%s: строка очереди по %s без несоответствия (%s «%s») — карточки с «Доп. проверка» нет\n%s", st, st.flange(), str(row, "kind"), str(row, "title"), s.itemDiag(st.Item))
 	}
 	c := s.card(st, nc)
 	item := str(c, "item_id")
@@ -1156,11 +1186,11 @@ func (s *showSystem) itemDiag(item string) string {
 	if code != 200 {
 		fmt.Fprintf(&b, " %v", pr)
 	}
-	es := list(s.read("ADM-01", "journal.entry.list", map[string]string{"item_id": item, "order": "desc", "limit": "25"}), "items")
+	es := list(s.read("ADM-01", "journal.entry.list", map[string]string{"item_id": item, "order": "desc", "limit": "40"}), "items")
 	for _, e := range es {
 		d, _ := e["data"].(map[string]any)
 		fmt.Fprintf(&b, "\n  %s %s %s %s %s", str(e, "seq"), str(e, "occurred_at"), str(e, "event_type"), str(d, "step_key"), str(d, "outcome"))
-		for _, k := range []string{"operation_run_id", "operation_code", "equipment_id", "station_id", "operator_id", "completion", "phase", "precondition", "reason"} {
+		for _, k := range []string{"operation_run_id", "operation_code", "equipment_id", "station_id", "operator_id", "completion", "phase", "precondition", "reason", "method", "observation_quality_bp", "processing_state", "kind", "title", "rule_id", "status"} {
 			if v := str(d, k); v != "" {
 				fmt.Fprintf(&b, " %s=%s", k, v)
 			}
