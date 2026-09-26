@@ -1,0 +1,53 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/integrations/erp/galaktika/gal.qc.v1/ack.schema.json",
+  "title": "GalAck",
+  "description": "Квитанция Галактики `GalAck` на пакет с тем же номером (gal.qc.v1): `ok` — принято (повтор того же номера возвращает прежнюю квитанцию, признак `duplicate`), `error` — ошибка данных с кодом Галактики (без автоповтора, карантин исходящих). В каталоге обмена — XML-файл `ack/‹номер›.xml`, у REST-фасада — тело ответа (202 — принято, 200 — повтор, 422 — ошибка данных).",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "message_id": {
+      "$ref": "exchange.schema.json#/definitions/message_id",
+      "description": "Номер пакета, на который квитанция."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "ok",
+        "error"
+      ],
+      "description": "Итог обработки пакета."
+    },
+    "duplicate": {
+      "type": "boolean",
+      "description": "Повтор уже принятого номера: квитанция прежняя, второй документ не создан (AD-7)."
+    },
+    "nrec_created": {
+      "$ref": "exchange.schema.json#/definitions/nrec",
+      "description": "NRec созданного документа Галактики."
+    },
+    "document": {
+      "type": "string",
+      "maxLength": 64,
+      "description": "Номер созданного документа Галактики (для людей)."
+    },
+    "code": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9_]{0,63}$",
+      "description": "Код ошибки Галактики (LOT_NOT_FOUND, ITEM_NOT_MAPPED, CONTRACT_NOT_FOUND, CONTRACT_VERSION, SCHEMA_VIOLATION …)."
+    },
+    "text": {
+      "type": "string",
+      "maxLength": 1024,
+      "description": "Пояснение ошибки."
+    },
+    "received_at": {
+      "$ref": "exchange.schema.json#/definitions/timestamp",
+      "description": "Когда Галактика приняла пакет впервые."
+    }
+  },
+  "required": [
+    "message_id",
+    "status"
+  ]
+}

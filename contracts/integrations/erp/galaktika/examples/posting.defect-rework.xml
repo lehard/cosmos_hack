@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GalExchange xmlns="urn:ant-qc:galaktika:v1" messageId="7b3728cb-964d-5362-a975-496405560232" createdAt="2026-09-25T10:42:17.305Z" from="ant" to="GAL-ERP-ZAVOD2" contract="gal.qc.v1">
+  <Posting kind="defect_rework">
+    <Source businessKey="ENT01:F-002/scrap_transfer_rework/defect.1" messageVersion="1" enterprise="ENT01" closingPoint="defect.1"></Source>
+    <Item itemId="ENT01:F-002" serialNo="F-002"></Item>
+    <WarehouseFrom code="WH-WC"></WarehouseFrom>
+    <Nonconformity ref="NC-2026-0040"></Nonconformity>
+  </Posting>
+</GalExchange>

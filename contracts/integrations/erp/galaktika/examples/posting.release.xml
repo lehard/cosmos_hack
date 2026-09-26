@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GalExchange xmlns="urn:ant-qc:galaktika:v1" messageId="2bf94791-7bba-5643-a630-62e96b2faad8" createdAt="2026-09-25T10:42:17.305Z" from="ant" to="GAL-ERP-ZAVOD2" contract="gal.qc.v1">
+  <Posting kind="release" afterRework="true" concession="RD-2026-0007">
+    <Source businessKey="ENT01:F-002/release/final.erp_release" messageVersion="1" enterprise="ENT01" closingPoint="final.erp_release"></Source>
+    <Item itemId="ENT01:F-002" serialNo="F-002"></Item>
+    <WarehouseFrom code="WH-AC"></WarehouseFrom>
+    <WarehouseTo code="WH-FG"></WarehouseTo>
+  </Posting>
+</GalExchange>
