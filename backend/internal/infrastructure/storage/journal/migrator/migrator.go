@@ -106,7 +106,7 @@ func Up(ctx context.Context, cfg *pgx.ConnConfig, log *slog.Logger, sets ...Set)
 		_, err := c.Exec(ctx, "SET ROLE "+RoleOwner)
 		return err
 	}))
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	var out []Applied
 	for _, s := range sets {
 		res, err := up(ctx, db, log, s)

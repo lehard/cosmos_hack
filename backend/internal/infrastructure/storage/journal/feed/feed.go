@@ -86,6 +86,9 @@ func (c *Consumer) Consume(ctx context.Context, name string, scope app.Scope, ha
 	for ctx.Err() == nil {
 		fence, ok, err := c.leases.Acquire(ctx, lease, c.opt.Holder, c.opt.TTL)
 		if err != nil {
+			if ctx.Err() != nil {
+				return nil
+			}
 			return err
 		}
 		if !ok {
@@ -95,6 +98,9 @@ func (c *Consumer) Consume(ctx context.Context, name string, scope app.Scope, ha
 		head := c.signal.Head()
 		cursor, err := c.store.Cursor(ctx, name, part)
 		if err != nil {
+			if ctx.Err() != nil {
+				return nil
+			}
 			return err
 		}
 		q := app.ReadQuery{AfterSeq: cursor, Limit: c.opt.Batch}
@@ -103,6 +109,9 @@ func (c *Consumer) Consume(ctx context.Context, name string, scope app.Scope, ha
 		}
 		batch, err := c.store.Read(ctx, q)
 		if err != nil {
+			if ctx.Err() != nil {
+				return nil
+			}
 			return err
 		}
 		if len(batch) == 0 {
@@ -111,11 +120,17 @@ func (c *Consumer) Consume(ctx context.Context, name string, scope app.Scope, ha
 		}
 		rq, err := handle(ctx, batch)
 		if err != nil {
+			if ctx.Err() != nil {
+				return nil
+			}
 			return fmt.Errorf("потребитель %s: %w", name, err)
 		}
 		rq.Fence = &fence
 		rq.Consumer = &app.CursorAdvance{Name: name, Partition: part, Seq: int64(batch[len(batch)-1].Seq)}
 		if _, err := c.store.Append(ctx, rq); err != nil {
+			if ctx.Err() != nil {
+				return nil
+			}
 			if errors.Is(err, app.ErrFenced) {
 				c.opt.Log.Warn("потребитель: аренда утрачена", "consumer", name, "lease", lease, "epoch", fence.Epoch)
 				continue

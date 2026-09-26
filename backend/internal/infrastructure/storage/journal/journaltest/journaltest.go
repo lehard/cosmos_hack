@@ -1,4 +1,8 @@
-package journal_test
+// Пакет journaltest — опоры интеграционных тестов журнала и его потребителей
+// на своей БД агента (make dev-db): отдельная база на тест с ролями и
+// миграциями, как после ant migrate, пулы ролей, тестовые записи.
+// Используется только из тестов.
+package journaltest
 
 import (
 	"context"
@@ -8,7 +12,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"strconv"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -24,13 +27,12 @@ import (
 	"ant/internal/infrastructure/storage/journal/migrator"
 )
 
-// Интеграционные тесты журнала на своей БД агента (make dev-db): каждый
-// тест создаёт отдельную базу, применяет роли и миграции (как ant migrate) и
-// удаляет базу в конце. Без ANT_DB_HOST тесты пропускаются.
-
-type testDB struct {
-	admin *pgxpool.Config // суперпользователь (роль migrate)
-	name  string
+// DB — тестовая база: создаётся NewDB, удаляется в конце теста.
+// Без ANT_DB_HOST тесты пропускаются.
+type DB struct {
+	// Admin — суперпользователь (роль migrate).
+	Admin *pgxpool.Config
+	Name  string
 }
 
 func adminConfig(t *testing.T, db string) *pgxpool.Config {
@@ -66,8 +68,8 @@ func cmpOr(a, b string) string {
 
 var dbCounter atomic.Int64
 
-// newDB — чистая база с ролями и миграциями журнала.
-func newDB(t *testing.T) *testDB {
+// NewDB — чистая база с ролями и миграциями журнала.
+func NewDB(t *testing.T) *DB {
 	t.Helper()
 	ctx := context.Background()
 	base := adminConfig(t, os.Getenv("ANT_DB_NAME"))
@@ -94,7 +96,7 @@ func newDB(t *testing.T) *testDB {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer ac.Close(ctx)
+	defer func() { _ = ac.Close(ctx) }()
 	if err := migrator.EnsureRoles(ctx, ac); err != nil {
 		t.Fatal(err)
 	}
@@ -105,13 +107,13 @@ func newDB(t *testing.T) *testDB {
 	if len(applied) == 0 {
 		t.Fatal("миграции журнала не применились")
 	}
-	return &testDB{admin: admin, name: name}
+	return &DB{Admin: admin, Name: name}
 }
 
-// appPool — пул роли приложения (SET ROLE ant_app), как у роли ant.
-func (d *testDB) appPool(t *testing.T) *pgxpool.Pool {
+// AppPool — пул роли приложения (SET ROLE ant_app), как у роли ant.
+func (d *DB) AppPool(t *testing.T) *pgxpool.Pool {
 	t.Helper()
-	p, err := store.NewAppPool(context.Background(), d.admin)
+	p, err := store.NewAppPool(context.Background(), d.Admin)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -119,9 +121,9 @@ func (d *testDB) appPool(t *testing.T) *pgxpool.Pool {
 	return p
 }
 
-func (d *testDB) adminConn(t *testing.T) *pgx.Conn {
+func (d *DB) AdminConn(t *testing.T) *pgx.Conn {
 	t.Helper()
-	c, err := pgx.ConnectConfig(context.Background(), d.admin.ConnConfig)
+	c, err := pgx.ConnectConfig(context.Background(), d.Admin.ConnConfig)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -129,9 +131,11 @@ func (d *testDB) adminConn(t *testing.T) *pgx.Conn {
 	return c
 }
 
-type sysClock struct{}
+// SysClock — системные часы InfraClock.
+type SysClock struct{}
 
-func (sysClock) Now() time.Time { return time.Now().UTC() }
+// Now — реальное время.
+func (SysClock) Now() time.Time { return time.Now().UTC() }
 
 var eventN atomic.Int64
 
@@ -145,8 +149,8 @@ func uuid7ish() string {
 	return h[0:8] + "-" + h[8:12] + "-" + h[12:16] + "-" + h[16:20] + "-" + h[20:32]
 }
 
-// envelope — конверт DSSE с payload события и data.
-func envelope(eventType string, data any) []byte {
+// Envelope — конверт DSSE с payload события и data.
+func Envelope(eventType string, data any) []byte {
 	d, _ := json.Marshal(data)
 	payload, _ := json.Marshal(map[string]any{"event_type": eventType, "data": json.RawMessage(d), "n": eventN.Add(1)})
 	env, _ := json.Marshal(map[string]any{
@@ -157,8 +161,8 @@ func envelope(eventType string, data any) []byte {
 	return env
 }
 
-// fact — запись о изделии (тип из каталога, поток item:‹id›).
-func entry(eventType string, kind jc.JournalEntryEntryKind, stream string, item string, occurred time.Time) app.Pending {
+// Entry — запись типа из каталога в потоке stream (item — изделие или пусто).
+func Entry(eventType string, kind jc.JournalEntryEntryKind, stream string, item string, occurred time.Time) app.Pending {
 	e := jc.JournalEntry{
 		EntryKind: kind, EventType: eventType, SchemaVersion: 1, EventID: uuid7ish(),
 		SourceID: "test-source", Stream: stream, Partition: 0,
@@ -171,15 +175,16 @@ func entry(eventType string, kind jc.JournalEntryEntryKind, stream string, item 
 		e.ItemID = &it
 		e.Partition = dj.Partition(item, 4)
 	}
-	return app.Pending{Entry: e, Envelope: envelope(eventType, map[string]any{"v": 1})}
+	return app.Pending{Entry: e, Envelope: Envelope(eventType, map[string]any{"v": 1})}
 }
 
-func fact(item string) app.Pending {
-	return entry("inspection.result.recorded", jc.JournalEntryEntryKindFact, dj.ItemStream(item), item, time.Now())
+// Fact — факт контроля изделия (inspection.result.recorded, триггер свёртки).
+func Fact(item string) app.Pending {
+	return Entry("inspection.result.recorded", jc.JournalEntryEntryKindFact, dj.ItemStream(item), item, time.Now())
 }
 
-// readAll — вся цепочка по порядку.
-func readAll(t *testing.T, s *store.Store, chain string) []jc.JournalEntry {
+// ReadAll — вся цепочка по порядку.
+func ReadAll(t *testing.T, s *store.Store, chain string) []jc.JournalEntry {
 	t.Helper()
 	var out []jc.JournalEntry
 	var after int64
@@ -196,17 +201,16 @@ func readAll(t *testing.T, s *store.Store, chain string) []jc.JournalEntry {
 	}
 }
 
-func seqStr(n int64) string { return strconv.FormatInt(n, 10) }
-
-func migratorUp(d *testDB) ([]migrator.Applied, error) {
+// MigrateAgain — повтор роли migrate на той же базе.
+func MigrateAgain(d *DB) ([]migrator.Applied, error) {
 	ctx := context.Background()
-	c, err := pgx.ConnectConfig(ctx, d.admin.ConnConfig)
+	c, err := pgx.ConnectConfig(ctx, d.Admin.ConnConfig)
 	if err != nil {
 		return nil, err
 	}
-	defer c.Close(ctx)
+	defer func() { _ = c.Close(ctx) }()
 	if err := migrator.EnsureRoles(ctx, c); err != nil {
 		return nil, err
 	}
-	return migrator.Up(ctx, d.admin.ConnConfig, nil, migrator.Set{Module: "journal", FS: store.Migrations, Dir: store.MigrationsDir})
+	return migrator.Up(ctx, d.Admin.ConnConfig, nil, migrator.Set{Module: "journal", FS: store.Migrations, Dir: store.MigrationsDir})
 }

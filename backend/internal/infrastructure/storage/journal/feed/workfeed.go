@@ -17,7 +17,7 @@ import (
 // postgres): P фиксированных партиций hash(item_id) mod P с арендой
 // `partition:‹n›` и эпохой; семантика consumer group Kafka с key = item_id.
 //
-// Распределение: копия держит не больше ⌈P / число живых держателей⌉
+// Распределение: копия держит не больше ⌈P / число живых копий⌉
 // партиций; лишние отдаёт при следующем Partitions, свободные и истёкшие
 // берёт — так изменение числа воркеров перераспределяет партиции, а упавший
 // воркер отдаёт свои по истечении аренды (InfraClock).
@@ -40,18 +40,33 @@ func NewWorkFeed(s *store.Store, l *store.Leases, sig app.Signal, partitions int
 
 var _ engine.WorkFeed = (*WorkFeed)(nil)
 
-const partitionPrefix = "partition:"
+const (
+	partitionPrefix = "partition:"
+	memberPrefix    = "worker:"
+)
 
 // Partitions продлевает свои аренды, отдаёт лишние, берёт свободные и
 // возвращает партиции с эпохами. Вызывать не реже TTL/2.
 func (w *WorkFeed) Partitions(ctx context.Context) ([]engine.Partition, error) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
+	// Присутствие копии — своя аренда `worker:‹держатель›`: новая копия
+	// видна остальным раньше, чем получит хоть одну партицию.
+	if _, _, err := w.leases.Acquire(ctx, memberPrefix+w.opt.Holder, w.opt.Holder, w.opt.TTL); err != nil {
+		return nil, err
+	}
+	members, err := w.leases.Live(ctx, memberPrefix)
+	if err != nil {
+		return nil, err
+	}
 	live, err := w.leases.Live(ctx, partitionPrefix)
 	if err != nil {
 		return nil, err
 	}
 	holders := map[string]bool{w.opt.Holder: true}
+	for _, m := range members {
+		holders[m.Holder] = true
+	}
 	taken := map[int]bool{}
 	var mine []int
 	for _, l := range live {
