@@ -15,6 +15,7 @@ import { alertText, attentionText, useAlerts, useAttention, useNotificationSumma
 import { useSession } from '@/entities/session'
 import { useTasks } from '@/entities/task'
 import { useDrillDown } from '@/features/drill-down'
+import type { DrillRef } from '@/shared/model/drill'
 import { backendModeOf } from '@/shared/api/response'
 import type { WidgetProps } from '@/shared/config/widget'
 import { useMomentStore } from '@/shared/model/moment'
@@ -52,7 +53,8 @@ const alerts = computed<NoticeRow[] | null>(() => {
     text: alertText(x, a),
     time: d(new Date(a.at), 'dateTime'),
     severe: a.kind !== 'anomaly' && a.kind !== 'gate_overdue',
-    ref: a.ref ?? null,
+    // Аномалия узла без объекта — окно операции этого шага (UI-45).
+    ref: a.ref ?? (a.kind === 'anomaly' && a.node ? ({ entity: 'operation', id: a.node } as unknown as DrillRef) : null),
   }))
 })
 const escalations = computed<NoticeRow[] | null>(() => {

@@ -48,6 +48,8 @@ const size = computed(() => naiveSizeOf(props.density))
 
     <SectionPanel v-if="sections.includes('task')" variant="plain" data-testid="section-tasks">
       <NAlert v-if="tasksError && !open" type="error" :bordered="false">{{ problemText(tasksError) }}</NAlert>
+      <!-- Нет открытых — одной строкой, выполненные ниже (UI-44). -->
+      <p v-else-if="open && !open.length" class="ant-muted" data-testid="no-open-tasks">{{ t('widgets.shopFloor.tasks.noOpen') }}</p>
       <TaskInbox v-else-if="open" :tasks="open" :basis-seq="basisSeq" :can-act="canAct" :density="density" :can-open="canOpen" @open="(r) => emit('open', r)" />
       <NCollapse v-if="closed.length" data-testid="closed-tasks">
         <NCollapseItem :title="t('widgets.shopFloor.tasks.closed', { n: closed.length })" name="closed">
@@ -62,7 +64,7 @@ const size = computed(() => naiveSizeOf(props.density))
         <li v-for="r in escalations" :key="r.id" class="notice" :data-escalation="r.id">
           <p class="ant-clamp-2" :class="r.severe ? 'severe' : 'mild'" :title="r.text">{{ r.text }}</p>
           <div v-if="r.ref && canOpen(r.ref)">
-            <ActionButton text type="primary" :size="size" :label="`${t('common.actions.open')} · ${r.ref.id}`" @click="emit('open', r.ref)" />
+            <ActionButton text type="primary" :size="size" :label="t('common.actions.open')" @click="emit('open', r.ref)" />
           </div>
         </li>
       </ul>
@@ -72,12 +74,14 @@ const size = computed(() => naiveSizeOf(props.density))
       <NAlert v-if="alertsError && !alerts" type="error" :bordered="false">{{ problemText(alertsError) }}</NAlert>
       <ul v-else-if="alerts" class="notices">
         <li v-for="r in alerts" :key="r.id" class="notice" :data-alert="r.id">
-          <p class="ant-clamp-2" :title="r.text">
+          <!-- Тревога с объектом — нажимается целиком: окно операции, изделия… (UI-45). -->
+          <button v-if="r.ref && canOpen(r.ref)" type="button" class="notice-link" data-testid="open-alert" @click="emit('open', r.ref)">
+            <span v-if="r.time" class="ant-muted">{{ r.time }} · </span><span :class="r.severe ? 'severe' : 'mild'">{{ r.text }}</span>
+            <span class="go">{{ t('widgets.shopFloor.tasks.whatToDo') }} →</span>
+          </button>
+          <p v-else class="ant-clamp-2" :title="r.text">
             <span v-if="r.time" class="ant-muted">{{ r.time }} · </span><span :class="r.severe ? 'severe' : 'mild'">{{ r.text }}</span>
           </p>
-          <div v-if="r.ref && canOpen(r.ref)">
-            <ActionButton text type="primary" :size="size" :label="`${t('common.actions.open')} · ${r.ref.id}`" @click="emit('open', r.ref)" />
-          </div>
         </li>
       </ul>
     </SectionPanel>
@@ -120,6 +124,27 @@ const size = computed(() => naiveSizeOf(props.density))
 
 .notice:last-child {
   border-bottom: 0;
+}
+
+.notice-link {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--ant-space-1) 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.notice-link:hover .go {
+  text-decoration: underline;
+}
+
+.go {
+  color: var(--ant-accent);
+  font-size: var(--ant-fs-meta);
 }
 
 .severe {

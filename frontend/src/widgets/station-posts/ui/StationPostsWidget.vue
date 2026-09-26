@@ -19,6 +19,7 @@ import { resolveWorkshop, useLocations } from '@/entities/reference'
 import { useSession } from '@/entities/session'
 import { usePosts } from '@/entities/workplace'
 import { useDrillDown } from '@/features/drill-down'
+import type { DrillRef } from '@/shared/model/drill'
 import { backendModeOf } from '@/shared/api/response'
 import type { WidgetProps } from '@/shared/config/widget'
 import { useMomentStore } from '@/shared/model/moment'
@@ -85,7 +86,9 @@ const state = computed(() => (allFailed.value ? 'input_error' : stationState(ste
       :at="at"
       :density="density"
       @item="(id) => drill.open({ entity: 'item', id })"
-      @node="(key) => drill.open({ entity: 'live_map', id: key })"
+      @node="(key) => drill.open({ entity: 'operation', id: key } as unknown as DrillRef)"
+      @workplace="(id) => drill.open({ entity: 'workplace', id })"
+      @person="(id) => drill.open({ entity: 'person', id } as unknown as DrillRef)"
     />
   </WidgetFrame>
 </template>

@@ -40,7 +40,7 @@ const props = withDefaults(
   }>(),
   { stepsError: undefined, postsError: undefined, registry: null, density: 'comfortable' },
 )
-const emit = defineEmits<{ item: [itemId: string]; node: [stepKey: string] }>()
+const emit = defineEmits<{ item: [itemId: string]; node: [stepKey: string]; workplace: [workplaceId: string]; person: [personId: string] }>()
 const { t, te, n } = useI18n()
 const problemText = useProblemText()
 const size = computed(() => naiveSizeOf(props.density))
@@ -62,15 +62,16 @@ const factLine = (s: StationStep) => queueFacts(s, props.posts ?? [], props.regi
       <div v-else-if="steps" class="list">
         <SectionPanel v-for="s in steps" :key="s.step.stepKey" variant="subtle" :data-step="s.step.stepKey" :data-growing="s.growing || undefined">
           <div class="row">
-            <ActionButton text :size="size" :label="s.step.name" @click="emit('node', s.step.stepKey)" />
+            <ActionButton text type="primary" :size="size" :label="s.step.name" :hint="t('widgets.operation.open')" data-testid="open-operation" @click="emit('node', s.step.stepKey)" />
             <span v-if="s.step.operationCode" class="ant-muted">{{ t('widgets.shopFloor.station.operationCode', { code: s.step.operationCode }) }}</span>
             <NTag v-if="s.step.specialProcess" size="small" :bordered="false" type="info">{{ t('widgets.shopFloor.station.specialProcess') }}</NTag>
           </div>
           <div class="row" data-testid="counters">
-            <NTag size="small" :bordered="false" :type="s.growing ? 'warning' : 'default'" data-testid="queue">
+            <!-- Счётчики — кнопки: открывают окно операции с изделиями (UI-42). -->
+            <button type="button" class="chip" :data-tone="s.growing ? 'warn' : undefined" data-testid="queue" @click="emit('node', s.step.stepKey)">
               {{ t('liveMap.counters.inQueue') }}: {{ s.counters ? s.counters.queue : '—' }}
-            </NTag>
-            <NTag size="small" :bordered="false">{{ t('liveMap.counters.inWork') }}: {{ s.counters ? s.counters.in_progress : '—' }}</NTag>
+            </button>
+            <button type="button" class="chip" data-testid="in-work" @click="emit('node', s.step.stepKey)">{{ t('liveMap.counters.inWork') }}: {{ s.counters ? s.counters.in_progress : '—' }}</button>
             <NTag v-if="s.counters?.nonconformities" size="small" :bordered="false" type="error">
               {{ t('plural.nonconformities', { n: s.counters.nonconformities }, s.counters.nonconformities) }}
             </NTag>
@@ -127,10 +128,13 @@ const factLine = (s: StationStep) => queueFacts(s, props.posts ?? [], props.regi
         </thead>
         <tbody>
           <tr v-for="p in posts" :key="p.post.workplace_id" :data-workplace="p.post.workplace_id" :data-presence="p.post.presence">
-            <th scope="row"><span class="ant-wrap">{{ p.post.station }}</span></th>
+            <th scope="row">
+              <ActionButton text type="primary" :size="size" :label="p.post.station" data-testid="open-post" @click="emit('workplace', p.post.workplace_id)" />
+            </th>
             <td>
               <div class="cell">
-                <span class="ant-wrap">{{ p.post.assigned?.display ?? t('liveMap.posts.notAssigned') }}</span>
+                <ActionButton v-if="p.post.assigned" text type="primary" :size="size" :label="p.post.assigned.display" data-testid="open-person" @click="emit('person', p.post.assigned.person_id)" />
+                <span v-else class="ant-wrap">{{ t('liveMap.posts.notAssigned') }}</span>
                 <NTag size="small" :bordered="false" :type="presenceTagType(p.post.presence)">
                   <span class="ant-wrap">{{ t(PRESENCE_TEXT[p.post.presence]) }}</span>
                 </NTag>
@@ -192,6 +196,27 @@ const factLine = (s: StationStep) => queueFacts(s, props.posts ?? [], props.regi
   gap: var(--ant-space-1) var(--ant-space-2);
   align-items: center;
   min-width: 0;
+}
+
+.chip {
+  padding: 2px var(--ant-space-2);
+  border: 1px solid var(--ant-border);
+  border-radius: var(--ant-radius-sm);
+  background: var(--ant-surface-subtle);
+  color: var(--ant-text);
+  font: inherit;
+  font-size: var(--ant-fs-meta);
+  cursor: pointer;
+}
+
+.chip:hover {
+  border-color: var(--ant-accent);
+  color: var(--ant-accent);
+}
+
+.chip[data-tone='warn'] {
+  border-color: var(--ant-status-attention);
+  background: var(--ant-status-attention-soft);
 }
 
 .warning {

@@ -12,7 +12,7 @@ import { PRESENCE_TEXT, presenceTagType } from '@/entities/workplace'
 import type { Density } from '@/shared/config/widget'
 import { codeToKey } from '@/shared/i18n'
 import { useProblemText } from '@/shared/i18n/problem'
-import { DataTable, EmptyState, SectionPanel } from '@/shared/ui'
+import { ActionButton, DataTable, EmptyState, SectionPanel } from '@/shared/ui'
 import { verificationOf, type EquipmentRow, type PersonRow } from '../model/people'
 
 withDefaults(
@@ -26,6 +26,12 @@ withDefaults(
   }>(),
   { peopleError: undefined, equipmentError: undefined, density: 'comfortable' },
 )
+const emit = defineEmits<{
+  /** Пост — окно поста: кто назначен, история (Д-70, UI-43). */
+  workplace: [workplaceId: string]
+  /** Сотрудник — окно сотрудника. */
+  person: [personId: string]
+}>()
 const { t, d } = useI18n()
 const problemText = useProblemText()
 const date = (iso: string | null | undefined) => (iso ? d(new Date(iso), 'date') : '—')
@@ -72,8 +78,13 @@ const qualType = (s: string) => (s === 'valid' ? 'success' : s === 'expiring' ? 
         </thead>
         <tbody>
           <tr v-for="p in people" :key="p.post.workplace_id" :data-workplace="p.post.workplace_id" :data-presence="p.post.presence">
-            <th scope="row"><span class="ant-wrap">{{ p.post.station }}</span></th>
-            <td><span class="ant-wrap">{{ p.post.assigned?.display ?? t('liveMap.posts.notAssigned') }}</span></td>
+            <th scope="row">
+              <ActionButton text type="primary" :label="p.post.station" data-testid="open-post" @click="emit('workplace', p.post.workplace_id)" />
+            </th>
+            <td>
+              <ActionButton v-if="p.post.assigned" text type="primary" :label="p.post.assigned.display" data-testid="open-person" @click="emit('person', p.post.assigned.person_id)" />
+              <span v-else class="ant-wrap">{{ t('liveMap.posts.notAssigned') }}</span>
+            </td>
             <td>
               <NTag size="small" :bordered="false" :type="presenceTagType(p.post.presence)"><span class="ant-wrap">{{ t(PRESENCE_TEXT[p.post.presence]) }}</span></NTag>
             </td>
@@ -110,7 +121,17 @@ const qualType = (s: string) => (s === 'valid' ? 'success' : s === 'expiring' ? 
         <tbody>
           <tr v-for="e in equipment" :key="e.id" :data-equipment="e.id">
             <th scope="row">
-              <span class="ant-wrap">{{ e.title }}</span>
+              <!-- Оборудование поста — окно поста: кто на нём работал (история поста). -->
+              <ActionButton
+                v-if="e.state?.station_id"
+                text
+                type="primary"
+                :label="e.title"
+                :hint="t('widgets.shopFloor.people.equipmentHistory')"
+                data-testid="open-equipment-post"
+                @click="emit('workplace', e.state!.station_id!)"
+              />
+              <span v-else class="ant-wrap">{{ e.title }}</span>
               <template v-if="e.state">
                 <p v-for="w in e.state.warnings" :key="`${w.kind}-${w.since}`" class="warning ant-clamp-2" :title="w.text" data-testid="equipment-warning">{{ w.text }}</p>
               </template>

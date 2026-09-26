@@ -32,6 +32,9 @@ const props = withDefaults(
     performers: readonly Candidate[]
     inspectors: readonly Candidate[]
     personName: (id: string) => string
+    /** Почему назначить нельзя — словами (нет доступа к сотрудникам, смена не выбрана, нет допущенных); null — можно. */
+    performerBlocked?: string | null
+    inspectorBlocked?: string | null
     canAct?: boolean
     busy?: boolean
     error?: unknown
@@ -39,7 +42,7 @@ const props = withDefaults(
     result?: string | null
     density?: Density
   }>(),
-  { shiftsError: undefined, rowsError: undefined, assignmentsError: undefined, canAct: true, busy: false, error: undefined, result: null, density: 'comfortable' },
+  { shiftsError: undefined, rowsError: undefined, assignmentsError: undefined, performerBlocked: null, inspectorBlocked: null, canAct: true, busy: false, error: undefined, result: null, density: 'comfortable' },
 )
 const emit = defineEmits<{
   'update:shiftId': [id: string]
@@ -153,6 +156,7 @@ function confirmClear(a: AccessAssignment): void {
               class="picker"
               :size="size"
               :options="performerOptions"
+              :disabled="!!performerBlocked"
               :placeholder="t('access.assignToPost')"
               filterable
               clearable
@@ -168,6 +172,7 @@ function confirmClear(a: AccessAssignment): void {
               @click="emit('assign', r.post.workplace_id, 'performer', pick[r.post.workplace_id]!, null)"
             />
           </ToolBar>
+          <p v-if="canAct && performerBlocked" class="blocked ant-wrap" data-testid="performer-blocked">{{ performerBlocked }}</p>
 
           <!-- Контролёр: запрос мастера → согласование начальника ОТК (PRD §11.18). -->
           <div class="line" data-testid="inspectors">
@@ -185,6 +190,7 @@ function confirmClear(a: AccessAssignment): void {
               class="picker"
               :size="size"
               :options="inspectorOptions"
+              :disabled="!!inspectorBlocked"
               :placeholder="t('widgets.shopFloor.shift.inspectorPick')"
               filterable
               clearable
@@ -213,6 +219,7 @@ function confirmClear(a: AccessAssignment): void {
               />
             </template>
           </ToolBar>
+          <p v-if="canAct && inspectorBlocked" class="blocked ant-wrap" data-testid="inspector-blocked">{{ inspectorBlocked }}</p>
         </SectionPanel>
       </div>
     </SectionPanel>
@@ -253,5 +260,10 @@ function confirmClear(a: AccessAssignment): void {
 
 .error {
   color: var(--ant-status-danger-text);
+}
+.blocked {
+  margin: 0;
+  color: var(--ant-status-attention-text);
+  font-size: var(--ant-fs-meta);
 }
 </style>

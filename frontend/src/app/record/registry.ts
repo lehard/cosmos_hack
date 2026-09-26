@@ -20,6 +20,8 @@
  *   решение» (id — изделие): окно решения на точке предъявления — «тогда |
  *   сейчас» для пересмотра, результаты методов, действия с последствиями
  *   сервера, подпись (UI-28, Д-81); паспорт — ссылкой;
+ * - `operation` — операция участка (id — шаг процесса): «Участок» мастера, тревоги
+ *   «аномалия узла»: что на операции, что от мастера нужно, изделия, посты (UI-42);
  * - `document` — строки реестра документов (раздел «Документы»): маршрут
  *   подписей, содержимое, версии, «Подписать / Отказать / Печать с QR / Скачать».
  * - `extract`, `partner` — строки раздела «Партнёры и выписки» (эпик 41, FR-131,
@@ -44,6 +46,7 @@ export const recordKinds: Record<string, RecordKindDefinition> = {
   integration: { load: () => import('./kinds/IntegrationRecord.vue') },
   document: { load: () => import('./kinds/DocumentRecord.vue') },
   presentation: { load: () => import('./kinds/PresentationRecord.vue') },
+  operation: { load: () => import('./kinds/OperationRecord.vue') },
   extract: { load: () => import('./kinds/ExtractRecord.vue') },
   partner: { load: () => import('./kinds/PartnerRecord.vue') },
 }
