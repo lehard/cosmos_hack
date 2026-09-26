@@ -23,6 +23,9 @@ type Listener struct {
 	mu      sync.Mutex
 	head    int64
 	changed chan struct{}
+	// progress закрывается и заменяется при любом движении журнала: новая
+	// голова или сдвиг курсора потребителя (ProgressChannel, эпик 16).
+	progress chan struct{}
 }
 
 // NewListener создаёт слушателя; запускается Run.
@@ -30,7 +33,27 @@ func NewListener(pool *pgxpool.Pool, log *slog.Logger) *Listener {
 	if log == nil {
 		log = slog.Default()
 	}
-	return &Listener{pool: pool, log: log, changed: make(chan struct{})}
+	return &Listener{pool: pool, log: log, changed: make(chan struct{}), progress: make(chan struct{})}
+}
+
+// Progress — канал, который закроется при следующем движении журнала: новой
+// голове основной цепочки или сдвиге курсора потребителя. Берётся до
+// проверки условия — сигнал между проверкой и ожиданием не теряется.
+func (l *Listener) Progress() <-chan struct{} {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return l.progress
+}
+
+func (l *Listener) bump() {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.bumpLocked()
+}
+
+func (l *Listener) bumpLocked() {
+	close(l.progress)
+	l.progress = make(chan struct{})
 }
 
 var _ app.Signal = (*Listener)(nil)
@@ -68,6 +91,7 @@ func (l *Listener) advance(seq int64) {
 	l.head = seq
 	close(l.changed)
 	l.changed = make(chan struct{})
+	l.bumpLocked()
 }
 
 // Run слушает канал до отмены ctx, переподключаясь после обрыва (пауза —
@@ -100,16 +124,26 @@ func (l *Listener) listen(ctx context.Context) error {
 	if _, err := conn.Exec(ctx, "LISTEN "+NotifyChannel); err != nil {
 		return err
 	}
+	if _, err := conn.Exec(ctx, "LISTEN "+ProgressChannel); err != nil {
+		return err
+	}
 	// Сначала LISTEN, потом голова: сигнал между ними не теряется.
 	var seq int64
 	if err := conn.QueryRow(ctx, "SELECT COALESCE(MAX(seq), 0) FROM journal.entries WHERE chain = 'main'").Scan(&seq); err != nil {
 		return err
 	}
 	l.advance(seq)
+	// После (пере)подключения сигналы курсоров могли потеряться: ждущие
+	// перепроверяют условие.
+	l.bump()
 	for {
 		n, err := conn.WaitForNotification(ctx)
 		if err != nil {
 			return err
+		}
+		if n.Channel == ProgressChannel {
+			l.bump()
+			continue
 		}
 		seq, err := strconv.ParseInt(n.Payload, 10, 64)
 		if err != nil {

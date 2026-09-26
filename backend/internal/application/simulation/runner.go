@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	appjournal "ant/internal/application/journal"
 	sim "ant/internal/domain/simulation"
 )
 
@@ -93,6 +94,7 @@ func (s *Service) Step(ctx context.Context, runID string) error {
 	if fast {
 		target = rp.plan.End
 	}
+	afterAction := true
 	for budget := s.d.Batch; budget > 0; budget-- {
 		due := sim.NextDue(rp.plan, rp.points, st.Cursor)
 		if due.At.After(target) {
@@ -105,6 +107,14 @@ func (s *Service) Step(ctx context.Context, runID string) error {
 		}
 		switch due.Kind {
 		case sim.DueEmissions:
+			// После решения человека (регистрация, носитель) привязка события
+			// по носителю (AD-41) должна видеть его результат: сначала движок
+			// догоняет журнал (эпик 16). Между доставками — без ожидания:
+			// пачки остаются пачками, неоднозначную привязку доделывает стадия.
+			if afterAction {
+				s.settle(ctx, st)
+				afterAction = false
+			}
 			if err := s.deliver(ctx, st, rp, due.From, due.To); err != nil {
 				return s.fail(ctx, st, err)
 			}
@@ -118,6 +128,7 @@ func (s *Service) Step(ctx context.Context, runID string) error {
 				return s.fail(ctx, st, err)
 			}
 			st.Cursor.Actions = due.Index + 1
+			afterAction = true
 		case sim.DuePoint:
 			s.evaluate(ctx, st, rp, rp.points[due.Index])
 			st.Cursor.Points = due.Index + 1
@@ -178,6 +189,10 @@ func (s *Service) action(ctx context.Context, st *RunState, rp *runPlan, i int) 
 	case sim.ActionTamper:
 		return s.tamper(ctx, st, rp, a, key)
 	}
+	// Решение человека и поиск объектов системы ({ref:…}) — по состоянию
+	// после обработки всего доставленного (эпик 16: иначе команда видит
+	// изделие без только что пришедших событий).
+	s.settle(ctx, st)
 	if st.Mode == ModeInteractive && a.Stop && st.Waiting == nil {
 		// FR-129: сценарий ждёт решения на столе роли; часы стоят.
 		obj := ""
@@ -198,6 +213,17 @@ func (s *Service) action(ctx context.Context, st *RunState, rp *runPlan, i int) 
 	}
 	s.decide(ctx, st, rp, a, key)
 	return nil
+}
+
+// settle — дождаться, пока воркер и стадия обработают доставленное прогоном
+// (порт Settler); без порта или по сроку — как есть.
+func (s *Service) settle(ctx context.Context, st *RunState) {
+	if s.d.Settler == nil {
+		return
+	}
+	if err := s.d.Settler.Settle(ctx, st.RunID); err != nil && s.d.Log != nil {
+		s.d.Log.Warn("прогон: движок не догнал журнал — продолжаю", "run_id", st.RunID, "err", err)
+	}
 }
 
 // waitDone — решение человека принято на столе роли: прогон продолжается.
@@ -235,7 +261,13 @@ func stepKey(a sim.Action) string {
 // AD-26): подписывается только шаг из определения — с его параметрами и телом.
 func (s *Service) decide(ctx context.Context, st *RunState, rp *runPlan, a sim.Action, key string) {
 	res := StepResult{Operation: a.Operation, At: a.At}
-	defer func() { st.Steps[key] = res }()
+	defer func() {
+		st.Steps[key] = res
+		if s.d.Log != nil && (res.Status == "failed" || res.Status == "skipped") {
+			s.d.Log.Warn("прогон: шаг не выполнен", "run_id", st.RunID, "step", key, "operation", a.Operation,
+				"status", res.Status, "refusal", res.Refusal, "detail", res.Detail)
+		}
+	}()
 	if s.d.Actor == nil {
 		res.Status, res.Detail = "skipped", "нет порта решений (demo-signer)"
 		return
@@ -250,7 +282,9 @@ func (s *Service) decide(ctx context.Context, st *RunState, rp *runPlan, a sim.A
 		res.Status, res.Detail = "skipped", err.Error()
 		return
 	}
-	out, err := s.d.Actor.Act(ctx, a.Actor, a.Operation, params, body)
+	// Прогон в контексте команды (AD-38): факты и решения демо-подписанта
+	// принадлежат прогону, доменное «сейчас» — часы прогона (AD-37).
+	out, err := s.d.Actor.Act(appjournal.WithRun(ctx, st.RunID), a.Actor, a.Operation, params, body)
 	switch {
 	case errors.Is(err, ErrUnavailable):
 		res.Status, res.Detail = "skipped", "операция "+a.Operation+" пока не отвечает (модуль в работе)"
@@ -267,7 +301,7 @@ func (s *Service) decide(ctx context.Context, st *RunState, rp *runPlan, a sim.A
 			res.Detail = "ожидался отказ " + a.Refusal
 		}
 	case out.Code != "":
-		res.Status, res.Refusal, res.Detail = "failed", out.Code, "команда отклонена"
+		res.Status, res.Refusal, res.Detail = "failed", out.Code, strings.TrimSpace("команда отклонена: "+out.Detail)
 	case a.Refusal != "":
 		res.Status, res.Detail = "failed", "ожидался отказ "+a.Refusal+", команда принята"
 	default:

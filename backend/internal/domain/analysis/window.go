@@ -35,6 +35,8 @@ func (s StageState) onViolationWindow(r kernel.Record) (StageState, []kernel.Add
 			continue
 		}
 		matched = true
+		inc.Windows = appendUnique(slices.Clone(inc.Windows), r.EventID)
+		s.Incidents[id] = inc
 		var changed []string
 		for _, it := range items {
 			changed = append(changed, inc.AutoAdd(it, StatusSuspect, "")...)
@@ -55,7 +57,8 @@ func (s StageState) onViolationWindow(r kernel.Record) (StageState, []kernel.Add
 		return s, out
 	}
 	inc := Incident{ID: IncidentID(r.EventID), Label: "Нарушение режима " + eq, Factor: FactorMachine, Value: eq, StepKey: step,
-		Factors: []FactorRef{{FactorMachine, eq}}, WindowStart: start, WindowEnd: end, Members: map[string]Member{}}
+		Factors: []FactorRef{{FactorMachine, eq}}, WindowStart: start, WindowEnd: end, Members: map[string]Member{},
+		Windows: []string{r.EventID}}
 	for _, it := range items {
 		inc.Members[it] = Member{Status: StatusSuspect, Action: ActionCheck}
 	}
@@ -67,4 +70,27 @@ func (s StageState) onViolationWindow(r kernel.Record) (StageState, []kernel.Add
 	out = append(out, s.version(&inc, ChangeComputed, "", slices.Sorted(maps.Keys(inc.Members)), nil, []string{r.EventID}, r)...)
 	s.Incidents[inc.ID] = inc
 	return s, out
+}
+
+// onWindowNC — несоответствие окна нарушения спецпроцесса
+// (decision.nonconformity.registered — функция-намерение nonconformity в
+// шаге machinelogs того же прохода, FR-151; стык эпиков 21 и 22, эпик 16):
+// несоответствие добавляется в инцидент, который это окно открыло или
+// расширило, — вход разбора обстоятельств и гипотез. Область не меняется:
+// изделие уже в ней «под подозрением» по окну.
+func (s StageState) onWindowNC(r kernel.Record) (StageState, []kernel.Addressed) {
+	d, err := kernel.Decode[ev.DecisionNonconformityRegisteredV1](r)
+	if err != nil || d.NcID == "" || d.ViolationWindowEventID == "" {
+		return s, nil
+	}
+	nc, win := string(d.NcID), string(d.ViolationWindowEventID)
+	for _, id := range slices.Sorted(maps.Keys(s.Incidents)) {
+		inc := s.Incidents[id]
+		if inc.Closed || !slices.Contains(inc.Windows, win) || slices.Contains(inc.NCs, nc) {
+			continue
+		}
+		inc.NCs = appendUnique(slices.Clone(inc.NCs), nc)
+		s.Incidents[id] = inc
+	}
+	return s, nil
 }

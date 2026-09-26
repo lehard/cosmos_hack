@@ -424,3 +424,24 @@ func mustJSON(t *testing.T, v any) []byte {
 	}
 	return b
 }
+
+// Эпик 16: команда начала операции согласована со свёрткой — токен на шаге
+// без своих данных (подготовка кромок без факта) догоняется до операции, как
+// догнал бы его факт operation.run.started; через точку предъявления — нет.
+func TestStartGuardCatchesUpLikeFold(t *testing.T) {
+	w := newWorld(t)
+	w.register(0)
+	s, _ := w.fold()
+	wantSteps(t, s, "welding.edge_prep")
+	err := Guard(s, w.env, Upstream{}, kernel.Command{Action: "process.operation.start", OccurredAt: at(5),
+		Payload: StartCommand{StepKey: "welding.weld", RunID: "W-1", OperatorID: "WLD-01"}})
+	if err != nil {
+		t.Fatalf("начало сварки после шага без данных: %v", err)
+	}
+	wantSteps(t, s, "welding.edge_prep") // гард состояние не меняет
+	err = Guard(s, w.env, Upstream{}, kernel.Command{Action: "process.operation.start", OccurredAt: at(5),
+		Payload: StartCommand{StepKey: "assembly.cover", RunID: "A-1"}})
+	if err == nil {
+		t.Fatal("операция за точкой предъявления без подписи принята")
+	}
+}

@@ -106,9 +106,7 @@ func (rp *runPlan) index() {
 
 // evaluate — проверка точки: строки табло (или значения «до») теми же операциями API.
 func (s *Service) evaluate(ctx context.Context, st *RunState, rp *runPlan, p sim.Point) {
-	if s.d.Settler != nil {
-		_ = s.d.Settler.Settle(ctx, st.RunID)
-	}
+	s.settle(ctx, st)
 	for _, i := range rp.byPoint[p.Index] {
 		r := rp.rows[i]
 		if p.Baseline {

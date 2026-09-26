@@ -47,6 +47,16 @@ type Deps struct {
 	Calendar Calendar
 	// Now — InfraClock для received_at (AD-37); nil — time.Now.
 	Now func() time.Time
+	// Authorities — полномочия сотрудника по политике (FR-19: решение на
+	// точке предъявления подписывает обладатель полномочия точки,
+	// process State.Gates[step].Authority); nil — без проверки.
+	Authorities AuthorityCheck
+}
+
+// AuthorityCheck — есть ли у сотрудника person полномочие authority
+// (normative/policy grants.authorities; эпик 26 — из журнала политики).
+type AuthorityCheck interface {
+	HasAuthority(person, authority string) bool
 }
 
 // Config — параметры модуля.

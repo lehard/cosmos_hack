@@ -95,7 +95,7 @@ func (w JournalWriter) Write(ctx context.Context, owner kernel.Module, recs []Re
 			id = kernel.UUIDv5(cmdID, string(d.Type)+"\x1f"+d.Stream)
 		}
 		ids = append(ids, id)
-		pend, err := w.pending(d, info, id, cmdID, now())
+		pend, err := w.pending(d, info, id, cmdID, now(), appjournal.RunFrom(ctx))
 		if err != nil {
 			return platform.Receipt{}, err
 		}
@@ -126,7 +126,9 @@ func (w JournalWriter) Write(ctx context.Context, owner kernel.Module, recs []Re
 	return rc, nil
 }
 
-func (w JournalWriter) pending(d Record, info catalog.Info, id, cmdID string, received time.Time) (appjournal.Pending, error) {
+// pending — запись и конверт; run — прогон сценария из контекста команды
+// (AD-38: всё, что прогон меняет, — записи прогона с run_id; эпик 16).
+func (w JournalWriter) pending(d Record, info catalog.Info, id, cmdID string, received time.Time, run string) (appjournal.Pending, error) {
 	data, err := json.Marshal(d.Data)
 	if err != nil {
 		return appjournal.Pending{}, err
@@ -158,6 +160,9 @@ func (w JournalWriter) pending(d Record, info catalog.Info, id, cmdID string, re
 	if d.ItemID != "" {
 		env["item_id"] = d.ItemID
 	}
+	if run != "" {
+		env["run_id"] = run
+	}
 	canon, err := engine.Canonical(env)
 	if err != nil {
 		return appjournal.Pending{}, err
@@ -180,6 +185,10 @@ func (w JournalWriter) pending(d Record, info catalog.Info, id, cmdID string, re
 	if d.Meta.BasisSeq > 0 {
 		b := int(d.Meta.BasisSeq)
 		e.BasisSeq = &b
+	}
+	if run != "" {
+		e.RunID = &run
+		e.ProvenanceClass = jc.JournalEntryProvenanceClassScenario
 	}
 	return appjournal.Pending{Entry: e, Envelope: sealed}, nil
 }

@@ -8,7 +8,6 @@ import (
 	engineapp "ant/internal/application/engine"
 	domdocs "ant/internal/domain/documents"
 	storagedocs "ant/internal/infrastructure/storage/documents"
-	"ant/internal/infrastructure/storage/journal/clock"
 )
 
 // Модуль documents (эпик 28): документы — детерминированные проекции журнала
@@ -47,7 +46,7 @@ func documentsLive(ctx context.Context, env *environment) (*documentsapp.Service
 	return documentsapp.NewService(
 		documentsapp.WithDeps(documentsapp.Deps{
 			Journal: c.journal, Codec: c.codec, Bundles: c.bundleSource(), Env: c.docsEnv,
-			DomainClock: clock.NewJournal(c.journal), Now: c.codec.Now,
+			DomainClock: c.domainClock(), Now: c.codec.Now,
 		}),
 		documentsapp.WithConfig(documentsapp.Config{DomainBuild: c.codec.DomainBuild, Partitions: env.cfg.Engine.Partitions}),
 	), nil

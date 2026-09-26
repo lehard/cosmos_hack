@@ -106,7 +106,7 @@ steps:
       processing_state: completed
       analyzer_confidence_bp: 9600
       observation_quality_bp: 9400
-      versions: {analyzer_version: "vqc-edge 1.4.0", contract_version: "1.0", recipe_ref: "KT-2@3", item_revision: "Б"}
+      versions: {analyzer_version: "vqc-edge 1.4.0", contract_version: "1.0", recipe_ref: "kt2-oblique@1", item_revision: "Б"}
   - {at: "2026-09-18T10:40:00+03:00", ref: Е-18, route: "F-001:cmm", note: "КИМ: 5 размеров в допуске; номер фланца считан с кода"}
   - {at: "2026-09-18T11:00:00+03:00", ref: Е-19, route: "F-001:zt2_presented,zt2", note: "ЗТ-2: принять и передать; маркировка сверена"}
   - {at: "2026-09-21T07:50:00+03:00", ref: "Е-30, Е-31", route: "F-001:sent_to_welding,received_welding", note: "Отправлено и принято сварочным цехом: повреждений нет → 1С «перемещение МЦ → СЦ»"}
@@ -132,7 +132,7 @@ steps:
       processing_state: completed
       analyzer_confidence_bp: 9500
       observation_quality_bp: 9300
-      versions: {analyzer_version: "vqc-weld 2.3.1", contract_version: "1.0", recipe_ref: "KT-3@5", camera_config: "angle-1", item_revision: "Б"}
+      versions: {analyzer_version: "vqc-weld 2.3.1", contract_version: "1.0", recipe_ref: "kt3-weld@1", camera_config: "angle-1", item_revision: "Б"}
   - at: "2026-09-21T09:50:05+03:00"
     ref: Е-44
     label: F-001/kt3-b
@@ -143,7 +143,7 @@ steps:
     data:
       <<: *kt3clean
       observation_id: "{local:KT3-F-001-B}"
-      versions: {analyzer_version: "vqc-weld 2.3.1", contract_version: "1.0", recipe_ref: "KT-3@5", camera_config: "angle-2", item_revision: "Б"}
+      versions: {analyzer_version: "vqc-weld 2.3.1", contract_version: "1.0", recipe_ref: "kt3-weld@1", camera_config: "angle-2", item_revision: "Б"}
   - {at: "2026-09-21T13:00:00+03:00", ref: Е-45, route: "F-001:xray", note: "Заключение рентгена РК-0921-01: дефектов нет"}
   - {at: "2026-09-21T14:00:00+03:00", ref: Е-47, route: "F-001:zt3_presented,zt3", note: "ЗТ-3: годно"}
   - {at: "2026-09-21T16:00:00+03:00", ref: "Е-30, Е-31", route: "F-001:sent_to_assembly,received_assembly", note: "В сборочный цех → 1С «перемещение СЦ → СИЦ»"}
@@ -188,7 +188,7 @@ steps:
       processing_state: completed
       analyzer_confidence_bp: 9500
       observation_quality_bp: 9200
-      versions: {analyzer_version: "vqc-final 1.1.0", contract_version: "1.0", recipe_ref: "KT-5@2", item_revision: "Б"}
+      versions: {analyzer_version: "vqc-final 1.1.0", contract_version: "1.0", recipe_ref: "kt5-final@1", item_revision: "Б"}
   - {at: "2026-09-23T09:40:00+03:00", ref: Е-71, system: "Сводка методов: все КТ и методы с результатом; открытых несоответствий нет"}
   - {at: "2026-09-23T10:15:00+03:00", ref: "Е-72, Е-73", route: "F-001:zt6_presented,zt6", note: "Предъявлено и принято (ЗТ-6): годно, первое предъявление; ОТК-2 + ПЗ-01"}
   - at: "2026-09-23T10:29:00+03:00"

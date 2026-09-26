@@ -1,6 +1,7 @@
 package main
 
 import (
+	domdocs "ant/internal/domain/documents"
 	"reflect"
 	"slices"
 	"testing"
@@ -49,7 +50,7 @@ func TestVerifierBundlesMatch(t *testing.T) {
 		return out
 	}
 	c := &core{bundles: &processapp.Bundles{}, codec: &engineapp.Codec{}}
-	vb, err := enginewire.Bundles(nil, c.codec)
+	vb, err := enginewire.Bundles(nil, c.codec, domdocs.VerificationDemo)
 	if err != nil {
 		t.Fatal(err)
 	}

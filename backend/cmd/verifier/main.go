@@ -42,6 +42,7 @@ import (
 	app "ant/internal/application/security"
 	"ant/internal/application/security/verify"
 	jc "ant/internal/contracts/journal"
+	domdocs "ant/internal/domain/documents"
 	dj "ant/internal/domain/journal"
 	"ant/internal/infrastructure/integration/security/keeper"
 	"ant/internal/infrastructure/observability/logging"
@@ -187,7 +188,7 @@ func open(ctx context.Context, cfg *config.Config, o options, log *slog.Logger) 
 	store := journalstore.NewStore(pool, clock.System{}, opts...)
 	v := &verifier{o: o, log: log, pool: pool, store: store, registry: enginewire.Registry(), parts: cfg.Engine.Partitions}
 	v.codec = &engineapp.Codec{Store: lenient{store}, KeyRef: "verifier@1", Profile: "gost", Partitions: cfg.Engine.Partitions}
-	if v.bundles, err = enginewire.Bundles(pool, v.codec); err != nil {
+	if v.bundles, err = enginewire.Bundles(pool, v.codec, docsVerification(cfg.Profile)); err != nil {
 		return nil, err
 	}
 	if v.signer, err = hybrid.Load(filepath.Join(o.data, "keys"), "verifier"); err != nil {
@@ -344,4 +345,13 @@ func (v *verifier) fromKeeper(ctx context.Context) ([]verify.Checkpoint, map[str
 		}
 	}
 	return out, links, nil
+}
+
+// docsVerification — режим проверки подписей документов, как у воркера
+// (cmd/ant documentsEnv): demo в профилях demo и fixtures, иначе full.
+func docsVerification(profile string) string {
+	if profile == config.ProfileDemo || profile == config.ProfileFixtures {
+		return domdocs.VerificationDemo
+	}
+	return domdocs.VerificationFull
 }

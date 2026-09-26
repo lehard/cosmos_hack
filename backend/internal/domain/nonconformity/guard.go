@@ -8,6 +8,7 @@ import (
 	"ant/internal/contracts/errcodes"
 	"ant/internal/contracts/statuses"
 	"ant/internal/domain/kernel"
+	"ant/internal/domain/process"
 	"ant/internal/domain/quality"
 )
 
@@ -160,6 +161,13 @@ func guardPresentation(s State, env Env, up Upstream, cmd kernel.Command, p Pres
 		if pr.StepKey == p.StepKey && pr.PresentationNo == p.PresentationNo && pr.ResolvedEventID != "" {
 			return refuse(errcodes.NonconformityInvalidTransition, "action", "решение на точке предъявления", "nc_id", s.ItemID,
 				"status", "предъявление №"+strconv.Itoa(p.PresentationNo)+" уже решено")
+		}
+	}
+	// Изделие стоит на точке, приёмка — не при открытом вмешательстве: гард
+	// точки предъявления модуля process над его состоянием (AD-40, эпик 16).
+	if up.Process != nil && env.Process.Def != nil {
+		if err := process.PresentationGuard(*up.Process, env.Process, p.StepKey, p.Resolution); err != nil {
+			return err
 		}
 	}
 	if !accept {

@@ -2,7 +2,7 @@
 #
 # Порядок запуска: secrets-init (пароль БД в том, один раз) → postgres →
 # migrate (разовая роль: схемы journal, engine, ingest, fixtures) → ant (роли api, worker,
-# crossitem, projector в одном процессе — делят пул и LISTEN; фронтенд встроен).
+# crossitem, projector, stands в одном процессе — делят пул и LISTEN; фронтенд встроен).
 # ant входит в БД как ant_admin и работает ролью ant_app (SET ROLE, AD-1).
 # trust-init (разово: ключи хранителя и верификатора, trust-anchors, демо-УЦ
 # mTLS, KEK) → keeper (хранитель контрольных точек, свой том) → verifier
@@ -216,6 +216,8 @@ services:
 
   ant:
     <<: [*ant-image, *ant-common]
+    # stands — stand-ы и раннер прогонов симуляции (эпики 06, 30, 32, 16): пульт
+    # сценариев держит прогоны в памяти процесса api, поэтому в том же процессе.
     # security — эпик 29: головы хранителю, отчёты верификатора, шина безопасности.
     command: ["-role=api,worker,crossitem,projector,scheduler,outbox,stands,security"]
     environment:

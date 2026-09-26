@@ -34,13 +34,18 @@ func init() {
 //	stands.interval (ANT_STANDS_INTERVAL) — период телеметрии (по умолчанию 5s).
 //
 // Stand-ы Галактики, MES и VisionQC (эпики 31–33, 43) добавляются в реестр здесь.
+//
+// Реестр — один на процесс (standsRegistry): его служебный порт сбоев
+// (StandControl) нужен и симуляции, которую собирает роль api.
 func runStands(ctx context.Context, env *environment) error {
 	sc := env.cfg.Stands
 	addr := sc.Addr
 	if addr == "" {
 		addr = ":8491"
 	}
-	reg := stands.NewRegistry()
+	reg := env.standsRegistry()
+	// Раннер прогонов пульта сценариев (эпики 32, 16): сервис собирает роль api.
+	go runSimulation(ctx, env)
 	// Эпик 30 (FR-91, AD-18): stand 1С — OData v3 и HTTP-сервис qc.v1 под
 	// /stand/1c/erp/, страница «глазами 1С» /stand/1c/; состояние — схема
 	// stand_onec (без БД — в памяти). Имя «onec» — то же для сценариев.
@@ -88,6 +93,13 @@ func runStands(ctx context.Context, env *environment) error {
 	sctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	return srv.Shutdown(sctx)
+}
+
+// standsRegistry — реестр stand-ов процесса (один на процесс): роль stands
+// поднимает их протоколы, симуляция включает сбои через StandControl.
+func (e *environment) standsRegistry() *stands.Registry {
+	e.standsOnce.Do(func() { e.standsReg = stands.NewRegistry() })
+	return e.standsReg
 }
 
 // onecStand — stand 1С с состоянием в схеме stand_onec на пуле ядра (роль

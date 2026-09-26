@@ -5,7 +5,6 @@ import (
 
 	analyticsapp "ant/internal/application/analytics"
 	analyticsstore "ant/internal/infrastructure/storage/analytics"
-	"ant/internal/infrastructure/storage/journal/clock"
 )
 
 // analyticsLive — live-показатели (эпик 25, AD-45) на ядре процесса: строки
@@ -19,7 +18,7 @@ func analyticsLive(ctx context.Context, env *environment) (*analyticsapp.Service
 	}
 	return analyticsapp.NewService(
 		analyticsapp.WithStore(analyticsstore.New(c.pool)),
-		analyticsapp.WithClock(clock.NewJournal(c.journal)),
+		analyticsapp.WithClock(c.domainClock()),
 		// Период и срез «смена» — по графику смен справочника (эпик 19, FR-81).
 		analyticsapp.WithShifts(referenceShifts{c.refSource}),
 	), nil

@@ -90,7 +90,11 @@ type JournalRecorder struct {
 	ScenarioClock bool
 	// Now — InfraClock для received_at (AD-37).
 	Now func() time.Time
-	mu  sync.Mutex
+	// DomainBuild — domain_build записи (AD-9, обязателен для journal.Append);
+	// Partition — партиция записей вне изделия (как у приёма: P, вне 0…P-1).
+	DomainBuild string
+	Partition   int
+	mu          sync.Mutex
 }
 
 var _ Recorder = (*JournalRecorder)(nil)
@@ -132,7 +136,8 @@ func (r *JournalRecorder) Record(ctx context.Context, rec Record) (int64, error)
 	run := rec.RunID
 	e := jc.JournalEntry{Chain: jc.JournalEntryChainMain, EntryKind: jc.JournalEntryEntryKindService, EventType: rec.Type,
 		SchemaVersion: 1, EventID: id, SourceID: SourceSimulation, Stream: "run:" + rec.RunID, OccurredAt: occurred,
-		ReceivedAt: sim.FormatTime(now()), CorrelationID: id, ProvenanceClass: jc.JournalEntryProvenanceClassScenario, RunID: &run}
+		ReceivedAt: sim.FormatTime(now()), CorrelationID: id, ProvenanceClass: jc.JournalEntryProvenanceClassScenario, RunID: &run,
+		DomainBuild: r.DomainBuild, Partition: r.Partition}
 	if r.ScenarioClock {
 		e.RecordedAt = occurred
 	}

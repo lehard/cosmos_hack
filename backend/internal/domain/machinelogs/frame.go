@@ -102,7 +102,7 @@ func Reduce(s State, r kernel.Record, env Env, up Upstream) State {
 			return fail(s, r, err.Error())
 		}
 		p.Run = run
-		p.SpecialProcess = env.Special(run.StepKey)
+		p.SpecialProcess = run.IsSpecial(env)
 		return put(s, id, derive(p))
 	case r.Type == catalog.EquipmentEventBound:
 		b, err := decodeBound(r.Data)

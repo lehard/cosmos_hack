@@ -68,7 +68,7 @@ func (c *Ctx) signalView(s SignalView) qualityapp.QualitySignal {
 			{Stage: "где дефект", Version: "vqc-weld 2.3.1", ConfidenceBP: ptr(s.Confidence), OutputNote: "Место: " + zoneTitle(s.Zone)},
 			{Stage: "какой тип", Version: "vqc-weld 2.3.1", ConfidenceBP: ptr(s.Confidence - 300), OutputNote: "Вид: " + defectTitle(s.Kind)},
 		}
-		q.Versions = map[string]string{"contract": "1.0", "analyzer": "vqc-weld 2.3.1", "item_revision": "Б", "recipe": "КТ-3 рецепт 3", "camera": s.Source}
+		q.Versions = map[string]string{"contract": "1.0", "analyzer": "vqc-weld 2.3.1", "item_revision": "Б", "recipe": "kt3-weld@1", "camera": s.Source}
 	}
 	if !s.Closed.After(c.T) {
 		q.State = s.ClosedAs

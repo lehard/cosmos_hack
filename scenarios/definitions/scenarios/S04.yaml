@@ -36,7 +36,7 @@ steps:
       analyzer_confidence_bp: 9100
       observation_quality_bp: 3400
       limitations: ["блик", "зона У6–У7 частично закрыта прижимом"]
-      versions: {analyzer_version: "vqc-weld 2.3.1", contract_version: "1.0", recipe_ref: "KT-3@5", camera_config: "angle-1", item_revision: "Б"}
+      versions: {analyzer_version: "vqc-weld 2.3.1", contract_version: "1.0", recipe_ref: "kt3-weld@1", camera_config: "angle-1", item_revision: "Б"}
   - {at: "2026-09-23T12:40:01+03:00", system: "Производный результат: качество ниже порога рецепта 0,6 → «оценка невозможна» для У6–У7; исходное сообщение не меняется"}
   - at: "2026-09-23T12:45:00+03:00"
     ref: Е-92

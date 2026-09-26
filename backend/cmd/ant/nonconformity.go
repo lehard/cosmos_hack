@@ -4,9 +4,9 @@ import (
 	"context"
 
 	"ant/cmd/internal/config"
+	accessapp "ant/internal/application/access"
 	nonconformityapp "ant/internal/application/nonconformity"
 	referenceapp "ant/internal/application/reference"
-	"ant/internal/infrastructure/storage/journal/clock"
 )
 
 // nonconformityLive — live-реализация ведущих портов nonconformity для роли
@@ -19,7 +19,7 @@ import (
 // (эпик 28) в профилях demo и fixtures — разрешающая заглушка DemoRoutes
 // (решение помечено approvals_status = demo_stub), иначе — PendingRoutes
 // (решение не исполняется до document.route.closed).
-func nonconformityLive(ctx context.Context, env *environment) (*nonconformityapp.Service, error) {
+func nonconformityLive(ctx context.Context, env *environment, dir *accessapp.Directory) (*nonconformityapp.Service, error) {
 	c, err := env.core(ctx)
 	if err != nil {
 		return nil, err
@@ -28,15 +28,21 @@ func nonconformityLive(ctx context.Context, env *environment) (*nonconformityapp
 	if env.cfg.Profile == config.ProfileDemo || env.cfg.Profile == config.ProfileFixtures {
 		routes = nonconformityapp.DemoRoutes{}
 	}
+	var auth nonconformityapp.AuthorityCheck
+	if dir != nil {
+		auth = dir // полномочия точки предъявления — по политике (FR-19)
+	}
 	return nonconformityapp.NewService(
 		nonconformityapp.WithDeps(nonconformityapp.Deps{
 			Journal: c.journal, Codec: c.codec, Bundles: c.bundleSource(), // та же версия, что у воркера
-			DomainClock: clock.NewJournal(c.journal), Routes: routes, Now: c.codec.Now,
+			DomainClock: c.domainClock(), Routes: routes, Now: c.codec.Now, Authorities: auth,
 			// Срок решения — по производственному календарю справочника (эпик 19, FR-55).
 			Calendar: referenceapp.WorkingCalendar{Source: c.refSource},
 		}),
 		nonconformityapp.WithConfig(nonconformityapp.Config{
 			DomainBuild: c.codec.DomainBuild, Partitions: env.cfg.Engine.Partitions,
+			// Профиль demo: recorded_at решения — доменное «сейчас» сценария (AD-37).
+			ScenarioClock: scenarioClock(env.cfg),
 		}),
 	), nil
 }

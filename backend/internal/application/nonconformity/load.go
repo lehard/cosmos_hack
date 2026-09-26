@@ -138,6 +138,7 @@ func (s *Service) loadItem(ctx context.Context, itemID string, m platform.Moment
 		b.Nonconformity = s.cfg.Env
 	}
 	b.Nonconformity.Quality = b.Quality
+	b.Nonconformity.Process = b.Process
 	v.Env = b.Nonconformity
 	if err := func() (err error) {
 		defer func() {

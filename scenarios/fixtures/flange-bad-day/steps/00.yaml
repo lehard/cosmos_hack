@@ -2397,13 +2397,13 @@ responses:
   - op: machinelogs.violation.list
     body: {"items":[]}
   - op: vision.analyzer.list
-    body: {"items":[{"analyzer_id":"vqc-weld","title":"Визуальный контроль шва (КТ-3)","kind":"visionqc","passport_id":"AP-KT3-3","stage":"active","trust_level":2,"status":"active","versions":{"analyzer":"vqc-weld 2.3.1","contract":"1.0","recipe":"КТ-3 рецепт 3","threshold_profile":"TP-3"}},{"analyzer_id":"ov-asm","title":"Контроль действий оператора на сборке","kind":"operatorvision","passport_id":"AP-OV-1","stage":"pilot","trust_level":1,"status":"active","versions":{"analyzer":"ov-asm 0.9.0","contract":"1.0"}}]}
+    body: {"items":[{"analyzer_id":"vqc-weld","title":"Визуальный контроль шва (КТ-3)","kind":"visionqc","passport_id":"AP-KT3-3","stage":"active","trust_level":2,"status":"active","versions":{"analyzer":"vqc-weld 2.3.1","contract":"1.0","recipe":"kt3-weld@1","threshold_profile":"TP-3"}},{"analyzer_id":"ov-asm","title":"Контроль действий оператора на сборке","kind":"operatorvision","passport_id":"AP-OV-1","stage":"pilot","trust_level":1,"status":"active","versions":{"analyzer":"ov-asm 0.9.0","contract":"1.0"}}]}
   - op: vision.passport.read
     params: {"passport_id":"AP-KT3-3"}
-    body: {"passport_id":"AP-KT3-3","analyzer_id":"vqc-weld","stage":"active","trust_level":2,"recipe_ref":"КТ-3 рецепт 3","versions":{"analyzer":"vqc-weld 2.3.1","contract":"1.0","recipe":"КТ-3 рецепт 3","threshold_profile":"TP-3"},"status":"active","admitted_at":"2026-09-01T06:00:00Z","document_id":"DOC-AP-KT3-3","allowed_auto_actions":["record","protective"],"basis_seq":9999}
+    body: {"passport_id":"AP-KT3-3","analyzer_id":"vqc-weld","stage":"active","trust_level":2,"recipe_ref":"kt3-weld@1","versions":{"analyzer":"vqc-weld 2.3.1","contract":"1.0","recipe":"kt3-weld@1","threshold_profile":"TP-3"},"status":"active","admitted_at":"2026-09-01T06:00:00Z","document_id":"DOC-AP-KT3-3","allowed_auto_actions":["record","protective"],"basis_seq":9999}
   - op: vision.passport.read
     params: {"passport_id":"AP-OV-1"}
-    body: {"passport_id":"AP-OV-1","analyzer_id":"ov-asm","stage":"pilot","trust_level":1,"recipe_ref":"Сборка ФЛ-100: порядок шагов","versions":{"analyzer":"ov-asm 0.9.0","contract":"1.0"},"status":"active","admitted_at":"2026-09-01T06:00:00Z","document_id":"DOC-AP-OV-1","allowed_auto_actions":["record"],"basis_seq":9999}
+    body: {"passport_id":"AP-OV-1","analyzer_id":"ov-asm","stage":"pilot","trust_level":1,"recipe_ref":"ov-asm@1","versions":{"analyzer":"ov-asm 0.9.0","contract":"1.0"},"status":"active","admitted_at":"2026-09-01T06:00:00Z","document_id":"DOC-AP-OV-1","allowed_auto_actions":["record"],"basis_seq":9999}
   - op: vision.check.list
     params: {"passport_id":"AP-KT3-3"}
     body: {"items":[{"event_id":"a24fac00-4159-5f1a-aac4-e272538d9270","passport_id":"AP-KT3-3","check_kind":"reference_set","escape_rate_bp":120,"false_alarm_rate_bp":450,"passed":true,"occurred_at":"2026-08-31T06:00:00Z"}]}
