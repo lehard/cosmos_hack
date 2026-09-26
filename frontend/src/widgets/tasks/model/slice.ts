@@ -28,7 +28,8 @@ export const runOf = (slice: Record<string, unknown>): string | undefined => (ty
  */
 export function ownWorkplaceTasks(tasks: readonly TaskEntry[], workplaceId: string | null | undefined): TaskEntry[] {
   if (!workplaceId) return [...tasks]
-  return tasks.filter((t) => !t.location_id || t.location_id === workplaceId)
+  // Своё место — задачи поста; задачи цеха или участка (не привязанные к другому посту) тоже свои.
+  return tasks.filter((t) => !t.location_id || t.location_id === workplaceId || !t.location_id.startsWith('WP-'))
 }
 
 /** Открытые — сначала просроченные, затем по сроку; закрытые — отдельно, новые сверху. */

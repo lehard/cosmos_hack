@@ -22,6 +22,7 @@ import { elapsedMinutes, normText, operationsOf, overNorm, parseProcessSteps, us
 import { useItemBasis, useItemsAtStep, useOperationCommand, type FinishOperationCompletion } from '@/entities/operation'
 import { useLocations, workshopOf } from '@/entities/reference'
 import { useSession } from '@/entities/session'
+import { useTasks } from '@/entities/task'
 import { useOperatorCommand, usePosts } from '@/entities/workplace'
 import { useDrillDown } from '@/features/drill-down'
 import { WorkplaceAdmission } from '@/features/workplace-admission'
@@ -70,10 +71,17 @@ const runProfile = computed(() => (profileQ.data.value?.data && !profileQ.data.v
 const runItemId = computed(() => runProfile.value?.item_id ?? startedHere.value?.itemId ?? null)
 
 const stepKey = ref<string | null>(null)
+/** Операция, по которой у исполнителя есть открытая задача «Начать», — её и показываем. */
+const tasksQ = useTasks(computed(() => ({})))
+const taskStep = computed(() => {
+  const open = (tasksQ.data.value?.data.items ?? []).filter((t) => t.state === 'open' && t.operation_id === 'process.operation.start')
+  return open.find((t) => t.step_key)?.step_key ?? null
+})
 watch(
-  [() => runProfile.value?.step_key, operations],
-  ([running, ops]) => {
+  [() => runProfile.value?.step_key, operations, taskStep],
+  ([running, ops, fromTask]) => {
     if (running) stepKey.value = running
+    else if (fromTask && ops.some((o) => o.stepKey === fromTask)) stepKey.value = fromTask
     else if (!stepKey.value || !ops.some((o) => o.stepKey === stepKey.value)) stepKey.value = ops[0]?.stepKey ?? null
   },
   { immediate: true },
