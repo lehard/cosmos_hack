@@ -1,5 +1,5 @@
-// Очередь «Ждут моего решения»: точки предъявления, сигналы, изолированные
-// изделия со сроком; порядок по риску или сроку считает сервер; выбор строки
+// Очередь «Ждут моего решения» (UI-25): задачи по группам — сигналы, изолированные
+// изделия со сроком, точки предъявления; порядок по риску или сроку считает сервер; выбор строки
 // открывает запись в правом окне (Д-70); работа с клавиатуры (PRD §3a, FR-55).
 import { flushPromises, mount } from '@vue/test-utils'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
@@ -24,25 +24,41 @@ const mountView = (props = {}) =>
   mount(DecisionQueueView, { props: { rows: queueRows(), sort: 'risk', now: Date.parse(at('11:23')), ...props }, global: { plugins: [pinia, i18n] } })
 
 describe('очередь «Ждут моего решения»', () => {
-  it('строки в порядке сервера: вид, изделие, тяжесть, срок', () => {
-    const rows = mountView().findAll('li.row')
+  it('задачи, а не записи: группы по тому, что нужно сделать, со счётчиком; строки в порядке сервера', () => {
+    const w = mountView()
+    const groups = w.findAll('section.group')
+    expect(groups.map((g) => g.find('.group-title').text())).toEqual([
+      expect.stringContaining('Подтвердить или отклонить сигнал'),
+      expect.stringContaining('Решить, что делать с изделием'),
+      expect.stringContaining('Принять на точке предъявления'),
+    ])
+    expect(groups.map((g) => g.find('[data-testid="group-count"]').text())).toEqual(['1', '1', '1'])
+    expect(groups[1]!.find('[data-testid="group-overdue"]').text()).toBe('просрочено: 1')
+    const rows = w.findAll('li.row')
     expect(rows.map((r) => r.attributes('data-key'))).toEqual(['signal:SIG-77', 'isolated:NC-0139', 'presentation:PR-5'])
-    expect(rows[0]!.text()).toContain('Сигнал на рассмотрение')
+    expect(rows[0]!.text()).toContain('FL-0042')
+    expect(rows[0]!.text()).toContain('Пора в шве · КТ-3')
     expect(rows[0]!.text()).toContain('Тяжесть: Значительный')
     expect(norm(rows[0]!.find('[data-testid="due"]').text())).toBe('Осталось 37 мин')
     expect(rows[1]!.attributes('data-overdue')).toBe('true')
     expect(norm(rows[1]!.find('[data-testid="due"]').text())).toContain('Просрочено на 2 ч 23 мин')
-    expect(rows[2]!.text()).toContain('Точка предъявления')
     expect(rows[2]!.text()).toContain('Предъявление № 2')
     // Тяжесть «неизвестна» — не «малозначительный».
     expect(rows[2]!.text()).toContain('Тяжесть: Неизвестно')
+  })
+
+  it('группы идут в порядке первой своей строки: порядок сервера не теряется', () => {
+    const [a, b, c] = queueRows()
+    const w = mountView({ rows: [c!, a!, { ...b!, kind: 'presentation', object_id: 'PR-6' }] })
+    expect(w.findAll('section.group').map((g) => g.attributes('data-group'))).toEqual(['presentation', 'signal'])
+    expect(w.findAll('li.row').map((r) => r.attributes('data-key'))).toEqual(['presentation:PR-5', 'presentation:PR-6', 'signal:SIG-77'])
   })
 
   it('выбор мышью и с клавиатуры', async () => {
     const w = mountView({ selected: 'signal:SIG-77' })
     await w.findAll('li.row')[2]!.trigger('click')
     expect(w.emitted('select')?.[0]?.[0]).toMatchObject({ object_id: 'PR-5' })
-    await w.find('ol.rows').trigger('keydown', { key: 'ArrowDown' })
+    await w.find('[data-testid="queue-groups"]').trigger('keydown', { key: 'ArrowDown' })
     expect(w.emitted('select')?.[1]?.[0]).toMatchObject({ object_id: 'NC-0139' })
   })
 

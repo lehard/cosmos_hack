@@ -110,6 +110,7 @@ describe('панель решений контролёра', () => {
 
   it('квитанция: номер записи журнала и критического действия', () => {
     const w = mountPanel({ receipt: { command_id: 'c', event_ids: ['e'], replayed: false, seq: 1270, ca_ref: 'CA-312' } })
-    expect(w.find('[data-testid="receipt"]').text()).toBe('Решение записано в журнал: запись № 1270 · CA-312')
+    expect(w.find('[data-testid="receipt"]').text()).toContain('Решение записано')
+    expect(w.find('[data-testid="receipt-ref"]').text()).toBe('Запись журнала № 1270 · CA-312')
   })
 })
