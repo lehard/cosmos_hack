@@ -74,6 +74,7 @@ var Files = [...]string{
 	"contracts/events/document/document.version.requested.v1.json",
 	"contracts/events/equipment/equipment.cycle.summarized.v1.json",
 	"contracts/events/equipment/equipment.deviation.detected.v1.json",
+	"contracts/events/equipment/equipment.event.bound.v1.json",
 	"contracts/events/equipment/equipment.program.changed.v1.json",
 	"contracts/events/equipment/equipment.state.changed.v1.json",
 	"contracts/events/equipment/equipment.state.changed.v2.json",

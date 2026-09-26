@@ -93,9 +93,10 @@
               "program",
               "tool",
               "cycle",
-              "alarm"
+              "alarm",
+              "override"
             ],
-            "description": "Категория."
+            "description": "Категория: режим работы, режим управления, исправность, программа, инструмент, цикл, авария, коррекция режима оператором (override: value — проценты, code — что корректируется: feed, spindle, rapid, current)."
           },
           "value": {
             "type": "string",
@@ -156,6 +157,56 @@
         "cycle_ref",
         "phase"
       ]
+    },
+    "setpoints": {
+      "type": "array",
+      "description": "Уставки параметров выполняемой программы (задание режима: WPS сварки, запрограммированные подача и нагрузка ЧПУ) — сообщает источник в начале цикла; по ним edge-агент выделяет выход за уставку (FR-147).",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Уставка параметра: номинал и границы в масштабе и единице отсчёта.",
+        "properties": {
+          "parameter": {
+            "type": "string",
+            "description": "Параметр (как в отсчётах).",
+            "maxLength": 64
+          },
+          "nominal": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "description": "Номинал, мантисса."
+          },
+          "lower": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "description": "Нижняя граница, мантисса; нет — не ограничена."
+          },
+          "upper": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "description": "Верхняя граница, мантисса; нет — не ограничена."
+          },
+          "scale": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 12,
+            "description": "Масштаб."
+          },
+          "unit": {
+            "type": "string",
+            "description": "Единица UCUM.",
+            "maxLength": 32
+          }
+        },
+        "required": [
+          "parameter",
+          "scale",
+          "unit"
+        ]
+      }
     }
   },
   "required": [
