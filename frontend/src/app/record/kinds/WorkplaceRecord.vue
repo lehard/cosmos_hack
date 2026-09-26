@@ -11,6 +11,8 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
+import { useEquipmentStates } from '@/entities/equipment'
+import { ProcessHoldAction } from '@/features/process-hold'
 import { PRESENCE_TEXT, PRESENCE_TONE, useWorkplaceCard, useWorkplaceHistory, type WorkplaceEvent } from '@/entities/workplace'
 import { useDrillDown } from '@/features/drill-down'
 import { statusPalette } from '@/shared/api/generated/statuses'
@@ -31,6 +33,10 @@ const cardQ = useWorkplaceCard(() => props.id, runId)
 const card = computed(() => cardQ.data.value?.data ?? null)
 
 const history = useWorkplaceHistory(() => props.id, runId)
+
+/** Оборудование этого поста (station_id — пост): остановка — по каждому (FR-49). */
+const equipmentQ = useEquipmentStates()
+const postEquipment = computed(() => (equipmentQ.data.value?.data ?? []).filter((e) => e.station_id === props.id))
 
 /** Основание события: код из словаря — по-русски, текст снятия — как есть. */
 function reasonText(reason: string): string {
@@ -187,10 +193,35 @@ const openItem = (id: string) => drill.open({ entity: 'item', id })
         </template>
       </SectionPanel>
     </div>
+
+    <template v-if="postEquipment.length" #actions>
+      <div class="post-equipment ant-box" data-testid="post-equipment">
+        <div v-for="e in postEquipment" :key="e.equipment_id" class="equipment-row ant-box">
+          <span class="equipment-title ant-ellipsis" :title="e.title">{{ e.title }}</span>
+          <ProcessHoldAction :equipment-id="e.equipment_id" :equipment-title="e.title" />
+        </div>
+      </div>
+    </template>
   </RecordDrawer>
 </template>
 
 <style scoped>
+.post-equipment {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ant-space-3);
+}
+
+.equipment-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ant-space-2);
+}
+
+.equipment-title {
+  font-weight: var(--ant-fw-bold);
+}
+
 .sections {
   display: flex;
   flex-direction: column;
