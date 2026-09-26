@@ -3,7 +3,8 @@
  * Текущее выполнение операции на посту (PRD §3a «длительность операции против
  * нормы», FR-121): профиль выполнения (`machinelogs.run_profile.read`) по
  * `current_run_id` оборудования поста; идёт с записи «операция начата» —
- * минуты против нормы шага из схемы процесса. Сведений нет — «неизвестно».
+ * минуты против нормы шага из схемы процесса. Сведений нет — строки нет
+ * (без стены «нет данных»). Изделие — меткой текущей детали поста, не id.
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -18,6 +19,8 @@ const props = defineProps<{
   steps: ReadonlyMap<string, ProcessStep>
   /** Момент просмотра. */
   at: Date
+  /** Текущая деталь поста — метка для людей вместо внутреннего id. */
+  currentItem?: { item_id: string; label: string } | null
 }>()
 const emit = defineEmits<{ item: [itemId: string] }>()
 const { t } = useI18n()
@@ -25,6 +28,7 @@ const profile = useRunProfile(() => props.runId)
 const run = computed(() => profile.data.value?.data ?? null)
 const step = computed(() => (run.value ? (props.steps.get(run.value.step_key) ?? null) : null))
 const minutes = computed(() => (run.value && !run.value.finished_at ? elapsedMinutes(run.value.started_at, props.at) : null))
+const itemLabel = computed(() => (run.value && props.currentItem?.item_id === run.value.item_id ? props.currentItem.label : t('common.words.item')))
 const over = computed(() => (step.value ? overNorm(minutes.value, step.value.norm) : null))
 </script>
 
@@ -34,9 +38,8 @@ const over = computed(() => (step.value ? overNorm(minutes.value, step.value.nor
     <span v-if="minutes !== null" :class="{ over }">{{ t('widgets.shopFloor.station.runFor', { time: formatMinutes(t, minutes) }) }}</span>
     <span class="ant-muted">{{ normText(t, step?.norm) }}</span>
     <NTag v-if="over" size="small" type="error" :bordered="false">{{ t('widgets.shopFloor.station.overNorm') }}</NTag>
-    <ActionButton v-if="run.item_id" text type="primary" size="small" :label="run.item_id" :hint="t('common.actions.openPassport')" @click="emit('item', run.item_id)" />
+    <ActionButton v-if="run.item_id" text type="primary" size="small" :label="itemLabel" :hint="t('common.actions.openPassport')" @click="emit('item', run.item_id)" />
   </div>
-  <span v-else-if="profile.error.value" class="ant-muted">{{ t('empty.noDataUnknown') }}</span>
 </template>
 
 <style scoped>
