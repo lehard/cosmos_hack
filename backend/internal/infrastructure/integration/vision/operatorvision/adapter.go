@@ -76,6 +76,9 @@ func (*Adapter) Translate(raw []byte) (appvision.Signals, error) {
 	if err != nil {
 		return appvision.Signals{}, err
 	}
+	if err := visionqc.CheckContract("OperatorVision", a.Software); err != nil {
+		return appvision.Signals{}, err
+	}
 	at, err := time.Parse(time.RFC3339Nano, a.CreationTime)
 	if err != nil {
 		return appvision.Signals{}, fmt.Errorf("OperatorVision: creation_time: %w", err)

@@ -106,6 +106,12 @@ func runAPI(ctx context.Context, env *environment) error {
 			return err
 		}
 	}
+	if modeOf(opts, "vision") == platform.ModeLive {
+		// Паспорта допуска анализаторов — над журналом ядра (эпик 33).
+		if opts.vision, err = visionLive(ctx, env); err != nil {
+			return err
+		}
+	}
 	buildAPI(mux, opts)
 	mux.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/problem+json")

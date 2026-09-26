@@ -131,6 +131,11 @@ func TestProtocolStrictAndUnknowns(t *testing.T) {
 	}
 	var m map[string]any
 	_ = json.Unmarshal(raw, &m)
+	m["software"] = map[string]any{"analyzer_version": "vqc-weld 3.0.0", "contract_version": "2.0"}
+	b2, _ := json.Marshal(m)
+	if _, err := visionqc.New(nil).Translate(b2); err == nil || !strings.Contains(err.Error(), "несовместима") {
+		t.Fatalf("контракт 2.0 принят: %v", err)
+	}
 	m["camera_id"] = "CAM-X"
 	delete(m, "configuration")
 	m["software"] = map[string]any{"analyzer_version": "vqc-weld 2.3.1"}

@@ -57,5 +57,6 @@ func runMigrate(ctx context.Context, env *environment) error {
 		return fmt.Errorf("миграции: %w", err)
 	}
 	env.log.Info("миграции: схема актуальна", "postgres", serverVersion, "applied", len(applied), "modules", len(migrationSets))
-	return nil
+	// Эпик 33: стартовые паспорта допуска анализаторов демо (профили demo, fixtures).
+	return seedVisionPassports(ctx, env)
 }

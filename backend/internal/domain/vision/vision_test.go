@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 	"testing"
@@ -40,8 +41,8 @@ func full() Versions {
 func admitted(id string, lvl int, extra map[string]any) map[string]any {
 	d := map[string]any{"passport_id": id, "stage": "active", "trust_level": lvl, "recipe_ref": "kt3-weld@1",
 		"versions": full().Contract(), "document_id": "DOC-" + id}
-	for k, v := range extra {
-		d[k] = v
+	for _, k := range slices.Sorted(maps.Keys(extra)) {
+		d[k] = extra[k]
 	}
 	return d
 }

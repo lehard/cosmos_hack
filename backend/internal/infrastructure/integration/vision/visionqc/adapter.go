@@ -71,6 +71,23 @@ func Decode(raw []byte) (Result, error) {
 	return r, nil
 }
 
+// ContractMajor — мажорная версия протокола, которую понимает адаптер.
+const ContractMajor = "1"
+
+// CheckContract — сверка версии контракта ответной стороны (AD-18): система
+// другой мажорной версии не принимается — сообщение отвергается целиком, а не
+// толкуется наугад. Версия не сообщена — наблюдение идёт с unknown.
+func CheckContract(system string, sw Software) error {
+	v := strings.TrimSpace(sw.ContractVersion)
+	if v == "" {
+		return nil
+	}
+	if major, _, _ := strings.Cut(v, "."); major != ContractMajor {
+		return fmt.Errorf("%s: версия контракта системы %s несовместима с адаптером (%s.x) — канал деградирован, сообщение не принято", system, v, ContractMajor)
+	}
+	return nil
+}
+
 // frameText — помехи кадра по-русски.
 var frameText = map[string]string{"glare": "блик", "blur": "смаз", "out_of_frame": "деталь вне кадра", "dirty_lens": "грязный объектив",
 	"underexposed": "недосвет", "overexposed": "пересвет", "occluded": "зона закрыта"}
@@ -101,6 +118,9 @@ func ItemRef(partID, kind string) *appvision.ItemRef {
 func (a *Adapter) Translate(raw []byte) (appvision.Signals, error) {
 	r, err := Decode(raw)
 	if err != nil {
+		return appvision.Signals{}, err
+	}
+	if err := CheckContract("VisionQC", r.Software); err != nil {
 		return appvision.Signals{}, err
 	}
 	at, err := time.Parse(time.RFC3339Nano, r.CreationTime)

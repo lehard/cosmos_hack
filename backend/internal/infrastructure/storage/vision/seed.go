@@ -25,7 +25,11 @@ func Seed() fs.FS {
 }
 
 // PassportsSeed — стартовые паспорта допуска демо (AD-29, AD-33).
-func PassportsSeed() (normative.AnalyzerPassportsSeed, error) { return appvision.LoadPassportsSeed(Seed()) }
+func PassportsSeed() (normative.AnalyzerPassportsSeed, error) {
+	return appvision.LoadPassportsSeed(Seed())
+}
 
 // Illustrations — каталог иллюстраций открытых наборов (FR-102).
-func Illustrations() (normative.IllustrationsCatalog, error) { return appvision.LoadIllustrations(Seed()) }
+func Illustrations() (normative.IllustrationsCatalog, error) {
+	return appvision.LoadIllustrations(Seed())
+}

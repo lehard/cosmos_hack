@@ -51,8 +51,7 @@
       "enum": [
         "internal",
         "datamatrix",
-        "qr",
-        "rfid"
+        "qr"
       ],
       "description": "Чем является part_id: внутренний ID изделия или значение носителя."
     },

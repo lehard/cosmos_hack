@@ -107,6 +107,8 @@ type apiOptions struct {
 	// analytics — live-показатели над строками вклада ядра (analytics.go);
 	// nil — без хранилища (операции 501).
 	analytics *analyticsapp.Service
+	// vision — live-реализация vision над журналом ядра (vision.go, эпик 33); nil — 501.
+	vision *visionapp.Service
 }
 
 // buildAPI собирает HTTP API: общий декоратор (Gate) над портами прав и входа,
@@ -196,7 +198,11 @@ func buildAPI(mux *http.ServeMux, o apiOptions) *httpapi.API {
 		machinelogshttp.Register(a, q, c)
 	}
 	{
-		q, c := pick[visionapp.Queries, visionapp.Commands](a.ModeFor("vision"), visionapp.NewService(), visionfx.New())
+		live := o.vision
+		if live == nil {
+			live = visionapp.NewService()
+		}
+		q, c := pick[visionapp.Queries, visionapp.Commands](a.ModeFor("vision"), live, visionfx.New())
 		visionhttp.Register(a, q, c)
 	}
 	{
