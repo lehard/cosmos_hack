@@ -39,7 +39,7 @@ steps:
     versions:
       analyzer_version: vqc-weld 2.3.1
       contract_version: '1.0'
-      recipe_ref: KT-3@5
+      recipe_ref: kt3-weld@1
       camera_config: angle-1
       item_revision: Б
   skew: +5m
@@ -63,7 +63,7 @@ steps:
     versions:
       analyzer_version: vqc-weld 2.3.1
       contract_version: '1.0'
-      recipe_ref: KT-3@5
+      recipe_ref: kt3-weld@1
       camera_config: angle-1
       item_revision: Б
   skew: +5m

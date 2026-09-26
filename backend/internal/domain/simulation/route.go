@@ -66,7 +66,7 @@ func (g *gen) ordersAndLots() {
 				"observation_id": "{local:KT1-" + l.ID + "}", "method": "camera", "phase": "incoming", "inspection_point": "KT-1",
 				"step_key": "incoming.kt1_camera", "lot_id": "{local:" + l.ID + "}", "outcome": "no_defect_indicated",
 				"processing_state": "completed", "analyzer_confidence_bp": 9400, "observation_quality_bp": 9000,
-				"versions": map[string]any{"analyzer_version": "vqc-surface 1.2.0", "contract_version": "1.0", "recipe_ref": "KT-1@2"}}})
+				"versions": map[string]any{"analyzer_version": "vqc-surface 1.2.0", "contract_version": "1.0", "recipe_ref": "kt1-camera@1"}}})
 		g.act(Action{Kind: ActionDecision, At: acc, Scenario: "route", Label: "lot/" + l.ID + "/zt1",
 			Operation: "nonconformity.lot.resolve", Role: "quality_inspector", Actor: g.ids.Person(w.Route.QCFinal), Params: lotParam,
 			Body: map[string]any{"resolution": "accept", "accepted_quantity": l.Quantity,
@@ -369,7 +369,7 @@ func (g *gen) item(p *ItemPlan) {
 			d.carrier = "tag"
 		case "kt2":
 			inspect(s, t, "cam-kt2", "camera", "after_operation", "machining.kt2_camera", "KT-2", run("MO"), []any{g.ids.Zone("EDGE")},
-				camera("KT-2@3", "vqc-edge 1.4.0", rnd.Between(9400, 9800), rnd.Between(9000, 9600)))
+				camera("kt2-oblique@1", "vqc-edge 1.4.0", rnd.Between(9400, 9800), rnd.Between(9000, 9600)))
 		case "cmm":
 			inspect(s, t, "cmm-1", "cmm", "after_operation", "machining.kt2_cmm", "", run("MO"), nil, map[string]any{
 				"inspector_id": g.ids.Person(r.CMMOperator), "measurements": cmmMeasurements(rnd)})
@@ -403,7 +403,7 @@ func (g *gen) item(p *ItemPlan) {
 			g.weldEvents(p, t, ln, run("SV"), itemParam, rnd)
 		case "kt3":
 			inspect(s, t, "cam-kt3-a", "camera", "after_operation", "welding.kt3_camera", "KT-3", run("SV"), weldZones,
-				camera("KT-3@5", "vqc-weld 2.3.1", rnd.Between(9300, 9700), rnd.Between(8800, 9500)))
+				camera("kt3-weld@1", "vqc-weld 2.3.1", rnd.Between(9300, 9700), rnd.Between(8800, 9500)))
 		case "xray":
 			inspect(s, t, "xray", "radiography", "after_operation", "welding.kt3_radiography", "", run("SV"), weldZones, map[string]any{
 				"inspector_id": g.ids.Person(r.NDT), "conclusion_ref": "РК-" + t.Add(-g.shift).Format("0102") + "-" + n})
@@ -462,7 +462,7 @@ func (g *gen) item(p *ItemPlan) {
 				"method_event_ids": methodEvents(p, "leak")})
 		case "kt5":
 			inspect(s, t, "cam-kt5", "camera", "final", "final.kt5_camera", "KT-5", "", nil,
-				camera("KT-5@2", "vqc-final 1.1.0", rnd.Between(9300, 9700), rnd.Between(8900, 9400)))
+				camera("kt5-final@1", "vqc-final 1.1.0", rnd.Between(9300, 9700), rnd.Between(8900, 9400)))
 		case "zt6_presented":
 			decide(s, t, "item.presentation.record", "site_foreman", r.MasterAC, itemParam,
 				map[string]any{"presentation_no": 1, "presented_to": "customer_representative", "step_key": "final.zt6_acceptance"})
@@ -634,7 +634,7 @@ func (g *gen) assemblyEvents(p *ItemPlan, t time.Time, run func(string) string, 
 	fact("kt4d", t.Add(12*time.Minute), "cam-kt4d", "inspection.result.recorded", withCamera(map[string]any{
 		"observation_id": "{local:KT4D-" + p.ID + "}", "method": "camera", "phase": "before_zone_closure", "step_key": "assembly.kt4d_zone_camera",
 		"inspection_point": "KT-4d", "operation_run_id": run("AS"), "zone_ids": []any{"S-1", "CAV"}, "outcome": "no_defect_indicated",
-		"processing_state": "completed"}, camera("KT-4d@2", "vqc-uv 1.0.3", rnd.Between(9200, 9700), rnd.Between(8800, 9400))))
+		"processing_state": "completed"}, camera("kt4d-uv@1", "vqc-uv 1.0.3", rnd.Between(9200, 9700), rnd.Between(8800, 9400))))
 	var torques []any
 	for b := 1; b <= 12; b++ {
 		torques = append(torques, map[string]any{"characteristic": fmt.Sprintf("Момент затяжки болта %d, Н·м", b),
@@ -658,7 +658,7 @@ func (g *gen) assemblyEvents(p *ItemPlan, t time.Time, run func(string) string, 
 	fact("kt4", t.Add(45*time.Minute), "cam-kt4", "inspection.result.recorded", withCamera(map[string]any{
 		"observation_id": "{local:KT4-" + p.ID + "}", "method": "camera", "phase": "assembly", "step_key": "assembly.kt4_camera",
 		"inspection_point": "KT-4", "operation_run_id": run("AS"), "zone_ids": []any{"J-1"}, "outcome": "no_defect_indicated",
-		"processing_state": "completed"}, camera("KT-4@4", "vqc-asm 3.0.2", rnd.Between(9200, 9700), rnd.Between(8500, 9300))))
+		"processing_state": "completed"}, camera("kt4-assembly@1", "vqc-asm 3.0.2", rnd.Between(9200, 9700), rnd.Between(8500, 9300))))
 	decide("finish", t.Add(55*time.Minute), "process.operation.finish", r.Assembler, map[string]any{"run_id": run("AS")},
 		map[string]any{"completion": "completed"})
 }

@@ -442,10 +442,10 @@ func renderVision(c *Ctx) []loader.Response {
 		return nil
 	}
 	admitted := c.M.clk.at(1, 9, 0)
-	vers := map[string]string{"analyzer": "vqc-weld 2.3.1", "recipe": "КТ-3 рецепт 3", "contract": "1.0", "threshold_profile": "TP-3"}
-	p1 := visionapp.AnalyzerPassport{PassportID: "AP-KT3-3", AnalyzerID: "vqc-weld", Stage: "active", TrustLevel: 2, RecipeRef: "КТ-3 рецепт 3", Versions: vers, Status: "active", AdmittedAt: admitted,
+	vers := map[string]string{"analyzer": "vqc-weld 2.3.1", "recipe": "kt3-weld@1", "contract": "1.0", "threshold_profile": "TP-3"}
+	p1 := visionapp.AnalyzerPassport{PassportID: "AP-KT3-3", AnalyzerID: "vqc-weld", Stage: "active", TrustLevel: 2, RecipeRef: "kt3-weld@1", Versions: vers, Status: "active", AdmittedAt: admitted,
 		DocumentID: "DOC-AP-KT3-3", AllowedAutoActions: []string{"record", "protective"}, BasisSeq: c.Seq()}
-	p2 := visionapp.AnalyzerPassport{PassportID: "AP-OV-1", AnalyzerID: "ov-asm", Stage: "pilot", TrustLevel: 1, RecipeRef: "Сборка ФЛ-100: порядок шагов", Versions: map[string]string{"analyzer": "ov-asm 0.9.0", "contract": "1.0"}, Status: "active", AdmittedAt: admitted,
+	p2 := visionapp.AnalyzerPassport{PassportID: "AP-OV-1", AnalyzerID: "ov-asm", Stage: "pilot", TrustLevel: 1, RecipeRef: "ov-asm@1", Versions: map[string]string{"analyzer": "ov-asm 0.9.0", "contract": "1.0"}, Status: "active", AdmittedAt: admitted,
 		DocumentID: "DOC-AP-OV-1", AllowedAutoActions: []string{"record"}, BasisSeq: c.Seq()}
 	list := visionapp.AnalyzerList{Items: []visionapp.AnalyzerSummary{
 		{AnalyzerID: "vqc-weld", Title: "Визуальный контроль шва (КТ-3)", Kind: "visionqc", PassportID: ptr(p1.PassportID), Stage: ptr("active"), TrustLevel: ptr(2), Status: "active", Versions: vers},

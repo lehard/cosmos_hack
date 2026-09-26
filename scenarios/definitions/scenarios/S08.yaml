@@ -35,7 +35,7 @@ steps:
       analyzer_confidence_bp: 5500
       observation_quality_bp: 8200
       recommendation: manual_review
-      versions: {analyzer_version: "vqc-asm 3.0.2", contract_version: "1.0", recipe_ref: "KT-4@4", item_revision: "Б"}
+      versions: {analyzer_version: "vqc-asm 3.0.2", contract_version: "1.0", recipe_ref: "kt4-assembly@1", item_revision: "Б"}
   - {at: "2026-09-22T11:21:00+03:00", ref: "Е-80, Е-84", system: "Сигнал; Ф-002 придержан на ЗТ-4 до решения"}
   - at: "2026-09-22T11:35:00+03:00"
     ref: Е-91
