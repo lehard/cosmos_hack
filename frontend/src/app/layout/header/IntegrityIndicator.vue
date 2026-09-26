@@ -11,13 +11,16 @@ import { useI18n } from 'vue-i18n'
 import { NTooltip } from 'naive-ui'
 import { effectiveIntegrity, useIntegrity } from '@/entities/integrity'
 import { statusPalette, type StatusTone } from '@/shared/api/generated/statuses'
+import { useServerNow } from '@/shared/model/server-clock'
 
 const props = withDefaults(defineProps<{ liveOff?: boolean }>(), { liveOff: false })
 const { t, d } = useI18n()
 const integrity = useIntegrity()
+// Свежесть — от «сейчас» сервера (Ant-Now), не от часов браузера.
+const now = useServerNow()
 
 const report = computed(() => integrity.data.value?.data)
-const status = computed(() => (integrity.isError.value ? 'unknown' : effectiveIntegrity(report.value, Date.now())))
+const status = computed(() => (integrity.isError.value ? 'unknown' : effectiveIntegrity(report.value, now.value)))
 
 const TONE: Record<string, StatusTone> = { ok: 'success', violated: 'danger', stale: 'attention', unknown: 'neutral' }
 
