@@ -3706,7 +3706,7 @@ type KeyProfileRegisteredV1 struct {
 	EffectiveFromSeq *Seq `json:"effective_from_seq,omitempty,omitzero"`
 
 	// Классы пакетов, для которых профиль обязателен.
-	ObjectClasses []string `json:"object_classes"`
+	ObjectClasses []Code `json:"object_classes"`
 
 	// Профиль.
 	ProfileID KeyProfileRegisteredV1ProfileID `json:"profile_id"`
@@ -3739,7 +3739,7 @@ type KeyRegistrationRecordedV1 struct {
 	KeyRef KeyRef `json:"key_ref"`
 
 	// Допустимые классы пакетов для ключа.
-	PayloadClasses []string `json:"payload_classes"`
+	PayloadClasses []Code `json:"payload_classes"`
 
 	// Профиль ключа.
 	ProfileID KeyRegistrationRecordedV1ProfileID `json:"profile_id"`

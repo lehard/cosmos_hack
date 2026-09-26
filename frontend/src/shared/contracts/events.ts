@@ -5363,7 +5363,10 @@ profile_id: ("gost" | "pq" | "hybrid")
  * 
  * @minItems 1
  * 
- * Items: Класс пакета (contracts/crypto/payload-classes.yaml): `event`, `document-signature`, `key-act`, …
+ * Items: Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
+ * 
+ * This interface was referenced by `AntDefsV1`'s JSON-Schema
+ * via the `definition` "code".
  */
 object_classes: [string, ...(string)[]]
 /**
@@ -5411,7 +5414,10 @@ fingerprint: string
  * 
  * @minItems 1
  * 
- * Items: Класс пакета (contracts/crypto/payload-classes.yaml): `event`, `document-signature`, `key-act`, …
+ * Items: Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
+ * 
+ * This interface was referenced by `AntDefsV1`'s JSON-Schema
+ * via the `definition` "code".
  */
 payload_classes: [string, ...(string)[]]
 /**
