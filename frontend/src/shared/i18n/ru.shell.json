@@ -247,6 +247,14 @@
         "nextCheck": "Что проверить следующим",
         "requestCheck": "Запросить проверку"
       },
+      "investigations": {
+        "title": "Мои расследования",
+        "inScope": "в области риска",
+        "path": "было {from} → сейчас {to}",
+        "open": "Расследование идёт",
+        "closed": "Закрыто",
+        "opened": "открыто {time}"
+      },
       "riskScope": {
         "systemAuthor": "Правило системы",
         "noBasis": "без основания",
