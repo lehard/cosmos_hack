@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -210,10 +211,10 @@ func TestViolationWindowNCsJoinIncident(t *testing.T) {
 	if len(ncs) == 0 || len(opened) != 1 {
 		t.Fatalf("окно: несоответствия %d, инцидентов %d", len(ncs), len(opened))
 	}
-	var inc analysis.Incident
-	for _, x := range f.st.Analysis.Incidents {
-		inc = x
+	if len(f.st.Analysis.Incidents) != 1 {
+		t.Fatalf("инцидентов %d", len(f.st.Analysis.Incidents))
 	}
+	inc := f.st.Analysis.Incidents[strings.TrimPrefix(opened[0].Stream, "incident:")]
 	if len(inc.NCs) != len(ncs) {
 		t.Fatalf("несоответствия окна в инциденте: %v, выдано %d", inc.NCs, len(ncs))
 	}
