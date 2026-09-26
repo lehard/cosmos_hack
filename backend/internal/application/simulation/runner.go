@@ -94,6 +94,7 @@ func (s *Service) Step(ctx context.Context, runID string) error {
 	if fast {
 		target = rp.plan.End
 	}
+	afterAction := true
 	for budget := s.d.Batch; budget > 0; budget-- {
 		due := sim.NextDue(rp.plan, rp.points, st.Cursor)
 		if due.At.After(target) {
@@ -106,9 +107,14 @@ func (s *Service) Step(ctx context.Context, runID string) error {
 		}
 		switch due.Kind {
 		case sim.DueEmissions:
-			// Привязка события по носителю (AD-41) видит носители, которые
-			// стадия уже обработала: сначала движок догоняет журнал (эпик 16).
-			s.settle(ctx, st)
+			// После решения человека (регистрация, носитель) привязка события
+			// по носителю (AD-41) должна видеть его результат: сначала движок
+			// догоняет журнал (эпик 16). Между доставками — без ожидания:
+			// пачки остаются пачками, неоднозначную привязку доделывает стадия.
+			if afterAction {
+				s.settle(ctx, st)
+				afterAction = false
+			}
 			if err := s.deliver(ctx, st, rp, due.From, due.To); err != nil {
 				return s.fail(ctx, st, err)
 			}
@@ -122,6 +128,7 @@ func (s *Service) Step(ctx context.Context, runID string) error {
 				return s.fail(ctx, st, err)
 			}
 			st.Cursor.Actions = due.Index + 1
+			afterAction = true
 		case sim.DuePoint:
 			s.evaluate(ctx, st, rp, rp.points[due.Index])
 			st.Cursor.Points = due.Index + 1
@@ -211,8 +218,11 @@ func (s *Service) action(ctx context.Context, st *RunState, rp *runPlan, i int) 
 // settle — дождаться, пока воркер и стадия обработают доставленное прогоном
 // (порт Settler); без порта или по сроку — как есть.
 func (s *Service) settle(ctx context.Context, st *RunState) {
-	if s.d.Settler != nil {
-		_ = s.d.Settler.Settle(ctx, st.RunID)
+	if s.d.Settler == nil {
+		return
+	}
+	if err := s.d.Settler.Settle(ctx, st.RunID); err != nil && s.d.Log != nil {
+		s.d.Log.Warn("прогон: движок не догнал журнал — продолжаю", "run_id", st.RunID, "err", err)
 	}
 }
 
@@ -251,7 +261,13 @@ func stepKey(a sim.Action) string {
 // AD-26): подписывается только шаг из определения — с его параметрами и телом.
 func (s *Service) decide(ctx context.Context, st *RunState, rp *runPlan, a sim.Action, key string) {
 	res := StepResult{Operation: a.Operation, At: a.At}
-	defer func() { st.Steps[key] = res }()
+	defer func() {
+		st.Steps[key] = res
+		if s.d.Log != nil && (res.Status == "failed" || res.Status == "skipped") {
+			s.d.Log.Warn("прогон: шаг не выполнен", "run_id", st.RunID, "step", key, "operation", a.Operation,
+				"status", res.Status, "refusal", res.Refusal, "detail", res.Detail)
+		}
+	}()
 	if s.d.Actor == nil {
 		res.Status, res.Detail = "skipped", "нет порта решений (demo-signer)"
 		return

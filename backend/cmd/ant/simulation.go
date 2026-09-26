@@ -156,6 +156,7 @@ func simulationLive(ctx context.Context, env *environment, ingest *ingestapp.Ser
 		Infra:   clock.System{},
 		Domain:  runStart{c},
 		Profile: env.cfg.Profile,
+		Log:     env.log,
 	})
 	env.log.Info("симуляция: пульт сценариев", "scenarios", dir, "scenario_clock", scenarioClock(env.cfg))
 	return svc, proxy, nil
