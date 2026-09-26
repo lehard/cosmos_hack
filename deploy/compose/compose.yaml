@@ -105,7 +105,7 @@ services:
     <<: [*ant-image, *ant-common]
     # stands — stand-ы и раннер прогонов симуляции (эпики 06, 32, 16): пульт
     # сценариев держит прогоны в памяти процесса api, поэтому в том же процессе.
-    command: ["-role=api,worker,crossitem,projector,stands"]
+    command: ["-role=api,worker,crossitem,projector,scheduler,stands"]
     depends_on:
       migrate:
         condition: service_completed_successfully

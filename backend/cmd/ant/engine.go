@@ -10,9 +10,11 @@ import (
 	analyticsapp "ant/internal/application/analytics"
 	crossitemapp "ant/internal/application/crossitem"
 	engineapp "ant/internal/application/engine"
+	itemapp "ant/internal/application/item"
 	appjournal "ant/internal/application/journal"
 	machinelogsapp "ant/internal/application/machinelogs"
 	nonconformityapp "ant/internal/application/nonconformity"
+	notificationsapp "ant/internal/application/notifications"
 	processapp "ant/internal/application/process"
 	qualityapp "ant/internal/application/quality"
 	mldomain "ant/internal/domain/machinelogs"
@@ -49,6 +51,9 @@ func engineRegistry() *engineapp.Registry {
 	// изоляция и несоответствия изделия.
 	mustRegister(nonconformityapp.RegisterProjections(r))
 	mustRegister(qualityapp.Register(r)) // эпик 20: quality.item, quality.index, вклады показателей качества
+	// notifications (эпик 24): единственная проекция сроков, задачи, уведомления.
+	mustRegister(notificationsapp.Register(r))
+	mustRegister(itemapp.Register(r)) // эпик 18: item.row, item.index
 	return r
 }
 

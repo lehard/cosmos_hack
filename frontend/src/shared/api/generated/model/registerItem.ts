@@ -19,6 +19,11 @@ export interface RegisterItem {
   item_revision: string;
   /** @maxLength 128 */
   item_type_id: string;
+  /**
+     * Локальный номер изделия (например, F-031); пусто — система выдаёт сама. Из метки не выводится (AD-16).
+     * @maxLength 96
+     */
+  local_id?: string;
   lot_ids?: string[];
   /**
      * Задание 1С (сквозной сценарий §1.5).

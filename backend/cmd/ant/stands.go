@@ -11,6 +11,8 @@ import (
 	"ant/internal/infrastructure/integration/ingest/stands"
 	cncstand "ant/internal/infrastructure/integration/machinelogs/cnc/stand"
 	weldstand "ant/internal/infrastructure/integration/machinelogs/welder/stand"
+	ovstand "ant/internal/infrastructure/integration/vision/operatorvision/stand"
+	vqcstand "ant/internal/infrastructure/integration/vision/visionqc/stand"
 )
 
 // Роль stands (AD-18, AD-6: одна копия) — каркас эпика 06: stand-ы внешних
@@ -54,6 +56,12 @@ func runStands(ctx context.Context, env *environment) error {
 		// выполнения — POST /stand/‹имя›/executions {"kind": …}.
 		reg.Add(cncstand.New("cnc-1", "CNC-1", edge, iv))
 		reg.Add(weldstand.New("weld-is-2", "IS-2", edge, iv))
+		// Эпик 33 (FR-97, FR-126): VisionQC — камера КТ-3 со ступенями
+		// анализатора (главная история: шов, поры, прожог, подрез, испорченный
+		// кадр 0,3, блик), OperatorVision — гипотезы о действиях на сборке;
+		// сцена по заказу — POST /stand/‹имя›/shots {"kind": …}.
+		reg.Add(vqcstand.New(vqcstand.Options{Name: "visionqc-kt3", EdgeURL: edge, Interval: 3 * iv}))
+		reg.Add(ovstand.New(ovstand.Options{Name: "operatorvision-asm", EdgeURL: edge, Interval: 6 * iv}))
 	}
 	srv := &http.Server{Addr: addr, Handler: reg.Handler(), ReadHeaderTimeout: 10 * time.Second,
 		BaseContext: func(net.Listener) context.Context { return ctx }}

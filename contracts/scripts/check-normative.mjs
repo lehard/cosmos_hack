@@ -11,6 +11,7 @@ const SCHEMA = {
   'documents/templates': 'templates', 'reference/flange/locations': 'locations', 'reference/flange/item-types': 'item-types',
   'reference/flange/equipment': 'equipment', 'reference/flange/calendar': 'calendar', 'reference/flange/shifts': 'shifts',
   'reference/flange/lot-templates': 'lot-templates',
+  'vision/analyzer-passports': 'analyzer-passports', 'vision/illustrations': 'illustrations',
 };
 export function loadNormative() {
   const out = {};

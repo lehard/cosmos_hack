@@ -1,0 +1,24 @@
+# Иллюстрации к сигналам VisionQC (FR-102, PRD §11.12; схема contracts/normative/illustrations.schema.json).
+# Файлы набора в репозиторий НЕ кладутся. Если набор распакован на краю (edge-agent -illustrations ‹каталог›),
+# адаптер VisionQC прикладывает образец класса к наблюдению с пометкой «ИЛЛЮСТРАЦИЯ», источником,
+# лицензией и автором — только когда хранилище материалов его приняло. Образец класса — файл sample,
+# а если его нет — первый по имени файл каталога класса (‹каталог›/‹dataset_class›/). Нет файла или хранилища —
+# материал не прикладывается, в ограничениях наблюдения — «иллюстрация недоступна офлайн» и ссылка.
+# Лицензия — по PRD §11.12 (CC BY-SA 4.0); сверить на странице набора перед сдачей материалов.
+version: 1
+datasets:
+  - id: tig-al5083
+    title: "TIG Aluminium 5083"
+    url: "https://www.kaggle.com/datasets/danielbacioiu/tig-aluminium-5083"
+    license: "CC BY-SA 4.0"
+    license_url: "https://creativecommons.org/licenses/by-sa/4.0/"
+    author: "Daniel Bacioiu"
+    citation: "Bacioiu D., Melton G., Papaelias M., Shaw R. Automated defect classification of Aluminium 5083 TIG welding using HDR camera and neural networks. Journal of Manufacturing Processes, 2019, 45, 603–613."
+    mark: "ИЛЛЮСТРАЦИЯ"
+    note: "Иллюстрация из открытого набора; не относится к изделию; не является промышленной валидацией."
+    classes:
+      - {dataset_class: good_weld, defect_codes: [], sample: "good_weld/sample.png", media_type: image/png}
+      - {dataset_class: burn_through, defect_codes: [W-BURNTHRU], sample: "burn_through/sample.png", media_type: image/png}
+      - {dataset_class: contamination, defect_codes: [W-PORE-S, W-SPATTER], sample: "contamination/sample.png", media_type: image/png}
+      - {dataset_class: lack_of_fusion, defect_codes: [W-LOF, W-UNDERCUT], sample: "lack_of_fusion/sample.png", media_type: image/png}
+      - {dataset_class: lack_of_penetration, defect_codes: [W-CRATER], sample: "lack_of_penetration/sample.png", media_type: image/png}

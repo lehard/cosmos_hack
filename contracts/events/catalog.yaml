@@ -2318,6 +2318,38 @@ types:
     versions: [1]
     current_version: 1
     refs: ["FR-15"]
+  genealogy.witness.propagated:
+    title: "Результат образца-свидетеля распространён на изделие группы"
+    emitter: "crossitem"
+    role: "crossitem"
+    kind: "reaction"
+    stream: "item"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["server_attested"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-15", "AD-42"]
+  genealogy.containment.propagated:
+    title: "Сдерживание распространено по генеалогии"
+    emitter: "crossitem"
+    role: "crossitem"
+    kind: "reaction"
+    stream: "item"
+    axis: "none"
+    action_class: "protective"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["server_attested"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-45", "FR-49", "AD-42", "AD-27"]
 
   # ── normative (владелец схемы: process) ──
   normative.version.loaded:
@@ -2542,7 +2574,7 @@ types:
     action_class: "record"
     critical: false
     ca_group: null
-    guard_relevant: true
+    guard_relevant: false
     publish_stage: false
     provenance: ["server_attested"]
     versions: [1]
@@ -2558,7 +2590,7 @@ types:
     action_class: "record"
     critical: false
     ca_group: null
-    guard_relevant: true
+    guard_relevant: false
     publish_stage: false
     provenance: ["server_attested"]
     versions: [1]
@@ -2574,7 +2606,7 @@ types:
     action_class: "record"
     critical: false
     ca_group: null
-    guard_relevant: true
+    guard_relevant: false
     publish_stage: false
     provenance: ["server_attested", "genesis"]
     versions: [1]
@@ -2982,7 +3014,7 @@ types:
     ca_group: "control_change"
     guard_relevant: true
     publish_stage: false
-    provenance: ["personal", "paper", "scenario"]
+    provenance: ["personal", "paper", "scenario", "genesis"]
     versions: [1]
     current_version: 1
     refs: ["FR-98", "FR-101", "AD-29"]

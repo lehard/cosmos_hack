@@ -14,6 +14,8 @@ type AdmitPassport struct {
 	Versions           map[string]string `json:"versions"`
 	PreviousPassportID string            `json:"previous_passport_id,omitempty"`
 	DocumentID         string            `json:"document_id" doc:"Протокол допуска с закрытым маршрутом."`
+	AnalyzerKind       string            `json:"analyzer_kind,omitempty" enum:"visionqc,operatorvision" doc:"Визуальный контроль или контроль действий оператора; по умолчанию visionqc."`
+	Title              string            `json:"title,omitempty" maxLength:"256" doc:"Название анализатора."`
 }
 
 // ReinstatePassport — вернуть анализатор после отката (analyzer.passport.reinstated,

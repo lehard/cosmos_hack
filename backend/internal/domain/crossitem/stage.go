@@ -26,6 +26,9 @@ type Own struct {
 	// эпика 07): повтор той же записи подавляется, записи, вызванные своими
 	// адресованными, не порождают новых (неподвижная точка, AD-42).
 	Emitted map[string]bool `json:"emitted,omitempty"`
+	// Genealogy — генеалогия, партии, садки, плавки, реестр носителей и
+	// события без изделия (эпик 18, own.go).
+	Genealogy Genealogy `json:"genealogy"`
 }
 
 // Stage — состояние межизделийной стадии целиком: своё и подключённых модулей.
@@ -225,8 +228,9 @@ func AddressedRecord(a kernel.Addressed, cause kernel.Record) (kernel.Record, bo
 // own — собственные правила стадии: binding.link.resolved, genealogy.link.added
 // (обоим изделиям), партии и группы.
 func own(s Own, r kernel.Record) (Own, []kernel.Addressed) {
-	_ = r
-	return s, nil
+	var out []kernel.Addressed
+	s.Genealogy, out = genealogyStep(s.Genealogy, r)
+	return s, out
 }
 
 // CarrierRef — носитель из события источника: тип и значение (AD-16).

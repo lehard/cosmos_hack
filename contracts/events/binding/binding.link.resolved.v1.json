@@ -35,6 +35,54 @@
     "binding_reliability": {
       "$ref": "../common/defs.v1.json#/definitions/identification_level",
       "description": "Надёжность привязки."
+    },
+    "carrier_ref": {
+      "type": "string",
+      "maxLength": 300,
+      "description": "Носитель события `‹тип›:‹значение›`, по которому разрешалась привязка (AD-41)."
+    },
+    "subject": {
+      "type": "object",
+      "description": "Копия привязываемого события без изделия (тип, время, источник, data): свёртка изделия видит содержимое события в своём потоке (AD-5, AD-41).",
+      "properties": {
+        "event_type": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "Тип события каталога."
+        },
+        "schema_version": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Версия схемы data."
+        },
+        "occurred_at": {
+          "$ref": "../common/defs.v1.json#/definitions/timestamp",
+          "description": "Время возникновения события."
+        },
+        "source_id": {
+          "type": "string",
+          "maxLength": 256,
+          "description": "Источник события."
+        },
+        "source_kind": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Вид источника (FR-140)."
+        },
+        "data": {
+          "type": "object",
+          "description": "data события как в журнале."
+        }
+      },
+      "required": [
+        "event_type",
+        "occurred_at",
+        "data"
+      ]
+    },
+    "previous_item_id": {
+      "$ref": "../common/defs.v1.json#/definitions/item_id",
+      "description": "Изделие прежней привязки при перепривязке: событие у него больше не учитывается (AD-41)."
     }
   },
   "required": [

@@ -28,11 +28,15 @@ export interface LotCard {
   documents: DrillRef[];
   /** Номер партии во внешней системе (соответствие — reference.external_id.mapped). */
   external_ref?: string;
+  /** Номер плавки партии. */
+  heat_no?: string;
   /** @minimum 0 */
   issued_quantity: number;
   issues: LotIssue[];
   item_type_id?: string;
   items: LotItem[];
+  /** Вид: lot — партия, heat — плавка (FR-45). */
+  kind?: string;
   lot_id: string;
   received_at?: string;
   registered_at?: string;

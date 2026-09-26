@@ -6,6 +6,7 @@ import "ant/internal/application/platform"
 // ID рождается в системе и из метки не выводится; закрепляет версию процесса (AD-17).
 type RegisterItem struct {
 	platform.CommandHeader
+	LocalID      string   `json:"local_id,omitempty" maxLength:"96" doc:"Локальный номер изделия (например, F-031); пусто — система выдаёт сама. Из метки не выводится (AD-16)."`
 	ItemTypeID   string   `json:"item_type_id" maxLength:"128"`
 	ItemRevision string   `json:"item_revision" maxLength:"64"`
 	OrderID      string   `json:"order_id,omitempty" maxLength:"128" doc:"Задание 1С (сквозной сценарий §1.5)."`
@@ -81,4 +82,20 @@ type RecordRelease struct {
 	WarehouseID  string `json:"warehouse_id" maxLength:"128"`
 	ConcessionID string `json:"concession_id,omitempty" maxLength:"128"`
 	AfterRework  bool   `json:"after_rework" doc:"Принято после переделки (AD-18)."`
+}
+
+// SplitPart — изделие, выделяемое разделением.
+type SplitPart struct {
+	ItemID       string   `json:"item_id,omitempty" maxLength:"128" doc:"Внутренний ID части; пусто — ‹исходный›-‹n›."`
+	ItemTypeID   string   `json:"item_type_id,omitempty" maxLength:"128" doc:"Тип части; пусто — тип исходного."`
+	ItemRevision string   `json:"item_revision,omitempty" maxLength:"64"`
+	LotIDs       []string `json:"lot_ids,omitempty" doc:"Дополнительные партии части (партии исходного переносятся сами)."`
+}
+
+// SplitItem — разделение 1→N (FR-15): каждая часть регистрируется
+// (item.item.registered с split_from); происхождение исходного переносит
+// межизделийная стадия (genealogy.link.added, relation = split_from).
+type SplitItem struct {
+	platform.CommandHeader
+	Parts []SplitPart `json:"parts" minItems:"1" maxItems:"100"`
 }

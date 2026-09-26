@@ -1,0 +1,29 @@
+{
+  "hypothesis_id": "CAM-OV-ASM-000002",
+  "seq": 2,
+  "system_id": "ov-asm",
+  "camera_id": "CAM-OV-ASM",
+  "creation_time": "2026-09-21T11:01:00.000Z",
+  "part_id": "ENT01:F-231",
+  "part_id_kind": "internal",
+  "workplace_id": "WP-ASM-1",
+  "tp_step": "Установка уплотнения S-1 до крышки",
+  "action": "sequence_broken",
+  "confidence_bp": 7400,
+  "frame_quality_bp": 8600,
+  "recipe": {
+    "id": "ov-asm",
+    "version": "1"
+  },
+  "configuration": {
+    "camera_config": "CAM-OV-ASM/обзор",
+    "calibration": "CAL-OV-2026-01-10",
+    "threshold_profile": "TP-OV-1"
+  },
+  "software": {
+    "analyzer_version": "ov-asm 0.9.4",
+    "app_version": "ov-gw 0.9.0",
+    "contract_version": "1.0"
+  },
+  "product_revision": "Б"
+}

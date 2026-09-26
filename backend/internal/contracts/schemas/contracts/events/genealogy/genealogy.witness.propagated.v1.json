@@ -1,0 +1,60 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/genealogy/genealogy.witness.propagated.v1.json",
+  "title": "GenealogyWitnessPropagatedV1",
+  "description": "Результат образца-свидетеля распространён на изделие группы — адресованная запись стадии каждому изделию садки или групповой операции: результат контроля свидетеля виден в паспортах всех изделий группы (FR-15, AD-42).",
+  "type": "object",
+  "properties": {
+    "group_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Группа (садка)."
+    },
+    "group_kind": {
+      "type": "string",
+      "enum": [
+        "charge",
+        "batch_operation",
+        "transport",
+        "other"
+      ],
+      "description": "Вид группы."
+    },
+    "witness_item_id": {
+      "$ref": "../common/defs.v1.json#/definitions/item_id",
+      "description": "Образец-свидетель."
+    },
+    "inspection_event_id": {
+      "$ref": "../common/defs.v1.json#/definitions/uuid",
+      "description": "Результат контроля свидетеля (`inspection.result.recorded`)."
+    },
+    "outcome": {
+      "$ref": "../common/defs.v1.json#/definitions/inspection_outcome",
+      "description": "Исход контроля свидетеля."
+    },
+    "method": {
+      "type": "string",
+      "maxLength": 64,
+      "description": "Метод контроля свидетеля."
+    },
+    "step_key": {
+      "$ref": "../common/defs.v1.json#/definitions/step_key"
+    },
+    "inspection_point": {
+      "type": "string",
+      "maxLength": 64,
+      "description": "Точка контроля."
+    },
+    "conclusion_ref": {
+      "type": "string",
+      "maxLength": 256,
+      "description": "Номер заключения или протокола испытаний."
+    }
+  },
+  "required": [
+    "group_id",
+    "group_kind",
+    "witness_item_id",
+    "inspection_event_id",
+    "outcome"
+  ]
+}

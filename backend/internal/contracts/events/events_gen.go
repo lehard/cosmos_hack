@@ -235,6 +235,14 @@ const AnalyzerCheckRecordedV1CheckKindShadowComparison AnalyzerCheckRecordedV1Ch
 // разрешённые и запрещённые автоматические действия; допущенная версия заморожена
 // (FR-98, FR-101, AD-29).
 type AnalyzerPassportAdmittedV1 struct {
+	// Анализатор (внешняя система видеофиксации и её модель), к которому относится
+	// паспорт: например, `vqc-weld`.
+	AnalyzerID *ObjectID `json:"analyzer_id,omitempty,omitzero"`
+
+	// Вид анализатора: визуальный контроль (VisionQC) или контроль действий оператора
+	// (OperatorVision).
+	AnalyzerKind *AnalyzerPassportAdmittedV1AnalyzerKind `json:"analyzer_kind,omitempty,omitzero"`
+
 	// Протокол допуска.
 	DocumentID ObjectID `json:"document_id"`
 
@@ -250,12 +258,20 @@ type AnalyzerPassportAdmittedV1 struct {
 	// Стадия.
 	Stage AnalyzerPassportAdmittedV1Stage `json:"stage"`
 
+	// Название анализатора для людей, например «Визуальный контроль шва (КТ-3)».
+	Title *string `json:"title,omitempty,omitzero"`
+
 	// Уровень доверия (contracts/analyzer-trust-levels.yaml).
 	TrustLevel int `json:"trust_level"`
 
 	// Допущенная конфигурация контура.
 	Versions AnalyzerVersions `json:"versions"`
 }
+
+type AnalyzerPassportAdmittedV1AnalyzerKind string
+
+const AnalyzerPassportAdmittedV1AnalyzerKindOperatorvision AnalyzerPassportAdmittedV1AnalyzerKind = "operatorvision"
+const AnalyzerPassportAdmittedV1AnalyzerKindVisionqc AnalyzerPassportAdmittedV1AnalyzerKind = "visionqc"
 
 type AnalyzerPassportAdmittedV1Stage string
 
@@ -498,8 +514,19 @@ type BindingLinkResolvedV1 struct {
 	// Кандидаты при неоднозначности.
 	Candidates []ItemID `json:"candidates,omitempty,omitzero"`
 
+	// Носитель события `‹тип›:‹значение›`, по которому разрешалась привязка (AD-41).
+	CarrierRef *string `json:"carrier_ref,omitempty,omitzero"`
+
 	// Изделие (если однозначно).
 	ItemID *ItemID `json:"item_id,omitempty,omitzero"`
+
+	// Изделие прежней привязки при перепривязке: событие у него больше не учитывается
+	// (AD-41).
+	PreviousItemID *ItemID `json:"previous_item_id,omitempty,omitzero"`
+
+	// Копия привязываемого события без изделия (тип, время, источник, data): свёртка
+	// изделия видит содержимое события в своём потоке (AD-5, AD-41).
+	Subject *BindingLinkResolvedV1Subject `json:"subject,omitempty,omitzero"`
 
 	// Привязываемое событие.
 	SubjectEventID UUID `json:"subject_event_id"`
@@ -511,6 +538,31 @@ const BindingLinkResolvedV1BindingBasisCarrier BindingLinkResolvedV1BindingBasis
 const BindingLinkResolvedV1BindingBasisManual BindingLinkResolvedV1BindingBasis = "manual"
 const BindingLinkResolvedV1BindingBasisPostContext BindingLinkResolvedV1BindingBasis = "post_context"
 const BindingLinkResolvedV1BindingBasisTimeWindow BindingLinkResolvedV1BindingBasis = "time_window"
+
+// Копия привязываемого события без изделия (тип, время, источник, data): свёртка
+// изделия видит содержимое события в своём потоке (AD-5, AD-41).
+type BindingLinkResolvedV1Subject struct {
+	// data события как в журнале.
+	Data BindingLinkResolvedV1SubjectData `json:"data"`
+
+	// Тип события каталога.
+	EventType string `json:"event_type"`
+
+	// Время возникновения события.
+	OccurredAt Timestamp `json:"occurred_at"`
+
+	// Версия схемы data.
+	SchemaVersion *int `json:"schema_version,omitempty,omitzero"`
+
+	// Источник события.
+	SourceID *string `json:"source_id,omitempty,omitzero"`
+
+	// Вид источника (FR-140).
+	SourceKind *string `json:"source_kind,omitempty,omitzero"`
+}
+
+// data события как в журнале.
+type BindingLinkResolvedV1SubjectData map[string]interface{}
 
 // Доля в базисных пунктах: 0…10000 (10000 = 1,0). Float в контрактах запрещён
 // (AD-4).
@@ -2175,6 +2227,44 @@ type FederationPartnerRegisteredV1 struct {
 	RootFingerprints []Digest `json:"root_fingerprints"`
 }
 
+// Сдерживание распространено по генеалогии — адресованная запись стадии изделию:
+// блок партии доходит до изделий из партии и собранных из них; блок компонента —
+// вверх по дереву сборки (AD-42). Ось «сдерживание» меняет nonconformity по этой
+// записи (AD-30); снятие основания блок не снимает — решает человек (AD-27).
+type GenealogyContainmentPropagatedV1 struct {
+	// Основания — `event_id` записей.
+	Basis []UUID `json:"basis"`
+
+	// Уровень сдерживания источника.
+	Level AxisContainment `json:"level"`
+
+	// Партия, если блок партии.
+	LotID *ObjectID `json:"lot_id,omitempty,omitzero"`
+
+	// Путь по дереву сборки от источника к изделию.
+	Path []ItemID `json:"path,omitempty,omitzero"`
+
+	// Основание снято у источника: блок остаётся до решения человека (AD-27, AD-3).
+	Released *bool `json:"released,omitempty,omitzero"`
+
+	// Откуда пришло: блок партии, блок компонента (вверх по сборке), блок исходного
+	// изделия при разделении.
+	Source GenealogyContainmentPropagatedV1Source `json:"source"`
+
+	// Запись сдерживания-источника (`decision.containment.*`,
+	// `decision.lot.resolved`).
+	SourceEventID UUID `json:"source_event_id"`
+
+	// Изделие-источник сдерживания (компонент или изделие партии).
+	SourceItemID *ItemID `json:"source_item_id,omitempty,omitzero"`
+}
+
+type GenealogyContainmentPropagatedV1Source string
+
+const GenealogyContainmentPropagatedV1SourceComponent GenealogyContainmentPropagatedV1Source = "component"
+const GenealogyContainmentPropagatedV1SourceLot GenealogyContainmentPropagatedV1Source = "lot"
+const GenealogyContainmentPropagatedV1SourceSplitParent GenealogyContainmentPropagatedV1Source = "split_parent"
+
 // Временная группа расформирована — разгруппировка (FR-15).
 type GenealogyGroupDissolvedV1 struct {
 	// Группа.
@@ -2214,11 +2304,21 @@ type GenealogyLinkAddedV1 struct {
 	// Компонент-экземпляр.
 	ChildItemID *ItemID `json:"child_item_id,omitempty,omitzero"`
 
+	// Временная группа (садка, групповая операция) для связи grouped_with (FR-15).
+	GroupID *ObjectID `json:"group_id,omitempty,omitzero"`
+
+	// Связь перенесена при разделении 1→N или по сборке (происхождение компонента), а
+	// не записана напрямую (FR-15).
+	Inherited *bool `json:"inherited,omitempty,omitzero"`
+
 	// Партия (для партионной связи).
 	LotID *ObjectID `json:"lot_id,omitempty,omitzero"`
 
 	// Сборка.
 	ParentItemID *ItemID `json:"parent_item_id,omitempty,omitzero"`
+
+	// Позиция компонента в сборке по спецификации.
+	Position *string `json:"position,omitempty,omitzero"`
 
 	// Вид связи.
 	Relation GenealogyLinkAddedV1Relation `json:"relation"`
@@ -2262,8 +2362,18 @@ type GenealogyLotRegisteredV1 struct {
 	// Сертификат поставщика есть.
 	CertificatePresent bool `json:"certificate_present"`
 
+	// Номер плавки партии (запрос «плавка → все изделия», FR-45).
+	HeatNo *string `json:"heat_no,omitempty,omitzero"`
+
+	// Номенклатура партии.
+	ItemTypeID *ObjectID `json:"item_type_id,omitempty,omitzero"`
+
 	// Партия.
 	LotID ObjectID `json:"lot_id"`
+
+	// Вид: партия материала или покупных / плавка (FR-45). Садка — временная группа
+	// genealogy.group.formed (kind = charge).
+	LotKind *GenealogyLotRegisteredV1LotKind `json:"lot_kind,omitempty,omitzero"`
 
 	// Упаковка без повреждений.
 	PackagingOk *bool `json:"packaging_ok,omitempty,omitzero"`
@@ -2271,6 +2381,50 @@ type GenealogyLotRegisteredV1 struct {
 	// Контролёр ВК.
 	RegisteredBy PersonRef `json:"registered_by"`
 }
+
+type GenealogyLotRegisteredV1LotKind string
+
+const GenealogyLotRegisteredV1LotKindHeat GenealogyLotRegisteredV1LotKind = "heat"
+const GenealogyLotRegisteredV1LotKindLot GenealogyLotRegisteredV1LotKind = "lot"
+
+// Результат образца-свидетеля распространён на изделие группы — адресованная
+// запись стадии каждому изделию садки или групповой операции: результат контроля
+// свидетеля виден в паспортах всех изделий группы (FR-15, AD-42).
+type GenealogyWitnessPropagatedV1 struct {
+	// Номер заключения или протокола испытаний.
+	ConclusionRef *string `json:"conclusion_ref,omitempty,omitzero"`
+
+	// Группа (садка).
+	GroupID ObjectID `json:"group_id"`
+
+	// Вид группы.
+	GroupKind GenealogyWitnessPropagatedV1GroupKind `json:"group_kind"`
+
+	// Результат контроля свидетеля (`inspection.result.recorded`).
+	InspectionEventID UUID `json:"inspection_event_id"`
+
+	// Точка контроля.
+	InspectionPoint *string `json:"inspection_point,omitempty,omitzero"`
+
+	// Метод контроля свидетеля.
+	Method *string `json:"method,omitempty,omitzero"`
+
+	// Исход контроля свидетеля.
+	Outcome InspectionOutcome `json:"outcome"`
+
+	// StepKey corresponds to the JSON schema field "step_key".
+	StepKey *StepKey `json:"step_key,omitempty,omitzero"`
+
+	// Образец-свидетель.
+	WitnessItemID ItemID `json:"witness_item_id"`
+}
+
+type GenealogyWitnessPropagatedV1GroupKind string
+
+const GenealogyWitnessPropagatedV1GroupKindBatchOperation GenealogyWitnessPropagatedV1GroupKind = "batch_operation"
+const GenealogyWitnessPropagatedV1GroupKindCharge GenealogyWitnessPropagatedV1GroupKind = "charge"
+const GenealogyWitnessPropagatedV1GroupKindOther GenealogyWitnessPropagatedV1GroupKind = "other"
+const GenealogyWitnessPropagatedV1GroupKindTransport GenealogyWitnessPropagatedV1GroupKind = "transport"
 
 // Гипотеза причины — только предположение (третий статус кейса §2.3).
 type Hypothesis struct {
@@ -3268,6 +3422,11 @@ type ItemItemRegisteredV1 struct {
 
 	// Хеш закреплённой версии процесса — XML как загружен (AD-17).
 	ProcessVersionHash Digest `json:"process_version_hash"`
+
+	// Изделие, из которого выделено новое при разделении 1→N (FR-15): происхождение и
+	// партии переносятся; связь пишет межизделийная стадия (genealogy.link.added,
+	// relation = split_from).
+	SplitFrom *ItemID `json:"split_from,omitempty,omitzero"`
 }
 
 // Изделие предъявлено — мастер предъявляет изделие ОТК или представителю заказчика
@@ -3805,11 +3964,24 @@ type ObligationDueReachedV1 struct {
 // Срок установлен — срок решения, точки предъявления, таймера BPMN: `due_at` — по
 // производственному календарю и графику смен; эмитит только notifications (AD-4).
 type ObligationDueSetV1 struct {
+	// Основание срока у модуля-владельца: isolation, isolation_move, nonconformity,
+	// presentation, incident_scope, recheck (FR-55, FR-57).
+	Basis *Code `json:"basis,omitempty,omitzero"`
+
 	// Срок.
 	DueAt Timestamp `json:"due_at"`
 
+	// Исходный срок обязательства (уровень 1): от него считается просрочка — цена
+	// задержки (FR-8, FR-57).
+	FirstDueAt *Timestamp `json:"first_due_at,omitempty,omitzero"`
+
 	// Вид срока.
 	Kind ObligationDueSetV1Kind `json:"kind"`
+
+	// Уровень эскалации, к которому относится срок: 1 — исходный срок; после
+	// «наступил срок» notifications переустанавливает срок следующего уровня того же
+	// обязательства (лестница эскалации, FR-57).
+	Level *int `json:"level,omitempty,omitzero"`
 
 	// Обязательство.
 	ObligationID ObjectID `json:"obligation_id"`
@@ -3822,6 +3994,13 @@ type ObligationDueSetV1 struct {
 
 	// Субъект срока.
 	SubjectRef StreamRef `json:"subject_ref"`
+
+	// Что ждёт решения — для ленты тревог и блока «требует вашего внимания» (FR-8).
+	Title *string `json:"title,omitempty,omitzero"`
+
+	// Чьего решения ждёт срок: изделие, несоответствие или инцидент; по нему сводится
+	// цена задержки — сколько изделий и операций стоят (FR-8).
+	WaitsOn *StreamRef `json:"waits_on,omitempty,omitzero"`
 }
 
 type ObligationDueSetV1Kind string

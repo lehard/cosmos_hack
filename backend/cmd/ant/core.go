@@ -12,7 +12,6 @@ import (
 	"ant/cmd/internal/db"
 	engineapp "ant/internal/application/engine"
 	processapp "ant/internal/application/process"
-	"ant/internal/domain/crossitem"
 	dj "ant/internal/domain/journal"
 	"ant/internal/infrastructure/security/permissive"
 	enginestore "ant/internal/infrastructure/storage/engine"
@@ -54,9 +53,6 @@ type core struct {
 	// clockMu — запись режима scenario при старте (clock.go, эпик 16).
 	clock   *clock.Journal
 	clockMu sync.Mutex
-	// carrierReg — реестр носителей для приёма (carriers.go, обход до эпика 18).
-	carrierReg  crossitem.CarrierRegistry
-	carrierOnce sync.Once
 }
 
 // coreHolder — ленивое создание ядра и его остановка после ролей.

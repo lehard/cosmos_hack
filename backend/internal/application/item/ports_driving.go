@@ -40,6 +40,8 @@ type Commands interface {
 	ConfirmIdentification(ctx context.Context, itemID string, in ConfirmIdentification) (platform.Receipt, error)
 	RecordAssembly(ctx context.Context, itemID string, in RecordAssembly) (platform.Receipt, error)
 	RecordRelease(ctx context.Context, itemID string, in RecordRelease) (platform.Receipt, error)
+	// Split — разделение 1→N с переносом происхождения (item.item.split, FR-15).
+	Split(ctx context.Context, itemID string, in SplitItem) (platform.Receipt, error)
 }
 
 // Unimplemented — заглушка портов item: каждая операция отвечает 501
@@ -89,6 +91,9 @@ func (Unimplemented) RecordAssembly(context.Context, string, RecordAssembly) (pl
 }
 func (Unimplemented) RecordRelease(context.Context, string, RecordRelease) (platform.Receipt, error) {
 	return platform.Receipt{}, ni("item.release.record")
+}
+func (Unimplemented) Split(context.Context, string, SplitItem) (platform.Receipt, error) {
+	return platform.Receipt{}, ni("item.item.split")
 }
 
 var (

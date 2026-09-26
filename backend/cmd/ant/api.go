@@ -96,6 +96,18 @@ func runAPI(ctx context.Context, env *environment) error {
 			return err
 		}
 	}
+	if modeOf(opts, "item") == platform.ModeLive {
+		// Паспорт, носители, генеалогия (эпик 18).
+		if opts.item, err = itemLive(ctx, env); err != nil {
+			return err
+		}
+	}
+	if modeOf(opts, "crossitem") == platform.ModeLive {
+		// Партии, садки, привязка событий без изделия (эпик 18).
+		if opts.crossitem, err = crossitemLive(ctx, env); err != nil {
+			return err
+		}
+	}
 	if modeOf(opts, "analysis") == platform.ModeLive {
 		if opts.analysis, err = analysisLive(ctx, env); err != nil {
 			return err
@@ -106,15 +118,21 @@ func runAPI(ctx context.Context, env *environment) error {
 			return err
 		}
 	}
+	if modeOf(opts, "vision") == platform.ModeLive {
+		// Паспорта допуска анализаторов — над журналом ядра (эпик 33).
+		if opts.vision, err = visionLive(ctx, env); err != nil {
+			return err
+		}
+	}
 	if modeOf(opts, "process") == platform.ModeLive {
 		// Живая карта, версии и команды исполнителя (эпик 17).
 		if opts.process, err = processLive(ctx, env, opts.ingest, opts.analytics); err != nil {
 			return err
 		}
 	}
-	if modeOf(opts, "item") == platform.ModeLive {
-		// TODO(18): обход до эпика 18 — команды item фактами через приём (itembypass.go).
-		if opts.item, err = itemLive(ctx, env, opts.ingest); err != nil {
+	if modeOf(opts, "notifications") == platform.ModeLive {
+		// Сроки, задачи, тревоги — проекции notifications.* (эпик 24).
+		if opts.notifications, err = notificationsLive(ctx, env); err != nil {
 			return err
 		}
 	}

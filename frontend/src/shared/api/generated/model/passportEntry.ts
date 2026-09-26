@@ -10,8 +10,16 @@ import type { PassportEntrySourceKind } from './passportEntrySourceKind';
 export interface PassportEntry {
   /** Автор (псевдоним) или источник. */
   author?: string;
+  /** Как событие привязано к изделию: internal_id, carrier, post_context, time_window, manual (AD-41). */
+  binding_basis?: string;
+  /** Надёжность привязки: unique, probable, ambiguous, unidentified (FR-34). */
+  binding_reliability?: string;
+  /** Событие пришло без изделия и привязано позже (AD-41). */
+  bound?: boolean;
   /** Критическое действие (AD-28). */
   ca_ref?: string;
+  /** Кандидаты при неоднозначной привязке события (FR-34). */
+  candidates?: string[];
   /** Исправляемая запись (FR-122). */
   corrects?: string;
   event_id: string;
