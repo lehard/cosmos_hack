@@ -87,6 +87,9 @@ type apiOptions struct {
 	// journal — live-реализация journal над журналом и публикатором SSE
 	// (core.go); nil — заглушка 501 (выгрузка OpenAPI, тесты).
 	journal *journalapp.Service
+	// machinelogs — live-реализация machinelogs над проекциями (engine.go);
+	// nil — заглушка 501.
+	machinelogs *machinelogsapp.Service
 }
 
 // buildAPI собирает HTTP API: общий декоратор (Gate) над портами прав и входа,
@@ -142,7 +145,11 @@ func buildAPI(mux *http.ServeMux, o apiOptions) *httpapi.API {
 		analysishttp.Register(a, q, c)
 	}
 	{
-		q, c := pick[machinelogsapp.Queries, machinelogsapp.Commands](a.ModeFor("machinelogs"), machinelogsapp.NewService(), machinelogsfx.New())
+		live := o.machinelogs
+		if live == nil {
+			live = machinelogsapp.NewService()
+		}
+		q, c := pick[machinelogsapp.Queries, machinelogsapp.Commands](a.ModeFor("machinelogs"), live, machinelogsfx.New())
 		machinelogshttp.Register(a, q, c)
 	}
 	{
