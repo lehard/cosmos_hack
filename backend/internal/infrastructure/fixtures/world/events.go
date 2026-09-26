@@ -312,10 +312,11 @@ func (m *Model) storyEvents() {
 		w := withItem(it)
 		if s.Unable {
 			m.ev("decision.recheck.requested", "decision", s.At.Time().Add(-minutes(10)), "Назначена доп. проверка: повторная съёмка шва и рентген", w, withAuthor("INS-01"))
+			// Иллюстрация блика — к наблюдению и к производному «оценка невозможна» (FR-102).
 			m.ev("inspection.result.recorded", "fact", s.At.Time(), fmt.Sprintf("КТ-3: признаков нет; уверенность %s; качество %s — блик, зона У6–У7 частично закрыта прижимом", pct(s.ConfidenceBP), pct(s.QualityBP)),
-				w, withStep("welding.kt3_camera"), withSource("edge-kt3", "camera"), withParams("method", "camera", "outcome", "no_defect_indicated", "analyzer_confidence_bp", fmt.Sprint(s.ConfidenceBP), "observation_quality_bp", fmt.Sprint(s.QualityBP), "zone", s.Zone))
+				w, withStep("welding.kt3_camera"), withSource("edge-kt3", "camera"), withParams("method", "camera", "outcome", "no_defect_indicated", "analyzer_confidence_bp", fmt.Sprint(s.ConfidenceBP), "observation_quality_bp", fmt.Sprint(s.QualityBP), "zone", s.Zone)).attach(illGlare)
 			m.ev("inspection.result.recorded", "reaction", s.At.Time(), "Производный результат: качество наблюдения ниже порога рецепта 0,6 → оценка невозможна для У6–У7; исходное сообщение не меняется",
-				w, withStep("welding.kt3_camera"), withParams("method", "camera", "outcome", "unable_to_assess", "derived_from", "observation_quality_bp < 6000"))
+				w, withStep("welding.kt3_camera"), withParams("method", "camera", "outcome", "unable_to_assess", "derived_from", "observation_quality_bp < 6000")).attach(illGlare)
 			m.ev("decision.recheck.requested", "decision", s.At.Time().Add(minutes(5)), "Назначена повторная съёмка: снять прижим, сменить угол света", w, withAuthor("INS-01"))
 			m.ev("inspection.result.recorded", "fact", s.Resolved.Time(), "КТ-3, повторный кадр: признаков нет; уверенность 0,93; качество 0,88",
 				w, withStep("welding.kt3_camera"), withSource("edge-kt3", "camera"), withParams("method", "camera", "outcome", "no_defect_indicated", "analyzer_confidence_bp", "9300", "observation_quality_bp", "8800"))
@@ -404,9 +405,11 @@ func (m *Model) ncEvents(n *NC) {
 		if method == "camera" {
 			obsOpts = append(obsOpts, withParams("analyzer_confidence_bp", "8600", "observation_quality_bp", "9000", "analyzer", "vqc-weld 2.3.1"))
 		}
-		m.ev("inspection.result.recorded", "fact", n.SignalAt.Add(-time.Minute), sum, obsOpts...)
+		obs := m.ev("inspection.result.recorded", "fact", n.SignalAt.Add(-time.Minute), sum, obsOpts...)
 		if n.ID == "NC-01" {
-			m.ev("inspection.result.recorded", "fact", n.SignalAt.Add(-50*time.Second), "КТ-3 ракурс 2: прожог У2; уверенность 0,81; качество 0,88", append(slices.Clone(opts), withStep(n.StepKey), withSource("edge-kt3-2", "camera"), withParams("method", "camera", "outcome", "defect_indicated", "analyzer_confidence_bp", "8100", "observation_quality_bp", "8800"))...)
+			// Иллюстрации к двум наблюдениям КТ-3 (кадров в заготовках нет, FR-102).
+			obs.attach(illBurnGeneral)
+			m.ev("inspection.result.recorded", "fact", n.SignalAt.Add(-50*time.Second), "КТ-3 ракурс 2: прожог У2; уверенность 0,81; качество 0,88", append(slices.Clone(opts), withStep(n.StepKey), withSource("edge-kt3-2", "camera"), withParams("method", "camera", "outcome", "defect_indicated", "analyzer_confidence_bp", "8100", "observation_quality_bp", "8800"))...).attach(illBurnClose)
 			m.ev("quality.observation.linked", "reaction", n.SignalAt.Add(-50*time.Second), "Наблюдение ракурса 2 связано с известным дефектом: Ф-017 + У2 (один дефект, два наблюдения)", opts...)
 		}
 		m.ev("quality.signal.raised", "reaction", n.SignalAt, "Сигнал о признаке дефекта: "+strings.Join(defects, "; "), append(slices.Clone(opts), withStep(n.StepKey), withParams("signal_id", n.SignalID))...)

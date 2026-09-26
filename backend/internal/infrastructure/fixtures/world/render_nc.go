@@ -205,7 +205,7 @@ func (c *Ctx) card(n *NC) ncapp.NCCard {
 		}
 		v := c.signalView(s)
 		src := ncapp.NCSourceSignal{SignalID: v.SignalID, BasisKind: v.BasisKind, DefectTypeCode: v.DefectTypeCode, DefectTypeKnown: v.DefectTypeKnown, ZoneID: v.ZoneID,
-			Severity: v.Severity, AnalyzerConfidenceBP: v.AnalyzerConfidenceBP, ObservationQualityBP: v.ObservationQualityBP, Stages: []ncapp.NCAnalyzerStage{}, Versions: v.Versions, EvidenceRefs: []string{}}
+			Severity: v.Severity, AnalyzerConfidenceBP: v.AnalyzerConfidenceBP, ObservationQualityBP: v.ObservationQualityBP, Stages: []ncapp.NCAnalyzerStage{}, Versions: v.Versions, EvidenceRefs: v.EvidenceRefs}
 		if v.DefectTypeCode != nil {
 			src.DefectTypeLabel = defectLabel(*v.DefectTypeCode)
 		}
