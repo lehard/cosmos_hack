@@ -9,6 +9,8 @@ import (
 	crossitemapp "ant/internal/application/crossitem"
 	engineapp "ant/internal/application/engine"
 	appjournal "ant/internal/application/journal"
+	machinelogsapp "ant/internal/application/machinelogs"
+	mldomain "ant/internal/domain/machinelogs"
 	"ant/internal/infrastructure/storage/journal/feed"
 )
 
@@ -22,7 +24,13 @@ import (
 // изделия (AddItem), глобальные (AddGlobal) и вклады показателей
 // (AddContributor) — одна строка на модуль, как в buildAPI.
 func engineRegistry() *engineapp.Registry {
-	return engineapp.NewRegistry()
+	r := engineapp.NewRegistry()
+	// machinelogs (эпик 23): профили выполнения изделия, индекс выполнений,
+	// состояние и журнал оборудования, окна нарушений специального процесса.
+	if err := machinelogsapp.RegisterProjections(r, mldomain.Env{}); err != nil {
+		panic(err)
+	}
+	return r
 }
 
 // runWorker — роль worker (AD-5, AD-6, AD-45): партиции hash(item_id) mod P
@@ -130,4 +138,15 @@ func journalLive(ctx context.Context, env *environment) (*appjournal.Service, er
 	live := engineapp.NewLiveUpdates(engineapp.LiveConfig{Log: c.engine, Now: c.codec.Now, Logger: env.log})
 	env.coreH.bg.Go(func() { _ = live.Run(ctx) })
 	return appjournal.NewServiceWith(c.journal, c.listener, appjournal.WithLive(live)), nil
+}
+
+// machinelogsLive — live-реализация ведущих портов machinelogs для роли api
+// (эпик 23): операции чтения над проекциями модуля на ядре процесса;
+// состояние изделия на момент — та же свёртка, что у воркера (AD-22).
+func machinelogsLive(ctx context.Context, env *environment) (*machinelogsapp.Service, error) {
+	c, err := env.core(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return machinelogsapp.NewLiveService(c.engine, engineapp.StateQueries{Codec: c.codec}, mldomain.Env{}), nil
 }

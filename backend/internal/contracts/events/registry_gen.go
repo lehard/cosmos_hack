@@ -58,6 +58,7 @@ var dataTypes = [...]DataType{
 	{Type: "document.version.requested", Version: 1, New: func() any { return new(DocumentVersionRequestedV1) }},
 	{Type: "equipment.cycle.summarized", Version: 1, New: func() any { return new(EquipmentCycleSummarizedV1) }},
 	{Type: "equipment.deviation.detected", Version: 1, New: func() any { return new(EquipmentDeviationDetectedV1) }},
+	{Type: "equipment.event.bound", Version: 1, New: func() any { return new(EquipmentEventBoundV1) }},
 	{Type: "equipment.program.changed", Version: 1, New: func() any { return new(EquipmentProgramChangedV1) }},
 	{Type: "equipment.state.changed", Version: 1, New: func() any { return new(EquipmentStateChangedV1) }},
 	{Type: "equipment.state.changed", Version: 2, New: func() any { return new(EquipmentStateChangedV2) }},

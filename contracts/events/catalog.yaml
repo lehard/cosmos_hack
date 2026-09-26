@@ -655,6 +655,22 @@ types:
     versions: [1]
     current_version: 1
     refs: ["FR-151", "AD-29", "AD-42"]
+  equipment.event.bound:
+    title: "Событие оборудования привязано к выполнению операции"
+    emitter: "machinelogs"
+    role: "crossitem"
+    kind: "reaction"
+    stream: "item"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["server_attested"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-121", "FR-148", "AD-29", "AD-42"]
 
   # ── operator (владелец схемы: access) ──
   operator.step.confirmed:

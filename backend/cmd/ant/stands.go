@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"ant/internal/infrastructure/integration/ingest/stands"
+	cncstand "ant/internal/infrastructure/integration/machinelogs/cnc/stand"
+	weldstand "ant/internal/infrastructure/integration/machinelogs/welder/stand"
 )
 
 // Роль stands (AD-18, AD-6: одна копия) — каркас эпика 06: stand-ы внешних
@@ -42,6 +44,11 @@ func runStands(ctx context.Context, env *environment) error {
 			iv = 5 * time.Second
 		}
 		reg.Add(&stands.EquipmentStand{Name: "weld-is-1", EquipmentID: "IS-1", EdgeURL: edge, Interval: iv})
+		// Эпик 23 (FR-149): станок ЧПУ и сварочный источник — нормальное
+		// выполнение и выполнение с двумя отклонениями по очереди; заказ
+		// выполнения — POST /stand/‹имя›/executions {"kind": …}.
+		reg.Add(cncstand.New("cnc-1", "CNC-1", edge, iv))
+		reg.Add(weldstand.New("weld-is-2", "IS-2", edge, iv))
 	}
 	srv := &http.Server{Addr: addr, Handler: reg.Handler(), ReadHeaderTimeout: 10 * time.Second,
 		BaseContext: func(net.Listener) context.Context { return ctx }}

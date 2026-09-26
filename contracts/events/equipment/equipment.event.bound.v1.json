@@ -1,0 +1,57 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/equipment/equipment.event.bound.v1.json",
+  "title": "EquipmentEventBoundV1",
+  "description": "Событие оборудования привязано к выполнению операции — межизделийная стадия по оборудованию и интервалу выполнения отнесла событие оборудования (без изделия) к выполнению операции изделия и адресовала его в поток изделия; из таких записей свёртка изделия строит профиль выполнения операции (FR-121, FR-148, AD-29, AD-42). Привязку делает только стадия; edge-агент `operation_run_id` не подставляет. Данные исходного события копируются как есть (`subject_data`), исходная запись остаётся в потоке оборудования.",
+  "type": "object",
+  "properties": {
+    "operation_run_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Выполнение операции, к которому привязано событие."
+    },
+    "equipment_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Оборудование."
+    },
+    "binding": {
+      "type": "string",
+      "enum": [
+        "interval",
+        "context"
+      ],
+      "description": "Как привязано: событие в интервале выполнения / обстановка до начала (последние программа, инструмент, состояние)."
+    },
+    "subject_event_id": {
+      "$ref": "../common/defs.v1.json#/definitions/uuid",
+      "description": "Исходное событие оборудования."
+    },
+    "subject_event_type": {
+      "type": "string",
+      "description": "Тип исходного события (семейство equipment).",
+      "pattern": "^equipment\\.[a-z_]+\\.[a-z_]+$",
+      "maxLength": 96
+    },
+    "subject_occurred_at": {
+      "$ref": "../common/defs.v1.json#/definitions/timestamp",
+      "description": "Время возникновения исходного события."
+    },
+    "subject_source_kind": {
+      "type": "string",
+      "description": "Источник исходного события (FR-140): ручной ввод, станок, датчик, внешняя система.",
+      "maxLength": 32
+    },
+    "subject_data": {
+      "type": "object",
+      "description": "Данные исходного события (текущая версия схемы его типа)."
+    }
+  },
+  "required": [
+    "operation_run_id",
+    "equipment_id",
+    "binding",
+    "subject_event_id",
+    "subject_event_type",
+    "subject_occurred_at",
+    "subject_data"
+  ]
+}
