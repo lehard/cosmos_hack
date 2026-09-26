@@ -359,4 +359,10 @@ export interface NcGroup {
   last_found_at: string
   /** Несоответствия группы (первое открывается в разборе обстоятельств); может быть пусто. */
   nc_ids?: string[]
+  /** Названия для людей (сервер); нет — код. */
+  defect_type_label?: string | null
+  operation_label?: string | null
+  equipment_label?: string | null
+  /** Расследование (инцидент), в которое входит группа; нет — расследования ещё нет. */
+  incident_id?: string | null
 }

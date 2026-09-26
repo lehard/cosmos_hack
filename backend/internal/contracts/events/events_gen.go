@@ -6623,11 +6623,24 @@ type TaskTaskCreatedV1 struct {
 	// Срок.
 	DueAt *Timestamp `json:"due_at,omitempty,omitzero"`
 
+	// Изделие задачи (субъект — изделие).
+	ItemID *ItemID `json:"item_id,omitempty,omitzero"`
+
+	// Метка изделия для людей: номер с бирки (Ф-001), DM-код или номер из id.
+	ItemLabel *string `json:"item_label,omitempty,omitzero"`
+
 	// Вид задачи.
 	Kind TaskTaskCreatedV1Kind `json:"kind"`
 
 	// Где физически изделие.
 	LocationID *ObjectID `json:"location_id,omitempty,omitzero"`
+
+	// Задача процесса (kind process_step): операция API, которой исполнитель
+	// продвигает изделие (process.movement.receive, process.operation.start и т. п.).
+	OperationID *string `json:"operation_id,omitempty,omitzero"`
+
+	// Шаг процесса, на котором стоит изделие.
+	StepKey *StepKey `json:"step_key,omitempty,omitzero"`
 
 	// Субъект.
 	SubjectRef StreamRef `json:"subject_ref"`
@@ -6647,6 +6660,7 @@ const TaskTaskCreatedV1KindInspectionMissing TaskTaskCreatedV1Kind = "inspection
 const TaskTaskCreatedV1KindIsolateMove TaskTaskCreatedV1Kind = "isolate_move"
 const TaskTaskCreatedV1KindOther TaskTaskCreatedV1Kind = "other"
 const TaskTaskCreatedV1KindPhysicalMove TaskTaskCreatedV1Kind = "physical_move"
+const TaskTaskCreatedV1KindProcessStep TaskTaskCreatedV1Kind = "process_step"
 const TaskTaskCreatedV1KindProtectionBasisChanged TaskTaskCreatedV1Kind = "protection_basis_changed"
 const TaskTaskCreatedV1KindRecheck TaskTaskCreatedV1Kind = "recheck"
 const TaskTaskCreatedV1KindRemarkCarrier TaskTaskCreatedV1Kind = "remark_carrier"

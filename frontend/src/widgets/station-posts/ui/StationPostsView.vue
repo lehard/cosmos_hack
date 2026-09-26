@@ -131,10 +131,9 @@ const factLine = (s: StationStep) => queueFacts(s, props.posts ?? [], props.regi
             <th scope="row">
               <ActionButton text type="primary" :size="size" :label="p.post.station" data-testid="open-post" @click="emit('workplace', p.post.workplace_id)" />
             </th>
-            <td>
+            <td class="assigned">
               <div class="cell">
                 <ActionButton v-if="p.post.assigned" text type="primary" :size="size" :label="p.post.assigned.display" data-testid="open-person" @click="emit('person', p.post.assigned.person_id)" />
-                <span v-else class="ant-wrap">{{ t('liveMap.posts.notAssigned') }}</span>
                 <NTag size="small" :bordered="false" :type="presenceTagType(p.post.presence)">
                   <span class="ant-wrap">{{ t(PRESENCE_TEXT[p.post.presence]) }}</span>
                 </NTag>
@@ -175,6 +174,16 @@ const factLine = (s: StationStep) => queueFacts(s, props.posts ?? [], props.regi
 </template>
 
 <style scoped>
+.assigned {
+  min-width: 12em;
+}
+
+.assigned :deep(.ant-wrap) {
+  overflow-wrap: normal;
+  word-break: normal;
+  white-space: nowrap;
+}
+
 .station,
 .list,
 .facts,

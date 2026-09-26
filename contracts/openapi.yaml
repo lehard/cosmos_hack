@@ -17071,6 +17071,12 @@ components:
           type:
             - string
             - "null"
+        item_id:
+          description: Изделие задачи (субъект — изделие).
+          type: string
+        item_label:
+          description: "Метка изделия для людей: номер с бирки (Ф-001), DM-код или номер из id — показывать вместо item_id."
+          type: string
         kind:
           enum:
             - physical_move
@@ -17084,9 +17090,13 @@ components:
             - remove_temporary_carrier
             - inspection_missing
             - admin_resend
+            - process_step
             - other
           type: string
         location_id:
+          type: string
+        operation_id:
+          description: "Задача процесса (kind process_step): операция API, которой исполнитель продвигает изделие (process.movement.receive, process.operation.start, process.operation.finish, process.movement.send)."
           type: string
         overdue:
           type: boolean
@@ -17100,6 +17110,9 @@ components:
             - accepted
             - declined
             - withdrawn
+          type: string
+        step_key:
+          description: Шаг процесса (step_key BPMN), на котором стоит изделие.
           type: string
         task_id:
           type: string
@@ -31255,6 +31268,14 @@ paths:
     get:
       description: "AD-26: определения scenarios/definitions — 8 ситуаций §4.2, 9 проверок §5.1, демо-сценарии, сбои; число утверждений табло и остановок на решениях."
       operationId: simulation.scenario.list
+      parameters:
+        - description: Весь каталог; по умолчанию — только сценарии показа (если отмечены в каталоге).
+          explode: false
+          in: query
+          name: all
+          schema:
+            description: Весь каталог; по умолчанию — только сценарии показа (если отмечены в каталоге).
+            type: boolean
       responses:
         "200":
           content:

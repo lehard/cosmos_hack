@@ -8,7 +8,7 @@
  */
 import { computed, toValue, type MaybeRefOrGetter } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
-import { itemGenealogyRead, itemHistoryList, itemItemLookup, itemPassportRead } from '@/shared/api/generated/client'
+import { itemGenealogyRead, itemHistoryList, itemItemLookup, itemPassportRead, qualityCoverageRead } from '@/shared/api/generated/client'
 import { entityKeys } from '@/shared/api/keys'
 import { useMomentStore, type MomentParams } from '@/shared/model/moment'
 
@@ -82,6 +82,21 @@ export function useItemGenealogy(itemId: MaybeRefOrGetter<string | null | undefi
     queryKey: computed(() => itemKeys.one(toValue(itemId) ?? '', 'genealogy', params.value)),
     queryFn: ({ signal }) => itemGenealogyRead(toValue(itemId) ?? '', params.value, { signal }),
     enabled: computed(() => !!toValue(itemId) && toValue(opts).enabled !== false),
+    retry: false,
+  })
+}
+
+/**
+ * Покрытие контролем изделия (FR-36): какие точки и методы обязательны, что
+ * получено, что ждём; какие виды дефектов не проверены методом, способным их
+ * выявить (это не годность). Пустой id — не читается.
+ */
+export function useCoverage(itemId: MaybeRefOrGetter<string | null | undefined>, opts: MaybeRefOrGetter<ItemReadOptions> = {}) {
+  const params = useReadParams(opts)
+  return useQuery({
+    queryKey: computed(() => itemKeys.one(toValue(itemId) ?? '', 'coverage', params.value)),
+    queryFn: ({ signal }) => qualityCoverageRead(toValue(itemId) ?? '', params.value, { signal }),
+    enabled: computed(() => !!toValue(itemId)),
     retry: false,
   })
 }

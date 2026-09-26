@@ -14,6 +14,10 @@ import { statusAxes, statusDictionaries } from '@/shared/api/generated/statuses'
 
 const props = defineProps<{ incidents: readonly IncidentSummary[]; selected: string | null }>()
 const emit = defineEmits<{ select: [incidentId: string] }>()
+defineSlots<{
+  /** Несоответствия расследования — контейнер рисует ссылки на их окна. */
+  ncs(props: { incident: IncidentSummary }): unknown
+}>()
 
 const { t, d } = useI18n()
 
@@ -74,6 +78,10 @@ const counts = (i: IncidentSummary) =>
           <template v-if="i.last_event_at"> · {{ t('widgets.analysis.investigations.lastEvent', { time: d(new Date(i.last_event_at), 'dateTime') }) }}</template>
         </span>
       </button>
+      <div v-if="i.nc_ids?.length" class="ncs" data-testid="incident-ncs">
+        <span class="ncs-title">{{ t('widgets.analysis.investigations.ncs') }}</span>
+        <slot name="ncs" :incident="i" />
+      </div>
     </li>
   </ul>
 </template>
@@ -160,6 +168,19 @@ const counts = (i: IncidentSummary) =>
   width: 8px;
   height: 8px;
   border-radius: 50%;
+}
+
+.ncs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ant-space-1);
+  align-items: baseline;
+  padding: var(--ant-space-1) var(--ant-space-3) 0;
+}
+
+.ncs-title {
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-meta);
 }
 
 .blockers {

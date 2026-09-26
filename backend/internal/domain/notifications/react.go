@@ -3,6 +3,7 @@ package notifications
 import (
 	"slices"
 	"strconv"
+	"strings"
 
 	"ant/internal/contracts/catalog"
 	"ant/internal/domain/kernel"
@@ -76,6 +77,10 @@ type TaskData struct {
 	DueAt            string `json:"due_at,omitempty"`
 	SubjectRef       string `json:"subject_ref"`
 	Title            string `json:"title"`
+	ItemID           string `json:"item_id,omitempty"`
+	ItemLabel        string `json:"item_label,omitempty"`
+	OperationID      string `json:"operation_id,omitempty"`
+	StepKey          string `json:"step_key,omitempty"`
 }
 
 // ReasonData — причина (common/defs reason).
@@ -196,7 +201,10 @@ func taskReaction(t Task) (kernel.Reaction, error) {
 			records(t.Causes, []Cause{*t.Closed})...)
 	}
 	d := TaskData{TaskID: t.ID, Kind: t.Kind, AssigneeRoleID: t.Role, AssigneePersonID: t.Person, LocationID: t.LocationID,
-		SubjectRef: t.Subject, Title: truncate(t.Title, 256)}
+		SubjectRef: t.Subject, Title: truncate(t.Title, 256), ItemLabel: t.ItemLabel, OperationID: t.Operation, StepKey: t.StepKey}
+	if strings.HasPrefix(t.Subject, "item:") {
+		d.ItemID = strings.TrimPrefix(t.Subject, "item:")
+	}
 	if t.DueAt != nil {
 		d.DueAt = FormatTime(*t.DueAt)
 	}

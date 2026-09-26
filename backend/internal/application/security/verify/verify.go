@@ -77,6 +77,9 @@ type Input struct {
 	Partitions int
 	// RunID — проверять только прогон (пусто — весь журнал).
 	RunID string
+	// SettleWait — пауза перед повтором снимка изделия, которое воркер ещё
+	// обрабатывает (items.settle); 0 — 150 мс.
+	SettleWait time.Duration
 	// Genesis — итог проверки блока генезиса целиком по якорю (AD-33, эпик
 	// 05): cmd/verifier вызывает signing.VerifyGenesis с anchor_fingerprint
 	// из trust-anchors. nil — генезиса нет и якорь не закреплён («не проверяемо»).

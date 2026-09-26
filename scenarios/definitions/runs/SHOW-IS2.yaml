@@ -2,8 +2,9 @@
 # ~/ant/_bmad-output/implementation-artifacts/demo-show-scenario.md): короткий прогон
 # профиля demo, который люди проводят руками.
 #
-# ПРОШЛОЕ (до live.from) — готовая история: две прошлые партии Ф-101…Ф-103 и
-# Ф-201…Ф-203 проведены целиком (приёмка партий, мехобработка, сварка, ЗТ-2…ЗТ-6, выпуск), живая партия
+# ПРОШЛОЕ (до live.from) — готовая история: прошлая партия Ф-201, Ф-202 проведена
+# целиком (история короткая: интерактивный прогон проигрывает её до первой
+# остановки за 1–2 минуты реального времени на живом движке) (приёмка партий, мехобработка, сварка, ЗТ-2…ЗТ-6, выпуск), живая партия
 # Ф-001…Ф-003 — через мехобработку и ЗТ-2 до передачи в сварочный цех. Эти решения
 # подписывает demo-signer; интерактивный прогон проигрывает историю сразу, без часов.
 # ЖИВАЯ ПАРТИЯ (с live.from, Пн 21.09 08:00) — только руками: каждое решение человека —
@@ -29,7 +30,7 @@ description: >-
 case_refs: ["кейс §1.5", "кейс §4.2 станок сломался", "Д-85 сценарий показа"]
 world: flange
 seed: 20260921
-anchor: "2026-09-04T08:00:00+03:00"
+anchor: "2026-09-11T08:00:00+03:00"
 end: "2026-09-21T14:00:00+03:00"
 speed: 60
 scenarios: [SHOW-IS2]
@@ -37,53 +38,26 @@ live:
   from: "2026-09-21T08:00:00+03:00"
 
 orders:
-  - {id: ORD-0904, at: "2026-09-04T08:00:00+03:00", external: ord-5c2b-0904, quantity: 3, due: "2026-09-18", items: "F-101…F-103",
-     lots: {blank: LOT-ZF-181, ring: LOT-R-114, cover: LOT-C-281, seal: LOT-SL-381, fastener: LOT-FS-481, valve: LOT-V-581}}
-  - {id: ORD-0911, at: "2026-09-11T08:00:00+03:00", external: ord-5c2b-0911, quantity: 3, due: "2026-09-25", items: "F-201…F-203",
-     lots: {blank: LOT-ZF-191, ring: LOT-R-115, cover: LOT-C-291, seal: LOT-SL-391, fastener: LOT-FS-491, valve: LOT-V-591}}
+  - {id: ORD-0911, at: "2026-09-11T08:00:00+03:00", external: ord-5c2b-0911, quantity: 2, due: "2026-09-25", items: "F-201…F-202",
+     lots: {blank: LOT-ZF-201, ring: LOT-R-116, cover: LOT-C-301, seal: LOT-SL-401, fastener: LOT-FS-501, valve: LOT-V-601}}
   - {id: ORD-0917, at: "2026-09-16T09:00:00+03:00", external: ord-5c2b-0917, quantity: 3, due: "2026-10-09", items: "F-001…F-003",
      lots: {blank: LOT-ZF-201, ring: LOT-R-116, cover: LOT-C-301, seal: LOT-SL-401, fastener: LOT-FS-501, valve: LOT-V-601}}
 
+# Партии — общие для прошлой и живой партии фланцев (история короче: меньше приёмок).
 lots:
-  - {id: LOT-ZF-181, component: FL-100.01.001, supplier: SUP-1, quantity: 3, certificate: С-181, heat: "5390", arrived: "2026-09-04T08:30:00+03:00"}
-  - {id: LOT-R-114,  component: FL-100.01.002, supplier: SUP-2, quantity: 3, certificate: С-114, arrived: "2026-09-04T08:40:00+03:00"}
-  - {id: LOT-C-281,  component: FL-100.00.003, supplier: SUP-4, quantity: 3, arrived: "2026-09-04T08:50:00+03:00"}
-  - {id: LOT-SL-381, component: FL-100.00.004, supplier: SUP-5, quantity: 5, arrived: "2026-09-04T09:00:00+03:00"}
-  - {id: LOT-FS-481, component: FL-100.00.005, supplier: SUP-6, quantity: 40, arrived: "2026-09-04T09:10:00+03:00"}
-  - {id: LOT-V-581,  component: KVD-6, supplier: SUP-8, quantity: 3, arrived: "2026-09-04T09:20:00+03:00"}
-  - id: LOT-W-86
-    component: WIRE-SV-AMG6
-    supplier: SUP-7
-    quantity: 10
-    arrived: "2026-09-04T09:30:00+03:00"
-    issues: [{at: "2026-09-08T07:00:00+03:00", to: ST-WELD, quantity: 10}]
-    note: "сварочная проволока позапрошлой партии"
-  - {id: LOT-ZF-191, component: FL-100.01.001, supplier: SUP-1, quantity: 3, certificate: С-191, heat: "5431", arrived: "2026-09-11T08:30:00+03:00"}
-  - {id: LOT-R-115,  component: FL-100.01.002, supplier: SUP-2, quantity: 3, certificate: С-115, arrived: "2026-09-11T08:40:00+03:00"}
-  - {id: LOT-C-291,  component: FL-100.00.003, supplier: SUP-4, quantity: 3, arrived: "2026-09-11T08:50:00+03:00"}
-  - {id: LOT-SL-391, component: FL-100.00.004, supplier: SUP-5, quantity: 5, arrived: "2026-09-11T09:00:00+03:00"}
-  - {id: LOT-FS-491, component: FL-100.00.005, supplier: SUP-6, quantity: 40, arrived: "2026-09-11T09:10:00+03:00"}
-  - {id: LOT-V-591,  component: KVD-6, supplier: SUP-8, quantity: 3, arrived: "2026-09-11T09:20:00+03:00"}
-  - id: LOT-W-87
-    component: WIRE-SV-AMG6
-    supplier: SUP-7
-    quantity: 10
-    arrived: "2026-09-11T09:30:00+03:00"
-    issues: [{at: "2026-09-14T07:00:00+03:00", to: ST-WELD, quantity: 10}]
-    note: "сварочная проволока прошлой партии"
-  - {id: LOT-ZF-201, component: FL-100.01.001, supplier: SUP-1, quantity: 3, certificate: С-201, heat: "5512", arrived: "2026-09-17T08:00:00+03:00"}
-  - {id: LOT-R-116,  component: FL-100.01.002, supplier: SUP-2, quantity: 3, certificate: С-116, units: "R-001…R-003", arrived: "2026-09-17T08:10:00+03:00"}
-  - {id: LOT-C-301,  component: FL-100.00.003, supplier: SUP-4, quantity: 3, units: "C-001…C-003", arrived: "2026-09-17T08:20:00+03:00"}
-  - {id: LOT-SL-401, component: FL-100.00.004, supplier: SUP-5, quantity: 5, arrived: "2026-09-17T08:30:00+03:00"}
-  - {id: LOT-FS-501, component: FL-100.00.005, supplier: SUP-6, quantity: 40, arrived: "2026-09-17T08:40:00+03:00"}
-  - {id: LOT-V-601,  component: KVD-6, supplier: SUP-8, quantity: 3, units: "V-001…V-003", arrived: "2026-09-17T08:50:00+03:00"}
+  - {id: LOT-ZF-201, component: FL-100.01.001, supplier: SUP-1, quantity: 5, certificate: С-201, heat: "5512", arrived: "2026-09-11T08:30:00+03:00"}
+  - {id: LOT-R-116,  component: FL-100.01.002, supplier: SUP-2, quantity: 5, certificate: С-116, units: "R-001…R-005", arrived: "2026-09-11T08:40:00+03:00"}
+  - {id: LOT-C-301,  component: FL-100.00.003, supplier: SUP-4, quantity: 5, units: "C-001…C-005", arrived: "2026-09-11T08:50:00+03:00"}
+  - {id: LOT-SL-401, component: FL-100.00.004, supplier: SUP-5, quantity: 10, arrived: "2026-09-11T09:00:00+03:00"}
+  - {id: LOT-FS-501, component: FL-100.00.005, supplier: SUP-6, quantity: 80, arrived: "2026-09-11T09:10:00+03:00"}
+  - {id: LOT-V-601,  component: KVD-6, supplier: SUP-8, quantity: 5, units: "V-001…V-005", arrived: "2026-09-11T09:20:00+03:00"}
   - id: LOT-W-88
     component: WIRE-SV-AMG6
     supplier: SUP-7
-    quantity: 10
-    arrived: "2026-09-18T10:00:00+03:00"
-    issues: [{at: "2026-09-21T07:00:00+03:00", to: ST-WELD, quantity: 10}]
-    note: "сварочная проволока П-88: на участке с Пн 21.09 07:00"
+    quantity: 20
+    arrived: "2026-09-11T09:30:00+03:00"
+    issues: [{at: "2026-09-14T07:00:00+03:00", to: ST-WELD, quantity: 20}]
+    note: "сварочная проволока П-88: на участке с Пн 14.09"
 
 # Объекты, которые рождает система во время показа (читаются теми же операциями API).
 refs:
@@ -92,25 +66,6 @@ refs:
   INC-IS2: {operation: analysis.incident.list, path: "/items/0/incident_id", note: "инцидент по ИС-2"}
 
 items:
-  # История: позапрошлая партия (Пн 07.09 – Чт 10.09), проведена целиком.
-  - id: F-101
-    order: ORD-0904
-    launch: "2026-09-07T08:00:00+03:00"
-    machining: "2026-09-07T08:30:00+03:00"
-    until: release
-    weld: {at: "2026-09-08T08:30:00+03:00", station: WS-1, welder: WLD-03}
-  - id: F-102
-    order: ORD-0904
-    launch: "2026-09-07T08:50:00+03:00"
-    machining: "2026-09-07T09:20:00+03:00"
-    until: release
-    weld: {at: "2026-09-08T10:00:00+03:00", station: WS-2, welder: WLD-02}
-  - id: F-103
-    order: ORD-0904
-    launch: "2026-09-07T09:40:00+03:00"
-    machining: "2026-09-07T10:10:00+03:00"
-    until: release
-    weld: {at: "2026-09-08T11:30:00+03:00", station: WS-1, welder: WLD-02}
   # История: прошлая партия (Пн 14.09 – Чт 17.09), проведена целиком.
   - id: F-201
     order: ORD-0911
@@ -118,18 +73,18 @@ items:
     machining: "2026-09-14T08:30:00+03:00"
     until: release
     weld: {at: "2026-09-15T08:30:00+03:00", station: WS-1, welder: WLD-02}
+    ring: R-004
+    cover: C-004
+    valve: V-004
   - id: F-202
     order: ORD-0911
     launch: "2026-09-14T08:50:00+03:00"
     machining: "2026-09-14T09:20:00+03:00"
     until: release
     weld: {at: "2026-09-15T10:00:00+03:00", station: WS-2, welder: WLD-03}
-  - id: F-203
-    order: ORD-0911
-    launch: "2026-09-14T09:40:00+03:00"
-    machining: "2026-09-14T10:10:00+03:00"
-    until: release
-    weld: {at: "2026-09-15T11:30:00+03:00", station: WS-2, welder: WLD-02}
+    ring: R-005
+    cover: C-005
+    valve: V-005
   # Живая партия: история — мехобработка и ЗТ-2 (Пт 18.09), передача в сварочный цех
   # (Пн 07:50); дальше — карточка SHOW-IS2, руками.
   - id: F-001

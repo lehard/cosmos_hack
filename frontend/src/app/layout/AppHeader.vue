@@ -4,7 +4,8 @@
  * целостность журнала «по данным сервера», токен, пользователь, справка, выход.
  * Момент просмотра появляется только при просмотре прошлого (с кнопкой
  * «Вернуться к текущему»); режим данных fixtures | live — в меню пользователя
- * одной строкой с пояснением. Имя системы — «Главный» (Д-65). Длинные имена и
+ * одной строкой с пояснением. Пока идёт прогон тестового сценария — часы
+ * прогона: доменное время и скорость (Д-85). Имя системы — «Главный» (Д-65). Длинные имена и
  * роли — многоточие с подсказкой.
  */
 import { computed } from 'vue'
@@ -21,6 +22,7 @@ import IntegrityIndicator from './header/IntegrityIndicator.vue'
 import ItemSearch from './header/ItemSearch.vue'
 import MomentIndicator from './header/MomentIndicator.vue'
 import NotificationsBell from './header/NotificationsBell.vue'
+import RunClock from './header/RunClock.vue'
 import TokenStatus from './header/TokenStatus.vue'
 
 defineProps<{ live: LiveStatus }>()
@@ -56,6 +58,7 @@ async function onLogout() {
     <ItemSearch class="search" />
 
     <div class="right">
+      <RunClock />
       <MomentIndicator />
       <IntegrityIndicator :live-off="live === 'closed'" />
       <TokenStatus />

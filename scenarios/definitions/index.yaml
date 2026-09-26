@@ -46,6 +46,9 @@ scenarios:
   title: 'Показ: партия фланцев, сбой ИС-2'
   kind: demo
   run: SHOW-IS2
+  # show: пульт по умолчанию показывает только сценарии показа (Д-85); весь
+  # каталог — simulation.scenario.list?all=true.
+  show: true
   cards:
   - SHOW-IS2
   case_refs:

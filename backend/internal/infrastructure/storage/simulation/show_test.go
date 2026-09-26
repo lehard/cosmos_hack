@@ -96,10 +96,14 @@ func TestShowRunManual(t *testing.T) {
 		}
 		return load()
 	}
-	// История — за несколько шагов раннера, без часов (реальное время почти не идёт).
+	// История — за несколько шагов раннера, без часов (реальное время почти не идёт);
+	// пока она идёт, часы пульта — последний тик истории, а не ×скорость.
 	st := load()
 	for i := 0; i < 50 && !st.Live; i++ {
-		st = step(10 * time.Millisecond)
+		st = step(10 * time.Second)
+		if v, _ := svc.Run(ctx, started.RunID, platformMoment()); !st.Live && !v.ClockAt.Equal(st.LastTick) {
+			t.Fatalf("часы во время истории: %s, последний тик %s", v.ClockAt, st.LastTick)
+		}
 	}
 	if !st.Live || st.Clock.Speed != 60 {
 		t.Fatalf("история не проиграна сразу: live=%v, скорость %d, курсор %+v", st.Live, st.Clock.Speed, st.Cursor)
@@ -163,11 +167,19 @@ func TestShowRunManual(t *testing.T) {
 	if !early {
 		t.Error("в плане нет второго приёма мастера")
 	}
-	// Остановок: 3 приёма + 2 допуска + 4 сварки × (начать, выполнено) + 3 ЗТ-3 + НС, изоляция,
-	// доп. проверка, изолятор, остановка ИС-2, причина, переделка = 24; ранний приём
-	// закрылся без ожидания.
+	// Пульт: по умолчанию только сценарии показа; остановок — все решения живой части.
+	sl, err := svc.Scenarios(ctx, false)
+	if err != nil || len(sl.Items) != 1 || sl.Items[0].ScenarioID != "SHOW-IS2" || sl.Items[0].Decisions != 23 {
+		t.Errorf("пульт показа: %+v %v", sl.Items, err)
+	}
+	if all, _ := svc.Scenarios(ctx, true); len(all.Items) < 40 {
+		t.Errorf("весь каталог: %d", len(all.Items))
+	}
+	// Остановок 23: 3 приёма + 2 допуска + 4 сварки × («Начать», «Выполнено») + 3 ЗТ-3 +
+	// НС, изоляция, доп. проверка, изолятор, остановка ИС-2, причина, переделка; ранний
+	// приём Ф-002 закрылся без ожидания, но остановкой в плане остался.
 	if len(stops) != 23 {
-		t.Errorf("остановок %d, ждали 23 (24 минус ранний приём): %v", len(stops), stops)
+		t.Errorf("остановок %d, ждали 23: %v", len(stops), stops)
 	}
 	for _, op := range d.auto {
 		if !slices.Contains([]string{"access.operator.confirm_step", "item.presentation.record"}, op) {

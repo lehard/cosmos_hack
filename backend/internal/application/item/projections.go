@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"slices"
-	"strings"
 
 	engineapp "ant/internal/application/engine"
 	"ant/internal/application/platform"
@@ -73,7 +72,7 @@ func rowView(itemID string, s engine.Snapshot, _ []kernel.Reaction) (any, error)
 
 // rowOf — строка списка по итогу свёртки.
 func rowOf(itemID string, s engine.Snapshot) ItemRow {
-	r := ItemRow{ItemID: itemID, Label: Label(itemID), ItemTypeID: s.Item.ItemTypeID, StepKey: s.Item.StepKey, VersionLabel: s.Item.NormativeRev,
+	r := ItemRow{ItemID: itemID, Label: s.Item.DisplayLabel(itemID), ItemTypeID: s.Item.ItemTypeID, StepKey: s.Item.StepKey, VersionLabel: s.Item.NormativeRev,
 		Status: StatusOf(s), RunID: s.Item.RunID}
 	if len(s.Item.LotIDs) > 0 {
 		r.LotID = s.Item.LotIDs[0]
@@ -104,23 +103,9 @@ func indexStep(_ string, prev json.RawMessage, r kernel.Record) (json.RawMessage
 	return json.Marshal(v)
 }
 
-// Label — номер детали для людей: локальная часть ID без кода предприятия и
-// префикса прогона; машинные F-/R-/C- — кириллицей, как на бирке.
-func Label(itemID string) string {
-	local := itemID
-	if i := strings.IndexByte(local, ':'); i >= 0 {
-		local = local[i+1:]
-	}
-	if i := strings.LastIndexByte(local, '/'); i >= 0 {
-		local = local[i+1:]
-	}
-	for _, r := range [][2]string{{"F-", "Ф-"}, {"R-", "К-"}, {"C-", "КР-"}} {
-		if strings.HasPrefix(local, r[0]) {
-			return r[1] + local[len(r[0]):]
-		}
-	}
-	return local
-}
+// Label — номер детали для людей по id (domain/item.LocalLabel); метка с
+// учётом носителей — item.State.DisplayLabel.
+func Label(itemID string) string { return dom.LocalLabel(itemID) }
 
 // StatusOf — оси статуса изделия (§3b PRD, AD-30) по итогу свёртки: каждую
 // ось показывает модуль-владелец; пока владелец оси не выставил её в

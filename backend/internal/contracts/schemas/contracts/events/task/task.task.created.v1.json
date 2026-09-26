@@ -23,6 +23,7 @@
         "remove_temporary_carrier",
         "inspection_missing",
         "admin_resend",
+        "process_step",
         "other"
       ],
       "description": "Вид задачи."
@@ -51,6 +52,24 @@
       "type": "string",
       "description": "Что сделать.",
       "maxLength": 256
+    },
+    "item_id": {
+      "$ref": "../common/defs.v1.json#/definitions/item_id",
+      "description": "Изделие задачи (субъект — изделие)."
+    },
+    "item_label": {
+      "type": "string",
+      "maxLength": 128,
+      "description": "Метка изделия для людей: номер с бирки (Ф-001), DM-код или номер из id."
+    },
+    "operation_id": {
+      "type": "string",
+      "maxLength": 128,
+      "description": "Задача процесса (kind process_step): операция API, которой исполнитель продвигает изделие (process.movement.receive, process.operation.start и т. п.)."
+    },
+    "step_key": {
+      "$ref": "../common/defs.v1.json#/definitions/step_key",
+      "description": "Шаг процесса, на котором стоит изделие."
     }
   },
   "required": [

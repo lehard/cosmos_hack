@@ -4,6 +4,8 @@
  * системы, решения людей, служебные записи — различимы; у каждой — пометка
  * источника, автор, время, подписи и итог их проверки, номер критического
  * действия. Исправление — отдельная запись со ссылкой на исправляемую (FR-122).
+ * У наблюдения анализатора — «Как машина пришла к выводу» (Ф1 SHOW-IS2): дорожка
+ * решения раскрывается по кнопке и читает наблюдение только тогда.
  */
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -19,7 +21,8 @@ import {
   type PassportEntry,
   type RecordLayer,
 } from '@/entities/item'
-import { EmptyState } from '@/shared/ui'
+import { ObservationDecisionTrace } from '@/features/decision-trace'
+import { ActionButton, EmptyState } from '@/shared/ui'
 
 const props = withDefaults(
   defineProps<{
@@ -42,6 +45,17 @@ const rows = computed(() => {
   return list.map((e) => ({ e, text: entryText(e), critical: isCriticalType(e.event_type) }))
 })
 const time = (x: string) => d(new Date(x), 'dateTime')
+
+/** Наблюдение анализатора (не ручной ввод) — у него есть дорожка решения. */
+const isObservation = (e: PassportEntry) => e.event_type === 'inspection.result.recorded' && e.source_kind !== 'manual_entry'
+/** Раскрытые дорожки решения (event_id). */
+const traces = ref<Set<string>>(new Set())
+function toggleTrace(id: string): void {
+  const next = new Set(traces.value)
+  if (next.has(id)) next.delete(id)
+  else next.add(id)
+  traces.value = next
+}
 </script>
 
 <template>
@@ -71,12 +85,32 @@ const time = (x: string) => d(new Date(x), 'dateTime')
           <li v-if="!e.signatures.length" class="muted" data-testid="no-signature">{{ t('widgets.passport.signature.none') }}</li>
         </ul>
         <p v-if="e.corrects" class="mark" data-testid="corrects">{{ t('timeline.marks.corrects', { eventId: e.corrects }) }}</p>
+        <template v-if="isObservation(e)">
+          <ActionButton
+            size="small"
+            quaternary
+            class="trace-toggle"
+            data-testid="trace-toggle"
+            :aria-expanded="traces.has(e.event_id)"
+            :label="traces.has(e.event_id) ? t('decisionTrace.hide') : t('decisionTrace.title')"
+            @click="toggleTrace(e.event_id)"
+          />
+          <ObservationDecisionTrace v-if="traces.has(e.event_id)" :event-id="e.event_id" class="trace" />
+        </template>
       </li>
     </ol>
   </section>
 </template>
 
 <style scoped>
+.trace-toggle {
+  align-self: flex-start;
+}
+
+.trace {
+  margin: var(--ant-space-2) 0 var(--ant-space-2) var(--ant-space-4);
+}
+
 .entries {
   display: flex;
   flex-direction: column;

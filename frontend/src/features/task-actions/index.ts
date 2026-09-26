@@ -4,6 +4,7 @@
  * и подтверждение физического перемещения в изолятор — с задачи мастера и с
  * терминала исполнителя.
  */
+export * from './model/actions'
 export * from './model/isolation'
 export { useIsolatorMove } from './model/use-isolator-move'
 export { default as IsolatorMoveConfirm } from './ui/IsolatorMoveConfirm.vue'
