@@ -16,7 +16,8 @@
 //	                     создаёт (0400) и регистрирует блоком генезиса
 //	                     ant init (эпик 05, AD-33);
 //	demo-signer serve  — API шагов: POST /v1/steps, GET /v1/personas, GET /healthz;
-//	demo-signer step   — один шаг из командной строки (отладка, make-цели).
+//	demo-signer step   — один шаг из командной строки (отладка, make-цели);
+//	demo-signer health — проверка живости службы (healthcheck compose).
 package main
 
 import (
@@ -46,8 +47,27 @@ func env(k, def string) string {
 
 func run(args []string, stdout, stderr io.Writer) int {
 	if len(args) == 0 {
-		_, _ = fmt.Fprintln(stderr, "demo-signer init | serve | step  (-h — флаги)")
+		_, _ = fmt.Fprintln(stderr, "demo-signer init | serve | step | health  (-h — флаги)")
 		return 2
+	}
+	if args[0] == "health" {
+		// Проверка живости службы compose (образ distroless — без curl):
+		// GET /healthz своего API шагов.
+		addr := env("DEMO_SIGNER_LISTEN", ":8445")
+		if strings.HasPrefix(addr, ":") {
+			addr = "127.0.0.1" + addr
+		}
+		c := http.Client{Timeout: 3 * time.Second}
+		resp, err := c.Get("http://" + addr + "/healthz")
+		if err != nil {
+			_, _ = fmt.Fprintln(stderr, err)
+			return 1
+		}
+		_ = resp.Body.Close()
+		if resp.StatusCode != http.StatusOK {
+			return 1
+		}
+		return 0
 	}
 	cmd, args := args[0], args[1:]
 	fs := flag.NewFlagSet("demo-signer "+cmd, flag.ContinueOnError)

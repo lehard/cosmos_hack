@@ -135,9 +135,12 @@ services:
     read_only: true
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
-    # HTTP-проверки в distroless нет: живость — по журналу службы и GET /healthz изнутри сети.
     healthcheck:
-      disable: true
+      test: ["CMD", "/demo-signer", "health"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 3s
     mem_limit: 64m
     restart: unless-stopped
     labels:
