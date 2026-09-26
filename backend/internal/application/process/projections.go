@@ -189,7 +189,7 @@ func day(t time.Time) string { return t.UTC().Format("2006-01-02") }
 
 // contributions — вклады изделия: выполненные шаги, пропуски данных и
 // признаки дефекта по шагу и суткам (AD-45: заменяются целиком при пересвёртке).
-func contributions(itemID string, s engine.Snapshot) ([]engineapp.Contribution, error) {
+func contributions(itemID string, s engine.Snapshot, _ []kernel.Record) ([]engineapp.Contribution, error) {
 	st := s.Process
 	type key struct{ metric, slice string }
 	sum := map[key]int64{}

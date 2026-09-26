@@ -270,7 +270,7 @@ func (m *machine) runStarted(r kernel.Record) {
 		m.refuse("unrouted", d.StepKey, errcodes.ProcessPreconditionFailed, "шага %q нет в версии процесса изделия", d.StepKey)
 		return
 	}
-	run.Node = n.ID
+	run.Node, run.Special = n.ID, n.Special()
 	var t *Token
 	if tk := m.s.TokenAt(d.StepKey); tk != nil {
 		t = m.tok(tk.ID)
@@ -399,7 +399,7 @@ func (m *machine) runFinished(r kernel.Record) {
 			return
 		}
 		n := m.d.Node(t.Node)
-		run = Run{RunID: d.RunID, StepKey: n.StepKey(), Node: n.ID, N: m.s.runsAt(n.ID, "") + 1, StartedAt: t.Since, Zones: m.s.zonesFor(n)}
+		run = Run{RunID: d.RunID, StepKey: n.StepKey(), Node: n.ID, N: m.s.runsAt(n.ID, "") + 1, StartedAt: t.Since, Zones: m.s.zonesFor(n), Special: n.Special()}
 		t.RunID = d.RunID
 	}
 	end := r.OccurredAt

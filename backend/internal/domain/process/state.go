@@ -93,6 +93,8 @@ type Run struct {
 	SourceStart bool   `json:"source_start,omitempty"`
 	SourceEnd   bool   `json:"source_end,omitempty"`
 	Completion  string `json:"completion,omitempty"`
+	// Special — шаг — специальный процесс (FR-151).
+	Special bool `json:"special_process,omitempty"`
 	// Detached — выполнение не на шаге токена (вне маршрута).
 	Detached bool    `json:"detached,omitempty"`
 	Causes   []Cause `json:"causes"`

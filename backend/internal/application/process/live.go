@@ -45,6 +45,24 @@ type FactWriter interface {
 	Submit(ctx context.Context, f Fact) (platform.Receipt, error)
 }
 
+// NodeCounterSet — счётчики узлов, ограничение линии, аномалии и узлы без
+// данных за период (FR-2, FR-3, FR-5).
+type NodeCounterSet struct {
+	Counters   []MapNodeCounters
+	Bottleneck *MapBottleneck
+	Anomalies  []MapNodeAnomaly
+	DataGaps   []string
+	BasisSeq   int64
+}
+
+// NodeCounterSource — ведомый порт счётчиков узлов живой карты: их считает
+// analytics по строкам вклада изделий (AD-21, AD-45, эпик 25) — те же
+// числа, что на вкладке «Аналитика» и в контрольных картах. nil — счётчики
+// считает process по положению токенов (режим без analytics).
+type NodeCounterSource interface {
+	NodeCounters(ctx context.Context, versionID string, q LiveMapQuery, m platform.Moment) (NodeCounterSet, error)
+}
+
 // DomainClock — доменное «сейчас» при приёме команды (AD-37).
 type DomainClock func(ctx context.Context) (time.Time, error)
 
@@ -61,6 +79,10 @@ type LiveService struct {
 	Bundles *Bundles
 	Facts   FactWriter
 	Clock   DomainClock
+	// Counters — счётчики узлов от analytics; nil — свои по токенам.
+	Counters NodeCounterSource
+	// Recorder — запись решений normative.version.* в журнал; nil — не пишутся.
+	Recorder *Recorder
 }
 
 var (
@@ -341,6 +363,27 @@ func (s *LiveService) LiveMap(ctx context.Context, q LiveMapQuery, m platform.Mo
 	if best != "" {
 		c := st[best]
 		lm.Bottleneck = &MapBottleneck{StepKey: best, Wait: fmt.Sprintf("%d мин", int((c.wait / time.Duration(c.queue)).Minutes()))}
+	}
+	if s.Counters != nil {
+		// Счётчики, ограничение и аномалии — от analytics (одни числа на карте
+		// и в аналитике); пропуски данных — объединение с пропусками исполнителя.
+		ncs, err := s.Counters.NodeCounters(ctx, shown.ID, q, m)
+		if err != nil {
+			return LiveMap{}, err
+		}
+		lm.Counters, lm.Bottleneck, lm.Anomalies = ncs.Counters, ncs.Bottleneck, ncs.Anomalies
+		if lm.Counters == nil {
+			lm.Counters = []MapNodeCounters{}
+		}
+		if lm.Anomalies == nil {
+			lm.Anomalies = []MapNodeAnomaly{}
+		}
+		for _, g := range ncs.DataGaps {
+			if !slices.Contains(lm.DataGaps, g) {
+				lm.DataGaps = append(lm.DataGaps, g)
+			}
+		}
+		lm.BasisSeq = max(lm.BasisSeq, ncs.BasisSeq)
 	}
 	return lm, nil
 }
@@ -625,8 +668,9 @@ func (s *LiveService) Bpmn(ctx context.Context, versionID string) (ProcessBpmn, 
 // ── команды ──
 
 // DraftVersion — черновик версии из редактора (process.version.draft, FR-22,
-// FR-25): проверка при загрузке (FR-13) — отказ с кодом и id элемента; в
-// журнал черновик не пишется, хранится в хранилище версий модуля.
+// FR-25): проверка при загрузке (FR-13) — отказ с кодом и id элемента;
+// байты XML — в хранилище версий модуля (id черновика — «draft-‹12 hex
+// хеша›»), в журнал — решение normative.version.drafted в поток версии.
 func (s *LiveService) DraftVersion(ctx context.Context, in DraftVersion) (platform.Receipt, error) {
 	if s.Library == nil {
 		return platform.Receipt{}, platform.NotImplemented("process.version.draft")
@@ -650,7 +694,14 @@ func (s *LiveService) DraftVersion(ctx context.Context, in DraftVersion) (platfo
 	if err := s.Library.Save(ctx, rec); err != nil {
 		return platform.Receipt{}, err
 	}
-	return platform.Receipt{CommandID: in.CommandID, EventIDs: []string{id}, RecordedAt: now}, nil
+	if s.Recorder == nil {
+		return platform.Receipt{CommandID: in.CommandID, EventIDs: []string{id}, RecordedAt: now}, nil
+	}
+	data := map[string]any{"version_id": id, "label": in.Label, "process_version_hash": hash}
+	if in.BaseVersionID != "" {
+		data["base_version_id"] = in.BaseVersionID
+	}
+	return s.Recorder.Record(ctx, catalog.NormativeVersionDrafted, VersionStream(id), rec.Author, in.CommandMeta(), now, data)
 }
 
 // LoadError — отказ загрузки описания (FR-13): код и id первого нарушения,

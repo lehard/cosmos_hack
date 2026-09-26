@@ -29,7 +29,7 @@ func nonconformityLive(ctx context.Context, env *environment) (*nonconformityapp
 	}
 	return nonconformityapp.NewService(
 		nonconformityapp.WithDeps(nonconformityapp.Deps{
-			Journal: c.journal, Codec: c.codec, Bundles: c.qualityBundles(nil), // та же версия, что у воркера
+			Journal: c.journal, Codec: c.codec, Bundles: c.bundleSource(), // та же версия, что у воркера
 			DomainClock: clock.NewJournal(c.journal), Routes: routes, Now: c.codec.Now,
 		}),
 		nonconformityapp.WithConfig(nonconformityapp.Config{

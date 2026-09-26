@@ -212,10 +212,13 @@ type intervalJSON struct {
 	IntervalStart  string `json:"interval_start"`
 	IntervalEnd    string `json:"interval_end,omitempty"`
 	IntervalOrigin string `json:"interval_origin"`
+	StepKey        string `json:"step_key,omitempty"`
+	SpecialProcess bool   `json:"special_process"`
 }
 
 func intervalData(r Run) intervalJSON {
-	d := intervalJSON{OperationRunID: r.RunID, EquipmentID: r.Equipment, IntervalStart: ts(r.StartedAt), IntervalOrigin: "system_computed"}
+	d := intervalJSON{OperationRunID: r.RunID, EquipmentID: r.Equipment, IntervalStart: ts(r.StartedAt), IntervalOrigin: "system_computed",
+		StepKey: r.StepKey, SpecialProcess: r.Special}
 	if r.FinishedAt != nil {
 		d.IntervalEnd = ts(*r.FinishedAt)
 	}

@@ -54,7 +54,8 @@ func newLiveWorld(t *testing.T) *liveWorld {
 	w.hash = seed.Hash
 	w.bundles = &app.Bundles{Store: w.store, TTL: time.Nanosecond}
 	w.svc = &app.LiveService{Store: j, States: engineapp.StateQueries{Codec: w.codec, Bundles: w.bundles}, Library: w.store, Bundles: w.bundles,
-		Clock: func(context.Context) (time.Time, error) { return clock, nil }}
+		Clock:    func(context.Context) (time.Time, error) { return clock, nil },
+		Recorder: &app.Recorder{Journal: j, DomainBuild: "test", Partitions: 1}}
 	return w
 }
 
@@ -229,10 +230,20 @@ func TestLiveMapOverWorker(t *testing.T) {
 	}
 	good := strings.Replace(string(flangeXML(t)), `waitLimitMinutes="60" repeatAuthority`, `waitLimitMinutes="45" repeatAuthority`, 1)
 	rc, err := w.svc.DraftVersion(ctx, app.DraftVersion{Label: "v2", BpmnXML: good})
-	if err != nil {
-		t.Fatal(err)
+	if err != nil || rc.Seq == 0 {
+		t.Fatalf("черновик: %+v %v", rc, err)
 	}
-	diff, err := w.svc.Diff(ctx, rc.EventIDs[0], "", platform.Moment{})
+	if w.count(catalog.NormativeVersionDrafted) != 1 {
+		t.Fatal("normative.version.drafted не записан")
+	}
+	vl, _ = w.svc.Versions(ctx, platform.Moment{})
+	draftID := ""
+	for _, x := range vl.Items {
+		if x.Status == dp.StatusDraft {
+			draftID = x.VersionID
+		}
+	}
+	diff, err := w.svc.Diff(ctx, draftID, "", platform.Moment{})
 	if err != nil {
 		t.Fatal(err)
 	}
