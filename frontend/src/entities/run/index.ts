@@ -49,7 +49,7 @@ export const RUN_POLL_MS = 2000
 export function useScenarios() {
   return useQuery({
     queryKey: runKeys.list('scenarios'),
-    queryFn: ({ signal }) => simulationScenarioList({ signal }),
+    queryFn: ({ signal }) => simulationScenarioList(undefined, { signal }),
     retry: false,
     staleTime: 60_000,
   })

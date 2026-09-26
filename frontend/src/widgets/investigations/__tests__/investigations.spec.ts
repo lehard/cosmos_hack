@@ -18,6 +18,9 @@ const incident = (id: string, over: Partial<IncidentSummary> = {}): IncidentSumm
   scope_version: 3,
   status: 'open',
   opened_at: '2026-09-23T08:10:00Z',
+  nc_ids: [],
+  close_blockers: [],
+  counts: { confirmed: 0, suspect: 0, unknown: 0, excluded: 0 },
   ...over,
 })
 
