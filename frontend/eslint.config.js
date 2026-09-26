@@ -81,7 +81,8 @@ export default defineConfig(
     rules: { 'no-restricted-globals': 'off', 'no-restricted-properties': 'off' },
   },
   {
-    files: ['*.config.{js,ts}'],
+    // Конфигурации и скрипты генерации и проверок (scripts/) выполняются в Node.
+    files: ['*.config.{js,ts}', 'scripts/**/*.mjs'],
     languageOptions: { globals: globals.node },
   },
 )

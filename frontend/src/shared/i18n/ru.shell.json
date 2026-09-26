@@ -1,0 +1,52 @@
+{
+  "shell": {
+    "login": {
+      "demoTitle": "Демо-вход: выберите сотрудника",
+      "demoHint": "Пароль не нужен: это условные сотрудники стартовой политики доступа",
+      "enterAs": "Войти как {name}",
+      "noPersonas": "Демо-вход недоступен — войдите по логину",
+      "byLogin": "Вход по логину",
+      "passwordOptional": "Пароль — пока необязателен",
+      "scope": "Область: {scope}"
+    },
+    "header": {
+      "search": "@:common.actions.search",
+      "logout": "@:common.actions.logout",
+      "goLive": "Вернуться к «Сейчас»",
+      "liveOff": "Живые обновления прерваны — данные могут отставать",
+      "unread": "Непрочитанных: {n}"
+    },
+    "frame": {
+      "normal": "Норма",
+      "inputError": "Ошибка входных данных",
+      "actionsDisabled": "@:common.modes.replayReadOnly"
+    },
+    "stub": {
+      "title": "Заготовка виджета",
+      "body": "Виджет наполняет эпик {epic}. Слот «{slot}», плотность «{density}»",
+      "slice": "Срез: {slice}"
+    },
+    "desk": {
+      "unknownWidget": "Неизвестный виджет «{widget}» — стол роли ссылается на то, чего нет в реестре",
+      "empty": "На столе нет виджетов"
+    },
+    "density": {
+      "large": "крупно",
+      "comfortable": "обычно",
+      "compact": "плотно"
+    },
+    "help": {
+      "title": "@:common.actions.helpForRole",
+      "offline": "Справка встроена в систему и открывается без сети",
+      "deskContents": "Что на вашем столе",
+      "noGuide": "Руководство для этой роли пока не написано"
+    }
+  },
+  "widgets": {
+    "mapTimeline": "Таймлайн: «сейчас» и воспроизведение",
+    "grantsHistory": "История выдачи прав",
+    "metricTiles": "Показатели",
+    "controlChart": "Контрольные карты",
+    "metricDrilldown": "Раскрытие показателя до исходных записей"
+  }
+}

@@ -1,0 +1,14 @@
+# Стол редкого подписанта (PRD §3a): карточка «Требуется ваше решение» (FR-136).
+# Тот же стол у ролей customer_representative и approver — различия задают полномочия, не код.
+# Владелец после волны 1 — эпик 11.
+version: 1
+role: customer_representative
+title_key: desks.decisionCard
+density: comfortable
+tabs:
+  - id: decision
+    title_key: desks.decisionCard
+    layout: main-side
+    slots:
+      - {id: card, area: main, widget: decision-request-card}
+      - {id: passport, area: right, widget: item-passport, slice: {view: compact}}
