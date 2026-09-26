@@ -56,7 +56,7 @@ func TestDigitalStandOnFakes(t *testing.T) {
 			t.Fatalf("%s: квитанция %+v, нажатие %+v", kind, rc, x)
 		}
 		rec := w.rec.Records[len(w.rec.Records)-1]
-		if rec.Type != "simulation.injection.applied" || rec.Data["injection"] != kind || rec.RunID != st.RunID {
+		if rec.Type != "simulation.injection.applied" || rec.Data["injection"] != kind || rec.RunID != st.RunID || rec.Data["press"] != x.N {
 			t.Fatalf("%s: нет записи simulation.injection.applied в журнале прогона: %+v", kind, rec)
 		}
 		b, err := w.svc.Board(ctx, st.RunID, platformMoment())

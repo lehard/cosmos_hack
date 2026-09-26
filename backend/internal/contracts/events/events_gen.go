@@ -5541,8 +5541,15 @@ const SeverityUnknown Severity = "unknown"
 // Инъекция цифрового стенда — кнопка поверх идущего прогона: повтор, опоздавшее
 // событие, испорченный кадр, сбой станка, потеря данных (FR-152).
 type SimulationInjectionAppliedV1 struct {
+	// Записи, внесённые кнопкой через обычный приём (повтор — ни одной).
+	EventIds []UUID `json:"event_ids,omitempty,omitzero"`
+
 	// Кнопка.
 	Injection SimulationInjectionAppliedV1Injection `json:"injection"`
+
+	// Номер нажатия кнопки в прогоне (1, 2, …): повторное нажатие — новая запись, не
+	// повтор (AD-7).
+	Press *int `json:"press,omitempty,omitzero"`
 
 	// Прогон.
 	RunID RunID `json:"run_id"`

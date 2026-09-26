@@ -7653,6 +7653,21 @@ injection: ("duplicate_event" | "late_event" | "corrupt_frame" | "machine_fault"
  * Идентификатор UUID в нижнем регистре (RFC 9562).
  */
 target_event_id?: string
+/**
+ * Номер нажатия кнопки в прогоне (1, 2, …): повторное нажатие — новая запись, не повтор (AD-7).
+ */
+press?: number
+/**
+ * Записи, внесённые кнопкой через обычный приём (повтор — ни одной).
+ * 
+ * @maxItems 100
+ * 
+ * Items: Идентификатор UUID в нижнем регистре (RFC 9562).
+ * 
+ * This interface was referenced by `AntDefsV1`'s JSON-Schema
+ * via the `definition` "uuid".
+ */
+event_ids?: string[]
 }
 /**
  * Прогон завершён — итог прогона; автосверка — табло «ожидалось → получилось» (FR-108).

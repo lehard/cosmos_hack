@@ -209,9 +209,14 @@ func (s *Service) ApplyInjection(ctx context.Context, runID string, in ApplyInje
 		}
 		st.StandSeq[k] = v
 	}
-	data := map[string]any{"run_id": st.RunID, "injection": string(kind)}
+	// press — номер нажатия: два одинаковых нажатия на одном тике — две
+	// записи, а не повтор (event_id служебной записи — от её содержимого).
+	data := map[string]any{"run_id": st.RunID, "injection": string(kind), "press": n}
 	if x.Target != "" {
 		data["target_event_id"] = x.Target
+	}
+	if len(x.EventIDs) > 0 {
+		data["event_ids"] = slices.Clone(x.EventIDs)
 	}
 	if x.Seq, err = s.record(ctx, st, "simulation.injection.applied", at, data); err != nil {
 		return platform.Receipt{}, err
