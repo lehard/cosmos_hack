@@ -128,3 +128,106 @@ func (s State) Primary(env Env) (TokenView, bool) {
 	}
 	return TokenView{}, false
 }
+
+// Действия человека на шаге процесса (задачи ролей порождает процесс, а не
+// сценарий): операция API, которой человек продвигает изделие, и роль по
+// дорожке шага.
+const (
+	OpMovementReceive = "process.movement.receive"
+	OpMovementSend    = "process.movement.send"
+	OpOperationStart  = "process.operation.start"
+	OpOperationFinish = "process.operation.finish"
+)
+
+// Роли исполнителей шагов (normative/policy/policy.v1.yaml).
+const (
+	RoleSiteForeman = "site_foreman"
+	RolePerformer   = "performer"
+	RoleStorekeeper = "storekeeper"
+)
+
+// movementRole — кто перемещает изделие на шаге дорожки: на складской
+// дорожке (цех WS-SK — «Склад и входной контроль») — кладовщик, в цехах —
+// мастер. Атрибута роли у дорожки в BPMN пока нет — проектное допущение.
+func movementRole(workshop string) string {
+	if workshop == "WS-SK" {
+		return RoleStorekeeper
+	}
+	return RoleSiteForeman
+}
+
+// HumanStep — изделие стоит на шаге, где процесс ждёт действия человека:
+// кто (роль), где (цех дорожки BPMN), что нажать (операция), с какого
+// момента и срок по нормативу шага (норма ожидания или норма времени).
+type HumanStep struct {
+	StepKey   string     `json:"step_key"`
+	Node      string     `json:"node"`
+	Name      string     `json:"name"`
+	Operation string     `json:"operation"`
+	Role      string     `json:"role"`
+	Workshop  string     `json:"workshop,omitempty"`
+	Since     time.Time  `json:"since"`
+	DueAt     *time.Time `json:"due_at,omitempty"`
+}
+
+// HumanSteps — шаги с действием человека, на которых сейчас стоят токены
+// изделия (одно правило на все шаги процесса):
+//   - перемещение: в пути или приёмка цехом (userTask) — «принять» мастером
+//     цеха-получателя; ждёт отправки — «отправить» мастером цеха;
+//   - операция: ждёт начала — «начать», начата — «выполнено»; исполнитель
+//     участка дорожки.
+//
+// Контроль человеком (точки предъявления) — в очереди контролёра
+// (nonconformity), машинный контроль и хранение — без задачи.
+func (s State) HumanSteps(env Env) []HumanStep {
+	if env.Def == nil || s.Completed {
+		return nil
+	}
+	var out []HumanStep
+	for _, t := range s.Tokens {
+		n := env.Def.Node(t.Node)
+		if n == nil || !n.IsTask() || n.IsHumanControl() || t.Phase == PhaseBlocked || t.Phase == PhaseStuck {
+			continue
+		}
+		h := HumanStep{StepKey: t.StepKey, Node: n.ID, Name: n.Name, Workshop: env.Def.Workshop(n), Since: t.Since}
+		var norm *int64
+		switch n.Props.StepKind {
+		case stepKindMovement:
+			// Изолированное изделие перемещает в изолятор задача isolate_move.
+			if s.Isolated && len(t.Stack) > 0 {
+				continue
+			}
+			h.Role = movementRole(h.Workshop)
+			if t.Phase == PhaseInTransit || n.Type == NodeUserTask {
+				h.Operation = OpMovementReceive
+			} else {
+				h.Operation = OpMovementSend
+			}
+			if n.Norm != nil {
+				norm = n.Norm.QueueNormMinutes
+			}
+		case stepKindOperation:
+			h.Role = RolePerformer
+			switch t.Phase {
+			case PhaseInProgress, PhasePaused:
+				h.Operation = OpOperationFinish
+				if n.Norm != nil {
+					norm = n.Norm.TimeMinutes
+				}
+			default:
+				h.Operation = OpOperationStart
+				if n.Norm != nil {
+					norm = n.Norm.QueueNormMinutes
+				}
+			}
+		default:
+			continue
+		}
+		if norm != nil && *norm > 0 {
+			d := t.Since.Add(time.Duration(*norm) * time.Minute)
+			h.DueAt = &d
+		}
+		out = append(out, h)
+	}
+	return out
+}

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"ant/internal/contracts/statuses"
+	"ant/internal/domain/item"
 	"ant/internal/domain/kernel"
 	"ant/internal/domain/nonconformity"
 	"ant/internal/domain/process"
@@ -67,6 +68,7 @@ func (s *State) derive(r kernel.Record, env Env, up Upstream) {
 		}
 		// Адресат задачи следует за изделием: кто держит его сейчас (FR-57).
 		t.Role, t.Person, t.LocationID, t.Title, t.DueAt = w.Role, w.Person, w.LocationID, w.Title, w.DueAt
+		t.ItemLabel, t.Operation, t.StepKey = w.ItemLabel, w.Operation, w.StepKey
 		if !t.Open {
 			t.Open, t.Closed, t.Causes = true, nil, w.Causes
 		}
@@ -86,6 +88,10 @@ func (s *State) wanted(env Env, up Upstream, cur Cause) ([]Obligation, []Task) {
 	var os []Obligation
 	var ts []Task
 	subject := "item:" + s.ItemID
+	label := item.LocalLabel(s.ItemID)
+	if up.Item != nil {
+		label = up.Item.DisplayLabel(s.ItemID)
+	}
 	obl := func(basis, kind, key, owner, title string, due time.Time, causes ...Cause) Obligation {
 		return Obligation{
 			ID: ObligationID(s.ItemID, basis+"/"+key), Key: basis + "/" + key, Kind: kind, Basis: basis,
@@ -96,7 +102,7 @@ func (s *State) wanted(env Env, up Upstream, cur Cause) ([]Obligation, []Task) {
 	task := func(key, kind, role, title string, due *time.Time, causes ...Cause) Task {
 		slot := kernel.Slot{RuleID: RuleTask, Subject: subject, TriggerKey: key}
 		return Task{ID: TaskID(slot), Key: key, Kind: kind, Role: role, LocationID: s.Where.LocationID, Title: title,
-			Subject: subject, DueAt: due, Causes: causes}
+			Subject: subject, DueAt: due, Causes: causes, ItemLabel: label}
 	}
 
 	// Сроки исполнителя процесса (эпик 17, process.State.Deadlines): окна
@@ -134,6 +140,20 @@ func (s *State) wanted(env Env, up Upstream, cur Cause) ([]Obligation, []Task) {
 				os = append(os, o)
 				gates[d.StepKey] = true
 			}
+		}
+	}
+
+	// Задачи процесса: изделие вошло в шаг с действием человека — роль по
+	// дорожке шага видит его в «Задачах»; действие продвигает токен, и задача
+	// снимается на том же шаге свёртки (одно правило на все шаги BPMN).
+	if p := up.Process; p != nil && env.Process.Def != nil {
+		for _, h := range p.HumanSteps(env.Process) {
+			t := task("process/"+h.Node+"/"+h.Operation, KindProcessStep, h.Role, stepTitle(h, label), h.DueAt, cur)
+			t.Operation, t.StepKey = h.Operation, h.StepKey
+			if h.Workshop != "" {
+				t.LocationID = h.Workshop
+			}
+			ts = append(ts, t)
 		}
 	}
 
@@ -263,6 +283,28 @@ func (s *State) wanted(env Env, up Upstream, cur Cause) ([]Obligation, []Task) {
 	return os, ts
 }
 
+// KindProcessStep — вид задачи «шаг процесса ждёт действия человека».
+const KindProcessStep = "process_step"
+
+// stepTitle — что сделать, для людей: «Принять в цех Ф-001».
+func stepTitle(h process.HumanStep, label string) string {
+	name := h.Name
+	if name == "" {
+		name = h.StepKey
+	}
+	switch h.Operation {
+	case process.OpMovementReceive:
+		return "Принять в цех " + label
+	case process.OpMovementSend:
+		return "Отправить " + label + ": " + name
+	case process.OpOperationStart:
+		return "Начать: " + name + " — " + label
+	case process.OpOperationFinish:
+		return "Завершить: " + name + " — " + label
+	}
+	return name + " — " + label
+}
+
 // group — чьего решения ждут сроки изделия: инцидента, если изделие в его
 // области на блоке (решение по области снимает блок всем изделиям сразу),
 // иначе самого изделия. По группе сводится цена задержки (FR-8).
@@ -307,7 +349,7 @@ func decisionAt(nc nonconformity.State, eventID string, def time.Time) time.Time
 func taskKind(k string) string {
 	switch k {
 	case "physical_move", "isolate_move", "recheck", "decision_required", "review_after_new_data", "protection_basis_changed",
-		"resign", "remark_carrier", "remove_temporary_carrier", "inspection_missing", "admin_resend", "other":
+		"resign", "remark_carrier", "remove_temporary_carrier", "inspection_missing", "admin_resend", "process_step", "other":
 		return k
 	}
 	return "other"
