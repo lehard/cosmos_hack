@@ -15,7 +15,7 @@
 | `b2mml/SyncMaterialLot.schema.json` | Главный → MES | то же для партии |
 | `b2mml/ConfirmBOD.schema.json` | в обе стороны | подтверждение: успех (повтор того же `BODID` — `Duplicate`), `ErrorMessage` с `ErrorType` |
 | `b2mml/common.schema.json` | — | `ApplicationArea` (`BODID` — ключ идемпотентности), количество, идентификаторы |
-| `binding/about.schema.json`, `binding/outbox.schema.json` | — | HTTP-привязка: `GET ‹канал›/about` (релиз B2MML и версии `mes.isa95`), `GET ‹канал›/outbox` (сообщения MES для Главного) |
+| `binding/about.schema.json`, `binding/outbox.schema.json` | — | HTTP-привязка: `GET ‹канал›/about` (релиз B2MML и версии контракта mes.isa95: `mes.isa95.v1`, …), `GET ‹канал›/outbox` (сообщения MES для Главного) |
 | `examples/` | — | эталоны; исходящие и `ConfirmBOD` формирует адаптер (контрактный тест сравнивает с эталоном) |
 
 **HTTP-привязка (MVP):** `POST ‹канал›/SyncMaterialSubLot`, `POST ‹канал›/SyncMaterialLot` — ответ `ConfirmBOD`;
