@@ -212,14 +212,14 @@ func TestStateHashStable(t *testing.T) {
 // после отзыва другим типом, — следующая версия.
 func TestDiffClearedDueIsStable(t *testing.T) {
 	slot := kernel.Slot{RuleID: notifications.RuleObligation, Subject: "item:ENT01:I-1", TriggerKey: "OB-1"}
-	set, err := kernel.NewReaction(notifications.Module, catalog.ObligationDueSet, slot,
+	set, err := notifications.DueSet(slot,
 		notifications.DueSetData{ObligationID: "OB-1", Kind: "decision", SubjectRef: "item:ENT01:I-1", DueAt: "2026-09-27T08:00:00.000Z",
 			OwnerRoleID: "technologist", Level: 0, FirstDueAt: "2026-09-27T08:00:00.000Z", Basis: "isolation", Title: "Решение"},
 		kernel.Record{EventID: "e1", OccurredAt: t0})
 	if err != nil {
 		t.Fatal(err)
 	}
-	cleared, err := kernel.NewReaction(notifications.Module, catalog.ObligationDueCleared, slot,
+	cleared, err := notifications.DueCleared(slot,
 		notifications.DueClearedData{ObligationID: "OB-1", Cause: "fulfilled"}, kernel.Record{EventID: "e1", OccurredAt: t0}, kernel.Record{EventID: "e2", OccurredAt: t0.Add(time.Hour)})
 	if err != nil {
 		t.Fatal(err)

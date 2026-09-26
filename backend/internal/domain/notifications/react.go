@@ -97,6 +97,21 @@ type AckData struct {
 	Note    string `json:"note,omitempty"`
 }
 
+// DueSet — реакция obligation.due.set (эмитент типа — notifications, AD-40)
+// в слоте slot: срок обязательства с текущим уровнем лестницы. Функция
+// модуля-владельца: правила модуля и тесты движка строят запись через неё,
+// а не вызывают kernel.NewReaction от имени notifications сами.
+func DueSet(slot kernel.Slot, d DueSetData, causes ...kernel.Record) (kernel.Reaction, error) {
+	return kernel.NewReaction(Module, catalog.ObligationDueSet, slot, d, causes...)
+}
+
+// DueCleared — реакция obligation.due.cleared (эмитент — notifications,
+// AD-40) в слоте slot: срок снят (основание исчезло или обязательство
+// исполнено, d.Cause).
+func DueCleared(slot kernel.Slot, d DueClearedData, causes ...kernel.Record) (kernel.Reaction, error) {
+	return kernel.NewReaction(Module, catalog.ObligationDueCleared, slot, d, causes...)
+}
+
 // obligationReactions — реакции обязательства (AD-3, AD-4, FR-57):
 //   - срок: due.set с текущим уровнем лестницы, пока основание есть; due.cleared,
 //     когда исчезло;
@@ -121,9 +136,9 @@ func obligationReactions(s State, o Obligation) []kernel.Reaction {
 	if o.Open {
 		d := DueSetData{ObligationID: o.ID, Kind: o.Kind, SubjectRef: o.Subject, DueAt: FormatTime(o.DueAt()), OwnerRoleID: o.OwnerRole,
 			StepKey: o.StepKey, Level: o.Level(), FirstDueAt: FormatTime(o.FirstDue), WaitsOn: o.WaitsOn, Basis: o.Basis, Title: truncate(o.Title, 256)}
-		must(kernel.NewReaction(Module, catalog.ObligationDueSet, slot, d, records(o.Causes, reachCauses)...))
+		must(DueSet(slot, d, records(o.Causes, reachCauses)...))
 	} else {
-		must(kernel.NewReaction(Module, catalog.ObligationDueCleared, slot, DueClearedData{ObligationID: o.ID, Cause: "fulfilled"},
+		must(DueCleared(slot, DueClearedData{ObligationID: o.ID, Cause: "fulfilled"},
 			records(o.Causes, reachCauses, []Cause{*o.Cleared})...))
 	}
 
