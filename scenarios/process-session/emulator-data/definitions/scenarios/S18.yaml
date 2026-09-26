@@ -1,0 +1,434 @@
+# =============================================================================
+# Определение сценария. Генерируется tools/generate.py — руками не править (правьте генератор).
+# Имена событий, действий и полей — НАШИ (process-events-catalog.md, scenarios-flange*.{md,yaml}).
+# [П] — имя или значение предварительное (нет в каталоге) / наше допущение; [ПП] — проектное предположение.
+# Время: at — UTC (RFC 3339, мс); at_msk — то же в МСК для чтения.
+# human_steps.mode: stop — сценарий ждёт решения на столе роли (интерактивный режим; в автосверке подписывает
+#   demo-signer); auto — demo-signer подписывает сам в указанное доменное время.
+# expect: accepted | refused[:код] — ожидаемый ответ системы на шаг (проверка отказов по правам и правилам).
+# =============================================================================
+
+id: S18
+title: 'Истёк допуск на дату операции: удостоверение сварщика и поверка ключа'
+goal: Допуск проверяется на дату операции. а) У С-03 удостоверение истекло 02.10 — старт сварки отклонён (предусловие шага, Е-13), запись в журнал критических действий, система предлагает
+  С-02. б) У ключа КЛ-1 поверка истекла 02.10 — моменты затяжки «недостоверно» (Е-128), ЗТ-4 на них не подписывается; ОТК-2 проверяет моменты поверенным ключом КЛ-2.
+case:
+  other:
+  - §4.3 условия выполнения операции
+  - §3.4 права и разграничение
+  - §3.2 журнал критических действий
+  - 'критерий О1: особенности отрасли — допуск к спецпроцессу, поверка средств измерений'
+kind: run
+run: standalone
+stream: streams/S18.jsonl
+seed: 20261018
+window_msk:
+- 2026-10-02 07:30
+- 2026-10-05 13:15
+items:
+- F-042
+erp_postings_expected:
+- issue_to_production (заготовка, кольцо, комплект)
+- transfer MC→WC, WC→AC
+- отказ в сварке, «недостоверно» и повторный контроль в 1С не уходят
+erp_note: Сообщения 1С — по словарю scenarios-flange-expected.yaml (erp_posting_type). Полный список с ответами stand-а — I1.yaml → erp_outbox_expected (для S13 и S10B — в их файлах).
+  «Выпуск годного» — только после ЗТ-6.
+expected: expected/S18.yaml
+precondition: 'мир S18 [П]: Ф-042 — взамен списанного Ф-021 (запасная заготовка ЗФ-201, его крышка К-021 и клапан V-021 не ставились); удостоверение С-03 (НАКС-УСЛ-0003) — до 02.10.2026;
+  поверка ключа КЛ-1 — до 02.10.2026 (qualifications.yaml, equipment.yaml); неделя 05.10 — оба сварщика в смене А'
+new_events_p:
+- 'inspection.result_invalidated (Е-128 [П], реакция) — «недостоверно: средство не поверено на дату»'
+- operation.precondition_failed (Е-13, реакция) с кодом E_QUALIFICATION_EXPIRED
+- отказ E_INSTRUMENT_NOT_VERIFIED [П] — ЗТ-4 на записях непроверенного ключа
+human_steps:
+- step_id: S18-H0001
+  label: ZT-1/LOT-ZF-201
+  at: '2026-10-02T04:47:30.000Z'
+  at_msk: '2026-10-02 07:47:30'
+  mode: auto
+  role: QC
+  persona: QC-02
+  action: decision.gate_passed
+  catalog_ref: E-08
+  subject:
+    gate: ZT-1
+    lot_id: LOT-ZF-201
+  process_ref: lot/LOT-ZF-201
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - iqc/LOT-ZF-201/documents
+    - iqc/LOT-ZF-201/lab
+    - iqc/F-042/kt1
+  expect: accepted
+  scenarios:
+  - S18
+- step_id: S18-H0002
+  label: ZT-1/LOT-R-119
+  at: '2026-10-02T05:06:00.000Z'
+  at_msk: '2026-10-02 08:06:00'
+  mode: auto
+  role: QC
+  persona: QC-02
+  action: decision.gate_passed
+  catalog_ref: E-08
+  subject:
+    gate: ZT-1
+    lot_id: LOT-R-119
+  process_ref: lot/LOT-R-119
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - iqc/LOT-R-119/documents
+    - iqc/LOT-R-119/lab
+    - iqc/LOT-R-119/xr-sample
+    - …
+  expect: accepted
+  scenarios:
+  - S18
+- step_id: S18-H0003
+  label: ZT-1/LOT-W-88
+  at: '2026-10-02T05:22:00.000Z'
+  at_msk: '2026-10-02 08:22:00'
+  mode: auto
+  role: QC
+  persona: QC-02
+  action: decision.gate_passed
+  catalog_ref: E-08
+  subject:
+    gate: ZT-1
+    lot_id: LOT-W-88
+  process_ref: lot/LOT-W-88
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - iqc/LOT-W-88/documents
+  expect: accepted
+  scenarios:
+  - S18
+- step_id: S18-H0004
+  label: ZT-1/LOT-C-301
+  at: '2026-10-02T05:44:00.000Z'
+  at_msk: '2026-10-02 08:44:00'
+  mode: auto
+  role: QC
+  persona: QC-02
+  action: decision.gate_passed
+  catalog_ref: E-08
+  subject:
+    gate: ZT-1
+    lot_id: LOT-C-301
+  process_ref: lot/LOT-C-301
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - iqc/LOT-C-301/documents
+    - iqc/LOT-C-301/kt1-sample
+  expect: accepted
+  scenarios:
+  - S18
+- step_id: S18-H0005
+  label: ZT-1/LOT-SL-401
+  at: '2026-10-02T06:05:00.000Z'
+  at_msk: '2026-10-02 09:05:00'
+  mode: auto
+  role: QC
+  persona: QC-02
+  action: decision.gate_passed
+  catalog_ref: E-08
+  subject:
+    gate: ZT-1
+    lot_id: LOT-SL-401
+  process_ref: lot/LOT-SL-401
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - iqc/LOT-SL-401/documents
+    - iqc/LOT-SL-401/kt1-sample
+  expect: accepted
+  scenarios:
+  - S18
+- step_id: S18-H0006
+  label: ZT-1/LOT-FS-501
+  at: '2026-10-02T06:26:00.000Z'
+  at_msk: '2026-10-02 09:26:00'
+  mode: auto
+  role: QC
+  persona: QC-02
+  action: decision.gate_passed
+  catalog_ref: E-08
+  subject:
+    gate: ZT-1
+    lot_id: LOT-FS-501
+  process_ref: lot/LOT-FS-501
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - iqc/LOT-FS-501/documents
+    - iqc/LOT-FS-501/kt1-sample
+  expect: accepted
+  scenarios:
+  - S18
+- step_id: S18-H0007
+  label: ZT-1/LOT-V-601
+  at: '2026-10-02T06:47:00.000Z'
+  at_msk: '2026-10-02 09:47:00'
+  mode: auto
+  role: QC
+  persona: QC-02
+  action: decision.gate_passed
+  catalog_ref: E-08
+  subject:
+    gate: ZT-1
+    lot_id: LOT-V-601
+  process_ref: lot/LOT-V-601
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - iqc/LOT-V-601/documents
+    - iqc/LOT-V-601/kt1-sample
+  expect: accepted
+  scenarios:
+  - S18
+- step_id: S18-H0008
+  label: ZT-2/F-042
+  at: '2026-10-02T08:00:00.000Z'
+  at_msk: '2026-10-02 11:00:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-19
+  subject:
+    gate: ZT-2
+    item_id: F-042
+  process_ref: item/F-042
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt2/F-042
+    - cmm/F-042
+    marking_check:
+      previous: TAG:F-042
+      current: DM:F-042
+      result: match
+      readable: true
+      basis_label: remark/F-042
+  expect: accepted
+  scenarios:
+  - S18
+- step_id: S18-H0009
+  label: S18/reassign
+  at: '2026-10-05T05:25:00.000Z'
+  at_msk: '2026-10-05 08:25:00'
+  mode: auto
+  role: MASTER
+  persona: MST-02
+  action: post.assignment_changed
+  catalog_ref: '[П] назначение исполнителя'
+  subject:
+    station_id: ST-WC-P2
+    item_id: F-042
+    operation_code: W2
+  process_ref: null
+  params:
+    from: WLD-03
+    to: WLD-02
+    reason: у С-03 удостоверение истекло 02.10.2026; система предложила С-02 — его удостоверение действует до 01.03.2027, он в смене А и свободен
+    suggested_by: system
+    basis_labels:
+    - S18/start-refused
+    what_next_for_WLD-03: направлен на продление аттестации; до продления — работы без сварки
+  expect: accepted
+  scenarios:
+  - S18
+- step_id: S18-H0010
+  label: ZT-3/F-042
+  at: '2026-10-05T07:50:00.000Z'
+  at_msk: '2026-10-05 10:50:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-47
+  subject:
+    gate: ZT-3
+    item_id: F-042
+  process_ref: item/F-042
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt3/SV-042-1/CAM-WS-1
+    - xr/F-042/RK-1005-01
+    - flat/SV-042-1
+  expect: accepted
+  scenarios:
+  - S18
+- step_id: S18-H0011
+  label: ZT-SR/F-042
+  at: '2026-10-05T08:45:00.000Z'
+  at_msk: '2026-10-05 11:45:00'
+  mode: auto
+  role: QC
+  persona: QC-02
+  action: decision.gate_passed
+  catalog_ref: E-55
+  subject:
+    gate: ZT-SR
+    item_id: F-042
+  process_ref: item/F-042
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - ktsr/F-042
+    zone: SEAL-GROOVE
+    tools_counted:
+      entered_cavity: 2
+      returned: 2
+  expect: accepted
+  scenarios:
+  - S18
+- step_id: S18-H0012
+  label: S18/ZT-4-refused
+  at: '2026-10-05T09:25:00.000Z'
+  at_msk: '2026-10-05 12:25:00'
+  mode: stop
+  role: QC
+  persona: QC-02
+  action: decision.gate_passed
+  catalog_ref: E-55
+  subject:
+    gate: ZT-4
+    item_id: F-042
+  process_ref: item/F-042
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt4/F-042
+    - torque/F-042
+    - torque/F-042/J-2
+  expect: refused:E_INSTRUMENT_NOT_VERIFIED
+  scenarios:
+  - S18
+  note: 'проверка правила: моменты записаны ключом КЛ-1, поверка которого кончилась 02.10.2026 — «недостоверно» (Е-128); на таком основании ЗТ-4 не подписывается'
+- step_id: S18-H0013
+  label: S18/ZT-4-recheck
+  at: '2026-10-05T09:28:00.000Z'
+  at_msk: '2026-10-05 12:28:00'
+  mode: auto
+  role: QC
+  persona: QC-02
+  action: decision.gate_passed
+  catalog_ref: E-55
+  subject:
+    gate: ZT-4
+    item_id: F-042
+  process_ref: item/F-042
+  params:
+    decision: recheck
+    presentation_no: 1
+    basis_labels:
+    - kt4/F-042
+    method: 'контроль момента поверенным ключом КЛ-2 (TW-2): J-1 — 12 болтов, J-2 — клапан'
+    reason: 'записи КЛ-1 — «недостоверно: средство не поверено на дату»; нужен повторный замер поверенным средством'
+    invalidated_basis:
+    - torque/F-042
+    - torque/F-042/J-2
+  expect: accepted
+  scenarios:
+  - S18
+- step_id: S18-H0014
+  label: ZT-4/F-042
+  at: '2026-10-05T10:15:00.000Z'
+  at_msk: '2026-10-05 13:15:00'
+  mode: auto
+  role: QC
+  persona: QC-02
+  action: decision.gate_passed
+  catalog_ref: E-55
+  subject:
+    gate: ZT-4
+    item_id: F-042
+  process_ref: item/F-042
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt4/F-042
+    - torque-check/F-042
+    - torque-check/F-042/J-2
+    invalidated_basis:
+    - torque/F-042
+    - torque/F-042/J-2
+    note: записи КЛ-1 — «недостоверно» (поверка до 02.10.2026); основание — контрольный ключ КЛ-2, поверен до 01.04.2027
+  expect: accepted
+  scenarios:
+  - S18
+erp_outbox_note: Ожидаемые учётные сообщения в 1С и ответы stand-а. Вывод движка — в потоки не входит; выведено генератором из фактов и шагов людей прогона [П]. Весь прогон.
+erp_outbox_counts:
+  issue_to_production: 3
+  transfer: 2
+erp_outbox_expected:
+- msg_no: 1
+  at_msk: '2026-10-02 09:30:00'
+  type: issue_to_production
+  item_id: F-042
+  lot_id: LOT-ZF-201
+  what: заготовка фланца
+  basis: reg/F-042
+  response: acked
+- msg_no: 2
+  at_msk: '2026-10-05 08:00:00'
+  type: transfer
+  item_id: F-042
+  route: MC->WC
+  basis: mv/F-042/MC-WC.received
+  response: acked
+- msg_no: 3
+  at_msk: '2026-10-05 08:05:00'
+  type: issue_to_production
+  lot_id: LOT-R-119
+  items:
+  - F-042
+  components:
+  - R-904
+  what: кольца в сварку
+  basis: issue/ring/F-042
+  response: acked
+- msg_no: 4
+  at_msk: '2026-10-05 11:10:00'
+  type: transfer
+  item_id: F-042
+  route: WC->AC
+  basis: mv/F-042/WC-AC.received
+  response: acked
+- msg_no: 5
+  at_msk: '2026-10-05 11:15:00'
+  type: issue_to_production
+  items:
+  - F-042
+  lots:
+  - LOT-C-301
+  - LOT-SL-401
+  - LOT-FS-501
+  - LOT-V-601
+  what: комплект на сборку
+  basis: kit/F-042/cover
+  response: acked
+mes_outbox_note: 'Ожидаемые сообщения в MES (схема v0.3.1, процесс «Удержание»; вывод движка, в потоки не входит) [П]: «не выдавать в работу» — в момент удержания (правило при сигнале,
+  круг, отзыв приёмки), один раз на объект; «можно выдавать» — только по шагу человека, когда оснований не осталось. Гипотез, причин и кадров нет. Кольцо на складе держит удержание партии.
+  В прогоне удержаний нет.'
+mes_outbox_counts: {}
+mes_held_at_end: []
+mes_outbox_expected: []

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Галактика → мы. Квитанция с ошибкой данных: склад не сопоставлен. Автоповтора нет: задача администратору,
+     после исправления таблицы соответствий — повтор с тем же MessageId gal-out-000121 -->
+<Package xmlns="urn:sergey-palych:integration:galaktika" contractVersion="1.0">
+  <Header>
+    <MessageId>gal-in-000512</MessageId>
+    <CorrelationId>gal-out-000121</CorrelationId>
+    <Sender>GALAKTIKA-ERP</Sender>
+    <Receiver>SERGEY-PALYCH-QC</Receiver>
+    <CreatedAt>2026-09-23T10:30:03+03:00</CreatedAt>
+    <Entity>Receipt</Entity>
+    <Operation>receipt</Operation>
+    <RoutingKey>receipt.sp-qc</RoutingKey>
+  </Header>
+  <Key>
+    <ProductionOrder>ПЗ-0917</ProductionOrder>
+    <Serial>Ф-001</Serial>
+  </Key>
+  <Body>
+    <Receipt>
+      <RefMessageId>gal-out-000121</RefMessageId>
+      <Result>rejected</Result>
+      <Error>
+        <Code>E_REF_NOT_FOUND</Code>
+        <Text>Склад «СКЛ-ГП» не найден в каталоге складов</Text>
+        <Field>Body/Release/ToWarehouse</Field>
+        <Retryable>false</Retryable>
+      </Error>
+    </Receipt>
+  </Body>
+</Package>

@@ -1,0 +1,29 @@
+# =============================================================================
+# Срез файла process/scenarios-flange-expected.yaml — БЕЗ изменений (наши имена, как есть).
+# Источник истины — исходный файл; этот файл пересобирается tools/split_expected.py.
+# Общие словари и ID — expected/_common.yaml; главная история — expected/main-story.yaml.
+# Времена здесь — МСК (+03:00), как в исходнике; в потоках и определениях — UTC.
+# =============================================================================
+
+scenarios:
+  S17:
+    title: "Исполнитель честно отметил пропуск обязательной проверки (Ф-006)"
+    case: {other: ["§4.3 действия: пропуски проверки", "§3.2 CriticalActions — журнал критических действий", "критерий Т3: логирование критических действий операторов"]}
+    run: main_story   # фон, Ср 23.09 08:11–08:30; в 4 минуты не входит
+    checkpoints:
+      - at: "2026-09-23T08:12:00+03:00"
+        label: "пропуск отмечен"
+        expect:
+          - {id: S17-01, what: "отметка пропуска (Е-21) — в журнале критических действий: кто (Сб-01), какая проверка, причина «щуп 0,05 мм не найден на рабочем месте»", subject: audit/critical_actions, filter: {item: F-006, action: check_skipped}, field: {count: 1, actor: ASM-01, check: seal_seating_check, reason_present: true, source: operator_marked}, op: eq, value: true}
+          - {id: S17-02, what: "по этой проверке — «нет данных» (Е-82), а не «годно»", subject: item/F-006, field: check_status/seal_seating_check, op: eq, value: {status: missing, reason: skipped_by_operator}}
+          - {id: S17-03, what: "«Сбой оборудования, пропуск проверки» (узел EQ8): шаг заблокирован, задачи мастеру М-03 и ОТК-2; ЗТ-СР по Ф-006 закрыта, пока проверки нет", subject: gate/ZT-SR/F-006, field: {blocked_until_check: true, tasks_to: [MST-03, QC-02]}, op: eq, value: true}
+      - at: "2026-09-23T08:35:00+03:00"
+        label: "проверка сделана, ЗТ-СР пройдена"
+        expect:
+          - {id: S17-04, what: "проверка выполнена в 08:22 (щуп принёс мастер) — отдельная запись со ссылкой на отметку пропуска; «нет данных» закрыто", subject: item/F-006, field: check_status/seal_seating_check, op: eq, value: {status: done, at: "2026-09-23T08:22:00+03:00", closes: S17/check-skipped}}
+          - {id: S17-05, what: "ЗТ-СР пройдена в 08:30 — после проверки; отметка пропуска осталась в истории", subject: gate/ZT-SR/F-006, field: {passed_at: "2026-09-23T08:30:00+03:00", skip_record_kept: true}, op: eq, value: true}
+    must_not:
+      - {id: S17-N1, what: "честная отметка — не «нарушение»: нет записи «нарушение», «ошибки исполнителя» и рейтинга; О-10 не меняется", subject: people/ASM-01, field: {violation_records: 0, operator_error: 0, rating: none, O-10_changed: false}, op: eq, value: true}
+      - {id: S17-N2, what: "честно отметивший не хуже промолчавшего: за саму отметку человеку ничего не начисляется — итог для него такой же, как если бы пропуск нашёл контроль полноты (Е-82)", subject: people/ASM-01, field: penalty_for_self_report, op: eq, value: false}
+      - {id: S17-N3, what: "пропуск проверки — не дефект изделия: нет сигнала и несоответствия", subject: item/F-006, field: {signals: 0, nc_count: 0}, op: eq, value: true}
+      - {id: S17-N4, what: "ЗТ-СР не пройдена раньше проверки", subject: gate/ZT-SR/F-006, field: passed_before_check, op: eq, value: false}

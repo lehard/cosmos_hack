@@ -1,0 +1,2523 @@
+# =============================================================================
+# Определение сценария. Генерируется tools/generate.py — руками не править (правьте генератор).
+# Имена событий, действий и полей — НАШИ (process-events-catalog.md, scenarios-flange*.{md,yaml}).
+# [П] — имя или значение предварительное (нет в каталоге) / наше допущение; [ПП] — проектное предположение.
+# Время: at — UTC (RFC 3339, мс); at_msk — то же в МСК для чтения.
+# human_steps.mode: stop — сценарий ждёт решения на столе роли (интерактивный режим; в автосверке подписывает
+#   demo-signer); auto — demo-signer подписывает сам в указанное доменное время.
+# expect: accepted | refused[:код] — ожидаемый ответ системы на шаг (проверка отказов по правам и правилам).
+# =============================================================================
+
+id: S14
+title: 'Общий фактор — один сварщик: система не ставит «ошибку исполнителя» сама'
+goal: 'Три подреза у одного сварщика на обоих постах при исправных источниках. Путь схемы v0.3: сигнал → инцидент по общему фактору «сварщик» (круг 6 → 3) → групповое решение «переделка»
+  через Н → разбор причин: версия «отклонение от техники выполнения» сильная, но «ошибку исполнителя» записывает только комиссия после письменного объяснения работника → мера «проверка
+  навыка и инструктаж» → окно наблюдения (8 швов) → закрыт.'
+case:
+  other:
+  - §2.3 обоснованность выводов
+  - §5.2 подтверждённые ошибки отдельно от гипотез
+  - §5.2 сравнение сопоставимых работ
+  - вопрос жюри «а если виноват человек?» (матрица приёмки, В1)
+kind: run
+run: standalone
+stream: streams/S14.jsonl
+seed: 20260929
+window_msk:
+- 2026-09-24 10:00
+- 2026-10-01 16:05
+items:
+- F-301
+- F-302
+- F-303
+- F-304
+- F-305
+- F-306
+- F-307
+- F-308
+- F-309
+- F-310
+- F-311
+- F-312
+- F-313
+- F-314
+- F-315
+- F-316
+- F-317
+- F-318
+- F-319
+- F-320
+- CS-141
+- CS-142
+- CS-143
+erp_postings_expected:
+- issue_to_production (заготовки ×20, кольца R-401…R-420 — две выдачи)
+- transfer MC→WC ×20
+- scrap_transfer_rework ×1 документ на 3 изделия (F-304, F-306, F-310 — групповое решение по RS-14)
+- rework_return_to_production ×3 [П] — на повторной ЗТ-3 в Чт 01.10
+- гипотезы, причина, объяснение работника и мера в 1С не уходят
+erp_note: Сообщения 1С — по словарю scenarios-flange-expected.yaml (erp_posting_type). Полный список с ответами stand-а — I1.yaml → erp_outbox_expected (для S13 и S10B — в их файлах).
+  «Выпуск годного» — только после ЗТ-6.
+expected: expected/S14.yaml
+precondition: 'отдельный мир: оба источника исправны, журналы в уставке; 29.09–01.10 — С-03 в смене А (подменяет) [П]; история фланцев с Чт 24.09 — в том же потоке'
+new_events_p:
+- cause.explanation_recorded (П-09 [П], шаг человека)
+- capa.effectiveness_confirmed (П-07), cause.investigation_closed (П-10 [П])
+- отказ E_EXPLANATION_REQUIRED [П] — «ошибку исполнителя» без объяснения работника не записать
+- 'реакции: risk_scope.created RS-14 (фактор «сварщик»), analysis.check_suggested (Е-79 [П]) — «сначала аппараты»; остановку поста система не предлагает'
+human_steps:
+- step_id: S14-H0001
+  label: ZT-1/LOT-ZF-202
+  at: '2026-09-24T08:32:00.000Z'
+  at_msk: '2026-09-24 11:32:00'
+  mode: auto
+  role: QC
+  persona: QC-02
+  action: decision.gate_passed
+  catalog_ref: E-08
+  subject:
+    gate: ZT-1
+    lot_id: LOT-ZF-202
+  process_ref: lot/LOT-ZF-202
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - iqc/LOT-ZF-202/documents
+    - iqc/LOT-ZF-202/lab
+    - iqc/F-301/kt1
+    - …
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0002
+  label: ZT-1/LOT-R-118
+  at: '2026-09-24T09:37:00.000Z'
+  at_msk: '2026-09-24 12:37:00'
+  mode: auto
+  role: QC
+  persona: QC-02
+  action: decision.gate_passed
+  catalog_ref: E-08
+  subject:
+    gate: ZT-1
+    lot_id: LOT-R-118
+  process_ref: lot/LOT-R-118
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - iqc/LOT-R-118/documents
+    - iqc/LOT-R-118/lab
+    - iqc/LOT-R-118/xr-sample
+    - …
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0003
+  label: ZT-1/LOT-W-88
+  at: '2026-09-24T09:52:00.000Z'
+  at_msk: '2026-09-24 12:52:00'
+  mode: auto
+  role: QC
+  persona: QC-02
+  action: decision.gate_passed
+  catalog_ref: E-08
+  subject:
+    gate: ZT-1
+    lot_id: LOT-W-88
+  process_ref: lot/LOT-W-88
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - iqc/LOT-W-88/documents
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0004
+  label: ZT-2/F-301
+  at: '2026-09-25T07:10:00.000Z'
+  at_msk: '2026-09-25 10:10:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-19
+  subject:
+    gate: ZT-2
+    item_id: F-301
+  process_ref: item/F-301
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt2/F-301
+    - cmm/F-301
+    marking_check:
+      previous: TAG:F-301
+      current: DM:F-301
+      result: match
+      readable: true
+      basis_label: remark/F-301
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0005
+  label: ZT-2/F-302
+  at: '2026-09-25T08:05:00.000Z'
+  at_msk: '2026-09-25 11:05:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-19
+  subject:
+    gate: ZT-2
+    item_id: F-302
+  process_ref: item/F-302
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt2/F-302
+    - cmm/F-302
+    marking_check:
+      previous: TAG:F-302
+      current: DM:F-302
+      result: match
+      readable: true
+      basis_label: remark/F-302
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0006
+  label: ZT-2/F-303
+  at: '2026-09-25T09:00:00.000Z'
+  at_msk: '2026-09-25 12:00:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-19
+  subject:
+    gate: ZT-2
+    item_id: F-303
+  process_ref: item/F-303
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt2/F-303
+    - cmm/F-303
+    marking_check:
+      previous: TAG:F-303
+      current: DM:F-303
+      result: match
+      readable: true
+      basis_label: remark/F-303
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0007
+  label: ZT-2/F-304
+  at: '2026-09-25T10:30:00.000Z'
+  at_msk: '2026-09-25 13:30:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-19
+  subject:
+    gate: ZT-2
+    item_id: F-304
+  process_ref: item/F-304
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt2/F-304
+    - cmm/F-304
+    marking_check:
+      previous: TAG:F-304
+      current: DM:F-304
+      result: match
+      readable: true
+      basis_label: remark/F-304
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0008
+  label: ZT-2/F-305
+  at: '2026-09-25T10:55:00.000Z'
+  at_msk: '2026-09-25 13:55:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-19
+  subject:
+    gate: ZT-2
+    item_id: F-305
+  process_ref: item/F-305
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt2/F-305
+    - cmm/F-305
+    marking_check:
+      previous: TAG:F-305
+      current: DM:F-305
+      result: match
+      readable: true
+      basis_label: remark/F-305
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0009
+  label: ZT-2/F-306
+  at: '2026-09-25T11:45:00.000Z'
+  at_msk: '2026-09-25 14:45:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-19
+  subject:
+    gate: ZT-2
+    item_id: F-306
+  process_ref: item/F-306
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt2/F-306
+    - cmm/F-306
+    marking_check:
+      previous: TAG:F-306
+      current: DM:F-306
+      result: match
+      readable: true
+      basis_label: remark/F-306
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0010
+  label: ZT-2/F-307
+  at: '2026-09-25T12:40:00.000Z'
+  at_msk: '2026-09-25 15:40:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-19
+  subject:
+    gate: ZT-2
+    item_id: F-307
+  process_ref: item/F-307
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt2/F-307
+    - cmm/F-307
+    marking_check:
+      previous: TAG:F-307
+      current: DM:F-307
+      result: match
+      readable: true
+      basis_label: remark/F-307
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0011
+  label: ZT-2/F-308
+  at: '2026-09-28T05:05:00.000Z'
+  at_msk: '2026-09-28 08:05:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-19
+  subject:
+    gate: ZT-2
+    item_id: F-308
+  process_ref: item/F-308
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt2/F-308
+    - cmm/F-308
+    marking_check:
+      previous: TAG:F-308
+      current: DM:F-308
+      result: match
+      readable: true
+      basis_label: remark/F-308
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0012
+  label: ZT-2/F-309
+  at: '2026-09-28T05:30:00.000Z'
+  at_msk: '2026-09-28 08:30:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-19
+  subject:
+    gate: ZT-2
+    item_id: F-309
+  process_ref: item/F-309
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt2/F-309
+    - cmm/F-309
+    marking_check:
+      previous: TAG:F-309
+      current: DM:F-309
+      result: match
+      readable: true
+      basis_label: remark/F-309
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0013
+  label: ZT-2/F-310
+  at: '2026-09-28T05:55:00.000Z'
+  at_msk: '2026-09-28 08:55:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-19
+  subject:
+    gate: ZT-2
+    item_id: F-310
+  process_ref: item/F-310
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt2/F-310
+    - cmm/F-310
+    marking_check:
+      previous: TAG:F-310
+      current: DM:F-310
+      result: match
+      readable: true
+      basis_label: remark/F-310
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0014
+  label: ZT-2/F-311
+  at: '2026-09-28T06:20:00.000Z'
+  at_msk: '2026-09-28 09:20:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-19
+  subject:
+    gate: ZT-2
+    item_id: F-311
+  process_ref: item/F-311
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt2/F-311
+    - cmm/F-311
+    marking_check:
+      previous: TAG:F-311
+      current: DM:F-311
+      result: match
+      readable: true
+      basis_label: remark/F-311
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0015
+  label: ZT-2/F-312
+  at: '2026-09-28T06:45:00.000Z'
+  at_msk: '2026-09-28 09:45:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-19
+  subject:
+    gate: ZT-2
+    item_id: F-312
+  process_ref: item/F-312
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt2/F-312
+    - cmm/F-312
+    marking_check:
+      previous: TAG:F-312
+      current: DM:F-312
+      result: match
+      readable: true
+      basis_label: remark/F-312
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0016
+  label: ZT-2/F-313
+  at: '2026-09-28T07:10:00.000Z'
+  at_msk: '2026-09-28 10:10:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-19
+  subject:
+    gate: ZT-2
+    item_id: F-313
+  process_ref: item/F-313
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt2/F-313
+    - cmm/F-313
+    marking_check:
+      previous: TAG:F-313
+      current: DM:F-313
+      result: match
+      readable: true
+      basis_label: remark/F-313
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0017
+  label: ZT-2/F-314
+  at: '2026-09-28T07:35:00.000Z'
+  at_msk: '2026-09-28 10:35:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-19
+  subject:
+    gate: ZT-2
+    item_id: F-314
+  process_ref: item/F-314
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt2/F-314
+    - cmm/F-314
+    marking_check:
+      previous: TAG:F-314
+      current: DM:F-314
+      result: match
+      readable: true
+      basis_label: remark/F-314
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0018
+  label: ZT-2/F-315
+  at: '2026-09-28T08:00:00.000Z'
+  at_msk: '2026-09-28 11:00:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-19
+  subject:
+    gate: ZT-2
+    item_id: F-315
+  process_ref: item/F-315
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt2/F-315
+    - cmm/F-315
+    marking_check:
+      previous: TAG:F-315
+      current: DM:F-315
+      result: match
+      readable: true
+      basis_label: remark/F-315
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0019
+  label: ZT-2/F-316
+  at: '2026-09-28T08:25:00.000Z'
+  at_msk: '2026-09-28 11:25:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-19
+  subject:
+    gate: ZT-2
+    item_id: F-316
+  process_ref: item/F-316
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt2/F-316
+    - cmm/F-316
+    marking_check:
+      previous: TAG:F-316
+      current: DM:F-316
+      result: match
+      readable: true
+      basis_label: remark/F-316
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0020
+  label: ZT-2/F-317
+  at: '2026-09-28T08:50:00.000Z'
+  at_msk: '2026-09-28 11:50:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-19
+  subject:
+    gate: ZT-2
+    item_id: F-317
+  process_ref: item/F-317
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt2/F-317
+    - cmm/F-317
+    marking_check:
+      previous: TAG:F-317
+      current: DM:F-317
+      result: match
+      readable: true
+      basis_label: remark/F-317
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0021
+  label: ZT-2/F-318
+  at: '2026-09-28T09:15:00.000Z'
+  at_msk: '2026-09-28 12:15:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-19
+  subject:
+    gate: ZT-2
+    item_id: F-318
+  process_ref: item/F-318
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt2/F-318
+    - cmm/F-318
+    marking_check:
+      previous: TAG:F-318
+      current: DM:F-318
+      result: match
+      readable: true
+      basis_label: remark/F-318
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0022
+  label: ZT-2/F-319
+  at: '2026-09-28T10:30:00.000Z'
+  at_msk: '2026-09-28 13:30:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-19
+  subject:
+    gate: ZT-2
+    item_id: F-319
+  process_ref: item/F-319
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt2/F-319
+    - cmm/F-319
+    marking_check:
+      previous: TAG:F-319
+      current: DM:F-319
+      result: match
+      readable: true
+      basis_label: remark/F-319
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0023
+  label: ZT-2/F-320
+  at: '2026-09-28T10:55:00.000Z'
+  at_msk: '2026-09-28 13:55:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-19
+  subject:
+    gate: ZT-2
+    item_id: F-320
+  process_ref: item/F-320
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt2/F-320
+    - cmm/F-320
+    marking_check:
+      previous: TAG:F-320
+      current: DM:F-320
+      result: match
+      readable: true
+      basis_label: remark/F-320
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0024
+  label: S14/confirm-NC-141
+  at: '2026-09-29T07:12:00.000Z'
+  at_msk: '2026-09-29 10:12:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.signal_confirmed
+  catalog_ref: E-90
+  subject:
+    item_id: F-304
+    signal_basis_labels:
+    - kt3/SV-304-1/CAM-WS-1
+    - kt3/SV-304-1/CAM-WS-2
+    nc_ref: NC-141
+  process_ref: signal/SG-kt3-SV-304-1-CAM-WS-1
+  process_links:
+  - item/F-304
+  - nc/NC-141
+  params:
+    defect_type: undercut
+    zone: U3
+    severity: major
+    reason: подрез на участке У3 подтверждён по двум ракурсам КТ-3 и осмотру с шаблоном
+    incident_basis: null
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0025
+  label: S14/isolate-F-304
+  at: '2026-09-29T07:15:00.000Z'
+  at_msk: '2026-09-29 10:15:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.item_isolated
+  catalog_ref: E-93
+  subject:
+    item_id: F-304
+    nc_ref: NC-141
+  process_ref: item/F-304
+  process_links:
+  - nc/NC-141
+  params:
+    location: ST-ISO-WC
+    reason: подтверждённое несоответствие NC-141, ждёт решения
+    basis_labels:
+    - S14/confirm-NC-141
+    - kt3/SV-304-1/CAM-WS-1
+    - kt3/SV-304-1/CAM-WS-2
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0026
+  label: S14/confirm-NC-142
+  at: '2026-09-29T08:02:00.000Z'
+  at_msk: '2026-09-29 11:02:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.signal_confirmed
+  catalog_ref: E-90
+  subject:
+    item_id: F-306
+    signal_basis_labels:
+    - kt3/SV-306-1/CAM-WS-1
+    - kt3/SV-306-1/CAM-WS-2
+    nc_ref: NC-142
+  process_ref: signal/SG-kt3-SV-306-1-CAM-WS-1
+  process_links:
+  - item/F-306
+  - nc/NC-142
+  - incident/RS-14
+  params:
+    defect_type: undercut
+    zone: U6
+    severity: major
+    reason: подрез на участке У6 подтверждён по двум ракурсам КТ-3 и осмотру с шаблоном
+    incident_basis: RS-14 (общий фактор — сварщик С-03)
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0027
+  label: S14/isolate-F-306
+  at: '2026-09-29T08:05:00.000Z'
+  at_msk: '2026-09-29 11:05:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.item_isolated
+  catalog_ref: E-93
+  subject:
+    item_id: F-306
+    nc_ref: NC-142
+  process_ref: item/F-306
+  process_links:
+  - nc/NC-142
+  params:
+    location: ST-ISO-WC
+    reason: подтверждённое несоответствие NC-142, ждёт решения
+    basis_labels:
+    - S14/confirm-NC-142
+    - kt3/SV-306-1/CAM-WS-1
+    - kt3/SV-306-1/CAM-WS-2
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0028
+  label: S14/recheck-F-302
+  at: '2026-09-29T08:08:00.000Z'
+  at_msk: '2026-09-29 11:08:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.recheck_requested
+  catalog_ref: E-92
+  subject:
+    items:
+    - F-302
+    risk_scope_ref: RS-14
+  process_ref: incident/RS-14
+  process_links:
+  - item/F-302
+  params:
+    method: visual_template
+    reason: 'в круге RS-14 (общий фактор — сварщик С-03): осмотреть шов с шаблоном'
+    suggested_by: system
+    suggestion_order:
+    - журналы ИС-1 и ИС-2 — в уставке (готово)
+    - сравнение с С-02 на тех же постах (готово)
+    - осмотр с шаблоном и рентген швов С-03 в круге
+    - контрольный образец С-03 под наблюдением ГС-01
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0029
+  label: ZT-3/F-301
+  at: '2026-09-29T08:40:00.000Z'
+  at_msk: '2026-09-29 11:40:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-47
+  subject:
+    gate: ZT-3
+    item_id: F-301
+  process_ref: item/F-301
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt3/SV-301-1/CAM-WS-1
+    - xr/F-301/RK-0929-01
+    - flat/SV-301-1
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0030
+  label: S14/exclude-F-302
+  at: '2026-09-29T09:05:00.000Z'
+  at_msk: '2026-09-29 12:05:00'
+  mode: auto
+  role: TECHNOLOGIST
+  persona: TECH-01
+  action: risk_scope.item_assessed
+  catalog_ref: E-113
+  subject:
+    risk_scope_ref: RS-14
+    item_id: F-302
+  process_ref: incident/RS-14
+  process_links:
+  - item/F-302
+  params:
+    result: excluded
+    basis_labels:
+    - vt/F-302
+    - xr/F-302/RK-0929-02
+    holds_released: containment.hold_released (Е-116) этим шагом
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0031
+  label: ZT-3/F-302
+  at: '2026-09-29T09:10:00.000Z'
+  at_msk: '2026-09-29 12:10:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-47
+  subject:
+    gate: ZT-3
+    item_id: F-302
+  process_ref: item/F-302
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt3/SV-302-1/CAM-WS-1
+    - xr/F-302/RK-0929-02
+    - vt/F-302
+    - flat/SV-302-1
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0032
+  label: ZT-3/F-303
+  at: '2026-09-29T09:20:00.000Z'
+  at_msk: '2026-09-29 12:20:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-47
+  subject:
+    gate: ZT-3
+    item_id: F-303
+  process_ref: item/F-303
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt3/SV-303-1/CAM-WS-1
+    - xr/F-303/RK-0929-03
+    - flat/SV-303-1
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0033
+  label: ZT-3/F-305
+  at: '2026-09-29T10:30:00.000Z'
+  at_msk: '2026-09-29 13:30:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-47
+  subject:
+    gate: ZT-3
+    item_id: F-305
+  process_ref: item/F-305
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt3/SV-305-1/CAM-WS-1
+    - xr/F-305/RK-0929-05
+    - flat/SV-305-1
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0034
+  label: S14/confirm-NC-143
+  at: '2026-09-29T10:52:00.000Z'
+  at_msk: '2026-09-29 13:52:00'
+  mode: stop
+  role: QC
+  persona: QC-01
+  action: decision.signal_confirmed
+  catalog_ref: E-90
+  subject:
+    item_id: F-310
+    signal_basis_labels:
+    - kt3/SV-310-1/CAM-WS-1
+    - kt3/SV-310-1/CAM-WS-2
+    nc_ref: NC-143
+  process_ref: signal/SG-kt3-SV-310-1-CAM-WS-1
+  process_links:
+  - item/F-310
+  - nc/NC-143
+  - incident/RS-14
+  params:
+    defect_type: undercut
+    zone: U2
+    severity: major
+    reason: подрез на участке У2 подтверждён по двум ракурсам КТ-3 и осмотру с шаблоном
+    incident_basis: RS-14 (общий фактор — сварщик С-03)
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0035
+  label: S14/isolate-F-310
+  at: '2026-09-29T10:55:00.000Z'
+  at_msk: '2026-09-29 13:55:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.item_isolated
+  catalog_ref: E-93
+  subject:
+    item_id: F-310
+    nc_ref: NC-143
+  process_ref: item/F-310
+  process_links:
+  - nc/NC-143
+  params:
+    location: ST-ISO-WC
+    reason: подтверждённое несоответствие NC-143, ждёт решения
+    basis_labels:
+    - S14/confirm-NC-143
+    - kt3/SV-310-1/CAM-WS-1
+    - kt3/SV-310-1/CAM-WS-2
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0036
+  label: S14/recheck-F-308-F-312
+  at: '2026-09-29T11:00:00.000Z'
+  at_msk: '2026-09-29 14:00:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.recheck_requested
+  catalog_ref: E-92
+  subject:
+    items:
+    - F-308
+    - F-312
+    risk_scope_ref: RS-14
+  process_ref: incident/RS-14
+  process_links:
+  - item/F-308
+  - item/F-312
+  params:
+    method: visual_template
+    reason: 'в круге RS-14: осмотреть швы С-03 с шаблоном'
+    suggested_by: system
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0037
+  label: ZT-3/F-307
+  at: '2026-09-29T11:10:00.000Z'
+  at_msk: '2026-09-29 14:10:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-47
+  subject:
+    gate: ZT-3
+    item_id: F-307
+  process_ref: item/F-307
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt3/SV-307-1/CAM-WS-1
+    - xr/F-307/RK-0929-07
+    - flat/SV-307-1
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0038
+  label: S14/exclude-F-308
+  at: '2026-09-29T11:25:00.000Z'
+  at_msk: '2026-09-29 14:25:00'
+  mode: auto
+  role: TECHNOLOGIST
+  persona: TECH-01
+  action: risk_scope.item_assessed
+  catalog_ref: E-113
+  subject:
+    risk_scope_ref: RS-14
+    item_id: F-308
+  process_ref: incident/RS-14
+  process_links:
+  - item/F-308
+  params:
+    result: excluded
+    basis_labels:
+    - vt/F-308
+    - xr/F-308/RK-0929-08
+    holds_released: containment.hold_released (Е-116) этим шагом
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0039
+  label: ZT-3/F-308
+  at: '2026-09-29T11:30:00.000Z'
+  at_msk: '2026-09-29 14:30:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-47
+  subject:
+    gate: ZT-3
+    item_id: F-308
+  process_ref: item/F-308
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt3/SV-308-1/CAM-WS-1
+    - xr/F-308/RK-0929-08
+    - vt/F-308
+    - flat/SV-308-1
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0040
+  label: ZT-3/F-309
+  at: '2026-09-29T11:50:00.000Z'
+  at_msk: '2026-09-29 14:50:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-47
+  subject:
+    gate: ZT-3
+    item_id: F-309
+  process_ref: item/F-309
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt3/SV-309-1/CAM-WS-1
+    - xr/F-309/RK-0929-09
+    - flat/SV-309-1
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0041
+  label: ZT-3/F-311
+  at: '2026-09-29T12:30:00.000Z'
+  at_msk: '2026-09-29 15:30:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-47
+  subject:
+    gate: ZT-3
+    item_id: F-311
+  process_ref: item/F-311
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt3/SV-311-1/CAM-WS-1
+    - xr/F-311/RK-0929-11
+    - flat/SV-311-1
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0042
+  label: S14/exclude-F-312
+  at: '2026-09-29T12:45:00.000Z'
+  at_msk: '2026-09-29 15:45:00'
+  mode: auto
+  role: TECHNOLOGIST
+  persona: TECH-01
+  action: risk_scope.item_assessed
+  catalog_ref: E-113
+  subject:
+    risk_scope_ref: RS-14
+    item_id: F-312
+  process_ref: incident/RS-14
+  process_links:
+  - item/F-312
+  params:
+    result: excluded
+    basis_labels:
+    - vt/F-312
+    - xr/F-312/RK-0929-12
+    holds_released: containment.hold_released (Е-116) этим шагом
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0043
+  label: ZT-3/F-312
+  at: '2026-09-29T12:50:00.000Z'
+  at_msk: '2026-09-29 15:50:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-47
+  subject:
+    gate: ZT-3
+    item_id: F-312
+  process_ref: item/F-312
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt3/SV-312-1/CAM-WS-1
+    - xr/F-312/RK-0929-12
+    - vt/F-312
+    - flat/SV-312-1
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0044
+  label: S14/assess/F-304
+  at: '2026-09-29T13:00:00.000Z'
+  at_msk: '2026-09-29 16:00:00'
+  mode: auto
+  role: COMMISSION
+  persona: TECH-01
+  signers:
+  - TECH-01
+  - QC-HEAD-01
+  - CHW-01
+  action: risk_scope.item_assessed
+  catalog_ref: E-113
+  subject:
+    risk_scope_ref: RS-14
+    item_id: F-304
+  process_ref: incident/RS-14
+  process_links:
+  - item/F-304
+  params:
+    result: confirmed
+    reason: подрез подтверждён камерой, осмотром и рентгеном
+    basis_labels:
+    - kt3/SV-304-1/CAM-WS-1
+    - kt3/SV-304-1/CAM-WS-2
+    - xr/F-304/RK-0929-04
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0045
+  label: S14/assess/F-306
+  at: '2026-09-29T13:00:00.000Z'
+  at_msk: '2026-09-29 16:00:00'
+  mode: auto
+  role: COMMISSION
+  persona: TECH-01
+  signers:
+  - TECH-01
+  - QC-HEAD-01
+  - CHW-01
+  action: risk_scope.item_assessed
+  catalog_ref: E-113
+  subject:
+    risk_scope_ref: RS-14
+    item_id: F-306
+  process_ref: incident/RS-14
+  process_links:
+  - item/F-306
+  params:
+    result: confirmed
+    reason: подрез подтверждён камерой, осмотром и рентгеном
+    basis_labels:
+    - kt3/SV-306-1/CAM-WS-1
+    - kt3/SV-306-1/CAM-WS-2
+    - xr/F-306/RK-0929-06
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0046
+  label: S14/assess/F-310
+  at: '2026-09-29T13:00:00.000Z'
+  at_msk: '2026-09-29 16:00:00'
+  mode: auto
+  role: COMMISSION
+  persona: TECH-01
+  signers:
+  - TECH-01
+  - QC-HEAD-01
+  - CHW-01
+  action: risk_scope.item_assessed
+  catalog_ref: E-113
+  subject:
+    risk_scope_ref: RS-14
+    item_id: F-310
+  process_ref: incident/RS-14
+  process_links:
+  - item/F-310
+  params:
+    result: confirmed
+    reason: подрез подтверждён камерой, осмотром и рентгеном
+    basis_labels:
+    - kt3/SV-310-1/CAM-WS-1
+    - kt3/SV-310-1/CAM-WS-2
+    - xr/F-310/RK-0929-10
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0047
+  label: S14/NC-14G
+  at: '2026-09-29T13:00:00.000Z'
+  at_msk: '2026-09-29 16:00:00'
+  mode: stop
+  role: COMMISSION
+  persona: TECH-01
+  signers:
+  - TECH-01
+  - QC-HEAD-01
+  - CHW-01
+  action: decision.signal_confirmed
+  catalog_ref: E-90
+  subject:
+    items:
+    - F-304
+    - F-306
+    - F-310
+    nc_ref: NC-14G
+    nc_kind: group
+    risk_scope_ref: RS-14
+  process_ref: incident/RS-14
+  process_links:
+  - item/F-304
+  - item/F-306
+  - item/F-310
+  - nc/NC-14G
+  params:
+    reason: подрез, общий фактор — сварщик С-03 (3 из 3); НС-141…НС-143 сведены в групповое
+    basis_labels:
+    - S14/assess/F-304
+    - S14/assess/F-306
+    - S14/assess/F-310
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0048
+  label: S14/disposition-rework
+  at: '2026-09-29T13:00:00.000Z'
+  at_msk: '2026-09-29 16:00:00'
+  mode: stop
+  role: COMMISSION
+  persona: TECH-01
+  signers:
+  - TECH-01
+  - QC-HEAD-01
+  - CHW-01
+  action: decision.disposition_set
+  catalog_ref: E-94
+  subject:
+    items:
+    - F-304
+    - F-306
+    - F-310
+    nc_ref: NC-14G
+  process_ref: nc/NC-14G
+  process_links:
+  - item/F-304
+  - item/F-306
+  - item/F-310
+  - incident/RS-14
+  params:
+    disposition: rework
+    per_item_zones:
+      F-304:
+      - U3
+      F-306:
+      - U6
+      F-310:
+      - U2
+    rework_no: 1
+    reason: переделка участка шва по ТП (первая — без согласия главного сварщика); варить — после проверки навыка
+    item_messages:
+    - item_id: F-304
+      block: BW
+      caught_by: BWD
+      route: BWG → BW (WSG → WL1 → WL2 → WLG → WL3)
+    - item_id: F-306
+      block: BW
+      caught_by: BWD
+      route: BWG → BW (WSG → WL1 → WL2 → WLG → WL3)
+    - item_id: F-310
+      block: BW
+      caught_by: BWD
+      route: BWG → BW (WSG → WL1 → WL2 → WLG → WL3)
+    basis_labels:
+    - S14/NC-14G
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0049
+  label: S14/close
+  at: '2026-09-29T13:05:00.000Z'
+  at_msk: '2026-09-29 16:05:00'
+  mode: auto
+  role: TECHNOLOGIST
+  persona: TECH-01
+  action: risk_scope.closed
+  catalog_ref: E-115
+  subject:
+    risk_scope_ref: RS-14
+  process_ref: incident/RS-14
+  params:
+    was: 6
+    confirmed: 3
+    excluded: 3
+    note: 'Изделия: решено · Расследование: открыто'
+    basis_labels:
+    - S14/exclude-F-302
+    - S14/exclude-F-308
+    - S14/exclude-F-312
+    - S14/assess/F-304
+    - S14/assess/F-306
+    - S14/assess/F-310
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0050
+  label: S14/cause-before-explanation-refused
+  at: '2026-09-30T06:10:00.000Z'
+  at_msk: '2026-09-30 09:10:00'
+  mode: auto
+  role: COMMISSION
+  persona: TECH-01
+  signers:
+  - TECH-01
+  - QC-HEAD-01
+  - CHW-01
+  action: cause.confirmed
+  catalog_ref: П-04
+  subject:
+    nc_refs:
+    - NC-141
+    - NC-142
+    - NC-143
+    - NC-14G
+  process_ref: cause/RS-14
+  process_links:
+  - incident/RS-14
+  - nc/NC-141
+  - nc/NC-142
+  - nc/NC-143
+  - nc/NC-14G
+  params:
+    category: operator_procedure
+    operator_error:
+      confirmed: true
+      person: WLD-03
+    verified_by: контрольные образцы CS-141, CS-142
+  expect: refused:E_EXPLANATION_REQUIRED
+  optional: true
+  scenarios:
+  - S14
+  note: 'проверка правила: «ошибку исполнителя» нельзя записать без письменного объяснения работника — ожидается отказ [П]'
+- step_id: S14-H0051
+  label: S14/explanation
+  at: '2026-09-30T06:30:00.000Z'
+  at_msk: '2026-09-30 09:30:00'
+  mode: auto
+  role: WELDER
+  persona: WLD-03
+  action: cause.explanation_recorded
+  catalog_ref: П-09 [П]
+  subject:
+    nc_refs:
+    - NC-141
+    - NC-142
+    - NC-143
+    - NC-14G
+    person: WLD-03
+  process_ref: cause/RS-14
+  process_links:
+  - incident/RS-14
+  - nc/NC-141
+  - nc/NC-142
+  - nc/NC-143
+  - nc/NC-14G
+  params:
+    form: письменное объяснение
+    received_by: QC-HEAD-01
+    hypothesis: operator_procedure
+    text: с понедельника на постах новые горелки с другим держателем; держал горелку ниже, чем по карте, — так удобнее; угол не проверял [П]
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0052
+  label: S14/cause
+  at: '2026-09-30T08:00:00.000Z'
+  at_msk: '2026-09-30 11:00:00'
+  mode: stop
+  role: COMMISSION
+  persona: TECH-01
+  signers:
+  - TECH-01
+  - QC-HEAD-01
+  - CHW-01
+  action: cause.confirmed
+  catalog_ref: П-04
+  subject:
+    nc_refs:
+    - NC-141
+    - NC-142
+    - NC-143
+    - NC-14G
+  process_ref: cause/RS-14
+  process_links:
+  - incident/RS-14
+  - nc/NC-141
+  - nc/NC-142
+  - nc/NC-143
+  - nc/NC-14G
+  params:
+    category: operator_procedure
+    text: 'отклонение от техники выполнения: угол наклона горелки ниже карты режимов (≈ 45° при 70–80°) [ПП]'
+    verified_by: 'контрольные образцы: CS-141 с прежним углом — подрез, CS-142 по карте — чисто; журналы ИС-1 и ИС-2 в уставке; у С-02 на тех же постах 6 из 6 швов чистые'
+    evidence_labels:
+    - CS-141/visual
+    - CS-142/visual
+    explanation_ref_label: S14/explanation
+    hypotheses_final:
+      equipment: weak
+      material: weak
+      operator_procedure: confirmed
+    contributing_factors:
+    - новая горелка с другим держателем на постах 1 и 2 с Пн 28.09
+    operator_error:
+      confirmed: true
+      person: WLD-03
+      basis: решение комиссии после разбора и письменного объяснения работника
+    not_decided_here: 'дисциплинарные вопросы — вне системы: решает работодатель по ТК РФ; система их не готовит'
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0053
+  label: S14/capa
+  at: '2026-09-30T08:20:00.000Z'
+  at_msk: '2026-09-30 11:20:00'
+  mode: stop
+  role: QC_HEAD
+  persona: QC-HEAD-01
+  signers:
+  - QC-HEAD-01
+  - CHW-01
+  action: capa.action_assigned
+  catalog_ref: П-05
+  subject:
+    nc_refs:
+    - NC-141
+    - NC-142
+    - NC-143
+    - NC-14G
+  process_ref: cause/RS-14
+  process_links:
+  - incident/RS-14
+  - nc/NC-141
+  - nc/NC-142
+  - nc/NC-143
+  - nc/NC-14G
+  params:
+    actions:
+    - kind: correction
+      text: 'внеочередная проверка навыка С-03: контрольный образец под наблюдением ГС-01'
+      owner: CHW-01
+      due: '2026-09-30'
+    - kind: corrective
+      text: 'внеплановый инструктаж по технике сварки кольцевого шва: угол горелки'
+      owner: CHW-01
+      due: '2026-09-30'
+    - kind: corrective
+      text: проверить держатель новой горелки на постах 1 и 2, при необходимости заменить
+      owner: MST-02
+      due: '2026-10-02'
+    effectiveness_plan:
+      metric: подрезы в швах С-03
+      baseline: 3 из 6 швов С-03 за Вт 29.09
+      window: первые 8 новых швов С-03 после меры (точка чистоты)
+      success: 0 подрезов
+      on_fail: мера снова открыта, разбор заново
+    not_a_penalty: true
+    basis_labels:
+    - S14/cause
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0054
+  label: S14/capa-done
+  at: '2026-09-30T10:00:00.000Z'
+  at_msk: '2026-09-30 13:00:00'
+  mode: auto
+  role: CHIEF_WELDER
+  persona: CHW-01
+  action: capa.action_implemented
+  catalog_ref: П-06
+  subject:
+    nc_refs:
+    - NC-141
+    - NC-142
+    - NC-143
+    - NC-14G
+  process_ref: cause/RS-14
+  process_links:
+  - incident/RS-14
+  - nc/NC-141
+  - nc/NC-142
+  - nc/NC-143
+  - nc/NC-14G
+  params:
+    done:
+    - инструктаж проведён (подписи С-03 и ГС-01)
+    - 'внеочередная проверка навыка сдана: образец CS-143 чистый'
+    - держатель горелки на посту 1 заменён
+    evidence_labels:
+    - CS-143/visual
+    window_opened: первые 8 новых швов С-03
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0055
+  label: S14/verified/F-304
+  at: '2026-10-01T05:20:00.000Z'
+  at_msk: '2026-10-01 08:20:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.disposition_verified
+  catalog_ref: E-96
+  subject:
+    item_id: F-304
+    nc_ref: NC-14G
+  process_ref: item/F-304
+  process_links:
+  - nc/NC-14G
+  params:
+    result: passed
+    methods:
+    - camera
+    - xray
+    rework_run: SV-304-2
+    basis_labels:
+    - kt3/SV-304-2/CAM-WS-1
+    - xr/F-304/RK-1001-01
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0056
+  label: ZT-3#2/F-304
+  at: '2026-10-01T05:20:30.000Z'
+  at_msk: '2026-10-01 08:20:30'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-47
+  subject:
+    gate: ZT-3
+    item_id: F-304
+  process_ref: item/F-304
+  params:
+    decision: accept
+    presentation_no: 2
+    basis_labels:
+    - kt3/SV-304-2/CAM-WS-1
+    - xr/F-304/RK-1001-01
+    - flat/SV-304-1
+    - flat/SV-304-2
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0057
+  label: S14/verified/F-306
+  at: '2026-10-01T05:40:00.000Z'
+  at_msk: '2026-10-01 08:40:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.disposition_verified
+  catalog_ref: E-96
+  subject:
+    item_id: F-306
+    nc_ref: NC-14G
+  process_ref: item/F-306
+  process_links:
+  - nc/NC-14G
+  params:
+    result: passed
+    methods:
+    - camera
+    - xray
+    rework_run: SV-306-2
+    basis_labels:
+    - kt3/SV-306-2/CAM-WS-1
+    - xr/F-306/RK-1001-02
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0058
+  label: ZT-3#2/F-306
+  at: '2026-10-01T05:40:30.000Z'
+  at_msk: '2026-10-01 08:40:30'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-47
+  subject:
+    gate: ZT-3
+    item_id: F-306
+  process_ref: item/F-306
+  params:
+    decision: accept
+    presentation_no: 2
+    basis_labels:
+    - kt3/SV-306-2/CAM-WS-1
+    - xr/F-306/RK-1001-02
+    - flat/SV-306-1
+    - flat/SV-306-2
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0059
+  label: S14/verified/F-310
+  at: '2026-10-01T06:00:00.000Z'
+  at_msk: '2026-10-01 09:00:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.disposition_verified
+  catalog_ref: E-96
+  subject:
+    item_id: F-310
+    nc_ref: NC-14G
+  process_ref: item/F-310
+  process_links:
+  - nc/NC-14G
+  params:
+    result: passed
+    methods:
+    - camera
+    - xray
+    rework_run: SV-310-2
+    basis_labels:
+    - kt3/SV-310-2/CAM-WS-1
+    - xr/F-310/RK-1001-03
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0060
+  label: ZT-3#2/F-310
+  at: '2026-10-01T06:00:30.000Z'
+  at_msk: '2026-10-01 09:00:30'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-47
+  subject:
+    gate: ZT-3
+    item_id: F-310
+  process_ref: item/F-310
+  params:
+    decision: accept
+    presentation_no: 2
+    basis_labels:
+    - kt3/SV-310-2/CAM-WS-1
+    - xr/F-310/RK-1001-03
+    - flat/SV-310-1
+    - flat/SV-310-2
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0061
+  label: ZT-3/F-313
+  at: '2026-10-01T07:10:00.000Z'
+  at_msk: '2026-10-01 10:10:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-47
+  subject:
+    gate: ZT-3
+    item_id: F-313
+  process_ref: item/F-313
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt3/SV-313-1/CAM-WS-1
+    - xr/F-313/RK-1001-04
+    - flat/SV-313-1
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0062
+  label: ZT-3/F-314
+  at: '2026-10-01T07:40:00.000Z'
+  at_msk: '2026-10-01 10:40:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-47
+  subject:
+    gate: ZT-3
+    item_id: F-314
+  process_ref: item/F-314
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt3/SV-314-1/CAM-WS-1
+    - xr/F-314/RK-1001-05
+    - flat/SV-314-1
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0063
+  label: ZT-3/F-315
+  at: '2026-10-01T08:10:00.000Z'
+  at_msk: '2026-10-01 11:10:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-47
+  subject:
+    gate: ZT-3
+    item_id: F-315
+  process_ref: item/F-315
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt3/SV-315-1/CAM-WS-1
+    - xr/F-315/RK-1001-06
+    - flat/SV-315-1
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0064
+  label: ZT-3/F-316
+  at: '2026-10-01T08:50:00.000Z'
+  at_msk: '2026-10-01 11:50:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-47
+  subject:
+    gate: ZT-3
+    item_id: F-316
+  process_ref: item/F-316
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt3/SV-316-1/CAM-WS-1
+    - xr/F-316/RK-1001-07
+    - flat/SV-316-1
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0065
+  label: ZT-3/F-317
+  at: '2026-10-01T10:10:00.000Z'
+  at_msk: '2026-10-01 13:10:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-47
+  subject:
+    gate: ZT-3
+    item_id: F-317
+  process_ref: item/F-317
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt3/SV-317-1/CAM-WS-1
+    - xr/F-317/RK-1001-08
+    - flat/SV-317-1
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0066
+  label: ZT-3/F-318
+  at: '2026-10-01T11:10:00.000Z'
+  at_msk: '2026-10-01 14:10:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-47
+  subject:
+    gate: ZT-3
+    item_id: F-318
+  process_ref: item/F-318
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt3/SV-318-1/CAM-WS-1
+    - xr/F-318/RK-1001-09
+    - flat/SV-318-1
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0067
+  label: ZT-3/F-319
+  at: '2026-10-01T12:00:00.000Z'
+  at_msk: '2026-10-01 15:00:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-47
+  subject:
+    gate: ZT-3
+    item_id: F-319
+  process_ref: item/F-319
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt3/SV-319-1/CAM-WS-1
+    - xr/F-319/RK-1001-10
+    - flat/SV-319-1
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0068
+  label: ZT-3/F-320
+  at: '2026-10-01T12:40:00.000Z'
+  at_msk: '2026-10-01 15:40:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-47
+  subject:
+    gate: ZT-3
+    item_id: F-320
+  process_ref: item/F-320
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt3/SV-320-1/CAM-WS-1
+    - xr/F-320/RK-1001-11
+    - flat/SV-320-1
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0069
+  label: S14/effective
+  at: '2026-10-01T13:00:00.000Z'
+  at_msk: '2026-10-01 16:00:00'
+  mode: auto
+  role: QC_HEAD
+  persona: QC-HEAD-01
+  action: capa.effectiveness_confirmed
+  catalog_ref: П-07
+  subject:
+    nc_refs:
+    - NC-141
+    - NC-142
+    - NC-143
+    - NC-14G
+  process_ref: cause/RS-14
+  process_links:
+  - incident/RS-14
+  - nc/NC-141
+  - nc/NC-142
+  - nc/NC-143
+  - nc/NC-14G
+  params:
+    window: первые 8 новых швов С-03 после меры
+    result: 8 из 8 без подреза (камера КТ-3 и рентген)
+    evidence_labels:
+    - kt3/SV-313-1/CAM-WS-1
+    - kt3/SV-314-1/CAM-WS-1
+    - kt3/SV-315-1/CAM-WS-1
+    - kt3/SV-316-1/CAM-WS-1
+    - kt3/SV-317-1/CAM-WS-1
+    - kt3/SV-318-1/CAM-WS-1
+    - kt3/SV-319-1/CAM-WS-1
+    - kt3/SV-320-1/CAM-WS-1
+  expect: accepted
+  scenarios:
+  - S14
+- step_id: S14-H0070
+  label: S14/closed
+  at: '2026-10-01T13:05:00.000Z'
+  at_msk: '2026-10-01 16:05:00'
+  mode: auto
+  role: QC_HEAD
+  persona: QC-HEAD-01
+  action: cause.investigation_closed
+  catalog_ref: П-10 [П]
+  subject:
+    nc_refs:
+    - NC-141
+    - NC-142
+    - NC-143
+    - NC-14G
+  process_ref: cause/RS-14
+  process_links:
+  - incident/RS-14
+  - nc/NC-141
+  - nc/NC-142
+  - nc/NC-143
+  - nc/NC-14G
+  params:
+    cause: отклонение от техники выполнения (угол горелки); сопутствующее — новая горелка
+    measures:
+    - проверка навыка
+    - инструктаж
+    - держатель горелки
+    window_result: результативна
+    status: 'Расследование: закрыто'
+    basis_labels:
+    - S14/capa-done
+    - S14/effective
+  expect: accepted
+  scenarios:
+  - S14
+erp_outbox_note: Ожидаемые учётные сообщения в 1С и ответы stand-а. Вывод движка — в потоки не входит; выведено генератором из фактов и шагов людей прогона [П]. Весь прогон.
+erp_outbox_counts:
+  issue_to_production: 22
+  rework_return_to_production: 3
+  scrap_transfer_rework: 1
+  transfer: 20
+erp_outbox_expected:
+- msg_no: 1
+  at_msk: '2026-09-25 08:30:00'
+  type: issue_to_production
+  item_id: F-301
+  lot_id: LOT-ZF-202
+  what: заготовка фланца
+  basis: reg/F-301
+  response: acked
+- msg_no: 2
+  at_msk: '2026-09-25 08:31:00'
+  type: issue_to_production
+  item_id: F-302
+  lot_id: LOT-ZF-202
+  what: заготовка фланца
+  basis: reg/F-302
+  response: acked
+- msg_no: 3
+  at_msk: '2026-09-25 08:32:00'
+  type: issue_to_production
+  item_id: F-303
+  lot_id: LOT-ZF-202
+  what: заготовка фланца
+  basis: reg/F-303
+  response: acked
+- msg_no: 4
+  at_msk: '2026-09-25 08:33:00'
+  type: issue_to_production
+  item_id: F-304
+  lot_id: LOT-ZF-202
+  what: заготовка фланца
+  basis: reg/F-304
+  response: acked
+- msg_no: 5
+  at_msk: '2026-09-25 08:34:00'
+  type: issue_to_production
+  item_id: F-305
+  lot_id: LOT-ZF-202
+  what: заготовка фланца
+  basis: reg/F-305
+  response: acked
+- msg_no: 6
+  at_msk: '2026-09-25 08:35:00'
+  type: issue_to_production
+  item_id: F-306
+  lot_id: LOT-ZF-202
+  what: заготовка фланца
+  basis: reg/F-306
+  response: acked
+- msg_no: 7
+  at_msk: '2026-09-25 08:36:00'
+  type: issue_to_production
+  item_id: F-307
+  lot_id: LOT-ZF-202
+  what: заготовка фланца
+  basis: reg/F-307
+  response: acked
+- msg_no: 8
+  at_msk: '2026-09-25 08:37:00'
+  type: issue_to_production
+  item_id: F-308
+  lot_id: LOT-ZF-202
+  what: заготовка фланца
+  basis: reg/F-308
+  response: acked
+- msg_no: 9
+  at_msk: '2026-09-25 08:38:00'
+  type: issue_to_production
+  item_id: F-309
+  lot_id: LOT-ZF-202
+  what: заготовка фланца
+  basis: reg/F-309
+  response: acked
+- msg_no: 10
+  at_msk: '2026-09-25 08:39:00'
+  type: issue_to_production
+  item_id: F-310
+  lot_id: LOT-ZF-202
+  what: заготовка фланца
+  basis: reg/F-310
+  response: acked
+- msg_no: 11
+  at_msk: '2026-09-25 08:40:00'
+  type: issue_to_production
+  item_id: F-311
+  lot_id: LOT-ZF-202
+  what: заготовка фланца
+  basis: reg/F-311
+  response: acked
+- msg_no: 12
+  at_msk: '2026-09-25 08:41:00'
+  type: issue_to_production
+  item_id: F-312
+  lot_id: LOT-ZF-202
+  what: заготовка фланца
+  basis: reg/F-312
+  response: acked
+- msg_no: 13
+  at_msk: '2026-09-25 08:42:00'
+  type: issue_to_production
+  item_id: F-313
+  lot_id: LOT-ZF-202
+  what: заготовка фланца
+  basis: reg/F-313
+  response: acked
+- msg_no: 14
+  at_msk: '2026-09-25 08:43:00'
+  type: issue_to_production
+  item_id: F-314
+  lot_id: LOT-ZF-202
+  what: заготовка фланца
+  basis: reg/F-314
+  response: acked
+- msg_no: 15
+  at_msk: '2026-09-25 08:44:00'
+  type: issue_to_production
+  item_id: F-315
+  lot_id: LOT-ZF-202
+  what: заготовка фланца
+  basis: reg/F-315
+  response: acked
+- msg_no: 16
+  at_msk: '2026-09-25 08:45:00'
+  type: issue_to_production
+  item_id: F-316
+  lot_id: LOT-ZF-202
+  what: заготовка фланца
+  basis: reg/F-316
+  response: acked
+- msg_no: 17
+  at_msk: '2026-09-25 08:46:00'
+  type: issue_to_production
+  item_id: F-317
+  lot_id: LOT-ZF-202
+  what: заготовка фланца
+  basis: reg/F-317
+  response: acked
+- msg_no: 18
+  at_msk: '2026-09-25 15:00:00'
+  type: issue_to_production
+  item_id: F-318
+  lot_id: LOT-ZF-202
+  what: заготовка фланца
+  basis: reg/F-318
+  response: acked
+- msg_no: 19
+  at_msk: '2026-09-25 15:01:00'
+  type: issue_to_production
+  item_id: F-319
+  lot_id: LOT-ZF-202
+  what: заготовка фланца
+  basis: reg/F-319
+  response: acked
+- msg_no: 20
+  at_msk: '2026-09-25 15:02:00'
+  type: issue_to_production
+  item_id: F-320
+  lot_id: LOT-ZF-202
+  what: заготовка фланца
+  basis: reg/F-320
+  response: acked
+- msg_no: 21
+  at_msk: '2026-09-28 08:00:00'
+  type: transfer
+  item_id: F-301
+  route: MC->WC
+  basis: mv/F-301/MC-WC.received
+  response: acked
+- msg_no: 22
+  at_msk: '2026-09-28 08:00:00'
+  type: transfer
+  item_id: F-302
+  route: MC->WC
+  basis: mv/F-302/MC-WC.received
+  response: acked
+- msg_no: 23
+  at_msk: '2026-09-28 08:00:00'
+  type: transfer
+  item_id: F-303
+  route: MC->WC
+  basis: mv/F-303/MC-WC.received
+  response: acked
+- msg_no: 24
+  at_msk: '2026-09-28 08:00:00'
+  type: transfer
+  item_id: F-304
+  route: MC->WC
+  basis: mv/F-304/MC-WC.received
+  response: acked
+- msg_no: 25
+  at_msk: '2026-09-28 08:00:00'
+  type: transfer
+  item_id: F-305
+  route: MC->WC
+  basis: mv/F-305/MC-WC.received
+  response: acked
+- msg_no: 26
+  at_msk: '2026-09-28 08:00:00'
+  type: transfer
+  item_id: F-306
+  route: MC->WC
+  basis: mv/F-306/MC-WC.received
+  response: acked
+- msg_no: 27
+  at_msk: '2026-09-28 08:00:00'
+  type: transfer
+  item_id: F-307
+  route: MC->WC
+  basis: mv/F-307/MC-WC.received
+  response: acked
+- msg_no: 28
+  at_msk: '2026-09-28 10:10:00'
+  type: transfer
+  item_id: F-308
+  route: MC->WC
+  basis: mv/F-308/MC-WC.received
+  response: acked
+- msg_no: 29
+  at_msk: '2026-09-28 10:10:00'
+  type: transfer
+  item_id: F-309
+  route: MC->WC
+  basis: mv/F-309/MC-WC.received
+  response: acked
+- msg_no: 30
+  at_msk: '2026-09-28 10:10:00'
+  type: transfer
+  item_id: F-310
+  route: MC->WC
+  basis: mv/F-310/MC-WC.received
+  response: acked
+- msg_no: 31
+  at_msk: '2026-09-28 10:10:00'
+  type: transfer
+  item_id: F-311
+  route: MC->WC
+  basis: mv/F-311/MC-WC.received
+  response: acked
+- msg_no: 32
+  at_msk: '2026-09-28 10:10:00'
+  type: transfer
+  item_id: F-312
+  route: MC->WC
+  basis: mv/F-312/MC-WC.received
+  response: acked
+- msg_no: 33
+  at_msk: '2026-09-28 14:10:00'
+  type: transfer
+  item_id: F-313
+  route: MC->WC
+  basis: mv/F-313/MC-WC.received
+  response: acked
+- msg_no: 34
+  at_msk: '2026-09-28 14:10:00'
+  type: transfer
+  item_id: F-314
+  route: MC->WC
+  basis: mv/F-314/MC-WC.received
+  response: acked
+- msg_no: 35
+  at_msk: '2026-09-28 14:10:00'
+  type: transfer
+  item_id: F-315
+  route: MC->WC
+  basis: mv/F-315/MC-WC.received
+  response: acked
+- msg_no: 36
+  at_msk: '2026-09-28 14:10:00'
+  type: transfer
+  item_id: F-316
+  route: MC->WC
+  basis: mv/F-316/MC-WC.received
+  response: acked
+- msg_no: 37
+  at_msk: '2026-09-28 14:10:00'
+  type: transfer
+  item_id: F-317
+  route: MC->WC
+  basis: mv/F-317/MC-WC.received
+  response: acked
+- msg_no: 38
+  at_msk: '2026-09-28 14:10:00'
+  type: transfer
+  item_id: F-318
+  route: MC->WC
+  basis: mv/F-318/MC-WC.received
+  response: acked
+- msg_no: 39
+  at_msk: '2026-09-28 14:10:00'
+  type: transfer
+  item_id: F-319
+  route: MC->WC
+  basis: mv/F-319/MC-WC.received
+  response: acked
+- msg_no: 40
+  at_msk: '2026-09-28 14:10:00'
+  type: transfer
+  item_id: F-320
+  route: MC->WC
+  basis: mv/F-320/MC-WC.received
+  response: acked
+- msg_no: 41
+  at_msk: '2026-09-29 08:05:00'
+  type: issue_to_production
+  lot_id: LOT-R-118
+  items:
+  - F-301
+  - F-302
+  - F-303
+  - F-304
+  - F-305
+  - F-306
+  - F-307
+  - F-308
+  - F-309
+  - F-310
+  - F-311
+  - F-312
+  components:
+  - R-401
+  - R-402
+  - R-403
+  - R-404
+  - R-405
+  - R-406
+  - R-407
+  - R-408
+  - R-409
+  - R-410
+  - R-411
+  - R-412
+  what: кольца в сварку
+  basis: issue/rings/LOT-R-118@0929
+  response: acked
+- msg_no: 42
+  at_msk: '2026-09-29 16:00:00'
+  type: scrap_transfer_rework
+  items:
+  - F-304
+  - F-306
+  - F-310
+  basis: S14/disposition-rework
+  response: acked
+- msg_no: 43
+  at_msk: '2026-10-01 08:05:00'
+  type: issue_to_production
+  lot_id: LOT-R-118
+  items:
+  - F-313
+  - F-314
+  - F-315
+  - F-316
+  - F-317
+  - F-318
+  - F-319
+  - F-320
+  components:
+  - R-413
+  - R-414
+  - R-415
+  - R-416
+  - R-417
+  - R-418
+  - R-419
+  - R-420
+  what: кольца в сварку
+  basis: issue/rings/LOT-R-118@1001
+  response: acked
+- msg_no: 44
+  at_msk: '2026-10-01 08:20:30'
+  type: rework_return_to_production
+  item_id: F-304
+  gate: ZT-3#2
+  what: переделка выполнена и проверена
+  basis: ZT-3#2/F-304
+  response: acked
+- msg_no: 45
+  at_msk: '2026-10-01 08:40:30'
+  type: rework_return_to_production
+  item_id: F-306
+  gate: ZT-3#2
+  what: переделка выполнена и проверена
+  basis: ZT-3#2/F-306
+  response: acked
+- msg_no: 46
+  at_msk: '2026-10-01 09:00:30'
+  type: rework_return_to_production
+  item_id: F-310
+  gate: ZT-3#2
+  what: переделка выполнена и проверена
+  basis: ZT-3#2/F-310
+  response: acked
+mes_outbox_note: 'Ожидаемые сообщения в MES (схема v0.3.1, процесс «Удержание»; вывод движка, в потоки не входит) [П]: «не выдавать в работу» — в момент удержания (правило при сигнале,
+  круг, отзыв приёмки), один раз на объект; «можно выдавать» — только по шагу человека, когда оснований не осталось. Гипотез, причин и кадров нет. Кольцо на складе держит удержание партии.'
+mes_outbox_counts:
+  hold: 6
+  release: 6
+mes_held_at_end: []
+mes_outbox_expected:
+- msg_no: 1
+  at_msk: '2026-09-29 10:06:00'
+  type: hold
+  item_id: F-304
+  text: не выдавать в работу
+  basis: signal:kt3/SV-304-1/CAM-WS-1
+  node: SG2
+  set_by: system
+- msg_no: 2
+  at_msk: '2026-09-29 10:56:00'
+  type: hold
+  item_id: F-306
+  text: не выдавать в работу
+  basis: signal:kt3/SV-306-1/CAM-WS-1
+  node: SG2
+  set_by: system
+- msg_no: 3
+  at_msk: '2026-09-29 11:02:00'
+  type: hold
+  item_id: F-302
+  text: не выдавать в работу
+  basis: risk_scope:RS-14
+  node: I2
+  set_by: system
+- msg_no: 4
+  at_msk: '2026-09-29 11:40:00'
+  type: hold
+  item_id: F-308
+  text: не выдавать в работу
+  basis: risk_scope:RS-14
+  node: I2
+  set_by: system
+- msg_no: 5
+  at_msk: '2026-09-29 12:05:00'
+  type: release
+  item_id: F-302
+  text: можно выдавать
+  released_bases:
+  - risk_scope:RS-14
+  decision_step: S14/exclude-F-302
+  decided_by: TECH-01
+  action: risk_scope.item_assessed
+- msg_no: 6
+  at_msk: '2026-09-29 13:40:00'
+  type: hold
+  item_id: F-310
+  text: не выдавать в работу
+  basis: risk_scope:RS-14
+  node: I2
+  set_by: system
+- msg_no: 7
+  at_msk: '2026-09-29 14:25:00'
+  type: release
+  item_id: F-308
+  text: можно выдавать
+  released_bases:
+  - risk_scope:RS-14
+  decision_step: S14/exclude-F-308
+  decided_by: TECH-01
+  action: risk_scope.item_assessed
+- msg_no: 8
+  at_msk: '2026-09-29 14:30:00'
+  type: hold
+  item_id: F-312
+  text: не выдавать в работу
+  basis: risk_scope:RS-14
+  node: I2
+  set_by: system
+- msg_no: 9
+  at_msk: '2026-09-29 15:45:00'
+  type: release
+  item_id: F-312
+  text: можно выдавать
+  released_bases:
+  - risk_scope:RS-14
+  decision_step: S14/exclude-F-312
+  decided_by: TECH-01
+  action: risk_scope.item_assessed
+- msg_no: 10
+  at_msk: '2026-09-29 16:00:00'
+  type: release
+  item_id: F-304
+  text: можно выдавать
+  released_bases:
+  - risk_scope:RS-14
+  - signal:kt3/SV-304-1/CAM-WS-1
+  decision_step: S14/disposition-rework
+  decided_by: TECH-01
+  action: decision.disposition_set
+- msg_no: 11
+  at_msk: '2026-09-29 16:00:00'
+  type: release
+  item_id: F-306
+  text: можно выдавать
+  released_bases:
+  - risk_scope:RS-14
+  - signal:kt3/SV-306-1/CAM-WS-1
+  decision_step: S14/disposition-rework
+  decided_by: TECH-01
+  action: decision.disposition_set
+- msg_no: 12
+  at_msk: '2026-09-29 16:00:00'
+  type: release
+  item_id: F-310
+  text: можно выдавать
+  released_bases:
+  - risk_scope:RS-14
+  - signal:kt3/SV-310-1/CAM-WS-1
+  decision_step: S14/disposition-rework
+  decided_by: TECH-01
+  action: decision.disposition_set

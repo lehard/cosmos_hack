@@ -1,0 +1,178 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "urn:sergey-palych:integration:cad:discrepancy-report:1.0",
+  "title": "Отчёт о расхождениях: состав КД против номенклатуры 1С (наш выход, администратору), cad-assembly 1.0 [П]",
+  "description": "Исходящий от импорта документ: строгая схема. Ничего не создаётся автоматически; решение по каждой строке — за человеком.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "report_id",
+    "created_at",
+    "assembly",
+    "source_file",
+    "import_status",
+    "summary",
+    "lines"
+  ],
+  "properties": {
+    "report_id": {
+      "type": "string"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "assembly": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "designation",
+        "version"
+      ],
+      "properties": {
+        "designation": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "previous_version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "source_file": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "sha256",
+        "format_version"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "format_version": {
+          "type": "string"
+        }
+      }
+    },
+    "import_status": {
+      "enum": [
+        "imported",
+        "imported_with_discrepancies",
+        "quarantined",
+        "duplicate"
+      ]
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "components",
+        "matched",
+        "discrepancies"
+      ],
+      "properties": {
+        "components": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "matched": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "discrepancies": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "lines": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "position",
+          "designation",
+          "check",
+          "result",
+          "action"
+        ],
+        "properties": {
+          "position": {
+            "type": "integer"
+          },
+          "designation": {
+            "type": "string"
+          },
+          "check": {
+            "enum": [
+              "designation_in_1c",
+              "unit_matches",
+              "tracking_matches",
+              "version_known",
+              "link_endpoints_exist"
+            ]
+          },
+          "result": {
+            "enum": [
+              "ok",
+              "not_found",
+              "mismatch",
+              "ambiguous"
+            ]
+          },
+          "found_in_1c": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "ref_key": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "article": {
+                "type": "string"
+              },
+              "unit": {
+                "type": "string"
+              }
+            }
+          },
+          "action": {
+            "enum": [
+              "none",
+              "admin_map_existing",
+              "admin_request_nomenclature",
+              "designer_check_kd"
+            ],
+            "description": "Кому задача. Автоматического создания номенклатуры нет"
+          },
+          "task_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "note": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

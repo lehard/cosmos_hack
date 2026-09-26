@@ -1,0 +1,10 @@
+{
+  "message_id": "qc-out-000120",
+  "contract_version": "1.0",
+  "result": "duplicate",
+  "ref_key": "c4a1f0d2-9a3b-11f1-8b10-0050569a1b01",
+  "number": "АКК-000120",
+  "document": "Акт контроля качества товаров № АКК-000120",
+  "status": "Отработан",
+  "received_at": "2026-09-23T10:16:05+03:00"
+}

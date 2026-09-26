@@ -1,0 +1,1700 @@
+# =============================================================================
+# Определение сценария. Генерируется tools/generate.py — руками не править (правьте генератор).
+# Имена событий, действий и полей — НАШИ (process-events-catalog.md, scenarios-flange*.{md,yaml}).
+# [П] — имя или значение предварительное (нет в каталоге) / наше допущение; [ПП] — проектное предположение.
+# Время: at — UTC (RFC 3339, мс); at_msk — то же в МСК для чтения.
+# human_steps.mode: stop — сценарий ждёт решения на столе роли (интерактивный режим; в автосверке подписывает
+#   demo-signer); auto — demo-signer подписывает сам в указанное доменное время.
+# expect: accepted | refused[:код] — ожидаемый ответ системы на шаг (проверка отказов по правам и правилам).
+# =============================================================================
+
+id: S13
+title: «Специалист заснул» — очередь на ЗТ-3 без решения, эскалация, перераспределение
+goal: На закрывающей точке никто не принимает решения; очередь растёт; система не пропускает детали сама — срабатывают сроки и эскалация с ценой задержки; мастер перераспределяет работу.
+case:
+  other:
+  - §2.4 ожидание и простой
+  - §1.2
+  - §5.2 изделия на ЗТ без подписи (О-9)
+  - 'соседи: FR-5, FR-8, FR-19, FR-56, FR-57, FR-81, FR-105, FR-129'
+kind: run
+run: standalone
+stream: streams/S13.jsonl
+seed: 20260925
+window_msk:
+- 2026-09-25 08:00
+- 2026-09-25 13:00
+items:
+- F-024
+- F-026
+- F-028
+- F-030
+- F-031
+- F-032
+- F-033
+- F-034
+- F-035
+- F-036
+- F-223
+- F-224
+erp_postings_expected:
+- transfer WC→AC ×10 — каждое после своей подписи ЗТ-3
+- issue_to_production (комплекты под F-024, F-030, F-031; новое уплотнение под F-031)
+erp_note: Сообщения 1С — по словарю scenarios-flange-expected.yaml (erp_posting_type). Полный список с ответами stand-а — I1.yaml → erp_outbox_expected (для S13 и S10B — в их файлах).
+  «Выпуск годного» — только после ЗТ-6.
+expected: expected/S13.yaml
+precondition: 'Пт 25.09 08:00: на ЗТ-3 ждут F-024, F-030, F-031, F-032; РК по F-033…F-035 выйдут в 09:20, по F-036, F-223, F-224 — в 10:20; в сборке F-028, на стенде LT-1 — F-026; пост
+  ЗТ-3 — QC-01'
+clock_note: имитатор не присылает решений QC-01 с 08:15 до 11:30; часы идут — ожидание и есть предмет проверки
+new_events_p:
+- gate.wait_overdue (реакция)
+- escalation.acknowledged (шаг человека)
+- escalation.closed (реакция)
+- post.assignment_requested (шаг человека)
+- post.assignment_changed (шаг человека)
+optional_rule: 'R-21 (по желанию): уплотнение под F-031, выданное в 08:10, в 12:10 блокируется; в 12:15 выдано новое'
+human_steps:
+- step_id: S13-H0001
+  label: ZT-1/LOT-ZF-111
+  at: '2026-09-08T06:17:00.000Z'
+  at_msk: '2026-09-08 09:17:00'
+  mode: auto
+  role: QC
+  persona: QC-02
+  action: decision.gate_passed
+  catalog_ref: E-08
+  subject:
+    gate: ZT-1
+    lot_id: LOT-ZF-111
+  process_ref: lot/LOT-ZF-111
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - iqc/LOT-ZF-111/documents
+    - iqc/LOT-ZF-111/lab
+    - iqc/F-223/kt1
+    - …
+  expect: accepted
+  scenarios: []
+- step_id: S13-H0002
+  label: ZT-1/LOT-R-108
+  at: '2026-09-08T06:37:00.000Z'
+  at_msk: '2026-09-08 09:37:00'
+  mode: auto
+  role: QC
+  persona: QC-02
+  action: decision.gate_passed
+  catalog_ref: E-08
+  subject:
+    gate: ZT-1
+    lot_id: LOT-R-108
+  process_ref: lot/LOT-R-108
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - iqc/LOT-R-108/documents
+    - iqc/LOT-R-108/lab
+    - iqc/LOT-R-108/xr-sample
+    - …
+  expect: accepted
+  scenarios: []
+- step_id: S13-H0003
+  label: ZT-1/LOT-C-211
+  at: '2026-09-08T06:59:00.000Z'
+  at_msk: '2026-09-08 09:59:00'
+  mode: auto
+  role: QC
+  persona: QC-02
+  action: decision.gate_passed
+  catalog_ref: E-08
+  subject:
+    gate: ZT-1
+    lot_id: LOT-C-211
+  process_ref: lot/LOT-C-211
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - iqc/LOT-C-211/documents
+    - iqc/LOT-C-211/kt1-sample
+  expect: accepted
+  scenarios: []
+- step_id: S13-H0004
+  label: ZT-1/LOT-SL-391
+  at: '2026-09-08T07:19:00.000Z'
+  at_msk: '2026-09-08 10:19:00'
+  mode: auto
+  role: QC
+  persona: QC-02
+  action: decision.gate_passed
+  catalog_ref: E-08
+  subject:
+    gate: ZT-1
+    lot_id: LOT-SL-391
+  process_ref: lot/LOT-SL-391
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - iqc/LOT-SL-391/documents
+    - iqc/LOT-SL-391/kt1-sample
+  expect: accepted
+  scenarios: []
+- step_id: S13-H0005
+  label: ZT-1/LOT-FS-481
+  at: '2026-09-08T07:39:00.000Z'
+  at_msk: '2026-09-08 10:39:00'
+  mode: auto
+  role: QC
+  persona: QC-02
+  action: decision.gate_passed
+  catalog_ref: E-08
+  subject:
+    gate: ZT-1
+    lot_id: LOT-FS-481
+  process_ref: lot/LOT-FS-481
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - iqc/LOT-FS-481/documents
+    - iqc/LOT-FS-481/kt1-sample
+  expect: accepted
+  scenarios: []
+- step_id: S13-H0006
+  label: ZT-1/LOT-W-87
+  at: '2026-09-08T07:54:00.000Z'
+  at_msk: '2026-09-08 10:54:00'
+  mode: auto
+  role: QC
+  persona: QC-02
+  action: decision.gate_passed
+  catalog_ref: E-08
+  subject:
+    gate: ZT-1
+    lot_id: LOT-W-87
+  process_ref: lot/LOT-W-87
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - iqc/LOT-W-87/documents
+  expect: accepted
+  scenarios: []
+- step_id: S13-H0007
+  label: ZT-1/LOT-V-591
+  at: '2026-09-08T08:14:00.000Z'
+  at_msk: '2026-09-08 11:14:00'
+  mode: auto
+  role: QC
+  persona: QC-02
+  action: decision.gate_passed
+  catalog_ref: E-08
+  subject:
+    gate: ZT-1
+    lot_id: LOT-V-591
+  process_ref: lot/LOT-V-591
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - iqc/LOT-V-591/documents
+    - iqc/LOT-V-591/kt1-sample
+  expect: accepted
+  scenarios: []
+- step_id: S13-H0008
+  label: ZT-2/F-223
+  at: '2026-09-10T12:10:00.000Z'
+  at_msk: '2026-09-10 15:10:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-19
+  subject:
+    gate: ZT-2
+    item_id: F-223
+  process_ref: item/F-223
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt2/F-223
+    - cmm/F-223
+    marking_check:
+      previous: TAG:F-223
+      current: DM:F-223
+      result: match
+      readable: true
+      basis_label: remark/F-223
+  expect: accepted
+  scenarios: []
+- step_id: S13-H0009
+  label: ZT-2/F-224
+  at: '2026-09-10T12:35:00.000Z'
+  at_msk: '2026-09-10 15:35:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-19
+  subject:
+    gate: ZT-2
+    item_id: F-224
+  process_ref: item/F-224
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt2/F-224
+    - cmm/F-224
+    marking_check:
+      previous: TAG:F-224
+      current: DM:F-224
+      result: match
+      readable: true
+      basis_label: remark/F-224
+  expect: accepted
+  scenarios: []
+- step_id: S13-H0010
+  label: ZT-1/LOT-ZF-201
+  at: '2026-09-17T06:37:00.000Z'
+  at_msk: '2026-09-17 09:37:00'
+  mode: auto
+  role: QC
+  persona: QC-02
+  action: decision.gate_passed
+  catalog_ref: E-08
+  subject:
+    gate: ZT-1
+    lot_id: LOT-ZF-201
+  process_ref: lot/LOT-ZF-201
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - iqc/LOT-ZF-201/documents
+    - iqc/LOT-ZF-201/lab
+    - iqc/F-024/kt1
+    - …
+  expect: accepted
+  scenarios: []
+- step_id: S13-H0011
+  label: ZT-1/LOT-R-116
+  at: '2026-09-17T07:17:00.000Z'
+  at_msk: '2026-09-17 10:17:00'
+  mode: auto
+  role: QC
+  persona: QC-02
+  action: decision.gate_passed
+  catalog_ref: E-08
+  subject:
+    gate: ZT-1
+    lot_id: LOT-R-116
+  process_ref: lot/LOT-R-116
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - iqc/LOT-R-116/documents
+    - iqc/LOT-R-116/lab
+    - iqc/LOT-R-116/xr-sample
+    - …
+  expect: accepted
+  scenarios: []
+- step_id: S13-H0012
+  label: ZT-1/LOT-C-301
+  at: '2026-09-17T07:47:00.000Z'
+  at_msk: '2026-09-17 10:47:00'
+  mode: auto
+  role: QC
+  persona: QC-02
+  action: decision.gate_passed
+  catalog_ref: E-08
+  subject:
+    gate: ZT-1
+    lot_id: LOT-C-301
+  process_ref: lot/LOT-C-301
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - iqc/LOT-C-301/documents
+    - iqc/LOT-C-301/kt1-sample
+  expect: accepted
+  scenarios: []
+- step_id: S13-H0013
+  label: ZT-1/LOT-SL-401
+  at: '2026-09-17T08:07:00.000Z'
+  at_msk: '2026-09-17 11:07:00'
+  mode: auto
+  role: QC
+  persona: QC-02
+  action: decision.gate_passed
+  catalog_ref: E-08
+  subject:
+    gate: ZT-1
+    lot_id: LOT-SL-401
+  process_ref: lot/LOT-SL-401
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - iqc/LOT-SL-401/documents
+    - iqc/LOT-SL-401/kt1-sample
+  expect: accepted
+  scenarios: []
+- step_id: S13-H0014
+  label: ZT-1/LOT-FS-501
+  at: '2026-09-17T08:27:00.000Z'
+  at_msk: '2026-09-17 11:27:00'
+  mode: auto
+  role: QC
+  persona: QC-02
+  action: decision.gate_passed
+  catalog_ref: E-08
+  subject:
+    gate: ZT-1
+    lot_id: LOT-FS-501
+  process_ref: lot/LOT-FS-501
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - iqc/LOT-FS-501/documents
+    - iqc/LOT-FS-501/kt1-sample
+  expect: accepted
+  scenarios: []
+- step_id: S13-H0015
+  label: ZT-1/LOT-W-88
+  at: '2026-09-17T08:42:00.000Z'
+  at_msk: '2026-09-17 11:42:00'
+  mode: auto
+  role: QC
+  persona: QC-02
+  action: decision.gate_passed
+  catalog_ref: E-08
+  subject:
+    gate: ZT-1
+    lot_id: LOT-W-88
+  process_ref: lot/LOT-W-88
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - iqc/LOT-W-88/documents
+  expect: accepted
+  scenarios: []
+- step_id: S13-H0016
+  label: ZT-1/LOT-V-601
+  at: '2026-09-17T09:02:00.000Z'
+  at_msk: '2026-09-17 12:02:00'
+  mode: auto
+  role: QC
+  persona: QC-02
+  action: decision.gate_passed
+  catalog_ref: E-08
+  subject:
+    gate: ZT-1
+    lot_id: LOT-V-601
+  process_ref: lot/LOT-V-601
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - iqc/LOT-V-601/documents
+    - iqc/LOT-V-601/kt1-sample
+  expect: accepted
+  scenarios: []
+- step_id: S13-H0017
+  label: ZT-2/F-024
+  at: '2026-09-21T11:45:00.000Z'
+  at_msk: '2026-09-21 14:45:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-19
+  subject:
+    gate: ZT-2
+    item_id: F-024
+  process_ref: item/F-024
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt2/F-024
+    - cmm/F-024
+    marking_check:
+      previous: TAG:F-024
+      current: DM:F-024
+      result: match
+      readable: true
+      basis_label: remark/F-024
+  expect: accepted
+  scenarios: []
+- step_id: S13-H0018
+  label: ZT-2/F-026
+  at: '2026-09-21T12:10:00.000Z'
+  at_msk: '2026-09-21 15:10:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-19
+  subject:
+    gate: ZT-2
+    item_id: F-026
+  process_ref: item/F-026
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt2/F-026
+    - cmm/F-026
+    marking_check:
+      previous: TAG:F-026
+      current: DM:F-026
+      result: match
+      readable: true
+      basis_label: remark/F-026
+  expect: accepted
+  scenarios: []
+- step_id: S13-H0019
+  label: ZT-2/F-028
+  at: '2026-09-21T12:35:00.000Z'
+  at_msk: '2026-09-21 15:35:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-19
+  subject:
+    gate: ZT-2
+    item_id: F-028
+  process_ref: item/F-028
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt2/F-028
+    - cmm/F-028
+    marking_check:
+      previous: TAG:F-028
+      current: DM:F-028
+      result: match
+      readable: true
+      basis_label: remark/F-028
+  expect: accepted
+  scenarios: []
+- step_id: S13-H0020
+  label: ZT-2/F-030
+  at: '2026-09-21T13:00:00.000Z'
+  at_msk: '2026-09-21 16:00:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-19
+  subject:
+    gate: ZT-2
+    item_id: F-030
+  process_ref: item/F-030
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt2/F-030
+    - cmm/F-030
+    marking_check:
+      previous: TAG:F-030
+      current: DM:F-030
+      result: match
+      readable: true
+      basis_label: remark/F-030
+  expect: accepted
+  scenarios: []
+- step_id: S13-H0021
+  label: ZT-2/F-036
+  at: '2026-09-22T06:20:00.000Z'
+  at_msk: '2026-09-22 09:20:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-19
+  subject:
+    gate: ZT-2
+    item_id: F-036
+  process_ref: item/F-036
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt2/F-036
+    - cmm/F-036
+    marking_check:
+      previous: TAG:F-036
+      current: DM:F-036
+      result: match
+      readable: true
+      basis_label: remark/F-036
+  expect: accepted
+  scenarios: []
+- step_id: S13-H0022
+  label: ZT-2/F-031
+  at: '2026-09-22T07:10:00.000Z'
+  at_msk: '2026-09-22 10:10:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-19
+  subject:
+    gate: ZT-2
+    item_id: F-031
+  process_ref: item/F-031
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt2/F-031
+    - cmm/F-031
+    marking_check:
+      previous: TAG:F-031
+      current: DM:F-031
+      result: match
+      readable: true
+      basis_label: remark/F-031
+  expect: accepted
+  scenarios: []
+- step_id: S13-H0023
+  label: ZT-2/F-035
+  at: '2026-09-22T07:35:00.000Z'
+  at_msk: '2026-09-22 10:35:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-19
+  subject:
+    gate: ZT-2
+    item_id: F-035
+  process_ref: item/F-035
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt2/F-035
+    - cmm/F-035
+    marking_check:
+      previous: TAG:F-035
+      current: DM:F-035
+      result: match
+      readable: true
+      basis_label: remark/F-035
+  expect: accepted
+  scenarios: []
+- step_id: S13-H0024
+  label: ZT-2/F-032
+  at: '2026-09-22T08:25:00.000Z'
+  at_msk: '2026-09-22 11:25:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-19
+  subject:
+    gate: ZT-2
+    item_id: F-032
+  process_ref: item/F-032
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt2/F-032
+    - cmm/F-032
+    marking_check:
+      previous: TAG:F-032
+      current: DM:F-032
+      result: match
+      readable: true
+      basis_label: remark/F-032
+  expect: accepted
+  scenarios: []
+- step_id: S13-H0025
+  label: ZT-2/F-033
+  at: '2026-09-22T09:15:00.000Z'
+  at_msk: '2026-09-22 12:15:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-19
+  subject:
+    gate: ZT-2
+    item_id: F-033
+  process_ref: item/F-033
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt2/F-033
+    - cmm/F-033
+    marking_check:
+      previous: TAG:F-033
+      current: DM:F-033
+      result: match
+      readable: true
+      basis_label: remark/F-033
+  expect: accepted
+  scenarios: []
+- step_id: S13-H0026
+  label: ZT-2/F-034
+  at: '2026-09-22T10:30:00.000Z'
+  at_msk: '2026-09-22 13:30:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-19
+  subject:
+    gate: ZT-2
+    item_id: F-034
+  process_ref: item/F-034
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt2/F-034
+    - cmm/F-034
+    marking_check:
+      previous: TAG:F-034
+      current: DM:F-034
+      result: match
+      readable: true
+      basis_label: remark/F-034
+  expect: accepted
+  scenarios: []
+- step_id: S13-H0027
+  label: ZT-3/F-026
+  at: '2026-09-24T07:30:00.000Z'
+  at_msk: '2026-09-24 10:30:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-47
+  subject:
+    gate: ZT-3
+    item_id: F-026
+  process_ref: item/F-026
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - xr/F-026/RK-0924-21
+    - flat/SV-026-1
+  expect: accepted
+  scenarios:
+  - S13
+- step_id: S13-H0028
+  label: ZT-3/F-028
+  at: '2026-09-24T07:45:00.000Z'
+  at_msk: '2026-09-24 10:45:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-47
+  subject:
+    gate: ZT-3
+    item_id: F-028
+  process_ref: item/F-028
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - xr/F-028/RK-0924-22
+    - flat/SV-028-1
+  expect: accepted
+  scenarios:
+  - S13
+- step_id: S13-H0029
+  label: ZT-SR/F-026
+  at: '2026-09-24T11:40:00.000Z'
+  at_msk: '2026-09-24 14:40:00'
+  mode: auto
+  role: QC
+  persona: QC-02
+  action: decision.gate_passed
+  catalog_ref: E-55
+  subject:
+    gate: ZT-SR
+    item_id: F-026
+  process_ref: item/F-026
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - ktsr/F-026
+    zone: SEAL-GROOVE
+    tools_counted:
+      entered_cavity: 2
+      returned: 2
+  expect: accepted
+  scenarios:
+  - S13
+- step_id: S13-H0030
+  label: ZT-4/F-026
+  at: '2026-09-24T12:30:00.000Z'
+  at_msk: '2026-09-24 15:30:00'
+  mode: auto
+  role: QC
+  persona: QC-02
+  action: decision.gate_passed
+  catalog_ref: E-55
+  subject:
+    gate: ZT-4
+    item_id: F-026
+  process_ref: item/F-026
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt4/F-026
+    - torque/F-026
+    - torque/F-026/J-2
+  expect: accepted
+  scenarios:
+  - S13
+- step_id: S13-H0031
+  label: ZT-3/F-024
+  at: '2026-09-25T05:15:00.000Z'
+  at_msk: '2026-09-25 08:15:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-47
+  subject:
+    gate: ZT-3
+    item_id: F-024
+  process_ref: item/F-024
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - xr/F-024/RK-0924-23
+    - flat/SV-024-1
+  expect: accepted
+  scenarios:
+  - S13
+- step_id: S13-H0032
+  label: ZT-SR/F-028
+  at: '2026-09-25T05:30:00.000Z'
+  at_msk: '2026-09-25 08:30:00'
+  mode: auto
+  role: QC
+  persona: QC-02
+  action: decision.gate_passed
+  catalog_ref: E-55
+  subject:
+    gate: ZT-SR
+    item_id: F-028
+  process_ref: item/F-028
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - ktsr/F-028
+    zone: SEAL-GROOVE
+    tools_counted:
+      entered_cavity: 2
+      returned: 2
+  expect: accepted
+  scenarios:
+  - S13
+- step_id: S13-H0033
+  label: S13/ack
+  at: '2026-09-25T06:05:00.000Z'
+  at_msk: '2026-09-25 09:05:00'
+  mode: auto
+  role: MASTER
+  persona: MST-02
+  action: escalation.acknowledged
+  catalog_ref: '[П] S13'
+  subject:
+    gate: ZT-3
+    escalation_level: master
+  process_ref: null
+  params:
+    text: Ищу контролёра
+    stops_deadlines: false
+  expect: accepted
+  scenarios:
+  - S13
+- step_id: S13-H0034
+  label: ZT-5/F-026
+  at: '2026-09-25T06:20:00.000Z'
+  at_msk: '2026-09-25 09:20:00'
+  mode: auto
+  role: QC
+  persona: QC-02
+  signers:
+  - TST-01
+  - QC-02
+  action: decision.gate_passed
+  catalog_ref: E-63
+  subject:
+    gate: ZT-5
+    item_id: F-026
+  process_ref: item/F-026
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - lt/F-026/result
+  expect: accepted
+  scenarios:
+  - S13
+- step_id: S13-H0035
+  label: ZT-4/F-028
+  at: '2026-09-25T06:25:00.000Z'
+  at_msk: '2026-09-25 09:25:00'
+  mode: auto
+  role: QC
+  persona: QC-02
+  action: decision.gate_passed
+  catalog_ref: E-55
+  subject:
+    gate: ZT-4
+    item_id: F-028
+  process_ref: item/F-028
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt4/F-028
+    - torque/F-028
+    - torque/F-028/J-2
+  expect: accepted
+  scenarios:
+  - S13
+- step_id: S13-H0036
+  label: ZT-SR/F-024
+  at: '2026-09-25T06:50:00.000Z'
+  at_msk: '2026-09-25 09:50:00'
+  mode: auto
+  role: QC
+  persona: QC-02
+  action: decision.gate_passed
+  catalog_ref: E-55
+  subject:
+    gate: ZT-SR
+    item_id: F-024
+  process_ref: item/F-024
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - ktsr/F-024
+    zone: SEAL-GROOVE
+    tools_counted:
+      entered_cavity: 2
+      returned: 2
+  expect: accepted
+  scenarios:
+  - S13
+- step_id: S13-H0037
+  label: ZT-4/F-024
+  at: '2026-09-25T07:40:00.000Z'
+  at_msk: '2026-09-25 10:40:00'
+  mode: auto
+  role: QC
+  persona: QC-02
+  action: decision.gate_passed
+  catalog_ref: E-55
+  subject:
+    gate: ZT-4
+    item_id: F-024
+  process_ref: item/F-024
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt4/F-024
+    - torque/F-024
+    - torque/F-024/J-2
+  expect: accepted
+  scenarios:
+  - S13
+- step_id: S13-H0038
+  label: S13/request
+  at: '2026-09-25T07:40:00.000Z'
+  at_msk: '2026-09-25 10:40:00'
+  mode: stop
+  role: MASTER
+  persona: MST-02
+  action: post.assignment_requested
+  catalog_ref: '[П] S13'
+  subject:
+    post: ZT-3
+    station: ST-WC-ZT3
+  process_ref: null
+  params:
+    option: second_controller
+    assignee: QC-02
+    until: очередь пуста
+  expect: accepted
+  scenarios:
+  - S13
+- step_id: S13-H0039
+  label: ZT-5/F-028
+  at: '2026-09-25T07:42:00.000Z'
+  at_msk: '2026-09-25 10:42:00'
+  mode: auto
+  role: QC
+  persona: QC-02
+  signers:
+  - TST-01
+  - QC-02
+  action: decision.gate_passed
+  catalog_ref: E-63
+  subject:
+    gate: ZT-5
+    item_id: F-028
+  process_ref: item/F-028
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - lt/F-028/result
+  expect: accepted
+  scenarios:
+  - S13
+- step_id: S13-H0040
+  label: S13/approve
+  at: '2026-09-25T07:45:00.000Z'
+  at_msk: '2026-09-25 10:45:00'
+  mode: stop
+  role: QC_HEAD
+  persona: QC-HEAD-01
+  action: post.assignment_changed
+  catalog_ref: '[П] S13'
+  subject:
+    post: ZT-3
+    station: ST-WC-ZT3
+  process_ref: null
+  params:
+    assignee: QC-02
+    from: '2026-09-25T07:45:00.000Z'
+    requested_by: MST-02
+    checks:
+    - допуск к приёмке сварных швов (STAMP-QC-02-WELD)
+    - не участвовала в изготовлении
+  expect: accepted
+  scenarios:
+  - S13
+- step_id: S13-H0041
+  label: ZT-3/F-030
+  at: '2026-09-25T08:00:00.000Z'
+  at_msk: '2026-09-25 11:00:00'
+  mode: stop
+  role: QC
+  persona: QC-02
+  action: decision.gate_passed
+  catalog_ref: E-47
+  subject:
+    gate: ZT-3
+    item_id: F-030
+  process_ref: item/F-030
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - xr/F-030/RK-0924-24
+    - flat/SV-030-1
+  expect: accepted
+  scenarios:
+  - S13
+- step_id: S13-H0042
+  label: ZT-3/F-031
+  at: '2026-09-25T08:10:00.000Z'
+  at_msk: '2026-09-25 11:10:00'
+  mode: stop
+  role: QC
+  persona: QC-02
+  action: decision.gate_passed
+  catalog_ref: E-47
+  subject:
+    gate: ZT-3
+    item_id: F-031
+  process_ref: item/F-031
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - xr/F-031/RK-0924-25
+    - flat/SV-031-1
+  expect: accepted
+  scenarios:
+  - S13
+- step_id: S13-H0043
+  label: ZT-3/F-032
+  at: '2026-09-25T08:20:00.000Z'
+  at_msk: '2026-09-25 11:20:00'
+  mode: stop
+  role: QC
+  persona: QC-02
+  action: decision.gate_passed
+  catalog_ref: E-47
+  subject:
+    gate: ZT-3
+    item_id: F-032
+  process_ref: item/F-032
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - xr/F-032/RK-0924-26
+    - flat/SV-032-1
+  expect: accepted
+  scenarios:
+  - S13
+- step_id: S13-H0044
+  label: ZT-3/F-033
+  at: '2026-09-25T08:30:00.000Z'
+  at_msk: '2026-09-25 11:30:00'
+  mode: stop
+  role: QC
+  persona: QC-02
+  action: decision.gate_passed
+  catalog_ref: E-47
+  subject:
+    gate: ZT-3
+    item_id: F-033
+  process_ref: item/F-033
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - xr/F-033/RK-0925-01
+    - flat/SV-033-1
+  expect: accepted
+  scenarios:
+  - S13
+- step_id: S13-H0045
+  label: ZT-3/F-034
+  at: '2026-09-25T08:40:00.000Z'
+  at_msk: '2026-09-25 11:40:00'
+  mode: stop
+  role: QC
+  persona: QC-02
+  action: decision.gate_passed
+  catalog_ref: E-47
+  subject:
+    gate: ZT-3
+    item_id: F-034
+  process_ref: item/F-034
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - xr/F-034/RK-0925-02
+    - flat/SV-034-1
+  expect: accepted
+  scenarios:
+  - S13
+- step_id: S13-H0046
+  label: ZT-3/F-035
+  at: '2026-09-25T08:40:00.000Z'
+  at_msk: '2026-09-25 11:40:00'
+  mode: stop
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-47
+  subject:
+    gate: ZT-3
+    item_id: F-035
+  process_ref: item/F-035
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - xr/F-035/RK-0925-03
+    - flat/SV-035-1
+  expect: accepted
+  scenarios:
+  - S13
+- step_id: S13-H0047
+  label: S13/end
+  at: '2026-09-25T08:40:30.000Z'
+  at_msk: '2026-09-25 11:40:30'
+  mode: auto
+  role: MASTER
+  persona: MST-02
+  action: post.assignment_changed
+  catalog_ref: '[П] S13'
+  subject:
+    post: ZT-3
+    station: ST-WC-ZT3
+  process_ref: null
+  params:
+    assignee: QC-02
+    to: '2026-09-25T08:40:00.000Z'
+    text: назначение закончено, ОТК-2 возвращается в СИЦ
+  expect: accepted
+  scenarios:
+  - S13
+- step_id: S13-H0048
+  label: ZT-SR/F-030
+  at: '2026-09-25T08:45:00.000Z'
+  at_msk: '2026-09-25 11:45:00'
+  mode: auto
+  role: QC
+  persona: QC-02
+  action: decision.gate_passed
+  catalog_ref: E-55
+  subject:
+    gate: ZT-SR
+    item_id: F-030
+  process_ref: item/F-030
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - ktsr/F-030
+    zone: SEAL-GROOVE
+    tools_counted:
+      entered_cavity: 2
+      returned: 2
+  expect: accepted
+  scenarios:
+  - S13
+- step_id: S13-H0049
+  label: ZT-3/F-036
+  at: '2026-09-25T08:50:00.000Z'
+  at_msk: '2026-09-25 11:50:00'
+  mode: stop
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-47
+  subject:
+    gate: ZT-3
+    item_id: F-036
+  process_ref: item/F-036
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - xr/F-036/RK-0925-04
+    - flat/SV-036-1
+  expect: accepted
+  scenarios:
+  - S13
+- step_id: S13-H0050
+  label: ZT-3/F-223
+  at: '2026-09-25T09:00:00.000Z'
+  at_msk: '2026-09-25 12:00:00'
+  mode: stop
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-47
+  subject:
+    gate: ZT-3
+    item_id: F-223
+  process_ref: item/F-223
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - xr/F-223/RK-0925-05
+    - flat/SV-223-1
+  expect: accepted
+  scenarios:
+  - S13
+- step_id: S13-H0051
+  label: ZT-5/F-024
+  at: '2026-09-25T09:05:00.000Z'
+  at_msk: '2026-09-25 12:05:00'
+  mode: auto
+  role: QC
+  persona: QC-02
+  signers:
+  - TST-01
+  - QC-02
+  action: decision.gate_passed
+  catalog_ref: E-63
+  subject:
+    gate: ZT-5
+    item_id: F-024
+  process_ref: item/F-024
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - lt/F-024/result
+  expect: accepted
+  scenarios:
+  - S13
+- step_id: S13-H0052
+  label: ZT-3/F-224
+  at: '2026-09-25T09:10:00.000Z'
+  at_msk: '2026-09-25 12:10:00'
+  mode: stop
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-47
+  subject:
+    gate: ZT-3
+    item_id: F-224
+  process_ref: item/F-224
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - xr/F-224/RK-0925-06
+    - flat/SV-224-1
+  expect: accepted
+  scenarios:
+  - S13
+- step_id: S13-H0053
+  label: ZT-4/F-030
+  at: '2026-09-25T09:40:00.000Z'
+  at_msk: '2026-09-25 12:40:00'
+  mode: auto
+  role: QC
+  persona: QC-02
+  action: decision.gate_passed
+  catalog_ref: E-55
+  subject:
+    gate: ZT-4
+    item_id: F-030
+  process_ref: item/F-030
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt4/F-030
+    - torque/F-030
+    - torque/F-030/J-2
+  expect: accepted
+  scenarios:
+  - S13
+erp_outbox_note: Ожидаемые учётные сообщения в 1С и ответы stand-а. Вывод движка — в потоки не входит; выведено генератором из фактов и шагов людей прогона [П]. Весь прогон.
+erp_outbox_counts:
+  issue_to_production: 22
+  transfer: 24
+erp_outbox_expected:
+- msg_no: 1
+  at_msk: '2026-09-09 15:04:00'
+  type: issue_to_production
+  item_id: F-223
+  lot_id: LOT-ZF-111
+  what: заготовка фланца
+  basis: reg/F-223
+  response: acked
+- msg_no: 2
+  at_msk: '2026-09-09 15:05:00'
+  type: issue_to_production
+  item_id: F-224
+  lot_id: LOT-ZF-111
+  what: заготовка фланца
+  basis: reg/F-224
+  response: acked
+- msg_no: 3
+  at_msk: '2026-09-10 16:10:00'
+  type: transfer
+  item_id: F-223
+  route: MC->WC
+  basis: mv/F-223/MC-WC.received
+  response: acked
+- msg_no: 4
+  at_msk: '2026-09-10 16:10:00'
+  type: transfer
+  item_id: F-224
+  route: MC->WC
+  basis: mv/F-224/MC-WC.received
+  response: acked
+- msg_no: 5
+  at_msk: '2026-09-18 15:03:00'
+  type: issue_to_production
+  item_id: F-024
+  lot_id: LOT-ZF-201
+  what: заготовка фланца
+  basis: reg/F-024
+  response: acked
+- msg_no: 6
+  at_msk: '2026-09-18 15:04:00'
+  type: issue_to_production
+  item_id: F-026
+  lot_id: LOT-ZF-201
+  what: заготовка фланца
+  basis: reg/F-026
+  response: acked
+- msg_no: 7
+  at_msk: '2026-09-18 15:05:00'
+  type: issue_to_production
+  item_id: F-028
+  lot_id: LOT-ZF-201
+  what: заготовка фланца
+  basis: reg/F-028
+  response: acked
+- msg_no: 8
+  at_msk: '2026-09-18 15:06:00'
+  type: issue_to_production
+  item_id: F-030
+  lot_id: LOT-ZF-201
+  what: заготовка фланца
+  basis: reg/F-030
+  response: acked
+- msg_no: 9
+  at_msk: '2026-09-18 15:10:00'
+  type: issue_to_production
+  item_id: F-036
+  lot_id: LOT-ZF-201
+  what: заготовка фланца
+  basis: reg/F-036
+  response: acked
+- msg_no: 10
+  at_msk: '2026-09-18 15:12:00'
+  type: issue_to_production
+  item_id: F-031
+  lot_id: LOT-ZF-201
+  what: заготовка фланца
+  basis: reg/F-031
+  response: acked
+- msg_no: 11
+  at_msk: '2026-09-18 15:13:00'
+  type: issue_to_production
+  item_id: F-035
+  lot_id: LOT-ZF-201
+  what: заготовка фланца
+  basis: reg/F-035
+  response: acked
+- msg_no: 12
+  at_msk: '2026-09-18 15:15:00'
+  type: issue_to_production
+  item_id: F-032
+  lot_id: LOT-ZF-201
+  what: заготовка фланца
+  basis: reg/F-032
+  response: acked
+- msg_no: 13
+  at_msk: '2026-09-18 15:17:00'
+  type: issue_to_production
+  item_id: F-033
+  lot_id: LOT-ZF-201
+  what: заготовка фланца
+  basis: reg/F-033
+  response: acked
+- msg_no: 14
+  at_msk: '2026-09-21 15:00:00'
+  type: issue_to_production
+  item_id: F-034
+  lot_id: LOT-ZF-201
+  what: заготовка фланца
+  basis: reg/F-034
+  response: acked
+- msg_no: 15
+  at_msk: '2026-09-21 16:10:00'
+  type: transfer
+  item_id: F-024
+  route: MC->WC
+  basis: mv/F-024/MC-WC.received
+  response: acked
+- msg_no: 16
+  at_msk: '2026-09-21 16:10:00'
+  type: transfer
+  item_id: F-026
+  route: MC->WC
+  basis: mv/F-026/MC-WC.received
+  response: acked
+- msg_no: 17
+  at_msk: '2026-09-21 16:10:00'
+  type: transfer
+  item_id: F-028
+  route: MC->WC
+  basis: mv/F-028/MC-WC.received
+  response: acked
+- msg_no: 18
+  at_msk: '2026-09-22 08:00:00'
+  type: transfer
+  item_id: F-030
+  route: MC->WC
+  basis: mv/F-030/MC-WC.received
+  response: acked
+- msg_no: 19
+  at_msk: '2026-09-22 08:10:00'
+  type: issue_to_production
+  lot_id: LOT-R-108
+  items:
+  - F-223
+  - F-224
+  components:
+  - R-323
+  - R-324
+  what: кольца в сварку
+  basis: issue/rings/2026-09-22/LOT-R-108
+  response: acked
+- msg_no: 20
+  at_msk: '2026-09-22 08:10:00'
+  type: issue_to_production
+  lot_id: LOT-R-116
+  items:
+  - F-024
+  - F-026
+  - F-028
+  - F-030
+  components:
+  - R-023
+  - R-025
+  - R-026
+  - R-027
+  what: кольца в сварку
+  basis: issue/rings/2026-09-22/LOT-R-116
+  response: acked
+- msg_no: 21
+  at_msk: '2026-09-22 10:10:00'
+  type: transfer
+  item_id: F-036
+  route: MC->WC
+  basis: mv/F-036/MC-WC.received
+  response: acked
+- msg_no: 22
+  at_msk: '2026-09-22 10:12:00'
+  type: issue_to_production
+  lot_id: LOT-R-116
+  items:
+  - F-036
+  components:
+  - R-033
+  what: кольца в сварку
+  basis: issue/rings/2026-09-22/LOT-R-116@1012
+  response: acked
+- msg_no: 23
+  at_msk: '2026-09-22 14:10:00'
+  type: transfer
+  item_id: F-031
+  route: MC->WC
+  basis: mv/F-031/MC-WC.received
+  response: acked
+- msg_no: 24
+  at_msk: '2026-09-22 14:10:00'
+  type: transfer
+  item_id: F-035
+  route: MC->WC
+  basis: mv/F-035/MC-WC.received
+  response: acked
+- msg_no: 25
+  at_msk: '2026-09-22 14:10:00'
+  type: transfer
+  item_id: F-032
+  route: MC->WC
+  basis: mv/F-032/MC-WC.received
+  response: acked
+- msg_no: 26
+  at_msk: '2026-09-22 14:10:00'
+  type: transfer
+  item_id: F-033
+  route: MC->WC
+  basis: mv/F-033/MC-WC.received
+  response: acked
+- msg_no: 27
+  at_msk: '2026-09-22 14:10:00'
+  type: transfer
+  item_id: F-034
+  route: MC->WC
+  basis: mv/F-034/MC-WC.received
+  response: acked
+- msg_no: 28
+  at_msk: '2026-09-22 14:12:00'
+  type: issue_to_production
+  lot_id: LOT-R-116
+  items:
+  - F-031
+  - F-032
+  - F-033
+  - F-034
+  - F-035
+  components:
+  - R-028
+  - R-029
+  - R-030
+  - R-031
+  - R-032
+  what: кольца в сварку
+  basis: issue/rings/2026-09-22/LOT-R-116@1412
+  response: acked
+- msg_no: 29
+  at_msk: '2026-09-24 14:10:00'
+  type: transfer
+  item_id: F-026
+  route: WC->AC
+  basis: mv/F-026/WC-AC.received
+  response: acked
+- msg_no: 30
+  at_msk: '2026-09-24 14:10:00'
+  type: transfer
+  item_id: F-028
+  route: WC->AC
+  basis: mv/F-028/WC-AC.received
+  response: acked
+- msg_no: 31
+  at_msk: '2026-09-24 14:10:00'
+  type: issue_to_production
+  items:
+  - F-026
+  lots:
+  - LOT-C-301
+  - LOT-SL-401
+  - LOT-FS-501
+  - LOT-V-601
+  what: комплект на сборку
+  basis: kit/F-026/cover
+  response: acked
+- msg_no: 32
+  at_msk: '2026-09-25 07:55:00'
+  type: issue_to_production
+  items:
+  - F-028
+  lots:
+  - LOT-C-301
+  - LOT-SL-401
+  - LOT-FS-501
+  - LOT-V-601
+  what: комплект на сборку
+  basis: kit/F-028/cover
+  response: acked
+- msg_no: 33
+  at_msk: '2026-09-25 08:10:00'
+  type: issue_to_production
+  items:
+  - F-024
+  lots:
+  - LOT-C-301
+  - LOT-SL-401
+  - LOT-FS-501
+  - LOT-V-601
+  what: комплект на сборку
+  basis: kit/F-024@0810
+  response: acked
+- msg_no: 34
+  at_msk: '2026-09-25 08:11:00'
+  type: issue_to_production
+  items:
+  - F-030
+  lots:
+  - LOT-C-301
+  - LOT-SL-401
+  - LOT-FS-501
+  - LOT-V-601
+  what: комплект на сборку
+  basis: kit/F-030@0810
+  response: acked
+- msg_no: 35
+  at_msk: '2026-09-25 08:12:00'
+  type: issue_to_production
+  items:
+  - F-031
+  lots:
+  - LOT-C-301
+  - LOT-SL-401
+  - LOT-FS-501
+  - LOT-V-601
+  what: комплект на сборку
+  basis: kit/F-031@0810
+  response: acked
+- msg_no: 36
+  at_msk: '2026-09-25 08:35:00'
+  type: transfer
+  item_id: F-024
+  route: WC->AC
+  basis: mv/F-024/WC-AC.received
+  response: acked
+- msg_no: 37
+  at_msk: '2026-09-25 11:15:00'
+  type: transfer
+  item_id: F-030
+  route: WC->AC
+  basis: mv/F-030/WC-AC.received
+  response: acked
+- msg_no: 38
+  at_msk: '2026-09-25 11:25:00'
+  type: transfer
+  item_id: F-031
+  route: WC->AC
+  basis: mv/F-031/WC-AC.received
+  response: acked
+- msg_no: 39
+  at_msk: '2026-09-25 11:35:00'
+  type: transfer
+  item_id: F-032
+  route: WC->AC
+  basis: mv/F-032/WC-AC.received
+  response: acked
+- msg_no: 40
+  at_msk: '2026-09-25 11:45:00'
+  type: transfer
+  item_id: F-033
+  route: WC->AC
+  basis: mv/F-033/WC-AC.received
+  response: acked
+- msg_no: 41
+  at_msk: '2026-09-25 11:55:00'
+  type: transfer
+  item_id: F-034
+  route: WC->AC
+  basis: mv/F-034/WC-AC.received
+  response: acked
+- msg_no: 42
+  at_msk: '2026-09-25 11:55:00'
+  type: transfer
+  item_id: F-035
+  route: WC->AC
+  basis: mv/F-035/WC-AC.received
+  response: acked
+- msg_no: 43
+  at_msk: '2026-09-25 12:05:00'
+  type: transfer
+  item_id: F-036
+  route: WC->AC
+  basis: mv/F-036/WC-AC.received
+  response: acked
+- msg_no: 44
+  at_msk: '2026-09-25 12:15:00'
+  type: transfer
+  item_id: F-223
+  route: WC->AC
+  basis: mv/F-223/WC-AC.received
+  response: acked
+- msg_no: 45
+  at_msk: '2026-09-25 12:15:00'
+  type: issue_to_production
+  items:
+  - F-031
+  lots:
+  - LOT-SL-401
+  what: комплект на сборку
+  basis: S13/seal-reissue
+  response: acked
+- msg_no: 46
+  at_msk: '2026-09-25 12:25:00'
+  type: transfer
+  item_id: F-224
+  route: WC->AC
+  basis: mv/F-224/WC-AC.received
+  response: acked
+mes_outbox_note: 'Ожидаемые сообщения в MES (схема v0.3.1, процесс «Удержание»; вывод движка, в потоки не входит) [П]: «не выдавать в работу» — в момент удержания (правило при сигнале,
+  круг, отзыв приёмки), один раз на объект; «можно выдавать» — только по шагу человека, когда оснований не осталось. Гипотез, причин и кадров нет. Кольцо на складе держит удержание партии.
+  В прогоне удержаний нет.'
+mes_outbox_counts: {}
+mes_held_at_end: []
+mes_outbox_expected: []

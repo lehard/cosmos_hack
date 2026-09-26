@@ -1,0 +1,25 @@
+# =============================================================================
+# Срез файла process/scenarios-flange-expected.yaml — БЕЗ изменений (наши имена, как есть).
+# Источник истины — исходный файл; этот файл пересобирается tools/split_expected.py.
+# Общие словари и ID — expected/_common.yaml; главная история — expected/main-story.yaml.
+# Времена здесь — МСК (+03:00), как в исходнике; в потоках и определениях — UTC.
+# =============================================================================
+
+scenarios:
+  S16:
+    title: "Ненадёжная привязка события к выполнению операции (Ф-004 / Ф-005)"
+    case: {other: ["§4.6 ненадёжная идентификация операции — явно", "§4.3 действия: изменение режима"]}
+    run: main_story   # фон, Пт 18.09 13:50; в 4 минуты не входит
+    checkpoints:
+      - at: "2026-09-18T15:30:00+03:00"
+        label: "после ЗТ-2 по Ф-005"
+        expect:
+          - {id: S16-01, what: "запись пульта ЧПУ-1 (подача 120 % на 80 с) хранится с уровнем привязки «неоднозначно»: два кандидата, основания названы", subject: event/S16/cnc-feed-override, field: run_binding, op: eq, value: {level: ambiguous, candidates: [MO-004-1, MO-005-1], probable: MO-005-1, basis: ["отметки терминала: MO-004-1 закрыт в 13:51:10, MO-005-1 открыт в 13:50:00 — перекрытие 70 с", "цикл станка начат в 13:50:30 — вероятнее MO-005-1"]}}
+          - {id: S16-02, what: "исполнитель у обоих кандидатов один — О-11 (вход на терминал): вывод «кто работал на станке» от неоднозначности не зависит", subject: event/S16/cnc-feed-override, field: operator_binding, op: eq, value: {level: by_terminal_login, operator: OP-CNC-11, same_for_all_candidates: true}}
+          - {id: S16-03, what: "зависимый вывод «было ли ручное изменение режима при обработке этой детали» у Ф-004 и Ф-005 — «не установлено: привязка неоднозначна»", subject: run/*, filter: {runs: [MO-004-1, MO-005-1]}, field: manual_mode_change, op: eq, value: {status: undetermined, reason: ambiguous_binding}}
+          - {id: S16-04, what: "независимые выводы не задеты: КИМ в допуске, КТ-2 без признаков, ЗТ-2 по обоим — с первого предъявления", subject: item/*, filter: {items: [F-004, F-005]}, field: {cmm_in_tolerance: true, cp_mo_camera: no_defect_found, gate_ZT-2_first_pass: true}, op: eq, value: true}
+          - {id: S16-05, what: "Н-5: «событий с неоднозначной привязкой» +1; у станка ЧПУ-1 изменение режима посчитано один раз", subject: metric/N-5, field: {ambiguous_bindings: 1, machine_mode_changes_CNC-1: 1}, op: eq, value: true}
+    must_not:
+      - {id: S16-N1, what: "запись не приписана одному выполнению «на глаз» и не раздвоена на два", subject: run/*, filter: {runs: [MO-004-1, MO-005-1]}, field: mode_changes_bound_as_fact, op: eq, value: 0}
+      - {id: S16-N2, what: "из-за неоднозначности нет ни сигнала, ни несоответствия, ни блока изделий", subject: item/*, filter: {items: [F-004, F-005]}, field: {signals: 0, nc_count: 0, holds: 0}, op: eq, value: true}
+      - {id: S16-N3, what: "в показатели по людям (О-10) событие не идёт", subject: metric/O-10, field: all, op: unchanged, baseline: "2026-09-18T13:49:00+03:00"}

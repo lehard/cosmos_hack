@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Мы → Галактика. Статус МЦ по результату контроля: Ф-001 годен после ЗТ-6. Это «результат контроля» на языке Галактики -->
+<Package xmlns="urn:sergey-palych:integration:galaktika" contractVersion="1.0">
+  <Header>
+    <MessageId>gal-out-000120</MessageId>
+    <Sender>SERGEY-PALYCH-QC</Sender>
+    <Receiver>GALAKTIKA-ERP</Receiver>
+    <CreatedAt>2026-09-23T10:15:20+03:00</CreatedAt>
+    <Entity>McQualityStatus</Entity>
+    <Operation>upsert</Operation>
+    <RoutingKey>quality.mc_status.upsert</RoutingKey>
+  </Header>
+  <Key>
+    <McCode>МЦ-1001</McCode>
+    <Serial>Ф-001</Serial>
+    <ExternalId>CR-F-001-ZT-6-1</ExternalId>
+  </Key>
+  <Body>
+    <McQualityStatus>
+      <Mc>
+        <Code>МЦ-1001</Code>
+        <Designation>ФЛ-100.00.000 СБ</Designation>
+        <KdVersion>Б</KdVersion>
+      </Mc>
+      <Serials><Serial>Ф-001</Serial></Serials>
+      <Qty unit="шт" okei="796">1</Qty>
+      <Status>годен</Status>
+      <ControlResult>годно</ControlResult>
+      <Operation>Окончательный контроль ОТК</Operation>
+      <Basis>
+        <DecisionId>DEC-F-001-ZT-6-1</DecisionId>
+        <GateCode>ZT-6</GateCode>
+        <SignedAt>2026-09-23T10:15:00+03:00</SignedAt>
+        <Signer ref="QC-02" role="QC_INSPECTOR"/>
+        <Signer ref="CR-01" role="CUSTOMER_REP"/>
+        <EvidenceUrl>https://qc.local/items/F-001/passport</EvidenceUrl>
+      </Basis>
+    </McQualityStatus>
+  </Body>
+</Package>

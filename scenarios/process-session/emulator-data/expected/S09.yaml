@@ -1,0 +1,39 @@
+# =============================================================================
+# Срез файла process/scenarios-flange-expected.yaml — БЕЗ изменений (наши имена, как есть).
+# Источник истины — исходный файл; этот файл пересобирается tools/split_expected.py.
+# Общие словари и ID — expected/_common.yaml; главная история — expected/main-story.yaml.
+# Времена здесь — МСК (+03:00), как в исходнике; в потоках и определениях — UTC.
+# =============================================================================
+
+scenarios:
+  S09:
+    title: "Подмена записи — обнаружена"
+    case: {s4_2: ["контрольное изменение записи"], s5_1: ["Изменение данных"], other: ["§3.4"]}
+    run: main_story
+    tamper: {at: "2026-09-23T16:30:00+03:00", target: EV-WS2-0412, field: current_a, from: 176, to: 166, method: "прямое изменение в базе в обход программы"}
+    checkpoints:
+      - at: "2026-09-23T16:40:00+03:00"
+        label: "после проверки целостности"
+        expect:
+          - {id: S09-01, what: "нарушение найдено на этой записи", subject: integrity, field: broken_at, op: eq, value: {event: EV-WS2-0412, source: WS-2, occurred_at: "2026-09-22T10:20:14+03:00"}}
+          - {id: S09-02, what: "красная полоса на всех экранах", subject: ui/banner, field: text, op: contains, value: "Нарушение целостности: запись EV-WS2-0412"}
+          - {id: S09-03, what: "запись в журнале критических действий, уведомлены А-01 и НОТК-01", subject: audit/critical_actions, filter: {type: integrity_violation}, field: {count: 1, notified: [ADM-01, QC-HEAD-01]}, op: eq, value: true}
+          - {id: S09-04, what: "исправление через программу — отказ, только новой записью", subject: api/events/EV-WS2-0412, filter: {method: update}, field: result, op: eq, value: {refused: true, hint: "исправление — только новой записью (event.corrected)"}}
+          - {id: S09-05, what: "зависимые выводы помечены «основание под вопросом» [П]", subject: integrity, field: flagged_dependents, op: contains, value: [risk_scope/RS-01@v3, hypothesis/NC-01@v2, nc/NC-G1.cause]}
+      - at: "2026-09-23T17:10:00+03:00"
+        label: "после атак 2 и 3 (волна 2)"
+        expect:
+          - {id: S09-06, what: "атака 2 — «администратор БД» правит заключение РК Ф-019 (пора → «дефектов нет») и пересчитывает цепочку: звенья сходятся, но не сходятся подпись источника и контрольная отметка вне базы → нарушение найдено", subject: integrity, filter: {attack: TAMPER-RECHAIN-RK-0923-07}, field: {broken_at: xr/F-019/RK-0923-07, chain_links_consistent: true, detected_by: [source_signature, external_anchor]}, op: eq, value: true}
+          - {id: S09-07, what: "атака 3 — правка представления «статус Ф-023» («в переделке» → «годно»): сверка с журналом нашла расхождение, представление пересобрано из журнала, журнал не тронут", subject: integrity, filter: {attack: TAMPER-PROJECTION-F-023}, field: {projection: item_status, item: F-023, stored: accepted, rebuilt_from_journal: rework, restored: true, journal_changed: false}, op: eq, value: true}
+          - {id: S09-08, what: "в журнале критических действий три нарушения целостности, по каждому уведомлены А-01 и НОТК-01", subject: audit/critical_actions, filter: {type: integrity_violation, at_to: "2026-09-23T17:10:00+03:00"}, field: {count: 3, notified: [ADM-01, QC-HEAD-01]}, op: eq, value: true}
+          - {id: S09-09, what: "выводы, которые опираются на заключение РК Ф-019, помечены «основание под вопросом»: НС-04, область RS-02, причина «входной брак», основание претензии", subject: integrity, filter: {attack: TAMPER-RECHAIN-RK-0923-07}, field: flagged_dependents, op: contains, value: [nc/NC-04, risk_scope/RS-02, cause/NC-04, claim/LOT-R-117]}
+      - at: "2026-09-24T07:50:00+03:00"
+        label: "разбор подмен"
+        expect:
+          - {id: S09-10, what: "разбор — новая запись НОТК-01 и А-01: подлинная версия та, с которой сходится подпись источника; метки «основание под вопросом» сняты", subject: integrity, field: {resolved_by: [QC-HEAD-01, ADM-01], resolved_at: "2026-09-24T07:45:00+03:00", authentic: {EV-WS2-0412: 176, xr/F-019/RK-0923-07: base_metal_pore}, dependents_flag_removed: true}, op: eq, value: true}
+    must_not:
+      - {id: S09-N1, what: "круг не пересчитан по подменённому значению", subject: risk_scope/RS-01, field: size_after_tamper, op: eq, value: 6}
+      - {id: S09-N2, what: "решения людей и подтверждённые сообщения 1С не отменены автоматически", subject: erp/postings, filter: {caused_by: integrity_violation}, field: count, op: eq, value: 0}
+      - {id: S09-N3, what: "Ф-023 не двинулся по подменённому статусу «годно»: ЗТ и передачи — только по журналу", subject: item/F-023, filter: {between: ["2026-09-23T17:00:00+03:00", "2026-09-24T07:59:00+03:00"]}, field: {gates_passed: 0, moves: 0}, op: eq, value: true}
+      - {id: S09-N4, what: "до разбора ни одна ЗТ по изделиям с затронутыми записями (Ф-015, Ф-019) не подписана", subject: gate/*, filter: {items: [F-015, F-019], between: ["2026-09-23T16:30:00+03:00", "2026-09-24T07:45:00+03:00"]}, field: passed, op: eq, value: 0}
+      - {id: S09-N5, what: "претензия поставщику и «возврат поставщику» в 1С не отменены из-за подменённого заключения", subject: erp/postings, filter: {type: return_to_supplier}, field: cancelled, op: eq, value: false}

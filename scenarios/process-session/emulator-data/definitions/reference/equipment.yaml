@@ -1,0 +1,103 @@
+# =============================================================================
+# Справочник: оборудование, средства измерения, камеры, краевые шлюзы.
+# Источник: scenarios-flange.md §2.4, cameras-project-draft.md, flange-process-bpmn.md §5.
+# ВСЕ характеристики, даты поверки и калибровки — ПРОЕКТНЫЕ ПРЕДПОЛОЖЕНИЯ [ПП].
+# На реальном производстве не проверены. Это не данные «Энергии».
+# Источники событий (source_id, способ подписи) — отдельно, в sources.yaml.
+# =============================================================================
+
+meta:
+  kind: reference.equipment
+  version: "0.1-draft"
+  valid_from: "2026-09-01"
+  assumption_note: "Все характеристики оборудования и камер — [ПП]"
+
+equipment:
+  # ---- Механический цех ----
+  - id: CNC-1
+    display: "Станок ЧПУ-1"
+    type: cnc_machine
+    station: ST-MC-CNC
+    reports: ["состояние (running/idle/stopped)", "программа и ревизия", "инструмент и ресурс", "длительность цикла (передано станком)", "сводка нагрузки шпинделя на цикл"]
+    program: {id: UP-FL-100-01, revision: "3"}            # [П] управляющая программа
+    tool_life_limit_cycles: 75                            # [ПП] «ресурс 73/75» (FR-147 соседей)
+    verification: {status: valid, valid_until: "2027-03-01"}   # [ПП]
+  - id: CMM-1
+    display: "КИМ-1 (координатно-измерительная машина)"
+    type: cmm
+    station: ST-MC-CMM
+    calibration: {id: CAL-CMM-1-2026-06, valid_until: "2026-12-31"}   # [ПП]
+    note: "Размеры проверяет только КИМ; камера их не меряет"
+
+  # ---- Сварочный цех ----
+  - id: WS-1
+    display: "Сварочный источник ИС-1 (пост 1)"
+    type: welding_source
+    station: ST-WC-P1
+    process: "аргонодуговая сварка"                      # [ПП]
+    edge_gateway: GW-1
+    telemetry: {summary_window_s: 60, note: "сводка на окно 60 с, пока источник включён; сырые данные остаются на краю [ПП]"}
+    verification: {status: valid, valid_until: "2027-01-15"}   # [ПП] аттестация оборудования
+  - id: WS-2
+    display: "Сварочный источник ИС-2 (пост 2)"
+    type: welding_source
+    station: ST-WC-P2
+    process: "аргонодуговая сварка"                      # [ПП]
+    edge_gateway: GW-2
+    telemetry: {summary_window_s: 60}
+    verification: {status: valid, valid_until: "2027-01-15"}   # [ПП]
+    scenario_note: "Во Вт 22.09 с 10:20 «уплыл» регулятор тока до 182 А (уставка 160 ± 10 А) — главная история"
+  - id: GW-1
+    display: "Краевой шлюз ШЛ-1 (ИС-1)"
+    type: edge_gateway
+    buffer_records: 2000                                  # [ПП]
+  - id: GW-2
+    display: "Краевой шлюз ШЛ-2 (ИС-2)"
+    type: edge_gateway
+    buffer_records: 900                                   # [ПП] переполнение буфера → потеря 35 записей Вт 16:40–17:15 (S04)
+    scenario_note: "Потерял связь Вт 22.09 09:50, дослал журнал Ср 23.09 12:05 (S07); часть пачки отправил дважды (S06)"
+  - id: XR-1
+    display: "Рентген РК-1 (лаборатория НК)"
+    type: xray
+    station: ST-NDT
+    capacity_note: "общая на завод; нашему участку — окно в смену до 4 узлов (flange-process-bpmn.md §5.1) [ПП]"
+    verification: {status: valid, valid_until: "2027-02-01"}   # [ПП]
+    sees: ["прожог в корне шва", "поры в шве", "несплавления", "пора в теле кольца в зоне снимка"]   # [ПП] допущение 4 scenarios-flange.md §9
+
+  # ---- Сборочно-испытательный цех ----
+  - id: TW-1
+    display: "Ключ с записью момента КЛ-1"
+    type: torque_wrench
+    station: ST-AC-ASM
+    verification: {status: valid, valid_until: "2026-10-02"}   # [ПП] S18: очередную поверку пропустили — с 03.10 записи ключа «недостоверно»
+  - id: TW-2
+    display: "Ключ с записью момента КЛ-2 (контрольный, ОТК)"
+    type: torque_wrench
+    station: ST-AC-ASM
+    verification: {status: valid, valid_until: "2027-04-01"}   # [ПП] S18: контроль момента на ЗТ-4 вместо непроверенного КЛ-1
+  - id: LT-1
+    display: "Стенд герметичности СТ-1 с гелиевым течеискателем"
+    type: leak_test_stand
+    station: ST-AC-LT
+    verification: {status: valid, valid_until: "2026-11-30"}   # [ПП] поверка стенда и течеискателя
+    control_leak_checked_daily: true                      # [ПП]
+
+  # ---- Камеры (VisionQC) и OperatorVision — все [ПП] ----
+  - {id: CAM-IQC,  display: "Камера КТ-1 (входной контроль)",   type: camera, checkpoint_id: CP-IQC,      station: ST-IQC,    calibration_id: CAL-CAM-IQC-2026-09}
+  - {id: CAM-MO,   display: "Камера КТ-2 с косым светом",       type: camera, checkpoint_id: CP-MO,       station: ST-MC-CNC, calibration_id: CAL-CAM-MO-2026-09}
+  - {id: CAM-WS-1, display: "Камера КТ-3, ракурс 1",            type: camera, checkpoint_id: CP-WELD,     station: ST-WC-ZT3, calibration_id: CAL-CAM-WS-2026-09}
+  - {id: CAM-WS-2, display: "Камера КТ-3, ракурс 2",            type: camera, checkpoint_id: CP-WELD,     station: ST-WC-ZT3, calibration_id: CAL-CAM-WS-2026-09}
+  - {id: CAM-UV,   display: "Камера зоны КТ-СР с УФ-светом",    type: camera, checkpoint_id: CP-ASM-ZONE, station: ST-AC-ASM, calibration_id: CAL-CAM-UV-2026-09}
+  - {id: CAM-ASM,  display: "Камера КТ-4 (сборка)",             type: camera, checkpoint_id: CP-ASM,      station: ST-AC-ASM, calibration_id: CAL-CAM-ASM-2026-09}
+  - {id: CAM-FQC,  display: "Камера КТ-5, 4 ракурса",           type: camera, checkpoint_id: CP-FQC,      station: ST-QC-FQC, calibration_id: CAL-CAM-FQC-2026-09}
+  - id: OV-ASM
+    display: "OperatorVision на сборочном месте"
+    type: operator_vision
+    station: ST-AC-ASM
+    optional_module: true
+    privacy: "без распознавания лиц; исполнитель — по входу на терминал; видео наружу не передаётся"
+
+# Параметры камер (разрешение, частота, задержка, минимальный дефект) — cameras-project-draft.md §11 [ПП].
+camera_assumptions:
+  result_latency_s: 5                         # [ПП] «результат камеры после операции ≤ 5 с»
+  no_result_timeout_min: 10                   # [ПП] > 10 мин → «нет данных» (Е-82)

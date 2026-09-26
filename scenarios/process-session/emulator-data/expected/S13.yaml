@@ -1,0 +1,54 @@
+# =============================================================================
+# Срез файла process/scenarios-flange-expected.yaml — БЕЗ изменений (наши имена, как есть).
+# Источник истины — исходный файл; этот файл пересобирается tools/split_expected.py.
+# Общие словари и ID — expected/_common.yaml; главная история — expected/main-story.yaml.
+# Времена здесь — МСК (+03:00), как в исходнике; в потоках и определениях — UTC.
+# =============================================================================
+
+scenarios:
+  S13:
+    title: "«Специалист заснул» — очередь на ЗТ-3 без решения, эскалация, перераспределение"
+    case: {other: ["§2.4 дополнительно: ожидание и простой", "§1.2 мастер — задержки; руководитель — время обработки", "§5.2 изделия на ЗТ без подписи (О-9)", "соседи: FR-5, FR-105, FR-129, FR-8, FR-19, FR-57, FR-81, FR-56, SM-C1, SM-C2"]}
+    run: standalone   # Пт 25.09, смена А, после главной истории; для показа FR-5 можно гонять отдельно
+    precondition: "2026-09-25 08:00: на ЗТ-3 ждут F-024, F-030, F-031, F-032 (КТ-3 и РК чистые, предъявлены в Чт после 16:00); заключения РК по F-033, F-034, F-035 выйдут в 09:20, по F-036, F-223, F-224 — в 10:20; в сборке F-028, на стенде LT-1 — F-026; пост ЗТ-3 — QC-01; все 10 фланцев сварены на WS-1 и исключены из RS-01 в среду"
+    clock_note: "имитатор не присылает решений QC-01 с 08:15 до 11:30; часы сценария идут, пока решения нет (FR-129): ожидание — предмет проверки"
+    params: {work_min_per_item: 10, wait_norm_min: 30, wait_due_min: 60, escalation_after_min: {reminder: 30, master: 60, qc_head: 120}, queue_color: {ok_max: 2, attention_max: 4}, waiting_counted: "только рабочие часы смены, в которой у ЗТ-3 есть контролёр", rule_R-21_seal_limit_h: 4}
+    human_decisions:
+      - {at: "2026-09-25T10:40:00+03:00", role: MASTER, who: MST-02, action: "выбрать вариант перераспределения"}
+      - {at: "2026-09-25T10:45:00+03:00", role: QC_HEAD, who: QC-HEAD-01, action: "согласовать назначение QC-02 на ЗТ-3"}
+      - {at: "2026-09-25T11:00:00+03:00", role: QC, who: QC-02, action: "решения ЗТ-3 по F-030…F-034, по одному"}
+      - {at: "2026-09-25T11:40:00+03:00", role: QC, who: QC-01, action: "решения ЗТ-3 по F-035, F-036, F-223, F-224, по одному"}
+    checkpoints:
+      - at: "2026-09-25T10:30:00+03:00"
+        label: "разгар: 9 фланцев ждут"
+        expect:
+          - {id: S13-01, what: "на ЗТ-3 без подписи стоят 9 фланцев двух заказов", subject: gate/ZT-3, field: queue, op: set_eq, value: [F-030, F-031, F-032, F-033, F-034, F-035, F-036, F-223, F-224]}
+          - {id: S13-02, what: "живая карта: узел ЗТ-3 — ограничение линии и аномалия «ожидание выше срока» (FR-5)", subject: map/node/W5, field: {constraint: true, anomaly: wait_over_due, anomaly_since: "2026-09-25T09:00:00+03:00", queue_color: bad}, op: eq, value: true}
+          - {id: S13-03, what: "эскалация по уровням: напоминание → мастер → начальник ОТК", subject: "escalation/ZT-3@2026-09-25", field: levels, op: eq, value: [{level: reminder, to: QC-01, at: "2026-09-25T08:30:00+03:00"}, {level: master, to: MST-02, at: "2026-09-25T09:00:00+03:00"}, {level: qc_head, to: QC-HEAD-01, at: "2026-09-25T10:00:00+03:00"}]}
+          - {id: S13-04, what: "цена задержки в 10:20 посчитана сама", subject: "escalation/ZT-3@2026-09-25", filter: {at: "2026-09-25T10:20:00+03:00"}, field: delay_cost, op: eq, value: {overdue_min: 80, items_waiting: 9, by_order: {ORD-0917: 7, ORD-0911: 2}, wait_over_norm_item_min: 420, stops_forecast: [{object: assembly_post, at: "10:30"}, {object: LT-1, at: "12:00"}], release_shift_min_gte: 110}}
+          - {id: S13-05, what: "подтверждение мастера записано, но сроки не остановило", subject: "escalation/ZT-3@2026-09-25", field: {ack_by: MST-02, ack_at: "2026-09-25T09:05:00+03:00", next_level_fired_at: "2026-09-25T10:00:00+03:00"}, op: eq, value: true}
+          - {id: S13-06, what: "варианты перераспределения с прогнозом: система предлагает, человек выбирает", subject: "escalation/ZT-3@2026-09-25", field: options, op: contains, value: [{option: second_controller, who: QC-02, queue_empty_forecast: "≈ 12:15"}, {option: next_shift, earliest: "2026-09-28T08:00:00+03:00", reason: "в смене Б контролёра ЗТ-3 нет"}]}
+          - {id: S13-18, what: "сверка 26.09, А-13 — О-9 по девяти фланцам очереди на ЗТ-3: незавершённых операций 0 — всё сварено и проверено, ждут подписи. «Ждёт подписи» — строка «стоят на ЗТ без подписи» рядом с О-9 (9, S13-01), а не «операция зависла»", subject: metric/O-9, filter: {items: [F-030, F-031, F-032, F-033, F-034, F-035, F-036, F-223, F-224], at: "2026-09-25T10:30:00+03:00"}, field: {in_progress: [], stuck: [], quality_hold: [], aborted: []}, op: eq, value: true}
+      - at: "2026-09-25T11:00:00+03:00"
+        label: "перераспределение"
+        expect:
+          - {id: S13-07, what: "ОТК-2 на ЗТ-3: запросил мастер, согласовал начальник ОТК; проверены допуск и «не участвовала в изготовлении»; запись в журнале критических действий", subject: post/ZT-3, field: assignment_changes, op: contains, value: [{assignee: QC-02, from: "2026-09-25T10:45:00+03:00", requested_by: MST-02, approved_by: QC-HEAD-01, qualification_checked: true, not_involved_in_manufacture: true, critical_log: true}]}
+      - at: "2026-09-25T13:00:00+03:00"
+        label: "очередь разобрана"
+        expect:
+          - {id: S13-08, what: "эскалация закрыта сама в 12:10 — очередь пуста; ЗТ-3 больше не ограничение линии", subject: "escalation/ZT-3@2026-09-25", field: {closed_at: "2026-09-25T12:10:00+03:00", reason: queue_cleared, W5_constraint_after_close: false}, op: eq, value: true}
+          - {id: S13-09, what: "10 решений на ЗТ-3 — каждое по одному фланцу и с подписью", subject: gate/ZT-3, filter: {date: "2026-09-25"}, field: decisions_by_signer, op: eq, value: {QC-01: [F-024, F-035, F-036, F-223, F-224], QC-02: [F-030, F-031, F-032, F-033, F-034]}}
+          - {id: S13-10, what: "Д-1 «ждёт подписи на ЗТ»: 9 из 10 позже срока, максимум 200 мин у F-032, сверх нормы 1010 фланце-минут; ночь не считается", subject: metric/D-1, filter: {gate: ZT-3, kind: waiting_for_gate_signature, date: "2026-09-25"}, field: {decisions: 10, over_due: 9, median_min: 135, max_min: 200, max_item: F-032, over_norm_sum_min: 1010, carryover_counted_from: "2026-09-25T08:00:00+03:00"}, op: eq, value: true}
+          - {id: S13-11, what: "Д-2: простой стенда и поста сборки, причина «нет детали»", subject: metric/D-2, filter: {date: "2026-09-25"}, field: idle, op: contains, value: [{object: LT-1, from: "12:00", to: "12:45", reason: no_part}, {object: assembly_post, from: "10:30", to: "11:20", reason: no_part}]}
+          - {id: S13-12, what: "пропускная способность ЗТ-3: 0 решений за 2 ч 45 мин, затем 9 за 1 ч 10 мин", subject: map/node/W5, field: throughput_windows, op: eq, value: [{from: "08:15", to: "11:00", decisions: 0}, {from: "11:00", to: "12:10", decisions: 9}]}
+          - {id: S13-13, what: "ожидание — не возврат: все 10 прошли ЗТ-3 с первого предъявления", subject: metric/D-3, filter: {gate: ZT-3, date: "2026-09-25"}, field: first_pass_items, op: eq, value: 10}
+          - {id: S13-14, what: "в 1С — 10 «перемещений СЦ → СИЦ», каждое после своей подписи", subject: erp/postings, filter: {type: transfer, route: "WC->AC", date: "2026-09-25"}, field: {count: 10, sent_before_gate_signature: 0}, op: eq, value: true}
+          - {id: S13-15, what: "по желанию: правило R-21 заблокировало уплотнение под F-031 (4 ч вне склада) и выдало новое; не списано, фланец не тронут", subject: item/F-031, field: seal_issues, op: eq, value: [{lot: LOT-SL-401, issued_at: "08:10", blocked_at: "12:10", rule: R-21, action: block_and_reissue, scrapped: false}, {lot: LOT-SL-401, issued_at: "12:15"}]}
+          - {id: S13-16, what: "нормы шагов (process/step-norms.yaml), окно Пт 08:00–13:00: задержки — ожидание на ЗТ-3 у 9 фланцев (90–200 мин при сроке 60) и ожидание рентгена у 6 (56,6–66,3 ч при пороге 24 ч: рентген — узкое место № 1, до 10:20 — ограничение линии); операции, сборка, стенд и перемещения — в норме; эскалация ЗТ-3 — 08:30, 09:00, 10:00, закрыта в 12:10", subject: norms/S13, filter: {window: "2026-09-25 08:00–13:00"}, field: norm_delays, op: eq, value: {delays: [{step: W4, object: F-033, value: 57.8, unit: h}, {step: W4, object: F-034, value: 57.2, unit: h}, {step: W4, object: F-035, value: 56.6, unit: h}, {step: W4, object: F-036, value: 64.4, unit: h}, {step: W4, object: F-223, value: 66.3, unit: h}, {step: W4, object: F-224, value: 59.5, unit: h}, {step: W5, object: F-030, presentation_no: 1, value: 180, unit: min}, {step: W5, object: F-031, presentation_no: 1, value: 190, unit: min}, {step: W5, object: F-032, presentation_no: 1, value: 200, unit: min}, {step: W5, object: F-033, presentation_no: 1, value: 130, unit: min}, {step: W5, object: F-034, presentation_no: 1, value: 140, unit: min}, {step: W5, object: F-035, presentation_no: 1, value: 140, unit: min}, {step: W5, object: F-036, presentation_no: 1, value: 90, unit: min}, {step: W5, object: F-223, presentation_no: 1, value: 100, unit: min}, {step: W5, object: F-224, presentation_no: 1, value: 110, unit: min}], escalations: {"W5@2026-09-25T08:30:00+03:00": {levels: {reminder: "2026-09-25T08:30:00+03:00", master: "2026-09-25T09:00:00+03:00", qc_head: "2026-09-25T10:00:00+03:00"}, closed_at: "2026-09-25T12:10:00+03:00"}}}}
+          - {id: S13-17, what: "карта дефицита данных: у S13 случаев нет — предъявления и заключения пришли, решения не было; «нет решения» ≠ «нет данных»", subject: metric/N-6, filter: {run: S13}, field: {data_gap_cases: 0}, op: eq, value: true}
+    must_not:
+      - {id: S13-N1, what: "ни один фланец не прошёл ЗТ-3 без подписи; нет «принято по истечении срока» и подписи пачкой", subject: gate/ZT-3, filter: {date: "2026-09-25"}, field: {passed_without_signature: 0, auto_accept_on_timeout: 0, batch_signatures: 0}, op: eq, value: true}
+      - {id: S13-N2, what: "среди вариантов нет «пропустить без подписи»", subject: "escalation/ZT-3@2026-09-25", field: options, op: not_contains, value: [auto_pass, pass_without_signature, batch_accept]}
+      - {id: S13-N3, what: "нет рейтинга, «простоя контролёра» и записи «нарушение» на ОТК-1; О-10 не меняется", subject: people/QC-01, field: {rating: none, idle_metric: none, violation_records: 0, O-10_changed: false}, op: eq, value: true}
+      - {id: S13-N4, what: "«нет решения» ≠ «нет данных»: Е-82 нет, Н-5 не меняется", subject: metric/N-5, field: all, op: unchanged, baseline: "2026-09-25T07:59:00+03:00"}
+      - {id: S13-N5, what: "это не инцидент качества: нет сигналов, несоответствий и цветов области риска", subject: item/*, filter: {items: [F-024, F-030, F-031, F-032, F-033, F-034, F-035, F-036, F-223, F-224]}, field: {signals: 0, nc_count: 0, incident_color: none}, op: eq, value: true}

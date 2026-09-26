@@ -1,0 +1,27 @@
+# =============================================================================
+# Срез файла process/scenarios-flange-expected.yaml — БЕЗ изменений (наши имена, как есть).
+# Источник истины — исходный файл; этот файл пересобирается tools/split_expected.py.
+# Общие словари и ID — expected/_common.yaml; главная история — expected/main-story.yaml.
+# Времена здесь — МСК (+03:00), как в исходнике; в потоках и определениях — UTC.
+# =============================================================================
+
+scenarios:
+  S12:
+    title: "Некорректные сообщения — карантин с кодами"
+    case: {other: ["§4.7 контракты и версии", "версия контракта ≠ версия анализатора"]}
+    run: main_story   # фон Вт 14:00; можно отдельно
+    inputs_note: "шесть сообщений описаны в scenarios-flange.md, S12"
+    checkpoints:
+      - at: "2026-09-22T14:35:00+03:00"
+        label: "после разбора карантина"
+        expect:
+          - {id: S12-01, what: "в карантине 3 сообщения с кодами", subject: quarantine, filter: {at_from: "2026-09-22T14:00:00+03:00"}, field: codes, op: set_eq, value: [E_MISSING_FIELD, E_UNSUPPORTED_VERSION, E_UNKNOWN_ENUM]}
+          - {id: S12-02, what: "у каждого — поле или значение, источник, время", subject: quarantine, field: details, op: contains, value: [{code: E_MISSING_FIELD, field: item_id}, {code: E_UNSUPPORTED_VERSION, value: "9.0"}, {code: E_UNKNOWN_ENUM, field: inspection_result, value: maybe}]}
+          - {id: S12-03, what: "новое необязательное поле принято и сохранено", subject: ingest, filter: {schema_version: "1.1"}, field: {outcome: accepted, extra_field_kept: lens_temp_c}, op: eq, value: true}
+          - {id: S12-04, what: "неизвестный класс дефекта в некритичном поле — принят с флагом", subject: ingest, filter: {defect_type: spatter_x}, field: {outcome: accepted, value_stored_as: "неизвестно (spatter_x)", flag: unknown_enum}, op: eq, value: true}
+          - {id: S12-05, what: "исправленное сообщение из карантина принято ровно один раз", subject: quarantine, filter: {code: E_MISSING_FIELD}, field: {reprocessed_by: ADM-01, accepted_times: 1}, op: eq, value: true}
+          - {id: S12-06, what: "Н-5: в карантине +3", subject: metric/N-5, field: quarantined, op: delta, value: 3, baseline: "2026-09-22T13:59:00+03:00"}
+    must_not:
+      - {id: S12-N1, what: "показатели качества не изменились от сообщений 1–3", subject: metric/*, field: quality_metrics, op: unchanged, baseline: "2026-09-22T13:59:00+03:00"}
+      - {id: S12-N2, what: "«maybe» не превратилось в «признаков нет»", subject: ingest, filter: {inspection_result: maybe}, field: stored_as_no_defect, op: eq, value: false}
+      - {id: S12-N3, what: "номер изделия не угадан без человека", subject: quarantine, filter: {code: E_MISSING_FIELD}, field: auto_bound_item, op: eq, value: false}

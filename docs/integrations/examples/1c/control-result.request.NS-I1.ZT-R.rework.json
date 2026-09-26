@@ -1,0 +1,51 @@
+{
+  "contract": "qc-1c.control-result",
+  "contract_version": "1.0",
+  "message_id": "qc-out-000126",
+  "sent_at": "2026-09-23T15:30:20+03:00",
+  "result_id": "CR-RS-01-ZT-R-1",
+  "gate": {"code": "ZT-R", "name": "Решение по несоответствию", "presentation_no": 1},
+  "subject": {
+    "kind": "items",
+    "items": [
+      {"internal_id": "F-015", "display": "Ф-015", "series_ref_key": "ser-91d0-0015"},
+      {"internal_id": "F-017", "display": "Ф-017", "series_ref_key": "ser-91d0-0017"},
+      {"internal_id": "F-019", "display": "Ф-019", "series_ref_key": "ser-91d0-0019"},
+      {"internal_id": "F-021", "display": "Ф-021", "series_ref_key": "ser-91d0-0021"},
+      {"internal_id": "F-023", "display": "Ф-023", "series_ref_key": "ser-91d0-0023"},
+      {"internal_id": "F-025", "display": "Ф-025", "series_ref_key": "ser-91d0-0025"}
+    ],
+    "lot": null,
+    "qty": 6,
+    "unit_okei": "796"
+  },
+  "nomenclature_ref_key": "nom-7a1e-0001",
+  "order_ref_key": "ord-5c2b-0917",
+  "operation": {"code": "OP-030", "name": "Сварка фланца с кольцом"},
+  "line_id": "L-FL-2",
+  "warehouse_ref_key": "wh-wc",
+  "outcome": "nonconforming",
+  "permit": null,
+  "nonconformities": [
+    {"nc_id": "NC-G1", "display": "НС-И1", "title": "Сварка вне режима ТП", "defect_class": "process_deviation", "severity": "major",
+     "item_ids": ["F-015", "F-017", "F-019", "F-021", "F-023", "F-025"]},
+    {"nc_id": "NC-01", "display": "НС-01", "title": "Прожог шва", "defect_class": "burn_through", "zone": "У2", "severity": "major", "item_ids": ["F-017"]},
+    {"nc_id": "NC-02", "display": "НС-02", "title": "Прожог в корне шва; поры в шве", "defect_class": "burn_through", "zone": "У5, У6", "severity": "major", "item_ids": ["F-021"]},
+    {"nc_id": "NC-03", "display": "НС-03", "title": "Прожог в корне шва", "defect_class": "burn_through", "zone": "У3", "severity": "major", "item_ids": ["F-023"]}
+  ],
+  "disposition": "rework",
+  "signed": {
+    "at": "2026-09-23T15:30:00+03:00",
+    "signers": [
+      {"ref": "TECH-01", "role": "TECHNOLOGIST"},
+      {"ref": "QC-HEAD-01", "role": "QC_HEAD"},
+      {"ref": "CHW-01", "role": "CHIEF_WELDER"}
+    ],
+    "signature_class": "token"
+  },
+  "basis": {
+    "decision_id": "DEC-RS-01-ZT-R-1",
+    "nc_ids": ["NC-G1", "NC-01", "NC-02", "NC-03"],
+    "evidence_url": "https://qc.local/nc/NC-G1"
+  }
+}

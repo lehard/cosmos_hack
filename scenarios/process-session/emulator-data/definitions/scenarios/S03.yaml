@@ -1,0 +1,93 @@
+# =============================================================================
+# Определение сценария. Генерируется tools/generate.py — руками не править (правьте генератор).
+# Имена событий, действий и полей — НАШИ (process-events-catalog.md, scenarios-flange*.{md,yaml}).
+# [П] — имя или значение предварительное (нет в каталоге) / наше допущение; [ПП] — проектное предположение.
+# Время: at — UTC (RFC 3339, мс); at_msk — то же в МСК для чтения.
+# human_steps.mode: stop — сценарий ждёт решения на столе роли (интерактивный режим; в автосверке подписывает
+#   demo-signer); auto — demo-signer подписывает сам в указанное доменное время.
+# expect: accepted | refused[:код] — ожидаемый ответ системы на шаг (проверка отказов по правам и правилам).
+# =============================================================================
+
+id: S03
+title: Новый дефект после сварки — прожог на Ф-017
+goal: Связать дефект с прошлой чистой проверкой и операцией, собрать обстоятельства и честно написать «причина не установлена», пока данных мало; сварщик — обстоятельство, не виновник.
+case:
+  s4_2:
+  - дефект после операции
+  s5_1:
+  - Новый дефект
+  - Решение пользователя (подтверждение)
+  other:
+  - §2.3
+  - §5.4
+kind: slice_of_main_story
+run: main_story (MS-1)
+stream: streams/main-story.jsonl
+slice: streams/S03.jsonl
+slice_lines: 42
+seed: 20260921
+window_msk:
+- 2026-09-18 10:10
+- 2026-09-23 11:20
+items:
+- F-017
+erp_postings_expected:
+- ничего
+erp_note: Сообщения 1С — по словарю scenarios-flange-expected.yaml (erp_posting_type). Полный список с ответами stand-а — I1.yaml → erp_outbox_expected (для S13 и S10B — в их файлах).
+  «Выпуск годного» — только после ЗТ-6.
+expected: expected/S03.yaml
+human_steps_ref: definitions/scenarios/main-story.yaml
+human_steps:
+- step_id: MS1-H0225
+  label: S03/confirm-NC-01
+  at: '2026-09-23T08:08:00.000Z'
+  at_msk: '2026-09-23 11:08:00'
+  mode: stop
+  role: QC
+  persona: QC-01
+  action: decision.signal_confirmed
+  catalog_ref: E-90
+  subject:
+    item_id: F-017
+    signal_basis_labels:
+    - kt3/SV-017-1/CAM-WS-1
+    - kt3/SV-017-1/CAM-WS-2
+    nc_ref: NC-01
+  process_ref: signal/SG-kt3-SV-017-1-CAM-WS-1
+  process_links:
+  - item/F-017
+  - nc/NC-01
+  - incident/RS-01
+  params:
+    defect_type: burn_through
+    zone: U2
+    severity: major
+    reason: прожог на участке У2 подтверждён по двум ракурсам КТ-3; деталь не соответствует КД
+  expect: accepted
+  scenarios:
+  - S03
+- step_id: MS1-H0227
+  label: S03/isolate
+  at: '2026-09-23T08:20:00.000Z'
+  at_msk: '2026-09-23 11:20:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.item_isolated
+  catalog_ref: E-93
+  subject:
+    item_id: F-017
+    nc_ref: NC-01
+  process_ref: item/F-017
+  process_links:
+  - nc/NC-01
+  params:
+    location: ST-ISO-WC
+    reason: подтверждённое несоответствие НС-01, ждёт решения
+    basis_labels:
+    - S03/confirm-NC-01
+    - kt3/SV-017-1/CAM-WS-1
+    - kt3/SV-017-1/CAM-WS-2
+  expect: accepted
+  scenarios:
+  - S03

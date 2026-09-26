@@ -1,0 +1,86 @@
+# =============================================================================
+# Определение сценария. Генерируется tools/generate.py — руками не править (правьте генератор).
+# Имена событий, действий и полей — НАШИ (process-events-catalog.md, scenarios-flange*.{md,yaml}).
+# [П] — имя или значение предварительное (нет в каталоге) / наше допущение; [ПП] — проектное предположение.
+# Время: at — UTC (RFC 3339, мс); at_msk — то же в МСК для чтения.
+# human_steps.mode: stop — сценарий ждёт решения на столе роли (интерактивный режим; в автосверке подписывает
+#   demo-signer); auto — demo-signer подписывает сам в указанное доменное время.
+# expect: accepted | refused[:код] — ожидаемый ответ системы на шаг (проверка отказов по правам и правилам).
+# =============================================================================
+
+id: S12
+title: Некорректные сообщения — карантин с кодами
+goal: 'Нарушение контракта: неправильные сообщения не теряются и не искажают данные, лежат в карантине с понятной причиной.'
+case:
+  other:
+  - §4.7 контракты и версии
+  - версия контракта ≠ версия анализатора
+kind: slice_of_main_story
+run: main_story (MS-1)
+stream: streams/main-story.jsonl
+slice: streams/S12.jsonl
+slice_lines: 6
+seed: 20260921
+window_msk:
+- 2026-09-22 14:00
+- 2026-09-22 14:35
+items:
+- F-024
+- F-004
+- F-026
+erp_postings_expected:
+- ничего
+erp_note: Сообщения 1С — по словарю scenarios-flange-expected.yaml (erp_posting_type). Полный список с ответами stand-а — I1.yaml → erp_outbox_expected (для S13 и S10B — в их файлах).
+  «Выпуск годного» — только после ЗТ-6.
+expected: expected/S12.yaml
+human_steps_ref: definitions/scenarios/main-story.yaml
+human_steps:
+- step_id: MS1-H0212
+  label: S12/reprocess
+  at: '2026-09-22T11:30:00.000Z'
+  at_msk: '2026-09-22 14:30:00'
+  mode: auto
+  role: DATA_ADMIN
+  persona: ADM-01
+  action: item.binding_corrected
+  catalog_ref: E-101 + [П] quarantine.reprocessed
+  subject:
+    quarantine_ref_label: kt3/SV-024-1/CAM-WS-2
+  process_ref: null
+  params:
+    item_id: F-024
+    method: post_context
+    then: quarantine.reprocessed [П] — повторная обработка из карантина
+  expect: accepted
+  scenarios:
+  - S12
+- step_id: MS1-H0214
+  label: S12/reject-spatter
+  at: '2026-09-22T12:00:00.000Z'
+  at_msk: '2026-09-22 15:00:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.signal_rejected
+  catalog_ref: E-91
+  subject:
+    item_id: F-026
+    signal_basis_labels:
+    - kt3/SV-026-1/CAM-WS-2
+  process_ref: signal/SG-kt3-SV-026-1-CAM-WS-2
+  process_links:
+  - item/F-026
+  params:
+    reason: брызги вне шва; класс spatter_x неизвестен словарю — передано владельцу классификатора
+  expect: accepted
+  optional: true
+  scenarios:
+  - S12
+  note: нужен, только если движок поднял сигнал по сообщению 5 [П]
+noise:
+- 'сообщение 1: CAM-WS-2, F-024, нет item_id → E_MISSING_FIELD'
+- 'сообщение 2: WS-1, сводка Вт 14:00, schema_version 9.0 → E_UNSUPPORTED_VERSION'
+- 'сообщение 3: CAM-ASM, F-004, inspection_result maybe → E_UNKNOWN_ENUM (затем исправная повторная отправка 14:06)'
+- 'сообщение 4: CAM-WS-1, F-024, schema_version 1.1 + lens_temp_c → принято'
+- 'сообщение 5: CAM-WS-2, F-026, defect_type spatter_x → принято как неизвестно (spatter_x) с флагом'
+- 'сообщение 6: шаг ADM-01 — привязка к F-024 по контексту поста и повторная обработка из карантина'

@@ -1,0 +1,246 @@
+{
+  "ApplicationArea": {
+    "Sender": {
+      "LogicalID": "SERGEY-PALYCH-QC"
+    },
+    "Receiver": {
+      "LogicalID": "MES"
+    },
+    "CreationDateTime": "2026-09-23T15:30:21+03:00",
+    "BODID": "mes-out-000127",
+    "ContractVersion": "1.0"
+  },
+  "DataArea": {
+    "Verb": "Process",
+    "TestResult": [
+      {
+        "ID": "CR-RS-01-ZT-R-1/F-015",
+        "JobOrderID": "JO-0922-0031",
+        "MaterialSubLotID": "MSL-0917-015",
+        "TestDateTime": "2026-09-23T15:30:00+03:00",
+        "GateCode": "ZT-R",
+        "PresentationNo": 1,
+        "Result": "NotAccepted",
+        "Disposition": "Rework",
+        "PermitNumber": null,
+        "NonconformityRef": [
+          "НС-И1"
+        ],
+        "SignedBy": [
+          {
+            "PersonRef": "TECH-01",
+            "Role": "TECHNOLOGIST"
+          },
+          {
+            "PersonRef": "QC-HEAD-01",
+            "Role": "QC_HEAD"
+          },
+          {
+            "PersonRef": "CHW-01",
+            "Role": "CHIEF_WELDER"
+          }
+        ],
+        "Property": [
+          {
+            "ID": "sp.item_id",
+            "Value": "F-015"
+          },
+          {
+            "ID": "sp.decision_id",
+            "Value": "DEC-RS-01-ZT-R-1"
+          }
+        ]
+      },
+      {
+        "ID": "CR-RS-01-ZT-R-1/F-017",
+        "JobOrderID": "JO-0923-0048",
+        "MaterialSubLotID": "MSL-0917-017",
+        "TestDateTime": "2026-09-23T15:30:00+03:00",
+        "GateCode": "ZT-R",
+        "PresentationNo": 1,
+        "Result": "NotAccepted",
+        "Disposition": "Rework",
+        "PermitNumber": null,
+        "NonconformityRef": [
+          "НС-И1"
+        ],
+        "SignedBy": [
+          {
+            "PersonRef": "TECH-01",
+            "Role": "TECHNOLOGIST"
+          },
+          {
+            "PersonRef": "QC-HEAD-01",
+            "Role": "QC_HEAD"
+          },
+          {
+            "PersonRef": "CHW-01",
+            "Role": "CHIEF_WELDER"
+          }
+        ],
+        "Property": [
+          {
+            "ID": "sp.item_id",
+            "Value": "F-017"
+          },
+          {
+            "ID": "sp.decision_id",
+            "Value": "DEC-RS-01-ZT-R-1"
+          }
+        ]
+      },
+      {
+        "ID": "CR-RS-01-ZT-R-1/F-019",
+        "JobOrderID": "JO-0922-0044",
+        "MaterialSubLotID": "MSL-0917-019",
+        "TestDateTime": "2026-09-23T15:30:00+03:00",
+        "GateCode": "ZT-R",
+        "PresentationNo": 1,
+        "Result": "NotAccepted",
+        "Disposition": "Rework",
+        "PermitNumber": null,
+        "NonconformityRef": [
+          "НС-И1"
+        ],
+        "SignedBy": [
+          {
+            "PersonRef": "TECH-01",
+            "Role": "TECHNOLOGIST"
+          },
+          {
+            "PersonRef": "QC-HEAD-01",
+            "Role": "QC_HEAD"
+          },
+          {
+            "PersonRef": "CHW-01",
+            "Role": "CHIEF_WELDER"
+          }
+        ],
+        "Property": [
+          {
+            "ID": "sp.item_id",
+            "Value": "F-019"
+          },
+          {
+            "ID": "sp.decision_id",
+            "Value": "DEC-RS-01-ZT-R-1"
+          }
+        ]
+      },
+      {
+        "ID": "CR-RS-01-ZT-R-1/F-021",
+        "JobOrderID": "JO-0922-0047",
+        "MaterialSubLotID": "MSL-0917-021",
+        "TestDateTime": "2026-09-23T15:30:00+03:00",
+        "GateCode": "ZT-R",
+        "PresentationNo": 1,
+        "Result": "NotAccepted",
+        "Disposition": "Rework",
+        "PermitNumber": null,
+        "NonconformityRef": [
+          "НС-И1"
+        ],
+        "SignedBy": [
+          {
+            "PersonRef": "TECH-01",
+            "Role": "TECHNOLOGIST"
+          },
+          {
+            "PersonRef": "QC-HEAD-01",
+            "Role": "QC_HEAD"
+          },
+          {
+            "PersonRef": "CHW-01",
+            "Role": "CHIEF_WELDER"
+          }
+        ],
+        "Property": [
+          {
+            "ID": "sp.item_id",
+            "Value": "F-021"
+          },
+          {
+            "ID": "sp.decision_id",
+            "Value": "DEC-RS-01-ZT-R-1"
+          }
+        ]
+      },
+      {
+        "ID": "CR-RS-01-ZT-R-1/F-023",
+        "JobOrderID": "JO-0923-0040",
+        "MaterialSubLotID": "MSL-0917-023",
+        "TestDateTime": "2026-09-23T15:30:00+03:00",
+        "GateCode": "ZT-R",
+        "PresentationNo": 1,
+        "Result": "NotAccepted",
+        "Disposition": "Rework",
+        "PermitNumber": null,
+        "NonconformityRef": [
+          "НС-И1"
+        ],
+        "SignedBy": [
+          {
+            "PersonRef": "TECH-01",
+            "Role": "TECHNOLOGIST"
+          },
+          {
+            "PersonRef": "QC-HEAD-01",
+            "Role": "QC_HEAD"
+          },
+          {
+            "PersonRef": "CHW-01",
+            "Role": "CHIEF_WELDER"
+          }
+        ],
+        "Property": [
+          {
+            "ID": "sp.item_id",
+            "Value": "F-023"
+          },
+          {
+            "ID": "sp.decision_id",
+            "Value": "DEC-RS-01-ZT-R-1"
+          }
+        ]
+      },
+      {
+        "ID": "CR-RS-01-ZT-R-1/F-025",
+        "JobOrderID": "JO-0923-0043",
+        "MaterialSubLotID": "MSL-0917-025",
+        "TestDateTime": "2026-09-23T15:30:00+03:00",
+        "GateCode": "ZT-R",
+        "PresentationNo": 1,
+        "Result": "NotAccepted",
+        "Disposition": "Rework",
+        "PermitNumber": null,
+        "NonconformityRef": [
+          "НС-И1"
+        ],
+        "SignedBy": [
+          {
+            "PersonRef": "TECH-01",
+            "Role": "TECHNOLOGIST"
+          },
+          {
+            "PersonRef": "QC-HEAD-01",
+            "Role": "QC_HEAD"
+          },
+          {
+            "PersonRef": "CHW-01",
+            "Role": "CHIEF_WELDER"
+          }
+        ],
+        "Property": [
+          {
+            "ID": "sp.item_id",
+            "Value": "F-025"
+          },
+          {
+            "ID": "sp.decision_id",
+            "Value": "DEC-RS-01-ZT-R-1"
+          }
+        ]
+      }
+    ]
+  }
+}

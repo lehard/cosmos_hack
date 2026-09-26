@@ -1,0 +1,1170 @@
+# =============================================================================
+# Определение сценария. Генерируется tools/generate.py — руками не править (правьте генератор).
+# Имена событий, действий и полей — НАШИ (process-events-catalog.md, scenarios-flange*.{md,yaml}).
+# [П] — имя или значение предварительное (нет в каталоге) / наше допущение; [ПП] — проектное предположение.
+# Время: at — UTC (RFC 3339, мс); at_msk — то же в МСК для чтения.
+# human_steps.mode: stop — сценарий ждёт решения на столе роли (интерактивный режим; в автосверке подписывает
+#   demo-signer); auto — demo-signer подписывает сам в указанное доменное время.
+# expect: accepted | refused[:код] — ожидаемый ответ системы на шаг (проверка отказов по правам и правилам).
+# =============================================================================
+
+id: S05
+title: Событие оборудования — ток ИС-2 вне уставки, тающая область 34 → 13 → 6
+goal: 'Главный кадр защиты: круг берётся широко и осторожно, сужается только по доказательствам с кнопкой «почему?»; решение на уровне инцидента; гипотеза про сварщика слабеет по фактам;
+  причина подтверждается контрольным образцом.'
+case:
+  s4_2:
+  - отклонение оборудования
+  s5_1:
+  - Событие станка
+  other:
+  - §2.3
+  - §5.2
+kind: slice_of_main_story
+run: main_story (MS-1)
+stream: streams/main-story.jsonl
+slice: streams/S05.jsonl
+slice_lines: 3215
+seed: 20260921
+window_msk:
+- 2026-09-21 14:55
+- 2026-09-23 16:40
+items:
+- F-007…F-036
+- F-221…F-224
+- CS-07
+erp_postings_expected:
+- scrap_transfer_rework ×1 документ на 6 изделий (acked)
+- transfer AC→WC для F-015 (acked)
+erp_note: Сообщения 1С — по словарю scenarios-flange-expected.yaml (erp_posting_type). Полный список с ответами stand-а — I1.yaml → erp_outbox_expected (для S13 и S10B — в их файлах).
+  «Выпуск годного» — только после ЗТ-6.
+expected: expected/S05.yaml
+human_steps_ref: definitions/scenarios/main-story.yaml
+human_steps:
+- step_id: MS1-H0178
+  label: ZT-3/F-007
+  at: '2026-09-22T05:40:00.000Z'
+  at_msk: '2026-09-22 08:40:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-47
+  subject:
+    gate: ZT-3
+    item_id: F-007
+  process_ref: item/F-007
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt3/SV-007-1/CAM-WS-1
+    - xr/F-007/RK-0922-01
+    - flat/SV-007-1
+  expect: accepted
+  scenarios:
+  - S05
+- step_id: MS1-H0180
+  label: ZT-3/F-008
+  at: '2026-09-22T06:00:00.000Z'
+  at_msk: '2026-09-22 09:00:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-47
+  subject:
+    gate: ZT-3
+    item_id: F-008
+  process_ref: item/F-008
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt3/SV-008-1/CAM-WS-1
+    - xr/F-008/RK-0922-02
+    - flat/SV-008-1
+  expect: accepted
+  scenarios:
+  - S05
+- step_id: MS1-H0182
+  label: ZT-3/F-009
+  at: '2026-09-22T06:20:00.000Z'
+  at_msk: '2026-09-22 09:20:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-47
+  subject:
+    gate: ZT-3
+    item_id: F-009
+  process_ref: item/F-009
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt3/SV-009-1/CAM-WS-1
+    - xr/F-009/RK-0922-03
+    - flat/SV-009-1
+  expect: accepted
+  scenarios:
+  - S05
+- step_id: MS1-H0184
+  label: ZT-3/F-010
+  at: '2026-09-22T06:40:00.000Z'
+  at_msk: '2026-09-22 09:40:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-47
+  subject:
+    gate: ZT-3
+    item_id: F-010
+  process_ref: item/F-010
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt3/SV-010-1/CAM-WS-1
+    - xr/F-010/RK-0922-04
+    - flat/SV-010-1
+  expect: accepted
+  scenarios:
+  - S05
+- step_id: MS1-H0186
+  label: ZT-3/F-011
+  at: '2026-09-22T07:00:00.000Z'
+  at_msk: '2026-09-22 10:00:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-47
+  subject:
+    gate: ZT-3
+    item_id: F-011
+  process_ref: item/F-011
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt3/SV-011-1/CAM-WS-1
+    - xr/F-011/RK-0922-05
+    - flat/SV-011-1
+  expect: accepted
+  scenarios:
+  - S05
+- step_id: MS1-H0188
+  label: ZT-3/F-221
+  at: '2026-09-22T07:20:00.000Z'
+  at_msk: '2026-09-22 10:20:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-47
+  subject:
+    gate: ZT-3
+    item_id: F-221
+  process_ref: item/F-221
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt3/SV-221-1/CAM-WS-1
+    - xr/F-221/RK-0922-06
+    - flat/SV-221-1
+  expect: accepted
+  scenarios:
+  - S05
+- step_id: MS1-H0191
+  label: ZT-3/F-013
+  at: '2026-09-22T07:40:00.000Z'
+  at_msk: '2026-09-22 10:40:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-47
+  subject:
+    gate: ZT-3
+    item_id: F-013
+  process_ref: item/F-013
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt3/SV-013-1/CAM-WS-1
+    - xr/F-013/RK-0922-07
+    - flat/SV-013-1
+  expect: accepted
+  scenarios:
+  - S05
+- step_id: MS1-H0194
+  label: ZT-3/F-012
+  at: '2026-09-22T08:00:00.000Z'
+  at_msk: '2026-09-22 11:00:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-47
+  subject:
+    gate: ZT-3
+    item_id: F-012
+  process_ref: item/F-012
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt3/SV-012-1/CAM-WS-1
+    - xr/F-012/RK-0922-08
+    - flat/SV-012-1
+  expect: accepted
+  scenarios:
+  - S05
+- step_id: MS1-H0196
+  label: ZT-3/F-018
+  at: '2026-09-22T08:20:00.000Z'
+  at_msk: '2026-09-22 11:20:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-47
+  subject:
+    gate: ZT-3
+    item_id: F-018
+  process_ref: item/F-018
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt3/SV-018-1/CAM-WS-1
+    - xr/F-018/RK-0922-09
+    - flat/SV-018-1
+  expect: accepted
+  scenarios:
+  - S05
+- step_id: MS1-H0200
+  label: ZT-3/F-014
+  at: '2026-09-22T08:40:00.000Z'
+  at_msk: '2026-09-22 11:40:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-47
+  subject:
+    gate: ZT-3
+    item_id: F-014
+  process_ref: item/F-014
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt3/SV-014-1/CAM-WS-1
+    - xr/F-014/RK-0922-10
+    - flat/SV-014-1
+  expect: accepted
+  scenarios:
+  - S05
+- step_id: MS1-H0203
+  label: ZT-3/F-222
+  at: '2026-09-22T09:00:00.000Z'
+  at_msk: '2026-09-22 12:00:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-47
+  subject:
+    gate: ZT-3
+    item_id: F-222
+  process_ref: item/F-222
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt3/SV-222-1/CAM-WS-1
+    - xr/F-222/RK-0922-11
+    - flat/SV-222-1
+  expect: accepted
+  scenarios:
+  - S05
+- step_id: MS1-H0207
+  label: ZT-3/F-016
+  at: '2026-09-22T10:20:00.000Z'
+  at_msk: '2026-09-22 13:20:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-47
+  subject:
+    gate: ZT-3
+    item_id: F-016
+  process_ref: item/F-016
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt3/SV-016-1/CAM-WS-1
+    - xr/F-016/RK-0922-12
+    - flat/SV-016-1
+  expect: accepted
+  scenarios:
+  - S05
+  - S07
+- step_id: MS1-H0215
+  label: ZT-3/F-015
+  at: '2026-09-22T12:30:00.000Z'
+  at_msk: '2026-09-22 15:30:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-47
+  subject:
+    gate: ZT-3
+    item_id: F-015
+  process_ref: item/F-015
+  params:
+    decision: accept_incomplete_data
+    presentation_no: 1
+    basis_labels:
+    - kt3/SV-015-1/CAM-WS-1
+    - xr/F-015/RK-0922-13
+    - flat/SV-015-1
+    missing:
+    - журнал режима WS-2 за сварку SV-015-1 (нет связи со Вт 09:50)
+    remark: журнал режима недоступен (сбой связи), принято по камере и рентгену
+    bpmn_node: WZ2
+  expect: accepted
+  scenarios:
+  - S05
+  - S07
+  note: 'итог «годно при неполных данных» [П]: журнал режима недоступен (сбой связи), принято по камере и рентгену'
+- step_id: MS1-H0221
+  label: ZT-SR/F-010
+  at: '2026-09-23T06:45:00.000Z'
+  at_msk: '2026-09-23 09:45:00'
+  mode: auto
+  role: QC
+  persona: QC-02
+  action: decision.gate_passed
+  catalog_ref: E-55
+  subject:
+    gate: ZT-SR
+    item_id: F-010
+  process_ref: item/F-010
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - ktsr/F-010
+    zone: SEAL-GROOVE
+    tools_counted:
+      entered_cavity: 2
+      returned: 2
+  expect: accepted
+  scenarios:
+  - S05
+- step_id: MS1-H0224
+  label: ZT-4/F-010
+  at: '2026-09-23T07:30:00.000Z'
+  at_msk: '2026-09-23 10:30:00'
+  mode: auto
+  role: QC
+  persona: QC-02
+  action: decision.gate_passed
+  catalog_ref: E-55
+  subject:
+    gate: ZT-4
+    item_id: F-010
+  process_ref: item/F-010
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt4/F-010
+    - torque/F-010
+    - torque/F-010/J-2
+  expect: accepted
+  scenarios:
+  - S05
+- step_id: MS1-H0226
+  label: hold/WS-2
+  at: '2026-09-23T08:12:00.000Z'
+  at_msk: '2026-09-23 11:12:00'
+  mode: auto
+  role: MASTER
+  persona: MST-02
+  action: process_hold.set
+  catalog_ref: E-114
+  subject:
+    equipment_id: WS-2
+    hold_scope: equipment
+  process_ref: incident/RS-01
+  params:
+    reason: НС-01 и нет журнала ИС-2 со Вт 09:50
+    release_condition: ремонт и проверка источника
+    proposed_by: system
+    basis_labels:
+    - S03/confirm-NC-01
+    - kt3/SV-017-1/CAM-WS-1
+    - kt3/SV-017-1/CAM-WS-2
+  expect: accepted
+  scenarios:
+  - S05
+- step_id: MS1-H0228
+  label: S05/v2
+  at: '2026-09-23T08:45:00.000Z'
+  at_msk: '2026-09-23 11:45:00'
+  mode: stop
+  role: TECHNOLOGIST
+  persona: TECH-01
+  action: risk_scope.narrowed
+  catalog_ref: E-112
+  subject:
+    risk_scope_ref: RS-01
+    to_version: 2
+  process_ref: incident/RS-01
+  params:
+    size_after: 13
+    excluded_items:
+    - F-007
+    - F-009
+    - F-011
+    - F-013
+    - F-018
+    - F-020
+    - F-022
+    - F-024
+    - F-026
+    - F-027
+    - F-028
+    - F-029
+    - F-030
+    - F-031
+    - F-032
+    - F-033
+    - F-034
+    - F-035
+    - F-036
+    - F-223
+    - F-224
+    basis:
+    - журнал WS-1 непрерывный, в уставке
+    - CP-WELD no_defect_found при качестве ≥ 0,6
+    - WLD-02 и LOT-W-88 на WS-1 без отклонений
+    holds_released: 'у исключённых — containment.hold_released (Е-116 [П], узел I5): блок снимает человек этим шагом'
+    per_item_basis:
+      F-007:
+      - kt3/SV-007-1/CAM-WS-1
+      - WS-1/sum/0921-1501
+      - WS-1/sum/0921-1532
+      F-009:
+      - kt3/SV-009-1/CAM-WS-1
+      - WS-1/sum/0921-1638
+      - WS-1/sum/0921-1712
+      F-011:
+      - kt3/SV-011-1/CAM-WS-1
+      - WS-1/sum/0921-1823
+      - WS-1/sum/0921-1857
+      F-013:
+      - kt3/SV-013-1/CAM-WS-1
+      - WS-1/sum/0921-2043
+      - WS-1/sum/0921-2117
+      F-018:
+      - kt3/SV-018-1/CAM-WS-1
+      - WS-1/sum/0921-2303
+      - WS-1/sum/0921-2337
+      F-020:
+      - kt3/SV-020-1/CAM-WS-1
+      - WS-1/sum/0922-1108
+      - WS-1/sum/0922-1142
+      F-022:
+      - kt3/SV-022-1/CAM-WS-1
+      - WS-1/sum/0922-1153
+      - WS-1/sum/0922-1227
+      F-024:
+      - kt3/SV-024-1/CAM-WS-1
+      - WS-1/sum/0922-1318
+      - WS-1/sum/0922-1352
+      F-026:
+      - kt3/SV-026-1/CAM-WS-1
+      - WS-1/sum/0922-1403
+      - WS-1/sum/0922-1437
+      F-027:
+      - kt3/SV-027-1/CAM-WS-1
+      - WS-1/sum/0922-1803
+      - WS-1/sum/0922-1837
+      F-028:
+      - kt3/SV-028-1/CAM-WS-1
+      - WS-1/sum/0922-1448
+      - WS-1/sum/0922-1522
+      F-029:
+      - kt3/SV-029-1/CAM-WS-1
+      - WS-1/sum/0922-2133
+      - WS-1/sum/0922-2207
+      F-030:
+      - kt3/SV-030-1/CAM-WS-1
+      - WS-1/sum/0922-1605
+      - WS-1/sum/0922-1625
+      F-031:
+      - kt3/SV-031-1/CAM-WS-1
+      - WS-1/sum/0922-1848
+      - WS-1/sum/0922-1922
+      F-032:
+      - kt3/SV-032-1/CAM-WS-1
+      - WS-1/sum/0922-2033
+      - WS-1/sum/0922-2107
+      F-033:
+      - kt3/SV-033-1/CAM-WS-1
+      - WS-1/sum/0922-2258
+      - WS-1/sum/0922-2327
+      F-034:
+      - kt3/SV-034-1/CAM-WS-1
+      - WS-1/sum/0922-2338
+      - WS-1/sum/0923-0007
+      F-035:
+      - kt3/SV-035-1/CAM-WS-1
+      - WS-1/sum/0923-0015
+      - WS-1/sum/0923-0044
+      F-036:
+      - kt3/SV-036-1/CAM-WS-1
+      - WS-1/sum/0922-1725
+      - WS-1/sum/0922-1755
+      F-223:
+      - kt3/SV-223-1/CAM-WS-1
+      - WS-1/sum/0922-1531
+      - WS-1/sum/0922-1557
+      F-224:
+      - kt3/SV-224-1/CAM-WS-1
+      - WS-1/sum/0922-2218
+      - WS-1/sum/0922-2247
+  expect: accepted
+  scenarios:
+  - S05
+- step_id: MS1-H0229
+  label: S05/narrow-by-qc-refused
+  at: '2026-09-23T08:47:00.000Z'
+  at_msk: '2026-09-23 11:47:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: risk_scope.narrowed
+  catalog_ref: E-112
+  subject:
+    risk_scope_ref: RS-01
+    to_version: 3
+  process_ref: incident/RS-01
+  params:
+    size_after: 12
+    excluded_items:
+    - F-010
+    basis:
+    - попытка контролёра
+  expect: refused
+  optional: true
+  scenarios:
+  - S05
+  note: 'проверка S05-N3: сужать круг может только технолог — ожидается отказ и запись в журнал критических действий'
+- step_id: MS1-H0230
+  label: S05/v3
+  at: '2026-09-23T09:15:00.000Z'
+  at_msk: '2026-09-23 12:15:00'
+  mode: stop
+  role: TECHNOLOGIST
+  persona: TECH-01
+  action: risk_scope.narrowed
+  catalog_ref: E-112
+  subject:
+    risk_scope_ref: RS-01
+    to_version: 3
+  process_ref: incident/RS-01
+  params:
+    size_after: 6
+    excluded_items:
+    - F-008
+    - F-010
+    - F-012
+    - F-014
+    - F-016
+    - F-221
+    - F-222
+    unknown_items:
+    - F-019
+    basis:
+    - 'опоздавший журнал ИС-2: ток впервые вышел за уставку во Вт 10:20 (EV-WS2-0412)'
+    - семь сварок до этого — в уставке, записи есть
+    - у F-019 записей нет — «нет данных»
+    recalculated_due_to_label: EV-WS2-0412
+    holds_released: у исключённых — containment.hold_released (Е-116 [П], узел I5); у F-019 блок остаётся
+    per_item_basis:
+      F-008:
+      - kt3/SV-008-1/CAM-WS-1
+      - WS-2/sum/0921-1543
+      - WS-2/sum/0921-1617
+      F-010:
+      - kt3/SV-010-1/CAM-WS-1
+      - WS-2/sum/0921-1733
+      - WS-2/sum/0921-1807
+      F-012:
+      - kt3/SV-012-1/CAM-WS-1
+      - WS-2/sum/0921-2213
+      - WS-2/sum/0921-2247
+      F-014:
+      - kt3/SV-014-1/CAM-WS-1
+      - WS-2/sum/0922-0823
+      - WS-2/sum/0922-0847
+      F-016:
+      - kt3/SV-016-1/CAM-WS-1
+      - WS-2/sum/0922-0923
+      - WS-2/sum/0922-1002
+      F-221:
+      - kt3/SV-221-1/CAM-WS-1
+      - WS-2/sum/0921-1953
+      - WS-2/sum/0921-2027
+      F-222:
+      - kt3/SV-222-1/CAM-WS-1
+      - WS-2/sum/0922-0858
+      - WS-2/sum/0922-0912
+  expect: accepted
+  scenarios:
+  - S04
+  - S05
+  - S07
+- step_id: MS1-H0231
+  label: ZT-5/F-010
+  at: '2026-09-23T09:30:00.000Z'
+  at_msk: '2026-09-23 12:30:00'
+  mode: auto
+  role: QC
+  persona: QC-02
+  signers:
+  - TST-01
+  - QC-02
+  action: decision.gate_passed
+  catalog_ref: E-63
+  subject:
+    gate: ZT-5
+    item_id: F-010
+  process_ref: item/F-010
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - lt/F-010/result
+  expect: accepted
+  scenarios:
+  - S05
+- step_id: MS1-H0232
+  label: S05/recheck5
+  at: '2026-09-23T09:30:00.000Z'
+  at_msk: '2026-09-23 12:30:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.recheck_requested
+  catalog_ref: E-92
+  subject:
+    items:
+    - F-015
+    - F-019
+    - F-021
+    - F-023
+    - F-025
+    risk_scope_ref: RS-01
+  process_ref: incident/RS-01
+  process_links:
+  - item/F-015
+  - item/F-019
+  - item/F-021
+  - item/F-023
+  - item/F-025
+  params:
+    methods:
+    - camera
+    - xray
+    zones:
+    - U1
+    - U2
+    - U3
+    - U4
+    - U5
+    - U6
+    - U7
+    - U8
+  expect: accepted
+  scenarios:
+  - S04
+  - S05
+- step_id: MS1-H0235
+  label: S05/confirm-NC-02
+  at: '2026-09-23T10:05:00.000Z'
+  at_msk: '2026-09-23 13:05:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.signal_confirmed
+  catalog_ref: E-90
+  subject:
+    item_id: F-021
+    signal_basis_labels:
+    - xr/F-021/RK-0923-08
+    nc_ref: NC-02
+  process_ref: signal/SG-xr-F-021-RK-0923-08
+  process_links:
+  - item/F-021
+  - nc/NC-02
+  - incident/RS-01
+  params:
+    defects:
+    - defect_type: burn_through
+      zone: U5
+      side: root
+    - defect_type: porosity
+      zone: U6
+    severity: major
+    reason: одно заключение РК, два дефекта
+  expect: accepted
+  scenarios:
+  - S05
+- step_id: MS1-H0236
+  label: S05/confirm-NC-03
+  at: '2026-09-23T10:20:00.000Z'
+  at_msk: '2026-09-23 13:20:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.signal_confirmed
+  catalog_ref: E-90
+  subject:
+    item_id: F-023
+    signal_basis_labels:
+    - xr/F-023/RK-0923-10
+    nc_ref: NC-03
+  process_ref: signal/SG-xr-F-023-RK-0923-10
+  process_links:
+  - item/F-023
+  - nc/NC-03
+  - incident/RS-01
+  params:
+    defects:
+    - defect_type: burn_through
+      zone: U3
+      side: root
+    severity: major
+    reason: прожог в корне шва по заключению РК
+  expect: accepted
+  scenarios:
+  - S05
+- step_id: MS1-H0239
+  label: S05/assess-F-015
+  at: '2026-09-23T11:00:00.000Z'
+  at_msk: '2026-09-23 14:00:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: risk_scope.item_assessed
+  catalog_ref: E-113
+  subject:
+    risk_scope_ref: RS-01
+    item_id: F-015
+  process_ref: incident/RS-01
+  process_links:
+  - item/F-015
+  params:
+    result: no_defects_found
+    group_after: suspected
+    basis_labels:
+    - xr/F-015/RK-0922-13
+    - kt3/F-015/recheck
+    note: дефектов нет, но сварка вне режима — решение на уровне инцидента
+  expect: accepted
+  scenarios:
+  - S05
+- step_id: MS1-H0245
+  label: S05/assess/F-015
+  at: '2026-09-23T12:30:00.000Z'
+  at_msk: '2026-09-23 15:30:00'
+  mode: auto
+  role: COMMISSION
+  persona: TECH-01
+  signers:
+  - TECH-01
+  - QC-HEAD-01
+  - CHW-01
+  action: risk_scope.item_assessed
+  catalog_ref: E-113
+  subject:
+    risk_scope_ref: RS-01
+    item_id: F-015
+  process_ref: incident/RS-01
+  process_links:
+  - item/F-015
+  params:
+    result: confirmed
+    reason: сварка вне режима ТП
+    basis_labels:
+    - kt3/SV-015-1/CAM-WS-2
+    - xr/F-015/RK-0922-13
+    - kt3/F-015/recheck
+  expect: accepted
+  scenarios:
+  - S05
+- step_id: MS1-H0246
+  label: S05/assess/F-017
+  at: '2026-09-23T12:30:00.000Z'
+  at_msk: '2026-09-23 15:30:00'
+  mode: auto
+  role: COMMISSION
+  persona: TECH-01
+  signers:
+  - TECH-01
+  - QC-HEAD-01
+  - CHW-01
+  action: risk_scope.item_assessed
+  catalog_ref: E-113
+  subject:
+    risk_scope_ref: RS-01
+    item_id: F-017
+  process_ref: incident/RS-01
+  process_links:
+  - item/F-017
+  params:
+    result: confirmed
+    reason: сварка вне режима ТП
+    basis_labels:
+    - SV-017-1.finish
+    - kt3/SV-017-1/CAM-WS-1
+    - kt3/SV-017-1/CAM-WS-2
+  expect: accepted
+  scenarios:
+  - S05
+- step_id: MS1-H0247
+  label: S05/assess/F-019
+  at: '2026-09-23T12:30:00.000Z'
+  at_msk: '2026-09-23 15:30:00'
+  mode: auto
+  role: COMMISSION
+  persona: TECH-01
+  signers:
+  - TECH-01
+  - QC-HEAD-01
+  - CHW-01
+  action: risk_scope.item_assessed
+  catalog_ref: E-113
+  subject:
+    risk_scope_ref: RS-01
+    item_id: F-019
+  process_ref: incident/RS-01
+  process_links:
+  - item/F-019
+  params:
+    result: confirmed
+    reason: соответствие режиму не доказано
+    basis_labels:
+    - kt3/SV-019-1/CAM-WS-2
+    - kt3/F-019/recheck
+    - xr/F-019/RK-0923-07
+  expect: accepted
+  scenarios:
+  - S05
+- step_id: MS1-H0248
+  label: S05/assess/F-021
+  at: '2026-09-23T12:30:00.000Z'
+  at_msk: '2026-09-23 15:30:00'
+  mode: auto
+  role: COMMISSION
+  persona: TECH-01
+  signers:
+  - TECH-01
+  - QC-HEAD-01
+  - CHW-01
+  action: risk_scope.item_assessed
+  catalog_ref: E-113
+  subject:
+    risk_scope_ref: RS-01
+    item_id: F-021
+  process_ref: incident/RS-01
+  process_links:
+  - item/F-021
+  params:
+    result: confirmed
+    reason: сварка вне режима ТП
+    basis_labels:
+    - kt3/SV-021-1/CAM-WS-2
+    - kt3/F-021/recheck
+    - xr/F-021/RK-0923-08
+  expect: accepted
+  scenarios:
+  - S05
+- step_id: MS1-H0249
+  label: S05/assess/F-023
+  at: '2026-09-23T12:30:00.000Z'
+  at_msk: '2026-09-23 15:30:00'
+  mode: auto
+  role: COMMISSION
+  persona: TECH-01
+  signers:
+  - TECH-01
+  - QC-HEAD-01
+  - CHW-01
+  action: risk_scope.item_assessed
+  catalog_ref: E-113
+  subject:
+    risk_scope_ref: RS-01
+    item_id: F-023
+  process_ref: incident/RS-01
+  process_links:
+  - item/F-023
+  params:
+    result: confirmed
+    reason: сварка вне режима ТП
+    basis_labels:
+    - kt3/SV-023-1/CAM-WS-2
+    - kt3/F-023/recheck
+    - xr/F-023/RK-0923-10
+  expect: accepted
+  scenarios:
+  - S05
+- step_id: MS1-H0250
+  label: S05/assess/F-025
+  at: '2026-09-23T12:30:00.000Z'
+  at_msk: '2026-09-23 15:30:00'
+  mode: auto
+  role: COMMISSION
+  persona: TECH-01
+  signers:
+  - TECH-01
+  - QC-HEAD-01
+  - CHW-01
+  action: risk_scope.item_assessed
+  catalog_ref: E-113
+  subject:
+    risk_scope_ref: RS-01
+    item_id: F-025
+  process_ref: incident/RS-01
+  process_links:
+  - item/F-025
+  params:
+    result: confirmed
+    reason: сварка вне режима ТП
+    basis_labels:
+    - kt3/F-025/recheck-glare
+    - kt3/F-025/reshoot
+    - xr/F-025/RK-0923-09
+  expect: accepted
+  scenarios:
+  - S05
+- step_id: MS1-H0251
+  label: S05/NC-G1
+  at: '2026-09-23T12:30:00.000Z'
+  at_msk: '2026-09-23 15:30:00'
+  mode: stop
+  role: COMMISSION
+  persona: TECH-01
+  signers:
+  - TECH-01
+  - QC-HEAD-01
+  - CHW-01
+  action: decision.signal_confirmed
+  catalog_ref: E-90
+  subject:
+    items:
+    - F-015
+    - F-017
+    - F-019
+    - F-021
+    - F-023
+    - F-025
+    nc_ref: NC-G1
+    nc_kind: group
+    risk_scope_ref: RS-01
+  process_ref: incident/RS-01
+  process_links:
+  - item/F-015
+  - item/F-017
+  - item/F-019
+  - item/F-021
+  - item/F-023
+  - item/F-025
+  - nc/NC-G1
+  params:
+    reason: сварка вне режима ТП (спецпроцесс)
+    special_process: true
+    basis_labels:
+    - S05/assess/F-015
+    - S05/assess/F-017
+    - S05/assess/F-019
+    - S05/assess/F-021
+    - S05/assess/F-023
+    - S05/assess/F-025
+  expect: accepted
+  scenarios:
+  - S05
+- step_id: MS1-H0252
+  label: S05/disposition-rework
+  at: '2026-09-23T12:30:00.000Z'
+  at_msk: '2026-09-23 15:30:00'
+  mode: stop
+  role: COMMISSION
+  persona: TECH-01
+  signers:
+  - TECH-01
+  - QC-HEAD-01
+  - CHW-01
+  action: decision.disposition_set
+  catalog_ref: E-94
+  subject:
+    items:
+    - F-015
+    - F-017
+    - F-019
+    - F-021
+    - F-023
+    - F-025
+    nc_ref: NC-G1
+  process_ref: nc/NC-G1
+  process_links:
+  - item/F-015
+  - item/F-017
+  - item/F-019
+  - item/F-021
+  - item/F-023
+  - item/F-025
+  - incident/RS-01
+  params:
+    disposition: rework
+    per_item_notes:
+      F-019: переделка с заменой кольца
+    reason: переварка шва на исправном источнике ИС-1
+    item_messages:
+    - item_id: F-015
+      block: BA
+      caught_by: BAD
+      route: BAG → BB (B1 вскрытие → B2…B4) → BW (WSG → WL1 → WL2 → WLG → WL3)
+    - item_id: F-017
+      block: BW
+      caught_by: BWD
+      route: BWG → BW (WSG → WL1 → WL2 → WLG → WL3)
+    - item_id: F-019
+      block: BW
+      caught_by: BWD
+      route: 'BWG → BW (WSG → WRX → V6: ждёт кольцо)'
+    - item_id: F-021
+      block: BW
+      caught_by: BWD
+      route: BWG → BW (WSG → WL1 → WL2 → WLG → WL3)
+    - item_id: F-023
+      block: BW
+      caught_by: BWD
+      route: BWG → BW (WSG → WL1 → WL2 → WLG → WL3)
+    - item_id: F-025
+      block: BW
+      caught_by: BWD
+      route: BWG → BW (WSG → WL1 → WL2 → WLG → WL3)
+    item_messages_note: 'реакция движка (узел I7, сообщение Msg_ItemDisposition): одно групповое решение — шесть сообщений, по одному каждому изделию; в 1С — одно сообщение на список'
+    basis_labels:
+    - S05/NC-G1
+  expect: accepted
+  scenarios:
+  - S05
+- step_id: MS1-H0253
+  label: S05/close
+  at: '2026-09-23T12:35:00.000Z'
+  at_msk: '2026-09-23 15:35:00'
+  mode: auto
+  role: TECHNOLOGIST
+  persona: TECH-01
+  action: risk_scope.closed
+  catalog_ref: E-115
+  subject:
+    risk_scope_ref: RS-01
+  process_ref: incident/RS-01
+  params:
+    was: 34
+    confirmed: 6
+    excluded: 28
+    basis_labels:
+    - S05/assess-F-015
+    - S05/assess/F-015
+    - S05/assess/F-017
+    - S05/assess/F-019
+    - S05/assess/F-021
+    - S05/assess/F-023
+    - S05/assess/F-025
+  expect: accepted
+  scenarios:
+  - S05
+- step_id: MS1-H0256
+  label: S05/F-015/intervention
+  at: '2026-09-23T12:50:00.000Z'
+  at_msk: '2026-09-23 15:50:00'
+  mode: auto
+  role: MASTER
+  persona: MST-03
+  signers:
+  - MST-03
+  - QC-02
+  action: intervention.opened
+  catalog_ref: E-120
+  subject:
+    item_id: F-015
+  process_ref: item/F-015
+  params:
+    removed:
+    - seal
+    not_installed:
+    - cover
+    - fasteners
+    - valve
+    zone: SEAL-GROOVE
+    reason: возврат в сварочный цех на переделку шва по решению комиссии (узел B1)
+    consent_by: QC-02
+    closes_at: ZT-4 после повторной сборки (вскрытие закрывают на ЗТ-4)
+  expect: accepted
+  scenarios:
+  - S05
+  - S10A
+- step_id: MS1-H0259
+  label: S05/cause
+  at: '2026-09-23T13:20:00.000Z'
+  at_msk: '2026-09-23 16:20:00'
+  mode: stop
+  role: TECHNOLOGIST
+  persona: TECH-01
+  signers:
+  - TECH-01
+  - CHW-01
+  action: cause.confirmed
+  catalog_ref: П-04
+  subject:
+    nc_refs:
+    - NC-01
+    - NC-02
+    - NC-03
+    - NC-G1
+  process_ref: cause/RS-01
+  process_links:
+  - incident/RS-01
+  - nc/NC-01
+  - nc/NC-02
+  - nc/NC-03
+  - nc/NC-G1
+  params:
+    category: equipment
+    equipment_id: WS-2
+    text: дрейф регулятора тока ИС-2
+    verified_by: контрольный образец CS-07 + журнал
+    evidence_labels:
+    - CS-07/visual
+    - EV-WS2-0412
+  expect: accepted
+  scenarios:
+  - S05

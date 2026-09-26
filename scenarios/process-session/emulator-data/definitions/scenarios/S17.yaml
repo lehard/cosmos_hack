@@ -1,0 +1,62 @@
+# =============================================================================
+# Определение сценария. Генерируется tools/generate.py — руками не править (правьте генератор).
+# Имена событий, действий и полей — НАШИ (process-events-catalog.md, scenarios-flange*.{md,yaml}).
+# [П] — имя или значение предварительное (нет в каталоге) / наше допущение; [ПП] — проектное предположение.
+# Время: at — UTC (RFC 3339, мс); at_msk — то же в МСК для чтения.
+# human_steps.mode: stop — сценарий ждёт решения на столе роли (интерактивный режим; в автосверке подписывает
+#   demo-signer); auto — demo-signer подписывает сам в указанное доменное время.
+# expect: accepted | refused[:код] — ожидаемый ответ системы на шаг (проверка отказов по правам и правилам).
+# =============================================================================
+
+id: S17
+title: Исполнитель честно отметил пропуск обязательной проверки
+goal: 'Сборщик не смог проверить посадку уплотнения (нет щупа) и сам отметил пропуск: запись в журнале критических действий, «нет данных» по проверке, ЗТ-СР закрыта, пока проверку не
+  сделают. Это не наказание: честно отметивший не хуже промолчавшего.'
+case:
+  other:
+  - '§4.3 действия: пропуски проверки'
+  - §3.2 CriticalActions
+  - 'критерий Т3: журнал критических действий операторов'
+kind: slice_of_main_story
+run: main_story (MS-1)
+stream: streams/main-story.jsonl
+slice: streams/S17.jsonl
+slice_lines: 4
+seed: 20260921
+window_msk:
+- 2026-09-23 08:00
+- 2026-09-23 09:12
+items:
+- F-006
+erp_postings_expected:
+- ничего сверх обычного
+erp_note: Сообщения 1С — по словарю scenarios-flange-expected.yaml (erp_posting_type). Полный список с ответами stand-а — I1.yaml → erp_outbox_expected (для S13 и S10B — в их файлах).
+  «Выпуск годного» — только после ЗТ-6.
+expected: expected/S17.yaml
+human_steps_ref: definitions/scenarios/main-story.yaml
+human_steps:
+- step_id: MS1-H0218
+  label: ZT-SR/F-006
+  at: '2026-09-23T05:30:00.000Z'
+  at_msk: '2026-09-23 08:30:00'
+  mode: auto
+  role: QC
+  persona: QC-02
+  action: decision.gate_passed
+  catalog_ref: E-55
+  subject:
+    gate: ZT-SR
+    item_id: F-006
+  process_ref: item/F-006
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - ktsr/F-006
+    zone: SEAL-GROOVE
+    tools_counted:
+      entered_cavity: 2
+      returned: 2
+  expect: accepted
+  scenarios:
+  - S17

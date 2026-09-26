@@ -1,0 +1,418 @@
+# =============================================================================
+# Определение сценария. Генерируется tools/generate.py — руками не править (правьте генератор).
+# Имена событий, действий и полей — НАШИ (process-events-catalog.md, scenarios-flange*.{md,yaml}).
+# [П] — имя или значение предварительное (нет в каталоге) / наше допущение; [ПП] — проектное предположение.
+# Время: at — UTC (RFC 3339, мс); at_msk — то же в МСК для чтения.
+# human_steps.mode: stop — сценарий ждёт решения на столе роли (интерактивный режим; в автосверке подписывает
+#   demo-signer); auto — demo-signer подписывает сам в указанное доменное время.
+# expect: accepted | refused[:код] — ожидаемый ответ системы на шаг (проверка отказов по правам и правилам).
+# =============================================================================
+
+id: S20
+title: Маркировка не читается, детали перепутали
+goal: 'Скан на посту: ожидался Ф-031, пришёл Ф-033 — шаг остановлен (Е-13), мастер выясняет, история не смешивается. У Ф-032 код не читается — ручной ввод с подтверждением второго человека,
+  потом перемаркировка по процедуре; ОТК сверяет на ЗТ-3.'
+case:
+  other:
+  - §4.6 ненадёжная идентификация объекта — явно
+  - §4.6 уникальные ID и сборка ↔ компоненты
+  - §3.2 журнал критических действий
+kind: run
+run: standalone
+stream: streams/S20.jsonl
+seed: 20261020
+window_msk:
+- 2026-09-29 07:30
+- 2026-09-30 13:05
+items:
+- F-031
+- F-032
+- F-033
+erp_postings_expected:
+- issue_to_production (заготовки ×3, кольца ×3)
+- transfer MC→WC ×3
+- стоп, выяснение и перемаркировка в 1С не уходят
+erp_note: Сообщения 1С — по словарю scenarios-flange-expected.yaml (erp_posting_type). Полный список с ответами stand-а — I1.yaml → erp_outbox_expected (для S13 и S10B — в их файлах).
+  «Выпуск годного» — только после ЗТ-6.
+expected: expected/S20.yaml
+precondition: 'мир S20 [П]: Ф-031…Ф-033 варят в Ср 30.09 на посту 1 (С-02, смена А); при приёмке во вторник Ф-031 и Ф-033 положили в тару друг друга; код Ф-032 поцарапан при перемещении'
+new_events_p:
+- 'item.scanned (Е-126 [П], поток) — скан на посту: ok / не читается / не то изделие'
+- operation.precondition_failed (Е-13, реакция) с кодами E_ITEM_MISMATCH, E_ITEM_NOT_IDENTIFIED
+human_steps:
+- step_id: S20-H0001
+  label: ZT-1/LOT-ZF-201
+  at: '2026-09-29T04:52:30.000Z'
+  at_msk: '2026-09-29 07:52:30'
+  mode: auto
+  role: QC
+  persona: QC-02
+  action: decision.gate_passed
+  catalog_ref: E-08
+  subject:
+    gate: ZT-1
+    lot_id: LOT-ZF-201
+  process_ref: lot/LOT-ZF-201
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - iqc/LOT-ZF-201/documents
+    - iqc/LOT-ZF-201/lab
+    - iqc/F-031/kt1
+    - …
+  expect: accepted
+  scenarios:
+  - S20
+- step_id: S20-H0002
+  label: ZT-1/LOT-R-116
+  at: '2026-09-29T05:16:00.000Z'
+  at_msk: '2026-09-29 08:16:00'
+  mode: auto
+  role: QC
+  persona: QC-02
+  action: decision.gate_passed
+  catalog_ref: E-08
+  subject:
+    gate: ZT-1
+    lot_id: LOT-R-116
+  process_ref: lot/LOT-R-116
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - iqc/LOT-R-116/documents
+    - iqc/LOT-R-116/lab
+    - iqc/LOT-R-116/xr-sample
+    - …
+  expect: accepted
+  scenarios:
+  - S20
+- step_id: S20-H0003
+  label: ZT-1/LOT-W-88
+  at: '2026-09-29T05:32:00.000Z'
+  at_msk: '2026-09-29 08:32:00'
+  mode: auto
+  role: QC
+  persona: QC-02
+  action: decision.gate_passed
+  catalog_ref: E-08
+  subject:
+    gate: ZT-1
+    lot_id: LOT-W-88
+  process_ref: lot/LOT-W-88
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - iqc/LOT-W-88/documents
+  expect: accepted
+  scenarios:
+  - S20
+- step_id: S20-H0004
+  label: ZT-2/F-031
+  at: '2026-09-29T07:10:00.000Z'
+  at_msk: '2026-09-29 10:10:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-19
+  subject:
+    gate: ZT-2
+    item_id: F-031
+  process_ref: item/F-031
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt2/F-031
+    - cmm/F-031
+    marking_check:
+      previous: TAG:F-031
+      current: DM:F-031
+      result: match
+      readable: true
+      basis_label: remark/F-031
+  expect: accepted
+  scenarios:
+  - S20
+- step_id: S20-H0005
+  label: ZT-2/F-032
+  at: '2026-09-29T08:05:00.000Z'
+  at_msk: '2026-09-29 11:05:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-19
+  subject:
+    gate: ZT-2
+    item_id: F-032
+  process_ref: item/F-032
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt2/F-032
+    - cmm/F-032
+    marking_check:
+      previous: TAG:F-032
+      current: DM:F-032
+      result: match
+      readable: true
+      basis_label: remark/F-032
+  expect: accepted
+  scenarios:
+  - S20
+- step_id: S20-H0006
+  label: ZT-2/F-033
+  at: '2026-09-29T09:00:00.000Z'
+  at_msk: '2026-09-29 12:00:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-19
+  subject:
+    gate: ZT-2
+    item_id: F-033
+  process_ref: item/F-033
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt2/F-033
+    - cmm/F-033
+    marking_check:
+      previous: TAG:F-033
+      current: DM:F-033
+      result: match
+      readable: true
+      basis_label: remark/F-033
+  expect: accepted
+  scenarios:
+  - S20
+- step_id: S20-H0007
+  label: S20/swap-resolved
+  at: '2026-09-30T05:25:00.000Z'
+  at_msk: '2026-09-30 08:25:00'
+  mode: stop
+  role: MASTER
+  persona: MST-02
+  action: item.binding_corrected
+  catalog_ref: E-101
+  subject:
+    items:
+    - F-031
+    - F-033
+  process_ref: null
+  params:
+    resolution: swap_found
+    expected: F-031
+    found: F-033
+    where: Ф-031 лежал в таре «Ф-033», Ф-033 — в таре «Ф-031»
+    cause: при приёмке во вторник фланцы положили в тару друг друга; бирки тары — по сменному заданию
+    fixed: фланцы переложены в свою тару; кольца К-028 и К-030 — к своим фланцам
+    history_mixed: false
+    events_rebound: 0
+    basis_labels:
+    - S20/scan-mismatch
+    - S20/scan-found-F-031
+  expect: accepted
+  scenarios:
+  - S20
+- step_id: S20-H0008
+  label: S20/manual-F-032
+  at: '2026-09-30T06:28:00.000Z'
+  at_msk: '2026-09-30 09:28:00'
+  mode: auto
+  role: MASTER
+  persona: MST-02
+  signers:
+  - WLD-02
+  - MST-02
+  action: item.binding_corrected
+  catalog_ref: E-101
+  subject:
+    item_id: F-032
+  process_ref: null
+  params:
+    method: manual_entry
+    entered_by: WLD-02
+    confirmed_by: MST-02
+    checked_against:
+    - бирка тары «Ф-032»
+    - сопроводительная карта Ф-032
+    - кольцо К-029 выдано под Ф-032
+    - последнее чтение кода — ЗТ-2 во вторник
+    reliability: manual_confirmed
+    event_label: S20/scan-unreadable
+    then: перемаркировка по процедуре до ЗТ-3; ОТК-1 сверяет на ЗТ-3
+  expect: accepted
+  scenarios:
+  - S20
+- step_id: S20-H0009
+  label: ZT-3/F-031
+  at: '2026-09-30T09:10:00.000Z'
+  at_msk: '2026-09-30 12:10:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-47
+  subject:
+    gate: ZT-3
+    item_id: F-031
+  process_ref: item/F-031
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt3/SV-031-1/CAM-WS-1
+    - xr/F-031/RK-0930-51
+    - flat/SV-031-1
+  expect: accepted
+  scenarios:
+  - S20
+- step_id: S20-H0010
+  label: ZT-3/F-032
+  at: '2026-09-30T09:20:00.000Z'
+  at_msk: '2026-09-30 12:20:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-47
+  subject:
+    gate: ZT-3
+    item_id: F-032
+  process_ref: item/F-032
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt3/SV-032-1/CAM-WS-1
+    - xr/F-032/RK-0930-52
+    - flat/SV-032-1
+    marking_check:
+      previous: DM:F-032 (не читается)
+      current: DM:F-032
+      result: match
+      readable: true
+      basis_label: remark2/F-032
+  expect: accepted
+  scenarios:
+  - S20
+- step_id: S20-H0011
+  label: ZT-3/F-033
+  at: '2026-09-30T10:05:00.000Z'
+  at_msk: '2026-09-30 13:05:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-47
+  subject:
+    gate: ZT-3
+    item_id: F-033
+  process_ref: item/F-033
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt3/SV-033-1/CAM-WS-1
+    - xr/F-033/RK-0930-53
+    - flat/SV-033-1
+  expect: accepted
+  scenarios:
+  - S20
+erp_outbox_note: Ожидаемые учётные сообщения в 1С и ответы stand-а. Вывод движка — в потоки не входит; выведено генератором из фактов и шагов людей прогона [П]. Весь прогон.
+erp_outbox_counts:
+  issue_to_production: 6
+  transfer: 3
+erp_outbox_expected:
+- msg_no: 1
+  at_msk: '2026-09-29 08:40:00'
+  type: issue_to_production
+  item_id: F-031
+  lot_id: LOT-ZF-201
+  what: заготовка фланца
+  basis: reg/F-031
+  response: acked
+- msg_no: 2
+  at_msk: '2026-09-29 08:41:00'
+  type: issue_to_production
+  item_id: F-032
+  lot_id: LOT-ZF-201
+  what: заготовка фланца
+  basis: reg/F-032
+  response: acked
+- msg_no: 3
+  at_msk: '2026-09-29 08:42:00'
+  type: issue_to_production
+  item_id: F-033
+  lot_id: LOT-ZF-201
+  what: заготовка фланца
+  basis: reg/F-033
+  response: acked
+- msg_no: 4
+  at_msk: '2026-09-29 14:10:00'
+  type: transfer
+  item_id: F-031
+  route: MC->WC
+  basis: mv/F-031/MC-WC.received
+  response: acked
+- msg_no: 5
+  at_msk: '2026-09-29 14:10:00'
+  type: transfer
+  item_id: F-032
+  route: MC->WC
+  basis: mv/F-032/MC-WC.received
+  response: acked
+- msg_no: 6
+  at_msk: '2026-09-29 14:10:00'
+  type: transfer
+  item_id: F-033
+  route: MC->WC
+  basis: mv/F-033/MC-WC.received
+  response: acked
+- msg_no: 7
+  at_msk: '2026-09-30 08:05:00'
+  type: issue_to_production
+  lot_id: LOT-R-116
+  items:
+  - F-031
+  components:
+  - R-028
+  what: кольца в сварку
+  basis: issue/ring/F-031
+  response: acked
+- msg_no: 8
+  at_msk: '2026-09-30 08:06:00'
+  type: issue_to_production
+  lot_id: LOT-R-116
+  items:
+  - F-032
+  components:
+  - R-029
+  what: кольца в сварку
+  basis: issue/ring/F-032
+  response: acked
+- msg_no: 9
+  at_msk: '2026-09-30 08:07:00'
+  type: issue_to_production
+  lot_id: LOT-R-116
+  items:
+  - F-033
+  components:
+  - R-030
+  what: кольца в сварку
+  basis: issue/ring/F-033
+  response: acked
+mes_outbox_note: 'Ожидаемые сообщения в MES (схема v0.3.1, процесс «Удержание»; вывод движка, в потоки не входит) [П]: «не выдавать в работу» — в момент удержания (правило при сигнале,
+  круг, отзыв приёмки), один раз на объект; «можно выдавать» — только по шагу человека, когда оснований не осталось. Гипотез, причин и кадров нет. Кольцо на складе держит удержание партии.
+  В прогоне удержаний нет.'
+mes_outbox_counts: {}
+mes_held_at_end: []
+mes_outbox_expected: []

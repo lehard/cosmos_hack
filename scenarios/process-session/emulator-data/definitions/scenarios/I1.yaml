@@ -1,0 +1,2872 @@
+# =============================================================================
+# Определение сценария. Генерируется tools/generate.py — руками не править (правьте генератор).
+# Имена событий, действий и полей — НАШИ (process-events-catalog.md, scenarios-flange*.{md,yaml}).
+# [П] — имя или значение предварительное (нет в каталоге) / наше допущение; [ПП] — проектное предположение.
+# Время: at — UTC (RFC 3339, мс); at_msk — то же в МСК для чтения.
+# human_steps.mode: stop — сценарий ждёт решения на столе роли (интерактивный режим; в автосверке подписывает
+#   demo-signer); auto — demo-signer подписывает сам в указанное доменное время.
+# expect: accepted | refused[:код] — ожидаемый ответ системы на шаг (проверка отказов по правам и правилам).
+# =============================================================================
+
+id: I1
+title: 'Обмен с 1С: задание, результаты на ЗТ, подтверждения, ошибка и повтор, ID'
+goal: 'Двусторонний обмен с 1С через stand: входящее задание и партии, исходящие учётные сообщения только на ЗТ, подтверждения, ошибка 503 с повтором, ошибка 422 с исправлением соответствия
+  ID.'
+case:
+  other:
+  - §5.3 интеграционные данные
+  - §3.3 интеграции
+kind: slice_of_main_story
+run: main_story (MS-1)
+stream: streams/main-story.jsonl
+slice: streams/I1.jsonl
+slice_lines: 137
+seed: 20260921
+window_msk:
+- 2026-09-14 11:00
+- 2026-09-24 16:30
+items:
+- F-001…F-036
+- LOT-R-117
+erp_postings_expected:
+- issue_to_production
+- transfer
+- scrap_transfer_rework
+- scrap_transfer_writeoff
+- return_to_supplier
+- rework_return_to_production [П] (после удачной переделки, на повторной ЗТ-3)
+- release_good — только после ЗТ-6 (Ф-001 и фоновый заказ)
+- 'ответы stand 1С: acked / 503 / 422 — см. stand_faults и erp_outbox_expected'
+- 'предложение [П, ждёт решения соседей]: control_result «результат контроля» (кейс §3.3) — в outbox не входит'
+erp_note: Сообщения 1С — по словарю scenarios-flange-expected.yaml (erp_posting_type). Полный список с ответами stand-а — I1.yaml → erp_outbox_expected (для S13 и S10B — в их файлах).
+  «Выпуск годного» — только после ЗТ-6.
+expected: expected/I1.yaml
+human_steps_ref: definitions/scenarios/main-story.yaml
+human_steps:
+- step_id: MS1-H0255
+  label: S02/return
+  at: '2026-09-23T12:45:00.000Z'
+  at_msk: '2026-09-23 15:45:00'
+  mode: auto
+  role: TECHNOLOGIST
+  persona: TECH-01
+  action: decision.disposition_set
+  catalog_ref: E-94
+  subject:
+    lot_id: LOT-R-117
+    items:
+    - R-104
+    - R-105
+    - R-106
+    - R-107
+    - R-108
+    - R-109
+    - R-110
+    nc_refs:
+    - NC-04
+    - NC-05
+  process_ref: nc/NC-04
+  process_links:
+  - lot/LOT-R-117
+  - incident/RS-02
+  params:
+    disposition: return_to_supplier
+    qty: 7
+    claim_basis_labels:
+    - xr/F-019/RK-0923-07
+    - xr/R-105/RK-0923-11
+  expect: accepted
+  scenarios:
+  - I1
+  - S02
+- step_id: MS1-H0258
+  label: S02/id-map
+  at: '2026-09-23T13:10:00.000Z'
+  at_msk: '2026-09-23 16:10:00'
+  mode: auto
+  role: DATA_ADMIN
+  persona: ADM-01
+  action: erp.id_map_added
+  catalog_ref: '[П] нет в каталоге'
+  subject:
+    system: erp_1c
+    entity: supplier_contract
+    internal: SUP-3
+  process_ref: null
+  params:
+    external: dog-0b19-0003-2026
+    then: повторить отправку с тем же номером сообщения
+  expect: accepted
+  scenarios:
+  - I1
+  - S02
+erp_outbox_note: Ожидаемые учётные сообщения в 1С и ответы stand-а. Вывод движка — в потоки не входит; выведено генератором из фактов и шагов людей прогона [П]. Весь прогон MS-1.
+erp_outbox_counts:
+  issue_to_production: 102
+  release_good: 21
+  return_to_supplier: 1
+  rework_return_to_production: 4
+  scrap_transfer_rework: 1
+  scrap_transfer_writeoff: 1
+  transfer: 92
+erp_outbox_expected:
+- msg_no: 1
+  at_msk: '2026-09-08 15:00:00'
+  type: issue_to_production
+  item_id: F-201
+  lot_id: LOT-ZF-111
+  what: заготовка фланца
+  basis: reg/F-201
+  response: acked
+- msg_no: 2
+  at_msk: '2026-09-08 15:01:00'
+  type: issue_to_production
+  item_id: F-202
+  lot_id: LOT-ZF-111
+  what: заготовка фланца
+  basis: reg/F-202
+  response: acked
+- msg_no: 3
+  at_msk: '2026-09-08 15:02:00'
+  type: issue_to_production
+  item_id: F-203
+  lot_id: LOT-ZF-111
+  what: заготовка фланца
+  basis: reg/F-203
+  response: acked
+- msg_no: 4
+  at_msk: '2026-09-08 15:03:00'
+  type: issue_to_production
+  item_id: F-204
+  lot_id: LOT-ZF-111
+  what: заготовка фланца
+  basis: reg/F-204
+  response: acked
+- msg_no: 5
+  at_msk: '2026-09-08 15:04:00'
+  type: issue_to_production
+  item_id: F-205
+  lot_id: LOT-ZF-111
+  what: заготовка фланца
+  basis: reg/F-205
+  response: acked
+- msg_no: 6
+  at_msk: '2026-09-08 15:05:00'
+  type: issue_to_production
+  item_id: F-206
+  lot_id: LOT-ZF-111
+  what: заготовка фланца
+  basis: reg/F-206
+  response: acked
+- msg_no: 7
+  at_msk: '2026-09-08 15:06:00'
+  type: issue_to_production
+  item_id: F-207
+  lot_id: LOT-ZF-111
+  what: заготовка фланца
+  basis: reg/F-207
+  response: acked
+- msg_no: 8
+  at_msk: '2026-09-08 15:07:00'
+  type: issue_to_production
+  item_id: F-208
+  lot_id: LOT-ZF-111
+  what: заготовка фланца
+  basis: reg/F-208
+  response: acked
+- msg_no: 9
+  at_msk: '2026-09-08 15:08:00'
+  type: issue_to_production
+  item_id: F-209
+  lot_id: LOT-ZF-111
+  what: заготовка фланца
+  basis: reg/F-209
+  response: acked
+- msg_no: 10
+  at_msk: '2026-09-08 15:09:00'
+  type: issue_to_production
+  item_id: F-210
+  lot_id: LOT-ZF-111
+  what: заготовка фланца
+  basis: reg/F-210
+  response: acked
+- msg_no: 11
+  at_msk: '2026-09-08 15:10:00'
+  type: issue_to_production
+  item_id: F-211
+  lot_id: LOT-ZF-111
+  what: заготовка фланца
+  basis: reg/F-211
+  response: acked
+- msg_no: 12
+  at_msk: '2026-09-08 15:11:00'
+  type: issue_to_production
+  item_id: F-212
+  lot_id: LOT-ZF-111
+  what: заготовка фланца
+  basis: reg/F-212
+  response: acked
+- msg_no: 13
+  at_msk: '2026-09-08 15:12:00'
+  type: issue_to_production
+  item_id: F-213
+  lot_id: LOT-ZF-111
+  what: заготовка фланца
+  basis: reg/F-213
+  response: acked
+- msg_no: 14
+  at_msk: '2026-09-08 15:13:00'
+  type: issue_to_production
+  item_id: F-214
+  lot_id: LOT-ZF-111
+  what: заготовка фланца
+  basis: reg/F-214
+  response: acked
+- msg_no: 15
+  at_msk: '2026-09-08 15:14:00'
+  type: issue_to_production
+  item_id: F-215
+  lot_id: LOT-ZF-111
+  what: заготовка фланца
+  basis: reg/F-215
+  response: acked
+- msg_no: 16
+  at_msk: '2026-09-08 15:15:00'
+  type: issue_to_production
+  item_id: F-216
+  lot_id: LOT-ZF-111
+  what: заготовка фланца
+  basis: reg/F-216
+  response: acked
+- msg_no: 17
+  at_msk: '2026-09-08 15:16:00'
+  type: issue_to_production
+  item_id: F-217
+  lot_id: LOT-ZF-111
+  what: заготовка фланца
+  basis: reg/F-217
+  response: acked
+- msg_no: 18
+  at_msk: '2026-09-08 15:17:00'
+  type: issue_to_production
+  item_id: F-218
+  lot_id: LOT-ZF-111
+  what: заготовка фланца
+  basis: reg/F-218
+  response: acked
+- msg_no: 19
+  at_msk: '2026-09-09 10:10:00'
+  type: transfer
+  item_id: F-201
+  route: MC->WC
+  basis: mv/F-201/MC-WC.received
+  response: acked
+- msg_no: 20
+  at_msk: '2026-09-09 14:10:00'
+  type: transfer
+  item_id: F-202
+  route: MC->WC
+  basis: mv/F-202/MC-WC.received
+  response: acked
+- msg_no: 21
+  at_msk: '2026-09-09 14:10:00'
+  type: transfer
+  item_id: F-203
+  route: MC->WC
+  basis: mv/F-203/MC-WC.received
+  response: acked
+- msg_no: 22
+  at_msk: '2026-09-09 14:10:00'
+  type: transfer
+  item_id: F-204
+  route: MC->WC
+  basis: mv/F-204/MC-WC.received
+  response: acked
+- msg_no: 23
+  at_msk: '2026-09-09 14:10:00'
+  type: transfer
+  item_id: F-205
+  route: MC->WC
+  basis: mv/F-205/MC-WC.received
+  response: acked
+- msg_no: 24
+  at_msk: '2026-09-09 15:00:00'
+  type: issue_to_production
+  item_id: F-219
+  lot_id: LOT-ZF-111
+  what: заготовка фланца
+  basis: reg/F-219
+  response: acked
+- msg_no: 25
+  at_msk: '2026-09-09 15:01:00'
+  type: issue_to_production
+  item_id: F-220
+  lot_id: LOT-ZF-111
+  what: заготовка фланца
+  basis: reg/F-220
+  response: acked
+- msg_no: 26
+  at_msk: '2026-09-09 15:02:00'
+  type: issue_to_production
+  item_id: F-221
+  lot_id: LOT-ZF-111
+  what: заготовка фланца
+  basis: reg/F-221
+  response: acked
+- msg_no: 27
+  at_msk: '2026-09-09 15:03:00'
+  type: issue_to_production
+  item_id: F-222
+  lot_id: LOT-ZF-111
+  what: заготовка фланца
+  basis: reg/F-222
+  response: acked
+- msg_no: 28
+  at_msk: '2026-09-09 15:04:00'
+  type: issue_to_production
+  item_id: F-223
+  lot_id: LOT-ZF-111
+  what: заготовка фланца
+  basis: reg/F-223
+  response: acked
+- msg_no: 29
+  at_msk: '2026-09-09 15:05:00'
+  type: issue_to_production
+  item_id: F-224
+  lot_id: LOT-ZF-111
+  what: заготовка фланца
+  basis: reg/F-224
+  response: acked
+- msg_no: 30
+  at_msk: '2026-09-09 16:10:00'
+  type: transfer
+  item_id: F-206
+  route: MC->WC
+  basis: mv/F-206/MC-WC.received
+  response: acked
+- msg_no: 31
+  at_msk: '2026-09-09 16:10:00'
+  type: transfer
+  item_id: F-207
+  route: MC->WC
+  basis: mv/F-207/MC-WC.received
+  response: acked
+- msg_no: 32
+  at_msk: '2026-09-09 16:10:00'
+  type: transfer
+  item_id: F-208
+  route: MC->WC
+  basis: mv/F-208/MC-WC.received
+  response: acked
+- msg_no: 33
+  at_msk: '2026-09-10 10:10:00'
+  type: transfer
+  item_id: F-209
+  route: MC->WC
+  basis: mv/F-209/MC-WC.received
+  response: acked
+- msg_no: 34
+  at_msk: '2026-09-10 10:10:00'
+  type: transfer
+  item_id: F-210
+  route: MC->WC
+  basis: mv/F-210/MC-WC.received
+  response: acked
+- msg_no: 35
+  at_msk: '2026-09-10 10:10:00'
+  type: transfer
+  item_id: F-211
+  route: MC->WC
+  basis: mv/F-211/MC-WC.received
+  response: acked
+- msg_no: 36
+  at_msk: '2026-09-10 10:10:00'
+  type: transfer
+  item_id: F-212
+  route: MC->WC
+  basis: mv/F-212/MC-WC.received
+  response: acked
+- msg_no: 37
+  at_msk: '2026-09-10 14:10:00'
+  type: transfer
+  item_id: F-213
+  route: MC->WC
+  basis: mv/F-213/MC-WC.received
+  response: acked
+- msg_no: 38
+  at_msk: '2026-09-10 14:10:00'
+  type: transfer
+  item_id: F-214
+  route: MC->WC
+  basis: mv/F-214/MC-WC.received
+  response: acked
+- msg_no: 39
+  at_msk: '2026-09-10 14:10:00'
+  type: transfer
+  item_id: F-215
+  route: MC->WC
+  basis: mv/F-215/MC-WC.received
+  response: acked
+- msg_no: 40
+  at_msk: '2026-09-10 14:10:00'
+  type: transfer
+  item_id: F-216
+  route: MC->WC
+  basis: mv/F-216/MC-WC.received
+  response: acked
+- msg_no: 41
+  at_msk: '2026-09-10 14:10:00'
+  type: transfer
+  item_id: F-217
+  route: MC->WC
+  basis: mv/F-217/MC-WC.received
+  response: acked
+- msg_no: 42
+  at_msk: '2026-09-10 14:10:00'
+  type: transfer
+  item_id: F-218
+  route: MC->WC
+  basis: mv/F-218/MC-WC.received
+  response: acked
+- msg_no: 43
+  at_msk: '2026-09-10 14:10:00'
+  type: transfer
+  item_id: F-220
+  route: MC->WC
+  basis: mv/F-220/MC-WC.received
+  response: acked
+- msg_no: 44
+  at_msk: '2026-09-10 16:10:00'
+  type: transfer
+  item_id: F-221
+  route: MC->WC
+  basis: mv/F-221/MC-WC.received
+  response: acked
+- msg_no: 45
+  at_msk: '2026-09-10 16:10:00'
+  type: transfer
+  item_id: F-222
+  route: MC->WC
+  basis: mv/F-222/MC-WC.received
+  response: acked
+- msg_no: 46
+  at_msk: '2026-09-10 16:10:00'
+  type: transfer
+  item_id: F-223
+  route: MC->WC
+  basis: mv/F-223/MC-WC.received
+  response: acked
+- msg_no: 47
+  at_msk: '2026-09-10 16:10:00'
+  type: transfer
+  item_id: F-224
+  route: MC->WC
+  basis: mv/F-224/MC-WC.received
+  response: acked
+- msg_no: 48
+  at_msk: '2026-09-11 08:00:00'
+  type: transfer
+  item_id: F-219
+  route: MC->WC
+  basis: mv/F-219/MC-WC.received
+  response: acked
+- msg_no: 49
+  at_msk: '2026-09-14 07:50:00'
+  type: issue_to_production
+  lot_id: LOT-R-108
+  components:
+  - R-311
+  - R-312
+  - R-313
+  - R-314
+  - R-315
+  - R-301
+  - R-302
+  - R-303
+  - R-304
+  - R-305
+  what: кольца в сварку
+  basis: issue/rings/2026-09-14
+  response: acked
+- msg_no: 50
+  at_msk: '2026-09-14 14:10:00'
+  type: transfer
+  item_id: F-211
+  route: WC->AC
+  basis: mv/F-211/WC-AC.received
+  response: acked
+- msg_no: 51
+  at_msk: '2026-09-14 14:10:00'
+  type: transfer
+  item_id: F-212
+  route: WC->AC
+  basis: mv/F-212/WC-AC.received
+  response: acked
+- msg_no: 52
+  at_msk: '2026-09-14 16:10:00'
+  type: transfer
+  item_id: F-213
+  route: WC->AC
+  basis: mv/F-213/WC-AC.received
+  response: acked
+- msg_no: 53
+  at_msk: '2026-09-14 16:10:00'
+  type: transfer
+  item_id: F-214
+  route: WC->AC
+  basis: mv/F-214/WC-AC.received
+  response: acked
+- msg_no: 54
+  at_msk: '2026-09-14 16:10:00'
+  type: transfer
+  item_id: F-215
+  route: WC->AC
+  basis: mv/F-215/WC-AC.received
+  response: acked
+- msg_no: 55
+  at_msk: '2026-09-15 07:50:00'
+  type: issue_to_production
+  lot_id: LOT-R-108
+  components:
+  - R-316
+  - R-317
+  - R-318
+  - R-319
+  - R-320
+  - R-306
+  - R-307
+  - R-308
+  - R-309
+  - R-310
+  what: кольца в сварку
+  basis: issue/rings/2026-09-15
+  response: acked
+- msg_no: 56
+  at_msk: '2026-09-15 07:55:00'
+  type: issue_to_production
+  items:
+  - F-211
+  lots:
+  - LOT-C-211
+  - LOT-SL-391
+  - LOT-FS-481
+  - LOT-V-591
+  what: комплект на сборку
+  basis: kit/F-211/cover
+  response: acked
+- msg_no: 57
+  at_msk: '2026-09-15 09:05:00'
+  type: issue_to_production
+  items:
+  - F-212
+  lots:
+  - LOT-C-211
+  - LOT-SL-391
+  - LOT-FS-481
+  - LOT-V-591
+  what: комплект на сборку
+  basis: kit/F-212/cover
+  response: acked
+- msg_no: 58
+  at_msk: '2026-09-15 10:10:00'
+  type: transfer
+  item_id: F-201
+  route: WC->AC
+  basis: mv/F-201/WC-AC.received
+  response: acked
+- msg_no: 59
+  at_msk: '2026-09-15 10:10:00'
+  type: transfer
+  item_id: F-202
+  route: WC->AC
+  basis: mv/F-202/WC-AC.received
+  response: acked
+- msg_no: 60
+  at_msk: '2026-09-15 10:10:00'
+  type: transfer
+  item_id: F-203
+  route: WC->AC
+  basis: mv/F-203/WC-AC.received
+  response: acked
+- msg_no: 61
+  at_msk: '2026-09-15 10:10:00'
+  type: transfer
+  item_id: F-204
+  route: WC->AC
+  basis: mv/F-204/WC-AC.received
+  response: acked
+- msg_no: 62
+  at_msk: '2026-09-15 10:10:00'
+  type: transfer
+  item_id: F-205
+  route: WC->AC
+  basis: mv/F-205/WC-AC.received
+  response: acked
+- msg_no: 63
+  at_msk: '2026-09-15 10:15:00'
+  type: issue_to_production
+  items:
+  - F-213
+  lots:
+  - LOT-C-211
+  - LOT-SL-391
+  - LOT-FS-481
+  - LOT-V-591
+  what: комплект на сборку
+  basis: kit/F-213/cover
+  response: acked
+- msg_no: 64
+  at_msk: '2026-09-15 10:50:00'
+  type: release_good
+  item_id: F-211
+  after_rework: false
+  concession_no: null
+  basis: release/F-211
+  response: acked
+- msg_no: 65
+  at_msk: '2026-09-15 12:00:00'
+  type: release_good
+  item_id: F-212
+  after_rework: false
+  concession_no: null
+  basis: release/F-212
+  response: acked
+- msg_no: 66
+  at_msk: '2026-09-15 12:55:00'
+  type: issue_to_production
+  items:
+  - F-214
+  lots:
+  - LOT-C-211
+  - LOT-SL-391
+  - LOT-FS-481
+  - LOT-V-591
+  what: комплект на сборку
+  basis: kit/F-214/cover
+  response: acked
+- msg_no: 67
+  at_msk: '2026-09-15 13:10:00'
+  type: release_good
+  item_id: F-213
+  after_rework: false
+  concession_no: null
+  basis: release/F-213
+  response: acked
+- msg_no: 68
+  at_msk: '2026-09-15 14:05:00'
+  type: issue_to_production
+  items:
+  - F-215
+  lots:
+  - LOT-C-211
+  - LOT-SL-391
+  - LOT-FS-481
+  - LOT-V-591
+  what: комплект на сборку
+  basis: kit/F-215/cover
+  response: acked
+- msg_no: 69
+  at_msk: '2026-09-15 14:10:00'
+  type: transfer
+  item_id: F-216
+  route: WC->AC
+  basis: mv/F-216/WC-AC.received
+  response: acked
+- msg_no: 70
+  at_msk: '2026-09-15 14:10:00'
+  type: transfer
+  item_id: F-217
+  route: WC->AC
+  basis: mv/F-217/WC-AC.received
+  response: acked
+- msg_no: 71
+  at_msk: '2026-09-15 14:10:00'
+  type: transfer
+  item_id: F-218
+  route: WC->AC
+  basis: mv/F-218/WC-AC.received
+  response: acked
+- msg_no: 72
+  at_msk: '2026-09-15 14:10:00'
+  type: transfer
+  item_id: F-219
+  route: WC->AC
+  basis: mv/F-219/WC-AC.received
+  response: acked
+- msg_no: 73
+  at_msk: '2026-09-15 15:50:00'
+  type: release_good
+  item_id: F-214
+  after_rework: false
+  concession_no: null
+  basis: release/F-214
+  response: acked
+- msg_no: 74
+  at_msk: '2026-09-15 16:10:00'
+  type: transfer
+  item_id: F-220
+  route: WC->AC
+  basis: mv/F-220/WC-AC.received
+  response: acked
+- msg_no: 75
+  at_msk: '2026-09-16 07:55:00'
+  type: issue_to_production
+  items:
+  - F-201
+  lots:
+  - LOT-C-211
+  - LOT-SL-391
+  - LOT-FS-481
+  - LOT-V-591
+  what: комплект на сборку
+  basis: kit/F-201/cover
+  response: acked
+- msg_no: 76
+  at_msk: '2026-09-16 08:30:00'
+  type: release_good
+  item_id: F-215
+  after_rework: false
+  concession_no: null
+  basis: release/F-215
+  response: acked
+- msg_no: 77
+  at_msk: '2026-09-16 09:05:00'
+  type: issue_to_production
+  items:
+  - F-202
+  lots:
+  - LOT-C-211
+  - LOT-SL-391
+  - LOT-FS-481
+  - LOT-V-591
+  what: комплект на сборку
+  basis: kit/F-202/cover
+  response: acked
+- msg_no: 78
+  at_msk: '2026-09-16 10:10:00'
+  type: transfer
+  item_id: F-206
+  route: WC->AC
+  basis: mv/F-206/WC-AC.received
+  response: acked
+- msg_no: 79
+  at_msk: '2026-09-16 10:10:00'
+  type: transfer
+  item_id: F-207
+  route: WC->AC
+  basis: mv/F-207/WC-AC.received
+  response: acked
+- msg_no: 80
+  at_msk: '2026-09-16 10:10:00'
+  type: transfer
+  item_id: F-208
+  route: WC->AC
+  basis: mv/F-208/WC-AC.received
+  response: acked
+- msg_no: 81
+  at_msk: '2026-09-16 10:10:00'
+  type: transfer
+  item_id: F-209
+  route: WC->AC
+  basis: mv/F-209/WC-AC.received
+  response: acked
+- msg_no: 82
+  at_msk: '2026-09-16 10:10:00'
+  type: transfer
+  item_id: F-210
+  route: WC->AC
+  basis: mv/F-210/WC-AC.received
+  response: acked
+- msg_no: 83
+  at_msk: '2026-09-16 10:15:00'
+  type: issue_to_production
+  items:
+  - F-203
+  lots:
+  - LOT-C-211
+  - LOT-SL-391
+  - LOT-FS-481
+  - LOT-V-591
+  what: комплект на сборку
+  basis: kit/F-203/cover
+  response: acked
+- msg_no: 84
+  at_msk: '2026-09-16 10:50:00'
+  type: release_good
+  item_id: F-201
+  after_rework: false
+  concession_no: null
+  basis: release/F-201
+  response: acked
+- msg_no: 85
+  at_msk: '2026-09-16 12:00:00'
+  type: release_good
+  item_id: F-202
+  after_rework: false
+  concession_no: null
+  basis: release/F-202
+  response: acked
+- msg_no: 86
+  at_msk: '2026-09-16 12:55:00'
+  type: issue_to_production
+  items:
+  - F-204
+  lots:
+  - LOT-C-211
+  - LOT-SL-391
+  - LOT-FS-481
+  - LOT-V-591
+  what: комплект на сборку
+  basis: kit/F-204/cover
+  response: acked
+- msg_no: 87
+  at_msk: '2026-09-16 13:10:00'
+  type: release_good
+  item_id: F-203
+  after_rework: false
+  concession_no: null
+  basis: release/F-203
+  response: acked
+- msg_no: 88
+  at_msk: '2026-09-16 14:05:00'
+  type: issue_to_production
+  items:
+  - F-205
+  lots:
+  - LOT-C-211
+  - LOT-SL-391
+  - LOT-FS-481
+  - LOT-V-591
+  what: комплект на сборку
+  basis: kit/F-205/cover
+  response: acked
+- msg_no: 89
+  at_msk: '2026-09-16 15:50:00'
+  type: release_good
+  item_id: F-204
+  after_rework: false
+  concession_no: null
+  basis: release/F-204
+  response: acked
+- msg_no: 90
+  at_msk: '2026-09-17 07:55:00'
+  type: issue_to_production
+  items:
+  - F-216
+  lots:
+  - LOT-C-211
+  - LOT-SL-391
+  - LOT-FS-481
+  - LOT-V-591
+  what: комплект на сборку
+  basis: kit/F-216/cover
+  response: acked
+- msg_no: 91
+  at_msk: '2026-09-17 08:30:00'
+  type: release_good
+  item_id: F-205
+  after_rework: false
+  concession_no: null
+  basis: release/F-205
+  response: acked
+- msg_no: 92
+  at_msk: '2026-09-17 09:05:00'
+  type: issue_to_production
+  items:
+  - F-217
+  lots:
+  - LOT-C-211
+  - LOT-SL-391
+  - LOT-FS-481
+  - LOT-V-591
+  what: комплект на сборку
+  basis: kit/F-217/cover
+  response: acked
+- msg_no: 93
+  at_msk: '2026-09-17 10:15:00'
+  type: issue_to_production
+  items:
+  - F-218
+  lots:
+  - LOT-C-211
+  - LOT-SL-391
+  - LOT-FS-481
+  - LOT-V-591
+  what: комплект на сборку
+  basis: kit/F-218/cover
+  response: acked
+- msg_no: 94
+  at_msk: '2026-09-17 10:50:00'
+  type: release_good
+  item_id: F-216
+  after_rework: false
+  concession_no: null
+  basis: release/F-216
+  response: acked
+- msg_no: 95
+  at_msk: '2026-09-17 12:00:00'
+  type: release_good
+  item_id: F-217
+  after_rework: false
+  concession_no: null
+  basis: release/F-217
+  response: acked
+- msg_no: 96
+  at_msk: '2026-09-17 12:55:00'
+  type: issue_to_production
+  items:
+  - F-219
+  lots:
+  - LOT-C-211
+  - LOT-SL-391
+  - LOT-FS-481
+  - LOT-V-591
+  what: комплект на сборку
+  basis: kit/F-219/cover
+  response: acked
+- msg_no: 97
+  at_msk: '2026-09-17 13:10:00'
+  type: release_good
+  item_id: F-218
+  after_rework: false
+  concession_no: null
+  basis: release/F-218
+  response: acked
+- msg_no: 98
+  at_msk: '2026-09-17 14:05:00'
+  type: issue_to_production
+  items:
+  - F-220
+  lots:
+  - LOT-C-211
+  - LOT-SL-391
+  - LOT-FS-481
+  - LOT-V-591
+  what: комплект на сборку
+  basis: kit/F-220/cover
+  response: acked
+- msg_no: 99
+  at_msk: '2026-09-17 15:50:00'
+  type: release_good
+  item_id: F-219
+  after_rework: false
+  concession_no: null
+  basis: release/F-219
+  response: acked
+- msg_no: 100
+  at_msk: '2026-09-18 07:55:00'
+  type: issue_to_production
+  items:
+  - F-206
+  lots:
+  - LOT-C-211
+  - LOT-SL-391
+  - LOT-FS-481
+  - LOT-V-591
+  what: комплект на сборку
+  basis: kit/F-206/cover
+  response: acked
+- msg_no: 101
+  at_msk: '2026-09-18 08:30:00'
+  type: release_good
+  item_id: F-220
+  after_rework: false
+  concession_no: null
+  basis: release/F-220
+  response: acked
+- msg_no: 102
+  at_msk: '2026-09-18 08:30:00'
+  type: issue_to_production
+  item_id: F-001
+  lot_id: LOT-ZF-201
+  what: заготовка фланца
+  basis: reg/F-001
+  response: acked
+- msg_no: 103
+  at_msk: '2026-09-18 08:31:00'
+  type: issue_to_production
+  item_id: F-017
+  lot_id: LOT-ZF-201
+  what: заготовка фланца
+  basis: reg/F-017
+  response: acked
+- msg_no: 104
+  at_msk: '2026-09-18 08:32:00'
+  type: issue_to_production
+  item_id: F-002
+  lot_id: LOT-ZF-201
+  what: заготовка фланца
+  basis: reg/F-002
+  response: acked
+- msg_no: 105
+  at_msk: '2026-09-18 08:33:00'
+  type: issue_to_production
+  item_id: F-003
+  lot_id: LOT-ZF-201
+  what: заготовка фланца
+  basis: reg/F-003
+  response: acked
+- msg_no: 106
+  at_msk: '2026-09-18 08:34:00'
+  type: issue_to_production
+  item_id: F-004
+  lot_id: LOT-ZF-201
+  what: заготовка фланца
+  basis: reg/F-004
+  response: acked
+- msg_no: 107
+  at_msk: '2026-09-18 08:35:00'
+  type: issue_to_production
+  item_id: F-005
+  lot_id: LOT-ZF-201
+  what: заготовка фланца
+  basis: reg/F-005
+  response: acked
+- msg_no: 108
+  at_msk: '2026-09-18 08:36:00'
+  type: issue_to_production
+  item_id: F-006
+  lot_id: LOT-ZF-201
+  what: заготовка фланца
+  basis: reg/F-006
+  response: acked
+- msg_no: 109
+  at_msk: '2026-09-18 08:37:00'
+  type: issue_to_production
+  item_id: F-007
+  lot_id: LOT-ZF-201
+  what: заготовка фланца
+  basis: reg/F-007
+  response: acked
+- msg_no: 110
+  at_msk: '2026-09-18 08:38:00'
+  type: issue_to_production
+  item_id: F-008
+  lot_id: LOT-ZF-201
+  what: заготовка фланца
+  basis: reg/F-008
+  response: acked
+- msg_no: 111
+  at_msk: '2026-09-18 08:39:00'
+  type: issue_to_production
+  item_id: F-009
+  lot_id: LOT-ZF-201
+  what: заготовка фланца
+  basis: reg/F-009
+  response: acked
+- msg_no: 112
+  at_msk: '2026-09-18 08:40:00'
+  type: issue_to_production
+  item_id: F-010
+  lot_id: LOT-ZF-201
+  what: заготовка фланца
+  basis: reg/F-010
+  response: acked
+- msg_no: 113
+  at_msk: '2026-09-18 08:41:00'
+  type: issue_to_production
+  item_id: F-011
+  lot_id: LOT-ZF-201
+  what: заготовка фланца
+  basis: reg/F-011
+  response: acked
+- msg_no: 114
+  at_msk: '2026-09-18 08:42:00'
+  type: issue_to_production
+  item_id: F-013
+  lot_id: LOT-ZF-201
+  what: заготовка фланца
+  basis: reg/F-013
+  response: acked
+- msg_no: 115
+  at_msk: '2026-09-18 08:43:00'
+  type: issue_to_production
+  item_id: F-012
+  lot_id: LOT-ZF-201
+  what: заготовка фланца
+  basis: reg/F-012
+  response: acked
+- msg_no: 116
+  at_msk: '2026-09-18 08:44:00'
+  type: issue_to_production
+  item_id: F-018
+  lot_id: LOT-ZF-201
+  what: заготовка фланца
+  basis: reg/F-018
+  response: acked
+- msg_no: 117
+  at_msk: '2026-09-18 08:45:00'
+  type: issue_to_production
+  item_id: F-014
+  lot_id: LOT-ZF-201
+  what: заготовка фланца
+  basis: reg/F-014
+  response: acked
+- msg_no: 118
+  at_msk: '2026-09-18 08:46:00'
+  type: issue_to_production
+  item_id: F-016
+  lot_id: LOT-ZF-201
+  what: заготовка фланца
+  basis: reg/F-016
+  response: acked
+- msg_no: 119
+  at_msk: '2026-09-18 09:05:00'
+  type: issue_to_production
+  items:
+  - F-207
+  lots:
+  - LOT-C-211
+  - LOT-SL-391
+  - LOT-FS-481
+  - LOT-V-591
+  what: комплект на сборку
+  basis: kit/F-207/cover
+  response: acked
+- msg_no: 120
+  at_msk: '2026-09-18 10:15:00'
+  type: issue_to_production
+  items:
+  - F-208
+  lots:
+  - LOT-C-211
+  - LOT-SL-391
+  - LOT-FS-481
+  - LOT-V-591
+  what: комплект на сборку
+  basis: kit/F-208/cover
+  response: acked
+- msg_no: 121
+  at_msk: '2026-09-18 10:50:00'
+  type: release_good
+  item_id: F-206
+  after_rework: false
+  concession_no: null
+  basis: release/F-206
+  response: acked
+- msg_no: 122
+  at_msk: '2026-09-18 12:00:00'
+  type: release_good
+  item_id: F-207
+  after_rework: false
+  concession_no: null
+  basis: release/F-207
+  response: acked
+- msg_no: 123
+  at_msk: '2026-09-18 12:55:00'
+  type: issue_to_production
+  items:
+  - F-209
+  lots:
+  - LOT-C-211
+  - LOT-SL-391
+  - LOT-FS-481
+  - LOT-V-591
+  what: комплект на сборку
+  basis: kit/F-209/cover
+  response: acked
+- msg_no: 124
+  at_msk: '2026-09-18 13:10:00'
+  type: release_good
+  item_id: F-208
+  after_rework: false
+  concession_no: null
+  basis: release/F-208
+  response: acked
+- msg_no: 125
+  at_msk: '2026-09-18 14:05:00'
+  type: issue_to_production
+  items:
+  - F-210
+  lots:
+  - LOT-C-211
+  - LOT-SL-391
+  - LOT-FS-481
+  - LOT-V-591
+  what: комплект на сборку
+  basis: kit/F-210/cover
+  response: acked
+- msg_no: 126
+  at_msk: '2026-09-18 15:00:00'
+  type: issue_to_production
+  item_id: F-015
+  lot_id: LOT-ZF-201
+  what: заготовка фланца
+  basis: reg/F-015
+  response: acked
+- msg_no: 127
+  at_msk: '2026-09-18 15:01:00'
+  type: issue_to_production
+  item_id: F-020
+  lot_id: LOT-ZF-201
+  what: заготовка фланца
+  basis: reg/F-020
+  response: acked
+- msg_no: 128
+  at_msk: '2026-09-18 15:02:00'
+  type: issue_to_production
+  item_id: F-022
+  lot_id: LOT-ZF-201
+  what: заготовка фланца
+  basis: reg/F-022
+  response: acked
+- msg_no: 129
+  at_msk: '2026-09-18 15:03:00'
+  type: issue_to_production
+  item_id: F-024
+  lot_id: LOT-ZF-201
+  what: заготовка фланца
+  basis: reg/F-024
+  response: acked
+- msg_no: 130
+  at_msk: '2026-09-18 15:04:00'
+  type: issue_to_production
+  item_id: F-026
+  lot_id: LOT-ZF-201
+  what: заготовка фланца
+  basis: reg/F-026
+  response: acked
+- msg_no: 131
+  at_msk: '2026-09-18 15:05:00'
+  type: issue_to_production
+  item_id: F-028
+  lot_id: LOT-ZF-201
+  what: заготовка фланца
+  basis: reg/F-028
+  response: acked
+- msg_no: 132
+  at_msk: '2026-09-18 15:06:00'
+  type: issue_to_production
+  item_id: F-030
+  lot_id: LOT-ZF-201
+  what: заготовка фланца
+  basis: reg/F-030
+  response: acked
+- msg_no: 133
+  at_msk: '2026-09-18 15:07:00'
+  type: issue_to_production
+  item_id: F-019
+  lot_id: LOT-ZF-201
+  what: заготовка фланца
+  basis: reg/F-019
+  response: acked
+- msg_no: 134
+  at_msk: '2026-09-18 15:08:00'
+  type: issue_to_production
+  item_id: F-023
+  lot_id: LOT-ZF-201
+  what: заготовка фланца
+  basis: reg/F-023
+  response: acked
+- msg_no: 135
+  at_msk: '2026-09-18 15:09:00'
+  type: issue_to_production
+  item_id: F-025
+  lot_id: LOT-ZF-201
+  what: заготовка фланца
+  basis: reg/F-025
+  response: acked
+- msg_no: 136
+  at_msk: '2026-09-18 15:10:00'
+  type: issue_to_production
+  item_id: F-036
+  lot_id: LOT-ZF-201
+  what: заготовка фланца
+  basis: reg/F-036
+  response: acked
+- msg_no: 137
+  at_msk: '2026-09-18 15:11:00'
+  type: issue_to_production
+  item_id: F-027
+  lot_id: LOT-ZF-201
+  what: заготовка фланца
+  basis: reg/F-027
+  response: acked
+- msg_no: 138
+  at_msk: '2026-09-18 15:12:00'
+  type: issue_to_production
+  item_id: F-031
+  lot_id: LOT-ZF-201
+  what: заготовка фланца
+  basis: reg/F-031
+  response: acked
+- msg_no: 139
+  at_msk: '2026-09-18 15:13:00'
+  type: issue_to_production
+  item_id: F-035
+  lot_id: LOT-ZF-201
+  what: заготовка фланца
+  basis: reg/F-035
+  response: acked
+- msg_no: 140
+  at_msk: '2026-09-18 15:14:00'
+  type: issue_to_production
+  item_id: F-021
+  lot_id: LOT-ZF-201
+  what: заготовка фланца
+  basis: reg/F-021
+  response: acked
+- msg_no: 141
+  at_msk: '2026-09-18 15:15:00'
+  type: issue_to_production
+  item_id: F-032
+  lot_id: LOT-ZF-201
+  what: заготовка фланца
+  basis: reg/F-032
+  response: acked
+- msg_no: 142
+  at_msk: '2026-09-18 15:16:00'
+  type: issue_to_production
+  item_id: F-029
+  lot_id: LOT-ZF-201
+  what: заготовка фланца
+  basis: reg/F-029
+  response: acked
+- msg_no: 143
+  at_msk: '2026-09-18 15:17:00'
+  type: issue_to_production
+  item_id: F-033
+  lot_id: LOT-ZF-201
+  what: заготовка фланца
+  basis: reg/F-033
+  response: acked
+- msg_no: 144
+  at_msk: '2026-09-18 15:50:00'
+  type: release_good
+  item_id: F-209
+  after_rework: false
+  concession_no: null
+  basis: release/F-209
+  response: acked
+- msg_no: 145
+  at_msk: '2026-09-21 08:00:00'
+  type: transfer
+  item_id: F-001
+  route: MC->WC
+  basis: mv/F-001/MC-WC.received
+  response: acked
+- msg_no: 146
+  at_msk: '2026-09-21 08:00:00'
+  type: transfer
+  item_id: F-017
+  route: MC->WC
+  basis: mv/F-017/MC-WC.received
+  response: acked
+- msg_no: 147
+  at_msk: '2026-09-21 08:00:00'
+  type: transfer
+  item_id: F-002
+  route: MC->WC
+  basis: mv/F-002/MC-WC.received
+  response: acked
+- msg_no: 148
+  at_msk: '2026-09-21 08:00:00'
+  type: transfer
+  item_id: F-003
+  route: MC->WC
+  basis: mv/F-003/MC-WC.received
+  response: acked
+- msg_no: 149
+  at_msk: '2026-09-21 08:00:00'
+  type: transfer
+  item_id: F-004
+  route: MC->WC
+  basis: mv/F-004/MC-WC.received
+  response: acked
+- msg_no: 150
+  at_msk: '2026-09-21 08:00:00'
+  type: transfer
+  item_id: F-005
+  route: MC->WC
+  basis: mv/F-005/MC-WC.received
+  response: acked
+- msg_no: 151
+  at_msk: '2026-09-21 08:00:00'
+  type: transfer
+  item_id: F-006
+  route: MC->WC
+  basis: mv/F-006/MC-WC.received
+  response: acked
+- msg_no: 152
+  at_msk: '2026-09-21 08:10:00'
+  type: issue_to_production
+  lot_id: LOT-R-108
+  items:
+  - F-221
+  components:
+  - R-321
+  what: кольца в сварку
+  basis: issue/rings/2026-09-21/LOT-R-108
+  response: acked
+- msg_no: 153
+  at_msk: '2026-09-21 08:10:00'
+  type: issue_to_production
+  lot_id: LOT-R-116
+  items:
+  - F-001
+  - F-002
+  - F-003
+  - F-004
+  - F-005
+  - F-006
+  components:
+  - R-001
+  - R-002
+  - R-003
+  - R-004
+  - R-005
+  - R-006
+  what: кольца в сварку
+  basis: issue/rings/2026-09-21/LOT-R-116
+  response: acked
+- msg_no: 154
+  at_msk: '2026-09-21 08:30:00'
+  type: release_good
+  item_id: F-210
+  after_rework: false
+  concession_no: null
+  basis: release/F-210
+  response: acked
+- msg_no: 155
+  at_msk: '2026-09-21 10:10:00'
+  type: transfer
+  item_id: F-007
+  route: MC->WC
+  basis: mv/F-007/MC-WC.received
+  response: acked
+- msg_no: 156
+  at_msk: '2026-09-21 10:10:00'
+  type: transfer
+  item_id: F-008
+  route: MC->WC
+  basis: mv/F-008/MC-WC.received
+  response: acked
+- msg_no: 157
+  at_msk: '2026-09-21 10:10:00'
+  type: transfer
+  item_id: F-009
+  route: MC->WC
+  basis: mv/F-009/MC-WC.received
+  response: acked
+- msg_no: 158
+  at_msk: '2026-09-21 10:10:00'
+  type: transfer
+  item_id: F-010
+  route: MC->WC
+  basis: mv/F-010/MC-WC.received
+  response: acked
+- msg_no: 159
+  at_msk: '2026-09-21 10:12:00'
+  type: issue_to_production
+  lot_id: LOT-R-116
+  items:
+  - F-007
+  - F-008
+  - F-009
+  - F-010
+  components:
+  - R-007
+  - R-008
+  - R-009
+  - R-010
+  what: кольца в сварку
+  basis: issue/rings/2026-09-21/LOT-R-116@1012
+  response: acked
+- msg_no: 160
+  at_msk: '2026-09-21 14:10:00'
+  type: transfer
+  item_id: F-011
+  route: MC->WC
+  basis: mv/F-011/MC-WC.received
+  response: acked
+- msg_no: 161
+  at_msk: '2026-09-21 14:10:00'
+  type: transfer
+  item_id: F-013
+  route: MC->WC
+  basis: mv/F-013/MC-WC.received
+  response: acked
+- msg_no: 162
+  at_msk: '2026-09-21 14:10:00'
+  type: transfer
+  item_id: F-012
+  route: MC->WC
+  basis: mv/F-012/MC-WC.received
+  response: acked
+- msg_no: 163
+  at_msk: '2026-09-21 14:10:00'
+  type: transfer
+  item_id: F-018
+  route: MC->WC
+  basis: mv/F-018/MC-WC.received
+  response: acked
+- msg_no: 164
+  at_msk: '2026-09-21 14:10:00'
+  type: transfer
+  item_id: F-014
+  route: MC->WC
+  basis: mv/F-014/MC-WC.received
+  response: acked
+- msg_no: 165
+  at_msk: '2026-09-21 14:10:00'
+  type: transfer
+  item_id: F-016
+  route: MC->WC
+  basis: mv/F-016/MC-WC.received
+  response: acked
+- msg_no: 166
+  at_msk: '2026-09-21 14:10:00'
+  type: transfer
+  item_id: F-015
+  route: MC->WC
+  basis: mv/F-015/MC-WC.received
+  response: acked
+- msg_no: 167
+  at_msk: '2026-09-21 14:10:00'
+  type: transfer
+  item_id: F-020
+  route: MC->WC
+  basis: mv/F-020/MC-WC.received
+  response: acked
+- msg_no: 168
+  at_msk: '2026-09-21 14:12:00'
+  type: issue_to_production
+  lot_id: LOT-R-116
+  items:
+  - F-011
+  - F-013
+  - F-012
+  - F-018
+  components:
+  - R-011
+  - R-013
+  - R-012
+  - R-018
+  what: кольца в сварку
+  basis: issue/rings/2026-09-21/LOT-R-116@1412
+  response: acked
+- msg_no: 169
+  at_msk: '2026-09-21 15:00:00'
+  type: issue_to_production
+  item_id: F-034
+  lot_id: LOT-ZF-201
+  what: заготовка фланца
+  basis: reg/F-034
+  response: acked
+- msg_no: 170
+  at_msk: '2026-09-21 16:10:00'
+  type: transfer
+  item_id: F-022
+  route: MC->WC
+  basis: mv/F-022/MC-WC.received
+  response: acked
+- msg_no: 171
+  at_msk: '2026-09-21 16:10:00'
+  type: transfer
+  item_id: F-024
+  route: MC->WC
+  basis: mv/F-024/MC-WC.received
+  response: acked
+- msg_no: 172
+  at_msk: '2026-09-21 16:10:00'
+  type: transfer
+  item_id: F-026
+  route: MC->WC
+  basis: mv/F-026/MC-WC.received
+  response: acked
+- msg_no: 173
+  at_msk: '2026-09-21 16:10:00'
+  type: transfer
+  item_id: F-028
+  route: MC->WC
+  basis: mv/F-028/MC-WC.received
+  response: acked
+- msg_no: 174
+  at_msk: '2026-09-21 16:10:00'
+  type: transfer
+  item_id: F-001
+  route: WC->AC
+  basis: mv/F-001/WC-AC.received
+  response: acked
+- msg_no: 175
+  at_msk: '2026-09-21 16:10:00'
+  type: transfer
+  item_id: F-002
+  route: WC->AC
+  basis: mv/F-002/WC-AC.received
+  response: acked
+- msg_no: 176
+  at_msk: '2026-09-21 16:10:00'
+  type: transfer
+  item_id: F-003
+  route: WC->AC
+  basis: mv/F-003/WC-AC.received
+  response: acked
+- msg_no: 177
+  at_msk: '2026-09-21 16:10:00'
+  type: transfer
+  item_id: F-004
+  route: WC->AC
+  basis: mv/F-004/WC-AC.received
+  response: acked
+- msg_no: 178
+  at_msk: '2026-09-21 16:10:00'
+  type: transfer
+  item_id: F-005
+  route: WC->AC
+  basis: mv/F-005/WC-AC.received
+  response: acked
+- msg_no: 179
+  at_msk: '2026-09-22 07:50:00'
+  type: issue_to_production
+  lot_id: LOT-R-116
+  items:
+  - F-014
+  components:
+  - R-014
+  what: кольца в сварку
+  basis: issue/rings/2026-09-22/LOT-R-116@0750
+  response: acked
+- msg_no: 180
+  at_msk: '2026-09-22 08:00:00'
+  type: transfer
+  item_id: F-030
+  route: MC->WC
+  basis: mv/F-030/MC-WC.received
+  response: acked
+- msg_no: 181
+  at_msk: '2026-09-22 08:00:00'
+  type: transfer
+  item_id: F-006
+  route: WC->AC
+  basis: mv/F-006/WC-AC.received
+  response: acked
+- msg_no: 182
+  at_msk: '2026-09-22 08:10:00'
+  type: issue_to_production
+  lot_id: LOT-R-108
+  items:
+  - F-222
+  - F-223
+  - F-224
+  components:
+  - R-322
+  - R-323
+  - R-324
+  what: кольца в сварку
+  basis: issue/rings/2026-09-22/LOT-R-108
+  response: acked
+- msg_no: 183
+  at_msk: '2026-09-22 08:10:00'
+  type: issue_to_production
+  lot_id: LOT-R-116
+  items:
+  - F-016
+  - F-015
+  - F-020
+  - F-022
+  - F-024
+  - F-026
+  - F-028
+  - F-030
+  components:
+  - R-016
+  - R-015
+  - R-019
+  - R-021
+  - R-023
+  - R-025
+  - R-026
+  - R-027
+  what: кольца в сварку
+  basis: issue/rings/2026-09-22/LOT-R-116
+  response: acked
+- msg_no: 184
+  at_msk: '2026-09-22 09:00:00'
+  type: issue_to_production
+  items:
+  - F-001
+  lots:
+  - LOT-C-301
+  - LOT-SL-401
+  - LOT-FS-501
+  - LOT-V-601
+  what: комплект на сборку
+  basis: kit/F-001/cover
+  response: acked
+- msg_no: 185
+  at_msk: '2026-09-22 10:10:00'
+  type: transfer
+  item_id: F-019
+  route: MC->WC
+  basis: mv/F-019/MC-WC.received
+  response: acked
+- msg_no: 186
+  at_msk: '2026-09-22 10:10:00'
+  type: transfer
+  item_id: F-023
+  route: MC->WC
+  basis: mv/F-023/MC-WC.received
+  response: acked
+- msg_no: 187
+  at_msk: '2026-09-22 10:10:00'
+  type: transfer
+  item_id: F-025
+  route: MC->WC
+  basis: mv/F-025/MC-WC.received
+  response: acked
+- msg_no: 188
+  at_msk: '2026-09-22 10:10:00'
+  type: transfer
+  item_id: F-036
+  route: MC->WC
+  basis: mv/F-036/MC-WC.received
+  response: acked
+- msg_no: 189
+  at_msk: '2026-09-22 10:10:00'
+  type: transfer
+  item_id: F-027
+  route: MC->WC
+  basis: mv/F-027/MC-WC.received
+  response: acked
+- msg_no: 190
+  at_msk: '2026-09-22 10:10:00'
+  type: transfer
+  item_id: F-007
+  route: WC->AC
+  basis: mv/F-007/WC-AC.received
+  response: acked
+- msg_no: 191
+  at_msk: '2026-09-22 10:10:00'
+  type: transfer
+  item_id: F-008
+  route: WC->AC
+  basis: mv/F-008/WC-AC.received
+  response: acked
+- msg_no: 192
+  at_msk: '2026-09-22 10:10:00'
+  type: transfer
+  item_id: F-009
+  route: WC->AC
+  basis: mv/F-009/WC-AC.received
+  response: acked
+- msg_no: 193
+  at_msk: '2026-09-22 10:10:00'
+  type: transfer
+  item_id: F-010
+  route: WC->AC
+  basis: mv/F-010/WC-AC.received
+  response: acked
+- msg_no: 194
+  at_msk: '2026-09-22 10:12:00'
+  type: issue_to_production
+  lot_id: LOT-R-116
+  items:
+  - F-036
+  components:
+  - R-033
+  what: кольца в сварку
+  basis: issue/rings/2026-09-22/LOT-R-116@1012
+  response: acked
+- msg_no: 195
+  at_msk: '2026-09-22 10:30:00'
+  type: issue_to_production
+  items:
+  - F-002
+  lots:
+  - LOT-C-301
+  - LOT-SL-401
+  - LOT-FS-501
+  - LOT-V-601
+  what: комплект на сборку
+  basis: kit/F-002/cover
+  response: acked
+- msg_no: 196
+  at_msk: '2026-09-22 11:40:00'
+  type: issue_to_production
+  items:
+  - F-003
+  lots:
+  - LOT-C-301
+  - LOT-SL-401
+  - LOT-FS-501
+  - LOT-V-601
+  what: комплект на сборку
+  basis: kit/F-003/cover
+  response: acked
+- msg_no: 197
+  at_msk: '2026-09-22 12:55:00'
+  type: issue_to_production
+  items:
+  - F-004
+  lots:
+  - LOT-C-301
+  - LOT-SL-401
+  - LOT-FS-501
+  - LOT-V-601
+  what: комплект на сборку
+  basis: kit/F-004/cover
+  response: acked
+- msg_no: 198
+  at_msk: '2026-09-22 14:10:00'
+  type: transfer
+  item_id: F-031
+  route: MC->WC
+  basis: mv/F-031/MC-WC.received
+  response: acked
+- msg_no: 199
+  at_msk: '2026-09-22 14:10:00'
+  type: transfer
+  item_id: F-035
+  route: MC->WC
+  basis: mv/F-035/MC-WC.received
+  response: acked
+- msg_no: 200
+  at_msk: '2026-09-22 14:10:00'
+  type: transfer
+  item_id: F-021
+  route: MC->WC
+  basis: mv/F-021/MC-WC.received
+  response: acked
+- msg_no: 201
+  at_msk: '2026-09-22 14:10:00'
+  type: transfer
+  item_id: F-032
+  route: MC->WC
+  basis: mv/F-032/MC-WC.received
+  response: acked
+- msg_no: 202
+  at_msk: '2026-09-22 14:10:00'
+  type: transfer
+  item_id: F-029
+  route: MC->WC
+  basis: mv/F-029/MC-WC.received
+  response: acked
+- msg_no: 203
+  at_msk: '2026-09-22 14:10:00'
+  type: transfer
+  item_id: F-033
+  route: MC->WC
+  basis: mv/F-033/MC-WC.received
+  response: acked
+- msg_no: 204
+  at_msk: '2026-09-22 14:10:00'
+  type: transfer
+  item_id: F-034
+  route: MC->WC
+  basis: mv/F-034/MC-WC.received
+  response: acked
+- msg_no: 205
+  at_msk: '2026-09-22 14:12:00'
+  type: issue_to_production
+  lot_id: LOT-R-116
+  items:
+  - F-031
+  - F-021
+  - F-032
+  - F-033
+  - F-034
+  - F-035
+  components:
+  - R-028
+  - R-020
+  - R-029
+  - R-030
+  - R-031
+  - R-032
+  what: кольца в сварку
+  basis: issue/rings/2026-09-22/LOT-R-116@1412
+  response: acked
+- msg_no: 206
+  at_msk: '2026-09-22 14:12:00'
+  type: issue_to_production
+  items:
+  - F-005
+  lots:
+  - LOT-C-301
+  - LOT-SL-401
+  - LOT-FS-501
+  - LOT-V-601
+  what: комплект на сборку
+  basis: kit/F-005/cover
+  response: acked
+- msg_no: 207
+  at_msk: '2026-09-22 14:15:00'
+  type: issue_to_production
+  lot_id: LOT-R-117
+  items:
+  - F-019
+  - F-027
+  - F-029
+  components:
+  - R-101
+  - R-102
+  - R-103
+  what: кольца в сварку
+  basis: issue/rings/LOT-R-117
+  response: acked
+- msg_no: 208
+  at_msk: '2026-09-22 16:10:00'
+  type: transfer
+  item_id: F-015
+  route: WC->AC
+  basis: mv/F-015/WC-AC.received
+  response: acked
+- msg_no: 209
+  at_msk: '2026-09-23 07:55:00'
+  type: issue_to_production
+  items:
+  - F-006
+  lots:
+  - LOT-C-301
+  - LOT-SL-401
+  - LOT-FS-501
+  - LOT-V-601
+  what: комплект на сборку
+  basis: kit/F-006/cover
+  response: acked
+- msg_no: 210
+  at_msk: '2026-09-23 08:00:00'
+  type: issue_to_production
+  lot_id: LOT-R-116
+  items:
+  - F-023
+  components:
+  - R-022
+  what: кольца в сварку
+  basis: issue/rings/2026-09-23/LOT-R-116@0800
+  response: acked
+- msg_no: 211
+  at_msk: '2026-09-23 08:10:00'
+  type: issue_to_production
+  lot_id: LOT-R-116
+  items:
+  - F-025
+  - F-017
+  components:
+  - R-024
+  - R-017
+  what: кольца в сварку
+  basis: issue/rings/2026-09-23/LOT-R-116
+  response: acked
+- msg_no: 212
+  at_msk: '2026-09-23 09:12:00'
+  type: issue_to_production
+  items:
+  - F-010
+  lots:
+  - LOT-C-301
+  - LOT-SL-401
+  - LOT-FS-501
+  - LOT-V-601
+  what: комплект на сборку
+  basis: kit/F-010/cover
+  response: acked
+- msg_no: 213
+  at_msk: '2026-09-23 10:30:00'
+  type: release_good
+  item_id: F-001
+  after_rework: false
+  concession_no: null
+  basis: release/F-001
+  response:
+  - attempt: 1
+    http_status: 503
+    result: error_retryable
+  - attempt: 2
+    same_message_id: true
+    result: acked
+    at_msk: '2026-09-23 10:31:00'
+- msg_no: 214
+  at_msk: '2026-09-23 10:30:00'
+  type: issue_to_production
+  items:
+  - F-015
+  lots:
+  - LOT-C-301
+  - LOT-SL-401
+  - LOT-FS-501
+  - LOT-V-601
+  what: комплект на сборку
+  basis: kit/F-015/cover
+  response: acked
+- msg_no: 215
+  at_msk: '2026-09-23 15:30:00'
+  type: scrap_transfer_rework
+  items:
+  - F-015
+  - F-017
+  - F-019
+  - F-021
+  - F-023
+  - F-025
+  basis: S05/disposition-rework
+  response: acked
+- msg_no: 216
+  at_msk: '2026-09-23 15:45:00'
+  type: return_to_supplier
+  lot_id: LOT-R-117
+  qty: 7
+  items:
+  - R-104
+  - R-105
+  - R-106
+  - R-107
+  - R-108
+  - R-109
+  - R-110
+  basis: S02/return
+  response:
+  - attempt: 1
+    http_status: 422
+    result: error_final
+    then: без автоповтора; задача ADM-01
+  - attempt: 2
+    same_message_id: true
+    after_step: S02/id-map
+    result: acked
+    at_msk: '2026-09-23 16:11:00'
+- msg_no: 217
+  at_msk: '2026-09-23 16:10:00'
+  type: transfer
+  item_id: F-015
+  route: AC->WC
+  basis: mv/F-015/AC-WC.received
+  response: acked
+- msg_no: 218
+  at_msk: '2026-09-24 12:00:30'
+  type: rework_return_to_production
+  item_id: F-017
+  gate: ZT-3#2
+  what: переделка выполнена и проверена
+  basis: ZT-3#2/F-017
+  response: acked
+- msg_no: 219
+  at_msk: '2026-09-24 12:40:30'
+  type: rework_return_to_production
+  item_id: F-023
+  gate: ZT-3#2
+  what: переделка выполнена и проверена
+  basis: ZT-3#2/F-023
+  response: acked
+- msg_no: 220
+  at_msk: '2026-09-24 13:20:30'
+  type: rework_return_to_production
+  item_id: F-025
+  gate: ZT-3#2
+  what: переделка выполнена и проверена
+  basis: ZT-3#2/F-025
+  response: acked
+- msg_no: 221
+  at_msk: '2026-09-24 15:10:30'
+  type: rework_return_to_production
+  item_id: F-015
+  gate: ZT-3#2
+  what: переделка выполнена и проверена
+  basis: ZT-3#2/F-015
+  response: acked
+- msg_no: 222
+  at_msk: '2026-09-24 15:30:00'
+  type: scrap_transfer_writeoff
+  items:
+  - F-021
+  basis: S10A/scrap-F-021
+  response: acked
+mes_outbox_note: 'Ожидаемые сообщения в MES (схема v0.3.1, процесс «Удержание»; вывод движка, в потоки не входит) [П]: «не выдавать в работу» — в момент удержания (правило при сигнале,
+  круг, отзыв приёмки), один раз на объект; «можно выдавать» — только по шагу человека, когда оснований не осталось. Гипотез, причин и кадров нет. Кольцо на складе держит удержание партии.'
+mes_outbox_counts:
+  hold: 43
+  release: 41
+mes_held_at_end:
+- F-021
+- LOT-R-117
+mes_outbox_expected:
+- msg_no: 1
+  at_msk: '2026-09-09 10:49:00'
+  type: hold
+  item_id: F-203
+  text: не выдавать в работу
+  basis: signal:kt2/F-203
+  node: SG2
+  set_by: system
+- msg_no: 2
+  at_msk: '2026-09-09 11:20:00'
+  type: release
+  item_id: F-203
+  text: можно выдавать
+  released_bases:
+  - signal:kt2/F-203
+  decision_step: ZT-2/F-203
+  decided_by: QC-01
+  action: decision.gate_passed
+- msg_no: 3
+  at_msk: '2026-09-09 16:11:00'
+  type: hold
+  item_id: F-206
+  text: не выдавать в работу
+  basis: signal:mv/F-206/MC-WC.received
+  node: SG2
+  set_by: system
+- msg_no: 4
+  at_msk: '2026-09-09 16:30:00'
+  type: release
+  item_id: F-206
+  text: можно выдавать
+  released_bases:
+  - signal:mv/F-206/MC-WC.received
+  decision_step: S08/bg/reject-dent
+  decided_by: QC-01
+  action: decision.signal_rejected
+- msg_no: 5
+  at_msk: '2026-09-10 13:26:00'
+  type: hold
+  item_id: F-219
+  text: не выдавать в работу
+  basis: signal:cmm/F-219
+  node: SG2
+  set_by: system
+- msg_no: 6
+  at_msk: '2026-09-10 13:35:00'
+  type: release
+  item_id: F-219
+  text: можно выдавать
+  released_bases:
+  - signal:cmm/F-219
+  decision_step: ZT-2/F-219
+  decided_by: QC-01
+  action: decision.gate_passed
+- msg_no: 7
+  at_msk: '2026-09-14 16:11:00'
+  type: hold
+  item_id: F-213
+  text: не выдавать в работу
+  basis: signal:mv/F-213/WC-AC.received
+  node: SG2
+  set_by: system
+- msg_no: 8
+  at_msk: '2026-09-14 16:35:00'
+  type: release
+  item_id: F-213
+  text: можно выдавать
+  released_bases:
+  - signal:mv/F-213/WC-AC.received
+  decision_step: S08/bg/reject-scratch
+  decided_by: QC-02
+  action: decision.signal_rejected
+- msg_no: 9
+  at_msk: '2026-09-22 11:21:00'
+  type: hold
+  item_id: F-002
+  text: не выдавать в работу
+  basis: signal:kt4/F-002
+  node: SG2
+  set_by: system
+- msg_no: 10
+  at_msk: '2026-09-22 11:35:00'
+  type: release
+  item_id: F-002
+  text: можно выдавать
+  released_bases:
+  - signal:kt4/F-002
+  decision_step: S08/reject
+  decided_by: QC-02
+  action: decision.signal_rejected
+- msg_no: 11
+  at_msk: '2026-09-23 11:06:00'
+  type: hold
+  item_id: F-017
+  text: не выдавать в работу
+  basis: signal:kt3/SV-017-1/CAM-WS-1
+  node: SG2
+  set_by: system
+- msg_no: 12
+  at_msk: '2026-09-23 11:10:00'
+  type: hold
+  item_id: F-007
+  text: не выдавать в работу
+  basis: risk_scope:RS-01
+  node: I2
+  set_by: system
+- msg_no: 13
+  at_msk: '2026-09-23 11:10:00'
+  type: hold
+  item_id: F-008
+  text: не выдавать в работу
+  basis: risk_scope:RS-01
+  node: I2
+  set_by: system
+- msg_no: 14
+  at_msk: '2026-09-23 11:10:00'
+  type: hold
+  item_id: F-009
+  text: не выдавать в работу
+  basis: risk_scope:RS-01
+  node: I2
+  set_by: system
+- msg_no: 15
+  at_msk: '2026-09-23 11:10:00'
+  type: hold
+  item_id: F-010
+  text: не выдавать в работу
+  basis: risk_scope:RS-01
+  node: I2
+  set_by: system
+- msg_no: 16
+  at_msk: '2026-09-23 11:10:00'
+  type: hold
+  item_id: F-011
+  text: не выдавать в работу
+  basis: risk_scope:RS-01
+  node: I2
+  set_by: system
+- msg_no: 17
+  at_msk: '2026-09-23 11:10:00'
+  type: hold
+  item_id: F-012
+  text: не выдавать в работу
+  basis: risk_scope:RS-01
+  node: I2
+  set_by: system
+- msg_no: 18
+  at_msk: '2026-09-23 11:10:00'
+  type: hold
+  item_id: F-013
+  text: не выдавать в работу
+  basis: risk_scope:RS-01
+  node: I2
+  set_by: system
+- msg_no: 19
+  at_msk: '2026-09-23 11:10:00'
+  type: hold
+  item_id: F-014
+  text: не выдавать в работу
+  basis: risk_scope:RS-01
+  node: I2
+  set_by: system
+- msg_no: 20
+  at_msk: '2026-09-23 11:10:00'
+  type: hold
+  item_id: F-015
+  text: не выдавать в работу
+  basis: risk_scope:RS-01
+  node: I2
+  set_by: system
+- msg_no: 21
+  at_msk: '2026-09-23 11:10:00'
+  type: hold
+  item_id: F-016
+  text: не выдавать в работу
+  basis: risk_scope:RS-01
+  node: I2
+  set_by: system
+- msg_no: 22
+  at_msk: '2026-09-23 11:10:00'
+  type: hold
+  item_id: F-018
+  text: не выдавать в работу
+  basis: risk_scope:RS-01
+  node: I2
+  set_by: system
+- msg_no: 23
+  at_msk: '2026-09-23 11:10:00'
+  type: hold
+  item_id: F-019
+  text: не выдавать в работу
+  basis: risk_scope:RS-01
+  node: I2
+  set_by: system
+- msg_no: 24
+  at_msk: '2026-09-23 11:10:00'
+  type: hold
+  item_id: F-020
+  text: не выдавать в работу
+  basis: risk_scope:RS-01
+  node: I2
+  set_by: system
+- msg_no: 25
+  at_msk: '2026-09-23 11:10:00'
+  type: hold
+  item_id: F-021
+  text: не выдавать в работу
+  basis: risk_scope:RS-01
+  node: I2
+  set_by: system
+- msg_no: 26
+  at_msk: '2026-09-23 11:10:00'
+  type: hold
+  item_id: F-022
+  text: не выдавать в работу
+  basis: risk_scope:RS-01
+  node: I2
+  set_by: system
+- msg_no: 27
+  at_msk: '2026-09-23 11:10:00'
+  type: hold
+  item_id: F-023
+  text: не выдавать в работу
+  basis: risk_scope:RS-01
+  node: I2
+  set_by: system
+- msg_no: 28
+  at_msk: '2026-09-23 11:10:00'
+  type: hold
+  item_id: F-024
+  text: не выдавать в работу
+  basis: risk_scope:RS-01
+  node: I2
+  set_by: system
+- msg_no: 29
+  at_msk: '2026-09-23 11:10:00'
+  type: hold
+  item_id: F-025
+  text: не выдавать в работу
+  basis: risk_scope:RS-01
+  node: I2
+  set_by: system
+- msg_no: 30
+  at_msk: '2026-09-23 11:10:00'
+  type: hold
+  item_id: F-026
+  text: не выдавать в работу
+  basis: risk_scope:RS-01
+  node: I2
+  set_by: system
+- msg_no: 31
+  at_msk: '2026-09-23 11:10:00'
+  type: hold
+  item_id: F-027
+  text: не выдавать в работу
+  basis: risk_scope:RS-01
+  node: I2
+  set_by: system
+- msg_no: 32
+  at_msk: '2026-09-23 11:10:00'
+  type: hold
+  item_id: F-028
+  text: не выдавать в работу
+  basis: risk_scope:RS-01
+  node: I2
+  set_by: system
+- msg_no: 33
+  at_msk: '2026-09-23 11:10:00'
+  type: hold
+  item_id: F-029
+  text: не выдавать в работу
+  basis: risk_scope:RS-01
+  node: I2
+  set_by: system
+- msg_no: 34
+  at_msk: '2026-09-23 11:10:00'
+  type: hold
+  item_id: F-030
+  text: не выдавать в работу
+  basis: risk_scope:RS-01
+  node: I2
+  set_by: system
+- msg_no: 35
+  at_msk: '2026-09-23 11:10:00'
+  type: hold
+  item_id: F-031
+  text: не выдавать в работу
+  basis: risk_scope:RS-01
+  node: I2
+  set_by: system
+- msg_no: 36
+  at_msk: '2026-09-23 11:10:00'
+  type: hold
+  item_id: F-032
+  text: не выдавать в работу
+  basis: risk_scope:RS-01
+  node: I2
+  set_by: system
+- msg_no: 37
+  at_msk: '2026-09-23 11:10:00'
+  type: hold
+  item_id: F-033
+  text: не выдавать в работу
+  basis: risk_scope:RS-01
+  node: I2
+  set_by: system
+- msg_no: 38
+  at_msk: '2026-09-23 11:10:00'
+  type: hold
+  item_id: F-034
+  text: не выдавать в работу
+  basis: risk_scope:RS-01
+  node: I2
+  set_by: system
+- msg_no: 39
+  at_msk: '2026-09-23 11:10:00'
+  type: hold
+  item_id: F-035
+  text: не выдавать в работу
+  basis: risk_scope:RS-01
+  node: I2
+  set_by: system
+- msg_no: 40
+  at_msk: '2026-09-23 11:10:00'
+  type: hold
+  item_id: F-036
+  text: не выдавать в работу
+  basis: risk_scope:RS-01
+  node: I2
+  set_by: system
+- msg_no: 41
+  at_msk: '2026-09-23 11:10:00'
+  type: hold
+  item_id: F-221
+  text: не выдавать в работу
+  basis: risk_scope:RS-01
+  node: I2
+  set_by: system
+- msg_no: 42
+  at_msk: '2026-09-23 11:10:00'
+  type: hold
+  item_id: F-222
+  text: не выдавать в работу
+  basis: risk_scope:RS-01
+  node: I2
+  set_by: system
+- msg_no: 43
+  at_msk: '2026-09-23 11:10:00'
+  type: hold
+  item_id: F-223
+  text: не выдавать в работу
+  basis: risk_scope:RS-01
+  node: I2
+  set_by: system
+- msg_no: 44
+  at_msk: '2026-09-23 11:10:00'
+  type: hold
+  item_id: F-224
+  text: не выдавать в работу
+  basis: risk_scope:RS-01
+  node: I2
+  set_by: system
+- msg_no: 45
+  at_msk: '2026-09-23 11:45:00'
+  type: release
+  item_id: F-007
+  text: можно выдавать
+  released_bases:
+  - risk_scope:RS-01
+  decision_step: S05/v2
+  decided_by: TECH-01
+  action: risk_scope.narrowed
+- msg_no: 46
+  at_msk: '2026-09-23 11:45:00'
+  type: release
+  item_id: F-009
+  text: можно выдавать
+  released_bases:
+  - risk_scope:RS-01
+  decision_step: S05/v2
+  decided_by: TECH-01
+  action: risk_scope.narrowed
+- msg_no: 47
+  at_msk: '2026-09-23 11:45:00'
+  type: release
+  item_id: F-011
+  text: можно выдавать
+  released_bases:
+  - risk_scope:RS-01
+  decision_step: S05/v2
+  decided_by: TECH-01
+  action: risk_scope.narrowed
+- msg_no: 48
+  at_msk: '2026-09-23 11:45:00'
+  type: release
+  item_id: F-013
+  text: можно выдавать
+  released_bases:
+  - risk_scope:RS-01
+  decision_step: S05/v2
+  decided_by: TECH-01
+  action: risk_scope.narrowed
+- msg_no: 49
+  at_msk: '2026-09-23 11:45:00'
+  type: release
+  item_id: F-018
+  text: можно выдавать
+  released_bases:
+  - risk_scope:RS-01
+  decision_step: S05/v2
+  decided_by: TECH-01
+  action: risk_scope.narrowed
+- msg_no: 50
+  at_msk: '2026-09-23 11:45:00'
+  type: release
+  item_id: F-020
+  text: можно выдавать
+  released_bases:
+  - risk_scope:RS-01
+  decision_step: S05/v2
+  decided_by: TECH-01
+  action: risk_scope.narrowed
+- msg_no: 51
+  at_msk: '2026-09-23 11:45:00'
+  type: release
+  item_id: F-022
+  text: можно выдавать
+  released_bases:
+  - risk_scope:RS-01
+  decision_step: S05/v2
+  decided_by: TECH-01
+  action: risk_scope.narrowed
+- msg_no: 52
+  at_msk: '2026-09-23 11:45:00'
+  type: release
+  item_id: F-024
+  text: можно выдавать
+  released_bases:
+  - risk_scope:RS-01
+  decision_step: S05/v2
+  decided_by: TECH-01
+  action: risk_scope.narrowed
+- msg_no: 53
+  at_msk: '2026-09-23 11:45:00'
+  type: release
+  item_id: F-026
+  text: можно выдавать
+  released_bases:
+  - risk_scope:RS-01
+  decision_step: S05/v2
+  decided_by: TECH-01
+  action: risk_scope.narrowed
+- msg_no: 54
+  at_msk: '2026-09-23 11:45:00'
+  type: release
+  item_id: F-027
+  text: можно выдавать
+  released_bases:
+  - risk_scope:RS-01
+  decision_step: S05/v2
+  decided_by: TECH-01
+  action: risk_scope.narrowed
+- msg_no: 55
+  at_msk: '2026-09-23 11:45:00'
+  type: release
+  item_id: F-028
+  text: можно выдавать
+  released_bases:
+  - risk_scope:RS-01
+  decision_step: S05/v2
+  decided_by: TECH-01
+  action: risk_scope.narrowed
+- msg_no: 56
+  at_msk: '2026-09-23 11:45:00'
+  type: release
+  item_id: F-029
+  text: можно выдавать
+  released_bases:
+  - risk_scope:RS-01
+  decision_step: S05/v2
+  decided_by: TECH-01
+  action: risk_scope.narrowed
+- msg_no: 57
+  at_msk: '2026-09-23 11:45:00'
+  type: release
+  item_id: F-030
+  text: можно выдавать
+  released_bases:
+  - risk_scope:RS-01
+  decision_step: S05/v2
+  decided_by: TECH-01
+  action: risk_scope.narrowed
+- msg_no: 58
+  at_msk: '2026-09-23 11:45:00'
+  type: release
+  item_id: F-031
+  text: можно выдавать
+  released_bases:
+  - risk_scope:RS-01
+  decision_step: S05/v2
+  decided_by: TECH-01
+  action: risk_scope.narrowed
+- msg_no: 59
+  at_msk: '2026-09-23 11:45:00'
+  type: release
+  item_id: F-032
+  text: можно выдавать
+  released_bases:
+  - risk_scope:RS-01
+  decision_step: S05/v2
+  decided_by: TECH-01
+  action: risk_scope.narrowed
+- msg_no: 60
+  at_msk: '2026-09-23 11:45:00'
+  type: release
+  item_id: F-033
+  text: можно выдавать
+  released_bases:
+  - risk_scope:RS-01
+  decision_step: S05/v2
+  decided_by: TECH-01
+  action: risk_scope.narrowed
+- msg_no: 61
+  at_msk: '2026-09-23 11:45:00'
+  type: release
+  item_id: F-034
+  text: можно выдавать
+  released_bases:
+  - risk_scope:RS-01
+  decision_step: S05/v2
+  decided_by: TECH-01
+  action: risk_scope.narrowed
+- msg_no: 62
+  at_msk: '2026-09-23 11:45:00'
+  type: release
+  item_id: F-035
+  text: можно выдавать
+  released_bases:
+  - risk_scope:RS-01
+  decision_step: S05/v2
+  decided_by: TECH-01
+  action: risk_scope.narrowed
+- msg_no: 63
+  at_msk: '2026-09-23 11:45:00'
+  type: release
+  item_id: F-036
+  text: можно выдавать
+  released_bases:
+  - risk_scope:RS-01
+  decision_step: S05/v2
+  decided_by: TECH-01
+  action: risk_scope.narrowed
+- msg_no: 64
+  at_msk: '2026-09-23 11:45:00'
+  type: release
+  item_id: F-223
+  text: можно выдавать
+  released_bases:
+  - risk_scope:RS-01
+  decision_step: S05/v2
+  decided_by: TECH-01
+  action: risk_scope.narrowed
+- msg_no: 65
+  at_msk: '2026-09-23 11:45:00'
+  type: release
+  item_id: F-224
+  text: можно выдавать
+  released_bases:
+  - risk_scope:RS-01
+  decision_step: S05/v2
+  decided_by: TECH-01
+  action: risk_scope.narrowed
+- msg_no: 66
+  at_msk: '2026-09-23 12:15:00'
+  type: release
+  item_id: F-008
+  text: можно выдавать
+  released_bases:
+  - risk_scope:RS-01
+  decision_step: S05/v3
+  decided_by: TECH-01
+  action: risk_scope.narrowed
+- msg_no: 67
+  at_msk: '2026-09-23 12:15:00'
+  type: release
+  item_id: F-010
+  text: можно выдавать
+  released_bases:
+  - risk_scope:RS-01
+  decision_step: S05/v3
+  decided_by: TECH-01
+  action: risk_scope.narrowed
+- msg_no: 68
+  at_msk: '2026-09-23 12:15:00'
+  type: release
+  item_id: F-012
+  text: можно выдавать
+  released_bases:
+  - risk_scope:RS-01
+  decision_step: S05/v3
+  decided_by: TECH-01
+  action: risk_scope.narrowed
+- msg_no: 69
+  at_msk: '2026-09-23 12:15:00'
+  type: release
+  item_id: F-014
+  text: можно выдавать
+  released_bases:
+  - risk_scope:RS-01
+  decision_step: S05/v3
+  decided_by: TECH-01
+  action: risk_scope.narrowed
+- msg_no: 70
+  at_msk: '2026-09-23 12:15:00'
+  type: release
+  item_id: F-016
+  text: можно выдавать
+  released_bases:
+  - risk_scope:RS-01
+  decision_step: S05/v3
+  decided_by: TECH-01
+  action: risk_scope.narrowed
+- msg_no: 71
+  at_msk: '2026-09-23 12:15:00'
+  type: release
+  item_id: F-221
+  text: можно выдавать
+  released_bases:
+  - risk_scope:RS-01
+  decision_step: S05/v3
+  decided_by: TECH-01
+  action: risk_scope.narrowed
+- msg_no: 72
+  at_msk: '2026-09-23 12:15:00'
+  type: release
+  item_id: F-222
+  text: можно выдавать
+  released_bases:
+  - risk_scope:RS-01
+  decision_step: S05/v3
+  decided_by: TECH-01
+  action: risk_scope.narrowed
+- msg_no: 73
+  at_msk: '2026-09-23 13:55:00'
+  type: hold
+  item_id: F-027
+  text: не выдавать в работу
+  basis: risk_scope:RS-02
+  node: I2
+  set_by: system
+- msg_no: 74
+  at_msk: '2026-09-23 13:55:00'
+  type: hold
+  item_id: F-029
+  text: не выдавать в работу
+  basis: risk_scope:RS-02
+  node: I2
+  set_by: system
+- msg_no: 75
+  at_msk: '2026-09-23 13:55:00'
+  type: hold
+  lot_id: LOT-R-117
+  text: не выдавать в работу
+  basis: risk_scope:RS-02
+  node: I2
+  set_by: system
+- msg_no: 76
+  at_msk: '2026-09-23 14:25:00'
+  type: release
+  item_id: F-027
+  text: можно выдавать
+  released_bases:
+  - risk_scope:RS-02
+  decision_step: S02/exclude-F-027
+  decided_by: TECH-01
+  action: risk_scope.item_assessed
+- msg_no: 77
+  at_msk: '2026-09-23 14:45:00'
+  type: release
+  item_id: F-029
+  text: можно выдавать
+  released_bases:
+  - risk_scope:RS-02
+  decision_step: S02/exclude-F-029
+  decided_by: TECH-01
+  action: risk_scope.item_assessed
+- msg_no: 78
+  at_msk: '2026-09-23 15:30:00'
+  type: release
+  item_id: F-015
+  text: можно выдавать
+  released_bases:
+  - review:ZT-3/F-015
+  - risk_scope:RS-01
+  decision_step: S05/disposition-rework
+  decided_by: TECH-01
+  action: decision.disposition_set
+- msg_no: 79
+  at_msk: '2026-09-23 15:30:00'
+  type: release
+  item_id: F-017
+  text: можно выдавать
+  released_bases:
+  - risk_scope:RS-01
+  - signal:kt3/SV-017-1/CAM-WS-1
+  decision_step: S05/disposition-rework
+  decided_by: TECH-01
+  action: decision.disposition_set
+- msg_no: 80
+  at_msk: '2026-09-23 15:30:00'
+  type: release
+  item_id: F-019
+  text: можно выдавать
+  released_bases:
+  - risk_scope:RS-01
+  - risk_scope:RS-02
+  - signal:xr/F-019/RK-0923-07
+  decision_step: S05/disposition-rework
+  decided_by: TECH-01
+  action: decision.disposition_set
+- msg_no: 81
+  at_msk: '2026-09-23 15:30:00'
+  type: release
+  item_id: F-021
+  text: можно выдавать
+  released_bases:
+  - risk_scope:RS-01
+  - signal:xr/F-021/RK-0923-08
+  decision_step: S05/disposition-rework
+  decided_by: TECH-01
+  action: decision.disposition_set
+- msg_no: 82
+  at_msk: '2026-09-23 15:30:00'
+  type: release
+  item_id: F-023
+  text: можно выдавать
+  released_bases:
+  - risk_scope:RS-01
+  - signal:xr/F-023/RK-0923-10
+  decision_step: S05/disposition-rework
+  decided_by: TECH-01
+  action: decision.disposition_set
+- msg_no: 83
+  at_msk: '2026-09-23 15:30:00'
+  type: release
+  item_id: F-025
+  text: можно выдавать
+  released_bases:
+  - risk_scope:RS-01
+  decision_step: S05/disposition-rework
+  decided_by: TECH-01
+  action: decision.disposition_set
+- msg_no: 84
+  at_msk: '2026-09-24 14:31:00'
+  type: hold
+  item_id: F-021
+  text: не выдавать в работу
+  basis: signal:xr/F-021/RK-0924-04
+  node: SG2
+  set_by: system
+stand_faults:
+- id: FAULT-1C-503-F001
+  system: erp_1c
+  scenarios:
+  - S01
+  - I1
+  match:
+    posting_type: release_good
+    item_id: F-001
+    attempt: 1
+  response:
+    http_status: 503
+    text: 1С недоступна
+  expected_behavior: временная ошибка → повтор с тем же номером сообщения; подтверждение в Ср 23.09 10:31
+  retry_ack_at: '2026-09-23T07:31:00.000Z'
+- id: FAULT-1C-422-LOT-R-117
+  system: erp_1c
+  scenarios:
+  - S02
+  - I1
+  match:
+    posting_type: return_to_supplier
+    lot_id: LOT-R-117
+  response:
+    http_status: 422
+    text: не найден договор с контрагентом ctr-0b19-0003
+  active_until_step: S02/id-map
+  expected_behavior: ошибка данных → без автоповтора, задача А-01; после соответствия — повтор с тем же номером; подтверждение Ср 23.09 16:11
+  retry_ack_at: '2026-09-23T13:11:00.000Z'

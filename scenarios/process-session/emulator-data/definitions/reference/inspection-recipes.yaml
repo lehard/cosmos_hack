@@ -1,0 +1,165 @@
+# =============================================================================
+# Справочник: карты контроля (recipe) по контрольным точкам.
+# Источник: cameras-project-draft.md §3.3, §13; scenarios-flange.md §2.4, §2.7.
+# recipe_id@версия — отдельно от версии контракта (schema_version "1.0") и от
+# версии анализатора (analyzer_version). Их нельзя смешивать (кейс §4.7).
+# Камеры, свет, пороги, версии анализаторов — ПРОЕКТНЫЕ ПРЕДПОЛОЖЕНИЯ [ПП].
+# Правило для всех КТ: «признаков нет» при качестве наблюдения ниже порога карты
+# → производное «оценка невозможна»; исходное сообщение не меняется.
+# =============================================================================
+
+meta:
+  kind: reference.inspection_recipes
+  version: "0.1-draft"
+  valid_from: "2026-09-01"
+  event_contract_version: "1.0"               # версия контракта сообщений (как в expected meta)
+
+recipes:
+  - id: RCP-CP-IQC@1
+    checkpoint_id: CP-IQC
+    phase: incoming
+    method: camera
+    cameras: [CAM-IQC]
+    analyzer_version: "vqc-iqc 1.2.0"         # [ПП]
+    quality_threshold: 0.6                    # [П]
+    zones: {flange_blank: [EDGE, FACE, BORE], ring: [RING-BODY], cover: [COVER]}
+    visible_classes: [scratch, dent]
+    blind_classes: [base_metal_pore]          # внутренние поры камера не видит (S02)
+    sampling: {FL-100-FLANGE: each, FL-100-RING: each, FL-100-COVER: sample, FL-100-SEAL: sample, FL-100-FASTENER: sample}   # [П]
+    purpose: "«нулевое» состояние зон для сравнения «до / после»"
+
+  - id: RCP-CP-MO@2
+    checkpoint_id: CP-MO
+    phase: after_operation
+    method: camera
+    cameras: [CAM-MO]
+    lighting: low_angle                       # косой свет [ПП]
+    analyzer_version: "vqc-mo 1.4.0"          # [ПП]
+    quality_threshold: 0.6                    # [П]
+    zones: [EDGE, FACE, BORE]
+    visible_classes: [scratch, dent]
+    blind_classes: [dimension_out_of_tolerance]   # размеры — только КИМ
+
+  - id: RCP-CP-MO-CMM@1
+    checkpoint_id: CP-MO
+    phase: after_operation
+    method: cmm
+    equipment: CMM-1
+    program: CMM-FL-100-01                    # [П]
+    characteristics: [D1, D2, H1, F1, P1]     # setpoints.yaml → cmm_characteristics
+    calibration_required: true
+
+  - id: RCP-CP-WELD@3
+    checkpoint_id: CP-WELD
+    phase: after_operation
+    method: camera
+    cameras: [CAM-WS-1, CAM-WS-2]             # два ракурса; одно наблюдение с каждой камеры
+    analyzer_version: "vqc-weld 2.3.1"        # scenarios-flange.md §2.7 [П]
+    quality_threshold: 0.6                    # ПОРОГ КТ-3 = 0,6 (S04): ниже порога «признаков нет» → «оценка невозможна»
+    zones: [U1, U2, U3, U4, U5, U6, U7, U8]
+    visible_classes: [burn_through, porosity, undercut, spatter, crater]
+    blind_classes: ["burn_through (корень шва)", "porosity (внутренние)"]
+    same_defect_key: "изделие + зона (без класса)"   # два ракурса одного дефекта = один дефект (S06)
+    lighting_profile: LP-KT3@2                # профиль света поста; все профили съёмки ниже — его режимы [ПП]
+    # Допущенные профили съёмки КТ-3 [ПП]. Пересъёмку выбирают ТОЛЬКО из этого списка (S04-13).
+    # Все четыре — режимы одного профиля света LP-KT3@2 и одной оптики; допущены паспортом ПД-КТ3-FL100-004.
+    # Новая оптика, лампа или фильтр — это новый профиль, он не допущен, пока анализатор не прошёл проверку заново.
+    capture_profiles:
+      - id: KT3-STD
+        name: "штатный"
+        cameras: [CAM-WS-1, CAM-WS-2]
+        windows: "все 24 окна, шаг 15°"
+        light: "купол + косой свет с 4 сторон + лазерная линия (5 кадров на остановку)"
+        for_reasons: [blur, misplaced, id_unreadable]       # плюс первое наблюдение каждого шва
+        why: "повторить то же наблюдение после переустановки окна: убрать случайную причину"
+        needs_person: false
+        admitted_by: ПД-КТ3-FL100-004
+      - id: KT3-SIDE
+        name: "боковой свет"
+        cameras: [CAM-WS-1, CAM-WS-2]
+        windows: "только окна спорных участков"
+        light: "купол с поляризационным фильтром + косой свет со стороны, противоположной блику; лазер по участку"
+        for_reasons: [glare, glare_zone, overexposed]
+        why: "отделить блик от геометрии: зеркальный блик уходит при смене стороны света, рельеф шва (край валика, подрез, прожог) остаётся"
+        needs_person: false
+        admitted_by: ПД-КТ3-FL100-004
+      - id: KT3-VIEW2
+        name: "второй ракурс"
+        cameras: [CAM-WS-1, CAM-WS-2]
+        windows: "окна спорных участков, позиционер доворачивает на 7,5° (полшага)"
+        light: "штатный"
+        for_reasons: [zone_occluded, shadow]
+        why: "посмотреть на участок под другим углом: оснастка или тень закрывают его только с одной стороны"
+        needs_person: false
+        admitted_by: ПД-КТ3-FL100-004
+      - id: KT3-ZOOM
+        name: "увеличенная зона"
+        cameras: [CAM-WS-1, CAM-WS-2]
+        windows: "только окна спорного участка, шаг поворота 5° вместо 15°; лазер с шагом 0,05 мм"
+        light: "штатный"
+        for_reasons: [coverage_incomplete, feature_at_resolution_limit]
+        why: "каждое место участка — в центре окна, втрое больше кадров; оптика та же (0,020 мм/пикс), разрешение не растёт"
+        needs_person: false
+        admitted_by: ПД-КТ3-FL100-004
+    # «Следующее лучшее наблюдение» (камера) [П]: NEXT_MEASUREMENT.md, раздел «Следующее лучшее наблюдение (камера)».
+    next_observation:
+      reshoot_limit_per_zone: 2               # ≤ 2 пересъёмки участка; дальше — осмотр человеком на ЗТ-3 (ПП-K8)
+      choose_from: capture_profiles           # только допущенные профили этой карты
+      person_actions:                         # причина, которую камера сама не устранит: нужен человек
+        zone_occluded_by_clamp: "снять прижим"
+      assigned_by: "по правилу — край сам, если человек не нужен (needs_person: false и нет person_actions); иначе — контролёр ОТК по предложению"
+      proposal_voice: "система (блок «инженерная справка»): предложение, не решение"
+      blind_class_rule: "класс, который камера в принципе не видит (корень шва, внутренние поры), пересъёмкой не проверяют: пересъёмка не предлагается, предлагается рентген RCP-CP-WELD-XR@1"
+      conclusion: "вывод по участку пишется по лучшему наблюдению участка; в выводе — ссылки на все наблюдения, на которых он сделан"
+
+  - id: RCP-CP-WELD-XR@1
+    checkpoint_id: CP-WELD
+    phase: after_operation
+    method: xray
+    equipment: XR-1
+    zones: [U1, U2, U3, U4, U5, U6, U7, U8, RING-BODY]   # тело кольца попадает в зону снимка [ПП]
+    required_by_kd: true                      # рентген шва обязателен по КД [П]
+    document: "заключение НК (ГОСТ 7512); юридически значимо заключение, а не снимок"
+
+  - id: RCP-CP-ASM-ZONE@1
+    checkpoint_id: CP-ASM-ZONE
+    phase: before_zone_closure
+    method: camera
+    cameras: [CAM-UV]
+    lighting: uv                              # [ПП]
+    analyzer_version: "vqc-fod 1.0.2"         # [ПП]
+    quality_threshold: 0.6                    # [П]
+    zones: [SEAL-GROOVE]
+    visible_classes: [foreign_object]
+    gate_after: "ЗТ-СР (скрытые работы: предъявление зоны ОТК) — до установки крышки"
+
+  - id: RCP-CP-ASM@2
+    checkpoint_id: CP-ASM
+    phase: after_assembly
+    method: camera
+    cameras: [CAM-ASM]
+    analyzer_version: "vqc-asm 1.3.0"         # [ПП]
+    quality_threshold: 0.6                    # [П]
+    zones: "BOLT-1…BOLT-12, COVER"
+    visible_classes: [missing_fastener, missing_torque_mark]
+    blind_classes: ["момент затяжки — только ключ TW-1"]
+
+  - id: RCP-CP-LEAK@1
+    checkpoint_id: CP-LEAK
+    phase: test
+    method: leak_test
+    equipment: LT-1
+    norms_ref: setpoints.yaml#leak_test
+    invalid_test_result: unable_to_assess     # давление не набрано или сбой → «оценка невозможна»
+
+  - id: RCP-CP-FQC@1
+    checkpoint_id: CP-FQC
+    phase: final
+    method: camera
+    cameras: [CAM-FQC]
+    views: 4
+    analyzer_version: "vqc-fqc 1.1.0"         # [ПП]
+    quality_threshold: 0.6                    # [П]
+    zones: [COVER, MARKING, FACE]
+    visible_classes: [scratch, dent, missing_fastener]
+    optional: true                            # КТ-5 — по желанию

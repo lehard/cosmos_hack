@@ -1,0 +1,43 @@
+# =============================================================================
+# Срез файла process/scenarios-flange-expected.yaml — БЕЗ изменений (наши имена, как есть).
+# Источник истины — исходный файл; этот файл пересобирается tools/split_expected.py.
+# Общие словари и ID — expected/_common.yaml; главная история — expected/main-story.yaml.
+# Времена здесь — МСК (+03:00), как в исходнике; в потоках и определениях — UTC.
+# =============================================================================
+
+scenarios:
+  S03:
+    title: "Новый дефект после сварки — прожог на Ф-017"
+    case: {s4_2: ["дефект после операции"], s5_1: ["Новый дефект", "Решение пользователя (подтверждение)"], other: ["§2.3", "§5.4"]}
+    run: main_story
+    checkpoints:
+      - at: "2026-09-23T11:25:00+03:00"
+        label: "после изоляции Ф-017"
+        expect:
+          - {id: S03-01, what: "сигнал, затем НС-01 подтверждено ОТК-1", subject: nc/NC-01, field: status_path, op: contains, value: [signal, confirmed, isolated]}
+          - {id: S03-02, what: "подтверждение — отдельная запись с автором и причиной", subject: nc/NC-01, field: "decisions[0]", op: eq, value: {type: signal_confirmed, author: QC-01, at: "2026-09-23T11:08:00+03:00", reason_present: true}}
+          - {id: S03-03, what: "Ф-017 изолирован, физически перемещён", subject: item/F-017, field: {status: isolated, physically_moved: true}, op: eq, value: true}
+          - {id: S03-04, what: "срок решения — 3 рабочих дня", subject: nc/NC-01, field: disposition_due, op: eq, value: "2026-09-28"}
+          - {id: S03-05, what: "последняя чистая проверка зоны — КТ-2 до сварки", subject: nc/NC-01, field: last_clean_observation, op: eq, value: {checkpoint: CP-MO, zone: EDGE, quality: 0.93}}
+          - {id: S03-06, what: "окно возникновения: сварка SV-017-1 и перемещение", subject: nc/NC-01, field: origin_window_candidates, op: set_eq, value: [run:SV-017-1, move:MC->WC]}
+          - {id: S03-07, what: "гипотезы v1: причина не установлена, оборудование не оценить", subject: hypothesis/NC-01, filter: {version: 1}, field: {overall: undetermined, equipment: not_assessable, operator_procedure: possible}, op: eq, value: true}
+          - {id: S03-08, what: "перечислено, чего не хватает", subject: hypothesis/NC-01, filter: {version: 1}, field: missing_info, op: contains, value: ["журнал параметров WS-2 10:40–11:00", "рентген F-017"]}
+          - {id: S03-09, what: "ручное действие С-02 — в обстоятельствах с пометкой «не вина»", subject: nc/NC-01, field: circumstances, op: contains, value: [{type: manual_override, operator: WLD-02, label: "обстоятельство, не вина"}]}
+          - {id: S03-10, what: "сравнение с эталоном Ф-001 доступно", subject: nc/NC-01, field: reference_item, op: eq, value: F-001}
+          - {id: S03-11, what: "задержка обнаружения 5 мин после операции", subject: metric/D-4, filter: {nc: NC-01}, field: detection_delay_min, op: eq, value: 5}
+          - {id: S03-12, what: "О-2 +1", subject: metric/O-2, field: items, op: delta, value: 1, baseline: "2026-09-23T11:04:00+03:00"}
+          - {id: S03-13, what: "лесенка О-3: наблюдения +2, уникальные +1, подтверждённые +1", subject: metric/O-3, field: ladder, op: delta, value: {observations: 2, unique_defects: 1, confirmed_defects: 1, items: 1}, baseline: "2026-09-23T11:04:00+03:00"}
+          - {id: S03-14, what: "нет фото — честная надпись или иллюстрация с пометкой", subject: nc/NC-01, field: evidence_display, op: in, value: [illustration_labeled, material_not_provided]}
+          - {id: S03-15, what: "v0.3.1: «не выдавать в работу» по Ф-017 ушло в MES сразу при удержании по правилу R-07 (Ср 11:06) — до подтверждения ОТК (11:08) и до изоляции (11:20)", subject: mes/postings, filter: {item: F-017, type: hold}, field: {at: "2026-09-23T11:06:00+03:00", basis: "signal:kt3/SV-017-1/CAM-WS-1", before_steps: [S03/confirm-NC-01, S03/isolate]}, op: eq, value: true}
+          - {id: S03-16, what: "§5.4, материалы: у кадра прожога Ф-017 — «материал не предоставлен» (снимков изделия в данных нет) и ИЛЛЮСТРАЦИЯ класса «прожог» из открытого набора TIG Aluminium 5083 (CC BY-SA 4.0) с пометкой «не относится к изделию»; фиктивного снимка изделия нет", subject: event/kt3/SV-017-1/CAM-WS-1, field: evidence_refs, op: eq, value: [{media_id: MED-NP-CAMERA-FRAME, kind: not_provided}, {media_id: MED-ILL-TIG5083-BURN-THROUGH, kind: illustration, defect_type: burn_through, relates_to_item: false, notice: "ИЛЛЮСТРАЦИЯ, не относится к изделию"}], note: "справочник emulator-data/definitions/reference/media.yaml: источник, авторы, лицензия, подпись"}
+          - {id: S03-18, what: "сверка 26.09, А-17 — О-11, журнал изменений О-2: было 0 → стало 1, из-за подтверждения сигнала Ф-017 (шаг S03/confirm-NC-01), ОТК-1, Ср 11:08", subject: metric/O-11, filter: {metric: O-2, window: main_story}, field: {metric: O-2, before: 0, after: 1, due_to: S03/confirm-NC-01, by: QC-01, at: "2026-09-23T11:08:00+03:00"}, op: eq, value: true}
+      - at: "2026-09-24T16:30:00+03:00"
+        label: "конец главной истории: материалы у всех записей"
+        expect:
+          - {id: S03-17, what: "§5.4, материалы по всей главной истории (без дублей): у 409 результатов камер — «материал не предоставлен», у 2 из них (Ф-017, два ракурса) — ещё иллюстрация класса с лицензией; у 55 результатов рентгена — заключение как документ, снимок не передаётся; у события OperatorVision — «видео не передаётся»; пустых ссылок и снимков изделия — 0", subject: ingest/evidence_refs, filter: {run: main_story, duplicates: excluded}, field: {camera_not_provided: 409, camera_illustrations: 2, illustration_items: [F-017], xray_documents: 55, operator_vision_event_only: 1, empty_evidence_refs: 0, item_images: 0}, op: eq, value: true}
+    must_not:
+      - {id: S03-N1, what: "нет «ошибки исполнителя»", subject: nc/NC-01, field: cause, op: ne, value: {category: operator_procedure, status: confirmed}}
+      - {id: S03-N2, what: "О-10 не меняется", subject: metric/O-10, field: all, op: unchanged, baseline: "2026-09-23T11:04:00+03:00"}
+      - {id: S03-N3, what: "в 1С ничего не ушло", subject: erp/postings, filter: {item: F-017, between: ["2026-09-23T11:00:00+03:00", "2026-09-23T11:25:00+03:00"]}, field: count, op: eq, value: 0}
+      - {id: S03-N4, what: "нет автоматического решения по изделию", subject: nc/NC-01, field: dispositions_by_system, op: eq, value: 0}
+      - {id: S03-N5, what: "в сообщении MES нет гипотез, причин, кадров и оценки людей — только объект, основание и уровень", subject: mes/postings, filter: {item: F-017}, field: contains_types, op: not_contains, value: [hypothesis, cause, inspection_frame, operator_assessment]}

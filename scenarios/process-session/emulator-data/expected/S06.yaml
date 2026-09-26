@@ -1,0 +1,29 @@
+# =============================================================================
+# Срез файла process/scenarios-flange-expected.yaml — БЕЗ изменений (наши имена, как есть).
+# Источник истины — исходный файл; этот файл пересобирается tools/split_expected.py.
+# Общие словари и ID — expected/_common.yaml; главная история — expected/main-story.yaml.
+# Времена здесь — МСК (+03:00), как в исходнике; в потоках и определениях — UTC.
+# =============================================================================
+
+scenarios:
+  S06:
+    title: "Повторная доставка — дубли не считаются дважды"
+    case: {s4_2: ["повторная доставка"], s5_1: ["Повтор"], other: ["§4.5 связывание наблюдений", "§5.2 дефекты ≠ изделия"]}
+    run: main_story   # можно отдельно: повторно отправить ту же пачку и сравнить снимки показателей
+    checkpoints:
+      - at: "2026-09-23T12:07:00+03:00"
+        label: "после пачки ИС-2"
+        expect:
+          - {id: S06-01, what: "у Ф-017 один дефект с двумя наблюдениями (два ракурса)", subject: item/F-017, field: {defects_at_U2: 1, observations_of_defect: 2}, op: eq, value: true}
+          - {id: S06-02, what: "повтор сообщения камеры — «повтор, состояние не изменилось»", subject: ingest, filter: {source: CAM-WS-1, at: "2026-09-23T11:05:40+03:00"}, field: outcome, op: eq, value: duplicate}
+          - {id: S06-03, what: "из пачки ИС-2 отсеяно 312 повторов, принято 928", subject: ingest, filter: {source: GW-2, batch_received_at: "2026-09-23T12:05:00+03:00"}, field: {received: 1240, duplicates: 312, accepted: 928}, op: eq, value: true}
+          - {id: S06-04, what: "Н-5: дублей отсеяно +313", subject: metric/N-5, field: duplicates_filtered, op: delta, value: 313, baseline: "2026-09-23T11:04:00+03:00"}
+      - at: "standalone"
+        label: "отдельный прогон: повторная отправка той же пачки"
+        expect:
+          - {id: S06-05, what: "все показатели, кроме счётчика дублей, не изменились", subject: metric/*, field: all_except_N-5.duplicates_filtered, op: unchanged, baseline: "до повторной отправки"}
+          - {id: S06-06, what: "тот же номер, другое содержимое → конфликт в журнал критических действий", subject: audit/critical_actions, filter: {code: E_ID_CONFLICT}, field: count, op: delta, value: 1, baseline: "до повторной отправки"}
+    must_not:
+      - {id: S06-N1, what: "число уникальных дефектов не растёт от дублей", subject: metric/O-3, field: unique_defects, op: delta, value: 0, baseline: "до повторной отправки"}
+      - {id: S06-N2, what: "дубль события — не повтор операции", subject: metric/O-8, field: repeated_runs, op: delta, value: 0, baseline: "до повторной отправки"}
+      - {id: S06-N3, what: "нет второго сигнала по Ф-017", subject: item/F-017, field: signals_at_U2, op: eq, value: 1}

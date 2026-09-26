@@ -1,0 +1,39 @@
+# =============================================================================
+# Срез файла process/scenarios-flange-expected.yaml — БЕЗ изменений (наши имена, как есть).
+# Источник истины — исходный файл; этот файл пересобирается tools/split_expected.py.
+# Общие словари и ID — expected/_common.yaml; главная история — expected/main-story.yaml.
+# Времена здесь — МСК (+03:00), как в исходнике; в потоках и определениях — UTC.
+# =============================================================================
+
+scenarios:
+  S08:
+    title: "Решение контролёра — ложное срабатывание отклонено (Ф-002)"
+    case: {s4_2: ["решение контролёра"], s5_1: ["Решение пользователя"], other: ["§4.5 исходный результат, рассмотрение, итог — раздельно", "§5.2 обновление после отклонения"]}
+    run: main_story   # фон, в 4 минуты не входит
+    checkpoints:
+      - at: "2026-09-22T11:45:00+03:00"
+        label: "после отклонения"
+        expect:
+          - {id: S08-01, what: "исходный сигнал сохранён без изменений", subject: item/F-002, field: signals, op: contains, value: [{checkpoint: CP-ASM, zone: BOLT-7, type: missing_torque_mark, confidence: 0.55, changed: false}]}
+          - {id: S08-02, what: "решение — отдельная запись с автором и причиной", subject: item/F-002, field: decisions, op: contains, value: [{type: signal_rejected, author: QC-02, at: "2026-09-22T11:35:00+03:00", reason: "метка есть, закрыта тенью от шайбы; момент по ключу в норме"}]}
+          - {id: S08-03, what: "ЗТ-4 пройдена с первого предъявления", subject: gate/ZT-4/F-002, field: first_pass, op: eq, value: true}
+          - {id: S08-04, what: "Н-4: ложных тревог КТ-4 +1", subject: metric/N-4, filter: {checkpoint: CP-ASM}, field: false_alarms, op: delta, value: 1, baseline: "2026-09-22T11:19:00+03:00"}
+          - {id: S08-05, what: "кадр помечен кандидатом для настройки модели", subject: item/F-002, field: model_tuning_candidate, op: eq, value: true}
+          - {id: S08-06, what: "рядом с сигналом (Е-80) — удержание по правилу (Е-84): правило R-16 [П], уровень «доп. проверка»", subject: item/F-002, field: holds, op: contains, value: [{event: containment.hold_applied, rule: R-16, level: extra_check, at: "2026-09-22T11:21:00+03:00"}]}
+          - {id: S08-07, what: "отклонение контролёром снимает удержание тем же решением (Е-116): удержание снято в 11:35, автор ОТК-2", subject: item/F-002, field: holds, op: contains, value: [{event: containment.hold_released, by: QC-02, at: "2026-09-22T11:35:00+03:00", with_decision: signal_rejected}]}
+          - {id: S08-08, what: "v0.3.1, MES: «не выдавать в работу» по Ф-002 при удержании R-16 (Вт 11:21), «можно выдавать» — по отклонению ОТК-2 (11:35)", subject: mes/postings, filter: {item: F-002}, field: sequence, op: eq, value: [{type: hold, at: "2026-09-22T11:21:00+03:00"}, {type: release, at: "2026-09-22T11:35:00+03:00", step: S08/reject, by: QC-02}]}
+          - {id: S08-15, what: "сверка 26.09, А-17 — О-11: в журнале Н-4 запись «ложные тревоги КТ-4: 0 → 1, из-за отклонения сигнала Ф-002 (S08/reject), ОТК-2, Вт 11:35»; записи для О-2 нет — отклонение О-2 не меняет", subject: metric/O-11, filter: {metric: N-4, checkpoint: CP-ASM}, field: {metric: N-4, checkpoint: CP-ASM, before: 0, after: 1, due_to: S08/reject, by: QC-02, at: "2026-09-22T11:35:00+03:00", O-2_entry: false}, op: eq, value: true}
+      - at: "2026-09-14T17:00:00+03:00"
+        label: "фон v0.3.1: сигналы по классам автора (фланцы фонового заказа, 09–14.09)"
+        expect:
+          - {id: S08-09, what: "скол 0,8 мм на кромке после станка (КТ-2, Ф-203, Ср 09.09 10:48) → ОТК-1 подтвердил → ЗТ-2 «вернуть на доработку по ТП» → зачистка МО-203-2 → КТ-2 чисто → ЗТ-2 №2 «годно»", subject: item/F-203, field: {signal: {class: chip, zone: EDGE, source: CAM-MO}, decision: signal_confirmed, gates: [{gate: ZT-2, decision: return_for_rework}, {gate: ZT-2, presentation: 2, decision: accept}], rework_run: MO-203-2}, op: eq, value: true}
+          - {id: S08-10, what: "геометрия: КИМ, Ф-219 (Чт 10.09 13:25) — D1 = 320,14 при 320 ± 0,10 → ОТК-1 подтвердил (КИМ с действующей калибровкой, припуск есть) → ЗТ-2 «вернуть на доработку по ТП» → доточка МО-219-2 на ЧПУ → КИМ в допуске → ЗТ-2 №2 «годно»", subject: item/F-219, field: {signal: {class: dimension_out_of_tolerance, char: D1, actual: 320.14}, decision: signal_confirmed, gates: [{gate: ZT-2, decision: return_for_rework}, {gate: ZT-2, presentation: 2, decision: accept}], rework_run: MO-219-2, remeasure: cmm/F-219/after-rework}, op: eq, value: true}
+          - {id: S08-11, what: "«вмятина» при приёме сварочным цехом (Ф-206, Ср 09.09 16:10; источник — перемещение) → ОТК-1 отклонил: след тары на защитной плёнке", subject: item/F-206, field: {signal: {class: dent, source: movement, node: W0S}, decision: signal_rejected, reason_present: true}, op: eq, value: true}
+          - {id: S08-12, what: "«царапина» при приёме сборочным цехом (Ф-213, Пн 14.09 16:10) → ОТК-2 отклонил: под УФ — след СОЖ [ПП]", subject: item/F-213, field: {signal: {class: scratch, source: movement, node: A0S}, decision: signal_rejected, reason_present: true}, op: eq, value: true}
+          - {id: S08-13, what: "аналитика «дефекты по классам автора» (конец главной истории): видны все пять классов — сигналы, подтверждено, отклонено", subject: metric/O-4, filter: {cut: author_class, window: main_story}, field: rows, op: eq, value: {weld: {confirmed_defects: 5}, chip: {signals: 1, confirmed: 1, rejected: 0}, dent: {signals: 1, confirmed: 0, rejected: 1}, scratch: {signals: 1, confirmed: 0, rejected: 1}, geometry: {signals: 1, confirmed: 1, rejected: 0}}}
+          - {id: S08-14, what: "MES по фону: четыре «не выдавать» в момент удержания и четыре «можно выдавать» — по решениям ЗТ-2 «доработка по ТП» (скол, геометрия) и по двум отклонениям (вмятина, царапина)", subject: mes/postings, filter: {items: [F-203, F-219, F-206, F-213]}, field: {holds: 4, releases: 4, release_steps: [ZT-2/F-203, ZT-2/F-219, S08/bg/reject-dent, S08/bg/reject-scratch]}, op: eq, value: true}
+    must_not:
+      - {id: S08-N1, what: "несоответствие не создано; О-2 не изменился", subject: metric/O-2, field: items, op: delta, value: 0, baseline: "2026-09-22T11:19:00+03:00"}
+      - {id: S08-N2, what: "отклонение без причины не принимается", subject: api/decisions, filter: {type: signal_rejected, reason: ""}, field: result, op: eq, value: refused}
+      - {id: S08-N3, what: "фон не трогает главную историю: фоновые сигналы — до Чт 17.09, на фланцах Ф-203, Ф-206, Ф-213, Ф-219; в круги RS-01 и RS-02 они не входят", subject: item/*, filter: {items: [F-203, F-206, F-213, F-219]}, field: {risk_scopes: RS-01+RS-02, signals_from: "2026-09-17T00:00:00+03:00"}, op: eq, value: {in_risk_scopes: 0, signals_from_2026-09-17: 0}}
+      - {id: S08-N4, what: "доработка по ТП после скола и геометрии — без изолятора и без 1С (лёгкий возврат); отклонённые сигналы — не брак (О-2 без изменений)", subject: erp/postings, filter: {items: [F-203, F-206, F-213, F-219]}, field: types, op: not_contains, value: [scrap_transfer_rework, scrap_transfer_writeoff, rework_return_to_production]}

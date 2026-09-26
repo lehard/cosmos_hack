@@ -1,0 +1,10 @@
+{
+  "message_id": "qc-out-000120",
+  "result": "unavailable",
+  "retry_after_s": 60,
+  "error": {
+    "code": "E_ERP_UNAVAILABLE",
+    "text": "1С недоступна: информационная база заблокирована регламентным заданием",
+    "retryable": true
+  }
+}

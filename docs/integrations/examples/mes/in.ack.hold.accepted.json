@@ -1,0 +1,17 @@
+{
+  "ApplicationArea": {
+    "Sender": {"LogicalID": "MES"},
+    "Receiver": {"LogicalID": "SERGEY-PALYCH-QC"},
+    "CreationDateTime": "2026-09-23T11:06:03+03:00",
+    "BODID": "mes-in-000201",
+    "ContractVersion": "1.0"
+  },
+  "DataArea": {
+    "Verb": "Acknowledge",
+    "Acknowledge": {
+      "OriginalBODID": "mes-out-000101",
+      "ResponseCode": "Accepted",
+      "InternalID": "MES-HOLD-55120"
+    }
+  }
+}

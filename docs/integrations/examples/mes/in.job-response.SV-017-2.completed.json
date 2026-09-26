@@ -1,0 +1,24 @@
+{
+  "ApplicationArea": {
+    "Sender": {"LogicalID": "MES"},
+    "Receiver": {"LogicalID": "SERGEY-PALYCH-QC"},
+    "CreationDateTime": "2026-09-24T08:52:10+03:00",
+    "BODID": "mes-in-000241",
+    "ContractVersion": "1.0"
+  },
+  "DataArea": {
+    "Verb": "Sync",
+    "JobResponse": [
+      {
+        "ID": "JR-0924-0117-1",
+        "JobOrderID": "JO-0924-0117",
+        "JobState": "Completed",
+        "StartTime": "2026-09-24T08:10:00+03:00",
+        "EndTime": "2026-09-24T08:52:00+03:00",
+        "EquipmentActual": [{"EquipmentID": "ИС-1"}],
+        "PersonnelActual": [{"PersonID": "ТН-4402"}],
+        "MaterialActual": [{"MaterialSubLotID": "MSL-0917-017", "MaterialUse": "Produced"}]
+      }
+    ]
+  }
+}

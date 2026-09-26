@@ -1,0 +1,157 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "urn:sergey-palych:integration:mes:Acknowledge:1.0",
+  "title": "Квитанция в обе стороны (Acknowledge), qc-mes 1.0 [П]",
+  "description": "Квитанция: и MES, и мы отвечаем ею на каждое сообщение. Решает ResponseCode и HTTP-код.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "ApplicationArea",
+    "DataArea"
+  ],
+  "properties": {
+    "ApplicationArea": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "Sender",
+        "Receiver",
+        "CreationDateTime",
+        "BODID",
+        "ContractVersion"
+      ],
+      "properties": {
+        "Sender": {
+          "type": "object",
+          "required": [
+            "LogicalID"
+          ],
+          "properties": {
+            "LogicalID": {
+              "enum": [
+                "SERGEY-PALYCH-QC",
+                "MES"
+              ]
+            }
+          }
+        },
+        "Receiver": {
+          "type": "object",
+          "required": [
+            "LogicalID"
+          ],
+          "properties": {
+            "LogicalID": {
+              "enum": [
+                "SERGEY-PALYCH-QC",
+                "MES"
+              ]
+            }
+          }
+        },
+        "CreationDateTime": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "BODID": {
+          "type": "string",
+          "pattern": "^mes-(in|out)-[0-9]{6}$",
+          "description": "Номер сообщения; при повторе не меняется"
+        },
+        "ContractVersion": {
+          "type": "string",
+          "pattern": "^1\\.[0-9]+$",
+          "description": "Версия контракта qc-mes. Не версия MES и не версия приложения"
+        }
+      }
+    },
+    "DataArea": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "Verb",
+        "Acknowledge"
+      ],
+      "properties": {
+        "Verb": {
+          "enum": [
+            "Acknowledge"
+          ],
+          "description": "В B2MML глагол — отдельный элемент (Process, Sync, Acknowledge …); здесь упрощено до строки [П, уточнить по схеме B2MML]"
+        },
+        "Acknowledge": {
+          "type": "object",
+          "additionalProperties": true,
+          "required": [
+            "OriginalBODID",
+            "ResponseCode"
+          ],
+          "properties": {
+            "OriginalBODID": {
+              "type": "string",
+              "pattern": "^mes-(in|out)-[0-9]{6}$"
+            },
+            "ResponseCode": {
+              "enum": [
+                "Accepted",
+                "Duplicate",
+                "Rejected"
+              ]
+            },
+            "InternalID": {
+              "type": "string",
+              "description": "ID созданного объекта у получателя"
+            },
+            "Errors": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "Code",
+                  "Text",
+                  "Retryable"
+                ],
+                "properties": {
+                  "Code": {
+                    "type": "string",
+                    "pattern": "^E_[A-Z0-9_]+$"
+                  },
+                  "Text": {
+                    "type": "string"
+                  },
+                  "Field": {
+                    "type": "string"
+                  },
+                  "Retryable": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "ResponseCode": {
+                    "const": "Rejected"
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "Errors"
+                ],
+                "properties": {
+                  "Errors": {
+                    "minItems": 1
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

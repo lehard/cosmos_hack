@@ -1,0 +1,28 @@
+# =============================================================================
+# Срез файла process/scenarios-flange-expected.yaml — БЕЗ изменений (наши имена, как есть).
+# Источник истины — исходный файл; этот файл пересобирается tools/split_expected.py.
+# Общие словари и ID — expected/_common.yaml; главная история — expected/main-story.yaml.
+# Времена здесь — МСК (+03:00), как в исходнике; в потоках и определениях — UTC.
+# =============================================================================
+
+scenarios:
+  S22:
+    title: "Попытка вернуть в работу списанную деталь (Ф-090)"
+    case: {other: ["§4.3 повторная обработка: конечный статус", "§3.4 права: отказ по правилу", "§3.2 журнал критических действий"]}
+    run: S10B   # продолжение прогона S10B: S22.jsonl подаётся после S10B.jsonl, Вт 29.09
+    checkpoints:
+      - at: "2026-09-29T08:35:00+03:00"
+        label: "попытки вернуть отклонены"
+        expect:
+          - {id: S22-01, what: "скан списанного Ф-090 на посту 1 в 08:20 — «изделие списано»: работу начать нельзя (Е-13 E_ITEM_SCRAPPED)", subject: event/S22/scan-F-090, field: {precondition_failed: E_ITEM_SCRAPPED, item_status: scrapped, operation_started: false}, op: eq, value: true}
+          - {id: S22-02, what: "решение «переделка» по списанному Ф-090 в 08:30 — отказ E_ITEM_SCRAPPED: «списано» — конечный статус, в маршрут не вернуть", subject: item/F-090, filter: {step: S22/rework-refused}, field: {refused: E_ITEM_SCRAPPED, status: scrapped}, op: eq, value: true}
+          - {id: S22-03, what: "в журнале критических действий — обе попытки: скан на посту (С-02) и решение (Т-01)", subject: audit/critical_actions, filter: {item: F-090, code: E_ITEM_SCRAPPED}, field: {count: 2, actors: [WLD-02, TECH-01]}, op: eq, value: true}
+      - at: "2026-09-29T13:05:00+03:00"
+        label: "образец на разрушающий контроль"
+        expect:
+          - {id: S22-04, what: "отдельное решение Т-01 и НОТК-01 в 09:00: Ф-090 — образец на разрушающий контроль (макрошлиф У4); статус «списано — образец», в маршрут не возвращается", subject: item/F-090, field: {status: scrapped_sample, route_return: false, decided_by: [TECH-01, QC-HEAD-01]}, op: eq, value: true}
+          - {id: S22-05, what: "макрошлиф У4 в 13:00: подрез 0,6 мм, провар корня полный — основание для разбора причин по НС-87…НС-90, а не новый сигнал", subject: event/S22/macro-U4, field: {defect: undercut, depth_mm: 0.6, used_as: cause_evidence, signal: none}, op: eq, value: true}
+    must_not:
+      - {id: S22-N1, what: "по Ф-090 после списания нет работы: ни выполнения, ни выдачи, ни ЗТ", subject: item/F-090, filter: {after: "2026-09-28T15:30:00+03:00"}, field: {runs: 0, issues: 0, gates: 0}, op: eq, value: true}
+      - {id: S22-N2, what: "в 1С ничего нового: Ф-090 уже списан в S10B; «возврат из брака в производство» не уходит", subject: erp/postings, filter: {run: S22}, field: count, op: eq, value: 0}
+      - {id: S22-N3, what: "в MES «можно выдавать» по Ф-090 не уходит — удержание списанного остаётся", subject: mes/postings, filter: {item: F-090, type: release}, field: count, op: eq, value: 0}

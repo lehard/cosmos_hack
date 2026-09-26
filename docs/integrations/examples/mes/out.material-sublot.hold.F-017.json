@@ -1,0 +1,30 @@
+{
+  "ApplicationArea": {
+    "Sender": {"LogicalID": "SERGEY-PALYCH-QC"},
+    "Receiver": {"LogicalID": "MES"},
+    "CreationDateTime": "2026-09-23T11:06:02+03:00",
+    "BODID": "mes-out-000101",
+    "ContractVersion": "1.0"
+  },
+  "DataArea": {
+    "Verb": "Sync",
+    "MaterialSubLot": [
+      {
+        "ID": "MSL-0917-017",
+        "Description": "Фланец люка в сборе ФЛ-100.00.000 СБ, Ф-017",
+        "MaterialDefinitionID": "ФЛ-100.00.000 СБ",
+        "Status": "Held",
+        "Hold": {
+          "HoldID": "HLD-F-017-0001",
+          "Kind": "quality_hold",
+          "Level": "quarantine",
+          "SetAt": "2026-09-23T11:06:00+03:00",
+          "SetBy": {"Kind": "rule", "Ref": "R-07", "RuleRevision": 1},
+          "Basis": {"Kind": "rule", "Ref": "R-07"},
+          "Instruction": "Не выдавать в работу. Удержание ОТК № HLD-F-017-0001"
+        },
+        "Property": [{"ID": "sp.item_id", "Value": "F-017"}]
+      }
+    ]
+  }
+}

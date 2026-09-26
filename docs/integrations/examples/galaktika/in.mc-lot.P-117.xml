@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Галактика → мы. Партия МЦ поступила; статус МЦ «на контроле» — запускать нельзя до ЗТ-1 -->
+<Package xmlns="urn:sergey-palych:integration:galaktika" contractVersion="1.0">
+  <Header>
+    <MessageId>gal-in-000402</MessageId>
+    <Sender>GALAKTIKA-ERP</Sender>
+    <Receiver>SERGEY-PALYCH-QC</Receiver>
+    <CreatedAt>2026-09-22T08:00:00+03:00</CreatedAt>
+    <Entity>McLot</Entity>
+    <Operation>upsert</Operation>
+    <RoutingKey>erp.mc_lot.upsert</RoutingKey>
+  </Header>
+  <Key>
+    <McCode>МЦ-1102</McCode>
+    <Lot>П-117</Lot>
+  </Key>
+  <Body>
+    <McLot>
+      <LotNumber>П-117</LotNumber>
+      <Mc>
+        <Code>МЦ-1102</Code>
+        <Designation>ФЛ-100.01.002</Designation>
+        <Name>Патрубок (кольцо)</Name>
+      </Mc>
+      <Supplier>
+        <Code>КА-0003</Code>
+        <Name>Поставщик-3</Name>
+      </Supplier>
+      <Qty unit="шт" okei="796">10</Qty>
+      <Certificate>С-117</Certificate>
+      <ReceivedAt>2026-09-22T08:00:00+03:00</ReceivedAt>
+      <McStatus>на контроле</McStatus>
+      <Serials>
+        <Serial>К-101</Serial><Serial>К-102</Serial><Serial>К-103</Serial><Serial>К-104</Serial><Serial>К-105</Serial>
+        <Serial>К-106</Serial><Serial>К-107</Serial><Serial>К-108</Serial><Serial>К-109</Serial><Serial>К-110</Serial>
+      </Serials>
+    </McLot>
+  </Body>
+</Package>

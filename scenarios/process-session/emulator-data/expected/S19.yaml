@@ -1,0 +1,37 @@
+# =============================================================================
+# Срез файла process/scenarios-flange-expected.yaml — БЕЗ изменений (наши имена, как есть).
+# Источник истины — исходный файл; этот файл пересобирается tools/split_expected.py.
+# Общие словари и ID — expected/_common.yaml; главная история — expected/main-story.yaml.
+# Времена здесь — МСК (+03:00), как в исходнике; в потоках и определениях — UTC.
+# =============================================================================
+
+scenarios:
+  S19:
+    title: "Изменили КД посреди партии: ревизия «Б» → «В» (извещение ИИ-ФЛ-100-07)"
+    case: {other: ["§4.6 версии: ревизия КД у каждого изделия", "§3.3 КОМПАС-3D и 1С", "AI_ADMISSION: новая ревизия — ручной контроль до допуска", "критерий О1: задел при изменении КД"]}
+    run: S19   # отдельный прогон, мир S19: остаток ЗП-0917, Пт 25.09 – Пн 28.09
+    checkpoints:
+      - at: "2026-09-28T12:47:00+03:00"
+        label: "извещение принято, задел придержан"
+        expect:
+          - {id: S19-01, what: "из КОМПАС пришла ревизия «В» с извещением ИИ-ФЛ-100-07 (отверстие D2 250 → 252 [П]); новые запуски — только по «В»; ревизия «Б» осталась в истории", subject: order/ORD-0917, field: {kd_revision_current: V, previous: B, change_notice: CN-FL-100-07, new_launches_revision: V}, op: eq, value: true}
+          - {id: S19-02, what: "система сама составила задел — начатые по «Б»: Ф-037 и Ф-038 (сварены, ЗТ-3 пройдена), Ф-039 (мехобработан, ЗТ-2 пройдена); не запущенный Ф-040 в задел не входит", subject: order/ORD-0917, field: wip_list, op: set_eq, value: [F-037, F-038, F-039]}
+          - {id: S19-03, what: "задел придержан до решения: в MES «не выдавать в работу» по трём изделиям в 12:46 (узел OC2)", subject: mes/postings, filter: {run: S19, type: hold}, field: {items: [F-037, F-038, F-039], at: "2026-09-28T12:46:00+03:00", basis: "kd_change:CN-FL-100-07"}, op: eq, value: true}
+          - {id: S19-04, what: "карта контроля КТ-2 для ревизии «В» — «ручной контроль»: допущенный контур ИИ есть только для «Б» (AI_ADMISSION)", subject: checkpoint/CP-MO, filter: {kd_revision: V}, field: {mode: manual, ai_admission: not_admitted}, op: eq, value: true}
+      - at: "2026-09-28T13:50:00+03:00"
+        label: "решение по каждому изделию задела"
+        expect:
+          - {id: S19-05, what: "по каждому изделию — своё решение технолога с причиной: Ф-039 — доработать до «В»; Ф-037 — оставить по «Б» по разрешению (уплотнение старой конструкции — одно); Ф-038 — списать", subject: order/ORD-0917, field: wip_decisions, op: eq, value: {F-039: rework_to_new_revision, F-037: keep_old_with_concession, F-038: scrap}}
+          - {id: S19-06, what: "разрешение на отклонение РО-0928-01 по Ф-037 подписали Т-01, НОТК-01 и ПЗ-01; только после подписей — в MES «можно выдавать»", subject: document/permit@RO-0928-01, field: {signers: [TECH-01, QC-HEAD-01, CR-01], scope: [F-037], mes_release_after_signing: true}, op: eq, value: true}
+          - {id: S19-07, what: "в 1С одно новое сообщение — «перевод в брак (списание)» по Ф-038; по доработке и по разрешению — ничего", subject: erp/postings, filter: {run: S19, after: "2026-09-28T12:40:00+03:00"}, field: {scrap_transfer_writeoff: [F-038], scrap_transfer_rework: 0, other_types: 0}, op: eq, value: true}
+      - at: "2026-09-28T16:00:00+03:00"
+        label: "Ф-039 доработан, Ф-040 запущен по «В»"
+        expect:
+          - {id: S19-08, what: "Ф-039 доработан до «В»: новое выполнение МО-039-2 со ссылкой на МО-039-1 (УП ред. 4), КИМ по D2 = 252,00 — в допуске, ЗТ-2 №2 в 14:55", subject: item/F-039, field: {rework_run: MO-039-2, rework_of: MO-039-1, cmm_D2_nominal: 252.0, gate: "ZT-2#2", kd_revision: V}, op: eq, value: true}
+          - {id: S19-09, what: "паспорт каждого изделия хранит, по какой ревизии сделано: Ф-037 — «Б» по разрешению РО-0928-01; Ф-038 — «Б», списан; Ф-039 — «Б → В», доработан по ИИ-ФЛ-100-07; Ф-040 — «В»", subject: item/*, field: kd_revision, op: eq, value: {F-037: "B (RO-0928-01)", F-038: "B (scrapped)", F-039: "B->V (CN-FL-100-07)", F-040: V}}
+          - {id: S19-10, what: "Ф-040 запущен в 14:05 по «В» (ТП ред. 4); КТ-2 у Ф-039 и Ф-040 — осмотр контролёром, кадров камеры КТ-2 в основании ЗТ-2 нет", subject: item/F-040, field: {kd_revision: V, tp_revision: 4, kt2: manual, camera_in_basis: false}, op: eq, value: true}
+    must_not:
+      - {id: S19-N1, what: "задел не выходит из удержания без шага человека; после «списать» по Ф-038 «можно выдавать» не уходит", subject: mes/postings, filter: {run: S19}, field: {release_without_human_step: 0, release_after_scrap: 0, held_at_end: [F-038]}, op: eq, value: true}
+      - {id: S19-N2, what: "Ф-037 не идёт дальше по «Б» до подписанного разрешения", subject: item/F-037, field: released_before_permit, op: eq, value: false}
+      - {id: S19-N3, what: "задел не переписан на «В» задним числом: у Ф-037 и Ф-038 в истории — ревизия «Б»", subject: item/*, filter: {items: [F-037, F-038]}, field: kd_revision_rewritten, op: eq, value: false}
+      - {id: S19-N4, what: "смена ревизии — не несоответствие: нет сигналов, НС и «перевода в брак (переделка)»", subject: order/ORD-0917, field: {signals: 0, nc_count: 0, scrap_transfer_rework: 0}, op: eq, value: true}

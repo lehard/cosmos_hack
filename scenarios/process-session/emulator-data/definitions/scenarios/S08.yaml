@@ -1,0 +1,350 @@
+# =============================================================================
+# Определение сценария. Генерируется tools/generate.py — руками не править (правьте генератор).
+# Имена событий, действий и полей — НАШИ (process-events-catalog.md, scenarios-flange*.{md,yaml}).
+# [П] — имя или значение предварительное (нет в каталоге) / наше допущение; [ПП] — проектное предположение.
+# Время: at — UTC (RFC 3339, мс); at_msk — то же в МСК для чтения.
+# human_steps.mode: stop — сценарий ждёт решения на столе роли (интерактивный режим; в автосверке подписывает
+#   demo-signer); auto — demo-signer подписывает сам в указанное доменное время.
+# expect: accepted | refused[:код] — ожидаемый ответ системы на шаг (проверка отказов по правам и правилам).
+# =============================================================================
+
+id: S08
+title: Решение контролёра — ложное срабатывание отклонено (Ф-002)
+goal: Решение человека — новая запись, исходный сигнал сохраняется.
+case:
+  s4_2:
+  - решение контролёра
+  s5_1:
+  - Решение пользователя
+  other:
+  - §4.5
+  - §5.2
+kind: slice_of_main_story
+run: main_story (MS-1)
+stream: streams/main-story.jsonl
+slice: streams/S08.jsonl
+slice_lines: 35
+seed: 20260921
+window_msk:
+- 2026-09-22 10:30
+- 2026-09-22 11:40
+items:
+- F-002
+erp_postings_expected:
+- issue_to_production (крышка, уплотнение, крепёж)
+erp_note: Сообщения 1С — по словарю scenarios-flange-expected.yaml (erp_posting_type). Полный список с ответами stand-а — I1.yaml → erp_outbox_expected (для S13 и S10B — в их файлах).
+  «Выпуск годного» — только после ЗТ-6.
+expected: expected/S08.yaml
+human_steps_ref: definitions/scenarios/main-story.yaml
+human_steps:
+- step_id: MS1-H0010
+  label: S08/bg/confirm-chip
+  at: '2026-09-09T08:00:00.000Z'
+  at_msk: '2026-09-09 11:00:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.signal_confirmed
+  catalog_ref: E-90
+  subject:
+    item_id: F-203
+    signal_basis_labels:
+    - kt2/F-203
+  process_ref: signal/SG-kt2-F-203
+  process_links:
+  - item/F-203
+  params:
+    defect_type: chip
+    zone: EDGE
+    severity: minor
+    reason: скол 0,8 мм на кромке под сварку подтверждён осмотром с лупой; общего фактора нет — решение на ЗТ-2
+    decision_at: ZT-2
+  expect: accepted
+  scenarios:
+  - S08
+- step_id: MS1-H0011
+  label: ZT-2/F-203
+  at: '2026-09-09T08:20:00.000Z'
+  at_msk: '2026-09-09 11:20:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-19
+  subject:
+    gate: ZT-2
+    item_id: F-203
+  process_ref: item/F-203
+  params:
+    decision: return_for_rework
+    presentation_no: 1
+    basis_labels:
+    - kt2/F-203
+    - cmm/F-203
+    marking_check:
+      previous: TAG:F-203
+      current: DM:F-203
+      result: match
+      readable: true
+      basis_label: remark/F-203
+    rework: 'зачистка скола на кромке по ТП (узел MG → M1): без изолятора и без 1С'
+    hold_released: 'containment.hold_released (Е-116): удержание по сигналу снято решением ЗТ-2 → в MES «можно выдавать»'
+  expect: accepted
+  scenarios:
+  - S08
+- step_id: MS1-H0012
+  label: ZT-2#2/F-203
+  at: '2026-09-09T08:50:00.000Z'
+  at_msk: '2026-09-09 11:50:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-19
+  subject:
+    gate: ZT-2
+    item_id: F-203
+  process_ref: item/F-203
+  params:
+    decision: accept
+    presentation_no: 2
+    basis_labels:
+    - kt2/F-203/after-rework
+    - cmm/F-203
+    marking_check:
+      previous: TAG:F-203
+      current: DM:F-203
+      result: match
+      readable: true
+      basis_label: remark/F-203
+  expect: accepted
+  scenarios:
+  - S08
+- step_id: MS1-H0018
+  label: S08/bg/reject-dent
+  at: '2026-09-09T13:30:00.000Z'
+  at_msk: '2026-09-09 16:30:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.signal_rejected
+  catalog_ref: E-91
+  subject:
+    item_id: F-206
+    signal_basis_labels:
+    - mv/F-206/MC-WC.received
+  process_ref: signal/SG-mv-F-206-MC-WC.received
+  process_links:
+  - item/F-206
+  params:
+    reason: след ремня тары на защитной плёнке; под плёнкой металл без вмятины — линейка и щуп 0,05 мм
+    source: movement
+    hold_released: 'containment.hold_released (Е-116): удержание по сигналу снято этим решением → в MES «можно выдавать»'
+  expect: accepted
+  scenarios:
+  - S08
+- step_id: MS1-H0029
+  label: S08/bg/confirm-geometry
+  at: '2026-09-10T10:32:00.000Z'
+  at_msk: '2026-09-10 13:32:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.signal_confirmed
+  catalog_ref: E-90
+  subject:
+    item_id: F-219
+    signal_basis_labels:
+    - cmm/F-219
+  process_ref: signal/SG-cmm-F-219
+  process_links:
+  - item/F-219
+  params:
+    defect_type: dimension_out_of_tolerance
+    char_id: D1
+    actual: 320.14
+    tolerance: 320 ± 0,10
+    reason: 'КИМ с действующей калибровкой: D1 больше допуска на 0,04 мм; припуск есть — доточка по ТП; общего фактора нет (журнал ЧПУ-1: инструмент в ресурсе, программа та же)'
+    decision_at: ZT-2
+  expect: accepted
+  scenarios:
+  - S08
+- step_id: MS1-H0030
+  label: ZT-2/F-219
+  at: '2026-09-10T10:35:00.000Z'
+  at_msk: '2026-09-10 13:35:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-19
+  subject:
+    gate: ZT-2
+    item_id: F-219
+  process_ref: item/F-219
+  params:
+    decision: return_for_rework
+    presentation_no: 1
+    basis_labels:
+    - kt2/F-219
+    - cmm/F-219
+    marking_check:
+      previous: TAG:F-219
+      current: DM:F-219
+      result: match
+      readable: true
+      basis_label: remark/F-219
+    rework: 'доточка D1 на ЧПУ по ТП (узел MG → M1): без изолятора и без 1С'
+    hold_released: 'containment.hold_released (Е-116): удержание по сигналу снято решением ЗТ-2 → в MES «можно выдавать»'
+  expect: accepted
+  scenarios:
+  - S08
+- step_id: MS1-H0036
+  label: ZT-2#2/F-219
+  at: '2026-09-10T13:00:00.000Z'
+  at_msk: '2026-09-10 16:00:00'
+  mode: auto
+  role: QC
+  persona: QC-01
+  action: decision.gate_passed
+  catalog_ref: E-19
+  subject:
+    gate: ZT-2
+    item_id: F-219
+  process_ref: item/F-219
+  params:
+    decision: accept
+    presentation_no: 2
+    basis_labels:
+    - kt2/F-219
+    - cmm/F-219/after-rework
+    marking_check:
+      previous: TAG:F-219
+      current: DM:F-219
+      result: match
+      readable: true
+      basis_label: remark/F-219
+  expect: accepted
+  scenarios:
+  - S08
+- step_id: MS1-H0042
+  label: S08/bg/reject-scratch
+  at: '2026-09-14T13:35:00.000Z'
+  at_msk: '2026-09-14 16:35:00'
+  mode: auto
+  role: QC
+  persona: QC-02
+  action: decision.signal_rejected
+  catalog_ref: E-91
+  subject:
+    item_id: F-213
+    signal_basis_labels:
+    - mv/F-213/WC-AC.received
+  process_ref: signal/SG-mv-F-213-WC-AC.received
+  process_links:
+  - item/F-213
+  params:
+    reason: под УФ светится — след СОЖ, не царапина; после протирки поверхность чистая [ПП]
+    source: movement
+    hold_released: 'containment.hold_released (Е-116): удержание по сигналу снято этим решением → в MES «можно выдавать»'
+  expect: accepted
+  scenarios:
+  - S08
+- step_id: MS1-H0192
+  label: ZT-SR/F-002
+  at: '2026-09-22T07:55:00.000Z'
+  at_msk: '2026-09-22 10:55:00'
+  mode: auto
+  role: QC
+  persona: QC-02
+  action: decision.gate_passed
+  catalog_ref: E-55
+  subject:
+    gate: ZT-SR
+    item_id: F-002
+  process_ref: item/F-002
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - ktsr/F-002
+    zone: SEAL-GROOVE
+    tools_counted:
+      entered_cavity: 2
+      returned: 2
+  expect: accepted
+  scenarios:
+  - S08
+- step_id: MS1-H0198
+  label: S08/reject-no-reason
+  at: '2026-09-22T08:30:00.000Z'
+  at_msk: '2026-09-22 11:30:00'
+  mode: auto
+  role: QC
+  persona: QC-02
+  action: decision.signal_rejected
+  catalog_ref: E-91
+  subject:
+    item_id: F-002
+    signal_basis_labels:
+    - kt4/F-002
+  process_ref: signal/SG-kt4-F-002
+  process_links:
+  - item/F-002
+  params:
+    reason: ''
+  expect: refused
+  optional: true
+  scenarios:
+  - S08
+  note: 'проверка S08-N2: отклонение без причины не принимается (ожидается отказ)'
+- step_id: MS1-H0199
+  label: S08/reject
+  at: '2026-09-22T08:35:00.000Z'
+  at_msk: '2026-09-22 11:35:00'
+  mode: auto
+  role: QC
+  persona: QC-02
+  action: decision.signal_rejected
+  catalog_ref: E-91
+  subject:
+    item_id: F-002
+    signal_basis_labels:
+    - kt4/F-002
+    checkpoint_id: CP-ASM
+    zone: BOLT-7
+  process_ref: signal/SG-kt4-F-002
+  process_links:
+  - item/F-002
+  params:
+    reason: метка есть, закрыта тенью от шайбы; момент по ключу в норме
+    evidence_labels:
+    - torque/F-002
+    model_tuning_candidate: true
+    hold_released: 'containment.hold_released (Е-116): удержание Е-84 по правилу R-16 [П] (уровень «доп. проверка») снято этим же решением ОТК-2'
+  expect: accepted
+  scenarios:
+  - S08
+- step_id: MS1-H0201
+  label: ZT-4/F-002
+  at: '2026-09-22T08:40:00.000Z'
+  at_msk: '2026-09-22 11:40:00'
+  mode: auto
+  role: QC
+  persona: QC-02
+  action: decision.gate_passed
+  catalog_ref: E-55
+  subject:
+    gate: ZT-4
+    item_id: F-002
+  process_ref: item/F-002
+  params:
+    decision: accept
+    presentation_no: 1
+    basis_labels:
+    - kt4/F-002
+    - torque/F-002
+    - torque/F-002/J-2
+  expect: accepted
+  scenarios:
+  - S08

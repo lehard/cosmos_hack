@@ -1,0 +1,263 @@
+# =============================================================================
+# Нормы времени для шагов схемы «Фланец люка гермокорпуса» (BPMN v0.3.1)
+# Отдельный файл параметров: схему BPMN не меняем, нормы в неё не пишем.
+# Ключ шага = ID узла из process/flange-process.bpmn v0.3.1 (как ключ шага у соседей, FR-12).
+#
+# ВСЕ ЧИСЛА — ПРОЕКТНЫЕ ДОПУЩЕНИЯ [ПП] или наши допущения [П]. Это не нормы завода.
+# На защите цифры не называем (flange-process-bpmn.md §7).
+#
+# Откуда числа:
+#   §7.1, §7.2 — process/flange-process-bpmn.md (ресурсы и пороги цвета очереди);
+#   setpoints   — emulator-data/definitions/reference/setpoints.yaml
+#                 (machining.norm_min, gate_waiting, queue_colors, windows_and_limits, deadlines);
+#   calendar    — emulator-data/definitions/reference/calendar.yaml (смены, waiting_rules).
+#
+# Проверка: emulator-data/tools/norms.py (вызывается из tools/check.py, пункт 27).
+# По этим нормам главная история и S13 дают ровно те задержки, что записаны
+# в ожиданиях: S07-12 (главная история) и S13-16 (S13).
+# =============================================================================
+
+meta:
+  id: step-norms
+  version: "0.1-draft"
+  created: "2026-09-26"
+  status: "черновик, пользователь не утвердил"
+  bpmn: "process/flange-process.bpmn v0.3.1"
+  project_assumption: true              # весь файл — проектное допущение
+  tag: "[ПП]"
+  units: {min: "минуты", h: "часы", wd: "рабочие дни по календарю calendar.yaml", items: "штук в очереди"}
+  levels:
+    ok: "в норме"
+    attention: "внимание — выше нормы, но в сроке"
+    delay: "задержка — позже порога; попадает в список задержек и в Д-1 «позже срока»"
+  counting:                             # как считаем время (всё — «определено системой», не «передано»)
+    time_of_record: "occurred_at; у записей со сдвигом часов (S15) — исправленное время"
+    rounding: "до целых минут вниз по времени записи"
+    operation: "активная работа = завершение − начало − паузы; прерванные выполнения (итог не «завершена») в нормы длительности не идут — это О-9 «прервано»"
+    gate_wait: "от готовности к ЗТ (событие-готовность у каждой ЗТ ниже) до подписи; повторное предъявление — от Е-72; только в рабочие минуты смены, в которой подпись; перенесённое с прошлой смены — с начала смены (calendar.yaml → waiting_rules)"
+    signal_wait: "от наблюдения, на котором стоит сигнал, до решения ОТК; в минутах смены, как gate_wait"
+    transit: "от отправки (Е-30) до приёма (Е-31), календарные часы; не принятое к концу окна — до конца окна"
+    window: "календарные часы"
+    working_days: "рабочие дни по календарю, день события не считается"
+  escalation_rule: "уровень срабатывает, когда ожидание изделия на узле достигло порога, а подписи ещё нет; подпись в ту же минуту — уровень не срабатывает; подтверждение эскалации сроки не останавливает (S13-05). Эпизод эскалации — пока очередь на узле не пустеет; закрывается, когда очередь пуста"
+  scenario_windows:                     # где проверяем «ровно те задержки»
+    main_story: {from: "2026-09-17T08:00:00+03:00", to: "2026-09-24T16:30:00+03:00", expect_id: S07-12}
+    S13: {from: "2026-09-25T08:00:00+03:00", to: "2026-09-25T13:00:00+03:00", expect_id: S13-16,
+          note: "пролог S13 (Чт 24.09) — предыстория до начала сценария; скрипт печатает её отдельно, в ожидания не входит"}
+
+steps:
+  # ---------------------------------------------------------------- мехобработка (BM)
+  M1:
+    name: "Мехобработка фланца на ЧПУ"
+    measure: operation
+    data: {operation_code: M1}
+    duration: {norm: 60, min: 40, max: 90, unit: min}
+    setup: {per_batch: "1–2 ч", unit: h}
+    queue: {where: M1, note: "очередь к станку; порогов цвета в §7.2 нет"}
+    delay_after: {value: 90, unit: min}
+    escalation: null
+    source: "[ПП] flange-process-bpmn.md §7.1 (60 мин, 40–90); setpoints.yaml → machining.norm_min"
+    project_assumption: true
+  M3:
+    name: "КТ-2 КИМ: размеры"
+    measure: operation
+    data: null
+    duration: {norm: 25, min: 15, max: 30, unit: min}
+    queue: {where: M3, note: "КИМ одна на цех"}
+    delay_after: {value: 30, unit: min}
+    escalation: null
+    checked_in_data: false
+    why_not_checked: "в данных у КИМ только результат замера, без начала и конца"
+    source: "[ПП] flange-process-bpmn.md §7.1"
+    project_assumption: true
+  M4:
+    name: "ЗТ-2 Приёмка ОТК"
+    measure: gate_wait
+    data: {gate: ZT-2, ready_when: "результат КИМ (M3), исправленное время"}
+    work: {controller: "5–20", unit: min}
+    wait: {norm_lt: 30, attention_lt: 60, unit: min}
+    delay_after: {value: 60, unit: min}
+    escalation: {reminder: 30, master: 60, qc_head: 120, unit: min}
+    source: "[ПП] §7.1 (контролёр 5–20 мин), §7.2 (ожидание контролёра на ЗТ); setpoints.yaml → gate_waiting"
+    project_assumption: true
+  M5W:
+    name: "В пути или в межцеховой кладовой (МЦ → СЦ)"
+    measure: transit
+    data: {route: "MC->WC"}
+    wait: {norm_lt: 2, attention_lt: 4, unit: h}
+    delay_after: {value: 4, unit: h, then: "таймер M5T «нет скана места 4 ч» — розыск"}
+    escalation: null
+    source: "[ПП] §7.1 (транспорт 0,5–4 ч), §7.2 (в пути < 2 ч, 2–4 ч, > 4 ч — розыск)"
+    project_assumption: true
+  # ---------------------------------------------------------------- сварка (BW)
+  WW:
+    name: "Кромки готовы, ждёт сварку"
+    measure: window
+    data: {from: "подготовка кромок (operator.action step=edge_prep)", to: "начало сварки W2"}
+    wait: {norm_lt: 6, attention_lt: 8, unit: h}
+    delay_after: {value: 8, unit: h, then: "таймер WT — кромки готовят заново"}
+    escalation: null
+    source: "[ПП] §7.2; setpoints.yaml → windows_and_limits.edge_prep_to_weld_max_h"
+    project_assumption: true
+  W2:
+    name: "Сварка фланца с кольцом"
+    measure: operation
+    data: {operation_code: W2}
+    duration: {norm: 45, unit: min, note: "пост целиком ≈ 75 мин: кромки 30 + сварка 45"}
+    delay_after: {value: 70, unit: min, rule: "[П] ≈ 1,5 × норма, до 5 мин"}
+    escalation: null
+    source: "[ПП] §7.1 (сварка 45 мин); порог задержки — [П]"
+    project_assumption: true
+  W3:
+    name: "КТ-3 Камера на шов"
+    measure: camera_latency
+    data: {from: "завершение сварки W2", to: "первый результат камеры КТ-3 по этой сварке"}
+    duration: {norm: "≤ 5 с на обработку кадра", unit: s}
+    delay_after: {value: 10, unit: min, then: "«нет данных» (Е-82)"}
+    escalation: null
+    source: "[ПП] §7.2 (результат камеры ≤ 5 с; до 10 мин; > 10 мин — «нет данных»); setpoints.yaml → deadlines.camera_result_timeout_min"
+    project_assumption: true
+  W4:
+    name: "КТ-3 Рентген шва (обязателен)"
+    measure: xray_wait
+    data: {from: "завершение сварки W2", to: "заключение РК по изделию"}
+    duration: {norm: "1–2", unit: h, note: "работа лаборатории на узел"}
+    queue: {norm_max: 4, attention_max: 8, unit: items, note: "узкое место № 1"}
+    delay_after: {value: 24, unit: h}
+    escalation: null
+    source: "[ПП] §7.1 (1–2 ч на узел, ожидание 4–24 ч), §7.2 (очередь ≤ 4 / 5–8 / > 8 или > 1 суток); setpoints.yaml → queue_colors.xray"
+    project_assumption: true
+  W5:
+    name: "ЗТ-3 Приёмка ОТК"
+    measure: gate_wait
+    data: {gate: ZT-3, ready_when: "заключение РК (W4)"}
+    work: {controller: 10, unit: min, note: "на фланец; по схеме 10–15"}
+    wait: {norm_lt: 30, attention_lt: 60, unit: min}
+    queue: {norm_max: 2, attention_max: 4, unit: items, note: "цвет счётчика, не деталей"}
+    delay_after: {value: 60, unit: min}
+    escalation: {reminder: 30, master: 60, qc_head: 120, unit: min, to: {reminder: "контролёр поста", master: "мастер участка", qc_head: "начальник ОТК"}}
+    source: "[ПП] §7.2; setpoints.yaml → gate_waiting, queue_colors.ZT-3; S13"
+    project_assumption: true
+  W6W:
+    name: "В пути или в межцеховой кладовой (СЦ → СИЦ)"
+    measure: transit
+    data: {route: "WC->AC"}
+    wait: {norm_lt: 2, attention_lt: 4, unit: h}
+    delay_after: {value: 4, unit: h, then: "таймер W6T — розыск"}
+    escalation: null
+    source: "[ПП] §7.1, §7.2"
+    project_assumption: true
+  WL1:
+    name: "Разметка и выборка дефекта по снимку"
+    measure: operation
+    data: {operation_code: WL1}
+    duration: {norm: 30, unit: min}
+    delay_after: {value: 45, unit: min, rule: "[П] ≈ 1,5 × норма"}
+    escalation: null
+    source: "[П] наше допущение: по подготовке кромок (§7.1 — 30 мин); в §7 нормы нет"
+    project_assumption: true
+  B2W:
+    name: "В пути или в межцеховой кладовой (СИЦ → СЦ, возврат в сварку)"
+    measure: transit
+    data: {route: "AC->WC"}
+    wait: {norm_lt: 2, attention_lt: 4, unit: h}
+    delay_after: {value: 4, unit: h, then: "таймер B2T — розыск"}
+    escalation: null
+    source: "[ПП] §7.1, §7.2"
+    project_assumption: true
+  # ---------------------------------------------------------------- вход (партия)
+  V3:
+    name: "ЗТ-1 Приёмка партии ОТК"
+    measure: gate_wait
+    data: {gate: ZT-1, ready_when: "последний результат входного контроля партии (документы, лаборатория, выборка, КТ-1)"}
+    work: {controller: "5–20", unit: min}
+    wait: {norm_lt: 30, attention_lt: 60, unit: min}
+    delay_after: {value: 60, unit: min}
+    escalation: {reminder: 30, master: 60, qc_head: 120, unit: min}
+    source: "[ПП] §7.1, §7.2"
+    project_assumption: true
+  # ---------------------------------------------------------------- сборка (BA)
+  A3:
+    name: "ЗТ-СР Скрытые работы: предъявление зоны ОТК"
+    measure: gate_wait
+    data: {gate: ZT-SR, ready_when: "кадр КТ-СР (A2)"}
+    work: {controller: "5–20", unit: min}
+    wait: {norm_lt: 30, attention_lt: 60, unit: min}
+    delay_after: {value: 60, unit: min}
+    escalation: {reminder: 30, master: 60, qc_head: 120, unit: min}
+    source: "[ПП] §7.1 (сборка ждёт ОТК перед крышкой), §7.2"
+    project_assumption: true
+  BA:
+    name: "Сборка, установка оборудования и ЗТ-4 (блок); норма — на работу сборщика A1 → A6, AO"
+    measure: operation
+    data: {operation_code: ASM}
+    duration: {norm: 80, unit: min, note: "включая ожидание ОТК перед крышкой и установку клапана"}
+    queue: {where: [V7, A3]}
+    delay_after: {value: 120, unit: min, rule: "[П] 1,5 × норма"}
+    escalation: null
+    source: "[ПП] §7.1 (≈ 80 мин); порог задержки — [П]"
+    project_assumption: true
+  A9:
+    name: "ЗТ-4 Приёмка сборки ОТК"
+    measure: gate_wait
+    data: {gate: ZT-4, ready_when: "завершение сборки (операция ASM)"}
+    work: {controller: "5–20", unit: min}
+    wait: {norm_lt: 30, attention_lt: 60, unit: min}
+    delay_after: {value: 60, unit: min}
+    escalation: {reminder: 30, master: 60, qc_head: 120, unit: min}
+    source: "[ПП] §7.1, §7.2"
+    project_assumption: true
+  # ---------------------------------------------------------------- испытание (BL)
+  T1:
+    name: "Испытание на герметичность"
+    measure: operation
+    data: {operation_code: T1}
+    duration: {norm: 75, unit: min, note: "в том числе выдержка 30 мин под 0,15 МПа"}
+    queue: {norm_max: 2, attention_max: 5, unit: items, note: "узкое место № 2"}
+    delay_after: {value: 115, unit: min, rule: "[П] ≈ 1,5 × норма, до 5 мин"}
+    escalation: null
+    source: "[ПП] §7.1 (≈ 75 мин), §7.2 (очередь ≤ 2 / 3–5 / > 5); setpoints.yaml → leak_test, queue_colors.leak_stand"
+    project_assumption: true
+  T2:
+    name: "ЗТ-5 Протокол испытаний"
+    measure: gate_wait
+    data: {gate: ZT-5, ready_when: "завершение испытания (операция T1)"}
+    work: {controller: "5–20", unit: min}
+    wait: {norm_lt: 30, attention_lt: 60, unit: min}
+    delay_after: {value: 60, unit: min}
+    escalation: {reminder: 30, master: 60, qc_head: 120, unit: min}
+    representative_wait: {norm_lt: 4, attention_lt: 8, unit: h, delay_after: "1 смена", note: "если по перечню нужна подпись ПЗ или ВП; в данных таких подписей нет"}
+    source: "[ПП] §7.1 (ПЗ или ВП — 1–8 ч), §7.2"
+    project_assumption: true
+  # ---------------------------------------------------------------- окончательный контроль (BK)
+  K3:
+    name: "ЗТ-6 Окончательный контроль ОТК"
+    measure: gate_wait
+    data: {gate: ZT-6, ready_when: "кадр КТ-5 (K2)"}
+    work: {controller: "5–20", unit: min}
+    wait: {norm_lt: 30, attention_lt: 60, unit: min}
+    delay_after: {value: 60, unit: min}
+    escalation: {reminder: 30, master: 60, qc_head: 120, unit: min}
+    representative_wait: {norm_lt: 4, attention_lt: 8, unit: h, delay_after: "1 смена", note: "если по перечню нужна подпись ПЗ или ВП"}
+    source: "[ПП] §7.1, §7.2"
+    project_assumption: true
+  # ---------------------------------------------------------------- отдельные процессы
+  SG3:
+    name: "Рассмотрение сигнала ОТК: подтвердить, отклонить или проверить"
+    measure: signal_wait
+    data: {from: "наблюдение, на котором стоит сигнал", to: "подтверждение или отклонение (Е-90, Е-91)"}
+    work: {controller: "2–5", unit: min}
+    wait: {norm_lt: 15, attention_lt: 60, unit: min}
+    delay_after: {value: 60, unit: min}
+    escalation: null
+    source: "[ПП] §7.1 (2–5 мин на сигнал), §7.2 (сигнал ждёт решения ОТК < 15 / 15–60 / > 60 мин)"
+    project_assumption: true
+  N2:
+    name: "ЗТ-Р Решение по изделию или по списку"
+    measure: nc_decision
+    data: {from: "подтверждение несоответствия (Е-90)", to: "решение по изделию (Е-94)"}
+    wait: {norm_lt: 2, attention_lt: 3, unit: wd}
+    delay_after: {value: 3, unit: wd, then: "просрочка, Е-97; Н-2"}
+    escalation: null
+    source: "[ПП] §7.2; setpoints.yaml → deadlines.nc_disposition_working_days"
+    project_assumption: true

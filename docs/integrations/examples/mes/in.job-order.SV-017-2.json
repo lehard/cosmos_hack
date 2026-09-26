@@ -1,0 +1,35 @@
+{
+  "ApplicationArea": {
+    "Sender": {"LogicalID": "MES"},
+    "Receiver": {"LogicalID": "SERGEY-PALYCH-QC"},
+    "CreationDateTime": "2026-09-23T16:05:00+03:00",
+    "BODID": "mes-in-000233",
+    "ContractVersion": "1.0"
+  },
+  "DataArea": {
+    "Verb": "Process",
+    "JobOrder": [
+      {
+        "ID": "JO-0924-0117",
+        "Description": "Переварка шва фланца Ф-017 после выборки (переделка по НС-И1)",
+        "WorkType": "Rework",
+        "WorkMasterID": "ТП-ФЛ-100/р3/030",
+        "PreviousJobOrderID": "JO-0923-0048",
+        "StartTime": "2026-09-24T08:10:00+03:00",
+        "EndTime": "2026-09-24T09:00:00+03:00",
+        "Priority": 2,
+        "HierarchyScope": {"EquipmentID": "СЦ-ПОСТ-1", "EquipmentLevel": "WorkUnit"},
+        "EquipmentRequirement": [{"EquipmentID": "ИС-1"}],
+        "PersonnelRequirement": [{"PersonID": "ТН-4402"}],
+        "MaterialRequirement": [
+          {"MaterialDefinitionID": "ФЛ-100.00.000 СБ", "MaterialSubLotID": "MSL-0917-017", "MaterialUse": "Produced",
+           "Quantity": {"QuantityString": "1", "UnitOfMeasure": "шт"}}
+        ],
+        "Parameter": [
+          {"ID": "welding_program", "Value": "ПС-4"},
+          {"ID": "nc_basis", "Value": "НС-И1"}
+        ]
+      }
+    ]
+  }
+}

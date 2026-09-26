@@ -1,0 +1,87 @@
+# =============================================================================
+# Справочник: правила реакции (карта реакций) и таблица соответствия внешних ID (1С).
+# Источник: scenarios-flange.md §2.7, §6.1; process-events-catalog.md §1 (режимы [1]…[5]).
+# Номера правил, ревизии, владельцы, ID 1С — условные [П]. Не данные «Энергии».
+# Правила исполняет движок соседей; здесь — только смысл и параметры.
+# =============================================================================
+
+meta:
+  kind: reference.rules_and_external_ids
+  version: "0.1-draft"
+  valid_from: "2026-09-01"
+
+automation_modes:                             # режимы автоматизации (PRD)
+  "1": "система делает сама"
+  "2": "сама по утверждённому правилу"
+  "3": "предлагает — человек утверждает"
+  "4": "несколько одобрений"
+  "5": "внешние полномочия"
+
+reaction_rules:
+  - id: R-07
+    revision: 1
+    owner: TECH-01
+    mode: 2
+    display: "Прожог или подрез на шве → карантин, черновик карточки несоответствия"
+    trigger: {event: inspection.result, checkpoint_id: CP-WELD, defect_type_in: [burn_through, undercut]}
+    actions: ["containment.hold_applied (карантин)", "nc.draft_created"]
+  - id: R-12
+    revision: 1
+    owner: TECH-01
+    mode: 2
+    display: "Параметр спецпроцесса (сварки) вне уставки → сигнал и область риска по оборудованию"
+    trigger: {event: machine.state, state: warning, equipment_type: welding_source}
+    actions: ["quality.signal_raised", "risk_scope.created / risk_scope.expanded (по оборудованию)"]
+    note: "область риска считается от последней подтверждённо годной сварки на участке; сужает — только человек (технолог)"
+  - id: R-15
+    revision: 1
+    owner: TECH-01
+    mode: 2
+    display: "Критичный признак сборки (нет крепежа) → изоляция"
+    trigger: {event: inspection.result, checkpoint_id: CP-ASM, defect_type_in: [missing_fastener]}
+    actions: ["containment.hold_applied (изоляция)"]
+  - id: R-16                                  # волна 2 [П]: S08
+    revision: 1
+    owner: QC-HEAD-01
+    mode: 2
+    display: "Некритичный признак сборки (нет метки затяжки) → удержание «доп. проверка» до решения ОТК на ЗТ-4"
+    trigger: {event: inspection.result, checkpoint_id: CP-ASM, defect_type_in: [missing_torque_mark]}
+    actions: ["containment.hold_applied (доп. проверка)"]
+    note: "отклонение сигнала контролёром снимает удержание тем же решением (containment.hold_released, Е-116)"
+  - id: R-21
+    revision: 1
+    owner: TECH-01
+    mode: 2
+    optional: true                            # «по желанию» (S13)
+    display: "Уплотнение, выданное на рабочее место, не установлено за 4 ч → блок к установке, выдать новое; прежнее — на склад для оценки, не списывать"
+    trigger: {since_event: batch.issued, item_type_id: FL-100-SEAL, not_followed_by: "установка уплотнения", within_h: 4}
+    actions: ["containment.hold_applied (блок к установке)", "задача кладовщику: выдать новое"]
+  - id: R-QUALITY-THRESHOLD
+    revision: 1
+    owner: QC-HEAD-01
+    mode: 1
+    display: "«Признаков нет» при качестве ниже порога карты контроля → производное «оценка невозможна»"
+    trigger: {event: inspection.result, inspection_result: no_defect_found, observation_quality_lt: "порог карты"}
+    actions: ["производный результат unable_to_assess (исходный не меняется)"]
+
+# Таблица соответствия внешних ID (scenarios-flange.md §6.1). Наши ID не зависят от ID 1С.
+external_ids:
+  - {system: erp_1c, entity: nomenclature,      internal: FL-100-ASSY, external: nom-7a1e-0001}
+  - {system: erp_1c, entity: production_order,  internal: ORD-0917,    external: ord-5c2b-0917}
+  - {system: erp_1c, entity: production_order,  internal: ORD-0911,    external: ord-5c2b-0911}   # [П]
+  - {system: erp_1c, entity: production_order,  internal: ORD-0928,    external: ord-5c2b-0928}   # [П] только S10B
+  - {system: erp_1c, entity: production_order,  internal: ORD-0929,    external: ord-5c2b-0929}   # [П] только S14 (волна 2)
+  - {system: erp_1c, entity: receipt_lot,       internal: LOT-V-601,   external: rcp-3f44-0601}   # [П] волна 2: клапаны
+  - {system: erp_1c, entity: counterparty,      internal: SUP-8,       external: ctr-0b19-0008}   # [П] волна 2
+  - {system: erp_1c, entity: item_series,       internal: F-017,       external: ser-91d0-0017, note: "правило для всех изделий: ser-91d0-00NN ↔ F-0NN [П]"}
+  - {system: erp_1c, entity: receipt_lot,       internal: LOT-R-117,   external: rcp-3f44-0117}
+  - {system: erp_1c, entity: counterparty,      internal: SUP-3,       external: ctr-0b19-0003}
+  - {system: erp_1c, entity: warehouse,         internal: WH-MC,       external: wh-0000-mc}   # [П]
+  - {system: erp_1c, entity: warehouse,         internal: WH-WC,       external: wh-0000-wc}   # [П]
+  - {system: erp_1c, entity: warehouse,         internal: WH-AC,       external: wh-0000-ac}   # [П]
+  - {system: erp_1c, entity: warehouse,         internal: WH-FG,       external: wh-0000-fg}   # [П]
+  # ВАЖНО для S02 / I1-03: соответствия «договор поставки SUP-3» здесь НЕТ.
+  # Его добавляет А-01 (ADM-01) в Ср 23.09 16:10 — шаг erp.id_map_added [П] в main-story.yaml.
+  # Пока его нет, стенд 1С отвечает 422 «не найден договор с контрагентом ctr-0b19-0003».
+missing_on_purpose:
+  - {system: erp_1c, entity: supplier_contract, internal: SUP-3, external: "dog-0b19-0003-2026", added_by_step: "MS1 · erp.id_map_added · Ср 23.09 16:10"}   # [П]

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Мы → Галактика. Решение ЗТ-Р: 7 колец партии П-117 вернуть поставщику. Претензию и возврат оформляет Галактика -->
+<Package xmlns="urn:sergey-palych:integration:galaktika" contractVersion="1.0">
+  <Header>
+    <MessageId>gal-out-000128</MessageId>
+    <Sender>SERGEY-PALYCH-QC</Sender>
+    <Receiver>GALAKTIKA-ERP</Receiver>
+    <CreatedAt>2026-09-23T15:45:20+03:00</CreatedAt>
+    <Entity>McQualityStatus</Entity>
+    <Operation>upsert</Operation>
+    <RoutingKey>quality.mc_status.upsert</RoutingKey>
+  </Header>
+  <Key>
+    <McCode>МЦ-1102</McCode>
+    <Lot>П-117</Lot>
+    <ExternalId>DEC-LOT-R-117-ZT-R-1</ExternalId>
+  </Key>
+  <Body>
+    <McQualityStatus>
+      <Mc>
+        <Code>МЦ-1102</Code>
+        <Designation>ФЛ-100.01.002</Designation>
+      </Mc>
+      <Lot>П-117</Lot>
+      <Qty unit="шт" okei="796">7</Qty>
+      <Status>к возврату поставщику</Status>
+      <ControlResult>не годно</ControlResult>
+      <Operation>Входной контроль партии</Operation>
+      <Basis>
+        <DecisionId>DEC-LOT-R-117-ZT-R-1</DecisionId>
+        <GateCode>ZT-R</GateCode>
+        <NcId>NC-04</NcId><NcId>NC-05</NcId>
+        <SignedAt>2026-09-23T15:45:00+03:00</SignedAt>
+        <Signer ref="TECH-01" role="TECHNOLOGIST"/>
+        <EvidenceUrl>https://qc.local/lots/LOT-R-117/claim-basis</EvidenceUrl>
+      </Basis>
+    </McQualityStatus>
+  </Body>
+</Package>

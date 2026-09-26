@@ -1,0 +1,38 @@
+{
+  "contract": "qc-1c.control-result",
+  "contract_version": "1.0",
+  "message_id": "qc-out-000120",
+  "sent_at": "2026-09-23T10:15:20+03:00",
+  "result_id": "CR-F-001-ZT-6-1",
+  "gate": {"code": "ZT-6", "name": "Окончательный контроль ОТК", "presentation_no": 1},
+  "subject": {
+    "kind": "item",
+    "items": [{"internal_id": "F-001", "display": "Ф-001", "series_ref_key": "ser-91d0-0001"}],
+    "lot": null,
+    "qty": 1,
+    "unit_okei": "796"
+  },
+  "nomenclature_ref_key": "nom-7a1e-0001",
+  "order_ref_key": "ord-5c2b-0917",
+  "operation": {"code": "OP-070", "name": "Окончательный контроль ОТК"},
+  "line_id": "L-FL-2",
+  "warehouse_ref_key": "wh-ac",
+  "outcome": "accepted",
+  "data_completeness": "full",
+  "permit": null,
+  "nonconformities": [],
+  "disposition": null,
+  "signed": {
+    "at": "2026-09-23T10:15:00+03:00",
+    "signers": [
+      {"ref": "QC-02", "role": "QC_INSPECTOR"},
+      {"ref": "CR-01", "role": "CUSTOMER_REP"}
+    ],
+    "signature_class": "token"
+  },
+  "basis": {
+    "decision_id": "DEC-F-001-ZT-6-1",
+    "nc_ids": [],
+    "evidence_url": "https://qc.local/items/F-001/passport"
+  }
+}

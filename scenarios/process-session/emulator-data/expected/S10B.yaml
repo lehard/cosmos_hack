@@ -1,0 +1,25 @@
+# =============================================================================
+# Срез файла process/scenarios-flange-expected.yaml — БЕЗ изменений (наши имена, как есть).
+# Источник истины — исходный файл; этот файл пересобирается tools/split_expected.py.
+# Общие словари и ID — expected/_common.yaml; главная история — expected/main-story.yaml.
+# Времена здесь — МСК (+03:00), как в исходнике; в потоках и определениях — UTC.
+# =============================================================================
+
+scenarios:
+  S10B:
+    title: "Лимит переделок участка шва — отдельный прогон на Ф-090"
+    case: {other: ["§4.3 повторная обработка", "лимит переделок из BPMN"]}
+    run: standalone
+    precondition: "У4 фланца Ф-090 уже переделан по ТП 3 раза: SV-090-2, SV-090-3, SV-090-4"
+    checkpoints:
+      - at: "end"
+        label: "после попытки пятого выполнения"
+        expect:
+          - {id: S10B-01, what: "лимит достигнут, запуск заблокирован", subject: item/F-090, field: {event: rework.limit_reached, zone: U4, count: 3, limit: 3, start_of_SV-090-5: blocked}, op: eq, value: true}
+          - {id: S10B-02, what: "запись в журнале критических действий, задача технологу", subject: audit/critical_actions, filter: {item: F-090}, field: count, op: gte, value: 1}
+          - {id: S10B-03, what: "«переделка» сверх лимита — отказ", subject: api/decisions, filter: {item: F-090, type: rework}, field: result, op: eq, value: {refused: true, code: E_REWORK_LIMIT}, note: "проверка движка полномочий соседей; в схеме v0.2 N2 переделку сверх лимита не предлагает, а выбранную — развилка итога WNG вернёт в решение"}
+          - {id: S10B-04, what: "«ремонт» без разрешения на отклонение — отказ", subject: api/decisions, filter: {item: F-090, type: repair, concession: null}, field: result, op: eq, value: {refused: true, code: E_PERMIT_REQUIRED}}
+          - {id: S10B-05, what: "доступны только два варианта", subject: item/F-090, field: allowed_dispositions, op: set_eq, value: [repair_with_concession, scrap]}
+          - {id: S10B-06, what: "перед каждой переделкой У4 — выборка и контроль выборки; второе и третье исправление — согласие главного сварщика отдельной записью (Е-99 [П], узел WLA) после контроля выборки", subject: item/F-090, field: rework_chain, op: eq, value: {SV-090-2: [WL1, WL2, WL3], SV-090-3: [WL1, WL2, rework.chief_welder_approved, WL3], SV-090-4: [WL1, WL2, rework.chief_welder_approved, WL3]}}
+          - {id: S10B-07, what: "попытка четвёртого исправления: выборка и контроль сделаны, заварка остановлена на развилке «какое исправление участка?» (WLG) — лимит", subject: item/F-090, field: {blocked_at: WLG, after: [WL1, WL2], run_blocked: SV-090-5}, op: eq, value: true}
+          - {id: S10B-08, what: "v0.3.1, MES: четыре сигнала — четыре «не выдавать»; три «можно выдавать» — по решениям «переделка» 1–3; после «списать» удержание остаётся", subject: mes/postings, filter: {item: F-090}, field: {holds: 4, releases: 3, release_steps: [S10B/rework-1, S10B/rework-2, S10B/rework-3], held_at_end: true}, op: eq, value: true}

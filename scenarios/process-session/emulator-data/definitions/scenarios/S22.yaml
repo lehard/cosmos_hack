@@ -1,0 +1,91 @@
+# =============================================================================
+# Определение сценария. Генерируется tools/generate.py — руками не править (правьте генератор).
+# Имена событий, действий и полей — НАШИ (process-events-catalog.md, scenarios-flange*.{md,yaml}).
+# [П] — имя или значение предварительное (нет в каталоге) / наше допущение; [ПП] — проектное предположение.
+# Время: at — UTC (RFC 3339, мс); at_msk — то же в МСК для чтения.
+# human_steps.mode: stop — сценарий ждёт решения на столе роли (интерактивный режим; в автосверке подписывает
+#   demo-signer); auto — demo-signer подписывает сам в указанное доменное время.
+# expect: accepted | refused[:код] — ожидаемый ответ системы на шаг (проверка отказов по правам и правилам).
+# =============================================================================
+
+id: S22
+title: Попытка вернуть в работу списанную деталь (Ф-090)
+goal: '«Списано» — конечный статус: скан на посту и решение «переделка» по списанному Ф-090 — отказ и запись в журнал критических действий. Разрешено только отдельное решение «образец
+  на разрушающий контроль» — макрошлиф участка У4, без возврата в маршрут; в 1С ничего нового.'
+case:
+  other:
+  - '§4.3 повторная обработка: лимит и конечный статус'
+  - '§3.4 права: отказ по правилу'
+  - §3.2 журнал критических действий
+kind: injection_after_run
+run: 'S10B + продолжение: S22.jsonl подаётся в тот же прогон после S10B.jsonl'
+stream: streams/S10B.jsonl
+injection: streams/S22.jsonl
+seed: 20260928
+window_msk:
+- 2026-09-29 08:20
+- 2026-09-29 13:00
+items:
+- F-090
+erp_postings_expected:
+- 'ничего: изделие уже списано в S10B'
+erp_note: Сообщения 1С — по словарю scenarios-flange-expected.yaml (erp_posting_type). Полный список с ответами stand-а — I1.yaml → erp_outbox_expected (для S13 и S10B — в их файлах).
+  «Выпуск годного» — только после ЗТ-6.
+expected: expected/S22.yaml
+precondition: Ф-090 списан в прогоне S10B (Пн 28.09 15:30, НС-90); S22.jsonl подаётся после S10B.jsonl в тот же прогон
+new_events_p:
+- item.sample_designated (Е-129 [П], шаг человека) — образец на разрушающий контроль
+- отказ E_ITEM_SCRAPPED [П]; Е-13 с тем же кодом на скан поста
+human_steps:
+- step_id: S22-H0001
+  label: S22/rework-refused
+  at: '2026-09-29T05:30:00.000Z'
+  at_msk: '2026-09-29 08:30:00'
+  mode: stop
+  role: TECHNOLOGIST
+  persona: TECH-01
+  action: decision.disposition_set
+  catalog_ref: E-94
+  subject:
+    item_id: F-090
+    nc_ref: NC-90
+  process_ref: nc/NC-90
+  process_links:
+  - item/F-090
+  params:
+    disposition: rework
+    rework_zones:
+    - U4
+    reason: 'вернуть в работу: ещё одна попытка на У4 с новым держателем горелки'
+  expect: refused:E_ITEM_SCRAPPED
+  scenarios:
+  - S22
+  note: 'проверка правила: «списано» — конечный статус; возврат в маршрут — отказ и запись в журнал критических действий'
+- step_id: S22-H0002
+  label: S22/sample
+  at: '2026-09-29T06:00:00.000Z'
+  at_msk: '2026-09-29 09:00:00'
+  mode: stop
+  role: TECHNOLOGIST
+  persona: TECH-01
+  signers:
+  - TECH-01
+  - QC-HEAD-01
+  action: item.sample_designated
+  catalog_ref: Е-129 [П]
+  subject:
+    item_id: F-090
+  process_ref: item/F-090
+  params:
+    purpose: destructive_test
+    test: макрошлиф участка У4
+    why: три подреза на У4 подряд — посмотреть форму и глубину подреза и провар корня; основание для разбора причин по НС-87…НС-90
+    route_return: false
+    status_after: списано — образец
+    erp: 'ничего нового: в 1С изделие уже списано'
+  expect: accepted
+  scenarios:
+  - S22
+erp_outbox_note: Ожидаемые учётные сообщения в 1С и ответы stand-а. Вывод движка — в потоки не входит; выведено генератором из фактов и шагов людей прогона [П]. Весь прогон.
+erp_outbox_counts: {}
+erp_outbox_expected: []

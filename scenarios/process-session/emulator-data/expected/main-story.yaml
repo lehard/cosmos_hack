@@ -1,0 +1,65 @@
+# =============================================================================
+# Срез файла process/scenarios-flange-expected.yaml — БЕЗ изменений (наши имена, как есть).
+# Источник истины — исходный файл; этот файл пересобирается tools/split_expected.py.
+# Общие словари и ID — expected/_common.yaml; главная история — expected/main-story.yaml.
+# Времена здесь — МСК (+03:00), как в исходнике; в потоках и определениях — UTC.
+# =============================================================================
+
+main_story:
+  id: MS-1
+  name: "Плохой день ИС-2"
+  window: {from: "2026-09-17T08:00:00+03:00", to: "2026-09-24T16:30:00+03:00"}
+  order: [S01, S16, S15, S07, S08, S11, S12, S17, S03, S05, S06, S04, S02, S09, S10A]
+  in_4_minutes: [S01, S03, S05, S07, S06, S04, S02, S09]
+  standalone: [S10B, S13, S14, S18, S19, S20, S21, S22]      # S18–S21 — короткие прогоны в своих мирах, S22 — продолжение S10B; S06 и S12 можно прогонять и отдельно; S13 — Пт 25.09, после главной истории; S14 — свой мир, Вт 29.09 – Ср 30.09
+  stops_for_human_decision:    # сценарий ждёт решения на рабочем столе роли (FR-129 соседей)
+    - {at: "2026-09-23T11:08:00+03:00", role: QC, action: "подтвердить сигнал Ф-017"}
+    - {at: "2026-09-23T11:45:00+03:00", role: TECHNOLOGIST, action: "сузить круг RS-01 до 13"}
+    - {at: "2026-09-23T12:15:00+03:00", role: TECHNOLOGIST, action: "сузить круг RS-01 до 6"}
+    - {at: "2026-09-23T15:30:00+03:00", role: COMMISSION, action: "решение по инциденту: переделка ×6"}
+    - {at: "2026-09-23T16:20:00+03:00", role: TECHNOLOGIST, action: "подтвердить причину по КО-7"}
+    - {at: "2026-09-24T15:30:00+03:00", role: CHIEF_WELDER, action: "новое решение по Ф-021"}
+
+# -----------------------------------------------------------------------------
+# Срез «пять ролей» в конце главной истории (Чт 24.09 16:30) — для кадра и проверки
+# -----------------------------------------------------------------------------
+role_views:
+  at: "2026-09-24T16:30:00+03:00"
+  peak_at: "2026-09-23T13:45:00+03:00"
+  master_MST-02:
+    peak: {problem_source: WS-2, source_stopped_since: "2026-09-23T11:12:00+03:00", suspected: 2, unknown: 1, confirmed: 3, blocked: 6}
+    end: {source_stopped: true, suspected: 0, rework_verified: 4, in_rework: 1, scrapped: 1, rings_to_return: 7}
+  qc_QC-01:
+    peak: {queue: 5, items: ["сигнал РК по F-019", "ЗТ-3 F-015 «пересмотрите»", NC-01, NC-02, NC-03], disposition_due: "2026-09-28"}
+  technologist_TECH-01:
+    peak: {shows: [before_after, reference_F-001, source_log_vs_setpoint, common_factors, hypothesis_versions, risk_scope_versions]}
+    end: {cause_confirmed: equipment, investigation: open}
+  manager:
+    end: {first_pass_ZT-3: "ниже, чем у фонового заказа (100 %)", repeated_runs_delta: 5, active_system_problems: 1, confirmed_welder_errors: 0, incoming_lots_nonconforming: 1, weld_defects_by_line: {L-FL-1: 1, L-FL-2: 4}}
+  admin_ADM-01:
+    end: {gateway_offline: ["2026-09-22T09:50:00+03:00", "2026-09-23T12:05:00+03:00"], received: 1240, duplicates_filtered: 312, late_accepted: 928, lost_at_source: 35, quarantined: 3, erp_errors: {"503": retried_ok, "422": fixed_id_map}, integrity_violations: 3, integrity_resolved_at: "2026-09-24T07:45:00+03:00", clock_skew: {CMM-1: "+7 мин, 5 записей исправлено по правилу, часы синхронизированы Пн 21.09 10:15"}, ambiguous_bindings: 1, sources_online: all}   # волна 2: три атаки подмены (S09), сдвиг часов (S15), неоднозначная привязка (S16)
+
+# -----------------------------------------------------------------------------
+# Итог главного потока (для одной строки табло «Плохой день ИС-2»)
+# -----------------------------------------------------------------------------
+main_story_totals:
+  at: "2026-09-24T16:30:00+03:00"
+  risk_scope_RS-01: {v1: 34, v2: 13, v3: 6, reduction_pct: 82}
+  items_with_confirmed_nc_in_incident: 6
+  confirmed_weld_defects: 5          # 4 до переделки (У2, У5, У6, У3) + 1 в новом шве Ф-021 (У5)
+  incoming_nc: [NC-04, NC-05]        # не входят в дефекты сварочного участка
+  confirmed_weld_defects_by_line: {L-FL-1: 1, L-FL-2: 4}
+  erp: {scrap_transfer_rework_items: 6, return_to_supplier_docs: 1, rework_return_to_production: 4, release_good_after_rework: 0, scrap_transfer_writeoff: 1}   # «выпуск годного» по переделанным — после ЗТ-6, за рамками главной истории
+  confirmed_errors_by_welder: {WLD-02: 0, WLD-03: 0}
+  cause: {RS-01: equipment/WS-2, RS-02: incoming/LOT-R-117}
+  # волна 2 (фон главной истории)
+  integrity_attacks_detected: 3          # S09: правка записи, правка с пересчётом цепочки, правка представления
+  time_corrected_records: 5              # S15: КИМ-1 +7 мин
+  ambiguous_run_bindings: 1              # S16
+  operator_checks_self_reported: 1       # S17: пропуск проверки отмечен исполнителем, запись в журнале критических действий
+  equipment_install_runs_main_week: 7    # установка оборудования EQ: Ф-001…Ф-006, Ф-010 (у Ф-015 сборка остановлена до крышки)
+  # v0.3.1 (решения пользователя 26.09)
+  mes: {holds: 43, releases: 41, held_at_end: [F-021, LOT-R-117]}   # «не выдавать» — в момент удержания; «можно выдавать» — только по шагу человека
+  flatness_after_welding: {records: 50, out_of_tolerance: 0}          # узел WP: у каждой сварки, дошедшей до рентгена
+  incoming_xray_samples: {LOT-R-108: R-301, LOT-R-116: R-001, LOT-R-117: R-104}   # узел VX: 1 кольцо из партии, все чистые; пора П-117 — в К-101 и К-105
+  author_defect_classes: {weld: {confirmed_defects: 5}, chip: {signals: 1, confirmed: 1}, dent: {signals: 1, rejected: 1}, scratch: {signals: 1, rejected: 1}, geometry: {signals: 1, confirmed: 1}}
