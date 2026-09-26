@@ -244,6 +244,9 @@ func (s *Service) expand(ctx context.Context, st *RunState, rp *runPlan, str str
 		out, err := ids.ExpandString(str, true)
 		var un *sim.ErrUnresolved
 		if err == nil || !errors.As(err, &un) {
+			if actual, ok := st.Runs[out]; ok && err == nil {
+				out = actual // выполнение начато человеком со своим id (aliasRun)
+			}
 			return out, err
 		}
 		name, ok := refName(un.Placeholder)
