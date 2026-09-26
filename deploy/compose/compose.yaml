@@ -103,7 +103,7 @@ services:
 
   ant:
     <<: [*ant-image, *ant-common]
-    command: ["-role=api,worker,crossitem,projector"]
+    command: ["-role=api,worker,crossitem,projector,scheduler"]
     depends_on:
       migrate:
         condition: service_completed_successfully
