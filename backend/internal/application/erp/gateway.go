@@ -59,20 +59,24 @@ func (o *Outbox) PullOnce(ctx context.Context) (int, error) {
 		return 0, err
 	}
 	src := GatewaySource(o.system())
-	seen, _ := o.Store.(GatewaySeen)
 	ids := make([]string, 0, len(facts))
 	for _, f := range facts {
 		ids = append(ids, f.EventID)
 	}
-	known := map[string]int64{}
-	if seen != nil {
-		if known, err = seen.Seen(ctx, src, ids); err != nil {
-			return 0, err
-		}
+	known, err := o.Store.Seen(ctx, src, ids)
+	if err != nil {
+		return 0, err
 	}
+	if known == nil {
+		known = map[string]int64{}
+	}
+	// Повторная доставка того же факта в одном чтении (сбой «дубль» stand-а,
+	// одна серия в нескольких строках поступления) — один факт: иначе копии
+	// получили бы разные source_seq, и приём счёл бы их конфликтом (FR-31).
 	var fresh []Inbound
 	for _, f := range facts {
 		if _, ok := known[f.EventID]; !ok {
+			known[f.EventID] = 0
 			fresh = append(fresh, f)
 		}
 	}
@@ -97,10 +101,8 @@ func (o *Outbox) PullOnce(ctx context.Context) (int, error) {
 	if _, err := o.Intake.Submit(ctx, src, envs); err != nil {
 		return 0, err
 	}
-	if seen != nil {
-		if err := seen.MarkSeen(ctx, src, marks); err != nil {
-			return 0, err
-		}
+	if err := o.Store.MarkSeen(ctx, src, marks); err != nil {
+		return 0, err
 	}
 	return len(fresh), nil
 }
