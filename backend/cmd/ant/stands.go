@@ -31,13 +31,18 @@ func init() {
 //	stands.interval (ANT_STANDS_INTERVAL) — период телеметрии (по умолчанию 5s).
 //
 // Stand-ы 1С, Галактики, MES и VisionQC (эпики 30–33, 43) добавляются в реестр здесь.
+//
+// Реестр — один на процесс (standsRegistry): его служебный порт сбоев
+// (StandControl) нужен и симуляции, которую собирает роль api.
 func runStands(ctx context.Context, env *environment) error {
 	sc := env.cfg.Stands
 	addr := sc.Addr
 	if addr == "" {
 		addr = ":8491"
 	}
-	reg := stands.NewRegistry()
+	reg := env.standsRegistry()
+	// Раннер прогонов пульта сценариев (эпики 32, 16): сервис собирает роль api.
+	go runSimulation(ctx, env)
 	if edge := strings.TrimSpace(sc.EdgeURL); edge != "" {
 		iv := sc.Interval
 		if iv <= 0 {
@@ -70,4 +75,11 @@ func runStands(ctx context.Context, env *environment) error {
 	sctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	return srv.Shutdown(sctx)
+}
+
+// standsRegistry — реестр stand-ов процесса (один на процесс): роль stands
+// поднимает их протоколы, симуляция включает сбои через StandControl.
+func (e *environment) standsRegistry() *stands.Registry {
+	e.standsOnce.Do(func() { e.standsReg = stands.NewRegistry() })
+	return e.standsReg
 }

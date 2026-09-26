@@ -109,6 +109,10 @@ type apiOptions struct {
 	analytics *analyticsapp.Service
 	// process — живая карта, версии и команды исполнителя (process.go, эпик 17); nil — 501.
 	process *processapp.Service
+	// simulation — пульт тестовых сценариев (simulation.go, эпики 32, 16); nil — 501.
+	simulation *simulationapp.Service
+	// item — команды item: обход до эпика 18 (itembypass.go); nil — 501.
+	item itemapp.Commands
 }
 
 // buildAPI собирает HTTP API: общий декоратор (Gate) над портами прав и входа,
@@ -167,6 +171,9 @@ func buildAPI(mux *http.ServeMux, o apiOptions) *httpapi.API {
 	}
 	{
 		q, c := pick[itemapp.Queries, itemapp.Commands](a.ModeFor("item"), itemapp.NewService(), itemfx.New())
+		if o.item != nil && a.ModeFor("item") == platform.ModeLive {
+			c = o.item // TODO(18): обход до эпика 18 — команды фактами через приём
+		}
 		itemhttp.Register(a, q, c)
 	}
 	{
@@ -257,7 +264,11 @@ func buildAPI(mux *http.ServeMux, o apiOptions) *httpapi.API {
 		federationhttp.Register(a, q, c)
 	}
 	{
-		q, c := pick[simulationapp.Queries, simulationapp.Commands](a.ModeFor("simulation"), simulationapp.NewService(), simulationfx.New())
+		var live any = simulationapp.NewService()
+		if o.simulation != nil {
+			live = o.simulation
+		}
+		q, c := pick[simulationapp.Queries, simulationapp.Commands](a.ModeFor("simulation"), live, simulationfx.New())
 		simulationhttp.Register(a, q, c)
 	}
 	{

@@ -5,6 +5,7 @@ import (
 
 	"ant/cmd/internal/config"
 	ingestapp "ant/internal/application/ingest"
+	appjournal "ant/internal/application/journal"
 	ingeststore "ant/internal/infrastructure/storage/ingest"
 	"ant/internal/infrastructure/storage/journal/clock"
 	materialsstore "ant/internal/infrastructure/storage/materials"
@@ -40,6 +41,13 @@ func ingestLive(ctx context.Context, env *environment) (*ingestapp.Service, erro
 	ic.Partitions = cfg.Engine.Partitions
 	ic.StagePartition = cfg.Engine.Partitions // партиция записей вне изделия — за пределами 0…P-1
 	ic.DomainBuild = domainBuild()
+	// Профиль demo — журнал в режиме часов scenario (AD-37, эпик 16): время
+	// приёма — доменное «сейчас» прогона, recorded_at — оно же.
+	var domain appjournal.DomainClock = clock.SystemDomain{}
+	if scenarioClock(cfg) {
+		ic.ScenarioClock = true
+		domain = c.domainClock()
+	}
 	return ingestapp.NewService(
 		ingestapp.WithConfig(ic),
 		ingestapp.WithDeps(ingestapp.Deps{
@@ -47,7 +55,8 @@ func ingestLive(ctx context.Context, env *environment) (*ingestapp.Service, erro
 			Registry:    store,
 			Quarantine:  store,
 			Materials:   mat,
-			DomainClock: clock.SystemDomain{},
+			DomainClock: domain,
+			Carriers:    c.carriers(), // TODO(18): реестр носителей стадии эпика 18; до него — обход carriers.go
 			InfraClock:  clock.System{},
 		}),
 	), nil

@@ -102,7 +102,7 @@ func runAPI(ctx context.Context, env *environment) error {
 		}
 	}
 	if modeOf(opts, "nonconformity") == platform.ModeLive {
-		if opts.nonconformity, err = nonconformityLive(ctx, env); err != nil {
+		if opts.nonconformity, err = nonconformityLive(ctx, env, opts.directory); err != nil {
 			return err
 		}
 	}
@@ -112,7 +112,21 @@ func runAPI(ctx context.Context, env *environment) error {
 			return err
 		}
 	}
-	buildAPI(mux, opts)
+	if modeOf(opts, "item") == platform.ModeLive {
+		// TODO(18): обход до эпика 18 — команды item фактами через приём (itembypass.go).
+		if opts.item, err = itemLive(ctx, env, opts.ingest); err != nil {
+			return err
+		}
+	}
+	var simProxy *portProxy
+	if modeOf(opts, "simulation") == platform.ModeLive {
+		// Пульт тестовых сценариев (эпики 32, 16): раннер — в роли stands процесса.
+		if opts.simulation, simProxy, err = simulationLive(ctx, env, opts.ingest); err != nil {
+			return err
+		}
+	}
+	api := buildAPI(mux, opts)
+	attachSimulation(env, opts.simulation, simProxy, api, mux)
 	mux.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(http.StatusNotFound)

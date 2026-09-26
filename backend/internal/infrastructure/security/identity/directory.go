@@ -45,6 +45,12 @@ type policyFile struct {
 			Scope string `yaml:"scope"`
 		} `yaml:"roles"`
 	} `yaml:"persons"`
+	Grants struct {
+		Authorities []struct {
+			Person    string `yaml:"person"`
+			Authority string `yaml:"authority"`
+		} `yaml:"authorities"`
+	} `yaml:"grants"`
 }
 
 // LoadDirectory читает стартовую политику и столы ролей из fsys (корень
@@ -58,7 +64,10 @@ func LoadDirectory(fsys fs.FS) (*access.Directory, error) {
 	if err := yaml.Unmarshal(b, &pf); err != nil {
 		return nil, fmt.Errorf("%s: %w", PolicyFile, err)
 	}
-	d := &access.Directory{Desks: map[string]access.Desk{}}
+	d := &access.Directory{Desks: map[string]access.Desk{}, Authorities: map[string][]string{}}
+	for _, g := range pf.Grants.Authorities {
+		d.Authorities[g.Person] = append(d.Authorities[g.Person], g.Authority)
+	}
 	for _, r := range pf.Roles {
 		d.Roles = append(d.Roles, access.RoleRef{ID: r.ID, Title: r.Title, Inherits: r.Inherits})
 	}

@@ -45,6 +45,10 @@ LABEL ant.project="ant" \
 COPY --from=backend /out/ant /ant
 COPY --from=backend --chown=65532:65532 /out/var/lib/ant /var/lib/ant
 COPY deploy/config/ant.yaml /etc/ant/ant.yaml
+# Определения и ожидания тестовых сценариев (AD-26): пульт сценариев роли
+# stands (stands.scenarios); потоки JSONL генератор строит сам.
+COPY scenarios/definitions/ /etc/ant/scenarios/definitions/
+COPY scenarios/expected/ /etc/ant/scenarios/expected/
 USER 65532:65532
 EXPOSE 8080
 HEALTHCHECK --interval=10s --timeout=3s --start-period=5s --retries=3 CMD ["/ant", "-healthcheck"]

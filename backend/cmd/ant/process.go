@@ -11,7 +11,6 @@ import (
 	"ant/internal/application/platform"
 	processapp "ant/internal/application/process"
 	"ant/internal/infrastructure/fixtures/world"
-	"ant/internal/infrastructure/storage/journal/clock"
 )
 
 // Модуль process (эпик 17) на ядре процесса: хранилище версий в схеме
@@ -62,7 +61,7 @@ func processLive(ctx context.Context, env *environment, ingest *ingestapp.Servic
 	}
 	c.ensureProcessSeed(ctx, env)
 	svc := &processapp.LiveService{Store: c.engine, States: c.states(), Library: c.versions, Bundles: c.bundles,
-		Clock:    clock.NewJournal(c.journal).Now,
+		Clock:    c.domainClock().Now,
 		Recorder: &processapp.Recorder{Journal: c.journal, DomainBuild: c.codec.DomainBuild, Partitions: env.cfg.Engine.Partitions, Now: c.codec.Now}}
 	if ingest != nil {
 		svc.Facts = ingestFacts{ingest}

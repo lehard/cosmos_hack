@@ -12,6 +12,7 @@ import (
 	"ant/cmd/internal/db"
 	engineapp "ant/internal/application/engine"
 	processapp "ant/internal/application/process"
+	"ant/internal/domain/crossitem"
 	dj "ant/internal/domain/journal"
 	"ant/internal/infrastructure/security/permissive"
 	enginestore "ant/internal/infrastructure/storage/engine"
@@ -49,6 +50,13 @@ type core struct {
 	versions *processstore.Versions
 	bundles  *processapp.Bundles
 	seedOnce sync.Once
+	// clock — часы журнала (режим из time.clock.mode_set, тики прогона);
+	// clockMu — запись режима scenario при старте (clock.go, эпик 16).
+	clock   *clock.Journal
+	clockMu sync.Mutex
+	// carrierReg — реестр носителей для приёма (carriers.go, обход до эпика 18).
+	carrierReg  crossitem.CarrierRegistry
+	carrierOnce sync.Once
 }
 
 // coreHolder — ленивое создание ядра и его остановка после ролей.
@@ -105,8 +113,9 @@ func openCore(ctx context.Context, env *environment) (*core, error) {
 		batch = journalstore.DefaultBatchMax
 	}
 	c := &core{
-		pool:     pool,
-		journal:  journalstore.NewStore(pool, infra, journalstore.WithBatchMax(batch)),
+		pool: pool,
+		// Профиль demo — журнал в режиме часов scenario (AD-37, эпик 16).
+		journal:  journalstore.NewStore(pool, infra, journalstore.WithBatchMax(batch), journalstore.WithScenarioClock(scenarioClock(cfg))),
 		leases:   journalstore.NewLeases(pool, infra),
 		listener: journalstore.NewListener(pool, env.log),
 		engine:   &enginestore.Store{Pool: pool},
@@ -115,6 +124,7 @@ func openCore(ctx context.Context, env *environment) (*core, error) {
 		holder:   fmt.Sprintf("%s:%d", host, os.Getpid()),
 		ttl:      ttl,
 	}
+	c.clock = clock.NewJournal(c.journal)
 	c.bundles = &processapp.Bundles{Store: c.versions, Quorum: processapp.RecordedQuorum{}, Now: infra.Now}
 	c.codec = &engineapp.Codec{
 		Store:  c.journal,

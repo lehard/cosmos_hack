@@ -111,6 +111,11 @@ type Config struct {
 		EdgeURL string `yaml:"edge_url"`
 		// Interval — период телеметрии stand-а оборудования.
 		Interval time.Duration `yaml:"interval"`
+		// Scenarios — каталог scenarios/ (definitions/ и expected/) пульта
+		// тестовых сценариев (AD-26, эпик 32); пусто — симуляция выключена.
+		Scenarios string `yaml:"scenarios"`
+		// Tick — период раннера прогонов в роли stands (0 — 500 мс).
+		Tick time.Duration `yaml:"tick"`
 	} `yaml:"stands"`
 
 	Integrations struct {

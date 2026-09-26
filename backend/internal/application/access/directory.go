@@ -12,6 +12,19 @@ type Directory struct {
 	Personas []DemoPersona
 	// Desks — столы по id роли, у которой есть свой файл.
 	Desks map[string]Desk
+	// Authorities — полномочия сотрудников (grants.authorities политики):
+	// псевдоним → id полномочий. Рамки (scope, limits) — эпик 26.
+	Authorities map[string][]string
+}
+
+// HasAuthority — у сотрудника person есть полномочие authority (FR-19, FR-50).
+func (d *Directory) HasAuthority(person, authority string) bool {
+	for _, a := range d.Authorities[person] {
+		if a == authority {
+			return true
+		}
+	}
+	return false
 }
 
 // Role — роль по id.

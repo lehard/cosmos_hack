@@ -16,7 +16,6 @@ import (
 	processapp "ant/internal/application/process"
 	qualityapp "ant/internal/application/quality"
 	mldomain "ant/internal/domain/machinelogs"
-	"ant/internal/infrastructure/storage/journal/clock"
 	"ant/internal/infrastructure/storage/journal/feed"
 )
 
@@ -152,6 +151,7 @@ func (e *environment) readyCore(ctx context.Context) (*core, error) {
 		return nil, err
 	}
 	c.ensureProcessSeed(ctx, e)
+	c.ensureClockMode(ctx, e)
 	return c, nil
 }
 
@@ -193,6 +193,6 @@ func analysisLive(ctx context.Context, env *environment) (*analysisapp.Service, 
 		Projections: c.engine,
 		Decisions: analysisapp.JournalDecisions{Journal: c.journal, DomainBuild: c.codec.DomainBuild,
 			Partitions: env.cfg.Engine.Partitions, Now: c.codec.Now},
-		Clock: clock.NewJournal(c.journal),
+		Clock: c.domainClock(),
 	}), nil
 }

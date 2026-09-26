@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	appjournal "ant/internal/application/journal"
 	sim "ant/internal/domain/simulation"
 )
 
@@ -178,6 +179,10 @@ func (s *Service) action(ctx context.Context, st *RunState, rp *runPlan, i int) 
 	case sim.ActionTamper:
 		return s.tamper(ctx, st, rp, a, key)
 	}
+	// Решение человека и поиск объектов системы ({ref:…}) — по состоянию
+	// после обработки всего доставленного (эпик 16: иначе команда видит
+	// изделие без только что пришедших событий).
+	s.settle(ctx, st)
 	if st.Mode == ModeInteractive && a.Stop && st.Waiting == nil {
 		// FR-129: сценарий ждёт решения на столе роли; часы стоят.
 		obj := ""
@@ -198,6 +203,14 @@ func (s *Service) action(ctx context.Context, st *RunState, rp *runPlan, i int) 
 	}
 	s.decide(ctx, st, rp, a, key)
 	return nil
+}
+
+// settle — дождаться, пока воркер и стадия обработают доставленное прогоном
+// (порт Settler); без порта или по сроку — как есть.
+func (s *Service) settle(ctx context.Context, st *RunState) {
+	if s.d.Settler != nil {
+		_ = s.d.Settler.Settle(ctx, st.RunID)
+	}
 }
 
 // waitDone — решение человека принято на столе роли: прогон продолжается.
@@ -250,7 +263,9 @@ func (s *Service) decide(ctx context.Context, st *RunState, rp *runPlan, a sim.A
 		res.Status, res.Detail = "skipped", err.Error()
 		return
 	}
-	out, err := s.d.Actor.Act(ctx, a.Actor, a.Operation, params, body)
+	// Прогон в контексте команды (AD-38): факты и решения демо-подписанта
+	// принадлежат прогону, доменное «сейчас» — часы прогона (AD-37).
+	out, err := s.d.Actor.Act(appjournal.WithRun(ctx, st.RunID), a.Actor, a.Operation, params, body)
 	switch {
 	case errors.Is(err, ErrUnavailable):
 		res.Status, res.Detail = "skipped", "операция "+a.Operation+" пока не отвечает (модуль в работе)"

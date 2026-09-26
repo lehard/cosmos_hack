@@ -369,7 +369,7 @@ func (st *stage) resolve(wid string) {
 // пересекается с окном (FR-151).
 func (st *stage) inWindow(w Window, run Run) bool {
 	return w.End != nil && run.EquipmentID == w.EquipmentID && run.ScenarioRun == w.RunID &&
-		run.ItemID != "" && !run.StartedAt.IsZero() && st.p.Env.Special(run.StepKey) && run.Overlaps(w.Start, *w.End)
+		run.ItemID != "" && !run.StartedAt.IsZero() && run.IsSpecial(st.p.Env) && run.Overlaps(w.Start, *w.End)
 }
 
 // windowRun — несоответствие выполнению id в закрытом окне wid (один раз).

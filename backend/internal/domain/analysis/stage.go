@@ -141,8 +141,11 @@ type Incident struct {
 	Emitted        int               `json:"emitted"`
 	Members        map[string]Member `json:"members,omitempty"`
 	NCs            []string          `json:"ncs,omitempty"`
-	Closed         bool              `json:"closed,omitempty"`
-	CauseConcluded bool              `json:"cause_concluded,omitempty"`
+	// Windows — окна нарушения спецпроцесса (event_id записи
+	// equipment.violation.window_resolved), открывшие или расширившие инцидент.
+	Windows        []string `json:"windows,omitempty"`
+	Closed         bool     `json:"closed,omitempty"`
+	CauseConcluded bool     `json:"cause_concluded,omitempty"`
 }
 
 // StageState — состояние модуля analysis в межизделийной стадии (AD-42):
@@ -314,6 +317,8 @@ func Stage(s StageState, r kernel.Record) (StageState, []kernel.Addressed) {
 		return s.onNonconformity(r)
 	case catalog.EquipmentViolationWindowResolved:
 		return s.onViolationWindow(r)
+	case catalog.DecisionNonconformityRegistered:
+		return s.onWindowNC(r)
 	case catalog.ItemAssemblyRecorded:
 		return s.onAssembly(r)
 	case catalog.GenealogyLotIssued:
