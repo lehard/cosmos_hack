@@ -9,6 +9,7 @@ import { computed, inject, toValue, type MaybeRefOrGetter, type Ref } from 'vue'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { routeLocationKey } from 'vue-router'
 import {
+  analysisActionAssign,
   analysisCauseConclude,
   analysisCircumstancesRead,
   analysisCommonFactorsRead,
@@ -21,7 +22,7 @@ import {
   analysisScopeExpand,
   analysisScopeNarrow,
 } from '@/shared/api/generated/client'
-import type { ChangeScope, ConcludeCause, Permission, RejectHypothesis, RequestMeasurement } from '@/shared/api/generated/model'
+import type { AssignAction, ChangeScope, ConcludeCause, Permission, RejectHypothesis, RequestMeasurement } from '@/shared/api/generated/model'
 import { entityKeys } from '@/shared/api/keys'
 import { backendModeOf } from '@/shared/api/response'
 import { usePermissions } from '@/entities/permission'
@@ -178,6 +179,12 @@ export function useAnalysisCommands() {
     expandScope: useMutation({
       mutationFn: (v: { incidentId: string; body: Cmd<ChangeScope> }) =>
         analysisScopeExpand(v.incidentId, { ...v.body, command_id: commandId(), policy_seq: policySeq() }),
+      onSuccess: refresh,
+    }),
+    /** Назначить меру (`analysis.action.assign`, FR-64): направление — по причине, план проверки эффективности обязателен. */
+    assignAction: useMutation({
+      mutationFn: (v: { incidentId: string; body: Cmd<AssignAction> }) =>
+        analysisActionAssign(v.incidentId, { ...v.body, command_id: commandId(), policy_seq: policySeq() }),
       onSuccess: refresh,
     }),
   }
