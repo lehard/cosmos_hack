@@ -2288,6 +2288,42 @@ doc_digest: string
  * via the `definition` "uuid".
  */
 signature_event_ids: string[]
+/**
+ * Как проверены подписи: full — полномочие и клеймо по политике на seq, криптопроверка подписи (эпик 27); demo — демо-профиль: подписи без агента токена, полномочие по стартовой политике, криптопроверка не проводилась (Д-30).
+ */
+verification?: ("full" | "demo")
+}
+/**
+ * Подписант не согласовал версию документа — вернул с замечанием; маршрут этой версии не закрывается, нужна новая версия или аннулирование (FR-136, AD-43).
+ * 
+ * This interface was referenced by `EventsContracts`'s JSON-Schema
+ * via the `definition` "DocumentSignatureDeclinedV1".
+ */
+export interface DocumentSignatureDeclinedV1 {
+/**
+ * Идентификатор объекта системы или справочника: ASCII, без пробелов.
+ */
+document_id: string
+/**
+ * Версия документа.
+ */
+version: number
+/**
+ * Отпечаток по хешу формата цепочки с префиксом алгоритма: `streebog256:‹64 hex›` (AD-44). Им же адресуются материалы.
+ */
+doc_digest: string
+/**
+ * Этап маршрута.
+ */
+stage: number
+/**
+ * Условный идентификатор (псевдоним) сотрудника; соответствие человеку хранит модуль access.
+ */
+signer_person_id: string
+/**
+ * Текст на русском для человека.
+ */
+comment: string
 }
 /**
  * Подпись документа записана — подпись над отпечатком: агентом токена или на бумаге с заверением (скан, QR, заверитель ≠ подписант, учётный номер оригинала) (FR-139, AD-43).
@@ -2350,6 +2386,14 @@ scan_address?: string
  * @maxItems 7
  */
 summary?: []|[SummaryField]|[SummaryField, SummaryField]|[SummaryField, SummaryField, SummaryField]|[SummaryField, SummaryField, SummaryField, SummaryField]|[SummaryField, SummaryField, SummaryField, SummaryField, SummaryField]|[SummaryField, SummaryField, SummaryField, SummaryField, SummaryField, SummaryField]|[SummaryField, SummaryField, SummaryField, SummaryField, SummaryField, SummaryField, SummaryField]
+/**
+ * Ключ подписанта `key_id@версия` (агент токена); проверяет модуль signing (эпик 27).
+ */
+key_ref?: string
+/**
+ * Подпись агента над отпечатком документа (base64, DSSE PAE класса document-signature); проверяет модуль signing (эпик 27). Пусто — демо без агента токена (Д-30).
+ */
+signature?: string
 }
 /**
  * Поле сводки уровня 2 (3–7 полей) — как видел подписант.
@@ -2454,6 +2498,10 @@ required_approvals: [ApprovalStage, ...(ApprovalStage)[]]
  * Заменяемая версия документа.
  */
 supersedes_document_version?: number
+/**
+ * Название документа для людей (из шаблона).
+ */
+title?: string
 }
 /**
  * Этап маршрута подписей (AD-13, AD-43).
@@ -2495,6 +2543,31 @@ attester_authority_id?: string
  * Внешняя сторона.
  */
 external_party?: ("none" | "customer_representative" | "partner")
+/**
+ * Кто подписывает этап — для людей (из маршрута шаблона).
+ */
+title?: string
+/**
+ * Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
+ */
+role?: string
+/**
+ * Сколько засчитанных подписей нужно на этапе.
+ */
+required?: number
+/**
+ * Этап закрывает само решение-источник документа (его автор подписал решение уровнем этапа) — отдельной подписи не требуется.
+ */
+by_source?: boolean
+/**
+ * Правила разделения обязанностей этапа: distinct_signers — один человек подписывает один этап; not_item_participant — не участвовал в изготовлении изделия (FR-56).
+ * 
+ * Items: Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
+ * 
+ * This interface was referenced by `AntDefsV1`'s JSON-Schema
+ * via the `definition` "code".
+ */
+separation?: string[]
 }
 /**
  * Запрошено оформление документа — человек запрашивает документ с маршрутом: «Запросить решение», выдача прав, назначение контролёра (FR-136, AD-12).
@@ -2532,6 +2605,10 @@ decision?: string
  * Комментарий автора запроса.
  */
 comment?: string
+/**
+ * Условный идентификатор (псевдоним) сотрудника; соответствие человеку хранит модуль access.
+ */
+requested_by?: string
 }
 /**
  * Сводка параметров за цикл — edge-агент на окно цикла отдаёт сводку (среднее, максимум, выход за уставку) — не миллисекундную телеметрию; сырые данные остаются на краю (FR-147, AD-25). `event_id` = UUIDv5(устройство, окно, вид сводки).

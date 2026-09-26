@@ -3,13 +3,10 @@
  * Источник: contracts/openapi.yaml
  */
 
-/**
- * source_decision — этап закрыт самим решением-источником (by_source).
- */
-export type DocumentSignatureViewMethod = typeof DocumentSignatureViewMethod[keyof typeof DocumentSignatureViewMethod];
+export type DocumentStageSignatureMethod = typeof DocumentStageSignatureMethod[keyof typeof DocumentStageSignatureMethod];
 
 
-export const DocumentSignatureViewMethod = {
+export const DocumentStageSignatureMethod = {
   token_agent: 'token_agent',
   paper: 'paper',
   device: 'device',

@@ -3,15 +3,13 @@
  * Источник: contracts/openapi.yaml
  */
 
-export type DocumentViewStatus = typeof DocumentViewStatus[keyof typeof DocumentViewStatus];
+export type DocumentVersionRefStatus = typeof DocumentVersionRefStatus[keyof typeof DocumentVersionRefStatus];
 
 
-export const DocumentViewStatus = {
-  requested: 'requested',
+export const DocumentVersionRefStatus = {
   drafted: 'drafted',
   signing: 'signing',
   route_closed: 'route_closed',
   annulled: 'annulled',
-  live: 'live',
   returned: 'returned',
 } as const;
