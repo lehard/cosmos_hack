@@ -100,6 +100,9 @@ type State struct {
 	Findings  []Finding    `json:"findings,omitempty"`
 	Cases     []Case       `json:"cases,omitempty"`
 	Incidents []Membership `json:"incidents,omitempty"`
+	// Equipment — события оборудования, привязанные к изделию приёмом
+	// (edge-агент знал изделие, AD-41): дорожка оборудования без порта.
+	Equipment []EquipmentEvent `json:"equipment,omitempty"`
 	// Released — изделие выпущено (item.release.recorded): «отгружено» в
 	// разбивке области (FR-61).
 	Released bool `json:"released,omitempty"`
@@ -123,6 +126,10 @@ func (s *State) run(id string) int {
 func reduceItem(s State, r kernel.Record) State {
 	if s.ItemID == "" && r.ItemID != "" {
 		s.ItemID = r.ItemID
+	}
+	if e, ok := EquipmentEventOf(r); ok {
+		s.Equipment = append(slices.Clone(s.Equipment), e)
+		return s
 	}
 	switch r.Type {
 	case catalog.OperationRunStarted:

@@ -123,6 +123,7 @@ func Analyze(s State, itemID, ncID string, eq []EquipmentEvent) (Analysis, bool)
 	if !ok {
 		return Analysis{}, false
 	}
+	eq = mergeEquipment(s.Equipment, eq)
 	a := Analysis{NCID: ncID, Records: []Mark{}, Missing: []string{}, Hypotheses: []Hypothesis{}}
 	a.Profile = Profile{NCID: ncID, ItemID: itemID, DefectType: c.DefectType, At: c.At}
 	causes := []string{c.EventID}
@@ -476,4 +477,22 @@ func sortedUnique(xs []string) []string {
 	}
 	slices.Sort(out)
 	return slices.Compact(out)
+}
+
+// mergeEquipment — события оборудования из свёртки изделия и из порта без
+// повторов; nil — нет ни тех, ни других (порт не подключён).
+func mergeEquipment(own, port []EquipmentEvent) []EquipmentEvent {
+	if len(own) == 0 {
+		return port
+	}
+	out := slices.Clone(port)
+	if out == nil {
+		out = []EquipmentEvent{}
+	}
+	for _, e := range own {
+		if !slices.ContainsFunc(out, func(x EquipmentEvent) bool { return x.EventID == e.EventID }) {
+			out = append(out, e)
+		}
+	}
+	return out
 }
