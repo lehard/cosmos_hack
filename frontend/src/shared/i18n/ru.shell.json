@@ -359,6 +359,27 @@
           "preventiveAction": "Предупреждающее действие (не допустить в похожих местах)"
         }
       },
+      "inbox": {
+        "title": "Что требует моих действий",
+        "needAction": "Требуют действий:",
+        "nothing": "Сейчас ничего не требует ваших действий",
+        "inScope": "{items} в области риска (было {initial})",
+        "next": "Дальше: {what}",
+        "recurringTitle": "Повторяется: {defect} — {step}",
+        "recurringCount": "случаев: {n}",
+        "noActions": "мер нет — повторится снова",
+        "actionsTitle": "Меры требуют внимания",
+        "overdue": "просрочено: {n}",
+        "ineffective": "не помогли, переоткрыты: {n}",
+        "evaluation": "пора оценить эффективность: {n}",
+        "versionTitle": "«{process}» — версия {label}",
+        "draft": "черновик — доработать и отправить на согласование",
+        "onApproval": "на согласовании — ждёт подписей",
+        "goInvestigation": "Открыть расследование",
+        "goRecurring": "Разобрать",
+        "goActions": "К мерам",
+        "goVersion": "К техпроцессу"
+      },
       "investigations": {
         "title": "Мои расследования",
         "inScope": "в области риска",
