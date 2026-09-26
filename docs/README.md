@@ -1,19 +1,19 @@
 # Документы «Главного»
 
-«Главный» — доверенная система контроля качества изделий; в коде — `ant`.
+«Главный» — платформа управления производством: доверенная система контроля качества изделий; в коде — `ant`.
 
 | Файл | Что |
 |---|---|
 | [reviewer-guide.md](reviewer-guide.md) | **Проверяющим.** Путеводитель по критериям оценки кейса: команда, что увидеть, где в коде |
 | [guides/](guides/README.md) | **Пользователям.** Руководства ролей, администратора, описание демо-сценариев и [расширения подписи «Главный — подпись»](guides/sign_extension.md) (тот же текст — во встроенной справке интерфейса) |
 | [architecture.md](architecture.md) | **Разработчикам — начать здесь.** Архитектура и карта всех архитектурных документов |
-| [prd.md](prd.md) | Требования к системе (PRD), копия для жюри |
+| [prd.md](prd.md) | Требования к системе (PRD), копия для жюри; FR-1…FR-157, решения этапа разработки — §11.20–11.21 |
 | [architecture-spine.md](architecture-spine.md) | Архитектурный спайн: парадигма, решения AD-1…AD-47, стек, дерево репозитория |
 | [case-compliance.md](case-compliance.md) | **Проверяющим:** каждый пункт кейса и критерий оценки → архитектурное решение → код и проверка → статус как есть |
 | [data-model.md](data-model.md) | Модель данных: запись журнала, сущности, статусы, проекции |
 | [specifications.md](specifications.md), [codegen.md](codegen.md) | Спецификации API, событий, BPMN; кодогенерация и проверки контрактов |
 | [scenario-processing.md](scenario-processing.md) | Как система отрабатывает сценарии кейса |
-| [integrations/README.md](integrations/README.md) | 1С, Галактика:ERP, MES, КОМПАС-3D |
+| [integrations/README.md](integrations/README.md) | 1С, Галактика:ERP, MES, КОМПАС-3D, СКУД; stand-ы и экран «Интеграции» |
 | [threat-model.md](threat-model.md), [crypto.md](crypto.md) | Модель угроз, меры приказа ФСТЭК № 117; подписи, ключи, криптопрофили |
 | [scaling.md](scaling.md), [observability-kafka-otel.md](observability-kafka-otel.md), [backup-restore.md](backup-restore.md) | Масштабирование; OpenTelemetry и Kafka; резервирование и восстановление |
 | [vision-camera-project.md](vision-camera-project.md), [target-components.md](target-components.md), [federation.md](federation.md) | Комплекс «камеры + ИИ»; компоненты кейса §3.2; межзаводская кооперация |
