@@ -66,6 +66,11 @@ type RefEquipment struct {
 	VerificationResult    string     `json:"verification_result,omitempty" enum:"valid,invalid"`
 	VerifiedUntil         *time.Time `json:"verified_until,omitempty"`
 	CertificateRef        string     `json:"certificate_ref,omitempty"`
+	// Usable — оборудование можно использовать на момент ответа (FR-17):
+	// есть в справочнике, у средства измерений действует поверка.
+	Usable bool `json:"usable" doc:"FR-17: можно использовать на момент ответа (поверка действует)."`
+	// UnusableReason — почему нельзя: unknown | not_verified | verification_invalid | verification_expired.
+	UnusableReason string `json:"unusable_reason,omitempty" doc:"unknown — нет в справочнике; not_verified — средство измерений без поверки; verification_invalid — непригодно; verification_expired — срок поверки истёк."`
 }
 
 // RefEquipmentList — оборудование.
@@ -80,6 +85,7 @@ type RefCalendar struct {
 	WeeklyDaysOff  []string `json:"weekly_days_off" enum:"mon,tue,wed,thu,fri,sat,sun"`
 	NonWorkingDays []string `json:"non_working_days" doc:"Даты YYYY-MM-DD."`
 	ShortenedDays  []string `json:"shortened_days" doc:"Даты YYYY-MM-DD."`
+	WorkingDays    []string `json:"working_days,omitempty" doc:"Рабочие дни на еженедельных выходных (перенос), YYYY-MM-DD."`
 }
 
 // RefShift — смена.
@@ -89,6 +95,10 @@ type RefShift struct {
 	Name       string    `json:"name,omitempty"`
 	StartsAt   time.Time `json:"starts_at"`
 	EndsAt     time.Time `json:"ends_at"`
+	// RepeatUntil, WorkingDaysOnly — шаблон: смена повторяется каждый
+	// (рабочий) день в то же местное время до RepeatUntil.
+	RepeatUntil     *time.Time `json:"repeat_until,omitempty" doc:"Шаблон: повторять каждый день, пока начало не позже этого момента."`
+	WorkingDaysOnly bool       `json:"working_days_only,omitempty" doc:"Шаблон: только рабочие дни производственного календаря."`
 }
 
 // RefShiftList — смены.
@@ -104,10 +114,50 @@ type RefExternalID struct {
 	InternalID string    `json:"internal_id"`
 	MappedAt   time.Time `json:"mapped_at"`
 	Conflict   bool      `json:"conflict" doc:"Конфликт соответствий — сигнал, не перезапись."`
+	Effective  bool      `json:"effective,omitempty" doc:"Действующее соответствие ключа (первое по порядку записи); при конфликте остальные только видны."`
 }
 
 // RefExternalIDList — соответствия внешних ID.
 type RefExternalIDList struct {
 	Items      []RefExternalID `json:"items"`
 	NextCursor string          `json:"next_cursor,omitempty"`
+}
+
+// RefLot — партия со сроком годности (erp.lot.received; FR-17: сроки годности
+// материалов и их партий).
+type RefLot struct {
+	LotID          string     `json:"lot_id"`
+	ItemTypeID     string     `json:"item_type_id"`
+	SupplierID     string     `json:"supplier_id"`
+	HeatNo         string     `json:"heat_no,omitempty"`
+	Quantity       int        `json:"quantity"`
+	CertificateNo  string     `json:"certificate_no,omitempty"`
+	ExpiryDate     string     `json:"expiry_date,omitempty" doc:"Срок годности YYYY-MM-DD (включительно, местная дата)."`
+	Usable         bool       `json:"usable" doc:"Срок годности не истёк на момент ответа."`
+	ExternalSystem string     `json:"external_system"`
+	ExternalNumber string     `json:"external_number"`
+	ReceivedAt     time.Time  `json:"received_at"`
+	ExpiresAt      *time.Time `json:"expires_at,omitempty" doc:"Момент окончания годности (начало следующих местных суток)."`
+}
+
+// RefLotList — партии.
+type RefLotList struct {
+	Items []RefLot `json:"items"`
+}
+
+// RefOrder — производственное задание учётной системы (erp.order.received).
+type RefOrder struct {
+	OrderID        string    `json:"order_id"`
+	ExternalSystem string    `json:"external_system"`
+	ExternalNumber string    `json:"external_number"`
+	ItemTypeID     string    `json:"item_type_id"`
+	ItemRevision   string    `json:"item_revision,omitempty"`
+	Quantity       int       `json:"quantity"`
+	DueDate        string    `json:"due_date,omitempty" doc:"Срок YYYY-MM-DD."`
+	ReceivedAt     time.Time `json:"received_at"`
+}
+
+// RefOrderList — задания.
+type RefOrderList struct {
+	Items []RefOrder `json:"items"`
 }

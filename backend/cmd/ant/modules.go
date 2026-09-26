@@ -49,7 +49,6 @@ import (
 	opsfx "ant/internal/infrastructure/fixtures/ops"
 	processfx "ant/internal/infrastructure/fixtures/process"
 	qualityfx "ant/internal/infrastructure/fixtures/quality"
-	referencefx "ant/internal/infrastructure/fixtures/reference"
 	securityfx "ant/internal/infrastructure/fixtures/security"
 	signingfx "ant/internal/infrastructure/fixtures/signing"
 	simulationfx "ant/internal/infrastructure/fixtures/simulation"
@@ -124,6 +123,8 @@ type apiOptions struct {
 	process *processapp.Service
 	// security — журнал CA, шина безопасности, индикатор целостности (security.go, эпик 29); nil — 501.
 	security *securityapp.Service
+	// reference — справочники из журнала ядра (reference.go, эпик 19); nil — 501.
+	reference *referenceapp.Service
 }
 
 // buildAPI собирает HTTP API: общий декоратор (Gate) над портами прав и входа,
@@ -180,7 +181,11 @@ func buildAPI(mux *http.ServeMux, o apiOptions) *httpapi.API {
 		ingesthttp.Register(a, q, c)
 	}
 	{
-		q, c := pick[referenceapp.Queries, referenceapp.Commands](a.ModeFor("reference"), referenceapp.NewService(), referencefx.New())
+		live := o.reference
+		if live == nil {
+			live = referenceapp.NewService()
+		}
+		q, c := pick[referenceapp.Queries, referenceapp.Commands](a.ModeFor("reference"), live, referenceFixtures())
 		referencehttp.Register(a, q, c)
 	}
 	{

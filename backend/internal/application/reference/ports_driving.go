@@ -20,6 +20,10 @@ type Queries interface {
 	Shifts(ctx context.Context, locationID string, m platform.Moment) (RefShiftList, error)
 	// ExternalIDs — соответствия внешних ID (reference.external_id.list).
 	ExternalIDs(ctx context.Context, system string, m platform.Moment, p platform.Page) (RefExternalIDList, error)
+	// Lots — партии и сроки годности (reference.lot.list).
+	Lots(ctx context.Context, m platform.Moment) (RefLotList, error)
+	// Orders — задания учётных систем (reference.order.list).
+	Orders(ctx context.Context, m platform.Moment) (RefOrderList, error)
 }
 
 // Commands — ведущий порт команд модуля reference (AD-39).
@@ -64,6 +68,14 @@ func (Unimplemented) Shifts(context.Context, string, platform.Moment) (RefShiftL
 
 func (Unimplemented) ExternalIDs(context.Context, string, platform.Moment, platform.Page) (RefExternalIDList, error) {
 	return RefExternalIDList{}, platform.NotImplemented("reference.external_id.list")
+}
+
+func (Unimplemented) Lots(context.Context, platform.Moment) (RefLotList, error) {
+	return RefLotList{}, platform.NotImplemented("reference.lot.list")
+}
+
+func (Unimplemented) Orders(context.Context, platform.Moment) (RefOrderList, error) {
+	return RefOrderList{}, platform.NotImplemented("reference.order.list")
 }
 
 func (Unimplemented) DefineItemType(context.Context, DefineItemType) (platform.Receipt, error) {

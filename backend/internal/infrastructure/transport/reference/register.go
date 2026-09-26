@@ -39,7 +39,7 @@ func Register(api *httpapi.API, q app.Queries, c app.Commands) {
 		}, m platform.Moment) (app.RefCalendar, error) {
 			return q.Calendar(ctx, in.Year, m)
 		})
-	httpapi.Read(api, httpapi.Get("/reference/shifts", "Смены", "FR-81: график смен по местам."),
+	httpapi.Read(api, httpapi.Get("/reference/shifts", "Смены", "FR-81: график смен по местам — смены от полусуток до момента до полутора суток после."),
 		platform.Action{ID: "reference.shift.list", Owner: owner},
 		func(ctx context.Context, in *struct {
 			LocationID string `query:"location_id" maxLength:"128"`
@@ -55,6 +55,17 @@ func Register(api *httpapi.API, q app.Queries, c app.Commands) {
 			httpapi.PageQuery
 		}, m platform.Moment) (app.RefExternalIDList, error) {
 			return q.ExternalIDs(ctx, in.System, m, in.Page())
+		})
+
+	httpapi.Read(api, httpapi.Get("/reference/lots", "Партии и сроки годности", "FR-17: поступившие партии (из учётной системы) со сроком годности на момент (AD-31)."),
+		platform.Action{ID: "reference.lot.list", Owner: owner},
+		func(ctx context.Context, in *momentIn, m platform.Moment) (app.RefLotList, error) {
+			return q.Lots(ctx, m)
+		})
+	httpapi.Read(api, httpapi.Get("/reference/orders", "Задания учётной системы", "FR-91, FR-95: производственные задания из 1С и Галактики (через приём) на момент."),
+		platform.Action{ID: "reference.order.list", Owner: owner},
+		func(ctx context.Context, in *momentIn, m platform.Moment) (app.RefOrderList, error) {
+			return q.Orders(ctx, m)
 		})
 
 	httpapi.Do(api, httpapi.Post("/reference/item-types", "Определить позицию номенклатуры", "AD-31: новая версия с датой действия; изменение задним числом доходит до изделий адресованными записями стадии (AD-42)."),
@@ -85,7 +96,7 @@ func Register(api *httpapi.API, q app.Queries, c app.Commands) {
 		func(ctx context.Context, in *struct{ Body app.DefineCalendar }) (platform.Receipt, error) {
 			return c.DefineCalendar(ctx, in.Body)
 		})
-	httpapi.Do(api, httpapi.Post("/reference/shifts", "Запланировать смену", "FR-81."),
+	httpapi.Do(api, httpapi.Post("/reference/shifts", "Запланировать смену", "FR-81: смена или шаблон, повторяющийся каждый (рабочий) день до repeat_until."),
 		platform.Action{ID: "reference.shift.schedule", Class: platform.ClassRecord, Owner: owner, Emits: emits(catalog.ReferenceShiftScheduled), SignatureLevel: 2},
 		func(ctx context.Context, in *struct{ Body app.ScheduleShift }) (platform.Receipt, error) {
 			return c.ScheduleShift(ctx, in.Body)

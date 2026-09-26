@@ -130,6 +130,7 @@ persons:
   - {id: AUD-01,  name: "Аудитор ИБ",                roles: [{role: security_auditor, scope: ent01}]}
   - {id: O17,     name: "Оператор ЧПУ O17",          roles: [{role: performer, scope: ent01/b1/mc}]}
   - {id: O18,     name: "Оператор ЧПУ O18",          roles: [{role: performer, scope: ent01/b1/mc}]}
+  - {id: K16,     name: "Оператор КИМ K16",          roles: [{role: performer, scope: ent01/b1/mc}]}
   - {id: W21,     name: "Сварщик W21",               roles: [{role: performer, scope: ent01/b1/wc}]}
   - {id: W22,     name: "Сварщик W22",               roles: [{role: performer, scope: ent01/b1/wc}]}
   - {id: A31,     name: "Сборщик A31",               roles: [{role: performer, scope: ent01/b1/ac}]}
@@ -196,6 +197,7 @@ grants:
     - {person: W22, qualification: welder_argon_arc_amg6, scope: ent01/b1/wc, valid_until: "2026-12-31T00:00:00.000Z", certificate_ref: "НАКС [ПП]"}
     - {person: O17, qualification: cnc_operator,          scope: ent01/b1/mc, valid_until: "2027-12-31T00:00:00.000Z"}
     - {person: O18, qualification: cnc_operator,          scope: ent01/b1/mc, valid_until: "2027-12-31T00:00:00.000Z"}
+    - {person: K16, qualification: cmm_operator,          scope: ent01/b1/mc, valid_until: "2027-12-31T00:00:00.000Z"}
     - {person: NDT-61, qualification: ndt_radiography_level2, scope: ent01/b1/ndt, valid_until: "2027-03-31T00:00:00.000Z"}
     - {person: T41, qualification: leak_test_operator,    scope: ent01/b1/ac, valid_until: "2027-12-31T00:00:00.000Z"}
     - {person: A31, qualification: assembler_torque,      scope: ent01/b1/ac, valid_until: "2027-12-31T00:00:00.000Z"}

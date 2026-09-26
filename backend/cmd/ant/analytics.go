@@ -20,5 +20,7 @@ func analyticsLive(ctx context.Context, env *environment) (*analyticsapp.Service
 	return analyticsapp.NewService(
 		analyticsapp.WithStore(analyticsstore.New(c.pool)),
 		analyticsapp.WithClock(clock.NewJournal(c.journal)),
+		// Период и срез «смена» — по графику смен справочника (эпик 19, FR-81).
+		analyticsapp.WithShifts(referenceShifts{c.refSource}),
 	), nil
 }

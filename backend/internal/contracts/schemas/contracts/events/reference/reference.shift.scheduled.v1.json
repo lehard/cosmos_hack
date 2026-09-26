@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://ant.invalid/contracts/events/reference/reference.shift.scheduled.v1.json",
   "title": "ReferenceShiftScheduledV1",
-  "description": "График смен — смены по участкам: начало, конец (FR-81).",
+  "description": "График смен — смены по участкам: начало, конец; смена-шаблон повторяется каждый (рабочий) день до repeat_until (FR-81).",
   "type": "object",
   "properties": {
     "shift_id": {
@@ -25,6 +25,14 @@
       "type": "string",
       "description": "Название смены.",
       "maxLength": 64
+    },
+    "repeat_until": {
+      "$ref": "../common/defs.v1.json#/definitions/timestamp",
+      "description": "Повторять смену каждый день в то же местное время, пока начало не позже этого момента; отсутствует — одна смена."
+    },
+    "working_days_only": {
+      "type": "boolean",
+      "description": "Повторять только в рабочие дни производственного календаря."
     }
   },
   "required": [

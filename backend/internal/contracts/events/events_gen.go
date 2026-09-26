@@ -5144,6 +5144,10 @@ type ReferenceCalendarDefinedV1 struct {
 	// Еженедельные выходные.
 	WeeklyDaysOff []ReferenceCalendarDefinedV1WeeklyDaysOffElem `json:"weekly_days_off,omitempty,omitzero"`
 
+	// Рабочие дни, выпадающие на еженедельные выходные (перенос выходного, ТК РФ ст.
+	// 112).
+	WorkingDays []Date `json:"working_days,omitempty,omitzero"`
+
 	// Год.
 	Year int `json:"year"`
 }
@@ -5361,7 +5365,8 @@ const ReferenceLocationDefinedV1KindWarehouse ReferenceLocationDefinedV1Kind = "
 const ReferenceLocationDefinedV1KindWorkplace ReferenceLocationDefinedV1Kind = "workplace"
 const ReferenceLocationDefinedV1KindWorkshop ReferenceLocationDefinedV1Kind = "workshop"
 
-// График смен — смены по участкам: начало, конец (FR-81).
+// График смен — смены по участкам: начало, конец; смена-шаблон повторяется каждый
+// (рабочий) день до repeat_until (FR-81).
 type ReferenceShiftScheduledV1 struct {
 	// Конец.
 	EndsAt Timestamp `json:"ends_at"`
@@ -5372,11 +5377,18 @@ type ReferenceShiftScheduledV1 struct {
 	// Название смены.
 	Name *string `json:"name,omitempty,omitzero"`
 
+	// Повторять смену каждый день в то же местное время, пока начало не позже этого
+	// момента; отсутствует — одна смена.
+	RepeatUntil *Timestamp `json:"repeat_until,omitempty,omitzero"`
+
 	// Смена.
 	ShiftID ObjectID `json:"shift_id"`
 
 	// Начало.
 	StartsAt Timestamp `json:"starts_at"`
+
+	// Повторять только в рабочие дни производственного календаря.
+	WorkingDaysOnly *bool `json:"working_days_only,omitempty,omitzero"`
 }
 
 type Reliability string

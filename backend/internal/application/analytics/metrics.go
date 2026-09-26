@@ -324,7 +324,7 @@ var catalog = []metricDef{
 	{id: "confirmed_performer_errors", title: "Подтверждённые ошибки исполнителей", group: "people", counts: "nonconformities", account: "performer", agg: aggSum,
 		dims: []string{"comparable"}, entries: func(v *view) []entry { return v.performerErrors() }},
 	{id: "operation_duration", title: "Длительность операций", group: "time", counts: "time", agg: aggMean,
-		dims: []string{"step", "location", "performer", "equipment"}, entries: points(domain.RowOperationDuration)},
+		dims: []string{"step", "location", "performer", "equipment", "shift"}, entries: points(domain.RowOperationDuration)},
 	{id: "waiting_time", title: "Ожидание изделий в очередях", group: "time", counts: "time", agg: aggTime, dims: []string{"step"},
 		meaning: domain.MeaningOther, note: "от выхода из прежнего узла (или предъявления) до начала операции (или решения)",
 		entries: func(v *view) []entry { return overlap(v.rows, domain.RowQueue, v.from, v.to) }},

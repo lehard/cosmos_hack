@@ -4600,7 +4600,7 @@ components:
     reference.shift.scheduled.v1:
       name: reference.shift.scheduled.v1
       title: График смен
-      summary: "График смен — смены по участкам: начало, конец (FR-81)."
+      summary: "График смен — смены по участкам: начало, конец; смена-шаблон повторяется каждый (рабочий) день до repeat_until (FR-81)."
       contentType: application/json
       payload:
         allOf:

@@ -8,6 +8,8 @@ import type { RefExternalIDSystem } from './refExternalIDSystem';
 export interface RefExternalID {
   /** Конфликт соответствий — сигнал, не перезапись. */
   conflict: boolean;
+  /** Действующее соответствие ключа (первое по порядку записи); при конфликте остальные только видны. */
+  effective?: boolean;
   external_id: string;
   internal_id: string;
   mapped_at: string;

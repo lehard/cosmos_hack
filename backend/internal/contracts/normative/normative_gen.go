@@ -119,7 +119,7 @@ type CalendarSeed struct {
 
 // Год.
 type CalendarSeedYearsElem struct {
-	// Праздники.
+	// Нерабочие дни сверх еженедельных: праздники и перенесённые выходные.
 	Holidays []string `json:"holidays"`
 
 	// Сокращённые дни.
@@ -127,6 +127,9 @@ type CalendarSeedYearsElem struct {
 
 	// Еженедельные выходные.
 	WeeklyDaysOff []CalendarSeedYearsElemWeeklyDaysOffElem `json:"weekly_days_off"`
+
+	// Рабочие дни, выпадающие на еженедельные выходные (перенос выходного).
+	WorkingDays []string `json:"working_days,omitempty,omitzero"`
 
 	// Год.
 	Year int `json:"year"`
