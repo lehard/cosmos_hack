@@ -355,8 +355,8 @@ codes:
     ui_key: errors.generic
     refs: [AD-12]
 
-  # ── documents: маршрут подписей документа (AD-12, AD-43) ──
-  documents.stage_not_open:
+  # ── document: маршрут подписей документа (модуль documents, AD-12, AD-43) ──
+  document.stage_not_open:
     status: 409
     title: "Этап маршрута не ждёт подписи"
     detail: "Документ {doc_id}, версия {version}, этап {stage}: {why}"

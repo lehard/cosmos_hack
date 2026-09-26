@@ -258,7 +258,7 @@ export const errorCatalog = {
     "title": "Неизвестная версия формата документа",
     "uiKey": "errors.generic"
   },
-  "documents.stage_not_open": {
+  "document.stage_not_open": {
     "status": 409,
     "title": "Этап маршрута не ждёт подписи",
     "uiKey": "errors.generic"

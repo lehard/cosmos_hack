@@ -290,5 +290,5 @@ func openVersion(d *Doc, no, stage int) (*Version, error) {
 }
 
 func notOpen(d *Doc, v *Version, stage int, why string) *kernel.Refusal {
-	return kernel.Refuse(errcodes.DocumentsStageNotOpen, "doc_id", d.ID, "version", strconv.Itoa(v.No), "stage", strconv.Itoa(stage), "why", why)
+	return kernel.Refuse(errcodes.DocumentStageNotOpen, "doc_id", d.ID, "version", strconv.Itoa(v.No), "stage", strconv.Itoa(stage), "why", why)
 }

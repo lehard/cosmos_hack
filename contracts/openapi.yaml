@@ -16753,7 +16753,7 @@ paths:
         guards:
           - access.signature_required
           - signing.document_changed
-          - documents.stage_not_open
+          - document.stage_not_open
         id: documents.signature.decline
         owner: documents
         signature_level: 2
@@ -16807,7 +16807,7 @@ paths:
           - signing.document_changed
           - access.separation_of_duties
           - access.no_stamp
-          - documents.stage_not_open
+          - document.stage_not_open
         id: documents.signature.record
         owner: documents
         signature_level: 2

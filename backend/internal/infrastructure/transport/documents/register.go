@@ -164,7 +164,7 @@ func registerRoute(api *httpapi.API, q app.Queries, c app.Commands) {
 			"Гард: версия текущая, отпечаток совпадает, этап открыт и по порядку, полномочие, клеймо, разделение обязанностей. "+
 			"«Маршрут закрыт» — только реакция document.route.closed модуля documents."),
 		platform.Action{ID: "documents.signature.record", Class: platform.ClassRecord, Owner: owner, Subject: "document",
-			Guards: []string{"access.signature_required", "signing.document_changed", "access.separation_of_duties", "access.no_stamp", "documents.stage_not_open"},
+			Guards: []string{"access.signature_required", "signing.document_changed", "access.separation_of_duties", "access.no_stamp", "document.stage_not_open"},
 			Emits:  []catalog.Type{catalog.DocumentSignatureRecorded, catalog.DocumentRouteClosed}, SignatureLevel: 2},
 		func(ctx context.Context, in *docCmd[app.RecordSignature]) (platform.Receipt, error) {
 			return c.RecordSignature(ctx, in.DocumentID, in.Body)
@@ -173,7 +173,7 @@ func registerRoute(api *httpapi.API, q app.Queries, c app.Commands) {
 	httpapi.Do(api, httpapi.Post("/documents/{document_id}/route/declines", "Не согласовать — вернуть с замечанием",
 		"FR-136, AD-43: document.signature.declined; маршрут этой версии не закрывается — нужна новая версия или аннулирование. Замечание обязательно."),
 		platform.Action{ID: "documents.signature.decline", Class: platform.ClassRecord, Owner: owner, Subject: "document",
-			Guards: []string{"access.signature_required", "signing.document_changed", "documents.stage_not_open"},
+			Guards: []string{"access.signature_required", "signing.document_changed", "document.stage_not_open"},
 			Emits:  []catalog.Type{catalog.DocumentSignatureDeclined}, SignatureLevel: 2},
 		func(ctx context.Context, in *docCmd[app.DeclineSignature]) (platform.Receipt, error) {
 			return c.Decline(ctx, in.DocumentID, in.Body)

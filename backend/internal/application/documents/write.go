@@ -489,7 +489,7 @@ func (s *Service) AnnulVersion(ctx context.Context, documentID string, in AnnulV
 		return platform.Receipt{}, notFound("Версия документа", documentID)
 	}
 	if ver.Annulled {
-		return platform.Receipt{}, kernel.Refuse(errcodes.DocumentsStageNotOpen, "doc_id", documentID, "version", itoa(in.Version), "stage", "0", "why", "версия уже аннулирована")
+		return platform.Receipt{}, kernel.Refuse(errcodes.DocumentStageNotOpen, "doc_id", documentID, "version", itoa(in.Version), "stage", "0", "why", "версия уже аннулирована")
 	}
 	reason := map[string]any{"text": in.Reason.Text}
 	if in.Reason.Code != "" {

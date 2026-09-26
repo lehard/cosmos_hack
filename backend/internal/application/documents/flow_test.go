@@ -225,7 +225,7 @@ func TestSpineFlow(t *testing.T) {
 		_, err := w.docs.RecordSignature(ctx, docID, app.RecordSignature{CommandHeader: hdr(), Version: d.Version, Stage: stage, DocDigest: d.DocDigest})
 		return err
 	}
-	if err := sign(hqc, 3); codeOf(err) != errcodes.DocumentsStageNotOpen {
+	if err := sign(hqc, 3); codeOf(err) != errcodes.DocumentStageNotOpen {
 		t.Fatalf("этап 3 раньше этапа 2: %v", err)
 	}
 	if err := sign(as("W21", "performer"), 2); codeOf(err) != errcodes.AccessSignatureRequired {
