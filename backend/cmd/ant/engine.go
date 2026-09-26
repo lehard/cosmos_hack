@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"ant/cmd/internal/db"
+	analyticsapp "ant/internal/application/analytics"
 	crossitemapp "ant/internal/application/crossitem"
 	engineapp "ant/internal/application/engine"
 	appjournal "ant/internal/application/journal"
@@ -22,7 +23,12 @@ import (
 // изделия (AddItem), глобальные (AddGlobal) и вклады показателей
 // (AddContributor) — одна строка на модуль, как в buildAPI.
 func engineRegistry() *engineapp.Registry {
-	return engineapp.NewRegistry()
+	r := engineapp.NewRegistry()
+	// Показатели (эпик 25, AD-45): вклады изделий и глобальные проекции analytics.
+	if err := analyticsapp.Register(r); err != nil {
+		panic(err)
+	}
+	return r
 }
 
 // runWorker — роль worker (AD-5, AD-6, AD-45): партиции hash(item_id) mod P
