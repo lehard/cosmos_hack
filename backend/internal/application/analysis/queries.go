@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"ant/internal/application/platform"
+	"ant/internal/contracts/catalog"
 	dom "ant/internal/domain/analysis"
 )
 
@@ -390,6 +391,77 @@ func (s *Service) RiskScope(ctx context.Context, incidentID string, m platform.M
 	return out, nil
 }
 
+// driftOption — сужение по времени выхода режима (FR-61, опоздавшие данные):
+// журнал оборудования инцидента показал первое отклонение; изделия области
+// «под подозрением», выполненные на нём и законченные раньше, с записями
+// журнала за выполнение и без отклонений, — «исключить выполненные до выхода
+// тока из уставки». Основание — запись первого отклонения и записи журнала
+// этих выполнений. Отклонений нет — предложения нет.
+func (s *Service) driftOption(ctx context.Context, v dom.IncidentRecord, views []ItemView) []NarrowOption {
+	var first *dom.EquipmentEvent
+	for _, iv := range views {
+		for _, e := range append(slices.Clone(iv.Equipment), iv.State.Equipment...) {
+			// Первое отклонение; в ту же минуту — запись отклонения, а не сводка цикла.
+			if e.EquipmentID == v.FactorValue && e.Deviation && (first == nil || e.OccurredAt.Before(first.OccurredAt) ||
+				e.OccurredAt.Equal(first.OccurredAt) && e.EventType == string(catalog.EquipmentDeviationDetected)) {
+				x := e
+				first = &x
+			}
+		}
+	}
+	if first == nil {
+		return nil
+	}
+	o := NarrowOption{Evidence: []JournalRecordRef{markRef(dom.Mark{EventID: first.EventID, EventType: first.EventType, Variant: first.Variant,
+		OccurredAt: first.OccurredAt, Params: first.Params})}}
+	seen := map[string]bool{first.EventID: true}
+	for _, iv := range views {
+		var run *dom.Run
+		for i := range iv.State.Runs {
+			if r := &iv.State.Runs[i]; r.StepKey == v.StepKey && r.Equipment != "" {
+				run = r
+			}
+		}
+		if run == nil || run.Equipment != v.FactorValue || run.Finished == nil || !run.Finished.Before(first.OccurredAt) {
+			continue
+		}
+		var ev []JournalRecordRef
+		ok := false
+		for _, e := range append(slices.Clone(iv.Equipment), iv.State.Equipment...) {
+			if e.EquipmentID != run.Equipment || e.OccurredAt.After(*run.Finished) || (e.EndedAt != nil && e.EndedAt.Before(run.Started)) ||
+				(e.EndedAt == nil && e.OccurredAt.Before(run.Started)) {
+				continue
+			}
+			if e.Deviation {
+				ok = false
+				break
+			}
+			ok = true
+			if !seen[e.EventID] {
+				seen[e.EventID] = true
+				ev = append(ev, markRef(dom.Mark{EventID: e.EventID, EventType: e.EventType, Variant: e.Variant, OccurredAt: e.OccurredAt, Params: e.Params}))
+			}
+		}
+		if ok {
+			o.ItemIDs = append(o.ItemIDs, iv.ItemID)
+			o.Evidence = append(o.Evidence, ev...)
+		}
+	}
+	if len(o.ItemIDs) == 0 {
+		return nil
+	}
+	name := v.FactorValue
+	if s.cfg.Names != nil {
+		if l, ok := s.cfg.Names.FactorLabel(ctx, dom.FactorMachine, name); ok {
+			name = l
+		}
+	}
+	at := first.OccurredAt.UTC().Format("02.01.2006 15:04 UTC")
+	o.Label = fmt.Sprintf("Исключить выполненные на %s до выхода режима из уставки (%d) — журнал %s", name, len(o.ItemIDs), name)
+	o.ReasonText = fmt.Sprintf("Журнал %s: режим впервые вне уставки %s; выполнения на %s до этого — в уставке", name, at, name)
+	return []NarrowOption{o}
+}
+
 // narrowOptions — сужение по оборудованию (FR-61): изделия области «под
 // подозрением», выполненные на шаге инцидента другим оборудованием, чей
 // журнал за эти выполнения есть и весь в уставке, — «исключить сваренные на
@@ -441,7 +513,7 @@ func (s *Service) narrowOptions(ctx context.Context, v dom.IncidentRecord, views
 		}
 		g.bad = g.bad || !found
 	}
-	var out []NarrowOption
+	out := s.driftOption(ctx, v, views)
 	for _, eq := range slices.Sorted(maps.Keys(groups)) {
 		g := groups[eq]
 		if g.bad || len(g.items) == 0 {
