@@ -307,6 +307,9 @@ func (v *run) checkpoints() {
 	}
 	// Задержка передачи хранителю: запись покрыта первой точкой, у которой
 	// голова её цепочки не меньше её seq; дольше MaxGap — сервер молчал.
+	// Записи до первой контрольной точки (хранитель подключён позже журнала)
+	// покрыты первой точкой — задержкой не считаются.
+	firstKT, _ := time.Parse(time.RFC3339Nano, v.in.Checkpoints[0].Payload.KeeperTime)
 	if v.in.MaxGap > 0 {
 		for _, chain := range []string{"main", "ca"} {
 			j := 0
@@ -323,7 +326,7 @@ func (v *run) checkpoints() {
 					break
 				}
 				kt, err := time.Parse(time.RFC3339Nano, cps[j].Payload.KeeperTime)
-				if err == nil && kt.Sub(r.committedAt) > v.in.MaxGap {
+				if err == nil && r.committedAt.After(firstKT) && kt.Sub(r.committedAt) > v.in.MaxGap {
 					if late == 0 {
 						c.reject("checkpoint_mismatch.gap", fmt.Sprintf("запись seq %d цепочки %s передана хранителю через %s после фиксации (порог %s) — сервер молчал перед хранителем",
 							r.seq, chain, kt.Sub(r.committedAt).Round(time.Second), v.in.MaxGap), chain, r.seq, "")
