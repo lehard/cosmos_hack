@@ -35,6 +35,7 @@ export type {
   NCItemAxes,
   NCOperationContext,
   NCReason,
+  NCParameterReading,
   NCRecordRef,
   NCRecordRefKind,
   NCRequirement,

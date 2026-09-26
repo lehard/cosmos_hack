@@ -893,7 +893,22 @@
     "origin": {
       "specialProcess": "Нарушение специального процесса"
     },
-    "groupItems": "Изделий в группе: {n}"
+    "groupItems": "Изделий в группе: {n}",
+    "regime": {
+      "above": "макс. {value} — на {delta} выше допуска",
+      "below": "мин. {value} — на {delta} ниже допуска",
+      "within": "в пределах уставки",
+      "setpointRange": "уставка {from}–{to}",
+      "nominal": "номинал {value}",
+      "range": "{from}–{to}",
+      "observed": "наблюдалось {value}",
+      "parameter": {
+        "currentA": "Ток сварки",
+        "voltageV": "Напряжение дуги",
+        "wireFeed": "Подача проволоки",
+        "temperatureC": "Температура"
+      }
+    }
   },
 
   "riskScope": {
