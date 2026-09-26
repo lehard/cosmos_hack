@@ -23,6 +23,8 @@ type Model struct {
 	// shifts — шаблоны смен справочника (период «смена» показателей, FR-81);
 	// пусто — смены по 8 ч с 00:00, как у live без графика.
 	shifts []shiftPattern
+	// names — названия зон и оборудования справочников (поля *_label карточки).
+	names Names
 
 	Items    []*Item
 	itemByID map[string]*Item

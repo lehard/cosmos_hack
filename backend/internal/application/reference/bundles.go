@@ -151,3 +151,32 @@ func (w WorkingCalendar) AddWorkingDays(from time.Time, days int) time.Time {
 	}
 	return cal.AddWorkingDays(from, days)
 }
+
+// EquipmentNames — названия оборудования для карточки несоответствия
+// (порт nonconformity.EquipmentNames: equipment_label рядом с equipment_id).
+// Версия, действующая на at; нет такой — последняя версия оборудования; нет
+// оборудования в справочнике или ошибка чтения — названия нет.
+type EquipmentNames struct {
+	Source BookSource
+}
+
+// EquipmentName — название оборудования id на момент at.
+func (n EquipmentNames) EquipmentName(ctx context.Context, id string, at time.Time) (string, bool) {
+	if n.Source == nil || id == "" {
+		return "", false
+	}
+	b, err := n.Source.Book(ctx, 0)
+	if err != nil {
+		return "", false
+	}
+	if e, ok := b.EquipmentAt(id, at); ok && e.Data.Name != "" {
+		return e.Data.Name, true
+	}
+	name := ""
+	for _, e := range b.Equipment {
+		if string(e.Data.EquipmentID) == id && e.Data.Name != "" {
+			name = e.Data.Name // версии — по порядку записи: последняя побеждает
+		}
+	}
+	return name, name != ""
+}

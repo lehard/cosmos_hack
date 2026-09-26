@@ -22,7 +22,7 @@ const FixturesDir = "scenarios/fixtures"
 
 // InputFiles — входы генератора от корня репозитория (кроме world.yaml сценариев):
 // их копия встроена в бинарник (input/), чтобы мир строился без каталога репозитория.
-var InputFiles = []string{"normative/policy/policy.v1.yaml", "normative/process/flange-process.bpmn", "normative/reference/flange/locations.yaml", ShiftsFile}
+var InputFiles = []string{"normative/policy/policy.v1.yaml", "normative/process/flange-process.bpmn", "normative/reference/flange/locations.yaml", ShiftsFile, ItemTypesFile, EquipmentFile}
 
 // InputGlobs — входы генератора по шаблону.
 var InputGlobs = []string{"normative/desks/*.yaml", FixturesDir + "/*/world.yaml"}
@@ -113,6 +113,10 @@ func Generate(fsys fs.FS) (map[string][]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	names, err := LoadNames(fsys)
+	if err != nil {
+		return nil, err
+	}
 	out := map[string][]byte{"common/blobs/" + BpmnBlob: bpmn, "common/blobs/" + BracketBpmnBlob: BracketBpmn}
 	var people []PersonRef
 	seen := map[string]bool{}
@@ -128,6 +132,7 @@ func Generate(fsys fs.FS) (map[string][]byte, error) {
 			return nil, err
 		}
 		m.shifts = shifts
+		m.names = names
 		if err := m.write(out); err != nil {
 			return nil, err
 		}

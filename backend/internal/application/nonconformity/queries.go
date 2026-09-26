@@ -208,6 +208,7 @@ func (s *Service) List(ctx context.Context, f NCFilter, m platform.Moment, p pla
 			if n.DefectTypeCode != "" {
 				c := n.DefectTypeCode
 				sum.DefectTypeCode = &c
+				sum.DefectTypeLabel = nameIn(v.Labels.defects, &c)
 			}
 			out = append(out, sum)
 		}
@@ -327,6 +328,7 @@ func (s *Service) Card(ctx context.Context, ncID string, m platform.Moment) (NCC
 		return NCCard{}, err
 	}
 	c := s.card(v, n, s.at(ctx, m, v.RunID))
+	s.withLabels(ctx, v, &c)
 	if n.Origin == dom.OriginSpecialProcess {
 		// FR-151, S05 (NC-G1): состав группового несоответствия окна.
 		items, err := s.ncGroup(ctx, ncID, m)

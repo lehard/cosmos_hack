@@ -62,10 +62,12 @@ type DecisionQueue struct {
 // NCOperationContext — «что произошло» на операции: станок, инструмент,
 // программа, исполнитель (зона «что произошло», FR-51).
 type NCOperationContext struct {
-	OperationRunID string     `json:"operation_run_id"`
-	StepKey        string     `json:"step_key"`
-	Label          string     `json:"label" doc:"Название операции по описанию процесса."`
-	EquipmentID    *string    `json:"equipment_id,omitempty"`
+	OperationRunID string  `json:"operation_run_id"`
+	StepKey        string  `json:"step_key"`
+	Label          string  `json:"label" doc:"Название операции по описанию процесса."`
+	EquipmentID    *string `json:"equipment_id,omitempty"`
+	// EquipmentLabel — название оборудования (совместимое дополнение).
+	EquipmentLabel *string    `json:"equipment_label,omitempty" doc:"Название оборудования — из справочника оборудования; нет в справочнике — поля нет."`
 	ToolID         *string    `json:"tool_id,omitempty"`
 	ProgramRef     *string    `json:"program_ref,omitempty"`
 	PerformerID    *string    `json:"performer_id,omitempty" doc:"Псевдоним исполнителя; нет — неизвестно."`
@@ -91,11 +93,15 @@ type NCAnalyzerStage struct {
 
 // NCSourceSignal — исходный сигнал в карточке (отдельно от анализа системы).
 type NCSourceSignal struct {
-	SignalID             string            `json:"signal_id"`
-	BasisKind            string            `json:"basis_kind" enum:"inspection_result,equipment_deviation,check_skipped,damage_on_receipt,leak,special_process_violation,operator_report"`
-	DefectTypeCode       *string           `json:"defect_type_code,omitempty"`
-	DefectTypeKnown      bool              `json:"defect_type_known"`
-	ZoneID               *string           `json:"zone_id,omitempty"`
+	SignalID        string  `json:"signal_id"`
+	BasisKind       string  `json:"basis_kind" enum:"inspection_result,equipment_deviation,check_skipped,damage_on_receipt,leak,special_process_violation,operator_report"`
+	DefectTypeCode  *string `json:"defect_type_code,omitempty"`
+	DefectTypeKnown bool    `json:"defect_type_known"`
+	ZoneID          *string `json:"zone_id,omitempty"`
+	// Названия рядом с кодами (совместимое дополнение): из справочников; кода
+	// нет в справочнике — поля нет.
+	DefectTypeLabel      *string           `json:"defect_type_label,omitempty" doc:"Вид дефекта по-русски — из классификатора видов дефектов; нет в классификаторе — поля нет."`
+	ZoneLabel            *string           `json:"zone_label,omitempty" doc:"Зона по-русски — из зон типа изделия по КД (справочник номенклатуры); нет в справочнике — поля нет."`
 	Severity             string            `json:"severity" enum:"critical,major,minor,unknown"`
 	AnalyzerConfidenceBP *int              `json:"analyzer_confidence_bp,omitempty" minimum:"0" maximum:"10000" doc:"Уверенность анализатора, б. п.; ≠ вероятность брака."`
 	ObservationQualityBP *int              `json:"observation_quality_bp,omitempty" minimum:"0" maximum:"10000" doc:"Качество наблюдения, б. п."`
@@ -233,6 +239,8 @@ type NCSummary struct {
 	InvestigationStatus string `json:"investigation_status,omitempty" enum:"none,open,closed" doc:"Системное расследование (FR-51)."`
 	Containment         string `json:"containment,omitempty" enum:"none,observe,additional_check,item_hold,lot_hold" doc:"Сдерживание изделия."`
 	Commission          bool   `json:"commission,omitempty" doc:"Решение — комиссия (FR-151)."`
+	// DefectTypeLabel — вид дефекта по-русски (совместимое дополнение).
+	DefectTypeLabel *string `json:"defect_type_label,omitempty" doc:"Вид дефекта по-русски — из классификатора видов дефектов; нет в классификаторе — поля нет."`
 }
 
 // NCList — несоответствия.

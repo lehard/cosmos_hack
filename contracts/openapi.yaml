@@ -8878,6 +8878,9 @@ components:
       properties:
         equipment_id:
           type: string
+        equipment_label:
+          description: Название оборудования — из справочника оборудования; нет в справочнике — поля нет.
+          type: string
         finished_at:
           format: date-time
           type: string
@@ -9029,6 +9032,9 @@ components:
           type: string
         defect_type_known:
           type: boolean
+        defect_type_label:
+          description: Вид дефекта по-русски — из классификатора видов дефектов; нет в классификаторе — поля нет.
+          type: string
         evidence_refs:
           description: "Адреса материалов: кадры, иллюстрация."
           items:
@@ -9062,6 +9068,9 @@ components:
           type: object
         zone_id:
           type: string
+        zone_label:
+          description: Зона по-русски — из зон типа изделия по КД (справочник номенклатуры); нет в справочнике — поля нет.
+          type: string
       required:
         - signal_id
         - basis_kind
@@ -9087,6 +9096,9 @@ components:
             - lot_hold
           type: string
         defect_type_code:
+          type: string
+        defect_type_label:
+          description: Вид дефекта по-русски — из классификатора видов дефектов; нет в классификаторе — поля нет.
           type: string
         disposition:
           enum:
