@@ -3269,6 +3269,9 @@ components:
           description: Номер предъявления (повторное — уровнем выше).
           format: int64
           type: integer
+        reason:
+          description: "Суть строки несоответствия: вид дефекта и зона по-русски — из справочников (нет в справочнике — не называются)."
+          type: string
         review_since:
           description: "Пересмотр: с какого момента решение помечено «принято до новых данных» (kind = review)."
           format: date-time
