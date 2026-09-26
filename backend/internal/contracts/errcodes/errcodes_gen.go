@@ -257,6 +257,8 @@ const (
 	ProcessStatusExpired Code = "process.status_expired"
 	// У элемента нет step_key
 	ProcessStepKeyMissing Code = "process.step_key_missing"
+	// Задача процесса закрывается действием
+	ProcessTaskClosedByAction Code = "process.task_closed_by_action"
 	// Недостижимый узел
 	ProcessUnreachableNode Code = "process.unreachable_node"
 	// Неподдерживаемый элемент BPMN
@@ -424,6 +426,7 @@ var codes = [...]Info{
 	{Code: ProcessSchemaViolation, Status: 422, Title: "Нарушение схемы расширения", Detail: "Нарушение схемы расширения: {element} — {detail}", UIKey: "errors.process.schemaViolation", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: ProcessStatusExpired, Status: 409, Title: "Истёк срок статуса", Detail: "Истёк срок статуса «{status}» — нужна повторная обработка", UIKey: "errors.decision.statusExpired", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
 	{Code: ProcessStepKeyMissing, Status: 422, Title: "У элемента нет step_key", Detail: "У элемента {element} нет ant:properties/@stepKey", UIKey: "errors.process.schemaViolation", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
+	{Code: ProcessTaskClosedByAction, Status: 409, Title: "Задача процесса закрывается действием", Detail: "Задача процесса закрывается действием: {action}", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
 	{Code: ProcessUnreachableNode, Status: 422, Title: "Недостижимый узел", Detail: "Недостижимый узел: {element}", UIKey: "errors.process.unreachableNode", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: ProcessUnsupportedElement, Status: 422, Title: "Неподдерживаемый элемент BPMN", Detail: "Неподдерживаемый элемент BPMN: {element}", UIKey: "errors.process.unsupportedElement", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: ProcessVersionTampered, Status: 409, Title: "Содержимое действующей версии изменено", Detail: "Хеш версии {version_id} не совпадает с подписанным — версия не исполняется", UIKey: "errors.process.versionTampered", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},

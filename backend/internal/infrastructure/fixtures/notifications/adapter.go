@@ -7,6 +7,7 @@ import (
 
 	app "ant/internal/application/notifications"
 	"ant/internal/application/platform"
+	notif "ant/internal/domain/notifications"
 	"ant/internal/infrastructure/fixtures/loader"
 	"ant/internal/infrastructure/fixtures/world"
 	"ant/internal/infrastructure/security/identity"
@@ -163,11 +164,27 @@ func acknowledged(ctx context.Context, rt *loader.Runtime, m platform.Moment) ma
 
 // AcknowledgeTask — отметить задачу (notifications.task.acknowledge): квитанция
 // и отметка в сессии — задача получает состояние итога (выполнена, принята,
-// отклонена) и уходит из открытых; сводка шапки пересчитывается.
+// отклонена) и уходит из открытых; сводка шапки пересчитывается. Задача
+// процесса отметкой не закрывается — тот же гард, что у live
+// (notif.GuardProcessStep).
 func (Adapter) AcknowledgeTask(ctx context.Context, taskID string, in app.AcknowledgeTask) (platform.Receipt, error) {
 	rt, err := loader.Default()
 	if err != nil {
 		return platform.Receipt{}, err
+	}
+	if all, err := respond[app.TaskList](ctx, "notifications.task.list", map[string]string{}, nil); err == nil {
+		for _, x := range all.Items {
+			if rt.Local(ctx, x.TaskID) != rt.Local(ctx, taskID) {
+				continue
+			}
+			op := ""
+			if x.OperationID != nil {
+				op = *x.OperationID
+			}
+			if err := notif.GuardProcessStep(x.Kind, op); err != nil {
+				return platform.Receipt{}, err
+			}
+		}
 	}
 	return rt.Record(ctx, "notifications.task.acknowledge", loader.ObjectRef{Kind: string(platform.EntityTask), ID: taskID}, in.CommandMeta(), in,
 		loader.Change{Entity: string(platform.EntityTask), ID: "global"}, loader.Change{Entity: string(platform.EntityNotification), ID: "global"})
