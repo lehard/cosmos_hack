@@ -166,6 +166,23 @@ func Diff(computed []kernel.Reaction, recorded []Recorded, trigger Trigger) ([]P
 	for _, k := range keys {
 		c, isComputed := want[k]
 		l, isRecorded := latest[k]
+		if isComputed && isRecorded && isWithdrawal(l.Type) && c.Type == l.Type {
+			// Вывод правила сам имеет тип отзыва (срок снят исполнением —
+			// obligation.due.cleared): тот же вывод — не пересмотр. Иначе
+			// каждая пересвёртка дописывала бы новую версию, а верификатор
+			// видел бы её «следующей из журнала, но не записанной» (AD-3, AD-9).
+			fc, err := Fingerprint(c)
+			if err != nil {
+				return nil, err
+			}
+			fl, err := l.Fingerprint()
+			if err != nil {
+				return nil, err
+			}
+			if fc == fl {
+				continue
+			}
+		}
 		switch {
 		case isComputed && (!isRecorded || isWithdrawal(l.Type)):
 			p := Planned{Reaction: c, Change: ChangeNew, Version: 1}

@@ -204,3 +204,43 @@ func TestStateHashStable(t *testing.T) {
 		t.Fatal("другой вывод — другой хеш")
 	}
 }
+
+// Срок снят исполнением (obligation.due.cleared, cause fulfilled) — вывод
+// правила, а не только отзыв: пересвёртка с тем же выводом ничего не
+// дописывает (иначе воркер пишет новую версию на каждой записи изделия, а
+// верификатор видит «следует из журнала, но не записана»); вывод, вернувшийся
+// после отзыва другим типом, — следующая версия.
+func TestDiffClearedDueIsStable(t *testing.T) {
+	slot := kernel.Slot{RuleID: notifications.RuleObligation, Subject: "item:ENT01:I-1", TriggerKey: "OB-1"}
+	set, err := kernel.NewReaction(notifications.Module, catalog.ObligationDueSet, slot,
+		notifications.DueSetData{ObligationID: "OB-1", Kind: "decision", SubjectRef: "item:ENT01:I-1", DueAt: "2026-09-27T08:00:00.000Z",
+			OwnerRoleID: "technologist", Level: 0, FirstDueAt: "2026-09-27T08:00:00.000Z", Basis: "isolation", Title: "Решение"},
+		kernel.Record{EventID: "e1", OccurredAt: t0})
+	if err != nil {
+		t.Fatal(err)
+	}
+	cleared, err := kernel.NewReaction(notifications.Module, catalog.ObligationDueCleared, slot,
+		notifications.DueClearedData{ObligationID: "OB-1", Cause: "fulfilled"}, kernel.Record{EventID: "e1", OccurredAt: t0}, kernel.Record{EventID: "e2", OccurredAt: t0.Add(time.Hour)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	plan, err := engine.Diff([]kernel.Reaction{set}, nil, engine.Trigger{EventID: "e1"})
+	if err != nil || len(plan) != 1 {
+		t.Fatalf("срок: %+v %v", plan, err)
+	}
+	rec := recordAs(t, plan, 2)
+	plan, err = engine.Diff([]kernel.Reaction{cleared}, rec, engine.Trigger{EventID: "e2"})
+	if err != nil || len(plan) != 1 || plan[0].Change != engine.ChangeRevised || plan[0].Version != 2 {
+		t.Fatalf("срок снят: %+v %v", plan, err)
+	}
+	rec = append(rec, recordAs(t, plan, 4)...)
+	again, err := engine.Diff([]kernel.Reaction{cleared}, rec, engine.Trigger{EventID: "e3"})
+	if err != nil || len(again) != 0 {
+		t.Fatalf("снятый срок с тем же выводом дописан снова: %+v %v", again, err)
+	}
+	// Срок вернулся (основание снова есть) — следующая версия.
+	back, err := engine.Diff([]kernel.Reaction{set}, rec, engine.Trigger{EventID: "e4"})
+	if err != nil || len(back) != 1 || back[0].Change != engine.ChangeRevised || back[0].Version != 3 {
+		t.Fatalf("срок вернулся: %+v %v", back, err)
+	}
+}

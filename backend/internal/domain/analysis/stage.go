@@ -109,6 +109,36 @@ type StageItem struct {
 	Components    []string      `json:"components,omitempty"`
 	ComponentLots []string      `json:"component_lots,omitempty"`
 	Released      bool          `json:"released,omitempty"`
+	// Accepted — «годно» на закрывающих точках участков (решение человека):
+	// участок операции и момент решения.
+	Accepted []StageAccept `json:"accepted,omitempty"`
+}
+
+// StageAccept — решение «годно» на закрывающей точке участка (ЗТ-3 — участок
+// welding): выполнения участка до решения подтверждены человеком.
+type StageAccept struct {
+	Stage string    `json:"stage"`
+	At    time.Time `json:"at"`
+}
+
+// stageOf — участок шага: первый сегмент step_key.
+func stageOf(stepKey string) string {
+	st, _, _ := strings.Cut(stepKey, ".")
+	return st
+}
+
+// confirmedGood — выполнение k изделия подтверждено годным: изделие выпущено
+// или его участок принят на закрывающей точке после конца выполнения.
+func (it StageItem) confirmedGood(k StageRun) bool {
+	if it.Released {
+		return true
+	}
+	for _, a := range it.Accepted {
+		if a.Stage == stageOf(k.StepKey) && k.Finished != nil && !a.At.Before(*k.Finished) {
+			return true
+		}
+	}
+	return false
 }
 
 // ToolMark — установка инструмента на оборудование.
@@ -329,6 +359,16 @@ func Stage(s StageState, r kernel.Record) (StageState, []kernel.Addressed) {
 			it.Released = true
 			s.Items[r.ItemID] = it
 		}
+	case catalog.DecisionPresentationResolved:
+		d, ok := decodeAs[struct {
+			StepKey    string `json:"step_key"`
+			Resolution string `json:"resolution"`
+		}](r)
+		if ok && r.ItemID != "" && d.Resolution == "accept" && d.StepKey != "" {
+			it := s.Items[r.ItemID]
+			it.Accepted = append(slices.Clone(it.Accepted), StageAccept{Stage: stageOf(d.StepKey), At: r.OccurredAt})
+			s.Items[r.ItemID] = it
+		}
 	case catalog.EquipmentToolChanged:
 		if e, ok := EquipmentEventOf(r); ok {
 			s.Tools[e.EquipmentID] = append(slices.Clone(s.Tools[e.EquipmentID]), ToolMark{At: e.OccurredAt, Tool: e.ToolID})
@@ -475,17 +515,15 @@ func (s StageState) machineIncident(r kernel.Record, ncID string, run StageRun) 
 			inc.Factors = append(inc.Factors, f)
 		}
 	}
-	// Последняя подтверждённо годная деталь через то же оборудование — изделие
-	// выпущено (прошло весь маршрут) и его выполнение закончилось до начала
-	// выполнения с дефектом.
+	// Последняя подтверждённо годная деталь через то же оборудование — её
+	// выполнение закончилось до начала выполнения с дефектом и подтверждено
+	// человеком: участок принят на закрывающей точке (Ф-006: ЗТ-3 «годно»,
+	// изделие уже в сборке) или изделие выпущено.
 	var good *time.Time
 	for _, id := range slices.Sorted(maps.Keys(s.Items)) {
 		it := s.Items[id]
-		if !it.Released {
-			continue
-		}
 		for _, k := range it.Runs {
-			if k.StepKey != run.StepKey || k.Equipment != run.Equipment || k.Finished == nil || !k.Finished.Before(run.Started) {
+			if k.StepKey != run.StepKey || k.Equipment != run.Equipment || k.Finished == nil || !k.Finished.Before(run.Started) || !it.confirmedGood(k) {
 				continue
 			}
 			if good == nil || k.Finished.After(*good) {

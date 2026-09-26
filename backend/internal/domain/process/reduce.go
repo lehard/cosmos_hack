@@ -130,6 +130,8 @@ func (m *machine) apply(r kernel.Record) {
 		m.movementSent(r)
 	case catalog.OperationMovementReceived:
 		m.movementReceived(r)
+	case catalog.ItemReleaseRecorded:
+		m.releaseRecorded()
 	case catalog.InspectionResultRecorded:
 		m.inspection(r)
 	case catalog.ItemPresentationRecorded:
@@ -472,6 +474,26 @@ func (m *machine) movementReceived(r kernel.Record) {
 		}
 		m.complete(t.ID)
 		return
+	}
+}
+
+// releaseRecorded — сдача на склад готовой продукции (item.release.recorded,
+// Е-74 в описании узла «Сдача на склад готовой продукции»): закрывает шаг-
+// перемещение, за которым процесс шлёт в 1С «выпуск годного» (erpAction
+// release), как приём на склад (FR-44, FR-91). Шаг уже закрыт приёмом —
+// запись только фиксирует выпуск, токен не двигает.
+func (m *machine) releaseRecorded() {
+	for _, t := range m.s.Tokens {
+		n := m.d.Node(t.Node)
+		if n == nil || (n.Props.StepKind != stepKindMovement && n.Props.StepKind != stepKindStorage) {
+			continue
+		}
+		for _, id := range m.d.Next(n) {
+			if nx := m.d.Node(id); nx != nil && nx.Type == NodeThrowEvent && nx.Props.ErpAction == "release" {
+				m.complete(t.ID)
+				return
+			}
+		}
 	}
 }
 

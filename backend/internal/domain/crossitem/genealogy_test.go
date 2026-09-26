@@ -257,6 +257,29 @@ func TestAmbiguousEventGetsCandidates(t *testing.T) {
 	}
 }
 
+// Факт изделия без номера и без носителя (S12 №1) ждёт ручной привязки и
+// привязывается человеком ровно один раз (AD-41, FR-34); факт партии — нет.
+func TestEventWithoutItemAndCarrierAwaitsBinding(t *testing.T) {
+	w := &world{t: t}
+	w.register("ENT01:F-026", nil)
+	glob := func(r *kernel.Record) { r.Stream = "global" }
+	ev := w.feed(catalog.InspectionResultRecorded, "", time.Hour, map[string]any{"outcome": "no_defect_indicated", "method": "camera", "phase": "after_operation"}, glob)
+	u, ok := w.s.Own.Genealogy.Unbound[ev.EventID]
+	if !ok || u.BoundTo != "" || len(u.Candidates) != 0 {
+		t.Fatalf("событие без носителя не в очереди привязки: %+v %v", u, ok)
+	}
+	lot := w.feed(catalog.InspectionResultRecorded, "", time.Hour, map[string]any{"outcome": "defect_indicated", "method": "radiography",
+		"phase": "incoming", "lot_id": "LOT-R-117"}, glob)
+	if _, ok := w.s.Own.Genealogy.Unbound[lot.EventID]; ok {
+		t.Fatal("факт партии попал в очередь привязки изделия")
+	}
+	w.feed(catalog.BindingLinkAssigned, "ENT01:F-026", 2*time.Hour, map[string]any{"subject_event_id": ev.EventID, "item_id": "ENT01:F-026",
+		"method": "manual_entry", "reason": map[string]any{"text": "по контексту поста"}})
+	if got := w.to(catalog.BindingLinkResolved, "ENT01:F-026"); len(got) != 1 || got[0]["item_id"] != "ENT01:F-026" || got[0]["subject"] == nil {
+		t.Fatalf("ручная привязка: %v", got)
+	}
+}
+
 // Разделение 1→N переносит происхождение; сборка — связь обоим изделиям.
 func TestSplitCarriesOrigin(t *testing.T) {
 	w := &world{t: t}
