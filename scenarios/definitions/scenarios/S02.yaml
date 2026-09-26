@@ -1,0 +1,196 @@
+# S02 — process/scenarios-flange.md §4 S02 «один к одному».
+id: S02
+version: "0.3"
+title: "Входной брак — пора в металле кольца (партия П-117)"
+kind: check
+goal: >-
+  «Где нашли» ≠ «где возникло»: рентген после сварки находит пору не в шве, а в теле
+  кольца, куда сварка не доходила; это входной брак поставщика — сварщик и источник ни при чём.
+case:
+  s4_2: ["входной дефект"]
+  s5_1: ["Входной брак"]
+  demo: ["«на вход завезли брак»"]
+  other: ["§5.2 входной брак отдельно от производственных ошибок"]
+run: MS-1
+where: "Главный поток, Ср 13:40 – 16:11. Кадр защиты 2:20–2:50."
+source: "process/scenarios-flange.md §4 S02"
+steps:
+  - {at: "2026-09-22T08:00:00+03:00", ref: "Е-03…Е-08", route: "lot:LOT-R-117", note: "Партия П-117 (Поставщик-3, С-117): кольца К-101…К-110; документы, камера, ЗТ-1 в 10:30–11:00 — годна; поверхность — признаков нет"}
+  - {at: "2026-09-22T14:15:00+03:00", ref: Е-50, route: "F-019:ring", note: "Выдача К-101, К-102, К-103 в сварку после приёмки фланцев сварочным цехом → 1С «принято в работу», 3 кольца"}
+  - {at: "2026-09-22T14:15:10+03:00", route: "F-027:ring"}
+  - {at: "2026-09-22T14:15:20+03:00", route: "F-029:ring"}
+  - {at: "2026-09-22T16:35:00+03:00", route: "F-019:weld", note: "Сварка Ф-019 (ИС-2), Ф-027 (ИС-1), Ф-029 (ИС-1) — С-03"}
+  - {at: "2026-09-22T18:00:00+03:00", route: "F-027:weld"}
+  - {at: "2026-09-22T21:30:00+03:00", route: "F-029:weld"}
+  - at: "2026-09-23T13:40:00+03:00"
+    ref: Е-45
+    label: F-019/xray
+    note: "Рентген Ф-019, РК-0923-07: шов У1…У8 — дефектов нет; пора 1,2 мм в зоне «тело кольца», 25 мм от шва, вне зоны нагрева"
+    fact: inspection.result.recorded
+    source: xray
+    item: F-019
+    data:
+      observation_id: "{local:RK-0923-07}"
+      method: radiography
+      phase: after_operation
+      step_key: welding.kt3_radiography
+      operation_run_id: "{local:SV-019-1}"
+      zone_ids: ["{zone:U1}", "{zone:U2}", "{zone:U3}", "{zone:U4}", "{zone:U5}", "{zone:U6}", "{zone:U7}", "{zone:U8}", "{zone:RING-BODY}"]
+      outcome: defect_indicated
+      processing_state: completed
+      inspector_id: "{person:NDT-01}"
+      conclusion_ref: "РК-0923-07"
+      defects:
+        - {defect_type_code: I-BASE-PORE, description: "Пора в основном металле кольца", component_ref: "{local:R-101}", zone_id: "{zone:RING-BODY}",
+           location: "25 мм от шва, вне зоны нагрева", severity: major, size: {value: 12, scale: 1, unit: mm}}
+  - {at: "2026-09-23T13:41:00+03:00", ref: Е-80, system: "Сигнал: основание — РК-0923-07; зона «тело кольца»"}
+  - {at: "2026-09-23T13:42:00+03:00", ref: Е-85, system: "Гипотезы: «входной брак» — зону не затрагивала ни одна операция; кольцо — партия П-117; камера КТ-1 внутренние поры не видит; не хватает проверки других колец партии"}
+  - at: "2026-09-23T13:50:00+03:00"
+    ref: Е-90
+    label: S02/confirm-NC-04
+    note: "Подтверждено — НС-04: тяжесть «значительный»"
+    decision: nonconformity.nonconformity.confirm
+    role: QC
+    actor: QC-01
+    item: F-019
+    params: {nc_id: "{ref:NC-04}"}
+    body: {signal_ids: ["{ref:SIG-F019}"], severity: major, defect_type_code: I-BASE-PORE, reason: {code: xray, text: "РК-0923-07: пора 1,2 мм в теле кольца К-101, вне зоны нагрева"}}
+  - {at: "2026-09-23T13:55:00+03:00", ref: Е-110, system: "Область риска RS-02 «партия П-117»: Ф-019 — подтверждено; Ф-027, Ф-029 — под подозрением; кольца К-104…К-110 на складе — блок"}
+  - at: "2026-09-23T14:20:00+03:00"
+    ref: Е-45
+    label: F-027/xray
+    note: "Рентген Ф-027: шов и тело кольца в зоне снимка — дефектов нет"
+    fact: inspection.result.recorded
+    source: xray
+    item: F-027
+    data: &clean
+      observation_id: "{local:RK-0923-11A}"
+      method: radiography
+      phase: after_operation
+      step_key: welding.kt3_radiography
+      operation_run_id: "{local:SV-027-1}"
+      zone_ids: ["{zone:U1}", "{zone:U2}", "{zone:U3}", "{zone:U4}", "{zone:U5}", "{zone:U6}", "{zone:U7}", "{zone:U8}", "{zone:RING-BODY}"]
+      outcome: no_defect_indicated
+      processing_state: completed
+      inspector_id: "{person:NDT-01}"
+      conclusion_ref: "РК-0923-11А"
+  - {at: "2026-09-23T14:25:00+03:00", ref: Е-113, decision: analysis.item.assess, role: TECHNOLOGIST, actor: TECH-01, item: F-027, note: "Ф-027 исключено — основание: заключение РК",
+     params: {incident_id: "{ref:RS-02}"}, body: {assessment: excluded, item_id: "{item:F-027}", evidence_event_ids: ["{event:F-027/xray}"]}}
+  - at: "2026-09-23T14:40:00+03:00"
+    ref: Е-45
+    label: F-029/xray
+    note: "Рентген Ф-029: дефектов нет"
+    fact: inspection.result.recorded
+    source: xray
+    item: F-029
+    data: {<<: *clean, observation_id: "{local:RK-0923-11B}", operation_run_id: "{local:SV-029-1}", conclusion_ref: "РК-0923-11Б"}
+  - {at: "2026-09-23T14:45:00+03:00", ref: Е-113, decision: analysis.item.assess, role: TECHNOLOGIST, actor: TECH-01, item: F-029, note: "Ф-029 исключено — основание: заключение РК",
+     params: {incident_id: "{ref:RS-02}"}, body: {assessment: excluded, item_id: "{item:F-029}", evidence_event_ids: ["{event:F-029/xray}"]}}
+  - at: "2026-09-23T14:50:00+03:00"
+    ref: "Е-92, Е-45"
+    label: LOT-R-117/xray-R-104
+    note: "Выборочный рентген колец со склада: К-104 — чисто"
+    fact: inspection.result.recorded
+    source: xray
+    lot: LOT-R-117
+    data:
+      observation_id: "{local:RK-0923-11-R104}"
+      method: radiography
+      phase: incoming
+      step_key: incoming.zt1_lot_acceptance
+      lot_id: "{local:LOT-R-117}"
+      outcome: no_defect_indicated
+      processing_state: completed
+      inspector_id: "{person:NDT-01}"
+      conclusion_ref: "РК-0923-11 (К-104)"
+      zone_ids: ["{zone:RING-BODY}"]
+  - at: "2026-09-23T15:00:00+03:00"
+    ref: "Е-45"
+    label: LOT-R-117/xray-R-105
+    note: "К-105 — пора 0,9 мм → НС-05"
+    fact: inspection.result.recorded
+    source: xray
+    lot: LOT-R-117
+    data:
+      observation_id: "{local:RK-0923-11-R105}"
+      method: radiography
+      phase: incoming
+      step_key: incoming.zt1_lot_acceptance
+      lot_id: "{local:LOT-R-117}"
+      outcome: defect_indicated
+      processing_state: completed
+      inspector_id: "{person:NDT-01}"
+      conclusion_ref: "РК-0923-11 (К-105)"
+      zone_ids: ["{zone:RING-BODY}"]
+      defects:
+        - {defect_type_code: I-BASE-PORE, description: "Пора в основном металле кольца", component_ref: "{local:R-105}", zone_id: "{zone:RING-BODY}", severity: major, size: {value: 9, scale: 1, unit: mm}}
+  - at: "2026-09-23T15:40:00+03:00"
+    ref: П-04
+    label: S02/cause
+    note: "Причина подтверждена (Т-01 + НОТК-01): «входной брак: Поставщик-3, партия П-117»; две находки в теле колец одной партии, зоны без операций"
+    decision: analysis.cause.conclude
+    role: TECHNOLOGIST
+    actor: TECH-01
+    params: {incident_id: "{ref:RS-02}"}
+    body:
+      category: incoming
+      conclusion: confirmed
+      nc_ids: ["{ref:NC-04}"]
+      reason: {code: incoming_defect, text: "Входной брак: Поставщик-3, партия П-117 — поры в теле колец К-101 и К-105, зоны без операций"}
+      verification: "Две находки в теле колец одной партии (РК-0923-07, РК-0923-11); операции эти зоны не затрагивали"
+  - at: "2026-09-23T15:45:00+03:00"
+    ref: Е-94
+    label: S02/return-lot
+    note: "Вернуть поставщику остаток партии: 7 колец К-104…К-110 → 1С «возврат поставщику» с основанием претензии"
+    decision: nonconformity.lot.resolve
+    role: TECHNOLOGIST
+    actor: TECH-01
+    params: {lot_id: "{local:LOT-R-117}"}
+    body:
+      resolution: reject
+      accepted_quantity: 0
+      reason: {code: return_to_supplier, text: "Входной брак партии П-117: остаток 7 колец К-104…К-110 — вернуть поставщику; основание претензии — РК-0923-07, РК-0923-11"}
+      method_event_ids: ["{event:F-019/xray}", "{event:LOT-R-117/xray-R-104}", "{event:LOT-R-117/xray-R-105}"]
+  - at: "2026-09-23T15:45:30+03:00"
+    note: "Stand 1С отвечает на «возврат поставщику» ошибкой 422 «не найден договор с поставщиком» до исправления соответствия ID (16:10)"
+    stand: {stand: onec, fault: error, param: 422, match: "return_to_supplier:LOT-R-117", until: "2026-09-23T16:10:00+03:00", detail: "422 не найден договор с контрагентом ctr-0b19-0003"}
+  - at: "2026-09-23T15:50:00+03:00"
+    ref: П-05
+    label: S02/action
+    note: "Мера назначена: «улучшить обнаружение» — выборочный рентген тела кольца (2 из партии); проверка результативности — следующие 3 партии колец без пор, найденных после сварки"
+    decision: analysis.action.assign
+    role: QC_HEAD
+    actor: QC-HEAD-01
+    params: {incident_id: "{ref:RS-02}"}
+    body:
+      action_type: corrective_action
+      direction: improve_detection
+      owner_id: "{person:QC-HEAD-01}"
+      due_at: "2026-10-09T16:30:00+03:00"
+      effectiveness_plan: {criterion: "следующие 3 партии колец Поставщика-3 без пор, найденных после сварки", method: "выборочный рентген тела кольца, 2 из партии"}
+  - at: "2026-09-23T16:10:00+03:00"
+    ref: Е-75
+    label: S02/mapping
+    note: "А-01 добавил соответствие договора с поставщиком в таблицу ID"
+    fact: reference.external_id.mapped
+    source: term-admin
+    data: {system: onec, object_kind: contract, external_id: "ctr-0b19-0003/dog-2026-117", internal_id: SUP-3}
+  - at: "2026-09-23T16:10:30+03:00"
+    ref: Е-75
+    note: "Повтор с тем же номером сообщения → 1С подтвердила в 16:11"
+    decision: erp.posting.resend
+    role: ADMIN
+    actor: ADM-01
+    params: {business_key: "{ref:ERP-RTS-KEY}"}
+    body: {request_event_id: "{ref:ERP-RTS-REQ}", reason: {code: id_mapping_fixed, text: "Добавлено соответствие договора с Поставщиком-3"}}
+outcome:
+  - "У Ф-019 два разных дела: НС-04 «пора в кольце» — причина «входной брак» подтверждена; нарушение режима сварки — в групповом решении по инциденту ИС-2."
+  - "В карточке НС-04 сварщик С-03 не указан ни как виновник, ни как кандидат."
+  - "Область RS-02: 1 подтверждено, 2 исключено (с основаниями), 7 колец на складе возвращены."
+  - "В 1С одно сообщение «возврат поставщику» (7 колец), подтверждено после исправления ошибки."
+  - "Пропуск на входном контроле — «метод КТ-1 внутренние поры не видит», не ошибка модели и не пропуск контролёром."
+  - "Мера — «улучшить обнаружение» с планом проверки результативности; «назначено» ≠ «результативно»."
+must_not:
+  - "Входной брак не попадает в статистику дефектов сварочного участка и в показатели сварщиков."
+  - "Нет гипотезы «отклонение от процедуры» по С-03; Ф-027 и Ф-029 не исключены без заключения рентгена."
+  - "Ф-019 целиком поставщику не возвращается."

@@ -1,0 +1,169 @@
+# Мир сценариев фланца люка гермокорпуса ФЛ-100.00.000 СБ (FR-104, AD-26).
+#
+# Откуда: process/scenarios-flange.md §2 «Условный набор данных» процессной сессии
+# (изделие, партии, цеха, оборудование, люди, смены, нормы) и затравка нормативного
+# слоя normative/ (ID оборудования, мест, шагов процесса, персон генезиса).
+# Все числа, режимы, ID и люди — условные [ПП]/[П], не данные предприятия.
+#
+# Имена процессной сессии (WLD-02, WS-2, U2, E_REWORK_LIMIT) в карточках и ожиданиях
+# остаются как в исходных таблицах — «один к одному»; в события, команды и сверку
+# они попадают только через сведение имён ниже (решение пользователя: имена
+# процессной сессии — через сведение с контрактом, эпик 00).
+id: flange
+version: "1"
+title: "Фланец люка гермокорпуса в сборе ФЛ-100.00.000 СБ, ревизия КД «Б»"
+enterprise: ENT01
+item_type: FL-100.00.000
+item_revision: "Б"
+
+aliases:
+  # Люди процессной сессии → персоны генезиса (normative/policy/policy.v1.yaml).
+  # OP-CMM-01 (оператор КИМ) в генезисе нет — остаётся как есть (в отчёте эпика 32).
+  people:
+    OP-CNC-11: O17
+    OP-CNC-12: O18
+    WLD-02: W21
+    WLD-03: W22
+    ASM-01: A31
+    TST-01: T41
+    NDT-01: NDT-61
+    QC-01: INS-01
+    QC-02: INS-02
+    QC-HEAD-01: HQC-01
+    TECH-01: TEC-01
+    CHW-01: CWL-01
+    MST-01: FOR-MC
+    MST-02: FOR-WC
+    MST-03: FOR-AC
+    STK-01: STK-51
+    CR-01: CR-71
+    ADM-01: ADM-01
+  # Оборудование процессной сессии → normative/reference/flange/equipment.yaml.
+  # Два ракурса КТ-3 (CAM-WS-1, CAM-WS-2) — одна камера CAM-KT3, два источника (ракурса).
+  equipment:
+    WS-1: IS-1
+    WS-2: IS-2
+    GW-2: IS-2
+    CAM-IQC: CAM-KT1
+    CAM-MO: CAM-KT2
+    CAM-WS-1: CAM-KT3
+    CAM-WS-2: CAM-KT3
+    XR-1: XRAY-LAB
+    CAM-UV: CAM-KT4D
+    CAM-ASM: CAM-KT4
+    CAM-FQC: CAM-KT5
+    LT-1: LEAK-1
+    TW-1: TW-1
+    CNC-1: CNC-1
+    CMM-1: CMM-1
+    OV-ASM: OV-ASM
+  # Зоны: участки шва — normative (W-1.U1…U8), канавка — S-1, крепёж — J-1.
+  # «Кромка под сварку», «тело кольца», «клапан» в номенклатуре normative пока нет —
+  # ID ниже предложены эпиком 32 (отчёт: нужно в item-types, эпики 00/19).
+  zones:
+    U1: W-1.U1
+    U2: W-1.U2
+    U3: W-1.U3
+    U4: W-1.U4
+    U5: W-1.U5
+    U6: W-1.U6
+    U7: W-1.U7
+    U8: W-1.U8
+    EDGE: W-1.EDGE
+    RING-BODY: PIPE-BODY
+    SEAL-GROOVE: S-1
+    VALVE: VALVE-J2
+    MARKING: F-OUTER
+    BOLT-7: J-1
+  # Роли карточек → роли политики генезиса.
+  roles:
+    QC: quality_inspector
+    QC_HEAD: head_of_qc
+    TECHNOLOGIST: technologist
+    CHIEF_WELDER: chief_welder
+    COMMISSION: technologist
+    MASTER: site_foreman
+    STOREKEEPER: storekeeper
+    PERFORMER: performer
+    ADMIN: administrator
+    CUSTOMER: customer_representative
+  # Рабочие коды процессной сессии → contracts/errors.yaml (сведение эпика 00, Д-9).
+  codes:
+    E_MISSING_FIELD: ingest.missing_required_field
+    E_UNSUPPORTED_VERSION: ingest.unknown_schema_version
+    E_UNKNOWN_ENUM: ingest.unknown_enum_value
+    E_ID_CONFLICT: ingest.duplicate_conflict
+    E_REWORK_LIMIT: process.rework_limit_exceeded
+    E_PERMIT_REQUIRED: nonconformity.concession_required
+    E_REF_NOT_FOUND: reference.not_found
+    # пары в контракте нет — предложение эпика 32 (отчёт)
+    E_EXPLANATION_REQUIRED: incident.explanation_required
+
+# Источники событий. source_id в прогоне — ‹run_id›/‹id› (AD-38). Факты устройств
+# идут stand → edge-агент → приём; ручной ввод терминалов — тот же приём (FR-137, FR-140).
+sources:
+  onec:       {id: onec-stand,   kind: external_system, reliability: high,   note: "stand 1С: задания, партии, квитанции (эпик 30)"}
+  term-vk:    {id: term-vk-1,    kind: manual_entry,    reliability: high,   workplace: WP-VK-1, note: "терминал входного контроля"}
+  kompas:     {id: kompas-import, kind: import,         reliability: high,   note: "импорт файла условной сборки КОМПАС-3D (эпик 31)"}
+  lab:        {id: gw-lab,       kind: machine,         reliability: high,   note: "лаборатория входного контроля: химсостав, мехсвойства, УЗК"}
+  term-admin: {id: term-admin-1, kind: manual_entry,    reliability: high,   note: "рабочее место администратора данных"}
+  cam-kt1:    {id: edge-kt1,     kind: camera,          reliability: medium, equipment: CAM-KT1, station: ST-VK}
+  cnc-1:      {id: edge-cnc-1,   kind: machine,         reliability: high,   equipment: CNC-1, station: ST-CNC, note: "станок ЧПУ и журнал пульта"}
+  marker:     {id: edge-marker-1, kind: machine,        reliability: high,   station: ST-CNC, note: "лазерный маркёр DataMatrix"}
+  cam-kt2:    {id: edge-kt2,     kind: camera,          reliability: medium, equipment: CAM-KT2, station: ST-CNC}
+  cmm-1:      {id: gw-cmm,       kind: machine,         reliability: high,   equipment: CMM-1, station: ST-CMM}
+  is-1:       {id: edge-weld-1,  kind: machine,         reliability: high,   equipment: IS-1, station: ST-WELD, note: "сварочный источник ИС-1, шлюз ШЛ-1"}
+  is-2:       {id: edge-weld-2,  kind: machine,         reliability: high,   equipment: IS-2, station: ST-WELD, note: "сварочный источник ИС-2, шлюз ШЛ-2 (копит журнал при обрыве связи)"}
+  cam-kt3-a:  {id: edge-kt3,     kind: camera,          reliability: medium, equipment: CAM-KT3, station: ST-WELD, note: "КТ-3, ракурс 1 (CAM-WS-1)"}
+  cam-kt3-b:  {id: edge-kt3-2,   kind: camera,          reliability: medium, equipment: CAM-KT3, station: ST-WELD, note: "КТ-3, ракурс 2 (CAM-WS-2)"}
+  xray:       {id: gw-ndt,       kind: machine,         reliability: high,   equipment: XRAY-LAB, station: LAB-NDT, note: "лаборатория НК: заключения РК"}
+  term-weld-1: {id: term-weld-1, kind: manual_entry,    reliability: high,   workplace: WP-WELD-1}
+  term-weld-2: {id: term-weld-2, kind: manual_entry,    reliability: high,   workplace: WP-WELD-2}
+  term-asm:   {id: term-asm-1,   kind: manual_entry,    reliability: high,   workplace: WP-ASM-1}
+  cam-kt4d:   {id: edge-kt4d,    kind: camera,          reliability: medium, equipment: CAM-KT4D, station: ST-ASM}
+  tw-1:       {id: edge-tw-1,    kind: machine,         reliability: high,   equipment: TW-1, station: ST-ASM}
+  cam-kt4:    {id: edge-kt4,     kind: camera,          reliability: medium, equipment: CAM-KT4, station: ST-ASM}
+  ov-asm:     {id: edge-ov-asm,  kind: camera,          reliability: medium, station: ST-ASM, note: "OperatorVision поста сборки (гипотеза действия)"}
+  leak-1:     {id: edge-leak-1,  kind: machine,         reliability: high,   equipment: LEAK-1, station: ST-LEAK}
+  cam-kt5:    {id: edge-kt5,     kind: camera,          reliability: medium, equipment: CAM-KT5, station: ST-FINAL}
+
+# Линии (кейс §1.4, §2.4): расходятся только на сварке — у каждой свой пост.
+lines:
+  L-FL-1: {title: "Линия ФЛ-100 № 1", welding_source: is-1, weld_terminal: term-weld-1, workplace: WP-WELD-1, equipment: WS-1}
+  L-FL-2: {title: "Линия ФЛ-100 № 2", welding_source: is-2, weld_terminal: term-weld-2, workplace: WP-WELD-2, equipment: WS-2}
+
+# Смены [П]: A — 08:00–16:30, Б — 16:30–01:00 (местное время, МСК).
+shifts:
+  A: {starts: "08:00", ends: "16:30"}
+  B: {starts: "16:30", ends: "01:00"}
+
+# Нормы маршрута фонового фланца [ПП] и исполнители по умолчанию.
+route:
+  machining_min: 50
+  cmm_min: 30
+  edge_prep_min: 45
+  weld_min: 45
+  xray_after_min: 240
+  zt3_after_min: 60
+  assembly_min: 60
+  leak_test_min: 75
+  final_after_min: 60
+  cnc_operator: OP-CNC-11
+  cnc_operator_b: OP-CNC-12
+  cmm_operator: OP-CMM-01
+  qc_machining: QC-01
+  qc_welding: QC-01
+  qc_assembly: QC-02
+  qc_final: QC-02
+  customer: CR-01
+  ndt: NDT-01
+  assembler: ASM-01
+  tester: TST-01
+  storekeeper: STK-01
+  master_mc: MST-01
+  master_wc: MST-02
+  master_ac: MST-03
+  program: PS-4
+  wire_lot: LOT-W-88
+  current_nominal: 160
+  current_tol: 10
