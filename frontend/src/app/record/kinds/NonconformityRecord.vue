@@ -67,7 +67,7 @@ const slice = computed(() => ({ nc_id: props.id, ...(runId.value ? { run_id: run
     />
 
     <template #actions>
-      <WidgetHost widget="decision-panel" slot-id="record-decision" :slice="slice" :frame="{ plain: true }" />
+      <WidgetHost widget="decision-panel" slot-id="record-decision" :slice="slice" :frame="{ plain: true, hideTitle: true }" />
     </template>
   </RecordDrawer>
 </template>

@@ -69,13 +69,15 @@ describe('панель решений контролёра', () => {
   it('решение по несоответствию: переделка / ремонт / как есть / списать / вернуть', () => {
     const w = mountPanel({ card: confirmedCard() })
     expect(w.findAll('[data-group="disposition"] .option-title').map((b) => b.text())).toEqual([
-      'Переделка — вернуть на операцию',
+      'Переделка',
       'Ремонт',
       'Принять как есть',
       'Списать',
       'Вернуть поставщику',
     ])
     expect(w.text()).toContain('Решение по изделию не ждёт установления причины')
+    // Пилюля — коротко; целиком, с условием — в подсказке.
+    expect(w.find('[data-disposition="rework"]').attributes('title')).toBe('Переделка — вернуть на операцию · без разрешения')
     // Этап 2 — карточки вариантов: смысл, условия, итог; первичных «подтвердить / отклонить» нет.
     const asIs = w.find('[data-disposition="use_as_is"]')
     expect(asIs.find('.option-terms').text()).toBe('требуется разрешение на отклонение')

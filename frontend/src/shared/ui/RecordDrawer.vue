@@ -201,7 +201,8 @@ function onShow(v: boolean): void {
   display: block;
   max-height: 50vh;
   overflow: auto;
-  padding: var(--ant-space-3) var(--ant-space-5);
+  padding: var(--ant-space-2) var(--ant-space-5) var(--ant-space-3);
+  border-top: 1px solid var(--ant-border);
   background: var(--ant-surface-subtle);
 }
 
