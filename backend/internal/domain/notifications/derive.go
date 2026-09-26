@@ -277,11 +277,24 @@ func (s *State) wanted(env Env, up Upstream, cur Cause) ([]Obligation, []Task) {
 				cs = append(cs, Cause{EventID: id, At: s.At})
 			}
 			t := task("quality/"+rq.Key, taskKind(rq.TaskKind), rq.RoleID, rq.Title, nil, cs...)
+			if rq.TaskKind == "recheck" {
+				// Доп. проверка по изделию (R-01, R-02: «оценка невозможна»):
+				// кнопка — назначить её по изделию, без несоответствия; назначенная
+				// доп. проверка задачу снимает (дальше — срок доп. проверки).
+				if up.Nonconformity != nil && slices.ContainsFunc(up.Nonconformity.Rechecks, func(rc nonconformity.Recheck) bool { return !rc.Done }) {
+					continue
+				}
+				t.Operation, t.StepKey = OpRecheckRequest, rq.StepKey
+				t.Title = "Доп. проверка " + label + ": " + rq.Title
+			}
 			ts = append(ts, t)
 		}
 	}
 	return os, ts
 }
+
+// OpRecheckRequest — операция «Назначить доп. проверку» по изделию.
+const OpRecheckRequest = "nonconformity.recheck.request"
 
 // KindProcessStep — вид задачи «шаг процесса ждёт действия человека».
 const KindProcessStep = "process_step"

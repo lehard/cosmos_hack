@@ -19,7 +19,7 @@ import type { DrillRef, TaskEntry } from '@/shared/api/generated/model'
 export type ProcessTask = TaskEntry
 
 /** Форма прямо в задаче. */
-export type TaskForm = 'receive' | 'isolator_move'
+export type TaskForm = 'receive' | 'isolator_move' | 'recheck'
 
 /** Как задача показывает своё действие. */
 export type TaskActionDef =
@@ -37,7 +37,8 @@ export const TASK_ACTIONS: Readonly<Record<string, TaskActionDef>> = {
   'process.operation.finish': { kind: 'terminal', verbKey: `${V}finish` },
   'nonconformity.presentation.resolve': { kind: 'window', window: 'presentation', verbKey: `${V}resolvePresentation` },
   'nonconformity.presentation.review': { kind: 'window', window: 'presentation', verbKey: `${V}reviewPresentation` },
-  'nonconformity.recheck.request': { kind: 'window', window: 'nonconformity', verbKey: `${V}recheck` },
+  // Доп. проверка по изделию, без несоответствия (R-01, R-02): форма в задаче.
+  'nonconformity.recheck.request': { kind: 'form', form: 'recheck', verbKey: `${V}recheck` },
   'nonconformity.nonconformity.confirm': { kind: 'window', window: 'nonconformity', verbKey: `${V}confirmSignal` },
   'nonconformity.signal.reject': { kind: 'window', window: 'nonconformity', verbKey: `${V}confirmSignal` },
   'nonconformity.disposition.set': { kind: 'window', window: 'nonconformity', verbKey: `${V}disposition` },
