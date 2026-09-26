@@ -282,6 +282,7 @@ var Files = [...]string{
 	"contracts/integrations/vision/visionqc/examples/aborted.json",
 	"contracts/integrations/vision/visionqc/examples/bad_frame.json",
 	"contracts/integrations/vision/visionqc/examples/glare.json",
+	"contracts/integrations/vision/visionqc/examples/light_changed.json",
 	"contracts/integrations/vision/visionqc/examples/weld_burnthrough.json",
 	"contracts/integrations/vision/visionqc/examples/weld_ok.json",
 	"contracts/integrations/vision/visionqc/examples/weld_pores.json",

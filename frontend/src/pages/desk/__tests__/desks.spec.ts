@@ -31,7 +31,7 @@ describe('столы ролей из yaml', () => {
   it('есть столы всех ролей PRD §3a', () => {
     const roles = files.map((f) => f.replace('.yaml', '')).sort()
     expect(roles).toEqual(
-      ['administrator', 'approver', 'customer_representative', 'performer', 'production_manager', 'quality_inspector', 'security_auditor', 'site_foreman', 'technologist'].sort(),
+      ['administrator', 'approver', 'customer_representative', 'head_of_qc', 'performer', 'production_manager', 'quality_inspector', 'security_auditor', 'site_foreman', 'technologist'].sort(),
     )
   })
 
