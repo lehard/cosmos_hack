@@ -8,6 +8,31 @@ title: Переделка шва — новое выполнение опера�
 run: MS-1
 source: 'process/scenarios-flange-expected.yaml процессной сессии, версия 0.3-draft: утверждения процессной сессии — в source без изменений, check — исполняемая форма эпика 32'
 checkpoints:
+- at: '2026-09-24T15:29:00+03:00'
+  label: до нового решения по Ф-021
+  assertions:
+  - id: S10A-10
+    what: 'блокировка Ф-021 и новый дефект НС-06 в 1С НЕ уходят: до нового решения по Ф-021 в 1С ничего'
+    check:
+      operation: erp.message.list
+      params:
+        item_id: '{item:F-021}'
+      path: /items/#
+      op: delta
+      value: 0
+    baseline: '2026-09-24T14:35:00+03:00'
+    mapping: exact
+    note: 'сведение: между подтверждением НС-06 (14:35) и новым решением (15:30) число сообщений по Ф-021 не изменилось'
+    source:
+      subject: erp/postings
+      field: count
+      filter:
+        item: F-021
+        between:
+        - '2026-09-24T14:35:00+03:00'
+        - '2026-09-24T15:29:00+03:00'
+      op: eq
+      value: 0
 - at: '2026-09-24T16:30:00+03:00'
   label: конец главной истории
   assertions:
@@ -201,26 +226,6 @@ checkpoints:
         type: rework_return_to_production
       op: eq
       value: true
-  - id: S10A-10
-    what: 'блокировка Ф-021 и новый дефект НС-06 в 1С НЕ уходят: до нового решения по Ф-021 в 1С ничего'
-    check:
-      operation: erp.message.list
-      params:
-        item_id: '{item:F-021}'
-      path: /items/#
-      op: eq
-      value: 0
-    mapping: exact
-    source:
-      subject: erp/postings
-      field: count
-      filter:
-        item: F-021
-        between:
-        - '2026-09-24T14:35:00+03:00'
-        - '2026-09-24T15:29:00+03:00'
-      op: eq
-      value: 0
   - id: S10A-11
     what: в 1С «перевод в брак (списание)» по Ф-021, подтверждено
     check:

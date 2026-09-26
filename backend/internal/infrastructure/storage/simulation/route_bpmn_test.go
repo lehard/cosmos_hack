@@ -13,10 +13,15 @@ import (
 	"time"
 
 	processapp "ant/internal/application/process"
+	qualityapp "ant/internal/application/quality"
 	"ant/internal/contracts/catalog"
+	ev "ant/internal/contracts/events"
 	"ant/internal/domain/engine"
 	"ant/internal/domain/kernel"
+	"ant/internal/domain/quality"
 	sim "ant/internal/domain/simulation"
+	dvision "ant/internal/domain/vision"
+	storevision "ant/internal/infrastructure/storage/vision"
 )
 
 // Генератор против процесса фланца (normative/process/flange-process.bpmn):
@@ -168,6 +173,44 @@ var knownGaps = map[string]map[string]string{
 	},
 }
 
+// seedPassports — паспорта допуска анализаторов затравки demo (роль migrate):
+// без них результат камеры — уровень доверия 0 и в полноту не идёт (AD-29).
+func seedPassports(t *testing.T) []quality.Passport {
+	t.Helper()
+	seed, err := storevision.PassportsSeed()
+	if err != nil {
+		t.Fatal(err)
+	}
+	at, err := time.Parse(time.RFC3339Nano, seed.AdmittedAt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var recs []kernel.Record
+	for i, ps := range seed.Passports {
+		v := ps.Versions
+		vers := dvision.Versions{ItemRevision: v.ItemRevision, RecipeRef: v.RecipeRef, CameraConfig: v.CameraConfig, Calibration: v.Calibration,
+			AnalyzerVersion: v.AnalyzerVersion, ThresholdProfile: v.ThresholdProfile, ContractVersion: v.ContractVersion, AppVersion: v.AppVersion}
+		d := ev.AnalyzerPassportAdmittedV1{PassportID: ev.ObjectID(ps.PassportID), Stage: ev.AnalyzerPassportAdmittedV1Stage(ps.Stage),
+			TrustLevel: ps.TrustLevel, RecipeRef: ps.RecipeRef, Versions: vers.Contract(), DocumentID: ev.ObjectID(ps.DocumentID)}
+		b, err := json.Marshal(d)
+		if err != nil {
+			t.Fatal(err)
+		}
+		recs = append(recs, kernel.Record{Seq: int64(i + 1), EventID: ps.PassportID, Type: catalog.AnalyzerPassportAdmitted,
+			Kind: catalog.KindDecision, OccurredAt: at, ReceivedAt: at, RecordedAt: at, Data: b})
+	}
+	return quality.PassportsFrom(recs)
+}
+
+// knownQualityGap — разрыв модуля quality (эпик 20): полнота контроля
+// считает результат точки устаревшим после любой следующей операции участка
+// (quality.points: «from» — последнее выполнение участка), в том числе после
+// операций, стоящих в процессе позже точки. На сборке КТ-4d (до крышки)
+// «устаревает» от установки крышки, крепежа и затяжки — ЗТ-4 ч.2 видит
+// «нет данных». Правка модуля — учитывать выполнения шагов не позже точки
+// (Order ≤ Order точки). Пока разрыв есть — отказ пишется в лог теста.
+const knownQualityGap = "inspection_missing на assembly.kt4d_zone_camera"
+
 // TestRouteWalksFlangeBPMN — FR-44, AD-17: маршрут генератора по каждому
 // изделию каждого прогона проходим токеном процесса фланца.
 func TestRouteWalksFlangeBPMN(t *testing.T) {
@@ -182,11 +225,19 @@ func TestRouteWalksFlangeBPMN(t *testing.T) {
 		t.Fatal(err)
 	}
 	bundles := &processapp.Bundles{Store: store}
+	// часть quality нормативного слоя (точки контроля, классификатор) —
+	// полнота контроля на закрывающих точках, как у гарда nonconformity
+	qenv, err := qualityapp.EnvFromFS(os.DirFS(repo), "flange-1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	qenv.Passports = seedPassports(t)
 	f := NewFiles(filepath.Join(repo, "scenarios"))
 	runs, err := f.Runs()
 	if err != nil {
 		t.Fatal(err)
 	}
+	qualityGaps := 0
 	for _, run := range runs {
 		t.Run(run, func(t *testing.T) {
 			b, err := f.Bundle(ctx, run)
@@ -213,8 +264,38 @@ func TestRouteWalksFlangeBPMN(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
+				bundle.Quality = qenv
 				s, _ := engine.Fold(bundle, in)
 				var bad []string
+				// Полнота контроля на точке (FR-35, гард nonconformity): к
+				// моменту решения «принять» у точки нет «нет данных» по плану.
+				for i, r := range in {
+					if r.Type != catalog.DecisionPresentationResolved {
+						continue
+					}
+					var d struct {
+						StepKey    string `json:"step_key"`
+						Resolution string `json:"resolution"`
+					}
+					_ = json.Unmarshal(r.Data, &d)
+					if d.Resolution != "accept" {
+						continue
+					}
+					before, _ := engine.Fold(bundle, in[:i])
+					for _, b := range quality.PresentationBlockers(before.Quality, bundle.Quality, d.StepKey) {
+						// открытые сигналы закрывают решения по ссылкам {ref:SIG-…},
+						// известным только живому прогону, — здесь не проверяются
+						if b.Code == "open_signal" {
+							continue
+						}
+						msg := fmt.Sprintf("%s на %s", b.Code, b.StepKey)
+						if msg == knownQualityGap {
+							qualityGaps++
+							continue
+						}
+						bad = append(bad, fmt.Sprintf("%s [quality]: %s", labels[r.EventID], msg))
+					}
+				}
 				for _, r := range s.Process.Refusals {
 					bad = append(bad, fmt.Sprintf("%s [%s]: %s — %s", labels[r.EventID], r.Kind, r.Code, r.Detail))
 				}
@@ -235,5 +316,10 @@ func TestRouteWalksFlangeBPMN(t *testing.T) {
 				}
 			}
 		})
+	}
+	if qualityGaps > 0 {
+		t.Logf("известный разрыв quality (%d решений ЗТ-4 ч.2): %s", qualityGaps, knownQualityGap)
+	} else {
+		t.Errorf("разрыв quality «%s» больше не воспроизводится — убрать knownQualityGap", knownQualityGap)
 	}
 }

@@ -91,8 +91,9 @@ type Result struct {
 // Extract — значения по пути в ответе.
 //
 // Путь: сегменты через «/»: имя поля; число — элемент списка; «*» — все
-// элементы; «#» — число элементов; фильтр «[поле=значение]» (поле может быть
-// вложенным через «.», несколько условий через «,») после имени или отдельно.
+// элементы; «#» — число элементов; фильтр «[поле=значение]» или
+// «[поле!=значение]» (поле может быть вложенным через «.», несколько условий
+// через «,») после имени или отдельно.
 // Результат — найденные значения (пусто — пути нет).
 func Extract(doc any, path string) ([]any, error) {
 	cur := []any{doc}
@@ -194,7 +195,11 @@ func isIndex(s string) bool {
 	return true
 }
 
-type cond struct{ key, value string }
+// cond — условие фильтра: поле = значение или поле != значение.
+type cond struct {
+	key, value string
+	not        bool
+}
 
 func parseSegment(seg string) (string, []cond, error) {
 	i := strings.IndexByte(seg, '[')
@@ -210,7 +215,8 @@ func parseSegment(seg string) (string, []cond, error) {
 		if !ok {
 			return "", nil, fmt.Errorf("путь: условие %q без «=»", part)
 		}
-		cs = append(cs, cond{strings.TrimSpace(k), strings.TrimSpace(v)})
+		not := strings.HasSuffix(k, "!")
+		cs = append(cs, cond{key: strings.TrimSpace(strings.TrimSuffix(k, "!")), value: strings.TrimSpace(v), not: not})
 	}
 	return seg[:i], cs, nil
 }
@@ -225,7 +231,7 @@ func matchFilter(e any, cs []cond) bool {
 			}
 			v = m[k]
 		}
-		if scalarString(v) != c.value {
+		if (scalarString(v) == c.value) == c.not {
 			return false
 		}
 	}

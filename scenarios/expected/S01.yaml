@@ -191,7 +191,7 @@ checkpoints:
       operation: erp.message.list
       params:
         item_id: '{item:F-001}'
-      path: /items/*/action
+      path: /items[action!=inspection_result]/*/action
       op: set_eq
       value:
       - accept_into_work
@@ -214,7 +214,7 @@ checkpoints:
       - transfer
       - transfer
       - release_good
-    note: виды учётных сообщений процессной сессии → erp_action контракта
+    note: 'виды учётных сообщений процессной сессии → erp_action контракта; «результат контроля» (inspection_result, [П] кейс §3.3) — не учётное движение и в счёт шести не входит'
   - id: S01-12
     what: все сообщения 1С подтверждены
     check:

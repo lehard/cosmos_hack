@@ -307,9 +307,11 @@ checkpoints:
       params:
         item_id: '{item:F-017}'
       path: /items/#
-      op: eq
+      op: delta
       value: 0
+    baseline: '2026-09-23T11:00:00+03:00'
     mapping: exact
+    note: 'сведение: «ничего не ушло» — между 11:00 и 11:25 (число сообщений по Ф-017 не изменилось); прежние учётные сообщения маршрута в счёт не идут'
     source:
       subject: erp/postings
       field: count

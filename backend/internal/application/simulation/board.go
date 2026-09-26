@@ -149,6 +149,11 @@ func (s *Service) check(ctx context.Context, st *RunState, rp *runPlan, r row) s
 	c := r.a.Check
 	c.Value = want
 	res := sim.Evaluate(c, v, found, st.Baselines[r.a.ID])
+	if res.Status == sim.StatusPassed && !found && r.a.Mapping != "exact" {
+		// «значения нет» — зелёное только у точного пути: у пути «по смыслу»
+		// отсутствие поля в ответе ничего не доказывает (честное табло)
+		return sim.Result{Status: sim.StatusPending, Detail: "сопоставление с ответом не уточнено (draft): путь не найден в ответе"}
+	}
 	if res.Status == sim.StatusFailed && r.a.Mapping != "exact" {
 		// путь сопоставлен по смыслу: расхождение ещё не доказывает ошибку
 		// системы — строка ждёт уточнения пути модулем-владельцем
