@@ -2,13 +2,21 @@ package engine
 
 import (
 	"context"
+	"encoding/json"
 
 	jc "ant/internal/contracts/journal"
+	"ant/internal/domain/engine"
+	"ant/internal/domain/kernel"
 )
 
 // WorkFeed — ведомый порт подачи работы воркеру (AD-6, AD-35, ключ work_feed):
 // фиксированные партиции hash(item_id) mod P в Postgres; Kafka с key = item_id —
 // замена (контрактный тест + state_hash на Kafka). Сигнал «есть новое» — seq.
+//
+// Триггер свёртки (AD-5) — новая запись потока изделия: факт, решение,
+// адресованная запись стадии, «наступил срок», «повтор обработки». Реакции и
+// служебные записи самого воркера (роль-эмитент worker в каталоге) триггером
+// не являются: адаптер их не подаёт, а воркер при подаче пропускает.
 type WorkFeed interface {
 	// Partitions — партиции, аренду которых держит эта копия (с эпохами).
 	Partitions(ctx context.Context) ([]Partition, error)
@@ -36,8 +44,49 @@ type Work struct {
 // записанных (новые, пересмотренные «из-за записи ‹id›», исчезнувшие по AD-3)
 // → journal.Append с basis_seq, вкладами показателей и курсором. Ошибка на
 // записи → ops.processing.failed, изделие «обработка остановлена», партиция
-// продолжает (AD-45). Реализация — эпик 07.
+// продолжает (AD-45). Реализация — WorkerService.
 type Worker interface {
 	// Run обрабатывает партиции до отмены ctx.
 	Run(ctx context.Context) error
+}
+
+// BundleSource — ведомый порт нормативного слоя изделия (AD-17): версия,
+// закреплённая при запуске изделия, разложенная по модулям, и её ревизия
+// (normative_rev записей). Реализует модуль process (эпик 17); до него —
+// EmptyBundles.
+type BundleSource interface {
+	Bundle(ctx context.Context, itemID string, input []kernel.Record) (engine.Bundle, string, error)
+}
+
+// EmptyBundles — нормативный слой пустых модулей (волна 2).
+type EmptyBundles struct{}
+
+// Bundle возвращает пустой Bundle.
+func (EmptyBundles) Bundle(context.Context, string, []kernel.Record) (engine.Bundle, string, error) {
+	return engine.Bundle{}, "", nil
+}
+
+// Sealer — ведомый порт подписи записей движка (AD-3, AD-10): канонический
+// конверт события → конверт DSSE, подписанный ключом «движок» (класс
+// server-attested). Адаптер — SignerSealer над портом signing.Signer.
+type Sealer interface {
+	Seal(ctx context.Context, payload []byte) ([]byte, error)
+}
+
+// ProjectionStore — ведомый порт чтения проекций движка и каркаса проекций
+// (AD-45): значение проекции name по ключу. Запись — только эффектами в
+// транзакции Append (один писатель, курсор атомарно).
+type ProjectionStore interface {
+	Get(ctx context.Context, name, key string) (json.RawMessage, bool, error)
+}
+
+// ChangeLog — ведомый порт журнала изменений сущностей для живых обновлений
+// (AD-6, AD-21): эффект Notify пишет строку в той же транзакции, что и
+// проекцию; LISTEN/NOTIFY несёт только сигнал «есть новое» с seq. Копия api
+// после переподключения догоняет по seq (After).
+type ChangeLog interface {
+	// After — изменения после seq в порядке seq, не больше limit.
+	After(ctx context.Context, afterSeq int64, limit int) ([]Change, error)
+	// Wait блокирует до сигнала «есть новое» или отмены ctx.
+	Wait(ctx context.Context) error
 }
