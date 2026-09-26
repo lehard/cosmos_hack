@@ -5,7 +5,7 @@
  * @casl/vue с сервером (AD-15), и правое окно записи (Д-70): любая страница
  * открывает запись по `?open=‹тип›:‹id›`.
  */
-import { computed, onBeforeUnmount, onMounted, provide, shallowRef } from 'vue'
+import { computed, onBeforeUnmount, onMounted, provide, shallowRef, watch } from 'vue'
 import { NLayout, NLayoutContent, NLayoutHeader } from 'naive-ui'
 import { useQueryClient } from '@tanstack/vue-query'
 import { startLiveUpdates, type LiveUpdates } from '@/shared/api/sse'
@@ -16,7 +16,7 @@ import { RECORD_KINDS } from '../record/registry'
 import RecordDrawerHost from '../record/RecordDrawerHost.vue'
 import AppHeader from './AppHeader.vue'
 import DeskNav from './DeskNav.vue'
-import RunWaitingBanner from './RunWaitingBanner.vue'
+import { activeRun, refreshActiveRun } from '@/shared/api/active-run'
 
 const queryClient = useQueryClient()
 useAbilitySync()
@@ -24,16 +24,26 @@ provide(RECORD_DRAWER, { kinds: RECORD_KINDS })
 
 const updates = shallowRef<LiveUpdates | null>(null)
 const live = computed(() => updates.value?.status.value ?? 'connecting')
+let runTimer: ReturnType<typeof setInterval> | undefined
 onMounted(() => {
   updates.value = startLiveUpdates(queryClient)
+  void refreshActiveRun()
+  runTimer = setInterval(() => void refreshActiveRun(), 3000)
 })
-onBeforeUnmount(() => updates.value?.stop())
-/** Активный прогон сменился — живые обновления переподключаются к нему (SSE фильтрует по run_id). */
-function onRunChanged(runId: string | null): void {
+onBeforeUnmount(() => {
   updates.value?.stop()
-  const url = runId ? `${SSE_ADDRESS}${SSE_ADDRESS.includes('?') ? '&' : '?'}run_id=${encodeURIComponent(runId)}` : SSE_ADDRESS
-  updates.value = startLiveUpdates(queryClient, url)
-}
+  clearInterval(runTimer)
+})
+/** Идёт прогон сценария — столы работают в нём: живые обновления переподключаются (SSE фильтрует по run_id), данные перечитываются. */
+watch(
+  () => activeRun.value?.run_id ?? null,
+  (runId) => {
+    updates.value?.stop()
+    const url = runId ? `${SSE_ADDRESS}${SSE_ADDRESS.includes('?') ? '&' : '?'}run_id=${encodeURIComponent(runId)}` : SSE_ADDRESS
+    updates.value = startLiveUpdates(queryClient, url)
+    void queryClient.invalidateQueries()
+  },
+)
 </script>
 
 <template>
@@ -44,7 +54,6 @@ function onRunChanged(runId: string | null): void {
     <NLayoutContent class="shell-content" content-class="shell-body">
       <DeskNav class="shell-nav" />
       <main class="shell-page">
-        <RunWaitingBanner @run-changed="onRunChanged" />
         <RouterView />
       </main>
     </NLayoutContent>
