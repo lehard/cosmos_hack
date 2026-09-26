@@ -211,7 +211,11 @@
         "outsideWindow": "Вне окна возможного возникновения",
         "windowUnknown": "Окно возможного возникновения определить нельзя: нет последнего подтверждённо нормального состояния или первой находки",
         "nothingNotable": "Значимых записей нет",
-        "phaseSummary": "Ход событий"
+        "phaseSummary": "Ход событий",
+        "gap": "{duration} без событий",
+        "laneOk": "данные полные",
+        "laneLate": "опоздали записей: {n}, до {delay}",
+        "laneGaps": "пропуски данных: {n} — исключать нельзя"
       },
       "missing": {
         "title": "@:ncCard.whySystemSuggests.missingData",

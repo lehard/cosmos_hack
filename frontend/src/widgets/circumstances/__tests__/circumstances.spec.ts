@@ -28,6 +28,27 @@ describe('разбор обстоятельств', () => {
     expect(w.text()).toContain('Оборудование')
   })
 
+  it('качество данных дорожки: полные / опоздания / пропуски — «исключать нельзя»', () => {
+    const m = weldCircumstances()
+    m.lanes = {
+      item: { late_count: 0, max_delay_min: 0, gaps: [] },
+      person: { late_count: 0, max_delay_min: 0, gaps: [{ from: '2026-09-23T08:12:00Z', to: '2026-09-23T08:18:00Z', source: 'term', text: 'нет данных терминала' }] },
+      equipment: { late_count: 2, max_delay_min: 83, gaps: [] },
+    }
+    const w = mountView(m)
+    expect(w.find('[data-lane-quality="item"]').text()).toBe('данные полные')
+    expect(w.find('[data-lane-quality="equipment"]').text()).toBe('опоздали записей: 2, до 1\u00a0ч 23\u00a0мин')
+    expect(w.find('[data-lane-quality="person"]').text()).toContain('исключать нельзя')
+  })
+
+  it('дни без событий — свёрнутый разрыв с длительностью', () => {
+    const m = weldCircumstances()
+    m.records = [{ ...m.records[0]!, event_id: 'e-early', occurred_at: '2026-09-20T09:00:00Z' }, ...m.records]
+    const w = mountView(m)
+    expect(w.findAll('[data-testid="gap-band"]').length).toBeGreaterThan(0)
+    expect(w.find('[data-testid="gap-band"]').text()).toContain('без событий')
+  })
+
   it('дорожки синхронны: одно время — одна позиция на всех дорожках', () => {
     const w = mountView()
     // 08:27 — ручная подача у исполнителя и ручное изменение режима у станка
