@@ -1,0 +1,333 @@
+{
+  "comment": "Эталонные документы AD-12: сервер (свёртка) и агент токена обязаны получить rendering_hash и doc_digest байт в байт. Пересборка: ANT_UPDATE_DOC_VECTORS=1 go test ./internal/application/documents -run TestGoldenDocuments",
+  "documents": [
+    {
+      "document_id": "TRV-ENT01:FL-0007",
+      "template_ref": "traveler@1",
+      "doc_format_version": 1,
+      "content": {
+        "approvals": [
+          {
+            "attester_authority_id": "paper_attestation",
+            "authority_id": "qc_acceptance",
+            "paper_allowed": true,
+            "quorum": "one",
+            "required": 1,
+            "role": "quality_inspector",
+            "separation": [
+              "distinct_signers",
+              "not_item_participant"
+            ],
+            "signature_level": 2,
+            "stage": 1,
+            "stamp_kind": "final",
+            "title": "Контролёр ОТК — итоговая годность"
+          },
+          {
+            "attester_authority_id": "paper_attestation",
+            "authority_id": "site_foreman",
+            "paper_allowed": true,
+            "quorum": "one",
+            "required": 1,
+            "role": "site_foreman",
+            "separation": [
+              "distinct_signers"
+            ],
+            "signature_level": 2,
+            "stage": 2,
+            "title": "Мастер участка — итоговая годность"
+          }
+        ],
+        "doc_type": "traveler",
+        "document_id": "TRV-ENT01:FL-0007",
+        "final": {
+          "at": "",
+          "status": "в работе"
+        },
+        "item": {
+          "item_id": "ENT01:FL-0007",
+          "item_revision": "Б",
+          "item_type_id": "FL-100.01.001",
+          "lots": [
+            "LOT-AMG6-17"
+          ],
+          "order_id": "ZK-1C-0042",
+          "process_version_hash": "streebog256:0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        "nc_count": 1,
+        "nonconformities": [
+          {
+            "concession": "CON-1",
+            "disposition": "как есть",
+            "nc_id": "0192f000-0000-7000-8000-000000000001",
+            "number": "НС-0192F000",
+            "status": "confirmed"
+          }
+        ],
+        "otk_count": 1,
+        "rows": [
+          {
+            "completion": "completed",
+            "date": "2026-09-28T07:00:00.000Z — 2026-09-28T07:42:00.000Z",
+            "executor": "O17",
+            "no": 1,
+            "operation": "Токарная обработка",
+            "operation_run_id": "RUN-1",
+            "otk": "годен — INS-01, 2026-09-28T08:00:00.000Z",
+            "otk_by": "INS-01",
+            "params": [
+              "Оборудование: CNC-3",
+              "Программа: УП-017 ред. 4",
+              "Ø 120: 120.02 mm (within)"
+            ],
+            "remarks": [],
+            "signature": [
+              "O17 (подпись personal, ур. 1)"
+            ],
+            "step_key": "machining.turn"
+          },
+          {
+            "completion": "completed",
+            "date": "2026-09-28T09:00:00.000Z — 2026-09-28T09:20:00.000Z",
+            "executor": "W21",
+            "no": 2,
+            "operation": "Сварка шва W-1",
+            "operation_run_id": "RUN-2",
+            "otk": "признак дефекта — камера, 2026-09-28T09:30:00.000Z",
+            "otk_by": "",
+            "params": [
+              "Оборудование: WELD-1",
+              "Длительность: 20 min"
+            ],
+            "remarks": [
+              "Заявление о несоответствии НС-0192F000"
+            ],
+            "signature": [
+              "W21 (подпись personal, ур. 1)"
+            ],
+            "step_key": "welding.weld"
+          }
+        ],
+        "rows_count": 2,
+        "subject": "item:ENT01:FL-0007",
+        "summary": [
+          {
+            "label": "Изделие",
+            "value": "ENT01:FL-0007"
+          },
+          {
+            "label": "Операций",
+            "value": "2"
+          },
+          {
+            "label": "Отметок ОТК",
+            "value": "1"
+          },
+          {
+            "label": "Несоответствий",
+            "value": "1"
+          },
+          {
+            "label": "Итоговая годность",
+            "value": "в работе"
+          }
+        ],
+        "template_ref": "traveler@1",
+        "title": "Сопроводительная карта изделия",
+        "version": 1
+      },
+      "content_canonical_utf8": "{\"approvals\":[{\"attester_authority_id\":\"paper_attestation\",\"authority_id\":\"qc_acceptance\",\"paper_allowed\":true,\"quorum\":\"one\",\"required\":1,\"role\":\"quality_inspector\",\"separation\":[\"distinct_signers\",\"not_item_participant\"],\"signature_level\":2,\"stage\":1,\"stamp_kind\":\"final\",\"title\":\"Контролёр ОТК — итоговая годность\"},{\"attester_authority_id\":\"paper_attestation\",\"authority_id\":\"site_foreman\",\"paper_allowed\":true,\"quorum\":\"one\",\"required\":1,\"role\":\"site_foreman\",\"separation\":[\"distinct_signers\"],\"signature_level\":2,\"stage\":2,\"title\":\"Мастер участка — итоговая годность\"}],\"doc_type\":\"traveler\",\"document_id\":\"TRV-ENT01:FL-0007\",\"final\":{\"at\":\"\",\"status\":\"в работе\"},\"item\":{\"item_id\":\"ENT01:FL-0007\",\"item_revision\":\"Б\",\"item_type_id\":\"FL-100.01.001\",\"lots\":[\"LOT-AMG6-17\"],\"order_id\":\"ZK-1C-0042\",\"process_version_hash\":\"streebog256:0000000000000000000000000000000000000000000000000000000000000000\"},\"nc_count\":1,\"nonconformities\":[{\"concession\":\"CON-1\",\"disposition\":\"как есть\",\"nc_id\":\"0192f000-0000-7000-8000-000000000001\",\"number\":\"НС-0192F000\",\"status\":\"confirmed\"}],\"otk_count\":1,\"rows\":[{\"completion\":\"completed\",\"date\":\"2026-09-28T07:00:00.000Z — 2026-09-28T07:42:00.000Z\",\"executor\":\"O17\",\"no\":1,\"operation\":\"Токарная обработка\",\"operation_run_id\":\"RUN-1\",\"otk\":\"годен — INS-01, 2026-09-28T08:00:00.000Z\",\"otk_by\":\"INS-01\",\"params\":[\"Оборудование: CNC-3\",\"Программа: УП-017 ред. 4\",\"Ø 120: 120.02 mm (within)\"],\"remarks\":[],\"signature\":[\"O17 (подпись personal, ур. 1)\"],\"step_key\":\"machining.turn\"},{\"completion\":\"completed\",\"date\":\"2026-09-28T09:00:00.000Z — 2026-09-28T09:20:00.000Z\",\"executor\":\"W21\",\"no\":2,\"operation\":\"Сварка шва W-1\",\"operation_run_id\":\"RUN-2\",\"otk\":\"признак дефекта — камера, 2026-09-28T09:30:00.000Z\",\"otk_by\":\"\",\"params\":[\"Оборудование: WELD-1\",\"Длительность: 20 min\"],\"remarks\":[\"Заявление о несоответствии НС-0192F000\"],\"signature\":[\"W21 (подпись personal, ур. 1)\"],\"step_key\":\"welding.weld\"}],\"rows_count\":2,\"subject\":\"item:ENT01:FL-0007\",\"summary\":[{\"label\":\"Изделие\",\"value\":\"ENT01:FL-0007\"},{\"label\":\"Операций\",\"value\":\"2\"},{\"label\":\"Отметок ОТК\",\"value\":\"1\"},{\"label\":\"Несоответствий\",\"value\":\"1\"},{\"label\":\"Итоговая годность\",\"value\":\"в работе\"}],\"template_ref\":\"traveler@1\",\"title\":\"Сопроводительная карта изделия\",\"version\":1}",
+      "rendering_utf8": "\u003carticle class=\"ant-doc\" data-template=\"traveler@1\"\u003e\n\u003cheader\u003e\u003ch1\u003eСопроводительная карта изделия\u003c/h1\u003e\u003cp class=\"ant-doc-id\"\u003eTRV-ENT01:FL-0007 · версия 1\u003c/p\u003e\u003c/header\u003e\n\u003csection\u003e\u003ch2\u003eИзделие\u003c/h2\u003e\u003cdl\u003e\u003cdt\u003eИзделие\u003c/dt\u003e\u003cdd\u003eENT01:FL-0007\u003c/dd\u003e\u003cdt\u003eОбозначение ДСЕ\u003c/dt\u003e\u003cdd\u003eFL-100.01.001\u003c/dd\u003e\u003cdt\u003eИзменение КД\u003c/dt\u003e\u003cdd\u003eБ\u003c/dd\u003e\u003cdt\u003eЗадание\u003c/dt\u003e\u003cdd\u003eZK-1C-0042\u003c/dd\u003e\u003cdt\u003eПартии\u003c/dt\u003e\u003cdd\u003eLOT-AMG6-17\u003c/dd\u003e\u003cdt\u003eВерсия техпроцесса\u003c/dt\u003e\u003cdd\u003estreebog256:0000000000000000000000000000000000000000000000000000000000000000\u003c/dd\u003e\u003c/dl\u003e\u003c/section\u003e\n\u003csection\u003e\u003ch2\u003eОперации\u003c/h2\u003e\u003ctable\u003e\u003cthead\u003e\u003ctr\u003e\u003cth\u003e№\u003c/th\u003e\u003cth\u003eОперация\u003c/th\u003e\u003cth\u003eИсполнитель\u003c/th\u003e\u003cth\u003eДата\u003c/th\u003e\u003cth\u003eПодпись\u003c/th\u003e\u003cth\u003eФактические параметры\u003c/th\u003e\u003cth\u003eОтметка ОТК\u003c/th\u003e\u003cth\u003eОтметки\u003c/th\u003e\u003c/tr\u003e\u003c/thead\u003e\u003ctbody\u003e\u003ctr\u003e\u003ctd\u003e1\u003c/td\u003e\u003ctd\u003eТокарная обработка\u003c/td\u003e\u003ctd\u003eO17\u003c/td\u003e\u003ctd\u003e2026-09-28T07:00:00.000Z — 2026-09-28T07:42:00.000Z\u003c/td\u003e\u003ctd\u003eO17 (подпись personal, ур. 1)\u003c/td\u003e\u003ctd\u003eОборудование: CNC-3; Программа: УП-017 ред. 4; Ø 120: 120.02 mm (within)\u003c/td\u003e\u003ctd\u003eгоден — INS-01, 2026-09-28T08:00:00.000Z\u003c/td\u003e\u003ctd\u003e—\u003c/td\u003e\u003c/tr\u003e\u003ctr\u003e\u003ctd\u003e2\u003c/td\u003e\u003ctd\u003eСварка шва W-1\u003c/td\u003e\u003ctd\u003eW21\u003c/td\u003e\u003ctd\u003e2026-09-28T09:00:00.000Z — 2026-09-28T09:20:00.000Z\u003c/td\u003e\u003ctd\u003eW21 (подпись personal, ур. 1)\u003c/td\u003e\u003ctd\u003eОборудование: WELD-1; Длительность: 20 min\u003c/td\u003e\u003ctd\u003eпризнак дефекта — камера, 2026-09-28T09:30:00.000Z\u003c/td\u003e\u003ctd\u003eЗаявление о несоответствии НС-0192F000\u003c/td\u003e\u003c/tr\u003e\u003c/tbody\u003e\u003c/table\u003e\u003c/section\u003e\n\u003csection\u003e\u003ch2\u003eНесоответствия и разрешения\u003c/h2\u003e\u003ctable\u003e\u003cthead\u003e\u003ctr\u003e\u003cth\u003e№ заявления\u003c/th\u003e\u003cth\u003eСостояние\u003c/th\u003e\u003cth\u003eРешение\u003c/th\u003e\u003cth\u003eРазрешение на отклонение\u003c/th\u003e\u003c/tr\u003e\u003c/thead\u003e\u003ctbody\u003e\u003ctr\u003e\u003ctd\u003eНС-0192F000\u003c/td\u003e\u003ctd\u003econfirmed\u003c/td\u003e\u003ctd\u003eкак есть\u003c/td\u003e\u003ctd\u003eCON-1\u003c/td\u003e\u003c/tr\u003e\u003c/tbody\u003e\u003c/table\u003e\u003c/section\u003e\n\u003csection\u003e\u003ch2\u003eИтог\u003c/h2\u003e\u003cdl\u003e\u003cdt\u003eИтоговая годность\u003c/dt\u003e\u003cdd\u003eв работе\u003c/dd\u003e\u003cdt\u003eДата\u003c/dt\u003e\u003cdd\u003e—\u003c/dd\u003e\u003c/dl\u003e\u003c/section\u003e\n\u003csection\u003e\u003ch2\u003eИтоговая годность — подписи\u003c/h2\u003e\u003col\u003e\u003cli\u003eЭтап 1. Контролёр ОТК — итоговая годность; полномочие qc_acceptance; роль quality_inspector; клеймо «final»; уровень 2; подписей 1; бумага с заверением допустима\u003c/li\u003e\u003cli\u003eЭтап 2. Мастер участка — итоговая годность; полномочие site_foreman; роль site_foreman; уровень 2; подписей 1; бумага с заверением допустима\u003c/li\u003e\u003c/ol\u003e\u003c/section\u003e\n\u003csection class=\"ant-doc-summary\"\u003e\u003ch2\u003eСводка для подписи\u003c/h2\u003e\u003cdl\u003e\u003cdt\u003eИзделие\u003c/dt\u003e\u003cdd\u003eENT01:FL-0007\u003c/dd\u003e\u003cdt\u003eОпераций\u003c/dt\u003e\u003cdd\u003e2\u003c/dd\u003e\u003cdt\u003eОтметок ОТК\u003c/dt\u003e\u003cdd\u003e1\u003c/dd\u003e\u003cdt\u003eНесоответствий\u003c/dt\u003e\u003cdd\u003e1\u003c/dd\u003e\u003cdt\u003eИтоговая годность\u003c/dt\u003e\u003cdd\u003eв работе\u003c/dd\u003e\u003c/dl\u003e\u003c/section\u003e\n\u003c/article\u003e\n",
+      "rendering_hash": "streebog256:e8ac4d62172fcce5e8db9136332b29657008830bcbf65f1d35ac6e1991fccaa9",
+      "doc_digest": "streebog256:0a5c02f46628161993b02c4bcb870f34955d2c340d0b9dc3644a0f6b8f7b08ca",
+      "qr": "ant:doc:TRV-ENT01:FL-0007:streebog256:0a5c02f46628161993b02c4bcb870f34955d2c340d0b9dc3644a0f6b8f7b08ca"
+    },
+    {
+      "document_id": "NCS-0192f000-0000-7000-8000-000000000001",
+      "template_ref": "nc-statement@1",
+      "doc_format_version": 1,
+      "content": {
+        "approvals": [
+          {
+            "authority_id": "nc_detection",
+            "by_source": true,
+            "paper_allowed": false,
+            "quorum": "one",
+            "required": 1,
+            "signature_level": 1,
+            "stage": 1,
+            "title": "Обнаруживший"
+          },
+          {
+            "attester_authority_id": "paper_attestation",
+            "authority_id": "qc_acceptance",
+            "by_source": true,
+            "paper_allowed": true,
+            "quorum": "one",
+            "required": 1,
+            "role": "quality_inspector",
+            "signature_level": 2,
+            "stage": 2,
+            "title": "Контролёр качества подтверждает"
+          }
+        ],
+        "doc_type": "nc_statement",
+        "document_id": "NCS-0192f000-0000-7000-8000-000000000001",
+        "item": {
+          "item_id": "ENT01:FL-0007",
+          "item_type_id": "FL-100.01.001"
+        },
+        "nc": {
+          "confirmed_at": "2026-09-28T09:40:00.000Z",
+          "confirmed_by": "INS-01",
+          "defect_type": "burn_through",
+          "evidence": [
+            "наблюдение OBS-1"
+          ],
+          "fact": "признак дефекта «burn_through» в зоне Z-1",
+          "found_at": "2026-09-28T09:30:00.000Z",
+          "found_by": "контроль «camera» (machine)",
+          "nc_id": "0192f000-0000-7000-8000-000000000001",
+          "number": "НС-0192F000",
+          "reason": "Прожог подтверждён",
+          "requirement": "КД ФЛ-100.00.000 п. 3",
+          "severity": "major",
+          "stage": "welding.weld (выполнение RUN-2)"
+        },
+        "subject": "nonconformity:0192f000-0000-7000-8000-000000000001",
+        "summary": [
+          {
+            "label": "Заявление",
+            "value": "НС-0192F000"
+          },
+          {
+            "label": "Изделие",
+            "value": "ENT01:FL-0007"
+          },
+          {
+            "label": "Требование",
+            "value": "КД ФЛ-100.00.000 п. 3"
+          },
+          {
+            "label": "Факт",
+            "value": "признак дефекта «burn_through» в зоне Z-1"
+          },
+          {
+            "label": "Значимость",
+            "value": "major"
+          }
+        ],
+        "template_ref": "nc-statement@1",
+        "title": "Заявление о несоответствии",
+        "version": 1
+      },
+      "content_canonical_utf8": "{\"approvals\":[{\"authority_id\":\"nc_detection\",\"by_source\":true,\"paper_allowed\":false,\"quorum\":\"one\",\"required\":1,\"signature_level\":1,\"stage\":1,\"title\":\"Обнаруживший\"},{\"attester_authority_id\":\"paper_attestation\",\"authority_id\":\"qc_acceptance\",\"by_source\":true,\"paper_allowed\":true,\"quorum\":\"one\",\"required\":1,\"role\":\"quality_inspector\",\"signature_level\":2,\"stage\":2,\"title\":\"Контролёр качества подтверждает\"}],\"doc_type\":\"nc_statement\",\"document_id\":\"NCS-0192f000-0000-7000-8000-000000000001\",\"item\":{\"item_id\":\"ENT01:FL-0007\",\"item_type_id\":\"FL-100.01.001\"},\"nc\":{\"confirmed_at\":\"2026-09-28T09:40:00.000Z\",\"confirmed_by\":\"INS-01\",\"defect_type\":\"burn_through\",\"evidence\":[\"наблюдение OBS-1\"],\"fact\":\"признак дефекта «burn_through» в зоне Z-1\",\"found_at\":\"2026-09-28T09:30:00.000Z\",\"found_by\":\"контроль «camera» (machine)\",\"nc_id\":\"0192f000-0000-7000-8000-000000000001\",\"number\":\"НС-0192F000\",\"reason\":\"Прожог подтверждён\",\"requirement\":\"КД ФЛ-100.00.000 п. 3\",\"severity\":\"major\",\"stage\":\"welding.weld (выполнение RUN-2)\"},\"subject\":\"nonconformity:0192f000-0000-7000-8000-000000000001\",\"summary\":[{\"label\":\"Заявление\",\"value\":\"НС-0192F000\"},{\"label\":\"Изделие\",\"value\":\"ENT01:FL-0007\"},{\"label\":\"Требование\",\"value\":\"КД ФЛ-100.00.000 п. 3\"},{\"label\":\"Факт\",\"value\":\"признак дефекта «burn_through» в зоне Z-1\"},{\"label\":\"Значимость\",\"value\":\"major\"}],\"template_ref\":\"nc-statement@1\",\"title\":\"Заявление о несоответствии\",\"version\":1}",
+      "rendering_utf8": "\u003carticle class=\"ant-doc\" data-template=\"nc-statement@1\"\u003e\n\u003cheader\u003e\u003ch1\u003eЗаявление о несоответствии\u003c/h1\u003e\u003cp class=\"ant-doc-id\"\u003eNCS-0192f000-0000-7000-8000-000000000001 · версия 1\u003c/p\u003e\u003c/header\u003e\n\u003csection\u003e\u003ch2\u003eЗаявление\u003c/h2\u003e\u003cdl\u003e\u003cdt\u003eНомер\u003c/dt\u003e\u003cdd\u003eНС-0192F000\u003c/dd\u003e\u003cdt\u003eИзделие\u003c/dt\u003e\u003cdd\u003eENT01:FL-0007\u003c/dd\u003e\u003cdt\u003eОбозначение ДСЕ\u003c/dt\u003e\u003cdd\u003eFL-100.01.001\u003c/dd\u003e\u003cdt\u003eОбнаружено\u003c/dt\u003e\u003cdd\u003e2026-09-28T09:30:00.000Z\u003c/dd\u003e\u003cdt\u003eКто обнаружил\u003c/dt\u003e\u003cdd\u003eконтроль «camera» (machine)\u003c/dd\u003e\u003cdt\u003eЭтап (операция)\u003c/dt\u003e\u003cdd\u003ewelding.weld (выполнение RUN-2)\u003c/dd\u003e\u003cdt\u003eТребование\u003c/dt\u003e\u003cdd\u003eКД ФЛ-100.00.000 п. 3\u003c/dd\u003e\u003cdt\u003eФакт\u003c/dt\u003e\u003cdd\u003eпризнак дефекта «burn_through» в зоне Z-1\u003c/dd\u003e\u003cdt\u003eЗначимость\u003c/dt\u003e\u003cdd\u003emajor\u003c/dd\u003e\u003cdt\u003eВид дефекта\u003c/dt\u003e\u003cdd\u003eburn_through\u003c/dd\u003e\u003cdt\u003eДоказательства\u003c/dt\u003e\u003cdd\u003eнаблюдение OBS-1\u003c/dd\u003e\u003cdt\u003eПодтвердил\u003c/dt\u003e\u003cdd\u003eINS-01\u003c/dd\u003e\u003cdt\u003eДата подтверждения\u003c/dt\u003e\u003cdd\u003e2026-09-28T09:40:00.000Z\u003c/dd\u003e\u003cdt\u003eОснование\u003c/dt\u003e\u003cdd\u003eПрожог подтверждён\u003c/dd\u003e\u003c/dl\u003e\u003c/section\u003e\n\u003csection\u003e\u003ch2\u003eПодписи\u003c/h2\u003e\u003col\u003e\u003cli\u003eЭтап 1. Обнаруживший; полномочие nc_detection; уровень 1; подписей 1; закрывается решением-источником; бумага запрещена\u003c/li\u003e\u003cli\u003eЭтап 2. Контролёр качества подтверждает; полномочие qc_acceptance; роль quality_inspector; уровень 2; подписей 1; закрывается решением-источником; бумага с заверением допустима\u003c/li\u003e\u003c/ol\u003e\u003c/section\u003e\n\u003csection class=\"ant-doc-summary\"\u003e\u003ch2\u003eСводка для подписи\u003c/h2\u003e\u003cdl\u003e\u003cdt\u003eЗаявление\u003c/dt\u003e\u003cdd\u003eНС-0192F000\u003c/dd\u003e\u003cdt\u003eИзделие\u003c/dt\u003e\u003cdd\u003eENT01:FL-0007\u003c/dd\u003e\u003cdt\u003eТребование\u003c/dt\u003e\u003cdd\u003eКД ФЛ-100.00.000 п. 3\u003c/dd\u003e\u003cdt\u003eФакт\u003c/dt\u003e\u003cdd\u003eпризнак дефекта «burn_through» в зоне Z-1\u003c/dd\u003e\u003cdt\u003eЗначимость\u003c/dt\u003e\u003cdd\u003emajor\u003c/dd\u003e\u003c/dl\u003e\u003c/section\u003e\n\u003c/article\u003e\n",
+      "rendering_hash": "streebog256:38dbcdca934b6731d4482d055f5af05fef5eb3d494280780d327670d89555bbe",
+      "doc_digest": "streebog256:8b50dc9fe80b86588826e6adb3d2a1d608a135921e9f8a3a44b37a1bf87af187",
+      "qr": "ant:doc:NCS-0192f000-0000-7000-8000-000000000001:streebog256:8b50dc9fe80b86588826e6adb3d2a1d608a135921e9f8a3a44b37a1bf87af187"
+    },
+    {
+      "document_id": "ncd-0192f000-0000-7000-8000-000000000001",
+      "template_ref": "nc-disposition@1",
+      "doc_format_version": 1,
+      "content": {
+        "approvals": [
+          {
+            "authority_id": "nc_disposition",
+            "by_source": true,
+            "paper_allowed": false,
+            "quorum": "one",
+            "required": 1,
+            "separation": [
+              "distinct_signers"
+            ],
+            "signature_level": 2,
+            "stage": 1,
+            "title": "Автор решения (контролёр качества)"
+          },
+          {
+            "attester_authority_id": "paper_attestation",
+            "authority_id": "nc_disposition",
+            "paper_allowed": true,
+            "quorum": "one",
+            "required": 1,
+            "role": "technologist",
+            "separation": [
+              "distinct_signers"
+            ],
+            "signature_level": 2,
+            "stage": 2,
+            "title": "Технолог"
+          },
+          {
+            "attester_authority_id": "paper_attestation",
+            "authority_id": "nc_disposition",
+            "paper_allowed": true,
+            "quorum": "one",
+            "required": 1,
+            "role": "head_of_qc",
+            "separation": [
+              "distinct_signers"
+            ],
+            "signature_level": 2,
+            "stage": 3,
+            "title": "Начальник ОТК"
+          }
+        ],
+        "decision": {
+          "at": "2026-09-28T10:00:00.000Z",
+          "author": "INS-01",
+          "claim": "",
+          "concession": "CON-1",
+          "disposition": "use_as_is",
+          "label": "как есть",
+          "reason": "в допуске по разрешению",
+          "scrap_kind": ""
+        },
+        "doc_type": "nc_disposition",
+        "document_id": "ncd-0192f000-0000-7000-8000-000000000001",
+        "item": {
+          "item_id": "ENT01:FL-0007"
+        },
+        "nc": {
+          "nc_id": "0192f000-0000-7000-8000-000000000001",
+          "number": "НС-0192F000",
+          "requirement": "КД ФЛ-100.00.000 п. 3",
+          "severity": "major"
+        },
+        "subject": "nonconformity:0192f000-0000-7000-8000-000000000001",
+        "summary": [
+          {
+            "label": "Несоответствие",
+            "value": "НС-0192F000"
+          },
+          {
+            "label": "Изделие",
+            "value": "ENT01:FL-0007"
+          },
+          {
+            "label": "Решение",
+            "value": "как есть"
+          },
+          {
+            "label": "Разрешение на отклонение",
+            "value": "CON-1"
+          },
+          {
+            "label": "Основание",
+            "value": "в допуске по разрешению"
+          }
+        ],
+        "template_ref": "nc-disposition@1",
+        "title": "Решение по несоответствующей продукции",
+        "version": 1
+      },
+      "content_canonical_utf8": "{\"approvals\":[{\"authority_id\":\"nc_disposition\",\"by_source\":true,\"paper_allowed\":false,\"quorum\":\"one\",\"required\":1,\"separation\":[\"distinct_signers\"],\"signature_level\":2,\"stage\":1,\"title\":\"Автор решения (контролёр качества)\"},{\"attester_authority_id\":\"paper_attestation\",\"authority_id\":\"nc_disposition\",\"paper_allowed\":true,\"quorum\":\"one\",\"required\":1,\"role\":\"technologist\",\"separation\":[\"distinct_signers\"],\"signature_level\":2,\"stage\":2,\"title\":\"Технолог\"},{\"attester_authority_id\":\"paper_attestation\",\"authority_id\":\"nc_disposition\",\"paper_allowed\":true,\"quorum\":\"one\",\"required\":1,\"role\":\"head_of_qc\",\"separation\":[\"distinct_signers\"],\"signature_level\":2,\"stage\":3,\"title\":\"Начальник ОТК\"}],\"decision\":{\"at\":\"2026-09-28T10:00:00.000Z\",\"author\":\"INS-01\",\"claim\":\"\",\"concession\":\"CON-1\",\"disposition\":\"use_as_is\",\"label\":\"как есть\",\"reason\":\"в допуске по разрешению\",\"scrap_kind\":\"\"},\"doc_type\":\"nc_disposition\",\"document_id\":\"ncd-0192f000-0000-7000-8000-000000000001\",\"item\":{\"item_id\":\"ENT01:FL-0007\"},\"nc\":{\"nc_id\":\"0192f000-0000-7000-8000-000000000001\",\"number\":\"НС-0192F000\",\"requirement\":\"КД ФЛ-100.00.000 п. 3\",\"severity\":\"major\"},\"subject\":\"nonconformity:0192f000-0000-7000-8000-000000000001\",\"summary\":[{\"label\":\"Несоответствие\",\"value\":\"НС-0192F000\"},{\"label\":\"Изделие\",\"value\":\"ENT01:FL-0007\"},{\"label\":\"Решение\",\"value\":\"как есть\"},{\"label\":\"Разрешение на отклонение\",\"value\":\"CON-1\"},{\"label\":\"Основание\",\"value\":\"в допуске по разрешению\"}],\"template_ref\":\"nc-disposition@1\",\"title\":\"Решение по несоответствующей продукции\",\"version\":1}",
+      "rendering_utf8": "\u003carticle class=\"ant-doc\" data-template=\"nc-disposition@1\"\u003e\n\u003cheader\u003e\u003ch1\u003eРешение по несоответствующей продукции\u003c/h1\u003e\u003cp class=\"ant-doc-id\"\u003encd-0192f000-0000-7000-8000-000000000001 · версия 1\u003c/p\u003e\u003c/header\u003e\n\u003csection\u003e\u003ch2\u003eРешение\u003c/h2\u003e\u003cdl\u003e\u003cdt\u003eНесоответствие\u003c/dt\u003e\u003cdd\u003eНС-0192F000\u003c/dd\u003e\u003cdt\u003eИзделие\u003c/dt\u003e\u003cdd\u003eENT01:FL-0007\u003c/dd\u003e\u003cdt\u003eТребование\u003c/dt\u003e\u003cdd\u003eКД ФЛ-100.00.000 п. 3\u003c/dd\u003e\u003cdt\u003eЗначимость\u003c/dt\u003e\u003cdd\u003emajor\u003c/dd\u003e\u003cdt\u003eРешение\u003c/dt\u003e\u003cdd\u003eкак есть\u003c/dd\u003e\u003cdt\u003eВид списания\u003c/dt\u003e\u003cdd\u003e—\u003c/dd\u003e\u003cdt\u003eРазрешение на отклонение\u003c/dt\u003e\u003cdd\u003eCON-1\u003c/dd\u003e\u003cdt\u003eОснование претензии\u003c/dt\u003e\u003cdd\u003e—\u003c/dd\u003e\u003cdt\u003eОснование\u003c/dt\u003e\u003cdd\u003eв допуске по разрешению\u003c/dd\u003e\u003cdt\u003eАвтор решения\u003c/dt\u003e\u003cdd\u003eINS-01\u003c/dd\u003e\u003cdt\u003eДата решения\u003c/dt\u003e\u003cdd\u003e2026-09-28T10:00:00.000Z\u003c/dd\u003e\u003c/dl\u003e\u003c/section\u003e\n\u003csection\u003e\u003ch2\u003eПодписи маршрута\u003c/h2\u003e\u003col\u003e\u003cli\u003eЭтап 1. Автор решения (контролёр качества); полномочие nc_disposition; уровень 2; подписей 1; закрывается решением-источником; бумага запрещена\u003c/li\u003e\u003cli\u003eЭтап 2. Технолог; полномочие nc_disposition; роль technologist; уровень 2; подписей 1; бумага с заверением допустима\u003c/li\u003e\u003cli\u003eЭтап 3. Начальник ОТК; полномочие nc_disposition; роль head_of_qc; уровень 2; подписей 1; бумага с заверением допустима\u003c/li\u003e\u003c/ol\u003e\u003c/section\u003e\n\u003csection class=\"ant-doc-summary\"\u003e\u003ch2\u003eСводка для подписи\u003c/h2\u003e\u003cdl\u003e\u003cdt\u003eНесоответствие\u003c/dt\u003e\u003cdd\u003eНС-0192F000\u003c/dd\u003e\u003cdt\u003eИзделие\u003c/dt\u003e\u003cdd\u003eENT01:FL-0007\u003c/dd\u003e\u003cdt\u003eРешение\u003c/dt\u003e\u003cdd\u003eкак есть\u003c/dd\u003e\u003cdt\u003eРазрешение на отклонение\u003c/dt\u003e\u003cdd\u003eCON-1\u003c/dd\u003e\u003cdt\u003eОснование\u003c/dt\u003e\u003cdd\u003eв допуске по разрешению\u003c/dd\u003e\u003c/dl\u003e\u003c/section\u003e\n\u003c/article\u003e\n",
+      "rendering_hash": "streebog256:1a5683b49cde44bbbda033807cfb53a21dba7030acece2b253a0c95c9cd95a8b",
+      "doc_digest": "streebog256:6c7eb7e15c7509cb34650707301932e8d1d95506559f7d30ee8c3862e1c7039d",
+      "qr": "ant:doc:ncd-0192f000-0000-7000-8000-000000000001:streebog256:6c7eb7e15c7509cb34650707301932e8d1d95506559f7d30ee8c3862e1c7039d"
+    }
+  ]
+}

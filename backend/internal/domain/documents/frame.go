@@ -43,7 +43,9 @@ type State struct {
 	Participants []string `json:"participants,omitempty"`
 	Final        *Final   `json:"final,omitempty"`
 	// Completed — процесс изделия завершён: карта зафиксирована версией.
-	Completed bool  `json:"completed,omitempty"`
+	Completed bool `json:"completed,omitempty"`
+	// TravelerRef — шаблон сопроводительной карты версии нормативного слоя изделия.
+	TravelerRef string `json:"traveler_ref,omitempty"`
 	Docs      []Doc `json:"docs,omitempty"`
 	// Requested — черновики, запрошенные намерением documents.Draft (AD-40);
 	// оформляются на следующей записи изделия.
@@ -127,6 +129,11 @@ func Reduce(s State, r kernel.Record, env Env, up Upstream) State {
 	s = s.clone()
 	if s.ItemID == "" {
 		s.ItemID, s.RunID = r.ItemID, r.RunID
+	}
+	if s.TravelerRef == "" && s.ItemID != "" {
+		if t, ok := env.Templates.ByRef(TemplateTraveler); ok && t.Complete() {
+			s.TravelerRef = t.Ref()
+		}
 	}
 	for _, c := range s.Requested {
 		s.fromIntent(env, c, r, up)

@@ -302,3 +302,48 @@ func PersonOf(actor string) string {
 	p, _, _ := strings.Cut(actor, "@")
 	return p
 }
+
+// DocRef — документ изделия для паспорта и проекции (FR-65).
+type DocRef struct {
+	DocumentID  string `json:"document_id"`
+	TemplateRef string `json:"template_ref"`
+	DocType     string `json:"doc_type"`
+	Title       string `json:"title"`
+	// Status — drafted | in_route | closed | annulled (статусы документов паспорта).
+	Status  string `json:"status"`
+	Version int    `json:"version"`
+	Digest  string `json:"doc_digest"`
+}
+
+// PassportStatus — статус документа в терминах паспорта изделия.
+func PassportStatus(st string) string {
+	switch st {
+	case StatusSigning, StatusReturned:
+		return "in_route"
+	case StatusRouteClosed:
+		return "closed"
+	case StatusAnnulled:
+		return "annulled"
+	}
+	return "drafted"
+}
+
+// Refs — документы изделия «собранные из истории» (FR-65): все документы с
+// версиями и сопроводительная карта, которая собирается из истории, даже если
+// версия ещё не зафиксирована.
+func (s *State) Refs() []DocRef {
+	var out []DocRef
+	if s.TravelerRef != "" && len(s.Rows) > 0 && s.doc(TravelerID(s.itemID())) == nil {
+		out = append(out, DocRef{DocumentID: TravelerID(s.itemID()), TemplateRef: s.TravelerRef, DocType: DocTraveler,
+			Title: "Сопроводительная карта изделия", Status: "drafted"})
+	}
+	for i := range s.Docs {
+		d := &s.Docs[i]
+		r := DocRef{DocumentID: d.ID, TemplateRef: d.TemplateRef, DocType: d.DocType, Title: d.Title, Status: PassportStatus(d.Status())}
+		if cur := d.Current(); cur != nil {
+			r.Version, r.Digest = cur.No, cur.Digest
+		}
+		out = append(out, r)
+	}
+	return out
+}

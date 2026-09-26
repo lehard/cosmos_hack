@@ -221,8 +221,14 @@ func (s *State) ncStatementBody(d *Doc) (map[string]any, []Ref, []Signature) {
 		},
 	}
 	var signers []Signature
-	if n.FoundSource != "" {
+	switch {
+	case n.FoundSource != "":
 		signers = append(signers, Signature{EventID: n.FoundSource, Stage: 1, Method: MethodSource, Provenance: "device"})
+	case n.Confirmed != nil:
+		// Источник сигнала не известен свёртке (нет наблюдения): обнаружившим
+		// считается зарегистрировавший несоответствие контролёр.
+		signers = append(signers, Signature{EventID: n.Confirmed.EventID, Stage: 1, Person: n.Confirmed.Person, Method: MethodSource,
+			Level: n.Confirmed.Level, Provenance: n.Confirmed.Provenance})
 	}
 	if n.Confirmed != nil {
 		signers = append(signers, Signature{EventID: n.Confirmed.EventID, Stage: 2, Person: n.Confirmed.Person, Method: MethodSource,

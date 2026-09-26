@@ -37,6 +37,8 @@
 
 Сгенерированы `test-vectors/generator` (Go 1.27.1, `github.com/deckhouse/gogost/v6` v6.2.0 — код GoGOST; `crypto/mldsa`; `encoding/json/jsontext`) в контейнере; команда — в шапке `generator/main.go`. Разделы: `streebog256`, `jcs`, `sample_event`, `dsse_pae`, `gost3410_2012_256` (подпись с фиксированным k, проверка, изменённый пакет → «не сходится»), `mldsa65` (детерминированная подпись, другой контекст → не проверяется), `dsse_envelope_hybrid`, `chain_v1` (две записи), `doc_digest` (AD-12), `merkle_rfc6962` (сменный рапорт, AD-12), `uuid5` (от `NS_ANT`).
 
+**Эталонные документы** (`test-vectors/documents.v1.json`, AD-12): сопроводительная карта, заявление о несоответствии, решение по несоответствующей продукции — шаблон, канонический `content`, каноническая отрисовка HTML, `rendering_hash`, `doc_digest`, QR. Сервер (свёртка, `domain/documents.Compose`) и агент токена (пересчёт из `content` и шаблона того же коммита, `domain/documents.Rebuild`) обязаны получить их байт в байт — тест «отпечаток сервера = отпечаток агента» (`backend/internal/application/documents/golden_test.go`); раздел `doc_digest` файла векторов — независимая проверка самого правила (`domain/documents/digest_test.go`). Пересборка эталона — только вместе с новой версией шаблона или `doc_format_version`: `ANT_UPDATE_DOC_VECTORS=1 go test ./internal/application/documents -run TestGoldenDocuments`.
+
 `contracts/scripts/check.sh` перепроверяет без ГОСТ-библиотеки то, что можно: JCS, PAE, UUIDv5, соответствие примера события и записей цепочки схемам. Стрибог и подписи проверяют Go-тесты эпика 05 (криптоядро) на этих же векторах — «отпечаток сервера = отпечаток агента» (AD-12).
 
 ## Смена профиля и ротация (AD-32)
