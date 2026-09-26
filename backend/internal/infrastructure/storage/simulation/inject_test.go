@@ -35,7 +35,7 @@ func TestDigitalStandOnFakes(t *testing.T) {
 	st, kt3 := w.runUntil(t, "F-501/kt3")
 
 	list, err := w.svc.Injections(ctx, st.RunID)
-	if err != nil || len(list.Items) != 6 {
+	if err != nil || len(list.Items) != len(sim.InjectionKinds) {
 		t.Fatalf("кнопки стенда: %+v %v", list, err)
 	}
 	for _, it := range list.Items {
