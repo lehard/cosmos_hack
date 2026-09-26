@@ -17,7 +17,7 @@ import { naiveSizeOf, type Density } from '@/shared/config/widget'
 import { useProblemText } from '@/shared/i18n/problem'
 import { newCommandId } from '@/shared/lib/command-id'
 import { ActionButton, EmptyState } from '@/shared/ui'
-import { taskActionOf, taskItemLabel, type ProcessTask, type TaskAction } from '../model/actions'
+import { taskActionOf, taskItemLabel, type TaskAction } from '../model/actions'
 import IsolatorMoveConfirm from './IsolatorMoveConfirm.vue'
 
 const props = withDefaults(
@@ -52,10 +52,10 @@ const lastError = ref<{ task: string; error: unknown } | null>(null)
 const acked = reactive<Record<string, { outcome: AcknowledgeTaskOutcome; seq: number }>>({})
 
 /** Действие каждой задачи — по operationId из реестра (model/actions.ts). */
-const actions = computed(() => new Map<string, TaskAction>(props.tasks.map((task) => [task.task_id, taskActionOf(task as ProcessTask)])))
+const actions = computed(() => new Map<string, TaskAction>(props.tasks.map((task) => [task.task_id, taskActionOf(task)])))
 const actionOf = (task: TaskEntry): TaskAction => actions.value.get(task.task_id) ?? { kind: 'ack', ref: task.ref ?? null }
-const itemLabel = (task: TaskEntry) => taskItemLabel(task as ProcessTask)
-const opOf = (task: TaskEntry) => (task as ProcessTask).operation ?? (task as ProcessTask).operation_id ?? task.kind
+const itemLabel = (task: TaskEntry) => taskItemLabel(task)
+const opOf = (task: TaskEntry) => task.operation_id ?? task.kind
 
 /**
  * Действие исполнителя — на его терминале: если терминал на этом столе, кнопка
