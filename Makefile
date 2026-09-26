@@ -234,8 +234,16 @@ tamper: ## Подделка в обход системы и её обнаруж�
 	@echo; echo "Индикатор целостности на столах загорится, когда ant заберёт отчёт у хранителя (security.interval)."
 keys: ## Ключи и генезис доверия (эпик 05)
 	@echo "keys: пока пусто — эпик 05 (AD-33)"
-load: ## Нагрузочный прогон 1 и N воркеров (эпик 35)
-	@echo "load: пока пусто — эпик 35 (FR-107)"
+# make load [N=4] [SCENARIO=MS-1] [SEED=…] [OUTAGE=20] — два раздельных прогона
+# одного seed (1 и N воркеров, посреди второго — падение и подъём копии воркера),
+# отчёты и сравнение хешей в scenarios/load/out/. Образ ant:load собирается из
+# рабочей копии, если его нет (LOAD_BUILD=1 — пересобрать); демо-стенд не трогается:
+# свой проект compose ant-load и порты 8484/8494.
+LOAD_IMAGE ?= ant:load
+load: ## Нагрузочный прогон 1 и N воркеров: rebuild_hash и state_hash «1 = N», задержки, потери, повторы (эпик 35)
+	@if [[ "$(LOAD_BUILD)" == 1 ]] || ! $(DOCKER) image inspect $(LOAD_IMAGE) >/dev/null 2>&1; then \
+		$(MAKE) build ANT_IMAGE=$(LOAD_IMAGE); fi
+	ANT_IMAGE=$(LOAD_IMAGE) $(ROOT)/scenarios/load/load.sh
 verify: ## Независимый верификатор журнала: проверка по запросу, подписанный отчёт — хранителю (эпик 29, AD-9)
 	@$(COMPOSE) run --rm --no-deps verifier -once || test $$? -eq 3
 rebuild: ## Пересборка проекций из журнала (ant rebuild; ITEM=‹item_id› — одно изделие: повтор после «обработка остановлена»)
