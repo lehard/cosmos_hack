@@ -271,7 +271,7 @@ checkpoints:
     check:
       operation: machinelogs.run_profile.read
       params:
-        run_id: '{local:EQ-001-1}'
+        run_id: '{local:TQ-001-1}'
       path: /
       op: eq
       value: true
@@ -288,6 +288,8 @@ checkpoints:
         gate_basis: ZT-4
       op: eq
       value: true
+    note: 'сведение: узла «установка оборудования» в flange-process.bpmn нет — клапан КВД ставится в 060 (fasteners_install), затяжка J-2 — внутри 070 (torque, выполнение TQ-001-1);
+      отдельное выполнение EQ — вопрос к процессной сессии (нормативный слой)'
   - id: S01-16
     what: 'перемаркировка (узел MK): до мехобработки — бирка с QR на таре TAG:F-001, после станка — код DM:F-001 на нерабочей поверхности; ОТК сверил на ЗТ-2 (номер совпал, код читается)'
     check:
