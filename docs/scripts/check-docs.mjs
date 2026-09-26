@@ -14,6 +14,9 @@
 //      (побайтно), разделы совпадают в обе стороны. Справка разбирается
 //      упрощённым markdown (shared/help: заголовки, абзацы, списки «- »), поэтому
 //      в ней нет таблиц, блоков кода, `кода`, **выделения**, ссылок и нумерованных списков.
+//      У каждого стола normative/desks/‹роль›.yaml есть help_key, и раздел справки
+//      с таким именем существует (FR-117: из интерфейса открывается справка своей роли;
+//      роль-наследник получает help_key вместе со столом базовой роли).
 //   3. Путеводитель и README. Пути репозитория в `коде` (backend/…, frontend/…,
 //      contracts/…, normative/…, scenarios/…, deploy/…, docs/…, extension/…,
 //      third_party/…, Makefile, compose.yaml) существуют; цели `make ‹цель›`
@@ -127,9 +130,14 @@ export function checkLinks(files, read = (f) => readFileSync(join(REPO, f), 'utf
   return problems
 }
 
-/** 2. Руководства ролей = встроенная справка; формат справки. */
-export function checkGuides(guides, help) {
+/** 2. Руководства ролей = встроенная справка; формат справки; help_key столов. */
+export function checkGuides(guides, help, desks = new Map()) {
   const problems = []
+  for (const [desk, text] of desks) {
+    const key = /^help_key:\s*([a-z][a-z0-9_]*)/m.exec(text)?.[1]
+    if (!key) problems.push(`normative/desks/${desk}: нет help_key — раздел справки роли не выбран`)
+    else if (!help.has(`${key}.md`)) problems.push(`normative/desks/${desk}: help_key «${key}» — нет раздела ${HELP}/${key}.md`)
+  }
   const names = (m) => new Set([...m.keys()])
   for (const name of names(guides)) {
     if (!help.has(name)) problems.push(`${GUIDES}/${name}: нет раздела встроенной справки ${HELP}/${name}`)
@@ -226,6 +234,13 @@ function markdownFiles() {
   return ['README.md', ...walk('docs', (rel) => rel.startsWith('docs/licenses'))].filter((f) => f.endsWith('.md'))
 }
 
+/** Столы ролей: имя файла → текст YAML. */
+function deskFiles() {
+  const out = new Map()
+  for (const f of walk('normative/desks')) if (f.endsWith('.yaml')) out.set(f.slice('normative/desks/'.length), readFileSync(join(REPO, f), 'utf8'))
+  return out
+}
+
 function readDir(dir) {
   const out = new Map()
   for (const f of walk(dir)) if (f.endsWith('.md') && !f.endsWith('/README.md')) out.set(f.slice(dir.length + 1), readFileSync(join(REPO, f), 'utf8'))
@@ -240,7 +255,7 @@ function run() {
   const refFiles = ['README.md', 'docs/reviewer-guide.md', ...walk(GUIDES).filter((f) => f.endsWith('.md'))].filter(exists)
   const sections = [
     ['ссылки и якоря', checkLinks(md, read, exists)],
-    ['руководства = справка', checkGuides(readDir(GUIDES), readDir(HELP))],
+    ['руководства = справка', checkGuides(readDir(GUIDES), readDir(HELP), deskFiles())],
     ['пути и цели make', checkRefs(refFiles, read, exists, targets)],
     ['заголовки пакетов Go', checkGoHeaders(goPackages())],
   ]
@@ -262,12 +277,16 @@ function selftest() {
   const read = (f) => files[f] ?? '# B\n'
   const exists = (p) => p in files || p === 'docs/b.md'
   const links = checkLinks(['docs/a.md'], read, exists)
-  const guides = checkGuides(new Map([['a.md', '# A\n'], ['b.md', '# B\n']]), new Map([['a.md', '# A\nтекст `код`\n1. пункт\n'], ['c.md', '# C\n']]))
+  const guides = checkGuides(
+    new Map([['a.md', '# A\n'], ['b.md', '# B\n']]),
+    new Map([['a.md', '# A\nтекст `код`\n1. пункт\n'], ['c.md', '# C\n']]),
+    new Map([['x.yaml', 'role: x\n'], ['y.yaml', 'help_key: nope\n'], ['z.yaml', 'help_key: a\n']]),
+  )
   const refs = checkRefs(['README.md'], () => '`backend/нет/такого` `make nosuch-target` `backend/‹модуль›`\n', () => false, new Set(['up']))
   const heads = checkGoHeaders(new Map([['backend/x', ['package x\n']], ['backend/y', ['// Code generated. DO NOT EDIT.\npackage y\n']], ['backend/z', ['// Пакет z.\npackage z\n']]]))
   const expect = [
     ['ссылки', links.length === 2],
-    ['руководства', guides.length === 5],
+    ['руководства', guides.length === 7],
     ['пути и make', refs.length === 2],
     ['заголовки Go', heads.length === 2],
     ['якорь GitHub', slug('2. Второй — раздел') === '2-второй--раздел' && slug('Сборка в `cmd/ant` (для интегратора)') === 'сборка-в-cmdant-для-интегратора'],
