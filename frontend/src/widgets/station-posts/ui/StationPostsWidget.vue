@@ -1,12 +1,91 @@
 <script setup lang="ts">
-// Заготовка виджета «station-posts» (эпик 03). Эпик 13 заменяет её содержимым,
-// оставаясь в рамке WidgetFrame (четыре состояния, момент, метка fixtures | live).
+/**
+ * Виджет «Участок» (PRD §3a «Мастер участка», FR-81, UJ-7; эпик 13) — контейнер:
+ * операции цеха по схеме процесса и живой карте (`process.live_map.read`),
+ * показатели по шагу (`analytics.overview.read`), посты
+ * (`access.workplace.list`), оборудование (`machinelogs.equipment.list`,
+ * `reference.equipment.list`), текущее выполнение (`machinelogs.run_profile.read`).
+ * Разделы читаются независимо: отказ одной операции не прячет остальные.
+ *
+ * Срез: `scope: own_station` — цех по области роли сеанса (справочник мест,
+ * `reference.location.list`); `workshop: WS-…` — цех явно; иначе весь завод;
+ * `run_id` — прогон сценария (AD-38).
+ */
+import { computed, onBeforeUnmount, ref } from 'vue'
+import { useEquipmentRegistry, useEquipmentStates } from '@/entities/equipment'
+import { operationsOf, parseProcessSteps, useLiveMap } from '@/entities/live-map'
+import { useAnalyticsOverview } from '@/entities/metric'
+import { resolveWorkshop, useLocations } from '@/entities/reference'
+import { useSession } from '@/entities/session'
+import { usePosts } from '@/entities/workplace'
+import { useDrillDown } from '@/features/drill-down'
+import { backendModeOf } from '@/shared/api/response'
 import type { WidgetProps } from '@/shared/config/widget'
-import { WidgetStub } from '@/shared/ui'
+import { useMomentStore } from '@/shared/model/moment'
+import { WidgetFrame } from '@/shared/ui'
+import { buildPosts, buildSteps, stationState } from '../model/station'
+import StationPostsView from './StationPostsView.vue'
 
 const props = defineProps<WidgetProps>()
+const drill = useDrillDown()
+const moment = useMomentStore()
+const session = useSession()
+const locationsQ = useLocations()
+
+const str = (v: unknown) => (typeof v === 'string' && v ? v : undefined)
+const run = computed(() => str(props.slice.run_id))
+
+/** Цех участка: явно из среза или по области роли сеанса. */
+const workshop = computed(() => resolveWorkshop(props.slice, locationsQ.data.value?.data ?? [], session.data.value?.data.scope))
+
+const mapQ = useLiveMap(computed(() => ({ period: 'shift' as const, ...(run.value ? { run_id: run.value } : {}) })))
+const overview = useAnalyticsOverview()
+const postsQ = usePosts(computed(() => ({ ...(workshop.value ? { workshop: workshop.value.id } : {}), ...(run.value ? { run_id: run.value } : {}) })))
+const equipmentQ = useEquipmentStates()
+const registryQ = useEquipmentRegistry()
+
+const parsed = computed(() => parseProcessSteps(mapQ.data.value?.data.bpmn_xml))
+const steps = computed(() => {
+  const map = mapQ.data.value?.data
+  if (!map) return null
+  return buildSteps(operationsOf(parsed.value, workshop.value?.id ?? null), map, overview.data.value?.items)
+})
+const posts = computed(() => {
+  const rows = postsQ.data.value?.data
+  return rows ? buildPosts(rows, equipmentQ.data.value?.data) : null
+})
+
+// «Сейчас» для «идёт N мин» — раз в полминуты; в воспроизведении — момент просмотра.
+const now = ref(new Date())
+const timer = setInterval(() => (now.value = new Date()), 30_000)
+onBeforeUnmount(() => clearInterval(timer))
+const at = computed(() => (moment.asOf ? new Date(moment.asOf) : now.value))
+
+const allFailed = computed(() => !!mapQ.error.value && !steps.value && !!postsQ.error.value && !posts.value)
+const state = computed(() => (allFailed.value ? 'input_error' : stationState(steps.value ?? [], posts.value ?? [])))
 </script>
 
 <template>
-  <WidgetStub v-bind="props" :epic="13" />
+  <WidgetFrame
+    :title-key="titleKey"
+    :density="density"
+    :mode="backendModeOf(mapQ.data.value ?? postsQ.data.value)"
+    :state="state"
+    :loading="mapQ.isPending.value && postsQ.isPending.value"
+    :data-widget="widgetId"
+  >
+    <StationPostsView
+      :workshop-name="workshop?.name ?? null"
+      :steps="steps"
+      :steps-error="mapQ.error.value ?? undefined"
+      :posts="posts"
+      :posts-error="postsQ.error.value ?? undefined"
+      :registry="registryQ.data.value?.data ?? null"
+      :step-index="parsed.byKey"
+      :at="at"
+      :density="density"
+      @item="(id) => drill.open({ entity: 'item', id })"
+      @node="(key) => drill.open({ entity: 'live_map', id: key })"
+    />
+  </WidgetFrame>
 </template>
