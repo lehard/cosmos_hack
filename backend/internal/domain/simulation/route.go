@@ -432,7 +432,7 @@ func (g *gen) item(p *ItemPlan) {
 					map[string]any{"item_ids": []any{"{item:" + p.ID + "}"}, "quantity": qty, "to_location_id": "WS-AC"})
 			}
 			decide(s, t.Add(10*time.Minute), "process.operation.start", "performer", r.Assembler, itemParam, map[string]any{
-				"operation_code": "AS", "operation_run_id": run("AS"), "step_key": "assembly.join_parts", "station_id": "ST-ASM"})
+				"operation_code": "AS", "operation_run_id": run("AS"), "step_key": "assembly.seal_install", "station_id": "ST-ASM"})
 		case "assembly":
 			g.assemblyEvents(p, t, run, itemParam, rnd, camera, lots)
 		case "zt4_presented":
