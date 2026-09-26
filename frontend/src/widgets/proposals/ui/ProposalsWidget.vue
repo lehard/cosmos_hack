@@ -1,12 +1,22 @@
 <script setup lang="ts">
-// Заготовка виджета «proposals» (эпик 03). Эпик 15 заменяет её содержимым,
-// оставаясь в рамке WidgetFrame (четыре состояния, момент, метка fixtures | live).
+/**
+ * Виджет «Предложения» — каркас страницы (FR-63; наполнение — эпик 42). Читает
+ * только уже существующий вход генератора «ограничение линии»
+ * (`analytics.node_counters.read`); списка предложений в контракте v1 нет.
+ */
+import { computed } from 'vue'
+import { useNodeCounterSet } from '@/entities/metric'
 import type { WidgetProps } from '@/shared/config/widget'
-import { WidgetStub } from '@/shared/ui'
+import { WidgetFrame } from '@/shared/ui'
+import ProposalsView from './ProposalsView.vue'
 
-const props = defineProps<WidgetProps>()
+defineProps<WidgetProps>()
+const nodes = useNodeCounterSet()
+const bottleneck = computed(() => nodes.data.value?.bottleneck ?? null)
 </script>
 
 <template>
-  <WidgetStub v-bind="props" :epic="15" />
+  <WidgetFrame :title-key="titleKey" :density="density" :mode="nodes.mode.value" :loading="nodes.isPending.value" :data-widget="widgetId">
+    <ProposalsView :bottleneck="bottleneck" />
+  </WidgetFrame>
 </template>
