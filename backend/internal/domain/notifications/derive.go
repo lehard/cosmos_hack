@@ -217,6 +217,13 @@ func (s *State) wanted(env Env, up Upstream, cur Cause) ([]Obligation, []Task) {
 			if c.Rule != nonconformity.RuleIncidentScope || c.Released {
 				continue
 			}
+			// Решение по области для изделия уже принято: исключено с основанием
+			// (основание — «наблюдать» или «снять») или решено несоответствие
+			// изделия — срока «решение по области» и задачи нет; сам блок, если
+			// остался, снимает человек (AD-27).
+			if b := statuses.Containment(c.Basis); b == statuses.ContainmentObserve || b == statuses.ContainmentNone || decided(*nc) {
+				continue
+			}
 			incident := strings.TrimPrefix(c.Key, "incident:")
 			kind, what := "", ""
 			switch statuses.Containment(c.Level) {

@@ -13,6 +13,7 @@ import (
 // инцидент), которые свёртка изделия не видит (FR-57, FR-59, FR-60):
 //   - incident.measurement.requested — задача «измерить» исполнителю из
 //     запроса, иначе контролёру ОТК (эпик 22: «задачу ставит notifications»);
+//     incident.measurement.recorded её снимает;
 //   - incident.action.assigned — задача владельцу меры со сроком меры;
 //   - analyzer.passport.suspended — задача начальнику ОТК «решить о возврате
 //     анализатора» после автоотката (эпик 40, FR-101);
@@ -58,6 +59,22 @@ func ObjectReact(r kernel.Record) []kernel.Reaction {
 		slot.TriggerKey = investigateKey + "/done"
 		re, err := kernel.NewReaction(Module, catalog.TaskTaskWithdrawn, slot,
 			TaskWithdrawnData{TaskID: TaskID(open), Reason: &ReasonData{Code: "fulfilled", Text: "Причина инцидента установлена или инцидент закрыт"}}, r)
+		if err != nil {
+			panic(err)
+		}
+		re.AutomationMode = 1
+		return []kernel.Reaction{re}
+	case catalog.IncidentMeasurementRecorded:
+		// Результат измерения записан — задача «измерить» по запросу снята.
+		var m struct {
+			RequestEventID string `json:"request_event_id"`
+		}
+		if !decode(r, &m) || m.RequestEventID == "" {
+			return nil
+		}
+		open := kernel.Slot{RuleID: RuleObjectTask, Subject: r.Stream, TriggerKey: m.RequestEventID}
+		re, err := kernel.NewReaction(Module, catalog.TaskTaskWithdrawn, slot,
+			TaskWithdrawnData{TaskID: TaskID(open), Reason: &ReasonData{Code: "fulfilled", Text: "Результат измерения записан"}}, r)
 		if err != nil {
 			panic(err)
 		}

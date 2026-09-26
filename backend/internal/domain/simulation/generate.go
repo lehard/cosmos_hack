@@ -123,7 +123,8 @@ func Generate(b Bundle, p Params) (*Plan, error) {
 }
 
 // live — живая часть прогона (Д-85): каждое решение с From — только руками
-// (остановка до нажатия); история до From — demo-signer.
+// (остановка до нажатия), кроме решений машины или лаборатории (Auto);
+// история до From — demo-signer.
 func (g *gen) live(plan *Plan) {
 	lp := g.b.Run.Live
 	if lp == nil {
@@ -132,7 +133,7 @@ func (g *gen) live(plan *Plan) {
 	plan.LiveFrom = g.t(lp.From)
 	for i := range plan.Actions {
 		a := &plan.Actions[i]
-		if a.Kind == ActionDecision && !a.At.Before(plan.LiveFrom) && a.Refusal == "" {
+		if a.Kind == ActionDecision && !a.At.Before(plan.LiveFrom) && a.Refusal == "" && !a.Auto {
 			a.Stop = true
 		}
 	}
@@ -380,7 +381,7 @@ func (g *gen) stepFact(scenario string, st *Step) {
 func (g *gen) stepDecision(scenario string, st *Step) {
 	a := Action{Kind: ActionDecision, At: g.t(st.At), Scenario: scenario, Label: st.Label, Note: st.Note,
 		Operation: st.Decision, Role: st.Role, Actor: g.ids.Person(st.Actor), Stop: st.Stop || slices.Contains(g.b.Run.Stops, st.Label),
-		Params: shiftMap(st.Params, g.shift), Body: shiftMap(st.Body, g.shift), Item: st.Item}
+		Params: shiftMap(st.Params, g.shift), Body: shiftMap(st.Body, g.shift), Item: st.Item, Auto: st.Auto}
 	if st.Refusal != "" {
 		a.Refusal = g.ids.Code(st.Refusal)
 	}

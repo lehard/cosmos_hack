@@ -49,3 +49,29 @@ func TestDeviationAlarmTasks(t *testing.T) {
 		t.Fatalf("ресурс инструмента — не тревога режима: %+v", rs)
 	}
 }
+
+// Результат измерения снимает задачу «измерить» того же запроса.
+func TestMeasurementTaskWithdrawn(t *testing.T) {
+	at := time.Date(2026, 9, 21, 8, 20, 0, 0, time.UTC)
+	rec := func(id string, tp catalog.Type, data any) kernel.Record {
+		b, _ := json.Marshal(data)
+		info, _ := catalog.Lookup(tp)
+		return kernel.Record{EventID: id, Type: tp, Kind: info.Kind, Stream: "incident:INC-1", OccurredAt: at, Data: b}
+	}
+	req := "00000000-0000-7000-8000-000000000021"
+	open := notif.ObjectReact(rec(req, catalog.IncidentMeasurementRequested, map[string]any{"incident_id": "INC-1", "what": "Контрольный образец"}))
+	done := notif.ObjectReact(rec("00000000-0000-7000-8000-000000000022", catalog.IncidentMeasurementRecorded,
+		map[string]any{"incident_id": "INC-1", "request_event_id": req, "outcome": "supports", "result": "прожог повторён"}))
+	if len(open) != 1 || len(done) != 1 || done[0].Type != catalog.TaskTaskWithdrawn {
+		t.Fatalf("задача %+v, снятие %+v", open, done)
+	}
+	var d notif.TaskData
+	var w notif.TaskWithdrawnData
+	raw, _ := json.Marshal(open[0].Data)
+	_ = json.Unmarshal(raw, &d)
+	raw, _ = json.Marshal(done[0].Data)
+	_ = json.Unmarshal(raw, &w)
+	if d.TaskID == "" || w.TaskID != d.TaskID {
+		t.Fatalf("снята другая задача: %s ≠ %s", w.TaskID, d.TaskID)
+	}
+}

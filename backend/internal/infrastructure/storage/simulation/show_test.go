@@ -188,7 +188,7 @@ func TestShowRunManual(t *testing.T) {
 		t.Errorf("остановок %d, ждали 27: %v", len(stops), stops)
 	}
 	for _, op := range d.auto {
-		if !slices.Contains([]string{"access.operator.confirm_step", "item.presentation.record"}, op) {
+		if !slices.Contains([]string{"access.operator.confirm_step", "item.presentation.record", "analysis.measurement.record"}, op) {
 			t.Errorf("demo-signer сделал решение живой партии %s — только руками", op)
 		}
 	}

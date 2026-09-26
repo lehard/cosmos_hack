@@ -56,7 +56,7 @@ roles:
     case_role: true
     domain: qc
     inherits: [staff]
-    actions: ["quality.*.read", "nonconformity.signal.reject", "nonconformity.nonconformity.confirm", "nonconformity.recheck.request", "nonconformity.item.isolate", "nonconformity.presentation.resolve", "nonconformity.presentation.review", "nonconformity.lot.resolve", "nonconformity.containment.set", "nonconformity.disposition.verify", "item.intervention.close", "item.identification.confirm", "analysis.item.assess", "documents.document.sign", "documents.signature.*", "documents.version.request", "documents.paper.print", "documents.document.request", "crossitem.binding.assign", "item.*.read", "analysis.*.read", "process.*.read", "access.workplace.admit", "access.workplace.release", "federation.extract.send", "federation.extract.receive"]
+    actions: ["quality.*.read", "nonconformity.signal.reject", "nonconformity.nonconformity.confirm", "nonconformity.nonconformity.close", "analysis.measurement.record", "nonconformity.recheck.request", "nonconformity.item.isolate", "nonconformity.presentation.resolve", "nonconformity.presentation.review", "nonconformity.lot.resolve", "nonconformity.containment.set", "nonconformity.disposition.verify", "item.intervention.close", "item.identification.confirm", "analysis.item.assess", "documents.document.sign", "documents.signature.*", "documents.version.request", "documents.paper.print", "documents.document.request", "crossitem.binding.assign", "item.*.read", "analysis.*.read", "process.*.read", "access.workplace.admit", "access.workplace.release", "federation.extract.send", "federation.extract.receive"]
   - id: site_foreman
     title: "Мастер участка"
     case_role: true
