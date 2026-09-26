@@ -106,11 +106,30 @@ func EnsureKeys(dir string, ps []Persona) (*KeySet, error) {
 	return &KeySet{Personas: ps, Ring: ring}, nil
 }
 
+// LoadKeys — ключи персон из тома dir: их создаёт и регистрирует блоком
+// генезиса ant init (эпик 05, AD-33); ключа нет — ошибка (свой ключ,
+// которого нет в генезисе, ant всё равно не примет).
+func LoadKeys(dir string, ps []Persona) (*KeySet, error) {
+	ring, err := profiles.LoadDir(dir)
+	if err != nil {
+		return nil, err
+	}
+	for _, p := range ps {
+		for _, ref := range []string{GostRef(p.PersonaID), PQRef(p.PersonaID)} {
+			if _, ok := ring.Key(ref); !ok {
+				return nil, errors.New("ключа " + ref + " в томе " + dir + " нет — сначала ant init (генезис)")
+			}
+		}
+	}
+	return &KeySet{Personas: ps, Ring: ring}, nil
+}
+
 // PersonaClasses — классы пакетов ключей демо-персон.
 var PersonaClasses = []string{dom.ClassEvent, dom.ClassDocumentSignature, dom.ClassPaperAttestation, dom.ClassShiftReport, dom.ClassKeyAct}
 
-// WriteBootstrap — открытые ключи персон в файл затравки реестра ant
-// (субъект — demo_persona с псевдонимом персоны, класс доверия scenario, AD-11, AD-26).
+// WriteBootstrap — открытые ключи персон в файл затравки реестра (субъект —
+// demo_persona, класс scenario, AD-11, AD-26). Устарело с эпиком 05: ключи
+// регистрирует блок генезиса; файл остаётся для тестов без журнала.
 func WriteBootstrap(path string, set *KeySet) error {
 	var out []storesigning.BootstrapKey
 	for _, p := range set.Personas {

@@ -1,0 +1,103 @@
+# Эпик 05 — роль init (`ant init`, AD-33, FR-109): дополнение к compose.yaml
+# (подключается в корневом compose.yaml списком path — файлы сливаются как
+# override). Отдельный файл — чтобы не править строки, которые меняют другие эпики.
+#
+# Порядок: … → migrate → init (разово: миграции, ключи в тома 0400, сертификаты
+# mTLS, блок генезиса seq 1…k, подписанный ключом-якорем hybrid, уничтожение
+# якоря, trust-anchors в томе хранителя) → ant. Повторный запуск ничего не
+# меняет: генезис уже есть — журнал и ключи не трогаются.
+#
+# Тома ключей (права 0400, владелец 65532 — пользователь исполнения образа):
+#   ant-keys          — движок и шлюзы (engine@1, gateway-ingest@1, gateway-enterprise@1), корни партнёра;
+#   keeper-data       — ключи хранителя (hybrid), демо-УЦ mTLS, trust-anchors.json (эпик 29 — тот же том);
+#   verifier-data     — ключи верификатора (hybrid), сертификат mTLS, копия trust-anchors.json;
+#   ant-pki           — сертификат mTLS ant для хранителя;
+#   demo-signer-keys  — демо-персоны сценариев (класс scenario, AD-26);
+#   device-keys       — ключи устройств для edge-агентов;
+#   ./.demo-keys/token-agent/ (вне репозитория) — интерактивные демо-персоны
+#     для агента токена; владелец — ANT_HOST_UID:ANT_HOST_GID (make задаёт сам).
+# init работает от root без сетевых прав сверх БД и только с CHOWN,
+# DAC_OVERRIDE, FOWNER: тома, которых нет в образе, docker создаёт от root;
+# init отдаёт созданное владельцу 65532 и выходит.
+
+services:
+  init:
+    image: ${ANT_IMAGE:-ant:local}
+    build:
+      context: ../..
+      dockerfile: deploy/Dockerfile
+      args:
+        VERSION: ${ANT_VERSION:-dev}
+      labels:
+        ant.project: ant
+    command: ["-role=init"]
+    user: "0:0"
+    environment:
+      ANT_PROFILE: ${ANT_PROFILE:-demo}
+      ANT_DB_HOST: postgres
+      ANT_DB_USER: ant_admin
+      ANT_DB_NAME: ant
+      ANT_DB_PASSWORD_FILE: /run/ant-secrets/ant/db_password
+      ANT_KEYS_DIR: /var/lib/ant-keys
+      ANT_PARTNER_KEYS: /var/lib/ant-keys/partner
+      ANT_KEEPER_DIR: /var/lib/keeper
+      ANT_VERIFIER_DIR: /var/lib/verifier
+      ANT_PKI_DIR: /var/lib/ant-pki
+      ANT_DEMO_SIGNER_KEYS: /var/lib/demo-signer/keys
+      ANT_DEVICE_KEYS: /var/lib/edge-agent/keys
+      ANT_TOKEN_AGENT_KEYS: /var/lib/ant-demo-keys/token-agent
+      ANT_INIT_OWNER: "65532:65532"
+      ANT_TOKEN_AGENT_OWNER: ${ANT_HOST_UID:-65532}:${ANT_HOST_GID:-65532}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    volumes:
+      - secrets:/run/ant-secrets:ro
+      - ../config/ant.yaml:/etc/ant/ant.yaml:ro
+      - ant-keys:/var/lib/ant-keys
+      - keeper-data:/var/lib/keeper
+      - verifier-data:/var/lib/verifier
+      - ant-pki:/var/lib/ant-pki
+      - demo-signer-keys:/var/lib/demo-signer/keys
+      - device-keys:/var/lib/edge-agent/keys
+      - ${ANT_DEMO_KEYS_DIR:-../../.demo-keys}/token-agent:/var/lib/ant-demo-keys/token-agent
+    read_only: true
+    cap_drop: [ALL]
+    cap_add: [CHOWN, DAC_OVERRIDE, FOWNER]
+    security_opt: [no-new-privileges:true]
+    healthcheck:
+      disable: true
+    mem_limit: 128m
+    restart: "no"
+    labels:
+      ant.project: ant
+
+  ant:
+    depends_on:
+      init:
+        condition: service_completed_successfully
+    environment:
+      # Ключ шлюза приёма gateway-ingest@1 (подпись служебных записей) — том ant.
+      ANT_KEYS_DIR: /var/lib/ant-keys
+    volumes:
+      - ant-keys:/var/lib/ant-keys:ro
+
+volumes:
+  ant-keys:
+    labels:
+      ant.project: ant
+  keeper-data:
+    labels:
+      ant.project: ant
+  verifier-data:
+    labels:
+      ant.project: ant
+  ant-pki:
+    labels:
+      ant.project: ant
+  demo-signer-keys:
+    labels:
+      ant.project: ant
+  device-keys:
+    labels:
+      ant.project: ant

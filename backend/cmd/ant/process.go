@@ -19,9 +19,9 @@ import (
 // process, нормативный слой изделия для воркера, запросов на момент и
 // пересборки (Bundles, AD-17), live-реализация операций process.
 
-// processSeedFile — стартовый процесс (FR-10): встроенная копия
-// normative/process (world.Inputs; совпадение с репозиторием проверяет тест
-// генератора заготовок), пока генезис не пишет его в журнал (эпик 05).
+// processSeedFile — стартовый процесс (FR-10): его отпечаток закрепляет блок
+// генезиса (normative.version.loaded, эпик 05), байты — встроенная копия
+// normative/; без генезиса (разработка) — копия world.Inputs.
 const processSeedFile = "normative/process/flange-process.bpmn"
 
 // bundleSource — нормативный слой изделия для воркера, запросов на момент,
@@ -42,7 +42,7 @@ func (c *core) states() engineapp.StateQueries {
 // (migrate ещё не прошёл) — предупреждение, повтор при следующем старте роли.
 func (c *core) ensureProcessSeed(ctx context.Context, env *environment) {
 	c.seedOnce.Do(func() {
-		xml, err := fs.ReadFile(world.Inputs(), processSeedFile)
+		xml, err := genesisProcessXML(ctx, c, env, func() ([]byte, error) { return fs.ReadFile(world.Inputs(), processSeedFile) })
 		if err != nil {
 			env.log.Error("процесс: нет стартовой версии", "err", err)
 			return

@@ -17,10 +17,7 @@
     "object_classes": {
       "type": "array",
       "items": {
-        "type": "string",
-        "pattern": "^[a-z][a-z0-9-]*$",
-        "maxLength": 64,
-        "description": "Класс пакета (contracts/crypto/payload-classes.yaml): `event`, `document-signature`, `key-act`, …"
+        "$ref": "../common/defs.v1.json#/definitions/code"
       },
       "description": "Классы пакетов, для которых профиль обязателен.",
       "minItems": 1,
