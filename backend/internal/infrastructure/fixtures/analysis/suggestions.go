@@ -23,7 +23,11 @@ func (Adapter) Suggestions(ctx context.Context, m platform.Moment) (app.Suggesti
 
 // CorrectiveActions — меры и взгляд руководителя по качеству (analysis.action.list).
 func (Adapter) CorrectiveActions(ctx context.Context, m platform.Moment) (app.CorrectiveActionList, error) {
-	return respond[app.CorrectiveActionList](ctx, "analysis.action.list", nil, &m)
+	l, err := respond[app.CorrectiveActionList](ctx, "analysis.action.list", nil, &m)
+	if err != nil {
+		return l, err
+	}
+	return withActions(ctx, l, m), nil
 }
 
 // DataDeficit — карта дефицита данных (analysis.data_deficit.read).
