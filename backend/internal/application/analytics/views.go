@@ -52,25 +52,28 @@ type MetricTileList struct {
 // NodeCounters — счётчики узла по step_key (FR-2, FR-3): очередь, в работе,
 // прошло, дефекты за период (физические дефекты, не наблюдения — соглашение «Дефект»).
 type NodeCounters struct {
-	StepKey         string `json:"step_key"`
-	Queue           int    `json:"queue" minimum:"0"`
-	InProgress      int    `json:"in_progress" minimum:"0"`
-	Passed          int    `json:"passed" minimum:"0"`
-	Defects         int    `json:"defects" minimum:"0"`
-	Nonconformities *int   `json:"nonconformities,omitempty" minimum:"0" doc:"Открытые несоответствия узла (FR-154)."`
+	StepKey         string  `json:"step_key"`
+	StepName        *string `json:"step_name,omitempty" doc:"Имя узла BPMN версии процесса; нет — показывать step_key."`
+	Queue           int     `json:"queue" minimum:"0"`
+	InProgress      int     `json:"in_progress" minimum:"0"`
+	Passed          int     `json:"passed" minimum:"0"`
+	Defects         int     `json:"defects" minimum:"0"`
+	Nonconformities *int    `json:"nonconformities,omitempty" minimum:"0" doc:"Открытые несоответствия узла (FR-154)."`
 }
 
 // NodeAnomaly — аномалия узла (FR-5).
 type NodeAnomaly struct {
 	StepKey   string  `json:"step_key"`
+	StepName  *string `json:"step_name,omitempty" doc:"Имя узла BPMN версии процесса; нет — показывать step_key."`
 	Kind      string  `json:"kind" enum:"queue_above_norm,wait_above_norm,downtime_over_threshold,output_spike,defect_rate_out_of_control"`
 	Threshold *string `json:"threshold,omitempty" doc:"Порог текстом с единицей."`
 }
 
 // Bottleneck — узел-ограничение линии (FR-5): наибольшее ожидание при наибольшей загрузке.
 type Bottleneck struct {
-	StepKey string  `json:"step_key"`
-	Wait    *string `json:"wait,omitempty" doc:"Среднее ожидание текстом с единицей («37 мин»)."`
+	StepKey  string  `json:"step_key"`
+	StepName *string `json:"step_name,omitempty" doc:"Имя узла BPMN версии процесса; нет — показывать step_key."`
+	Wait     *string `json:"wait,omitempty" doc:"Среднее ожидание текстом с единицей («37 мин»)."`
 }
 
 // NodeCounterSet — счётчики узлов, ограничение линии и аномалии: считает сервер (AD-21).
@@ -82,6 +85,8 @@ type NodeCounterSet struct {
 	Anomalies        []NodeAnomaly  `json:"anomalies"`
 	DataGaps         []string       `json:"data_gaps" doc:"step_key узлов, где оценка невозможна (нет данных источника) — не «норма»."`
 	BasisSeq         int64          `json:"basis_seq"`
+	// StepNames — имена узлов ответа (UI-21): data_gaps — строки step_key.
+	StepNames map[string]string `json:"step_names,omitempty" doc:"step_key → имя узла BPMN для всех узлов ответа (в том числе data_gaps); нет имени — ключа нет."`
 }
 
 // MetricRow — показатель раздела «Аналитика» с разбивкой по срезу.

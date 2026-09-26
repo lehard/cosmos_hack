@@ -41,3 +41,19 @@ func jsonName(f reflect.StructField) string {
 	}
 	return n
 }
+
+// Имена узлов рядом с step_key (UI-21): счётчики, ограничение, аномалии —
+// step_name; data_gaps (строки) — словарь step_names; нет имени — кода хватит.
+func TestNodeCounterSetNameSteps(t *testing.T) {
+	set := analytics.NodeCounterSet{Counters: []analytics.NodeCounters{{StepKey: "welding.weld"}, {StepKey: "x.unknown"}},
+		Bottleneck: &analytics.Bottleneck{StepKey: "welding.weld"}, Anomalies: []analytics.NodeAnomaly{{StepKey: "welding.weld"}},
+		DataGaps: []string{"welding.kt3_camera"}}
+	set.NameSteps(map[string]string{"welding.weld": "Сварка", "welding.kt3_camera": "КТ-3 камера", "other": "Лишний"})
+	if set.Counters[0].StepName == nil || *set.Counters[0].StepName != "Сварка" || set.Counters[1].StepName != nil ||
+		set.Bottleneck.StepName == nil || set.Anomalies[0].StepName == nil {
+		t.Fatalf("step_name: %+v", set)
+	}
+	if len(set.StepNames) != 2 || set.StepNames["welding.kt3_camera"] != "КТ-3 камера" || set.StepNames["other"] != "" {
+		t.Fatalf("step_names: %v", set.StepNames)
+	}
+}

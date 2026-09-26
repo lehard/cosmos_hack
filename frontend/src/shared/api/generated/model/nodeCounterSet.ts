@@ -5,6 +5,7 @@
 import type { Bottleneck } from './bottleneck';
 import type { NodeAnomaly } from './nodeAnomaly';
 import type { NodeCounters } from './nodeCounters';
+import type { NodeCounterSetStepNames } from './nodeCounterSetStepNames';
 import type { Period } from './period';
 
 export interface NodeCounterSet {
@@ -16,4 +17,6 @@ export interface NodeCounterSet {
   data_gaps: string[];
   period: Period;
   process_version_id: string;
+  /** step_key → имя узла BPMN для всех узлов ответа (в том числе data_gaps); нет имени — ключа нет. */
+  step_names?: NodeCounterSetStepNames;
 }

@@ -7,6 +7,8 @@ import type { NodeAnomalyKind } from './nodeAnomalyKind';
 export interface NodeAnomaly {
   kind: NodeAnomalyKind;
   step_key: string;
+  /** Имя узла BPMN версии процесса; нет — показывать step_key. */
+  step_name?: string;
   /** Порог текстом с единицей. */
   threshold?: string;
 }

@@ -591,6 +591,7 @@ func (c *Ctx) renderAnalyticsPeriod(all []aMetric, w aWindow) []loader.Response 
 	if k, wt := c.bottleneck(cs); k != "" {
 		ncs.Bottleneck = &analyticsapp.Bottleneck{StepKey: k, Wait: ptr(wt)}
 	}
+	ncs.NameSteps(stepNames(c.M.Bpmn))
 	ov := analyticsapp.AnalyticsOverview{Period: w.Period, BasisSeq: c.Seq(), Items: []analyticsapp.MetricRow{}}
 	for _, m := range ms {
 		if m.id == "defects_by_type" {
