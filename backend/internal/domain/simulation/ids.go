@@ -60,6 +60,18 @@ func (m *IDMap) EventID(n int) string {
 }
 
 // CommandID — command_id решения шага прогона (повтор шага — тот же ответ, AD-7).
+// ActionCommandID — command_id решения прогона: от метки шага (метки
+// уникальны в плане и не меняются при вставке шагов), без метки — от номера.
+// От номера — нельзя: вставка шагов в историю сдвигает номера, и изделие,
+// рождённое регистрацией (item_id — из command_id), получает id другого
+// изделия прежней версии плана (Ф-101 ↔ Ф-001 в SHOW-IS2).
+func (m *IDMap) ActionCommandID(label string, step int) string {
+	if label == "" {
+		return m.CommandID(step)
+	}
+	return kernel.UUIDv5(constants.NsAnt, fmt.Sprintf("simulation-command|%s|%d|label|%s", m.RunID, m.Seed, label))
+}
+
 func (m *IDMap) CommandID(step int) string {
 	return kernel.UUIDv5(constants.NsAnt, fmt.Sprintf("simulation-command|%s|%d|%d", m.RunID, m.Seed, step))
 }

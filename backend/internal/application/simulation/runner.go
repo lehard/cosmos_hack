@@ -408,7 +408,7 @@ func (s *Service) body(ctx context.Context, st *RunState, rp *runPlan, a sim.Act
 	if m == nil {
 		m = map[string]any{}
 	}
-	m["command_id"] = rp.plan.IDs.CommandID(a.Seq)
+	m["command_id"] = rp.plan.IDs.ActionCommandID(a.Label, a.Seq)
 	if _, ok := m["basis_seq"]; !ok {
 		m["basis_seq"] = 0
 	}
