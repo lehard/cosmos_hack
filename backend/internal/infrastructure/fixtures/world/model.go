@@ -56,7 +56,7 @@ type Model struct {
 	templates dom.Templates
 	// federation — партнёры и подписанные выписки сценария (эпик 41, scenarios/federation).
 	federation *Federation
-	docs      []*wdoc
+	docs       []*wdoc
 }
 
 // Item — изделие сценария.

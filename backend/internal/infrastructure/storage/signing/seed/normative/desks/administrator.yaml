@@ -45,3 +45,10 @@ tabs:
     layout: single
     slots:
       - {id: documents, area: main, widget: documents-registry}
+  # Федерация предприятий (эпик 41; FR-131, FR-132, AD-19): партнёры и их корни доверия, входящие и исходящие
+  # выписки паспорта с проверкой подписей; щелчок — окно выписки справа (Д-70).
+  - id: federation
+    title_key: widgets.federation.title
+    layout: single
+    slots:
+      - {id: federation, area: main, widget: federation}

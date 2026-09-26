@@ -164,7 +164,7 @@ profiles:
       synchronous_commit: "off"
     # integrations.enabled — список stand-ов заполняют эпики интеграций.
     integrations:
-      enabled: [onec, skud] # эпик 30: обмен с stand-ом 1С; эпик 37: stand СКУД (роли outbox и stands)
+      enabled: [onec, skud, partner] # эпик 30: обмен с stand-ом 1С; эпик 37: stand СКУД (роли outbox и stands); эпик 41: партнёры федерации (выписки паспорта)
 
   # Нагрузочный прогон: больше партиций и параллелизма, ant-worker ×N (FR-107).
   load:

@@ -1,0 +1,64 @@
+{
+  "self": {
+    "code": "ENT01",
+    "name": "Наше предприятие",
+    "roots": [
+      "streebog256:cbccc8567bbb7ed719aa4801d8be76ce98149ac42bf89ce20f9e4379754258d7",
+      "streebog256:77e7104f1c9afe44e0bd4bf3dfb63498300071348ddd77aa61eeb7b7efdd76af"
+    ]
+  },
+  "partners": [
+    {
+      "code": "MZ01",
+      "name": "Металлургический завод МЗ-1",
+      "role": "supplier",
+      "endpoint": "https://mz01.partners.stand/federation/v1",
+      "roots": [
+        "streebog256:5e6f52708e0387b1ee9e52d75fdf105c6a720299fc1e0f76f53c9a92deabc8ef",
+        "streebog256:5bd78c711680a17b8c243d3e213ad01eb8025dcf26b91c8ae4225aef7e54ea47"
+      ],
+      "document_id": "DOC-PARTNER-MZ01"
+    },
+    {
+      "code": "PK02",
+      "name": "Поставщик колец ПК-2",
+      "role": "supplier",
+      "endpoint": "https://pk02.partners.stand/federation/v1",
+      "roots": [
+        "streebog256:67e1cb7c3dfd1d4ecc394ca650f5ab765ca6ef77803dab3e9660f7a10e8f332e",
+        "streebog256:7599dbf6a22b1291ef38d129697fb985ab0ff55ee4021629f220e90c959ba248"
+      ],
+      "document_id": "DOC-PARTNER-PK02"
+    },
+    {
+      "code": "SB01",
+      "name": "Сборочное предприятие СБ-1",
+      "role": "assembler",
+      "endpoint": "https://sb01.partners.stand/federation/v1",
+      "roots": [
+        "streebog256:2100cc58b31afca78e345980af9e147ed89762399d0b21521e4db66fc5668d4b"
+      ],
+      "document_id": "DOC-PARTNER-SB01"
+    }
+  ],
+  "incoming": [
+    {
+      "file": "mz01-heat-5512.extract.json",
+      "partner": "MZ01"
+    },
+    {
+      "file": "pk02-lot-r116.extract.json",
+      "partner": "PK02"
+    }
+  ],
+  "outgoing": [
+    {
+      "file": "ent01-f-001-to-sb01.extract.json",
+      "partner": "SB01",
+      "item": "F-001",
+      "document_id": "DOC-EXTRACT-F-001",
+      "message_id": "0192c3a0-0000-7000-8000-00000000f001"
+    }
+  ],
+  "tampered": "mz01-heat-5512.tampered.json"
+}

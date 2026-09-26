@@ -11,7 +11,9 @@ import (
 )
 
 // Поддельная криптография для доменного теста: «подпись» = H(pub ‖ PAE).
-func fakeSign(pub, pae []byte) string { return base64.StdEncoding.EncodeToString(signing.Hash(pub, pae)) }
+func fakeSign(pub, pae []byte) string {
+	return base64.StdEncoding.EncodeToString(signing.Hash(pub, pae))
+}
 
 func fakeVerify(_ string, pub []byte, _ string, pae, sig []byte) bool {
 	return bytes.Equal(sig, signing.Hash(pub, pae))
