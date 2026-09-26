@@ -1,0 +1,54 @@
+# Проверки «Главного» на GitVerse CI вместо машины разработки (Д-76).
+# Три независимых задания — каждое в том же образе, что и make check локально;
+# скрипты ждут корень репозитория в /src, поэтому /src — ссылка на checkout.
+# Лимит GitVerse — 30 минут на задание и 500 минут в месяц на приватный
+# репозиторий: запуск только на push в master и вручную.
+name: check
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    container: golang:1.27.1
+    env:
+      GOTOOLCHAIN: local
+      GOFLAGS: -buildvcs=false
+      TOOLBIN: /tmp/toolbin
+      ANT_CHECK_FAST: "1"
+    steps:
+      # checkout — JS-действие: в образе golang нет node.
+      - name: node для checkout
+        run: apt-get update -qq && apt-get install -y -qq nodejs >/dev/null
+      - uses: actions/checkout@v5
+      - name: бэкенд — слои, gofmt, vet, golangci-lint, detcheck, emitcheck, go test, сборка
+        run: |
+          ln -sfn "$PWD" /src
+          bash deploy/scripts/check-backend.sh
+
+  frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    container: node:24.21.0-slim
+    steps:
+      - name: git для checkout
+        run: apt-get update -qq && apt-get install -y -qq git >/dev/null
+      - uses: actions/checkout@v5
+      - name: фронтенд — ESLint, столы ↔ реестр, vue-tsc, тесты, сборка
+        run: |
+          ln -sfn "$PWD" /src
+          bash deploy/scripts/check-frontend.sh
+
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    container: node:24.21.0-slim
+    steps:
+      - name: git для checkout
+        run: apt-get update -qq && apt-get install -y -qq git >/dev/null
+      - uses: actions/checkout@v5
+      - name: контракты — схемы, каталог событий, коды ошибок, AsyncAPI
+        run: bash contracts/scripts/check.sh --in-container
