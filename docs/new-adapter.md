@@ -94,7 +94,7 @@ go test ./internal/infrastructure/integration/erp/... ./internal/application/erp
 ### Шаг 4. Конфигурация
 
 Включённые системы и адреса — конфигурация (AD-18). Ключи канала Галактики (`deploy/config/ant.yaml`,
-предложение — подключается в сборке вместе с фабрикой шага 5):
+поле `ERP.Galaktika` в `cmd/internal/config`; переменные `ANT_ERP_GALAKTIKA_*`):
 
 ```yaml
 integrations:
@@ -123,7 +123,7 @@ erp:
 Роль `outbox`, реакция, шлюз входящих и операции API берут порт, а не конкретную систему:
 
 ```go
-// cmd/ant: фабрика порта учёта по конфигурации (1С — эпик 30, Галактика — эпик 31).
+// cmd/ant/outbox.go (упрощённо; в коде — ledger и galaktikaClient): фабрика порта учёта по конфигурации (1С — эпик 30, Галактика — эпик 31).
 func ledger(env *environment) (erpapp.Ledger, error) {
 	if slices.Contains(env.cfg.Integrations.Enabled, "galaktika") {
 		c := env.cfg.ERP.Galaktika
