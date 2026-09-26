@@ -2,12 +2,14 @@ package analysis
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"slices"
 	"time"
 
 	app "ant/internal/application/analysis"
 	"ant/internal/application/platform"
+	dom "ant/internal/domain/analysis"
 	"ant/internal/infrastructure/fixtures/loader"
 )
 
@@ -105,8 +107,12 @@ type scopeChange struct {
 	In     app.ChangeScope
 }
 
-// withScope — область риска со ступенями сессии: изделия исключены или
-// добавлены, новая версия с основанием, автором и доказательствами.
+// withScope — область риска со ступенями сессии. Ответ мира несёт все
+// изделия, когда-либо входившие в область (исключённые — known = excluded),
+// поэтому текущая область — изделия не «исключено»: сужение исключает их с
+// основанием, расширение возвращает или добавляет; новая версия — размер
+// текущей области, исключённые и добавленные изделия, доказательства словами,
+// автор с именем.
 func withScope(ctx context.Context, rs app.RiskScope, m platform.Moment) app.RiskScope {
 	fs, rt := incidentFacts(ctx, m)
 	list := fs[rt.Local(ctx, rs.IncidentID)]
@@ -119,37 +125,195 @@ func withScope(ctx context.Context, rs app.RiskScope, m platform.Moment) app.Ris
 		if !ok {
 			continue
 		}
-		var added, removed []string
-		for _, id := range ch.In.ItemIDs {
-			i := slices.IndexFunc(rs.Items, func(x app.ScopeItem) bool { return x.ItemID == id || rt.Local(ctx, x.ItemID) == rt.Local(ctx, id) })
-			switch {
-			case ch.Narrow && i >= 0:
-				removed = append(removed, rs.Items[i].ItemID)
-				rs.Items = slices.Delete(rs.Items, i, i+1)
-			case !ch.Narrow && i < 0:
-				added = append(added, id)
-				rs.Items = append(rs.Items, app.ScopeItem{ItemID: id, Label: labelOf(rt.Local(ctx, id)), Known: "suspect", Action: "check", Location: "in_production"})
-			}
-		}
-		actor := f.Actor
-		change := "expanded"
-		if ch.Narrow {
-			change = "narrowed"
-		}
-		reason := app.Reason{Text: ch.In.Reason.Text, Code: ch.In.Reason.Code}
-		v := app.ScopeVersion{ScopeVersion: len(rs.Versions) + 1, Change: change, Size: len(rs.Items), RecordedAt: f.At, Author: &actor, Reason: &reason,
-			EvidenceEventIDs: append([]string{}, ch.In.EvidenceEventIDs...), Breakdown: breakdown(rs.Items)}
-		v.ItemsAdded, v.ItemsRemoved = nonNil(added), nonNil(removed)
-		v.Evidence = []app.JournalRecordRef{}
-		for _, id := range ch.In.EvidenceEventIDs {
-			v.Evidence = append(v.Evidence, app.JournalRecordRef{EventID: id, EventType: "journal.record", OccurredAt: f.At})
-		}
-		if ch.Narrow {
-			v.SignedBy, v.KeyClass = &actor, ptr("personal")
-		}
-		rs.Versions = append(rs.Versions, v)
+		rs = applyScope(ctx, rt, rs, ch, f, m)
 	}
 	return rs
+}
+
+// applyScope — одна ступень сужения или расширения поверх области rs.
+func applyScope(ctx context.Context, rt *loader.Runtime, rs app.RiskScope, ch scopeChange, f loader.Fact, m platform.Moment) app.RiskScope {
+	var added, removed []string
+	for _, id := range ch.In.ItemIDs {
+		i := slices.IndexFunc(rs.Items, func(x app.ScopeItem) bool { return rt.Local(ctx, x.ItemID) == rt.Local(ctx, id) })
+		switch {
+		case ch.Narrow && i >= 0 && rs.Items[i].Known != "excluded":
+			rs.Items[i].Known, rs.Items[i].Action = "excluded", "release"
+			removed = append(removed, rs.Items[i].ItemID)
+		case !ch.Narrow && i >= 0 && rs.Items[i].Known == "excluded":
+			rs.Items[i].Known, rs.Items[i].Action = "suspect", "check"
+			added = append(added, rs.Items[i].ItemID)
+		case !ch.Narrow && i < 0:
+			rs.Items = append(rs.Items, app.ScopeItem{ItemID: id, Label: labelOf(rt.Local(ctx, id)), Known: "suspect", Action: "check", Location: "in_production"})
+			added = append(added, id)
+		}
+	}
+	actor := f.Actor
+	change := "expanded"
+	if ch.Narrow {
+		change = "narrowed"
+	}
+	reason := app.Reason{Text: ch.In.Reason.Text, Code: ch.In.Reason.Code}
+	cur := inScope(rs.Items)
+	v := app.ScopeVersion{ScopeVersion: len(rs.Versions) + 1, Change: change, Size: len(cur), RecordedAt: f.At, Author: &actor, Reason: &reason,
+		EvidenceEventIDs: append([]string{}, ch.In.EvidenceEventIDs...), Breakdown: breakdown(cur)}
+	v.ItemsAdded, v.ItemsRemoved = nonNil(added), nonNil(removed)
+	v.Evidence = evidenceOf(ctx, rt, rs, ch.In.EvidenceEventIDs, f, m)
+	if name := personName(ctx, rt, actor); name != "" {
+		v.AuthorName = &name
+	}
+	if ch.Narrow {
+		v.SignedBy, v.KeyClass = &actor, ptr("personal")
+	}
+	at := f.At
+	v.Trigger = &app.ScopeTrigger{Kind: "human", Label: "Решение: " + nameOr(personName(ctx, rt, actor), actor) + " — " + reason.Text, ReceivedAt: &at, OccurredAt: &at}
+	rs.Versions = append(rs.Versions, v)
+	return rs
+}
+
+// inScope — изделия текущей области (не исключённые).
+func inScope(items []app.ScopeItem) []app.ScopeItem {
+	var out []app.ScopeItem
+	for _, x := range items {
+		if x.Known != "excluded" {
+			out = append(out, x)
+		}
+	}
+	return out
+}
+
+// evidenceOf — доказательства ступени словами: те же записи, что в
+// обстоятельствах несоответствий инцидента и в ступенях мира (тот же
+// построитель — генератор мира); запись не найдена — только её id.
+func evidenceOf(ctx context.Context, rt *loader.Runtime, rs app.RiskScope, ids []string, f loader.Fact, m platform.Moment) []app.JournalRecordRef {
+	out := []app.JournalRecordRef{}
+	if len(ids) == 0 {
+		return out
+	}
+	var pool []any
+	for _, v := range rs.Versions {
+		for _, e := range v.Evidence {
+			pool = append(pool, e)
+		}
+	}
+	for _, nc := range rs.NCIDs {
+		var c any
+		if err := rt.Respond(ctx, "analysis.circumstances.read", map[string]string{"nc_id": nc}, &m, &c); err == nil {
+			pool = append(pool, c)
+		}
+	}
+	for _, id := range ids {
+		ref := app.JournalRecordRef{EventID: id, EventType: "journal.record", OccurredAt: f.At}
+		if found, ok := findRecord(pool, id); ok {
+			ref = found
+		}
+		out = append(out, ref)
+	}
+	return out
+}
+
+// findRecord — запись журнала с event_id в любом месте ответов pool; из
+// нескольких — с текстом.
+func findRecord(pool []any, id string) (app.JournalRecordRef, bool) {
+	var best app.JournalRecordRef
+	found := false
+	var walk func(any)
+	walk = func(x any) {
+		switch v := x.(type) {
+		case map[string]any:
+			if v["event_id"] == id && v["event_type"] != nil {
+				var r app.JournalRecordRef
+				if b, err := json.Marshal(v); err == nil && json.Unmarshal(b, &r) == nil && (!found || (best.Text == nil && r.Text != nil)) {
+					best, found = r, true
+				}
+			}
+			for _, y := range v {
+				walk(y)
+			}
+		case []any:
+			for _, y := range v {
+				walk(y)
+			}
+		}
+	}
+	for _, p := range pool {
+		b, err := json.Marshal(p)
+		if err != nil {
+			continue
+		}
+		var g any
+		if json.Unmarshal(b, &g) == nil {
+			walk(g)
+		}
+	}
+	return best, found
+}
+
+// personName — имя демо-персоны по псевдониму (access.persona.list мира).
+func personName(ctx context.Context, rt *loader.Runtime, id string) string {
+	var l struct {
+		Items []struct {
+			ID   string `json:"id"`
+			Name string `json:"name"`
+		} `json:"items"`
+	}
+	if rt.Respond(ctx, "access.persona.list", nil, nil, &l) == nil {
+		for _, p := range l.Items {
+			if p.ID == id {
+				return p.Name
+			}
+		}
+	}
+	return ""
+}
+
+func nameOr(name, id string) string {
+	if name != "" {
+		return name
+	}
+	return id
+}
+
+// checkScope — гарды сужения и расширения те же, что у live
+// (domain/analysis.GuardNarrow, GuardExpand; AD-27): сужение — только с
+// доказательствами и текстом основания и только изделий текущей области,
+// расширение — с основанием и хотя бы одно изделие вне области; закрытый
+// инцидент — отказ.
+func checkScope(ctx context.Context, incidentID string, narrow bool, in app.ChangeScope) error {
+	rs, err := Adapter{}.RiskScope(ctx, incidentID, platform.Moment{})
+	if err != nil {
+		return err
+	}
+	rt, err := loader.Default()
+	if err != nil {
+		return err
+	}
+	v := dom.IncidentRecord{IncidentID: incidentID, Members: map[string]dom.MemberRecord{}}
+	for _, x := range rs.Items {
+		v.Members[rt.Local(ctx, x.ItemID)] = dom.MemberRecord{Status: x.Known, Action: x.Action}
+	}
+	if l, err := (Adapter{}).Incidents(ctx, platform.Moment{}, platform.Page{}); err == nil {
+		for _, x := range l.Items {
+			if x.IncidentID == incidentID && x.Status == "closed" {
+				v.Closed = true
+			}
+		}
+	}
+	items := make([]string, len(in.ItemIDs))
+	for i, id := range in.ItemIDs {
+		items[i] = rt.Local(ctx, id)
+	}
+	if narrow {
+		err = dom.GuardNarrow(v, items, in.EvidenceEventIDs, in.Reason.Text)
+	} else {
+		err = dom.GuardExpand(v, items, in.Reason.Text)
+	}
+	if err == nil {
+		return nil
+	}
+	if pe, ok := platform.AsError(err); ok {
+		return pe
+	}
+	return err
 }
 
 // withIncidents — инциденты со ступенями области и стадией расследования сессии.
@@ -165,7 +329,7 @@ func withIncidents(ctx context.Context, l app.IncidentList, m platform.Moment) a
 		}
 		if rs, err := respond[app.RiskScope](ctx, "analysis.risk_scope.read", incident(x.IncidentID), &m); err == nil {
 			rs = withScope(ctx, rs, m)
-			x.Size, x.ScopeVersion = len(rs.Items), len(rs.Versions)
+			x.Size, x.ScopeVersion = len(inScope(rs.Items)), len(rs.Versions)
 			x.Counts = counts(rs.Items)
 		}
 		for _, f := range list {

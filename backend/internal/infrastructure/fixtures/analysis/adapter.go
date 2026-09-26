@@ -94,11 +94,17 @@ func (Adapter) RequestMeasurement(ctx context.Context, ncID string, in app.Reque
 
 // NarrowScope — сузить область риска (analysis.scope.narrow).
 func (Adapter) NarrowScope(ctx context.Context, incidentID string, in app.ChangeScope) (platform.Receipt, error) {
+	if err := checkScope(ctx, incidentID, true, in); err != nil {
+		return platform.Receipt{}, err
+	}
 	return record(ctx, "analysis.scope.narrow", incidentID, in.CommandMeta(), scopeChange{Narrow: true, In: in})
 }
 
 // ExpandScope — расширить область риска (analysis.scope.expand).
 func (Adapter) ExpandScope(ctx context.Context, incidentID string, in app.ChangeScope) (platform.Receipt, error) {
+	if err := checkScope(ctx, incidentID, false, in); err != nil {
+		return platform.Receipt{}, err
+	}
 	return record(ctx, "analysis.scope.expand", incidentID, in.CommandMeta(), scopeChange{In: in})
 }
 
