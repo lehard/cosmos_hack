@@ -1,0 +1,101 @@
+# Роль api (AD-6): без состояния — сеансы в Postgres, LISTEN/NOTIFY несёт только
+# сигнал «есть новое» с seq, копия после переподключения догоняет по seq.
+# Масштаб — горизонтальный, по CPU; две противоречащие команды с двух копий
+# невозможны: journal.Append проверяет basis_seq в своей транзакции (AD-39).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ant-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels: {app.kubernetes.io/name: ant-api}
+  strategy:
+    rollingUpdate: {maxUnavailable: 0, maxSurge: 1}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: ant-api}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: api
+          image: ant
+          args: ["-role=api", "-config=/etc/ant/ant.yaml"]
+          envFrom: [{configMapRef: {name: ant-env}}]
+          env:
+            # Пул соединений копии: api держит короткие запросы чтения и команды.
+            - {name: ANT_DB_MAX_CONNS, value: "16"}
+          ports: [{name: http, containerPort: 8080}]
+          readinessProbe:
+            httpGet: {path: /readyz, port: http}
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: {path: /healthz, port: http}
+            periodSeconds: 10
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          resources:
+            requests: {cpu: 250m, memory: 128Mi}
+            limits: {memory: 384Mi}
+          volumeMounts:
+            - {name: config, mountPath: /etc/ant, readOnly: true}
+            - {name: db-secret, mountPath: /run/ant-secrets/ant, readOnly: true}
+            - {name: kek, mountPath: /var/lib/ant-kek, readOnly: true}
+            - {name: materials, mountPath: /var/lib/ant/materials}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - name: config
+          configMap: {name: ant-config}
+        - name: db-secret
+          secret: {secretName: ant-db, defaultMode: 0400}
+        - name: kek
+          secret: {secretName: ant-kek, defaultMode: 0400}
+        # Хранилище материалов по адресу содержимого (AD-23): общий том RWX
+        # (или S3-совместимое хранилище в контуре — путь развития, docs/scaling.md).
+        - name: materials
+          persistentVolumeClaim: {claimName: ant-materials}
+        - name: tmp
+          emptyDir: {sizeLimit: 64Mi}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ant-api
+spec:
+  selector: {app.kubernetes.io/name: ant-api}
+  ports: [{name: http, port: 80, targetPort: http}]
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: ant-api
+spec:
+  scaleTargetRef: {apiVersion: apps/v1, kind: Deployment, name: ant-api}
+  minReplicas: 2
+  maxReplicas: 8
+  metrics:
+    - type: Resource
+      resource: {name: cpu, target: {type: Utilization, averageUtilization: 70}}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ant-api
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels: {app.kubernetes.io/name: ant-api}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ant-materials
+spec:
+  accessModes: [ReadWriteMany]
+  resources:
+    requests: {storage: 50Gi}

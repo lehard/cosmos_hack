@@ -1,0 +1,95 @@
+# Нагрузочный профиль (эпик 35, FR-107, AD-6): поверх deploy/compose/compose.yaml.
+# Пути — относительно deploy/compose (каталог первого файла -f).
+#
+#   ant         — api, crossitem, projector, scheduler, outbox, stands, security
+#                 (одна копия; роли-лидеры по аренде) — без worker;
+#   ant-worker  — только роль worker, ×N (docker compose up --scale ant-worker=N):
+#                 партиции hash(item_id) mod P делятся арендами между копиями;
+#   load        — разовая роль load: запускает прогон сценария через обычный API,
+#                 ждёт конца и догонки журнала, печатает отчёт и хеши (профиль tools).
+#
+# Запуск — make load (scenarios/load/load.sh), проект compose ant-load, свои порты.
+#
+# Профиль: генератор интенсивности — пульт сценариев, а он живёт на часах
+# scenario и демо-персонах профиля demo; параметры профиля load (deploy/config/
+# ant.yaml: 64 партиции, параллелизм свёртки 4, пул 30, пачка 1024) заданы
+# переменными ANT_* поверх demo.
+x-load-env: &load-env
+  ANT_PROFILE: demo
+  ANT_ENGINE_PARTITIONS: "64"
+  ANT_ENGINE_FOLD_PARALLELISM: "4"
+  # Пул копии; postgres демо-стенда — max_connections 80: ant 24 + воркеры по 6.
+  ANT_DB_MAX_CONNS: "24"
+  ANT_DB_SYNCHRONOUS_COMMIT: "off"
+  ANT_JOURNAL_BATCH_MAX: "1024"
+  ANT_LOG_LEVEL: warn
+  ANT_DB_HOST: postgres
+  ANT_DB_USER: ant_admin
+  ANT_DB_NAME: ant
+  ANT_DB_PASSWORD_FILE: /run/ant-secrets/ant/db_password
+  ANT_SECURITY_KEEPER_URL: https://keeper:8444
+
+services:
+  ant:
+    command: ["-role=api,crossitem,projector,scheduler,outbox,stands,security"]
+    environment:
+      <<: *load-env
+      ANT_SECURITY_EXPORT_FILE: /var/lib/ant-export/security-events.jsonl
+    mem_limit: 512m
+
+  ant-worker:
+    image: ${ANT_IMAGE:-ant:local}
+    command: ["-role=worker"]
+    environment:
+      <<: *load-env
+      ANT_DB_MAX_CONNS: "6"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      trust-init:
+        condition: service_completed_successfully
+    volumes:
+      - secrets:/run/ant-secrets:ro
+      - ../config/ant.yaml:/etc/ant/ant.yaml:ro
+      - ant-pki:/var/lib/ant-pki:ro
+      - kek:/var/lib/ant-kek:ro
+    tmpfs:
+      - /tmp:size=16m
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    # HTTP (/healthz) слушает только роль api — у воркера проверки нет.
+    healthcheck:
+      disable: true
+    mem_limit: 192m
+    restart: unless-stopped
+    labels:
+      ant.project: ant
+
+  load:
+    image: ${ANT_IMAGE:-ant:local}
+    command: ["-role=load"]
+    profiles: [tools]
+    environment:
+      <<: *load-env
+      ANT_DB_MAX_CONNS: "6"
+      ANT_LOAD_API: http://ant:8080
+      ANT_LOAD_SCENARIO: ${ANT_LOAD_SCENARIO:-MS-1}
+      ANT_LOAD_SEED: ${ANT_LOAD_SEED:-0}
+      ANT_LOAD_WORKERS: ${ANT_LOAD_WORKERS:-4}
+      ANT_LOAD_LABEL: ${ANT_LOAD_LABEL:-}
+      ANT_LOAD_TIMEOUT: ${ANT_LOAD_TIMEOUT:-60m}
+    volumes:
+      - secrets:/run/ant-secrets:ro
+      - ../config/ant.yaml:/etc/ant/ant.yaml:ro
+      - ant-pki:/var/lib/ant-pki:ro
+      - kek:/var/lib/ant-kek:ro
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    healthcheck:
+      disable: true
+    mem_limit: 256m
+    restart: "no"
+    labels:
+      ant.project: ant
