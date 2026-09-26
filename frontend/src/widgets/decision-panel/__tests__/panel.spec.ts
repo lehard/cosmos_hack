@@ -67,7 +67,7 @@ describe('панель решений контролёра', () => {
 
   it('решение по несоответствию: переделка / ремонт / как есть / списать / вернуть', () => {
     const w = mountPanel({ card: confirmedCard() })
-    expect(w.findAll('[data-group="disposition"] button').map((b) => b.text())).toEqual([
+    expect(w.findAll('[data-group="disposition"] .option-title').map((b) => b.text())).toEqual([
       'Переделка — вернуть на операцию «Сварка»',
       'Ремонт — по разрешению на отклонение',
       'Как есть — по разрешению на отклонение',
@@ -75,6 +75,20 @@ describe('панель решений контролёра', () => {
       'Вернуть поставщику — оформить возврат с основанием претензии',
     ])
     expect(w.text()).toContain('Решение по изделию не ждёт установления причины')
+    // Этап 2 — карточки вариантов: смысл, условия, итог; первичных «подтвердить / отклонить» нет.
+    const asIs = w.find('[data-disposition="use_as_is"]')
+    expect(asIs.find('.option-terms').text()).toContain('нужно действующее разрешение на отклонение')
+    expect(asIs.find('.option-terms').text()).toContain('не «годно»')
+    expect(w.find('[data-disposition="rework"] .option-terms').text()).toContain('без разрешения на отклонение')
+    expect(w.find('[data-action="confirm_nc"]').exists()).toBe(false)
+    expect(w.find('[data-stage="disposition"]').attributes('data-state')).toBe('current')
+  })
+
+  it('выбранный вариант отмечен', async () => {
+    const w = mountPanel({ card: confirmedCard() })
+    await w.find('[data-disposition="scrap"]').trigger('click')
+    expect(w.find('[data-disposition="scrap"]').attributes('aria-pressed')).toBe('true')
+    expect(w.find('[data-disposition="rework"]').attributes('aria-pressed')).toBe('false')
   })
 
   it('«как есть» без действующего разрешения не подписывается — оформить новое (FR-53, FR-54)', async () => {
