@@ -157,7 +157,7 @@ flowchart LR
 | [docs/case-compliance.md](docs/case-compliance.md) | Каждый пункт кейса и критерий → архитектурное решение → код и проверка → честный статус |
 | [docs/architecture.md](docs/architecture.md) | Архитектура целиком и карта всех архитектурных документов |
 | [docs/architecture-spine.md](docs/architecture-spine.md) | Решения AD-1…AD-47, парадигма, инварианты, стек, дерево репозитория |
-| [docs/prd.md](docs/prd.md) | Требования: роли, сценарии, FR-1…FR-157, нефункциональные требования |
+| [docs/prd.md](docs/prd.md) | Требования: роли, сценарии, FR-1…FR-158, нефункциональные требования |
 | [docs/scenario-processing.md](docs/scenario-processing.md) | Как система отрабатывает сценарии кейса: от сигнала до решения по изделию |
 | [docs/data-model.md](docs/data-model.md) | Запись журнала, сущности, статусы, проекции |
 | [docs/specifications.md](docs/specifications.md), [docs/codegen.md](docs/codegen.md) | Спецификации API, событий, BPMN; что генерируется и как ловится рассинхронизация |
