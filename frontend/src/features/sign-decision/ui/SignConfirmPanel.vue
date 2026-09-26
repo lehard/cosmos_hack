@@ -30,14 +30,21 @@ const props = withDefaults(
     error?: unknown
     /** Сколько объектов в пачке (одно окно, одно касание, AD-13); 1 — одиночная подпись. */
     batch?: number
+    /**
+     * Демонстрационный профиль без агента токена: команда уходит без подписи
+     * агента, в паспорте её подпись — «не проверялась» (не «действительна»).
+     */
+    demoUnsigned?: boolean
   }>(),
-  { paperAllowed: true, busy: false, error: undefined, batch: 1 },
+  { paperAllowed: true, busy: false, error: undefined, batch: 1, demoUnsigned: false },
 )
 const emit = defineEmits<{
   /** Подписать агентом токена. */
   'confirm-token': []
   /** Подписать на бумаге. */
   'sign-paper': []
+  /** Демо: подтвердить без подписи агента. */
+  'confirm-unsigned': []
   cancel: []
 }>()
 
@@ -47,7 +54,7 @@ const problemText = useProblemText()
 const value = (f: SummaryField) => f.value ?? (f.valueKey ? t(f.valueKey, f.valueParams ?? {}) : t('common.words.unknown'))
 const ready = computed(() => tokenReady(props.tokenStatus))
 /** Нет ни агента, ни бумаги — подписать нечем. */
-const noPath = computed(() => !ready.value && !props.paperAllowed)
+const noPath = computed(() => !ready.value && !props.paperAllowed && !props.demoUnsigned)
 const tokenNote = computed(() =>
   props.tokenStatus === 'missing' ? t('errors.signing.tokenMissing') : props.tokenStatus === 'agent_missing' ? t('common.header.tokenAgentMissing') : null,
 )
@@ -68,12 +75,16 @@ const tokenNote = computed(() =>
 
     <p class="muted" :title="t('hints.tokenAgent')">{{ t('widgets.signing.trustedWindow') }}</p>
     <p v-if="tokenNote" class="muted" data-testid="token-note">{{ tokenNote }}</p>
+    <p v-if="demoUnsigned && !ready" class="muted" data-testid="demo-note">{{ t('widgets.signing.demoUnsignedNote') }}</p>
     <NAlert v-if="noPath" type="error" :bordered="false" :show-icon="false" data-testid="no-path">{{ t('errors.signing.noSignaturePath') }}</NAlert>
     <NAlert v-if="error" type="error" :bordered="false" :show-icon="false" data-testid="sign-error">{{ problemText(error) }}</NAlert>
 
     <footer class="buttons">
       <NButton type="primary" :disabled="!ready || busy" :loading="busy" data-testid="confirm-token" @click="emit('confirm-token')">
         {{ t('decisions.signature.confirmWithToken') }}
+      </NButton>
+      <NButton v-if="demoUnsigned && !ready" type="primary" secondary :disabled="busy" :loading="busy" data-testid="confirm-unsigned" @click="emit('confirm-unsigned')">
+        {{ t('widgets.signing.demoUnsigned') }}
       </NButton>
       <NButton v-if="paperAllowed" :disabled="busy" data-testid="sign-paper" @click="emit('sign-paper')">
         {{ t('decisions.signature.signOnPaper') }}

@@ -26,6 +26,8 @@ export const router = createRouter({
         { path: '', redirect: { name: 'desk' } },
         { path: 'desk/:tab?', name: 'desk', component: () => import('@/pages/desk') },
         { path: 'items/:id', name: 'item', component: () => import('@/pages/item') },
+        // Эпик 11: карточка несоответствия — сюда ведут ссылки features/drill-down (FR-7).
+        { path: 'nonconformities/:id', name: 'nonconformity', component: () => import('@/pages/nonconformity') },
         { path: 'help/:role?', name: 'help', component: () => import('@/pages/help') },
       ],
     },

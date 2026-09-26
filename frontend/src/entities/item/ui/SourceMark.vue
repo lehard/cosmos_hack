@@ -7,9 +7,9 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { sourceMark } from '../model/passport'
-import type { PassportRecord } from '../model/types'
+import type { SourcedRecord } from '../model/types'
 
-const props = defineProps<{ record: Pick<PassportRecord, 'event_type' | 'source_kind' | 'reliability'> }>()
+const props = defineProps<{ record: SourcedRecord }>()
 const { t } = useI18n()
 const mark = computed(() => sourceMark(props.record))
 </script>

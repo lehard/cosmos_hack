@@ -25,12 +25,15 @@ withDefaults(
     document?: Pick<DocumentHead, 'document_id' | 'doc_digest' | 'version'> | null
     expectedSigner?: string | null
     batch?: number
+    /** Демо без агента токена — см. SignConfirmPanel. */
+    demoUnsigned?: boolean
   }>(),
-  { paperAllowed: true, busy: false, error: undefined, document: null, expectedSigner: null, batch: 1 },
+  { paperAllowed: true, busy: false, error: undefined, document: null, expectedSigner: null, batch: 1, demoUnsigned: false },
 )
 const emit = defineEmits<{
   'confirm-token': []
   'sign-paper': []
+  'confirm-unsigned': []
   print: []
   close: []
 }>()
@@ -55,7 +58,9 @@ const { t } = useI18n()
       :busy="busy"
       :error="error"
       :batch="batch"
+      :demo-unsigned="demoUnsigned"
       @confirm-token="emit('confirm-token')"
+      @confirm-unsigned="emit('confirm-unsigned')"
       @sign-paper="emit('sign-paper')"
       @cancel="emit('close')"
     />

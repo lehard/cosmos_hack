@@ -1,17 +1,31 @@
 <script setup lang="ts">
 /**
  * Шапка паспорта изделия (FR-42, PRD §3b): кто это, по какой версии процесса
- * запущено, пять осей статуса и статус в каждом инциденте. Оси показываются
- * раздельно — «в изоляции» (положение) ≠ «блок» (сдерживание) ≠ «несоответствие
- * подтверждено» (качество).
+ * запущено, уровень идентификации, пять осей статуса раздельно — «в изоляции»
+ * (положение) ≠ «блок» (сдерживание) ≠ «несоответствие подтверждено»
+ * (качество) — и связанные несоответствия и инциденты.
  */
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { NAlert } from 'naive-ui'
-import { AXIS_TEXT, STATUS_AXES_ORDER, SummaryTag, type ItemPassport } from '@/entities/item'
+import { AXIS_TEXT, IDENTIFICATION_TEXT, STATUS_AXES_ORDER, SummaryTag, identificationDoubtful, isHeld, type ItemPassport } from '@/entities/item'
 import { StatusTag } from '@/shared/ui'
 
-defineProps<{ passport: ItemPassport }>()
+const props = withDefaults(
+  defineProps<{
+    passport: ItemPassport
+    /** Есть ли экран карточки несоответствия (ссылки активны). */
+    canOpenNc?: boolean
+    /** Есть ли экран инцидента. */
+    canOpenIncident?: boolean
+  }>(),
+  { canOpenNc: false, canOpenIncident: false },
+)
+const emit = defineEmits<{ 'open-nc': [ncId: string]; 'open-incident': [incidentId: string] }>()
 const { t } = useI18n()
+
+const status = computed(() => props.passport.status)
+const doubtful = computed(() => identificationDoubtful(props.passport.identification))
 </script>
 
 <template>
@@ -19,38 +33,47 @@ const { t } = useI18n()
     <div class="title">
       <strong class="label">{{ passport.label }}</strong>
       <span class="muted">{{ t('passport.identifier') }}: <code>{{ passport.item_id }}</code></span>
-      <SummaryTag :code="passport.summary" data-testid="summary" />
+      <SummaryTag :code="status.summary" data-testid="summary" />
     </div>
     <p class="muted">
-      {{ t('common.words.itemType') }}: {{ passport.item_type_id }} · {{ t('common.words.revision') }}: {{ passport.item_revision }} ·
-      {{ t('passport.processVersion', { version: passport.process_version }) }}
+      {{ t('common.words.itemType') }}: {{ passport.item_type_id }} · {{ t('common.words.revision') }}: {{ passport.item_revision }}
+      <template v-if="passport.order_id"> · {{ t('common.words.productionOrder') }}: {{ passport.order_id }}</template>
+    </p>
+    <p class="muted" :title="passport.process_version">{{ t('passport.processVersion', { version: passport.process_version }) }}</p>
+    <p class="muted" data-testid="identification" :data-level="passport.identification">
+      {{ t('widgets.passport.identification.title') }}: {{ t(IDENTIFICATION_TEXT[passport.identification]) }}
     </p>
 
     <dl class="axes" data-testid="axes">
       <template v-for="axis in STATUS_AXES_ORDER" :key="axis">
         <dt>{{ t(AXIS_TEXT[axis]) }}</dt>
-        <dd><StatusTag :axis="axis" :code="passport.statuses[axis]" /></dd>
-      </template>
-      <template v-for="inc in passport.incidents" :key="inc.incident_id">
-        <dt>{{ t('common.words.incident') }} {{ inc.label }}</dt>
-        <dd><StatusTag axis="incident" :code="inc.status" /></dd>
+        <dd><StatusTag :axis="axis" :code="status[axis]" /></dd>
       </template>
     </dl>
 
-    <p v-if="passport.statuses.containment === 'item_hold' || passport.statuses.containment === 'lot_hold'" class="muted" data-testid="hold-hint">
-      {{ t('hints.hold') }}
-    </p>
-    <p v-if="passport.statuses.quality === 'unable_to_assess'" class="muted" data-testid="unable-hint">{{ t('hints.unableToAssess') }}</p>
-    <p v-if="passport.statuses.quality === 'accepted_with_concession'" class="muted" data-testid="concession-hint">
-      {{ t('decisions.concession.resultStatus') }}
-    </p>
-    <NAlert v-if="passport.processing_stopped" type="error" :bordered="false" :show-icon="false" data-testid="processing-stopped">
-      {{ t('passport.processingStopped') }}
+    <p v-if="isHeld(status)" class="muted" data-testid="hold-hint">{{ t('hints.hold') }}</p>
+    <p v-if="status.position === 'isolated'" class="muted" data-testid="isolation-hint">{{ t('hints.isolation') }}</p>
+    <p v-if="status.quality === 'unable_to_assess'" class="muted" data-testid="unable-hint">{{ t('hints.unableToAssess') }}</p>
+    <p v-if="status.quality === 'accepted_with_concession'" class="muted" data-testid="concession-hint">{{ t('decisions.concession.resultStatus') }}</p>
+    <NAlert v-if="doubtful" type="warning" :bordered="false" :show-icon="false" data-testid="identification-doubtful">
+      {{ t('widgets.passport.identification.doubtful') }}
     </NAlert>
-    <NAlert v-if="passport.identification_questioned" type="warning" :bordered="false" :show-icon="false" data-testid="identification-questioned">
-      {{ t('widgets.passport.identificationQuestioned') }}
-    </NAlert>
-    <p class="muted" data-testid="documents-from-history">{{ t('passport.documentsFromHistory', { n: passport.documents_from_history }) }}</p>
+
+    <p v-if="passport.nonconformities.length" class="links" data-testid="nonconformities">
+      <span class="muted">{{ t('common.words.nonconformity') }}:</span>
+      <template v-for="nc in passport.nonconformities" :key="nc">
+        <button v-if="canOpenNc" type="button" class="linklike" @click="emit('open-nc', nc)">{{ nc }}</button>
+        <span v-else>{{ nc }}</span>
+      </template>
+    </p>
+    <p v-if="passport.incidents.length" class="links" data-testid="incidents">
+      <span class="muted">{{ t('common.words.incident') }}:</span>
+      <template v-for="inc in passport.incidents" :key="inc">
+        <button v-if="canOpenIncident" type="button" class="linklike" @click="emit('open-incident', inc)">{{ inc }}</button>
+        <span v-else>{{ inc }}</span>
+      </template>
+    </p>
+    <p class="muted" data-testid="documents-from-history">{{ t('passport.documentsFromHistory', { n: passport.documents.length }) }}</p>
   </header>
 </template>
 
@@ -61,11 +84,13 @@ const { t } = useI18n()
   gap: 6px;
 }
 
-.title {
+.title,
+.links {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px 12px;
+  gap: 4px 10px;
   align-items: baseline;
+  margin: 0;
 }
 
 .label {
@@ -91,5 +116,14 @@ const { t } = useI18n()
 
 .axes dd {
   margin: 0;
+}
+
+.linklike {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #2f6fdb;
+  font: inherit;
+  cursor: pointer;
 }
 </style>

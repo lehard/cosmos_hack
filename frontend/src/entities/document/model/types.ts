@@ -2,6 +2,10 @@
  * Документы, маршруты подписей и запросы решения (эпик 11; FR-65, FR-66,
  * FR-136, FR-139; AD-12, AD-13, AD-43).
  *
+ * Операций модуля documents в contracts/openapi.yaml пока нет — эта форма
+ * данных написана руками по полям контракта событий и предложена для него;
+ * подпись этапа — та же `ItemSignature`, что в паспорте.
+ *
  * Поля — как в семействе `document` (contracts/events/document): набор
  * обязательных подписей `required_approvals` замораживается при
  * `document.version.drafted`, подписи — `document.signature.recorded`, закрытие
@@ -9,7 +13,7 @@
  * модуль documents (AD-43); интерфейс только показывает (`counted`).
  */
 import type { DocumentVersionDraftedV1, EvidenceRef } from '@/shared/contracts/events'
-import type { DocumentStatus, RecordSignature } from '@/entities/item'
+import type { ItemDocumentRefStatus, RecordSignature } from '@/entities/item'
 
 export type { EvidenceRef }
 
@@ -48,7 +52,8 @@ export interface DocumentHead {
   doc_type: string
   /** Отпечаток — входит в QR бумажного экземпляра (AD-43). */
   doc_digest: string
-  status: DocumentStatus
+  /** Статус документа — те же значения, что у документов паспорта (`ItemDocumentRef.status`). */
+  status: ItemDocumentRefStatus
   drafted_at: string
 }
 

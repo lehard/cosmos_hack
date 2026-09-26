@@ -11,6 +11,7 @@
  * настоящую реализацию через `provideSigningPort`, не трогая виджеты.
  */
 import { inject, provide, type InjectionKey, type Ref } from 'vue'
+import type { DsseEnvelope } from '@/shared/api/generated/model'
 import type { ApiError } from '@/shared/api/problem'
 import { PAYLOAD_TYPE_TEMPLATE } from '@/shared/contracts/constants'
 import type { SignBlock } from '@/shared/contracts/procs'
@@ -23,14 +24,8 @@ import { useTokenStatus, type TokenStatus } from '@/shared/lib/token-agent'
  */
 export type SignRequest = Pick<SignBlock, 'level' | 'payload_type' | 'payload_b64' | 'event_type' | 'template_ref' | 'doc_format_version' | 'expected_doc_digest'>
 
-/** Результат подписи агентом. */
-export interface SignResult {
-  method: 'token_agent'
-  /** Ключ `key_id@версия`. */
-  key_ref: string
-  /** Подписанный пакет (base64). */
-  signature_b64: string
-}
+/** Результат подписи агентом — конверт DSSE для поля `signature` команды (AD-10). */
+export type SignResult = DsseEnvelope
 
 /** Порт подписи. */
 export interface SigningPort {

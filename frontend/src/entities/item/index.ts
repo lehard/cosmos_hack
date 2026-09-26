@@ -2,26 +2,23 @@
  * Изделие (кейс «история изделия»): ключи кэша, поиск по номеру детали для шапки
  * и паспорт изделия (эпик 11: FR-42, FR-43, FR-45, FR-46, FR-140).
  *
- * Операции чтения паспорта ещё нет в contracts/openapi.yaml (эпик 02): запрос
- * стоит на заглушке `api.not_implemented` (shared/api/pending.ts) с настоящим
- * ключом кэша `[item, id, 'passport', момент]` — его инвалидирует SSE по
- * изделию. Форма данных (model/types.ts) — предложение для контракта; когда
- * операция появится, функция запроса меняется на вызов клиента, ключи и
- * виджеты остаются прежними.
+ * Чтение — сгенерированным клиентом (`item.passport.read`, `item.history.list`,
+ * `item.genealogy.read`) с ключами по соглашению shared/api/keys.ts:
+ * `[item, id, …, момент]` — их инвалидирует SSE по изделию.
  */
 import { computed, toValue, type MaybeRefOrGetter } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
-import { itemItemLookup } from '@/shared/api/generated/client'
+import { itemGenealogyRead, itemHistoryList, itemItemLookup, itemPassportRead } from '@/shared/api/generated/client'
 import { entityKeys } from '@/shared/api/keys'
-import { pendingOperation, type Envelope } from '@/shared/api/pending'
 import { useMomentStore, type MomentParams } from '@/shared/model/moment'
-import type { ItemPassport } from './model/types'
 
 export type { ItemLookup } from '@/shared/api/generated/model'
-export type { Envelope }
 
 export * from './model/types'
 export * from './model/passport'
+export { default as SourceMark } from './ui/SourceMark.vue'
+export { default as SignatureMark } from './ui/SignatureMark.vue'
+export { default as SummaryTag } from './ui/SummaryTag.vue'
 
 export const itemKeys = entityKeys('item')
 
@@ -32,26 +29,57 @@ export const itemLookupQueryOptions = (q: string, moment: MomentParams) => ({
   retry: false,
 })
 
-/** id ожидаемой операции чтения паспорта (AD-40). */
-export const PASSPORT_OPERATION = 'item.passport.read'
+/** Необязательные параметры чтения, кроме момента. */
+export interface ItemReadOptions {
+  /** Прогон сценария (AD-38). */
+  run_id?: string
+}
 
-/**
- * Паспорт изделия на момент из useMomentStore (FR-42, AD-22). Ожидаемая
- * операция — `item.passport.read` (GET /api/v1/items/{item_id}/passport).
- * Пустой id — запрос не выполняется.
- */
-export function usePassport(itemId: MaybeRefOrGetter<string | null | undefined>) {
+/** Параметры запроса: момент из useMomentStore и прогон. */
+function useReadParams(opts: MaybeRefOrGetter<ItemReadOptions>) {
   const moment = useMomentStore()
-  return useQuery({
-    queryKey: computed(() => itemKeys.one(toValue(itemId) ?? '', 'passport', moment.params)),
-    queryFn: () => pendingOperation<Envelope<ItemPassport>>(PASSPORT_OPERATION)(),
-    enabled: computed(() => !!toValue(itemId)),
-    retry: false,
-    // Смена момента не мигает пустым паспортом — прежний виден до нового ответа.
-    placeholderData: (prev: Envelope<ItemPassport> | undefined) => prev,
+  return computed(() => {
+    const run = toValue(opts).run_id
+    return run ? { ...moment.params, run_id: run } : { ...moment.params }
   })
 }
 
-export { default as SourceMark } from './ui/SourceMark.vue'
-export { default as SignatureMark } from './ui/SignatureMark.vue'
-export { default as SummaryTag } from './ui/SummaryTag.vue'
+/**
+ * Паспорт изделия на момент (FR-42, AD-22) — `item.passport.read`. Пустой id —
+ * запрос не выполняется. Смена момента не мигает пустым паспортом.
+ */
+export function usePassport(itemId: MaybeRefOrGetter<string | null | undefined>, opts: MaybeRefOrGetter<ItemReadOptions> = {}) {
+  const params = useReadParams(opts)
+  return useQuery({
+    queryKey: computed(() => itemKeys.one(toValue(itemId) ?? '', 'passport', params.value)),
+    queryFn: ({ signal }) => itemPassportRead(toValue(itemId) ?? '', params.value, { signal }),
+    enabled: computed(() => !!toValue(itemId)),
+    retry: false,
+    placeholderData: (prev) => prev,
+  })
+}
+
+/**
+ * Журнал изменений паспорта (FR-43) — `item.history.list`: что изменилось,
+ * было → стало, кто, основание, ссылка на запись журнала.
+ */
+export function useItemHistory(itemId: MaybeRefOrGetter<string | null | undefined>, opts: MaybeRefOrGetter<ItemReadOptions & { enabled?: boolean }> = {}) {
+  const params = useReadParams(opts)
+  return useQuery({
+    queryKey: computed(() => itemKeys.one(toValue(itemId) ?? '', 'history', params.value)),
+    queryFn: ({ signal }) => itemHistoryList(toValue(itemId) ?? '', params.value, { signal }),
+    enabled: computed(() => !!toValue(itemId) && toValue(opts).enabled !== false),
+    retry: false,
+  })
+}
+
+/** Генеалогия (FR-45) — `item.genealogy.read`: куда входит, из чего состоит, партии. */
+export function useItemGenealogy(itemId: MaybeRefOrGetter<string | null | undefined>, opts: MaybeRefOrGetter<ItemReadOptions & { enabled?: boolean }> = {}) {
+  const params = useReadParams(opts)
+  return useQuery({
+    queryKey: computed(() => itemKeys.one(toValue(itemId) ?? '', 'genealogy', params.value)),
+    queryFn: ({ signal }) => itemGenealogyRead(toValue(itemId) ?? '', params.value, { signal }),
+    enabled: computed(() => !!toValue(itemId) && toValue(opts).enabled !== false),
+    retry: false,
+  })
+}
