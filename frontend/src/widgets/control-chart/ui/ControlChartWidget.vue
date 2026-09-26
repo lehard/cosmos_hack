@@ -34,7 +34,10 @@ const defaultStep = computed(() => {
 const step = computed(() => chosen.value ?? defaultStep.value)
 const options = computed(() => {
   const keys = steps.value.includes(step.value ?? '') || !step.value ? steps.value : [step.value, ...steps.value]
-  return keys.map((k) => ({ label: k, value: k }))
+  // Имя узла BPMN (step_names / step_name), код — только если имени нет.
+  const names = nodes.data.value?.step_names ?? {}
+  const byCounter = new Map((nodes.data.value?.counters ?? []).map((c) => [c.step_key, c.step_name]))
+  return keys.map((k) => ({ label: names[k] ?? byCounter.get(k) ?? k, value: k }))
 })
 
 const src = useControlChart(step, sliceMetric)
