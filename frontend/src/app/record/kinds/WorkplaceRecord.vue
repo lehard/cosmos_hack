@@ -44,7 +44,8 @@ const postEquipment = computed(() => {
   const all = equipmentQ.data.value?.data ?? []
   const own = all.filter((e) => e.station_id === props.id)
   if (own.length) return own
-  const station = card.value?.station_id ?? card.value?.parent_id ?? null
+  const c = card.value as { station_id?: string | null; parent_id?: string | null } | null
+  const station = c?.station_id ?? c?.parent_id ?? null
   const atStation = all.filter((e) => e.station_id && (e.station_id === station || props.id.startsWith(String(e.station_id).replace(/^ST-/, 'WP-'))))
   const n = /-(\d+)$/.exec(props.id)?.[1]
   const byNo = n ? atStation.filter((e) => new RegExp(`-${n}$`).test(e.equipment_id)) : []
