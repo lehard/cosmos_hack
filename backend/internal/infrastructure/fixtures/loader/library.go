@@ -158,14 +158,15 @@ type parsedStep struct {
 	entries []*entry
 }
 
-// readSteps разбирает steps/NN.yaml параллельно (не больше GOMAXPROCS и не
-// больше 4 файлов сразу — память контейнера api ограничена): YAML в десятки
-// МБ — основная работа холодного старта после построения мира. Накопление
-// шагов идёт потом последовательно, так что итог не зависит от порядка разбора.
+// readSteps разбирает steps/NN.yaml параллельно, не больше 2 файлов сразу:
+// YAML в десятки МБ — основная работа холодного старта после построения мира;
+// 2 разборщика дают почти весь выигрыш по времени при том же пике кучи, что и
+// один (~190 МБ), а 4 поднимают пик до ~260 МБ — у api в compose лимит 384 МБ.
+// Накопление шагов идёт потом последовательно — итог не зависит от порядка разбора.
 func readSteps(fsys fs.FS, dir string, headers []StepHeader) ([]parsedStep, error) {
 	out := make([]parsedStep, len(headers))
 	errs := make([]error, len(headers))
-	sem := make(chan struct{}, max(1, min(4, runtime.GOMAXPROCS(0))))
+	sem := make(chan struct{}, max(1, min(2, runtime.GOMAXPROCS(0))))
 	var wg sync.WaitGroup
 	for i, h := range headers {
 		wg.Add(1)
@@ -190,6 +191,7 @@ func readSteps(fsys fs.FS, dir string, headers []StepHeader) ([]parsedStep, erro
 					return
 				}
 				entries[j] = e
+				f.Responses[j].Body = nil // тело — в entries[j].body (JSON)
 			}
 			out[i] = parsedStep{file: f, entries: entries}
 		}()
@@ -212,6 +214,9 @@ func newEntry(r Response) (*entry, error) {
 	if err != nil {
 		return nil, fmt.Errorf("%s: тело: %w", r.Op, err)
 	}
+	// Дерево тела (map[string]any из YAML) после перевода в JSON не нужно, а
+	// на мире заготовок в десятки МБ оно занимало бы сотни МБ памяти api.
+	r.Body = nil
 	return &entry{resp: r, body: b}, nil
 }
 
@@ -373,7 +378,8 @@ func canonParams(p map[string]string) string {
 }
 
 // Walk обходит все ответы библиотеки (общие и все шаги всех сценариев) — для
-// проверки тел схемами openapi.yaml.
+// проверки тел схемами openapi.yaml. Тело — только body (JSON): Response.Body
+// после загрузки не хранится.
 func (l *Library) Walk(fn func(where string, r Response, body []byte) error) error {
 	keys := make([]string, 0, len(l.common))
 	for k := range l.common {
