@@ -56,6 +56,10 @@ type Env struct {
 	// для гарда решения на точке предъявления: quality.PresentationBlockers
 	// (FR-35, FR-44). Нулевая — гард без проверки полноты контроля quality.
 	Quality quality.Env `json:"-"`
+	// Process — нормативный слой процесса изделия (закреплённая версия) для
+	// гарда решения на точке предъявления: process.PresentationGuard (FR-19,
+	// FR-21, FR-44; стык эпиков 17 и 21, эпик 16). Нулевой — без проверки.
+	Process process.Env `json:"-"`
 }
 
 // Upstream — состояния модулей раньше nonconformity в композиции на этом шаге

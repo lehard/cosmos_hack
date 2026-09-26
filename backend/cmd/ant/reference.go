@@ -35,7 +35,7 @@ func referenceLive(ctx context.Context, env *environment) (*referenceapp.Service
 	return referenceapp.NewService(
 		referenceapp.WithSource(c.refSource),
 		referenceapp.WithWriter(referenceapp.JournalWriter{Journal: c.journal, DomainBuild: c.codec.DomainBuild, Now: c.codec.Now}),
-		referenceapp.WithClock(clock.NewJournal(c.journal)),
+		referenceapp.WithClock(c.domainClock()),
 	), nil
 }
 

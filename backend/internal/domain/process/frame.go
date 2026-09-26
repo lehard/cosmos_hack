@@ -325,6 +325,17 @@ func GuardStart(s State, env Env, c StartCommand, at time.Time) error {
 	}
 	t := s.TokenAt(c.StepKey)
 	if t == nil {
+		// Факт начала догоняет токен по проходимым узлам (catchUp свёртки):
+		// гард принимает то же, что примет свёртка, — команда и факт
+		// согласованы (эпик 16: шаг-перемещение «выдача заготовки» после
+		// выдачи партии, шаги без своих данных перед операцией).
+		cs := s.clone()
+		cm := &machine{s: &cs, env: env, d: d, at: at}
+		if ct := cm.catchUp(n.ID); ct != nil {
+			s, t = cs, ct
+		}
+	}
+	if t == nil {
 		m := &machine{s: &s, env: env, d: d}
 		if g := m.gateBefore(n); g != "" {
 			gn := d.ByStep(g)

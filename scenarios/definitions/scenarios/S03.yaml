@@ -34,7 +34,7 @@ steps:
       processing_state: completed
       analyzer_confidence_bp: 9500
       observation_quality_bp: 9300
-      versions: {analyzer_version: "vqc-edge 1.4.0", contract_version: "1.0", recipe_ref: "KT-2@3", item_revision: "Б"}
+      versions: {analyzer_version: "vqc-edge 1.4.0", contract_version: "1.0", recipe_ref: "kt2-oblique@1", item_revision: "Б"}
   - {at: "2026-09-21T07:50:00+03:00", ref: Е-31, route: "F-017:sent_to_welding,received_welding", note: "Принято сварочным цехом: повреждений нет"}
   - {at: "2026-09-23T08:50:00+03:00", route: "F-017:ring,edge_prep", note: "Подготовка кромок: окно до сварки 1 ч 50 мин (норма)"}
   - {at: "2026-09-23T10:40:00+03:00", ref: "Е-23, Е-40, Е-12", route: "F-017:weld", note: "Режим по карте сверен (10:38); сварка СВ-017-1 на ИС-2, ПС-4, П-88; завершена в 11:00 — 20 мин, «вычислено системой»"}
@@ -93,7 +93,7 @@ steps:
       analyzer_confidence_bp: 8600
       observation_quality_bp: 9000
       recommendation: isolate
-      versions: {analyzer_version: "vqc-weld 2.3.1", contract_version: "1.0", recipe_ref: "KT-3@5", camera_config: "angle-1", item_revision: "Б"}
+      versions: {analyzer_version: "vqc-weld 2.3.1", contract_version: "1.0", recipe_ref: "kt3-weld@1", camera_config: "angle-1", item_revision: "Б"}
   - at: "2026-09-23T11:05:10+03:00"
     ref: Е-44
     label: F-017/kt3-b
@@ -106,7 +106,7 @@ steps:
       observation_id: "{local:KT3-F-017-B}"
       analyzer_confidence_bp: 8100
       observation_quality_bp: 8800
-      versions: {analyzer_version: "vqc-weld 2.3.1", contract_version: "1.0", recipe_ref: "KT-3@5", camera_config: "angle-2", item_revision: "Б"}
+      versions: {analyzer_version: "vqc-weld 2.3.1", contract_version: "1.0", recipe_ref: "kt3-weld@1", camera_config: "angle-2", item_revision: "Б"}
   - {at: "2026-09-23T11:06:00+03:00", ref: "Е-80, Е-84, Е-83, Е-85", system: "Сигнал; карантин по правилу R-07; черновик карточки; гипотезы v1: оборудование — не оценить (нет журнала ИС-2 со Вт 09:50); процедура — возможна; итог «причина не установлена»"}
   - at: "2026-09-23T11:08:00+03:00"
     ref: Е-90

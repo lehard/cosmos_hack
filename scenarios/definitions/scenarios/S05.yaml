@@ -182,7 +182,7 @@ steps:
       processing_state: completed
       analyzer_confidence_bp: 9400
       observation_quality_bp: 9000
-      versions: {analyzer_version: "vqc-weld 2.3.1", contract_version: "1.0", recipe_ref: "KT-3@5", camera_config: "angle-1", item_revision: "Б"}
+      versions: {analyzer_version: "vqc-weld 2.3.1", contract_version: "1.0", recipe_ref: "kt3-weld@1", camera_config: "angle-1", item_revision: "Б"}
   - {at: "2026-09-23T15:29:00+03:00", decision: analysis.item.assess, role: COMMISSION, actor: TECH-01, item: F-015, note: "Е-113 «подтверждено»: сварено вне режима ТП",
      params: {incident_id: "{ref:RS-01}"}, body: {assessment: confirmed, item_id: "{item:F-015}", evidence_event_ids: ["{event:EV-WS2-0412}"]}}
   - {at: "2026-09-23T15:29:10+03:00", decision: analysis.item.assess, role: COMMISSION, actor: TECH-01, item: F-017,

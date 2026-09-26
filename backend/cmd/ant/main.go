@@ -6,8 +6,9 @@
 // Роль процесса задаётся флагом -role (несколько — через запятую). Все роли
 // спайна зарегистрированы заранее (эпик 02). Работают: api, migrate, worker,
 // crossitem, projector, rebuild (-item ‹id› — одно изделие), scheduler (эпик
-// 24, notifications.go), stands (каркас эпика 06, stands.go); остальные —
-// заглушки до своих эпиков (outbox — 30; init — 05).
+// 24, notifications.go), stands (каркас эпика 06 и раннер прогонов симуляции,
+// stands.go, simulation.go); остальные — заглушки до своих эпиков (outbox —
+// 30; init — 05).
 // Роли одного процесса делят ядро (пул ant_app, журнал, LISTEN) — core.go.
 //
 // Флаг -openapi ‹файл› — выгрузить спецификацию HTTP API (contracts/openapi.yaml)
@@ -35,6 +36,7 @@ import (
 	"time"
 
 	"ant/cmd/internal/config"
+	"ant/internal/infrastructure/integration/ingest/stands"
 	"ant/internal/infrastructure/observability/logging"
 )
 
@@ -78,6 +80,11 @@ type environment struct {
 	coreH coreHolder
 	// ctx — общий контекст ролей процесса (runRoles): фоновые циклы ядра.
 	ctx context.Context
+	// sim — сервис симуляции процесса (simulation.go): собирает api, крутит stands.
+	sim simHolder
+	// standsReg — реестр stand-ов процесса (stands.go).
+	standsReg  *stands.Registry
+	standsOnce sync.Once
 }
 
 func main() {

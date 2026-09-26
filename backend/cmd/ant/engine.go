@@ -20,7 +20,6 @@ import (
 	processapp "ant/internal/application/process"
 	qualityapp "ant/internal/application/quality"
 	mldomain "ant/internal/domain/machinelogs"
-	"ant/internal/infrastructure/storage/journal/clock"
 	"ant/internal/infrastructure/storage/journal/feed"
 )
 
@@ -183,6 +182,7 @@ func (e *environment) readyCore(ctx context.Context) (*core, error) {
 		return nil, err
 	}
 	c.ensureProcessSeed(ctx, e)
+	c.ensureClockMode(ctx, e)
 	return c, nil
 }
 
@@ -197,7 +197,7 @@ func journalLive(ctx context.Context, env *environment) (*appjournal.Service, er
 	}
 	live := engineapp.NewLiveUpdates(engineapp.LiveConfig{Log: c.engine, Now: c.codec.Now, Logger: env.log})
 	env.coreH.bg.Go(func() { _ = live.Run(ctx) })
-	return appjournal.NewServiceWith(c.journal, c.listener, appjournal.WithLive(live)), nil
+	return appjournal.NewServiceWith(c.journal, c.listener, appjournal.WithLive(live), appjournal.WithClockMode(c.clock.Mode)), nil
 }
 
 // machinelogsLive — live-реализация ведущих портов machinelogs для роли api
@@ -224,6 +224,6 @@ func analysisLive(ctx context.Context, env *environment) (*analysisapp.Service, 
 		Projections: c.engine,
 		Decisions: analysisapp.JournalDecisions{Journal: c.journal, DomainBuild: c.codec.DomainBuild,
 			Partitions: env.cfg.Engine.Partitions, Now: c.codec.Now},
-		Clock: clock.NewJournal(c.journal),
+		Clock: c.domainClock(),
 	}), nil
 }

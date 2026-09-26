@@ -57,6 +57,10 @@ type core struct {
 	refSource *referenceapp.JournalSource
 	// docsEnv — шаблоны документов и срез политики (эпик 28, documents.go).
 	docsEnv domdocs.Env
+	// clock — часы журнала (режим из time.clock.mode_set, тики прогона);
+	// clockMu — запись режима scenario при старте (clock.go, эпик 16).
+	clock   *clock.Journal
+	clockMu sync.Mutex
 }
 
 // coreHolder — ленивое создание ядра и его остановка после ролей.
@@ -116,9 +120,10 @@ func openCore(ctx context.Context, env *environment) (*core, error) {
 		pool: pool,
 		// Эффекты модулей со своими таблицами в транзакции Append (AD-45):
 		// очередь исходящих erp (эпик 30); доверие (эпик 29): записи CA в той
-		// же транзакции и шифрование при хранении.
+		// же транзакции и шифрование при хранении. Профиль demo — журнал в
+		// режиме часов scenario (AD-37, эпик 16).
 		journal: journalstore.NewStore(pool, infra, append([]journalstore.Option{journalstore.WithBatchMax(batch),
-			journalstore.WithEffects(erpstore.ApplyEffect)}, trustOptions(cfg, env)...)...),
+			journalstore.WithEffects(erpstore.ApplyEffect), journalstore.WithScenarioClock(scenarioClock(cfg))}, trustOptions(cfg, env)...)...),
 		leases:   journalstore.NewLeases(pool, infra),
 		listener: journalstore.NewListener(pool, env.log),
 		engine:   &enginestore.Store{Pool: pool},
@@ -128,6 +133,7 @@ func openCore(ctx context.Context, env *environment) (*core, error) {
 		ttl:      ttl,
 		docsEnv:  documentsEnv(env),
 	}
+	c.clock = clock.NewJournal(c.journal)
 	c.bundles = &processapp.Bundles{Store: c.versions, Quorum: processapp.RecordedQuorum{}, Now: infra.Now}
 	c.codec = &engineapp.Codec{
 		Store:  c.journal,

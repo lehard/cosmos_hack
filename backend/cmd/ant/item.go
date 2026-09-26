@@ -9,7 +9,6 @@ import (
 	itemapp "ant/internal/application/item"
 	dom "ant/internal/domain/item"
 	itemstore "ant/internal/infrastructure/storage/item"
-	"ant/internal/infrastructure/storage/journal/clock"
 )
 
 // Сборка модулей item и crossitem (эпик 18): нормативная часть item —
@@ -49,7 +48,7 @@ func itemLive(ctx context.Context, env *environment) (*itemapp.Service, error) {
 		return nil, err
 	}
 	return itemapp.NewLive(itemapp.Config{Codec: c.codec, Projections: c.engine, Bundles: c.bundleSource(), Writer: c.itemWriter(env),
-		Clock: clock.NewJournal(c.journal), Env: ienv, ProcessVersion: pv, NormativeRev: qualityRev}), nil
+		Clock: c.domainClock(), Env: ienv, ProcessVersion: pv, NormativeRev: qualityRev}), nil
 }
 
 // crossitemLive — живые операции crossitem (AD-36).
@@ -58,5 +57,5 @@ func crossitemLive(ctx context.Context, env *environment) (*crossitemapp.Service
 	if err != nil {
 		return nil, err
 	}
-	return crossitemapp.NewLive(crossitemapp.Config{Projections: c.engine, Writer: c.itemWriter(env), Clock: clock.NewJournal(c.journal)}), nil
+	return crossitemapp.NewLive(crossitemapp.Config{Projections: c.engine, Writer: c.itemWriter(env), Clock: c.domainClock()}), nil
 }

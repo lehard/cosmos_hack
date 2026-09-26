@@ -121,6 +121,8 @@ type apiOptions struct {
 	crossitem *crossitemapp.Service
 	// process — живая карта, версии и команды исполнителя (process.go, эпик 17); nil — 501.
 	process *processapp.Service
+	// simulation — пульт тестовых сценариев (simulation.go, эпики 32, 16); nil — 501.
+	simulation *simulationapp.Service
 	// security — журнал CA, шина безопасности, индикатор целостности (security.go, эпик 29); nil — 501.
 	security *securityapp.Service
 	// reference — справочники из журнала ядра (reference.go, эпик 19); nil — 501.
@@ -331,7 +333,11 @@ func buildAPI(mux *http.ServeMux, o apiOptions) *httpapi.API {
 		federationhttp.Register(a, q, c)
 	}
 	{
-		q, c := pick[simulationapp.Queries, simulationapp.Commands](a.ModeFor("simulation"), simulationapp.NewService(), simulationfx.New())
+		var live any = simulationapp.NewService()
+		if o.simulation != nil {
+			live = o.simulation
+		}
+		q, c := pick[simulationapp.Queries, simulationapp.Commands](a.ModeFor("simulation"), live, simulationfx.New())
 		simulationhttp.Register(a, q, c)
 	}
 	{
@@ -349,4 +355,13 @@ func pick[Q, C any](mode platform.Mode, live, fixtures interface{}) (Q, C) {
 		impl = fixtures
 	}
 	return impl.(Q), impl.(C)
+}
+
+// accessDirectory — каталог политики из пакета доступа (эпик 08); nil, если
+// доступ не собран (полномочия сотрудников для гарда точки предъявления, эпик 16).
+func (o apiOptions) accessDirectory() *accessapp.Directory {
+	if o.access == nil {
+		return nil
+	}
+	return o.access.directory
 }

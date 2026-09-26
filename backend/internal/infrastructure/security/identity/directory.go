@@ -200,7 +200,10 @@ func LoadDirectory(fsys fs.FS) (*access.Directory, error) {
 	if err != nil {
 		return nil, err
 	}
-	d := &access.Directory{Desks: map[string]access.Desk{}}
+	d := &access.Directory{Desks: map[string]access.Desk{}, Authorities: map[string][]string{}}
+	for _, g := range pf.Grants.Authorities {
+		d.Authorities[g.Person] = append(d.Authorities[g.Person], g.Authority)
+	}
 	for _, r := range pf.Roles {
 		d.Roles = append(d.Roles, access.RoleRef{ID: r.ID, Title: r.Title, Inherits: r.Inherits})
 	}

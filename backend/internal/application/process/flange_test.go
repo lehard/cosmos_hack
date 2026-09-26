@@ -319,3 +319,17 @@ func TestFlangeTamperedXMLNotExecuted(t *testing.T) {
 	j.store.Tamper(app.SeedVersionID, xml)
 	j.want("incoming.marking")
 }
+
+// Эпик 16: изделие, запущенное с шага выдачи заготовки (entry_step_key —
+// после параллельной раздачи по цехам), проходит слияние «фланец + патрубок»:
+// ветвь патрубка оно не проходило, ждать её некому.
+func TestFlangeEntryAfterSplitPassesJoin(t *testing.T) {
+	j := newJourney(t)
+	j.add(catalog.ItemItemRegistered, 0, map[string]any{"item_id": j.item, "item_type_id": "FL-100.00.000", "item_revision": "Б",
+		"process_version_hash": j.hash, "normative_rev": "flange-1", "lot_ids": []string{"LOT-FL-1"}, "entry_step_key": "incoming.issue_blank"})
+	j.want("incoming.issue_blank")
+	j.run("RUN-M1-1", "machining.cnc", 1, 2)
+	j.decide("machining.zt2_acceptance", dp.ResolutionAccept, 3)
+	j.received("welding.receive", 4)
+	j.want("welding.edge_prep")
+}

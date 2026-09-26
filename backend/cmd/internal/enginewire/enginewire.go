@@ -15,6 +15,7 @@ import (
 
 	analysisapp "ant/internal/application/analysis"
 	analyticsapp "ant/internal/application/analytics"
+	documentsapp "ant/internal/application/documents"
 	engineapp "ant/internal/application/engine"
 	erpapp "ant/internal/application/erp"
 	itemapp "ant/internal/application/item"
@@ -27,6 +28,7 @@ import (
 	itemdom "ant/internal/domain/item"
 	mldomain "ant/internal/domain/machinelogs"
 	"ant/internal/domain/quality"
+	storagedocs "ant/internal/infrastructure/storage/documents"
 	itemstore "ant/internal/infrastructure/storage/item"
 	processstore "ant/internal/infrastructure/storage/process"
 	qualitystore "ant/internal/infrastructure/storage/quality"
@@ -44,6 +46,7 @@ func Registry() *engineapp.Registry {
 	must(qualityapp.Register(r))
 	must(notificationsapp.Register(r))
 	must(itemapp.Register(r))
+	must(documentsapp.RegisterProjections(r))
 	return r
 }
 
@@ -64,7 +67,7 @@ var (
 // Bundles — нормативный слой изделия, как cmd/ant bundleSource: версия
 // процесса, закреплённая при запуске изделия (схема process), слои quality,
 // item, notifications и reference поверх неё. Совпадение цепочки проверяет тест cmd/ant.
-func Bundles(pool *pgxpool.Pool, codec *engineapp.Codec) (engineapp.BundleSource, error) {
+func Bundles(pool *pgxpool.Pool, codec *engineapp.Codec, docsVerification string) (engineapp.BundleSource, error) {
 	qenv, err := qualityEnv()
 	if err != nil {
 		return nil, err
@@ -78,5 +81,12 @@ func Bundles(pool *pgxpool.Pool, codec *engineapp.Codec) (engineapp.BundleSource
 	// Слой справочников (эпик 19) — внешний, как у воркера: срез поверки,
 	// квалификаций и календаря на basis_seq входа изделия.
 	ref := &referenceapp.JournalSource{Journal: codec.Store, Codec: codec}
-	return &referenceapp.Bundles{Next: notificationsapp.Bundles{Next: itemapp.Bundles{Next: q, Env: ienv}}, Source: ref}, nil
+	// Слой documents (эпик 28) — в том же режиме проверки подписей, что у
+	// воркера (demo | full по профилю), иначе пересвёртка даст ложные тревоги.
+	denv, err := storagedocs.SeedEnv(docsVerification)
+	if err != nil {
+		return nil, err
+	}
+	docs := documentsapp.Bundles{Next: notificationsapp.Bundles{Next: itemapp.Bundles{Next: q, Env: ienv}}, Env: denv}
+	return &referenceapp.Bundles{Next: docs, Source: ref}, nil
 }
