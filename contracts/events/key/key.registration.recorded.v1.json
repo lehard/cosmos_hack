@@ -57,7 +57,7 @@
     "payload_classes": {
       "type": "array",
       "items": {
-        "$ref": "../common/defs.v1.json#/definitions/code"
+        "$ref": "../common/defs.v1.json#/definitions/class"
       },
       "description": "Допустимые классы пакетов для ключа.",
       "minItems": 1,

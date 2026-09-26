@@ -5680,10 +5680,10 @@ profile_id: ("gost" | "pq" | "hybrid")
  * 
  * @minItems 1
  * 
- * Items: Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
+ * Items: Класс подписанного пакета (contracts/crypto/payload-classes.yaml): как code, но допускает дефис — `event`, `document-signature`, `key-act` (Д-66).
  * 
  * This interface was referenced by `AntDefsV1`'s JSON-Schema
- * via the `definition` "code".
+ * via the `definition` "class".
  */
 object_classes: [string, ...(string)[]]
 /**
@@ -5731,10 +5731,10 @@ fingerprint: string
  * 
  * @minItems 1
  * 
- * Items: Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
+ * Items: Класс подписанного пакета (contracts/crypto/payload-classes.yaml): как code, но допускает дефис — `event`, `document-signature`, `key-act` (Д-66).
  * 
  * This interface was referenced by `AntDefsV1`'s JSON-Schema
- * via the `definition` "code".
+ * via the `definition` "class".
  */
 payload_classes: [string, ...(string)[]]
 /**

@@ -7,7 +7,27 @@
 //     удаление значения перечисления;
 //   совместимые: новое необязательное свойство, новое значение перечисления
 //     (приём даёт UNKNOWN(значение) с флагом), тексты описаний.
+//   исключения (WIDENED_PATTERNS): расширение шаблона строки, при котором все
+//     прежние значения остаются допустимыми, — это расширение допустимых
+//     значений, совместимый случай FR-29 (как новое значение перечисления).
+//     Разрешена только точная пара «было → стало» на названных полях.
 import { diff } from '@asyncapi/diff';
+
+/**
+ * Разрешённые расширения шаблонов (решения дирижёра):
+ *  - Д-66: классы подписанных пакетов key.registration.recorded.payload_classes
+ *    и key.profile.registered.object_classes — шаблон `code` → `class`
+ *    (допускает дефис: `document-signature`, `key-act` из
+ *    contracts/crypto/payload-classes.yaml). Прежние значения по-прежнему
+ *    допустимы; шаблон `code` для остальных полей не меняется.
+ */
+const WIDENED_PATTERNS = [
+  { path: /\/properties\/(payload_classes|object_classes)\/items\/pattern$/, from: '^[a-z][a-z0-9_]*$', to: '^[a-z][a-z0-9_-]*$' },
+];
+
+function widened(c) {
+  return c.action === 'edit' && WIDENED_PATTERNS.some((w) => w.path.test(c.path) && c.before === w.from && c.after === w.to);
+}
 
 const TEXT = /\/(description|title|summary|x-parser-[a-z-]+)(\/|$)/;
 const STRICT = /\/(type|const|pattern|format|\$ref|additionalProperties)(\/\d+)?$/;
@@ -38,6 +58,7 @@ export function breakingChanges(baseDoc, nextDoc) {
     if (/\/required(\/\d+)?$/.test(c.path)) return true;
     if (/\/enum\/\d+$/.test(c.path)) return c.action === 'remove' || c.action === 'edit';
     if (c.action === 'remove') return true;
+    if (widened(c)) return false;
     if (c.action === 'edit' && STRICT.test(c.path)) return true;
     return false;
   });

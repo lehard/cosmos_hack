@@ -892,6 +892,10 @@ const CarrierTypePostContext CarrierType = "post_context"
 const CarrierTypeRouteCard CarrierType = "route_card"
 const CarrierTypeTagQr CarrierType = "tag_qr"
 
+// Класс подписанного пакета (contracts/crypto/payload-classes.yaml): как code, но
+// допускает дефис — `event`, `document-signature`, `key-act` (Д-66).
+type Class string
+
 // Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
 type Code string
 
@@ -4009,7 +4013,7 @@ type KeyProfileRegisteredV1 struct {
 	EffectiveFromSeq *Seq `json:"effective_from_seq,omitempty,omitzero"`
 
 	// Классы пакетов, для которых профиль обязателен.
-	ObjectClasses []Code `json:"object_classes"`
+	ObjectClasses []Class `json:"object_classes"`
 
 	// Профиль.
 	ProfileID KeyProfileRegisteredV1ProfileID `json:"profile_id"`
@@ -4042,7 +4046,7 @@ type KeyRegistrationRecordedV1 struct {
 	KeyRef KeyRef `json:"key_ref"`
 
 	// Допустимые классы пакетов для ключа.
-	PayloadClasses []Code `json:"payload_classes"`
+	PayloadClasses []Class `json:"payload_classes"`
 
 	// Профиль ключа.
 	ProfileID KeyRegistrationRecordedV1ProfileID `json:"profile_id"`

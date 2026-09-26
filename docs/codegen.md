@@ -127,7 +127,7 @@ make contract-demo      # воспроизводимое несовместим�
 | Проверка | Что ловит |
 |---|---|
 | `check-generated` | сгенерированное устарело относительно источников |
-| `check-compat` (oasdiff breaking, @asyncapi/diff + правила FR-29 в `compat-rules.mjs`) | несовместимое изменение HTTP API или событий без новой мажорной версии |
+| `check-compat` (oasdiff breaking, @asyncapi/diff + правила FR-29 в `compat-rules.mjs`) | несовместимое изменение HTTP API или событий без новой мажорной версии; исключение — перечисленные в `WIDENED_PATTERNS` расширения шаблона строки (все прежние значения допустимы — совместимый случай FR-29; Д-66: `payload_classes`/`object_classes` ключей — шаблон `class` с дефисом) |
 | `check-openapi.mjs` + самопроверка | у операции нет `x-ant-action` или класса; модуль эмитит чужой тип; действие политики не соответствует операции |
 | `emitcheck` + самопроверка в `arch-selftest.sh` | доменный код строит запись чужого модуля (`kernel.NewReaction` / `NewAddressed`) |
 | `kernel.NewReaction` / `NewAddressed` (во время работы) | тип записи не из каталога или чужого модуля |
