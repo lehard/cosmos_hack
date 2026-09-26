@@ -107,6 +107,9 @@ type apiOptions struct {
 	// analytics — live-показатели над строками вклада ядра (analytics.go);
 	// nil — без хранилища (операции 501).
 	analytics *analyticsapp.Service
+	// notifications — live-реализация notifications над проекциями сроков,
+	// задач и уведомлений (notifications.go, эпик 24); nil — заглушка 501.
+	notifications *notificationsapp.Service
 }
 
 // buildAPI собирает HTTP API: общий декоратор (Gate) над портами прав и входа,
@@ -223,7 +226,11 @@ func buildAPI(mux *http.ServeMux, o apiOptions) *httpapi.API {
 		materialshttp.Register(a, q, c)
 	}
 	{
-		q, c := pick[notificationsapp.Queries, notificationsapp.Commands](a.ModeFor("notifications"), notificationsapp.NewService(), notificationsfx.New())
+		live := o.notifications
+		if live == nil {
+			live = notificationsapp.NewService()
+		}
+		q, c := pick[notificationsapp.Queries, notificationsapp.Commands](a.ModeFor("notifications"), live, notificationsfx.New())
 		notificationshttp.Register(a, q, c)
 	}
 	{

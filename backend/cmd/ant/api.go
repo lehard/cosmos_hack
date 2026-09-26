@@ -106,6 +106,12 @@ func runAPI(ctx context.Context, env *environment) error {
 			return err
 		}
 	}
+	if modeOf(opts, "notifications") == platform.ModeLive {
+		// Сроки, задачи, тревоги — проекции notifications.* (эпик 24).
+		if opts.notifications, err = notificationsLive(ctx, env); err != nil {
+			return err
+		}
+	}
 	buildAPI(mux, opts)
 	mux.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/problem+json")
