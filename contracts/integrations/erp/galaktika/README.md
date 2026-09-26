@@ -6,11 +6,13 @@
 конфигурацией (`docs/new-adapter.md`). Описание обмена — `docs/integrations/galaktika.md`. **Все форматы —
 проектные предположения** (публичной спецификации API Галактики нет, NFR-DOC-2).
 
+Платформа для людей — **Главный** (техническое имя `ant`, Д-65).
+
 **Одна модель — два транспорта** (ключ `transport`):
 
 | Транспорт | Что передаётся | Где |
 |---|---|---|
-| `exchange-dir` (основной для 9.x) | XML-пакет `GalExchange` (`gal.qc.v1.xsd`) | `out/‹номер›.xml` — от ant; `ack/‹номер›.xml` — квитанция Галактики; `in/*.xml` — пакеты Галактики; `in-ack/‹номер›.xml` — наша квитанция; `about.xml` — версии контракта обработчика |
+| `exchange-dir` (основной для 9.x) | XML-пакет `GalExchange` (`gal.qc.v1.xsd`) | `out/‹номер›.xml` — от Главного; `ack/‹номер›.xml` — квитанция Галактики; `in/*.xml` — пакеты Галактики; `in-ack/‹номер›.xml` — квитанция Главного; `about.xml` — версии контракта обработчика |
 | `rest-facade` («под Галактика ESB») | JSON-форма того же пакета (`gal.qc.v1/exchange.schema.json`) | `POST ‹фасад›/quality/lot-results`, `POST ‹фасад›/production/postings` (заголовки `X-Message-Id`, `X-Contract-Version: gal.qc.v1`), `GET ‹фасад›/exchange/outbox`, `GET ‹фасад›/about` |
 
 | Файл | Что это |

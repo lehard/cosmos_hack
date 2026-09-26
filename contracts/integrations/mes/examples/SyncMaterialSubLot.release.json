@@ -21,7 +21,7 @@
       "MaterialSubLot": [
         {
           "ID": "ENT01:F-007",
-          "Description": "Снятие блока по решению человека; ant: ENT01:F-007; ключ ENT01:F-007/release/1",
+          "Description": "Снятие блока по решению человека; Главный: ENT01:F-007; ключ ENT01:F-007/release/1",
           "Disposition": "UnRestricted",
           "Status": "QC-RELEASED"
         }

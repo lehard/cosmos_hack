@@ -105,7 +105,7 @@ func (c *Client) Check(ctx context.Context) (string, error) {
 // Encode — блок или снятие в MES: экземпляр — SyncMaterialSubLot, партия —
 // SyncMaterialLot. Disposition = Restricted — блок (заблокированное изделие не
 // получает следующую операцию), UnRestricted — снятие; ConfirmationCode =
-// Always — блок должен быть подтверждён. Наш ID — в Description.
+// Always — блок должен быть подтверждён. Наш ID — в Description (для мастера: «Главный: ‹ID›»).
 func Encode(logicalID string, m app.HoldMessage) (message string, body any) {
 	at := m.OccurredAt.UTC()
 	if m.OccurredAt.IsZero() {
@@ -117,7 +117,7 @@ func Encode(logicalID string, m app.HoldMessage) (message string, body any) {
 	s.DataArea.Sync.ActionCriteria.ActionExpression.ActionCode = "Change"
 	subject := or(m.ItemID, m.LotID)
 	l := Lot{ID: or(m.ExternalID, subject), Disposition: "UnRestricted", Status: "QC-RELEASED",
-		Description: strings.TrimSpace(m.Reason + "; ant: " + subject + "; ключ " + m.Key)}
+		Description: strings.TrimSpace(m.Reason + "; Главный: " + subject + "; ключ " + m.Key)}
 	if m.Hold {
 		l.Disposition, l.Status, l.StorageLocation = "Restricted", "QC-HOLD", "Изолятор ОТК"
 	}

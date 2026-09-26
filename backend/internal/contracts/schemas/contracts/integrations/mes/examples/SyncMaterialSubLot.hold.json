@@ -21,7 +21,7 @@
       "MaterialSubLot": [
         {
           "ID": "ENT01:F-007",
-          "Description": "Блок по сдерживанию: ожидается решение контролёра; ant: ENT01:F-007; ключ ENT01:F-007/hold/1",
+          "Description": "Блок по сдерживанию: ожидается решение контролёра; Главный: ENT01:F-007; ключ ENT01:F-007/hold/1",
           "Disposition": "Restricted",
           "Status": "QC-HOLD",
           "StorageLocation": "Изолятор ОТК"

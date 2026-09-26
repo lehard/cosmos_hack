@@ -21,7 +21,7 @@
       "MaterialLot": [
         {
           "ID": "LOT-P-2026-0915",
-          "Description": "Блок по сдерживанию: ожидается решение контролёра; ant: LOT-P-2026-0915; ключ LOT-P-2026-0915/hold/1",
+          "Description": "Блок по сдерживанию: ожидается решение контролёра; Главный: LOT-P-2026-0915; ключ LOT-P-2026-0915/hold/1",
           "Disposition": "Restricted",
           "Status": "QC-HOLD",
           "StorageLocation": "Изолятор ОТК"
