@@ -1,0 +1,43 @@
+# Кнопка цифрового стенда «Сменить свет на камере» (FR-152; эпик 40, FR-101) —
+# ожидаемый видимый результат: три кадра подряд с качеством 0,55, анализатор
+# отвечает «признаков нет» → контроль дрейфа модуля vision приостанавливает
+# паспорт допуска (откат в сторону строгости), начальнику ОТК — задача; вернуть
+# анализатор может только он. Плейсхолдеры — см. duplicate_event.yaml.
+scenario: F08
+version: '1'
+title: 'Кнопка стенда: смена света → дрейф → автооткат'
+run: stand
+source: эпик 40 по FR-101 (PRD, «Проверка: эмулятор меняет свет → дрейф → автоматический откат»)
+checkpoints:
+- at: apply
+  label: после нажатия
+  assertions:
+  - id: STAND-LIGHT-00
+    what: кадры приняты приёмом как есть
+    check:
+      operation: step
+      params:
+        label: '{inj:step}'
+      path: /delivered/0
+      op: eq
+      value: accepted
+    mapping: exact
+  - id: STAND-LIGHT-01
+    what: 'исходный результат сохранён: качество 0,55'
+    check:
+      operation: quality.inspection.list
+      params:
+        item_id: '{inj:item}'
+      path: /items[event_id={inj:event}]/0/observation_quality_bp
+      op: eq
+      value: 5500
+    mapping: exact
+  - id: STAND-LIGHT-02
+    what: 'дрейф: паспорт анализатора приостановлен автооткатом'
+    check:
+      operation: vision.analyzer.list
+      params: {}
+      path: /items[status=suspended]/0/status
+      op: eq
+      value: suspended
+    mapping: exact
