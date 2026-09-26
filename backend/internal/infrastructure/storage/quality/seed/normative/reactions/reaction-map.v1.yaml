@@ -1,0 +1,109 @@
+# Карта реакций v1 — нормативный слой (FR-48, FR-49, FR-50, FR-144, FR-151; AD-3, AD-27, AD-29).
+# Меняется только новой версией через кворум; закрепляется при запуске изделия (AD-17).
+# Правило: условие (исход, вид, тяжесть, уверенность, качество наблюдения, основание) → реакция.
+# Реакция допустима, только если её разрешают одновременно класс действия (AD-27), режим правила (1–5)
+# и — для сигналов анализатора — уровень доверия паспорта (contracts/analyzer-trust-levels.yaml).
+# Правила применяются по возрастанию priority; первое подходящее даёт реакцию. Числа — [ПП].
+version: 1
+id: flange-reactions
+owner_role: technologist
+approved_by: "генезис: кворум стартовой версии (AD-33)"
+valid_from: "2026-09-25T00:00:00.000Z"
+scope: {item_type_ids: [FL-100.00.000]}
+rules:
+  - id: R-01
+    title: "Оценка невозможна — всегда к человеку"
+    priority: 10
+    automation_mode: 1
+    match: {outcome: [unable_to_assess]}
+    reaction: {outcome: manual_review, containment_level: additional_check, draft_nc: false, task: recheck}
+    refs: [FR-36, FR-48, кейс §4.5]
+  - id: R-02
+    title: "«Признаков нет» при плохом наблюдении — это «оценка невозможна»"
+    priority: 20
+    automation_mode: 1
+    match: {outcome: [no_defect_indicated], observation_quality_below_recipe: true}
+    reaction: {outcome: manual_review, containment_level: additional_check, draft_nc: false, task: recheck}
+    refs: [FR-36, кейс §4.5]
+  - id: R-07
+    title: "Прожог или подрез шва — карантин и черновик карточки"
+    priority: 30
+    automation_mode: 2
+    match: {outcome: [defect_indicated], defect_types: [W-BURNTHRU, W-UNDERCUT]}
+    reaction: {outcome: isolate, containment_level: item_hold, draft_nc: true, task: isolate_move}
+    refs: [FR-48, каталог процессной сессии КТ-3]
+  - id: R-15
+    title: "Нет крепежа — критичный признак, изоляция по правилу"
+    priority: 30
+    automation_mode: 2
+    match: {outcome: [defect_indicated], defect_types: [A-FASTENER-MISSING]}
+    reaction: {outcome: isolate, containment_level: item_hold, draft_nc: true, task: isolate_move}
+    refs: [FR-48, каталог процессной сессии КТ-4]
+  - id: R-03
+    title: "Критическая тяжесть — блок при любой уверенности"
+    priority: 40
+    automation_mode: 2
+    match: {outcome: [defect_indicated], severity: [critical]}
+    reaction: {outcome: isolate, containment_level: item_hold, draft_nc: true, task: isolate_move}
+    refs: [FR-48, «уверенность × тяжесть»]
+  - id: R-04
+    title: "Значительный дефект с уверенностью ≥ 0,6 — изоляция"
+    priority: 50
+    automation_mode: 2
+    match: {outcome: [defect_indicated], severity: [major], confidence_min_bp: 6000}
+    reaction: {outcome: isolate, containment_level: item_hold, draft_nc: true, task: isolate_move}
+    refs: [FR-48]
+  - id: R-05
+    title: "Прочие признаки дефекта — ручной осмотр контролёром"
+    priority: 60
+    automation_mode: 1
+    match: {outcome: [defect_indicated]}
+    reaction: {outcome: manual_review, containment_level: additional_check, draft_nc: true, task: decision_required}
+    refs: [FR-48, FR-52]
+  - id: R-06
+    title: "Вид без требования КД — вопрос технологу, а не брак"
+    priority: 5
+    automation_mode: 1
+    match: {outcome: [defect_indicated], no_requirement: true}
+    reaction: {outcome: question_to_technologist, containment_level: observe, draft_nc: false, task: decision_required}
+    refs: [FR-48, глоссарий «Несоответствие»]
+  - id: R-08
+    title: "Уверенное «признаков нет» — к следующему контролю (только уровень доверия 4)"
+    priority: 90
+    automation_mode: 2
+    match: {outcome: [no_defect_indicated], confidence_min_bp: 9000, trust_level_min: 4}
+    reaction: {outcome: pass_to_next, containment_level: none, draft_nc: false, sampled_recheck_bp: 1000}
+    refs: [FR-48, AD-29]
+  - id: R-20
+    title: "Параметр вне уставки на специальном процессе — несоответствие всем изделиям окна"
+    priority: 15
+    automation_mode: 2
+    match: {basis_kind: [equipment_deviation], deviation_kinds: [out_of_setpoint], special_process: true}
+    reaction: {outcome: isolate, containment_level: item_hold, draft_nc: true, special_process_window_nc: true, task: decision_required}
+    refs: [FR-151, FR-121, AD-29]
+  - id: R-21
+    title: "Отклонение оборудования вне специального процесса — сигнал и предложение области риска"
+    priority: 16
+    automation_mode: 1
+    match: {basis_kind: [equipment_deviation]}
+    reaction: {outcome: manual_review, containment_level: observe, draft_nc: false, task: decision_required}
+    refs: [FR-121, FR-61]
+  - id: R-22
+    title: "Пропущена обязательная проверка — «нет данных» и задача"
+    priority: 12
+    automation_mode: 1
+    match: {basis_kind: [check_skipped]}
+    reaction: {outcome: manual_review, containment_level: additional_check, draft_nc: false, task: inspection_missing}
+    refs: [FR-35, FR-28]
+  - id: R-23
+    title: "Течь на испытании — изоляция и связь с прежними наблюдениями зоны"
+    priority: 14
+    automation_mode: 2
+    match: {basis_kind: [leak]}
+    reaction: {outcome: isolate, containment_level: item_hold, draft_nc: true, task: isolate_move}
+    refs: [FR-100, каталог процессной сессии Е-62]
+# Сроки (FR-55): изоляция — решение за 3 рабочих дня по производственному календарю; быстрое сдерживание — по классу риска.
+deadlines:
+  nc_disposition_work_days: 3
+  containment_review_minutes: {critical: 60, major: 240, minor: 480}
+  isolation_move_minutes: 60

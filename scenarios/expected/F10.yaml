@@ -1,0 +1,28 @@
+# Ожидания прогона сбоя F10 — отдельно от входных событий (кейс §5.1, AD-26).
+scenario: F10
+version: '1'
+title: 'Сбой: Неизвестная версия схемы'
+run: F10
+source: эпик 32 по research/data-collection-sources-and-failures.md §6 (ожидаемое поведение системы)
+checkpoints:
+- at: end
+  label: конец прогона
+  assertions:
+  - id: F10-01
+    what: в карантине с кодом ingest.unknown_schema_version
+    check:
+      operation: ingest.quarantine.list
+      path: /items[problem_code=ingest.unknown_schema_version]/#
+      op: eq
+      value: 1
+    mapping: exact
+  - id: F10-02
+    what: 'история Ф-501 не изменилась: результата КТ-3 нет'
+    check:
+      operation: quality.inspection.list
+      path: /items[step_key=welding.kt3_camera]/#
+      op: eq
+      params:
+        item_id: '{item:F-501}'
+      value: 0
+    mapping: exact

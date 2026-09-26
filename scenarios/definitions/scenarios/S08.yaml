@@ -1,0 +1,74 @@
+# S08 — process/scenarios-flange.md §4 S08 «один к одному».
+id: S08
+version: "0.3"
+title: "Решение контролёра — ложное срабатывание отклонено (Ф-002)"
+kind: check
+goal: "Решение человека — новая запись, исходный сигнал сохраняется."
+case:
+  s4_2: ["решение контролёра"]
+  s5_1: ["Решение пользователя"]
+  other: ["§4.5 исходный результат, рассмотрение и итог хранятся раздельно", "§5.2 обновление после отклонения"]
+run: MS-1
+where: "Главный поток, фон: Вт 22.09 11:18–11:40. В 4 минуты не входит; в табло — да."
+source: "process/scenarios-flange.md §4 S08"
+steps:
+  - {at: "2026-09-22T11:18:00+03:00", ref: Е-53, route: "F-002:assembly", note: "Затяжка записана ключом КЛ-1: 12 болтов, моменты в норме"}
+  - at: "2026-09-22T11:20:00+03:00"
+    ref: Е-54
+    label: F-002/kt4
+    note: "Камера КТ-4: «нет метки затяжки», болт 7; уверенность 0,55; качество 0,82"
+    fact: inspection.result.recorded
+    source: cam-kt4
+    item: F-002
+    data:
+      observation_id: "{local:KT4-F-002}"
+      method: camera
+      phase: assembly
+      step_key: assembly.kt4_camera
+      inspection_point: KT-4
+      operation_run_id: "{local:AS-002-1}"
+      zone_ids: [J-1]
+      outcome: defect_indicated
+      processing_state: completed
+      defects:
+        - {defect_type_code: A-MARK-MISSING, description: "Нет метки затяжки", zone_id: J-1, location: "болт 7", severity: minor}
+      analyzer_confidence_bp: 5500
+      observation_quality_bp: 8200
+      recommendation: manual_review
+      versions: {analyzer_version: "vqc-asm 3.0.2", contract_version: "1.0", recipe_ref: "KT-4@4", item_revision: "Б"}
+  - {at: "2026-09-22T11:21:00+03:00", ref: "Е-80, Е-84", system: "Сигнал; Ф-002 придержан на ЗТ-4 до решения"}
+  - at: "2026-09-22T11:35:00+03:00"
+    ref: Е-91
+    label: S08/reject
+    note: "Сигнал отклонён контролёром: метка есть, закрыта тенью от шайбы; момент по ключу в норме"
+    decision: nonconformity.signal.reject
+    role: QC
+    actor: QC-02
+    item: F-002
+    params: {item_id: "{item:F-002}"}
+    body:
+      signal_ids: ["{ref:SIG-F002}"]
+      label_for_adaptation: true
+      reason: {code: false_alarm, text: "Метка есть, закрыта тенью от шайбы; момент по ключу в норме"}
+  - {at: "2026-09-22T11:38:00+03:00", route: "F-002:zt4_presented", note: "Предъявлено на ЗТ-4"}
+  - at: "2026-09-22T11:40:00+03:00"
+    ref: Е-55
+    label: S08/zt4
+    note: "ЗТ-4 пройдена, с первого предъявления"
+    decision: nonconformity.presentation.resolve
+    role: QC
+    actor: QC-02
+    item: F-002
+    params: {item_id: "{item:F-002}"}
+    body:
+      closing_point: ZT-4
+      step_key: assembly.zt4_acceptance
+      presentation_no: 1
+      resolution: accept
+      method_event_ids: ["{event:F-002/kt4d}", "{event:F-002/torque}", "{event:F-002/kt4}"]
+outcome:
+  - "Исходный сигнал виден в истории Ф-002 без изменений, рядом — «отклонено контролёром: ОТК-2, 11:35, причина»; это не «признаков нет»."
+  - "Несоответствий нет; О-2 не меняется; «сигналы на рассмотрении» −1; ложные тревоги КТ-4 (Н-4) +1; кадр — кандидат для настройки модели."
+  - "Сдача ЗТ-4 с первого предъявления (Д-3) у Ф-002 — да."
+must_not:
+  - "Сигнал не удаляется и не редактируется. Отклонение без причины не принимается."

@@ -108,6 +108,11 @@ export const errorCatalog = {
     "title": "Лимит разрешения на отклонение исчерпан",
     "uiKey": "errors.decision.concessionRequired"
   },
+  "journal.duplicate": {
+    "status": 409,
+    "title": "Запись уже есть в журнале",
+    "uiKey": "errors.generic"
+  },
   "journal.append_only": {
     "status": 405,
     "title": "Журнал только на дописывание",
@@ -298,6 +303,16 @@ export const errorCatalog = {
     "title": "Разрешение на отклонение не применимо",
     "uiKey": "errors.decision.concessionRequired"
   },
+  "nonconformity.invalid_transition": {
+    "status": 409,
+    "title": "Решение недопустимо в этом состоянии",
+    "uiKey": "errors.generic"
+  },
+  "nonconformity.process_hold_not_active": {
+    "status": 409,
+    "title": "Остановка точки процесса не действует",
+    "uiKey": "errors.generic"
+  },
   "process.unsupported_element": {
     "status": 422,
     "title": "Неподдерживаемый элемент BPMN",
@@ -387,6 +402,21 @@ export const errorCatalog = {
     "status": 422,
     "title": "Нужно основание",
     "uiKey": "riskScope.basisRequired"
+  },
+  "incident.item_not_in_scope": {
+    "status": 409,
+    "title": "Изделия нет в области риска",
+    "uiKey": "errors.generic"
+  },
+  "incident.closed": {
+    "status": 409,
+    "title": "Инцидент закрыт",
+    "uiKey": "errors.generic"
+  },
+  "incident.explanation_required": {
+    "status": 422,
+    "title": "Нужно письменное объяснение работника",
+    "uiKey": "errors.generic"
   },
   "erp.unavailable": {
     "status": 503,

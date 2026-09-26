@@ -1,0 +1,70 @@
+# F19 — строка таблицы сбоев «один к одному».
+id: F19
+version: '1'
+title: 'Сбой: Групповая операция'
+kind: failure
+goal: Связь с партией, результат распространяется на N изделий с пометкой «групповой»
+case:
+  other:
+  - 'таблица сбоев PRD §4.3: «Одно событие на садку из N изделий»'
+  - 'проверка: Термообработка партии из 3 изделий: у всех трёх в истории одно событие'
+run: F19
+source: research/data-collection-sources-and-failures.md §6, строка «Групповая операция»
+steps:
+- at: '2026-09-22T09:00:00+03:00'
+  decision: process.operation.start
+  role: PERFORMER
+  actor: OP-CNC-11
+  item: F-501
+  params:
+    item_id: '{item:F-501}'
+  body:
+    operation_code: HT
+    operation_run_id: '{local:HT-501-1}'
+    group_id: '{local:BATCH-HT-01}'
+    step_key: machining.cnc
+    station_id: ST-CNC
+- at: '2026-09-22T09:00:00+03:00'
+  decision: process.operation.start
+  role: PERFORMER
+  actor: OP-CNC-11
+  item: F-502
+  params:
+    item_id: '{item:F-502}'
+  body:
+    operation_code: HT
+    operation_run_id: '{local:HT-502-1}'
+    group_id: '{local:BATCH-HT-01}'
+    step_key: machining.cnc
+    station_id: ST-CNC
+- at: '2026-09-22T09:00:00+03:00'
+  decision: process.operation.start
+  role: PERFORMER
+  actor: OP-CNC-11
+  item: F-503
+  params:
+    item_id: '{item:F-503}'
+  body:
+    operation_code: HT
+    operation_run_id: '{local:HT-503-1}'
+    group_id: '{local:BATCH-HT-01}'
+    step_key: machining.cnc
+    station_id: ST-CNC
+- at: '2026-09-22T11:00:00+03:00'
+  label: F19/batch-cycle
+  fact: equipment.cycle.summarized
+  source: cnc-1
+  data:
+    equipment_id: '{equipment:CNC-1}'
+    station_id: ST-CNC
+    window_start: '2026-09-22T09:00:00+03:00'
+    window_end: '2026-09-22T11:00:00+03:00'
+    cycle_ref: '{local:BATCH-HT-01}'
+    parameters:
+    - parameter: furnace_temp
+      mean:
+        value: 320
+        scale: 0
+        unit: Cel
+outcome:
+- Связь с партией, результат распространяется на N изделий с пометкой «групповой»

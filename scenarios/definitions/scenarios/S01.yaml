@@ -1,0 +1,211 @@
+# S01 — карточка процессной сессии «один к одному» (process/scenarios-flange.md §4 S01).
+# Строки с route: — событие даёт маршрут изделия в runs/MS-1.yaml (генератор проверяет,
+# что маршрут их действительно строит); fact: — событие источника через обычный приём;
+# decision: — решение человека операцией API; system: — вывод системы, его делает
+# движок, проверяет табло (scenarios/expected/S01.yaml).
+id: S01
+version: "0.3"
+title: "Нормальное изготовление — эталонный фланец Ф-001"
+kind: situation
+goal: >-
+  Целая история одного фланца без замечаний: все проверки чистые при хорошем качестве,
+  журнал источника в норме, все шаги подтверждены, все ЗТ подписаны, 1С всё приняла.
+  С этим эталоном потом сравнивают проблемные фланцы.
+case:
+  s4_2: ["нормальное изготовление"]
+  s5_1: ["Нормальное производство"]
+  demo: ["сквозной сценарий кейса §1.5"]
+  other: ["§1.5 основной сценарий целиком", "§5.2 — видно, откуда взято время", "§1.1 установка оборудования (волна 2)"]
+run: MS-1
+where: "Главный поток, фон: Пт 18.09 – Ср 23.09 10:31."
+source: "process/scenarios-flange.md §4 S01 (черновик 0.3 процессной сессии)"
+steps:
+  - {at: "2026-09-14T09:00:00+03:00", ref: Е-01, route: "order:ORD-0917", note: "Получено задание ЗП-0917 (1С): 40 шт., ревизия КД «Б», ТП ред. 3"}
+  - at: "2026-09-14T09:30:00+03:00"
+    ref: Е-02
+    label: kompas-FL-100
+    note: "Состав и ревизия КД из КОМПАС: 6 позиций с клапаном, связи W-1, J-1, S-1, J-2; геометрии нет — сказано явно"
+    fact: cad.assembly.imported
+    source: kompas
+    data:
+      assembly_designation: "ФЛ-100.00.000 СБ"
+      revision: "Б"
+      file_digest: "streebog256:5f1d3c0a9e7b24c16d8e0f3a2b7c9d4e1f60a8b3c5d7e9f1a2b4c6d8e0f2a4b6"
+      components:
+        - {position: "1", designation: "ФЛ-100.01", quantity: 1, lot_tracked: false}
+        - {position: "2", designation: "ФЛ-100.02", quantity: 1, lot_tracked: false}
+        - {position: "3", designation: "ФЛ-100.03", quantity: 1, lot_tracked: false}
+        - {position: "4", designation: "ФЛ-100.04", quantity: 1, lot_tracked: true}
+        - {position: "5", designation: "ФЛ-100.05", quantity: 12, lot_tracked: true}
+        - {position: "7", designation: "КВД-6", quantity: 1, lot_tracked: false}
+      links:
+        - {link_id: W-1, kind: weld, components: ["1", "2"]}
+        - {link_id: J-1, kind: bolted_joint, components: ["3", "5"]}
+        - {link_id: S-1, kind: seal, components: ["3", "4"]}
+        - {link_id: J-2, kind: bolted_joint, components: ["3", "7"]}
+      geometry_present: false
+  - {at: "2026-09-17T08:00:00+03:00", ref: "Е-03…Е-08", route: "lot:LOT-ZF-201,LOT-R-116,LOT-C-301,LOT-SL-401,LOT-FS-501,LOT-V-601",
+     note: "Партии пришли и приняты ОТК (ЗТ-1): сертификаты есть, признаков нет"}
+  - at: "2026-09-17T12:00:00+03:00"
+    ref: "узел VL [ПП]"
+    label: lab/LOT-ZF-201
+    note: "Лабораторный контроль образцов ЗФ-201: химсостав, мехсвойства, УЗК по КД"
+    fact: inspection.result.recorded
+    source: lab
+    lot: LOT-ZF-201
+    data:
+      observation_id: "{local:LAB-LOT-ZF-201}"
+      method: laboratory
+      phase: incoming
+      step_key: incoming.zt1_lot_acceptance
+      lot_id: "{local:LOT-ZF-201}"
+      outcome: no_defect_indicated
+      processing_state: completed
+      measurements:
+        - {characteristic: "Химический состав по ГОСТ 4784 (АМг6)", tolerance: {}, verdict: within}
+        - {characteristic: "Механические свойства (σв, δ)", tolerance: {}, verdict: within}
+        - {characteristic: "УЗК по КД", tolerance: {}, verdict: within}
+  - at: "2026-09-17T12:30:00+03:00"
+    ref: "узел VL [ПП]"
+    label: lab/LOT-R-116
+    note: "П-116: химсостав и мехсвойства; объёмного контроля колец в плане нет"
+    fact: inspection.result.recorded
+    source: lab
+    lot: LOT-R-116
+    data:
+      observation_id: "{local:LAB-LOT-R-116}"
+      method: laboratory
+      phase: incoming
+      step_key: incoming.zt1_lot_acceptance
+      lot_id: "{local:LOT-R-116}"
+      outcome: no_defect_indicated
+      processing_state: completed
+      measurements:
+        - {characteristic: "Химический состав", tolerance: {}, verdict: within}
+        - {characteristic: "Механические свойства", tolerance: {}, verdict: within}
+      limitations: ["объёмный контроль колец планом входного контроля не предусмотрен"]
+  - {at: "2026-09-18T08:30:00+03:00", ref: "Е-07, Е-09", route: "F-001:launch", note: "Изделие запущено (выдача заготовки ЗФ-201), бирка TAG:F-001 на таре → 1С «принято в работу»"}
+  - {at: "2026-09-18T09:00:00+03:00", ref: "Е-10, Е-12", route: "F-001:machining", note: "Мехобработка МО-001-1 на ЧПУ-1: 62 мин — «передано станком», «активная обработка»"}
+  - {at: "2026-09-18T10:06:00+03:00", ref: Е-07, route: "F-001:remark", note: "Перемаркировка: бирка TAG:F-001 → код DM:F-001 на нерабочей поверхности"}
+  - at: "2026-09-18T10:10:00+03:00"
+    ref: Е-17
+    label: F-001/kt2
+    note: "Камера КТ-2: признаков нет; зона «кромка под сварку»; качество 0,94; уверенность 0,96"
+    fact: inspection.result.recorded
+    source: cam-kt2
+    item: F-001
+    data:
+      observation_id: "{local:KT2-F-001}"
+      method: camera
+      phase: after_operation
+      step_key: machining.kt2_camera
+      inspection_point: KT-2
+      operation_run_id: "{local:MO-001-1}"
+      zone_ids: ["{zone:EDGE}"]
+      outcome: no_defect_indicated
+      processing_state: completed
+      analyzer_confidence_bp: 9600
+      observation_quality_bp: 9400
+      versions: {analyzer_version: "vqc-edge 1.4.0", contract_version: "1.0", recipe_ref: "KT-2@3", item_revision: "Б"}
+  - {at: "2026-09-18T10:40:00+03:00", ref: Е-18, route: "F-001:cmm", note: "КИМ: 5 размеров в допуске; номер фланца считан с кода"}
+  - {at: "2026-09-18T11:00:00+03:00", ref: Е-19, route: "F-001:zt2_presented,zt2", note: "ЗТ-2: принять и передать; маркировка сверена"}
+  - {at: "2026-09-21T07:50:00+03:00", ref: "Е-30, Е-31", route: "F-001:sent_to_welding,received_welding", note: "Отправлено и принято сварочным цехом: повреждений нет → 1С «перемещение МЦ → СЦ»"}
+  - {at: "2026-09-21T08:10:00+03:00", ref: "Е-50, Е-41", route: "F-001:ring", note: "Выдача кольца К-001 в сварку, скан фланца и кольца"}
+  - {at: "2026-09-21T08:15:00+03:00", route: "F-001:edge_prep", note: "Подготовка кромок: окно до сварки 45 мин (норма ≤ 8 ч)"}
+  - {at: "2026-09-21T09:00:00+03:00", ref: "Е-23, Е-40, Е-42, Е-12", route: "F-001:weld", note: "Сварка СВ-001-1 на ИС-2: ПС-4, П-88, ток 158–163 А; режим по карте сверен"}
+  - at: "2026-09-21T09:50:00+03:00"
+    ref: Е-44
+    label: F-001/kt3
+    note: "Камера КТ-3, ракурс 1: У1…У8 признаков нет; качество 0,93; уверенность 0,95"
+    fact: inspection.result.recorded
+    source: cam-kt3-a
+    item: F-001
+    data: &kt3clean
+      observation_id: "{local:KT3-F-001-A}"
+      method: camera
+      phase: after_operation
+      step_key: welding.kt3_camera
+      inspection_point: KT-3
+      operation_run_id: "{local:SV-001-1}"
+      zone_ids: ["{zone:U1}", "{zone:U2}", "{zone:U3}", "{zone:U4}", "{zone:U5}", "{zone:U6}", "{zone:U7}", "{zone:U8}"]
+      outcome: no_defect_indicated
+      processing_state: completed
+      analyzer_confidence_bp: 9500
+      observation_quality_bp: 9300
+      versions: {analyzer_version: "vqc-weld 2.3.1", contract_version: "1.0", recipe_ref: "KT-3@5", camera_config: "angle-1", item_revision: "Б"}
+  - at: "2026-09-21T09:50:05+03:00"
+    ref: Е-44
+    label: F-001/kt3-b
+    note: "Камера КТ-3, ракурс 2"
+    fact: inspection.result.recorded
+    source: cam-kt3-b
+    item: F-001
+    data:
+      <<: *kt3clean
+      observation_id: "{local:KT3-F-001-B}"
+      versions: {analyzer_version: "vqc-weld 2.3.1", contract_version: "1.0", recipe_ref: "KT-3@5", camera_config: "angle-2", item_revision: "Б"}
+  - {at: "2026-09-21T13:00:00+03:00", ref: Е-45, route: "F-001:xray", note: "Заключение рентгена РК-0921-01: дефектов нет"}
+  - {at: "2026-09-21T14:00:00+03:00", ref: Е-47, route: "F-001:zt3_presented,zt3", note: "ЗТ-3: годно"}
+  - {at: "2026-09-21T16:00:00+03:00", ref: "Е-30, Е-31", route: "F-001:sent_to_assembly,received_assembly", note: "В сборочный цех → 1С «перемещение СЦ → СИЦ»"}
+  - {at: "2026-09-22T09:00:00+03:00", ref: "Е-50, Е-51", route: "F-001:assembly_started", note: "Выдача комплекта на сборку: КР-001, уплотнение УП-401, 12 болтов КП-501, клапан V-001 → 1С «принято в работу»"}
+  - {at: "2026-09-22T09:10:00+03:00", ref: "Е-52, Е-53, Е-54, Е-10, Е-51, Е-23", route: "F-001:assembly",
+     note: "Уплотнение → зона чистая → крышка → крепёж; установка оборудования УО-001-1: клапан КВД V-001 отсканирован, затяжка J-2 12 Н·м ± 10 %, контровка"}
+  - at: "2026-09-22T09:50:00+03:00"
+    ref: "ЗТ-СР [ПП]"
+    label: F-001/tools
+    note: "Скрытые работы: ОТК-2 посчитал инструмент, заходивший в полость: зашло 2, вышло 2"
+    fact: inspection.result.recorded
+    source: term-asm
+    item: F-001
+    data:
+      observation_id: "{local:TOOLS-F-001}"
+      method: visual_human
+      phase: before_zone_closure
+      step_key: assembly.tool_accounting
+      zone_ids: [CAV]
+      outcome: no_defect_indicated
+      processing_state: completed
+      inspector_id: "{person:QC-02}"
+      measurements:
+        - {characteristic: "Инструмент, зашедший в полость, шт.", value: {value: 2, scale: 0, unit: "1"}, tolerance: {}, verdict: within}
+        - {characteristic: "Инструмент, вышедший из полости, шт.", value: {value: 2, scale: 0, unit: "1"}, tolerance: {}, verdict: within}
+  - {at: "2026-09-22T10:30:00+03:00", ref: Е-55, route: "F-001:zt4_presented,zt4", note: "ЗТ-4: 12 моментов в норме, метки есть, клапан законтрен"}
+  - {at: "2026-09-22T13:00:00+03:00", ref: "Е-60…Е-63", route: "F-001:leak_test,zt5_presented,zt5", note: "Испытание: поверка действует, герметично; ЗТ-5"}
+  - at: "2026-09-23T09:30:00+03:00"
+    ref: Е-70
+    label: F-001/kt5
+    note: "Камера КТ-5: признаков нет; качество 0,92"
+    fact: inspection.result.recorded
+    source: cam-kt5
+    item: F-001
+    data:
+      observation_id: "{local:KT5-F-001}"
+      method: camera
+      phase: final
+      step_key: final.kt5_camera
+      inspection_point: KT-5
+      outcome: no_defect_indicated
+      processing_state: completed
+      analyzer_confidence_bp: 9500
+      observation_quality_bp: 9200
+      versions: {analyzer_version: "vqc-final 1.1.0", contract_version: "1.0", recipe_ref: "KT-5@2", item_revision: "Б"}
+  - {at: "2026-09-23T09:40:00+03:00", ref: Е-71, system: "Сводка методов: все КТ и методы с результатом; открытых несоответствий нет"}
+  - {at: "2026-09-23T10:15:00+03:00", ref: "Е-72, Е-73", route: "F-001:zt6_presented,zt6", note: "Предъявлено и принято (ЗТ-6): годно, первое предъявление; ОТК-2 + ПЗ-01"}
+  - at: "2026-09-23T10:29:00+03:00"
+    note: "Первая попытка «выпуска годного» в 1С получит 503 (1С недоступна); повтор с тем же номером сообщения в 10:31 — подтверждено (§6)"
+    stand: {stand: onec, fault: error, param: 503, match: "release_good:F-001", until: "2026-09-23T10:31:00+03:00", detail: "503 Service Unavailable"}
+  - {at: "2026-09-23T10:30:00+03:00", ref: Е-74, route: "F-001:release", note: "Выпуск годного → 1С «выпуск годного» (503, повтор, подтверждение в 10:31)"}
+outcome:
+  - "Ф-001 — «годно» (принято). Шесть ЗТ пройдены с первого раза, у каждой — кто и когда подтвердил."
+  - "В истории изделия все слои по времени: операции, наблюдения, журнал ИС-2, действия, решения, обмен с 1С."
+  - "Генеалогия: заготовка ЗФ-201, кольцо К-001 (П-116), крышка КР-001, уплотнение УП-401, крепёж КП-501, клапан V-001 (КВ-601)."
+  - "Установка оборудования — отдельное выполнение УО-001-1 внутри сборки."
+  - "Маркировка: до мехобработки — бирка, после — код; на КИМ номер считан с кода."
+  - "На каждой ЗТ подписант не выполнял операцию, которую принимает."
+  - "Шесть учётных событий в 1С, все подтверждены."
+  - "У каждой длительности две метки: источник и смысл."
+  - "Ф-001 доступен как эталон; у всех его событий с запуска — линия 2 (L-FL-2)."
+must_not:
+  - "Нет сигналов, карантина, несоответствий."
+  - "В 1С не уходят наблюдения камер, журналы источника, движения внутри цеха."
+  - "Статус «учтено в 1С» не ставится до подтверждения 1С."

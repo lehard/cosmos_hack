@@ -1,0 +1,21 @@
+# Ожидания прогона сбоя F14 — отдельно от входных событий (кейс §5.1, AD-26).
+scenario: F14
+version: '1'
+title: 'Сбой: Смена версии анализатора'
+run: F14
+source: эпик 32 по research/data-collection-sources-and-failures.md §6 (ожидаемое поведение системы)
+checkpoints:
+- at: end
+  label: конец прогона
+  assertions:
+  - id: F14-01
+    what: у сигналов и наблюдений — вектор версий
+    check:
+      operation: quality.inspection.list
+      path: /items[step_key=welding.kt3_camera]/#
+      op: eq
+      params:
+        item_id: '{item:F-502}'
+      value: 1
+    mapping: draft
+    note: версию анализатора в ответе списка наблюдений покажет эпик 20 (поле versions)

@@ -1,0 +1,75 @@
+# F22 — строка таблицы сбоев «один к одному».
+id: F22
+version: '1'
+title: 'Сбой: Флаппинг источника'
+kind: failure
+goal: Состояние источника с подавлением дребезга, счётчик обрывов, пометка «ненадёжен»
+case:
+  other:
+  - 'таблица сбоев PRD §4.3: «Серия обрывов и восстановлений»'
+  - 'проверка: Эмулятор 10 раз за минуту рвёт связь: одно предупреждение, а не 10'
+run: F22
+source: research/data-collection-sources-and-failures.md §6, строка «Флаппинг источника»
+steps:
+- at: '2026-09-21T13:30:00+03:00'
+  note: Обрыв связи ИС-1 №1
+  stand:
+    stand: equipment:IS-1
+    fault: offline
+    until: '2026-09-21T13:30:03+03:00'
+- at: '2026-09-21T13:30:06+03:00'
+  note: Обрыв связи ИС-1 №2
+  stand:
+    stand: equipment:IS-1
+    fault: offline
+    until: '2026-09-21T13:30:09+03:00'
+- at: '2026-09-21T13:30:12+03:00'
+  note: Обрыв связи ИС-1 №3
+  stand:
+    stand: equipment:IS-1
+    fault: offline
+    until: '2026-09-21T13:30:15+03:00'
+- at: '2026-09-21T13:30:18+03:00'
+  note: Обрыв связи ИС-1 №4
+  stand:
+    stand: equipment:IS-1
+    fault: offline
+    until: '2026-09-21T13:30:21+03:00'
+- at: '2026-09-21T13:30:24+03:00'
+  note: Обрыв связи ИС-1 №5
+  stand:
+    stand: equipment:IS-1
+    fault: offline
+    until: '2026-09-21T13:30:27+03:00'
+- at: '2026-09-21T13:30:30+03:00'
+  note: Обрыв связи ИС-1 №6
+  stand:
+    stand: equipment:IS-1
+    fault: offline
+    until: '2026-09-21T13:30:33+03:00'
+- at: '2026-09-21T13:30:36+03:00'
+  note: Обрыв связи ИС-1 №7
+  stand:
+    stand: equipment:IS-1
+    fault: offline
+    until: '2026-09-21T13:30:39+03:00'
+- at: '2026-09-21T13:30:42+03:00'
+  note: Обрыв связи ИС-1 №8
+  stand:
+    stand: equipment:IS-1
+    fault: offline
+    until: '2026-09-21T13:30:45+03:00'
+- at: '2026-09-21T13:30:48+03:00'
+  note: Обрыв связи ИС-1 №9
+  stand:
+    stand: equipment:IS-1
+    fault: offline
+    until: '2026-09-21T13:30:51+03:00'
+- at: '2026-09-21T13:30:54+03:00'
+  note: Обрыв связи ИС-1 №10
+  stand:
+    stand: equipment:IS-1
+    fault: offline
+    until: '2026-09-21T13:30:57+03:00'
+outcome:
+- Состояние источника с подавлением дребезга, счётчик обрывов, пометка «ненадёжен»

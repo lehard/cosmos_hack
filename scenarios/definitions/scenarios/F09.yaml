@@ -1,0 +1,51 @@
+# F09 — строка таблицы сбоев «один к одному».
+id: F09
+version: '1'
+title: 'Сбой: Противоречие камеры и контролёра'
+kind: failure
+goal: Обе записи хранятся; решение контролёра — новая запись с автором и причиной; исходный сигнал не меняется
+case:
+  other:
+  - 'таблица сбоев PRD §4.3: «Камера OK, контролёр — брак»'
+  - 'проверка: Сигнал OK → решение «брак»: видны исходный результат, рассмотрение и итоговый статус'
+run: F09
+source: research/data-collection-sources-and-failures.md §6, строка «Противоречие камеры и контролёра»
+steps:
+- at: '2026-09-21T13:00:00+03:00'
+  label: F-501/visual
+  fact: inspection.result.recorded
+  source: term-weld-1
+  item: F-501
+  data:
+    observation_id: '{local:VIS-F-501}'
+    method: visual_human
+    phase: after_operation
+    step_key: welding.zt3_acceptance
+    operation_run_id: '{local:SV-501-1}'
+    zone_ids:
+    - '{zone:U4}'
+    outcome: defect_indicated
+    processing_state: completed
+    inspector_id: '{person:QC-01}'
+    defects:
+    - defect_type_code: W-CRATER
+      description: Кратер
+      zone_id: '{zone:U4}'
+      severity: major
+- at: '2026-09-21T13:10:00+03:00'
+  decision: nonconformity.nonconformity.confirm
+  role: QC
+  actor: QC-01
+  item: F-501
+  params:
+    nc_id: '{ref:NC-F501}'
+  body:
+    signal_ids:
+    - '{ref:SIG-F501}'
+    severity: major
+    defect_type_code: W-CRATER
+    reason:
+      code: visual
+      text: Кратер У4 при осмотре; камера признаков не видела
+outcome:
+- Обе записи хранятся; решение контролёра — новая запись с автором и причиной; исходный сигнал не меняется

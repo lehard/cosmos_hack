@@ -1,0 +1,300 @@
+# Ожидания S07 — отдельно от входных событий (кейс §5.1, AD-26): утверждения над теми же
+# operationId, что показывают столы; check.path — путь в ответе (board.go), значения — ID
+# процессной сессии (сверка переводит их сведением имён прогона). mapping: exact — поле
+# ответа контракта; draft — по смыслу, путь уточнит модуль-владелец; manual — видно на экране.
+scenario: S07
+version: 0.3-draft
+title: Позднее событие — опоздавший журнал ИС-2 пересматривает вывод
+run: MS-1
+source: 'process/scenarios-flange-expected.yaml процессной сессии, версия 0.3-draft: утверждения процессной сессии — в source без изменений, check — исполняемая форма эпика 32'
+checkpoints:
+- at: '2026-09-22T10:06:00+03:00'
+  label: связь пропала
+  assertions:
+  - id: S07-01
+    what: через 15 минут — «нет данных от ИС-2», уведомление администратору
+    check:
+      operation: ingest.source.list
+      path: /items
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: source/WS-2
+      field:
+        status: no_connection
+        alert_to: ADM-01
+        alert_at: '2026-09-22T10:05:00+03:00'
+      op: eq
+      value: true
+    note: источник WS-2
+  - id: S07-10
+    what: '«Сбой оборудования» (узел EQ3): вместе с задачей администратору — вопрос мастеру М-02 «остановить пост ИС-2?»; ответа нет, пост не остановлен (это вопрос расследования)'
+    check:
+      operation: ingest.source.list
+      path: /items
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: source/WS-2
+      field:
+        master_question:
+          to: MST-02
+          at: '2026-09-22T10:05:00+03:00'
+          text: остановить пост ИС-2?
+          answer: none
+        stopped: false
+      op: eq
+      value: true
+    note: источник WS-2
+- at: '2026-09-22T23:00:00+03:00'
+  label: 'конец вторника: журнала ИС-2 нет'
+  assertions:
+  - id: S07-11
+    what: у сварок ИС-2 без журнала итог режима — «оценка режима невозможна», а не «в норме»
+    check:
+      operation: machinelogs.run_profile.read
+      path: /mode_assessment
+      op: eq
+      value: unable_to_assess
+    mapping: draft
+    source:
+      subject: run/*
+      field: mode_assessment
+      filter:
+        runs:
+        - SV-015-1
+        - SV-019-1
+        - SV-021-1
+        at: '2026-09-22T23:00:00+03:00'
+      op: eq
+      value: unable_to_assess
+    note: 'выборка выполнений {"runs": ["SV-015-1", "SV-019-1", "SV-021-1"], "at": "2026-09-22T23:00:00+03:00"}'
+- at: '2026-09-23T12:10:00+03:00'
+  label: после опоздавшей пачки
+  assertions:
+  - id: S07-02
+    what: ключевая запись встала на своё время
+    check:
+      operation: journal.entry.list
+      path: /items
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: event/EV-WS2-0412
+      field:
+        occurred_at: '2026-09-22T10:20:14+03:00'
+        received_at: '2026-09-23T12:05:07+03:00'
+        late: true
+        current_a: 176
+        run: SV-015-1
+      op: eq
+      value: true
+    note: запись EV-WS2-0412
+  - id: S07-03
+    what: в истории Ф-017 журнал ИС-2 стоит раньше наблюдения камеры
+    check:
+      operation: item.passport.read
+      params:
+        item_id: '{item:F-017}'
+      path: /timeline_order
+      op: before
+      value: &id001
+      - machine_parameters@10:42
+      - inspection@11:05
+    mapping: draft
+    source:
+      subject: item/F-017
+      field: timeline_order
+      op: before
+      value: *id001
+  - id: S07-04
+    what: сигналы «нарушение режима» по пяти сваркам со временем события
+    check:
+      operation: machinelogs.run_profile.read
+      path: /out_of_setpoint_runs
+      op: set_eq
+      value: &id002
+      - SV-015-1
+      - SV-021-1
+      - SV-023-1
+      - SV-025-1
+      - SV-017-1
+    mapping: draft
+    source:
+      subject: run/*
+      field: out_of_setpoint_runs
+      op: set_eq
+      value: *id002
+    note: выборка выполнений {}
+  - id: S07-05
+    what: гипотезы НС-01 — новая версия с пометкой, старая сохранена
+    check:
+      operation: analysis.hypothesis.list
+      params:
+        nc_id: '{ref:NC-01}'
+      path: /hypotheses
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: hypothesis/NC-01
+      field:
+        versions: 2
+        v2_revised_due_to: EV-WS2-0412
+        v1_visible: true
+      op: eq
+      value: true
+  - id: S07-06
+    what: на подписанной ЗТ-3 Ф-015 (итог «годно при неполных данных») — метка «принято до новых данных — пересмотрите» (decision.review_flagged [П])
+    check:
+      operation: item.passport.read
+      params:
+        item_id: '{item:F-015}'
+      path: /entries[event_type=decision.presentation.resolved]
+      op: eq
+      value: &id003
+        event: decision.review_flagged
+        original_decision: accepted_incomplete_data
+        label: принято до новых данных — пересмотрите
+        due_to: EV-WS2-0412
+        task_to: QC-01
+    mapping: draft
+    source:
+      subject: gate/ZT-3/F-015
+      field: review_flag
+      op: eq
+      value: *id003
+    note: ЗТ ZT-3
+  - id: S07-07
+    what: показатели прошлых дней пересчитаны с пометкой
+    check:
+      operation: analytics.metric.drilldown
+      params:
+        metric_id: runs_out_of_setpoint
+      path: /by_day
+      op: eq
+      value: &id004
+        '2026-09-22':
+          before: 0
+          after: 2
+        '2026-09-23':
+          before: 0
+          after: 3
+        recalculated_due_to: EV-WS2-0412
+    mapping: draft
+    source:
+      subject: metric/runs_out_of_setpoint
+      field: by_day
+      op: eq
+      value: *id004
+    note: показатель runs_out_of_setpoint каталога процессной сессии (analytics-catalog.md); сопоставление — эпик 25
+  - id: S07-08
+    what: 'Н-5: опоздавших 928, наибольшая задержка ≈ 26 ч'
+    check:
+      operation: analytics.metric.drilldown
+      params:
+        metric_id: N-5
+      path: /total
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: metric/N-5
+      field:
+        late_events: 928
+        max_delay_h_gte: 26
+      op: eq
+      value: true
+    note: показатель N-5 каталога процессной сессии (analytics-catalog.md); сопоставление — эпик 25
+- at: '2026-09-23T14:10:00+03:00'
+  label: пересмотр человеком
+  assertions:
+  - id: S07-09
+    what: 'пересмотр ЗТ-3 — новая запись ОТК-1 (decision.review_completed [П]) с итогом «отозвано»: блок изделия, изделие в инциденте RS-01; исходная подпись сохранена'
+    check:
+      operation: item.passport.read
+      params:
+        item_id: '{item:F-015}'
+      path: /entries[event_type=decision.presentation.resolved]
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: gate/ZT-3/F-015
+      field:
+        original_decision_kept: true
+        review_record_author: QC-01
+        review_event: decision.review_completed
+        outcome: revoked
+        incident: RS-01
+      op: eq
+      value: true
+    note: ЗТ ZT-3
+- at: '2026-09-23T14:10:00+03:00'
+  label: чего не должно случиться
+  must_not: true
+  assertions:
+  - id: S07-N1
+    what: опоздавшие не датированы временем получения
+    check:
+      operation: ingest.metrics.read
+      path: /ordered_by_received_at
+      op: eq
+      value: false
+    mapping: draft
+    source:
+      subject: ingest
+      field: ordered_by_received_at
+      filter:
+        batch: GW-2@2026-09-23T12:05
+      op: eq
+      value: false
+  - id: S07-N2
+    what: подтверждение НС-01 не изменено
+    check:
+      operation: nonconformity.card.read
+      params:
+        nc_id: '{ref:NC-01}'
+      path: /decisions[0].changed
+      op: eq
+      value: false
+    mapping: draft
+    source:
+      subject: nc/NC-01
+      field: decisions[0].changed
+      op: eq
+      value: false
+  - id: S07-N3
+    what: ЗТ-3 Ф-015 не отменена автоматически
+    check:
+      operation: item.passport.read
+      params:
+        item_id: '{item:F-015}'
+      path: /entries[event_type=decision.presentation.resolved]
+      op: eq
+      value: false
+    mapping: draft
+    source:
+      subject: gate/ZT-3/F-015
+      field: auto_revoked
+      op: eq
+      value: false
+    note: ЗТ ZT-3
+  - id: S07-N4
+    what: в 1С ничего не отправлено повторно из-за пересчёта
+    check:
+      operation: erp.message.list
+      path: /items/#
+      op: eq
+      value: 0
+    mapping: draft
+    source:
+      subject: erp/postings
+      field: count
+      filter:
+        caused_by: recalculation
+      op: eq
+      value: 0

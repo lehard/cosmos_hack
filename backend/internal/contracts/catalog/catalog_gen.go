@@ -98,6 +98,10 @@ const (
 	BindingLinkResolved Type = "binding.link.resolved"
 	// Условная сборка импортирована
 	CadAssemblyImported Type = "cad.assembly.imported"
+	// Изделие в точке чистоты
+	DecisionCleanPointAssigned Type = "decision.clean_point.assigned"
+	// Разрешение на отклонение выдано
+	DecisionConcessionGranted Type = "decision.concession.granted"
 	// Разрешение на отклонение отозвано
 	DecisionConcessionRevoked Type = "decision.concession.revoked"
 	// Сдерживание применено правилом
@@ -216,6 +220,8 @@ const (
 	IncidentIncidentOpened Type = "incident.incident.opened"
 	// Изделие в области проверено
 	IncidentItemAssessed Type = "incident.item.assessed"
+	// Запрошено измерение для проверки гипотезы
+	IncidentMeasurementRequested Type = "incident.measurement.requested"
 	// Статус изделия в инциденте изменён
 	IncidentMembershipChanged Type = "incident.membership.changed"
 	// Ошибка исполнителя подтверждена
@@ -292,6 +298,8 @@ const (
 	MesJobReceived Type = "mes.job.received"
 	// Версия процесса введена в действие
 	NormativeVersionActivated Type = "normative.version.activated"
+	// Черновик версии процесса сохранён
+	NormativeVersionDrafted Type = "normative.version.drafted"
 	// Стартовая версия нормативного слоя загружена
 	NormativeVersionLoaded Type = "normative.version.loaded"
 	// Версия выведена
@@ -463,6 +471,8 @@ var types = [...]Info{
 	{Type: BindingLinkAssigned, Title: "Привязка задана человеком", Family: "binding", Emitter: "crossitem", Role: "api", Kind: "decision", Stream: "item", Axis: "none", ActionClass: "record", Critical: true, CAGroup: "protected_data", GuardRelevant: true, PublishStage: true, Provenance: []string{"personal", "paper", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: BindingLinkResolved, Title: "Событие привязано к изделию", Family: "binding", Emitter: "crossitem", Role: "crossitem", Kind: "reaction", Stream: "item", Axis: "none", ActionClass: "record", Critical: false, CAGroup: "", GuardRelevant: true, PublishStage: false, Provenance: []string{"server_attested"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: CadAssemblyImported, Title: "Условная сборка импортирована", Family: "cad", Emitter: "cad", Role: "api", Kind: "fact", Stream: "reference", Axis: "none", ActionClass: "record", Critical: false, CAGroup: "", GuardRelevant: false, PublishStage: false, Provenance: []string{"server_attested", "personal", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
+	{Type: DecisionCleanPointAssigned, Title: "Изделие в точке чистоты", Family: "decision", Emitter: "nonconformity", Role: "crossitem", Kind: "reaction", Stream: "item", Axis: "containment", ActionClass: "protective", Critical: false, CAGroup: "", GuardRelevant: true, PublishStage: false, Provenance: []string{"server_attested"}, Versions: []int{1}, CurrentVersion: 1},
+	{Type: DecisionConcessionGranted, Title: "Разрешение на отклонение выдано", Family: "decision", Emitter: "nonconformity", Role: "api", Kind: "decision", Stream: "concession", Axis: "none", ActionClass: "permissive", Critical: true, CAGroup: "nc_decision", GuardRelevant: true, PublishStage: false, Provenance: []string{"personal", "paper", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: DecisionConcessionRevoked, Title: "Разрешение на отклонение отозвано", Family: "decision", Emitter: "nonconformity", Role: "api", Kind: "decision", Stream: "concession", Axis: "none", ActionClass: "protective", Critical: true, CAGroup: "nc_decision", GuardRelevant: true, PublishStage: false, Provenance: []string{"personal", "paper", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: DecisionContainmentApplied, Title: "Сдерживание применено правилом", Family: "decision", Emitter: "nonconformity", Role: "worker", Kind: "reaction", Stream: "item", Axis: "containment", ActionClass: "protective", Critical: true, CAGroup: "product_decision", GuardRelevant: true, PublishStage: true, Provenance: []string{"server_attested"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: DecisionContainmentReleased, Title: "Сдерживание снято", Family: "decision", Emitter: "nonconformity", Role: "api", Kind: "decision", Stream: "item", Axis: "containment", ActionClass: "permissive", Critical: true, CAGroup: "product_decision", GuardRelevant: true, PublishStage: true, Provenance: []string{"personal", "paper", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
@@ -522,6 +532,7 @@ var types = [...]Info{
 	{Type: IncidentIncidentClosed, Title: "Инцидент закрыт", Family: "incident", Emitter: "analysis", Role: "api", Kind: "decision", Stream: "incident", Axis: "none", ActionClass: "record", Critical: false, CAGroup: "", GuardRelevant: true, PublishStage: false, Provenance: []string{"personal", "paper", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: IncidentIncidentOpened, Title: "Инцидент открыт", Family: "incident", Emitter: "analysis", Role: "crossitem", Kind: "reaction", Stream: "incident", Axis: "none", ActionClass: "record", Critical: false, CAGroup: "", GuardRelevant: true, PublishStage: false, Provenance: []string{"server_attested"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: IncidentItemAssessed, Title: "Изделие в области проверено", Family: "incident", Emitter: "analysis", Role: "api", Kind: "decision", Stream: "incident", Axis: "none", ActionClass: "permissive", Critical: true, CAGroup: "risk_scope", GuardRelevant: true, PublishStage: false, Provenance: []string{"personal", "paper", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
+	{Type: IncidentMeasurementRequested, Title: "Запрошено измерение для проверки гипотезы", Family: "incident", Emitter: "analysis", Role: "api", Kind: "decision", Stream: "incident", Axis: "none", ActionClass: "record", Critical: false, CAGroup: "", GuardRelevant: false, PublishStage: false, Provenance: []string{"personal", "paper", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: IncidentMembershipChanged, Title: "Статус изделия в инциденте изменён", Family: "incident", Emitter: "analysis", Role: "crossitem", Kind: "reaction", Stream: "item", Axis: "incident", ActionClass: "protective", Critical: false, CAGroup: "", GuardRelevant: true, PublishStage: false, Provenance: []string{"server_attested"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: IncidentOperatorErrorConfirmed, Title: "Ошибка исполнителя подтверждена", Family: "incident", Emitter: "analysis", Role: "api", Kind: "decision", Stream: "incident", Axis: "none", ActionClass: "irreversible", Critical: true, CAGroup: "cause", GuardRelevant: true, PublishStage: false, Provenance: []string{"personal", "paper", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: IncidentScopeComputed, Title: "Новая версия области риска вычислена", Family: "incident", Emitter: "analysis", Role: "crossitem", Kind: "reaction", Stream: "incident", Axis: "none", ActionClass: "protective", Critical: false, CAGroup: "", GuardRelevant: true, PublishStage: false, Provenance: []string{"server_attested"}, Versions: []int{1}, CurrentVersion: 1},
@@ -560,6 +571,7 @@ var types = [...]Info{
 	{Type: MesHoldResponded, Title: "Ответ MES на блокировку", Family: "mes", Emitter: "mes", Role: "outbox", Kind: "fact", Stream: "erp_message", Axis: "none", ActionClass: "record", Critical: false, CAGroup: "", GuardRelevant: false, PublishStage: false, Provenance: []string{"server_attested", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: MesJobReceived, Title: "Получено задание MES", Family: "mes", Emitter: "mes", Role: "api", Kind: "fact", Stream: "order", Axis: "none", ActionClass: "record", Critical: false, CAGroup: "", GuardRelevant: false, PublishStage: false, Provenance: []string{"server_attested", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: NormativeVersionActivated, Title: "Версия процесса введена в действие", Family: "normative", Emitter: "process", Role: "api", Kind: "decision", Stream: "process_version", Axis: "none", ActionClass: "irreversible", Critical: true, CAGroup: "control_change", GuardRelevant: true, PublishStage: false, Provenance: []string{"personal", "paper", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
+	{Type: NormativeVersionDrafted, Title: "Черновик версии процесса сохранён", Family: "normative", Emitter: "process", Role: "api", Kind: "decision", Stream: "process_version", Axis: "none", ActionClass: "record", Critical: false, CAGroup: "", GuardRelevant: true, PublishStage: false, Provenance: []string{"personal", "paper", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: NormativeVersionLoaded, Title: "Стартовая версия нормативного слоя загружена", Family: "normative", Emitter: "process", Role: "init", Kind: "service", Stream: "process_version", Axis: "none", ActionClass: "record", Critical: false, CAGroup: "", GuardRelevant: true, PublishStage: false, Provenance: []string{"genesis"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: NormativeVersionRetired, Title: "Версия выведена", Family: "normative", Emitter: "process", Role: "api", Kind: "decision", Stream: "process_version", Axis: "none", ActionClass: "record", Critical: true, CAGroup: "control_change", GuardRelevant: true, PublishStage: false, Provenance: []string{"personal", "paper", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: NormativeVersionSubmitted, Title: "Версия отправлена на утверждение", Family: "normative", Emitter: "process", Role: "api", Kind: "decision", Stream: "process_version", Axis: "none", ActionClass: "record", Critical: false, CAGroup: "", GuardRelevant: true, PublishStage: false, Provenance: []string{"personal", "paper", "scenario"}, Versions: []int{1}, CurrentVersion: 1},

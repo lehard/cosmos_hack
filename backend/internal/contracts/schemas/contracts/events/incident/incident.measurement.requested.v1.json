@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/incident/incident.measurement.requested.v1.json",
+  "title": "IncidentMeasurementRequestedV1",
+  "description": "Запрошено измерение для проверки гипотезы — технолог просит измерить (контрольный образец, рентген, замер режима); задачу исполнителю ставит notifications по этой записи; вывод о причине не меняется до решения человека (FR-59, FR-135).",
+  "type": "object",
+  "properties": {
+    "incident_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Инцидент."
+    },
+    "nc_ids": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/object_id",
+        "description": "Несоответствие."
+      },
+      "description": "Несоответствия.",
+      "uniqueItems": true
+    },
+    "hypothesis_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Проверяемая гипотеза."
+    },
+    "what": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Что измерить."
+    },
+    "assignee_id": {
+      "$ref": "../common/defs.v1.json#/definitions/person_ref",
+      "description": "Кому; нет — по правилу назначения."
+    }
+  },
+  "required": [
+    "incident_id",
+    "hypothesis_id",
+    "what"
+  ]
+}

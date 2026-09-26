@@ -1,0 +1,616 @@
+# S10 часть А — process/scenarios-flange.md §4 S10 «один к одному». Часть Б (жёсткий лимит,
+# Ф-090) — отдельный прогон runs/S10B.yaml.
+id: S10A
+version: '0.3'
+title: Переделка шва — новое выполнение операции; переделка помогает не всем (часть А)
+kind: extra
+goal: Переделка — новое выполнение операции со ссылкой на прежнее; «исполнено» ≠ «проверено»; один фланец не проходит повторный контроль, и по нему снова принимают решение с учётом лимита
+  переделок.
+case:
+  other:
+  - §4.3 повторная обработка
+  - §4.6 новый идентификатор повторного выполнения со связью с прежним
+  - §5.2 повторные операции
+run: MS-1
+where: Главный поток, Чт 24.09. ИС-2 остановлен, переварка на ИС-1 (пост линии 1), С-02.
+source: process/scenarios-flange.md §4 S10, часть А
+steps:
+- at: '2026-09-24T08:00:00+03:00'
+  ref: Е-40, Е-12
+  note: 'Переварка F-017 на ИС-1 (пост линии 1), С-02, ток в уставке: новое выполнение СВ-017-2 со ссылкой на СВ-017-1; счётчик переделок каждого участка — 1 из 3'
+  weld:
+    item: F-017
+    run: SV-017-2
+    station: WS-1
+    welder: WLD-02
+    minutes: 45
+    rework_of: SV-017-1
+- at: '2026-09-24T08:50:00+03:00'
+  ref: Е-44
+  label: F-017/kt3-2
+  note: 'Камера КТ-3 после переварки F-017: признаков нет, качество ≥ 0,85'
+  fact: inspection.result.recorded
+  source: cam-kt3-a
+  item: F-017
+  data:
+    observation_id: '{local:KT3-F-017-2}'
+    method: camera
+    phase: after_operation
+    step_key: welding.kt3_camera
+    inspection_point: KT-3
+    operation_run_id: '{local:SV-017-2}'
+    zone_ids:
+    - '{zone:U1}'
+    - '{zone:U2}'
+    - '{zone:U3}'
+    - '{zone:U4}'
+    - '{zone:U5}'
+    - '{zone:U6}'
+    - '{zone:U7}'
+    - '{zone:U8}'
+    outcome: no_defect_indicated
+    processing_state: completed
+    analyzer_confidence_bp: 9500
+    observation_quality_bp: 8900
+    versions:
+      analyzer_version: vqc-weld 2.3.1
+      contract_version: '1.0'
+      recipe_ref: KT-3@5
+      camera_config: angle-1
+      item_revision: Б
+- at: '2026-09-24T08:55:00+03:00'
+  ref: Е-40, Е-12
+  note: 'Переварка F-023 на ИС-1 (пост линии 1), С-02, ток в уставке: новое выполнение СВ-023-2 со ссылкой на СВ-023-1; счётчик переделок каждого участка — 1 из 3'
+  weld:
+    item: F-023
+    run: SV-023-2
+    station: WS-1
+    welder: WLD-02
+    minutes: 45
+    rework_of: SV-023-1
+- at: '2026-09-24T09:45:00+03:00'
+  ref: Е-44
+  label: F-023/kt3-2
+  note: 'Камера КТ-3 после переварки F-023: признаков нет, качество ≥ 0,85'
+  fact: inspection.result.recorded
+  source: cam-kt3-a
+  item: F-023
+  data:
+    observation_id: '{local:KT3-F-023-2}'
+    method: camera
+    phase: after_operation
+    step_key: welding.kt3_camera
+    inspection_point: KT-3
+    operation_run_id: '{local:SV-023-2}'
+    zone_ids:
+    - '{zone:U1}'
+    - '{zone:U2}'
+    - '{zone:U3}'
+    - '{zone:U4}'
+    - '{zone:U5}'
+    - '{zone:U6}'
+    - '{zone:U7}'
+    - '{zone:U8}'
+    outcome: no_defect_indicated
+    processing_state: completed
+    analyzer_confidence_bp: 9500
+    observation_quality_bp: 8900
+    versions:
+      analyzer_version: vqc-weld 2.3.1
+      contract_version: '1.0'
+      recipe_ref: KT-3@5
+      camera_config: angle-1
+      item_revision: Б
+- at: '2026-09-24T09:50:00+03:00'
+  ref: Е-40, Е-12
+  note: 'Переварка F-025 на ИС-1 (пост линии 1), С-02, ток в уставке: новое выполнение СВ-025-2 со ссылкой на СВ-025-1; счётчик переделок каждого участка — 1 из 3'
+  weld:
+    item: F-025
+    run: SV-025-2
+    station: WS-1
+    welder: WLD-02
+    minutes: 45
+    rework_of: SV-025-1
+- at: '2026-09-24T10:40:00+03:00'
+  ref: Е-44
+  label: F-025/kt3-2
+  note: 'Камера КТ-3 после переварки F-025: признаков нет, качество ≥ 0,85'
+  fact: inspection.result.recorded
+  source: cam-kt3-a
+  item: F-025
+  data:
+    observation_id: '{local:KT3-F-025-2}'
+    method: camera
+    phase: after_operation
+    step_key: welding.kt3_camera
+    inspection_point: KT-3
+    operation_run_id: '{local:SV-025-2}'
+    zone_ids:
+    - '{zone:U1}'
+    - '{zone:U2}'
+    - '{zone:U3}'
+    - '{zone:U4}'
+    - '{zone:U5}'
+    - '{zone:U6}'
+    - '{zone:U7}'
+    - '{zone:U8}'
+    outcome: no_defect_indicated
+    processing_state: completed
+    analyzer_confidence_bp: 9500
+    observation_quality_bp: 8900
+    versions:
+      analyzer_version: vqc-weld 2.3.1
+      contract_version: '1.0'
+      recipe_ref: KT-3@5
+      camera_config: angle-1
+      item_revision: Б
+- at: '2026-09-24T10:45:00+03:00'
+  ref: Е-40, Е-12
+  note: 'Переварка F-015 на ИС-1 (пост линии 1), С-02, ток в уставке: новое выполнение СВ-015-2 со ссылкой на СВ-015-1; счётчик переделок каждого участка — 1 из 3'
+  weld:
+    item: F-015
+    run: SV-015-2
+    station: WS-1
+    welder: WLD-02
+    minutes: 45
+    rework_of: SV-015-1
+- at: '2026-09-24T11:00:00+03:00'
+  ref: Е-45
+  label: F-017/xray-2
+  note: 'Рентген F-017 после переварки (РК-0924-01): дефектов нет'
+  fact: inspection.result.recorded
+  source: xray
+  item: F-017
+  data:
+    observation_id: '{local:RK-0924-01}'
+    method: radiography
+    phase: after_operation
+    step_key: welding.kt3_radiography
+    operation_run_id: '{local:SV-017-2}'
+    zone_ids:
+    - '{zone:U1}'
+    - '{zone:U2}'
+    - '{zone:U3}'
+    - '{zone:U4}'
+    - '{zone:U5}'
+    - '{zone:U6}'
+    - '{zone:U7}'
+    - '{zone:U8}'
+    outcome: no_defect_indicated
+    processing_state: completed
+    inspector_id: '{person:NDT-01}'
+    conclusion_ref: РК-0924-01
+- at: '2026-09-24T11:35:00+03:00'
+  ref: Е-44
+  label: F-015/kt3-2
+  note: 'Камера КТ-3 после переварки F-015: признаков нет, качество ≥ 0,85'
+  fact: inspection.result.recorded
+  source: cam-kt3-a
+  item: F-015
+  data:
+    observation_id: '{local:KT3-F-015-2}'
+    method: camera
+    phase: after_operation
+    step_key: welding.kt3_camera
+    inspection_point: KT-3
+    operation_run_id: '{local:SV-015-2}'
+    zone_ids:
+    - '{zone:U1}'
+    - '{zone:U2}'
+    - '{zone:U3}'
+    - '{zone:U4}'
+    - '{zone:U5}'
+    - '{zone:U6}'
+    - '{zone:U7}'
+    - '{zone:U8}'
+    outcome: no_defect_indicated
+    processing_state: completed
+    analyzer_confidence_bp: 9500
+    observation_quality_bp: 8900
+    versions:
+      analyzer_version: vqc-weld 2.3.1
+      contract_version: '1.0'
+      recipe_ref: KT-3@5
+      camera_config: angle-1
+      item_revision: Б
+- at: '2026-09-24T11:40:00+03:00'
+  ref: Е-40, Е-12
+  note: 'Переварка F-021 на ИС-1 (пост линии 1), С-02, ток в уставке: новое выполнение СВ-021-2 со ссылкой на СВ-021-1; счётчик переделок каждого участка — 1 из 3'
+  weld:
+    item: F-021
+    run: SV-021-2
+    station: WS-1
+    welder: WLD-02
+    minutes: 45
+    rework_of: SV-021-1
+- at: '2026-09-24T11:40:00+03:00'
+  ref: Е-45
+  label: F-023/xray-2
+  note: 'Рентген F-023 после переварки (РК-0924-02): дефектов нет'
+  fact: inspection.result.recorded
+  source: xray
+  item: F-023
+  data:
+    observation_id: '{local:RK-0924-02}'
+    method: radiography
+    phase: after_operation
+    step_key: welding.kt3_radiography
+    operation_run_id: '{local:SV-023-2}'
+    zone_ids:
+    - '{zone:U1}'
+    - '{zone:U2}'
+    - '{zone:U3}'
+    - '{zone:U4}'
+    - '{zone:U5}'
+    - '{zone:U6}'
+    - '{zone:U7}'
+    - '{zone:U8}'
+    outcome: no_defect_indicated
+    processing_state: completed
+    inspector_id: '{person:NDT-01}'
+    conclusion_ref: РК-0924-02
+- at: '2026-09-24T11:55:00+03:00'
+  ref: Е-96
+  note: 'Исполнение решения «переделка» по F-017 подтверждено: камера и рентген чистые'
+  decision: nonconformity.disposition.verify
+  role: QC
+  actor: QC-01
+  item: F-017
+  params:
+    nc_id: '{ref:NC-G1}'
+  body:
+    recheck_event_ids:
+    - '{event:F-017/kt3-2}'
+    - '{event:F-017/xray-2}'
+- at: '2026-09-24T11:58:00+03:00'
+  note: F-017 предъявлен на ЗТ-3 повторно
+  decision: item.presentation.record
+  role: MASTER
+  actor: MST-02
+  item: F-017
+  params:
+    item_id: '{item:F-017}'
+  body:
+    presentation_no: 2
+    presented_to: qc
+    step_key: welding.zt3_acceptance
+- at: '2026-09-24T12:00:00+03:00'
+  ref: Е-47
+  label: S10A/zt3-2-F-017
+  note: 'ЗТ-3, второе предъявление: переделка принята → 1С «возврат из брака в производство» [П]'
+  decision: nonconformity.presentation.resolve
+  role: QC
+  actor: QC-01
+  item: F-017
+  params:
+    item_id: '{item:F-017}'
+  body:
+    closing_point: ZT-3
+    step_key: welding.zt3_acceptance
+    presentation_no: 2
+    resolution: accept
+    method_event_ids:
+    - '{event:F-017/kt3-2}'
+    - '{event:F-017/xray-2}'
+- at: '2026-09-24T12:20:00+03:00'
+  ref: Е-45
+  label: F-025/xray-2
+  note: 'Рентген F-025 после переварки (РК-0924-03): дефектов нет'
+  fact: inspection.result.recorded
+  source: xray
+  item: F-025
+  data:
+    observation_id: '{local:RK-0924-03}'
+    method: radiography
+    phase: after_operation
+    step_key: welding.kt3_radiography
+    operation_run_id: '{local:SV-025-2}'
+    zone_ids:
+    - '{zone:U1}'
+    - '{zone:U2}'
+    - '{zone:U3}'
+    - '{zone:U4}'
+    - '{zone:U5}'
+    - '{zone:U6}'
+    - '{zone:U7}'
+    - '{zone:U8}'
+    outcome: no_defect_indicated
+    processing_state: completed
+    inspector_id: '{person:NDT-01}'
+    conclusion_ref: РК-0924-03
+- at: '2026-09-24T12:30:00+03:00'
+  ref: Е-44
+  label: F-021/kt3-2
+  note: 'Камера КТ-3 после переварки F-021: признаков нет, качество ≥ 0,85'
+  fact: inspection.result.recorded
+  source: cam-kt3-a
+  item: F-021
+  data:
+    observation_id: '{local:KT3-F-021-2}'
+    method: camera
+    phase: after_operation
+    step_key: welding.kt3_camera
+    inspection_point: KT-3
+    operation_run_id: '{local:SV-021-2}'
+    zone_ids:
+    - '{zone:U1}'
+    - '{zone:U2}'
+    - '{zone:U3}'
+    - '{zone:U4}'
+    - '{zone:U5}'
+    - '{zone:U6}'
+    - '{zone:U7}'
+    - '{zone:U8}'
+    outcome: no_defect_indicated
+    processing_state: completed
+    analyzer_confidence_bp: 9500
+    observation_quality_bp: 8900
+    versions:
+      analyzer_version: vqc-weld 2.3.1
+      contract_version: '1.0'
+      recipe_ref: KT-3@5
+      camera_config: angle-1
+      item_revision: Б
+- at: '2026-09-24T12:35:00+03:00'
+  ref: Е-96
+  note: 'Исполнение решения «переделка» по F-023 подтверждено: камера и рентген чистые'
+  decision: nonconformity.disposition.verify
+  role: QC
+  actor: QC-01
+  item: F-023
+  params:
+    nc_id: '{ref:NC-G1}'
+  body:
+    recheck_event_ids:
+    - '{event:F-023/kt3-2}'
+    - '{event:F-023/xray-2}'
+- at: '2026-09-24T12:38:00+03:00'
+  note: F-023 предъявлен на ЗТ-3 повторно
+  decision: item.presentation.record
+  role: MASTER
+  actor: MST-02
+  item: F-023
+  params:
+    item_id: '{item:F-023}'
+  body:
+    presentation_no: 2
+    presented_to: qc
+    step_key: welding.zt3_acceptance
+- at: '2026-09-24T12:40:00+03:00'
+  ref: Е-47
+  label: S10A/zt3-2-F-023
+  note: 'ЗТ-3, второе предъявление: переделка принята → 1С «возврат из брака в производство» [П]'
+  decision: nonconformity.presentation.resolve
+  role: QC
+  actor: QC-01
+  item: F-023
+  params:
+    item_id: '{item:F-023}'
+  body:
+    closing_point: ZT-3
+    step_key: welding.zt3_acceptance
+    presentation_no: 2
+    resolution: accept
+    method_event_ids:
+    - '{event:F-023/kt3-2}'
+    - '{event:F-023/xray-2}'
+- at: '2026-09-24T13:15:00+03:00'
+  ref: Е-96
+  note: 'Исполнение решения «переделка» по F-025 подтверждено: камера и рентген чистые'
+  decision: nonconformity.disposition.verify
+  role: QC
+  actor: QC-01
+  item: F-025
+  params:
+    nc_id: '{ref:NC-G1}'
+  body:
+    recheck_event_ids:
+    - '{event:F-025/kt3-2}'
+    - '{event:F-025/xray-2}'
+- at: '2026-09-24T13:18:00+03:00'
+  note: F-025 предъявлен на ЗТ-3 повторно
+  decision: item.presentation.record
+  role: MASTER
+  actor: MST-02
+  item: F-025
+  params:
+    item_id: '{item:F-025}'
+  body:
+    presentation_no: 2
+    presented_to: qc
+    step_key: welding.zt3_acceptance
+- at: '2026-09-24T13:20:00+03:00'
+  ref: Е-47
+  label: S10A/zt3-2-F-025
+  note: 'ЗТ-3, второе предъявление: переделка принята → 1С «возврат из брака в производство» [П]'
+  decision: nonconformity.presentation.resolve
+  role: QC
+  actor: QC-01
+  item: F-025
+  params:
+    item_id: '{item:F-025}'
+  body:
+    closing_point: ZT-3
+    step_key: welding.zt3_acceptance
+    presentation_no: 2
+    resolution: accept
+    method_event_ids:
+    - '{event:F-025/kt3-2}'
+    - '{event:F-025/xray-2}'
+- at: '2026-09-24T13:40:00+03:00'
+  ref: Е-49
+  label: S10A/unlink-R-101
+  note: 'Ф-019: шов удалён, кольцо К-101 снято и отложено к претензии (НС-04); изделие то же; ждёт новое кольцо. Типа «компонент снят» в контракте нет — вскрытие с перечнем снятых компонентов
+    (предложение эпика 32 в отчёте)'
+  decision: item.intervention.open
+  role: PERFORMER
+  actor: WLD-02
+  item: F-019
+  params:
+    item_id: '{item:F-019}'
+  body:
+    purpose: Удаление шва для переделки; кольцо К-101 снято и отложено к претензии поставщику (НС-04)
+    zone_ids:
+    - '{zone:U1}'
+    - '{zone:U2}'
+    - '{zone:U3}'
+    - '{zone:U4}'
+    - '{zone:U5}'
+    - '{zone:U6}'
+    - '{zone:U7}'
+    - '{zone:U8}'
+    - '{zone:RING-BODY}'
+    removed_components:
+    - '{local:R-101}'
+- at: '2026-09-24T14:10:00+03:00'
+  ref: Е-45
+  label: F-015/xray-2
+  note: 'Рентген F-015 после переварки (РК-0924-05): дефектов нет'
+  fact: inspection.result.recorded
+  source: xray
+  item: F-015
+  data:
+    observation_id: '{local:RK-0924-05}'
+    method: radiography
+    phase: after_operation
+    step_key: welding.kt3_radiography
+    operation_run_id: '{local:SV-015-2}'
+    zone_ids:
+    - '{zone:U1}'
+    - '{zone:U2}'
+    - '{zone:U3}'
+    - '{zone:U4}'
+    - '{zone:U5}'
+    - '{zone:U6}'
+    - '{zone:U7}'
+    - '{zone:U8}'
+    outcome: no_defect_indicated
+    processing_state: completed
+    inspector_id: '{person:NDT-01}'
+    conclusion_ref: РК-0924-05
+- at: '2026-09-24T14:30:00+03:00'
+  ref: Е-45
+  label: F-021/xray-2
+  note: 'Рентген Ф-021 после переварки (РК-0924-04): поры, У5'
+  fact: inspection.result.recorded
+  source: xray
+  item: F-021
+  data:
+    observation_id: '{local:RK-0924-04}'
+    method: radiography
+    phase: after_operation
+    step_key: welding.kt3_radiography
+    operation_run_id: '{local:SV-021-2}'
+    zone_ids:
+    - '{zone:U1}'
+    - '{zone:U2}'
+    - '{zone:U3}'
+    - '{zone:U4}'
+    - '{zone:U5}'
+    - '{zone:U6}'
+    - '{zone:U7}'
+    - '{zone:U8}'
+    outcome: defect_indicated
+    processing_state: completed
+    inspector_id: '{person:NDT-01}'
+    conclusion_ref: РК-0924-04
+    defects:
+    - defect_type_code: W-PORE-I
+      description: Поры
+      zone_id: '{zone:U5}'
+      severity: major
+- at: '2026-09-24T14:34:00+03:00'
+  ref: Е-80
+  system: Сигнал по новому шву Ф-021
+- at: '2026-09-24T14:35:00+03:00'
+  ref: Е-90
+  label: S10A/confirm-NC-06
+  note: 'НС-06: новый дефект в новом шве (линия 1); исполнение решения не пройдено; Ф-021 заблокирован внутри системы; в 1С не уходит'
+  decision: nonconformity.nonconformity.confirm
+  role: QC
+  actor: QC-01
+  item: F-021
+  params:
+    nc_id: '{ref:NC-06}'
+  body:
+    signal_ids:
+    - '{ref:SIG-F021-2}'
+    severity: major
+    defect_type_code: W-PORE-I
+    reason:
+      code: xray
+      text: 'РК-0924-04: поры У5 в шве после переварки СВ-021-2'
+- at: '2026-09-24T14:36:00+03:00'
+  system: 'Проверка лимита: У5 — 1 переделка из 3; повторная переделка того же участка — только с согласия главного сварщика → автоматического назначения нет, задача ГС-01 и Т-01'
+- at: '2026-09-24T15:05:00+03:00'
+  ref: Е-96
+  note: 'Исполнение решения «переделка» по F-015 подтверждено: камера и рентген чистые'
+  decision: nonconformity.disposition.verify
+  role: QC
+  actor: QC-01
+  item: F-015
+  params:
+    nc_id: '{ref:NC-G1}'
+  body:
+    recheck_event_ids:
+    - '{event:F-015/kt3-2}'
+    - '{event:F-015/xray-2}'
+- at: '2026-09-24T15:08:00+03:00'
+  note: F-015 предъявлен на ЗТ-3 повторно
+  decision: item.presentation.record
+  role: MASTER
+  actor: MST-02
+  item: F-015
+  params:
+    item_id: '{item:F-015}'
+  body:
+    presentation_no: 2
+    presented_to: qc
+    step_key: welding.zt3_acceptance
+- at: '2026-09-24T15:10:00+03:00'
+  ref: Е-47
+  label: S10A/zt3-2-F-015
+  note: 'ЗТ-3, второе предъявление: переделка принята → 1С «возврат из брака в производство» [П]'
+  decision: nonconformity.presentation.resolve
+  role: QC
+  actor: QC-01
+  item: F-015
+  params:
+    item_id: '{item:F-015}'
+  body:
+    closing_point: ZT-3
+    step_key: welding.zt3_acceptance
+    presentation_no: 2
+    resolution: accept
+    method_event_ids:
+    - '{event:F-015/kt3-2}'
+    - '{event:F-015/xray-2}'
+- at: '2026-09-24T15:30:00+03:00'
+  ref: Е-94
+  label: S10A/scrap-F-021
+  note: 'Новое решение по Ф-021: «списать» — после удаления шва стенка у У5 на нижней границе; повторную переделку того же места не назначаем; прежнее решение остаётся → 1С «перевод
+    в брак (списание)»'
+  decision: nonconformity.disposition.set
+  role: CHIEF_WELDER
+  actor: CHW-01
+  stop: true
+  item: F-021
+  params:
+    nc_id: '{ref:NC-06}'
+  body:
+    disposition: scrap
+    scrap_kind: writeoff
+    reason:
+      code: wall_thickness_limit
+      text: После удаления шва стенка у У5 на нижней границе; повторную переделку того же места не назначаем
+outcome:
+- 'В паспорте Ф-017 две сварки, связанные между собой: СВ-017-1 (прожог) → СВ-017-2 (чисто).'
+- 'Повторные обработки (О-8): +5 выполнений сварки за четверг; проверенные изделия и изделия с несоответствиями не удваиваются.'
+- ЗТ-3 у этих пяти — не с первого предъявления; повторных предъявлений +5.
+- 'Итог по шести фланцам инцидента: 4 — переделка принята, 1 — списан (Ф-021), 1 — в переделке (Ф-019).'
+- 'В 1С: «возврат из брака в производство» ×4 [П], «перевод в брак (списание)» ×1; блокировка Ф-021 и НС-06 в 1С не уходят.'
+- 'С переварки пять фланцев идут по линии 1; итог по линиям: линия 2 — 4 дефекта сварки, линия 1 — 1.'
+must_not:
+- Переварка не создаёт новое изделие; повтор события не путается с повтором операции.
+- «Возврат из брака в производство» не уходит до чистого рентгена и подписи повторной ЗТ-3; «выпуск годного» — не раньше ЗТ-6.
+- Решение «переделка» по Ф-021 не стирается — новое решение ссылается на него.

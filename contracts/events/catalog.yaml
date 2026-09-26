@@ -1027,6 +1027,22 @@ types:
     versions: [1]
     current_version: 1
     refs: ["FR-19", "Е-08 decision.gate_passed (ЗТ-1)"]
+  decision.concession.granted:
+    title: "Разрешение на отклонение выдано"
+    emitter: "nonconformity"
+    role: "api"
+    kind: "decision"
+    stream: "concession"
+    axis: "none"
+    action_class: "permissive"
+    critical: true
+    ca_group: "nc_decision"
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-54", "AD-39", "решение дирижёра Д-24"]
   decision.concession.revoked:
     title: "Разрешение на отклонение отозвано"
     emitter: "nonconformity"
@@ -1091,7 +1107,22 @@ types:
     versions: [1]
     current_version: 1
     refs: ["FR-49", "Е-114 process_hold.released"]
-
+  decision.clean_point.assigned:
+    title: "Изделие в точке чистоты"
+    emitter: "nonconformity"
+    role: "crossitem"
+    kind: "reaction"
+    stream: "item"
+    axis: "containment"
+    action_class: "protective"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["server_attested"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-49", "AD-42"]
   # ── erp (владелец схемы: erp) ──
   erp.order.received:
     title: "Получено производственное задание"
@@ -2305,6 +2336,22 @@ types:
     versions: [1]
     current_version: 1
     refs: ["FR-10", "FR-22", "AD-17", "AD-33"]
+  normative.version.drafted:
+    title: "Черновик версии процесса сохранён"
+    emitter: "process"
+    role: "api"
+    kind: "decision"
+    stream: "process_version"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-13", "FR-22", "FR-25", "решение дирижёра Д-26"]
   normative.version.submitted:
     title: "Версия отправлена на утверждение"
     emitter: "process"
@@ -2809,6 +2856,22 @@ types:
     versions: [1]
     current_version: 1
     refs: ["FR-59", "FR-146"]
+  incident.measurement.requested:
+    title: "Запрошено измерение для проверки гипотезы"
+    emitter: "analysis"
+    role: "api"
+    kind: "decision"
+    stream: "incident"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-59", "FR-135", "Д-26"]
   incident.analysis.scoped:
     title: "Решено, нужен ли полный разбор"
     emitter: "analysis"

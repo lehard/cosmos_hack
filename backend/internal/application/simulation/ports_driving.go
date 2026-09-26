@@ -22,7 +22,8 @@ type Queries interface {
 
 // Commands — ведущий порт команд модуля simulation.
 type Commands interface {
-	StartRun(ctx context.Context, scenarioID string, in StartRun) (platform.Receipt, error)
+	// StartRun — новый прогон сценария (simulation.run.start): квитанция и run_id.
+	StartRun(ctx context.Context, scenarioID string, in StartRun) (StartedRun, error)
 	PauseRun(ctx context.Context, runID string, in RunControl) (platform.Receipt, error)
 	ResumeRun(ctx context.Context, runID string, in RunControl) (platform.Receipt, error)
 	StopRun(ctx context.Context, runID string, in RunControl) (platform.Receipt, error)
@@ -51,8 +52,8 @@ func (Unimplemented) Board(context.Context, string, platform.Moment) (Board, err
 func (Unimplemented) Injections(context.Context, string) (InjectionList, error) {
 	return InjectionList{}, ni("simulation.injection.list")
 }
-func (Unimplemented) StartRun(context.Context, string, StartRun) (platform.Receipt, error) {
-	return platform.Receipt{}, ni("simulation.run.start")
+func (Unimplemented) StartRun(context.Context, string, StartRun) (StartedRun, error) {
+	return StartedRun{}, ni("simulation.run.start")
 }
 func (Unimplemented) PauseRun(context.Context, string, RunControl) (platform.Receipt, error) {
 	return platform.Receipt{}, ni("simulation.run.pause")

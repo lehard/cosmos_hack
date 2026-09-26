@@ -1,0 +1,88 @@
+# S15 — process/scenarios-flange.md §4 S15 «один к одному».
+id: S15
+version: "0.3"
+title: "Сдвиг часов источника: часы КИМ-1 спешат на 7 минут"
+kind: extra
+goal: >-
+  «Соврали часы» ≠ «нарушили порядок»: записи источника идут строго по номерам, система
+  замечает сдвиг, исправляет время по правилу и помечает запись; исходное время не меняется;
+  ЗТ-2, подписанная раньше «неисправленного» времени протокола, не получает ложного «пересмотрите».
+case:
+  other: ["§4.6 расхождения времени источников", "§5.2 — откуда взято время", "ред-тим, строка 26 (а)"]
+run: MS-1
+where: "Главный поток, фон: Пн 21.09 08:25–10:15. В табло — да."
+source: "process/scenarios-flange.md §4 S15"
+steps:
+  - {at: "2026-09-21T08:00:00+03:00", system: "После выходных КИМ-1 не синхронизировал часы с сервером времени: спешат на 7 мин [П]"}
+  - at: "2026-09-21T08:25:00+03:00"
+    ref: Е-18
+    label: F-007/cmm
+    note: "Протокол КИМ Ф-007: время события 08:32:00 (часы источника), получено 08:25"
+    fact: inspection.result.recorded
+    source: cmm-1
+    item: F-007
+    skew: "+7m"
+    data: &cmm
+      observation_id: "{local:CMM-F-007}"
+      method: cmm
+      phase: after_operation
+      step_key: machining.kt2_cmm
+      operation_run_id: "{local:MO-007-1}"
+      outcome: no_defect_indicated
+      processing_state: completed
+      inspector_id: "{person:OP-CMM-01}"
+      measurements: &cmm5
+        - {characteristic: "Ø посадочный 120H8, мм", value: {value: 120021, scale: 3, unit: mm}, tolerance: {nominal: {value: 120000, scale: 3, unit: mm}, lower: {value: 119946, scale: 3, unit: mm}, upper: {value: 120054, scale: 3, unit: mm}}, verdict: within}
+        - {characteristic: "Ø наружный 180h9, мм", value: {value: 179968, scale: 3, unit: mm}, tolerance: {nominal: {value: 180000, scale: 3, unit: mm}, lower: {value: 179900, scale: 3, unit: mm}, upper: {value: 180100, scale: 3, unit: mm}}, verdict: within}
+        - {characteristic: "Высота 32±0,1, мм", value: {value: 32012, scale: 3, unit: mm}, tolerance: {nominal: {value: 32000, scale: 3, unit: mm}, lower: {value: 31900, scale: 3, unit: mm}, upper: {value: 32100, scale: 3, unit: mm}}, verdict: within}
+        - {characteristic: "Плоскостность уплотнительной поверхности, мм", value: {value: 12, scale: 3, unit: mm}, tolerance: {upper: {value: 30, scale: 3, unit: mm}}, verdict: within}
+        - {characteristic: "Позиция отверстий 12×Ø9, мм", value: {value: 41, scale: 3, unit: mm}, tolerance: {upper: {value: 100, scale: 3, unit: mm}}, verdict: within}
+  - {at: "2026-09-21T08:25:01+03:00", ref: "Е-87, Е-89", system: "Расхождение часов источника: сдвиг +7 мин; время исправлено по правилу 08:25:00, исходное 08:32:00 сохранено; задача А-01"}
+  - {at: "2026-09-21T08:30:00+03:00", ref: Е-19, route: "F-007:zt2_presented,zt2", note: "ЗТ-2 Ф-007: по исправленному времени КИМ был до подписи — метки «пересмотрите» нет"}
+  - at: "2026-09-21T08:50:00+03:00"
+    ref: Е-18
+    label: F-008/cmm
+    fact: inspection.result.recorded
+    source: cmm-1
+    item: F-008
+    skew: "+7m"
+    data: {<<: *cmm, observation_id: "{local:CMM-F-008}", operation_run_id: "{local:MO-008-1}"}
+  - at: "2026-09-21T09:15:00+03:00"
+    ref: Е-18
+    label: F-009/cmm
+    fact: inspection.result.recorded
+    source: cmm-1
+    item: F-009
+    skew: "+7m"
+    data: {<<: *cmm, observation_id: "{local:CMM-F-009}", operation_run_id: "{local:MO-009-1}"}
+  - at: "2026-09-21T09:40:00+03:00"
+    ref: Е-18
+    label: F-010/cmm
+    fact: inspection.result.recorded
+    source: cmm-1
+    item: F-010
+    skew: "+7m"
+    data: {<<: *cmm, observation_id: "{local:CMM-F-010}", operation_run_id: "{local:MO-010-1}"}
+  - at: "2026-09-21T10:05:00+03:00"
+    ref: Е-18
+    label: F-011/cmm
+    fact: inspection.result.recorded
+    source: cmm-1
+    item: F-011
+    skew: "+7m"
+    data: {<<: *cmm, observation_id: "{local:CMM-F-011}", operation_run_id: "{local:MO-011-1}"}
+  - {at: "2026-09-21T08:55:00+03:00", route: "F-008:zt2_presented,zt2", note: "ЗТ-2 Ф-008…Ф-011 — после протоколов, без «пересмотрите»"}
+  - {at: "2026-09-21T09:20:00+03:00", route: "F-009:zt2_presented,zt2"}
+  - {at: "2026-09-21T09:45:00+03:00", route: "F-010:zt2_presented,zt2"}
+  - {at: "2026-09-21T10:10:00+03:00", route: "F-011:zt2_presented,zt2"}
+  - {at: "2026-09-21T10:15:00+03:00", ref: Е-88, system: "Часы КИМ-1 синхронизированы (А-01): сдвиг был 7 мин 00 с. Операции «часы синхронизированы» в контракте нет — предложение эпика 32 (отчёт)"}
+  - {at: "2026-09-21T10:30:00+03:00", ref: Е-18, route: "F-013:cmm", note: "Протокол КИМ Ф-013 — время верное, без поправки"}
+outcome:
+  - "У пяти протоколов КИМ (Ф-007…Ф-011) — исходное время как есть и рядом исправленное, с пометкой «время исправлено по правилу: часы источника +7 мин»."
+  - "Порядок записей КИМ-1 по номерам не нарушен; ничего не переставлено и не отброшено."
+  - "В истории этих фланцев протокол КИМ стоит до подписи ЗТ-2."
+  - "Следующая запись (Ф-013) — без поправки; Н-5: «время исправлено по правилу» — 5 записей."
+must_not:
+  - "ЗТ-2 по Ф-007…Ф-011 не помечены «пересмотрите»."
+  - "Записи со сдвигом не уходят в карантин; исходное время не перезаписано."
+  - "В показателях ожидания нет отрицательных интервалов «КИМ → ЗТ-2»."

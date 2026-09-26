@@ -62,14 +62,22 @@ func Register(api *httpapi.API, q app.Queries, c app.Commands) {
 			return q.Injections(ctx, in.RunID)
 		})
 
-	httpapi.Do(api, httpapi.Post("/scenarios/{scenario_id}/runs", "Запустить сценарий",
+	type startedRun struct {
+		httpapi.Receipt
+		RunID string `json:"run_id" doc:"Новый прогон — отдельное пространство имён (AD-38)."`
+	}
+	httpapi.Register(api, httpapi.Post("/scenarios/{scenario_id}/runs", "Запустить сценарий",
 		"AD-38: новый прогон с run_id, seed, скоростью и режимом; события идут через stand-ы → edge-агент → обычный приём (AD-26)."),
 		platform.Action{ID: "simulation.run.start", Class: platform.ClassRecord, Owner: owner, Subject: "run", Emits: emits(catalog.SimulationRunStarted)},
 		func(ctx context.Context, in *struct {
 			ScenarioID string `path:"scenario_id" maxLength:"128"`
 			Body       app.StartRun
-		}) (platform.Receipt, error) {
-			return c.StartRun(ctx, in.ScenarioID, in.Body)
+		}) (*httpapi.Out[startedRun], error) {
+			r, err := c.StartRun(ctx, in.ScenarioID, in.Body)
+			if err != nil {
+				return nil, err
+			}
+			return httpapi.OK(startedRun{Receipt: httpapi.ReceiptOf(r.Receipt).Body, RunID: r.RunID}), nil
 		})
 
 	httpapi.Do(api, httpapi.Post("/runs/{run_id}/pause", "Пауза", "AD-26: пауза останавливает поток событий и доменные часы; столы показывают состояние на этот момент."),

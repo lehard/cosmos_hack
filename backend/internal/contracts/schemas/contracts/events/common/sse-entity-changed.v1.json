@@ -24,7 +24,14 @@
         "integrity",
         "live_map",
         "policy",
-        "quarantine"
+        "quarantine",
+        "concession",
+        "process_hold",
+        "person",
+        "reference",
+        "key",
+        "material",
+        "partner"
       ],
       "description": "Вид сущности — первый элемент ключа Vue Query."
     },

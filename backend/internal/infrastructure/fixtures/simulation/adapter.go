@@ -2,6 +2,7 @@ package simulation
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"sync/atomic"
@@ -51,7 +52,7 @@ func (a *Adapter) now() time.Time {
 }
 
 // Scenarios — сценарии пульта: сценарии библиотеки заготовок (simulation.scenario.list).
-func (a *Adapter) Scenarios(context.Context) (app.ScenarioList, error) {
+func (a *Adapter) Scenarios(ctx context.Context) (app.ScenarioList, error) {
 	rt, err := a.rt()
 	if err != nil {
 		return app.ScenarioList{}, err
@@ -67,9 +68,11 @@ func (a *Adapter) Scenarios(context.Context) (app.ScenarioList, error) {
 				decisions++
 			}
 		}
+		items, rows := a.totals(ctx, rt, sc)
 		out.Items = append(out.Items, app.Scenario{
 			ScenarioID: mf.ID, Version: "fixtures-1", Title: mf.Title, Description: mf.Description,
 			CaseRefs: append([]string{}, mf.Case...), Decisions: decisions,
+			DefaultSeed: defaultSeed(mf.ID), DefaultItems: items, Assertions: rows,
 		})
 	}
 	return out, nil
@@ -119,10 +122,10 @@ func (a *Adapter) Injections(ctx context.Context, runID string) (app.InjectionLi
 }
 
 // StartRun — запуск прогона сценария с шага 0 (simulation.run.start): новый run_id.
-func (a *Adapter) StartRun(ctx context.Context, scenarioID string, in app.StartRun) (platform.Receipt, error) {
+func (a *Adapter) StartRun(ctx context.Context, scenarioID string, in app.StartRun) (app.StartedRun, error) {
 	rt, err := a.rt()
 	if err != nil {
-		return platform.Receipt{}, err
+		return app.StartedRun{}, err
 	}
 	var runID string
 	if in.CommandID != "" {
@@ -134,11 +137,14 @@ func (a *Adapter) StartRun(ctx context.Context, scenarioID string, in app.StartR
 	if in.Seed != nil {
 		seed = *in.Seed
 	}
+	if seed == 0 {
+		seed = defaultSeed(scenarioID)
+	}
 	st, err := rt.Start(ctx, scenarioID, runID, in.Mode, seed, in.Speed, a.now())
 	if err != nil {
-		return platform.Receipt{}, err
+		return app.StartedRun{}, err
 	}
-	return receipt("simulation.run.start", in.CommandMeta(), st), nil
+	return app.StartedRun{Receipt: receipt("simulation.run.start", in.CommandMeta(), st), RunID: runID}, nil
 }
 
 // PauseRun — пауза прогона (simulation.run.pause): столы показывают шаг курсора.
@@ -237,8 +243,8 @@ func (a *Adapter) view(ctx context.Context, rt *loader.Runtime, st platform.Curs
 	}
 	r := app.Run{
 		RunID: runID, ScenarioID: sc.Manifest.ID, ScenarioVersion: "fixtures-1", Mode: "interactive",
-		State: state, Speed: speed, Step: st.Step, Steps: sc.Steps(), ClockAt: st.ClockAt,
-		StartedAt: sc.Header(0).Clock, BasisSeq: loader.StepSeq(st.Step),
+		State: state, Speed: speed, Step: st.Step, StepTitle: sc.Header(st.Step).Title, Steps: sc.Steps(), ClockAt: st.ClockAt,
+		StartedAt: sc.Header(0).Clock, BasisSeq: loader.StepSeq(st.Step), Seed: defaultSeed(sc.Manifest.ID),
 	}
 	if r.ClockAt.IsZero() {
 		r.ClockAt = sc.Header(st.Step).Clock
@@ -247,12 +253,46 @@ func (a *Adapter) view(ctx context.Context, rt *loader.Runtime, st platform.Curs
 		r.Mode, r.Seed, r.StartedAt, r.FinishedAt = ri.Mode, ri.Seed, ri.StartedAt, ri.FinishedAt
 	}
 	if w := sc.Header(st.Step).Wait; w != nil && state == "waiting_for_decision" {
-		r.WaitingFor = &app.RunWait{Role: w.Role, Action: w.Action, ObjectID: sc.PrefixID(w.Object.ID, st.RunID)}
+		r.WaitingFor = &app.RunWait{Role: w.Role, Action: w.Action, ObjectID: sc.PrefixID(w.Object.ID, st.RunID), Title: w.Title}
 	}
 	if b, err := a.respondBoard(ctx, runID, nil); err == nil {
 		r.BoardPassed, r.BoardTotal = b.Passed, len(b.Rows)
 	}
 	return r
+}
+
+// defaultSeed — seed сценария заготовок: мир flange-bad-day — главная история
+// MS-1 определений симуляции (scenarios/definitions/runs/MS-1.yaml), тот же seed.
+func defaultSeed(scenario string) int64 {
+	if scenario == "flange-bad-day" {
+		return 20260921
+	}
+	return 0
+}
+
+// totals — изделий и строк табло сценария заготовок: по ответам его последнего шага.
+func (a *Adapter) totals(ctx context.Context, rt *loader.Runtime, sc *loader.Scenario) (items, rows int) {
+	cur, cs, err := rt.State(ctx)
+	if err != nil || cs == nil || cs.Manifest.ID != sc.Manifest.ID || sc.Steps() == 0 {
+		return 0, 0
+	}
+	last := sc.Header(sc.Steps() - 1).Clock
+	m := &platform.Moment{Axis: platform.AxisRecorded, AsOf: &last}
+	runID := cur.RunID
+	if runID == "" {
+		runID = sc.Manifest.ID
+	}
+	var b app.Board
+	if err := rt.Respond(ctx, "simulation.board.read", map[string]string{"run_id": runID}, m, &b); err == nil {
+		rows = len(b.Rows)
+	}
+	var list struct {
+		Items []json.RawMessage `json:"items"`
+	}
+	if err := rt.Respond(ctx, "item.item.list", map[string]string{}, m, &list); err == nil {
+		items = len(list.Items)
+	}
+	return items, rows
 }
 
 // receipt — квитанция команды пульта (AD-7): seq шага курсора, id — UUIDv5.

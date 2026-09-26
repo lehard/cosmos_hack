@@ -6,11 +6,16 @@ import (
 	"time"
 
 	"ant/cmd/internal/db"
+	analysisapp "ant/internal/application/analysis"
+	analyticsapp "ant/internal/application/analytics"
 	crossitemapp "ant/internal/application/crossitem"
 	engineapp "ant/internal/application/engine"
 	appjournal "ant/internal/application/journal"
 	machinelogsapp "ant/internal/application/machinelogs"
+	nonconformityapp "ant/internal/application/nonconformity"
+	qualityapp "ant/internal/application/quality"
 	mldomain "ant/internal/domain/machinelogs"
+	"ant/internal/infrastructure/storage/journal/clock"
 	"ant/internal/infrastructure/storage/journal/feed"
 )
 
@@ -30,7 +35,25 @@ func engineRegistry() *engineapp.Registry {
 	if err := machinelogsapp.RegisterProjections(r, mldomain.Env{}); err != nil {
 		panic(err)
 	}
+	// analysis (эпик 22): разбор обстоятельств изделия, инциденты и версии
+	// области риска, несоответствия для гипотез и общих факторов.
+	analysisapp.MustRegister(r)
+	// Показатели (эпик 25, AD-45): вклады изделий и глобальные проекции analytics.
+	if err := analyticsapp.Register(r); err != nil {
+		panic(err)
+	}
+	// nonconformity (эпик 21): оси «решение по изделию» и «сдерживание»,
+	// изоляция и несоответствия изделия.
+	mustRegister(nonconformityapp.RegisterProjections(r))
+	mustRegister(qualityapp.Register(r)) // эпик 20: quality.item, quality.index, вклады показателей качества
 	return r
+}
+
+// mustRegister — ошибка регистрации проекции — ошибка сборки (одно имя — один писатель, AD-45).
+func mustRegister(err error) {
+	if err != nil {
+		panic(err)
+	}
 }
 
 // runWorker — роль worker (AD-5, AD-6, AD-45): партиции hash(item_id) mod P
@@ -44,6 +67,7 @@ func runWorker(ctx context.Context, env *environment) error {
 	wf := feed.NewWorkFeed(c.journal, c.leases, c.listener, env.cfg.Engine.Partitions, c.feedOptions(env, "worker"))
 	w := engineapp.NewWorker(engineapp.WorkerConfig{
 		Feed: wf, Codec: c.codec, Projections: c.registry, Log: env.log, Now: c.codec.Now,
+		Bundles: c.qualityBundles(nil), // эпик 20; эпик 17 передаст сюда свой источник версии
 		// Аренды партиций продлевает WorkFeed.Partitions — не реже TTL/3.
 		Refresh: c.ttl / 3,
 	})
@@ -94,7 +118,7 @@ func runRebuild(ctx context.Context, env *environment) error {
 	if err != nil {
 		return err
 	}
-	rb := &engineapp.Rebuilder{Codec: c.codec, Registry: c.registry}
+	rb := &engineapp.Rebuilder{Codec: c.codec, Registry: c.registry, Bundles: c.qualityBundles(nil)}
 	var rep engineapp.RebuildReport
 	if env.item != "" {
 		rep, err = rb.RebuildItem(ctx, env.item, env.reason)
@@ -149,4 +173,21 @@ func machinelogsLive(ctx context.Context, env *environment) (*machinelogsapp.Ser
 		return nil, err
 	}
 	return machinelogsapp.NewLiveService(c.engine, engineapp.StateQueries{Codec: c.codec}, mldomain.Env{}), nil
+}
+
+// analysisLive — live-реализация ведущих портов analysis для роли api (эпик
+// 22): чтение — проекции analysis.* на ядре процесса; команды — гард над
+// состоянием инцидента и решение в журнал ядра; доменное «сейчас» — часы
+// журнала (AD-37).
+func analysisLive(ctx context.Context, env *environment) (*analysisapp.Service, error) {
+	c, err := env.core(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return analysisapp.NewLive(analysisapp.Config{
+		Projections: c.engine,
+		Decisions: analysisapp.JournalDecisions{Journal: c.journal, DomainBuild: c.codec.DomainBuild,
+			Partitions: env.cfg.Engine.Partitions, Now: c.codec.Now},
+		Clock: clock.NewJournal(c.journal),
+	}), nil
 }

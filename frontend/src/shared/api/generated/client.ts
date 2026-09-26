@@ -131,6 +131,7 @@ import type {
   FederationExtractListParams,
   FederationPartnerListParams,
   FinishOperation,
+  GrantConcession,
   GrantPolicy,
   GrantQualification,
   Hypotheses,
@@ -317,6 +318,7 @@ import type {
   SourceList,
   StartOperation,
   StartRun,
+  StartedRun,
   StoppedItemList,
   SubmitVersion,
   SwitchSource,
@@ -3430,6 +3432,126 @@ export function useNonconformityConcessionList<TData = Awaited<ReturnType<typeof
 
 
 
+
+export type nonconformityConcessionGrantResponse200 = {
+  data: Receipt
+  status: 200
+}
+
+export type nonconformityConcessionGrantResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type nonconformityConcessionGrantResponseSuccess = (nonconformityConcessionGrantResponse200) & {
+  headers: Headers;
+};
+export type nonconformityConcessionGrantResponseError = (nonconformityConcessionGrantResponseDefault) & {
+  headers: Headers;
+};
+
+export const getNonconformityConcessionGrantUrl = () => {
+
+
+
+
+  return `/api/v1/concessions`
+}
+
+/**
+ * FR-54, Д-24: номер, пункт КД/ТУ, область действия, лимит количества, срок; лимит открывается атомарно с записью (AD-39). Внешние полномочия (режим 5) — маршрут подписей документа разрешения.
+ * @summary Выдать разрешение на отклонение
+ */
+export const nonconformityConcessionGrant = async (grantConcession: GrantConcession, options?: RequestInit): Promise<nonconformityConcessionGrantResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getNonconformityConcessionGrantUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(grantConcession)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: nonconformityConcessionGrantResponseError['data'], status?: number} = new globalThis.Error();
+    const data : nonconformityConcessionGrantResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: nonconformityConcessionGrantResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as nonconformityConcessionGrantResponseSuccess
+}
+
+
+
+
+
+export const getNonconformityConcessionGrantMutationKey = () => ['nonconformityConcessionGrant'] as const;
+
+export const getNonconformityConcessionGrantMutationOptions = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof nonconformityConcessionGrant>>, TError,NonconformityConcessionGrantMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof nonconformityConcessionGrant>>, TError,NonconformityConcessionGrantMutationVariables, TContext> => {
+
+const mutationKey = getNonconformityConcessionGrantMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof nonconformityConcessionGrant>>, NonconformityConcessionGrantMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  nonconformityConcessionGrant(data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type NonconformityConcessionGrantMutationResult = NonNullable<Awaited<ReturnType<typeof nonconformityConcessionGrant>>>
+    export type NonconformityConcessionGrantMutationBody = GrantConcession
+    export type NonconformityConcessionGrantMutationError = globalThis.Error & { info?: Problem; status?: number }
+    export type NonconformityConcessionGrantMutationVariables = {data: GrantConcession}
+
+    /**
+ * @summary Выдать разрешение на отклонение
+ */
+export const useNonconformityConcessionGrant = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof nonconformityConcessionGrant>>, TError,NonconformityConcessionGrantMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof nonconformityConcessionGrant>>,
+        TError,
+        NonconformityConcessionGrantMutationVariables,
+        TContext
+      > => {
+      return useMutation(getNonconformityConcessionGrantMutationOptions(options), queryClient);
+    }
 
 export type nonconformityConcessionRevokeResponse200 = {
   data: Receipt
@@ -15804,7 +15926,7 @@ export const getAnalysisMeasurementRequestUrl = (ncId: string,) => {
 }
 
 /**
- * Проверка гипотезы измерением: задачу исполнителю ставит notifications по записи запроса (тип записи — предложение контракта, см. docs/codegen.md).
+ * Проверка гипотезы измерением: запись incident.measurement.requested; задачу исполнителю ставит notifications по этой записи.
  * @summary Запросить измерение
  */
 export const analysisMeasurementRequest = async (ncId: string,
@@ -23528,7 +23650,7 @@ export function useSimulationScenarioList<TData = Awaited<ReturnType<typeof simu
 
 
 export type simulationRunStartResponse200 = {
-  data: Receipt
+  data: StartedRun
   status: 200
 }
 

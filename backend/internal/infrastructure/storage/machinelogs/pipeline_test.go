@@ -32,19 +32,6 @@ const partitions = 4
 
 var t0 = time.Date(2026, 9, 26, 7, 0, 0, 0, time.UTC)
 
-// Заготовка функции-намерения nonconformity (эпик 21): модуль и тип —
-// переменные (emitcheck: запись от имени nonconformity строит только тест).
-var (
-	ncModule kernel.Module = "nonconformity"
-	ncType                 = catalog.DecisionNonconformityRegistered
-)
-
-func fakeRegistrar(q ml.NCRequest) (kernel.Addressed, error) {
-	return kernel.NewAddressed(ncModule, ncType, "item:"+q.ItemID, q.Key(),
-		map[string]any{"nc_id": q.NCID, "violation_window_event_id": q.WindowEventID, "operation_run_id": q.OperationRunID, "step_key": q.StepKey},
-		q.CauseRecords()...)
-}
-
 type core struct {
 	journal *journalstore.Store
 	engine  *enginestore.Store
@@ -162,15 +149,9 @@ func TestPostgresRunProfileFeed130(t *testing.T) {
 // 3 из них без найденного дефекта — на Postgres.
 func TestPostgresSpecialProcessSixItems(t *testing.T) {
 	sc := mltest.WeldingOutOfRegime(t0, "")
-	f := ml.StageWith(ml.StagePorts{Register: fakeRegistrar})
-	stage := func(s dcross.Stage, r kernel.Record) (dcross.Stage, []kernel.Addressed) {
-		return dcross.Settle(s, r, func(s dcross.Stage, r kernel.Record) (dcross.Stage, []kernel.Addressed) {
-			var a []kernel.Addressed
-			s.Machinelogs, a = f(s.Machinelogs, r)
-			return s, a
-		})
-	}
-	c := run(t, sc, stage)
+	// Стадия в сборке crossitem.Fold: порт machinelogs.Registrar — функция
+	// nonconformity.RegisterWindowNC (эпик 21), без заглушки.
+	c := run(t, sc, nil)
 	ctx := context.Background()
 	ncs, err := c.journal.Read(ctx, appjournal.ReadQuery{EventType: string(catalog.DecisionNonconformityRegistered)})
 	if err != nil {

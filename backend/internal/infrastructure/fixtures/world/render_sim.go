@@ -84,8 +84,8 @@ func (m *Model) assertions() []assertion {
 			}
 			return nil
 		}},
-		{"S05-29", "Изделий с подтверждёнными несоответствиями — 6", "analytics.tile.list", "/items/items_with_confirmed_nc/value/value", m.stepOf(23, 15, 35), 6, func(c *Ctx) any { return c.metrics().withNC }},
-		{"S05-30", "Подтверждённых дефектов сварки — 4 на 3 изделиях", "quality.defect.list", "/defect_count", m.stepOf(23, 15, 35), 4, func(c *Ctx) any { return sum(c.metrics().defects) }},
+		{"S05-29", "Изделий с подтверждёнными несоответствиями — 6", "analytics.tile.list", "/items/items_with_confirmed_nc/value/value", m.stepOf(23, 15, 35), 6, func(c *Ctx) any { return c.metricTotal("items_with_confirmed_nc") }},
+		{"S05-30", "Подтверждённых дефектов сварки — 4 на 3 изделиях", "quality.defect.list", "/defect_count", m.stepOf(23, 15, 35), 4, func(c *Ctx) any { return c.metricTotal("defects_by_type") }},
 		{"S05-25", "В 1С «перевод в брак (переделка)» по 6 изделиям подтверждён", "erp.message.read", "/status", m.stepOf(23, 15, 35), "acknowledged", func(c *Ctx) any {
 			for _, e := range c.M.ERP {
 				if e.ID == "OUT-000127" && !e.At.After(c.T) {

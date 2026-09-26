@@ -39,6 +39,7 @@ const data = computed(() => (focus.pick ? src.data.value : null))
       :has-more="src.hasMore.value"
       :loading-more="src.loadingMore.value"
       @open-item="(id) => drill.open({ entity: 'item', id })"
+      @open-ref="(ref) => drill.open(ref)"
       @more="src.loadMore"
     />
   </WidgetFrame>

@@ -44,6 +44,15 @@
     "reason": {
       "$ref": "../common/defs.v1.json#/definitions/reason",
       "description": "Причина: код и текст."
+    },
+    "approvals_status": {
+      "type": "string",
+      "enum": [
+        "route_closed",
+        "pending",
+        "demo_stub"
+      ],
+      "description": "Подписи маршрута решения на момент записи (FR-50 режим 4, AD-43): route_closed — маршрут закрыт; pending — исполнение ждёт document.route.closed; demo_stub — демо-профиль, подписи не проверялись (заглушка порта «маршрут закрыт»)."
     }
   },
   "required": [

@@ -1,0 +1,99 @@
+# S12 — process/scenarios-flange.md §4 S12 «один к одному». Сообщения не по контракту
+# собираются генератором и портятся правкой mutate (кейс §4.7, FR-29, AD-20).
+#
+# Сведение с контрактом v1 (эпик 00): сообщение 1 «без номера изделия» по AD-41 не
+# карантин, а событие без привязки — оно уходит в очередь привязки межизделийной стадии,
+# и А-01 привязывает его вручную новой записью (binding.link.assigned) — как в строке
+# «Деталь не идентифицирована» таблицы сбоев. В карантине — сообщения 2 и 3.
+id: S12
+version: "0.3"
+title: "Некорректные сообщения — карантин с кодами"
+kind: extra
+goal: >-
+  Поведение при нарушении контракта: неправильные сообщения не теряются и не искажают
+  данные, а лежат в карантине с понятной причиной; изменения контракта принимаются по правилам.
+case:
+  other: ["§4.7 неизвестная версия, новое необязательное поле, нет обязательного поля, неизвестное значение", "версия контракта ≠ версия анализатора"]
+run: MS-1
+where: "Главный поток, фон: Вт 22.09 14:00 (имитатор подмешивает). Можно прогнать отдельно."
+source: "process/scenarios-flange.md §4 S12"
+steps:
+  - at: "2026-09-22T14:00:00+03:00"
+    ref: "S12 №1"
+    label: F-026/kt3
+    note: "Результат контроля КТ-3 без номера изделия (носителя нет): событие без привязки → очередь привязки (AD-41)"
+    fact: inspection.result.recorded
+    source: cam-kt3-a
+    item: F-026
+    mutate: {drop: [item_ref]}
+    data: &kt3
+      observation_id: "{local:KT3-F-026-A}"
+      method: camera
+      phase: after_operation
+      step_key: welding.kt3_camera
+      inspection_point: KT-3
+      zone_ids: ["{zone:U1}", "{zone:U2}", "{zone:U3}", "{zone:U4}", "{zone:U5}", "{zone:U6}", "{zone:U7}", "{zone:U8}"]
+      outcome: no_defect_indicated
+      processing_state: completed
+      analyzer_confidence_bp: 9400
+      observation_quality_bp: 9000
+      versions: {analyzer_version: "vqc-weld 2.3.1", contract_version: "1.0", recipe_ref: "KT-3@5", camera_config: "angle-1", item_revision: "Б"}
+  - at: "2026-09-22T14:00:10+03:00"
+    ref: "S12 №2"
+    label: S12/unknown-version
+    note: "Параметры ИС-1 с версией контракта «9.0» → карантин: неизвестная версия (E_UNSUPPORTED_VERSION → ingest.unknown_schema_version)"
+    fact: equipment.cycle.summarized
+    source: is-1
+    mutate: {set: {schema_version: 9}, invalid: true, quarantine: true}
+    data:
+      equipment_id: "{equipment:WS-1}"
+      station_id: ST-WELD
+      window_start: "2026-09-22T13:59:00+03:00"
+      window_end: "2026-09-22T14:00:00+03:00"
+      parameters: [{parameter: current, mean: {value: 161, scale: 0, unit: A}}]
+  - at: "2026-09-22T14:00:20+03:00"
+    ref: "S12 №3"
+    label: S12/unknown-enum
+    note: "Результат контроля с исходом «maybe» → карантин: исход — критичное поле (E_UNKNOWN_ENUM → ingest.unknown_enum_value_critical)"
+    fact: inspection.result.recorded
+    source: cam-kt3-b
+    item: F-026
+    mutate: {set: {data/outcome: maybe}, invalid: true, quarantine: true}
+    data: {<<: *kt3, observation_id: "{local:KT3-F-026-B}", versions: {analyzer_version: "vqc-weld 2.3.1", contract_version: "1.0", recipe_ref: "KT-3@5", camera_config: "angle-2"}}
+  - at: "2026-09-22T14:00:30+03:00"
+    ref: "S12 №4"
+    label: S12/new-optional-field
+    note: "Результат контроля «версии 1.1» с новым необязательным полем (температура объектива) — принят, поле сохранено как есть"
+    fact: inspection.result.recorded
+    source: cam-kt3-b
+    item: F-024
+    data: {<<: *kt3, observation_id: "{local:KT3-F-024-B}", lens_temp_c: {value: 412, scale: 1, unit: Cel}, versions: {analyzer_version: "vqc-weld 2.3.1", contract_version: "1.1", recipe_ref: "KT-3@5", camera_config: "angle-2"}}
+  - at: "2026-09-22T14:00:40+03:00"
+    ref: "S12 №5"
+    label: S12/unknown-noncritical
+    note: "Неизвестное значение в некритичном поле (рекомендация анализатора «spatter_x») — принято как «неизвестно (исходное значение)» с флагом"
+    fact: inspection.result.recorded
+    source: cam-kt3-b
+    item: F-022
+    mutate: {set: {data/recommendation: spatter_x}, invalid: true}
+    data: {<<: *kt3, observation_id: "{local:KT3-F-022-B}", versions: {analyzer_version: "vqc-weld 2.3.1", contract_version: "1.0", recipe_ref: "KT-3@5", camera_config: "angle-2"}}
+  - at: "2026-09-22T14:30:00+03:00"
+    ref: "S12 №6"
+    label: S12/manual-binding
+    note: "А-01 привязывает сообщение 1 к Ф-026 по контексту поста (ЗТ-3, пост 1) — новая запись с автором; принято один раз"
+    decision: crossitem.binding.assign
+    role: ADMIN
+    actor: ADM-01
+    item: F-026
+    body:
+      subject_event_id: "{event:F-026/kt3}"
+      item_id: "{item:F-026}"
+      method: manual_entry
+      reason: {code: post_context, text: "Номер изделия по контексту поста: пост ЗТ-3, сварка Ф-026 13:25–14:00"}
+outcome:
+  - "В карантине 2 сообщения (неизвестная версия, неизвестное значение в критичном поле), у каждого — код, поле или значение, время, источник; источник получил уведомление."
+  - "Сообщение без носителя изделия не потеряно: оно в очереди привязки и привязано человеком ровно один раз."
+  - "Сообщение с новым необязательным полем принято; версия контракта и версия анализатора — разные поля."
+  - "Изделия, история, сигналы и показатели от сообщений 2–3 не меняются."
+must_not:
+  - "Сообщение не пропадает молча. Номер изделия не «угадывается» без человека. «maybe» не превращается в «признаков нет»."

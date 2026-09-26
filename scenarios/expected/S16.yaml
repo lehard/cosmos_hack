@@ -1,0 +1,170 @@
+# Ожидания S16 — отдельно от входных событий (кейс §5.1, AD-26): утверждения над теми же
+# operationId, что показывают столы; check.path — путь в ответе (board.go), значения — ID
+# процессной сессии (сверка переводит их сведением имён прогона). mapping: exact — поле
+# ответа контракта; draft — по смыслу, путь уточнит модуль-владелец; manual — видно на экране.
+scenario: S16
+version: 0.3-draft
+title: Ненадёжная привязка события к выполнению операции (Ф-004 / Ф-005)
+run: MS-1
+source: 'process/scenarios-flange-expected.yaml процессной сессии, версия 0.3-draft: утверждения процессной сессии — в source без изменений, check — исполняемая форма эпика 32'
+checkpoints:
+- at: '2026-09-18T15:30:00+03:00'
+  label: после ЗТ-2 по Ф-005
+  assertions:
+  - id: S16-01
+    what: 'запись пульта ЧПУ-1 (подача 120 % на 80 с) хранится с уровнем привязки «неоднозначно»: два кандидата, основания названы'
+    check:
+      operation: journal.entry.list
+      path: /items
+      op: eq
+      value: &id001
+        level: ambiguous
+        candidates:
+        - MO-004-1
+        - MO-005-1
+        probable: MO-005-1
+        basis:
+        - 'отметки терминала: MO-004-1 закрыт в 13:51:10, MO-005-1 открыт в 13:50:00 — перекрытие 70 с'
+        - цикл станка начат в 13:50:30 — вероятнее MO-005-1
+    mapping: draft
+    source:
+      subject: event/S16/cnc-feed-override
+      field: run_binding
+      op: eq
+      value: *id001
+    note: запись S16/cnc-feed-override
+  - id: S16-02
+    what: 'исполнитель у обоих кандидатов один — О-11 (вход на терминал): вывод «кто работал на станке» от неоднозначности не зависит'
+    check:
+      operation: journal.entry.list
+      path: /items
+      op: eq
+      value: &id002
+        level: by_terminal_login
+        operator: OP-CNC-11
+        same_for_all_candidates: true
+    mapping: draft
+    source:
+      subject: event/S16/cnc-feed-override
+      field: operator_binding
+      op: eq
+      value: *id002
+    note: запись S16/cnc-feed-override
+  - id: S16-03
+    what: 'зависимый вывод «было ли ручное изменение режима при обработке этой детали» у Ф-004 и Ф-005 — «не установлено: привязка неоднозначна»'
+    check:
+      operation: machinelogs.run_profile.read
+      path: /manual_mode_change
+      op: eq
+      value: &id003
+        status: undetermined
+        reason: ambiguous_binding
+    mapping: draft
+    source:
+      subject: run/*
+      field: manual_mode_change
+      filter:
+        runs:
+        - MO-004-1
+        - MO-005-1
+      op: eq
+      value: *id003
+    note: 'выборка выполнений {"runs": ["MO-004-1", "MO-005-1"]}'
+  - id: S16-04
+    what: 'независимые выводы не задеты: КИМ в допуске, КТ-2 без признаков, ЗТ-2 по обоим — с первого предъявления'
+    check:
+      operation: item.item.list
+      path: /items
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: item/*
+      field:
+        cmm_in_tolerance: true
+        cp_mo_camera: no_defect_found
+        gate_ZT-2_first_pass: true
+      filter:
+        items:
+        - F-004
+        - F-005
+      op: eq
+      value: true
+    note: 'проверка по списку изделий {"items": ["F-004", "F-005"]}'
+  - id: S16-05
+    what: 'Н-5: «событий с неоднозначной привязкой» +1; у станка ЧПУ-1 изменение режима посчитано один раз'
+    check:
+      operation: analytics.metric.drilldown
+      params:
+        metric_id: N-5
+      path: /total
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: metric/N-5
+      field:
+        ambiguous_bindings: 1
+        machine_mode_changes_CNC-1: 1
+      op: eq
+      value: true
+    note: показатель N-5 каталога процессной сессии (analytics-catalog.md); сопоставление — эпик 25
+- at: '2026-09-18T15:30:00+03:00'
+  label: чего не должно случиться
+  must_not: true
+  assertions:
+  - id: S16-N1
+    what: запись не приписана одному выполнению «на глаз» и не раздвоена на два
+    check:
+      operation: machinelogs.run_profile.read
+      path: /mode_changes_bound_as_fact
+      op: eq
+      value: 0
+    mapping: draft
+    source:
+      subject: run/*
+      field: mode_changes_bound_as_fact
+      filter:
+        runs:
+        - MO-004-1
+        - MO-005-1
+      op: eq
+      value: 0
+    note: 'выборка выполнений {"runs": ["MO-004-1", "MO-005-1"]}'
+  - id: S16-N2
+    what: из-за неоднозначности нет ни сигнала, ни несоответствия, ни блока изделий
+    check:
+      operation: item.item.list
+      path: /items
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: item/*
+      field:
+        signals: 0
+        nc_count: 0
+        holds: 0
+      filter:
+        items:
+        - F-004
+        - F-005
+      op: eq
+      value: true
+    note: 'проверка по списку изделий {"items": ["F-004", "F-005"]}'
+  - id: S16-N3
+    what: в показатели по людям (О-10) событие не идёт
+    check:
+      operation: analytics.metric.drilldown
+      params:
+        metric_id: O-10
+      path: /all
+      op: unchanged
+    mapping: draft
+    baseline: '2026-09-18T13:49:00+03:00'
+    source:
+      subject: metric/O-10
+      field: all
+      op: unchanged
+      baseline: '2026-09-18T13:49:00+03:00'
+    note: показатель O-10 каталога процессной сессии (analytics-catalog.md); сопоставление — эпик 25

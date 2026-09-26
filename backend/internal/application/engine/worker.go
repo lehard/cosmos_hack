@@ -370,7 +370,7 @@ func (w *WorkerService) planItem(ctx context.Context, wk Work) (rq appjournal.Ap
 		}
 		rq.Batch = append(rq.Batch, pend)
 	}
-	effects, err := w.cfg.Projections.ItemEffects(wk.ItemID, snap, reactions)
+	effects, err := w.cfg.Projections.ItemEffects(wk.ItemID, snap, reactions, in.Input)
 	if err != nil {
 		return fail(err)
 	}

@@ -1,0 +1,483 @@
+# Ожидания S01 — отдельно от входных событий (кейс §5.1, AD-26): утверждения над теми же
+# operationId, что показывают столы; check.path — путь в ответе (board.go), значения — ID
+# процессной сессии (сверка переводит их сведением имён прогона). mapping: exact — поле
+# ответа контракта; draft — по смыслу, путь уточнит модуль-владелец; manual — видно на экране.
+scenario: S01
+version: 0.3-draft
+title: Нормальное изготовление — эталонный фланец Ф-001
+run: MS-1
+source: 'process/scenarios-flange-expected.yaml процессной сессии, версия 0.3-draft: утверждения процессной сессии — в source без изменений, check — исполняемая форма эпика 32'
+checkpoints:
+- at: '2026-09-23T10:35:00+03:00'
+  label: после выпуска Ф-001
+  assertions:
+  - id: S01-01
+    what: Ф-001 — годно
+    check:
+      operation: item.passport.read
+      params:
+        item_id: '{item:F-001}'
+      path: /status/summary
+      op: eq
+      value: released
+    mapping: exact
+    source:
+      subject: item/F-001
+      field: status
+      op: eq
+      value: accepted
+    note: статус процессной сессии «accepted» → сводный статус контракта «released»
+  - id: S01-02
+    what: пройдены 6 ЗТ, все с первого предъявления
+    check:
+      operation: item.passport.read
+      params:
+        item_id: '{item:F-001}'
+      path: /gates_passed_first_time
+      op: set_eq
+      value: &id001
+      - ZT-1
+      - ZT-2
+      - ZT-3
+      - ZT-4
+      - ZT-5
+      - ZT-6
+    mapping: draft
+    source:
+      subject: item/F-001
+      field: gates_passed_first_time
+      op: set_eq
+      value: *id001
+  - id: S01-03
+    what: у каждой ЗТ есть подпись человека (агент токена или бумага с QR, заверенная вторым сотрудником, FR-139)
+    check:
+      operation: item.passport.read
+      params:
+        item_id: '{item:F-001}'
+      path: /gates_without_signer
+      op: eq
+      value: 0
+    mapping: draft
+    source:
+      subject: item/F-001
+      field: gates_without_signer
+      op: eq
+      value: 0
+  - id: S01-04
+    what: несоответствий нет
+    check:
+      operation: nonconformity.nonconformity.list
+      params:
+        item_id: '{item:F-001}'
+      path: /items/#
+      op: eq
+      value: 0
+    mapping: exact
+    source:
+      subject: item/F-001
+      field: nc_count
+      op: eq
+      value: 0
+  - id: S01-05
+    what: 'генеалогия собрана (волна 2: с клапаном КВД V-001)'
+    check:
+      operation: item.genealogy.read
+      params:
+        item_id: '{item:F-001}'
+      path: /nodes/*/label
+      op: set_eq
+      value: &id002
+      - flange_from:LOT-ZF-201
+      - R-001
+      - C-001
+      - LOT-SL-401
+      - LOT-FS-501
+      - V-001
+    mapping: draft
+    source:
+      subject: item/F-001
+      field: components
+      op: set_eq
+      value: *id002
+    note: состав генеалогии — метки узлов; сопоставление ID уточнит эпик 18
+  - id: S01-06
+    what: журнал ИС-2 при сварке в уставке
+    check:
+      operation: machinelogs.run_profile.read
+      params:
+        run_id: '{local:SV-001-1}'
+      path: /current_a_range
+      op: eq
+      value: &id003
+      - 158
+      - 163
+    mapping: draft
+    source:
+      subject: run/SV-001-1
+      field: current_a_range
+      op: eq
+      value: *id003
+  - id: S01-07
+    what: 'камера КТ-3: признаков нет при хорошем качестве'
+    check:
+      operation: machinelogs.run_profile.read
+      params:
+        run_id: '{local:SV-001-1}'
+      path: /cp_weld_result
+      op: eq
+      value: &id004
+        inspection_result: no_defect_found
+        observation_quality_min: 0.93
+    mapping: draft
+    source:
+      subject: run/SV-001-1
+      field: cp_weld_result
+      op: eq
+      value: *id004
+  - id: S01-08
+    what: все шаги оператора подтверждены
+    check:
+      operation: item.passport.read
+      params:
+        item_id: '{item:F-001}'
+      path: /unconfirmed_steps
+      op: eq
+      value: 0
+    mapping: draft
+    source:
+      subject: item/F-001
+      field: unconfirmed_steps
+      op: eq
+      value: 0
+  - id: S01-09
+    what: 'мехобработка: длительность передана станком, смысл — активная обработка'
+    check:
+      operation: machinelogs.run_profile.read
+      params:
+        run_id: '{local:MO-001-1}'
+      path: /duration
+      op: eq
+      value: &id005
+        value_min: 62
+        source: reported
+        meaning: active
+    mapping: draft
+    source:
+      subject: run/MO-001-1
+      field: duration
+      op: eq
+      value: *id005
+  - id: S01-10
+    what: 'сварка: длительность вычислена системой'
+    check:
+      operation: machinelogs.run_profile.read
+      params:
+        run_id: '{local:SV-001-1}'
+      path: /duration
+      op: eq
+      value: &id006
+        value_min: 45
+        source: computed
+        meaning: active
+    mapping: draft
+    source:
+      subject: run/SV-001-1
+      field: duration
+      op: eq
+      value: *id006
+  - id: S01-11
+    what: в 1С ушло 6 учётных событий по Ф-001
+    check:
+      operation: erp.message.list
+      params:
+        item_id: '{item:F-001}'
+      path: /items/*/action
+      op: set_eq
+      value:
+      - accept_into_work
+      - accept_into_work
+      - accept_into_work
+      - warehouse_transfer
+      - warehouse_transfer
+      - release
+    mapping: exact
+    source:
+      subject: erp/postings
+      field: types
+      filter:
+        item: F-001
+      op: set_eq
+      value:
+      - issue_to_production
+      - issue_to_production
+      - issue_to_production
+      - transfer
+      - transfer
+      - release_good
+    note: виды учётных сообщений процессной сессии → erp_action контракта
+  - id: S01-12
+    what: все сообщения 1С подтверждены
+    check:
+      operation: erp.message.list
+      params:
+        item_id: '{item:F-001}'
+      path: /items/*/status
+      op: eq
+      value: acknowledged
+    mapping: draft
+    source:
+      subject: erp/postings
+      field: ack_status
+      filter:
+        item: F-001
+      op: eq
+      value: acked
+  - id: S01-13
+    what: Ф-001 доступен как эталон для сравнения
+    check:
+      operation: item.passport.read
+      params:
+        item_id: '{item:F-001}'
+      path: /reference_for_comparison
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: item/F-001
+      field: reference_for_comparison
+      op: eq
+      value: true
+  - id: S01-14
+    what: 'Ф-001 идёт по линии 2 (сварен на посту 2): у всех его событий после запуска — линия L-FL-2'
+    check:
+      operation: item.passport.read
+      params:
+        item_id: '{item:F-001}'
+      path: /events_line_ids
+      op: set_eq
+      value: &id007
+      - L-FL-2
+    mapping: draft
+    source:
+      subject: item/F-001
+      field: events_line_ids
+      op: set_eq
+      value: *id007
+  - id: S01-15
+    what: 'установка оборудования (кейс §1.1, узел AO) — отдельное выполнение EQ-001-1 после затяжки крепежа: клапан V-001 отсканирован до установки, затяжка J-2 в норме (12 Н·м ± 10
+      %), контровка подтверждена; основание ЗТ-4 включает журнал ключа по J-2'
+    check:
+      operation: machinelogs.run_profile.read
+      params:
+        run_id: '{local:EQ-001-1}'
+      path: /
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: run/EQ-001-1
+      field:
+        operation: EQ
+        item: F-001
+        component: V-001
+        after_step: tightening
+        torque_J-2_in_tolerance: true
+        lockwire_confirmed: true
+        gate_basis: ZT-4
+      op: eq
+      value: true
+  - id: S01-16
+    what: 'перемаркировка (узел MK): до мехобработки — бирка с QR на таре TAG:F-001, после станка — код DM:F-001 на нерабочей поверхности; ОТК сверил на ЗТ-2 (номер совпал, код читается)'
+    check:
+      operation: item.passport.read
+      params:
+        item_id: '{item:F-001}'
+      path: /carriers
+      op: eq
+      value: &id008
+      - carrier: tag_qr
+        value: TAG:F-001
+      - carrier: dpm_datamatrix
+        value: DM:F-001
+        reason: remark_after_machining
+        verified_at_gate: ZT-2
+        result: match
+    mapping: draft
+    source:
+      subject: item/F-001
+      field: marking_history
+      op: eq
+      value: *id008
+  - id: S01-17
+    what: на КИМ номер фланца выбран из списка ожидаемых изделий, а не введён руками
+    check:
+      operation: journal.entry.list
+      path: /items
+      op: eq
+      value: pick_from_expected_list
+    mapping: draft
+    source:
+      subject: event/cmm/F-001
+      field: item_identification.method
+      op: eq
+      value: pick_from_expected_list
+    note: запись cmm/F-001
+  - id: S01-19
+    what: 'лабораторный контроль образцов по плану на входе (узел VL, [ПП]): ЗФ-201 — химсостав, мехсвойства, УЗК; П-116 — химсостав и мехсвойства, объёмного контроля колец в плане нет'
+    check:
+      operation: crossitem.lot.list
+      path: /items
+      op: eq
+      value: &id009
+        LOT-ZF-201:
+          result: no_defect_found
+          tests:
+          - chemical_composition
+          - mechanical_properties
+          - ultrasonic_per_kd
+        LOT-R-116:
+          result: no_defect_found
+          tests:
+          - chemical_composition
+          - mechanical_properties
+          volumetric_control: not_in_plan
+    mapping: draft
+    source:
+      subject: lot/*
+      field: lab
+      filter:
+        lots:
+        - LOT-ZF-201
+        - LOT-R-116
+      op: eq
+      value: *id009
+  - id: S01-20
+    what: 'при приёме цехом (Е-31) у Ф-001 — поле «повреждения: нет» (МЦ → СЦ и СЦ → СИЦ)'
+    check:
+      operation: item.passport.read
+      params:
+        item_id: '{item:F-001}'
+      path: /receipts_damage
+      op: eq
+      value: &id010
+        MC->WC: none
+        WC->AC: none
+    mapping: draft
+    source:
+      subject: item/F-001
+      field: receipts_damage
+      op: eq
+      value: *id010
+  - id: S01-21
+    what: 'в начале — состав и ревизия КД из КОМПАС (Е-02, узел OD): 6 позиций с клапаном, связи W-1, J-1, S-1, J-2, геометрии нет — сказано явно'
+    check:
+      operation: journal.entry.list
+      path: /items
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: event/import/kompas-FL-100
+      field:
+        revision: B
+        components: 6
+        links:
+        - W-1
+        - J-1
+        - S-1
+        - J-2
+        geometry: null
+      op: eq
+      value: true
+    note: запись import/kompas-FL-100
+  - id: S01-22
+    what: 'на ЗТ-СР (скрытые работы) ОТК-2 посчитал инструмент, заходивший в полость: всё вышло'
+    check:
+      operation: item.passport.read
+      params:
+        item_id: '{item:F-001}'
+      path: /entries[event_type=decision.presentation.resolved]
+      op: eq
+      value: &id011
+        entered_cavity: 2
+        returned: 2
+    mapping: draft
+    source:
+      subject: gate/ZT-SR/F-001
+      field: tools_counted
+      op: eq
+      value: *id011
+    note: ЗТ ZT-SR
+  - id: S01-18
+    what: у каждой ЗТ Ф-001 подписант не выполнял операцию, которую принимает
+    check:
+      operation: item.passport.read
+      params:
+        item_id: '{item:F-001}'
+      path: /gates_signed_by_performer
+      op: eq
+      value: 0
+    mapping: draft
+    source:
+      subject: item/F-001
+      field: gates_signed_by_performer
+      op: eq
+      value: 0
+- at: '2026-09-23T10:35:00+03:00'
+  label: чего не должно случиться
+  must_not: true
+  assertions:
+  - id: S01-N1
+    what: нет сигналов по Ф-001
+    check:
+      operation: quality.signal.list
+      params:
+        item_id: '{item:F-001}'
+      path: /items/#
+      op: eq
+      value: 0
+    mapping: exact
+    source:
+      subject: item/F-001
+      field: signals_count
+      op: eq
+      value: 0
+  - id: S01-N2
+    what: в 1С не ушли наблюдения, журналы, движения внутри цеха
+    check:
+      operation: erp.message.list
+      params:
+        item_id: '{item:F-001}'
+      path: /items/*/action
+      op: not_contains
+      value:
+      - inspection
+      - machine_log
+      - internal_move
+    mapping: exact
+    source:
+      subject: erp/postings
+      field: types
+      filter:
+        item: F-001
+      op: not_contains
+      value:
+      - inspection
+      - machine_log
+      - internal_move
+    note: виды учётных сообщений процессной сессии → erp_action контракта
+  - id: S01-N3
+    what: «учтено в 1С» не раньше подтверждения
+    check:
+      operation: item.passport.read
+      params:
+        item_id: '{item:F-001}'
+      path: /erp_accounted_before_ack
+      op: eq
+      value: false
+    mapping: draft
+    source:
+      subject: item/F-001
+      field: erp_accounted_before_ack
+      op: eq
+      value: false

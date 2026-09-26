@@ -93,6 +93,12 @@ const (
 	IncidentAutoExcludeForbidden Code = "incident.auto_exclude_forbidden"
 	// Нужно основание
 	IncidentBasisRequired Code = "incident.basis_required"
+	// Инцидент закрыт
+	IncidentClosed Code = "incident.closed"
+	// Нужно письменное объяснение работника
+	IncidentExplanationRequired Code = "incident.explanation_required"
+	// Изделия нет в области риска
+	IncidentItemNotInScope Code = "incident.item_not_in_scope"
 	// Слишком большая пачка
 	IngestBatchTooLarge Code = "ingest.batch_too_large"
 	// Подписанные байты не в каноническом виде
@@ -121,6 +127,8 @@ const (
 	JournalAppendOnly Code = "journal.append_only"
 	// Лимит разрешения на отклонение исчерпан
 	JournalConcessionExhausted Code = "journal.concession_exhausted"
+	// Запись уже есть в журнале
+	JournalDuplicate Code = "journal.duplicate"
 	// Запись отвергнута: аренда партиции утрачена
 	JournalFenced Code = "journal.fenced"
 	// Политика доступа изменилась
@@ -141,10 +149,14 @@ const (
 	NonconformityGateWithoutSignature Code = "nonconformity.gate_without_signature"
 	// Открыто вмешательство
 	NonconformityInterventionOpen Code = "nonconformity.intervention_open"
+	// Решение недопустимо в этом состоянии
+	NonconformityInvalidTransition Code = "nonconformity.invalid_transition"
 	// Изделие заблокировано
 	NonconformityItemBlocked Code = "nonconformity.item_blocked"
 	// Нет результата метода контроля
 	NonconformityMethodResultMissing Code = "nonconformity.method_result_missing"
+	// Остановка точки процесса не действует
+	NonconformityProcessHoldNotActive Code = "nonconformity.process_hold_not_active"
 	// Нужна причина отклонения
 	NonconformityRejectReasonRequired Code = "nonconformity.reject_reason_required"
 	// Вернуть поставщику можно только необработанное
@@ -254,6 +266,9 @@ var codes = [...]Info{
 	{Code: FederationExtractUnverifiable, Status: 202, Title: "Происхождение не подтверждено", Detail: "Подписи выписки проверить нельзя — принята с пометкой «происхождение не подтверждено»", UIKey: "errors.federation.extractUnverifiable", Quarantine: false, Severity: "warning", Guard: false, Aliases: nil},
 	{Code: IncidentAutoExcludeForbidden, Status: 403, Title: "Автоматически исключить нельзя", Detail: "Исключить изделие из области риска автоматически нельзя — нужен человек или делегированное правило", UIKey: "errors.decision.autoExcludeForbidden", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
 	{Code: IncidentBasisRequired, Status: 422, Title: "Нужно основание", Detail: "Сужение области риска — только с основанием: доказательство, автор, время", UIKey: "riskScope.basisRequired", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
+	{Code: IncidentClosed, Status: 409, Title: "Инцидент закрыт", Detail: "Инцидент {incident_id} закрыт — область риска и выводы больше не меняются", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
+	{Code: IncidentExplanationRequired, Status: 422, Title: "Нужно письменное объяснение работника", Detail: "Ошибку исполнителя подтверждает только уполномоченный после письменного объяснения работника (ТК РФ ст. 247); сначала — incident.operator_error.confirmed", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
+	{Code: IncidentItemNotInScope, Status: 409, Title: "Изделия нет в области риска", Detail: "Изделие {item_id} не входит в текущую версию области риска инцидента {incident_id} (или уже исключено)", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
 	{Code: IngestBatchTooLarge, Status: 413, Title: "Слишком большая пачка", Detail: "В пачке {count} сообщений, допустимо {limit}", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: IngestCanonicalFormViolation, Status: 422, Title: "Подписанные байты не в каноническом виде", Detail: "{reason}: повторяющиеся ключи, целые вне ±(2^53−1), строки не в NFC или идентификатор не ASCII", UIKey: "errors.ingest.signatureInvalid", Quarantine: true, Severity: "error", Guard: false, Aliases: nil},
 	{Code: IngestDuplicateConflict, Status: 409, Title: "Тот же номер события, другое содержимое", Detail: "{source_id}/{event_id}: содержимое отличается — конфликт целостности записан в журнал критических действий", UIKey: "errors.ingest.duplicateConflict", Quarantine: false, Severity: "error", Guard: false, Aliases: []string{"E_ID_CONFLICT"}},
@@ -268,6 +283,7 @@ var codes = [...]Info{
 	{Code: IngestUnknownSource, Status: 403, Title: "Источник не зарегистрирован", Detail: "Источник «{source_id}» не зарегистрирован — сообщение отклонено", UIKey: "errors.ingest.unknownSource", Quarantine: true, Severity: "error", Guard: false, Aliases: nil},
 	{Code: JournalAppendOnly, Status: 405, Title: "Журнал только на дописывание", Detail: "Изменение и удаление записей журнала невозможны — исправление только новой записью", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: JournalConcessionExhausted, Status: 409, Title: "Лимит разрешения на отклонение исчерпан", Detail: "Разрешение {concession_id}: остаток {remaining} из {limit}", UIKey: "errors.decision.concessionRequired", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
+	{Code: JournalDuplicate, Status: 409, Title: "Запись уже есть в журнале", Detail: "Запись с этим event_id уже записана — повтор не записывается", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: JournalFenced, Status: 503, Title: "Запись отвергнута: аренда партиции утрачена", Detail: "Эпоха аренды партиции {partition} устарела — копия больше не пишет", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: JournalStalePolicy, Status: 409, Title: "Политика доступа изменилась", Detail: "Политика изменилась после seq {policy_seq} — повторите действие", UIKey: "errors.staleState", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: JournalStaleState, Status: 409, Title: "Состояние изменилось после проверки", Detail: "В потоке {stream} после seq {basis_seq} есть новые записи — обновите и проверьте ещё раз", UIKey: "errors.staleState", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
@@ -278,8 +294,10 @@ var codes = [...]Info{
 	{Code: NonconformityConcessionRequired, Status: 422, Title: "Нужно действующее разрешение на отклонение", Detail: "«{decision}» без действующего разрешения на отклонение не подписывается", UIKey: "errors.decision.concessionRequired", Quarantine: false, Severity: "error", Guard: true, Aliases: []string{"E_PERMIT_REQUIRED"}},
 	{Code: NonconformityGateWithoutSignature, Status: 403, Title: "Точка предъявления без подписи", Detail: "Без подписи {role} изделие не проходит точку предъявления — попытка записана в журнал критических действий", UIKey: "errors.decision.gateWithoutSignature", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
 	{Code: NonconformityInterventionOpen, Status: 409, Title: "Открыто вмешательство", Detail: "Открыта запись вмешательства — приёмка и отгрузка запрещены", UIKey: "errors.decision.interventionOpen", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
+	{Code: NonconformityInvalidTransition, Status: 409, Title: "Решение недопустимо в этом состоянии", Detail: "«{action}» недопустимо: несоответствие {nc_id} в состоянии «{status}»", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
 	{Code: NonconformityItemBlocked, Status: 409, Title: "Изделие заблокировано", Detail: "Изделие заблокировано — операция запрещена до решения", UIKey: "errors.decision.itemBlocked", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
 	{Code: NonconformityMethodResultMissing, Status: 409, Title: "Нет результата метода контроля", Detail: "Нельзя принять: нет результата {method} на {inspection_point} — «нет данных» ≠ «годно»", UIKey: "empty.inspectionMissing", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
+	{Code: NonconformityProcessHoldNotActive, Status: 409, Title: "Остановка точки процесса не действует", Detail: "Остановка {hold_id} не найдена или уже снята", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
 	{Code: NonconformityRejectReasonRequired, Status: 422, Title: "Нужна причина отклонения", Detail: "Укажите, почему сигнал отклонён", UIKey: "errors.decision.rejectReasonRequired", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
 	{Code: NonconformityReturnOnlyUnprocessed, Status: 422, Title: "Вернуть поставщику можно только необработанное", Detail: "Изделие {item_id} уже обрабатывалось — «вернуть поставщику» недопустимо", UIKey: "errors.decision.returnOnlyUnprocessed", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
 	{Code: ProcessClosingPathWithoutHuman, Status: 422, Title: "Закрывающий путь без контроля человеком", Detail: "Закрывающий путь без контроля человеком: {element}", UIKey: "errors.process.closingPathWithoutHuman", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},

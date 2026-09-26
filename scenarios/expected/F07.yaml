@@ -1,0 +1,26 @@
+# Ожидания прогона сбоя F07 — отдельно от входных событий (кейс §5.1, AD-26).
+scenario: F07
+version: '1'
+title: 'Сбой: Разрыв в номерах источника'
+run: F07
+source: эпик 32 по research/data-collection-sources-and-failures.md §6 (ожидаемое поведение системы)
+checkpoints:
+- at: end
+  label: конец прогона
+  assertions:
+  - id: F07-01
+    what: разрыв номеров ИС-1 учтён
+    check:
+      operation: ingest.source.list
+      path: /items[source_id={run}/edge-weld-1]/0/gap_count
+      op: gte
+      value: 1
+    mapping: exact
+  - id: F07-02
+    what: полнота приёма ниже 100 %
+    check:
+      operation: ingest.metrics.read
+      path: /completeness_bp
+      op: lte
+      value: 9999
+    mapping: draft

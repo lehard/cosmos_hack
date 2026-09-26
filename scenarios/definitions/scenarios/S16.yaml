@@ -1,0 +1,112 @@
+# S16 — process/scenarios-flange.md §4 S16 «один к одному».
+id: S16
+version: "0.3"
+title: "Ненадёжная привязка события к выполнению операции (Ф-004 / Ф-005)"
+kind: extra
+goal: >-
+  Система явно хранит, насколько надёжно событие отнесено к выполнению операции: запись
+  пульта ЧПУ без номера выполнения на стыке двух деталей — «неоднозначно» и два кандидата;
+  неопределённость мешает только выводам, которые от неё зависят.
+case:
+  other: ["§4.6 ненадёжная идентификация операции — явно", "§4.3 изменение режима", "ред-тим, строка 26 (б)"]
+run: MS-1
+where: "Главный поток, фон: Пт 18.09 12:55–15:20. В табло — да."
+source: "process/scenarios-flange.md §4 S16"
+steps:
+  - at: "2026-09-18T12:55:00+03:00"
+    ref: Е-10
+    note: "«Начал» МО-004-1 (Ф-004) на терминале ЧПУ"
+    decision: process.operation.start
+    role: PERFORMER
+    actor: OP-CNC-11
+    item: F-004
+    params: {item_id: "{item:F-004}"}
+    body: {operation_code: MO, operation_run_id: "{local:MO-004-1}", step_key: machining.cnc, equipment_id: "{equipment:CNC-1}", station_id: ST-CNC, program_ref: "ЧПУ-ФЛ-100.01-03"}
+  - at: "2026-09-18T13:45:05+03:00"
+    ref: Е-14
+    label: S16/cnc-cycle-004
+    note: "ЧПУ-1 закончил цикл в 13:45:05 — номера выполнения в журнале станка нет"
+    fact: equipment.cycle.summarized
+    source: cnc-1
+    data:
+      equipment_id: "{equipment:CNC-1}"
+      station_id: ST-CNC
+      window_start: "2026-09-18T12:55:00+03:00"
+      window_end: "2026-09-18T13:45:05+03:00"
+      parameters: [{parameter: spindle_load, mean: {value: 66, scale: 0, unit: "%"}}]
+  - {at: "2026-09-18T13:49:00+03:00", ref: Е-07, route: "F-004:remark", note: "Перемаркировка Ф-004: бирка → код"}
+  - at: "2026-09-18T13:50:00+03:00"
+    ref: Е-10
+    note: "«Начал» МО-005-1 (Ф-005)"
+    decision: process.operation.start
+    role: PERFORMER
+    actor: OP-CNC-11
+    item: F-005
+    params: {item_id: "{item:F-005}"}
+    body: {operation_code: MO, operation_run_id: "{local:MO-005-1}", step_key: machining.cnc, equipment_id: "{equipment:CNC-1}", station_id: ST-CNC, program_ref: "ЧПУ-ФЛ-100.01-03"}
+  - at: "2026-09-18T13:50:30+03:00"
+    ref: Е-14
+    label: S16/cnc-cycle-started
+    note: "ЧПУ-1: цикл начат; номера выполнения в журнале станка нет"
+    fact: equipment.state.changed
+    schema_version: 2
+    source: cnc-1
+    data: {equipment_id: "{equipment:CNC-1}", station_id: ST-CNC, execution: running, controller_mode: automatic, condition: normal}
+  - at: "2026-09-18T13:50:50+03:00"
+    ref: Е-20
+    label: S16/cnc-feed-override
+    note: >-
+      Изменение режима с пульта: подача 120 % на 80 с; номера выполнения нет, исполнителя нет.
+      В контракте operator.mode.changed требует исполнителя, поэтому запись журнала пульта —
+      equipment.deviation.detected (manual_override): исполнитель — «неизвестно», привязку к
+      выполнению делает межизделийная стадия по интервалам (AD-29, AD-42).
+    fact: equipment.deviation.detected
+    source: cnc-1
+    data:
+      equipment_id: "{equipment:CNC-1}"
+      station_id: ST-CNC
+      deviation_kind: manual_override
+      parameter: feed_override
+      value: {value: 120, scale: 0, unit: "%"}
+      started_at: "2026-09-18T13:50:50+03:00"
+      ended_at: "2026-09-18T13:52:10+03:00"
+      code: FEED_OVR
+  - at: "2026-09-18T13:51:10+03:00"
+    ref: Е-12
+    note: "«Закончил» МО-004-1 — нажато с опозданием: по терминалу выполнения перекрываются 13:50:00–13:51:10"
+    decision: process.operation.finish
+    role: PERFORMER
+    actor: OP-CNC-11
+    item: F-004
+    params: {run_id: "{local:MO-004-1}"}
+    body: {completion: completed}
+  - at: "2026-09-18T14:40:00+03:00"
+    label: S16/cnc-cycle-005
+    note: "ЧПУ-1 закончил цикл Ф-005 (номера выполнения нет)"
+    fact: equipment.cycle.summarized
+    source: cnc-1
+    data:
+      equipment_id: "{equipment:CNC-1}"
+      station_id: ST-CNC
+      window_start: "2026-09-18T13:50:30+03:00"
+      window_end: "2026-09-18T14:40:00+03:00"
+      parameters: [{parameter: spindle_load, mean: {value: 71, scale: 0, unit: "%"}}, {parameter: feed_override, max: {value: 120, scale: 0, unit: "%"}}]
+  - at: "2026-09-18T14:42:00+03:00"
+    note: "«Закончил» МО-005-1"
+    decision: process.operation.finish
+    role: PERFORMER
+    actor: OP-CNC-11
+    item: F-005
+    params: {run_id: "{local:MO-005-1}"}
+    body: {completion: completed}
+  - {at: "2026-09-18T13:53:00+03:00", ref: "Е-17, Е-18, Е-19", route: "F-004:kt2,cmm,zt2_presented,zt2", note: "КТ-2, КИМ, ЗТ-2 по Ф-004 — всё чисто, в допуске"}
+  - {at: "2026-09-18T14:48:00+03:00", ref: "Е-17, Е-18, Е-19", route: "F-005:remark,kt2,cmm,zt2_presented,zt2", note: "Перемаркировка, КТ-2, КИМ, ЗТ-2 по Ф-005"}
+  - {at: "2026-09-18T13:50:51+03:00", system: "Привязка записи 13:50:50: «неоднозначно» — МО-004-1 или МО-005-1 (вероятнее МО-005-1); исполнитель О-11 у обоих кандидатов; «ручное изменение режима» у обоих выполнений — «не установлено»"}
+outcome:
+  - "Запись хранится с уровнем привязки «неоднозначно», двумя кандидатами и основаниями; «вероятный» кандидат показан, но фактом не стал."
+  - "У выполнений МО-004-1 и МО-005-1 вывод «ручное изменение режима» — «не установлено»; остальное по Ф-004 и Ф-005 — без оговорок."
+  - "Качество потока (Н-5): «событий с неоднозначной привязкой» +1; изменение режима ЧПУ-1 посчитано один раз."
+must_not:
+  - "Запись не приписана одному выполнению «на глаз» и не раздвоена на два."
+  - "Из-за неоднозначности нет сигнала, несоответствия и блока изделий."
+  - "Событие не идёт в показатели по людям (О-10)."
