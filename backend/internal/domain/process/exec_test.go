@@ -262,7 +262,9 @@ func TestPresentationPointRequiresSignature(t *testing.T) {
 	w.finish("A-1", 8)
 	s, _ := w.fold()
 	wantSteps(t, s, "welding.zt3")
-	if !slices.ContainsFunc(s.Refusals, func(x Refusal) bool { return x.EventID == r.EventID && x.Code == string(errcodes.NonconformityGateWithoutSignature) }) {
+	if !slices.ContainsFunc(s.Refusals, func(x Refusal) bool {
+		return x.EventID == r.EventID && x.Code == string(errcodes.NonconformityGateWithoutSignature)
+	}) {
 		t.Fatalf("отказ по решению без подписи не записан: %+v", s.Refusals)
 	}
 	err := Guard(s, w.env, Upstream{}, kernel.Command{Action: "process.operation.start", OccurredAt: at(7),

@@ -111,11 +111,11 @@ func TestExpr(t *testing.T) {
 	for src, want := range map[string]bool{
 		"decision == 'accept'": true,
 		"decision == 'accept' or decision == 'accept_with_concession'": true,
-		"not (decision == 'reject')":                                    true,
-		"rework.count < 3 and decision != 'reject'":                     true,
-		"rework.count >= 3":                                             false,
-		"tools.accounted == false":                                      false,
-		"nc.outcome == 'scrapped'":                                      false, // нет данных — не ветка
+		"not (decision == 'reject')":                                   true,
+		"rework.count < 3 and decision != 'reject'":                    true,
+		"rework.count >= 3":                                            false,
+		"tools.accounted == false":                                     false,
+		"nc.outcome == 'scrapped'":                                     false, // нет данных — не ветка
 	} {
 		e, err := ParseExpr(src, nil)
 		if err != nil {

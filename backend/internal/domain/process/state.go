@@ -47,7 +47,9 @@ type Cause struct {
 func causeOf(r kernel.Record) Cause { return Cause{EventID: r.EventID, OccurredAt: r.OccurredAt} }
 
 // Record — причина как запись для kernel.NewReaction.
-func (c Cause) Record() kernel.Record { return kernel.Record{EventID: c.EventID, OccurredAt: c.OccurredAt} }
+func (c Cause) Record() kernel.Record {
+	return kernel.Record{EventID: c.EventID, OccurredAt: c.OccurredAt}
+}
 
 // Frame — кадр стека вызовов токена: узел вызова (callActivity или встроенный
 // подпроцесс) и номер экземпляра вызова. Возврат — в точку вызова (AD-17).

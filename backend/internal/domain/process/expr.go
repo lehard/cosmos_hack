@@ -31,15 +31,15 @@ type VarSpec struct {
 // Переменные языка условий (contracts/bpmn-ext/rules.yaml →
 // conditions.variables; соответствие проверяет тест application/process).
 const (
-	VarDecision          = "decision"
-	VarDisposition       = "disposition"
-	VarNCOutcome         = "nc.outcome"
-	VarTestResult        = "test.result"
-	VarToolsAccounted    = "tools.accounted"
-	VarPlanRadiography   = "plan.radiography_required"
-	VarPresentationNo    = "presentation.no"
-	VarReworkCount       = "rework.count"
-	maxSafeInteger int64 = 1<<53 - 1
+	VarDecision              = "decision"
+	VarDisposition           = "disposition"
+	VarNCOutcome             = "nc.outcome"
+	VarTestResult            = "test.result"
+	VarToolsAccounted        = "tools.accounted"
+	VarPlanRadiography       = "plan.radiography_required"
+	VarPresentationNo        = "presentation.no"
+	VarReworkCount           = "rework.count"
+	maxSafeInteger     int64 = 1<<53 - 1
 )
 
 // Variables — перечень переменных и их типы (Д-7: поля только из состояния
@@ -64,9 +64,9 @@ type Value struct {
 }
 
 // Str, Int, Bool — конструкторы значений.
-func Str(s string) Value  { return Value{Kind: VarEnum, S: s} }
-func Int(i int64) Value   { return Value{Kind: VarInteger, I: i} }
-func Bool(b bool) Value   { return Value{Kind: VarBoolean, B: b} }
+func Str(s string) Value { return Value{Kind: VarEnum, S: s} }
+func Int(i int64) Value  { return Value{Kind: VarInteger, I: i} }
+func Bool(b bool) Value  { return Value{Kind: VarBoolean, B: b} }
 func (v Value) String() string {
 	switch v.Kind {
 	case VarInteger:

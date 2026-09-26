@@ -32,16 +32,16 @@ var stepKeyPattern = regexp.MustCompile(`^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)*$`)
 
 // Перечисления rules.yaml → enums.
 var (
-	enumStepKind       = []string{stepKindOperation, stepKindAutomated, stepKindHuman, stepKindMovement, stepKindStorage}
-	enumInspMethod     = []string{"camera", "cmm", "radiography", "ultrasonic", "penetrant", "leak_test", "torque", "visual_human", "supplier_documents", "laboratory", "other"}
-	enumInspPhase      = []string{"incoming", "before_operation", "after_operation", "before_zone_closure", "assembly", "test", "final", "other"}
-	enumPrecondKind    = []string{"qualification", "equipment_verification", "document_revision", "material_expiry", "time_window", "zone_check", "item_blocked", "open_intervention", "lot_accepted", "rework_limit", "status_expired"}
-	enumPrecondMode    = []string{preconditionBlock, preconditionRecordViol}
-	enumReworkScope    = []string{reworkScopeItem, reworkScopeZone, reworkScopeLoop}
-	enumErpAction      = []string{"accept_into_work", "warehouse_transfer", "scrap_transfer_rework", "scrap_transfer_writeoff", "scrap_transfer_reprocess", "return_to_supplier", "release"}
-	enumTimerScope     = []string{timerScopeUntilStart, timerScopeActivity}
-	enumOutcome        = []string{"rework_or_repair", "use_as_is", "scrapped", "returned"}
-	enumClosingPoint   = []string{"ZT-1", "ZT-2", "ZT-3", "ZT-4.1", "ZT-4.2", "ZT-5", "ZT-6", "ZT-R", "ZT-V"}
+	enumStepKind     = []string{stepKindOperation, stepKindAutomated, stepKindHuman, stepKindMovement, stepKindStorage}
+	enumInspMethod   = []string{"camera", "cmm", "radiography", "ultrasonic", "penetrant", "leak_test", "torque", "visual_human", "supplier_documents", "laboratory", "other"}
+	enumInspPhase    = []string{"incoming", "before_operation", "after_operation", "before_zone_closure", "assembly", "test", "final", "other"}
+	enumPrecondKind  = []string{"qualification", "equipment_verification", "document_revision", "material_expiry", "time_window", "zone_check", "item_blocked", "open_intervention", "lot_accepted", "rework_limit", "status_expired"}
+	enumPrecondMode  = []string{preconditionBlock, preconditionRecordViol}
+	enumReworkScope  = []string{reworkScopeItem, reworkScopeZone, reworkScopeLoop}
+	enumErpAction    = []string{"accept_into_work", "warehouse_transfer", "scrap_transfer_rework", "scrap_transfer_writeoff", "scrap_transfer_reprocess", "return_to_supplier", "release"}
+	enumTimerScope   = []string{timerScopeUntilStart, timerScopeActivity}
+	enumOutcome      = []string{"rework_or_repair", "use_as_is", "scrapped", "returned"}
+	enumClosingPoint = []string{"ZT-1", "ZT-2", "ZT-3", "ZT-4.1", "ZT-4.2", "ZT-5", "ZT-6", "ZT-R", "ZT-V"}
 )
 
 // Load — загрузка версии: разбор и проверка (FR-10, FR-13). Модель
