@@ -191,6 +191,12 @@ type OutboxStore interface {
 	Channels(ctx context.Context) ([]Channel, error)
 	// NextSourceSeq — следующий source_seq шлюза входящих (AD-7).
 	NextSourceSeq(ctx context.Context, sourceID string, n int) (int64, error)
+	// GatewaySeen — поданные шлюзом факты. Часть порта, а не необязательное
+	// расширение: обёртки хранилища в cmd/ant встраивают OutboxStore, и
+	// проверка типа на необязательный интерфейс его теряла — шлюз подавал
+	// все факты 1С заново при каждом опросе с новым source_seq и occurred_at,
+	// приём отвечал security.idempotency.conflict (AD-7, FR-31).
+	GatewaySeen
 }
 
 // Эффекты транзакции Append модуля erp (применяет infrastructure/storage/erp).
