@@ -127,7 +127,12 @@ type IntegrityPoller struct {
 
 	lastAlarm int64
 	loaded    bool
+	// seen — нарушения, уже записанные в журнал: пока нарушение держится,
+	// каждый новый отчёт его повторяет, а в шину оно уходит один раз.
+	seen map[string]bool
 }
+
+func violationKey(kind, detail string) string { return kind + "\x1f" + detail }
 
 // Once — забрать отчёт и тревоги.
 func (p *IntegrityPoller) Once(ctx context.Context) error {
@@ -208,6 +213,10 @@ func (p *IntegrityPoller) record(ctx context.Context, r Report) error {
 	if max <= 0 {
 		max = 20
 	}
+	if p.seen == nil {
+		p.seen = p.journaledViolations(ctx)
+	}
+	var keys []string
 	for _, c := range r.Payload.Checks {
 		if c.Status != "rejected" {
 			continue
@@ -216,7 +225,13 @@ func (p *IntegrityPoller) record(ctx context.Context, r Report) error {
 			if len(outs) > max {
 				break
 			}
-			v := map[string]any{"violation": ViolationKind(f.Code, string(c.Check)), "detail": clip(f.Detail, 4000)}
+			kind, detail := ViolationKind(f.Code, string(c.Check)), clip(f.Detail, 4000)
+			if k := violationKey(kind, detail); p.seen[k] {
+				continue
+			} else {
+				keys = append(keys, k)
+			}
+			v := map[string]any{"violation": kind, "detail": detail}
 			if f.Seq != nil {
 				v["seq"] = *f.Seq
 			}
@@ -226,8 +241,36 @@ func (p *IntegrityPoller) record(ctx context.Context, r Report) error {
 			outs = append(outs, Out{Type: catalog.SecurityIntegrityViolated, OccurredAt: at, Causation: "", Data: v})
 		}
 	}
-	_, err = p.Emit.Emit(ctx, outs...)
-	return err
+	if _, err = p.Emit.Emit(ctx, outs...); err != nil {
+		return err
+	}
+	for _, k := range keys {
+		p.seen[k] = true
+	}
+	return nil
+}
+
+// journaledViolations — нарушения, уже записанные в журнал (последние записи).
+func (p *IntegrityPoller) journaledViolations(ctx context.Context) map[string]bool {
+	out := map[string]bool{}
+	es, err := p.Journal.Read(ctx, appjournal.ReadQuery{EventType: string(catalog.SecurityIntegrityViolated), Backward: true, Limit: 500})
+	if err != nil {
+		return out
+	}
+	for _, e := range es {
+		ev, err := open(ctx, p.Journal, e)
+		if err != nil {
+			continue
+		}
+		var d struct {
+			Violation string `json:"violation"`
+			Detail    string `json:"detail"`
+		}
+		if json.Unmarshal(ev.Data, &d) == nil {
+			out[violationKey(d.Violation, d.Detail)] = true
+		}
+	}
+	return out
 }
 
 // alarms — тревоги хранителя, ещё не записанные в журнал.

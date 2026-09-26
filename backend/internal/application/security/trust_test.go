@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -95,6 +96,12 @@ func TestHeadsAndIntegrityPoller(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
+	// Новый отчёт с тем же нарушением: отчёт — в журнал, нарушение — нет
+	// (и после перезапуска ant — тоже).
+	k.report.Digest = "streebog256:" + strings.Repeat("1", 64)
+	if err := (&IntegrityPoller{Journal: j, Keeper: k, Emit: emit}).Once(ctx); err != nil {
+		t.Fatal(err)
+	}
 	count := map[string]int{}
 	var violated map[string]any
 	for _, e := range j.es {
@@ -104,7 +111,7 @@ func TestHeadsAndIntegrityPoller(t *testing.T) {
 			_ = json.Unmarshal(ev.Data, &violated)
 		}
 	}
-	if count[string(catalog.SecurityIntegrityChecked)] != 1 || count[string(catalog.SecurityIntegrityViolated)] != 1 || count[string(catalog.SecurityKeeperAlert)] != 1 {
+	if count[string(catalog.SecurityIntegrityChecked)] != 2 || count[string(catalog.SecurityIntegrityViolated)] != 1 || count[string(catalog.SecurityKeeperAlert)] != 1 {
 		t.Fatalf("записи: %v", count)
 	}
 	if violated["violation"] != "projection_mismatch" || violated["ca_ref"] != "CA-3" || violated["seq"] != float64(42) {
