@@ -202,15 +202,6 @@ func seedPassports(t *testing.T) []quality.Passport {
 	return quality.PassportsFrom(recs)
 }
 
-// knownQualityGap — разрыв модуля quality (эпик 20): полнота контроля
-// считает результат точки устаревшим после любой следующей операции участка
-// (quality.points: «from» — последнее выполнение участка), в том числе после
-// операций, стоящих в процессе позже точки. На сборке КТ-4d (до крышки)
-// «устаревает» от установки крышки, крепежа и затяжки — ЗТ-4 ч.2 видит
-// «нет данных». Правка модуля — учитывать выполнения шагов не позже точки
-// (Order ≤ Order точки). Пока разрыв есть — отказ пишется в лог теста.
-const knownQualityGap = "inspection_missing на assembly.kt4d_zone_camera"
-
 // TestRouteWalksFlangeBPMN — FR-44, AD-17: маршрут генератора по каждому
 // изделию каждого прогона проходим токеном процесса фланца.
 func TestRouteWalksFlangeBPMN(t *testing.T) {
@@ -237,7 +228,6 @@ func TestRouteWalksFlangeBPMN(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	qualityGaps := 0
 	for _, run := range runs {
 		t.Run(run, func(t *testing.T) {
 			b, err := f.Bundle(ctx, run)
@@ -288,12 +278,7 @@ func TestRouteWalksFlangeBPMN(t *testing.T) {
 						if b.Code == "open_signal" {
 							continue
 						}
-						msg := fmt.Sprintf("%s на %s", b.Code, b.StepKey)
-						if msg == knownQualityGap {
-							qualityGaps++
-							continue
-						}
-						bad = append(bad, fmt.Sprintf("%s [quality]: %s", labels[r.EventID], msg))
+						bad = append(bad, fmt.Sprintf("%s [quality]: %s на %s", labels[r.EventID], b.Code, b.StepKey))
 					}
 				}
 				for _, r := range s.Process.Refusals {
@@ -316,10 +301,5 @@ func TestRouteWalksFlangeBPMN(t *testing.T) {
 				}
 			}
 		})
-	}
-	if qualityGaps > 0 {
-		t.Logf("известный разрыв quality (%d решений ЗТ-4 ч.2): %s", qualityGaps, knownQualityGap)
-	} else {
-		t.Errorf("разрыв quality «%s» больше не воспроизводится — убрать knownQualityGap", knownQualityGap)
 	}
 }
