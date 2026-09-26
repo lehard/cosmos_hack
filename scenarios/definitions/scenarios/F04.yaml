@@ -1,0 +1,44 @@
+# F04 — строка таблицы сбоев «один к одному».
+id: F04
+version: '1'
+title: 'Сбой: Нарушение порядка'
+kind: failure
+goal: Ожидание в окне переупорядочивания; не дождались — операция «незавершена», без выдуманной длительности
+case:
+  other:
+  - 'таблица сбоев PRD §4.3: ««Конец» операции раньше «начала»»'
+  - 'проверка: Отправить finished раньше started: после прихода started операция собрана корректно, длительность подсчитана'
+run: F04
+source: research/data-collection-sources-and-failures.md §6, строка «Нарушение порядка»
+steps:
+- at: '2026-09-21T09:25:00+03:00'
+  label: F-502/mo-started
+  fact: operation.run.started
+  source: cnc-1
+  item: F-502
+  deliver: '2026-09-21T10:16:00+03:00'
+  data:
+    operation_run_id: '{local:MO-502-1}'
+    operation_code: MO
+    step_key: machining.cnc
+    equipment_id: '{equipment:CNC-1}'
+    station_id: ST-CNC
+    operator_id: '{person:OP-CNC-11}'
+    operation_started_at: '2026-09-21T09:25:00+03:00'
+- at: '2026-09-21T10:15:00+03:00'
+  label: F-502/mo-finished
+  fact: operation.run.finished
+  source: cnc-1
+  item: F-502
+  data:
+    operation_run_id: '{local:MO-502-1}'
+    completion: completed
+    operation_started_at: '2026-09-21T09:25:00+03:00'
+    operation_finished_at: '2026-09-21T10:15:00+03:00'
+    reported_duration:
+      value: 50
+      unit: min
+      meaning: active_processing
+      origin: source_reported
+outcome:
+- Ожидание в окне переупорядочивания; не дождались — операция «незавершена», без выдуманной длительности

@@ -1,0 +1,61 @@
+# F16 — строка таблицы сбоев «один к одному».
+id: F16
+version: '1'
+title: 'Сбой: Деталь не идентифицирована'
+kind: failure
+goal: Событие принято как «не привязано» и уходит в очередь разбора; ручная привязка — новая запись с автором
+case:
+  other:
+  - 'таблица сбоев PRD §4.3: «Код не прочитан, item_id пуст»'
+  - 'проверка: Сигнал без item_id, затем ручная привязка: исходник цел, связь появилась, указан автор'
+run: F16
+source: research/data-collection-sources-and-failures.md §6, строка «Деталь не идентифицирована»
+steps:
+- at: '2026-09-21T12:50:00+03:00'
+  label: F-501/kt3
+  fact: inspection.result.recorded
+  source: cam-kt3-a
+  item: F-501
+  data:
+    observation_id: '{local:KT3-F-501-KT3}'
+    method: camera
+    phase: after_operation
+    step_key: welding.kt3_camera
+    inspection_point: KT-3
+    operation_run_id: '{local:SV-501-1}'
+    zone_ids:
+    - '{zone:U1}'
+    - '{zone:U2}'
+    - '{zone:U3}'
+    - '{zone:U4}'
+    - '{zone:U5}'
+    - '{zone:U6}'
+    - '{zone:U7}'
+    - '{zone:U8}'
+    outcome: no_defect_indicated
+    processing_state: completed
+    analyzer_confidence_bp: 9500
+    observation_quality_bp: 9200
+    versions:
+      analyzer_version: vqc-weld 2.3.1
+      contract_version: '1.0'
+      recipe_ref: KT-3@5
+      camera_config: angle-1
+      item_revision: Б
+  mutate:
+    drop:
+    - item_ref
+- at: '2026-09-21T13:05:00+03:00'
+  decision: crossitem.binding.assign
+  role: ADMIN
+  actor: ADM-01
+  item: F-501
+  body:
+    subject_event_id: '{event:F-501/kt3}'
+    item_id: '{item:F-501}'
+    method: select_expected
+    reason:
+      code: expected_at_station
+      text: 'Выбрано из ожидаемых на посту: сварка Ф-501 11:00–11:45'
+outcome:
+- Событие принято как «не привязано» и уходит в очередь разбора; ручная привязка — новая запись с автором

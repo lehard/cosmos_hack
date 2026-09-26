@@ -1,0 +1,19 @@
+# Ожидания прогона сбоя F20 — отдельно от входных событий (кейс §5.1, AD-26).
+scenario: F20
+version: '1'
+title: 'Сбой: Незавершённая операция'
+run: F20
+source: эпик 32 по research/data-collection-sources-and-failures.md §6 (ожидаемое поведение системы)
+checkpoints:
+- at: end
+  label: конец прогона
+  assertions:
+  - id: F20-01
+    what: 'сварка Ф-502 не завершена: длительность неизвестна'
+    check:
+      operation: machinelogs.run_profile.read
+      path: /finished_at
+      op: eq
+      params:
+        run_id: '{local:SV-502-1}'
+    mapping: draft

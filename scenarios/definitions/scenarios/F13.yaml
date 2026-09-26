@@ -1,0 +1,51 @@
+# F13 — строка таблицы сбоев «один к одному».
+id: F13
+version: '1'
+title: 'Сбой: Неизвестное значение перечисления'
+kind: failure
+goal: Принять как «неизвестный тип» с исходной строкой; уведомить ответственного за справочник; не отбрасывать
+case:
+  other:
+  - 'таблица сбоев PRD §4.3: «defects[].type = «delamination_v2»»'
+  - 'проверка: Отправить новый тип: дефект виден как «неизвестный (delamination_v2)»'
+run: F13
+source: research/data-collection-sources-and-failures.md §6, строка «Неизвестное значение перечисления»
+steps:
+- at: '2026-09-21T12:50:00+03:00'
+  label: F-501/kt3
+  fact: inspection.result.recorded
+  source: cam-kt3-a
+  item: F-501
+  data:
+    observation_id: '{local:KT3-F-501-KT3}'
+    method: camera
+    phase: after_operation
+    step_key: welding.kt3_camera
+    inspection_point: KT-3
+    operation_run_id: '{local:SV-501-1}'
+    zone_ids:
+    - '{zone:U1}'
+    - '{zone:U2}'
+    - '{zone:U3}'
+    - '{zone:U4}'
+    - '{zone:U5}'
+    - '{zone:U6}'
+    - '{zone:U7}'
+    - '{zone:U8}'
+    outcome: defect_indicated
+    processing_state: completed
+    analyzer_confidence_bp: 9500
+    observation_quality_bp: 9200
+    versions:
+      analyzer_version: vqc-weld 2.3.1
+      contract_version: '1.0'
+      recipe_ref: KT-3@5
+      camera_config: angle-1
+      item_revision: Б
+    defects:
+    - defect_type_code: DELAMINATION_V2
+      description: delamination_v2
+      zone_id: '{zone:U3}'
+      severity: unknown
+outcome:
+- Принять как «неизвестный тип» с исходной строкой; уведомить ответственного за справочник; не отбрасывать

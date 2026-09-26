@@ -21,6 +21,8 @@ type Scenario struct {
 	DefaultItems int      `json:"default_items" minimum:"0" doc:"Изделий в прогоне по умолчанию (плюс фоновые)."`
 	Assertions   int      `json:"assertions" minimum:"0" doc:"Число утверждений в scenarios/expected — строк табло."`
 	Decisions    int      `json:"decisions" minimum:"0" doc:"Сколько раз сценарий останавливается на решении человека."`
+	Kind         string   `json:"kind,omitempty" doc:"situation — ситуация кейса §4.2; check — проверка §5.1; demo — демо-сценарий; failure — сбой каталога; extra — сверх кейса; run — прогон целиком."`
+	RunDef       string   `json:"run_def,omitempty" doc:"Определение прогона, который запускается (scenarios/definitions/runs)."`
 }
 
 // ScenarioList — сценарии пульта.
@@ -74,24 +76,31 @@ type RunList struct {
 // BoardRow — строка табло «ожидалось → получилось» (AD-26, кейс §5.1):
 // утверждение scenarios/expected над operationId и путём ответа.
 type BoardRow struct {
-	AssertionID string  `json:"assertion_id"`
-	Title       string  `json:"title" doc:"Что проверяется, по-русски."`
-	OperationID string  `json:"operation_id" doc:"Операция API, которой проверяется утверждение (те же Queries)."`
-	Path        string  `json:"path" doc:"JSON Pointer в ответе операции."`
-	Expected    string  `json:"expected" doc:"Ожидаемое значение (JSON)."`
-	Actual      *string `nullable:"true" json:"actual" doc:"Полученное значение (JSON); null — ещё не проверено."`
-	Status      string  `json:"status" enum:"pending,passed,failed,not_reached" doc:"not_reached — сценарий не дошёл до шага."`
-	Step        int     `json:"step" minimum:"0" doc:"Шаг сценария, после которого проверяется."`
+	AssertionID string     `json:"assertion_id"`
+	Title       string     `json:"title" doc:"Что проверяется, по-русски."`
+	OperationID string     `json:"operation_id" doc:"Операция API, которой проверяется утверждение (те же Queries)."`
+	Path        string     `json:"path" doc:"JSON Pointer в ответе операции."`
+	Expected    string     `json:"expected" doc:"Ожидаемое значение (JSON)."`
+	Actual      *string    `nullable:"true" json:"actual" doc:"Полученное значение (JSON); null — ещё не проверено."`
+	Status      string     `json:"status" enum:"pending,passed,failed,not_reached" doc:"not_reached — сценарий не дошёл до шага."`
+	Step        int        `json:"step" minimum:"0" doc:"Шаг сценария, после которого проверяется."`
+	ScenarioID  string     `json:"scenario_id,omitempty" doc:"Карточка сценария, которой принадлежит утверждение."`
+	Checkpoint  string     `json:"checkpoint,omitempty" doc:"Момент проверки словами карточки."`
+	At          *time.Time `json:"at,omitempty" doc:"Доменное время проверки."`
+	MustNot     bool       `json:"must_not,omitempty" doc:"Утверждение «чего не должно случиться»."`
+	Mapping     string     `json:"mapping,omitempty" enum:"exact,draft,manual" doc:"exact — поле ответа контракта; draft — по смыслу, путь уточняет модуль-владелец; manual — видно на экране."`
+	Detail      string     `json:"detail,omitempty" doc:"Пояснение: почему ожидает или не совпало."`
 }
 
 // Board — табло прогона.
 type Board struct {
-	RunID    string     `json:"run_id"`
-	Passed   int        `json:"passed" minimum:"0"`
-	Failed   int        `json:"failed" minimum:"0"`
-	Pending  int        `json:"pending" minimum:"0"`
-	Rows     []BoardRow `json:"rows"`
-	BasisSeq int64      `json:"basis_seq"`
+	RunID      string     `json:"run_id"`
+	Passed     int        `json:"passed" minimum:"0"`
+	Failed     int        `json:"failed" minimum:"0"`
+	Pending    int        `json:"pending" minimum:"0"`
+	NotReached int        `json:"not_reached,omitempty" minimum:"0" doc:"Строк, до которых прогон не дошёл."`
+	Rows       []BoardRow `json:"rows"`
+	BasisSeq   int64      `json:"basis_seq"`
 }
 
 // Injection — кнопка цифрового стенда (FR-152, AD-26): инъекция поверх идущего прогона.

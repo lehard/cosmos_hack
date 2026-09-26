@@ -106,6 +106,7 @@ sources:
   term-vk:    {id: term-vk-1,    kind: manual_entry,    reliability: high,   workplace: WP-VK-1, note: "терминал входного контроля"}
   kompas:     {id: kompas-import, kind: import,         reliability: high,   note: "импорт файла условной сборки КОМПАС-3D (эпик 31)"}
   lab:        {id: gw-lab,       kind: machine,         reliability: high,   note: "лаборатория входного контроля: химсостав, мехсвойства, УЗК"}
+  paper:      {id: paper-import-1, kind: import,      reliability: medium, note: "ввод с бумаги задним числом (импорт журнала)"}
   term-admin: {id: term-admin-1, kind: manual_entry,    reliability: high,   note: "рабочее место администратора данных"}
   cam-kt1:    {id: edge-kt1,     kind: camera,          reliability: medium, equipment: CAM-KT1, station: ST-VK}
   cnc-1:      {id: edge-cnc-1,   kind: machine,         reliability: high,   equipment: CNC-1, station: ST-CNC, note: "станок ЧПУ и журнал пульта"}

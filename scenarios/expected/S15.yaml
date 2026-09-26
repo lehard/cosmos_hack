@@ -1,0 +1,224 @@
+# Ожидания S15 — отдельно от входных событий (кейс §5.1, AD-26): утверждения над теми же
+# operationId, что показывают столы; check.path — путь в ответе (board.go), значения — ID
+# процессной сессии (сверка переводит их сведением имён прогона). mapping: exact — поле
+# ответа контракта; draft — по смыслу, путь уточнит модуль-владелец; manual — видно на экране.
+scenario: S15
+version: 0.3-draft
+title: 'Сдвиг часов источника: часы КИМ-1 спешат на 7 минут'
+run: MS-1
+source: 'process/scenarios-flange-expected.yaml процессной сессии, версия 0.3-draft: утверждения процессной сессии — в source без изменений, check — исполняемая форма эпика 32'
+checkpoints:
+- at: '2026-09-21T08:26:00+03:00'
+  label: первая запись «из будущего»
+  assertions:
+  - id: S15-01
+    what: время события КИМ-1 позже времени приёма на 6 мин 58 с — система видит, что часы источника спешат, и сообщает администратору
+    check:
+      operation: ingest.source.list
+      path: /items[source_id={run}/gw-cmm]/0/clock_skew_ms
+      op: gte
+      value: 400000
+    mapping: exact
+    source:
+      subject: source/CMM-1
+      field:
+        clock_offset_s: 420
+        detected_at: '2026-09-21T08:25:02+03:00'
+        rule: occurred_at позже received_at больше чем на 30 с
+        alert_to: ADM-01
+      op: eq
+      value: true
+    note: часы КИМ-1 спешат на 7 мин (420 000 мс)
+  - id: S15-02
+    what: исходное время записи сохранено как есть; рядом — исправленное по правилу время с пометкой
+    check:
+      operation: journal.entry.list
+      path: /items
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: event/cmm/F-007
+      field:
+        occurred_at: '2026-09-21T08:32:00+03:00'
+        corrected_occurred_at: '2026-09-21T08:25:00+03:00'
+        time_corrected:
+          rule: source_clock_offset
+          offset_s: 420
+      op: eq
+      value: true
+    note: запись cmm/F-007
+- at: '2026-09-21T10:35:00+03:00'
+  label: после синхронизации часов
+  assertions:
+  - id: S15-03
+    what: исправлено 5 записей КИМ-1 (Ф-007…Ф-011), у каждой одна и та же пометка
+    check:
+      operation: ingest.metrics.read
+      path: /time_corrected_count
+      op: eq
+      value: 5
+    mapping: draft
+    source:
+      subject: ingest
+      field: time_corrected_count
+      filter:
+        source: CMM-1
+        date: '2026-09-21'
+      op: eq
+      value: 5
+  - id: S15-04
+    what: порядок записей источника по source_seq не нарушен — «соврали часы» не значит «нарушили порядок»; ничего не переставлено
+    check:
+      operation: ingest.metrics.read
+      path: /
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: ingest
+      field:
+        out_of_order: 0
+        ordered_by: source_seq
+      filter:
+        source: CMM-1
+      op: eq
+      value: true
+  - id: S15-05
+    what: в истории Ф-007…Ф-011 протокол КИМ по исправленному времени стоит до подписи ЗТ-2
+    check:
+      operation: item.item.list
+      path: /items
+      op: before
+      value: &id001
+      - inspection_cmm@corrected
+      - gate_ZT-2
+    mapping: draft
+    source:
+      subject: item/*
+      field: timeline_order
+      filter:
+        items:
+        - F-007
+        - F-008
+        - F-009
+        - F-010
+        - F-011
+      op: before
+      value: *id001
+    note: 'проверка по списку изделий {"items": ["F-007", "F-008", "F-009", "F-010", "F-011"]}'
+  - id: S15-06
+    what: администратор синхронизировал часы КИМ-1 в 10:15; следующая запись (Ф-013, 10:30) — без поправки
+    check:
+      operation: ingest.source.list
+      path: /items
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: source/CMM-1
+      field:
+        clock_synced_by: ADM-01
+        clock_synced_at: '2026-09-21T10:15:00+03:00'
+        next_record_corrected: false
+      op: eq
+      value: true
+    note: источник CMM-1
+  - id: S15-07
+    what: 'Н-5: «время исправлено по правилу» — 5 записей, источник КИМ-1, сдвиг +7 мин'
+    check:
+      operation: analytics.metric.drilldown
+      params:
+        metric_id: N-5
+      path: /time_corrected
+      op: eq
+      value: &id002
+        records: 5
+        source: CMM-1
+        offset: +7 мин
+    mapping: draft
+    source:
+      subject: metric/N-5
+      field: time_corrected
+      op: eq
+      value: *id002
+    note: показатель N-5 каталога процессной сессии (analytics-catalog.md); сопоставление — эпик 25
+- at: '2026-09-21T10:35:00+03:00'
+  label: чего не должно случиться
+  must_not: true
+  assertions:
+  - id: S15-N1
+    what: 'решения ЗТ-2 по Ф-007…Ф-011 не получили метку «пересмотрите»: по исправленному времени КИМ был до подписи'
+    check:
+      operation: nonconformity.queue.list
+      path: /items
+      op: eq
+      value: none
+    mapping: draft
+    source:
+      subject: gate/ZT-2/*
+      field: review_flag
+      filter:
+        items:
+        - F-007
+        - F-008
+        - F-009
+        - F-010
+        - F-011
+      op: eq
+      value: none
+    note: ЗТ ZT-2/*
+  - id: S15-N2
+    what: записи со сдвигом не ушли в карантин и не отброшены
+    check:
+      operation: ingest.quarantine.list
+      params:
+        source_id: '{run}/gw-cmm'
+      path: /items/#
+      op: eq
+      value: 0
+    mapping: exact
+    source:
+      subject: quarantine
+      field: count
+      filter:
+        source: CMM-1
+      op: eq
+      value: 0
+  - id: S15-N3
+    what: исходное occurred_at не перезаписано
+    check:
+      operation: journal.entry.list
+      path: /items
+      op: eq
+      value: false
+    mapping: draft
+    source:
+      subject: event/cmm/F-007
+      field: occurred_at_overwritten
+      op: eq
+      value: false
+    note: запись cmm/F-007
+  - id: S15-N4
+    what: нет отрицательных интервалов «КИМ → ЗТ-2» в показателях ожидания
+    check:
+      operation: analytics.metric.drilldown
+      params:
+        metric_id: D-1
+      path: /negative_intervals
+      op: eq
+      value: 0
+    mapping: draft
+    source:
+      subject: metric/D-1
+      field: negative_intervals
+      filter:
+        items:
+        - F-007
+        - F-008
+        - F-009
+        - F-010
+        - F-011
+      op: eq
+      value: 0
+    note: показатель D-1 каталога процессной сессии (analytics-catalog.md); сопоставление — эпик 25

@@ -1,0 +1,447 @@
+# Ожидания S10A — отдельно от входных событий (кейс §5.1, AD-26): утверждения над теми же
+# operationId, что показывают столы; check.path — путь в ответе (board.go), значения — ID
+# процессной сессии (сверка переводит их сведением имён прогона). mapping: exact — поле
+# ответа контракта; draft — по смыслу, путь уточнит модуль-владелец; manual — видно на экране.
+scenario: S10A
+version: 0.3-draft
+title: Переделка шва — новое выполнение операции; переделка помогает не всем
+run: MS-1
+source: 'process/scenarios-flange-expected.yaml процессной сессии, версия 0.3-draft: утверждения процессной сессии — в source без изменений, check — исполняемая форма эпика 32'
+checkpoints:
+- at: '2026-09-24T16:30:00+03:00'
+  label: конец главной истории
+  assertions:
+  - id: S10A-01
+    what: переварки — новые выполнения со ссылкой на прежние
+    check:
+      operation: machinelogs.run_profile.read
+      path: /rework_links
+      op: set_eq
+      value: &id001
+        SV-017-2: SV-017-1
+        SV-023-2: SV-023-1
+        SV-025-2: SV-025-1
+        SV-015-2: SV-015-1
+        SV-021-2: SV-021-1
+    mapping: draft
+    source:
+      subject: run/*
+      field: rework_links
+      filter:
+        date: '2026-09-24'
+        operation: welding
+      op: set_eq
+      value: *id001
+    note: 'выборка выполнений {"date": "2026-09-24", "operation": "welding"}'
+  - id: S10A-02
+    what: переварка на ИС-1, ток в уставке
+    check:
+      operation: machinelogs.run_profile.read
+      params:
+        run_id: '{local:SV-017-2}'
+      path: /
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: run/SV-017-2
+      field:
+        equipment: WS-1
+        current_in_setpoint: true
+      op: eq
+      value: true
+  - id: S10A-03
+    what: счётчик переделок участков шва по ТП после переварки — 1 из 3
+    check:
+      operation: item.passport.read
+      params:
+        item_id: '{item:F-017}'
+      path: /rework_counter
+      op: eq
+      value: &id002
+        U1: 1
+        U2: 1
+        U3: 1
+        U4: 1
+        U5: 1
+        U6: 1
+        U7: 1
+        U8: 1
+        limit: 3
+    mapping: draft
+    source:
+      subject: item/F-017
+      field: rework_counter
+      op: eq
+      value: *id002
+  - id: S10A-04
+    what: 'у 4 фланцев переделка принята: камера и рентген чистые, ЗТ-3 пройдена повторно; дальше — по маршруту'
+    check:
+      operation: item.item.list
+      path: /items
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: item/*
+      field:
+        disposition_verified: true
+        status: in_progress
+      filter:
+        items:
+        - F-015
+        - F-017
+        - F-023
+        - F-025
+      op: eq
+      value: true
+    note: 'проверка по списку изделий {"items": ["F-015", "F-017", "F-023", "F-025"]}'
+  - id: S10A-05
+    what: Ф-021 — новый дефект в новом шве, НС-06
+    check:
+      operation: nonconformity.card.read
+      params:
+        nc_id: '{ref:NC-06}'
+      path: /
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: nc/NC-06
+      field:
+        item: F-021
+        zone: U5
+        type: porosity
+        run: SV-021-2
+      op: eq
+      value: true
+  - id: S10A-06
+    what: повторная переделка того же участка не назначена без главного сварщика
+    check:
+      operation: item.passport.read
+      params:
+        item_id: '{item:F-021}'
+      path: /auto_rework_assigned
+      op: eq
+      value: false
+    mapping: draft
+    source:
+      subject: item/F-021
+      field: auto_rework_assigned
+      op: eq
+      value: false
+  - id: S10A-07
+    what: новое решение по Ф-021 — списать; прежнее «переделка» сохранено и связано
+    check:
+      operation: item.passport.read
+      params:
+        item_id: '{item:F-021}'
+      path: /dispositions
+      op: eq
+      value: &id003
+      - type: rework
+        at: '2026-09-23T15:30:00+03:00'
+      - type: scrap
+        at: '2026-09-24T15:30:00+03:00'
+        signers:
+        - CHW-01
+        - TECH-01
+        supersedes: rework
+    mapping: draft
+    source:
+      subject: item/F-021
+      field: dispositions
+      op: eq
+      value: *id003
+  - id: S10A-08
+    what: итог по шести фланцам инцидента
+    check:
+      operation: analysis.risk_scope.read
+      params:
+        incident_id: '{ref:RS-01}'
+      path: /items_outcome
+      op: eq
+      value: &id004
+        rework_verified:
+        - F-015
+        - F-017
+        - F-023
+        - F-025
+        scrapped:
+        - F-021
+        in_rework:
+        - F-019
+    mapping: draft
+    source:
+      subject: risk_scope/RS-01
+      field: items_outcome
+      op: eq
+      value: *id004
+  - id: S10A-09
+    what: в 1С «возврат из брака в производство» ×4 — на повторной ЗТ-3, каждое после своей подписи, подтверждено [П]
+    check:
+      operation: erp.message.list
+      path: /items
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: erp/postings
+      field:
+        items:
+        - F-015
+        - F-017
+        - F-023
+        - F-025
+        gate: ZT-3
+        presentation_no: 2
+        sent_before_gate_signature: 0
+        ack_status: acked
+      filter:
+        type: rework_return_to_production
+      op: eq
+      value: true
+  - id: S10A-10
+    what: 'блокировка Ф-021 и новый дефект НС-06 в 1С НЕ уходят: до нового решения по Ф-021 в 1С ничего'
+    check:
+      operation: erp.message.list
+      params:
+        item_id: '{item:F-021}'
+      path: /items/#
+      op: eq
+      value: 0
+    mapping: exact
+    source:
+      subject: erp/postings
+      field: count
+      filter:
+        item: F-021
+        between:
+        - '2026-09-24T14:35:00+03:00'
+        - '2026-09-24T15:29:00+03:00'
+      op: eq
+      value: 0
+  - id: S10A-11
+    what: в 1С «перевод в брак (списание)» по Ф-021, подтверждено
+    check:
+      operation: erp.message.list
+      params:
+        item_id: '{item:F-021}'
+      path: /items/*/status
+      op: eq
+      value: acknowledged
+    mapping: draft
+    source:
+      subject: erp/postings
+      field: ack_status
+      filter:
+        type: scrap_transfer_writeoff
+        item: F-021
+      op: eq
+      value: acked
+  - id: S10A-12
+    what: 'О-8: +5 повторных выполнений сварки, +5 изделий с повтором'
+    check:
+      operation: analytics.metric.drilldown
+      params:
+        metric_id: O-8
+      path: /total
+      op: delta
+      value: true
+    mapping: draft
+    baseline: '2026-09-24T07:59:00+03:00'
+    source:
+      subject: metric/O-8
+      field:
+        repeated_runs: 5
+        items_with_repeat: 5
+      op: delta
+      value: true
+      baseline: '2026-09-24T07:59:00+03:00'
+    note: показатель O-8 каталога процессной сессии (analytics-catalog.md); сопоставление — эпик 25
+  - id: S10A-13
+    what: ЗТ-3 не с первого предъявления у 5 изделий; Р-5 +5
+    check:
+      operation: analytics.metric.drilldown
+      params:
+        metric_id: D-3
+      path: /not_first_pass_items
+      op: contains
+      value: &id005
+      - F-015
+      - F-017
+      - F-021
+      - F-023
+      - F-025
+    mapping: draft
+    source:
+      subject: metric/D-3
+      field: not_first_pass_items
+      filter:
+        gate: ZT-3
+      op: contains
+      value: *id005
+    note: показатель D-3 каталога процессной сессии (analytics-catalog.md); сопоставление — эпик 25
+  - id: S10A-14
+    what: в паспорте Ф-017 две связанные сварки
+    check:
+      operation: item.passport.read
+      params:
+        item_id: '{item:F-017}'
+      path: /entries[event_type=operation.run.started]/#
+      op: eq
+      value: 2
+    mapping: draft
+    source:
+      subject: item/F-017
+      field: welding_runs
+      op: eq
+      value:
+      - SV-017-1
+      - SV-017-2
+  - id: S10A-15
+    what: 'переварка шла на посту линии 1: с неё пять фланцев идут по линии 1'
+    check:
+      operation: item.item.list
+      path: /items
+      op: eq
+      value: L-FL-1
+    mapping: draft
+    source:
+      subject: item/*
+      field: line_id
+      filter:
+        items:
+        - F-015
+        - F-017
+        - F-021
+        - F-023
+        - F-025
+        from: '2026-09-24T08:00:00+03:00'
+      op: eq
+      value: L-FL-1
+    note: 'проверка по списку изделий {"items": ["F-015", "F-017", "F-021", "F-023", "F-025"], "from": "2026-09-24T08:00:00+03:00"}'
+  - id: S10A-16
+    what: 'дефекты по линиям за главную историю: линия 2 — 4 (до переделки), линия 1 — 1 (НС-06 в новом шве Ф-021)'
+    check:
+      operation: analytics.metric.drilldown
+      params:
+        metric_id: O-4
+      path: /confirmed_defects_by_line
+      op: eq
+      value: &id006
+        L-FL-1: 1
+        L-FL-2: 4
+    mapping: draft
+    source:
+      subject: metric/O-4
+      field: confirmed_defects_by_line
+      filter:
+        cut: line
+        station: welding
+        window: main_story
+      op: eq
+      value: *id006
+    note: показатель O-4 каталога процессной сессии (analytics-catalog.md); сопоставление — эпик 25
+  - id: S10A-17
+    what: перед каждой переваркой — выборка (удаление шва, новое выполнение WL-…, С-03 в среду вечером) и контроль выборки ОТК-1 до заварки (узлы WL1 → WL2 → WLG → WL3)
+    check:
+      operation: machinelogs.run_profile.read
+      path: /preceded_by
+      op: eq
+      value: &id007
+        excavation: WL1
+        excavation_check:
+          by: QC-01
+          result: clean
+        chief_welder_approval: not_needed_first_rework
+    mapping: draft
+    source:
+      subject: run/*
+      field: preceded_by
+      filter:
+        runs:
+        - SV-017-2
+        - SV-023-2
+        - SV-025-2
+        - SV-015-2
+        - SV-021-2
+      op: eq
+      value: *id007
+    note: 'выборка выполнений {"runs": ["SV-017-2", "SV-023-2", "SV-025-2", "SV-015-2", "SV-021-2"]}'
+- at: '2026-09-24T16:30:00+03:00'
+  label: чего не должно случиться
+  must_not: true
+  assertions:
+  - id: S10A-N1
+    what: 'переделка не создаёт новое изделие: О-1 и О-2 не удваиваются'
+    check:
+      operation: analytics.metric.drilldown
+      params:
+        metric_id: O-2
+      path: /total/value
+      op: eq
+      value: 6
+    mapping: draft
+    source:
+      subject: metric/O-2
+      field: items
+      filter:
+        incident: RS-01
+      op: eq
+      value: 6
+    note: показатель O-2 каталога процессной сессии (analytics-catalog.md); сопоставление — эпик 25
+  - id: S10A-N2
+    what: «возврат из брака в производство» не раньше чистого рентгена и подписи повторной ЗТ-3
+    check:
+      operation: erp.message.list
+      path: /items
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: erp/postings
+      field:
+        sent_before_xray_clean: 0
+        sent_before_gate_signature: 0
+      filter:
+        type: rework_return_to_production
+      op: eq
+      value: true
+  - id: S10A-N3
+    what: нет второго «перевода в брак (переделка)» по тем же изделиям
+    check:
+      operation: erp.message.list
+      path: /items/#
+      op: eq
+      value: 1
+    mapping: draft
+    source:
+      subject: erp/postings
+      field: count
+      filter:
+        type: scrap_transfer_rework
+      op: eq
+      value: 1
+  - id: S10A-N4
+    what: '«выпуск годного» по фланцам инцидента в главной истории не уходит: до ЗТ-6 (сборка, испытание, окончательный контроль) они не дошли'
+    check:
+      operation: erp.message.list
+      path: /items/#
+      op: eq
+      value: 0
+    mapping: draft
+    source:
+      subject: erp/postings
+      field: count
+      filter:
+        type: release_good
+        items:
+        - F-015
+        - F-017
+        - F-019
+        - F-021
+        - F-023
+        - F-025
+      op: eq
+      value: 0

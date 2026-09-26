@@ -60,8 +60,10 @@ type Emission struct {
 	Scenario string    `json:"scenario"`
 	Label    string    `json:"label,omitempty"`
 	Delivery Delivery  `json:"delivery"`
-	// Contract — false у сообщений не по контракту (S12): приём кладёт их в карантин.
+	// Contract — false у сообщений не по контракту (S12): схемы их не пропускают.
 	Contract bool `json:"contract"`
+	// Quarantine — приём должен положить сообщение в карантин (FR-30).
+	Quarantine bool `json:"quarantine,omitempty"`
 	// Event — исходное событие (конверт v1, канонический JSON), без подписи.
 	Event json.RawMessage `json:"event"`
 }

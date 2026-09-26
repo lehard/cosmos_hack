@@ -1,0 +1,181 @@
+# Ожидания S17 — отдельно от входных событий (кейс §5.1, AD-26): утверждения над теми же
+# operationId, что показывают столы; check.path — путь в ответе (board.go), значения — ID
+# процессной сессии (сверка переводит их сведением имён прогона). mapping: exact — поле
+# ответа контракта; draft — по смыслу, путь уточнит модуль-владелец; manual — видно на экране.
+scenario: S17
+version: 0.3-draft
+title: Исполнитель честно отметил пропуск обязательной проверки (Ф-006)
+run: MS-1
+source: 'process/scenarios-flange-expected.yaml процессной сессии, версия 0.3-draft: утверждения процессной сессии — в source без изменений, check — исполняемая форма эпика 32'
+checkpoints:
+- at: '2026-09-23T08:12:00+03:00'
+  label: пропуск отмечен
+  assertions:
+  - id: S17-01
+    what: 'отметка пропуска (Е-21) — в журнале критических действий: кто (Сб-01), какая проверка, причина «щуп 0,05 мм не найден на рабочем месте»'
+    check:
+      operation: security.critical_action.list
+      path: /items
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: audit/critical_actions
+      field:
+        count: 1
+        actor: ASM-01
+        check: seal_seating_check
+        reason_present: true
+        source: operator_marked
+      filter:
+        item: F-006
+        action: check_skipped
+      op: eq
+      value: true
+  - id: S17-02
+    what: по этой проверке — «нет данных» (Е-82), а не «годно»
+    check:
+      operation: item.passport.read
+      params:
+        item_id: '{item:F-006}'
+      path: /check_status/seal_seating_check
+      op: eq
+      value: &id001
+        status: missing
+        reason: skipped_by_operator
+    mapping: draft
+    source:
+      subject: item/F-006
+      field: check_status/seal_seating_check
+      op: eq
+      value: *id001
+  - id: S17-03
+    what: '«Сбой оборудования, пропуск проверки» (узел EQ8): шаг заблокирован, задачи мастеру М-03 и ОТК-2; ЗТ-СР по Ф-006 закрыта, пока проверки нет'
+    check:
+      operation: item.passport.read
+      params:
+        item_id: '{item:F-006}'
+      path: /entries[event_type=decision.presentation.resolved]
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: gate/ZT-SR/F-006
+      field:
+        blocked_until_check: true
+        tasks_to:
+        - MST-03
+        - QC-02
+      op: eq
+      value: true
+    note: ЗТ ZT-SR
+- at: '2026-09-23T08:35:00+03:00'
+  label: проверка сделана, ЗТ-СР пройдена
+  assertions:
+  - id: S17-04
+    what: проверка выполнена в 08:22 (щуп принёс мастер) — отдельная запись со ссылкой на отметку пропуска; «нет данных» закрыто
+    check:
+      operation: item.passport.read
+      params:
+        item_id: '{item:F-006}'
+      path: /check_status/seal_seating_check
+      op: eq
+      value: &id002
+        status: done
+        at: '2026-09-23T08:22:00+03:00'
+        closes: S17/check-skipped
+    mapping: draft
+    source:
+      subject: item/F-006
+      field: check_status/seal_seating_check
+      op: eq
+      value: *id002
+  - id: S17-05
+    what: ЗТ-СР пройдена в 08:30 — после проверки; отметка пропуска осталась в истории
+    check:
+      operation: item.passport.read
+      params:
+        item_id: '{item:F-006}'
+      path: /entries[event_type=decision.presentation.resolved]
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: gate/ZT-SR/F-006
+      field:
+        passed_at: '2026-09-23T08:30:00+03:00'
+        skip_record_kept: true
+      op: eq
+      value: true
+    note: ЗТ ZT-SR
+- at: '2026-09-23T08:35:00+03:00'
+  label: чего не должно случиться
+  must_not: true
+  assertions:
+  - id: S17-N1
+    what: 'честная отметка — не «нарушение»: нет записи «нарушение», «ошибки исполнителя» и рейтинга; О-10 не меняется'
+    check:
+      operation: access.person.read
+      params:
+        person_id: '{person:ASM-01}'
+      path: /
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: people/ASM-01
+      field:
+        violation_records: 0
+        operator_error: 0
+        rating: none
+        O-10_changed: false
+      op: eq
+      value: true
+  - id: S17-N2
+    what: 'честно отметивший не хуже промолчавшего: за саму отметку человеку ничего не начисляется — итог для него такой же, как если бы пропуск нашёл контроль полноты (Е-82)'
+    check:
+      operation: access.person.read
+      params:
+        person_id: '{person:ASM-01}'
+      path: /
+      op: eq
+      value: false
+    mapping: draft
+    source:
+      subject: people/ASM-01
+      field: penalty_for_self_report
+      op: eq
+      value: false
+  - id: S17-N3
+    what: 'пропуск проверки — не дефект изделия: нет сигнала и несоответствия'
+    check:
+      operation: item.passport.read
+      params:
+        item_id: '{item:F-006}'
+      path: /status
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: item/F-006
+      field:
+        signals: 0
+        nc_count: 0
+      op: eq
+      value: true
+  - id: S17-N4
+    what: ЗТ-СР не пройдена раньше проверки
+    check:
+      operation: item.passport.read
+      params:
+        item_id: '{item:F-006}'
+      path: /entries[event_type=decision.presentation.resolved]
+      op: eq
+      value: false
+    mapping: draft
+    source:
+      subject: gate/ZT-SR/F-006
+      field: passed_before_check
+      op: eq
+      value: false
+    note: ЗТ ZT-SR

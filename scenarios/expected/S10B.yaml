@@ -1,0 +1,157 @@
+# Ожидания S10B — отдельно от входных событий (кейс §5.1, AD-26): утверждения над теми же
+# operationId, что показывают столы; check.path — путь в ответе (board.go), значения — ID
+# процессной сессии (сверка переводит их сведением имён прогона). mapping: exact — поле
+# ответа контракта; draft — по смыслу, путь уточнит модуль-владелец; manual — видно на экране.
+scenario: S10B
+version: 0.3-draft
+title: Лимит переделок участка шва — отдельный прогон на Ф-090
+run: S10B
+source: 'process/scenarios-flange-expected.yaml процессной сессии, версия 0.3-draft: утверждения процессной сессии — в source без изменений, check — исполняемая форма эпика 32'
+checkpoints:
+- at: end
+  label: после попытки пятого выполнения
+  assertions:
+  - id: S10B-01
+    what: лимит достигнут, запуск заблокирован
+    check:
+      operation: item.passport.read
+      params:
+        item_id: '{item:F-090}'
+      path: /status
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: item/F-090
+      field:
+        event: rework.limit_reached
+        zone: U4
+        count: 3
+        limit: 3
+        start_of_SV-090-5: blocked
+      op: eq
+      value: true
+  - id: S10B-02
+    what: запись в журнале критических действий, задача технологу
+    check:
+      operation: security.critical_action.list
+      path: /items/#
+      op: gte
+      value: 1
+    mapping: draft
+    source:
+      subject: audit/critical_actions
+      field: count
+      filter:
+        item: F-090
+      op: gte
+      value: 1
+  - id: S10B-03
+    what: «переделка» сверх лимита — отказ
+    check:
+      operation: step
+      params:
+        label: S10B/rework-refused
+      path: /refusal
+      op: eq
+      value: process.rework_limit_exceeded
+    mapping: exact
+    source:
+      subject: api/decisions
+      field: result
+      filter:
+        item: F-090
+        type: rework
+      op: eq
+      value:
+        refused: true
+        code: E_REWORK_LIMIT
+    note: 'отказ API на шаге S10B/rework-refused: код контракта process.rework_limit_exceeded'
+  - id: S10B-04
+    what: «ремонт» без разрешения на отклонение — отказ
+    check:
+      operation: step
+      params:
+        label: S10B/repair-refused
+      path: /refusal
+      op: eq
+      value: nonconformity.concession_required
+    mapping: exact
+    source:
+      subject: api/decisions
+      field: result
+      filter:
+        item: F-090
+        type: repair
+        concession: null
+      op: eq
+      value:
+        refused: true
+        code: E_PERMIT_REQUIRED
+    note: 'отказ API на шаге S10B/repair-refused: код контракта nonconformity.concession_required'
+  - id: S10B-05
+    what: доступны только два варианта
+    check:
+      operation: item.passport.read
+      params:
+        item_id: '{item:F-090}'
+      path: /allowed_dispositions
+      op: set_eq
+      value: &id001
+      - repair_with_concession
+      - scrap
+    mapping: draft
+    source:
+      subject: item/F-090
+      field: allowed_dispositions
+      op: set_eq
+      value: *id001
+  - id: S10B-06
+    what: перед каждой переделкой У4 — выборка и контроль выборки; второе и третье исправление — согласие главного сварщика отдельной записью (Е-99 [П], узел WLA) после контроля выборки
+    check:
+      operation: item.passport.read
+      params:
+        item_id: '{item:F-090}'
+      path: /rework_chain
+      op: eq
+      value: &id002
+        SV-090-2:
+        - WL1
+        - WL2
+        - WL3
+        SV-090-3:
+        - WL1
+        - WL2
+        - rework.chief_welder_approved
+        - WL3
+        SV-090-4:
+        - WL1
+        - WL2
+        - rework.chief_welder_approved
+        - WL3
+    mapping: draft
+    source:
+      subject: item/F-090
+      field: rework_chain
+      op: eq
+      value: *id002
+  - id: S10B-07
+    what: 'попытка четвёртого исправления: выборка и контроль сделаны, заварка остановлена на развилке «какое исправление участка?» (WLG) — лимит'
+    check:
+      operation: item.passport.read
+      params:
+        item_id: '{item:F-090}'
+      path: /status
+      op: eq
+      value: true
+    mapping: draft
+    source:
+      subject: item/F-090
+      field:
+        blocked_at: WLG
+        after:
+        - WL1
+        - WL2
+        run_blocked: SV-090-5
+      op: eq
+      value: true

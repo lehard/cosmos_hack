@@ -1,0 +1,37 @@
+# Прогон сбоя каталога F16 (FR-105): два фланца и одна строка таблицы сбоев.
+id: F16
+version: '1'
+title: 'Сбой каталога: Деталь не идентифицирована'
+kind: failure
+description: 'Строка таблицы «Сбой → проявление → ожидаемое поведение → проверочный сценарий» (research/data-collection-sources-and-failures.md §6): «Деталь не идентифицирована».'
+case_refs: ['PRD §4.3, FR-105 — сбои таблицы каталога', кейс §4.6–4.7]
+world: flange
+seed: 20261016
+anchor: '2026-09-21T07:00:00+03:00'
+end: '2026-09-21T16:00:00+03:00'
+speed: 1000
+scenarios: [F16]
+orders:
+- id: ORD-0917
+  at: '2026-09-21T07:00:00+03:00'
+  external: ord-5c2b-0917
+  quantity: 3
+  due: '2026-10-09'
+  lots: {blank: LOT-ZF-201, ring: LOT-R-116, cover: LOT-C-301, seal: LOT-SL-401, fastener: LOT-FS-501, valve: LOT-V-601}
+lots:
+- {id: LOT-ZF-201, component: FL-100.01.001, supplier: SUP-1, quantity: 42, arrived: '2026-09-21T07:05:00+03:00', accepted: '2026-09-21T07:50:00+03:00'}
+- {id: LOT-R-116, component: FL-100.01.002, supplier: SUP-2, quantity: 33, arrived: '2026-09-21T07:10:00+03:00', accepted: '2026-09-21T07:55:00+03:00'}
+items:
+- id: F-501
+  order: ORD-0917
+  launch: '2026-09-21T08:00:00+03:00'
+  machining: '2026-09-21T08:30:00+03:00'
+  weld: {at: '2026-09-21T12:00:00+03:00', station: WS-1, welder: WLD-02}
+  until: kt3
+  skip: [kt3]
+- id: F-502
+  order: ORD-0917
+  launch: '2026-09-21T08:55:00+03:00'
+  machining: '2026-09-21T09:25:00+03:00'
+  weld: {at: '2026-09-21T13:00:00+03:00', station: WS-1, welder: WLD-02}
+  until: kt3

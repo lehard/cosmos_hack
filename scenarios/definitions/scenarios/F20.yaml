@@ -1,0 +1,29 @@
+# F20 — строка таблицы сбоев «один к одному».
+id: F20
+version: '1'
+title: 'Сбой: Незавершённая операция'
+kind: failure
+goal: Статус «не завершена», длительность неизвестна, показатель помечен
+case:
+  other:
+  - 'таблица сбоев PRD §4.3: ««Начало» без «конца» дольше тайм-аута»'
+  - 'проверка: Только started: через тайм-аут операция в списке незавершённых'
+run: F20
+source: research/data-collection-sources-and-failures.md §6, строка «Незавершённая операция»
+steps:
+- at: '2026-09-21T13:00:00+03:00'
+  decision: process.operation.start
+  role: PERFORMER
+  actor: WLD-02
+  item: F-502
+  params:
+    item_id: '{item:F-502}'
+  body:
+    operation_code: SV
+    operation_run_id: '{local:SV-502-1}'
+    step_key: welding.weld
+    equipment_id: '{equipment:WS-1}'
+    station_id: ST-WELD
+    program_ref: PS-4
+outcome:
+- Статус «не завершена», длительность неизвестна, показатель помечен

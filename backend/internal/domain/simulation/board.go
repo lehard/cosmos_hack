@@ -31,6 +31,7 @@ type Checkpoint struct {
 	At         string      `json:"at"`
 	Label      string      `json:"label,omitempty"`
 	MustNot    bool        `json:"must_not,omitempty"`
+	Note       string      `json:"note,omitempty"`
 	Assertions []Assertion `json:"assertions"`
 }
 

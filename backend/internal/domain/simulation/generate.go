@@ -388,7 +388,8 @@ func (g *gen) number(plan *Plan) error {
 		order++
 		base := Emission{N: d.n, Order: order, DeliverAt: deliver, SourceKey: d.source, SourceID: g.ids.SourceID(g.b.World.Sources[d.source].ID),
 			SourceSeq: d.seq, EventID: d.eventID, EventType: d.typ, OccurredAt: d.occurred, TrueAt: d.at, Item: d.item,
-			Scenario: d.scenario, Label: d.label, Delivery: delivery, Contract: contract, Event: body}
+			Scenario: d.scenario, Label: d.label, Delivery: delivery, Contract: contract, Event: body,
+			Quarantine: d.mutate != nil && d.mutate.Quarantine}
 		em = append(em, base)
 		for _, at := range d.dups {
 			order++

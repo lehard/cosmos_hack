@@ -1,0 +1,20 @@
+# Ожидания прогона сбоя F18 — отдельно от входных событий (кейс §5.1, AD-26).
+scenario: F18
+version: '1'
+title: 'Сбой: Событие станции без детали'
+run: F18
+source: эпик 32 по research/data-collection-sources-and-failures.md §6 (ожидаемое поведение системы)
+checkpoints:
+- at: end
+  label: конец прогона
+  assertions:
+  - id: F18-01
+    what: авария привязана к выполнению сварки Ф-501
+    check:
+      operation: machinelogs.run_profile.read
+      path: /events[event_type=equipment.deviation.detected]/#
+      op: gte
+      params:
+        run_id: '{local:SV-501-1}'
+      value: 1
+    mapping: draft
