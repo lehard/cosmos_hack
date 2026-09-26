@@ -7203,6 +7203,15 @@ weekly_days_off?: ("mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun")[]
  */
 non_working_days: string[]
 /**
+ * Рабочие дни, выпадающие на еженедельные выходные (перенос выходного, ТК РФ ст. 112).
+ * 
+ * Items: Календарная дата YYYY-MM-DD (без format: date — диалект AD-20).
+ * 
+ * This interface was referenced by `AntDefsV1`'s JSON-Schema
+ * via the `definition` "date".
+ */
+working_days?: string[]
+/**
  * Сокращённые дни.
  * 
  * Items: Календарная дата YYYY-MM-DD (без format: date — диалект AD-20).
@@ -7447,7 +7456,7 @@ valid_from: string
 valid_until?: string
 }
 /**
- * График смен — смены по участкам: начало, конец (FR-81).
+ * График смен — смены по участкам: начало, конец; смена-шаблон повторяется каждый (рабочий) день до repeat_until (FR-81).
  * 
  * This interface was referenced by `EventsContracts`'s JSON-Schema
  * via the `definition` "ReferenceShiftScheduledV1".
@@ -7473,6 +7482,14 @@ ends_at: string
  * Название смены.
  */
 name?: string
+/**
+ * Момент времени: RFC 3339 UTC, ровно три знака после секунд (YYYY-MM-DDTHH:MM:SS.mmmZ).
+ */
+repeat_until?: string
+/**
+ * Повторять только в рабочие дни производственного календаря.
+ */
+working_days_only?: boolean
 }
 /**
  * Отказ в доступе — вызов API или действие отклонено по политике, месту сеанса или доменному гарду (FR-85, AD-24).

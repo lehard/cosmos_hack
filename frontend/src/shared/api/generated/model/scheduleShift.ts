@@ -20,10 +20,14 @@ export interface ScheduleShift {
      * @minimum 0
      */
   policy_seq: number;
+  /** Шаблон: повторять каждый день, пока начало не позже этого момента. */
+  repeat_until?: string;
   shift_id: string;
   /** Подписанный пакет DSSE для операций с уровнем подписи ≥ 1 (AD-10, AD-13, AD-14): подписывает агент токена, сервер сверяет отпечаток. */
   signature?: DsseEnvelope;
   starts_at: string;
+  /** Шаблон: только рабочие дни производственного календаря. */
+  working_days_only?: boolean;
   /**
      * Рабочее место сеанса (барьер 2, AD-15).
      * @maxLength 128

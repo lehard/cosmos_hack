@@ -34,7 +34,9 @@ func TestShiftPeriodAndSliceFromSchedule(t *testing.T) {
 		t.Fatalf("начало периода «смена»: %s, ждали %s", ov.Period.From, want)
 	}
 	d := row(ov, "operation_duration")
-	if !slices.ContainsFunc(d.Slices, func(s analytics.MetricSlice) bool { return s.Dimension == "shift" && s.Label == "Первая смена 26.09" }) {
+	if !slices.ContainsFunc(d.Slices, func(s analytics.MetricSlice) bool {
+		return s.Dimension == "shift" && s.Label == "Первая смена 26.09"
+	}) {
 		t.Fatalf("нет среза «смена»: %+v", d.Slices)
 	}
 }

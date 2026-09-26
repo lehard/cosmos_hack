@@ -252,12 +252,16 @@ import type {
   RefExternalIDList,
   RefItemTypeList,
   RefLocationList,
+  RefLotList,
+  RefOrderList,
   RefShiftList,
   ReferenceCalendarReadParams,
   ReferenceEquipmentListParams,
   ReferenceExternalIdListParams,
   ReferenceItemTypeListParams,
   ReferenceLocationListParams,
+  ReferenceLotListParams,
+  ReferenceOrderListParams,
   ReferenceShiftListParams,
   RegisterItem,
   RegisterKey,
@@ -23071,6 +23075,242 @@ export const useReferenceLocationDefine = <TError = globalThis.Error & { info?: 
       return useMutation(getReferenceLocationDefineMutationOptions(options), queryClient);
     }
 
+export type referenceLotListResponse200 = {
+  data: RefLotList
+  status: 200
+}
+
+export type referenceLotListResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type referenceLotListResponseSuccess = (referenceLotListResponse200) & {
+  headers: Headers;
+};
+export type referenceLotListResponseError = (referenceLotListResponseDefault) & {
+  headers: Headers;
+};
+
+export const getReferenceLotListUrl = (params?: ReferenceLotListParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/reference/lots?${stringifiedParams}` : `/api/v1/reference/lots`
+}
+
+/**
+ * FR-17: поступившие партии (из учётной системы) со сроком годности на момент (AD-31).
+ * @summary Партии и сроки годности
+ */
+export const referenceLotList = async (params?: ReferenceLotListParams, options?: RequestInit): Promise<referenceLotListResponseSuccess> => {
+
+  const res = await fetch(getReferenceLotListUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: referenceLotListResponseError['data'], status?: number} = new globalThis.Error();
+    const data : referenceLotListResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: referenceLotListResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as referenceLotListResponseSuccess
+}
+
+
+
+
+
+export const getReferenceLotListQueryKey = (params?: MaybeRefOrGetter<ReferenceLotListParams>,) => {
+    return [
+    'api','v1','reference','lots', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getReferenceLotListQueryOptions = <TData = Awaited<ReturnType<typeof referenceLotList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(params?: MaybeRefOrGetter<ReferenceLotListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof referenceLotList>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getReferenceLotListQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof referenceLotList>>> = ({ signal }) => referenceLotList(toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof referenceLotList>>, TError, TData>
+}
+
+export type ReferenceLotListQueryResult = NonNullable<Awaited<ReturnType<typeof referenceLotList>>>
+export type ReferenceLotListQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Партии и сроки годности
+ */
+
+export function useReferenceLotList<TData = Awaited<ReturnType<typeof referenceLotList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ params?: MaybeRefOrGetter<ReferenceLotListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof referenceLotList>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getReferenceLotListQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+
+export type referenceOrderListResponse200 = {
+  data: RefOrderList
+  status: 200
+}
+
+export type referenceOrderListResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type referenceOrderListResponseSuccess = (referenceOrderListResponse200) & {
+  headers: Headers;
+};
+export type referenceOrderListResponseError = (referenceOrderListResponseDefault) & {
+  headers: Headers;
+};
+
+export const getReferenceOrderListUrl = (params?: ReferenceOrderListParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/reference/orders?${stringifiedParams}` : `/api/v1/reference/orders`
+}
+
+/**
+ * FR-91, FR-95: производственные задания из 1С и Галактики (через приём) на момент.
+ * @summary Задания учётной системы
+ */
+export const referenceOrderList = async (params?: ReferenceOrderListParams, options?: RequestInit): Promise<referenceOrderListResponseSuccess> => {
+
+  const res = await fetch(getReferenceOrderListUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: referenceOrderListResponseError['data'], status?: number} = new globalThis.Error();
+    const data : referenceOrderListResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: referenceOrderListResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as referenceOrderListResponseSuccess
+}
+
+
+
+
+
+export const getReferenceOrderListQueryKey = (params?: MaybeRefOrGetter<ReferenceOrderListParams>,) => {
+    return [
+    'api','v1','reference','orders', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getReferenceOrderListQueryOptions = <TData = Awaited<ReturnType<typeof referenceOrderList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(params?: MaybeRefOrGetter<ReferenceOrderListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof referenceOrderList>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getReferenceOrderListQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof referenceOrderList>>> = ({ signal }) => referenceOrderList(toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof referenceOrderList>>, TError, TData>
+}
+
+export type ReferenceOrderListQueryResult = NonNullable<Awaited<ReturnType<typeof referenceOrderList>>>
+export type ReferenceOrderListQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Задания учётной системы
+ */
+
+export function useReferenceOrderList<TData = Awaited<ReturnType<typeof referenceOrderList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ params?: MaybeRefOrGetter<ReferenceOrderListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof referenceOrderList>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getReferenceOrderListQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+
 export type referenceShiftListResponse200 = {
   data: RefShiftList
   status: 200
@@ -23104,7 +23344,7 @@ export const getReferenceShiftListUrl = (params?: ReferenceShiftListParams,) => 
 }
 
 /**
- * FR-81: график смен по местам.
+ * FR-81: график смен по местам — смены от полусуток до момента до полутора суток после.
  * @summary Смены
  */
 export const referenceShiftList = async (params?: ReferenceShiftListParams, options?: RequestInit): Promise<referenceShiftListResponseSuccess> => {
@@ -23215,7 +23455,7 @@ export const getReferenceShiftScheduleUrl = () => {
 }
 
 /**
- * FR-81.
+ * FR-81: смена или шаблон, повторяющийся каждый (рабочий) день до repeat_until.
  * @summary Запланировать смену
  */
 export const referenceShiftSchedule = async (scheduleShift: ScheduleShift, options?: RequestInit): Promise<referenceShiftScheduleResponseSuccess> => {

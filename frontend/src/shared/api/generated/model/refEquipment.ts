@@ -14,6 +14,10 @@ export interface RefEquipment {
   name: string;
   /** Источник событий (edge-агент). */
   source_id?: string;
+  /** unknown — нет в справочнике; not_verified — средство измерений без поверки; verification_invalid — непригодно; verification_expired — срок поверки истёк. */
+  unusable_reason?: string;
+  /** FR-17: можно использовать на момент ответа (поверка действует). */
+  usable: boolean;
   verification_result?: RefEquipmentVerificationResult;
   verified_until?: string;
 }

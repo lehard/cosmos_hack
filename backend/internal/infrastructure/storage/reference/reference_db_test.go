@@ -364,7 +364,7 @@ func TestLiveOperationsOnPostgres(t *testing.T) {
 		if _, err := e.w.Write(e.ctx, app.Record{EventID: cmdID("map-" + string(rune('a'+i))), Type: catalog.ReferenceExternalIdMapped,
 			Stream: app.Stream("external_id", "onec:order:ЗП-0917"), OccurredAt: e.clock.t, SourceID: "onec-stand",
 			Provenance: jc.JournalEntryProvenanceClassServerAttested,
-			Data: map[string]string{"system": "onec", "object_kind": "order", "external_id": "ЗП-0917", "internal_id": internal}}); err != nil {
+			Data:       map[string]string{"system": "onec", "object_kind": "order", "external_id": "ЗП-0917", "internal_id": internal}}); err != nil {
 			t.Fatal(err)
 		}
 	}
