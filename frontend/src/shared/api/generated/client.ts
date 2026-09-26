@@ -1,6 +1,6 @@
 /**
  * СГЕНЕРИРОВАНО orval (frontend/scripts/generate.mjs) — руками не править (AD-20).
- * Источник: frontend/dev/openapi.draft.yaml (черновик до появления contracts/openapi.yaml)
+ * Источник: contracts/openapi.yaml
  */
 import {
   useMutation,
@@ -27,16 +27,19 @@ import type {
 } from 'vue';
 
 import type {
+  AccessPermissionExplainParams,
   AccessPermissionListParams,
   DemoPersonaList,
   Desk,
+  Explanation,
   IntegrityStatus,
   ItemItemLookupParams,
   ItemLookup,
+  JournalStreamSubscribeParams,
   NotificationSummary,
   NotificationsSummaryReadParams,
   PermissionList,
-  ProblemResponse,
+  Problem,
   Session,
   SessionCreate
 } from './model';
@@ -58,7 +61,7 @@ export type accessPersonaListResponse200 = {
 }
 
 export type accessPersonaListResponseDefault = {
-  data: ProblemResponse
+  data: Problem
   status: Exclude<HTTPStatusCodes, 200>
 }
 
@@ -78,7 +81,7 @@ export const getAccessPersonaListUrl = () => {
 }
 
 /**
- * Демо-трек (эпик 08, заметка): экран входа сначала предлагает выбрать демо-персону — псевдоним из стартовой политики (normative/policy) с ролью и областью. Вне демо-профиля операция отвечает 404 (api.not_found), и экран показывает только вход по логину.
+ * Демо-трек (эпик 08): экран входа предлагает выбрать демо-персону — псевдоним из стартовой политики (normative/policy) с ролью и областью. Вне профилей fixtures и demo операция отвечает 404 api.not_found, и экран показывает только вход по логину.
  * @summary Демо-персоны для входа без пароля
  */
 export const accessPersonaList = async ( options?: RequestInit): Promise<accessPersonaListResponseSuccess> => {
@@ -117,7 +120,7 @@ export const getAccessPersonaListQueryKey = () => {
     }
 
 
-export const getAccessPersonaListQueryOptions = <TData = Awaited<ReturnType<typeof accessPersonaList>>, TError = globalThis.Error & { info?: ProblemResponse; status?: number }>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof accessPersonaList>>, TError, TData>>, fetch?: RequestInit}
+export const getAccessPersonaListQueryOptions = <TData = Awaited<ReturnType<typeof accessPersonaList>>, TError = globalThis.Error & { info?: Problem; status?: number }>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof accessPersonaList>>, TError, TData>>, fetch?: RequestInit}
 ) => {
 
 const {query: queryOptions, fetch: fetchOptions} = options ?? {};
@@ -136,14 +139,14 @@ const {query: queryOptions, fetch: fetchOptions} = options ?? {};
 }
 
 export type AccessPersonaListQueryResult = NonNullable<Awaited<ReturnType<typeof accessPersonaList>>>
-export type AccessPersonaListQueryError = globalThis.Error & { info?: ProblemResponse; status?: number }
+export type AccessPersonaListQueryError = globalThis.Error & { info?: Problem; status?: number }
 
 
 /**
  * @summary Демо-персоны для входа без пароля
  */
 
-export function useAccessPersonaList<TData = Awaited<ReturnType<typeof accessPersonaList>>, TError = globalThis.Error & { info?: ProblemResponse; status?: number }>(
+export function useAccessPersonaList<TData = Awaited<ReturnType<typeof accessPersonaList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof accessPersonaList>>, TError, TData>>, fetch?: RequestInit}
  , queryClient?: QueryClient
  ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -163,13 +166,119 @@ export function useAccessPersonaList<TData = Awaited<ReturnType<typeof accessPer
 
 
 
+export type accessSessionDeleteResponse204 = {
+  data: void
+  status: 204
+}
+
+export type accessSessionDeleteResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 204>
+}
+
+export type accessSessionDeleteResponseSuccess = (accessSessionDeleteResponse204) & {
+  headers: Headers;
+};
+export type accessSessionDeleteResponseError = (accessSessionDeleteResponseDefault) & {
+  headers: Headers;
+};
+
+export const getAccessSessionDeleteUrl = () => {
+
+
+
+
+  return `/api/v1/auth/session`
+}
+
+/**
+ * Закрыть сеанс веба (FR-128).
+ * @summary Выйти
+ */
+export const accessSessionDelete = async ( options?: RequestInit): Promise<accessSessionDeleteResponseSuccess> => {
+
+  const res = await fetch(getAccessSessionDeleteUrl(),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: accessSessionDeleteResponseError['data'], status?: number} = new globalThis.Error();
+    const data : accessSessionDeleteResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: accessSessionDeleteResponseSuccess['data'] = body ? JSON.parse(body) : undefined
+  return { data, status: res.status, headers: res.headers } as accessSessionDeleteResponseSuccess
+}
+
+
+
+
+
+export const getAccessSessionDeleteMutationKey = () => ['accessSessionDelete'] as const;
+
+export const getAccessSessionDeleteMutationOptions = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof accessSessionDelete>>, TError,void, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof accessSessionDelete>>, TError,void, TContext> => {
+
+const mutationKey = getAccessSessionDeleteMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof accessSessionDelete>>, void> = () => {
+
+
+          return  accessSessionDelete(fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AccessSessionDeleteMutationResult = NonNullable<Awaited<ReturnType<typeof accessSessionDelete>>>
+
+    export type AccessSessionDeleteMutationError = globalThis.Error & { info?: Problem; status?: number }
+
+
+    /**
+ * @summary Выйти
+ */
+export const useAccessSessionDelete = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof accessSessionDelete>>, TError,void, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof accessSessionDelete>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getAccessSessionDeleteMutationOptions(options), queryClient);
+    }
+
 export type accessSessionReadResponse200 = {
   data: Session
   status: 200
 }
 
 export type accessSessionReadResponseDefault = {
-  data: ProblemResponse
+  data: Problem
   status: Exclude<HTTPStatusCodes, 200>
 }
 
@@ -189,7 +298,7 @@ export const getAccessSessionReadUrl = () => {
 }
 
 /**
- * Пользователь, активная роль, область, смена, рабочее место; 401 access.unauthenticated — сеанса нет.
+ * Пользователь, активная роль, область, смена, рабочее место, версия политики (FR-128); 401 access.unauthenticated — сеанса нет.
  * @summary Текущий сеанс
  */
 export const accessSessionRead = async ( options?: RequestInit): Promise<accessSessionReadResponseSuccess> => {
@@ -228,7 +337,7 @@ export const getAccessSessionReadQueryKey = () => {
     }
 
 
-export const getAccessSessionReadQueryOptions = <TData = Awaited<ReturnType<typeof accessSessionRead>>, TError = globalThis.Error & { info?: ProblemResponse; status?: number }>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof accessSessionRead>>, TError, TData>>, fetch?: RequestInit}
+export const getAccessSessionReadQueryOptions = <TData = Awaited<ReturnType<typeof accessSessionRead>>, TError = globalThis.Error & { info?: Problem; status?: number }>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof accessSessionRead>>, TError, TData>>, fetch?: RequestInit}
 ) => {
 
 const {query: queryOptions, fetch: fetchOptions} = options ?? {};
@@ -247,14 +356,14 @@ const {query: queryOptions, fetch: fetchOptions} = options ?? {};
 }
 
 export type AccessSessionReadQueryResult = NonNullable<Awaited<ReturnType<typeof accessSessionRead>>>
-export type AccessSessionReadQueryError = globalThis.Error & { info?: ProblemResponse; status?: number }
+export type AccessSessionReadQueryError = globalThis.Error & { info?: Problem; status?: number }
 
 
 /**
  * @summary Текущий сеанс
  */
 
-export function useAccessSessionRead<TData = Awaited<ReturnType<typeof accessSessionRead>>, TError = globalThis.Error & { info?: ProblemResponse; status?: number }>(
+export function useAccessSessionRead<TData = Awaited<ReturnType<typeof accessSessionRead>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof accessSessionRead>>, TError, TData>>, fetch?: RequestInit}
  , queryClient?: QueryClient
  ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -280,7 +389,7 @@ export type accessSessionCreateResponse201 = {
 }
 
 export type accessSessionCreateResponseDefault = {
-  data: ProblemResponse
+  data: Problem
   status: Exclude<HTTPStatusCodes, 201>
 }
 
@@ -300,7 +409,7 @@ export const getAccessSessionCreateUrl = () => {
 }
 
 /**
- * FR-128. Вход демо-персоной (persona_id) или по логину. Пароль пока необязателен (демо-трек); после эпика 08 — обязателен для входа по логину (сеанс scs, argon2id). Ответ ставит cookie сеанса.
+ * FR-128. Вход демо-персоной (persona_id, только профили fixtures и demo) или по логину. Пароль пока необязателен (демо-трек); после эпика 08 — обязателен для входа по логину (сеанс scs, argon2id). Ответ ставит cookie сеанса.
  * @summary Войти
  */
 export const accessSessionCreate = async (sessionCreate: SessionCreate, options?: RequestInit): Promise<accessSessionCreateResponseSuccess> => {
@@ -348,7 +457,7 @@ const res = await fetch(getAccessSessionCreateUrl(),
 
 export const getAccessSessionCreateMutationKey = () => ['accessSessionCreate'] as const;
 
-export const getAccessSessionCreateMutationOptions = <TError = globalThis.Error & { info?: ProblemResponse; status?: number },
+export const getAccessSessionCreateMutationOptions = <TError = globalThis.Error & { info?: Problem; status?: number },
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof accessSessionCreate>>, TError,AccessSessionCreateMutationVariables, TContext>, fetch?: RequestInit}
 ): UseMutationOptions<Awaited<ReturnType<typeof accessSessionCreate>>, TError,AccessSessionCreateMutationVariables, TContext> => {
 
@@ -377,13 +486,13 @@ const {mutation: mutationOptions, fetch: fetchOptions} = options ?
 
     export type AccessSessionCreateMutationResult = NonNullable<Awaited<ReturnType<typeof accessSessionCreate>>>
     export type AccessSessionCreateMutationBody = SessionCreate
-    export type AccessSessionCreateMutationError = globalThis.Error & { info?: ProblemResponse; status?: number }
+    export type AccessSessionCreateMutationError = globalThis.Error & { info?: Problem; status?: number }
     export type AccessSessionCreateMutationVariables = {data: SessionCreate}
 
     /**
  * @summary Войти
  */
-export const useAccessSessionCreate = <TError = globalThis.Error & { info?: ProblemResponse; status?: number },
+export const useAccessSessionCreate = <TError = globalThis.Error & { info?: Problem; status?: number },
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof accessSessionCreate>>, TError,AccessSessionCreateMutationVariables, TContext>, fetch?: RequestInit}
  , queryClient?: QueryClient): UseMutationReturnType<
         Awaited<ReturnType<typeof accessSessionCreate>>,
@@ -394,118 +503,13 @@ export const useAccessSessionCreate = <TError = globalThis.Error & { info?: Prob
       return useMutation(getAccessSessionCreateMutationOptions(options), queryClient);
     }
 
-export type accessSessionDeleteResponse204 = {
-  data: void
-  status: 204
-}
-
-export type accessSessionDeleteResponseDefault = {
-  data: ProblemResponse
-  status: Exclude<HTTPStatusCodes, 204>
-}
-
-export type accessSessionDeleteResponseSuccess = (accessSessionDeleteResponse204) & {
-  headers: Headers;
-};
-export type accessSessionDeleteResponseError = (accessSessionDeleteResponseDefault) & {
-  headers: Headers;
-};
-
-export const getAccessSessionDeleteUrl = () => {
-
-
-
-
-  return `/api/v1/auth/session`
-}
-
-/**
- * @summary Выйти
- */
-export const accessSessionDelete = async ( options?: RequestInit): Promise<accessSessionDeleteResponseSuccess> => {
-
-  const res = await fetch(getAccessSessionDeleteUrl(),
-  {
-    ...options,
-    method: 'DELETE'
-
-
-  }
-)
-
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-  if (!res.ok) {
-
-    const err: globalThis.Error & {info?: accessSessionDeleteResponseError['data'], status?: number} = new globalThis.Error();
-    const data : accessSessionDeleteResponseError['data'] = body ? JSON.parse(body) : {}
-    err.info = data;
-    err.status = res.status;
-    throw err;
-  }
-  const data: accessSessionDeleteResponseSuccess['data'] = body ? JSON.parse(body) : undefined
-  return { data, status: res.status, headers: res.headers } as accessSessionDeleteResponseSuccess
-}
-
-
-
-
-
-export const getAccessSessionDeleteMutationKey = () => ['accessSessionDelete'] as const;
-
-export const getAccessSessionDeleteMutationOptions = <TError = globalThis.Error & { info?: ProblemResponse; status?: number },
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof accessSessionDelete>>, TError,void, TContext>, fetch?: RequestInit}
-): UseMutationOptions<Awaited<ReturnType<typeof accessSessionDelete>>, TError,void, TContext> => {
-
-const mutationKey = getAccessSessionDeleteMutationKey();
-const {mutation: mutationOptions, fetch: fetchOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, fetch: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof accessSessionDelete>>, void> = () => {
-
-
-          return  accessSessionDelete(fetchOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type AccessSessionDeleteMutationResult = NonNullable<Awaited<ReturnType<typeof accessSessionDelete>>>
-
-    export type AccessSessionDeleteMutationError = globalThis.Error & { info?: ProblemResponse; status?: number }
-
-
-    /**
- * @summary Выйти
- */
-export const useAccessSessionDelete = <TError = globalThis.Error & { info?: ProblemResponse; status?: number },
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof accessSessionDelete>>, TError,void, TContext>, fetch?: RequestInit}
- , queryClient?: QueryClient): UseMutationReturnType<
-        Awaited<ReturnType<typeof accessSessionDelete>>,
-        TError,
-        void,
-        TContext
-      > => {
-      return useMutation(getAccessSessionDeleteMutationOptions(options), queryClient);
-    }
-
 export type accessDeskReadResponse200 = {
   data: Desk
   status: 200
 }
 
 export type accessDeskReadResponseDefault = {
-  data: ProblemResponse
+  data: Problem
   status: Exclude<HTTPStatusCodes, 200>
 }
 
@@ -564,7 +568,7 @@ export const getAccessDeskReadQueryKey = () => {
     }
 
 
-export const getAccessDeskReadQueryOptions = <TData = Awaited<ReturnType<typeof accessDeskRead>>, TError = globalThis.Error & { info?: ProblemResponse; status?: number }>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof accessDeskRead>>, TError, TData>>, fetch?: RequestInit}
+export const getAccessDeskReadQueryOptions = <TData = Awaited<ReturnType<typeof accessDeskRead>>, TError = globalThis.Error & { info?: Problem; status?: number }>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof accessDeskRead>>, TError, TData>>, fetch?: RequestInit}
 ) => {
 
 const {query: queryOptions, fetch: fetchOptions} = options ?? {};
@@ -583,19 +587,366 @@ const {query: queryOptions, fetch: fetchOptions} = options ?? {};
 }
 
 export type AccessDeskReadQueryResult = NonNullable<Awaited<ReturnType<typeof accessDeskRead>>>
-export type AccessDeskReadQueryError = globalThis.Error & { info?: ProblemResponse; status?: number }
+export type AccessDeskReadQueryError = globalThis.Error & { info?: Problem; status?: number }
 
 
 /**
  * @summary Стол активной роли
  */
 
-export function useAccessDeskRead<TData = Awaited<ReturnType<typeof accessDeskRead>>, TError = globalThis.Error & { info?: ProblemResponse; status?: number }>(
+export function useAccessDeskRead<TData = Awaited<ReturnType<typeof accessDeskRead>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof accessDeskRead>>, TError, TData>>, fetch?: RequestInit}
  , queryClient?: QueryClient
  ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getAccessDeskReadQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+
+export type securityIntegrityReadResponse200 = {
+  data: IntegrityStatus
+  status: 200
+}
+
+export type securityIntegrityReadResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type securityIntegrityReadResponseSuccess = (securityIntegrityReadResponse200) & {
+  headers: Headers;
+};
+export type securityIntegrityReadResponseError = (securityIntegrityReadResponseDefault) & {
+  headers: Headers;
+};
+
+export const getSecurityIntegrityReadUrl = () => {
+
+
+
+
+  return `/api/v1/integrity`
+}
+
+/**
+ * AD-46: ant забирает последний подписанный отчёт верификатора у хранителя и журналирует security.integrity.checked. Индикатор на столах помечен «по данным сервера» и желтеет сам, если свежего отчёта нет дольше двух интервалов.
+ * @summary Состояние целостности журнала «по данным сервера»
+ */
+export const securityIntegrityRead = async ( options?: RequestInit): Promise<securityIntegrityReadResponseSuccess> => {
+
+  const res = await fetch(getSecurityIntegrityReadUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: securityIntegrityReadResponseError['data'], status?: number} = new globalThis.Error();
+    const data : securityIntegrityReadResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: securityIntegrityReadResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as securityIntegrityReadResponseSuccess
+}
+
+
+
+
+
+export const getSecurityIntegrityReadQueryKey = () => {
+    return [
+    'api','v1','integrity'
+    ] as const;
+    }
+
+
+export const getSecurityIntegrityReadQueryOptions = <TData = Awaited<ReturnType<typeof securityIntegrityRead>>, TError = globalThis.Error & { info?: Problem; status?: number }>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof securityIntegrityRead>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getSecurityIntegrityReadQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof securityIntegrityRead>>> = ({ signal }) => securityIntegrityRead({ signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof securityIntegrityRead>>, TError, TData>
+}
+
+export type SecurityIntegrityReadQueryResult = NonNullable<Awaited<ReturnType<typeof securityIntegrityRead>>>
+export type SecurityIntegrityReadQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Состояние целостности журнала «по данным сервера»
+ */
+
+export function useSecurityIntegrityRead<TData = Awaited<ReturnType<typeof securityIntegrityRead>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof securityIntegrityRead>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getSecurityIntegrityReadQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+
+export type itemItemLookupResponse200 = {
+  data: ItemLookup
+  status: 200
+}
+
+export type itemItemLookupResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type itemItemLookupResponseSuccess = (itemItemLookupResponse200) & {
+  headers: Headers;
+};
+export type itemItemLookupResponseError = (itemItemLookupResponseDefault) & {
+  headers: Headers;
+};
+
+export const getItemItemLookupUrl = (params: ItemItemLookupParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/items/lookup?${stringifiedParams}` : `/api/v1/items/lookup`
+}
+
+/**
+ * Разрешение носителя (AD-41) → изделие на момент. Не найдено — 404 api.not_found.
+ * @summary Найти изделие по номеру детали или скану DataMatrix
+ */
+export const itemItemLookup = async (params: ItemItemLookupParams, options?: RequestInit): Promise<itemItemLookupResponseSuccess> => {
+
+  const res = await fetch(getItemItemLookupUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: itemItemLookupResponseError['data'], status?: number} = new globalThis.Error();
+    const data : itemItemLookupResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: itemItemLookupResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as itemItemLookupResponseSuccess
+}
+
+
+
+
+
+export const getItemItemLookupQueryKey = (params?: MaybeRefOrGetter<ItemItemLookupParams>,) => {
+    return [
+    'api','v1','items','lookup', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getItemItemLookupQueryOptions = <TData = Awaited<ReturnType<typeof itemItemLookup>>, TError = globalThis.Error & { info?: Problem; status?: number }>(params: MaybeRefOrGetter<ItemItemLookupParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof itemItemLookup>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getItemItemLookupQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof itemItemLookup>>> = ({ signal }) => itemItemLookup(toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof itemItemLookup>>, TError, TData>
+}
+
+export type ItemItemLookupQueryResult = NonNullable<Awaited<ReturnType<typeof itemItemLookup>>>
+export type ItemItemLookupQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Найти изделие по номеру детали или скану DataMatrix
+ */
+
+export function useItemItemLookup<TData = Awaited<ReturnType<typeof itemItemLookup>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ params: MaybeRefOrGetter<ItemItemLookupParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof itemItemLookup>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getItemItemLookupQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+
+export type notificationsSummaryReadResponse200 = {
+  data: NotificationSummary
+  status: 200
+}
+
+export type notificationsSummaryReadResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type notificationsSummaryReadResponseSuccess = (notificationsSummaryReadResponse200) & {
+  headers: Headers;
+};
+export type notificationsSummaryReadResponseError = (notificationsSummaryReadResponseDefault) & {
+  headers: Headers;
+};
+
+export const getNotificationsSummaryReadUrl = (params?: NotificationsSummaryReadParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/notifications/summary?${stringifiedParams}` : `/api/v1/notifications/summary`
+}
+
+/**
+ * FR-57: непрочитанные по видам — информация, тревога, задача, запрос решения.
+ * @summary Сводка уведомлений для шапки
+ */
+export const notificationsSummaryRead = async (params?: NotificationsSummaryReadParams, options?: RequestInit): Promise<notificationsSummaryReadResponseSuccess> => {
+
+  const res = await fetch(getNotificationsSummaryReadUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: notificationsSummaryReadResponseError['data'], status?: number} = new globalThis.Error();
+    const data : notificationsSummaryReadResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: notificationsSummaryReadResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as notificationsSummaryReadResponseSuccess
+}
+
+
+
+
+
+export const getNotificationsSummaryReadQueryKey = (params?: MaybeRefOrGetter<NotificationsSummaryReadParams>,) => {
+    return [
+    'api','v1','notifications','summary', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getNotificationsSummaryReadQueryOptions = <TData = Awaited<ReturnType<typeof notificationsSummaryRead>>, TError = globalThis.Error & { info?: Problem; status?: number }>(params?: MaybeRefOrGetter<NotificationsSummaryReadParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof notificationsSummaryRead>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getNotificationsSummaryReadQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof notificationsSummaryRead>>> = ({ signal }) => notificationsSummaryRead(toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof notificationsSummaryRead>>, TError, TData>
+}
+
+export type NotificationsSummaryReadQueryResult = NonNullable<Awaited<ReturnType<typeof notificationsSummaryRead>>>
+export type NotificationsSummaryReadQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Сводка уведомлений для шапки
+ */
+
+export function useNotificationsSummaryRead<TData = Awaited<ReturnType<typeof notificationsSummaryRead>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ params?: MaybeRefOrGetter<NotificationsSummaryReadParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof notificationsSummaryRead>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getNotificationsSummaryReadQueryOptions(params,options)
 
   const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
@@ -616,7 +967,7 @@ export type accessPermissionListResponse200 = {
 }
 
 export type accessPermissionListResponseDefault = {
-  data: ProblemResponse
+  data: Problem
   status: Exclude<HTTPStatusCodes, 200>
 }
 
@@ -682,7 +1033,7 @@ export const getAccessPermissionListQueryKey = (params?: MaybeRefOrGetter<Access
     }
 
 
-export const getAccessPermissionListQueryOptions = <TData = Awaited<ReturnType<typeof accessPermissionList>>, TError = globalThis.Error & { info?: ProblemResponse; status?: number }>(params?: MaybeRefOrGetter<AccessPermissionListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof accessPermissionList>>, TError, TData>>, fetch?: RequestInit}
+export const getAccessPermissionListQueryOptions = <TData = Awaited<ReturnType<typeof accessPermissionList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(params?: MaybeRefOrGetter<AccessPermissionListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof accessPermissionList>>, TError, TData>>, fetch?: RequestInit}
 ) => {
 
 const {query: queryOptions, fetch: fetchOptions} = options ?? {};
@@ -701,14 +1052,14 @@ const {query: queryOptions, fetch: fetchOptions} = options ?? {};
 }
 
 export type AccessPermissionListQueryResult = NonNullable<Awaited<ReturnType<typeof accessPermissionList>>>
-export type AccessPermissionListQueryError = globalThis.Error & { info?: ProblemResponse; status?: number }
+export type AccessPermissionListQueryError = globalThis.Error & { info?: Problem; status?: number }
 
 
 /**
  * @summary Разрешённые действия
  */
 
-export function useAccessPermissionList<TData = Awaited<ReturnType<typeof accessPermissionList>>, TError = globalThis.Error & { info?: ProblemResponse; status?: number }>(
+export function useAccessPermissionList<TData = Awaited<ReturnType<typeof accessPermissionList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
  params?: MaybeRefOrGetter<AccessPermissionListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof accessPermissionList>>, TError, TData>>, fetch?: RequestInit}
  , queryClient?: QueryClient
  ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -728,135 +1079,24 @@ export function useAccessPermissionList<TData = Awaited<ReturnType<typeof access
 
 
 
-export type securityIntegrityReadResponse200 = {
-  data: IntegrityStatus
+export type accessPermissionExplainResponse200 = {
+  data: Explanation
   status: 200
 }
 
-export type securityIntegrityReadResponseDefault = {
-  data: ProblemResponse
+export type accessPermissionExplainResponseDefault = {
+  data: Problem
   status: Exclude<HTTPStatusCodes, 200>
 }
 
-export type securityIntegrityReadResponseSuccess = (securityIntegrityReadResponse200) & {
+export type accessPermissionExplainResponseSuccess = (accessPermissionExplainResponse200) & {
   headers: Headers;
 };
-export type securityIntegrityReadResponseError = (securityIntegrityReadResponseDefault) & {
-  headers: Headers;
-};
-
-export const getSecurityIntegrityReadUrl = () => {
-
-
-
-
-  return `/api/v1/integrity`
-}
-
-/**
- * AD-46: ant забирает последний подписанный отчёт верификатора у хранителя и журналирует security.integrity.checked. Индикатор на столах помечен «по данным сервера» и желтеет сам, если свежего отчёта нет дольше двух интервалов.
- * @summary Состояние целостности журнала «по данным сервера»
- */
-export const securityIntegrityRead = async ( options?: RequestInit): Promise<securityIntegrityReadResponseSuccess> => {
-
-  const res = await fetch(getSecurityIntegrityReadUrl(),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-)
-
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-  if (!res.ok) {
-
-    const err: globalThis.Error & {info?: securityIntegrityReadResponseError['data'], status?: number} = new globalThis.Error();
-    const data : securityIntegrityReadResponseError['data'] = body ? JSON.parse(body) : {}
-    err.info = data;
-    err.status = res.status;
-    throw err;
-  }
-  const data: securityIntegrityReadResponseSuccess['data'] = body ? JSON.parse(body) : {}
-  return { data, status: res.status, headers: res.headers } as securityIntegrityReadResponseSuccess
-}
-
-
-
-
-
-export const getSecurityIntegrityReadQueryKey = () => {
-    return [
-    'api','v1','integrity'
-    ] as const;
-    }
-
-
-export const getSecurityIntegrityReadQueryOptions = <TData = Awaited<ReturnType<typeof securityIntegrityRead>>, TError = globalThis.Error & { info?: ProblemResponse; status?: number }>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof securityIntegrityRead>>, TError, TData>>, fetch?: RequestInit}
-) => {
-
-const {query: queryOptions, fetch: fetchOptions} = options ?? {};
-
-  const queryKey =  getSecurityIntegrityReadQueryKey();
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof securityIntegrityRead>>> = ({ signal }) => securityIntegrityRead({ signal, ...fetchOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof securityIntegrityRead>>, TError, TData>
-}
-
-export type SecurityIntegrityReadQueryResult = NonNullable<Awaited<ReturnType<typeof securityIntegrityRead>>>
-export type SecurityIntegrityReadQueryError = globalThis.Error & { info?: ProblemResponse; status?: number }
-
-
-/**
- * @summary Состояние целостности журнала «по данным сервера»
- */
-
-export function useSecurityIntegrityRead<TData = Awaited<ReturnType<typeof securityIntegrityRead>>, TError = globalThis.Error & { info?: ProblemResponse; status?: number }>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof securityIntegrityRead>>, TError, TData>>, fetch?: RequestInit}
- , queryClient?: QueryClient
- ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-
-  const queryOptions = getSecurityIntegrityReadQueryOptions(options)
-
-  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
-
-  return query;
-}
-
-
-
-
-
-
-
-export type notificationsSummaryReadResponse200 = {
-  data: NotificationSummary
-  status: 200
-}
-
-export type notificationsSummaryReadResponseDefault = {
-  data: ProblemResponse
-  status: Exclude<HTTPStatusCodes, 200>
-}
-
-export type notificationsSummaryReadResponseSuccess = (notificationsSummaryReadResponse200) & {
-  headers: Headers;
-};
-export type notificationsSummaryReadResponseError = (notificationsSummaryReadResponseDefault) & {
+export type accessPermissionExplainResponseError = (accessPermissionExplainResponseDefault) & {
   headers: Headers;
 };
 
-export const getNotificationsSummaryReadUrl = (params?: NotificationsSummaryReadParams,) => {
+export const getAccessPermissionExplainUrl = (params: AccessPermissionExplainParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -868,15 +1108,16 @@ export const getNotificationsSummaryReadUrl = (params?: NotificationsSummaryRead
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/notifications/summary?${stringifiedParams}` : `/api/v1/notifications/summary`
+  return stringifiedParams.length > 0 ? `/api/v1/permissions/explain?${stringifiedParams}` : `/api/v1/permissions/explain`
 }
 
 /**
- * @summary Сводка уведомлений для шапки
+ * FR-136, FR-146: решение по действию над объектом с объяснением (роль, область, полномочие, клеймо, разделение обязанностей) и тем, что можно сделать вместо («Запросить решение»).
+ * @summary Почему вы можете или не можете
  */
-export const notificationsSummaryRead = async (params?: NotificationsSummaryReadParams, options?: RequestInit): Promise<notificationsSummaryReadResponseSuccess> => {
+export const accessPermissionExplain = async (params: AccessPermissionExplainParams, options?: RequestInit): Promise<accessPermissionExplainResponseSuccess> => {
 
-  const res = await fetch(getNotificationsSummaryReadUrl(params),
+  const res = await fetch(getAccessPermissionExplainUrl(params),
   {
     ...options,
     method: 'GET'
@@ -889,177 +1130,59 @@ export const notificationsSummaryRead = async (params?: NotificationsSummaryRead
   const body = [204, 205, 304].includes(res.status) ? null : await res.text();
   if (!res.ok) {
 
-    const err: globalThis.Error & {info?: notificationsSummaryReadResponseError['data'], status?: number} = new globalThis.Error();
-    const data : notificationsSummaryReadResponseError['data'] = body ? JSON.parse(body) : {}
+    const err: globalThis.Error & {info?: accessPermissionExplainResponseError['data'], status?: number} = new globalThis.Error();
+    const data : accessPermissionExplainResponseError['data'] = body ? JSON.parse(body) : {}
     err.info = data;
     err.status = res.status;
     throw err;
   }
-  const data: notificationsSummaryReadResponseSuccess['data'] = body ? JSON.parse(body) : {}
-  return { data, status: res.status, headers: res.headers } as notificationsSummaryReadResponseSuccess
+  const data: accessPermissionExplainResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as accessPermissionExplainResponseSuccess
 }
 
 
 
 
 
-export const getNotificationsSummaryReadQueryKey = (params?: MaybeRefOrGetter<NotificationsSummaryReadParams>,) => {
+export const getAccessPermissionExplainQueryKey = (params?: MaybeRefOrGetter<AccessPermissionExplainParams>,) => {
     return [
-    'api','v1','notifications','summary', ...(params ? [params] : [])
+    'api','v1','permissions','explain', ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getNotificationsSummaryReadQueryOptions = <TData = Awaited<ReturnType<typeof notificationsSummaryRead>>, TError = globalThis.Error & { info?: ProblemResponse; status?: number }>(params?: MaybeRefOrGetter<NotificationsSummaryReadParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof notificationsSummaryRead>>, TError, TData>>, fetch?: RequestInit}
+export const getAccessPermissionExplainQueryOptions = <TData = Awaited<ReturnType<typeof accessPermissionExplain>>, TError = globalThis.Error & { info?: Problem; status?: number }>(params: MaybeRefOrGetter<AccessPermissionExplainParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof accessPermissionExplain>>, TError, TData>>, fetch?: RequestInit}
 ) => {
 
 const {query: queryOptions, fetch: fetchOptions} = options ?? {};
 
-  const queryKey =  getNotificationsSummaryReadQueryKey(params);
+  const queryKey =  getAccessPermissionExplainQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof notificationsSummaryRead>>> = ({ signal }) => notificationsSummaryRead(toValue(params), { signal, ...fetchOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof accessPermissionExplain>>> = ({ signal }) => accessPermissionExplain(toValue(params), { signal, ...fetchOptions });
 
 
 
 
 
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof notificationsSummaryRead>>, TError, TData>
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof accessPermissionExplain>>, TError, TData>
 }
 
-export type NotificationsSummaryReadQueryResult = NonNullable<Awaited<ReturnType<typeof notificationsSummaryRead>>>
-export type NotificationsSummaryReadQueryError = globalThis.Error & { info?: ProblemResponse; status?: number }
+export type AccessPermissionExplainQueryResult = NonNullable<Awaited<ReturnType<typeof accessPermissionExplain>>>
+export type AccessPermissionExplainQueryError = globalThis.Error & { info?: Problem; status?: number }
 
 
 /**
- * @summary Сводка уведомлений для шапки
+ * @summary Почему вы можете или не можете
  */
 
-export function useNotificationsSummaryRead<TData = Awaited<ReturnType<typeof notificationsSummaryRead>>, TError = globalThis.Error & { info?: ProblemResponse; status?: number }>(
- params?: MaybeRefOrGetter<NotificationsSummaryReadParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof notificationsSummaryRead>>, TError, TData>>, fetch?: RequestInit}
+export function useAccessPermissionExplain<TData = Awaited<ReturnType<typeof accessPermissionExplain>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ params: MaybeRefOrGetter<AccessPermissionExplainParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof accessPermissionExplain>>, TError, TData>>, fetch?: RequestInit}
  , queryClient?: QueryClient
  ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const queryOptions = getNotificationsSummaryReadQueryOptions(params,options)
-
-  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
-
-  return query;
-}
-
-
-
-
-
-
-
-export type itemItemLookupResponse200 = {
-  data: ItemLookup
-  status: 200
-}
-
-export type itemItemLookupResponseDefault = {
-  data: ProblemResponse
-  status: Exclude<HTTPStatusCodes, 200>
-}
-
-export type itemItemLookupResponseSuccess = (itemItemLookupResponse200) & {
-  headers: Headers;
-};
-export type itemItemLookupResponseError = (itemItemLookupResponseDefault) & {
-  headers: Headers;
-};
-
-export const getItemItemLookupUrl = (params: ItemItemLookupParams,) => {
-  const normalizedParams = new URLSearchParams();
-
-  Object.entries(params || {}).forEach(([key, value]) => {
-
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : String(value))
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0 ? `/api/v1/items/lookup?${stringifiedParams}` : `/api/v1/items/lookup`
-}
-
-/**
- * Разрешение носителя (AD-41) → изделие. Не найдено — 404 api.not_found.
- * @summary Найти изделие по номеру детали или скану DataMatrix
- */
-export const itemItemLookup = async (params: ItemItemLookupParams, options?: RequestInit): Promise<itemItemLookupResponseSuccess> => {
-
-  const res = await fetch(getItemItemLookupUrl(params),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-)
-
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-  if (!res.ok) {
-
-    const err: globalThis.Error & {info?: itemItemLookupResponseError['data'], status?: number} = new globalThis.Error();
-    const data : itemItemLookupResponseError['data'] = body ? JSON.parse(body) : {}
-    err.info = data;
-    err.status = res.status;
-    throw err;
-  }
-  const data: itemItemLookupResponseSuccess['data'] = body ? JSON.parse(body) : {}
-  return { data, status: res.status, headers: res.headers } as itemItemLookupResponseSuccess
-}
-
-
-
-
-
-export const getItemItemLookupQueryKey = (params?: MaybeRefOrGetter<ItemItemLookupParams>,) => {
-    return [
-    'api','v1','items','lookup', ...(params ? [params] : [])
-    ] as const;
-    }
-
-
-export const getItemItemLookupQueryOptions = <TData = Awaited<ReturnType<typeof itemItemLookup>>, TError = globalThis.Error & { info?: ProblemResponse; status?: number }>(params: MaybeRefOrGetter<ItemItemLookupParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof itemItemLookup>>, TError, TData>>, fetch?: RequestInit}
-) => {
-
-const {query: queryOptions, fetch: fetchOptions} = options ?? {};
-
-  const queryKey =  getItemItemLookupQueryKey(params);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof itemItemLookup>>> = ({ signal }) => itemItemLookup(toValue(params), { signal, ...fetchOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof itemItemLookup>>, TError, TData>
-}
-
-export type ItemItemLookupQueryResult = NonNullable<Awaited<ReturnType<typeof itemItemLookup>>>
-export type ItemItemLookupQueryError = globalThis.Error & { info?: ProblemResponse; status?: number }
-
-
-/**
- * @summary Найти изделие по номеру детали или скану DataMatrix
- */
-
-export function useItemItemLookup<TData = Awaited<ReturnType<typeof itemItemLookup>>, TError = globalThis.Error & { info?: ProblemResponse; status?: number }>(
- params: MaybeRefOrGetter<ItemItemLookupParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof itemItemLookup>>, TError, TData>>, fetch?: RequestInit}
- , queryClient?: QueryClient
- ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-
-  const queryOptions = getItemItemLookupQueryOptions(params,options)
+  const queryOptions = getAccessPermissionExplainQueryOptions(params,options)
 
   const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
@@ -1080,7 +1203,7 @@ export type journalStreamSubscribeResponse200 = {
 }
 
 export type journalStreamSubscribeResponseDefault = {
-  data: ProblemResponse
+  data: Problem
   status: Exclude<HTTPStatusCodes, 200>
 }
 
@@ -1091,21 +1214,28 @@ export type journalStreamSubscribeResponseError = (journalStreamSubscribeRespons
   headers: Headers;
 };
 
-export const getJournalStreamSubscribeUrl = () => {
+export const getJournalStreamSubscribeUrl = (params?: JournalStreamSubscribeParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/v1/stream`
+  return stringifiedParams.length > 0 ? `/api/v1/stream?${stringifiedParams}` : `/api/v1/stream`
 }
 
 /**
- * Канал `sse` из contracts/events/asyncapi.yaml: `id:` = seq, `event: entity_changed`, `data:` — EntityChanged. Фронтенд инвалидирует ключ Vue Query [сущность, id]; переподключение — с Last-Event-ID. Клиент — ручной модуль src/shared/api/sse (единственное исключение AD-20), типы — отсюда.
+ * Канал sse из contracts/events/asyncapi.yaml: `id:` = seq, `event: entity_changed`, `data:` — EntityChanged (components). Фронтенд инвалидирует ключ Vue Query [сущность, id]; переподключение — с Last-Event-ID (AD-21). Бюджет «событие → экран» ≤ 2 с (FR-2).
  * @summary Живые обновления столов (SSE)
  */
-export const journalStreamSubscribe = async ( options?: RequestInit): Promise<journalStreamSubscribeResponseSuccess> => {
+export const journalStreamSubscribe = async (params?: JournalStreamSubscribeParams, options?: RequestInit): Promise<journalStreamSubscribeResponseSuccess> => {
 
-  const res = await fetch(getJournalStreamSubscribeUrl(),
+  const res = await fetch(getJournalStreamSubscribeUrl(params),
   {
     ...options,
     method: 'GET'
@@ -1132,23 +1262,23 @@ export const journalStreamSubscribe = async ( options?: RequestInit): Promise<jo
 
 
 
-export const getJournalStreamSubscribeQueryKey = () => {
+export const getJournalStreamSubscribeQueryKey = (params?: MaybeRefOrGetter<JournalStreamSubscribeParams>,) => {
     return [
-    'api','v1','stream'
+    'api','v1','stream', ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getJournalStreamSubscribeQueryOptions = <TData = Awaited<ReturnType<typeof journalStreamSubscribe>>, TError = globalThis.Error & { info?: ProblemResponse; status?: number }>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof journalStreamSubscribe>>, TError, TData>>, fetch?: RequestInit}
+export const getJournalStreamSubscribeQueryOptions = <TData = Awaited<ReturnType<typeof journalStreamSubscribe>>, TError = globalThis.Error & { info?: Problem; status?: number }>(params?: MaybeRefOrGetter<JournalStreamSubscribeParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof journalStreamSubscribe>>, TError, TData>>, fetch?: RequestInit}
 ) => {
 
 const {query: queryOptions, fetch: fetchOptions} = options ?? {};
 
-  const queryKey =  getJournalStreamSubscribeQueryKey();
+  const queryKey =  getJournalStreamSubscribeQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof journalStreamSubscribe>>> = ({ signal }) => journalStreamSubscribe({ signal, ...fetchOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof journalStreamSubscribe>>> = ({ signal }) => journalStreamSubscribe(toValue(params), { signal, ...fetchOptions });
 
 
 
@@ -1158,19 +1288,19 @@ const {query: queryOptions, fetch: fetchOptions} = options ?? {};
 }
 
 export type JournalStreamSubscribeQueryResult = NonNullable<Awaited<ReturnType<typeof journalStreamSubscribe>>>
-export type JournalStreamSubscribeQueryError = globalThis.Error & { info?: ProblemResponse; status?: number }
+export type JournalStreamSubscribeQueryError = globalThis.Error & { info?: Problem; status?: number }
 
 
 /**
  * @summary Живые обновления столов (SSE)
  */
 
-export function useJournalStreamSubscribe<TData = Awaited<ReturnType<typeof journalStreamSubscribe>>, TError = globalThis.Error & { info?: ProblemResponse; status?: number }>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof journalStreamSubscribe>>, TError, TData>>, fetch?: RequestInit}
+export function useJournalStreamSubscribe<TData = Awaited<ReturnType<typeof journalStreamSubscribe>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ params?: MaybeRefOrGetter<JournalStreamSubscribeParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof journalStreamSubscribe>>, TError, TData>>, fetch?: RequestInit}
  , queryClient?: QueryClient
  ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const queryOptions = getJournalStreamSubscribeQueryOptions(options)
+  const queryOptions = getJournalStreamSubscribeQueryOptions(params,options)
 
   const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

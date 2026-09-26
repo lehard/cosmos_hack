@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/reference/reference.shift.scheduled.v1.json",
+  "title": "ReferenceShiftScheduledV1",
+  "description": "График смен — смены по участкам: начало, конец (FR-81).",
+  "type": "object",
+  "properties": {
+    "shift_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Смена."
+    },
+    "location_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Участок или цех."
+    },
+    "starts_at": {
+      "$ref": "../common/defs.v1.json#/definitions/timestamp",
+      "description": "Начало."
+    },
+    "ends_at": {
+      "$ref": "../common/defs.v1.json#/definitions/timestamp",
+      "description": "Конец."
+    },
+    "name": {
+      "type": "string",
+      "description": "Название смены.",
+      "maxLength": 64
+    }
+  },
+  "required": [
+    "shift_id",
+    "location_id",
+    "starts_at",
+    "ends_at"
+  ]
+}

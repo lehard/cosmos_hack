@@ -1,0 +1,34 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/access/access.zone.passed.v1.json",
+  "title": "AccessZonePassedV1",
+  "description": "Проход через точку СКУД — событие прохода в зону или из зоны через порт СКУД (FR-82).",
+  "type": "object",
+  "properties": {
+    "person_id": {
+      "$ref": "../common/defs.v1.json#/definitions/person_ref",
+      "description": "Сотрудник."
+    },
+    "zone_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Зона доступа."
+    },
+    "direction": {
+      "type": "string",
+      "enum": [
+        "enter",
+        "exit"
+      ],
+      "description": "Направление."
+    },
+    "reader_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Считыватель."
+    }
+  },
+  "required": [
+    "person_id",
+    "zone_id",
+    "direction"
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/erp/erp.lot.received.v1.json",
+  "title": "ErpLotReceivedV1",
+  "description": "Партия поступила — на склад пришла партия: поставщик, номер партии и плавки, количество, сертификат; ещё не проверена — запускать нельзя (FR-91).",
+  "type": "object",
+  "properties": {
+    "lot_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Внутренний ID партии."
+    },
+    "external_system": {
+      "type": "string",
+      "enum": [
+        "onec",
+        "galaktika"
+      ],
+      "description": "Система."
+    },
+    "external_number": {
+      "type": "string",
+      "description": "Номер приходного документа.",
+      "maxLength": 64
+    },
+    "supplier_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Поставщик."
+    },
+    "item_type_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Что пришло."
+    },
+    "heat_no": {
+      "type": "string",
+      "description": "Плавка.",
+      "maxLength": 64
+    },
+    "quantity": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100000000,
+      "description": "Количество."
+    },
+    "certificate_no": {
+      "type": "string",
+      "description": "Номер сертификата; отсутствует — сертификата нет.",
+      "maxLength": 64
+    },
+    "expiry_date": {
+      "$ref": "../common/defs.v1.json#/definitions/date",
+      "description": "Срок годности, если есть."
+    }
+  },
+  "required": [
+    "lot_id",
+    "external_system",
+    "external_number",
+    "supplier_id",
+    "item_type_id",
+    "quantity"
+  ]
+}

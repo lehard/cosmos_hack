@@ -1,0 +1,46 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/obligation/obligation.escalation.raised.v1.json",
+  "title": "ObligationEscalationRaisedV1",
+  "description": "Эскалация — просрочка с ценой задержки («просрочено 37 мин — стоят 18 изделий, 2 операции») (FR-57, FR-8).",
+  "type": "object",
+  "properties": {
+    "obligation_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Обязательство."
+    },
+    "level": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 10,
+      "description": "Уровень эскалации."
+    },
+    "escalate_to_role_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Кому."
+    },
+    "overdue_minutes": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991,
+      "description": "На сколько просрочено, минут."
+    },
+    "blocked_items": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991,
+      "description": "Изделий стоит."
+    },
+    "blocked_operations": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991,
+      "description": "Операций стоит."
+    }
+  },
+  "required": [
+    "obligation_id",
+    "level",
+    "overdue_minutes"
+  ]
+}

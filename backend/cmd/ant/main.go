@@ -3,9 +3,13 @@
 // Слой: точка входа и сборка зависимостей (cmd/*) — единственное место, где
 // зоны инфраструктуры соединяются с приложением (AD-1).
 //
-// Роль процесса задаётся флагом -role (несколько — через запятую). Сейчас
-// реализованы api и migrate; остальные роли спайна (worker, crossitem,
-// projector, scheduler, outbox, stands, init, rebuild) регистрирует эпик 02.
+// Роль процесса задаётся флагом -role (несколько — через запятую). Все роли
+// спайна зарегистрированы заранее (эпик 02): api и migrate работают, остальные
+// — заглушки до своих эпиков (worker, crossitem, projector — 07; scheduler —
+// 24; outbox — 30; stands — 06; init — 05; rebuild — 07, 34).
+//
+// Флаг -openapi ‹файл› — выгрузить спецификацию HTTP API (contracts/openapi.yaml)
+// из операций Huma и выйти (make generate, AD-20); БД и конфигурация не нужны.
 //
 // Флаг -healthcheck — проверка живости для HEALTHCHECK контейнера: в образе
 // нет оболочки и curl, поэтому проверку делает сам бинарник.
@@ -48,8 +52,16 @@ type role struct {
 
 // roles — реестр ролей процесса.
 var roles = map[string]role{
-	"api":     {run: runAPI},
-	"migrate": {run: runMigrate, oneShot: true},
+	"api":       {run: runAPI},
+	"migrate":   {run: runMigrate, oneShot: true},
+	"worker":    pendingRole("worker", "эпик 07: свёртка изделий по партициям", false),
+	"crossitem": pendingRole("crossitem", "эпик 07: межизделийная стадия, копия-лидер", false),
+	"projector": pendingRole("projector", "эпик 07: глобальные потребители журнала, копия-лидер", false),
+	"scheduler": pendingRole("scheduler", "эпик 24: сроки и «наступил срок»", false),
+	"outbox":    pendingRole("outbox", "эпик 30: исходящие сообщения и квитанции", false),
+	"stands":    pendingRole("stands", "эпики 06, 30–33: stand-ы внешних систем и прогоны", false),
+	"init":      pendingRole("init", "эпик 05: ключи, миграции, генезис", true),
+	"rebuild":   pendingRole("rebuild", "эпики 07, 34: пересборка проекций", true),
 }
 
 // environment — то, что роль получает от точки входа.
@@ -69,11 +81,19 @@ func run(args []string, stdout, stderr io.Writer) int {
 	cfgPath := fs.String("config", envOr("ANT_CONFIG", "/etc/ant/ant.yaml"), "путь к ant.yaml (или ANT_CONFIG)")
 	healthcheck := fs.Bool("healthcheck", false, "проверить /healthz запущенного процесса и выйти (для HEALTHCHECK)")
 	showVersion := fs.Bool("version", false, "показать версию и выйти")
+	openapiOut := fs.String("openapi", "", "выгрузить спецификацию HTTP API в файл и выйти (make generate)")
 	if err := fs.Parse(args); err != nil {
 		return 2
 	}
 	if *showVersion {
 		_, _ = fmt.Fprintln(stdout, version)
+		return 0
+	}
+	if *openapiOut != "" {
+		if err := dumpOpenAPI(*openapiOut); err != nil {
+			_, _ = fmt.Fprintln(stderr, "openapi:", err)
+			return 1
+		}
 		return 0
 	}
 

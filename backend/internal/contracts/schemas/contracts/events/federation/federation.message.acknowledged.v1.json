@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/federation/federation.message.acknowledged.v1.json",
+  "title": "FederationMessageAcknowledgedV1",
+  "description": "Партнёр подтвердил получение — квитанция событием — работает и через однонаправленные каналы (FR-131).",
+  "type": "object",
+  "properties": {
+    "partner_code": {
+      "type": "string",
+      "description": "Партнёр.",
+      "pattern": "^[A-Z0-9][A-Z0-9_-]{0,15}$"
+    },
+    "message_id": {
+      "$ref": "../common/defs.v1.json#/definitions/uuid",
+      "description": "Сообщение."
+    },
+    "outcome": {
+      "type": "string",
+      "enum": [
+        "received",
+        "rejected"
+      ],
+      "description": "Итог."
+    }
+  },
+  "required": [
+    "partner_code",
+    "message_id",
+    "outcome"
+  ]
+}

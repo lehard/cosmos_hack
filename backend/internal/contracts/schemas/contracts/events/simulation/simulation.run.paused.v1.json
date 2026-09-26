@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/simulation/simulation.run.paused.v1.json",
+  "title": "SimulationRunPausedV1",
+  "description": "Прогон на паузе — пауза останавливает поток и часы; столы показывают состояние на момент паузы (FR-129).",
+  "type": "object",
+  "properties": {
+    "run_id": {
+      "$ref": "../common/defs.v1.json#/definitions/run_id",
+      "description": "Прогон."
+    },
+    "reason": {
+      "type": "string",
+      "enum": [
+        "user",
+        "waiting_for_decision"
+      ],
+      "description": "Почему."
+    }
+  },
+  "required": [
+    "run_id",
+    "reason"
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/incident/incident.hypothesis.recorded.v1.json",
+  "title": "IncidentHypothesisRecordedV1",
+  "description": "Гипотеза причины записана человеком — технолог добавил гипотезу с основаниями и альтернативами; две ветки — «почему возник» и «почему пропустили» (FR-59).",
+  "type": "object",
+  "properties": {
+    "incident_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Инцидент."
+    },
+    "nc_ids": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/object_id",
+        "description": "Несоответствие."
+      },
+      "description": "Несоответствия.",
+      "uniqueItems": true
+    },
+    "branch": {
+      "type": "string",
+      "enum": [
+        "why_made",
+        "why_missed"
+      ],
+      "description": "Ветка."
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "incoming",
+        "equipment",
+        "performer",
+        "handling",
+        "assembly",
+        "documentation",
+        "not_established"
+      ],
+      "description": "Категория."
+    },
+    "statement": {
+      "type": "string",
+      "maxLength": 4000,
+      "description": "Формулировка гипотезы."
+    },
+    "supporting_event_ids": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/uuid"
+      },
+      "description": "Основания.",
+      "uniqueItems": true
+    }
+  },
+  "required": [
+    "incident_id",
+    "branch",
+    "category",
+    "statement"
+  ]
+}

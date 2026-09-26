@@ -1,0 +1,67 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/material/material.object.stored.v1.json",
+  "title": "MaterialObjectStoredV1",
+  "description": "Материал помещён в хранилище — фото, видео, скан, протокол, иллюстрация — по адресу H(байты), зашифровано; в журнале — адрес и метаданные: источник, время, изделие, точка контроля, происхождение (FR-102, AD-23).",
+  "type": "object",
+  "properties": {
+    "material_address": {
+      "$ref": "../common/defs.v1.json#/definitions/digest",
+      "description": "Адрес содержимого."
+    },
+    "media_type": {
+      "type": "string",
+      "description": "MIME-тип.",
+      "pattern": "^[a-z]+/[A-Za-z0-9.+-]+$"
+    },
+    "size_bytes": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991,
+      "description": "Размер."
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "photo",
+        "video",
+        "illustration",
+        "protocol",
+        "log_excerpt",
+        "scan",
+        "quarantine_payload",
+        "other"
+      ],
+      "description": "Вид."
+    },
+    "captured_at": {
+      "$ref": "../common/defs.v1.json#/definitions/timestamp",
+      "description": "Когда получен у источника."
+    },
+    "item_id": {
+      "$ref": "../common/defs.v1.json#/definitions/item_id",
+      "description": "Изделие, если относится."
+    },
+    "inspection_point": {
+      "type": "string",
+      "description": "Точка контроля.",
+      "maxLength": 32
+    },
+    "is_illustration": {
+      "type": "boolean",
+      "description": "Иллюстрация из открытого набора (FR-102)."
+    },
+    "provenance_note": {
+      "type": "string",
+      "description": "Источник, лицензия, автор; для иллюстраций — «не относится к изделию».",
+      "maxLength": 500
+    }
+  },
+  "required": [
+    "material_address",
+    "media_type",
+    "size_bytes",
+    "kind",
+    "is_illustration"
+  ]
+}

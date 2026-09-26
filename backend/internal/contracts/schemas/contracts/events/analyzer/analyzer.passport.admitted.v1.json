@@ -1,0 +1,53 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/analyzer/analyzer.passport.admitted.v1.json",
+  "title": "AnalyzerPassportAdmittedV1",
+  "description": "Паспорт допуска введён в действие — после маршрута подписей (ОТК, технолог, метролог; при изменении ТП/КД — ВП и держатель КД): уровень доверия 0–4, разрешённые и запрещённые автоматические действия; допущенная версия заморожена (FR-98, FR-101, AD-29).",
+  "type": "object",
+  "properties": {
+    "passport_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Паспорт."
+    },
+    "stage": {
+      "type": "string",
+      "enum": [
+        "shadow",
+        "pilot",
+        "active"
+      ],
+      "description": "Стадия."
+    },
+    "trust_level": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4,
+      "description": "Уровень доверия (contracts/analyzer-trust-levels.yaml)."
+    },
+    "recipe_ref": {
+      "type": "string",
+      "description": "Карта контроля `‹id›@‹версия›`.",
+      "maxLength": 128
+    },
+    "versions": {
+      "$ref": "../common/defs.v1.json#/definitions/analyzer_versions",
+      "description": "Допущенная конфигурация контура."
+    },
+    "previous_passport_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Предыдущий допущенный паспорт — для отката."
+    },
+    "document_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Протокол допуска."
+    }
+  },
+  "required": [
+    "passport_id",
+    "stage",
+    "trust_level",
+    "recipe_ref",
+    "versions",
+    "document_id"
+  ]
+}

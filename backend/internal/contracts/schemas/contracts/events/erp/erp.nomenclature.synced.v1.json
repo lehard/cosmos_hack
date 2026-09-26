@@ -1,0 +1,57 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/erp/erp.nomenclature.synced.v1.json",
+  "title": "ErpNomenclatureSyncedV1",
+  "description": "Справочник номенклатуры получен — номенклатура и состав изделия из учётной системы; расхождение обозначений — отчёт, без автосоздания (FR-91).",
+  "type": "object",
+  "properties": {
+    "external_system": {
+      "type": "string",
+      "enum": [
+        "onec",
+        "galaktika"
+      ],
+      "description": "Система."
+    },
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "description": "Позиция номенклатуры.",
+        "properties": {
+          "external_id": {
+            "type": "string",
+            "description": "ID во внешней системе.",
+            "maxLength": 64
+          },
+          "designation": {
+            "type": "string",
+            "description": "Обозначение.",
+            "maxLength": 128
+          },
+          "name": {
+            "type": "string",
+            "description": "Наименование.",
+            "maxLength": 256
+          },
+          "item_type_id": {
+            "$ref": "../common/defs.v1.json#/definitions/object_id",
+            "description": "Сопоставленный внутренний тип, если есть."
+          }
+        },
+        "required": [
+          "external_id",
+          "designation",
+          "name"
+        ],
+        "title": "NomenclatureEntry"
+      },
+      "description": "Позиции.",
+      "minItems": 1
+    }
+  },
+  "required": [
+    "external_system",
+    "entries"
+  ]
+}

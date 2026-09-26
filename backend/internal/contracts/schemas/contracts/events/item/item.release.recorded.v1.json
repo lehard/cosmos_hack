@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/item/item.release.recorded.v1.json",
+  "title": "ItemReleaseRecordedV1",
+  "description": "Изделие сдано на склад готовой продукции — кладовщик принял годное изделие на склад; это исполнение закрывающей точки выпуска, следом — «выпуск годного» в 1С (FR-44).",
+  "type": "object",
+  "properties": {
+    "warehouse_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Склад готовой продукции."
+    },
+    "concession_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Разрешение на отклонение, если изделие годно по нему."
+    },
+    "after_rework": {
+      "type": "boolean",
+      "description": "Изделие принято после переделки."
+    },
+    "received_by": {
+      "$ref": "../common/defs.v1.json#/definitions/person_ref",
+      "description": "Кладовщик."
+    }
+  },
+  "required": [
+    "warehouse_id",
+    "after_rework",
+    "received_by"
+  ]
+}

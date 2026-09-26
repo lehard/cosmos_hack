@@ -1,10 +1,10 @@
 /**
  * СГЕНЕРИРОВАНО orval (frontend/scripts/generate.mjs) — руками не править (AD-20).
- * Источник: frontend/dev/openapi.draft.yaml (черновик до появления contracts/openapi.yaml)
+ * Источник: contracts/openapi.yaml
  */
 
 /**
- * Класс операции из x-ant-action (AD-27, AD-40); read — чтение.
+ * Класс операции из x-ant-action (AD-27, AD-40): read — чтение, record — запись без последствий на осях, protective — защитное, permissive — разрешающее, irreversible — необратимое.
  */
 export type ActionClass = typeof ActionClass[keyof typeof ActionClass];
 

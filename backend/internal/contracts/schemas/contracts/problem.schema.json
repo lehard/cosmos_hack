@@ -1,0 +1,112 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/problem.schema.json",
+  "title": "Problem",
+  "description": "Тело ответа об ошибке — RFC 9457 `application/problem+json` с расширениями ant. Код — из contracts/errors.yaml.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "type",
+    "title",
+    "status",
+    "code"
+  ],
+  "properties": {
+    "type": {
+      "type": "string",
+      "pattern": "^urn:ant:problem:[a-z][a-z0-9]*\\.[a-z][a-z0-9_]*$",
+      "description": "URI типа проблемы: urn:ant:problem:‹код›."
+    },
+    "title": {
+      "type": "string",
+      "maxLength": 256,
+      "description": "Краткий заголовок по-русски (из каталога)."
+    },
+    "status": {
+      "type": "integer",
+      "minimum": 200,
+      "maximum": 599,
+      "description": "HTTP-статус."
+    },
+    "detail": {
+      "type": "string",
+      "maxLength": 4000,
+      "description": "Пояснение по-русски для этого случая."
+    },
+    "instance": {
+      "type": "string",
+      "maxLength": 512,
+      "description": "URI конкретного случая (путь запроса или id записи карантина)."
+    },
+    "code": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*\\.[a-z][a-z0-9_]*$",
+      "description": "Код из contracts/errors.yaml."
+    },
+    "params": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "maxLength": 512
+      },
+      "description": "Параметры шаблона текста интерфейса."
+    },
+    "violations": {
+      "type": "array",
+      "description": "Нарушения по полям или элементам.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "code"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9]*\\.[a-z][a-z0-9_]*$",
+            "description": "Код нарушения."
+          },
+          "field": {
+            "type": "string",
+            "maxLength": 256,
+            "description": "JSON Pointer поля."
+          },
+          "element_id": {
+            "type": "string",
+            "maxLength": 128,
+            "description": "Идентификатор элемента BPMN."
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 1000,
+            "description": "Пояснение."
+          }
+        }
+      }
+    },
+    "quarantine_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+      "description": "Запись карантина (FR-30)."
+    },
+    "ca_ref": {
+      "type": "string",
+      "pattern": "^CA-[1-9][0-9]*$",
+      "description": "Критическое действие, записанное из-за отказа (FR-19)."
+    },
+    "basis_seq": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991,
+      "description": "Для journal.stale_*: на каком seq проверено."
+    },
+    "allowed_actions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 128
+      },
+      "description": "Что пользователь может сделать вместо: например, «Запросить решение» (FR-146)."
+    }
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/access/access.workplace.revoked.v1.json",
+  "title": "AccessWorkplaceRevokedV1",
+  "description": "Допуск к рабочему месту снят автоматически — извлечён токен, сотрудник вышел из зоны, закончилась смена или отозвана квалификация (AD-15).",
+  "type": "object",
+  "properties": {
+    "workplace_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Рабочее место."
+    },
+    "workplace_session_id": {
+      "$ref": "../common/defs.v1.json#/definitions/uuid",
+      "description": "Сеанс."
+    },
+    "cause": {
+      "type": "string",
+      "enum": [
+        "token_removed",
+        "zone_exit",
+        "shift_ended",
+        "qualification_revoked",
+        "assignment_cleared",
+        "policy_changed"
+      ],
+      "description": "Причина."
+    }
+  },
+  "required": [
+    "workplace_id",
+    "workplace_session_id",
+    "cause"
+  ]
+}

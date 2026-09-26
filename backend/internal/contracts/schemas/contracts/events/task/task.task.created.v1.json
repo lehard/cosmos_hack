@@ -1,0 +1,63 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/task/task.task.created.v1.json",
+  "title": "TaskTaskCreatedV1",
+  "description": "Задача поставлена — адресная задача тому, у кого есть действие: владелец, срок, подтверждение (FR-57); физические задачи, доп. проверка, переподписание, «основание защиты изменилось — пересмотрите» (AD-3).",
+  "type": "object",
+  "properties": {
+    "task_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Задача."
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "physical_move",
+        "isolate_move",
+        "recheck",
+        "decision_required",
+        "review_after_new_data",
+        "protection_basis_changed",
+        "resign",
+        "remark_carrier",
+        "remove_temporary_carrier",
+        "inspection_missing",
+        "admin_resend",
+        "other"
+      ],
+      "description": "Вид задачи."
+    },
+    "assignee_role_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Роль-исполнитель."
+    },
+    "assignee_person_id": {
+      "$ref": "../common/defs.v1.json#/definitions/person_ref",
+      "description": "Конкретный исполнитель, если назначен."
+    },
+    "location_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Где физически изделие."
+    },
+    "due_at": {
+      "$ref": "../common/defs.v1.json#/definitions/timestamp",
+      "description": "Срок."
+    },
+    "subject_ref": {
+      "$ref": "../common/defs.v1.json#/definitions/stream_ref",
+      "description": "Субъект."
+    },
+    "title": {
+      "type": "string",
+      "description": "Что сделать.",
+      "maxLength": 256
+    }
+  },
+  "required": [
+    "task_id",
+    "kind",
+    "assignee_role_id",
+    "subject_ref",
+    "title"
+  ]
+}

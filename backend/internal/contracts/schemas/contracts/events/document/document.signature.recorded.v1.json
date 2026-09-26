@@ -1,0 +1,105 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/document/document.signature.recorded.v1.json",
+  "title": "DocumentSignatureRecordedV1",
+  "description": "Подпись документа записана — подпись над отпечатком: агентом токена или на бумаге с заверением (скан, QR, заверитель ≠ подписант, учётный номер оригинала) (FR-139, AD-43).",
+  "type": "object",
+  "properties": {
+    "document_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Документ."
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100000,
+      "description": "Версия документа."
+    },
+    "doc_digest": {
+      "$ref": "../common/defs.v1.json#/definitions/digest",
+      "description": "Подписанный отпечаток."
+    },
+    "stage": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100,
+      "description": "Этап маршрута."
+    },
+    "method": {
+      "type": "string",
+      "enum": [
+        "token_agent",
+        "paper",
+        "device",
+        "demo_signer"
+      ],
+      "description": "Способ подписи."
+    },
+    "signer_person_id": {
+      "$ref": "../common/defs.v1.json#/definitions/person_ref",
+      "description": "Подписант."
+    },
+    "authority_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Полномочие подписанта."
+    },
+    "stamp_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Цифровое клеймо."
+    },
+    "signature_level": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 3,
+      "description": "Уровень подписи."
+    },
+    "attested_by": {
+      "$ref": "../common/defs.v1.json#/definitions/person_ref",
+      "description": "Заверитель бумажной подписи."
+    },
+    "paper_original_no": {
+      "type": "string",
+      "description": "Учётный номер бумажного оригинала в архиве ОТК.",
+      "maxLength": 64
+    },
+    "scan_address": {
+      "$ref": "../common/defs.v1.json#/definitions/digest",
+      "description": "Адрес скана в хранилище материалов."
+    },
+    "summary": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "description": "Поле сводки уровня 2 (3–7 полей) — как видел подписант.",
+        "properties": {
+          "label": {
+            "type": "string",
+            "description": "Подпись поля.",
+            "maxLength": 128
+          },
+          "value": {
+            "type": "string",
+            "description": "Значение.",
+            "maxLength": 512
+          }
+        },
+        "required": [
+          "label",
+          "value"
+        ],
+        "title": "SummaryField"
+      },
+      "description": "Сводка.",
+      "maxItems": 7
+    }
+  },
+  "required": [
+    "document_id",
+    "version",
+    "doc_digest",
+    "stage",
+    "method",
+    "signer_person_id",
+    "signature_level"
+  ]
+}

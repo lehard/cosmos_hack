@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/inspection/inspection.point.mode_changed.v1.json",
+  "title": "InspectionPointModeChangedV1",
+  "description": "Режим точки контроля изменён — точка контроля работает / ухудшена / только ручной контроль / выведена; результаты в ручном режиме получают источник «человек».",
+  "type": "object",
+  "properties": {
+    "inspection_point": {
+      "type": "string",
+      "description": "Точка контроля (КТ).",
+      "maxLength": 32
+    },
+    "equipment_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Станция контроля."
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "operational",
+        "degraded",
+        "manual_only",
+        "out_of_service"
+      ],
+      "description": "Новый режим."
+    },
+    "reason": {
+      "$ref": "../common/defs.v1.json#/definitions/reason",
+      "description": "Причина: код и текст."
+    }
+  },
+  "required": [
+    "inspection_point",
+    "mode"
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/item/item.assembly.recorded.v1.json",
+  "title": "ItemAssemblyRecordedV1",
+  "description": "Компонент включён в сборку — компонент (экземпляр или партия) установлен в сборку или соединён сваркой; история сборки включает историю компонентов (FR-45). Сканируется до установки.",
+  "type": "object",
+  "properties": {
+    "assembly_item_id": {
+      "$ref": "../common/defs.v1.json#/definitions/item_id",
+      "description": "Сборка (изделие верхнего уровня)."
+    },
+    "component_item_id": {
+      "$ref": "../common/defs.v1.json#/definitions/item_id",
+      "description": "Компонент-экземпляр; для партионного компонента — отсутствует."
+    },
+    "component_lot_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Партия компонента (крепёж, уплотнение)."
+    },
+    "component_type_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Тип компонента по спецификации."
+    },
+    "quantity": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100000,
+      "description": "Количество (для партионных компонентов)."
+    },
+    "position": {
+      "type": "string",
+      "description": "Позиция по спецификации или карте сборки.",
+      "maxLength": 64
+    },
+    "binding_method": {
+      "$ref": "../common/defs.v1.json#/definitions/carrier_type",
+      "description": "Как компонент опознан: скан или ручной ввод."
+    },
+    "operation_run_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Идентификатор выполнения операции; повтор операции — новый идентификатор со ссылкой `rework_of` (FR-47)."
+    }
+  },
+  "required": [
+    "assembly_item_id",
+    "component_type_id",
+    "binding_method"
+  ]
+}

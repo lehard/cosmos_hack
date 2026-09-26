@@ -30,6 +30,7 @@ linters:
             - "ant/internal/domain/ingest"
             - "ant/internal/domain/item"
             - "ant/internal/domain/journal"
+            - "ant/internal/domain/kernel"
             - "ant/internal/domain/machinelogs"
             - "ant/internal/domain/materials"
             - "ant/internal/domain/mes"
@@ -107,6 +108,16 @@ linters:
             - pkg: "unsafe"
               desc: "AD-1, AD-4: домен — только stdlib без ввода-вывода, часов и случайности, контракты, Стрибог-256 и доменные модули"
           # AD-1, AD-4: домен — только stdlib без ввода-вывода, часов и случайности, контракты, Стрибог-256 и доменные модули
+        domain-kernel:
+          list-mode: strict
+          files:
+            - "**/internal/domain/kernel/**"
+          allow:
+            - "$gostd"
+            - "ant/internal/contracts"
+            - "go.stargrave.org/gogost/v7/gost34112012256"
+            - "ant/internal/domain/kernel"
+          # AD-1: domain/kernel импортирует только доменные модули раньше себя в порядке kernel → reference → signing → access → item → process → vision → quality → machinelogs → documents → nonconformity → analysis → notifications → crossitem → engine
         domain-reference:
           list-mode: strict
           files:
@@ -115,8 +126,9 @@ linters:
             - "$gostd"
             - "ant/internal/contracts"
             - "go.stargrave.org/gogost/v7/gost34112012256"
+            - "ant/internal/domain/kernel"
             - "ant/internal/domain/reference"
-          # AD-1: domain/reference импортирует только доменные модули раньше себя в порядке reference → signing → access → item → process → vision → quality → machinelogs → documents → nonconformity → analysis → notifications → crossitem → engine
+          # AD-1: domain/reference импортирует только доменные модули раньше себя в порядке kernel → reference → signing → access → item → process → vision → quality → machinelogs → documents → nonconformity → analysis → notifications → crossitem → engine
         domain-signing:
           list-mode: strict
           files:
@@ -125,9 +137,10 @@ linters:
             - "$gostd"
             - "ant/internal/contracts"
             - "go.stargrave.org/gogost/v7/gost34112012256"
+            - "ant/internal/domain/kernel"
             - "ant/internal/domain/reference"
             - "ant/internal/domain/signing"
-          # AD-1: domain/signing импортирует только доменные модули раньше себя в порядке reference → signing → access → item → process → vision → quality → machinelogs → documents → nonconformity → analysis → notifications → crossitem → engine
+          # AD-1: domain/signing импортирует только доменные модули раньше себя в порядке kernel → reference → signing → access → item → process → vision → quality → machinelogs → documents → nonconformity → analysis → notifications → crossitem → engine
         domain-access:
           list-mode: strict
           files:
@@ -136,10 +149,11 @@ linters:
             - "$gostd"
             - "ant/internal/contracts"
             - "go.stargrave.org/gogost/v7/gost34112012256"
+            - "ant/internal/domain/kernel"
             - "ant/internal/domain/reference"
             - "ant/internal/domain/signing"
             - "ant/internal/domain/access"
-          # AD-1: domain/access импортирует только доменные модули раньше себя в порядке reference → signing → access → item → process → vision → quality → machinelogs → documents → nonconformity → analysis → notifications → crossitem → engine
+          # AD-1: domain/access импортирует только доменные модули раньше себя в порядке kernel → reference → signing → access → item → process → vision → quality → machinelogs → documents → nonconformity → analysis → notifications → crossitem → engine
         domain-item:
           list-mode: strict
           files:
@@ -148,11 +162,12 @@ linters:
             - "$gostd"
             - "ant/internal/contracts"
             - "go.stargrave.org/gogost/v7/gost34112012256"
+            - "ant/internal/domain/kernel"
             - "ant/internal/domain/reference"
             - "ant/internal/domain/signing"
             - "ant/internal/domain/access"
             - "ant/internal/domain/item"
-          # AD-1: domain/item импортирует только доменные модули раньше себя в порядке reference → signing → access → item → process → vision → quality → machinelogs → documents → nonconformity → analysis → notifications → crossitem → engine
+          # AD-1: domain/item импортирует только доменные модули раньше себя в порядке kernel → reference → signing → access → item → process → vision → quality → machinelogs → documents → nonconformity → analysis → notifications → crossitem → engine
         domain-process:
           list-mode: strict
           files:
@@ -161,12 +176,13 @@ linters:
             - "$gostd"
             - "ant/internal/contracts"
             - "go.stargrave.org/gogost/v7/gost34112012256"
+            - "ant/internal/domain/kernel"
             - "ant/internal/domain/reference"
             - "ant/internal/domain/signing"
             - "ant/internal/domain/access"
             - "ant/internal/domain/item"
             - "ant/internal/domain/process"
-          # AD-1: domain/process импортирует только доменные модули раньше себя в порядке reference → signing → access → item → process → vision → quality → machinelogs → documents → nonconformity → analysis → notifications → crossitem → engine
+          # AD-1: domain/process импортирует только доменные модули раньше себя в порядке kernel → reference → signing → access → item → process → vision → quality → machinelogs → documents → nonconformity → analysis → notifications → crossitem → engine
         domain-vision:
           list-mode: strict
           files:
@@ -175,13 +191,14 @@ linters:
             - "$gostd"
             - "ant/internal/contracts"
             - "go.stargrave.org/gogost/v7/gost34112012256"
+            - "ant/internal/domain/kernel"
             - "ant/internal/domain/reference"
             - "ant/internal/domain/signing"
             - "ant/internal/domain/access"
             - "ant/internal/domain/item"
             - "ant/internal/domain/process"
             - "ant/internal/domain/vision"
-          # AD-1: domain/vision импортирует только доменные модули раньше себя в порядке reference → signing → access → item → process → vision → quality → machinelogs → documents → nonconformity → analysis → notifications → crossitem → engine
+          # AD-1: domain/vision импортирует только доменные модули раньше себя в порядке kernel → reference → signing → access → item → process → vision → quality → machinelogs → documents → nonconformity → analysis → notifications → crossitem → engine
         domain-quality:
           list-mode: strict
           files:
@@ -190,6 +207,7 @@ linters:
             - "$gostd"
             - "ant/internal/contracts"
             - "go.stargrave.org/gogost/v7/gost34112012256"
+            - "ant/internal/domain/kernel"
             - "ant/internal/domain/reference"
             - "ant/internal/domain/signing"
             - "ant/internal/domain/access"
@@ -197,7 +215,7 @@ linters:
             - "ant/internal/domain/process"
             - "ant/internal/domain/vision"
             - "ant/internal/domain/quality"
-          # AD-1: domain/quality импортирует только доменные модули раньше себя в порядке reference → signing → access → item → process → vision → quality → machinelogs → documents → nonconformity → analysis → notifications → crossitem → engine
+          # AD-1: domain/quality импортирует только доменные модули раньше себя в порядке kernel → reference → signing → access → item → process → vision → quality → machinelogs → documents → nonconformity → analysis → notifications → crossitem → engine
         domain-machinelogs:
           list-mode: strict
           files:
@@ -206,6 +224,7 @@ linters:
             - "$gostd"
             - "ant/internal/contracts"
             - "go.stargrave.org/gogost/v7/gost34112012256"
+            - "ant/internal/domain/kernel"
             - "ant/internal/domain/reference"
             - "ant/internal/domain/signing"
             - "ant/internal/domain/access"
@@ -214,7 +233,7 @@ linters:
             - "ant/internal/domain/vision"
             - "ant/internal/domain/quality"
             - "ant/internal/domain/machinelogs"
-          # AD-1: domain/machinelogs импортирует только доменные модули раньше себя в порядке reference → signing → access → item → process → vision → quality → machinelogs → documents → nonconformity → analysis → notifications → crossitem → engine
+          # AD-1: domain/machinelogs импортирует только доменные модули раньше себя в порядке kernel → reference → signing → access → item → process → vision → quality → machinelogs → documents → nonconformity → analysis → notifications → crossitem → engine
         domain-documents:
           list-mode: strict
           files:
@@ -223,6 +242,7 @@ linters:
             - "$gostd"
             - "ant/internal/contracts"
             - "go.stargrave.org/gogost/v7/gost34112012256"
+            - "ant/internal/domain/kernel"
             - "ant/internal/domain/reference"
             - "ant/internal/domain/signing"
             - "ant/internal/domain/access"
@@ -232,7 +252,7 @@ linters:
             - "ant/internal/domain/quality"
             - "ant/internal/domain/machinelogs"
             - "ant/internal/domain/documents"
-          # AD-1: domain/documents импортирует только доменные модули раньше себя в порядке reference → signing → access → item → process → vision → quality → machinelogs → documents → nonconformity → analysis → notifications → crossitem → engine
+          # AD-1: domain/documents импортирует только доменные модули раньше себя в порядке kernel → reference → signing → access → item → process → vision → quality → machinelogs → documents → nonconformity → analysis → notifications → crossitem → engine
         domain-nonconformity:
           list-mode: strict
           files:
@@ -241,6 +261,7 @@ linters:
             - "$gostd"
             - "ant/internal/contracts"
             - "go.stargrave.org/gogost/v7/gost34112012256"
+            - "ant/internal/domain/kernel"
             - "ant/internal/domain/reference"
             - "ant/internal/domain/signing"
             - "ant/internal/domain/access"
@@ -251,7 +272,7 @@ linters:
             - "ant/internal/domain/machinelogs"
             - "ant/internal/domain/documents"
             - "ant/internal/domain/nonconformity"
-          # AD-1: domain/nonconformity импортирует только доменные модули раньше себя в порядке reference → signing → access → item → process → vision → quality → machinelogs → documents → nonconformity → analysis → notifications → crossitem → engine
+          # AD-1: domain/nonconformity импортирует только доменные модули раньше себя в порядке kernel → reference → signing → access → item → process → vision → quality → machinelogs → documents → nonconformity → analysis → notifications → crossitem → engine
         domain-analysis:
           list-mode: strict
           files:
@@ -260,6 +281,7 @@ linters:
             - "$gostd"
             - "ant/internal/contracts"
             - "go.stargrave.org/gogost/v7/gost34112012256"
+            - "ant/internal/domain/kernel"
             - "ant/internal/domain/reference"
             - "ant/internal/domain/signing"
             - "ant/internal/domain/access"
@@ -271,7 +293,7 @@ linters:
             - "ant/internal/domain/documents"
             - "ant/internal/domain/nonconformity"
             - "ant/internal/domain/analysis"
-          # AD-1: domain/analysis импортирует только доменные модули раньше себя в порядке reference → signing → access → item → process → vision → quality → machinelogs → documents → nonconformity → analysis → notifications → crossitem → engine
+          # AD-1: domain/analysis импортирует только доменные модули раньше себя в порядке kernel → reference → signing → access → item → process → vision → quality → machinelogs → documents → nonconformity → analysis → notifications → crossitem → engine
         domain-notifications:
           list-mode: strict
           files:
@@ -280,6 +302,7 @@ linters:
             - "$gostd"
             - "ant/internal/contracts"
             - "go.stargrave.org/gogost/v7/gost34112012256"
+            - "ant/internal/domain/kernel"
             - "ant/internal/domain/reference"
             - "ant/internal/domain/signing"
             - "ant/internal/domain/access"
@@ -292,7 +315,7 @@ linters:
             - "ant/internal/domain/nonconformity"
             - "ant/internal/domain/analysis"
             - "ant/internal/domain/notifications"
-          # AD-1: domain/notifications импортирует только доменные модули раньше себя в порядке reference → signing → access → item → process → vision → quality → machinelogs → documents → nonconformity → analysis → notifications → crossitem → engine
+          # AD-1: domain/notifications импортирует только доменные модули раньше себя в порядке kernel → reference → signing → access → item → process → vision → quality → machinelogs → documents → nonconformity → analysis → notifications → crossitem → engine
         domain-crossitem:
           list-mode: strict
           files:
@@ -301,6 +324,7 @@ linters:
             - "$gostd"
             - "ant/internal/contracts"
             - "go.stargrave.org/gogost/v7/gost34112012256"
+            - "ant/internal/domain/kernel"
             - "ant/internal/domain/reference"
             - "ant/internal/domain/signing"
             - "ant/internal/domain/access"
@@ -314,7 +338,7 @@ linters:
             - "ant/internal/domain/analysis"
             - "ant/internal/domain/notifications"
             - "ant/internal/domain/crossitem"
-          # AD-1: domain/crossitem импортирует только доменные модули раньше себя в порядке reference → signing → access → item → process → vision → quality → machinelogs → documents → nonconformity → analysis → notifications → crossitem → engine
+          # AD-1: domain/crossitem импортирует только доменные модули раньше себя в порядке kernel → reference → signing → access → item → process → vision → quality → machinelogs → documents → nonconformity → analysis → notifications → crossitem → engine
         domain-engine:
           list-mode: strict
           files:
@@ -323,6 +347,7 @@ linters:
             - "$gostd"
             - "ant/internal/contracts"
             - "go.stargrave.org/gogost/v7/gost34112012256"
+            - "ant/internal/domain/kernel"
             - "ant/internal/domain/reference"
             - "ant/internal/domain/signing"
             - "ant/internal/domain/access"
@@ -337,7 +362,7 @@ linters:
             - "ant/internal/domain/notifications"
             - "ant/internal/domain/crossitem"
             - "ant/internal/domain/engine"
-          # AD-1: domain/engine импортирует только доменные модули раньше себя в порядке reference → signing → access → item → process → vision → quality → machinelogs → documents → nonconformity → analysis → notifications → crossitem → engine
+          # AD-1: domain/engine импортирует только доменные модули раньше себя в порядке kernel → reference → signing → access → item → process → vision → quality → machinelogs → documents → nonconformity → analysis → notifications → crossitem → engine
         domain-security:
           list-mode: strict
           files:
@@ -346,11 +371,12 @@ linters:
             - "$gostd"
             - "ant/internal/contracts"
             - "go.stargrave.org/gogost/v7/gost34112012256"
+            - "ant/internal/domain/kernel"
             - "ant/internal/domain/reference"
             - "ant/internal/domain/signing"
             - "ant/internal/domain/access"
             - "ant/internal/domain/security"
-          # AD-1: domain/security импортирует из домена только reference, signing, access
+          # AD-1: domain/security импортирует из домена только kernel, reference, signing, access
         domain-federation:
           list-mode: strict
           files:
@@ -359,11 +385,12 @@ linters:
             - "$gostd"
             - "ant/internal/contracts"
             - "go.stargrave.org/gogost/v7/gost34112012256"
+            - "ant/internal/domain/kernel"
             - "ant/internal/domain/reference"
             - "ant/internal/domain/signing"
             - "ant/internal/domain/access"
             - "ant/internal/domain/federation"
-          # AD-1: domain/federation импортирует из домена только reference, signing, access
+          # AD-1: domain/federation импортирует из домена только kernel, reference, signing, access
         domain-analytics:
           list-mode: strict
           files:
@@ -372,11 +399,12 @@ linters:
             - "$gostd"
             - "ant/internal/contracts"
             - "go.stargrave.org/gogost/v7/gost34112012256"
+            - "ant/internal/domain/kernel"
             - "ant/internal/domain/reference"
             - "ant/internal/domain/signing"
             - "ant/internal/domain/access"
             - "ant/internal/domain/analytics"
-          # AD-1: domain/analytics импортирует из домена только reference, signing, access
+          # AD-1: domain/analytics импортирует из домена только kernel, reference, signing, access
         domain-simulation:
           list-mode: strict
           files:
@@ -385,11 +413,12 @@ linters:
             - "$gostd"
             - "ant/internal/contracts"
             - "go.stargrave.org/gogost/v7/gost34112012256"
+            - "ant/internal/domain/kernel"
             - "ant/internal/domain/reference"
             - "ant/internal/domain/signing"
             - "ant/internal/domain/access"
             - "ant/internal/domain/simulation"
-          # AD-1: domain/simulation импортирует из домена только reference, signing, access
+          # AD-1: domain/simulation импортирует из домена только kernel, reference, signing, access
         domain-erp:
           list-mode: strict
           files:
@@ -398,11 +427,12 @@ linters:
             - "$gostd"
             - "ant/internal/contracts"
             - "go.stargrave.org/gogost/v7/gost34112012256"
+            - "ant/internal/domain/kernel"
             - "ant/internal/domain/reference"
             - "ant/internal/domain/signing"
             - "ant/internal/domain/access"
             - "ant/internal/domain/erp"
-          # AD-1: domain/erp импортирует из домена только reference, signing, access
+          # AD-1: domain/erp импортирует из домена только kernel, reference, signing, access
         domain-mes:
           list-mode: strict
           files:
@@ -411,11 +441,12 @@ linters:
             - "$gostd"
             - "ant/internal/contracts"
             - "go.stargrave.org/gogost/v7/gost34112012256"
+            - "ant/internal/domain/kernel"
             - "ant/internal/domain/reference"
             - "ant/internal/domain/signing"
             - "ant/internal/domain/access"
             - "ant/internal/domain/mes"
-          # AD-1: domain/mes импортирует из домена только reference, signing, access
+          # AD-1: domain/mes импортирует из домена только kernel, reference, signing, access
         domain-cad:
           list-mode: strict
           files:
@@ -424,11 +455,12 @@ linters:
             - "$gostd"
             - "ant/internal/contracts"
             - "go.stargrave.org/gogost/v7/gost34112012256"
+            - "ant/internal/domain/kernel"
             - "ant/internal/domain/reference"
             - "ant/internal/domain/signing"
             - "ant/internal/domain/access"
             - "ant/internal/domain/cad"
-          # AD-1: domain/cad импортирует из домена только reference, signing, access
+          # AD-1: domain/cad импортирует из домена только kernel, reference, signing, access
         domain-ingest:
           list-mode: strict
           files:
@@ -437,11 +469,12 @@ linters:
             - "$gostd"
             - "ant/internal/contracts"
             - "go.stargrave.org/gogost/v7/gost34112012256"
+            - "ant/internal/domain/kernel"
             - "ant/internal/domain/reference"
             - "ant/internal/domain/signing"
             - "ant/internal/domain/access"
             - "ant/internal/domain/ingest"
-          # AD-1: domain/ingest импортирует из домена только reference, signing, access
+          # AD-1: domain/ingest импортирует из домена только kernel, reference, signing, access
         domain-journal:
           list-mode: strict
           files:
@@ -450,11 +483,12 @@ linters:
             - "$gostd"
             - "ant/internal/contracts"
             - "go.stargrave.org/gogost/v7/gost34112012256"
+            - "ant/internal/domain/kernel"
             - "ant/internal/domain/reference"
             - "ant/internal/domain/signing"
             - "ant/internal/domain/access"
             - "ant/internal/domain/journal"
-          # AD-1: domain/journal импортирует из домена только reference, signing, access
+          # AD-1: domain/journal импортирует из домена только kernel, reference, signing, access
         domain-ops:
           list-mode: strict
           files:
@@ -463,11 +497,12 @@ linters:
             - "$gostd"
             - "ant/internal/contracts"
             - "go.stargrave.org/gogost/v7/gost34112012256"
+            - "ant/internal/domain/kernel"
             - "ant/internal/domain/reference"
             - "ant/internal/domain/signing"
             - "ant/internal/domain/access"
             - "ant/internal/domain/ops"
-          # AD-1: domain/ops импортирует из домена только reference, signing, access
+          # AD-1: domain/ops импортирует из домена только kernel, reference, signing, access
         domain-materials:
           list-mode: strict
           files:
@@ -476,11 +511,12 @@ linters:
             - "$gostd"
             - "ant/internal/contracts"
             - "go.stargrave.org/gogost/v7/gost34112012256"
+            - "ant/internal/domain/kernel"
             - "ant/internal/domain/reference"
             - "ant/internal/domain/signing"
             - "ant/internal/domain/access"
             - "ant/internal/domain/materials"
-          # AD-1: domain/materials импортирует из домена только reference, signing, access
+          # AD-1: domain/materials импортирует из домена только kernel, reference, signing, access
         domain-unlisted:
           list-mode: strict
           files:
@@ -497,6 +533,7 @@ linters:
             - "!**/internal/domain/ingest/**"
             - "!**/internal/domain/item/**"
             - "!**/internal/domain/journal/**"
+            - "!**/internal/domain/kernel/**"
             - "!**/internal/domain/machinelogs/**"
             - "!**/internal/domain/materials/**"
             - "!**/internal/domain/mes/**"
@@ -514,6 +551,7 @@ linters:
             - "$gostd"
             - "ant/internal/contracts"
             - "go.stargrave.org/gogost/v7/gost34112012256"
+            - "ant/internal/domain/kernel"
             - "ant/internal/domain/reference"
             - "ant/internal/domain/signing"
             - "ant/internal/domain/access"

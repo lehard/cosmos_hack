@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/equipment/equipment.state.changed.v1.json",
+  "title": "EquipmentStateChangedV1",
+  "description": "Состояние оборудования изменилось (v1) — первая версия: одно поле `machine_state`, смешивающее режим работы и исправность (как в каталоге процессной сессии и кейсе §4.4). Сохраняется для чтения старых записей; повышатель v1 → v2 разделяет поле по MTConnect.",
+  "type": "object",
+  "properties": {
+    "equipment_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Оборудование."
+    },
+    "station_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Участок."
+    },
+    "machine_state": {
+      "type": "string",
+      "enum": [
+        "running",
+        "idle",
+        "stopped",
+        "warning",
+        "alarm"
+      ],
+      "description": "Состояние: работает / ожидает / остановлено / предупреждение / авария."
+    },
+    "code": {
+      "type": "string",
+      "description": "Код состояния или аварии у источника.",
+      "maxLength": 64
+    },
+    "parameter": {
+      "type": "string",
+      "description": "Параметр, если предупреждение по параметру.",
+      "maxLength": 64
+    },
+    "value": {
+      "$ref": "../common/defs.v1.json#/definitions/measurement",
+      "description": "Значение параметра."
+    },
+    "setpoint": {
+      "$ref": "../common/defs.v1.json#/definitions/tolerance",
+      "description": "Уставка."
+    }
+  },
+  "required": [
+    "equipment_id",
+    "machine_state"
+  ]
+}

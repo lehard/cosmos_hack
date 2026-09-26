@@ -1,11 +1,11 @@
 /**
  * СГЕНЕРИРОВАНО orval (frontend/scripts/generate.mjs) — руками не править (AD-20).
- * Источник: frontend/dev/openapi.draft.yaml (черновик до появления contracts/openapi.yaml)
+ * Источник: contracts/openapi.yaml
  */
 
-export type SessionShift = {
-  id: string;
-  title: string;
-  starts_at?: string;
+export interface SessionShift {
   ends_at?: string;
-};
+  id: string;
+  starts_at?: string;
+  title: string;
+}

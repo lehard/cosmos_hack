@@ -40,6 +40,12 @@ codes:
     detail: "Запрос на момент {as_of} только для чтения"
     ui_key: errors.decision.replayReadOnly
     refs: [FR-4, AD-21, AD-22]
+  api.internal_error:
+    status: 500
+    title: "Внутренняя ошибка"
+    detail: "{detail}"
+    ui_key: errors.generic
+    refs: [эпик 02, FR-28]
   api.rate_limited:
     status: 429
     title: "Слишком много запросов"

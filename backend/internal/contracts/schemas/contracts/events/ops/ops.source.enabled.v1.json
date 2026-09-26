@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/ops/ops.source.enabled.v1.json",
+  "title": "OpsSourceEnabledV1",
+  "description": "Источник включён — включение источника или адаптера.",
+  "type": "object",
+  "properties": {
+    "source_id": {
+      "$ref": "../common/defs.v1.json#/definitions/source_id",
+      "description": "Источник."
+    },
+    "reason": {
+      "$ref": "../common/defs.v1.json#/definitions/reason",
+      "description": "Причина: код и текст."
+    }
+  },
+  "required": [
+    "source_id",
+    "reason"
+  ]
+}

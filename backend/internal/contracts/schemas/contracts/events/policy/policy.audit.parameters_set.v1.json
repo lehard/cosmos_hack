@@ -1,0 +1,46 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/policy/policy.audit.parameters_set.v1.json",
+  "title": "PolicyAuditParametersSetV1",
+  "description": "Параметры аудита установлены — принадлежат Аудитору ИБ: перечень критических типов, интервал и предельный разрыв контрольных точек, отпечаток ключа хранителя, подписчики шины безопасности (AD-8, AD-15).",
+  "type": "object",
+  "properties": {
+    "critical_types": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/event_type"
+      },
+      "description": "Дополнительно критические типы сверх каталога.",
+      "uniqueItems": true
+    },
+    "checkpoint_interval_s": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 86400,
+      "description": "Интервал контрольных точек N, секунд."
+    },
+    "checkpoint_max_gap_s": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 864000,
+      "description": "Предельный разрыв между точками, секунд."
+    },
+    "keeper_key_fingerprint": {
+      "$ref": "../common/defs.v1.json#/definitions/digest",
+      "description": "Отпечаток ключа хранителя."
+    },
+    "security_bus_subscribers": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/code"
+      },
+      "description": "Подписчики шины безопасности.",
+      "uniqueItems": true
+    }
+  },
+  "required": [
+    "checkpoint_interval_s",
+    "checkpoint_max_gap_s",
+    "keeper_key_fingerprint"
+  ]
+}

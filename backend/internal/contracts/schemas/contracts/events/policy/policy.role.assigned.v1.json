@@ -1,0 +1,37 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/policy/policy.role.assigned.v1.json",
+  "title": "PolicyRoleAssignedV1",
+  "description": "Роль назначена в области — человеку назначена роль в области действия («исполнитель — пост сварки 2»); привилегированные выдачи — со второй подписью независимой стороны (AD-11, PRD §11.16).",
+  "type": "object",
+  "properties": {
+    "person_id": {
+      "$ref": "../common/defs.v1.json#/definitions/person_ref",
+      "description": "Сотрудник."
+    },
+    "role_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Роль."
+    },
+    "scope": {
+      "type": "string",
+      "description": "Область действия: путь `здание/цех/участок/рабочее место` (иерархия областей, AD-15).",
+      "pattern": "^[a-z0-9_-]+(/[a-z0-9_-]+)*$",
+      "maxLength": 256
+    },
+    "valid_from": {
+      "$ref": "../common/defs.v1.json#/definitions/timestamp",
+      "description": "Начало действия (доменное время)."
+    },
+    "valid_until": {
+      "$ref": "../common/defs.v1.json#/definitions/timestamp",
+      "description": "Окончание действия; отсутствует — бессрочно."
+    }
+  },
+  "required": [
+    "person_id",
+    "role_id",
+    "scope",
+    "valid_from"
+  ]
+}

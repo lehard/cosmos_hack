@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/decision/decision.concession.revoked.v1.json",
+  "title": "DecisionConcessionRevokedV1",
+  "description": "Разрешение на отклонение отозвано — отзыв — новая запись; решения, принятые по разрешению, подсвечиваются (FR-54).",
+  "type": "object",
+  "properties": {
+    "concession_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Разрешение."
+    },
+    "reason": {
+      "$ref": "../common/defs.v1.json#/definitions/reason",
+      "description": "Причина: код и текст."
+    }
+  },
+  "required": [
+    "concession_id",
+    "reason"
+  ]
+}

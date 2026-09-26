@@ -1,0 +1,155 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/internal/token-agent/nm-request.v1.json",
+  "title": "TokenAgentRequestV1",
+  "description": "Сообщение браузерного расширения → агенту токена по Native Messaging (AD-14, AD-46). Вид — поле `type`; для каждого вида обязателен свой блок (без oneOf, диалект AD-20). Хост Native Messaging — тонкий посредник; PIN вводится только в окне агента, никогда на странице.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "protocol_version": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 999,
+      "description": "Версия протокола."
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "hello",
+        "status",
+        "sign",
+        "sign_batch",
+        "shift_report",
+        "local_journal"
+      ],
+      "description": "Вид запроса."
+    },
+    "request_id": {
+      "type": "string",
+      "description": "Идентификатор запроса расширения.",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "origin": {
+      "type": "string",
+      "description": "Origin страницы ant, от которой пришёл запрос (проверяет расширение).",
+      "maxLength": 256
+    },
+    "sign": {
+      "$ref": "#/definitions/sign_block"
+    },
+    "sign_batch": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/sign_block"
+      },
+      "description": "Пачка однородных подписей уровня 2: «подписать: N изделий, операция X, годен» — одно окно, одно касание токена (AD-13).",
+      "minItems": 1,
+      "maxItems": 500
+    },
+    "shift_report": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Запрос сменного рапорта (уровень 3).",
+      "properties": {
+        "shift_id": {
+          "type": "string",
+          "description": "Смена.",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$"
+        },
+        "window_from": {
+          "type": "string",
+          "description": "Начало окна.",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$"
+        },
+        "window_to": {
+          "type": "string",
+          "description": "Конец окна.",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$"
+        }
+      },
+      "required": [
+        "shift_id",
+        "window_from",
+        "window_to"
+      ]
+    },
+    "local_journal": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Запрос выписки локального журнала подписанного.",
+      "properties": {
+        "since_seq": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "description": "С какого номера локального журнала."
+        }
+      },
+      "required": [
+        "since_seq"
+      ]
+    }
+  },
+  "required": [
+    "protocol_version",
+    "type",
+    "request_id",
+    "origin"
+  ],
+  "definitions": {
+    "sign_block": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Запрос одной подписи: агент сам разбирает содержимое, сам считает отпечаток пакетом domain/documents и сам вычисляет поля сводки (AD-14).",
+      "properties": {
+        "level": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2,
+          "description": "Уровень подписи 1–2; уровень 1 — только типы из level1-actions.yaml, иначе агент отклоняет сам."
+        },
+        "payload_type": {
+          "type": "string",
+          "description": "payloadType пакета.",
+          "pattern": "^application/vnd\\.ant\\.[a-z][a-z-]*\\+json; v=[1-9][0-9]*$"
+        },
+        "payload_b64": {
+          "type": "string",
+          "description": "Каноническое содержимое (base64): событие-команда или содержимое документа.",
+          "pattern": "^[A-Za-z0-9+/]*={0,2}$"
+        },
+        "event_type": {
+          "type": "string",
+          "description": "Тип события-команды (для проверки перечня уровня 1).",
+          "pattern": "^[a-z][a-z0-9_]*\\.[a-z][a-z0-9_]*\\.[a-z][a-z0-9_]*$"
+        },
+        "template_ref": {
+          "type": "string",
+          "description": "Шаблон документа `‹id›@‹версия›`, если подписывается документ.",
+          "maxLength": 128
+        },
+        "doc_format_version": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 999,
+          "description": "Версия формата документа; неизвестную агент отвергает (signing.unknown_doc_format)."
+        },
+        "expected_doc_digest": {
+          "type": "string",
+          "description": "Отпечаток, который ожидает сервер; агент сверяет со своим.",
+          "pattern": "^streebog256:[0-9a-f]{64}$"
+        },
+        "key_ref": {
+          "type": "string",
+          "description": "Ключ, которым просят подписать.",
+          "pattern": "^[a-z0-9][a-z0-9._:-]{0,95}@[1-9][0-9]{0,5}$"
+        }
+      },
+      "required": [
+        "level",
+        "payload_type",
+        "payload_b64"
+      ]
+    }
+  }
+}

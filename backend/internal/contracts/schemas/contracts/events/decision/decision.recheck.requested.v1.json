@@ -1,0 +1,37 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/decision/decision.recheck.requested.v1.json",
+  "title": "DecisionRecheckRequestedV1",
+  "description": "Назначена дополнительная проверка — данных мало для решения: метод, зона, срок; изделие ждёт в изоляции, автоматически не маршрутизируется (FR-52).",
+  "type": "object",
+  "properties": {
+    "method": {
+      "$ref": "../common/defs.v1.json#/definitions/inspection_method"
+    },
+    "zone_ids": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/object_id",
+        "description": "Зона."
+      },
+      "description": "Зоны доп. проверки.",
+      "uniqueItems": true
+    },
+    "due_at": {
+      "$ref": "../common/defs.v1.json#/definitions/timestamp",
+      "description": "Срок."
+    },
+    "suggested_by_rule": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Правило, подсказавшее проверку (режим 3), если было."
+    },
+    "reason": {
+      "$ref": "../common/defs.v1.json#/definitions/reason",
+      "description": "Причина: код и текст."
+    }
+  },
+  "required": [
+    "method",
+    "reason"
+  ]
+}

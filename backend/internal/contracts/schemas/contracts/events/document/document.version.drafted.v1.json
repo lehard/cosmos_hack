@@ -1,0 +1,138 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/document/document.version.drafted.v1.json",
+  "title": "DocumentVersionDraftedV1",
+  "description": "Версия документа сформирована — документ = шаблон шага@версия × события-источники; отпечаток и набор обязательных подписей (замороженный, AD-43) входят в канонический JSON (AD-12).",
+  "type": "object",
+  "properties": {
+    "document_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Документ."
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100000,
+      "description": "Версия документа."
+    },
+    "template_ref": {
+      "type": "string",
+      "description": "Шаблон `‹id›@‹версия›`.",
+      "maxLength": 128
+    },
+    "doc_format_version": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 999,
+      "description": "Версия формата документа."
+    },
+    "doc_digest": {
+      "$ref": "../common/defs.v1.json#/definitions/digest",
+      "description": "Отпечаток документа."
+    },
+    "rendering_hash": {
+      "$ref": "../common/defs.v1.json#/definitions/digest",
+      "description": "Хеш канонической отрисовки (HTML)."
+    },
+    "subject_ref": {
+      "$ref": "../common/defs.v1.json#/definitions/stream_ref",
+      "description": "Объект документа."
+    },
+    "source_event_ids": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/uuid"
+      },
+      "description": "События-источники.",
+      "uniqueItems": true
+    },
+    "required_approvals": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "description": "Этап маршрута подписей (AD-13, AD-43).",
+        "properties": {
+          "stage": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "description": "Номер этапа."
+          },
+          "authority_id": {
+            "$ref": "../common/defs.v1.json#/definitions/object_id",
+            "description": "Полномочие."
+          },
+          "stamp_kind": {
+            "$ref": "../common/defs.v1.json#/definitions/code",
+            "description": "Вид клейма, если нужен."
+          },
+          "quorum": {
+            "type": "string",
+            "enum": [
+              "one",
+              "all",
+              "k_of_n"
+            ],
+            "description": "Сколько подписей."
+          },
+          "k": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "description": "k для k из n."
+          },
+          "signature_level": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3,
+            "description": "Уровень подписи."
+          },
+          "paper_allowed": {
+            "type": "boolean",
+            "description": "Разрешена бумага с заверением."
+          },
+          "attester_authority_id": {
+            "$ref": "../common/defs.v1.json#/definitions/object_id",
+            "description": "Полномочие заверителя бумажной подписи."
+          },
+          "external_party": {
+            "type": "string",
+            "enum": [
+              "none",
+              "customer_representative",
+              "partner"
+            ],
+            "description": "Внешняя сторона."
+          }
+        },
+        "required": [
+          "stage",
+          "authority_id",
+          "quorum",
+          "signature_level",
+          "paper_allowed"
+        ],
+        "title": "ApprovalStage"
+      },
+      "description": "Замороженный набор обязательных подписей.",
+      "minItems": 1
+    },
+    "supersedes_document_version": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100000,
+      "description": "Заменяемая версия документа."
+    }
+  },
+  "required": [
+    "document_id",
+    "version",
+    "template_ref",
+    "doc_format_version",
+    "doc_digest",
+    "rendering_hash",
+    "subject_ref",
+    "source_event_ids",
+    "required_approvals"
+  ]
+}

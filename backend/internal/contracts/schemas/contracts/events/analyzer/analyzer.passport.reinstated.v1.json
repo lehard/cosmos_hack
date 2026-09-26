@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/analyzer/analyzer.passport.reinstated.v1.json",
+  "title": "AnalyzerPassportReinstatedV1",
+  "description": "Анализатор возвращён в работу — разрешающее действие: только начальник ОТК (FR-101, AD-27).",
+  "type": "object",
+  "properties": {
+    "passport_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Паспорт."
+    },
+    "suspension_event_id": {
+      "$ref": "../common/defs.v1.json#/definitions/uuid",
+      "description": "Приостановка."
+    },
+    "reason": {
+      "$ref": "../common/defs.v1.json#/definitions/reason",
+      "description": "Причина: код и текст."
+    }
+  },
+  "required": [
+    "passport_id",
+    "suspension_event_id",
+    "reason"
+  ]
+}

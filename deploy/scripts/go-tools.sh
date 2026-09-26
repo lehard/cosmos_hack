@@ -7,7 +7,7 @@
 set -euo pipefail
 cd /src/backend/tools
 TOOLBIN="${TOOLBIN:-/cache/bin}"
-key=$(cat go.mod go.sum archgen/*.go detcheck/*.go | sha256sum | cut -c1-16)
+key=$(cat go.mod go.sum */*.go | sha256sum | cut -c1-16)
 bin="$TOOLBIN/$key"
 pkgs=("$@")
 if [[ ${#pkgs[@]} == 0 ]]; then

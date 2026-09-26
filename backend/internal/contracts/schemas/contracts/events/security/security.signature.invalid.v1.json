@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/security/security.signature.invalid.v1.json",
+  "title": "SecuritySignatureInvalidV1",
+  "description": "Недействительная подпись — подпись сообщения или документа не прошла проверку: неизвестный, отозванный, чужой ключ, понижение профиля, изменённый пакет (FR-26, FR-68, AD-10).",
+  "type": "object",
+  "properties": {
+    "subject_event_id": {
+      "$ref": "../common/defs.v1.json#/definitions/uuid",
+      "description": "Проверявшаяся запись (если записана) или `event_id` из конверта."
+    },
+    "source_id": {
+      "$ref": "../common/defs.v1.json#/definitions/source_id",
+      "description": "Источник."
+    },
+    "key_ref": {
+      "$ref": "../common/defs.v1.json#/definitions/key_ref",
+      "description": "Ключ из пакета."
+    },
+    "failure": {
+      "type": "string",
+      "enum": [
+        "unknown_key",
+        "revoked_key",
+        "foreign_key",
+        "profile_downgrade",
+        "payload_tampered",
+        "bad_signature",
+        "key_unavailable",
+        "class_not_allowed"
+      ],
+      "description": "Что не так."
+    },
+    "quarantine_event_id": {
+      "$ref": "../common/defs.v1.json#/definitions/uuid",
+      "description": "Запись карантина."
+    }
+  },
+  "required": [
+    "failure"
+  ]
+}

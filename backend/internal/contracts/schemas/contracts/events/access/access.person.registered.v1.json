@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/access/access.person.registered.v1.json",
+  "title": "AccessPersonRegisteredV1",
+  "description": "Сотрудник заведён — сотрудник с условным идентификатором (псевдонимом); соответствие человеку хранится отдельно в access (FR-78).",
+  "type": "object",
+  "properties": {
+    "person_id": {
+      "$ref": "../common/defs.v1.json#/definitions/person_ref",
+      "description": "Псевдоним сотрудника."
+    },
+    "display_name": {
+      "type": "string",
+      "description": "Отображаемое имя (условное).",
+      "maxLength": 128
+    },
+    "org_unit": {
+      "type": "string",
+      "description": "Подразделение.",
+      "pattern": "^[a-z0-9_-]+(/[a-z0-9_-]+)*$",
+      "maxLength": 256
+    }
+  },
+  "required": [
+    "person_id",
+    "display_name"
+  ]
+}

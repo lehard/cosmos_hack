@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/decision/decision.nonconformity.registered.v1.json",
+  "title": "DecisionNonconformityRegisteredV1",
+  "description": "Несоответствие зарегистрировано правилом — межизделийная стадия регистрирует несоответствие всем изделиям окна нарушения специального процесса, даже без найденного дефекта; решение — маршрутом комиссии (FR-151, AD-29).",
+  "type": "object",
+  "properties": {
+    "nc_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Несоответствие."
+    },
+    "violation_window_event_id": {
+      "$ref": "../common/defs.v1.json#/definitions/uuid",
+      "description": "Окно нарушения (`equipment.violation.window_resolved`)."
+    },
+    "operation_run_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Идентификатор выполнения операции; повтор операции — новый идентификатор со ссылкой `rework_of` (FR-47)."
+    },
+    "step_key": {
+      "$ref": "../common/defs.v1.json#/definitions/step_key",
+      "description": "Ключ шага процесса (`ant:properties/@stepKey`), к которому относится запись."
+    }
+  },
+  "required": [
+    "nc_id",
+    "violation_window_event_id",
+    "operation_run_id"
+  ]
+}

@@ -1,0 +1,113 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/cad/cad.assembly.imported.v1.json",
+  "title": "CadAssemblyImportedV1",
+  "description": "Условная сборка импортирована — структура сборки из файла КОМПАС (идентификатор, версия, компоненты, количество, связи; геометрии нет — явно); связи переводятся в зоны и ограничения нормативного слоя (FR-94, PRD §11.15). Схема файла — `contracts/integrations/cad/assembly.schema.json` (эпик 31).",
+  "type": "object",
+  "properties": {
+    "assembly_designation": {
+      "type": "string",
+      "description": "Обозначение сборки (например, ФЛ-100.00.000 СБ).",
+      "maxLength": 128
+    },
+    "revision": {
+      "type": "string",
+      "description": "Версия (литера).",
+      "maxLength": 32
+    },
+    "file_digest": {
+      "$ref": "../common/defs.v1.json#/definitions/digest",
+      "description": "Отпечаток импортированного файла."
+    },
+    "components": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "description": "Компонент.",
+        "properties": {
+          "position": {
+            "type": "string",
+            "description": "Позиция.",
+            "maxLength": 32
+          },
+          "designation": {
+            "type": "string",
+            "description": "Обозначение.",
+            "maxLength": 128
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100000,
+            "description": "Количество."
+          },
+          "lot_tracked": {
+            "type": "boolean",
+            "description": "Учитывается партией."
+          }
+        },
+        "required": [
+          "position",
+          "designation",
+          "quantity",
+          "lot_tracked"
+        ],
+        "title": "CadComponent"
+      },
+      "description": "Компоненты.",
+      "minItems": 1
+    },
+    "links": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "description": "Связь сборки.",
+        "properties": {
+          "link_id": {
+            "type": "string",
+            "description": "Идентификатор связи (W-1, J-1, S-1).",
+            "maxLength": 32
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "weld",
+              "bolted_joint",
+              "seal",
+              "other"
+            ],
+            "description": "Вид связи."
+          },
+          "components": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "Позиция.",
+              "maxLength": 32
+            },
+            "description": "Связанные позиции.",
+            "minItems": 1
+          }
+        },
+        "required": [
+          "link_id",
+          "kind",
+          "components"
+        ],
+        "title": "CadLink"
+      },
+      "description": "Связи."
+    },
+    "geometry_present": {
+      "type": "boolean",
+      "description": "Геометрия в файле есть; в условной сборке — false (кейс §5.3)."
+    }
+  },
+  "required": [
+    "assembly_designation",
+    "revision",
+    "file_digest",
+    "components",
+    "geometry_present"
+  ]
+}

@@ -12,11 +12,12 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"ant/cmd/internal/db"
+	"ant/internal/application/platform"
 	"ant/internal/infrastructure/transport/webui"
 )
 
-// runAPI — роль api: HTTP API, проверки живости и готовности, встроенный
-// интерфейс (AD-25). Операции Huma подключает эпик 02 под префиксом /api/.
+// runAPI — роль api: HTTP API (операции Huma всех модулей под /api/v1/),
+// проверки живости и готовности, встроенный интерфейс (AD-25).
 func runAPI(ctx context.Context, env *environment) error {
 	cfg, log := env.cfg, env.log
 
@@ -47,15 +48,17 @@ func runAPI(ctx context.Context, env *environment) error {
 		writeJSON(w, http.StatusOK, map[string]string{"status": "ok", "version": version})
 	})
 	mux.HandleFunc("GET /readyz", readyHandler(pool, &started))
+	// Операции всех модулей (AD-20, AD-36); неизвестный путь /api/ — 404 problem+json.
+	buildAPI(mux, apiOptions{mode: platform.Mode(cfg.Ports.Mode), moduleModes: moduleModes(cfg.Ports.Modules)})
 	mux.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
-		// Заглушка до эпика 02: ответ в формате RFC 9457.
 		w.Header().Set("Content-Type", "application/problem+json")
-		w.WriteHeader(http.StatusNotImplemented)
+		w.WriteHeader(http.StatusNotFound)
 		_ = json.NewEncoder(w).Encode(map[string]any{
-			"type":   "about:blank",
-			"title":  "Операция ещё не реализована",
-			"status": http.StatusNotImplemented,
-			"detail": r.Method + " " + r.URL.Path,
+			"type":   "urn:ant:problem:api.not_found",
+			"title":  "Объект не найден",
+			"status": http.StatusNotFound,
+			"code":   "api.not_found",
+			"detail": "Операции " + r.Method + " " + r.URL.Path + " нет в контракте",
 		})
 	})
 	mux.Handle("/", webui.Handler())
@@ -122,4 +125,14 @@ func writeJSON(w http.ResponseWriter, code int, v any) {
 	w.Header().Set("Cache-Control", "no-store")
 	w.WriteHeader(code)
 	_ = json.NewEncoder(w).Encode(v)
+}
+
+// moduleModes — переопределение режима ведущих портов по модулю (вертикальные
+// срезы, AD-36).
+func moduleModes(m map[string]string) map[string]platform.Mode {
+	out := make(map[string]platform.Mode, len(m))
+	for k, v := range m {
+		out[k] = platform.Mode(v)
+	}
+	return out
 }

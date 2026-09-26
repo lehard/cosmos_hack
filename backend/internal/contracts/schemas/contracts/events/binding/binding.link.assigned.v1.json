@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/binding/binding.link.assigned.v1.json",
+  "title": "BindingLinkAssignedV1",
+  "description": "Привязка задана человеком — событие «деталь не опознана» или перепутанную деталь привязали вручную; выводы пересчитываются у обоих изделий (FR-34, AD-41).",
+  "type": "object",
+  "properties": {
+    "subject_event_id": {
+      "$ref": "../common/defs.v1.json#/definitions/uuid",
+      "description": "Событие."
+    },
+    "item_id": {
+      "$ref": "../common/defs.v1.json#/definitions/item_id",
+      "description": "Изделие."
+    },
+    "previous_item_id": {
+      "$ref": "../common/defs.v1.json#/definitions/item_id",
+      "description": "Прежняя привязка, если была."
+    },
+    "method": {
+      "type": "string",
+      "enum": [
+        "scan",
+        "select_expected",
+        "manual_entry"
+      ],
+      "description": "Способ."
+    },
+    "reason": {
+      "$ref": "../common/defs.v1.json#/definitions/reason",
+      "description": "Причина: код и текст."
+    }
+  },
+  "required": [
+    "subject_event_id",
+    "item_id",
+    "method",
+    "reason"
+  ]
+}
