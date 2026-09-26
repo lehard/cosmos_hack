@@ -151,7 +151,7 @@ func (j *Journal) Read(_ context.Context, q appjournal.ReadQuery) ([]jc.JournalE
 		if int64(e.Seq) <= q.AfterSeq {
 			continue
 		}
-		if q.Stream != "" && e.Stream != q.Stream && !(e.ItemID != nil && q.Stream == "item:"+*e.ItemID) {
+		if q.Stream != "" && e.Stream != q.Stream && (e.ItemID == nil || q.Stream != "item:"+*e.ItemID) {
 			continue
 		}
 		if q.Stream == "" && e.Partition != q.Partition {
