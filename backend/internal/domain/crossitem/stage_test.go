@@ -1,6 +1,7 @@
 package crossitem_test
 
 import (
+	"maps"
 	"slices"
 	"testing"
 	"time"
@@ -103,8 +104,8 @@ func TestPassDelivery(t *testing.T) {
 		"analysis":      {catalog.EquipmentDeviationDetected, catalog.EquipmentViolationWindowResolved, catalog.DecisionNonconformityRegistered},
 		"notifications": {catalog.EquipmentDeviationDetected, catalog.EquipmentViolationWindowResolved, catalog.DecisionNonconformityRegistered, catalog.IncidentScopeComputed},
 	}
-	for m, w := range want {
-		if !slices.Equal(got[m], w) {
+	for _, m := range slices.Sorted(maps.Keys(want)) {
+		if w := want[m]; !slices.Equal(got[m], w) {
 			t.Fatalf("%s получил %v, ожидалось %v", m, got[m], w)
 		}
 	}
