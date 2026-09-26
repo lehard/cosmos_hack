@@ -1,8 +1,11 @@
 <script setup lang="ts">
 /**
  * Общая рамка виджета (AD-21, NFR-UI-4, FR-150). Даёт каждому виджету одинаково:
- * - заголовок и метку режима данных `fixtures | live` (заголовок Ant-Backend);
- * - момент: «Сейчас» или «Как было / Что мы знали — на момент …» (axis, as_of);
+ * - заголовок; режим данных `fixtures | live` — только атрибутом `data-mode`
+ *   (Д-70, UI-4, UI-6: метки режима в заголовке панели не показываются, режим
+ *   заготовок пояснён в меню пользователя);
+ * - момент — только при просмотре прошлого: «Как было / Что мы знали — на
+ *   момент …» (axis, as_of); «Сейчас» не пишется — это обычное состояние;
  * - четыре состояния данных: норма / признак дефекта / оценка невозможна / ошибка
  *   входа — с цветом тона из словаря статусов (контракт, AD-30); плюс загрузка
  *   и «нет записей»;
@@ -12,9 +15,11 @@
  *
  * Плотность стола (AD-21) рамка раздаёт содержимому: класс `ant-density-‹…›`
  * (CSS-переменные размеров) и вложенная тема Naive UI (высоты, шрифт).
- * Заголовок — одна строка с многоточием и подсказкой (UI-2).
+ * Заголовок — одна строка с многоточием и подсказкой (UI-2). Если заголовок уже
+ * показан выше (страница, вкладка, окно записи — WIDGET_FRAME_CONTEXT), рамка
+ * его не повторяет (UI-6).
  */
-import { computed } from 'vue'
+import { computed, inject } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { NAlert, NCard, NConfigProvider, NSpin } from 'naive-ui'
 import type { BackendMode } from '@/shared/api/generated/model'
@@ -23,6 +28,7 @@ import { naiveSizeOf, type Density, type WidgetDataState } from '@/shared/config
 import { useProblemText } from '@/shared/i18n/problem'
 import { useMomentStore } from '@/shared/model/moment'
 import EmptyState from './EmptyState.vue'
+import { WIDGET_FRAME_CONTEXT } from './frame'
 import { densityClass, densityOverrides } from './theme'
 
 const props = withDefaults(
@@ -61,8 +67,11 @@ const effectiveState = computed<WidgetDataState>(() => (props.error ? 'input_err
 const stateInfo = computed(() => STATES[effectiveState.value])
 const accent = computed(() => (effectiveState.value === 'normal' ? 'transparent' : statusPalette[stateInfo.value.tone]))
 
+const context = inject(WIDGET_FRAME_CONTEXT, {})
+
+/** Момент — только при просмотре прошлого (Д-70). */
 const momentLabel = computed(() => {
-  if (!moment.asOf) return t('common.modes.now')
+  if (!moment.asOf) return null
   const axis = t(moment.axis === 'recorded' ? 'common.modes.asOfRecorded' : 'common.modes.asOfOccurred')
   return `${axis} · ${t('common.modes.atMoment', { time: d(new Date(moment.asOf), 'dateTime') })}`
 })
@@ -70,29 +79,27 @@ const momentLabel = computed(() => {
 const title = computed(() => t(props.titleKey))
 const overrides = computed(() => densityOverrides(props.density))
 
-const modeLabel = computed(() =>
-  props.mode === 'fixtures' ? t('common.modes.backendFixtures') : props.mode === 'live' ? t('common.modes.backendLive') : null,
-)
+/** Шапка рамки нужна, если есть заголовок или что сказать о состоянии и моменте. */
+const showHeader = computed(() => !context.hideTitle || effectiveState.value !== 'normal' || !!momentLabel.value)
 </script>
 
 <template>
   <NCard
     class="widget-frame"
-    :class="densityClass(density)"
+    :class="[densityClass(density), { 'widget-frame--plain': context.plain, 'widget-frame--headless': !showHeader }]"
     :size="naiveSizeOf(density)"
     :style="{ '--accent': accent }"
     :data-state="effectiveState"
     :data-mode="mode ?? undefined"
     :segmented="{ content: true, footer: 'soft' }"
   >
-    <template #header>
-      <h3 class="title ant-ellipsis" :title="title">{{ title }}</h3>
+    <template v-if="showHeader" #header>
+      <h3 v-if="!context.hideTitle" class="title ant-ellipsis" :title="title">{{ title }}</h3>
     </template>
-    <template #header-extra>
+    <template v-if="showHeader" #header-extra>
       <div class="meta ant-box">
         <span v-if="effectiveState !== 'normal'" class="state ant-ellipsis">{{ t(stateInfo.key) }}</span>
-        <span class="moment ant-ellipsis" :data-replay="moment.isReplay || undefined" :title="momentLabel">{{ momentLabel }}</span>
-        <span v-if="modeLabel" class="mode ant-ellipsis" :title="modeLabel">{{ modeLabel }}</span>
+        <span v-if="momentLabel" class="moment ant-ellipsis" data-replay="true" :title="momentLabel">{{ momentLabel }}</span>
       </div>
     </template>
 
@@ -173,11 +180,22 @@ const modeLabel = computed(() =>
   font-weight: var(--ant-fw-bold);
 }
 
-.mode {
-  padding: 0 6px;
-  border: 1px solid var(--ant-border-strong);
-  border-radius: var(--ant-radius-sm);
-  line-height: 18px;
+/* Внутри окна записи: без обводки, тени и внутренних полей — поля даёт окно. */
+.widget-frame--plain {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.widget-frame--plain :deep(.n-card-header),
+.widget-frame--plain :deep(.n-card__content),
+.widget-frame--plain :deep(.n-card__action) {
+  padding-right: 0;
+  padding-left: 0;
+}
+
+.widget-frame--plain :deep(.n-card__content) {
+  padding-top: 0;
 }
 
 .frame-body {

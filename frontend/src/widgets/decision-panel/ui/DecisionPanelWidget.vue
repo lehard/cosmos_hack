@@ -23,7 +23,6 @@ import {
   decisionSummary,
   useConcessions,
   useDecisionCommand,
-  useDecisionFocusStore,
   useNcCard,
   uuidv7,
   type DecisionDraft,
@@ -40,12 +39,12 @@ import DecisionPanelView from './DecisionPanelView.vue'
 
 const props = defineProps<WidgetProps>()
 const route = useRoute()
-const focus = useDecisionFocusStore()
 const moment = useMomentStore()
 const port = useSigningPort()
 
 const str = (v: unknown): string | undefined => (typeof v === 'string' && v ? v : undefined)
-const ncId = computed(() => str(props.slice.nc_id) ?? focus.ncId ?? null)
+// Несоответствие — из среза: окно записи (Д-70) или страница карточки.
+const ncId = computed(() => str(props.slice.nc_id) ?? null)
 const runId = computed(() => str(route?.query.run) ?? str(props.slice.run_id))
 
 const cardQ = useNcCard(ncId, runId)

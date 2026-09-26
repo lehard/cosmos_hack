@@ -4,15 +4,13 @@
  * данные через entities/item (`item.passport.read`, `item.history.list`,
  * `item.genealogy.read`) на момент из useMomentStore, рамка WidgetFrame.
  *
- * Изделие — из среза стола (`item_id`, страница паспорта) или из выбора в
- * очереди «Ждут моего решения» (стол контролёра). Срез `view: compact` —
- * правая панель; `full` — страница. Состояние рамки — по оси качества:
+ * Изделие — из среза (`item_id`): страница паспорта или окно записи (Д-70).
+ * Срез `view: compact` — узкая панель; `full` — страница и окно. Состояние рамки — по оси качества:
  * «заблокировано» не делает паспорт «дефектным» (NFR-UI-4).
  */
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { qualityState, useItemGenealogy, useItemHistory, usePassport } from '@/entities/item'
-import { useDecisionFocusStore } from '@/entities/nonconformity'
 import { useDrillDown } from '@/features/drill-down'
 import { backendModeOf } from '@/shared/api/response'
 import type { WidgetProps } from '@/shared/config/widget'
@@ -22,11 +20,10 @@ import ItemPassportView from './ItemPassportView.vue'
 const props = defineProps<WidgetProps>()
 const route = useRoute()
 const drill = useDrillDown()
-const focus = useDecisionFocusStore()
 
 const str = (v: unknown): string | undefined => (typeof v === 'string' && v ? v : undefined)
 
-const itemId = computed(() => str(props.slice.item_id) ?? focus.itemId ?? null)
+const itemId = computed(() => str(props.slice.item_id) ?? null)
 const view = computed<'full' | 'compact'>(() => (props.slice.view === 'compact' ? 'compact' : 'full'))
 const opts = computed(() => {
   const run = str(route?.query.run) ?? str(props.slice.run_id)
@@ -69,7 +66,7 @@ const state = computed(() => (passport.value ? qualityState(passport.value.statu
       @open-item="(id) => drill.open({ entity: 'item', id })"
       @open-nc="(id) => drill.open({ entity: 'nonconformity', id })"
       @open-incident="(id) => drill.open({ entity: 'incident', id })"
-      @open-full="drill.open({ entity: 'item', id: passport.item_id })"
+      @open-full="drill.openPage({ entity: 'item', id: passport.item_id })"
     />
   </WidgetFrame>
 </template>

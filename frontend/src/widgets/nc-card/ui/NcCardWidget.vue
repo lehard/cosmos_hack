@@ -2,13 +2,13 @@
 /**
  * Виджет «Карточка несоответствия» (FR-51) — контейнер: данные через
  * entities/nonconformity (`nonconformity.card.read`) на момент из
- * useMomentStore, рамка WidgetFrame. Несоответствие — из среза (`nc_id`,
- * страница карточки) или из выбора в очереди «Ждут моего решения».
+ * useMomentStore, рамка WidgetFrame. Несоответствие — из среза (`nc_id`):
+ * страница карточки или окно записи (Д-70), куда его открывает очередь.
  * Срок решения считается от доменного «сейчас»: в воспроизведении — от момента.
  */
 import { computed, onBeforeUnmount, ref } from 'vue'
 import { useRoute } from 'vue-router'
-import { ncCardState, useDecisionFocusStore, useNcCard } from '@/entities/nonconformity'
+import { ncCardState, useNcCard } from '@/entities/nonconformity'
 import { useDrillDown } from '@/features/drill-down'
 import { backendModeOf } from '@/shared/api/response'
 import type { WidgetProps } from '@/shared/config/widget'
@@ -19,11 +19,10 @@ import NcCardView from './NcCardView.vue'
 const props = defineProps<WidgetProps>()
 const route = useRoute()
 const drill = useDrillDown()
-const focus = useDecisionFocusStore()
 const moment = useMomentStore()
 
 const str = (v: unknown): string | undefined => (typeof v === 'string' && v ? v : undefined)
-const ncId = computed(() => str(props.slice.nc_id) ?? focus.ncId ?? null)
+const ncId = computed(() => str(props.slice.nc_id) ?? null)
 const runId = computed(() => str(route?.query.run) ?? str(props.slice.run_id))
 const view = computed<'evidence' | 'full'>(() => (props.slice.view === 'evidence' ? 'evidence' : 'full'))
 

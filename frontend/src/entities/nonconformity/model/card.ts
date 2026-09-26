@@ -6,7 +6,10 @@
  */
 import { qualityState } from '@/entities/item'
 import type { WidgetDataState } from '@/shared/config/widget'
-import type { NCCard, NCConclusionVersion } from './types'
+import type { DecisionQueueRow, NCCard, NCConclusionVersion } from './types'
+
+/** Ключ строки очереди: вид и объект. */
+export const rowKey = (row: Pick<DecisionQueueRow, 'kind' | 'object_id'>): string => `${row.kind}:${row.object_id}`
 
 /**
  * Состояние данных карточки для рамки — по оси «Состояние качества» изделия

@@ -86,7 +86,8 @@ describe('виджет «Живая карта»', () => {
     const frame = w.find('.widget-frame')
     expect(frame.attributes('data-state')).toBe('defect_indication')
     expect(frame.attributes('data-mode')).toBe('fixtures')
-    expect(frame.text()).toContain('Демо на заготовках')
+    // Д-70: режим — атрибутом рамки, меткой в заголовке панели не пишется.
+    expect(frame.text()).not.toContain('Демо на заготовках')
     await vi.waitFor(() => expect(document.querySelector('.dot[data-item="ENT:FL-0041"]')).not.toBeNull(), WAIT)
   })
 
