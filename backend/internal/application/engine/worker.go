@@ -13,11 +13,11 @@ import (
 	appjournal "ant/internal/application/journal"
 	"ant/internal/application/platform"
 	"ant/internal/contracts/catalog"
-	"ant/internal/contracts/constants"
 	ev "ant/internal/contracts/events"
 	jc "ant/internal/contracts/journal"
 	"ant/internal/domain/engine"
 	"ant/internal/domain/kernel"
+	dops "ant/internal/domain/ops"
 )
 
 // RoleWorker — роль-эмитент записей воркера в каталоге (AD-40): реакции
@@ -215,7 +215,8 @@ func (w *WorkerService) Process(ctx context.Context, p Partition, works []Work) 
 		var perr *ProcessingError
 		switch {
 		case errors.As(err, &perr):
-			w.cfg.Log.Error("обработка остановлена", "item_id", wk.ItemID, "seq", wk.UpToSeq, "err", perr.Err)
+			w.cfg.Log.Error("обработка остановлена", "item_id", wk.ItemID, "seq", wk.UpToSeq, "event_id", wk.Trigger.EventID,
+				"correlation_id", wk.Trigger.CorrelationID, "run_id", runOf(wk.Trigger), "err", perr.Err)
 			w.cfg.Telemetry.Counter(MetricProcessingFailed, 1)
 			if rq, err = w.failure(ctx, wk, perr); err != nil {
 				return err
@@ -421,15 +422,12 @@ func (w *WorkerService) failure(ctx context.Context, wk Work, perr *ProcessingEr
 
 // FailureRequest — служебная запись ops.processing.failed (эмитент ops, роль
 // worker, AD-45): изделие «обработка остановлена», партиция и потребитель
-// продолжают. id = UUIDv5(NS_ANT, тип ‖ потребитель ‖ изделие ‖ seq) — повтор
-// после сбоя не создаёт второго смысла.
-// TODO(эпик 34): перенести сборку записи в ops.Commands.ReportFailure.
+// продолжают. Идентичность и текст записи — правила модуля ops
+// (domain/ops.FailureEventID, FailureMessage): повтор после сбоя не создаёт
+// второго смысла. Другие модули сообщают через порт ops.Reporter.ReportFailure.
 func FailureRequest(ctx context.Context, c *Codec, consumer, itemID string, seq int64, trig jc.JournalEntry, cause error) (appjournal.AppendRequest, error) {
-	msg := cause.Error()
-	if len(msg) > 4000 {
-		msg = msg[:4000]
-	}
-	id := kernel.UUIDv5(constants.NsAnt, string(catalog.OpsProcessingFailed)+"\x1f"+consumer+"\x1f"+itemID+"\x1f"+fmt.Sprint(seq))
+	msg := dops.FailureMessage(cause.Error())
+	id := dops.FailureEventID(consumer, itemID, seq)
 	occurred, _ := parseTime(trig.OccurredAt)
 	received, _ := parseTime(trig.ReceivedAt)
 	var run string
@@ -448,6 +446,14 @@ func FailureRequest(ctx context.Context, c *Codec, consumer, itemID string, seq 
 		Batch:   []appjournal.Pending{pend},
 		Effects: []appjournal.Effect{Notify{Changes: []Change{{Entity: platform.EntityItem, ID: itemID, Seq: seq, RunID: run, ReceivedAt: received}}}},
 	}, nil
+}
+
+// runOf — run_id записи для логов (пусто вне прогона).
+func runOf(e jc.JournalEntry) string {
+	if e.RunID == nil {
+		return ""
+	}
+	return *e.RunID
 }
 
 // NopTelemetry — телеметрия-пустышка.

@@ -6,12 +6,12 @@ import (
 	"errors"
 	"net"
 	"net/http"
-	"sync/atomic"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"ant/cmd/internal/db"
+	opsapp "ant/internal/application/ops"
 	"ant/internal/application/platform"
 	"ant/internal/infrastructure/fixtures/loader"
 	storagefx "ant/internal/infrastructure/storage/fixtures"
@@ -33,23 +33,34 @@ func runAPI(ctx context.Context, env *environment) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	// Самопроверка после старта (FR-109): процесс жив сразу, готов — когда
-	// ответила БД. Пока БД не ответила, /readyz отдаёт 503.
-	var started atomic.Bool
+	// Самопроверка после старта (FR-109, эпик 34): процесс жив сразу; готов —
+	// когда ответила БД и самопроверка (журнал, генезис, миграции, роли) не
+	// нашла критических ошибок. До итога и при критических находках /readyz — 503.
+	var selfcheck selfCheckState
+	var opsSvc *opsapp.Service
+	opsReady := make(chan struct{})
 	go func() {
 		if err := db.WaitReady(ctx, pool, 2*time.Minute); err != nil {
 			log.Error("самопроверка: БД не ответила", "err", err)
 			return
 		}
-		started.Store(true)
-		log.Info("самопроверка пройдена", "check", "db")
+		select {
+		case <-opsReady:
+		case <-ctx.Done():
+			return
+		}
+		v := runSelfCheck(ctx, env, pool)
+		selfcheck.set(v)
+		if opsSvc != nil {
+			opsSvc.SetSelfCheck(v)
+		}
 	}()
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]string{"status": "ok", "version": version})
 	})
-	mux.HandleFunc("GET /readyz", readyHandler(pool, &started))
+	mux.HandleFunc("GET /readyz", readyHandler(pool, &selfcheck))
 	// Операции всех модулей (AD-20, AD-36); неизвестный путь /api/ — 404 problem+json.
 	opts := apiOptions{mode: platform.Mode(cfg.Ports.Mode), moduleModes: moduleModes(cfg.Ports.Modules)}
 	// Вход, сеансы и права (эпик 08): порт входа, проекция политики, Casbin.
@@ -167,7 +178,18 @@ func runAPI(ctx context.Context, env *environment) error {
 			return err
 		}
 	}
+	if modeOf(opts, "ops") == platform.ModeLive {
+		// Эпик 34: состояние компонентов, остановленные изделия, настройки.
+		if opts.ops, err = opsLive(ctx, env, pool, opts.ingest); err != nil {
+			close(opsReady)
+			return err
+		}
+		opsSvc = opts.ops
+	}
+	close(opsReady)
 	api := buildAPI(mux, opts)
+	// Метрики процесса (FR-41, FR-113, AD-35): приём, воркер, живые обновления, ops.
+	mux.Handle("GET /metrics", env.metricsHandler(opts.ops))
 	attachSimulation(env, opts.simulation, simProxy, api, mux)
 	mux.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/problem+json")
@@ -216,26 +238,13 @@ func runAPI(ctx context.Context, env *environment) error {
 	return nil
 }
 
-// readyHandler — готовность: самопроверка пройдена и БД отвечает сейчас.
-func readyHandler(pool *pgxpool.Pool, started *atomic.Bool) http.HandlerFunc {
+// readyHandler — готовность: итог самопроверки после старта и ответ БД сейчас.
+func readyHandler(pool *pgxpool.Pool, sc *selfCheckState) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		checks := map[string]string{"selfcheck": "ok", "db": "ok"}
-		code := http.StatusOK
-		if !started.Load() {
-			checks["selfcheck"] = "pending"
-			code = http.StatusServiceUnavailable
-		}
 		ctx, cancel := context.WithTimeout(r.Context(), time.Second)
 		defer cancel()
-		if err := pool.Ping(ctx); err != nil {
-			checks["db"] = "unavailable"
-			code = http.StatusServiceUnavailable
-		}
-		status := "ready"
-		if code != http.StatusOK {
-			status = "not_ready"
-		}
-		writeJSON(w, code, map[string]any{"status": status, "checks": checks})
+		code, body := readyView(sc.get(), pool.Ping(ctx))
+		writeJSON(w, code, body)
 	}
 }
 

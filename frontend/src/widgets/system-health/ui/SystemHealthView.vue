@@ -35,7 +35,7 @@ const emit = defineEmits<{ retry: [item: StoppedItem] }>()
 const { t, te, d, n } = useI18n()
 const problemText = useProblemText()
 
-const TONE: Record<string, StatusTone> = { ok: 'success', degraded: 'attention', down: 'danger', not_implemented: 'muted', unknown: 'neutral', intact: 'success', intact_with_caveats: 'attention', violated: 'critical' }
+const TONE: Record<string, StatusTone> = { ok: 'success', degraded: 'attention', down: 'danger', not_implemented: 'muted', disabled: 'muted', unknown: 'neutral', intact: 'success', intact_with_caveats: 'attention', violated: 'critical' }
 const color = (code: string) => statusPalette[TONE[code] ?? 'neutral']
 const time = (iso: string | null | undefined) => (iso ? d(new Date(iso), 'dateTime') : '—')
 const completeness = computed(() => (props.metrics ? n(props.metrics.completeness_bp / 10000, 'percent') : ''))

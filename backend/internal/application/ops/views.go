@@ -25,12 +25,14 @@ type QueueState struct {
 	Scope   string `json:"scope" enum:"partition,global,outbox"`
 	LagSeq  int64  `json:"lag_seq" minimum:"0" doc:"Отставание курсора от головы журнала."`
 	Pending int64  `json:"pending" minimum:"0"`
+	// Quarantined — у очереди исходящих: сообщений в карантине (ждут решения человека).
+	Quarantined *int64 `json:"quarantined,omitempty" minimum:"0" doc:"Очередь исходящих: сообщений в карантине (ждут решения человека, FR-96)."`
 }
 
 // IntegrationState — состояние интеграции (ops.integration.degraded).
 type IntegrationState struct {
 	System string     `json:"system" enum:"onec,galaktika,mes,kompas,skud,ca,partner"`
-	State  string     `json:"state" enum:"ok,degraded"`
+	State  string     `json:"state" enum:"ok,degraded,disabled" doc:"disabled — система не включена (integrations.enabled) или канал выключен."`
 	Detail *string    `json:"detail,omitempty"`
 	Since  *time.Time `nullable:"true" json:"since"`
 }
@@ -54,6 +56,23 @@ type OpsHealth struct {
 	Profile        string             `json:"profile" enum:"fixtures,demo,load,prod"`
 	Mode           platform.Mode      `json:"mode"`
 	Version        string             `json:"version"`
+	SelfCheck      *SelfCheckView     `json:"selfcheck,omitempty" doc:"Самопроверка после старта этой копии api (FR-109)."`
+}
+
+// SelfCheckFinding — находка самопроверки.
+type SelfCheckFinding struct {
+	Check    string `json:"check" enum:"journal,genesis,migrations,db_roles,roles"`
+	Severity string `json:"severity" enum:"critical,warning"`
+	Text     string `json:"text"`
+}
+
+// SelfCheckView — итог самопроверки после старта (FR-109, AD-25): журнал,
+// генезис, миграции, роли БД и процесса.
+type SelfCheckView struct {
+	OK        bool               `json:"ok" doc:"Критических находок нет."`
+	Summary   string             `json:"summary" doc:"«инициализация без критических ошибок» или перечень критических находок."`
+	Findings  []SelfCheckFinding `json:"findings"`
+	CheckedAt time.Time          `json:"checked_at"`
 }
 
 // StoppedItem — изделие, обработка которого остановлена ошибкой свёртки или
@@ -90,9 +109,20 @@ type ModuleMode struct {
 
 // SettingList — настройки адаптеров и режимов (FR-127).
 type SettingList struct {
-	Ports   []PortSetting `json:"ports"`
-	Modules []ModuleMode  `json:"modules"`
-	Enabled []string      `json:"enabled_integrations" doc:"Включённые внешние системы (stand-ы или реальные адаптеры)."`
+	Ports   []PortSetting  `json:"ports"`
+	Modules []ModuleMode   `json:"modules"`
+	Enabled []string       `json:"enabled_integrations" doc:"Включённые внешние системы (stand-ы или реальные адаптеры)."`
+	Sources []SourceSwitch `json:"sources,omitempty" doc:"Источники, которые отключали или включали (ops.source.disabled / enabled)."`
+}
+
+// SourceSwitch — последнее решение об источнике событий (AD-28).
+type SourceSwitch struct {
+	SourceID string    `json:"source_id"`
+	Enabled  bool      `json:"enabled"`
+	Reason   string    `json:"reason"`
+	Actor    string    `json:"actor,omitempty" doc:"Кто решил (псевдоним)."`
+	At       time.Time `json:"at"`
+	Seq      int64     `json:"seq" doc:"basis_seq для следующей команды над источником (AD-39)."`
 }
 
 // OpsReason — основание решения: код и текст.

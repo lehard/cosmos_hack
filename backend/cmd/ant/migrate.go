@@ -59,7 +59,7 @@ func runMigrate(ctx context.Context, env *environment) error {
 	if err != nil {
 		return err
 	}
-	applied, err := migrator.Up(ctx, pool.Config().ConnConfig, env.log, migrationSets...)
+	applied, err := migrator.Up(ctx, pool.Config().ConnConfig, env.moduleLog("journal"), migrationSets...)
 	for _, a := range applied {
 		env.log.Info("миграции: применена", "module", a.Module, "version", a.Version, "source", a.Source)
 	}

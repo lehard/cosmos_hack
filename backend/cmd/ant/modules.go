@@ -130,6 +130,9 @@ type apiOptions struct {
 	// documents — документы-проекции, маршруты подписей, печать с QR
 	// (documents.go, эпик 28); nil — заглушка 501.
 	documents *documentsapp.Service
+	// ops — состояние компонентов, остановленные изделия, настройки
+	// (ops.go, эпик 34); nil — заглушка 501.
+	ops *opsapp.Service
 }
 
 // buildAPI собирает HTTP API: общий декоратор (Gate) над портами прав и входа,
@@ -331,7 +334,14 @@ func buildAPI(mux *http.ServeMux, o apiOptions) *httpapi.API {
 		simulationhttp.Register(a, q, c)
 	}
 	{
-		q, c := pick[opsapp.Queries, opsapp.Commands](a.ModeFor("ops"), opsapp.NewService(), opsfx.New())
+		live := o.ops
+		if live == nil {
+			live = opsapp.NewService()
+		} else {
+			// Режимы ведущих портов модулей — из каталога операций API (ops.setting.list).
+			live.SetModules(func() []opsapp.ModuleMode { return moduleModesOf(a.Actions(), a.ModeFor) })
+		}
+		q, c := pick[opsapp.Queries, opsapp.Commands](a.ModeFor("ops"), live, opsfx.New())
 		opshttp.Register(a, q, c)
 	}
 	return a

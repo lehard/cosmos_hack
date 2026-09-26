@@ -75,7 +75,7 @@ func erpReactor(env *environment, c *core) (*erpapp.Reactor, error) {
 		return nil, err
 	}
 	return &erpapp.Reactor{Consumer: feed.NewConsumer(c.journal, c.leases, c.listener, c.feedOptions(env, "projector")),
-		Codec: c.codec, Store: c.engine, Env: e, Log: env.log.With("module", "erp")}, nil
+		Codec: c.codec, Store: c.engine, Env: e, Log: env.moduleLog("erp")}, nil
 }
 
 // runOutbox — роль outbox (AD-6, AD-7, AD-18): одна копия-лидер по аренде
@@ -108,9 +108,11 @@ func runOutbox(ctx context.Context, env *environment) error {
 	ob := &erpapp.Outbox{
 		Journal:  c.journal,
 		Consumer: feed.NewConsumer(c.journal, c.leases, c.listener, c.feedOptions(env, "outbox")),
-		Codec:    c.codec, Store: erpstore.NewStore(c.pool), Ledger: ledger, Intake: ingestIntake{intake},
+		// Смена состояния канала — ops.integration.degraded через порт ops (эпик 34).
+		Codec: c.codec, Store: channelWatch{OutboxStore: erpstore.NewStore(c.pool), rep: opsReporter(env, c), log: env.moduleLog("ops")},
+		Ledger: ledger, Intake: ingestIntake{intake},
 		Clock: clock.NewJournal(c.journal), Now: c.codec.Now, Retry: retry,
-		Poll: oc.Poll, Recheck: oc.Recheck, PullEvery: oc.PullEvery, Log: env.log.With("module", "erp"),
+		Poll: oc.Poll, Recheck: oc.Recheck, PullEvery: oc.PullEvery, Log: env.moduleLog("erp"),
 	}
 	env.log.Info("outbox: старт", "system", "onec", "endpoint", ledger.Info().Endpoint)
 	return c.leader(env, "outbox").Run(ctx, ob.Run)

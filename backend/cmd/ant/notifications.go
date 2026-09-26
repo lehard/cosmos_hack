@@ -54,9 +54,9 @@ func runScheduler(ctx context.Context, env *environment) error {
 	}
 	s := &notificationsapp.Scheduler{
 		Projections: notificationsstore.New(c.pool), Codec: c.codec,
-		Clock: c.domainClock(), Log: env.log, BatchMax: env.cfg.Journal.BatchMax,
+		Clock: c.domainClock(), Log: env.moduleLog("notifications"), BatchMax: env.cfg.Journal.BatchMax,
 	}
-	integrity := &notificationsapp.Integrity{Journal: c.journal, Log: env.log}
+	integrity := &notificationsapp.Integrity{Journal: c.journal, Log: env.moduleLog("notifications")}
 	checks := []notificationsapp.Check{{Name: "integrity", Every: integrityEvery, Run: integrity.Check}}
 	if ing, err := ingestLive(ctx, env); err != nil {
 		env.log.Warn("планировщик: приём недоступен — проверка полноты выключена", "err", err)

@@ -94,14 +94,14 @@ func runSecurity(ctx context.Context, env *environment) error {
 	}
 	cfg := env.cfg
 	emit := securityapp.Emitter{Journal: c.journal, Enc: securityEncoder(cfg)}
-	subs := []securityapp.Subscriber{securityapp.LogSubscriber{Log: env.log}}
+	subs := []securityapp.Subscriber{securityapp.LogSubscriber{Log: env.moduleLog("security")}}
 	if cfg.Security.ExportFile != "" {
 		// Экспорт во внешний мониторинг ИБ (JSON-строки) — ещё один подписчик
 		// без изменения источников.
 		subs = append(subs, &securityapp.FileExport{Path: filepath.Clean(cfg.Security.ExportFile)})
 	}
 	bus := &securityapp.Bus{Consumer: feed.NewConsumer(c.journal, c.leases, c.listener, c.feedOptions(env, "security")),
-		Journal: c.journal, Subscribers: subs, Log: env.log}
+		Journal: c.journal, Subscribers: subs, Log: env.moduleLog("security")}
 	var wg sync.WaitGroup
 	wg.Go(func() { _ = bus.Run(ctx) })
 	k, err := keeperClient(cfg)
@@ -109,8 +109,8 @@ func runSecurity(ctx context.Context, env *environment) error {
 		env.log.Error("хранитель: сертификат mTLS не загружен", "err", err)
 	}
 	if k != nil {
-		heads := &securityapp.HeadsSender{Journal: c.journal, Keeper: k, Emit: emit, Log: env.log}
-		poll := &securityapp.IntegrityPoller{Journal: c.journal, Keeper: k, Emit: emit, Log: env.log}
+		heads := &securityapp.HeadsSender{Journal: c.journal, Keeper: k, Emit: emit, Log: env.moduleLog("security")}
+		poll := &securityapp.IntegrityPoller{Journal: c.journal, Keeper: k, Emit: emit, Log: env.moduleLog("security")}
 		wg.Go(func() {
 			_ = c.leader(env, "security").Run(ctx, func(ctx context.Context, _ appjournal.Fence) error {
 				var lw sync.WaitGroup

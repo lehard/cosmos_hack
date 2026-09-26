@@ -7,6 +7,7 @@ import type { ComponentState } from './componentState';
 import type { IntegrationState } from './integrationState';
 import type { OpsHealthProfile } from './opsHealthProfile';
 import type { QueueState } from './queueState';
+import type { SelfCheckView } from './selfCheckView';
 import type { VerifierReportRef } from './verifierReportRef';
 
 export interface OpsHealth {
@@ -17,6 +18,8 @@ export interface OpsHealth {
   /** @minimum 0 */
   quarantine_open: number;
   queues: QueueState[];
+  /** Самопроверка после старта этой копии api (FR-109). */
+  selfcheck?: SelfCheckView;
   /**
      * Изделия «обработка остановлена» (AD-45).
      * @minimum 0

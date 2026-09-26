@@ -22,8 +22,8 @@ import (
 //
 // Подпись источника: в профилях demo и fixtures неподписанное принимается с
 // пометкой «подпись не проверялась» (заметка эпика 06) до эпика 05; ключ шлюза
-// и реестр ключей — эпик 05, Prometheus — эпик 34 (Telemetry nil — счётчики
-// только для стола администратора).
+// и реестр ключей — эпик 05; метрики приёма (FR-41) — в телеметрию процесса
+// (/metrics, эпик 34) и в счётчики стола администратора.
 func ingestLive(ctx context.Context, env *environment) (*ingestapp.Service, error) {
 	c, err := env.core(ctx)
 	if err != nil {
@@ -61,6 +61,7 @@ func ingestLive(ctx context.Context, env *environment) (*ingestapp.Service, erro
 			Carriers:    crossitemapp.ProjectedCarriers{Store: c.engine},
 			DomainClock: domain,
 			InfraClock:  clock.System{},
+			Telemetry:   env.telemetry(),
 			// Шина безопасности модуля security (эпик 29) вместо моста эпика 06.
 			Security: securityapp.IngestBus{Enc: securityEncoder(cfg)},
 		}),
