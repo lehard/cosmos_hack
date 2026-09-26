@@ -8,6 +8,7 @@
  * оболочка; своего опроса здесь нет).
  */
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { NTooltip } from 'naive-ui'
 import { formatRunClock, runClockAt, runClockTicking, type RunState } from '@/entities/run'
 import { activeRun } from '@/shared/api/active-run'
 import { useMomentStore } from '@/shared/model/moment'
@@ -20,6 +21,24 @@ const run = computed(() => {
 })
 const visible = computed(() => !moment.isReplay && !!run.value)
 const ticking = computed(() => !!run.value && runClockTicking(run.value))
+
+/** Почему время стоит: кто и что должен сделать (из waiting_for активного прогона) — в подсказке. */
+const WHO: Record<string, string> = {
+  site_foreman: 'мастера',
+  performer: 'сварщика',
+  quality_inspector: 'контролёра ОТК',
+  technologist: 'технолога',
+  chief_welder: 'главного сварщика',
+  head_of_qc: 'начальника ОТК',
+}
+const waitText = computed(() => {
+  const r = activeRun.value
+  if (r?.state === 'paused') return 'Пауза'
+  const w = r?.state === 'waiting_for_decision' ? r.waiting_for : null
+  if (!w) return ''
+  const what = (w.title ?? '').replace(/^[^:«]*:\s*/, '')
+  return `Время стоит — ждём ${WHO[w.role] ?? w.role}${what ? `: ${what}` : ''}`
+})
 
 // Каждый ответ опроса — новая точка отсчёта.
 const observedAt = ref(Date.now())
@@ -50,6 +69,12 @@ const clock = computed(() => {
     <span class="time" data-testid="run-clock-time">{{ clock }}</span>
     <span class="speed" aria-hidden="true">·</span>
     <span class="speed" data-testid="run-clock-speed">×{{ run.speed }}</span>
+    <NTooltip v-if="waitText" placement="bottom">
+      <template #trigger>
+        <span class="halt" tabindex="0" :aria-label="waitText" data-testid="run-clock-wait">⏸</span>
+      </template>
+      {{ waitText }}
+    </NTooltip>
   </span>
 </template>
 
@@ -74,6 +99,11 @@ const clock = computed(() => {
 
 .speed {
   color: var(--ant-text-2);
+}
+
+.halt {
+  color: var(--ant-status-attention-text);
+  cursor: help;
 }
 
 .dot {

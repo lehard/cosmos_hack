@@ -17,7 +17,7 @@ import { naiveSizeOf, type Density } from '@/shared/config/widget'
 import { useProblemText } from '@/shared/i18n/problem'
 import { newCommandId } from '@/shared/lib/command-id'
 import { ActionButton, EmptyState } from '@/shared/ui'
-import { taskActionOf, taskItemLabel, type ProcessTask, type TaskAction } from '../model/actions'
+import { taskActionOf, taskItemLabel, type TaskAction } from '../model/actions'
 import IsolatorMoveConfirm from './IsolatorMoveConfirm.vue'
 
 const props = withDefaults(
@@ -52,10 +52,10 @@ const lastError = ref<{ task: string; error: unknown } | null>(null)
 const acked = reactive<Record<string, { outcome: AcknowledgeTaskOutcome; seq: number }>>({})
 
 /** Действие каждой задачи — по operationId из реестра (model/actions.ts). */
-const actions = computed(() => new Map<string, TaskAction>(props.tasks.map((task) => [task.task_id, taskActionOf(task as ProcessTask)])))
+const actions = computed(() => new Map<string, TaskAction>(props.tasks.map((task) => [task.task_id, taskActionOf(task)])))
 const actionOf = (task: TaskEntry): TaskAction => actions.value.get(task.task_id) ?? { kind: 'ack', ref: task.ref ?? null }
-const itemLabel = (task: TaskEntry) => taskItemLabel(task as ProcessTask)
-const opOf = (task: TaskEntry) => (task as ProcessTask).operation ?? task.kind
+const itemLabel = (task: TaskEntry) => taskItemLabel(task)
+const opOf = (task: TaskEntry) => task.operation_id ?? task.kind
 
 /**
  * Действие исполнителя — на его терминале: если терминал на этом столе, кнопка
@@ -129,7 +129,7 @@ const kindKey = (task: TaskEntry) => (taskNotificationKind(task.kind) === 'decis
       <!-- Своё действие задачи — глаголом (реестр operationId → форма или окно). -->
       <template v-if="isOpenTask(task) && canAct && !acked[task.task_id] && actionOf(task).kind !== 'ack'">
         <template v-for="a in [actionOf(task)]" :key="a.kind">
-          <ReceiveAction v-if="a.kind === 'form' && a.form === 'receive'" :item-id="a.itemId" :basis-seq="basisSeq" data-testid="task-receive" />
+          <ReceiveAction v-if="a.kind === 'form' && a.form === 'receive'" :item-id="a.itemId" :basis-seq="basisSeq" :to-location-id="(task as unknown as { location_id?: string | null }).location_id ?? null" data-testid="task-receive" />
           <template v-else-if="a.kind === 'form' && a.form === 'isolator_move'">
             <div v-if="moving !== task.task_id" class="line">
               <ActionButton :size="size" type="primary" secondary :label="t(a.verbKey)" data-testid="open-isolator-move" @click="moving = task.task_id" />
