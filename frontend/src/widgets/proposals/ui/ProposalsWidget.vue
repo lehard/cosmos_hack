@@ -28,7 +28,6 @@ const session = useSession()
 const q = useSuggestions()
 const list = computed(() => q.data.value?.data ?? null)
 const items = computed(() => list.value?.items ?? [])
-const generators = computed(() => list.value?.generators ?? [])
 
 const { open, setOpen } = useOpenRecord(['suggestion'] as const)
 const current = computed(() => (open.value ? (items.value.find((s) => s.suggestion_id === open.value?.id) ?? null) : null))
@@ -49,7 +48,6 @@ async function generate(): Promise<void> {
 
 const time = (iso: string) => d(new Date(iso), 'dateTime')
 const role = (r?: string | null) => (r ? t(`widgets.suggestions.role.${r}`) : '—')
-const genKey = (id: string) => `widgets.suggestions.generator.${id.replace(/\./g, '_')}`
 </script>
 
 <template>
@@ -116,14 +114,6 @@ const genKey = (id: string) => `widgets.suggestions.generator.${id.replace(/\./g
         </DataTable>
       </SectionPanel>
 
-      <SectionPanel variant="subtle" :title="t('widgets.suggestions.generatorsTitle')" :subtitle="t('widgets.suggestions.generatorsSubtitle')">
-        <ul class="generators">
-          <li v-for="g in generators" :key="g.id" :data-generator="g.id" :data-connected="g.connected">
-            <span class="ant-wrap">{{ $te(genKey(g.id)) ? t(genKey(g.id)) : g.id }}</span>
-            <span class="muted">{{ g.connected ? t('widgets.suggestions.connected') : t('widgets.suggestions.notConnected') }}</span>
-          </li>
-        </ul>
-      </SectionPanel>
     </div>
     <SuggestionDrawer :suggestion="current" :density="density" @close="setOpen(null)" />
   </WidgetFrame>
@@ -171,19 +161,7 @@ const genKey = (id: string) => `widgets.suggestions.generator.${id.replace(/\./g
   font-size: var(--ant-fs-meta);
 }
 
-.generators {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
 
-.generators li {
-  display: flex;
-  gap: var(--ant-space-3);
-  justify-content: space-between;
-  padding: var(--ant-space-1) 0;
-  border-bottom: 1px solid var(--ant-border);
-}
 
 .status {
   font-size: var(--ant-fs-meta);

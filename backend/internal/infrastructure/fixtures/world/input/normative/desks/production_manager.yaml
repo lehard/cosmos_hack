@@ -25,7 +25,7 @@ tabs:
     title_key: desks.posts
     layout: single
     slots:
-      - {id: posts, area: main, widget: posts}
+      - {id: posts, area: main, widget: posts, slice: {exceptions_first: true}}
   - id: proposals
     title_key: desks.proposals
     layout: single
