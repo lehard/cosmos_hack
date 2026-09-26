@@ -34,6 +34,10 @@ import (
 // defaultSimTick — период раннера прогонов, если stands.tick не задан.
 const defaultSimTick = 500 * time.Millisecond
 
+// simBatch — сколько наступивших событий и шагов прогона раннер проводит за
+// один шаг (между шагами — сохранение состояния и команды пульта).
+const simBatch = 200
+
 // simHolder — сервис симуляции процесса и сигнал его готовности для роли stands.
 type simHolder struct {
 	once  sync.Once
@@ -157,6 +161,9 @@ func simulationLive(ctx context.Context, env *environment, ingest *ingestapp.Ser
 		Domain:  runStart{c},
 		Profile: env.cfg.Profile,
 		Log:     env.log,
+		// Шаг раннера — небольшими порциями: состояние прогона (шаг, часы,
+		// табло) видно на пульте по ходу, пауза и остановка не ждут конца прогона.
+		Batch: simBatch,
 	})
 	env.log.Info("симуляция: пульт сценариев", "scenarios", dir, "scenario_clock", scenarioClock(env.cfg))
 	return svc, proxy, nil
