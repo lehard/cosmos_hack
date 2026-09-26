@@ -45,7 +45,8 @@ function openPoint(p: ControlChartPoint): void {
 <template>
   <div class="chart">
     <p class="caption">
-      <code>{{ chart.step_key }}</code> · {{ metricName }}
+      <span v-if="chart.step_name" class="ant-wrap" :title="chart.step_key">{{ chart.step_name }}</span>
+      <code v-else>{{ chart.step_key }}</code> · {{ metricName }}
     </p>
     <dl class="limits">
       <div data-limit="upper"><dt>{{ t('widgets.analytics.chart.upper') }}</dt><dd>{{ fmt(chart.upper) }}</dd></div>
