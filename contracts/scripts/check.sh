@@ -5,7 +5,8 @@
 #   диалект JSON Schema и компиляция всех схем; каталог типов (схема и ровно один эмитент у каждого типа);
 #   AsyncAPI 3.0 собран из каталога и валиден; коды ошибок; таблица уровней доверия анализатора;
 #   тест-векторы crypto; контракты собственных процессов; примеры пяти случаев изменения контракта и v1 → v2;
-#   затравка нормативного слоя; BPMN фланца по дескриптору urn:ant:bpmn-ext:1 (step_key у каждого узла).
+#   затравка нормативного слоя; BPMN фланца по дескриптору urn:ant:bpmn-ext:1 (step_key у каждого узла);
+#   openapi.yaml: x-ant-action, классы, эмитенты, соответствие политике (эпик 02) и самопроверка.
 # Нужен Node ≥ 20 на хосте; иначе проверка идёт в контейнере node:24.21.0-slim (docker через `sg docker -c`).
 # Блокировку ~/.cache/cosmo-build.lock скрипт НЕ берёт (её держит make check).
 set -euo pipefail
@@ -13,7 +14,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT"
 SCRIPTS=contracts/scripts
-CHECKS=(lint-schemas check-catalog check-errors check-tables asyncapi check-vectors check-internal check-examples check-normative check-bpmn check-bpmn-js)
+CHECKS=(lint-schemas check-catalog check-errors check-tables asyncapi check-vectors check-internal check-examples check-normative check-bpmn check-bpmn-js check-openapi)
 
 node_ok() {
   command -v node >/dev/null 2>&1 || return 1
@@ -30,6 +31,8 @@ run_checks() {
   for c in "${CHECKS[@]}"; do
     timeout 300 node "$SCRIPTS/$c.mjs" || failed=1
   done
+  # Самопроверка проверки операций (эпик 02): «нет класса» и «чужой тип» краснеют.
+  timeout 300 node "$SCRIPTS/check-openapi.mjs" --selftest || failed=1
   return "$failed"
 }
 

@@ -13,6 +13,14 @@ type Queries interface {
 	// на изменения сущностей после seq в пределах прогона (LISTEN/NOTIFY несёт
 	// только сигнал «есть новое» с seq, AD-6).
 	Subscribe(ctx context.Context, afterSeq int64, runID string) (Subscription, error)
+	// Entries — журнал событий (journal.entry.list): общий экран, фильтры по изделию, потоку, типу.
+	Entries(ctx context.Context, f EntryFilter, m platform.Moment, p platform.Page) (JournalEntryList, error)
+	// Entry — запись по seq (journal.entry.read).
+	Entry(ctx context.Context, seq int64) (JournalEntryView, error)
+	// Head — голова журнала (journal.head.read).
+	Head(ctx context.Context, m platform.Moment) (JournalHead, error)
+	// Timeline — диапазон истории и метки таймлайна (journal.timeline.read, FR-4).
+	Timeline(ctx context.Context, m platform.Moment) (TimelineData, error)
 }
 
 // Subscription — открытая подписка на изменения.
@@ -43,6 +51,22 @@ type Unimplemented struct{}
 
 func (Unimplemented) Subscribe(context.Context, int64, string) (Subscription, error) {
 	return nil, platform.NotImplemented("journal.stream.subscribe")
+}
+
+func (Unimplemented) Entries(context.Context, EntryFilter, platform.Moment, platform.Page) (JournalEntryList, error) {
+	return JournalEntryList{}, platform.NotImplemented("journal.entry.list")
+}
+
+func (Unimplemented) Entry(context.Context, int64) (JournalEntryView, error) {
+	return JournalEntryView{}, platform.NotImplemented("journal.entry.read")
+}
+
+func (Unimplemented) Head(context.Context, platform.Moment) (JournalHead, error) {
+	return JournalHead{}, platform.NotImplemented("journal.head.read")
+}
+
+func (Unimplemented) Timeline(context.Context, platform.Moment) (TimelineData, error) {
+	return TimelineData{}, platform.NotImplemented("journal.timeline.read")
 }
 
 var (

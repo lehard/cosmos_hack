@@ -1,4 +1,3 @@
-/* eslint-disable */
 // СГЕНЕРИРОВАНО contracts/scripts/gen-ts.mjs (make generate) — руками не править (AD-20).
 // Источник: contracts/events/catalog.yaml
 

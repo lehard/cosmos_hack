@@ -119,3 +119,32 @@ type Desk struct {
 	HelpKey  string    `json:"help_key,omitempty" doc:"Раздел встроенной справки роли."`
 	Tabs     []DeskTab `json:"tabs" minItems:"1"`
 }
+
+// PostPerson — назначенный на пост сотрудник (псевдоним, «Соглашения/Идентификаторы»).
+type PostPerson struct {
+	PersonID string `json:"person_id"`
+	Display  string `json:"display"`
+}
+
+// PostItem — текущее изделие на посту.
+type PostItem struct {
+	ItemID string `json:"item_id"`
+	Label  string `json:"label"`
+}
+
+// PostRow — строка панели «Посты» (PRD §3a, FR-6, FR-81): участок — кто
+// назначен — на месте ли (СКУД, ключ вставлен) — текущее изделие. Данных нет —
+// «unknown», а не «на месте».
+type PostRow struct {
+	WorkplaceID string      `json:"workplace_id"`
+	Station     string      `json:"station" doc:"Участок (пост) — подпись."`
+	Workshop    string      `json:"workshop,omitempty" doc:"Цех (FR-130)."`
+	Assigned    *PostPerson `json:"assigned,omitempty" doc:"Нет — никто не назначен."`
+	Presence    string      `json:"presence" enum:"present,key_missing,owner_absent,absent,not_assigned,unknown" doc:"На месте; по СКУД на месте, но ключ не вставлен; ключ вставлен, а владельца нет в зоне; нет ни в зоне, ни ключа; никто не назначен; неизвестно."`
+	CurrentItem *PostItem   `json:"current_item,omitempty" doc:"Нет — на посту нет изделия."`
+}
+
+// PostList — посты в области.
+type PostList struct {
+	Items []PostRow `json:"items"`
+}
