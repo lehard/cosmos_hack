@@ -275,6 +275,11 @@ func buildAPI(mux *http.ServeMux, o apiOptions) *httpapi.API {
 				accessapp.WithAccounts(x.creds, x.hasher), accessapp.WithDecisions(x.decisions, x.now))
 			// Эпик 26: документ выдачи прав и карточки редких подписантов — по
 			// живому модулю documents (маршрут подписей, AD-43, FR-136).
+			// Посты, назначения и факты исполнителя — живые в режиме live модуля
+			// access (в режиме fixtures панель «Посты» — у заготовок).
+			if a.ModeFor("access") == platform.ModeLive {
+				opts = append(opts, accessapp.WithLiveRoster(x.facts))
+			}
 			if o.documents != nil && a.ModeFor("documents") == platform.ModeLive {
 				bridge := accessapp.DocumentsBridge{Docs: o.documents}
 				opts = append(opts, accessapp.WithGrantDocuments(bridge))

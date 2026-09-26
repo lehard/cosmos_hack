@@ -9,6 +9,7 @@ import (
 
 	"ant/cmd/internal/config"
 	accessapp "ant/internal/application/access"
+	itemapp "ant/internal/application/item"
 	accessdom "ant/internal/domain/access"
 	"ant/internal/infrastructure/fixtures/world"
 	"ant/internal/infrastructure/security/casbin"
@@ -30,6 +31,8 @@ type accessBundle struct {
 	creds     accessapp.CredentialStore
 	hasher    accessapp.PasswordHasher
 	decisions accessapp.DecisionWriter
+	// facts — запись фактов исполнителя (терминал, FR-137) в журнал ядра (эпик 26).
+	facts itemapp.Writer
 	// now — доменное «сейчас» (AD-37) для сроков полномочий и записей решений.
 	now func(ctx context.Context) (time.Time, error)
 }
@@ -85,6 +88,7 @@ func accessLive(ctx context.Context, env *environment) (*accessBundle, error) {
 	b.events = accessstore.NewSecurityBus(c.journal, c.codec)
 	b.creds = accessstore.NewCredentials(c.pool)
 	b.decisions = accessapp.JournalDecisions{Journal: c.journal, DomainBuild: c.codec.DomainBuild, Now: c.codec.Now}
+	b.facts = c.itemWriter(env)
 
 	switch cfg.Ports.Adapters["identity_provider"] {
 	case "demo":

@@ -316,3 +316,5 @@ func TestCardOnlyAndExplain(t *testing.T) {
 		t.Fatal("json")
 	}
 }
+
+func jsonMarshal(v any) ([]byte, error) { return json.Marshal(v) }

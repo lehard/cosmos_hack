@@ -85,6 +85,8 @@ var operationOf = map[catalog.Type]string{
 	catalog.PolicyRoleUnassigned: "access.policy.revoke", catalog.PolicyAuthorityRevoked: "access.policy.revoke", catalog.PolicyStampRevoked: "access.policy.revoke",
 	catalog.PolicyAuditParametersSet: "access.audit.set_parameters", catalog.AccessPersonRegistered: "access.person.register",
 	catalog.AccessAccountActivated: "access.account.activate",
+	catalog.AccessAssignmentSet:    "access.assignment.set", catalog.AccessAssignmentCleared: "access.assignment.clear",
+	catalog.AccessQualificationGranted: "access.qualification.grant", catalog.AccessQualificationRevoked: "access.qualification.revoke",
 }
 
 // authorityOf — проверка одной записи по политике pol до неё.

@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	itemapp "ant/internal/application/item"
 	"ant/internal/application/platform"
 	"ant/internal/contracts/catalog"
 	"ant/internal/contracts/errcodes"
@@ -37,6 +38,10 @@ type Service struct {
 	decisions DecisionWriter
 	// grants — документы выдачи прав (маршрут подписей documents, эпик 26).
 	grants GrantDocuments
+	// live — модуль access в режиме live (панель «Посты», факты исполнителя);
+	// facts — запись фактов исполнителя в журнал.
+	live  bool
+	facts itemapp.Writer
 	// now — доменное «сейчас» (DomainClock, AD-37).
 	now func(ctx context.Context) (time.Time, error)
 }

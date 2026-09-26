@@ -24,6 +24,7 @@ import (
 	"path"
 	"sort"
 	"strings"
+	"time"
 
 	"go.yaml.in/yaml/v3"
 
@@ -91,6 +92,13 @@ type policyFile struct {
 			Scope    string `yaml:"scope"`
 			OrderRef string `yaml:"order_ref"`
 		} `yaml:"stamps"`
+		Qualifications []struct {
+			Person         string    `yaml:"person"`
+			Qualification  string    `yaml:"qualification"`
+			Scope          string    `yaml:"scope"`
+			ValidUntil     time.Time `yaml:"valid_until"`
+			CertificateRef string    `yaml:"certificate_ref"`
+		} `yaml:"qualifications"`
 	} `yaml:"grants"`
 }
 
@@ -156,6 +164,10 @@ func LoadSeed(fsys fs.FS) (accessdom.Seed, error) {
 	for _, st := range pf.Grants.Stamps {
 		s.Stamps = append(s.Stamps, accessdom.Stamp{StampID: st.StampID, PersonID: st.Person, Kind: st.Kind, Scope: st.Scope, OrderRef: st.OrderRef})
 	}
+	for _, q := range pf.Grants.Qualifications {
+		s.Qualifications = append(s.Qualifications, accessdom.Qualification{PersonID: q.Person, QualificationID: q.Qualification, Scope: q.Scope,
+			CertificateRef: q.CertificateRef, ValidUntil: q.ValidUntil})
+	}
 	return s, nil
 }
 
@@ -193,6 +205,46 @@ func LoadPlaces(fsys fs.FS) (Places, error) {
 	return out, nil
 }
 
+// loadWorkplaces — рабочие места справочника мест с цехом (первый предок
+// вида workshop); нет справочника — пусто.
+func loadWorkplaces(fsys fs.FS) ([]access.WorkplaceRef, error) {
+	b, err := fs.ReadFile(fsys, LocationsFile)
+	if err != nil {
+		return nil, nil
+	}
+	var f struct {
+		Locations []struct {
+			ID     string `yaml:"id"`
+			Kind   string `yaml:"kind"`
+			Scope  string `yaml:"scope"`
+			Parent string `yaml:"parent"`
+			Name   string `yaml:"name"`
+		} `yaml:"locations"`
+	}
+	if err := yaml.Unmarshal(b, &f); err != nil {
+		return nil, fmt.Errorf("%s: %w", LocationsFile, err)
+	}
+	kind, parent := map[string]string{}, map[string]string{}
+	for _, l := range f.Locations {
+		kind[l.ID], parent[l.ID] = l.Kind, l.Parent
+	}
+	var out []access.WorkplaceRef
+	for _, l := range f.Locations {
+		if l.Kind != "workplace" {
+			continue
+		}
+		w := access.WorkplaceRef{ID: l.ID, Name: l.Name, Scope: l.Scope}
+		for p, n := l.Parent, 0; p != "" && n < 10; p, n = parent[p], n+1 {
+			if kind[p] == "workshop" {
+				w.Workshop = p
+				break
+			}
+		}
+		out = append(out, w)
+	}
+	return out, nil
+}
+
 // LoadDirectory читает стартовую политику и столы ролей из fsys (корень
 // репозитория или встроенная копия нормативного слоя).
 func LoadDirectory(fsys fs.FS) (*access.Directory, error) {
@@ -216,6 +268,9 @@ func LoadDirectory(fsys fs.FS) (*access.Directory, error) {
 			return nil, fmt.Errorf("%s: у сотрудника %s неизвестная роль %q", PolicyFile, p.ID, p.Roles[0].Role)
 		}
 		d.Personas = append(d.Personas, access.DemoPersona{ID: p.ID, Name: p.Name, Role: role, Scope: p.Roles[0].Scope})
+	}
+	if d.Workplaces, err = loadWorkplaces(fsys); err != nil {
+		return nil, err
 	}
 	names, err := fs.Glob(fsys, DesksGlob)
 	if err != nil {

@@ -32,6 +32,8 @@ var Types = []catalog.Type{
 	catalog.PolicyAuthorityGranted, catalog.PolicyAuthorityRevoked,
 	catalog.PolicyStampIssued, catalog.PolicyStampRevoked, catalog.PolicyAuditParametersSet,
 	catalog.AccessPersonRegistered, catalog.AccessAccountActivated,
+	catalog.AccessQualificationGranted, catalog.AccessQualificationRevoked,
+	catalog.AccessAssignmentSet, catalog.AccessAssignmentCleared,
 }
 
 // Apply — свёртка политики (AD-15: источник правды — журнал): применяет
@@ -41,6 +43,9 @@ var Types = []catalog.Type{
 func (p *Policy) Apply(r Record) error {
 	if r.Seq > p.Seq {
 		p.Seq = r.Seq
+	}
+	if ok, err := p.applyRoster(r); ok {
+		return err
 	}
 	switch catalog.Type(r.Type) {
 	case catalog.PolicyRoleDefined:

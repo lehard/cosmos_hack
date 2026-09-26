@@ -27,8 +27,11 @@ type GrantDocument struct {
 	Template   string
 	// Closed — маршрут закрыт (document.route.closed).
 	Closed bool
-	// Decision — решение документа (accessdom.FormatGrantDecision).
+	// Decision — решение документа (accessdom.FormatGrantDecision; для
+	// согласования контролёра — accessdom.ControllerDecision).
 	Decision string
+	// Subject — объект документа (для согласования контролёра — пост).
+	Subject string
 	// Approvals — засчитанные подписи текущей версии по этапам.
 	Approvals []accessdom.Approval
 }
@@ -66,7 +69,10 @@ func (b DocumentsBridge) GrantDocument(ctx context.Context, documentID string) (
 	if err != nil {
 		return GrantDocument{}, err
 	}
-	g := GrantDocument{DocumentID: v.DocumentID, Template: v.Template, Closed: v.Status == "route_closed", Decision: findGrant(v.Content)}
+	g := GrantDocument{DocumentID: v.DocumentID, Template: v.Template, Closed: v.Status == "route_closed", Decision: findGrant(v.Content), Subject: v.Subject.ID}
+	if d, ok := v.Content["decision"].(string); ok && g.Decision == "" {
+		g.Decision = d
+	}
 	for _, s := range v.Signatures {
 		if s.CurrentVersion && s.Verification != "invalid" {
 			g.Approvals = append(g.Approvals, accessdom.Approval{PersonID: s.SignerPersonID, Stage: s.Stage, At: s.SignedAt})

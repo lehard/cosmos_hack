@@ -15,8 +15,31 @@ type Directory struct {
 	// Desks — столы по id роли, у которой есть свой файл.
 	Desks map[string]Desk
 	// Authorities — полномочия сотрудников (grants.authorities политики):
-	// псевдоним → id полномочий. Рамки (scope, limits) — эпик 26.
+	// псевдоним → id полномочий. Рамки (scope, limits) и сроки — у проекции
+	// политики (accessdom.Policy.HasAuthority, эпик 26).
 	Authorities map[string][]string
+	// Workplaces — рабочие места (посты) из справочника мест: панель «Посты»,
+	// назначения на посты (FR-6, FR-81).
+	Workplaces []WorkplaceRef
+}
+
+// WorkplaceRef — рабочее место (пост) справочника мест.
+type WorkplaceRef struct {
+	ID    string
+	Name  string
+	Scope string
+	// Workshop — цех (location id WS-…), в котором пост.
+	Workshop string
+}
+
+// Workplace — рабочее место по id.
+func (d *Directory) Workplace(id string) (WorkplaceRef, bool) {
+	for _, w := range d.Workplaces {
+		if w.ID == id {
+			return w, true
+		}
+	}
+	return WorkplaceRef{}, false
 }
 
 // HasAuthority — у сотрудника person есть полномочие authority (FR-19, FR-50).

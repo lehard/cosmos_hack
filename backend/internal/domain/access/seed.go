@@ -12,6 +12,8 @@ type Seed struct {
 	Stamps          []Stamp
 	// Catalog — сферы ролей и полномочий, маршрут выдачи, параметры аудита по умолчанию.
 	Catalog Catalog
+	// Qualifications — квалификации затравки (FR-80).
+	Qualifications []Qualification
 }
 
 // SeedPerson — сотрудник затравки с ролями в областях.
@@ -41,5 +43,6 @@ func FromSeed(s Seed) Policy {
 	}
 	p.Authorities = append(p.Authorities, s.Authorities...)
 	p.Stamps = append(p.Stamps, s.Stamps...)
+	p.Qualifications = append(p.Qualifications, s.Qualifications...)
 	return p.Clone()
 }
