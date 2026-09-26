@@ -59,15 +59,21 @@ func (c *Ctx) bracket() []loader.Response {
 		CreatedAt: created, EffectiveFrom: tptr(created), Quorum: quorum}
 	v := processapp.ProcessVersion{VersionID: BracketVersionID, Label: "v1", Status: "active", Hash: digest, Author: ptr("TEC-01"), CreatedAt: created,
 		EffectiveFrom: tptr(created), Quorum: quorum, Elements: []processapp.ProcessElement{}, BasisSeq: c.Seq()}
-	out := []loader.Response{
-		resp("process.live_map.read", lm, "process_id", BracketProcessID),
-		resp("process.live_map.read", lm, "process_version_id", BracketVersionID),
+	out := []loader.Response{}
+	// Карта кронштейна — и с period: иначе ответ основного процесса с period
+	// при равной точности перебил бы process_id (карта кронштейна от периода
+	// не зависит — изделий нет).
+	for _, kind := range periodKinds {
+		out = append(out, resp("process.live_map.read", lm, periodParams(kind, "process_id", BracketProcessID)...),
+			resp("process.live_map.read", lm, periodParams(kind, "process_version_id", BracketVersionID)...))
+	}
+	out = append(out,
 		resp("process.version.list", processapp.ProcessVersionList{Items: []processapp.ProcessVersionSummary{sum}}, "process_id", BracketProcessID),
 		resp("process.version.diff", processapp.ProcessVersionDiff{VersionID: BracketVersionID, AgainstID: BracketVersionID, Entries: []processapp.ProcessDiffEntry{}},
 			"version_id", BracketVersionID),
 		resp("process.version.bpmn", processapp.ProcessBpmn{VersionID: BracketVersionID, Hash: digest, BpmnXML: loader.BlobPrefix + BracketBpmnBlob},
 			"version_id", BracketVersionID),
-	}
+	)
 	for _, n := range order {
 		e := processapp.ProcessElement{ID: n.ID, StepKey: ptr(n.StepKey), Kind: nodeKind(n), Name: n.Name, Properties: map[string]any{}, Next: n.Next}
 		if n.Lane != "" {
