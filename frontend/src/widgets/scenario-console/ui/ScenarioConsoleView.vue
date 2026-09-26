@@ -3,7 +3,8 @@
  * Пульт тестовых сценариев — представление (FR-129, FR-152; AD-26, AD-37, AD-38;
  * кейс §5.1). Слева — список сценариев и конфигурация прогона (изделия, скорость,
  * seed, режим), справа — текущий прогон: состояние, шаг, доменное время,
- * скорость, пауза и продолжение, чего ждёт сценарий, и кнопки цифрового стенда.
+ * скорость, пауза и продолжение, план прогона («сейчас ждём», ближайшие события,
+ * запланированные сбои — Д-85), и кнопки цифрового стенда.
  *
  * Данных не читает и команд не шлёт — только показывает и сообщает о намерениях
  * (контейнер ScenarioConsoleWidget). В воспроизведении (`canAct = false`)
@@ -29,6 +30,7 @@ import {
   type Injection,
   type Run,
   type RunConfig,
+  type RunPlan,
   type RunControlKind,
   type Scenario,
 } from '@/entities/run'
@@ -37,6 +39,7 @@ import type { Density } from '@/shared/config/widget'
 import { codeToKey } from '@/shared/i18n'
 import { useProblemText } from '@/shared/i18n/problem'
 import { ActionButton } from '@/shared/ui'
+import RunPlanPanel from './RunPlanPanel.vue'
 
 const props = withDefaults(
   defineProps<{
@@ -44,6 +47,8 @@ const props = withDefaults(
     selectedScenario?: string | null
     config: RunConfig
     run?: Run | null
+    /** План прогона (`simulation.run.plan`, Д-85); нет — только «ждёт решения». */
+    plan?: RunPlan | null
     injections?: Injection[]
     /** Команды разрешены (не воспроизведение). */
     canAct?: boolean
@@ -55,7 +60,7 @@ const props = withDefaults(
     injected?: number | null
     density?: Density
   }>(),
-  { selectedScenario: null, run: null, injections: () => [], canAct: true, busy: false, error: undefined, injected: null, density: 'comfortable' },
+  { selectedScenario: null, run: null, plan: null, injections: () => [], canAct: true, busy: false, error: undefined, injected: null, density: 'comfortable' },
 )
 const emit = defineEmits<{
   'select-scenario': [id: string]
@@ -231,7 +236,8 @@ function inject(item: Injection): void {
         <NAlert v-if="run.state === 'paused' && !idle" type="info" :bordered="false" :show-icon="false" data-testid="paused">
           {{ t('testStand.pausedState', { time: time(run.clock_at) }) }}
         </NAlert>
-        <NAlert v-if="run.state === 'waiting_for_decision' && run.waiting_for" type="warning" :bordered="false" :show-icon="false" data-testid="waiting">
+        <RunPlanPanel v-if="plan && !idle && plan.run_id === run.run_id" :plan="plan" />
+        <NAlert v-else-if="run.state === 'waiting_for_decision' && run.waiting_for" type="warning" :bordered="false" :show-icon="false" data-testid="waiting">
           <div>{{ t('testStand.waitingForDecision', { role: roleText(run.waiting_for.role), what: actionText(run.waiting_for.action) }) }}</div>
           <div class="muted">{{ t('widgets.scenarios.waitingObject', { object: run.waiting_for.object_id }) }}</div>
           <div class="muted">{{ t('testStand.waitingHint') }}</div>
