@@ -52,6 +52,10 @@ type Env struct {
 	// задачу человеку: реакция сдерживания исчезает, движок пишет задачу
 	// «основание защиты изменилось — пересмотрите» (AD-3), блок в оси остаётся.
 	DelegatedIncidentRelease bool `json:"delegated_incident_release,omitempty"`
+	// Quality — нормативная часть quality (план контроля, шаги предъявления)
+	// для гарда решения на точке предъявления: quality.PresentationBlockers
+	// (FR-35, FR-44). Нулевая — гард без проверки полноты контроля quality.
+	Quality quality.Env `json:"-"`
 }
 
 // Upstream — состояния модулей раньше nonconformity в композиции на этом шаге
@@ -181,7 +185,8 @@ func Reduce(s State, r kernel.Record, env Env, up Upstream) State {
 				if d.FullAnalysisRequired {
 					n.Investigation = InvestigationOpen
 				}
-				s.effect(Effect{Kind: "set_quality", Value: string(statuses.QualityNonconforming)}, r)
+				// Ось «состояние качества» по подтверждению quality ведёт сам:
+				// он читает decision.nonconformity.confirmed (эпик 20).
 			}
 		}
 	case catalog.DecisionSignalRejected:
@@ -189,6 +194,14 @@ func Reduce(s State, r kernel.Record, env Env, up Upstream) State {
 		if decode(r, &d) {
 			s.decision(r, "", "Сигнал отклонён: "+d.Reason.Text)
 			s.Rejections = append(s.Rejections, Rejection{EventID: r.EventID, SignalIDs: slices.Clone(d.SignalIDs), Reason: d.Reason.Text})
+			// Сдерживание правилом, основанное только на отклонённом сигнале,
+			// снимает этим же решением человек (AD-27: разрешающее — человеком).
+			for i := range s.Containment {
+				c := &s.Containment[i]
+				if c.By == ByRule && c.SignalID != "" && slices.Contains(d.SignalIDs, c.SignalID) {
+					c.Released, c.ReleasedBy = true, r.EventID
+				}
+			}
 			// Черновик, все сигналы которого отклонены, закрывается без
 			// решения по изделию; сами сигналы и черновик не меняются (FR-51).
 			for i := range s.NCs {
@@ -303,10 +316,9 @@ func Reduce(s State, r kernel.Record, env Env, up Upstream) State {
 					break
 				}
 			}
-			if d.Resolution == "accept_with_concession" {
-				s.effect(Effect{Kind: "set_quality", Value: string(statuses.QualityAcceptedWithConcession)}, r)
-			}
-			s.effect(Effect{Kind: "advance_presentation", Value: d.Resolution, StepKey: d.StepKey}, r)
+			// Продвижение токена точки (process.AdvancePresentation) и ось
+			// качества по решению на точке ведёт quality: он читает
+			// decision.presentation.resolved сам (эпик 20).
 		}
 	case catalog.DecisionReworkLimitWaived:
 		var d ReworkWaivedData
@@ -324,7 +336,88 @@ func Reduce(s State, r kernel.Record, env Env, up Upstream) State {
 				Rule: RuleCleanPoint, At: r.OccurredAt, Reason: "Точка чистоты после снятия остановки " + d.HoldID})
 		}
 	}
+	s.fromQuality(up, r)
 	return s
+}
+
+// fromQuality — намерения quality, выраженные данными его состояния
+// (quality.State.Requests, AD-40): quality стоит в композиции раньше и не
+// вызывает функции nonconformity, поэтому nonconformity читает запросы через
+// Upstream.Quality на том же шаге свёртки. draft_nc — черновик
+// несоответствия (реакция decision.nonconformity.drafted), contain —
+// сдерживание правилом карты реакций (decision.containment.applied); task —
+// зона notifications.
+func (s *State) fromQuality(up Upstream, r kernel.Record) {
+	if up.Quality == nil || s.ItemID == "" {
+		return
+	}
+	q := up.Quality
+	signal := func(id string) (quality.Signal, bool) {
+		i := slices.IndexFunc(q.Signals, func(sg quality.Signal) bool { return sg.SignalID == id })
+		if i < 0 {
+			return quality.Signal{}, false
+		}
+		return q.Signals[i], true
+	}
+	for _, rq := range q.Requests {
+		if rq.SignalID == "" || s.SignalRejected(rq.SignalID) {
+			continue
+		}
+		ncID := DraftNCID(s.ItemID, []string{rq.SignalID})
+		switch rq.Kind {
+		case quality.RequestDraftNC:
+			if s.nc(ncID) != nil {
+				continue
+			}
+			sg, _ := signal(rq.SignalID)
+			d := DraftedData{NCID: ncID, SignalIDs: []string{rq.SignalID}, BasisKind: basisOf(sg.Basis), Severity: sg.Severity,
+				DefectTypeCode: sg.TypeCode, ZoneID: sg.Zone, StepKey: rq.StepKey, RequirementRef: sg.RequirementRef,
+				ReactionOutcome: outcomeOf(sg.Assessment.Outcome), ReactionMapRef: rq.RuleRef}
+			if d.Severity == "" {
+				d.Severity = "unknown"
+			}
+			s.NCs = append(s.NCs, NC{
+				ID: ncID, Number: NCNumber(ncID), Origin: OriginSignal, FoundAt: r.OccurredAt, Causes: slices.Clone(rq.Causes),
+				From: string(quality.Module), Draft: d, Status: StatusDraft, Investigation: InvestigationNone, Severity: d.Severity,
+				DefectTypeCode: d.DefectTypeCode, RequirementRef: d.RequirementRef, SignalID: rq.SignalID, AutomationMode: rq.AutomationMode,
+			})
+		case quality.RequestContain:
+			key := "quality:" + rq.Key
+			lvl := string(rq.Containment)
+			if levelRank(lvl) == 0 {
+				continue
+			}
+			i := slices.IndexFunc(s.Containment, func(c ContainmentSource) bool { return c.Key == key })
+			if i >= 0 {
+				// Защитное — поднимается само (AD-27); ниже — только человеком.
+				if c := &s.Containment[i]; !c.Released && levelRank(lvl) > levelRank(c.Level) {
+					c.Level, c.Basis = lvl, lvl
+				}
+				continue
+			}
+			s.Containment = append(s.Containment, ContainmentSource{Key: key, Level: lvl, Basis: lvl, By: ByRule,
+				Rule: RuleSignalContainment, NCID: ncID, SignalID: rq.SignalID, At: r.OccurredAt, Causes: slices.Clone(rq.Causes),
+				Reason: "Карта реакций " + rq.RuleRef})
+		}
+	}
+}
+
+// basisOf — основание сигнала quality в перечислении контракта черновика.
+func basisOf(b string) string {
+	switch b {
+	case "inspection_result", "equipment_deviation", "check_skipped", "damage_on_receipt", "leak", "special_process_violation", "operator_report":
+		return b
+	}
+	return "inspection_result"
+}
+
+// outcomeOf — реакция карты в перечислении контракта черновика.
+func outcomeOf(o string) string {
+	switch o {
+	case "pass_to_next", "manual_review", "isolate", "question_to_technologist":
+		return o
+	}
+	return ""
 }
 
 // reduceIncident — FR-62: действие по изделию в области риска инцидента.
@@ -411,15 +504,13 @@ func (s *State) addSource(c ContainmentSource) {
 	s.Containment = append(s.Containment, c)
 }
 
-// releaseNC — основание сдерживания правилом по черновику, закрытому
-// отклонением всех сигналов, уходит (AD-3: защитная реакция не снимается
-// автоматически — блок в оси остаётся до решения человека, движок ставит
-// задачу «основание защиты изменилось — пересмотрите»).
+// releaseNC — черновик закрыт отклонением всех его сигналов: сдерживание
+// правилом по этому черновику снимает то же решение человека (AD-27).
 func (s *State) releaseNC(ncID string) {
 	for i := range s.Containment {
 		c := &s.Containment[i]
-		if c.NCID == ncID && c.By == ByRule {
-			c.Basis = string(statuses.ContainmentNone)
+		if c.NCID == ncID && c.By == ByRule && !c.Released {
+			c.Released = true
 		}
 	}
 }

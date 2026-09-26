@@ -46,6 +46,12 @@ type itemView struct {
 // State — состояние модуля nonconformity изделия.
 func (v *itemView) State() dom.State { return v.Snap.Nonconformity }
 
+// Upstream — состояния модулей раньше nonconformity (для гарда, AD-40).
+func (v *itemView) Upstream() dom.Upstream {
+	s := &v.Snap
+	return dom.Upstream{Item: &s.Item, Process: &s.Process, Vision: &s.Vision, Quality: &s.Quality, Machinelogs: &s.Machinelogs, Documents: &s.Documents}
+}
+
 // Record — запись входа по event_id.
 func (v *itemView) Record(id string) (kernel.Record, bool) {
 	i := slices.IndexFunc(v.Input, func(r kernel.Record) bool { return r.EventID == id })
@@ -131,6 +137,7 @@ func (s *Service) loadItem(ctx context.Context, itemID string, m platform.Moment
 	if isZeroEnv(b.Nonconformity) {
 		b.Nonconformity = s.cfg.Env
 	}
+	b.Nonconformity.Quality = b.Quality
 	v.Env = b.Nonconformity
 	if err := func() (err error) {
 		defer func() {

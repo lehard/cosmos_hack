@@ -163,7 +163,8 @@ func TestUseAsIsNeedsConcessionAndApprovals(t *testing.T) {
 	}
 	j.add(catalog.DecisionNonconformityConfirmed, nc.ConfirmedData{NCID: id, SignalIDs: []string{"SIG-1"}, Severity: "major", Reason: nc.Reason{Text: "подтверждаю"}}, "qc-1")
 	s, out := fold(nc.Env{}, j.recs, intents)
-	if s.NCs[0].Status != nc.StatusConfirmed || len(out.Intents) != 1 || out.Intents[0].Name != quality.IntentSetQuality {
+	// Ось качества по подтверждению quality ведёт сам (читает решение, эпик 20).
+	if s.NCs[0].Status != nc.StatusConfirmed || len(out.Intents) != 0 {
 		t.Fatalf("подтверждение: %+v %+v", s.NCs[0], out.Intents)
 	}
 	if c := code(nc.Guard(s, nc.Env{}, nc.Upstream{}, cmd)); c != errcodes.NonconformityConcessionRequired {

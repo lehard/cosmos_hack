@@ -23,8 +23,9 @@ import (
 //     остаётся до решения человека (AD-27).
 //
 // Намерения — только на шаге своей записи (State.Effects): quality.SetQuality
-// (подтверждение, «годно по разрешению»), process.Isolate (изоляция),
-// process.AdvancePresentation (решение на точке предъявления).
+// («годно по разрешению на отклонение» по исполненному решению, несоответствие
+// спецпроцесса), process.Isolate (изоляция). Подтверждение, отклонение сигнала
+// и решение на точке предъявления quality читает сам (эпик 20).
 func React(s State, env Env, up Upstream) kernel.Output {
 	_, _ = env, up
 	var out kernel.Output
@@ -39,6 +40,7 @@ func React(s State, env Env, up Upstream) kernel.Output {
 		re := must(kernel.NewReaction(Module, catalog.DecisionNonconformityDrafted,
 			kernel.Slot{RuleID: RuleDraft, Subject: subject, TriggerKey: n.ID}, n.Draft, stubs(n.Causes, n.FoundAt)...))
 		re.AutomationMode = 1
+		re.RuleRev = n.Draft.ReactionMapRef
 		out.Reactions = append(out.Reactions, re)
 	}
 	for _, c := range s.Containment {
@@ -73,8 +75,6 @@ func React(s State, env Env, up Upstream) kernel.Output {
 			out.Intents = append(out.Intents, quality.SetQuality(Module, statuses.Quality(e.Value), cause))
 		case "isolate":
 			out.Intents = append(out.Intents, process.Isolate(Module, e.Value, cause))
-		case "advance_presentation":
-			out.Intents = append(out.Intents, process.AdvancePresentation(Module, process.Presentation{StepKey: e.StepKey, Resolution: e.Value}, cause))
 		}
 	}
 	return out

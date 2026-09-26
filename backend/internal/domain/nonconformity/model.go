@@ -92,6 +92,11 @@ type NC struct {
 	// до этого решение режима 4 не исполняется (FR-50).
 	Executed bool `json:"executed,omitempty"`
 
+	// SignalID — сигнал quality, по которому построен черновик; AutomationMode —
+	// режим правила карты реакций (FR-50).
+	SignalID       string `json:"signal_id,omitempty"`
+	AutomationMode int    `json:"automation_mode,omitempty"`
+
 	// Решения людей по несоответствию (event_id записей по порядку).
 	ConfirmedEventID   string `json:"confirmed_event_id,omitempty"`
 	DispositionEventID string `json:"disposition_event_id,omitempty"`
@@ -122,6 +127,10 @@ type ContainmentSource struct {
 	BasisEventID string `json:"basis_event_id,omitempty"`
 	// Causes — записи-основания намерения (для правила из намерения).
 	Causes []string `json:"causes,omitempty"`
+	// SignalID — сигнал quality, на котором основано сдерживание правилом.
+	SignalID string `json:"signal_id,omitempty"`
+	// ReleasedBy — решение человека, снявшее сдерживание.
+	ReleasedBy string `json:"released_by,omitempty"`
 }
 
 // Isolation — изоляция изделия (FR-55): «изоляция» — положение, ждущее
@@ -181,7 +190,7 @@ type Recheck struct {
 // их функции-намерения (AD-30, AD-40). Сбрасывается в начале каждого Reduce:
 // намерение выражается один раз — на шаге своей записи.
 type Effect struct {
-	// Kind — set_quality | isolate | advance_presentation.
+	// Kind — set_quality | isolate.
 	Kind  string `json:"kind"`
 	Value string `json:"value,omitempty"`
 	// StepKey — для advance_presentation.

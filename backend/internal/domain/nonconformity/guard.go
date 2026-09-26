@@ -8,6 +8,7 @@ import (
 	"ant/internal/contracts/errcodes"
 	"ant/internal/contracts/statuses"
 	"ant/internal/domain/kernel"
+	"ant/internal/domain/quality"
 )
 
 // Операции модуля (x-ant-action, AD-40) — ключи гарда.
@@ -75,7 +76,7 @@ func Guard(s State, env Env, up Upstream, cmd kernel.Command) error {
 			return refuse(errcodes.NonconformityInvalidTransition, "action", "изолировать", "nc_id", s.ItemID, "status", "уже в изоляции")
 		}
 	case PresentationResolvedData:
-		return guardPresentation(s, cmd, p)
+		return guardPresentation(s, env, up, cmd, p)
 	case DispositionSetData:
 		n, err := s.mustNC(p.NCID)
 		if err != nil {
@@ -149,7 +150,7 @@ func Guard(s State, env Env, up Upstream, cmd kernel.Command) error {
 	return nil
 }
 
-func guardPresentation(s State, cmd kernel.Command, p PresentationResolvedData) error {
+func guardPresentation(s State, env Env, up Upstream, cmd kernel.Command, p PresentationResolvedData) error {
 	accept := p.Resolution == "accept" || p.Resolution == "accept_with_concession"
 	// FR-56: участник изготовления не принимает изделие на точке предъявления.
 	if accept && cmd.Actor != "" && s.Participant(cmd.Actor) {
@@ -183,10 +184,33 @@ func guardPresentation(s State, cmd kernel.Command, p PresentationResolvedData) 
 			return kernel.Refuse(errcodes.NonconformityMethodResultMissing, "method", "контроля", "inspection_point", p.ClosingPoint)
 		}
 	}
+	// FR-35, FR-44, FR-48: полнота контроля и открытые сигналы участка —
+	// чистая функция quality над его состоянием на basis_seq.
+	if up.Quality != nil && !env.Quality.IsZero() {
+		if bs := quality.PresentationBlockers(*up.Quality, env.Quality, p.StepKey); len(bs) > 0 {
+			b := bs[0]
+			if b.Code == "open_signal" {
+				return kernel.Refuse(errcodes.NonconformityItemBlocked)
+			}
+			return kernel.Refuse(errcodes.NonconformityMethodResultMissing, "method", "контроля ("+blockerText(b.Code)+")", "inspection_point", b.StepKey)
+		}
+	}
 	if p.Resolution == "accept_with_concession" && p.ConcessionID == "" {
 		return kernel.Refuse(errcodes.NonconformityConcessionRequired, "decision", "Принять по разрешению на отклонение")
 	}
 	return nil
+}
+
+func blockerText(code string) string {
+	switch code {
+	case "inspection_missing":
+		return "нет данных"
+	case "inspection_pending":
+		return "результат ещё не получен"
+	case "unable_to_assess":
+		return "оценка невозможна"
+	}
+	return code
 }
 
 // DispositionLabel — вариант решения по-русски (для текста отказа).

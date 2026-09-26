@@ -66,7 +66,7 @@ func (s *Service) onItem(ctx context.Context, v *itemView, c itemCommand) (platf
 	}
 	cmd := kernel.Command{Action: c.Action, CommandID: c.Meta.CommandID, Actor: actor, Object: stream, BasisSeq: basis,
 		PolicySeq: c.Meta.PolicySeq, GuardStreams: []string{stream}, OccurredAt: now, SignatureLevel: 2, Payload: c.Data}
-	if err := dom.Guard(v.State(), v.Env, dom.Upstream{}, cmd); err != nil {
+	if err := dom.Guard(v.State(), v.Env, v.Upstream(), cmd); err != nil {
 		return platform.Receipt{}, err
 	}
 	checks := []appjournal.Check{{Stream: stream, BasisSeq: basis}}
