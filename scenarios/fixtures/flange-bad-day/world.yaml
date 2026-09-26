@@ -1,0 +1,259 @@
+# Мир главной истории «плохой день сварочного участка» (MS-1) — компактное описание.
+# Вход генератора заготовок (backend/internal/infrastructure/fixtures/world, AD-36):
+#   go test ./internal/infrastructure/fixtures/world -update
+# пересобирает отсюда scenario.yaml, steps/NN.yaml и встроенную копию. Руками правится
+# только этот файл; сгенерированное — нет.
+#
+# Сюжет, числа и времена — сценарии S01–S12 и S10-А процессной сессии
+# (process/scenarios-flange.md, scenarios-flange-expected.yaml v0.2.1): те же изделия,
+# область риска 34 → 13 → 6, те же решения и сообщения 1С. Имена — нашего контракта
+# (эпик 00): люди — псевдонимы normative/policy, оборудование и места — normative/reference,
+# статусы — contracts/statuses.yaml, шаги — step_key normative/process.
+# Все изделия, числа, режимы, ID, даты и люди — условные [П], [ПП].
+#
+# Время: «ДД ЧЧ:ММ» — день сентября 2026, московское (+03:00); «ДД ЧЧ:ММ-ЧЧ:ММ» — интервал.
+format: 1
+id: flange-bad-day
+title: "Плохой день сварочного участка: ток ИС-2 вне уставки"
+description: >-
+  Главная история демо (MS-1, Пн 21.09 – Чт 24.09) и сквозной сценарий кейса §1.5:
+  задание 1С на 40 фланцев, эталон Ф-001 выпущен, прожог на Ф-017, область риска 34 → 13 → 6,
+  опоздавший журнал ИС-2, блик «оценка невозможна», входной брак партии колец П-117,
+  решение комиссии «переделка ×6» и «перевод в брак» в 1С, подмена записи, переварка в четверг.
+covers: [S01, S02, S03, S04, S05, S06, S07, S08, S09, S10A, S11, S12]
+case: ["§1.5", "§4.2", "§5.1", "§5.2", "§5.3"]
+enterprise: ENT01
+month: "2026-09"
+tz: "+03:00"
+# Пока пульт не запускал прогон, курсор стоит на «разгаре» — Ср 13:45 (срез ролей §5).
+initial_step: 16
+
+# Локальные ID сценария — им адаптер добавляет префикс прогона (AD-38).
+local_ids: ['F-\d{3}', 'R-\d{3}', 'LOT-[A-Z]+-\d+', 'ORD-\d{4}', 'NC-(\d{2}|G1)', 'RS-\d{2}', 'SIG-[A-Z0-9-]+', 'EV-[A-Z0-9-]+', 'OUT-\d{6}', 'Q-\d{3}', 'TASK-\d{3}', 'RUN-[A-Z0-9-]+']
+
+# Человек сценария процессной сессии → псевдоним нашей политики (normative/policy).
+people:
+  - {ref: "С-02",    person: W21,    workplace: WP-WELD-2, shift: SHIFT-1}
+  - {ref: "С-03",    person: W22,    workplace: WP-WELD-2, shift: SHIFT-2}
+  - {ref: "ОТК-1",   person: INS-01, workplace: WP-QC-WC,  shift: SHIFT-1}
+  - {ref: "ОТК-2",   person: INS-02, workplace: WP-QC-AC,  shift: SHIFT-1}
+  - {ref: "НОТК-01", person: HQC-01}
+  - {ref: "Т-01",    person: TEC-01}
+  - {ref: "ГС-01",   person: CWL-01}
+  - {ref: "М-01",    person: FOR-MC, shift: SHIFT-1}
+  - {ref: "М-02",    person: FOR-WC, shift: SHIFT-1}
+  - {ref: "М-03",    person: FOR-AC, shift: SHIFT-1}
+  - {ref: "Кл-01",   person: STK-51, workplace: WP-VK-1,   shift: SHIFT-1}
+  - {ref: "Д-01",    person: NDT-61, shift: SHIFT-1}
+  - {ref: "ПЗ-01",   person: CR-71}
+  - {ref: "А-01",    person: ADM-01}
+  - {ref: "Сб-01",   person: A31,    workplace: WP-ASM-1,  shift: SHIFT-1}
+  - {ref: "И-01",    person: T41,    workplace: WP-LEAK-1, shift: SHIFT-1}
+  - {ref: "О-11",    person: O17,    workplace: WP-CNC-1,  shift: SHIFT-1}
+  - {ref: "О-12",    person: O18,    workplace: WP-CNC-1,  shift: SHIFT-2}
+  - {ref: "—",       person: PM-01}
+  - {ref: "—",       person: AUD-01}
+
+# Две линии ФЛ-100 расходятся только на сварке (процессная сессия §2.4); в справочнике
+# normative/reference пока одна линия LINE-FL — нужна правка эпика 19 (см. отчёт эпика 09).
+lines:
+  - {id: LINE-FL-1, name: "Линия ФЛ-100 № 1", post: WP-WELD-1, source: IS-1}
+  - {id: LINE-FL-2, name: "Линия ФЛ-100 № 2", post: WP-WELD-2, source: IS-2}
+
+suppliers:
+  - {id: SUP-1, name: "Поставщик-1 (заготовки)"}
+  - {id: SUP-2, name: "Поставщик-2 (кольца)"}
+  - {id: SUP-3, name: "Поставщик-3 (кольца)"}
+  - {id: SUP-4, name: "Поставщик-4 (крышки)"}
+  - {id: SUP-5, name: "Поставщик-5 (уплотнения)"}
+  - {id: SUP-6, name: "Поставщик-6 (крепёж)"}
+  - {id: SUP-7, name: "Поставщик-7 (сварочная проволока)"}
+
+orders:
+  - {id: ORD-0917, label: "ЗП-0917", qty: 40, due: "2026-10-09", received: "14 09:00", items: "F-001..F-040", erp_ref: "ord-5c2b-0917"}
+  - {id: ORD-0911, label: "ЗП-0911", qty: 24, due: "2026-09-30", received: "07 09:00", items: "F-201..F-224", erp_ref: "ord-5c2b-0911"}
+
+lots:
+  - {id: LOT-ZF-201, label: "ЗФ-201", item_type: FL-100.01.001, qty: 42,  supplier: SUP-1, heat: "5512", cert: "С-201", received: "17 08:00", accepted: "17 11:00"}
+  - {id: LOT-R-109,  label: "П-109",  item_type: FL-100.01.002, qty: 24,  supplier: SUP-2, cert: "С-109", received: "08 08:00", accepted: "08 11:00", rings: "R-901..R-924"}
+  - {id: LOT-R-116,  label: "П-116",  item_type: FL-100.01.002, qty: 33,  supplier: SUP-2, cert: "С-116", received: "17 08:00", accepted: "17 11:20", rings: "R-001..R-033"}
+  - {id: LOT-R-117,  label: "П-117",  item_type: FL-100.01.002, qty: 10,  supplier: SUP-3, cert: "С-117", received: "22 08:00", accepted: "22 11:00", rings: "R-101..R-110"}
+  - {id: LOT-C-301,  label: "КР-301", item_type: FL-100.00.003, qty: 40,  supplier: SUP-4, received: "17 08:00", accepted: "17 11:40"}
+  - {id: LOT-SL-401, label: "УП-401", item_type: FL-100.00.004, qty: 50,  supplier: SUP-5, received: "17 08:00", accepted: "17 12:00"}
+  - {id: LOT-FS-501, label: "КП-501", item_type: FL-100.00.005, qty: 500, supplier: SUP-6, received: "17 08:00", accepted: "17 12:20"}
+  - {id: LOT-W-88,   label: "П-88",   item_type: WIRE,          qty: 1,   supplier: SUP-7, received: "21 08:00", accepted: "21 08:00"}
+
+# Фоновый заказ ЗП-0911: Ф-201…Ф-220 сварены 14–18.09 (по 10 у каждого сварщика) и выпущены —
+# история для сравнения сопоставимых работ (кейс §5.2). Раскладку по дням строит генератор.
+background: {items: "F-201..F-220", welders: [W21, W22], sources: [IS-1, IS-2], from: "14 09:00", released_by: "18 15:00"}
+
+# Изделия главного потока. Мехобработка (ЧПУ-1, по 20 мин с Пт 10:05; Ф-001 — 09:00–10:02),
+# ЗТ-2, отправка в СЦ (Пн 07:50), подготовка кромок, КТ-3 и промежуточные узлы генератор
+# ставит сам; здесь — то, что задаёт сюжет. Кольца П-116 раздаются по порядку, П-117 — явно.
+# weld — сварка (источник src, сварщик welder); xray — заключение РК; zt3 — ЗТ-3; to_ac — рейс
+# в СИЦ; asm — сборка; zt4; test — испытание; zt5; kt5; zt6; rel — выпуск.
+items:
+  - {id: F-001, weld: "21 09:00-09:45", src: IS-2, welder: W21, xray: "21 13:00", zt3: "21 14:00", to_ac: "21 16:00", asm: "22 09:10-10:20", zt4: "22 10:30", test: "22 13:00-14:00", zt5: "22 14:30", kt5: "23 09:30", zt6: "23 10:15", rel: "23 10:30", reference: true}
+  - {id: F-002, weld: "21 10:00-10:40", src: IS-1, welder: W21, xray: "21 13:20", zt3: "21 14:20", to_ac: "21 16:00", asm: "22 10:40-11:18", zt4: "22 11:40", test: "22 14:30-15:30", zt5: "22 15:45", kt5: "23 11:00"}
+  - {id: F-003, weld: "21 10:50-11:30", src: IS-1, welder: W21, xray: "21 13:40", zt3: "21 14:40", to_ac: "21 16:00", asm: "22 11:45-12:30", zt4: "22 12:40", test: "22 15:30-16:20", zt5: "22 16:25", kt5: "23 11:10"}
+  - {id: F-004, weld: "21 11:40-12:20", src: IS-2, welder: W21, xray: "21 14:00", zt3: "21 15:00", to_ac: "21 16:00", asm: "22 13:00-14:20", zt4: "22 14:30", test: "23 08:30-09:30", zt5: "23 09:45", kt5: "23 11:20"}
+  - {id: F-005, weld: "21 12:30-13:10", src: IS-1, welder: W21, xray: "21 14:20", zt3: "21 15:20", to_ac: "21 16:00", asm: "22 14:30-15:50", zt4: "22 16:00", test: "23 09:30-10:30", zt5: "23 10:45", kt5: "23 11:30"}
+  - {id: F-006, weld: "21 14:10-14:55", src: IS-2, welder: W21, xray: "21 15:30", zt3: "21 16:10", to_ac: "22 14:00", asm: "23 08:00-09:20", zt4: "23 09:30", test: "23 13:40-14:40", zt5: "23 14:50", kt5: "23 15:30", anchor: true}
+  - {id: F-007, weld: "21 15:00-15:35", src: IS-1, welder: W21, xray: "22 09:30", zt3: "22 10:30", to_ac: "22 14:00", asm: "23 12:40-14:00", zt4: "23 14:10", test: "24 08:30-09:30", zt5: "24 09:45", kt5: "24 10:30"}
+  - {id: F-008, weld: "21 15:40-16:20", src: IS-2, welder: W21, xray: "22 10:00", zt3: "22 11:00", to_ac: "22 14:00", asm: "23 14:00-15:20", zt4: "23 15:30", test: "24 09:30-10:30", zt5: "24 10:45"}
+  - {id: F-009, weld: "21 16:40-17:15", src: IS-1, welder: W22, xray: "22 11:00", zt3: "22 12:00", to_ac: "22 14:00", asm: "24 08:00-09:20", zt4: "24 09:30", test: "24 10:30-11:30", zt5: "24 11:45"}
+  - {id: F-010, weld: "21 17:30-18:10", src: IS-2, welder: W22, xray: "22 08:30", zt3: "22 09:30", to_ac: "22 14:00", asm: "22 15:00-16:20", zt4: "22 16:25", test: "23 10:30-12:40", zt5: "23 12:50", kt5: "23 13:30"}
+  - {id: F-011, weld: "21 18:20-18:55", src: IS-1, welder: W22, xray: "22 13:00", zt3: "22 16:10", to_ac: "23 14:00", asm: "24 11:00-12:20", zt4: "24 12:30", test: "24 13:00-14:00", zt5: "24 14:15"}
+  - {id: F-012, weld: "21 22:10-22:50", src: IS-2, welder: W22, xray: "22 13:45", zt3: "23 08:50", to_ac: "23 14:00", asm: "24 12:30-13:50", zt4: "24 14:00", test: "24 14:15-15:15", zt5: "24 15:30"}
+  - {id: F-013, weld: "21 19:00-19:40", src: IS-1, welder: W22, xray: "22 13:15", zt3: "22 16:20", to_ac: "23 14:00", asm: "24 14:00-15:20", zt4: "24 15:30"}
+  - {id: F-014, weld: "22 08:20-08:43", src: IS-2, welder: W21, xray: "22 14:00", zt3: "23 09:10", to_ac: "23 16:00", asm: "24 15:20-16:30"}
+  - {id: F-015, weld: "22 10:15-11:00", src: IS-2, welder: W21, xray: "22 13:30", zt3: "22 15:30", zt3_incomplete: true, to_ac: "22 16:00", moves: [{at: "23 10:30", step: assembly.seal_install, pos: in_progress, loc: WP-ASM-1}]}
+  - {id: F-016, weld: "22 09:20-10:05", src: IS-2, welder: W21, xray: "22 14:20", zt3: "23 09:50", to_ac: "23 16:00"}
+  - {id: F-017, weld: "23 10:40-11:00", src: IS-2, welder: W21, edge_prep: "23 08:50"}
+  - {id: F-018, weld: "22 11:40-12:15", src: IS-1, welder: W21, xray: "22 15:00", zt3: "23 10:10", to_ac: "23 14:00"}
+  - {id: F-019, weld: "22 16:35-17:20", src: IS-2, welder: W22, ring: R-101, xray: "23 13:40"}
+  - {id: F-020, weld: "22 12:20-12:55", src: IS-1, welder: W21, xray: "23 15:00", zt3: "24 08:30", to_ac: "24 14:00"}
+  - {id: F-021, weld: "22 19:40-20:20", src: IS-2, welder: W22, xray: "23 12:50"}
+  - {id: F-022, weld: "22 13:00-13:35", src: IS-1, welder: W21, xray: "23 15:20", zt3: "24 08:40", to_ac: "24 14:00"}
+  - {id: F-023, weld: "23 08:30-09:15", src: IS-2, welder: W21, xray: "23 13:10"}
+  - {id: F-024, weld: "22 13:40-14:15", src: IS-1, welder: W21, xray: "24 15:50"}
+  - {id: F-025, weld: "23 09:35-10:20", src: IS-2, welder: W21, xray: "23 13:25"}
+  - {id: F-026, weld: "22 14:20-14:55", src: IS-1, welder: W21, xray: "23 15:40", zt3: "24 08:50", to_ac: "24 14:00"}
+  - {id: F-027, weld: "22 18:00-18:40", src: IS-1, welder: W22, ring: R-102, xray: "23 14:20", zt3: "24 09:00", to_ac: "24 14:00"}
+  - {id: F-028, weld: "22 18:50-19:25", src: IS-1, welder: W22, xray: "23 16:00", zt3: "24 09:10", to_ac: "24 14:00"}
+  - {id: F-029, weld: "22 21:30-22:10", src: IS-1, welder: W22, ring: R-103, xray: "23 14:40", zt3: "24 09:20", to_ac: "24 14:00"}
+  - {id: F-030, weld: "21 23:00-23:35", src: IS-1, welder: W22, xray: "24 16:00"}
+  - {id: F-031, weld: "22 20:35-21:10", src: IS-1, welder: W22, xray: "24 16:10"}
+  - {id: F-032, weld: "22 22:20-22:55", src: IS-1, welder: W22, xray: "24 16:20"}
+  - {id: F-033, weld: "22 15:00-15:35", src: IS-1, welder: W21}
+  - {id: F-034, weld: "22 15:40-16:15", src: IS-1, welder: W21}
+  - {id: F-035, weld: "22 11:05-11:35", src: IS-1, welder: W21}
+  - {id: F-036, weld: "22 23:50-00:25", src: IS-1, welder: W22}
+  - {id: F-037}
+  - {id: F-038}
+  - {id: F-039}
+  - {id: F-040}
+  - {id: F-221, weld: "21 19:50-20:30", src: IS-2, welder: W22, xray: "22 11:30", zt3: "23 08:30", to_ac: "23 14:00"}
+  - {id: F-222, weld: "22 08:45-09:10", src: IS-2, welder: W21, xray: "22 14:40", zt3: "23 09:30", to_ac: "23 16:00"}
+  - {id: F-223, weld: "21 20:40-21:15", src: IS-1, welder: W22}
+  - {id: F-224, weld: "22 23:05-23:40", src: IS-1, welder: W22}
+
+# Переварка в четверг (S10-А): ИС-2 стоит, новые выполнения на ИС-1 (пост линии 1), сварщик С-02;
+# у каждого — ссылка на прежнее выполнение. Ф-019 ждёт новое кольцо (придёт в пятницу).
+rework:
+  - {item: F-017, weld: "24 08:00-08:45", xray: "24 11:00", zt3: "24 12:00", to_ac: "24 14:00", asm: "24 14:10-15:30", zt4: "24 15:40", test: "24 16:00-17:00"}
+  - {item: F-023, weld: "24 08:55-09:40", xray: "24 11:40", zt3: "24 12:40", to_ac: "24 14:00", asm: "24 15:30-16:50"}
+  - {item: F-025, weld: "24 09:50-10:35", xray: "24 12:20", zt3: "24 13:20", to_ac: "24 14:00"}
+  - {item: F-015, weld: "24 10:45-11:30", xray: "24 14:00", zt3: "24 15:10", to_ac: "24 16:00"}
+  - {item: F-021, weld: "24 11:40-12:25", xray: "24 14:30"}
+
+# Решения по несоответствиям, область риска, 1С, сбои источников — то, что меняет оси статусов
+# и чего нет в маршруте. Генератор проверяет, что их изделия есть в items.
+signals:
+  - {id: SIG-F002-KT4, item: F-002, at: "22 11:21", source: CAM-KT4, zone: J-1, kind: missing_torque_mark, confidence_bp: 5500, quality_bp: 8200, rejected: "22 11:35", by: INS-02, reason: "Метка есть, закрыта тенью от шайбы; момент по ключу в норме", scenario: S08}
+  - {id: SIG-F025-GLARE, item: F-025, at: "23 12:40", source: CAM-KT3, zone: W-1.U6, unable: true, confidence_bp: 9100, quality_bp: 3400, resolved: "23 12:55", scenario: S04}
+
+ncs:
+  - {id: NC-01, label: "НС-01", item: F-017, signal: "23 11:06", confirmed: "23 11:08", by: INS-01, source: CAM-KT3, isolated: "23 11:20", defects: [{zone: W-1.U2, kind: burn_through, side: face}], severity: major, cause: {category: equipment, at: "23 16:20", ref: IS-2}, scenario: S03}
+  - {id: NC-02, label: "НС-02", item: F-021, signal: "23 12:50", confirmed: "23 13:05", by: INS-01, source: XRAY-LAB, report: "РК-0923-08", defects: [{zone: W-1.U5, kind: burn_through, side: root}, {zone: W-1.U6, kind: porosity}], severity: major, cause: {category: equipment, at: "23 16:20", ref: IS-2}, scenario: S05}
+  - {id: NC-03, label: "НС-03", item: F-023, signal: "23 13:10", confirmed: "23 13:20", by: INS-01, source: XRAY-LAB, report: "РК-0923-10", defects: [{zone: W-1.U3, kind: burn_through, side: root}], severity: major, cause: {category: equipment, at: "23 16:20", ref: IS-2}, scenario: S05}
+  - {id: NC-04, label: "НС-04", item: F-019, signal: "23 13:41", confirmed: "23 13:50", by: INS-01, source: XRAY-LAB, report: "РК-0923-07", component: R-101, defects: [{zone: RING-BODY, kind: base_metal_pore}], severity: major, cause: {category: incoming, at: "23 15:40", ref: LOT-R-117}, scenario: S02}
+  - {id: NC-05, label: "НС-05", lot: LOT-R-117, component: R-105, signal: "23 14:50", confirmed: "23 14:55", by: INS-02, source: XRAY-LAB, report: "РК-0923-11", defects: [{zone: RING-BODY, kind: base_metal_pore}], severity: major, cause: {category: incoming, at: "23 15:40", ref: LOT-R-117}, disposition: {kind: return_to_supplier, at: "23 15:45", by: [TEC-01]}, scenario: S02}
+  - {id: NC-G1, label: "НС-И1", items: [F-015, F-017, F-019, F-021, F-023, F-025], confirmed: "23 15:30", by: TEC-01, kind: weld_out_of_regime, severity: major, disposition: {kind: rework, at: "23 15:30", by: [TEC-01, HQC-01, CWL-01]}, cause: {category: equipment, at: "23 16:20", ref: IS-2}, scenario: S05}
+  - {id: NC-06, label: "НС-06", item: F-021, signal: "24 14:30", confirmed: "24 14:35", by: INS-01, source: XRAY-LAB, report: "РК-0924-04", defects: [{zone: W-1.U5, kind: porosity}], severity: major, disposition: {kind: scrap, at: "24 15:30", by: [CWL-01, TEC-01]}, scenario: S10A}
+
+# Область риска RS-01 строится из данных: все сварки после последней подтверждённо годной
+# (anchor: Ф-006) до находки; версии сужают её по основаниям (S05).
+incidents:
+  - id: RS-01
+    label: "Инцидент ИС-2"
+    opened: "23 11:10"
+    trigger: NC-01
+    factors: [W21, IS-2, LOT-W-88]
+    versions:
+      - {v: 1, at: "23 11:10", by: system, rule: after_anchor, basis: "Общие факторы с Ф-017: сварщик С-02, источник ИС-2, проволока П-88; отсчёт — после последней подтверждённо годной сварки Ф-006 (Пн 14:55)"}
+      - {v: 2, at: "23 11:45", by: TEC-01, rule: exclude_source, source: IS-1, basis: "Журнал ИС-1 непрерывный и в уставке; КТ-3 — признаков нет при качестве не ниже 0,6; тот же сварщик и та же проволока на ИС-1 дефектов не дали — общий фактор ИС-2"}
+      - {v: 3, at: "23 12:15", by: TEC-01, rule: exclude_before, before: "22 10:20", unknown: [F-019], late_event: EV-WS2-0412, basis: "Опоздавший журнал ИС-2: ток впервые вне уставки во Вт 10:20 (EV-WS2-0412); сварки до этого — в уставке; у Ф-019 записей нет"}
+      - {v: 4, at: "23 15:30", by: TEC-01, rule: confirm_all, basis: "Решение комиссии: шесть фланцев сварены вне режима ТП; у Ф-019 соответствие режиму не доказано"}
+    closed: "23 15:35"
+    cause_confirmed: "23 16:20"
+  - id: RS-02
+    label: "Входной брак партии П-117"
+    opened: "23 13:55"
+    trigger: NC-04
+    factors: [LOT-R-117]
+    versions:
+      - {v: 1, at: "23 13:55", by: system, rule: lot_members, lot: LOT-R-117, confirmed: [F-019], basis: "Кольца партии П-117: Ф-019 ← К-101, Ф-027 ← К-102, Ф-029 ← К-103; 7 колец на складе — блок"}
+      - {v: 2, at: "23 14:40", by: TEC-01, rule: exclude_items, exclude: [F-027, F-029], basis: "Заключения РК Ф-027 (РК-0923-12) и Ф-029 (РК-0923-13): шов и тело кольца — дефектов нет"}
+    closed: "23 16:11"
+    cause_confirmed: "23 15:40"
+
+# Пересмотр подписанной приёмки (S07): решение ЗТ-3 по Ф-015 «годно при неполных данных».
+reviews:
+  - {item: F-015, gate: ZT-3, flagged: "23 12:06", completed: "23 14:05", outcome: revoked, by: INS-01, late_event: EV-WS2-0412}
+
+# Остановка точки процесса (S05) и вскрытие собранного (Е-120).
+process_holds:
+  - {equipment: IS-2, set: "23 11:12", by: FOR-WC, proposed_by: system, reason: "НС-01 и нет журнала ИС-2", release_condition: "ремонт и проверка"}
+interventions:
+  - {item: F-015, opened: "23 15:50", by: FOR-AC, note: "Уплотнение снято; крышку и крепёж не ставили", back_to_wc: "23 16:00"}
+component_unlinks:
+  - {item: F-019, component: R-101, at: "24 13:40", note: "Шов удалён, кольцо К-101 снято и отложено к претензии (НС-04); ждёт новое кольцо"}
+
+# Источники (S06, S07, S04): шлюз ИС-2 копил журнал, дослал пачку с повторами и потерями.
+sources:
+  - {id: edge-weld-2, equipment: IS-2, lost: "22 09:50", alert: "22 10:05", restored: "23 12:05", batch: {records: 1240, duplicates: 312, late: 928, lost: 35, lost_window: "22 16:40-17:15", gap: "4711-4745", max_delay_hours: 26}}
+late_events:
+  - {id: EV-WS2-0412, source: edge-weld-2, occurred: "22 10:20", received: "23 12:05", current_a: 176, setpoint: "160 ± 10 А", run_item: F-015}
+
+# Карантин приёма (S12): три сообщения, одно исправлено администратором и принято один раз.
+quarantine:
+  - {id: Q-001, at: "22 14:00", code: ingest.missing_required_field, field: item_id, source: edge-kt3, fixed: "22 15:10", by: ADM-01}
+  - {id: Q-002, at: "22 14:00", code: ingest.unknown_schema_version, field: schema_version, value: "9.0", source: edge-weld-1}
+  - {id: Q-003, at: "22 14:00", code: ingest.unknown_enum_value_critical, field: outcome, value: maybe, source: edge-kt3}
+
+# Сообщения 1С сверх автоматических (приём в работу, перемещения, выпуск — их ставит генератор).
+erp:
+  - {id: OUT-000120, kind: release_good, items: [F-001], at: "23 10:30", attempts: [{at: "23 10:30", result: error_retryable, code: erp.unavailable, http: 503}, {at: "23 10:31", result: acked, doc: "Выпуск № 0000-000041"}]}
+  - {id: OUT-000127, kind: scrap_transfer_rework, items: [F-015, F-017, F-019, F-021, F-023, F-025], at: "23 15:30", basis: NC-G1, attempts: [{at: "23 15:31", result: acked, doc: "Перевод в брак № 0000-000058"}]}
+  - {id: OUT-000128, kind: return_to_supplier, lot: LOT-R-117, qty: 7, at: "23 15:45", basis: NC-05, attempts: [{at: "23 15:46", result: error_final, code: erp.contract_not_found, http: 422}, {at: "23 16:11", result: acked, doc: "Возврат товаров поставщику № 0000-000012"}]}
+  - {id: OUT-000129, kind: transfer, items: [F-015], route: "WS-AC>WS-WC", at: "23 16:00", attempts: [{at: "23 16:01", result: acked}]}
+  - {id: OUT-000131, kind: rework_return_to_production, items: [F-017], at: "24 12:00", basis: NC-G1, attempts: [{at: "24 12:01", result: acked}]}
+  - {id: OUT-000132, kind: rework_return_to_production, items: [F-023], at: "24 12:40", basis: NC-G1, attempts: [{at: "24 12:41", result: acked}]}
+  - {id: OUT-000133, kind: rework_return_to_production, items: [F-025], at: "24 13:20", basis: NC-G1, attempts: [{at: "24 13:21", result: acked}]}
+  - {id: OUT-000134, kind: rework_return_to_production, items: [F-015], at: "24 15:10", basis: NC-G1, attempts: [{at: "24 15:11", result: acked}]}
+  - {id: OUT-000135, kind: scrap_transfer_writeoff, items: [F-021], at: "24 15:30", basis: NC-06, attempts: [{at: "24 15:31", result: acked}]}
+
+# Подмена записи в обход системы (S09) — обнаружена проверкой целостности.
+integrity:
+  interval_minutes: 15
+  violations: [{at: "23 16:31", record: EV-WS2-0412, note: "Запись журнала ИС-2 (Вт 10:20) изменена в обход системы: ток 176 → 166 А"}]
+
+# Шаги курсора: часы, что происходит, чего ждёт сценарий (FR-129). Ожидания — main_story.stops_for_human_decision.
+steps:
+  - {at: "18 08:00", title: "Задание 1С ЗП-0917 в работе, партии приняты ОТК (ЗТ-1); фоновый заказ выпущен", scenarios: [S01]}
+  - {at: "18 16:30", title: "Мехобработка: Ф-001 и первые фланцы прошли ЗТ-2", scenarios: [S01]}
+  - {at: "21 14:55", title: "Сварка: эталон Ф-001 прошёл ЗТ-3; Ф-006 — последняя подтверждённо годная сварка", scenarios: [S01]}
+  - {at: "22 10:05", title: "Шлюз ИС-2 потерял связь в 09:50, журнал копится у шлюза; «нет данных от ИС-2 15 минут»", scenarios: [S07]}
+  - {at: "22 11:40", title: "Фон: ложный сигнал КТ-4 по Ф-002 отклонён контролёром", scenarios: [S08]}
+  - {at: "22 14:00", title: "Фон: «забыли прокладку» — шаг остановлен до брака; три сообщения в карантине", scenarios: [S11, S12]}
+  - {at: "22 17:20", title: "ЗТ-3 Ф-015 «годно при неполных данных»; Ф-019 сварен — записи ИС-2 16:40–17:15 потеряны у шлюза", scenarios: [S07, S04]}
+  - {at: "23 10:31", title: "Эталон Ф-001 выпущен: ЗТ-6, «выпуск годного» в 1С после ошибки 503 и повтора", scenarios: [S01]}
+  - {at: "23 11:06", title: "Крючок: КТ-3 видит прожог на Ф-017; сигнал и черновик карточки — ждёт контролёра", scenarios: [S03, S06], wait: {action: nonconformity.nonconformity.confirm, role: quality_inspector, object: {kind: item, id: "ENT01:F-017"}, title: "Подтвердить сигнал по Ф-017"}}
+  - {at: "23 11:08", title: "НС-01 подтверждено ОТК-1: прожог У2; причина не установлена — нет журнала ИС-2", scenarios: [S03]}
+  - {at: "23 11:12", title: "Область риска RS-01: 34 изделия, 33 придержаны; ИС-2 остановлен — ждёт технолога", scenarios: [S05], wait: {action: analysis.scope.narrow, role: technologist, object: {kind: incident, id: RS-01}, title: "Сузить область RS-01"}}
+  - {at: "23 11:45", title: "Область сужена до 13: исключены 21 сварка на ИС-1", scenarios: [S05]}
+  - {at: "23 12:06", title: "Опоздавший журнал ИС-2: 1240 записей, 312 повторов, 35 потеряно; гипотезы пересмотрены; ЗТ-3 Ф-015 — «пересмотрите»", scenarios: [S07, S06, S04], wait: {action: analysis.scope.narrow, role: technologist, object: {kind: incident, id: RS-01}, title: "Сузить область RS-01 по опоздавшему журналу"}}
+  - {at: "23 12:15", title: "Область сужена до 6: 1 подтверждено, 4 под подозрением, 1 нет данных", scenarios: [S05, S07, S04]}
+  - {at: "23 12:55", title: "Блик на Ф-025: «признаков нет, 0,91» при качестве 0,34 → оценка невозможна → повторный кадр", scenarios: [S04]}
+  - {at: "23 13:30", title: "Рентген: прожог в корне у Ф-021 (С-03) и Ф-023 (С-02) — гипотеза про сварщика слабеет", scenarios: [S05]}
+  - {at: "23 13:45", title: "Разгар: рентген Ф-019 — пора в теле кольца; у каждой роли свой срез", scenarios: [S02, S05]}
+  - {at: "23 14:55", title: "Входной брак: НС-04, область RS-02 по партии П-117; Ф-027, Ф-029 исключены; НС-05 на складе", scenarios: [S02, S07]}
+  - {at: "23 15:29", title: "Комиссия собирается: решение по инциденту RS-01 ждёт подписей", scenarios: [S05], wait: {action: nonconformity.disposition.set, role: technologist, object: {kind: nonconformity, id: NC-G1}, title: "Решение по инциденту: переделка ×6"}}
+  - {at: "23 15:35", title: "Переделка ×6: в 1С «перевод в брак (переделка)» подтверждён; область закрыта: 6 подтверждено, 28 исключено", scenarios: [S05]}
+  - {at: "23 16:11", title: "Причина НС-04/05 — входной брак П-117; «возврат поставщику» после ошибки 422; Ф-015 вскрыт и возвращён в сварку — ждёт подтверждения причины", scenarios: [S02, S05], wait: {action: analysis.cause.conclude, role: technologist, object: {kind: incident, id: RS-01}, title: "Подтвердить причину по контрольному образцу КО-7"}}
+  - {at: "23 16:20", title: "Причина подтверждена: оборудование ИС-2, дрейф регулятора тока; ошибок сварщиков — 0", scenarios: [S05]}
+  - {at: "23 16:35", title: "Подмена записи EV-WS2-0412 в обход системы обнаружена проверкой целостности", scenarios: [S09]}
+  - {at: "24 13:30", title: "Переварка на посту линии 1: Ф-017, Ф-023, Ф-025 прошли повторную ЗТ-3 — «возврат из брака в производство»", scenarios: [S10A]}
+  - {at: "24 15:10", title: "Ф-021: новый дефект в новом шве (НС-06) — ждёт главного сварщика; Ф-015 прошёл ЗТ-3", scenarios: [S10A], wait: {action: nonconformity.disposition.set, role: chief_welder, object: {kind: nonconformity, id: NC-06}, title: "Новое решение по Ф-021"}}
+  - {at: "24 16:30", title: "Конец главной истории: 4 — переделка принята, 1 — списан, 1 — в переделке", scenarios: [S10A]}
