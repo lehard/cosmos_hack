@@ -97,7 +97,7 @@ func opsLive(ctx context.Context, env *environment, pool *pgxpool.Pool, ingest *
 		Exchanges: []opsapp.Exchange{
 			// Эпик 30: очередь исходящих и канал 1С (схема erp). TODO(31):
 			// Галактика и MES — их модули добавляют сюда свой Exchange.
-			erpExchange{store: erpstore.NewStore(c.pool), systems: []string{"onec"}},
+			erpExchange{store: erpstore.NewStore(c.pool), systems: exchangeSystems(env)},
 		},
 		Partitions: cfg.Engine.Partitions, Enabled: cfg.Integrations.Enabled,
 		Profile: cfg.Profile, Version: version, Mode: platform.Mode(cfg.Ports.Mode),
@@ -105,6 +105,9 @@ func opsLive(ctx context.Context, env *environment, pool *pgxpool.Pool, ingest *
 		VerifierInterval: cfg.Security.VerifierInterval,
 		Now:              c.codec.Now, Clock: c.domainClock(), DomainBuild: c.codec.DomainBuild,
 		Telemetry: env.telemetry(), Log: env.moduleLog("ops"),
+		// Эпик 48: экран «Интеграции» — установленные интеграции, проверка
+		// соединения, порт состояния этой копии (сброс кэша после решения).
+		Installed: installedIntegrations(cfg), Probe: integrationProbe{env}, Switch: integrationSwitch(env, c),
 	}
 	if ingest != nil {
 		oc.Quarantine = ingestQuarantine{ingest}
@@ -173,6 +176,15 @@ func (d opsDatabase) Migrations(ctx context.Context) []dom.Migration {
 	return out
 }
 
+// exchangeSystems — учётная система порта учёта (эпик 48: очередь исходящих
+// на экране «Интеграции»); обмен выключен — onec, как было.
+func exchangeSystems(env *environment) []string {
+	if sys := ledgerSystem(env); sys != "" {
+		return []string{sys}
+	}
+	return []string{"onec"}
+}
+
 // erpExchange — очередь исходящих и каналы обмена модуля erp (роль outbox).
 type erpExchange struct {
 	store   *erpstore.Store
@@ -194,7 +206,8 @@ func (x erpExchange) Exchange(ctx context.Context) ([]opsapp.ExchangeQueue, []do
 	}
 	out := make([]dom.Channel, 0, len(chs))
 	for _, c := range chs {
-		out = append(out, dom.Channel{System: c.System, State: c.State, Detail: c.Detail, CheckedAt: c.CheckedAt})
+		out = append(out, dom.Channel{System: c.System, State: c.State, Detail: c.Detail, CheckedAt: c.CheckedAt,
+			Endpoint: c.Endpoint, LastExchangeAt: c.LastExchangeAt})
 	}
 	return qs, out, nil
 }

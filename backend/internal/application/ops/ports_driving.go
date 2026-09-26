@@ -14,6 +14,8 @@ type Queries interface {
 	StoppedItems(ctx context.Context, p platform.Page) (StoppedItemList, error)
 	// Settings — адаптеры портов и режимы модулей (ops.setting.list, AD-35, AD-36).
 	Settings(ctx context.Context) (SettingList, error)
+	// Integrations — экран «Интеграции» (ops.integration.list, FR-157).
+	Integrations(ctx context.Context) (IntegrationList, error)
 }
 
 // Commands — ведущий порт команд модуля ops.
@@ -21,6 +23,10 @@ type Commands interface {
 	RetryProcessing(ctx context.Context, itemID string, in RetryProcessing) (platform.Receipt, error)
 	DisableSource(ctx context.Context, sourceID string, in SwitchSource) (platform.Receipt, error)
 	EnableSource(ctx context.Context, sourceID string, in SwitchSource) (platform.Receipt, error)
+	// SetIntegration — включить, выключить, «стенд ↔ реальная» (ops.integration.set, AD-47).
+	SetIntegration(ctx context.Context, system string, in SetIntegrationState) (platform.Receipt, error)
+	// CheckIntegration — проверить соединение (ops.integration.check, AD-47).
+	CheckIntegration(ctx context.Context, system string, in CheckIntegration) (platform.Receipt, error)
 }
 
 // Unimplemented — заглушка портов ops: каждая операция отвечает 501.
@@ -45,6 +51,16 @@ func (Unimplemented) DisableSource(context.Context, string, SwitchSource) (platf
 }
 func (Unimplemented) EnableSource(context.Context, string, SwitchSource) (platform.Receipt, error) {
 	return platform.Receipt{}, ni("ops.source.enable")
+}
+
+func (Unimplemented) Integrations(context.Context) (IntegrationList, error) {
+	return IntegrationList{}, ni("ops.integration.list")
+}
+func (Unimplemented) SetIntegration(context.Context, string, SetIntegrationState) (platform.Receipt, error) {
+	return platform.Receipt{}, ni("ops.integration.set")
+}
+func (Unimplemented) CheckIntegration(context.Context, string, CheckIntegration) (platform.Receipt, error) {
+	return platform.Receipt{}, ni("ops.integration.check")
 }
 
 var (

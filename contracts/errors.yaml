@@ -134,6 +134,13 @@ codes:
     ui_key: errors.ingest.duplicateConflict
     aliases: [E_ID_CONFLICT]
     refs: [FR-31, AD-7]
+  ingest.source_disabled:
+    status: 403
+    title: "Источник выключен администратором"
+    detail: "Источник «{source_id}» выключен ({reason}) — сообщение отклонено и сохранено в карантине"
+    ui_key: errors.generic
+    quarantine: true
+    refs: [AD-28, AD-47, FR-157]
   ingest.batch_too_large:
     status: 413
     title: "Слишком большая пачка"
@@ -888,6 +895,36 @@ codes:
     ui_key: errors.integration.refNotFound
     aliases: [E_REF_NOT_FOUND]
     refs: [FR-91, FR-95, решение дирижёра Д-9]
+
+  # ── ops: управление интеграциями (FR-157, AD-47) ──
+  ops.integration_not_installed:
+    status: 409
+    title: "Интеграция не установлена"
+    detail: "Система {system} не установлена конфигурацией (integrations.enabled) — включить её с экрана нельзя"
+    ui_key: errors.generic
+    guard: true
+    refs: [AD-47, FR-157, FR-114]
+  ops.stand_forbidden:
+    status: 409
+    title: "Стенд в рабочем профиле запрещён"
+    detail: "Профиль {profile}: переключить {system} на стенд нельзя — только реальная система или «выключена»"
+    ui_key: errors.generic
+    guard: true
+    refs: [AD-47, FR-157]
+  ops.integration_mode_unavailable:
+    status: 409
+    title: "Режим интеграции не настроен"
+    detail: "Для {system} не задан адрес режима «{state}» в конфигурации — переключение невозможно"
+    ui_key: errors.generic
+    guard: true
+    refs: [AD-47, FR-157]
+  ops.integration_state_unchanged:
+    status: 409
+    title: "Интеграция уже в этом состоянии"
+    detail: "{system} уже в состоянии «{state}» — решение не записано"
+    ui_key: errors.generic
+    guard: true
+    refs: [AD-47]
 
   # ── simulation (AD-26, AD-38) ──
   simulation.scenario_keys_in_prod:

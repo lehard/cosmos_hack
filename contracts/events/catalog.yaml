@@ -3362,3 +3362,35 @@ types:
     versions: [1]
     current_version: 1
     refs: ["AD-18", "FR-127"]
+  ops.integration.state_set:
+    title: "Состояние интеграции задано"
+    emitter: "ops"
+    role: "api"
+    kind: "decision"
+    stream: "source"
+    axis: "none"
+    action_class: "permissive"
+    critical: true
+    ca_group: "admin_security"
+    guard_relevant: true
+    publish_stage: false
+    provenance: ["personal", "paper", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["AD-47", "FR-157"]
+  ops.integration.checked:
+    title: "Соединение с интеграцией проверено"
+    emitter: "ops"
+    role: "api"
+    kind: "service"
+    stream: "source"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["server_attested", "genesis"]
+    versions: [1]
+    current_version: 1
+    refs: ["AD-18", "AD-47", "FR-157"]

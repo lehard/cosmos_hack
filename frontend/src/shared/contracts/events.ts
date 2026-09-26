@@ -6946,6 +6946,34 @@ step_key: string
 tp_step?: string
 }
 /**
+ * Соединение с внешней системой проверено по кнопке администратора — та же сверка ответной стороны, что при старте адаптера: метаданные, версия контракта (AD-18, AD-47).
+ * 
+ * This interface was referenced by `EventsContracts`'s JSON-Schema
+ * via the `definition` "OpsIntegrationCheckedV1".
+ */
+export interface OpsIntegrationCheckedV1 {
+/**
+ * Внешняя система.
+ */
+system: ("onec" | "galaktika" | "mes" | "kompas" | "skud" | "ca" | "visionqc" | "operatorvision" | "partner")
+/**
+ * ok — ответная сторона отвечает, контракт совпал; degraded — контракт не совпал; unreachable — не отвечает; not_supported — у адаптера нет проверки.
+ */
+result: ("ok" | "degraded" | "unreachable" | "not_supported")
+/**
+ * Состояние интеграции на момент проверки.
+ */
+mode?: ("enabled" | "disabled" | "stand")
+/**
+ * Адрес ответной стороны без секретов.
+ */
+endpoint?: string
+/**
+ * Что ответила или почему не ответила ответная сторона.
+ */
+detail?: string
+}
+/**
  * Интеграция в режиме degraded — при старте адаптер сверил метаданные и версию контракта внешней системы; расхождение — канал `degraded`, не отправляет (AD-18).
  * 
  * This interface was referenced by `EventsContracts`'s JSON-Schema
@@ -6964,6 +6992,46 @@ state: ("ok" | "degraded")
  * Что не сошлось.
  */
 detail?: string
+}
+/**
+ * Состояние интеграции задано — администратор включил, выключил или переключил «стенд ↔ реальная система» установленную конфигурацией внешнюю систему; процессы подхватывают состояние без перезапуска (AD-47, FR-157; единолично — Д-71).
+ * 
+ * This interface was referenced by `EventsContracts`'s JSON-Schema
+ * via the `definition` "OpsIntegrationStateSetV1".
+ */
+export interface OpsIntegrationStateSetV1 {
+/**
+ * Внешняя система.
+ */
+system: ("onec" | "galaktika" | "mes" | "kompas" | "skud" | "ca" | "visionqc" | "operatorvision" | "partner")
+/**
+ * enabled — включена, реальная система; disabled — выключена: исходящие копятся в очереди, входящие отвергаются приёмом; stand — включена, обмен со стендом (эмулятором). В профиле prod stand запрещён.
+ */
+state: ("enabled" | "disabled" | "stand")
+/**
+ * Состояние до решения (по умолчанию профиля, если решений не было).
+ */
+previous?: ("enabled" | "disabled" | "stand")
+reason: Reason38
+}
+/**
+ * Причина действия: код и текст.
+ */
+export interface Reason38 {
+/**
+ * Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
+ * 
+ * This interface was referenced by `AntDefsV1`'s JSON-Schema
+ * via the `definition` "code".
+ */
+code?: string
+/**
+ * Текст на русском для человека.
+ * 
+ * This interface was referenced by `AntDefsV1`'s JSON-Schema
+ * via the `definition` "text".
+ */
+text: string
 }
 /**
  * Сбой обработки изделия — ошибка свёртки или проекции на записи: изделие «обработка остановлена», партиция продолжает (AD-45).
@@ -6996,12 +7064,12 @@ export interface OpsProcessingRetriedV1 {
  * Идентификатор UUID в нижнем регистре (RFC 9562).
  */
 failure_event_id: string
-reason?: Reason38
+reason?: Reason39
 }
 /**
  * Причина действия: код и текст.
  */
-export interface Reason38 {
+export interface Reason39 {
 /**
  * Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
  * 
@@ -7028,12 +7096,12 @@ export interface OpsSourceDisabledV1 {
  * Идентификатор источника событий: устройство, шлюз, терминал, партнёр (`partner:‹код›`); в прогоне сценария — `‹run_id›/‹источник›` (AD-38).
  */
 source_id: string
-reason: Reason39
+reason: Reason40
 }
 /**
  * Причина действия: код и текст.
  */
-export interface Reason39 {
+export interface Reason40 {
 /**
  * Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
  * 
@@ -7060,12 +7128,12 @@ export interface OpsSourceEnabledV1 {
  * Идентификатор источника событий: устройство, шлюз, терминал, партнёр (`partner:‹код›`); в прогоне сценария — `‹run_id›/‹источник›` (AD-38).
  */
 source_id: string
-reason: Reason40
+reason: Reason41
 }
 /**
  * Причина действия: код и текст.
  */
-export interface Reason40 {
+export interface Reason41 {
 /**
  * Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
  * 
@@ -7217,12 +7285,12 @@ scope: string
  * Момент времени: RFC 3339 UTC, ровно три знака после секунд (YYYY-MM-DDTHH:MM:SS.mmmZ).
  */
 effective_from: string
-reason?: Reason41
+reason?: Reason42
 }
 /**
  * Причина действия: код и текст.
  */
-export interface Reason41 {
+export interface Reason42 {
 /**
  * Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
  * 
@@ -7325,12 +7393,12 @@ scope: string
  * Момент времени: RFC 3339 UTC, ровно три знака после секунд (YYYY-MM-DDTHH:MM:SS.mmmZ).
  */
 effective_from: string
-reason?: Reason42
+reason?: Reason43
 }
 /**
  * Причина действия: код и текст.
  */
-export interface Reason42 {
+export interface Reason43 {
 /**
  * Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
  * 
@@ -7437,12 +7505,12 @@ stamp_id: string
  * Момент времени: RFC 3339 UTC, ровно три знака после секунд (YYYY-MM-DDTHH:MM:SS.mmmZ).
  */
 effective_from: string
-reason: Reason43
+reason: Reason44
 }
 /**
  * Причина действия: код и текст.
  */
-export interface Reason43 {
+export interface Reason44 {
 /**
  * Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
  * 
@@ -8112,12 +8180,12 @@ basis_event_ids: string[]
  * Отменяемое критическое действие `CA-‹n›`.
  */
 cancels?: string
-cancel_reason?: Reason44
+cancel_reason?: Reason45
 }
 /**
  * Причина действия: код и текст.
  */
-export interface Reason44 {
+export interface Reason45 {
 /**
  * Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
  * 
@@ -8533,12 +8601,12 @@ export interface TaskTaskWithdrawnV1 {
  * Идентификатор объекта системы или справочника: ASCII, без пробелов.
  */
 task_id: string
-reason?: Reason45
+reason?: Reason46
 }
 /**
  * Причина действия: код и текст.
  */
-export interface Reason45 {
+export interface Reason46 {
 /**
  * Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
  * 

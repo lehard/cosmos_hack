@@ -217,7 +217,7 @@ func (s *Service) replay(ctx context.Context, commandID string) (platform.Receip
 	if _, err := uuid.Parse(id); err != nil || id == "" {
 		return platform.Receipt{}, false, nil
 	}
-	for _, t := range []catalog.Type{catalog.OpsProcessingRetried, catalog.OpsSourceDisabled, catalog.OpsSourceEnabled} {
+	for _, t := range []catalog.Type{catalog.OpsProcessingRetried, catalog.OpsSourceDisabled, catalog.OpsSourceEnabled, catalog.OpsIntegrationStateSet} {
 		ds, err := s.cfg.Journal.Read(ctx, appjournal.ReadQuery{EventType: string(t), Backward: true, Limit: 200})
 		if err != nil {
 			return platform.Receipt{}, false, err

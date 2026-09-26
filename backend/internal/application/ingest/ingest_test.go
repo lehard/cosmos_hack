@@ -534,3 +534,29 @@ func TestAPIForms(t *testing.T) {
 	}
 	checkEnvelopes(t, c)
 }
+
+// gate — выключенные источники (эпик 48, AD-28, AD-47).
+type gate map[string]string
+
+func (g gate) SourceBlocked(_ context.Context, id string) (bool, string, error) {
+	why, ok := g[id]
+	return ok, why, nil
+}
+
+// Эпик 48 (хвост 34): источник, отключённый администратором, или выключенная
+// интеграция — приём отвергает с кодом ingest.source_disabled, сообщение в
+// карантине; прочие источники принимаются.
+func TestSourceDisabled(t *testing.T) {
+	ctx := context.Background()
+	cfg := app.DefaultConfig()
+	cfg.Profile = "demo"
+	c := inmem.NewCore(cfg, inmem.NewClock(t0), func(d *app.Deps) { d.Gate = gate{"erp.onec": "интеграция onec выключена"} })
+	r, err := c.Service.Ingest(ctx, event(uid(1), "erp.onec", 1, t0.Add(-time.Second), `"station_id":"weld-2"`))
+	if err != nil || r.Outcome != app.OutcomeQuarantined || r.Code != errcodes.IngestSourceDisabled || r.Status != 403 {
+		t.Fatalf("выключенный источник: %+v %v", r, err)
+	}
+	r, err = c.Service.Ingest(ctx, event(uid(2), "edge-weld-1", 1, t0.Add(-time.Second), `"station_id":"weld-2"`))
+	if err != nil || r.Outcome != app.OutcomeAccepted {
+		t.Fatalf("включённый источник: %+v %v", r, err)
+	}
+}

@@ -358,8 +358,12 @@ const (
 	OperatorOverridePerformed Type = "operator.override.performed"
 	// Шаг подтверждён исполнителем
 	OperatorStepConfirmed Type = "operator.step.confirmed"
+	// Соединение с интеграцией проверено
+	OpsIntegrationChecked Type = "ops.integration.checked"
 	// Интеграция в режиме degraded
 	OpsIntegrationDegraded Type = "ops.integration.degraded"
+	// Состояние интеграции задано
+	OpsIntegrationStateSet Type = "ops.integration.state_set"
 	// Сбой обработки изделия
 	OpsProcessingFailed Type = "ops.processing.failed"
 	// Повтор обработки запрошен
@@ -613,7 +617,9 @@ var types = [...]Info{
 	{Type: OperatorModeChanged, Title: "Исполнитель сменил режим оборудования", Family: "operator", Emitter: "access", Role: "api", Kind: "fact", Stream: "item", Axis: "none", ActionClass: "record", Critical: true, CAGroup: "control_change", GuardRelevant: false, PublishStage: true, Provenance: []string{"device", "personal", "paper", "server_attested", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: OperatorOverridePerformed, Title: "Ручное вмешательство в автоматику", Family: "operator", Emitter: "access", Role: "api", Kind: "fact", Stream: "item", Axis: "none", ActionClass: "record", Critical: true, CAGroup: "control_change", GuardRelevant: true, PublishStage: true, Provenance: []string{"device", "personal", "paper", "server_attested", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: OperatorStepConfirmed, Title: "Шаг подтверждён исполнителем", Family: "operator", Emitter: "access", Role: "api", Kind: "fact", Stream: "item", Axis: "none", ActionClass: "record", Critical: false, CAGroup: "", GuardRelevant: false, PublishStage: false, Provenance: []string{"device", "personal", "paper", "server_attested", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
+	{Type: OpsIntegrationChecked, Title: "Соединение с интеграцией проверено", Family: "ops", Emitter: "ops", Role: "api", Kind: "service", Stream: "source", Axis: "none", ActionClass: "record", Critical: false, CAGroup: "", GuardRelevant: false, PublishStage: false, Provenance: []string{"server_attested", "genesis"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: OpsIntegrationDegraded, Title: "Интеграция в режиме degraded", Family: "ops", Emitter: "ops", Role: "outbox", Kind: "service", Stream: "source", Axis: "none", ActionClass: "record", Critical: false, CAGroup: "", GuardRelevant: false, PublishStage: false, Provenance: []string{"server_attested", "genesis"}, Versions: []int{1}, CurrentVersion: 1},
+	{Type: OpsIntegrationStateSet, Title: "Состояние интеграции задано", Family: "ops", Emitter: "ops", Role: "api", Kind: "decision", Stream: "source", Axis: "none", ActionClass: "permissive", Critical: true, CAGroup: "admin_security", GuardRelevant: true, PublishStage: false, Provenance: []string{"personal", "paper", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: OpsProcessingFailed, Title: "Сбой обработки изделия", Family: "ops", Emitter: "ops", Role: "worker", Kind: "service", Stream: "item", Axis: "none", ActionClass: "record", Critical: false, CAGroup: "", GuardRelevant: false, PublishStage: false, Provenance: []string{"server_attested", "genesis"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: OpsProcessingRetried, Title: "Повтор обработки запрошен", Family: "ops", Emitter: "ops", Role: "api", Kind: "decision", Stream: "item", Axis: "none", ActionClass: "record", Critical: false, CAGroup: "", GuardRelevant: false, PublishStage: false, Provenance: []string{"personal", "paper", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: OpsSourceDisabled, Title: "Источник отключён", Family: "ops", Emitter: "ops", Role: "api", Kind: "decision", Stream: "source", Axis: "none", ActionClass: "protective", Critical: true, CAGroup: "admin_security", GuardRelevant: true, PublishStage: false, Provenance: []string{"personal", "paper", "scenario"}, Versions: []int{1}, CurrentVersion: 1},

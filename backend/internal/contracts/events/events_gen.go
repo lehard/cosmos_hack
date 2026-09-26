@@ -5056,6 +5056,52 @@ type OperatorStepConfirmedV1 struct {
 	WorkplaceID *ObjectID `json:"workplace_id,omitempty,omitzero"`
 }
 
+// Соединение с внешней системой проверено по кнопке администратора — та же сверка
+// ответной стороны, что при старте адаптера: метаданные, версия контракта (AD-18,
+// AD-47).
+type OpsIntegrationCheckedV1 struct {
+	// Что ответила или почему не ответила ответная сторона.
+	Detail *string `json:"detail,omitempty,omitzero"`
+
+	// Адрес ответной стороны без секретов.
+	Endpoint *string `json:"endpoint,omitempty,omitzero"`
+
+	// Состояние интеграции на момент проверки.
+	Mode *OpsIntegrationCheckedV1Mode `json:"mode,omitempty,omitzero"`
+
+	// ok — ответная сторона отвечает, контракт совпал; degraded — контракт не совпал;
+	// unreachable — не отвечает; not_supported — у адаптера нет проверки.
+	Result OpsIntegrationCheckedV1Result `json:"result"`
+
+	// Внешняя система.
+	System OpsIntegrationCheckedV1System `json:"system"`
+}
+
+type OpsIntegrationCheckedV1Mode string
+
+const OpsIntegrationCheckedV1ModeDisabled OpsIntegrationCheckedV1Mode = "disabled"
+const OpsIntegrationCheckedV1ModeEnabled OpsIntegrationCheckedV1Mode = "enabled"
+const OpsIntegrationCheckedV1ModeStand OpsIntegrationCheckedV1Mode = "stand"
+
+type OpsIntegrationCheckedV1Result string
+
+const OpsIntegrationCheckedV1ResultDegraded OpsIntegrationCheckedV1Result = "degraded"
+const OpsIntegrationCheckedV1ResultNotSupported OpsIntegrationCheckedV1Result = "not_supported"
+const OpsIntegrationCheckedV1ResultOk OpsIntegrationCheckedV1Result = "ok"
+const OpsIntegrationCheckedV1ResultUnreachable OpsIntegrationCheckedV1Result = "unreachable"
+
+type OpsIntegrationCheckedV1System string
+
+const OpsIntegrationCheckedV1SystemCa OpsIntegrationCheckedV1System = "ca"
+const OpsIntegrationCheckedV1SystemGalaktika OpsIntegrationCheckedV1System = "galaktika"
+const OpsIntegrationCheckedV1SystemKompas OpsIntegrationCheckedV1System = "kompas"
+const OpsIntegrationCheckedV1SystemMes OpsIntegrationCheckedV1System = "mes"
+const OpsIntegrationCheckedV1SystemOnec OpsIntegrationCheckedV1System = "onec"
+const OpsIntegrationCheckedV1SystemOperatorvision OpsIntegrationCheckedV1System = "operatorvision"
+const OpsIntegrationCheckedV1SystemPartner OpsIntegrationCheckedV1System = "partner"
+const OpsIntegrationCheckedV1SystemSkud OpsIntegrationCheckedV1System = "skud"
+const OpsIntegrationCheckedV1SystemVisionqc OpsIntegrationCheckedV1System = "visionqc"
+
 // Интеграция в режиме degraded — при старте адаптер сверил метаданные и версию
 // контракта внешней системы; расхождение — канал `degraded`, не отправляет
 // (AD-18).
@@ -5084,6 +5130,49 @@ const OpsIntegrationDegradedV1SystemMes OpsIntegrationDegradedV1System = "mes"
 const OpsIntegrationDegradedV1SystemOnec OpsIntegrationDegradedV1System = "onec"
 const OpsIntegrationDegradedV1SystemPartner OpsIntegrationDegradedV1System = "partner"
 const OpsIntegrationDegradedV1SystemSkud OpsIntegrationDegradedV1System = "skud"
+
+// Состояние интеграции задано — администратор включил, выключил или переключил
+// «стенд ↔ реальная система» установленную конфигурацией внешнюю систему; процессы
+// подхватывают состояние без перезапуска (AD-47, FR-157; единолично — Д-71).
+type OpsIntegrationStateSetV1 struct {
+	// Состояние до решения (по умолчанию профиля, если решений не было).
+	Previous *OpsIntegrationStateSetV1Previous `json:"previous,omitempty,omitzero"`
+
+	// Основание: код и текст.
+	Reason Reason `json:"reason"`
+
+	// enabled — включена, реальная система; disabled — выключена: исходящие копятся в
+	// очереди, входящие отвергаются приёмом; stand — включена, обмен со стендом
+	// (эмулятором). В профиле prod stand запрещён.
+	State OpsIntegrationStateSetV1State `json:"state"`
+
+	// Внешняя система.
+	System OpsIntegrationStateSetV1System `json:"system"`
+}
+
+type OpsIntegrationStateSetV1Previous string
+
+const OpsIntegrationStateSetV1PreviousDisabled OpsIntegrationStateSetV1Previous = "disabled"
+const OpsIntegrationStateSetV1PreviousEnabled OpsIntegrationStateSetV1Previous = "enabled"
+const OpsIntegrationStateSetV1PreviousStand OpsIntegrationStateSetV1Previous = "stand"
+
+type OpsIntegrationStateSetV1State string
+
+const OpsIntegrationStateSetV1StateDisabled OpsIntegrationStateSetV1State = "disabled"
+const OpsIntegrationStateSetV1StateEnabled OpsIntegrationStateSetV1State = "enabled"
+const OpsIntegrationStateSetV1StateStand OpsIntegrationStateSetV1State = "stand"
+
+type OpsIntegrationStateSetV1System string
+
+const OpsIntegrationStateSetV1SystemCa OpsIntegrationStateSetV1System = "ca"
+const OpsIntegrationStateSetV1SystemGalaktika OpsIntegrationStateSetV1System = "galaktika"
+const OpsIntegrationStateSetV1SystemKompas OpsIntegrationStateSetV1System = "kompas"
+const OpsIntegrationStateSetV1SystemMes OpsIntegrationStateSetV1System = "mes"
+const OpsIntegrationStateSetV1SystemOnec OpsIntegrationStateSetV1System = "onec"
+const OpsIntegrationStateSetV1SystemOperatorvision OpsIntegrationStateSetV1System = "operatorvision"
+const OpsIntegrationStateSetV1SystemPartner OpsIntegrationStateSetV1System = "partner"
+const OpsIntegrationStateSetV1SystemSkud OpsIntegrationStateSetV1System = "skud"
+const OpsIntegrationStateSetV1SystemVisionqc OpsIntegrationStateSetV1System = "visionqc"
 
 // Сбой обработки изделия — ошибка свёртки или проекции на записи: изделие
 // «обработка остановлена», партиция продолжает (AD-45).

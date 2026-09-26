@@ -91,6 +91,7 @@ import type {
   CadAssemblyList,
   CadAssemblyListParams,
   ChangeScope,
+  CheckIntegration,
   Circumstances,
   ClearAssignment,
   CloseIncident,
@@ -172,6 +173,7 @@ import type {
   InjectionList,
   InspectionCoverage,
   InspectionResultList,
+  IntegrationList,
   IntegrityStatus,
   IsolateItem,
   IssueLot,
@@ -346,6 +348,7 @@ import type {
   SetAuditParameters,
   SetContainment,
   SetDisposition,
+  SetIntegrationState,
   SetPaperStatus,
   SetProcessHold,
   SetSpeed,
@@ -18828,6 +18831,359 @@ export function useOpsHealthRead<TData = Awaited<ReturnType<typeof opsHealthRead
 
 
 
+
+export type opsIntegrationListResponse200 = {
+  data: IntegrationList
+  status: 200
+}
+
+export type opsIntegrationListResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type opsIntegrationListResponseSuccess = (opsIntegrationListResponse200) & {
+  headers: Headers;
+};
+export type opsIntegrationListResponseError = (opsIntegrationListResponseDefault) & {
+  headers: Headers;
+};
+
+export const getOpsIntegrationListUrl = () => {
+
+
+
+
+  return `/api/v1/ops/integrations`
+}
+
+/**
+ * FR-157, AD-47: внешние системы — установлена ли конфигурацией, включена / выключена / стенд, живой канал, последний обмен, ошибки, очередь и карантин исходящих, последняя проверка соединения.
+ * @summary Интеграции
+ */
+export const opsIntegrationList = async ( options?: RequestInit): Promise<opsIntegrationListResponseSuccess> => {
+
+  const res = await fetch(getOpsIntegrationListUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: opsIntegrationListResponseError['data'], status?: number} = new globalThis.Error();
+    const data : opsIntegrationListResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: opsIntegrationListResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as opsIntegrationListResponseSuccess
+}
+
+
+
+
+
+export const getOpsIntegrationListQueryKey = () => {
+    return [
+    'api','v1','ops','integrations'
+    ] as const;
+    }
+
+
+export const getOpsIntegrationListQueryOptions = <TData = Awaited<ReturnType<typeof opsIntegrationList>>, TError = globalThis.Error & { info?: Problem; status?: number }>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof opsIntegrationList>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getOpsIntegrationListQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof opsIntegrationList>>> = ({ signal }) => opsIntegrationList({ signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof opsIntegrationList>>, TError, TData>
+}
+
+export type OpsIntegrationListQueryResult = NonNullable<Awaited<ReturnType<typeof opsIntegrationList>>>
+export type OpsIntegrationListQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Интеграции
+ */
+
+export function useOpsIntegrationList<TData = Awaited<ReturnType<typeof opsIntegrationList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof opsIntegrationList>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getOpsIntegrationListQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+
+export type opsIntegrationCheckResponse200 = {
+  data: Receipt
+  status: 200
+}
+
+export type opsIntegrationCheckResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type opsIntegrationCheckResponseSuccess = (opsIntegrationCheckResponse200) & {
+  headers: Headers;
+};
+export type opsIntegrationCheckResponseError = (opsIntegrationCheckResponseDefault) & {
+  headers: Headers;
+};
+
+export const getOpsIntegrationCheckUrl = (system: string,) => {
+
+
+
+
+  return `/api/v1/ops/integrations/${system}/check`
+}
+
+/**
+ * AD-18, AD-47: сверка ответной стороны, как при старте адаптера; итог — служебная запись ops.integration.checked.
+ * @summary Проверить соединение
+ */
+export const opsIntegrationCheck = async (system: string,
+    checkIntegration: CheckIntegration, options?: RequestInit): Promise<opsIntegrationCheckResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getOpsIntegrationCheckUrl(system),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(checkIntegration)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: opsIntegrationCheckResponseError['data'], status?: number} = new globalThis.Error();
+    const data : opsIntegrationCheckResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: opsIntegrationCheckResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as opsIntegrationCheckResponseSuccess
+}
+
+
+
+
+
+export const getOpsIntegrationCheckMutationKey = () => ['opsIntegrationCheck'] as const;
+
+export const getOpsIntegrationCheckMutationOptions = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof opsIntegrationCheck>>, TError,OpsIntegrationCheckMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof opsIntegrationCheck>>, TError,OpsIntegrationCheckMutationVariables, TContext> => {
+
+const mutationKey = getOpsIntegrationCheckMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof opsIntegrationCheck>>, OpsIntegrationCheckMutationVariables> = (props) => {
+          const {system,data} = props ?? {};
+
+          return  opsIntegrationCheck(system,data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type OpsIntegrationCheckMutationResult = NonNullable<Awaited<ReturnType<typeof opsIntegrationCheck>>>
+    export type OpsIntegrationCheckMutationBody = CheckIntegration
+    export type OpsIntegrationCheckMutationError = globalThis.Error & { info?: Problem; status?: number }
+    export type OpsIntegrationCheckMutationVariables = {system: string;data: CheckIntegration}
+
+    /**
+ * @summary Проверить соединение
+ */
+export const useOpsIntegrationCheck = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof opsIntegrationCheck>>, TError,OpsIntegrationCheckMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof opsIntegrationCheck>>,
+        TError,
+        OpsIntegrationCheckMutationVariables,
+        TContext
+      > => {
+      return useMutation(getOpsIntegrationCheckMutationOptions(options), queryClient);
+    }
+
+export type opsIntegrationSetResponse200 = {
+  data: Receipt
+  status: 200
+}
+
+export type opsIntegrationSetResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type opsIntegrationSetResponseSuccess = (opsIntegrationSetResponse200) & {
+  headers: Headers;
+};
+export type opsIntegrationSetResponseError = (opsIntegrationSetResponseDefault) & {
+  headers: Headers;
+};
+
+export const getOpsIntegrationSetUrl = (system: string,) => {
+
+
+
+
+  return `/api/v1/ops/integrations/${system}/state`
+}
+
+/**
+ * FR-157, AD-47: критическое действие администратора, единолично (Д-71) — запись ops.integration.state_set; процессы подхватывают без перезапуска; выключенная — исходящие копятся в очереди, входящие отвергаются приёмом. В prod стенд — отказ ops.stand_forbidden.
+ * @summary Включить, выключить, стенд ↔ реальная
+ */
+export const opsIntegrationSet = async (system: string,
+    setIntegrationState: SetIntegrationState, options?: RequestInit): Promise<opsIntegrationSetResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getOpsIntegrationSetUrl(system),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(setIntegrationState)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: opsIntegrationSetResponseError['data'], status?: number} = new globalThis.Error();
+    const data : opsIntegrationSetResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: opsIntegrationSetResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as opsIntegrationSetResponseSuccess
+}
+
+
+
+
+
+export const getOpsIntegrationSetMutationKey = () => ['opsIntegrationSet'] as const;
+
+export const getOpsIntegrationSetMutationOptions = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof opsIntegrationSet>>, TError,OpsIntegrationSetMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof opsIntegrationSet>>, TError,OpsIntegrationSetMutationVariables, TContext> => {
+
+const mutationKey = getOpsIntegrationSetMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof opsIntegrationSet>>, OpsIntegrationSetMutationVariables> = (props) => {
+          const {system,data} = props ?? {};
+
+          return  opsIntegrationSet(system,data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type OpsIntegrationSetMutationResult = NonNullable<Awaited<ReturnType<typeof opsIntegrationSet>>>
+    export type OpsIntegrationSetMutationBody = SetIntegrationState
+    export type OpsIntegrationSetMutationError = globalThis.Error & { info?: Problem; status?: number }
+    export type OpsIntegrationSetMutationVariables = {system: string;data: SetIntegrationState}
+
+    /**
+ * @summary Включить, выключить, стенд ↔ реальная
+ */
+export const useOpsIntegrationSet = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof opsIntegrationSet>>, TError,OpsIntegrationSetMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof opsIntegrationSet>>,
+        TError,
+        OpsIntegrationSetMutationVariables,
+        TContext
+      > => {
+      return useMutation(getOpsIntegrationSetMutationOptions(options), queryClient);
+    }
 
 export type opsSettingListResponse200 = {
   data: SettingList

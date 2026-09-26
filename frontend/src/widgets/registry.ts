@@ -79,6 +79,8 @@ export const widgetRegistry = {
   'corrective-actions': { titleKey: 'widgets.quality.title', epic: 42, load: () => import('./corrective-actions') },
   // ── эпик 40: Адаптация VisionQC ──
   'vision-adaptation': { titleKey: 'widgets.visionAdaptation.title', epic: 40, load: () => import('./vision-adaptation') },
+  // ── эпик 48: Управление интеграциями ──
+  'integrations': { titleKey: 'widgets.integrations.title', epic: 48, load: () => import('./integrations') },
 } satisfies Record<string, WidgetDefinition>
 
 /** id виджета из реестра. */

@@ -187,8 +187,10 @@ func runOutbox(ctx context.Context, env *environment) error {
 			Journal:  c.journal,
 			Consumer: feed.NewConsumer(c.journal, c.leases, c.listener, c.feedOptions(env, "outbox")),
 			// Смена состояния канала — ops.integration.degraded через порт ops (эпик 34).
-			Codec: c.codec, Store: channelWatch{OutboxStore: erpstore.NewStore(c.pool), rep: opsReporter(env, c), log: env.moduleLog("ops")},
-			Ledger: l, Intake: ingestIntake{intake},
+			// Эпик 48: выключенная администратором система — исходящие копятся
+			// в очереди, входящие не опрашиваются (switchedStore, switchedLedger).
+			Codec: c.codec, Store: switchedStore{OutboxStore: channelWatch{OutboxStore: erpstore.NewStore(c.pool), rep: opsReporter(env, c), log: env.moduleLog("ops")}, sw: integrationSwitch(env, c)},
+			Ledger: switchedLedger{Ledger: l, sw: integrationSwitch(env, c)}, Intake: ingestIntake{intake},
 			Clock: clock.NewJournal(c.journal), Now: c.codec.Now, Retry: retry,
 			Poll: timing.Poll, Recheck: timing.Recheck, PullEvery: timing.PullEvery, Log: env.moduleLog("erp"),
 		}

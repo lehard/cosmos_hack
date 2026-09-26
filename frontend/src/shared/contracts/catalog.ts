@@ -1642,6 +1642,17 @@ export const eventCatalog = {
     "caGroup": null,
     "currentVersion": 1
   },
+  "ops.integration.checked": {
+    "title": "Соединение с интеграцией проверено",
+    "emitter": "ops",
+    "kind": "service",
+    "stream": "source",
+    "axis": "none",
+    "actionClass": "record",
+    "critical": false,
+    "caGroup": null,
+    "currentVersion": 1
+  },
   "ops.integration.degraded": {
     "title": "Интеграция в режиме degraded",
     "emitter": "ops",
@@ -1651,6 +1662,17 @@ export const eventCatalog = {
     "actionClass": "record",
     "critical": false,
     "caGroup": null,
+    "currentVersion": 1
+  },
+  "ops.integration.state_set": {
+    "title": "Состояние интеграции задано",
+    "emitter": "ops",
+    "kind": "decision",
+    "stream": "source",
+    "axis": "none",
+    "actionClass": "permissive",
+    "critical": true,
+    "caGroup": "admin_security",
     "currentVersion": 1
   },
   "ops.processing.failed": {

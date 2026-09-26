@@ -239,3 +239,74 @@ func TestSelfCheck(t *testing.T) {
 		t.Fatalf("роли БД: %+v", v)
 	}
 }
+
+// Эпик 48 (FR-157, AD-47, Д-71): выключение 1С администратором — запись
+// ops.integration.state_set; порт IntegrationSwitch видит «выключена»,
+// приём отвергает шлюз 1С; стенд в prod — отказ ops.stand_forbidden.
+func TestIntegrationSwitch(t *testing.T) {
+	r := newRig(t)
+	inst := []dom.Installed{{System: "onec", Stand: true}, {System: "visionqc", Stand: true, Real: true}}
+	now := t0
+	sw := &opsapp.IntegrationSwitch{Journal: r.j, Codec: r.codec, Profile: "demo", Installed: inst, Now: func() time.Time { return now }}
+	svc := opsapp.NewLive(opsapp.Config{Journal: r.j, Codec: r.codec, Partitions: 1, Enabled: []string{"onec", "visionqc"}, Installed: inst,
+		Profile: "demo", Version: "test", Mode: platform.ModeLive, Switch: sw})
+	ctx := platform.WithPrincipal(context.Background(), platform.Principal{PersonID: "ADM-01"})
+
+	if !sw.Active(ctx, "onec") {
+		t.Fatal("1С в demo по умолчанию — стенд, включена")
+	}
+	l, err := svc.Integrations(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var onec *opsapp.IntegrationEntry
+	for i := range l.Items {
+		if l.Items[i].System == "onec" {
+			onec = &l.Items[i]
+		}
+	}
+	if onec == nil || onec.State != dom.SwitchStand || !onec.Default || !onec.StandAvailable || onec.RealAvailable {
+		t.Fatalf("строка 1С: %+v", onec)
+	}
+	rc, err := svc.SetIntegration(ctx, "onec", opsapp.SetIntegrationState{State: dom.SwitchDisabled, Reason: opsapp.OpsReason{Text: "плановые работы 1С"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rc.Seq == 0 {
+		t.Fatalf("квитанция без seq: %+v", rc)
+	}
+	if sw.Active(ctx, "onec") {
+		t.Fatal("после решения 1С выключена без перезапуска")
+	}
+	if b, _, err := sw.SourceBlocked(ctx, "erp.onec"); err != nil || !b {
+		t.Fatalf("входящие выключенной 1С отвергаются: %v %v", b, err)
+	}
+	l, _ = svc.Integrations(ctx)
+	for _, e := range l.Items {
+		if e.System == "onec" && (e.State != dom.SwitchDisabled || e.LastDecision == nil || e.LastDecision.Actor != "adm-01" || e.LastDecision.Previous == nil || *e.LastDecision.Previous != dom.SwitchStand) {
+			t.Fatalf("решение видно в списке: %+v %+v", e, e.LastDecision)
+		}
+	}
+	// Повтор того же состояния — отказ гарда.
+	if _, err := svc.SetIntegration(ctx, "onec", opsapp.SetIntegrationState{State: dom.SwitchDisabled, Reason: opsapp.OpsReason{Text: "ещё раз"}}); code(err) != errcodes.OpsIntegrationStateUnchanged {
+		t.Fatalf("то же состояние: %v", err)
+	}
+
+	prod := opsapp.NewLive(opsapp.Config{Journal: r.j, Codec: r.codec, Partitions: 1, Installed: inst, Profile: "prod", Version: "test", Mode: platform.ModeLive})
+	if _, err := prod.SetIntegration(ctx, "visionqc", opsapp.SetIntegrationState{State: dom.SwitchStand, Reason: opsapp.OpsReason{Text: "попробовать стенд"}}); code(err) != errcodes.OpsStandForbidden {
+		t.Fatalf("prod: стенд — ops.stand_forbidden, получено %v", err)
+	}
+	if _, err := svc.SetIntegration(ctx, "mes", opsapp.SetIntegrationState{State: dom.SwitchStand, Reason: opsapp.OpsReason{Text: "x"}}); code(err) != errcodes.OpsIntegrationNotInstalled {
+		t.Fatalf("неустановленная MES: %v", err)
+	}
+	// Проверка соединения без порта Probe — «не поддерживается», запись в журнал.
+	if _, err := svc.CheckIntegration(ctx, "onec", opsapp.CheckIntegration{}); err != nil {
+		t.Fatal(err)
+	}
+	l, _ = svc.Integrations(ctx)
+	for _, e := range l.Items {
+		if e.System == "onec" && (e.LastCheck == nil || e.LastCheck.Result != opsapp.ProbeNotSupported) {
+			t.Fatalf("последняя проверка: %+v", e.LastCheck)
+		}
+	}
+}

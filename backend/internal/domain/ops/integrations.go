@@ -42,6 +42,10 @@ type Channel struct {
 	State     string
 	Detail    string
 	CheckedAt time.Time
+	// Endpoint — адрес ответной стороны без секретов; LastExchangeAt —
+	// последний обмен (экран «Интеграции», FR-157); пусто — неизвестно.
+	Endpoint       string
+	LastExchangeAt *time.Time
 }
 
 // Integration — состояние интеграции для экрана.

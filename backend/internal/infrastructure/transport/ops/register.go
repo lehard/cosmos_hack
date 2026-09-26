@@ -65,4 +65,37 @@ func Register(api *httpapi.API, q app.Queries, c app.Commands) {
 		func(ctx context.Context, in *sourceCmd) (platform.Receipt, error) {
 			return c.EnableSource(ctx, in.SourceID, in.Body)
 		})
+
+	// Эпик 48 — управление интеграциями (FR-157, AD-47).
+	type integrationCmd struct {
+		System string `path:"system" maxLength:"64" doc:"Внешняя система: onec, galaktika, mes, kompas, skud, ca, visionqc, operatorvision, partner."`
+		Body   app.SetIntegrationState
+	}
+	type checkCmd struct {
+		System string `path:"system" maxLength:"64" doc:"Внешняя система."`
+		Body   app.CheckIntegration
+	}
+
+	httpapi.Read(api, httpapi.Get("/ops/integrations", "Интеграции",
+		"FR-157, AD-47: внешние системы — установлена ли конфигурацией, включена / выключена / стенд, живой канал, последний обмен, ошибки, очередь и карантин исходящих, последняя проверка соединения."),
+		platform.Action{ID: "ops.integration.list", Owner: owner, Subject: "integrity"},
+		func(ctx context.Context, _ *struct{}, _ platform.Moment) (app.IntegrationList, error) {
+			return q.Integrations(ctx)
+		})
+
+	httpapi.Do(api, httpapi.Post("/ops/integrations/{system}/state", "Включить, выключить, стенд ↔ реальная",
+		"FR-157, AD-47: критическое действие администратора, единолично (Д-71) — запись ops.integration.state_set; процессы подхватывают без перезапуска; выключенная — исходящие копятся в очереди, входящие отвергаются приёмом. В prod стенд — отказ ops.stand_forbidden."),
+		platform.Action{ID: "ops.integration.set", Class: platform.ClassPermissive, Critical: true, CAGroup: "admin_security", Owner: owner, Subject: "integrity",
+			Emits: []catalog.Type{catalog.OpsIntegrationStateSet}, SignatureLevel: 2},
+		func(ctx context.Context, in *integrationCmd) (platform.Receipt, error) {
+			return c.SetIntegration(ctx, in.System, in.Body)
+		})
+
+	httpapi.Do(api, httpapi.Post("/ops/integrations/{system}/check", "Проверить соединение",
+		"AD-18, AD-47: сверка ответной стороны, как при старте адаптера; итог — служебная запись ops.integration.checked."),
+		platform.Action{ID: "ops.integration.check", Class: platform.ClassRecord, Owner: owner, Subject: "integrity",
+			Emits: []catalog.Type{catalog.OpsIntegrationChecked}},
+		func(ctx context.Context, in *checkCmd) (platform.Receipt, error) {
+			return c.CheckIntegration(ctx, in.System, in.Body)
+		})
 }

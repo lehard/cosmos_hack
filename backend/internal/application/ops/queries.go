@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"slices"
 	"strconv"
-	"strings"
 	"time"
 
 	"ant/internal/application/platform"
@@ -251,31 +250,7 @@ func (s *Service) Settings(ctx context.Context) (SettingList, error) {
 
 // sources — последнее решение по каждому источнику (ops.source.disabled / enabled).
 func (s *Service) sources(ctx context.Context) ([]SourceSwitch, error) {
-	last := map[string]SourceSwitch{}
-	for _, t := range []catalog.Type{catalog.OpsSourceDisabled, catalog.OpsSourceEnabled} {
-		ds, err := records(ctx, s.cfg.Journal, s.cfg.Codec, t, "")
-		if err != nil {
-			return nil, err
-		}
-		for _, d := range ds {
-			var x ev.OpsSourceDisabledV1
-			if err := json.Unmarshal(d.Record.Data, &x); err != nil {
-				return nil, err
-			}
-			id := string(x.SourceID)
-			if p, ok := last[id]; ok && p.Seq > d.Record.Seq {
-				continue
-			}
-			last[id] = SourceSwitch{SourceID: id, Enabled: t == catalog.OpsSourceEnabled, Reason: string(x.Reason.Text),
-				Actor: strings.TrimSuffix(d.Record.Actor, "@1"), At: d.Record.RecordedAt, Seq: d.Record.Seq}
-		}
-	}
-	out := make([]SourceSwitch, 0, len(last))
-	for _, v := range last {
-		out = append(out, v)
-	}
-	slices.SortFunc(out, func(a, b SourceSwitch) int { return strings.Compare(a.SourceID, b.SourceID) })
-	return out, nil
+	return sourceDecisions(ctx, s.cfg.Journal, s.cfg.Codec)
 }
 
 func (s *Service) profile() string {
