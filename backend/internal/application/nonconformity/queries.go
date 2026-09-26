@@ -326,7 +326,16 @@ func (s *Service) Card(ctx context.Context, ncID string, m platform.Moment) (NCC
 	if err != nil {
 		return NCCard{}, err
 	}
-	return s.card(v, n, s.at(ctx, m, v.RunID)), nil
+	c := s.card(v, n, s.at(ctx, m, v.RunID))
+	if n.Origin == dom.OriginSpecialProcess {
+		// FR-151, S05 (NC-G1): состав группового несоответствия окна.
+		items, err := s.ncGroup(ctx, ncID, m)
+		if err != nil {
+			return NCCard{}, err
+		}
+		c.GroupItemIDs = items
+	}
+	return c, nil
 }
 
 func (s *Service) card(v *itemView, n dom.NC, now time.Time) NCCard {

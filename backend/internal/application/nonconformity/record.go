@@ -74,71 +74,11 @@ func (s *Service) write(ctx context.Context, d decision) (platform.Receipt, erro
 	if r, ok, err := s.replayed(ctx, d.Stream, d.Type, id); err != nil || ok {
 		return r, err
 	}
-	data, err := json.Marshal(d.Data)
+	p, err := s.pending(d, id)
 	if err != nil {
 		return platform.Receipt{}, err
 	}
-	occurred := engineapp.FormatTime(d.OccurredAt)
-	guard := d.GuardStreams
-	if guard == nil {
-		guard = []string{}
-	}
-	cmd := map[string]any{"command_id": id, "basis_seq": d.Meta.BasisSeq, "guard_streams": guard, "policy_seq": d.Meta.PolicySeq,
-		"signature_level": d.SignatureLevel}
-	if d.Meta.WorkplaceID != "" {
-		cmd["workplace_id"] = d.Meta.WorkplaceID
-	}
-	env := map[string]any{
-		"event_id": id, "event_type": string(d.Type), "schema_version": info.CurrentVersion, "source_id": SourceAPI,
-		"source_kind": "manual_entry", "occurred_at": occurred, "correlation_id": id, "causation_id": nil, "command": cmd,
-		"integrity": map[string]any{"format_version": 1, "crypto_profile": "gost", "signers": []string{signer(d.Actor)}},
-		"data":      json.RawMessage(data),
-	}
-	if d.ItemID != "" {
-		env["item_id"] = d.ItemID
-	}
-	if d.RunID != "" {
-		env["run_id"] = d.RunID
-	}
-	canon, err := engine.Canonical(env)
-	if err != nil {
-		return platform.Receipt{}, err
-	}
-	sealed, _ := json.Marshal(struct {
-		PayloadType string   `json:"payloadType"`
-		Payload     string   `json:"payload"`
-		Signatures  []string `json:"signatures"`
-	}{engineapp.PayloadTypeEvent, base64.StdEncoding.EncodeToString(canon), []string{}})
-	e := jc.JournalEntry{
-		Chain: jc.JournalEntryChainMain, EntryKind: jc.JournalEntryEntryKindDecision, EventType: string(d.Type),
-		SchemaVersion: info.CurrentVersion, EventID: id, SourceID: SourceAPI, Stream: d.Stream,
-		OccurredAt: occurred, ReceivedAt: engineapp.FormatTime(s.d.Now()), CorrelationID: id,
-		ProvenanceClass: jc.JournalEntryProvenanceClassPersonal, DomainBuild: s.cfg.DomainBuild,
-	}
-	if s.cfg.ScenarioClock {
-		e.RecordedAt = occurred
-	}
-	if d.ItemID != "" {
-		item := d.ItemID
-		e.ItemID = &item
-		e.Partition = kernel.PartitionOf(d.ItemID, s.cfg.Partitions)
-	} else {
-		// Записи вне изделия — партиция стадии за пределами 0…P-1 (как у приёма).
-		e.Partition = s.cfg.Partitions
-	}
-	if d.RunID != "" {
-		run := d.RunID
-		e.RunID = &run
-	}
-	if d.Meta.BasisSeq > 0 {
-		b := int(d.Meta.BasisSeq)
-		e.BasisSeq = &b
-	}
-	if d.Meta.PolicySeq > 0 {
-		p := int(d.Meta.PolicySeq)
-		e.PolicySeq = &p
-	}
-	rq := appjournal.AppendRequest{Batch: []appjournal.Pending{{Entry: e, Envelope: sealed}}, Checks: d.Checks, ConcessionGrants: d.Grants}
+	rq := appjournal.AppendRequest{Batch: []appjournal.Pending{p}, Checks: d.Checks, ConcessionGrants: d.Grants}
 	// AD-28: критическое действие — через сервис доверенных решений: запись
 	// CA строится в транзакции этого Append (эпик 29).
 	var res appjournal.AppendResult
@@ -164,6 +104,82 @@ func (s *Service) write(ctx context.Context, d decision) (platform.Receipt, erro
 		r.RecordedAt = res.Committed.UTC()
 	}
 	return r, nil
+}
+
+// pending — запись-решение d с event_id id: конверт DSSE и строка журнала.
+func (s *Service) pending(d decision, id string) (appjournal.Pending, error) {
+	info, _ := catalog.Lookup(d.Type)
+	data, err := json.Marshal(d.Data)
+	if err != nil {
+		return appjournal.Pending{}, err
+	}
+	occurred := engineapp.FormatTime(d.OccurredAt)
+	guard := d.GuardStreams
+	if guard == nil {
+		guard = []string{}
+	}
+	// Команда группового решения пишет по записи в поток каждого изделия:
+	// event_id у записей свои, command_id и correlation_id — команды.
+	cmdID := strings.ToLower(d.Meta.CommandID)
+	if _, err := uuid.Parse(cmdID); err != nil || cmdID == "" {
+		cmdID = id
+	}
+	cmd := map[string]any{"command_id": cmdID, "basis_seq": d.Meta.BasisSeq, "guard_streams": guard, "policy_seq": d.Meta.PolicySeq,
+		"signature_level": d.SignatureLevel}
+	if d.Meta.WorkplaceID != "" {
+		cmd["workplace_id"] = d.Meta.WorkplaceID
+	}
+	env := map[string]any{
+		"event_id": id, "event_type": string(d.Type), "schema_version": info.CurrentVersion, "source_id": SourceAPI,
+		"source_kind": "manual_entry", "occurred_at": occurred, "correlation_id": cmdID, "causation_id": nil, "command": cmd,
+		"integrity": map[string]any{"format_version": 1, "crypto_profile": "gost", "signers": []string{signer(d.Actor)}},
+		"data":      json.RawMessage(data),
+	}
+	if d.ItemID != "" {
+		env["item_id"] = d.ItemID
+	}
+	if d.RunID != "" {
+		env["run_id"] = d.RunID
+	}
+	canon, err := engine.Canonical(env)
+	if err != nil {
+		return appjournal.Pending{}, err
+	}
+	sealed, _ := json.Marshal(struct {
+		PayloadType string   `json:"payloadType"`
+		Payload     string   `json:"payload"`
+		Signatures  []string `json:"signatures"`
+	}{engineapp.PayloadTypeEvent, base64.StdEncoding.EncodeToString(canon), []string{}})
+	e := jc.JournalEntry{
+		Chain: jc.JournalEntryChainMain, EntryKind: jc.JournalEntryEntryKindDecision, EventType: string(d.Type),
+		SchemaVersion: info.CurrentVersion, EventID: id, SourceID: SourceAPI, Stream: d.Stream,
+		OccurredAt: occurred, ReceivedAt: engineapp.FormatTime(s.d.Now()), CorrelationID: cmdID,
+		ProvenanceClass: jc.JournalEntryProvenanceClassPersonal, DomainBuild: s.cfg.DomainBuild,
+	}
+	if s.cfg.ScenarioClock {
+		e.RecordedAt = occurred
+	}
+	if d.ItemID != "" {
+		item := d.ItemID
+		e.ItemID = &item
+		e.Partition = kernel.PartitionOf(d.ItemID, s.cfg.Partitions)
+	} else {
+		// Записи вне изделия — партиция стадии за пределами 0…P-1 (как у приёма).
+		e.Partition = s.cfg.Partitions
+	}
+	if d.RunID != "" {
+		run := d.RunID
+		e.RunID = &run
+	}
+	if d.Meta.BasisSeq > 0 {
+		b := int(d.Meta.BasisSeq)
+		e.BasisSeq = &b
+	}
+	if d.Meta.PolicySeq > 0 {
+		p := int(d.Meta.PolicySeq)
+		e.PolicySeq = &p
+	}
+	return appjournal.Pending{Entry: e, Envelope: sealed}, nil
 }
 
 // replayed — команда с этим command_id уже записана (AD-7): прежняя

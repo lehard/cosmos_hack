@@ -8570,6 +8570,11 @@ components:
           type: array
         evidence:
           $ref: "#/components/schemas/NCEvidence"
+        group_item_ids:
+          description: "Изделия группового несоответствия: окно нарушения специального процесса — одно несоответствие на все изделия окна, решение комиссии приходит каждому (FR-151)."
+          items:
+            type: string
+          type: array
         happened:
           $ref: "#/components/schemas/NCHappened"
         human_decisions:

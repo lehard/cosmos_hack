@@ -214,6 +214,7 @@ type NCCard struct {
 	PhysicallyNotMoved  bool                   `json:"physically_not_moved,omitempty" doc:"«Изолировано в системе, физически не перемещено» (FR-55)."`
 	ApprovalsStatus     *string                `json:"approvals_status,omitempty" enum:"route_closed,pending,demo_stub" doc:"Подписи маршрута решения (режим 4): pending — решение не исполняется; demo_stub — демо, подписи не проверялись."`
 	Containment         []NCContainmentSource  `json:"containment,omitempty" doc:"Действующие основания сдерживания."`
+	GroupItemIDs        []string               `json:"group_item_ids,omitempty" doc:"Изделия группового несоответствия: окно нарушения специального процесса — одно несоответствие на все изделия окна, решение комиссии приходит каждому (FR-151)."`
 }
 
 // NCSummary — несоответствие в списке.

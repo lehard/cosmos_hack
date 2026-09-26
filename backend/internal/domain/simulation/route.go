@@ -341,7 +341,7 @@ func (g *gen) item(p *ItemPlan) {
 			g.act(Action{Kind: ActionDecision, At: t, Scenario: "route", Label: p.ID + "/register", Operation: "item.item.register",
 				Role: "storekeeper", Actor: g.ids.Person(r.Storekeeper), Binds: p.ID, Item: p.ID,
 				Body: map[string]any{"item_type_id": w.ItemType, "item_revision": w.ItemRevision, "order_id": "{local:" + p.Order + "}",
-					"lot_ids": []any{"{local:" + blank + "}"}, "entry_step_key": "incoming.issue_blank"}})
+					"lot_ids": []any{"{local:" + blank + "}"}, "entry_step_key": "incoming.distribute"}})
 			decide(s+"/tag", t.Add(time.Minute), "item.carrier.apply", "storekeeper", r.Storekeeper, itemParam,
 				map[string]any{"carrier_type": "tag_qr", "value": "{carrier:TAG:" + p.ID + "}", "is_temporary": true})
 			decide(s+"/issue", t.Add(2*time.Minute), "crossitem.lot.issue", "storekeeper", r.Storekeeper,
@@ -393,6 +393,11 @@ func (g *gen) item(p *ItemPlan) {
 			if ring == "" {
 				ring = "R-" + n
 			}
+			// Ветка патрубка процесса (V6 «Склад: патрубок — выдача в
+			// сварочный цех» → E1b «принято в работу») закрывается приёмом
+			// кольца в сварочном цехе; без него слияние WJ перед сваркой ждёт.
+			decide(s+"/receive", t, "process.movement.receive", "site_foreman", r.MasterWC, itemParam, map[string]any{"destination_kind": "workshop",
+				"from_location_id": "WH-SK", "to_location_id": "WS-WC", "inspection_on_receipt": "no_damage", "step_key": "incoming.issue_pipe"})
 			decide(s+"/issue", t, "crossitem.lot.issue", "storekeeper", r.Storekeeper, map[string]any{"lot_id": "{local:" + ringLot + "}"},
 				map[string]any{"item_ids": []any{"{item:" + p.ID + "}"}, "quantity": 1, "to_location_id": "WS-WC"})
 			decide(s+"/scan", t.Add(3*time.Minute), "item.assembly.record", "performer", welder, itemParam, map[string]any{
@@ -433,6 +438,12 @@ func (g *gen) item(p *ItemPlan) {
 					map[string]any{"lot_id": "{local:" + lot + "}"},
 					map[string]any{"item_ids": []any{"{item:" + p.ID + "}"}, "quantity": qty, "to_location_id": "WS-AC"})
 			}
+			// Ветка покупных (V7 «выдача на сборку» → E4 «принято в работу»)
+			// закрывается приёмом комплекта в сборочном цехе; без него слияние
+			// AJ перед установкой уплотнения ждёт.
+			decide(s+"/receive", t.Add(5*time.Minute), "process.movement.receive", "site_foreman", r.MasterAC, itemParam, map[string]any{
+				"destination_kind": "workshop", "from_location_id": "WH-SK", "to_location_id": "WS-AC", "inspection_on_receipt": "no_damage",
+				"step_key": "incoming.issue_assembly_parts"})
 			decide(s, t.Add(10*time.Minute), "process.operation.start", "performer", r.Assembler, itemParam, map[string]any{
 				"operation_code": "AS", "operation_run_id": run("AS"), "step_key": "assembly.seal_install", "station_id": "ST-ASM"})
 		case "assembly":

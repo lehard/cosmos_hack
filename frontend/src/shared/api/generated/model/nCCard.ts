@@ -28,6 +28,8 @@ export interface NCCard {
   /** Действующие основания сдерживания. */
   containment?: NCContainmentSource[];
   evidence: NCEvidence;
+  /** Изделия группового несоответствия: окно нарушения специального процесса — одно несоответствие на все изделия окна, решение комиссии приходит каждому (FR-151). */
+  group_item_ids?: string[];
   happened: NCHappened;
   /** Решения людей с подписью (отдельно от вывода системы). */
   human_decisions: NCRecordRef[];

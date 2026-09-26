@@ -151,6 +151,13 @@ func (m *machine) apply(r kernel.Record) {
 		d, _ := decode[presentationData](r)
 		m.noteDecision(r, d.StepKey)
 		m.advanceGate(Presentation{StepKey: d.StepKey, Resolution: d.Resolution, DecisionEventID: r.EventID, PresentationNo: d.PresentationNo, ConcessionID: d.ConcessionID})
+	case catalog.DecisionNonconformityConfirmed:
+		// BPMN, стартовое событие N0 подпроцесса брака: «Е-90
+		// decision.signal_confirmed» — подтверждённое человеком несоответствие.
+		m.noteDecision(r, "")
+		if signedDecision(r) {
+			m.enterNC()
+		}
 	case catalog.DecisionDispositionSet:
 		m.disposition(r)
 	case catalog.DecisionItemIsolated:
@@ -642,6 +649,10 @@ func (m *machine) disposition(r kernel.Record) {
 		m.refuse("gate", "", errcodes.NonconformityGateWithoutSignature, "решение по изделию без подписи")
 		return
 	}
+	// Решение по изделию без входа в подпроцесс брака (несоответствие,
+	// зарегистрированное правилом окна спецпроцесса, групповое решение
+	// комиссии) — само подписанное решение и заводит изделие на ЗТ-Р.
+	m.enterNC()
 	vars := map[string]Value{VarDisposition: Str(d.Disposition)}
 	order := []string{authorityDisposition}
 	if d.ConcessionID != "" {
@@ -666,6 +677,76 @@ func (m *machine) disposition(r kernel.Record) {
 			m.setVar(&m.s.Tokens[i], VarDisposition, Str(d.Disposition))
 		}
 	}
+}
+
+// enterNC — подписанное несоответствие заводит изделие в подпроцесс брака
+// своего участка (FR-44, FR-53; BPMN: старт N0 «Е-90
+// decision.signal_confirmed»): токен уходит с текущего шага в ближайший по
+// маршруту вызов подпроцесса брака (у ЗТ участка: МН, СН, АН, …) — не только
+// через «не годно» на закрывающей точке. Изделие уже в подпроцессе — без
+// изменений; токенов несколько (параллельные ветки) — первый по id, от
+// которого вызов достижим; остальные ветки стоят, где стояли.
+func (m *machine) enterNC() {
+	ids := make([]int, 0, len(m.s.Tokens))
+	for _, t := range m.s.Tokens {
+		if len(t.Stack) > 0 {
+			return
+		}
+		ids = append(ids, t.ID)
+	}
+	slices.Sort(ids)
+	for _, id := range ids {
+		t := m.tok(id)
+		call := m.ncCallAhead(t.Node)
+		if call == "" {
+			continue
+		}
+		m.closeVisit(id, "nonconformity")
+		m.disarm(id, "")
+		t.RunID, t.Block = "", ""
+		m.enter(id, call)
+		return
+	}
+}
+
+// ncCallAhead — ближайший (поиск в ширину по порядку документа) вызов
+// подпроцесса брака, достижимый от узла from в его области; пусто — нет.
+func (m *machine) ncCallAhead(from string) string {
+	seen := map[string]bool{from: true}
+	q := []string{from}
+	for len(q) > 0 {
+		id := q[0]
+		q = q[1:]
+		n := m.d.Node(id)
+		if n == nil {
+			continue
+		}
+		if n.Type == NodeCallActivity && m.ncScope(n.CalledElement) {
+			return n.ID
+		}
+		for _, nx := range m.d.Next(n) {
+			if !seen[nx] {
+				seen[nx] = true
+				q = append(q, nx)
+			}
+		}
+	}
+	return ""
+}
+
+// ncScope — вызываемый процесс — подпроцесс брака: в нём есть точка решения
+// по изделию (ЗТ-Р, полномочие nc_disposition).
+func (m *machine) ncScope(scope string) bool {
+	sc := m.d.Scopes[scope]
+	if sc == nil {
+		return false
+	}
+	for _, id := range sc.Nodes {
+		if n := m.d.Node(id); n != nil && n.Presentation != nil && n.Presentation.Authority == authorityDisposition {
+			return true
+		}
+	}
+	return false
 }
 
 // recheckBlocked — снять блок, если предусловия теперь выполнены (разрешение

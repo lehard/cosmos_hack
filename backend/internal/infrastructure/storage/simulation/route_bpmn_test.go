@@ -84,6 +84,9 @@ func decisionRecord(a sim.Action, ids *sim.IDMap, hash string) (catalog.Type, ma
 	case "nonconformity.presentation.resolve":
 		return catalog.DecisionPresentationResolved, map[string]any{"step_key": get(body, "step_key"), "closing_point": get(body, "closing_point"),
 			"resolution": get(body, "resolution"), "presentation_no": get(body, "presentation_no"), "method_event_ids": []string{}}, true
+	case "nonconformity.nonconformity.confirm":
+		return catalog.DecisionNonconformityConfirmed, map[string]any{"nc_id": "NC", "signal_ids": get(body, "signal_ids"),
+			"severity": get(body, "severity"), "reason": map[string]string{"code": "x", "text": "x"}}, true
 	case "nonconformity.disposition.set":
 		return catalog.DecisionDispositionSet, map[string]any{"nc_id": "NC", "disposition": get(body, "disposition"),
 			"concession_id": get(body, "concession_id"), "reason": map[string]string{"code": "x", "text": "x"}}, true
@@ -113,9 +116,30 @@ func itemRoutes(t *testing.T, p *sim.Plan, hash string) map[string][]routeRecord
 		out[e.Item] = append(out[e.Item], routeRecord{at: e.DeliverAt, order: e.Order, label: e.Label,
 			rec: kernel.Record{EventID: e.EventID, Type: catalog.Type(env.Type), Provenance: "device", OccurredAt: e.OccurredAt, Data: env.Data}})
 	}
+	// Групповое решение по несоответствию (NC-G1, S05) — без изделия в шаге:
+	// модуль nonconformity пишет его в поток каждого изделия группы. Состав
+	// группы здесь — изделия, которые комиссия подтвердила в области
+	// инцидента того же сценария до решения (analysis.item.assess confirmed);
+	// живой прогон берёт его из несоответствия окна спецпроцесса.
+	confirmed := map[string][]string{}
 	for _, a := range p.Actions {
-		if a.Kind != sim.ActionDecision || a.Item == "" || a.Refusal != "" {
+		if a.Kind != sim.ActionDecision || a.Operation != "analysis.item.assess" || a.Item == "" || a.Body["assessment"] != "confirmed" {
 			continue
+		}
+		if !slices.Contains(confirmed[a.Scenario], a.Item) {
+			confirmed[a.Scenario] = append(confirmed[a.Scenario], a.Item)
+		}
+	}
+	for _, a := range p.Actions {
+		if a.Kind != sim.ActionDecision || a.Refusal != "" {
+			continue
+		}
+		items := []string{a.Item}
+		if a.Item == "" {
+			if a.Operation != "nonconformity.disposition.set" {
+				continue
+			}
+			items = confirmed[a.Scenario]
 		}
 		typ, data, ok := decisionRecord(a, p.IDs, hash)
 		if !ok {
@@ -125,10 +149,12 @@ func itemRoutes(t *testing.T, p *sim.Plan, hash string) map[string][]routeRecord
 		if err != nil {
 			t.Fatal(err)
 		}
-		// решения идут после событий того же момента: раннер доставляет
-		// наступившие события до шагов людей
-		out[a.Item] = append(out[a.Item], routeRecord{at: a.At, order: 1 << 30, label: a.Label,
-			rec: kernel.Record{EventID: p.IDs.CommandID(a.Seq), Type: typ, Provenance: "personal", OccurredAt: a.At, Data: b}})
+		for _, item := range items {
+			// решения идут после событий того же момента: раннер доставляет
+			// наступившие события до шагов людей
+			out[item] = append(out[item], routeRecord{at: a.At, order: 1 << 30, label: a.Label,
+				rec: kernel.Record{EventID: p.IDs.CommandID(a.Seq) + "/" + item, Type: typ, Provenance: "personal", OccurredAt: a.At, Data: b}})
+		}
 	}
 	for item, rs := range out {
 		slices.SortStableFunc(rs, func(x, y routeRecord) int {
@@ -155,21 +181,13 @@ func itemRoutes(t *testing.T, p *sim.Plan, hash string) map[string][]routeRecord
 // покраснеет — строку нужно убрать.
 var knownGaps = map[string]map[string]string{
 	"MS-1": {
-		// S05, S10A: переварка по групповому несоответствию инцидента. По BPMN
-		// в подпроцесс брака изделие попадает только через «не годно» на ЗТ;
-		// несоответствие, подтверждённое по сигналу (S03, S05), и групповое
-		// решение «переделка» (NC-G1) токен в подпроцесс не ведут — повторная
-		// сварка «вне маршрута» (process 17 + nonconformity 21).
-		"F-017": "переварка без входа в подпроцесс брака (НС по сигналу, групповое решение)",
-		"F-021": "переварка без входа в подпроцесс брака (НС по сигналу, групповое решение)",
-		"F-023": "переварка без входа в подпроцесс брака (НС по сигналу, групповое решение)",
-		"F-025": "переварка без входа в подпроцесс брака (групповое решение)",
-		// Ф-015 уже в сборке: пути из сборочной дорожки обратно на сварку в
-		// процессе нет — нужен нормативный ответ (процессная сессия, эпик 39).
-		"F-015": "переварка изделия, ушедшего со сварки: пути назад в процессе нет",
-	},
-	"S10B": {
-		"F-090": "повторные переварки по несоответствию без ЗТ-3 «не годно» (process 17 + nonconformity 21)",
+		// Ф-015 уже в сборке, когда приходит групповое решение «переделка»
+		// (NC-G1, S05): подпроцесс брака сборочного участка (АН) возвращает
+		// токен в сборку, а карточка ведёт изделие обратно на сварку
+		// (перемещение СИЦ → СЦ, переварка SV-015-2, повторная ЗТ-3). Пути из
+		// сборочной дорожки на сварку BPMN не описывает — вопрос процессной
+		// сессии (эпик 39); модуль его не выдумывает.
+		"F-015": "переварка изделия, ушедшего со сварки: пути назад в процессе нет — вопрос процессной сессии",
 	},
 }
 
@@ -298,6 +316,20 @@ func TestRouteWalksFlangeBPMN(t *testing.T) {
 				}
 				if it.Until == "release" && !slices.Contains(it.Skip, "release") && !s.Process.Completed {
 					t.Errorf("%s: маршрут до выпуска, а изделие на %v", it.ID, s.Process.Steps())
+				}
+				// S01-11: «принято в работу» уходит по каждой ветке раздачи
+				// (заготовка, патрубок, покупные на сборку) — регистрация до
+				// параллельной раздачи, приёмы веток — шагами генератора.
+				if it.Until == "release" && !slices.Contains(it.Skip, "release") {
+					n := 0
+					for _, th := range s.Process.Thrown {
+						if th.ErpAction == "accept_into_work" {
+							n++
+						}
+					}
+					if n != 3 {
+						t.Errorf("%s: «принято в работу» %d раз, ожидалось 3 (заготовка, патрубок, покупные)", it.ID, n)
+					}
 				}
 			}
 		})

@@ -185,6 +185,49 @@ func TestNonconformitySubprocessReturnsToCallPoint(t *testing.T) {
 	}
 }
 
+// BPMN N0 «Е-90 decision.signal_confirmed»: подписанное подтверждение
+// несоответствия заводит изделие в подпроцесс брака своего участка — без
+// «не годно» на ЗТ; решение «переделка» возвращает на подготовку кромок.
+func TestConfirmedNonconformityEntersSubprocess(t *testing.T) {
+	w := newWorld(t)
+	weldOnce(w)
+	w.add(catalog.DecisionNonconformityConfirmed, 55, map[string]any{"nc_id": "NC-1", "severity": "major", "reason": map[string]string{"code": "x", "text": "x"}})
+	s, _ := w.fold()
+	wantSteps(t, s, "nc.isolation")
+	if tk := s.TokenAt("nc.isolation"); len(tk.Stack) != 1 || tk.Stack[0].Call != "NC1" {
+		t.Fatalf("нет кадра вызова NC1 (подпроцесс участка сварки): %+v", tk)
+	}
+	// Повторное подтверждение (другое несоответствие) токен не двигает.
+	w.add(catalog.DecisionNonconformityConfirmed, 56, map[string]any{"nc_id": "NC-2", "severity": "major", "reason": map[string]string{"code": "x", "text": "x"}})
+	s, _ = w.fold()
+	wantSteps(t, s, "nc.isolation")
+	w.dispose("rework", 70)
+	s, _ = w.fold()
+	wantSteps(t, s, "welding.edge_prep")
+	if len(s.Refusals) > 0 {
+		t.Fatalf("отказы: %+v", s.Refusals)
+	}
+}
+
+// Решение по изделию без подтверждения (несоответствие окна спецпроцесса,
+// групповое решение комиссии) само заводит изделие на ЗТ-Р; без подписи —
+// не заводит.
+func TestDispositionWithoutConfirmEntersSubprocess(t *testing.T) {
+	w := newWorld(t)
+	weldOnce(w)
+	r := w.add(catalog.DecisionNonconformityConfirmed, 55, map[string]any{"nc_id": "NC-1"})
+	w.in[len(w.in)-1].Provenance = "server-attested"
+	_ = r
+	s, _ := w.fold()
+	wantSteps(t, s, "welding.zt3")
+	w.dispose("rework", 70)
+	s, _ = w.fold()
+	wantSteps(t, s, "welding.edge_prep")
+	if !slices.ContainsFunc(s.Gaps, func(g Gap) bool { return g.StepKey == "nc.isolation" }) {
+		t.Fatalf("пропуск изоляции не помечен «нет данных»: %+v", s.Gaps)
+	}
+}
+
 // FR-18: четвёртая доработка зоны при лимите 3 без разрешения блокируется.
 func TestFourthReworkOfZoneIsBlocked(t *testing.T) {
 	w := newWorld(t)

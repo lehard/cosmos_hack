@@ -196,7 +196,8 @@ type Visit struct {
 	Node    string     `json:"node"`
 	Entered time.Time  `json:"entered"`
 	Left    *time.Time `json:"left,omitempty"`
-	// Via — как покинут: completed | timer | skipped | terminated.
+	// Via — как покинут: completed | timer | skipped | terminated |
+	// nonconformity (подтверждённое несоответствие увело в подпроцесс брака).
 	Via string `json:"via,omitempty"`
 }
 

@@ -2,6 +2,7 @@ package nonconformity
 
 import (
 	"context"
+	"slices"
 	"strings"
 	"time"
 	"uuid"
@@ -235,16 +236,25 @@ func (s *Service) SetDisposition(ctx context.Context, ncID string, in SetDisposi
 			return s.useConcession(ctx, in.ConcessionID, v.ItemID, in.Disposition, now)
 		}
 	}
-	return s.nc(ctx, ncID, c)
+	return s.group(ctx, ncID, c, nil)
 }
 
 // VerifyDisposition — подтвердить выполнение решения повторной проверкой.
+// Групповое несоответствие: проверка относится к изделиям, чьи результаты
+// повторного контроля в ней указаны (у каждого изделия — свои).
 func (s *Service) VerifyDisposition(ctx context.Context, ncID string, in VerifyDisposition) (platform.Receipt, error) {
 	if !s.live() {
 		return s.Unimplemented.VerifyDisposition(ctx, ncID, in)
 	}
-	return s.nc(ctx, ncID, itemCommand{Action: dom.ActVerify, Type: catalog.DecisionDispositionVerified, Meta: in.CommandMeta(),
-		Data: dom.DispositionVerifiedData{NCID: ncID, RecheckEventIDs: in.RecheckEventIDs}})
+	c := itemCommand{Action: dom.ActVerify, Type: catalog.DecisionDispositionVerified, Meta: in.CommandMeta(),
+		Data: dom.DispositionVerifiedData{NCID: ncID, RecheckEventIDs: in.RecheckEventIDs}}
+	var pick func(v *itemView) bool
+	if len(in.RecheckEventIDs) > 0 {
+		pick = func(v *itemView) bool {
+			return slices.ContainsFunc(in.RecheckEventIDs, func(id string) bool { return slices.Contains(v.State().Inspections, id) })
+		}
+	}
+	return s.group(ctx, ncID, c, pick)
 }
 
 // Close — закрыть несоответствие по изделию (системное расследование не закрывается, FR-51).
@@ -252,8 +262,8 @@ func (s *Service) Close(ctx context.Context, ncID string, in CloseNonconformity)
 	if !s.live() {
 		return s.Unimplemented.Close(ctx, ncID, in)
 	}
-	return s.nc(ctx, ncID, itemCommand{Action: dom.ActClose, Type: catalog.DecisionNonconformityClosed, Meta: in.CommandMeta(),
-		Data: dom.ClosedData{NCID: ncID, Summary: in.Summary}})
+	return s.group(ctx, ncID, itemCommand{Action: dom.ActClose, Type: catalog.DecisionNonconformityClosed, Meta: in.CommandMeta(),
+		Data: dom.ClosedData{NCID: ncID, Summary: in.Summary}}, nil)
 }
 
 // SetContainment — установить уровень сдерживания (FR-49): защитное.
