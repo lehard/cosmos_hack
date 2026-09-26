@@ -1,11 +1,27 @@
-// Пакет vision — бизнес-правила модуля vision: VisionQC и OperatorVision: порты сигналов, карты контроля, паспорта допуска анализаторов, откат.
+// Пакет vision — бизнес-правила модуля vision: VisionQC и OperatorVision.
+//
+// Что здесь (эпик 33):
+//   - Versions — вектор версий наблюдения (AD-29): восемь составляющих,
+//     несообщённое — явное unknown;
+//   - Fold — реестр паспортов допуска и проверок анализаторов из записей
+//     analyzer.* (статусы, откат действует на будущее), EffectiveLevel и
+//     AllowedAutoActions — уровень доверия и допустимые автоматические действия
+//     (contracts/analyzer-trust-levels.yaml);
+//   - GuardAdmit, GuardReinstate, GuardRetire — гарды операций паспорта
+//     (AD-39): вернуть анализатор после отката — только начальник ОТК (AD-27);
+//   - Sessions, ExecutorAt — исполнитель гипотезы OperatorVision по входу на
+//     рабочее место, без распознавания лиц (FR-126);
+//   - ChooseIllustration — иллюстрация открытого набора к наблюдению с
+//     пометкой «ИЛЛЮСТРАЦИЯ», источником, лицензией и автором (FR-102).
 //
 // Слой: domain — чистые детерминированные функции без часов, случайности,
-// float и ввода-вывода (AD-4); модуль композиции свёртки изделия (AD-40): импортирует только доменные модули раньше себя в порядке kernel → reference → signing → access → item → process → vision → quality → machinelogs → documents → nonconformity → analysis → notifications → crossitem → engine.
-// Связи: вызывается из application/vision, из свёртки (domain/engine) и
-// независимым верификатором (AD-9).
+// float и ввода-вывода (AD-4); модуль композиции свёртки изделия (AD-40):
+// импортирует только доменные модули раньше себя в порядке kernel → reference
+// → signing → access → item → process → vision → quality → … Уровень доверия
+// паспорта к наблюдению применяет quality (quality.PassportsFrom).
+// Связи: вызывается из application/vision и независимым верификатором (AD-9).
 //
-// Требования: FR-97…FR-103, FR-126, AD-18, AD-29.
+// Требования: FR-38, FR-97…FR-103, FR-126, AD-18, AD-29.
 // Компонент кейса §3.2: VisionQC, OperatorVision.
-// Владелец после волны 1: эпик 33 (порты и эмуляторы), 40 (адаптация).
+// Владелец: эпик 33 (порты и эмуляторы), 40 (допуск, откат, адаптация).
 package vision

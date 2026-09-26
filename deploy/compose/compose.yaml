@@ -103,12 +103,13 @@ services:
 
   ant:
     <<: [*ant-image, *ant-common]
-    command: ["-role=api,worker,crossitem,projector,scheduler"]
+    command: ["-role=api,worker,crossitem,projector,scheduler,outbox,stands"]
     depends_on:
       migrate:
         condition: service_completed_successfully
     ports:
       - "${ANT_HTTP_BIND:-127.0.0.1}:${ANT_HTTP_PORT:-8480}:8080"
+      - "${ANT_HTTP_BIND:-127.0.0.1}:${ANT_STANDS_PORT:-8491}:8491"
     volumes:
       - secrets:/run/ant-secrets:ro
       - ../config/ant.yaml:/etc/ant/ant.yaml:ro

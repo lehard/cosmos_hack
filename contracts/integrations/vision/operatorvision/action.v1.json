@@ -1,0 +1,175 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/integrations/vision/operatorvision/action.v1.json",
+  "title": "OperatorVisionActionV1",
+  "description": "Гипотеза внешней системы OperatorVision («Контроль действий оператора») о действии у рабочего места (FR-126): пропущен шаг, нарушен порядок, лишний шаг, инструмента нет. Распознавания лиц нет: в сообщении нет и не может быть сведений о человеке — исполнитель определяется в ant по входу на рабочее место. Сообщение системы (или её stand-а) → edge-агент (POST /v1/vision/operatorvision) → operator.action.observed. Закрытая схема.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "hypothesis_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+      "description": "Идентификатор гипотезы, уникальный в системе."
+    },
+    "seq": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991,
+      "description": "Номер сообщения системы: разрыв номеров виден получателю как пропуск."
+    },
+    "system_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+      "description": "Экземпляр внешней системы (станция видеофиксации)."
+    },
+    "camera_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+      "description": "Камера."
+    },
+    "run_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,62}$",
+      "description": "Прогон сценария (AD-38), если система работает в прогоне."
+    },
+    "creation_time": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$",
+      "description": "Время результата по часам системы (CreationTime OPC UA MV), UTC."
+    },
+    "is_simulated": {
+      "type": "boolean",
+      "description": "Результат получен в режиме симуляции (IsSimulated OPC UA MV)."
+    },
+    "part_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+      "description": "Идентификатор детали, переданный системе линией (PartId OPC UA MV): внутренний ID или значение DataMatrix."
+    },
+    "part_id_kind": {
+      "type": "string",
+      "enum": [
+        "internal",
+        "datamatrix",
+        "qr"
+      ],
+      "description": "Чем является part_id: внутренний ID изделия или значение носителя."
+    },
+    "workplace_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$",
+      "description": "Рабочее место, которое видит камера."
+    },
+    "tp_step": {
+      "type": "string",
+      "maxLength": 64,
+      "description": "Шаг техпроцесса, к которому относится гипотеза."
+    },
+    "action": {
+      "type": "string",
+      "enum": [
+        "step_missed",
+        "sequence_broken",
+        "extra_step",
+        "tool_missing",
+        "tool_returned",
+        "manual_intervention",
+        "other"
+      ],
+      "description": "Гипотеза о действии."
+    },
+    "confidence_bp": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10000,
+      "description": "Уверенность системы, б. п."
+    },
+    "frame_quality_bp": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10000,
+      "description": "Качество наблюдения, б. п."
+    },
+    "recipe": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Карта контроля (рецепт) системы.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 96,
+          "description": "Идентификатор карты контроля."
+        },
+        "version": {
+          "type": "string",
+          "maxLength": 24,
+          "description": "Версия карты контроля."
+        }
+      },
+      "required": [
+        "id",
+        "version"
+      ]
+    },
+    "configuration": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Конфигурация контура: камера и свет, калибровка, профиль порогов.",
+      "properties": {
+        "camera_config": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "Конфигурация камеры и света."
+        },
+        "calibration": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "Калибровка."
+        },
+        "threshold_profile": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "Профиль порогов."
+        }
+      }
+    },
+    "software": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Версии программ системы.",
+      "properties": {
+        "analyzer_version": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "Версия анализатора (модели)."
+        },
+        "app_version": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Версия приложения системы."
+        },
+        "contract_version": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Версия этого контракта у системы."
+        }
+      }
+    },
+    "product_revision": {
+      "type": "string",
+      "maxLength": 64,
+      "description": "Ревизия изделия (КД), которую система считает действующей."
+    }
+  },
+  "required": [
+    "hypothesis_id",
+    "seq",
+    "system_id",
+    "camera_id",
+    "creation_time",
+    "workplace_id",
+    "action",
+    "recipe",
+    "software"
+  ]
+}

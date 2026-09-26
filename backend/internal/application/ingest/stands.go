@@ -33,11 +33,17 @@ const (
 // FaultKinds — все виды сбоев.
 var FaultKinds = []FaultKind{FaultOffline, FaultDelay, FaultDuplicate, FaultDrop, FaultReorder, FaultClockSkew, FaultCorrupt, FaultError}
 
-// Fault — включённый сбой: вид, параметр (мс или доля в bp) и срок (нулевой — до снятия).
+// Fault — включённый сбой: вид, параметр (мс, доля в bp или код ответа) и
+// срок (нулевой — до снятия). Match — только для сообщения, подходящего под
+// образец (бизнес-ключ, вид: «release_good:F-001»); что значит образец,
+// решает stand (эпик 30: сбой stand-а 1С по конкретному сообщению). Detail —
+// текст ошибки, которую stand вернёт.
 type Fault struct {
-	Kind  FaultKind `json:"kind"`
-	Param int64     `json:"param,omitempty"`
-	Until time.Time `json:"until,omitzero"`
+	Kind   FaultKind `json:"kind"`
+	Param  int64     `json:"param,omitempty"`
+	Until  time.Time `json:"until,omitzero"`
+	Match  string    `json:"match,omitempty"`
+	Detail string    `json:"detail,omitempty"`
 }
 
 // StandInfo — stand внешней системы или оборудования (AD-18): что эмулирует,

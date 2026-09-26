@@ -108,6 +108,12 @@ func runAPI(ctx context.Context, env *environment) error {
 			return err
 		}
 	}
+	if modeOf(opts, "erp") == platform.ModeLive {
+		// Эпик 30: операции erp.* над проекциями erp.* и каналами обмена.
+		if opts.erp, err = erpLive(ctx, env); err != nil {
+			return err
+		}
+	}
 	if modeOf(opts, "analysis") == platform.ModeLive {
 		if opts.analysis, err = analysisLive(ctx, env); err != nil {
 			return err
@@ -115,6 +121,12 @@ func runAPI(ctx context.Context, env *environment) error {
 	}
 	if modeOf(opts, "nonconformity") == platform.ModeLive {
 		if opts.nonconformity, err = nonconformityLive(ctx, env); err != nil {
+			return err
+		}
+	}
+	if modeOf(opts, "vision") == platform.ModeLive {
+		// Паспорта допуска анализаторов — над журналом ядра (эпик 33).
+		if opts.vision, err = visionLive(ctx, env); err != nil {
 			return err
 		}
 	}

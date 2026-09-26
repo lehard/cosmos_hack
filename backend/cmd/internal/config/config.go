@@ -117,6 +117,37 @@ type Config struct {
 		// Enabled — включённые внешние системы (stand-ы или настоящие адаптеры).
 		Enabled []string `yaml:"enabled"`
 	} `yaml:"integrations"`
+
+	// ERP — каналы обмена с учётными системами (эпик 30; AD-18: включённые
+	// системы и адреса — конфигурация). Канал 1С работает, если "onec" есть в
+	// integrations.enabled.
+	ERP struct {
+		OneC OneC `yaml:"onec"`
+	} `yaml:"erp"`
+}
+
+// OneC — канал обмена с 1С: адрес публикации базы (stand или реальная 1С),
+// учётные данные файлом, повторы и опросы роли outbox (AD-7, AD-18, FR-96).
+type OneC struct {
+	// BaseURL — `http(s)://‹хост›/‹база›`; OData — `…/odata/standard.odata/`,
+	// сервис qc — `…/hs/qc/v1/`. Пусто — stand роли stands на этом хосте.
+	BaseURL string `yaml:"base_url"`
+	// User, PasswordFile — HTTP Basic (пароль — только файлом).
+	User         string `yaml:"user"`
+	PasswordFile string `yaml:"password_file"`
+	// Enterprise — код предприятия в источнике сообщений.
+	Enterprise string `yaml:"enterprise"`
+	// Stand — на месте 1С stand (эмулятор кейса).
+	Stand bool `yaml:"stand"`
+	// Timeout — предел ответа 1С (дольше — транспортная ошибка, повтор).
+	Timeout time.Duration `yaml:"timeout"`
+	// Poll — период опроса очереди исходящих; Recheck — сверки $metadata при
+	// ok; PullEvery — опроса входящих (задания, номенклатура, партии).
+	Poll      time.Duration `yaml:"poll"`
+	Recheck   time.Duration `yaml:"recheck"`
+	PullEvery time.Duration `yaml:"pull_every"`
+	// RetryMax — попыток при транспортных ошибках до карантина.
+	RetryMax int `yaml:"retry_max"`
 }
 
 // DB — подключение к PostgreSQL. Пароль — только файлом.

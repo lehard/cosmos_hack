@@ -1,7 +1,8 @@
 // Команда edge-agent — агент на краю (кейс §3.2 «Edge-агенты и защищённый
 // обмен», FR-39, AD-7, AD-18): ключ устройства, source_seq, буфер исходных
 // подписанных конвертов на диске, досылка пачками после недоступности ядра;
-// локальный вход для источников и stand-ов оборудования.
+// локальный вход для источников, stand-ов оборудования и систем видеофиксации
+// (VisionQC, OperatorVision: адаптеры на краю, vision.go, эпик 33).
 //
 // Слой: точка входа отдельного процесса (граница доверия — устройство, AD-25).
 //
@@ -49,6 +50,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 	interval := fs.Duration("interval", time.Second, "период досылки")
 	kind := fs.String("source-kind", "machine", "source_kind по умолчанию (FR-140)")
 	examples := fs.String("examples", "", "каталог примеров contracts/events/examples/contract-change (demo)")
+	illustrations := fs.String("illustrations", env("EDGE_ILLUSTRATIONS_DIR", ""), "каталог распакованного набора иллюстраций TIG Aluminium 5083 (EDGE_ILLUSTRATIONS_DIR); пусто — иллюстрации не прикладываются")
 	if err := fs.Parse(args); err != nil {
 		return 2
 	}
@@ -115,7 +117,12 @@ func run(args []string, stdout, stderr io.Writer) int {
 		}
 		return 0
 	case "run":
-		srv := &http.Server{Addr: *listen, Handler: LocalHandler(a, NewExtractor()), ReadHeaderTimeout: 10 * time.Second}
+		vision, err := VisionRoutes(*core, *illustrations, nil)
+		if err != nil {
+			_, _ = fmt.Fprintln(stderr, err)
+			return 1
+		}
+		srv := &http.Server{Addr: *listen, Handler: LocalHandler(a, NewExtractor(), vision...), ReadHeaderTimeout: 10 * time.Second}
 		go func() {
 			if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 				log.Error("локальный вход", "err", err)
@@ -123,7 +130,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 			}
 		}()
 		log.Info("старт", "core", *core, "listen", *listen, "signed", signer.Signs(), "next_seq", a.Status().NextSeq)
-		err := a.Run(ctx)
+		err = a.Run(ctx)
 		sctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		_ = srv.Shutdown(sctx)

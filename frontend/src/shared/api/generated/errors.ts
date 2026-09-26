@@ -538,6 +538,21 @@ export const errorCatalog = {
     "title": "Несовместимое изменение контракта обмена",
     "uiKey": "errors.integration.contractIncompatible"
   },
+  "erp.not_quarantined": {
+    "status": 409,
+    "title": "Сообщение не ждёт решения",
+    "uiKey": "errors.integration.erpDataError"
+  },
+  "erp.correction_pending": {
+    "status": 409,
+    "title": "Новая версия отправленного сообщения ждёт решения",
+    "uiKey": "errors.integration.erpDataError"
+  },
+  "erp.channel_degraded": {
+    "status": 503,
+    "title": "Канал обмена в режиме degraded",
+    "uiKey": "errors.integration.contractIncompatible"
+  },
   "erp.galaktika_unavailable": {
     "status": 503,
     "title": "Галактика:ERP недоступна",
@@ -561,6 +576,16 @@ export const errorCatalog = {
   "analyzer.trust_level_exceeded": {
     "status": 403,
     "title": "Действие сверх уровня доверия паспорта",
+    "uiKey": "errors.generic"
+  },
+  "analyzer.invalid_transition": {
+    "status": 409,
+    "title": "Действие с паспортом недоступно в его статусе",
+    "uiKey": "errors.generic"
+  },
+  "analyzer.admission_route_open": {
+    "status": 409,
+    "title": "Протокол допуска не подписан",
     "uiKey": "errors.generic"
   },
   "federation.extract_tampered": {

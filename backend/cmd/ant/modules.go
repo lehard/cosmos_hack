@@ -96,6 +96,9 @@ type apiOptions struct {
 	// nonconformity — live-реализация nonconformity над журналом и свёрткой
 	// изделия (nonconformity.go, эпик 21); nil — заглушка 501.
 	nonconformity *nonconformityapp.Service
+	// erp — live-реализация erp над проекциями erp.*, каналами обмена и
+	// журналом (outbox.go, эпик 30); nil — заглушка 501.
+	erp *erpapp.Service
 	// ingest — live-приём над журналом ядра (ingest.go); nil — заглушка 501.
 	ingest *ingestapp.Service
 	// identity, directory — вход демо-персоной и каталог политики (демо-трек
@@ -107,6 +110,8 @@ type apiOptions struct {
 	// analytics — live-показатели над строками вклада ядра (analytics.go);
 	// nil — без хранилища (операции 501).
 	analytics *analyticsapp.Service
+	// vision — live-реализация vision над журналом ядра (vision.go, эпик 33); nil — 501.
+	vision *visionapp.Service
 	// notifications — live-реализация notifications над проекциями сроков,
 	// задач и уведомлений (notifications.go, эпик 24); nil — заглушка 501.
 	notifications *notificationsapp.Service
@@ -217,7 +222,11 @@ func buildAPI(mux *http.ServeMux, o apiOptions) *httpapi.API {
 		machinelogshttp.Register(a, q, c)
 	}
 	{
-		q, c := pick[visionapp.Queries, visionapp.Commands](a.ModeFor("vision"), visionapp.NewService(), visionfx.New())
+		live := o.vision
+		if live == nil {
+			live = visionapp.NewService()
+		}
+		q, c := pick[visionapp.Queries, visionapp.Commands](a.ModeFor("vision"), live, visionfx.New())
 		visionhttp.Register(a, q, c)
 	}
 	{
@@ -260,7 +269,11 @@ func buildAPI(mux *http.ServeMux, o apiOptions) *httpapi.API {
 		analyticshttp.Register(a, q, c)
 	}
 	{
-		q, c := pick[erpapp.Queries, erpapp.Commands](a.ModeFor("erp"), erpapp.NewService(), erpfx.New())
+		live := o.erp
+		if live == nil {
+			live = erpapp.NewService()
+		}
+		q, c := pick[erpapp.Queries, erpapp.Commands](a.ModeFor("erp"), live, erpfx.New())
 		erphttp.Register(a, q, c)
 	}
 	{

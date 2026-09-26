@@ -18,6 +18,16 @@ type FaultSwitch struct {
 	active    map[app.FaultKind]app.Fault
 	now       func() time.Time
 	held      [][]byte // придержанные сообщения для нарушения порядка
+	// manual — stand применяет сбои сам (свой протокол, сбой по образцу
+	// сообщения, служебная страница без сбоев): Middleware их пропускает.
+	manual bool
+}
+
+// Manual — сбои применяет сам stand (эпик 30, stand 1С): общий Middleware
+// пропускает запросы без изменений.
+func (f *FaultSwitch) Manual() *FaultSwitch {
+	f.manual = true
+	return f
 }
 
 // NewFaultSwitch — сбои stand-а с поддерживаемыми видами (nil — все).
@@ -85,6 +95,9 @@ func (f *FaultSwitch) Get(k app.FaultKind) (app.Fault, bool) {
 // Middleware — сбои входящих запросов протокола stand-а: offline — соединение
 // рвётся, error — 503, delay — ответ через Param мс.
 func (f *FaultSwitch) Middleware(next http.Handler) http.Handler {
+	if f.manual {
+		return next
+	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if _, ok := f.Get(app.FaultOffline); ok {
 			if hj, ok := w.(http.Hijacker); ok {

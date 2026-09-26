@@ -31,6 +31,7 @@ type AnalyzerSummary struct {
 	TrustLevel *int              `json:"trust_level,omitempty" minimum:"0" maximum:"4" doc:"Уровень доверия паспорта → допустимые автоматические действия (AD-29)."`
 	Status     string            `json:"status" enum:"active,suspended,retired,not_admitted"`
 	Versions   map[string]string `json:"versions,omitempty" doc:"Вектор версий (AD-29)."`
+	Provenance *string           `json:"provenance,omitempty" doc:"Происхождение записи допуска (AD-2): genesis — демо-затравка без экзамена (не промышленная валидация), personal — решение людей."`
 }
 
 // AnalyzerList — анализаторы.
@@ -53,6 +54,9 @@ type AnalyzerPassport struct {
 	Suspension         *AnalyzerSuspension `json:"suspension,omitempty"`
 	AllowedAutoActions []string            `json:"allowed_auto_actions" doc:"Допустимые автоматические действия уровня доверия (contracts/analyzer-trust-levels.yaml)."`
 	BasisSeq           int64               `json:"basis_seq" doc:"seq, на котором построен ответ (AD-39)."`
+	Title              *string             `json:"title,omitempty" doc:"Название анализатора."`
+	AnalyzerKind       *string             `json:"analyzer_kind,omitempty" enum:"visionqc,operatorvision" doc:"Визуальный контроль или контроль действий оператора."`
+	Provenance         *string             `json:"provenance,omitempty" doc:"Происхождение записи допуска (AD-2): genesis — демо-затравка без экзамена (не промышленная валидация), personal — решение людей."`
 }
 
 // AnalyzerCheck — отчёт проверки анализатора (analyzer.check.recorded).

@@ -1,0 +1,106 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/integrations/erp/1c/qc.v1/posting.schema.json",
+  "title": "QcPosting",
+  "description": "Учётное действие порта учёта — тело `POST /‹база›/hs/qc/v1/postings` (FR-91, AD-18): принято в работу, смена склада, перевод в брак, возврат поставщику, возврат из брака в производство, выпуск. Ключ идемпотентности — `message_id` (заголовок `X-Message-Id`).",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "message_id": {
+      "$ref": "common.schema.json#/definitions/uuid",
+      "description": "Номер сообщения — ключ идемпотентности."
+    },
+    "contract": {
+      "type": "string",
+      "pattern": "^qc\\.v[1-9][0-9]*$",
+      "description": "Версия контракта (`qc.v1`); неподдерживаемая — `400 CONTRACT_VERSION`."
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "accepted_to_work",
+        "warehouse_transfer",
+        "moved_to_defect",
+        "returned_to_supplier",
+        "returned_from_defect",
+        "released"
+      ],
+      "description": "Учётное действие."
+    },
+    "defect_kind": {
+      "type": "string",
+      "enum": [
+        "rework",
+        "scrap",
+        "reprocessing"
+      ],
+      "description": "Для перевода в брак: переделка / списание / переработка."
+    },
+    "occurred_at": {
+      "$ref": "common.schema.json#/definitions/timestamp",
+      "description": "Момент решения на закрывающей точке."
+    },
+    "source": {
+      "$ref": "common.schema.json#/definitions/source",
+      "description": "Источник и бизнес-ключ."
+    },
+    "item": {
+      "$ref": "common.schema.json#/definitions/item",
+      "description": "Изделие."
+    },
+    "lot": {
+      "$ref": "common.schema.json#/definitions/lot",
+      "description": "Партия."
+    },
+    "warehouse_from": {
+      "$ref": "common.schema.json#/definitions/warehouse",
+      "description": "Склад-отправитель."
+    },
+    "warehouse_to": {
+      "$ref": "common.schema.json#/definitions/warehouse",
+      "description": "Склад-получатель."
+    },
+    "order_id": {
+      "$ref": "common.schema.json#/definitions/code",
+      "description": "Производственное задание (наш ID)."
+    },
+    "concession_number": {
+      "type": "string",
+      "maxLength": 128,
+      "description": "Номер разрешения на отклонение (выпуск «годно по разрешению»)."
+    },
+    "after_rework": {
+      "type": "boolean",
+      "description": "Выпуск изделия, принятого после переделки."
+    },
+    "claim_basis": {
+      "type": "string",
+      "maxLength": 4000,
+      "description": "Основание претензии для возврата поставщику."
+    },
+    "nonconformities": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 128,
+        "description": "Номер несоответствия."
+      },
+      "description": "Несоответствия — основание."
+    },
+    "document": {
+      "$ref": "common.schema.json#/definitions/document",
+      "description": "Подписанный документ ant."
+    },
+    "corrects_message_id": {
+      "$ref": "common.schema.json#/definitions/uuid",
+      "description": "Исправляемое сообщение: сторно прежнего и новое содержимое одной транзакцией (AD-7, по решению человека)."
+    }
+  },
+  "required": [
+    "message_id",
+    "contract",
+    "kind",
+    "occurred_at",
+    "source"
+  ]
+}

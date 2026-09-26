@@ -13,6 +13,8 @@ export interface AnalyzerSummary {
   kind: AnalyzerSummaryKind;
   /** Действующий паспорт допуска. */
   passport_id?: string;
+  /** Происхождение записи допуска (AD-2): genesis — демо-затравка без экзамена (не промышленная валидация), personal — решение людей. */
+  provenance?: string;
   /** Стадия допуска: тень, пилот, работа. */
   stage?: AnalyzerSummaryStage;
   status: AnalyzerSummaryStatus;

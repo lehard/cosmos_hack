@@ -741,6 +741,24 @@ codes:
     detail: "Метаданные {system} не совпали с версией контракта адаптера — канал degraded, результат не отправлен"
     ui_key: errors.integration.contractIncompatible
     refs: [AD-18, FR-111]
+  erp.not_quarantined:
+    status: 409
+    title: "Сообщение не ждёт решения"
+    detail: "Учётное сообщение {business_key} в состоянии «{status}» — переотправка и исправление только из карантина"
+    ui_key: errors.integration.erpDataError
+    refs: [FR-96, AD-7]
+  erp.correction_pending:
+    status: 409
+    title: "Новая версия отправленного сообщения ждёт решения"
+    detail: "Содержимое учётного сообщения {business_key} изменилось после подтверждения 1С — исправление (сторно + новое) только по решению человека"
+    ui_key: errors.integration.erpDataError
+    refs: [AD-7, FR-96]
+  erp.channel_degraded:
+    status: 503
+    title: "Канал обмена в режиме degraded"
+    detail: "Канал {system} в режиме degraded: {detail} — отправка остановлена до восстановления контракта"
+    ui_key: errors.integration.contractIncompatible
+    refs: [AD-18, FR-111]
   erp.galaktika_unavailable:
     status: 503
     title: "Галактика:ERP недоступна"
@@ -776,6 +794,20 @@ codes:
     ui_key: errors.generic
     guard: true
     refs: [AD-29, contracts/analyzer-trust-levels.yaml]
+  analyzer.invalid_transition:
+    status: 409
+    title: "Действие с паспортом недоступно в его статусе"
+    detail: "Паспорт {passport_id} в статусе «{status}»: действие «{action}» недоступно"
+    ui_key: errors.generic
+    guard: true
+    refs: [FR-98, FR-101, AD-29]
+  analyzer.admission_route_open:
+    status: 409
+    title: "Протокол допуска не подписан"
+    detail: "Протокол допуска {document_id} не подписан: маршрут подписей не закрыт — паспорт не вводится в действие"
+    ui_key: errors.generic
+    guard: true
+    refs: [FR-98, FR-101, AD-43]
 
   # ── federation (FR-132) ──
   federation.extract_tampered:

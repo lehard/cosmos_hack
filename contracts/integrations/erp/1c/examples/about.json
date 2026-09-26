@@ -1,0 +1,8 @@
+{
+  "service": "qc",
+  "contract": "qc.v1",
+  "supported": [
+    "qc.v1"
+  ],
+  "configuration": "1С:ERP Управление предприятием 2.5 + расширение КонтрольКачества 1.0 (stand)"
+}
