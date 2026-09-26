@@ -235,7 +235,7 @@ func TestFoldDeterministic(t *testing.T) {
 
 func metrics(t *testing.T, s engine.Snapshot) map[string]int64 {
 	t.Helper()
-	rows, err := app.Contributions("x", s)
+	rows, err := app.Contributions("x", s, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -266,7 +266,7 @@ func (m memStore) Get(_ context.Context, name, key string) (json.RawMessage, boo
 // apply — эффекты проекций изделия и глобальной проекции-перечня.
 func (m memStore) apply(t *testing.T, reg *engineapp.Registry, item string, s engine.Snapshot, rs []kernel.Reaction, in []kernel.Record) {
 	t.Helper()
-	effs, err := reg.ItemEffects(item, s, rs)
+	effs, err := reg.ItemEffects(item, s, rs, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

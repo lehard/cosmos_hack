@@ -102,7 +102,7 @@ const (
 )
 
 // Contributions — строки вклада изделия в показатели качества.
-func Contributions(itemID string, s engine.Snapshot) ([]engineapp.Contribution, error) {
+func Contributions(itemID string, s engine.Snapshot, _ []kernel.Record) ([]engineapp.Contribution, error) {
 	q := s.Quality
 	rows := []engineapp.Contribution{}
 	add := func(metric, slice string, v int64, sources []string) {
