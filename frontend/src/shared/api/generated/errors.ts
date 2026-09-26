@@ -438,6 +438,21 @@ export const errorCatalog = {
     "title": "Несовместимое изменение контракта обмена",
     "uiKey": "errors.integration.contractIncompatible"
   },
+  "erp.not_quarantined": {
+    "status": 409,
+    "title": "Сообщение не ждёт решения",
+    "uiKey": "errors.integration.erpDataError"
+  },
+  "erp.correction_pending": {
+    "status": 409,
+    "title": "Новая версия отправленного сообщения ждёт решения",
+    "uiKey": "errors.integration.erpDataError"
+  },
+  "erp.channel_degraded": {
+    "status": 503,
+    "title": "Канал обмена в режиме degraded",
+    "uiKey": "errors.integration.contractIncompatible"
+  },
   "erp.galaktika_unavailable": {
     "status": 503,
     "title": "Галактика:ERP недоступна",

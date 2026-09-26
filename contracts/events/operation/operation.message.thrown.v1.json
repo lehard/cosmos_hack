@@ -23,9 +23,10 @@
         "scrap_transfer_writeoff",
         "scrap_transfer_reprocess",
         "return_to_supplier",
+        "return_from_defect",
         "release"
       ],
-      "description": "Учётное действие по свойству шага `ant:properties/@erpAction`."
+      "description": "Учётное действие по свойству шага `ant:properties/@erpAction`; `return_from_defect` — «возврат из брака в производство» (решение Д-17)."
     },
     "closing_basis": {
       "type": "array",

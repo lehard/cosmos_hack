@@ -38,7 +38,7 @@ enums:
   precondition.kind: [qualification, equipment_verification, document_revision, material_expiry, time_window, zone_check, item_blocked, open_intervention, lot_accepted, rework_limit, status_expired]
   precondition.mode: [block, record_violation]
   properties.reworkLimitScope: [item, zone, loop]
-  properties.erpAction: [accept_into_work, warehouse_transfer, scrap_transfer_rework, scrap_transfer_writeoff, scrap_transfer_reprocess, return_to_supplier, release]
+  properties.erpAction: [accept_into_work, warehouse_transfer, scrap_transfer_rework, scrap_transfer_writeoff, scrap_transfer_reprocess, return_to_supplier, return_from_defect, release] # return_from_defect — Д-17
   properties.timerScope: [until_started, activity]
   properties.outcome: [rework_or_repair, use_as_is, scrapped, returned]
   properties.closingPoint: [ZT-1, ZT-2, ZT-3, ZT-4.1, ZT-4.2, ZT-5, ZT-6, ZT-R, ZT-V]

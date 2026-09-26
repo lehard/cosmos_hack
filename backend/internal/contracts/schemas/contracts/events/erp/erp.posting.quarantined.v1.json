@@ -24,6 +24,35 @@
       "type": "string",
       "description": "Код последней ошибки.",
       "maxLength": 96
+    },
+    "cause": {
+      "type": "string",
+      "enum": [
+        "transport_exhausted",
+        "data_error",
+        "contract_incompatible",
+        "correction_pending"
+      ],
+      "description": "Почему в карантине: повторы при транспортных ошибках исчерпаны / ошибка данных без автоповтора / несовместимый контракт / новая версия отправленного ждёт решения человека (AD-7)."
+    },
+    "error_message": {
+      "type": "string",
+      "maxLength": 4000,
+      "description": "Текст последней ошибки."
+    },
+    "message_version": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1000,
+      "description": "Версия содержимого, которая в карантине."
+    },
+    "item_id": {
+      "$ref": "../common/defs.v1.json#/definitions/item_id",
+      "description": "Изделие."
+    },
+    "lot_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Партия."
     }
   },
   "required": [

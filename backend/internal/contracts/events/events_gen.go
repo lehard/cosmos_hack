@@ -1690,28 +1690,61 @@ type ErpPostingQuarantinedV1 struct {
 	// Бизнес-ключ.
 	BusinessKey string `json:"business_key"`
 
+	// Почему в карантине: повторы при транспортных ошибках исчерпаны / ошибка данных
+	// без автоповтора / несовместимый контракт / новая версия отправленного ждёт
+	// решения человека (AD-7).
+	Cause *ErpPostingQuarantinedV1Cause `json:"cause,omitempty,omitzero"`
+
+	// Текст последней ошибки.
+	ErrorMessage *string `json:"error_message,omitempty,omitzero"`
+
+	// Изделие.
+	ItemID *ItemID `json:"item_id,omitempty,omitzero"`
+
 	// Код последней ошибки.
 	LastErrorCode *string `json:"last_error_code,omitempty,omitzero"`
+
+	// Партия.
+	LotID *ObjectID `json:"lot_id,omitempty,omitzero"`
+
+	// Версия содержимого, которая в карантине.
+	MessageVersion *int `json:"message_version,omitempty,omitzero"`
 
 	// Запрос.
 	RequestEventID UUID `json:"request_event_id"`
 }
 
+type ErpPostingQuarantinedV1Cause string
+
+const ErpPostingQuarantinedV1CauseContractIncompatible ErpPostingQuarantinedV1Cause = "contract_incompatible"
+const ErpPostingQuarantinedV1CauseCorrectionPending ErpPostingQuarantinedV1Cause = "correction_pending"
+const ErpPostingQuarantinedV1CauseDataError ErpPostingQuarantinedV1Cause = "data_error"
+const ErpPostingQuarantinedV1CauseTransportExhausted ErpPostingQuarantinedV1Cause = "transport_exhausted"
+
 // Учётное сообщение сформировано — исходящее учётное действие на закрывающей точке
 // с бизнес-ключом идемпотентности (субъект, действие, точка); очередь отправки —
 // проекция журнала; при воспроизведении ничего не отправляется (AD-7, AD-18).
 type ErpPostingRequestedV1 struct {
-	// Учётное действие порта учёта.
+	// Учётное действие порта учёта; `return_from_defect` — «возврат из брака в
+	// производство» после удачной переделки или ремонта (решение Д-17).
 	Action ErpPostingRequestedV1Action `json:"action"`
 
 	// Выпуск после переделки.
 	AfterRework *bool `json:"after_rework,omitempty,omitzero"`
+
+	// Записи-основания: событие-сообщение процесса, решение на закрывающей точке,
+	// решение по несоответствию.
+	BasisEventIds []UUID `json:"basis_event_ids,omitempty,omitzero"`
 
 	// Бизнес-ключ: субъект, учётное действие, закрывающая точка.
 	BusinessKey string `json:"business_key"`
 
 	// Основание претензии для возврата.
 	ClaimBasis *string `json:"claim_basis,omitempty,omitzero"`
+
+	// Закрывающая точка — часть бизнес-ключа: `ZT-1`…`ZT-6`, `ZT-R`, шаг процесса или
+	// цикл брака `defect.‹N›`.
+	ClosingPoint *string `json:"closing_point,omitempty,omitzero"`
 
 	// Разрешение на отклонение для выпуска.
 	ConcessionID *ObjectID `json:"concession_id,omitempty,omitzero"`
@@ -1728,9 +1761,34 @@ type ErpPostingRequestedV1 struct {
 	// Партия.
 	LotID *ObjectID `json:"lot_id,omitempty,omitzero"`
 
+	// Номер сообщения для учётной системы (`X-Message-Id`): UUIDv5 от бизнес-ключа и
+	// версии; повтор и переотправка — с тем же номером (AD-7).
+	MessageID *UUID `json:"message_id,omitempty,omitzero"`
+
 	// Версия содержимого по бизнес-ключу; другое содержимое — только исправлением по
 	// решению человека.
 	MessageVersion int `json:"message_version"`
+
+	// Несоответствия — основание перевода в брак, возврата или «не годно».
+	NcIds []ObjectID `json:"nc_ids,omitempty,omitzero"`
+
+	// Производственное задание (наш ID; соответствие —
+	// `reference.external_id.mapped`).
+	OrderID *ObjectID `json:"order_id,omitempty,omitzero"`
+
+	// Номер предъявления.
+	PresentationNo *int `json:"presentation_no,omitempty,omitzero"`
+
+	// Количество (для партии).
+	Quantity *int `json:"quantity,omitempty,omitzero"`
+
+	// Итог контроля для «результата контроля»: годно / годно по разрешению на
+	// отклонение / годно частично / не годно / мало данных.
+	Resolution *ErpPostingRequestedV1Resolution `json:"resolution,omitempty,omitzero"`
+
+	// Шаг процесса, на котором сформировано действие (событие-сообщение BPMN или
+	// точка предъявления).
+	StepKey *StepKey `json:"step_key,omitempty,omitzero"`
 
 	// Склад-получатель.
 	ToWarehouseID *ObjectID `json:"to_warehouse_id,omitempty,omitzero"`
@@ -1741,6 +1799,7 @@ type ErpPostingRequestedV1Action string
 const ErpPostingRequestedV1ActionAcceptIntoWork ErpPostingRequestedV1Action = "accept_into_work"
 const ErpPostingRequestedV1ActionInspectionResult ErpPostingRequestedV1Action = "inspection_result"
 const ErpPostingRequestedV1ActionRelease ErpPostingRequestedV1Action = "release"
+const ErpPostingRequestedV1ActionReturnFromDefect ErpPostingRequestedV1Action = "return_from_defect"
 const ErpPostingRequestedV1ActionReturnToSupplier ErpPostingRequestedV1Action = "return_to_supplier"
 const ErpPostingRequestedV1ActionScrapTransferReprocess ErpPostingRequestedV1Action = "scrap_transfer_reprocess"
 const ErpPostingRequestedV1ActionScrapTransferRework ErpPostingRequestedV1Action = "scrap_transfer_rework"
@@ -1751,6 +1810,14 @@ type ErpPostingRequestedV1ExternalSystem string
 
 const ErpPostingRequestedV1ExternalSystemGalaktika ErpPostingRequestedV1ExternalSystem = "galaktika"
 const ErpPostingRequestedV1ExternalSystemOnec ErpPostingRequestedV1ExternalSystem = "onec"
+
+type ErpPostingRequestedV1Resolution string
+
+const ErpPostingRequestedV1ResolutionAccept ErpPostingRequestedV1Resolution = "accept"
+const ErpPostingRequestedV1ResolutionAcceptPartially ErpPostingRequestedV1Resolution = "accept_partially"
+const ErpPostingRequestedV1ResolutionAcceptWithConcession ErpPostingRequestedV1Resolution = "accept_with_concession"
+const ErpPostingRequestedV1ResolutionInsufficientData ErpPostingRequestedV1Resolution = "insufficient_data"
+const ErpPostingRequestedV1ResolutionReject ErpPostingRequestedV1Resolution = "reject"
 
 // Переотправка запрошена администратором — ручная переотправка сообщения из
 // карантина с тем же бизнес-ключом (FR-96).
@@ -1768,6 +1835,12 @@ type ErpPostingResendRequestedV1 struct {
 // Ответ учётной системы — квитанция или ошибка 1С на исходящее сообщение; ось
 // «учёт в 1С» меняется только по подтверждению (AD-30).
 type ErpPostingRespondedV1 struct {
+	// Учётное действие сообщения.
+	Action *ErpPostingRespondedV1Action `json:"action,omitempty,omitzero"`
+
+	// Номер попытки отправки, на которую пришёл ответ.
+	Attempt *int `json:"attempt,omitempty,omitzero"`
+
 	// Бизнес-ключ.
 	BusinessKey string `json:"business_key"`
 
@@ -1780,8 +1853,24 @@ type ErpPostingRespondedV1 struct {
 	// Документ 1С.
 	ExternalDocumentRef *string `json:"external_document_ref,omitempty,omitzero"`
 
+	// Код ответа HTTP учётной системы.
+	HTTPStatus *int `json:"http_status,omitempty,omitzero"`
+
+	// Изделие — для оси «учёт в 1С» (AD-30).
+	ItemID *ItemID `json:"item_id,omitempty,omitzero"`
+
+	// Партия.
+	LotID *ObjectID `json:"lot_id,omitempty,omitzero"`
+
+	// Номер сообщения (`X-Message-Id`).
+	MessageID *UUID `json:"message_id,omitempty,omitzero"`
+
 	// Итог.
 	Outcome ErpPostingRespondedV1Outcome `json:"outcome"`
+
+	// Номер квитанции учётной системы; повтор с тем же номером сообщения возвращает
+	// ту же квитанцию.
+	Receipt *string `json:"receipt,omitempty,omitzero"`
 
 	// Запись `erp.posting.requested`.
 	RequestEventID UUID `json:"request_event_id"`
@@ -1789,6 +1878,18 @@ type ErpPostingRespondedV1 struct {
 	// Статус учёта изделия после подтверждения.
 	ResultingStatus *AxisErpAccounting `json:"resulting_status,omitempty,omitzero"`
 }
+
+type ErpPostingRespondedV1Action string
+
+const ErpPostingRespondedV1ActionAcceptIntoWork ErpPostingRespondedV1Action = "accept_into_work"
+const ErpPostingRespondedV1ActionInspectionResult ErpPostingRespondedV1Action = "inspection_result"
+const ErpPostingRespondedV1ActionRelease ErpPostingRespondedV1Action = "release"
+const ErpPostingRespondedV1ActionReturnFromDefect ErpPostingRespondedV1Action = "return_from_defect"
+const ErpPostingRespondedV1ActionReturnToSupplier ErpPostingRespondedV1Action = "return_to_supplier"
+const ErpPostingRespondedV1ActionScrapTransferReprocess ErpPostingRespondedV1Action = "scrap_transfer_reprocess"
+const ErpPostingRespondedV1ActionScrapTransferRework ErpPostingRespondedV1Action = "scrap_transfer_rework"
+const ErpPostingRespondedV1ActionScrapTransferWriteoff ErpPostingRespondedV1Action = "scrap_transfer_writeoff"
+const ErpPostingRespondedV1ActionWarehouseTransfer ErpPostingRespondedV1Action = "warehouse_transfer"
 
 type ErpPostingRespondedV1Outcome string
 
@@ -3679,7 +3780,8 @@ type OperationMessageThrownV1 struct {
 	// Записи закрывающей точки, на которых основано действие.
 	ClosingBasis []UUID `json:"closing_basis"`
 
-	// Учётное действие по свойству шага `ant:properties/@erpAction`.
+	// Учётное действие по свойству шага `ant:properties/@erpAction`;
+	// `return_from_defect` — «возврат из брака в производство» (решение Д-17).
 	ErpAction OperationMessageThrownV1ErpAction `json:"erp_action"`
 
 	// Сообщение BPMN (`bpmn:message/@id`).
@@ -3693,6 +3795,7 @@ type OperationMessageThrownV1ErpAction string
 
 const OperationMessageThrownV1ErpActionAcceptIntoWork OperationMessageThrownV1ErpAction = "accept_into_work"
 const OperationMessageThrownV1ErpActionRelease OperationMessageThrownV1ErpAction = "release"
+const OperationMessageThrownV1ErpActionReturnFromDefect OperationMessageThrownV1ErpAction = "return_from_defect"
 const OperationMessageThrownV1ErpActionReturnToSupplier OperationMessageThrownV1ErpAction = "return_to_supplier"
 const OperationMessageThrownV1ErpActionScrapTransferReprocess OperationMessageThrownV1ErpAction = "scrap_transfer_reprocess"
 const OperationMessageThrownV1ErpActionScrapTransferRework OperationMessageThrownV1ErpAction = "scrap_transfer_rework"

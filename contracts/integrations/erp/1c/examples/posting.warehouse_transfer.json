@@ -1,0 +1,29 @@
+{
+  "message_id": "1b0c5e7d-2f3a-5b4c-9d8e-7f6a5b4c3d2e",
+  "contract": "qc.v1",
+  "kind": "warehouse_transfer",
+  "occurred_at": "2026-09-23T07:40:00.000Z",
+  "source": {
+    "system": "ant",
+    "enterprise": "ENT01",
+    "business_key": "ENT01:F-001/warehouse_transfer/welding.erp_transfer_in",
+    "message_version": 1,
+    "closing_point": "welding.erp_transfer_in",
+    "step_key": "welding.erp_transfer_in",
+    "basis_event_ids": [
+      "0192ad10-4c7e-7f21-9b3a-5c6d7e8f9a0c"
+    ]
+  },
+  "item": {
+    "item_id": "ENT01:F-001",
+    "designation": "ФЛ-100.00.000",
+    "serial_no": "F-001"
+  },
+  "warehouse_from": {
+    "code": "WH-MC"
+  },
+  "warehouse_to": {
+    "code": "WH-WC"
+  },
+  "order_id": "ORD-0917"
+}
