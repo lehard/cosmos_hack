@@ -297,4 +297,6 @@ export interface NcGroup {
   investigation: NcInvestigationStatus
   /** Последняя находка. */
   last_found_at: string
+  /** Несоответствия группы (первое открывается в разборе обстоятельств); может быть пусто. */
+  nc_ids?: string[]
 }

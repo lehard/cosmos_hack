@@ -18,6 +18,8 @@ import {
   scopeState,
   sortFactors,
   sortGroups,
+  toCircumstancesModel,
+  toRiskScopeModel,
   sortHypotheses,
   stackLabels,
   useAnalysisFocusStore,
@@ -189,5 +191,22 @@ describe('группы и фокус разбора', () => {
     expect(f.factor?.intent).toBe('narrow_scope')
     f.selectGroup('g-2')
     expect([f.groupKey, f.eventId, f.factor]).toEqual(['g-2', null, null])
+  })
+})
+
+describe('ответы API → данные экранов', () => {
+  it('отсутствующие необязательные поля — явный null', () => {
+    const m = toCircumstancesModel({
+      nc_id: 'NC-1',
+      basis_seq: 5,
+      conclusion_is_categorical: true,
+      missing_information: [],
+      records: [{ event_id: 'e', lane: 'item', event_type: 'inspection.result.recorded', occurred_at: '2026-09-23T08:00:00.000Z' }],
+    })
+    expect(m.operation).toBeNull()
+    expect(m.window).toBeNull()
+    expect(m.records[0]).toMatchObject({ variant: null, ended_at: null, journal_seq: null, evidence_refs: [], related_event_ids: [], source_kind: null })
+    const s = toRiskScopeModel({ incident_id: 'I', incident_label: 'И', basis_seq: 1, items: [], versions: [] })
+    expect([s.common_factor, s.window, s.last_known_good]).toEqual([null, null, null])
   })
 })

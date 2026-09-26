@@ -18,6 +18,7 @@ type Queries interface {
 	Desks(ctx context.Context) (Desk, error)
 	// Workplaces — посты для панели «Посты» (access.workplace.list, FR-6, FR-81).
 	Workplaces(ctx context.Context, workshop string, m platform.Moment) (PostList, error)
+	AdminQueries
 }
 
 // Commands — ведущий порт команд модуля access.
@@ -26,6 +27,7 @@ type Commands interface {
 	OpenSession(ctx context.Context, rq SessionCreate) (Session, string, error)
 	// CloseSession — выход (access.session.delete).
 	CloseSession(ctx context.Context, token string) error
+	AdminCommands
 }
 
 // Unimplemented — заглушка портов access: каждая операция отвечает 501

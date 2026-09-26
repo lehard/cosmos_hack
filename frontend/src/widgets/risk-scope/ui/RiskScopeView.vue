@@ -6,7 +6,7 @@
  * области «подвергались условиям, способным вызвать дефект» — это не брак.
  * Расширяет область правило, сужает только человек по доказательствам.
  */
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { NAlert, NButton } from 'naive-ui'
 import {
@@ -31,16 +31,20 @@ const props = withDefaults(
   defineProps<{
     model: RiskScopeModel
     density?: Density
-    /** Доступны ли команды сужения и расширения. */
-    canAct?: boolean
+    /** Доступно ли сужение области. */
+    canNarrow?: boolean
+    /** Доступно ли расширение области. */
+    canExpand?: boolean
+    /** Команда отправляется — формы выключены. */
+    busy?: boolean
   }>(),
-  { density: 'compact', canAct: true },
+  { density: 'compact', canNarrow: true, canExpand: true, busy: false },
 )
 const emit = defineEmits<{
-  /** Сузить область — указать основание. */
-  narrow: []
-  /** Расширить область. */
-  expand: []
+  /** Сузить область: исключаемые изделия и основание (FR-61). */
+  narrow: [input: { item_ids: string[]; reason: string }]
+  /** Расширить область: добавляемые изделия и основание. */
+  expand: [input: { item_ids: string[]; reason: string }]
   /** Открыть изделие. */
   'open-item': [itemId: string]
 }>()
@@ -92,6 +96,40 @@ const ISSUE_TEXT: Record<ScopeIssue['kind'], string> = {
   breakdown_mismatch: 'widgets.analysis.riskScope.issueBreakdownMismatch',
   version_order: 'widgets.analysis.riskScope.issueVersionOrder',
   narrowed_grew: 'widgets.analysis.riskScope.issueNarrowedGrew',
+}
+
+/** Открытая форма правки области. */
+const form = ref<'narrow' | 'expand' | null>(null)
+const picked = ref<string[]>([])
+const typed = ref('')
+const reason = ref('')
+
+/** Кандидаты на исключение — изделия, ещё не исключённые. */
+const narrowable = computed(() => props.model.items.filter((i) => i.known !== 'excluded'))
+
+function openForm(kind: 'narrow' | 'expand'): void {
+  form.value = kind
+  picked.value = []
+  typed.value = ''
+  reason.value = ''
+}
+
+const typedIds = computed(() =>
+  typed.value
+    .split(/[\s,;]+/)
+    .map((x) => x.trim())
+    .filter(Boolean),
+)
+const formIds = computed(() => (form.value === 'narrow' ? picked.value : typedIds.value))
+// Без основания изделие из области не выходит (FR-61) — и не входит без него.
+const formReady = computed(() => formIds.value.length > 0 && reason.value.trim() !== '')
+
+function submit(): void {
+  if (!form.value || !formReady.value) return
+  const input = { item_ids: [...formIds.value], reason: reason.value.trim() }
+  if (form.value === 'narrow') emit('narrow', input)
+  else emit('expand', input)
+  form.value = null
 }
 
 const actionColor = (code: string) =>
@@ -189,9 +227,38 @@ const actionColor = (code: string) =>
     </section>
 
     <footer class="actions">
-      <NButton :size="naiveSizeOf(density)" type="primary" secondary :disabled="!canAct || moment.isReplay" data-testid="narrow" @click="emit('narrow')">{{ t('riskScope.narrow') }}</NButton>
-      <NButton :size="naiveSizeOf(density)" :disabled="!canAct || moment.isReplay" data-testid="expand" @click="emit('expand')">{{ t('riskScope.expand') }}</NButton>
+      <NButton :size="naiveSizeOf(density)" type="primary" secondary :disabled="!canNarrow || busy || moment.isReplay" data-testid="narrow" @click="openForm('narrow')">
+        {{ t('riskScope.narrow') }}
+      </NButton>
+      <NButton :size="naiveSizeOf(density)" :disabled="!canExpand || busy || moment.isReplay" data-testid="expand" @click="openForm('expand')">
+        {{ t('riskScope.expand') }}
+      </NButton>
     </footer>
+
+    <form v-if="form" class="form" :data-form="form" @submit.prevent="submit">
+      <fieldset v-if="form === 'narrow'" class="picks">
+        <legend>{{ t('widgets.analysis.riskScope.narrowItems') }}</legend>
+        <label v-for="it in narrowable" :key="it.item_id">
+          <input v-model="picked" type="checkbox" :value="it.item_id" :data-pick="it.item_id" />
+          {{ it.label }}
+        </label>
+      </fieldset>
+      <label v-else>
+        <span>{{ t('widgets.analysis.riskScope.expandItems') }}</span>
+        <textarea v-model="typed" rows="2" data-testid="expand-items" />
+      </label>
+      <label>
+        <span>{{ t('widgets.analysis.riskScope.reason') }}</span>
+        <textarea v-model="reason" rows="2" required data-testid="scope-reason" />
+      </label>
+      <p class="muted">{{ t(form === 'narrow' ? 'riskScope.narrowOnlyByHuman' : 'riskScope.expandIsCautious') }}</p>
+      <div class="actions">
+        <NButton :size="naiveSizeOf(density)" type="primary" attr-type="submit" :disabled="!formReady || busy || moment.isReplay" data-testid="scope-submit">
+          {{ t('common.actions.send') }}
+        </NButton>
+        <NButton :size="naiveSizeOf(density)" quaternary @click="form = null">{{ t('common.actions.cancel') }}</NButton>
+      </div>
+    </form>
   </div>
 </template>
 
@@ -357,5 +424,45 @@ h4 {
 .actions {
   display: flex;
   gap: 8px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #f8fafc;
+}
+
+.form label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.picks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 0;
+  padding: 4px 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+}
+
+.picks label {
+  flex-direction: row;
+  gap: 4px;
+  align-items: center;
+}
+
+.form textarea {
+  font: inherit;
+  padding: 4px 6px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  resize: vertical;
 }
 </style>

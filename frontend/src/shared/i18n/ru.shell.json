@@ -89,7 +89,8 @@
         "fromFactor": "Вход из общего фактора: {factor}",
         "similarCauseHypothesis": "гипотеза",
         "similarCauseConfirmed": "подтверждена",
-        "noMeasure": "не назначена"
+        "noMeasure": "не назначена",
+        "measureWhat": "Что измерить"
       },
       "riskScope": {
         "systemAuthor": "Правило системы",
@@ -102,7 +103,12 @@
         "issueBasisMissing": "Версия {version}: изделия вышли из области без основания",
         "issueBreakdownMismatch": "Версия {version}: разбивка не сходится с размером области",
         "issueVersionOrder": "Версия {version}: версии области не по порядку",
-        "issueNarrowedGrew": "Версия {version}: «сужение» увеличило область"
+        "issueNarrowedGrew": "Версия {version}: «сужение» увеличило область",
+        "narrowItems": "Какие изделия исключить",
+        "expandItems": "Какие изделия добавить — номера через запятую или с новой строки",
+        "reason": "@:common.words.basis",
+        "incident": "@:common.words.incident",
+        "pickIncident": "@:common.words.incident"
       },
       "process": {
         "noActive": "Действующей версии нет — сравнивать не с чем",
@@ -119,7 +125,9 @@
         "count": "Несоответствий",
         "lastFound": "Последняя находка",
         "investigation": "@:ncCard.twoStatuses.investigation"
-      }
+      },
+      "commandSent": "Решение записано в журнал",
+      "selectNc": "Выберите несоответствие: группу в «Разборе причин» или переход из карточки несоответствия"
     }
   },
   "mapWidgets": {

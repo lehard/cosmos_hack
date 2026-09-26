@@ -28,12 +28,30 @@ import type {
 } from 'vue';
 
 import type {
+  AccessAssignmentList,
+  AccessAssignmentListParams,
+  AccessAuditParameters,
+  AccessAuditReadParams,
+  AccessGrantHistory,
+  AccessGrantListParams,
   AccessPermissionExplainParams,
   AccessPermissionListParams,
+  AccessPerson,
+  AccessPersonList,
+  AccessPersonListParams,
+  AccessPersonReadParams,
+  AccessQualificationList,
+  AccessQualificationListParams,
+  AccessRoleList,
+  AccessRoleListParams,
+  AccessStampList,
+  AccessStampListParams,
   AccessWorkplaceListParams,
   AcknowledgeTask,
+  ActivateAccount,
   ActivateVersion,
   AdmitPassport,
+  AdmitWorkplace,
   AlertList,
   AnalysisCircumstancesReadParams,
   AnalysisCommonFactorsReadParams,
@@ -51,14 +69,20 @@ import type {
   AnalyzerCheckList,
   AnalyzerList,
   AnalyzerPassport,
+  AnnulVersion,
   ApplyCarrier,
   ApplyInjection,
   AssessItem,
   AssignAction,
+  AssignBinding,
   AttentionList,
+  AttestPaper,
   Board,
+  CadAssemblyList,
+  CadAssemblyListParams,
   ChangeScope,
   Circumstances,
+  ClearAssignment,
   CloseIncident,
   CloseIntervention,
   CloseNonconformity,
@@ -68,10 +92,29 @@ import type {
   ConcludeCause,
   ConfirmIdentification,
   ConfirmNonconformity,
+  ConfirmStep,
   ControlChart,
+  CriticalAction,
+  CriticalActionList,
+  CrossitemGroupListParams,
+  CrossitemLotListParams,
+  CrossitemLotReadParams,
+  CryptoProfileList,
+  DecisionCard,
   DecisionQueue,
+  DefineCalendar,
+  DefineEquipment,
+  DefineItemType,
+  DefineLocation,
   DemoPersonaList,
   Desk,
+  DocumentList,
+  DocumentRendering,
+  DocumentView,
+  DocumentsDecisionCardReadParams,
+  DocumentsDocumentListParams,
+  DocumentsDocumentReadParams,
+  DocumentsDocumentRenderParams,
   DraftVersion,
   EquipmentList,
   EquipmentState,
@@ -85,9 +128,14 @@ import type {
   ErpOrderListParams,
   EvaluateAction,
   Explanation,
+  FederationExtractListParams,
+  FederationPartnerListParams,
   FinishOperation,
+  GrantPolicy,
+  GrantQualification,
   Hypotheses,
   ImplementAction,
+  ImportAssembly,
   ImportFile,
   ImportResult,
   IncidentList,
@@ -102,8 +150,10 @@ import type {
   InspectionResultList,
   IntegrityStatus,
   IsolateItem,
+  IssueLot,
   ItemGenealogy,
   ItemGenealogyReadParams,
+  ItemGroupList,
   ItemHistory,
   ItemHistoryListParams,
   ItemItemListParams,
@@ -119,13 +169,23 @@ import type {
   JournalHeadReadParams,
   JournalStreamSubscribeParams,
   JournalTimelineReadParams,
+  KeyDetails,
+  KeyList,
   LiveMap,
+  LotCard,
+  LotList,
   MachinelogsEquipmentListParams,
   MachinelogsEquipmentReadParams,
   MachinelogsRunProfileReadParams,
   MachinelogsTimelineReadParams,
   MachinelogsViolationListParams,
   ManualEvent,
+  MaterialInfo,
+  MaterialsMaterialUploadParams,
+  MesBlockList,
+  MesBlockListParams,
+  MesJobList,
+  MesOrderListParams,
   MetricDrilldown,
   MetricTileList,
   NCCard,
@@ -144,6 +204,9 @@ import type {
   OpenIntervention,
   OpsHealth,
   OpsStoppedItemListParams,
+  PartnerList,
+  PassportExtractList,
+  PassportExtractView,
   PauseOperation,
   PermissionList,
   PostList,
@@ -178,14 +241,34 @@ import type {
   RecordHypothesis,
   RecordPresentation,
   RecordRelease,
+  RefCalendar,
+  RefEquipmentList,
+  RefExternalIDList,
+  RefItemTypeList,
+  RefLocationList,
+  RefShiftList,
+  ReferenceCalendarReadParams,
+  ReferenceEquipmentListParams,
+  ReferenceExternalIdListParams,
+  ReferenceItemTypeListParams,
+  ReferenceLocationListParams,
+  ReferenceShiftListParams,
   RegisterItem,
+  RegisterKey,
+  RegisterLot,
+  RegisterPartner,
+  RegisterPerson,
   ReinstatePassport,
   RejectHypothesis,
   RejectSignal,
   ReleaseContainment,
   ReleaseProcessHold,
+  ReleaseWorkplace,
   RemoveCarrier,
+  ReportDeviation,
   ReprocessMessage,
+  RequestDecision,
+  RequestInspection,
   RequestMeasurement,
   RequestRecheck,
   ResendPosting,
@@ -196,21 +279,37 @@ import type {
   RetireVersion,
   RetryProcessing,
   RevokeConcession,
+  RevokeKey,
+  RevokePolicy,
+  RevokeQualification,
   RiskScope,
   Run,
   RunControl,
   RunList,
   RunProfile,
   ScenarioList,
+  ScheduleShift,
   ScopeAnalysis,
+  SecurityCriticalActionListParams,
+  SecurityEventList,
+  SecurityEventListParams,
+  SecurityVerifierReportListParams,
+  SendExtract,
   SendMovement,
   Session,
   SessionCreate,
+  SetAssignment,
+  SetAuditParameters,
   SetContainment,
   SetDisposition,
+  SetPaperStatus,
   SetProcessHold,
   SetSpeed,
   SettingList,
+  SignDocument,
+  SigningKeyListParams,
+  SigningKeyReadParams,
+  SigningProfileListParams,
   SimilarCaseList,
   SimulationBoardReadParams,
   SimulationRunListParams,
@@ -223,7 +322,10 @@ import type {
   SwitchSource,
   TaskList,
   TimelineData,
+  VerifierReport,
+  VerifierReportList,
   VerifyDisposition,
+  VerifyEquipment,
   ViolationList,
   VisionAnalyzerListParams,
   VisionCheckListParams,
@@ -1691,6 +1793,364 @@ export function useVisionAnalyzerList<TData = Awaited<ReturnType<typeof visionAn
 
 
 
+export type accessAssignmentListResponse200 = {
+  data: AccessAssignmentList
+  status: 200
+}
+
+export type accessAssignmentListResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type accessAssignmentListResponseSuccess = (accessAssignmentListResponse200) & {
+  headers: Headers;
+};
+export type accessAssignmentListResponseError = (accessAssignmentListResponseDefault) & {
+  headers: Headers;
+};
+
+export const getAccessAssignmentListUrl = (params?: AccessAssignmentListParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/assignments?${stringifiedParams}` : `/api/v1/assignments`
+}
+
+/**
+ * FR-81: кто назначен на какой пост в смене; допуск и квалификация на дату.
+ * @summary Назначения на посты
+ */
+export const accessAssignmentList = async (params?: AccessAssignmentListParams, options?: RequestInit): Promise<accessAssignmentListResponseSuccess> => {
+
+  const res = await fetch(getAccessAssignmentListUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: accessAssignmentListResponseError['data'], status?: number} = new globalThis.Error();
+    const data : accessAssignmentListResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: accessAssignmentListResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as accessAssignmentListResponseSuccess
+}
+
+
+
+
+
+export const getAccessAssignmentListQueryKey = (params?: MaybeRefOrGetter<AccessAssignmentListParams>,) => {
+    return [
+    'api','v1','assignments', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getAccessAssignmentListQueryOptions = <TData = Awaited<ReturnType<typeof accessAssignmentList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(params?: MaybeRefOrGetter<AccessAssignmentListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof accessAssignmentList>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getAccessAssignmentListQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof accessAssignmentList>>> = ({ signal }) => accessAssignmentList(toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof accessAssignmentList>>, TError, TData>
+}
+
+export type AccessAssignmentListQueryResult = NonNullable<Awaited<ReturnType<typeof accessAssignmentList>>>
+export type AccessAssignmentListQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Назначения на посты
+ */
+
+export function useAccessAssignmentList<TData = Awaited<ReturnType<typeof accessAssignmentList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ params?: MaybeRefOrGetter<AccessAssignmentListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof accessAssignmentList>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getAccessAssignmentListQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+
+export type accessAssignmentSetResponse200 = {
+  data: Receipt
+  status: 200
+}
+
+export type accessAssignmentSetResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type accessAssignmentSetResponseSuccess = (accessAssignmentSetResponse200) & {
+  headers: Headers;
+};
+export type accessAssignmentSetResponseError = (accessAssignmentSetResponseDefault) & {
+  headers: Headers;
+};
+
+export const getAccessAssignmentSetUrl = () => {
+
+
+
+
+  return `/api/v1/assignments`
+}
+
+/**
+ * FR-81, PRD §11.18: исполнителей назначает мастер (только допущенных по квалификации); контролёра — по документу «запрос мастера → согласование начальника ОТК».
+ * @summary Назначить на пост
+ */
+export const accessAssignmentSet = async (setAssignment: SetAssignment, options?: RequestInit): Promise<accessAssignmentSetResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getAccessAssignmentSetUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(setAssignment)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: accessAssignmentSetResponseError['data'], status?: number} = new globalThis.Error();
+    const data : accessAssignmentSetResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: accessAssignmentSetResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as accessAssignmentSetResponseSuccess
+}
+
+
+
+
+
+export const getAccessAssignmentSetMutationKey = () => ['accessAssignmentSet'] as const;
+
+export const getAccessAssignmentSetMutationOptions = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof accessAssignmentSet>>, TError,AccessAssignmentSetMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof accessAssignmentSet>>, TError,AccessAssignmentSetMutationVariables, TContext> => {
+
+const mutationKey = getAccessAssignmentSetMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof accessAssignmentSet>>, AccessAssignmentSetMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  accessAssignmentSet(data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AccessAssignmentSetMutationResult = NonNullable<Awaited<ReturnType<typeof accessAssignmentSet>>>
+    export type AccessAssignmentSetMutationBody = SetAssignment
+    export type AccessAssignmentSetMutationError = globalThis.Error & { info?: Problem; status?: number }
+    export type AccessAssignmentSetMutationVariables = {data: SetAssignment}
+
+    /**
+ * @summary Назначить на пост
+ */
+export const useAccessAssignmentSet = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof accessAssignmentSet>>, TError,AccessAssignmentSetMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof accessAssignmentSet>>,
+        TError,
+        AccessAssignmentSetMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAccessAssignmentSetMutationOptions(options), queryClient);
+    }
+
+export type accessAssignmentClearResponse200 = {
+  data: Receipt
+  status: 200
+}
+
+export type accessAssignmentClearResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type accessAssignmentClearResponseSuccess = (accessAssignmentClearResponse200) & {
+  headers: Headers;
+};
+export type accessAssignmentClearResponseError = (accessAssignmentClearResponseDefault) & {
+  headers: Headers;
+};
+
+export const getAccessAssignmentClearUrl = () => {
+
+
+
+
+  return `/api/v1/assignments/clear`
+}
+
+/**
+ * FR-81.
+ * @summary Снять с поста
+ */
+export const accessAssignmentClear = async (clearAssignment: ClearAssignment, options?: RequestInit): Promise<accessAssignmentClearResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getAccessAssignmentClearUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(clearAssignment)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: accessAssignmentClearResponseError['data'], status?: number} = new globalThis.Error();
+    const data : accessAssignmentClearResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: accessAssignmentClearResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as accessAssignmentClearResponseSuccess
+}
+
+
+
+
+
+export const getAccessAssignmentClearMutationKey = () => ['accessAssignmentClear'] as const;
+
+export const getAccessAssignmentClearMutationOptions = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof accessAssignmentClear>>, TError,AccessAssignmentClearMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof accessAssignmentClear>>, TError,AccessAssignmentClearMutationVariables, TContext> => {
+
+const mutationKey = getAccessAssignmentClearMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof accessAssignmentClear>>, AccessAssignmentClearMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  accessAssignmentClear(data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AccessAssignmentClearMutationResult = NonNullable<Awaited<ReturnType<typeof accessAssignmentClear>>>
+    export type AccessAssignmentClearMutationBody = ClearAssignment
+    export type AccessAssignmentClearMutationError = globalThis.Error & { info?: Problem; status?: number }
+    export type AccessAssignmentClearMutationVariables = {data: ClearAssignment}
+
+    /**
+ * @summary Снять с поста
+ */
+export const useAccessAssignmentClear = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof accessAssignmentClear>>, TError,AccessAssignmentClearMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof accessAssignmentClear>>,
+        TError,
+        AccessAssignmentClearMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAccessAssignmentClearMutationOptions(options), queryClient);
+    }
+
 export type notificationsAttentionListResponse200 = {
   data: AttentionList
   status: 200
@@ -1808,6 +2268,244 @@ export function useNotificationsAttentionList<TData = Awaited<ReturnType<typeof 
 
 
 
+
+export type accessAuditReadResponse200 = {
+  data: AccessAuditParameters
+  status: 200
+}
+
+export type accessAuditReadResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type accessAuditReadResponseSuccess = (accessAuditReadResponse200) & {
+  headers: Headers;
+};
+export type accessAuditReadResponseError = (accessAuditReadResponseDefault) & {
+  headers: Headers;
+};
+
+export const getAccessAuditReadUrl = (params?: AccessAuditReadParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/audit/parameters?${stringifiedParams}` : `/api/v1/audit/parameters`
+}
+
+/**
+ * AD-8, AD-15: интервал и предельный разрыв контрольных точек, критические типы, ключ хранителя, подписчики шины.
+ * @summary Параметры аудита
+ */
+export const accessAuditRead = async (params?: AccessAuditReadParams, options?: RequestInit): Promise<accessAuditReadResponseSuccess> => {
+
+  const res = await fetch(getAccessAuditReadUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: accessAuditReadResponseError['data'], status?: number} = new globalThis.Error();
+    const data : accessAuditReadResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: accessAuditReadResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as accessAuditReadResponseSuccess
+}
+
+
+
+
+
+export const getAccessAuditReadQueryKey = (params?: MaybeRefOrGetter<AccessAuditReadParams>,) => {
+    return [
+    'api','v1','audit','parameters', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getAccessAuditReadQueryOptions = <TData = Awaited<ReturnType<typeof accessAuditRead>>, TError = globalThis.Error & { info?: Problem; status?: number }>(params?: MaybeRefOrGetter<AccessAuditReadParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof accessAuditRead>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getAccessAuditReadQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof accessAuditRead>>> = ({ signal }) => accessAuditRead(toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof accessAuditRead>>, TError, TData>
+}
+
+export type AccessAuditReadQueryResult = NonNullable<Awaited<ReturnType<typeof accessAuditRead>>>
+export type AccessAuditReadQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Параметры аудита
+ */
+
+export function useAccessAuditRead<TData = Awaited<ReturnType<typeof accessAuditRead>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ params?: MaybeRefOrGetter<AccessAuditReadParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof accessAuditRead>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getAccessAuditReadQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+
+export type accessAuditSetParametersResponse200 = {
+  data: Receipt
+  status: 200
+}
+
+export type accessAuditSetParametersResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type accessAuditSetParametersResponseSuccess = (accessAuditSetParametersResponse200) & {
+  headers: Headers;
+};
+export type accessAuditSetParametersResponseError = (accessAuditSetParametersResponseDefault) & {
+  headers: Headers;
+};
+
+export const getAccessAuditSetParametersUrl = () => {
+
+
+
+
+  return `/api/v1/audit/parameters`
+}
+
+/**
+ * AD-8, AD-15: только Аудитор ИБ; хранитель берёт интервал и предельный разрыв контрольных точек из этой записи.
+ * @summary Установить параметры аудита
+ */
+export const accessAuditSetParameters = async (setAuditParameters: SetAuditParameters, options?: RequestInit): Promise<accessAuditSetParametersResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getAccessAuditSetParametersUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(setAuditParameters)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: accessAuditSetParametersResponseError['data'], status?: number} = new globalThis.Error();
+    const data : accessAuditSetParametersResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: accessAuditSetParametersResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as accessAuditSetParametersResponseSuccess
+}
+
+
+
+
+
+export const getAccessAuditSetParametersMutationKey = () => ['accessAuditSetParameters'] as const;
+
+export const getAccessAuditSetParametersMutationOptions = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof accessAuditSetParameters>>, TError,AccessAuditSetParametersMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof accessAuditSetParameters>>, TError,AccessAuditSetParametersMutationVariables, TContext> => {
+
+const mutationKey = getAccessAuditSetParametersMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof accessAuditSetParameters>>, AccessAuditSetParametersMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  accessAuditSetParameters(data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AccessAuditSetParametersMutationResult = NonNullable<Awaited<ReturnType<typeof accessAuditSetParameters>>>
+    export type AccessAuditSetParametersMutationBody = SetAuditParameters
+    export type AccessAuditSetParametersMutationError = globalThis.Error & { info?: Problem; status?: number }
+    export type AccessAuditSetParametersMutationVariables = {data: SetAuditParameters}
+
+    /**
+ * @summary Установить параметры аудита
+ */
+export const useAccessAuditSetParameters = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof accessAuditSetParameters>>, TError,AccessAuditSetParametersMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof accessAuditSetParameters>>,
+        TError,
+        AccessAuditSetParametersMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAccessAuditSetParametersMutationOptions(options), queryClient);
+    }
 
 export type accessPersonaListResponse200 = {
   data: DemoPersonaList
@@ -2257,6 +2955,364 @@ export const useAccessSessionCreate = <TError = globalThis.Error & { info?: Prob
       return useMutation(getAccessSessionCreateMutationOptions(options), queryClient);
     }
 
+export type crossitemBindingAssignResponse200 = {
+  data: Receipt
+  status: 200
+}
+
+export type crossitemBindingAssignResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type crossitemBindingAssignResponseSuccess = (crossitemBindingAssignResponse200) & {
+  headers: Headers;
+};
+export type crossitemBindingAssignResponseError = (crossitemBindingAssignResponseDefault) & {
+  headers: Headers;
+};
+
+export const getCrossitemBindingAssignUrl = () => {
+
+
+
+
+  return `/api/v1/bindings`
+}
+
+/**
+ * AD-41, FR-34: ручная привязка или перепривязка события без изделия; пересвёртка обоих изделий; критическое действие (AD-28).
+ * @summary Привязать событие к изделию
+ */
+export const crossitemBindingAssign = async (assignBinding: AssignBinding, options?: RequestInit): Promise<crossitemBindingAssignResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getCrossitemBindingAssignUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(assignBinding)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: crossitemBindingAssignResponseError['data'], status?: number} = new globalThis.Error();
+    const data : crossitemBindingAssignResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: crossitemBindingAssignResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as crossitemBindingAssignResponseSuccess
+}
+
+
+
+
+
+export const getCrossitemBindingAssignMutationKey = () => ['crossitemBindingAssign'] as const;
+
+export const getCrossitemBindingAssignMutationOptions = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof crossitemBindingAssign>>, TError,CrossitemBindingAssignMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof crossitemBindingAssign>>, TError,CrossitemBindingAssignMutationVariables, TContext> => {
+
+const mutationKey = getCrossitemBindingAssignMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof crossitemBindingAssign>>, CrossitemBindingAssignMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  crossitemBindingAssign(data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CrossitemBindingAssignMutationResult = NonNullable<Awaited<ReturnType<typeof crossitemBindingAssign>>>
+    export type CrossitemBindingAssignMutationBody = AssignBinding
+    export type CrossitemBindingAssignMutationError = globalThis.Error & { info?: Problem; status?: number }
+    export type CrossitemBindingAssignMutationVariables = {data: AssignBinding}
+
+    /**
+ * @summary Привязать событие к изделию
+ */
+export const useCrossitemBindingAssign = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof crossitemBindingAssign>>, TError,CrossitemBindingAssignMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof crossitemBindingAssign>>,
+        TError,
+        CrossitemBindingAssignMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCrossitemBindingAssignMutationOptions(options), queryClient);
+    }
+
+export type cadAssemblyListResponse200 = {
+  data: CadAssemblyList
+  status: 200
+}
+
+export type cadAssemblyListResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type cadAssemblyListResponseSuccess = (cadAssemblyListResponse200) & {
+  headers: Headers;
+};
+export type cadAssemblyListResponseError = (cadAssemblyListResponseDefault) & {
+  headers: Headers;
+};
+
+export const getCadAssemblyListUrl = (params?: CadAssemblyListParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/cad/assemblies?${stringifiedParams}` : `/api/v1/cad/assemblies`
+}
+
+/**
+ * FR-94: импортированные сборки — состав и связи W-1, J-1, S-1.
+ * @summary Условные сборки
+ */
+export const cadAssemblyList = async (params?: CadAssemblyListParams, options?: RequestInit): Promise<cadAssemblyListResponseSuccess> => {
+
+  const res = await fetch(getCadAssemblyListUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: cadAssemblyListResponseError['data'], status?: number} = new globalThis.Error();
+    const data : cadAssemblyListResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: cadAssemblyListResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as cadAssemblyListResponseSuccess
+}
+
+
+
+
+
+export const getCadAssemblyListQueryKey = (params?: MaybeRefOrGetter<CadAssemblyListParams>,) => {
+    return [
+    'api','v1','cad','assemblies', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getCadAssemblyListQueryOptions = <TData = Awaited<ReturnType<typeof cadAssemblyList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(params?: MaybeRefOrGetter<CadAssemblyListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof cadAssemblyList>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getCadAssemblyListQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof cadAssemblyList>>> = ({ signal }) => cadAssemblyList(toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof cadAssemblyList>>, TError, TData>
+}
+
+export type CadAssemblyListQueryResult = NonNullable<Awaited<ReturnType<typeof cadAssemblyList>>>
+export type CadAssemblyListQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Условные сборки
+ */
+
+export function useCadAssemblyList<TData = Awaited<ReturnType<typeof cadAssemblyList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ params?: MaybeRefOrGetter<CadAssemblyListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof cadAssemblyList>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getCadAssemblyListQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+
+export type cadAssemblyImportResponse200 = {
+  data: Receipt
+  status: 200
+}
+
+export type cadAssemblyImportResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type cadAssemblyImportResponseSuccess = (cadAssemblyImportResponse200) & {
+  headers: Headers;
+};
+export type cadAssemblyImportResponseError = (cadAssemblyImportResponseDefault) & {
+  headers: Headers;
+};
+
+export const getCadAssemblyImportUrl = () => {
+
+
+
+
+  return `/api/v1/cad/assemblies`
+}
+
+/**
+ * FR-94: файл условной сборки по образцу ФЛ-100.00.000 СБ; geometry: null; связи переводятся в зоны и ограничения нормативного слоя.
+ * @summary Импортировать условную сборку
+ */
+export const cadAssemblyImport = async (importAssembly: ImportAssembly, options?: RequestInit): Promise<cadAssemblyImportResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getCadAssemblyImportUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(importAssembly)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: cadAssemblyImportResponseError['data'], status?: number} = new globalThis.Error();
+    const data : cadAssemblyImportResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: cadAssemblyImportResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as cadAssemblyImportResponseSuccess
+}
+
+
+
+
+
+export const getCadAssemblyImportMutationKey = () => ['cadAssemblyImport'] as const;
+
+export const getCadAssemblyImportMutationOptions = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof cadAssemblyImport>>, TError,CadAssemblyImportMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof cadAssemblyImport>>, TError,CadAssemblyImportMutationVariables, TContext> => {
+
+const mutationKey = getCadAssemblyImportMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof cadAssemblyImport>>, CadAssemblyImportMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  cadAssemblyImport(data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CadAssemblyImportMutationResult = NonNullable<Awaited<ReturnType<typeof cadAssemblyImport>>>
+    export type CadAssemblyImportMutationBody = ImportAssembly
+    export type CadAssemblyImportMutationError = globalThis.Error & { info?: Problem; status?: number }
+    export type CadAssemblyImportMutationVariables = {data: ImportAssembly}
+
+    /**
+ * @summary Импортировать условную сборку
+ */
+export const useCadAssemblyImport = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof cadAssemblyImport>>, TError,CadAssemblyImportMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof cadAssemblyImport>>,
+        TError,
+        CadAssemblyImportMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCadAssemblyImportMutationOptions(options), queryClient);
+    }
+
 export type nonconformityConcessionListResponse200 = {
   data: ConcessionList
   status: 200
@@ -2495,6 +3551,476 @@ export const useNonconformityConcessionRevoke = <TError = globalThis.Error & { i
       > => {
       return useMutation(getNonconformityConcessionRevokeMutationOptions(options), queryClient);
     }
+
+export type securityCriticalActionListResponse200 = {
+  data: CriticalActionList
+  status: 200
+}
+
+export type securityCriticalActionListResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type securityCriticalActionListResponseSuccess = (securityCriticalActionListResponse200) & {
+  headers: Headers;
+};
+export type securityCriticalActionListResponseError = (securityCriticalActionListResponseDefault) & {
+  headers: Headers;
+};
+
+export const getSecurityCriticalActionListUrl = (params?: SecurityCriticalActionListParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/critical-actions?${stringifiedParams}` : `/api/v1/critical-actions`
+}
+
+/**
+ * AD-28, FR-77: CA-‹n› — действие, объект, было → стало, кто, полномочие и клеймо с ревизией политики, основание, ссылка на подписанную запись основного журнала; отмена — только новой записью. Стол Аудитора ИБ.
+ * @summary Журнал критических действий
+ */
+export const securityCriticalActionList = async (params?: SecurityCriticalActionListParams, options?: RequestInit): Promise<securityCriticalActionListResponseSuccess> => {
+
+  const res = await fetch(getSecurityCriticalActionListUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: securityCriticalActionListResponseError['data'], status?: number} = new globalThis.Error();
+    const data : securityCriticalActionListResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: securityCriticalActionListResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as securityCriticalActionListResponseSuccess
+}
+
+
+
+
+
+export const getSecurityCriticalActionListQueryKey = (params?: MaybeRefOrGetter<SecurityCriticalActionListParams>,) => {
+    return [
+    'api','v1','critical-actions', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getSecurityCriticalActionListQueryOptions = <TData = Awaited<ReturnType<typeof securityCriticalActionList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(params?: MaybeRefOrGetter<SecurityCriticalActionListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof securityCriticalActionList>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getSecurityCriticalActionListQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof securityCriticalActionList>>> = ({ signal }) => securityCriticalActionList(toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof securityCriticalActionList>>, TError, TData>
+}
+
+export type SecurityCriticalActionListQueryResult = NonNullable<Awaited<ReturnType<typeof securityCriticalActionList>>>
+export type SecurityCriticalActionListQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Журнал критических действий
+ */
+
+export function useSecurityCriticalActionList<TData = Awaited<ReturnType<typeof securityCriticalActionList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ params?: MaybeRefOrGetter<SecurityCriticalActionListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof securityCriticalActionList>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getSecurityCriticalActionListQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+
+export type securityCriticalActionReadResponse200 = {
+  data: CriticalAction
+  status: 200
+}
+
+export type securityCriticalActionReadResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type securityCriticalActionReadResponseSuccess = (securityCriticalActionReadResponse200) & {
+  headers: Headers;
+};
+export type securityCriticalActionReadResponseError = (securityCriticalActionReadResponseDefault) & {
+  headers: Headers;
+};
+
+export const getSecurityCriticalActionReadUrl = (caRef: string,) => {
+
+
+
+
+  return `/api/v1/critical-actions/${caRef}`
+}
+
+/**
+ * AD-28: запись CA-‹n› и её связь с подписанной записью основного журнала (event_id, commit); верификатор сверяет их один к одному.
+ * @summary Критическое действие
+ */
+export const securityCriticalActionRead = async (caRef: string, options?: RequestInit): Promise<securityCriticalActionReadResponseSuccess> => {
+
+  const res = await fetch(getSecurityCriticalActionReadUrl(caRef),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: securityCriticalActionReadResponseError['data'], status?: number} = new globalThis.Error();
+    const data : securityCriticalActionReadResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: securityCriticalActionReadResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as securityCriticalActionReadResponseSuccess
+}
+
+
+
+
+
+export const getSecurityCriticalActionReadQueryKey = (caRef: MaybeRefOrGetter<string>,) => {
+    return [
+    'api','v1','critical-actions',caRef
+    ] as const;
+    }
+
+
+export const getSecurityCriticalActionReadQueryOptions = <TData = Awaited<ReturnType<typeof securityCriticalActionRead>>, TError = globalThis.Error & { info?: Problem; status?: number }>(caRef: MaybeRefOrGetter<string>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof securityCriticalActionRead>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getSecurityCriticalActionReadQueryKey(caRef);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof securityCriticalActionRead>>> = ({ signal }) => securityCriticalActionRead(toValue(caRef), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: computed(() => toValue(caRef) !== null && toValue(caRef) !== undefined), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof securityCriticalActionRead>>, TError, TData>
+}
+
+export type SecurityCriticalActionReadQueryResult = NonNullable<Awaited<ReturnType<typeof securityCriticalActionRead>>>
+export type SecurityCriticalActionReadQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Критическое действие
+ */
+
+export function useSecurityCriticalActionRead<TData = Awaited<ReturnType<typeof securityCriticalActionRead>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ caRef: MaybeRefOrGetter<string>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof securityCriticalActionRead>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getSecurityCriticalActionReadQueryOptions(caRef,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+
+export type signingProfileListResponse200 = {
+  data: CryptoProfileList
+  status: 200
+}
+
+export type signingProfileListResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type signingProfileListResponseSuccess = (signingProfileListResponse200) & {
+  headers: Headers;
+};
+export type signingProfileListResponseError = (signingProfileListResponseDefault) & {
+  headers: Headers;
+};
+
+export const getSigningProfileListUrl = (params?: SigningProfileListParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/crypto-profiles?${stringifiedParams}` : `/api/v1/crypto-profiles`
+}
+
+/**
+ * AD-32, кейс §6.3: gost, pq (демонстрационный), hybrid; объект → обязательный профиль; с какой записи действует.
+ * @summary Криптопрофили
+ */
+export const signingProfileList = async (params?: SigningProfileListParams, options?: RequestInit): Promise<signingProfileListResponseSuccess> => {
+
+  const res = await fetch(getSigningProfileListUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: signingProfileListResponseError['data'], status?: number} = new globalThis.Error();
+    const data : signingProfileListResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: signingProfileListResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as signingProfileListResponseSuccess
+}
+
+
+
+
+
+export const getSigningProfileListQueryKey = (params?: MaybeRefOrGetter<SigningProfileListParams>,) => {
+    return [
+    'api','v1','crypto-profiles', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getSigningProfileListQueryOptions = <TData = Awaited<ReturnType<typeof signingProfileList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(params?: MaybeRefOrGetter<SigningProfileListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof signingProfileList>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getSigningProfileListQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof signingProfileList>>> = ({ signal }) => signingProfileList(toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof signingProfileList>>, TError, TData>
+}
+
+export type SigningProfileListQueryResult = NonNullable<Awaited<ReturnType<typeof signingProfileList>>>
+export type SigningProfileListQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Криптопрофили
+ */
+
+export function useSigningProfileList<TData = Awaited<ReturnType<typeof signingProfileList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ params?: MaybeRefOrGetter<SigningProfileListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof signingProfileList>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getSigningProfileListQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+
+export type documentsDecisionCardReadResponse200 = {
+  data: DecisionCard
+  status: 200
+}
+
+export type documentsDecisionCardReadResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type documentsDecisionCardReadResponseSuccess = (documentsDecisionCardReadResponse200) & {
+  headers: Headers;
+};
+export type documentsDecisionCardReadResponseError = (documentsDecisionCardReadResponseDefault) & {
+  headers: Headers;
+};
+
+export const getDocumentsDecisionCardReadUrl = (documentId: string,
+    params?: DocumentsDecisionCardReadParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/decision-cards/${documentId}?${stringifiedParams}` : `/api/v1/decision-cards/${documentId}`
+}
+
+/**
+ * FR-136: для редких подписантов (представитель заказчика, согласующий): что решается, почему вы, основания, кто ещё подписывает, что будет после подписи.
+ * @summary Карточка «требуется ваше решение»
+ */
+export const documentsDecisionCardRead = async (documentId: string,
+    params?: DocumentsDecisionCardReadParams, options?: RequestInit): Promise<documentsDecisionCardReadResponseSuccess> => {
+
+  const res = await fetch(getDocumentsDecisionCardReadUrl(documentId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: documentsDecisionCardReadResponseError['data'], status?: number} = new globalThis.Error();
+    const data : documentsDecisionCardReadResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: documentsDecisionCardReadResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as documentsDecisionCardReadResponseSuccess
+}
+
+
+
+
+
+export const getDocumentsDecisionCardReadQueryKey = (documentId: MaybeRefOrGetter<string>,
+    params?: MaybeRefOrGetter<DocumentsDecisionCardReadParams>,) => {
+    return [
+    'api','v1','decision-cards',documentId, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getDocumentsDecisionCardReadQueryOptions = <TData = Awaited<ReturnType<typeof documentsDecisionCardRead>>, TError = globalThis.Error & { info?: Problem; status?: number }>(documentId: MaybeRefOrGetter<string>,
+    params?: MaybeRefOrGetter<DocumentsDecisionCardReadParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof documentsDecisionCardRead>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getDocumentsDecisionCardReadQueryKey(documentId,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof documentsDecisionCardRead>>> = ({ signal }) => documentsDecisionCardRead(toValue(documentId),toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: computed(() => toValue(documentId) !== null && toValue(documentId) !== undefined), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof documentsDecisionCardRead>>, TError, TData>
+}
+
+export type DocumentsDecisionCardReadQueryResult = NonNullable<Awaited<ReturnType<typeof documentsDecisionCardRead>>>
+export type DocumentsDecisionCardReadQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Карточка «требуется ваше решение»
+ */
+
+export function useDocumentsDecisionCardRead<TData = Awaited<ReturnType<typeof documentsDecisionCardRead>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ documentId: MaybeRefOrGetter<string>,
+    params?: MaybeRefOrGetter<DocumentsDecisionCardReadParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof documentsDecisionCardRead>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getDocumentsDecisionCardReadQueryOptions(documentId,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
 
 export type nonconformityQueueListResponse200 = {
   data: DecisionQueue
@@ -2842,6 +4368,974 @@ export function useAccessDeskRead<TData = Awaited<ReturnType<typeof accessDeskRe
 
 
 
+
+export type documentsDocumentListResponse200 = {
+  data: DocumentList
+  status: 200
+}
+
+export type documentsDocumentListResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type documentsDocumentListResponseSuccess = (documentsDocumentListResponse200) & {
+  headers: Headers;
+};
+export type documentsDocumentListResponseError = (documentsDocumentListResponseDefault) & {
+  headers: Headers;
+};
+
+export const getDocumentsDocumentListUrl = (params: DocumentsDocumentListParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/documents?${stringifiedParams}` : `/api/v1/documents`
+}
+
+/**
+ * FR-65: документы изделия, несоответствия, партии — «документов собрано из истории»; статус маршрута и бумажного экземпляра.
+ * @summary Документы объекта
+ */
+export const documentsDocumentList = async (params: DocumentsDocumentListParams, options?: RequestInit): Promise<documentsDocumentListResponseSuccess> => {
+
+  const res = await fetch(getDocumentsDocumentListUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: documentsDocumentListResponseError['data'], status?: number} = new globalThis.Error();
+    const data : documentsDocumentListResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: documentsDocumentListResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as documentsDocumentListResponseSuccess
+}
+
+
+
+
+
+export const getDocumentsDocumentListQueryKey = (params?: MaybeRefOrGetter<DocumentsDocumentListParams>,) => {
+    return [
+    'api','v1','documents', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getDocumentsDocumentListQueryOptions = <TData = Awaited<ReturnType<typeof documentsDocumentList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(params: MaybeRefOrGetter<DocumentsDocumentListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof documentsDocumentList>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getDocumentsDocumentListQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof documentsDocumentList>>> = ({ signal }) => documentsDocumentList(toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof documentsDocumentList>>, TError, TData>
+}
+
+export type DocumentsDocumentListQueryResult = NonNullable<Awaited<ReturnType<typeof documentsDocumentList>>>
+export type DocumentsDocumentListQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Документы объекта
+ */
+
+export function useDocumentsDocumentList<TData = Awaited<ReturnType<typeof documentsDocumentList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ params: MaybeRefOrGetter<DocumentsDocumentListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof documentsDocumentList>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getDocumentsDocumentListQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+
+export type documentsDocumentRequestResponse200 = {
+  data: Receipt
+  status: 200
+}
+
+export type documentsDocumentRequestResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type documentsDocumentRequestResponseSuccess = (documentsDocumentRequestResponse200) & {
+  headers: Headers;
+};
+export type documentsDocumentRequestResponseError = (documentsDocumentRequestResponseDefault) & {
+  headers: Headers;
+};
+
+export const getDocumentsDocumentRequestUrl = () => {
+
+
+
+
+  return `/api/v1/documents/requests`
+}
+
+/**
+ * FR-146, FR-136: вместо недоступного действия — документ с маршрутом подписей по шаблону; обязательные подписи вычисляются один раз (AD-43).
+ * @summary Запросить решение
+ */
+export const documentsDocumentRequest = async (requestDecision: RequestDecision, options?: RequestInit): Promise<documentsDocumentRequestResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getDocumentsDocumentRequestUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(requestDecision)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: documentsDocumentRequestResponseError['data'], status?: number} = new globalThis.Error();
+    const data : documentsDocumentRequestResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: documentsDocumentRequestResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as documentsDocumentRequestResponseSuccess
+}
+
+
+
+
+
+export const getDocumentsDocumentRequestMutationKey = () => ['documentsDocumentRequest'] as const;
+
+export const getDocumentsDocumentRequestMutationOptions = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof documentsDocumentRequest>>, TError,DocumentsDocumentRequestMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof documentsDocumentRequest>>, TError,DocumentsDocumentRequestMutationVariables, TContext> => {
+
+const mutationKey = getDocumentsDocumentRequestMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof documentsDocumentRequest>>, DocumentsDocumentRequestMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  documentsDocumentRequest(data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DocumentsDocumentRequestMutationResult = NonNullable<Awaited<ReturnType<typeof documentsDocumentRequest>>>
+    export type DocumentsDocumentRequestMutationBody = RequestDecision
+    export type DocumentsDocumentRequestMutationError = globalThis.Error & { info?: Problem; status?: number }
+    export type DocumentsDocumentRequestMutationVariables = {data: RequestDecision}
+
+    /**
+ * @summary Запросить решение
+ */
+export const useDocumentsDocumentRequest = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof documentsDocumentRequest>>, TError,DocumentsDocumentRequestMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof documentsDocumentRequest>>,
+        TError,
+        DocumentsDocumentRequestMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDocumentsDocumentRequestMutationOptions(options), queryClient);
+    }
+
+export type documentsDocumentReadResponse200 = {
+  data: DocumentView
+  status: 200
+}
+
+export type documentsDocumentReadResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type documentsDocumentReadResponseSuccess = (documentsDocumentReadResponse200) & {
+  headers: Headers;
+};
+export type documentsDocumentReadResponseError = (documentsDocumentReadResponseDefault) & {
+  headers: Headers;
+};
+
+export const getDocumentsDocumentReadUrl = (documentId: string,
+    params?: DocumentsDocumentReadParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/documents/${documentId}?${stringifiedParams}` : `/api/v1/documents/${documentId}`
+}
+
+/**
+ * AD-12, AD-43: канонический content, отпечаток doc_digest, rendering_hash, поля сводки уровня 2, замороженный набор обязательных подписей с прогрессом и статусом проверки каждой подписи. Агент токена пересчитывает отпечаток сам (AD-14).
+ * @summary Документ для подписи
+ */
+export const documentsDocumentRead = async (documentId: string,
+    params?: DocumentsDocumentReadParams, options?: RequestInit): Promise<documentsDocumentReadResponseSuccess> => {
+
+  const res = await fetch(getDocumentsDocumentReadUrl(documentId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: documentsDocumentReadResponseError['data'], status?: number} = new globalThis.Error();
+    const data : documentsDocumentReadResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: documentsDocumentReadResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as documentsDocumentReadResponseSuccess
+}
+
+
+
+
+
+export const getDocumentsDocumentReadQueryKey = (documentId: MaybeRefOrGetter<string>,
+    params?: MaybeRefOrGetter<DocumentsDocumentReadParams>,) => {
+    return [
+    'api','v1','documents',documentId, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getDocumentsDocumentReadQueryOptions = <TData = Awaited<ReturnType<typeof documentsDocumentRead>>, TError = globalThis.Error & { info?: Problem; status?: number }>(documentId: MaybeRefOrGetter<string>,
+    params?: MaybeRefOrGetter<DocumentsDocumentReadParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof documentsDocumentRead>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getDocumentsDocumentReadQueryKey(documentId,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof documentsDocumentRead>>> = ({ signal }) => documentsDocumentRead(toValue(documentId),toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: computed(() => toValue(documentId) !== null && toValue(documentId) !== undefined), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof documentsDocumentRead>>, TError, TData>
+}
+
+export type DocumentsDocumentReadQueryResult = NonNullable<Awaited<ReturnType<typeof documentsDocumentRead>>>
+export type DocumentsDocumentReadQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Документ для подписи
+ */
+
+export function useDocumentsDocumentRead<TData = Awaited<ReturnType<typeof documentsDocumentRead>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ documentId: MaybeRefOrGetter<string>,
+    params?: MaybeRefOrGetter<DocumentsDocumentReadParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof documentsDocumentRead>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getDocumentsDocumentReadQueryOptions(documentId,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+
+export type documentsVersionAnnulResponse200 = {
+  data: Receipt
+  status: 200
+}
+
+export type documentsVersionAnnulResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type documentsVersionAnnulResponseSuccess = (documentsVersionAnnulResponse200) & {
+  headers: Headers;
+};
+export type documentsVersionAnnulResponseError = (documentsVersionAnnulResponseDefault) & {
+  headers: Headers;
+};
+
+export const getDocumentsVersionAnnulUrl = (documentId: string,) => {
+
+
+
+
+  return `/api/v1/documents/${documentId}/annul`
+}
+
+/**
+ * AD-12: документ не редактируется; аннулирование — новая запись с основанием (критическое действие, защищённые данные).
+ * @summary Аннулировать версию документа
+ */
+export const documentsVersionAnnul = async (documentId: string,
+    annulVersion: AnnulVersion, options?: RequestInit): Promise<documentsVersionAnnulResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getDocumentsVersionAnnulUrl(documentId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(annulVersion)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: documentsVersionAnnulResponseError['data'], status?: number} = new globalThis.Error();
+    const data : documentsVersionAnnulResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: documentsVersionAnnulResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as documentsVersionAnnulResponseSuccess
+}
+
+
+
+
+
+export const getDocumentsVersionAnnulMutationKey = () => ['documentsVersionAnnul'] as const;
+
+export const getDocumentsVersionAnnulMutationOptions = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof documentsVersionAnnul>>, TError,DocumentsVersionAnnulMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof documentsVersionAnnul>>, TError,DocumentsVersionAnnulMutationVariables, TContext> => {
+
+const mutationKey = getDocumentsVersionAnnulMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof documentsVersionAnnul>>, DocumentsVersionAnnulMutationVariables> = (props) => {
+          const {documentId,data} = props ?? {};
+
+          return  documentsVersionAnnul(documentId,data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DocumentsVersionAnnulMutationResult = NonNullable<Awaited<ReturnType<typeof documentsVersionAnnul>>>
+    export type DocumentsVersionAnnulMutationBody = AnnulVersion
+    export type DocumentsVersionAnnulMutationError = globalThis.Error & { info?: Problem; status?: number }
+    export type DocumentsVersionAnnulMutationVariables = {documentId: string;data: AnnulVersion}
+
+    /**
+ * @summary Аннулировать версию документа
+ */
+export const useDocumentsVersionAnnul = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof documentsVersionAnnul>>, TError,DocumentsVersionAnnulMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof documentsVersionAnnul>>,
+        TError,
+        DocumentsVersionAnnulMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDocumentsVersionAnnulMutationOptions(options), queryClient);
+    }
+
+export type documentsPaperAttestResponse200 = {
+  data: Receipt
+  status: 200
+}
+
+export type documentsPaperAttestResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type documentsPaperAttestResponseSuccess = (documentsPaperAttestResponse200) & {
+  headers: Headers;
+};
+export type documentsPaperAttestResponseError = (documentsPaperAttestResponseDefault) & {
+  headers: Headers;
+};
+
+export const getDocumentsPaperAttestUrl = (documentId: string,) => {
+
+
+
+
+  return `/api/v1/documents/${documentId}/paper-signatures`
+}
+
+/**
+ * AD-43, FR-139: скан распечатки с QR загружен (materials.material.upload); заверитель подписывает уровнем 2, заверитель ≠ подписант; полномочие и клеймо проверяются по подписанту на seq заверения. В записи — подписант, заверитель, учётный номер оригинала.
+ * @summary Заверить бумажную подпись
+ */
+export const documentsPaperAttest = async (documentId: string,
+    attestPaper: AttestPaper, options?: RequestInit): Promise<documentsPaperAttestResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getDocumentsPaperAttestUrl(documentId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(attestPaper)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: documentsPaperAttestResponseError['data'], status?: number} = new globalThis.Error();
+    const data : documentsPaperAttestResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: documentsPaperAttestResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as documentsPaperAttestResponseSuccess
+}
+
+
+
+
+
+export const getDocumentsPaperAttestMutationKey = () => ['documentsPaperAttest'] as const;
+
+export const getDocumentsPaperAttestMutationOptions = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof documentsPaperAttest>>, TError,DocumentsPaperAttestMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof documentsPaperAttest>>, TError,DocumentsPaperAttestMutationVariables, TContext> => {
+
+const mutationKey = getDocumentsPaperAttestMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof documentsPaperAttest>>, DocumentsPaperAttestMutationVariables> = (props) => {
+          const {documentId,data} = props ?? {};
+
+          return  documentsPaperAttest(documentId,data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DocumentsPaperAttestMutationResult = NonNullable<Awaited<ReturnType<typeof documentsPaperAttest>>>
+    export type DocumentsPaperAttestMutationBody = AttestPaper
+    export type DocumentsPaperAttestMutationError = globalThis.Error & { info?: Problem; status?: number }
+    export type DocumentsPaperAttestMutationVariables = {documentId: string;data: AttestPaper}
+
+    /**
+ * @summary Заверить бумажную подпись
+ */
+export const useDocumentsPaperAttest = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof documentsPaperAttest>>, TError,DocumentsPaperAttestMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof documentsPaperAttest>>,
+        TError,
+        DocumentsPaperAttestMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDocumentsPaperAttestMutationOptions(options), queryClient);
+    }
+
+export type documentsPaperStatusSetResponse200 = {
+  data: Receipt
+  status: 200
+}
+
+export type documentsPaperStatusSetResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type documentsPaperStatusSetResponseSuccess = (documentsPaperStatusSetResponse200) & {
+  headers: Headers;
+};
+export type documentsPaperStatusSetResponseError = (documentsPaperStatusSetResponseDefault) & {
+  headers: Headers;
+};
+
+export const getDocumentsPaperStatusSetUrl = (documentId: string,) => {
+
+
+
+
+  return `/api/v1/documents/${documentId}/paper-status`
+}
+
+/**
+ * AD-12: напечатан / подписан / уничтожен — событием; журнал не трогается.
+ * @summary Статус бумажного экземпляра
+ */
+export const documentsPaperStatusSet = async (documentId: string,
+    setPaperStatus: SetPaperStatus, options?: RequestInit): Promise<documentsPaperStatusSetResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getDocumentsPaperStatusSetUrl(documentId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(setPaperStatus)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: documentsPaperStatusSetResponseError['data'], status?: number} = new globalThis.Error();
+    const data : documentsPaperStatusSetResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: documentsPaperStatusSetResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as documentsPaperStatusSetResponseSuccess
+}
+
+
+
+
+
+export const getDocumentsPaperStatusSetMutationKey = () => ['documentsPaperStatusSet'] as const;
+
+export const getDocumentsPaperStatusSetMutationOptions = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof documentsPaperStatusSet>>, TError,DocumentsPaperStatusSetMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof documentsPaperStatusSet>>, TError,DocumentsPaperStatusSetMutationVariables, TContext> => {
+
+const mutationKey = getDocumentsPaperStatusSetMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof documentsPaperStatusSet>>, DocumentsPaperStatusSetMutationVariables> = (props) => {
+          const {documentId,data} = props ?? {};
+
+          return  documentsPaperStatusSet(documentId,data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DocumentsPaperStatusSetMutationResult = NonNullable<Awaited<ReturnType<typeof documentsPaperStatusSet>>>
+    export type DocumentsPaperStatusSetMutationBody = SetPaperStatus
+    export type DocumentsPaperStatusSetMutationError = globalThis.Error & { info?: Problem; status?: number }
+    export type DocumentsPaperStatusSetMutationVariables = {documentId: string;data: SetPaperStatus}
+
+    /**
+ * @summary Статус бумажного экземпляра
+ */
+export const useDocumentsPaperStatusSet = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof documentsPaperStatusSet>>, TError,DocumentsPaperStatusSetMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof documentsPaperStatusSet>>,
+        TError,
+        DocumentsPaperStatusSetMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDocumentsPaperStatusSetMutationOptions(options), queryClient);
+    }
+
+export type documentsDocumentRenderResponse200 = {
+  data: DocumentRendering
+  status: 200
+}
+
+export type documentsDocumentRenderResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type documentsDocumentRenderResponseSuccess = (documentsDocumentRenderResponse200) & {
+  headers: Headers;
+};
+export type documentsDocumentRenderResponseError = (documentsDocumentRenderResponseDefault) & {
+  headers: Headers;
+};
+
+export const getDocumentsDocumentRenderUrl = (documentId: string,
+    params?: DocumentsDocumentRenderParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/documents/${documentId}/rendering?${stringifiedParams}` : `/api/v1/documents/${documentId}/rendering`
+}
+
+/**
+ * AD-12: HTML по шаблону@версия; серверного PDF нет, печатная рамка (QR, дата печати) в отрисовку не входит.
+ * @summary Каноническая отрисовка документа
+ */
+export const documentsDocumentRender = async (documentId: string,
+    params?: DocumentsDocumentRenderParams, options?: RequestInit): Promise<documentsDocumentRenderResponseSuccess> => {
+
+  const res = await fetch(getDocumentsDocumentRenderUrl(documentId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: documentsDocumentRenderResponseError['data'], status?: number} = new globalThis.Error();
+    const data : documentsDocumentRenderResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: documentsDocumentRenderResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as documentsDocumentRenderResponseSuccess
+}
+
+
+
+
+
+export const getDocumentsDocumentRenderQueryKey = (documentId: MaybeRefOrGetter<string>,
+    params?: MaybeRefOrGetter<DocumentsDocumentRenderParams>,) => {
+    return [
+    'api','v1','documents',documentId,'rendering', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getDocumentsDocumentRenderQueryOptions = <TData = Awaited<ReturnType<typeof documentsDocumentRender>>, TError = globalThis.Error & { info?: Problem; status?: number }>(documentId: MaybeRefOrGetter<string>,
+    params?: MaybeRefOrGetter<DocumentsDocumentRenderParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof documentsDocumentRender>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getDocumentsDocumentRenderQueryKey(documentId,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof documentsDocumentRender>>> = ({ signal }) => documentsDocumentRender(toValue(documentId),toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: computed(() => toValue(documentId) !== null && toValue(documentId) !== undefined), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof documentsDocumentRender>>, TError, TData>
+}
+
+export type DocumentsDocumentRenderQueryResult = NonNullable<Awaited<ReturnType<typeof documentsDocumentRender>>>
+export type DocumentsDocumentRenderQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Каноническая отрисовка документа
+ */
+
+export function useDocumentsDocumentRender<TData = Awaited<ReturnType<typeof documentsDocumentRender>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ documentId: MaybeRefOrGetter<string>,
+    params?: MaybeRefOrGetter<DocumentsDocumentRenderParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof documentsDocumentRender>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getDocumentsDocumentRenderQueryOptions(documentId,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+
+export type documentsDocumentSignResponse200 = {
+  data: Receipt
+  status: 200
+}
+
+export type documentsDocumentSignResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type documentsDocumentSignResponseSuccess = (documentsDocumentSignResponse200) & {
+  headers: Headers;
+};
+export type documentsDocumentSignResponseError = (documentsDocumentSignResponseDefault) & {
+  headers: Headers;
+};
+
+export const getDocumentsDocumentSignUrl = (documentId: string,) => {
+
+
+
+
+  return `/api/v1/documents/${documentId}/signatures`
+}
+
+/**
+ * FR-66, AD-13, AD-14: подпись уровня 2 через агент токена (пакет DSSE в signature) над текущим отпечатком; этап, полномочие, клеймо и разделение обязанностей проверяются по маршруту. «Маршрут закрыт» — только реакция document.route.closed (AD-43).
+ * @summary Подписать документ
+ */
+export const documentsDocumentSign = async (documentId: string,
+    signDocument: SignDocument, options?: RequestInit): Promise<documentsDocumentSignResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getDocumentsDocumentSignUrl(documentId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(signDocument)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: documentsDocumentSignResponseError['data'], status?: number} = new globalThis.Error();
+    const data : documentsDocumentSignResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: documentsDocumentSignResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as documentsDocumentSignResponseSuccess
+}
+
+
+
+
+
+export const getDocumentsDocumentSignMutationKey = () => ['documentsDocumentSign'] as const;
+
+export const getDocumentsDocumentSignMutationOptions = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof documentsDocumentSign>>, TError,DocumentsDocumentSignMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof documentsDocumentSign>>, TError,DocumentsDocumentSignMutationVariables, TContext> => {
+
+const mutationKey = getDocumentsDocumentSignMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof documentsDocumentSign>>, DocumentsDocumentSignMutationVariables> = (props) => {
+          const {documentId,data} = props ?? {};
+
+          return  documentsDocumentSign(documentId,data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DocumentsDocumentSignMutationResult = NonNullable<Awaited<ReturnType<typeof documentsDocumentSign>>>
+    export type DocumentsDocumentSignMutationBody = SignDocument
+    export type DocumentsDocumentSignMutationError = globalThis.Error & { info?: Problem; status?: number }
+    export type DocumentsDocumentSignMutationVariables = {documentId: string;data: SignDocument}
+
+    /**
+ * @summary Подписать документ
+ */
+export const useDocumentsDocumentSign = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof documentsDocumentSign>>, TError,DocumentsDocumentSignMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof documentsDocumentSign>>,
+        TError,
+        DocumentsDocumentSignMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDocumentsDocumentSignMutationOptions(options), queryClient);
+    }
 
 export type machinelogsEquipmentListResponse200 = {
   data: EquipmentList
@@ -4154,6 +6648,364 @@ export function useQualityEscapeList<TData = Awaited<ReturnType<typeof qualityEs
 
 
 
+
+export type accessGrantListResponse200 = {
+  data: AccessGrantHistory
+  status: 200
+}
+
+export type accessGrantListResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type accessGrantListResponseSuccess = (accessGrantListResponse200) & {
+  headers: Headers;
+};
+export type accessGrantListResponseError = (accessGrantListResponseDefault) & {
+  headers: Headers;
+};
+
+export const getAccessGrantListUrl = (params?: AccessGrantListParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/grants?${stringifiedParams}` : `/api/v1/grants`
+}
+
+/**
+ * AD-15: журнал выдачи и отзыва ролей, полномочий, клейм, квалификаций, параметров аудита — для Аудитора ИБ; со второй подписью и CA.
+ * @summary История выдачи прав
+ */
+export const accessGrantList = async (params?: AccessGrantListParams, options?: RequestInit): Promise<accessGrantListResponseSuccess> => {
+
+  const res = await fetch(getAccessGrantListUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: accessGrantListResponseError['data'], status?: number} = new globalThis.Error();
+    const data : accessGrantListResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: accessGrantListResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as accessGrantListResponseSuccess
+}
+
+
+
+
+
+export const getAccessGrantListQueryKey = (params?: MaybeRefOrGetter<AccessGrantListParams>,) => {
+    return [
+    'api','v1','grants', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getAccessGrantListQueryOptions = <TData = Awaited<ReturnType<typeof accessGrantList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(params?: MaybeRefOrGetter<AccessGrantListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof accessGrantList>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getAccessGrantListQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof accessGrantList>>> = ({ signal }) => accessGrantList(toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof accessGrantList>>, TError, TData>
+}
+
+export type AccessGrantListQueryResult = NonNullable<Awaited<ReturnType<typeof accessGrantList>>>
+export type AccessGrantListQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary История выдачи прав
+ */
+
+export function useAccessGrantList<TData = Awaited<ReturnType<typeof accessGrantList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ params?: MaybeRefOrGetter<AccessGrantListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof accessGrantList>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getAccessGrantListQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+
+export type accessPolicyGrantResponse200 = {
+  data: Receipt
+  status: 200
+}
+
+export type accessPolicyGrantResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type accessPolicyGrantResponseSuccess = (accessPolicyGrantResponse200) & {
+  headers: Headers;
+};
+export type accessPolicyGrantResponseError = (accessPolicyGrantResponseDefault) & {
+  headers: Headers;
+};
+
+export const getAccessPolicyGrantUrl = () => {
+
+
+
+
+  return `/api/v1/grants`
+}
+
+/**
+ * AD-11, AD-15, FR-145: выдача документом с маршрутом; полномочия ОТК и клейма — вторая подпись начальника ОТК, производства — руководителя производства, администраторов и аудита — Аудитора ИБ; «выдача себе» — только со второй подписью.
+ * @summary Выдать роль, полномочие или клеймо
+ */
+export const accessPolicyGrant = async (grantPolicy: GrantPolicy, options?: RequestInit): Promise<accessPolicyGrantResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getAccessPolicyGrantUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(grantPolicy)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: accessPolicyGrantResponseError['data'], status?: number} = new globalThis.Error();
+    const data : accessPolicyGrantResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: accessPolicyGrantResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as accessPolicyGrantResponseSuccess
+}
+
+
+
+
+
+export const getAccessPolicyGrantMutationKey = () => ['accessPolicyGrant'] as const;
+
+export const getAccessPolicyGrantMutationOptions = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof accessPolicyGrant>>, TError,AccessPolicyGrantMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof accessPolicyGrant>>, TError,AccessPolicyGrantMutationVariables, TContext> => {
+
+const mutationKey = getAccessPolicyGrantMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof accessPolicyGrant>>, AccessPolicyGrantMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  accessPolicyGrant(data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AccessPolicyGrantMutationResult = NonNullable<Awaited<ReturnType<typeof accessPolicyGrant>>>
+    export type AccessPolicyGrantMutationBody = GrantPolicy
+    export type AccessPolicyGrantMutationError = globalThis.Error & { info?: Problem; status?: number }
+    export type AccessPolicyGrantMutationVariables = {data: GrantPolicy}
+
+    /**
+ * @summary Выдать роль, полномочие или клеймо
+ */
+export const useAccessPolicyGrant = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof accessPolicyGrant>>, TError,AccessPolicyGrantMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof accessPolicyGrant>>,
+        TError,
+        AccessPolicyGrantMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAccessPolicyGrantMutationOptions(options), queryClient);
+    }
+
+export type accessPolicyRevokeResponse200 = {
+  data: Receipt
+  status: 200
+}
+
+export type accessPolicyRevokeResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type accessPolicyRevokeResponseSuccess = (accessPolicyRevokeResponse200) & {
+  headers: Headers;
+};
+export type accessPolicyRevokeResponseError = (accessPolicyRevokeResponseDefault) & {
+  headers: Headers;
+};
+
+export const getAccessPolicyRevokeUrl = () => {
+
+
+
+
+  return `/api/v1/grants/revocations`
+}
+
+/**
+ * AD-15: отзыв доходит до всех копий api; команда по устаревшей политике — 409 journal.stale_policy.
+ * @summary Отозвать роль, полномочие или клеймо
+ */
+export const accessPolicyRevoke = async (revokePolicy: RevokePolicy, options?: RequestInit): Promise<accessPolicyRevokeResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getAccessPolicyRevokeUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(revokePolicy)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: accessPolicyRevokeResponseError['data'], status?: number} = new globalThis.Error();
+    const data : accessPolicyRevokeResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: accessPolicyRevokeResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as accessPolicyRevokeResponseSuccess
+}
+
+
+
+
+
+export const getAccessPolicyRevokeMutationKey = () => ['accessPolicyRevoke'] as const;
+
+export const getAccessPolicyRevokeMutationOptions = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof accessPolicyRevoke>>, TError,AccessPolicyRevokeMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof accessPolicyRevoke>>, TError,AccessPolicyRevokeMutationVariables, TContext> => {
+
+const mutationKey = getAccessPolicyRevokeMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof accessPolicyRevoke>>, AccessPolicyRevokeMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  accessPolicyRevoke(data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AccessPolicyRevokeMutationResult = NonNullable<Awaited<ReturnType<typeof accessPolicyRevoke>>>
+    export type AccessPolicyRevokeMutationBody = RevokePolicy
+    export type AccessPolicyRevokeMutationError = globalThis.Error & { info?: Problem; status?: number }
+    export type AccessPolicyRevokeMutationVariables = {data: RevokePolicy}
+
+    /**
+ * @summary Отозвать роль, полномочие или клеймо
+ */
+export const useAccessPolicyRevoke = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof accessPolicyRevoke>>, TError,AccessPolicyRevokeMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof accessPolicyRevoke>>,
+        TError,
+        AccessPolicyRevokeMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAccessPolicyRevokeMutationOptions(options), queryClient);
+    }
 
 export type analysisIncidentListResponse200 = {
   data: IncidentList
@@ -6057,6 +8909,124 @@ export function useSecurityIntegrityRead<TData = Awaited<ReturnType<typeof secur
  ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getSecurityIntegrityReadQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+
+export type crossitemGroupListResponse200 = {
+  data: ItemGroupList
+  status: 200
+}
+
+export type crossitemGroupListResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type crossitemGroupListResponseSuccess = (crossitemGroupListResponse200) & {
+  headers: Headers;
+};
+export type crossitemGroupListResponseError = (crossitemGroupListResponseDefault) & {
+  headers: Headers;
+};
+
+export const getCrossitemGroupListUrl = (params?: CrossitemGroupListParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/item-groups?${stringifiedParams}` : `/api/v1/item-groups`
+}
+
+/**
+ * FR-15: садки, групповые операции, транспорт.
+ * @summary Временные группы изделий
+ */
+export const crossitemGroupList = async (params?: CrossitemGroupListParams, options?: RequestInit): Promise<crossitemGroupListResponseSuccess> => {
+
+  const res = await fetch(getCrossitemGroupListUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: crossitemGroupListResponseError['data'], status?: number} = new globalThis.Error();
+    const data : crossitemGroupListResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: crossitemGroupListResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as crossitemGroupListResponseSuccess
+}
+
+
+
+
+
+export const getCrossitemGroupListQueryKey = (params?: MaybeRefOrGetter<CrossitemGroupListParams>,) => {
+    return [
+    'api','v1','item-groups', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getCrossitemGroupListQueryOptions = <TData = Awaited<ReturnType<typeof crossitemGroupList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(params?: MaybeRefOrGetter<CrossitemGroupListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof crossitemGroupList>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getCrossitemGroupListQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof crossitemGroupList>>> = ({ signal }) => crossitemGroupList(toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof crossitemGroupList>>, TError, TData>
+}
+
+export type CrossitemGroupListQueryResult = NonNullable<Awaited<ReturnType<typeof crossitemGroupList>>>
+export type CrossitemGroupListQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Временные группы изделий
+ */
+
+export function useCrossitemGroupList<TData = Awaited<ReturnType<typeof crossitemGroupList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ params?: MaybeRefOrGetter<CrossitemGroupListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof crossitemGroupList>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getCrossitemGroupListQueryOptions(params,options)
 
   const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
@@ -9569,6 +12539,488 @@ export function useJournalEntryRead<TData = Awaited<ReturnType<typeof journalEnt
 
 
 
+export type signingKeyListResponse200 = {
+  data: KeyList
+  status: 200
+}
+
+export type signingKeyListResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type signingKeyListResponseSuccess = (signingKeyListResponse200) & {
+  headers: Headers;
+};
+export type signingKeyListResponseError = (signingKeyListResponseDefault) & {
+  headers: Headers;
+};
+
+export const getSigningKeyListUrl = (params?: SigningKeyListParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/keys?${stringifiedParams}` : `/api/v1/keys`
+}
+
+/**
+ * FR-79, AD-11: ключи людей, устройств, движка, шлюзов, хранителя, верификатора и корни партнёров — с профилем, отпечатком, статусом и актами. Закрытых ключей людей и устройств на сервере нет.
+ * @summary Реестр ключей
+ */
+export const signingKeyList = async (params?: SigningKeyListParams, options?: RequestInit): Promise<signingKeyListResponseSuccess> => {
+
+  const res = await fetch(getSigningKeyListUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: signingKeyListResponseError['data'], status?: number} = new globalThis.Error();
+    const data : signingKeyListResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: signingKeyListResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as signingKeyListResponseSuccess
+}
+
+
+
+
+
+export const getSigningKeyListQueryKey = (params?: MaybeRefOrGetter<SigningKeyListParams>,) => {
+    return [
+    'api','v1','keys', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getSigningKeyListQueryOptions = <TData = Awaited<ReturnType<typeof signingKeyList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(params?: MaybeRefOrGetter<SigningKeyListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof signingKeyList>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getSigningKeyListQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof signingKeyList>>> = ({ signal }) => signingKeyList(toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof signingKeyList>>, TError, TData>
+}
+
+export type SigningKeyListQueryResult = NonNullable<Awaited<ReturnType<typeof signingKeyList>>>
+export type SigningKeyListQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Реестр ключей
+ */
+
+export function useSigningKeyList<TData = Awaited<ReturnType<typeof signingKeyList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ params?: MaybeRefOrGetter<SigningKeyListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof signingKeyList>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getSigningKeyListQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+
+export type signingKeyRegisterResponse200 = {
+  data: Receipt
+  status: 200
+}
+
+export type signingKeyRegisterResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type signingKeyRegisterResponseSuccess = (signingKeyRegisterResponse200) & {
+  headers: Headers;
+};
+export type signingKeyRegisterResponseError = (signingKeyRegisterResponseDefault) & {
+  headers: Headers;
+};
+
+export const getSigningKeyRegisterUrl = () => {
+
+
+
+
+  return `/api/v1/keys`
+}
+
+/**
+ * AD-11, FR-70, FR-79: акт регистрации с доказательством владения и подтверждением субъекта; вторая подпись — от независимой стороны (ОТК — начальник ОТК, производство — руководитель производства, администраторы и аудит — Аудитор ИБ). Разрешающее критическое действие.
+ * @summary Зарегистрировать ключ
+ */
+export const signingKeyRegister = async (registerKey: RegisterKey, options?: RequestInit): Promise<signingKeyRegisterResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getSigningKeyRegisterUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(registerKey)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: signingKeyRegisterResponseError['data'], status?: number} = new globalThis.Error();
+    const data : signingKeyRegisterResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: signingKeyRegisterResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as signingKeyRegisterResponseSuccess
+}
+
+
+
+
+
+export const getSigningKeyRegisterMutationKey = () => ['signingKeyRegister'] as const;
+
+export const getSigningKeyRegisterMutationOptions = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof signingKeyRegister>>, TError,SigningKeyRegisterMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof signingKeyRegister>>, TError,SigningKeyRegisterMutationVariables, TContext> => {
+
+const mutationKey = getSigningKeyRegisterMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof signingKeyRegister>>, SigningKeyRegisterMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  signingKeyRegister(data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SigningKeyRegisterMutationResult = NonNullable<Awaited<ReturnType<typeof signingKeyRegister>>>
+    export type SigningKeyRegisterMutationBody = RegisterKey
+    export type SigningKeyRegisterMutationError = globalThis.Error & { info?: Problem; status?: number }
+    export type SigningKeyRegisterMutationVariables = {data: RegisterKey}
+
+    /**
+ * @summary Зарегистрировать ключ
+ */
+export const useSigningKeyRegister = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof signingKeyRegister>>, TError,SigningKeyRegisterMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof signingKeyRegister>>,
+        TError,
+        SigningKeyRegisterMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSigningKeyRegisterMutationOptions(options), queryClient);
+    }
+
+export type signingKeyReadResponse200 = {
+  data: KeyDetails
+  status: 200
+}
+
+export type signingKeyReadResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type signingKeyReadResponseSuccess = (signingKeyReadResponse200) & {
+  headers: Headers;
+};
+export type signingKeyReadResponseError = (signingKeyReadResponseDefault) & {
+  headers: Headers;
+};
+
+export const getSigningKeyReadUrl = (keyRef: string,
+    params?: SigningKeyReadParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/keys/${keyRef}?${stringifiedParams}` : `/api/v1/keys/${keyRef}`
+}
+
+/**
+ * AD-11: акт регистрации с подписями (владение, подтверждение субъекта, вторая подпись независимой стороны), история ротаций, отзыв и «скомпрометирован с».
+ * @summary Ключ и его акты
+ */
+export const signingKeyRead = async (keyRef: string,
+    params?: SigningKeyReadParams, options?: RequestInit): Promise<signingKeyReadResponseSuccess> => {
+
+  const res = await fetch(getSigningKeyReadUrl(keyRef,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: signingKeyReadResponseError['data'], status?: number} = new globalThis.Error();
+    const data : signingKeyReadResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: signingKeyReadResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as signingKeyReadResponseSuccess
+}
+
+
+
+
+
+export const getSigningKeyReadQueryKey = (keyRef: MaybeRefOrGetter<string>,
+    params?: MaybeRefOrGetter<SigningKeyReadParams>,) => {
+    return [
+    'api','v1','keys',keyRef, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getSigningKeyReadQueryOptions = <TData = Awaited<ReturnType<typeof signingKeyRead>>, TError = globalThis.Error & { info?: Problem; status?: number }>(keyRef: MaybeRefOrGetter<string>,
+    params?: MaybeRefOrGetter<SigningKeyReadParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof signingKeyRead>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getSigningKeyReadQueryKey(keyRef,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof signingKeyRead>>> = ({ signal }) => signingKeyRead(toValue(keyRef),toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: computed(() => toValue(keyRef) !== null && toValue(keyRef) !== undefined), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof signingKeyRead>>, TError, TData>
+}
+
+export type SigningKeyReadQueryResult = NonNullable<Awaited<ReturnType<typeof signingKeyRead>>>
+export type SigningKeyReadQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Ключ и его акты
+ */
+
+export function useSigningKeyRead<TData = Awaited<ReturnType<typeof signingKeyRead>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ keyRef: MaybeRefOrGetter<string>,
+    params?: MaybeRefOrGetter<SigningKeyReadParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof signingKeyRead>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getSigningKeyReadQueryOptions(keyRef,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+
+export type signingKeyRevokeResponse200 = {
+  data: Receipt
+  status: 200
+}
+
+export type signingKeyRevokeResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type signingKeyRevokeResponseSuccess = (signingKeyRevokeResponse200) & {
+  headers: Headers;
+};
+export type signingKeyRevokeResponseError = (signingKeyRevokeResponseDefault) & {
+  headers: Headers;
+};
+
+export const getSigningKeyRevokeUrl = (keyRef: string,) => {
+
+
+
+
+  return `/api/v1/keys/${keyRef}/revocation`
+}
+
+/**
+ * AD-11: отзыв с «скомпрометирован с X» (X может быть раньше даты отзыва) — защитная реакция: изделиям с решениями, подписанными этим ключом после X, — сдерживание «подпись под сомнением» и задачи на переподписание.
+ * @summary Отозвать ключ
+ */
+export const signingKeyRevoke = async (keyRef: string,
+    revokeKey: RevokeKey, options?: RequestInit): Promise<signingKeyRevokeResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getSigningKeyRevokeUrl(keyRef),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(revokeKey)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: signingKeyRevokeResponseError['data'], status?: number} = new globalThis.Error();
+    const data : signingKeyRevokeResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: signingKeyRevokeResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as signingKeyRevokeResponseSuccess
+}
+
+
+
+
+
+export const getSigningKeyRevokeMutationKey = () => ['signingKeyRevoke'] as const;
+
+export const getSigningKeyRevokeMutationOptions = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof signingKeyRevoke>>, TError,SigningKeyRevokeMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof signingKeyRevoke>>, TError,SigningKeyRevokeMutationVariables, TContext> => {
+
+const mutationKey = getSigningKeyRevokeMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof signingKeyRevoke>>, SigningKeyRevokeMutationVariables> = (props) => {
+          const {keyRef,data} = props ?? {};
+
+          return  signingKeyRevoke(keyRef,data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SigningKeyRevokeMutationResult = NonNullable<Awaited<ReturnType<typeof signingKeyRevoke>>>
+    export type SigningKeyRevokeMutationBody = RevokeKey
+    export type SigningKeyRevokeMutationError = globalThis.Error & { info?: Problem; status?: number }
+    export type SigningKeyRevokeMutationVariables = {keyRef: string;data: RevokeKey}
+
+    /**
+ * @summary Отозвать ключ
+ */
+export const useSigningKeyRevoke = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof signingKeyRevoke>>, TError,SigningKeyRevokeMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof signingKeyRevoke>>,
+        TError,
+        SigningKeyRevokeMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSigningKeyRevokeMutationOptions(options), queryClient);
+    }
+
 export type processLiveMapReadResponse200 = {
   data: LiveMap
   status: 200
@@ -9686,6 +13138,489 @@ export function useProcessLiveMapRead<TData = Awaited<ReturnType<typeof processL
 
 
 
+
+export type crossitemLotListResponse200 = {
+  data: LotList
+  status: 200
+}
+
+export type crossitemLotListResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type crossitemLotListResponseSuccess = (crossitemLotListResponse200) & {
+  headers: Headers;
+};
+export type crossitemLotListResponseError = (crossitemLotListResponseDefault) & {
+  headers: Headers;
+};
+
+export const getCrossitemLotListUrl = (params?: CrossitemLotListParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/lots?${stringifiedParams}` : `/api/v1/lots`
+}
+
+/**
+ * FR-15: партии, садки, плавки со статусом, количеством и сдерживанием.
+ * @summary Партии
+ */
+export const crossitemLotList = async (params?: CrossitemLotListParams, options?: RequestInit): Promise<crossitemLotListResponseSuccess> => {
+
+  const res = await fetch(getCrossitemLotListUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: crossitemLotListResponseError['data'], status?: number} = new globalThis.Error();
+    const data : crossitemLotListResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: crossitemLotListResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as crossitemLotListResponseSuccess
+}
+
+
+
+
+
+export const getCrossitemLotListQueryKey = (params?: MaybeRefOrGetter<CrossitemLotListParams>,) => {
+    return [
+    'api','v1','lots', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getCrossitemLotListQueryOptions = <TData = Awaited<ReturnType<typeof crossitemLotList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(params?: MaybeRefOrGetter<CrossitemLotListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof crossitemLotList>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getCrossitemLotListQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof crossitemLotList>>> = ({ signal }) => crossitemLotList(toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof crossitemLotList>>, TError, TData>
+}
+
+export type CrossitemLotListQueryResult = NonNullable<Awaited<ReturnType<typeof crossitemLotList>>>
+export type CrossitemLotListQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Партии
+ */
+
+export function useCrossitemLotList<TData = Awaited<ReturnType<typeof crossitemLotList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ params?: MaybeRefOrGetter<CrossitemLotListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof crossitemLotList>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getCrossitemLotListQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+
+export type crossitemLotReadResponse200 = {
+  data: LotCard
+  status: 200
+}
+
+export type crossitemLotReadResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type crossitemLotReadResponseSuccess = (crossitemLotReadResponse200) & {
+  headers: Headers;
+};
+export type crossitemLotReadResponseError = (crossitemLotReadResponseDefault) & {
+  headers: Headers;
+};
+
+export const getCrossitemLotReadUrl = (lotId: string,
+    params?: CrossitemLotReadParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/lots/${lotId}?${stringifiedParams}` : `/api/v1/lots/${lotId}`
+}
+
+/**
+ * FR-15, FR-45: входной контроль, выдачи, изделия из партии, документы.
+ * @summary Карточка партии
+ */
+export const crossitemLotRead = async (lotId: string,
+    params?: CrossitemLotReadParams, options?: RequestInit): Promise<crossitemLotReadResponseSuccess> => {
+
+  const res = await fetch(getCrossitemLotReadUrl(lotId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: crossitemLotReadResponseError['data'], status?: number} = new globalThis.Error();
+    const data : crossitemLotReadResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: crossitemLotReadResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as crossitemLotReadResponseSuccess
+}
+
+
+
+
+
+export const getCrossitemLotReadQueryKey = (lotId: MaybeRefOrGetter<string>,
+    params?: MaybeRefOrGetter<CrossitemLotReadParams>,) => {
+    return [
+    'api','v1','lots',lotId, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getCrossitemLotReadQueryOptions = <TData = Awaited<ReturnType<typeof crossitemLotRead>>, TError = globalThis.Error & { info?: Problem; status?: number }>(lotId: MaybeRefOrGetter<string>,
+    params?: MaybeRefOrGetter<CrossitemLotReadParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof crossitemLotRead>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getCrossitemLotReadQueryKey(lotId,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof crossitemLotRead>>> = ({ signal }) => crossitemLotRead(toValue(lotId),toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: computed(() => toValue(lotId) !== null && toValue(lotId) !== undefined), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof crossitemLotRead>>, TError, TData>
+}
+
+export type CrossitemLotReadQueryResult = NonNullable<Awaited<ReturnType<typeof crossitemLotRead>>>
+export type CrossitemLotReadQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Карточка партии
+ */
+
+export function useCrossitemLotRead<TData = Awaited<ReturnType<typeof crossitemLotRead>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ lotId: MaybeRefOrGetter<string>,
+    params?: MaybeRefOrGetter<CrossitemLotReadParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof crossitemLotRead>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getCrossitemLotReadQueryOptions(lotId,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+
+export type crossitemLotIssueResponse200 = {
+  data: Receipt
+  status: 200
+}
+
+export type crossitemLotIssueResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type crossitemLotIssueResponseSuccess = (crossitemLotIssueResponse200) & {
+  headers: Headers;
+};
+export type crossitemLotIssueResponseError = (crossitemLotIssueResponseDefault) & {
+  headers: Headers;
+};
+
+export const getCrossitemLotIssueUrl = (lotId: string,) => {
+
+
+
+
+  return `/api/v1/lots/${lotId}/issues`
+}
+
+/**
+ * FR-45: выдача в производство — корень генеалогии изделий.
+ * @summary Выдать из партии
+ */
+export const crossitemLotIssue = async (lotId: string,
+    issueLot: IssueLot, options?: RequestInit): Promise<crossitemLotIssueResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getCrossitemLotIssueUrl(lotId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(issueLot)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: crossitemLotIssueResponseError['data'], status?: number} = new globalThis.Error();
+    const data : crossitemLotIssueResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: crossitemLotIssueResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as crossitemLotIssueResponseSuccess
+}
+
+
+
+
+
+export const getCrossitemLotIssueMutationKey = () => ['crossitemLotIssue'] as const;
+
+export const getCrossitemLotIssueMutationOptions = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof crossitemLotIssue>>, TError,CrossitemLotIssueMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof crossitemLotIssue>>, TError,CrossitemLotIssueMutationVariables, TContext> => {
+
+const mutationKey = getCrossitemLotIssueMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof crossitemLotIssue>>, CrossitemLotIssueMutationVariables> = (props) => {
+          const {lotId,data} = props ?? {};
+
+          return  crossitemLotIssue(lotId,data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CrossitemLotIssueMutationResult = NonNullable<Awaited<ReturnType<typeof crossitemLotIssue>>>
+    export type CrossitemLotIssueMutationBody = IssueLot
+    export type CrossitemLotIssueMutationError = globalThis.Error & { info?: Problem; status?: number }
+    export type CrossitemLotIssueMutationVariables = {lotId: string;data: IssueLot}
+
+    /**
+ * @summary Выдать из партии
+ */
+export const useCrossitemLotIssue = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof crossitemLotIssue>>, TError,CrossitemLotIssueMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof crossitemLotIssue>>,
+        TError,
+        CrossitemLotIssueMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCrossitemLotIssueMutationOptions(options), queryClient);
+    }
+
+export type crossitemLotRegisterResponse200 = {
+  data: Receipt
+  status: 200
+}
+
+export type crossitemLotRegisterResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type crossitemLotRegisterResponseSuccess = (crossitemLotRegisterResponse200) & {
+  headers: Headers;
+};
+export type crossitemLotRegisterResponseError = (crossitemLotRegisterResponseDefault) & {
+  headers: Headers;
+};
+
+export const getCrossitemLotRegisterUrl = (lotId: string,) => {
+
+
+
+
+  return `/api/v1/lots/${lotId}/registration`
+}
+
+/**
+ * Кладовщик регистрирует поступившую партию: фактическое количество, упаковка, сертификат.
+ * @summary Зарегистрировать партию
+ */
+export const crossitemLotRegister = async (lotId: string,
+    registerLot: RegisterLot, options?: RequestInit): Promise<crossitemLotRegisterResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getCrossitemLotRegisterUrl(lotId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(registerLot)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: crossitemLotRegisterResponseError['data'], status?: number} = new globalThis.Error();
+    const data : crossitemLotRegisterResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: crossitemLotRegisterResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as crossitemLotRegisterResponseSuccess
+}
+
+
+
+
+
+export const getCrossitemLotRegisterMutationKey = () => ['crossitemLotRegister'] as const;
+
+export const getCrossitemLotRegisterMutationOptions = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof crossitemLotRegister>>, TError,CrossitemLotRegisterMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof crossitemLotRegister>>, TError,CrossitemLotRegisterMutationVariables, TContext> => {
+
+const mutationKey = getCrossitemLotRegisterMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof crossitemLotRegister>>, CrossitemLotRegisterMutationVariables> = (props) => {
+          const {lotId,data} = props ?? {};
+
+          return  crossitemLotRegister(lotId,data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CrossitemLotRegisterMutationResult = NonNullable<Awaited<ReturnType<typeof crossitemLotRegister>>>
+    export type CrossitemLotRegisterMutationBody = RegisterLot
+    export type CrossitemLotRegisterMutationError = globalThis.Error & { info?: Problem; status?: number }
+    export type CrossitemLotRegisterMutationVariables = {lotId: string;data: RegisterLot}
+
+    /**
+ * @summary Зарегистрировать партию
+ */
+export const useCrossitemLotRegister = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof crossitemLotRegister>>, TError,CrossitemLotRegisterMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof crossitemLotRegister>>,
+        TError,
+        CrossitemLotRegisterMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCrossitemLotRegisterMutationOptions(options), queryClient);
+    }
 
 export type nonconformityLotResolveResponse200 = {
   data: Receipt
@@ -9807,6 +13742,592 @@ export const useNonconformityLotResolve = <TError = globalThis.Error & { info?: 
       > => {
       return useMutation(getNonconformityLotResolveMutationOptions(options), queryClient);
     }
+
+export type materialsMaterialUploadResponse201 = {
+  data: MaterialInfo
+  status: 201
+}
+
+export type materialsMaterialUploadResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 201>
+}
+
+export type materialsMaterialUploadResponseSuccess = (materialsMaterialUploadResponse201) & {
+  headers: Headers;
+};
+export type materialsMaterialUploadResponseError = (materialsMaterialUploadResponseDefault) & {
+  headers: Headers;
+};
+
+export const getMaterialsMaterialUploadUrl = (params: MaterialsMaterialUploadParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/materials?${stringifiedParams}` : `/api/v1/materials`
+}
+
+/**
+ * AD-23: скан бумажной подписи, кадр, вложение сохраняется в хранилище материалов по адресу H(байты) и шифруется конвертной схемой; в журнале — только адрес и метаданные. Повтор тех же байтов — тот же адрес (идемпотентно).
+ * @summary Загрузить материал
+ */
+export const materialsMaterialUpload = async (materialsMaterialUploadBody: Blob,
+    params: MaterialsMaterialUploadParams, options?: RequestInit): Promise<materialsMaterialUploadResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getMaterialsMaterialUploadUrl(params),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/octet-stream', ...getHeaders(options?.headers) },
+    body: materialsMaterialUploadBody
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: materialsMaterialUploadResponseError['data'], status?: number} = new globalThis.Error();
+    const data : materialsMaterialUploadResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: materialsMaterialUploadResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as materialsMaterialUploadResponseSuccess
+}
+
+
+
+
+
+export const getMaterialsMaterialUploadMutationKey = () => ['materialsMaterialUpload'] as const;
+
+export const getMaterialsMaterialUploadMutationOptions = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof materialsMaterialUpload>>, TError,MaterialsMaterialUploadMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof materialsMaterialUpload>>, TError,MaterialsMaterialUploadMutationVariables, TContext> => {
+
+const mutationKey = getMaterialsMaterialUploadMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof materialsMaterialUpload>>, MaterialsMaterialUploadMutationVariables> = (props) => {
+          const {data,params} = props ?? {};
+
+          return  materialsMaterialUpload(data,params,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type MaterialsMaterialUploadMutationResult = NonNullable<Awaited<ReturnType<typeof materialsMaterialUpload>>>
+    export type MaterialsMaterialUploadMutationBody = Blob
+    export type MaterialsMaterialUploadMutationError = globalThis.Error & { info?: Problem; status?: number }
+    export type MaterialsMaterialUploadMutationVariables = {data: Blob;params: MaterialsMaterialUploadParams}
+
+    /**
+ * @summary Загрузить материал
+ */
+export const useMaterialsMaterialUpload = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof materialsMaterialUpload>>, TError,MaterialsMaterialUploadMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof materialsMaterialUpload>>,
+        TError,
+        MaterialsMaterialUploadMutationVariables,
+        TContext
+      > => {
+      return useMutation(getMaterialsMaterialUploadMutationOptions(options), queryClient);
+    }
+
+export type materialsMaterialReadResponse200 = {
+  data: MaterialInfo
+  status: 200
+}
+
+export type materialsMaterialReadResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type materialsMaterialReadResponseSuccess = (materialsMaterialReadResponse200) & {
+  headers: Headers;
+};
+export type materialsMaterialReadResponseError = (materialsMaterialReadResponseDefault) & {
+  headers: Headers;
+};
+
+export const getMaterialsMaterialReadUrl = (address: string,) => {
+
+
+
+
+  return `/api/v1/materials/${address}`
+}
+
+/**
+ * AD-23: вид, тип и размер, изделие, время съёмки, «иллюстрация, а не доказательство».
+ * @summary Метаданные материала
+ */
+export const materialsMaterialRead = async (address: string, options?: RequestInit): Promise<materialsMaterialReadResponseSuccess> => {
+
+  const res = await fetch(getMaterialsMaterialReadUrl(address),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: materialsMaterialReadResponseError['data'], status?: number} = new globalThis.Error();
+    const data : materialsMaterialReadResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: materialsMaterialReadResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as materialsMaterialReadResponseSuccess
+}
+
+
+
+
+
+export const getMaterialsMaterialReadQueryKey = (address: MaybeRefOrGetter<string>,) => {
+    return [
+    'api','v1','materials',address
+    ] as const;
+    }
+
+
+export const getMaterialsMaterialReadQueryOptions = <TData = Awaited<ReturnType<typeof materialsMaterialRead>>, TError = globalThis.Error & { info?: Problem; status?: number }>(address: MaybeRefOrGetter<string>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof materialsMaterialRead>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getMaterialsMaterialReadQueryKey(address);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof materialsMaterialRead>>> = ({ signal }) => materialsMaterialRead(toValue(address), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: computed(() => toValue(address) !== null && toValue(address) !== undefined), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof materialsMaterialRead>>, TError, TData>
+}
+
+export type MaterialsMaterialReadQueryResult = NonNullable<Awaited<ReturnType<typeof materialsMaterialRead>>>
+export type MaterialsMaterialReadQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Метаданные материала
+ */
+
+export function useMaterialsMaterialRead<TData = Awaited<ReturnType<typeof materialsMaterialRead>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ address: MaybeRefOrGetter<string>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof materialsMaterialRead>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getMaterialsMaterialReadQueryOptions(address,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+
+export type materialsMaterialContentResponse200 = {
+  data: string
+  status: 200
+}
+
+export type materialsMaterialContentResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type materialsMaterialContentResponseSuccess = (materialsMaterialContentResponse200) & {
+  headers: Headers;
+};
+export type materialsMaterialContentResponseError = (materialsMaterialContentResponseDefault) & {
+  headers: Headers;
+};
+
+export const getMaterialsMaterialContentUrl = (address: string,) => {
+
+
+
+
+  return `/api/v1/materials/${address}/content`
+}
+
+/**
+ * AD-23: байты материала; адрес проверяется после расшифрования и чтения.
+ * @summary Содержимое материала
+ */
+export const materialsMaterialContent = async (address: string, options?: RequestInit): Promise<materialsMaterialContentResponseSuccess> => {
+
+  const res = await fetch(getMaterialsMaterialContentUrl(address),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: materialsMaterialContentResponseError['data'], status?: number} = new globalThis.Error();
+    const data : materialsMaterialContentResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: materialsMaterialContentResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as materialsMaterialContentResponseSuccess
+}
+
+
+
+
+
+export const getMaterialsMaterialContentQueryKey = (address: MaybeRefOrGetter<string>,) => {
+    return [
+    'api','v1','materials',address,'content'
+    ] as const;
+    }
+
+
+export const getMaterialsMaterialContentQueryOptions = <TData = Awaited<ReturnType<typeof materialsMaterialContent>>, TError = globalThis.Error & { info?: Problem; status?: number }>(address: MaybeRefOrGetter<string>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof materialsMaterialContent>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getMaterialsMaterialContentQueryKey(address);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof materialsMaterialContent>>> = ({ signal }) => materialsMaterialContent(toValue(address), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: computed(() => toValue(address) !== null && toValue(address) !== undefined), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof materialsMaterialContent>>, TError, TData>
+}
+
+export type MaterialsMaterialContentQueryResult = NonNullable<Awaited<ReturnType<typeof materialsMaterialContent>>>
+export type MaterialsMaterialContentQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Содержимое материала
+ */
+
+export function useMaterialsMaterialContent<TData = Awaited<ReturnType<typeof materialsMaterialContent>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ address: MaybeRefOrGetter<string>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof materialsMaterialContent>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getMaterialsMaterialContentQueryOptions(address,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+
+export type mesBlockListResponse200 = {
+  data: MesBlockList
+  status: 200
+}
+
+export type mesBlockListResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type mesBlockListResponseSuccess = (mesBlockListResponse200) & {
+  headers: Headers;
+};
+export type mesBlockListResponseError = (mesBlockListResponseDefault) & {
+  headers: Headers;
+};
+
+export const getMesBlockListUrl = (params?: MesBlockListParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/mes/blocks?${stringifiedParams}` : `/api/v1/mes/blocks`
+}
+
+/**
+ * FR-93, AD-30: блок изделия или партии, отправленный в MES, и квитанция.
+ * @summary Блокировки в MES
+ */
+export const mesBlockList = async (params?: MesBlockListParams, options?: RequestInit): Promise<mesBlockListResponseSuccess> => {
+
+  const res = await fetch(getMesBlockListUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: mesBlockListResponseError['data'], status?: number} = new globalThis.Error();
+    const data : mesBlockListResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: mesBlockListResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as mesBlockListResponseSuccess
+}
+
+
+
+
+
+export const getMesBlockListQueryKey = (params?: MaybeRefOrGetter<MesBlockListParams>,) => {
+    return [
+    'api','v1','mes','blocks', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getMesBlockListQueryOptions = <TData = Awaited<ReturnType<typeof mesBlockList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(params?: MaybeRefOrGetter<MesBlockListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof mesBlockList>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getMesBlockListQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof mesBlockList>>> = ({ signal }) => mesBlockList(toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof mesBlockList>>, TError, TData>
+}
+
+export type MesBlockListQueryResult = NonNullable<Awaited<ReturnType<typeof mesBlockList>>>
+export type MesBlockListQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Блокировки в MES
+ */
+
+export function useMesBlockList<TData = Awaited<ReturnType<typeof mesBlockList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ params?: MaybeRefOrGetter<MesBlockListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof mesBlockList>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getMesBlockListQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+
+export type mesOrderListResponse200 = {
+  data: MesJobList
+  status: 200
+}
+
+export type mesOrderListResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type mesOrderListResponseSuccess = (mesOrderListResponse200) & {
+  headers: Headers;
+};
+export type mesOrderListResponseError = (mesOrderListResponseDefault) & {
+  headers: Headers;
+};
+
+export const getMesOrderListUrl = (params?: MesOrderListParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/mes/orders?${stringifiedParams}` : `/api/v1/mes/orders`
+}
+
+/**
+ * FR-92: задания MES (B2MML-JSON, проектное предположение).
+ * @summary Задания MES
+ */
+export const mesOrderList = async (params?: MesOrderListParams, options?: RequestInit): Promise<mesOrderListResponseSuccess> => {
+
+  const res = await fetch(getMesOrderListUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: mesOrderListResponseError['data'], status?: number} = new globalThis.Error();
+    const data : mesOrderListResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: mesOrderListResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as mesOrderListResponseSuccess
+}
+
+
+
+
+
+export const getMesOrderListQueryKey = (params?: MaybeRefOrGetter<MesOrderListParams>,) => {
+    return [
+    'api','v1','mes','orders', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getMesOrderListQueryOptions = <TData = Awaited<ReturnType<typeof mesOrderList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(params?: MaybeRefOrGetter<MesOrderListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof mesOrderList>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getMesOrderListQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof mesOrderList>>> = ({ signal }) => mesOrderList(toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof mesOrderList>>, TError, TData>
+}
+
+export type MesOrderListQueryResult = NonNullable<Awaited<ReturnType<typeof mesOrderList>>>
+export type MesOrderListQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Задания MES
+ */
+
+export function useMesOrderList<TData = Awaited<ReturnType<typeof mesOrderList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ params?: MaybeRefOrGetter<MesOrderListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof mesOrderList>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getMesOrderListQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
 
 export type analyticsNodeCountersReadResponse200 = {
   data: NodeCounterSet
@@ -12808,6 +17329,593 @@ export const useOpsProcessingRetry = <TError = globalThis.Error & { info?: Probl
       return useMutation(getOpsProcessingRetryMutationOptions(options), queryClient);
     }
 
+export type federationPartnerListResponse200 = {
+  data: PartnerList
+  status: 200
+}
+
+export type federationPartnerListResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type federationPartnerListResponseSuccess = (federationPartnerListResponse200) & {
+  headers: Headers;
+};
+export type federationPartnerListResponseError = (federationPartnerListResponseDefault) & {
+  headers: Headers;
+};
+
+export const getFederationPartnerListUrl = (params?: FederationPartnerListParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/partners?${stringifiedParams}` : `/api/v1/partners`
+}
+
+/**
+ * AD-19: партнёр — такая же копия ant со своим кодом предприятия; доверие ключам — от нашего акта регистрации партнёра и его корней.
+ * @summary Предприятия-партнёры
+ */
+export const federationPartnerList = async (params?: FederationPartnerListParams, options?: RequestInit): Promise<federationPartnerListResponseSuccess> => {
+
+  const res = await fetch(getFederationPartnerListUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: federationPartnerListResponseError['data'], status?: number} = new globalThis.Error();
+    const data : federationPartnerListResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: federationPartnerListResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as federationPartnerListResponseSuccess
+}
+
+
+
+
+
+export const getFederationPartnerListQueryKey = (params?: MaybeRefOrGetter<FederationPartnerListParams>,) => {
+    return [
+    'api','v1','partners', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getFederationPartnerListQueryOptions = <TData = Awaited<ReturnType<typeof federationPartnerList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(params?: MaybeRefOrGetter<FederationPartnerListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof federationPartnerList>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getFederationPartnerListQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof federationPartnerList>>> = ({ signal }) => federationPartnerList(toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof federationPartnerList>>, TError, TData>
+}
+
+export type FederationPartnerListQueryResult = NonNullable<Awaited<ReturnType<typeof federationPartnerList>>>
+export type FederationPartnerListQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Предприятия-партнёры
+ */
+
+export function useFederationPartnerList<TData = Awaited<ReturnType<typeof federationPartnerList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ params?: MaybeRefOrGetter<FederationPartnerListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof federationPartnerList>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getFederationPartnerListQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+
+export type federationPartnerRegisterResponse200 = {
+  data: Receipt
+  status: 200
+}
+
+export type federationPartnerRegisterResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type federationPartnerRegisterResponseSuccess = (federationPartnerRegisterResponse200) & {
+  headers: Headers;
+};
+export type federationPartnerRegisterResponseError = (federationPartnerRegisterResponseDefault) & {
+  headers: Headers;
+};
+
+export const getFederationPartnerRegisterUrl = () => {
+
+
+
+
+  return `/api/v1/partners`
+}
+
+/**
+ * AD-19, AD-11: акт регистрации партнёра и его корней — администратор безопасности + вторая подпись начальника ОТК; разрешающее критическое действие.
+ * @summary Зарегистрировать партнёра
+ */
+export const federationPartnerRegister = async (registerPartner: RegisterPartner, options?: RequestInit): Promise<federationPartnerRegisterResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getFederationPartnerRegisterUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(registerPartner)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: federationPartnerRegisterResponseError['data'], status?: number} = new globalThis.Error();
+    const data : federationPartnerRegisterResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: federationPartnerRegisterResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as federationPartnerRegisterResponseSuccess
+}
+
+
+
+
+
+export const getFederationPartnerRegisterMutationKey = () => ['federationPartnerRegister'] as const;
+
+export const getFederationPartnerRegisterMutationOptions = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof federationPartnerRegister>>, TError,FederationPartnerRegisterMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof federationPartnerRegister>>, TError,FederationPartnerRegisterMutationVariables, TContext> => {
+
+const mutationKey = getFederationPartnerRegisterMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof federationPartnerRegister>>, FederationPartnerRegisterMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  federationPartnerRegister(data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type FederationPartnerRegisterMutationResult = NonNullable<Awaited<ReturnType<typeof federationPartnerRegister>>>
+    export type FederationPartnerRegisterMutationBody = RegisterPartner
+    export type FederationPartnerRegisterMutationError = globalThis.Error & { info?: Problem; status?: number }
+    export type FederationPartnerRegisterMutationVariables = {data: RegisterPartner}
+
+    /**
+ * @summary Зарегистрировать партнёра
+ */
+export const useFederationPartnerRegister = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof federationPartnerRegister>>, TError,FederationPartnerRegisterMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof federationPartnerRegister>>,
+        TError,
+        FederationPartnerRegisterMutationVariables,
+        TContext
+      > => {
+      return useMutation(getFederationPartnerRegisterMutationOptions(options), queryClient);
+    }
+
+export type federationExtractListResponse200 = {
+  data: PassportExtractList
+  status: 200
+}
+
+export type federationExtractListResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type federationExtractListResponseSuccess = (federationExtractListResponse200) & {
+  headers: Headers;
+};
+export type federationExtractListResponseError = (federationExtractListResponseDefault) & {
+  headers: Headers;
+};
+
+export const getFederationExtractListUrl = (params?: FederationExtractListParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/passport-extracts?${stringifiedParams}` : `/api/v1/passport-extracts`
+}
+
+/**
+ * FR-131, FR-132: входящие (через приём, source_id = partner:‹код›) и исходящие выписки; происхождение подтверждено / только сервером отправителя / не подтверждено.
+ * @summary Выписки паспорта
+ */
+export const federationExtractList = async (params?: FederationExtractListParams, options?: RequestInit): Promise<federationExtractListResponseSuccess> => {
+
+  const res = await fetch(getFederationExtractListUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: federationExtractListResponseError['data'], status?: number} = new globalThis.Error();
+    const data : federationExtractListResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: federationExtractListResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as federationExtractListResponseSuccess
+}
+
+
+
+
+
+export const getFederationExtractListQueryKey = (params?: MaybeRefOrGetter<FederationExtractListParams>,) => {
+    return [
+    'api','v1','passport-extracts', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getFederationExtractListQueryOptions = <TData = Awaited<ReturnType<typeof federationExtractList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(params?: MaybeRefOrGetter<FederationExtractListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof federationExtractList>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getFederationExtractListQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof federationExtractList>>> = ({ signal }) => federationExtractList(toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof federationExtractList>>, TError, TData>
+}
+
+export type FederationExtractListQueryResult = NonNullable<Awaited<ReturnType<typeof federationExtractList>>>
+export type FederationExtractListQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Выписки паспорта
+ */
+
+export function useFederationExtractList<TData = Awaited<ReturnType<typeof federationExtractList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ params?: MaybeRefOrGetter<FederationExtractListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof federationExtractList>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getFederationExtractListQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+
+export type federationExtractSendResponse200 = {
+  data: Receipt
+  status: 200
+}
+
+export type federationExtractSendResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type federationExtractSendResponseSuccess = (federationExtractSendResponse200) & {
+  headers: Headers;
+};
+export type federationExtractSendResponseError = (federationExtractSendResponseDefault) & {
+  headers: Headers;
+};
+
+export const getFederationExtractSendUrl = () => {
+
+
+
+
+  return `/api/v1/passport-extracts`
+}
+
+/**
+ * FR-131, AD-19: исходящая выписка — документ с маршрутом «контролёр ОТК (2) + ключ шлюза предприятия»; отправляет роль outbox с досылкой, квитанция — событием.
+ * @summary Отправить выписку паспорта партнёру
+ */
+export const federationExtractSend = async (sendExtract: SendExtract, options?: RequestInit): Promise<federationExtractSendResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getFederationExtractSendUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(sendExtract)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: federationExtractSendResponseError['data'], status?: number} = new globalThis.Error();
+    const data : federationExtractSendResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: federationExtractSendResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as federationExtractSendResponseSuccess
+}
+
+
+
+
+
+export const getFederationExtractSendMutationKey = () => ['federationExtractSend'] as const;
+
+export const getFederationExtractSendMutationOptions = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof federationExtractSend>>, TError,FederationExtractSendMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof federationExtractSend>>, TError,FederationExtractSendMutationVariables, TContext> => {
+
+const mutationKey = getFederationExtractSendMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof federationExtractSend>>, FederationExtractSendMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  federationExtractSend(data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type FederationExtractSendMutationResult = NonNullable<Awaited<ReturnType<typeof federationExtractSend>>>
+    export type FederationExtractSendMutationBody = SendExtract
+    export type FederationExtractSendMutationError = globalThis.Error & { info?: Problem; status?: number }
+    export type FederationExtractSendMutationVariables = {data: SendExtract}
+
+    /**
+ * @summary Отправить выписку паспорта партнёру
+ */
+export const useFederationExtractSend = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof federationExtractSend>>, TError,FederationExtractSendMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof federationExtractSend>>,
+        TError,
+        FederationExtractSendMutationVariables,
+        TContext
+      > => {
+      return useMutation(getFederationExtractSendMutationOptions(options), queryClient);
+    }
+
+export type federationExtractReadResponse200 = {
+  data: PassportExtractView
+  status: 200
+}
+
+export type federationExtractReadResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type federationExtractReadResponseSuccess = (federationExtractReadResponse200) & {
+  headers: Headers;
+};
+export type federationExtractReadResponseError = (federationExtractReadResponseDefault) & {
+  headers: Headers;
+};
+
+export const getFederationExtractReadUrl = (extractDigest: string,) => {
+
+
+
+
+  return `/api/v1/passport-extracts/${extractDigest}`
+}
+
+/**
+ * FR-133, AD-19: содержимое, подписи класса partner с проверкой цепочкой к корням партнёра, контрольная точка хранителя отправителя.
+ * @summary Выписка паспорта
+ */
+export const federationExtractRead = async (extractDigest: string, options?: RequestInit): Promise<federationExtractReadResponseSuccess> => {
+
+  const res = await fetch(getFederationExtractReadUrl(extractDigest),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: federationExtractReadResponseError['data'], status?: number} = new globalThis.Error();
+    const data : federationExtractReadResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: federationExtractReadResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as federationExtractReadResponseSuccess
+}
+
+
+
+
+
+export const getFederationExtractReadQueryKey = (extractDigest: MaybeRefOrGetter<string>,) => {
+    return [
+    'api','v1','passport-extracts',extractDigest
+    ] as const;
+    }
+
+
+export const getFederationExtractReadQueryOptions = <TData = Awaited<ReturnType<typeof federationExtractRead>>, TError = globalThis.Error & { info?: Problem; status?: number }>(extractDigest: MaybeRefOrGetter<string>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof federationExtractRead>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getFederationExtractReadQueryKey(extractDigest);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof federationExtractRead>>> = ({ signal }) => federationExtractRead(toValue(extractDigest), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: computed(() => toValue(extractDigest) !== null && toValue(extractDigest) !== undefined), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof federationExtractRead>>, TError, TData>
+}
+
+export type FederationExtractReadQueryResult = NonNullable<Awaited<ReturnType<typeof federationExtractRead>>>
+export type FederationExtractReadQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Выписка паспорта
+ */
+
+export function useFederationExtractRead<TData = Awaited<ReturnType<typeof federationExtractRead>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ extractDigest: MaybeRefOrGetter<string>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof federationExtractRead>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getFederationExtractReadQueryOptions(extractDigest,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+
 export type accessPermissionListResponse200 = {
   data: PermissionList
   status: 200
@@ -13043,6 +18151,730 @@ export function useAccessPermissionExplain<TData = Awaited<ReturnType<typeof acc
 
 
 
+
+export type accessPersonListResponse200 = {
+  data: AccessPersonList
+  status: 200
+}
+
+export type accessPersonListResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type accessPersonListResponseSuccess = (accessPersonListResponse200) & {
+  headers: Headers;
+};
+export type accessPersonListResponseError = (accessPersonListResponseDefault) & {
+  headers: Headers;
+};
+
+export const getAccessPersonListUrl = (params?: AccessPersonListParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/persons?${stringifiedParams}` : `/api/v1/persons`
+}
+
+/**
+ * FR-78: сотрудники с условными идентификаторами, учётные записи, роли в областях.
+ * @summary Сотрудники
+ */
+export const accessPersonList = async (params?: AccessPersonListParams, options?: RequestInit): Promise<accessPersonListResponseSuccess> => {
+
+  const res = await fetch(getAccessPersonListUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: accessPersonListResponseError['data'], status?: number} = new globalThis.Error();
+    const data : accessPersonListResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: accessPersonListResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as accessPersonListResponseSuccess
+}
+
+
+
+
+
+export const getAccessPersonListQueryKey = (params?: MaybeRefOrGetter<AccessPersonListParams>,) => {
+    return [
+    'api','v1','persons', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getAccessPersonListQueryOptions = <TData = Awaited<ReturnType<typeof accessPersonList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(params?: MaybeRefOrGetter<AccessPersonListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof accessPersonList>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getAccessPersonListQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof accessPersonList>>> = ({ signal }) => accessPersonList(toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof accessPersonList>>, TError, TData>
+}
+
+export type AccessPersonListQueryResult = NonNullable<Awaited<ReturnType<typeof accessPersonList>>>
+export type AccessPersonListQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Сотрудники
+ */
+
+export function useAccessPersonList<TData = Awaited<ReturnType<typeof accessPersonList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ params?: MaybeRefOrGetter<AccessPersonListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof accessPersonList>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getAccessPersonListQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+
+export type accessPersonRegisterResponse200 = {
+  data: Receipt
+  status: 200
+}
+
+export type accessPersonRegisterResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type accessPersonRegisterResponseSuccess = (accessPersonRegisterResponse200) & {
+  headers: Headers;
+};
+export type accessPersonRegisterResponseError = (accessPersonRegisterResponseDefault) & {
+  headers: Headers;
+};
+
+export const getAccessPersonRegisterUrl = () => {
+
+
+
+
+  return `/api/v1/persons`
+}
+
+/**
+ * FR-78: сотрудник с псевдонимом; соответствие человеку хранится отдельно.
+ * @summary Завести сотрудника
+ */
+export const accessPersonRegister = async (registerPerson: RegisterPerson, options?: RequestInit): Promise<accessPersonRegisterResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getAccessPersonRegisterUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(registerPerson)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: accessPersonRegisterResponseError['data'], status?: number} = new globalThis.Error();
+    const data : accessPersonRegisterResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: accessPersonRegisterResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as accessPersonRegisterResponseSuccess
+}
+
+
+
+
+
+export const getAccessPersonRegisterMutationKey = () => ['accessPersonRegister'] as const;
+
+export const getAccessPersonRegisterMutationOptions = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof accessPersonRegister>>, TError,AccessPersonRegisterMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof accessPersonRegister>>, TError,AccessPersonRegisterMutationVariables, TContext> => {
+
+const mutationKey = getAccessPersonRegisterMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof accessPersonRegister>>, AccessPersonRegisterMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  accessPersonRegister(data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AccessPersonRegisterMutationResult = NonNullable<Awaited<ReturnType<typeof accessPersonRegister>>>
+    export type AccessPersonRegisterMutationBody = RegisterPerson
+    export type AccessPersonRegisterMutationError = globalThis.Error & { info?: Problem; status?: number }
+    export type AccessPersonRegisterMutationVariables = {data: RegisterPerson}
+
+    /**
+ * @summary Завести сотрудника
+ */
+export const useAccessPersonRegister = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof accessPersonRegister>>, TError,AccessPersonRegisterMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof accessPersonRegister>>,
+        TError,
+        AccessPersonRegisterMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAccessPersonRegisterMutationOptions(options), queryClient);
+    }
+
+export type accessPersonReadResponse200 = {
+  data: AccessPerson
+  status: 200
+}
+
+export type accessPersonReadResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type accessPersonReadResponseSuccess = (accessPersonReadResponse200) & {
+  headers: Headers;
+};
+export type accessPersonReadResponseError = (accessPersonReadResponseDefault) & {
+  headers: Headers;
+};
+
+export const getAccessPersonReadUrl = (personId: string,
+    params?: AccessPersonReadParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/persons/${personId}?${stringifiedParams}` : `/api/v1/persons/${personId}`
+}
+
+/**
+ * FR-78: учётная запись и роли сотрудника.
+ * @summary Сотрудник
+ */
+export const accessPersonRead = async (personId: string,
+    params?: AccessPersonReadParams, options?: RequestInit): Promise<accessPersonReadResponseSuccess> => {
+
+  const res = await fetch(getAccessPersonReadUrl(personId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: accessPersonReadResponseError['data'], status?: number} = new globalThis.Error();
+    const data : accessPersonReadResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: accessPersonReadResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as accessPersonReadResponseSuccess
+}
+
+
+
+
+
+export const getAccessPersonReadQueryKey = (personId: MaybeRefOrGetter<string>,
+    params?: MaybeRefOrGetter<AccessPersonReadParams>,) => {
+    return [
+    'api','v1','persons',personId, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getAccessPersonReadQueryOptions = <TData = Awaited<ReturnType<typeof accessPersonRead>>, TError = globalThis.Error & { info?: Problem; status?: number }>(personId: MaybeRefOrGetter<string>,
+    params?: MaybeRefOrGetter<AccessPersonReadParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof accessPersonRead>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getAccessPersonReadQueryKey(personId,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof accessPersonRead>>> = ({ signal }) => accessPersonRead(toValue(personId),toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: computed(() => toValue(personId) !== null && toValue(personId) !== undefined), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof accessPersonRead>>, TError, TData>
+}
+
+export type AccessPersonReadQueryResult = NonNullable<Awaited<ReturnType<typeof accessPersonRead>>>
+export type AccessPersonReadQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Сотрудник
+ */
+
+export function useAccessPersonRead<TData = Awaited<ReturnType<typeof accessPersonRead>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ personId: MaybeRefOrGetter<string>,
+    params?: MaybeRefOrGetter<AccessPersonReadParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof accessPersonRead>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getAccessPersonReadQueryOptions(personId,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+
+export type accessAccountActivateResponse200 = {
+  data: Receipt
+  status: 200
+}
+
+export type accessAccountActivateResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type accessAccountActivateResponseSuccess = (accessAccountActivateResponse200) & {
+  headers: Headers;
+};
+export type accessAccountActivateResponseError = (accessAccountActivateResponseDefault) & {
+  headers: Headers;
+};
+
+export const getAccessAccountActivateUrl = (personId: string,) => {
+
+
+
+
+  return `/api/v1/persons/${personId}/account`
+}
+
+/**
+ * FR-128: заявка на регистрацию активируется администратором с начальной ролью.
+ * @summary Активировать учётную запись
+ */
+export const accessAccountActivate = async (personId: string,
+    activateAccount: ActivateAccount, options?: RequestInit): Promise<accessAccountActivateResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getAccessAccountActivateUrl(personId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(activateAccount)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: accessAccountActivateResponseError['data'], status?: number} = new globalThis.Error();
+    const data : accessAccountActivateResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: accessAccountActivateResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as accessAccountActivateResponseSuccess
+}
+
+
+
+
+
+export const getAccessAccountActivateMutationKey = () => ['accessAccountActivate'] as const;
+
+export const getAccessAccountActivateMutationOptions = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof accessAccountActivate>>, TError,AccessAccountActivateMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof accessAccountActivate>>, TError,AccessAccountActivateMutationVariables, TContext> => {
+
+const mutationKey = getAccessAccountActivateMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof accessAccountActivate>>, AccessAccountActivateMutationVariables> = (props) => {
+          const {personId,data} = props ?? {};
+
+          return  accessAccountActivate(personId,data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AccessAccountActivateMutationResult = NonNullable<Awaited<ReturnType<typeof accessAccountActivate>>>
+    export type AccessAccountActivateMutationBody = ActivateAccount
+    export type AccessAccountActivateMutationError = globalThis.Error & { info?: Problem; status?: number }
+    export type AccessAccountActivateMutationVariables = {personId: string;data: ActivateAccount}
+
+    /**
+ * @summary Активировать учётную запись
+ */
+export const useAccessAccountActivate = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof accessAccountActivate>>, TError,AccessAccountActivateMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof accessAccountActivate>>,
+        TError,
+        AccessAccountActivateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAccessAccountActivateMutationOptions(options), queryClient);
+    }
+
+export type accessQualificationGrantResponse200 = {
+  data: Receipt
+  status: 200
+}
+
+export type accessQualificationGrantResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type accessQualificationGrantResponseSuccess = (accessQualificationGrantResponse200) & {
+  headers: Headers;
+};
+export type accessQualificationGrantResponseError = (accessQualificationGrantResponseDefault) & {
+  headers: Headers;
+};
+
+export const getAccessQualificationGrantUrl = (personId: string,) => {
+
+
+
+
+  return `/api/v1/persons/${personId}/qualifications`
+}
+
+/**
+ * FR-80: квалификация с областью и сроком.
+ * @summary Выдать квалификацию
+ */
+export const accessQualificationGrant = async (personId: string,
+    grantQualification: GrantQualification, options?: RequestInit): Promise<accessQualificationGrantResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getAccessQualificationGrantUrl(personId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(grantQualification)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: accessQualificationGrantResponseError['data'], status?: number} = new globalThis.Error();
+    const data : accessQualificationGrantResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: accessQualificationGrantResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as accessQualificationGrantResponseSuccess
+}
+
+
+
+
+
+export const getAccessQualificationGrantMutationKey = () => ['accessQualificationGrant'] as const;
+
+export const getAccessQualificationGrantMutationOptions = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof accessQualificationGrant>>, TError,AccessQualificationGrantMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof accessQualificationGrant>>, TError,AccessQualificationGrantMutationVariables, TContext> => {
+
+const mutationKey = getAccessQualificationGrantMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof accessQualificationGrant>>, AccessQualificationGrantMutationVariables> = (props) => {
+          const {personId,data} = props ?? {};
+
+          return  accessQualificationGrant(personId,data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AccessQualificationGrantMutationResult = NonNullable<Awaited<ReturnType<typeof accessQualificationGrant>>>
+    export type AccessQualificationGrantMutationBody = GrantQualification
+    export type AccessQualificationGrantMutationError = globalThis.Error & { info?: Problem; status?: number }
+    export type AccessQualificationGrantMutationVariables = {personId: string;data: GrantQualification}
+
+    /**
+ * @summary Выдать квалификацию
+ */
+export const useAccessQualificationGrant = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof accessQualificationGrant>>, TError,AccessQualificationGrantMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof accessQualificationGrant>>,
+        TError,
+        AccessQualificationGrantMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAccessQualificationGrantMutationOptions(options), queryClient);
+    }
+
+export type accessQualificationRevokeResponse200 = {
+  data: Receipt
+  status: 200
+}
+
+export type accessQualificationRevokeResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type accessQualificationRevokeResponseSuccess = (accessQualificationRevokeResponse200) & {
+  headers: Headers;
+};
+export type accessQualificationRevokeResponseError = (accessQualificationRevokeResponseDefault) & {
+  headers: Headers;
+};
+
+export const getAccessQualificationRevokeUrl = (personId: string,) => {
+
+
+
+
+  return `/api/v1/persons/${personId}/qualifications/revocations`
+}
+
+/**
+ * FR-80: отзыв снимает допуск к рабочему месту (access.workplace.revoked).
+ * @summary Отозвать квалификацию
+ */
+export const accessQualificationRevoke = async (personId: string,
+    revokeQualification: RevokeQualification, options?: RequestInit): Promise<accessQualificationRevokeResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getAccessQualificationRevokeUrl(personId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(revokeQualification)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: accessQualificationRevokeResponseError['data'], status?: number} = new globalThis.Error();
+    const data : accessQualificationRevokeResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: accessQualificationRevokeResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as accessQualificationRevokeResponseSuccess
+}
+
+
+
+
+
+export const getAccessQualificationRevokeMutationKey = () => ['accessQualificationRevoke'] as const;
+
+export const getAccessQualificationRevokeMutationOptions = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof accessQualificationRevoke>>, TError,AccessQualificationRevokeMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof accessQualificationRevoke>>, TError,AccessQualificationRevokeMutationVariables, TContext> => {
+
+const mutationKey = getAccessQualificationRevokeMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof accessQualificationRevoke>>, AccessQualificationRevokeMutationVariables> = (props) => {
+          const {personId,data} = props ?? {};
+
+          return  accessQualificationRevoke(personId,data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AccessQualificationRevokeMutationResult = NonNullable<Awaited<ReturnType<typeof accessQualificationRevoke>>>
+    export type AccessQualificationRevokeMutationBody = RevokeQualification
+    export type AccessQualificationRevokeMutationError = globalThis.Error & { info?: Problem; status?: number }
+    export type AccessQualificationRevokeMutationVariables = {personId: string;data: RevokeQualification}
+
+    /**
+ * @summary Отозвать квалификацию
+ */
+export const useAccessQualificationRevoke = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof accessQualificationRevoke>>, TError,AccessQualificationRevokeMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof accessQualificationRevoke>>,
+        TError,
+        AccessQualificationRevokeMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAccessQualificationRevokeMutationOptions(options), queryClient);
+    }
 
 export type nonconformityProcessHoldSetResponse200 = {
   data: Receipt
@@ -14371,6 +20203,124 @@ export const useProcessVersionSubmit = <TError = globalThis.Error & { info?: Pro
       return useMutation(getProcessVersionSubmitMutationOptions(options), queryClient);
     }
 
+export type accessQualificationListResponse200 = {
+  data: AccessQualificationList
+  status: 200
+}
+
+export type accessQualificationListResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type accessQualificationListResponseSuccess = (accessQualificationListResponse200) & {
+  headers: Headers;
+};
+export type accessQualificationListResponseError = (accessQualificationListResponseDefault) & {
+  headers: Headers;
+};
+
+export const getAccessQualificationListUrl = (params?: AccessQualificationListParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/qualifications?${stringifiedParams}` : `/api/v1/qualifications`
+}
+
+/**
+ * FR-80: квалификации и аттестации со сроками; проверяются на дату операции.
+ * @summary Квалификации
+ */
+export const accessQualificationList = async (params?: AccessQualificationListParams, options?: RequestInit): Promise<accessQualificationListResponseSuccess> => {
+
+  const res = await fetch(getAccessQualificationListUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: accessQualificationListResponseError['data'], status?: number} = new globalThis.Error();
+    const data : accessQualificationListResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: accessQualificationListResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as accessQualificationListResponseSuccess
+}
+
+
+
+
+
+export const getAccessQualificationListQueryKey = (params?: MaybeRefOrGetter<AccessQualificationListParams>,) => {
+    return [
+    'api','v1','qualifications', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getAccessQualificationListQueryOptions = <TData = Awaited<ReturnType<typeof accessQualificationList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(params?: MaybeRefOrGetter<AccessQualificationListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof accessQualificationList>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getAccessQualificationListQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof accessQualificationList>>> = ({ signal }) => accessQualificationList(toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof accessQualificationList>>, TError, TData>
+}
+
+export type AccessQualificationListQueryResult = NonNullable<Awaited<ReturnType<typeof accessQualificationList>>>
+export type AccessQualificationListQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Квалификации
+ */
+
+export function useAccessQualificationList<TData = Awaited<ReturnType<typeof accessQualificationList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ params?: MaybeRefOrGetter<AccessQualificationListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof accessQualificationList>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getAccessQualificationListQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+
 export type ingestQuarantineListResponse200 = {
   data: QuarantineList
   status: 200
@@ -14825,6 +20775,1553 @@ export function useQualityReactionMapRead<TData = Awaited<ReturnType<typeof qual
  ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getQualityReactionMapReadQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+
+export type referenceCalendarReadResponse200 = {
+  data: RefCalendar
+  status: 200
+}
+
+export type referenceCalendarReadResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type referenceCalendarReadResponseSuccess = (referenceCalendarReadResponse200) & {
+  headers: Headers;
+};
+export type referenceCalendarReadResponseError = (referenceCalendarReadResponseDefault) & {
+  headers: Headers;
+};
+
+export const getReferenceCalendarReadUrl = (params?: ReferenceCalendarReadParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/reference/calendar?${stringifiedParams}` : `/api/v1/reference/calendar`
+}
+
+/**
+ * AD-4: сроки считаются по производственному календарю и графику смен.
+ * @summary Производственный календарь
+ */
+export const referenceCalendarRead = async (params?: ReferenceCalendarReadParams, options?: RequestInit): Promise<referenceCalendarReadResponseSuccess> => {
+
+  const res = await fetch(getReferenceCalendarReadUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: referenceCalendarReadResponseError['data'], status?: number} = new globalThis.Error();
+    const data : referenceCalendarReadResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: referenceCalendarReadResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as referenceCalendarReadResponseSuccess
+}
+
+
+
+
+
+export const getReferenceCalendarReadQueryKey = (params?: MaybeRefOrGetter<ReferenceCalendarReadParams>,) => {
+    return [
+    'api','v1','reference','calendar', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getReferenceCalendarReadQueryOptions = <TData = Awaited<ReturnType<typeof referenceCalendarRead>>, TError = globalThis.Error & { info?: Problem; status?: number }>(params?: MaybeRefOrGetter<ReferenceCalendarReadParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof referenceCalendarRead>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getReferenceCalendarReadQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof referenceCalendarRead>>> = ({ signal }) => referenceCalendarRead(toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof referenceCalendarRead>>, TError, TData>
+}
+
+export type ReferenceCalendarReadQueryResult = NonNullable<Awaited<ReturnType<typeof referenceCalendarRead>>>
+export type ReferenceCalendarReadQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Производственный календарь
+ */
+
+export function useReferenceCalendarRead<TData = Awaited<ReturnType<typeof referenceCalendarRead>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ params?: MaybeRefOrGetter<ReferenceCalendarReadParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof referenceCalendarRead>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getReferenceCalendarReadQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+
+export type referenceCalendarDefineResponse200 = {
+  data: Receipt
+  status: 200
+}
+
+export type referenceCalendarDefineResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type referenceCalendarDefineResponseSuccess = (referenceCalendarDefineResponse200) & {
+  headers: Headers;
+};
+export type referenceCalendarDefineResponseError = (referenceCalendarDefineResponseDefault) & {
+  headers: Headers;
+};
+
+export const getReferenceCalendarDefineUrl = () => {
+
+
+
+
+  return `/api/v1/reference/calendar`
+}
+
+/**
+ * AD-31.
+ * @summary Определить производственный календарь
+ */
+export const referenceCalendarDefine = async (defineCalendar: DefineCalendar, options?: RequestInit): Promise<referenceCalendarDefineResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getReferenceCalendarDefineUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(defineCalendar)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: referenceCalendarDefineResponseError['data'], status?: number} = new globalThis.Error();
+    const data : referenceCalendarDefineResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: referenceCalendarDefineResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as referenceCalendarDefineResponseSuccess
+}
+
+
+
+
+
+export const getReferenceCalendarDefineMutationKey = () => ['referenceCalendarDefine'] as const;
+
+export const getReferenceCalendarDefineMutationOptions = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof referenceCalendarDefine>>, TError,ReferenceCalendarDefineMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof referenceCalendarDefine>>, TError,ReferenceCalendarDefineMutationVariables, TContext> => {
+
+const mutationKey = getReferenceCalendarDefineMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof referenceCalendarDefine>>, ReferenceCalendarDefineMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  referenceCalendarDefine(data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReferenceCalendarDefineMutationResult = NonNullable<Awaited<ReturnType<typeof referenceCalendarDefine>>>
+    export type ReferenceCalendarDefineMutationBody = DefineCalendar
+    export type ReferenceCalendarDefineMutationError = globalThis.Error & { info?: Problem; status?: number }
+    export type ReferenceCalendarDefineMutationVariables = {data: DefineCalendar}
+
+    /**
+ * @summary Определить производственный календарь
+ */
+export const useReferenceCalendarDefine = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof referenceCalendarDefine>>, TError,ReferenceCalendarDefineMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof referenceCalendarDefine>>,
+        TError,
+        ReferenceCalendarDefineMutationVariables,
+        TContext
+      > => {
+      return useMutation(getReferenceCalendarDefineMutationOptions(options), queryClient);
+    }
+
+export type referenceEquipmentListResponse200 = {
+  data: RefEquipmentList
+  status: 200
+}
+
+export type referenceEquipmentListResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type referenceEquipmentListResponseSuccess = (referenceEquipmentListResponse200) & {
+  headers: Headers;
+};
+export type referenceEquipmentListResponseError = (referenceEquipmentListResponseDefault) & {
+  headers: Headers;
+};
+
+export const getReferenceEquipmentListUrl = (params?: ReferenceEquipmentListParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/reference/equipment?${stringifiedParams}` : `/api/v1/reference/equipment`
+}
+
+/**
+ * FR-17: оборудование с поверкой и калибровкой на дату.
+ * @summary Оборудование и поверка
+ */
+export const referenceEquipmentList = async (params?: ReferenceEquipmentListParams, options?: RequestInit): Promise<referenceEquipmentListResponseSuccess> => {
+
+  const res = await fetch(getReferenceEquipmentListUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: referenceEquipmentListResponseError['data'], status?: number} = new globalThis.Error();
+    const data : referenceEquipmentListResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: referenceEquipmentListResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as referenceEquipmentListResponseSuccess
+}
+
+
+
+
+
+export const getReferenceEquipmentListQueryKey = (params?: MaybeRefOrGetter<ReferenceEquipmentListParams>,) => {
+    return [
+    'api','v1','reference','equipment', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getReferenceEquipmentListQueryOptions = <TData = Awaited<ReturnType<typeof referenceEquipmentList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(params?: MaybeRefOrGetter<ReferenceEquipmentListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof referenceEquipmentList>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getReferenceEquipmentListQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof referenceEquipmentList>>> = ({ signal }) => referenceEquipmentList(toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof referenceEquipmentList>>, TError, TData>
+}
+
+export type ReferenceEquipmentListQueryResult = NonNullable<Awaited<ReturnType<typeof referenceEquipmentList>>>
+export type ReferenceEquipmentListQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Оборудование и поверка
+ */
+
+export function useReferenceEquipmentList<TData = Awaited<ReturnType<typeof referenceEquipmentList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ params?: MaybeRefOrGetter<ReferenceEquipmentListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof referenceEquipmentList>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getReferenceEquipmentListQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+
+export type referenceEquipmentDefineResponse200 = {
+  data: Receipt
+  status: 200
+}
+
+export type referenceEquipmentDefineResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type referenceEquipmentDefineResponseSuccess = (referenceEquipmentDefineResponse200) & {
+  headers: Headers;
+};
+export type referenceEquipmentDefineResponseError = (referenceEquipmentDefineResponseDefault) & {
+  headers: Headers;
+};
+
+export const getReferenceEquipmentDefineUrl = () => {
+
+
+
+
+  return `/api/v1/reference/equipment`
+}
+
+/**
+ * AD-31.
+ * @summary Определить оборудование
+ */
+export const referenceEquipmentDefine = async (defineEquipment: DefineEquipment, options?: RequestInit): Promise<referenceEquipmentDefineResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getReferenceEquipmentDefineUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(defineEquipment)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: referenceEquipmentDefineResponseError['data'], status?: number} = new globalThis.Error();
+    const data : referenceEquipmentDefineResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: referenceEquipmentDefineResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as referenceEquipmentDefineResponseSuccess
+}
+
+
+
+
+
+export const getReferenceEquipmentDefineMutationKey = () => ['referenceEquipmentDefine'] as const;
+
+export const getReferenceEquipmentDefineMutationOptions = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof referenceEquipmentDefine>>, TError,ReferenceEquipmentDefineMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof referenceEquipmentDefine>>, TError,ReferenceEquipmentDefineMutationVariables, TContext> => {
+
+const mutationKey = getReferenceEquipmentDefineMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof referenceEquipmentDefine>>, ReferenceEquipmentDefineMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  referenceEquipmentDefine(data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReferenceEquipmentDefineMutationResult = NonNullable<Awaited<ReturnType<typeof referenceEquipmentDefine>>>
+    export type ReferenceEquipmentDefineMutationBody = DefineEquipment
+    export type ReferenceEquipmentDefineMutationError = globalThis.Error & { info?: Problem; status?: number }
+    export type ReferenceEquipmentDefineMutationVariables = {data: DefineEquipment}
+
+    /**
+ * @summary Определить оборудование
+ */
+export const useReferenceEquipmentDefine = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof referenceEquipmentDefine>>, TError,ReferenceEquipmentDefineMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof referenceEquipmentDefine>>,
+        TError,
+        ReferenceEquipmentDefineMutationVariables,
+        TContext
+      > => {
+      return useMutation(getReferenceEquipmentDefineMutationOptions(options), queryClient);
+    }
+
+export type referenceEquipmentVerifyResponse200 = {
+  data: Receipt
+  status: 200
+}
+
+export type referenceEquipmentVerifyResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type referenceEquipmentVerifyResponseSuccess = (referenceEquipmentVerifyResponse200) & {
+  headers: Headers;
+};
+export type referenceEquipmentVerifyResponseError = (referenceEquipmentVerifyResponseDefault) & {
+  headers: Headers;
+};
+
+export const getReferenceEquipmentVerifyUrl = (equipmentId: string,) => {
+
+
+
+
+  return `/api/v1/reference/equipment/${equipmentId}/verification`
+}
+
+/**
+ * FR-17: поверка или калибровка — предусловие операции на дату; метролог.
+ * @summary Записать поверку
+ */
+export const referenceEquipmentVerify = async (equipmentId: string,
+    verifyEquipment: VerifyEquipment, options?: RequestInit): Promise<referenceEquipmentVerifyResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getReferenceEquipmentVerifyUrl(equipmentId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(verifyEquipment)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: referenceEquipmentVerifyResponseError['data'], status?: number} = new globalThis.Error();
+    const data : referenceEquipmentVerifyResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: referenceEquipmentVerifyResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as referenceEquipmentVerifyResponseSuccess
+}
+
+
+
+
+
+export const getReferenceEquipmentVerifyMutationKey = () => ['referenceEquipmentVerify'] as const;
+
+export const getReferenceEquipmentVerifyMutationOptions = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof referenceEquipmentVerify>>, TError,ReferenceEquipmentVerifyMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof referenceEquipmentVerify>>, TError,ReferenceEquipmentVerifyMutationVariables, TContext> => {
+
+const mutationKey = getReferenceEquipmentVerifyMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof referenceEquipmentVerify>>, ReferenceEquipmentVerifyMutationVariables> = (props) => {
+          const {equipmentId,data} = props ?? {};
+
+          return  referenceEquipmentVerify(equipmentId,data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReferenceEquipmentVerifyMutationResult = NonNullable<Awaited<ReturnType<typeof referenceEquipmentVerify>>>
+    export type ReferenceEquipmentVerifyMutationBody = VerifyEquipment
+    export type ReferenceEquipmentVerifyMutationError = globalThis.Error & { info?: Problem; status?: number }
+    export type ReferenceEquipmentVerifyMutationVariables = {equipmentId: string;data: VerifyEquipment}
+
+    /**
+ * @summary Записать поверку
+ */
+export const useReferenceEquipmentVerify = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof referenceEquipmentVerify>>, TError,ReferenceEquipmentVerifyMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof referenceEquipmentVerify>>,
+        TError,
+        ReferenceEquipmentVerifyMutationVariables,
+        TContext
+      > => {
+      return useMutation(getReferenceEquipmentVerifyMutationOptions(options), queryClient);
+    }
+
+export type referenceExternalIdListResponse200 = {
+  data: RefExternalIDList
+  status: 200
+}
+
+export type referenceExternalIdListResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type referenceExternalIdListResponseSuccess = (referenceExternalIdListResponse200) & {
+  headers: Headers;
+};
+export type referenceExternalIdListResponseError = (referenceExternalIdListResponseDefault) & {
+  headers: Headers;
+};
+
+export const getReferenceExternalIdListUrl = (params?: ReferenceExternalIdListParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/reference/external-ids?${stringifiedParams}` : `/api/v1/reference/external-ids`
+}
+
+/**
+ * AD-18, FR-95: соответствия ID 1С, Галактики, MES, КОМПАС; конфликт — сигнал, не перезапись.
+ * @summary Соответствия внешних ID
+ */
+export const referenceExternalIdList = async (params?: ReferenceExternalIdListParams, options?: RequestInit): Promise<referenceExternalIdListResponseSuccess> => {
+
+  const res = await fetch(getReferenceExternalIdListUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: referenceExternalIdListResponseError['data'], status?: number} = new globalThis.Error();
+    const data : referenceExternalIdListResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: referenceExternalIdListResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as referenceExternalIdListResponseSuccess
+}
+
+
+
+
+
+export const getReferenceExternalIdListQueryKey = (params?: MaybeRefOrGetter<ReferenceExternalIdListParams>,) => {
+    return [
+    'api','v1','reference','external-ids', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getReferenceExternalIdListQueryOptions = <TData = Awaited<ReturnType<typeof referenceExternalIdList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(params?: MaybeRefOrGetter<ReferenceExternalIdListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof referenceExternalIdList>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getReferenceExternalIdListQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof referenceExternalIdList>>> = ({ signal }) => referenceExternalIdList(toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof referenceExternalIdList>>, TError, TData>
+}
+
+export type ReferenceExternalIdListQueryResult = NonNullable<Awaited<ReturnType<typeof referenceExternalIdList>>>
+export type ReferenceExternalIdListQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Соответствия внешних ID
+ */
+
+export function useReferenceExternalIdList<TData = Awaited<ReturnType<typeof referenceExternalIdList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ params?: MaybeRefOrGetter<ReferenceExternalIdListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof referenceExternalIdList>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getReferenceExternalIdListQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+
+export type referenceItemTypeListResponse200 = {
+  data: RefItemTypeList
+  status: 200
+}
+
+export type referenceItemTypeListResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type referenceItemTypeListResponseSuccess = (referenceItemTypeListResponse200) & {
+  headers: Headers;
+};
+export type referenceItemTypeListResponseError = (referenceItemTypeListResponseDefault) & {
+  headers: Headers;
+};
+
+export const getReferenceItemTypeListUrl = (params?: ReferenceItemTypeListParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/reference/item-types?${stringifiedParams}` : `/api/v1/reference/item-types`
+}
+
+/**
+ * Изделия и номенклатура: обозначение, ревизия, зоны, состав, маркировка — срез на момент (AD-31).
+ * @summary Номенклатура
+ */
+export const referenceItemTypeList = async (params?: ReferenceItemTypeListParams, options?: RequestInit): Promise<referenceItemTypeListResponseSuccess> => {
+
+  const res = await fetch(getReferenceItemTypeListUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: referenceItemTypeListResponseError['data'], status?: number} = new globalThis.Error();
+    const data : referenceItemTypeListResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: referenceItemTypeListResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as referenceItemTypeListResponseSuccess
+}
+
+
+
+
+
+export const getReferenceItemTypeListQueryKey = (params?: MaybeRefOrGetter<ReferenceItemTypeListParams>,) => {
+    return [
+    'api','v1','reference','item-types', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getReferenceItemTypeListQueryOptions = <TData = Awaited<ReturnType<typeof referenceItemTypeList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(params?: MaybeRefOrGetter<ReferenceItemTypeListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof referenceItemTypeList>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getReferenceItemTypeListQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof referenceItemTypeList>>> = ({ signal }) => referenceItemTypeList(toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof referenceItemTypeList>>, TError, TData>
+}
+
+export type ReferenceItemTypeListQueryResult = NonNullable<Awaited<ReturnType<typeof referenceItemTypeList>>>
+export type ReferenceItemTypeListQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Номенклатура
+ */
+
+export function useReferenceItemTypeList<TData = Awaited<ReturnType<typeof referenceItemTypeList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ params?: MaybeRefOrGetter<ReferenceItemTypeListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof referenceItemTypeList>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getReferenceItemTypeListQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+
+export type referenceItemTypeDefineResponse200 = {
+  data: Receipt
+  status: 200
+}
+
+export type referenceItemTypeDefineResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type referenceItemTypeDefineResponseSuccess = (referenceItemTypeDefineResponse200) & {
+  headers: Headers;
+};
+export type referenceItemTypeDefineResponseError = (referenceItemTypeDefineResponseDefault) & {
+  headers: Headers;
+};
+
+export const getReferenceItemTypeDefineUrl = () => {
+
+
+
+
+  return `/api/v1/reference/item-types`
+}
+
+/**
+ * AD-31: новая версия с датой действия; изменение задним числом доходит до изделий адресованными записями стадии (AD-42).
+ * @summary Определить позицию номенклатуры
+ */
+export const referenceItemTypeDefine = async (defineItemType: DefineItemType, options?: RequestInit): Promise<referenceItemTypeDefineResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getReferenceItemTypeDefineUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(defineItemType)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: referenceItemTypeDefineResponseError['data'], status?: number} = new globalThis.Error();
+    const data : referenceItemTypeDefineResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: referenceItemTypeDefineResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as referenceItemTypeDefineResponseSuccess
+}
+
+
+
+
+
+export const getReferenceItemTypeDefineMutationKey = () => ['referenceItemTypeDefine'] as const;
+
+export const getReferenceItemTypeDefineMutationOptions = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof referenceItemTypeDefine>>, TError,ReferenceItemTypeDefineMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof referenceItemTypeDefine>>, TError,ReferenceItemTypeDefineMutationVariables, TContext> => {
+
+const mutationKey = getReferenceItemTypeDefineMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof referenceItemTypeDefine>>, ReferenceItemTypeDefineMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  referenceItemTypeDefine(data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReferenceItemTypeDefineMutationResult = NonNullable<Awaited<ReturnType<typeof referenceItemTypeDefine>>>
+    export type ReferenceItemTypeDefineMutationBody = DefineItemType
+    export type ReferenceItemTypeDefineMutationError = globalThis.Error & { info?: Problem; status?: number }
+    export type ReferenceItemTypeDefineMutationVariables = {data: DefineItemType}
+
+    /**
+ * @summary Определить позицию номенклатуры
+ */
+export const useReferenceItemTypeDefine = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof referenceItemTypeDefine>>, TError,ReferenceItemTypeDefineMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof referenceItemTypeDefine>>,
+        TError,
+        ReferenceItemTypeDefineMutationVariables,
+        TContext
+      > => {
+      return useMutation(getReferenceItemTypeDefineMutationOptions(options), queryClient);
+    }
+
+export type referenceLocationListResponse200 = {
+  data: RefLocationList
+  status: 200
+}
+
+export type referenceLocationListResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type referenceLocationListResponseSuccess = (referenceLocationListResponse200) & {
+  headers: Headers;
+};
+export type referenceLocationListResponseError = (referenceLocationListResponseDefault) & {
+  headers: Headers;
+};
+
+export const getReferenceLocationListUrl = (params?: ReferenceLocationListParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/reference/locations?${stringifiedParams}` : `/api/v1/reference/locations`
+}
+
+/**
+ * Здания, цеха, линии, участки, рабочие места, склады, изоляторы — иерархия областей прав (AD-15).
+ * @summary Места
+ */
+export const referenceLocationList = async (params?: ReferenceLocationListParams, options?: RequestInit): Promise<referenceLocationListResponseSuccess> => {
+
+  const res = await fetch(getReferenceLocationListUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: referenceLocationListResponseError['data'], status?: number} = new globalThis.Error();
+    const data : referenceLocationListResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: referenceLocationListResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as referenceLocationListResponseSuccess
+}
+
+
+
+
+
+export const getReferenceLocationListQueryKey = (params?: MaybeRefOrGetter<ReferenceLocationListParams>,) => {
+    return [
+    'api','v1','reference','locations', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getReferenceLocationListQueryOptions = <TData = Awaited<ReturnType<typeof referenceLocationList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(params?: MaybeRefOrGetter<ReferenceLocationListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof referenceLocationList>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getReferenceLocationListQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof referenceLocationList>>> = ({ signal }) => referenceLocationList(toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof referenceLocationList>>, TError, TData>
+}
+
+export type ReferenceLocationListQueryResult = NonNullable<Awaited<ReturnType<typeof referenceLocationList>>>
+export type ReferenceLocationListQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Места
+ */
+
+export function useReferenceLocationList<TData = Awaited<ReturnType<typeof referenceLocationList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ params?: MaybeRefOrGetter<ReferenceLocationListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof referenceLocationList>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getReferenceLocationListQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+
+export type referenceLocationDefineResponse200 = {
+  data: Receipt
+  status: 200
+}
+
+export type referenceLocationDefineResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type referenceLocationDefineResponseSuccess = (referenceLocationDefineResponse200) & {
+  headers: Headers;
+};
+export type referenceLocationDefineResponseError = (referenceLocationDefineResponseDefault) & {
+  headers: Headers;
+};
+
+export const getReferenceLocationDefineUrl = () => {
+
+
+
+
+  return `/api/v1/reference/locations`
+}
+
+/**
+ * AD-31.
+ * @summary Определить место
+ */
+export const referenceLocationDefine = async (defineLocation: DefineLocation, options?: RequestInit): Promise<referenceLocationDefineResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getReferenceLocationDefineUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(defineLocation)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: referenceLocationDefineResponseError['data'], status?: number} = new globalThis.Error();
+    const data : referenceLocationDefineResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: referenceLocationDefineResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as referenceLocationDefineResponseSuccess
+}
+
+
+
+
+
+export const getReferenceLocationDefineMutationKey = () => ['referenceLocationDefine'] as const;
+
+export const getReferenceLocationDefineMutationOptions = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof referenceLocationDefine>>, TError,ReferenceLocationDefineMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof referenceLocationDefine>>, TError,ReferenceLocationDefineMutationVariables, TContext> => {
+
+const mutationKey = getReferenceLocationDefineMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof referenceLocationDefine>>, ReferenceLocationDefineMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  referenceLocationDefine(data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReferenceLocationDefineMutationResult = NonNullable<Awaited<ReturnType<typeof referenceLocationDefine>>>
+    export type ReferenceLocationDefineMutationBody = DefineLocation
+    export type ReferenceLocationDefineMutationError = globalThis.Error & { info?: Problem; status?: number }
+    export type ReferenceLocationDefineMutationVariables = {data: DefineLocation}
+
+    /**
+ * @summary Определить место
+ */
+export const useReferenceLocationDefine = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof referenceLocationDefine>>, TError,ReferenceLocationDefineMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof referenceLocationDefine>>,
+        TError,
+        ReferenceLocationDefineMutationVariables,
+        TContext
+      > => {
+      return useMutation(getReferenceLocationDefineMutationOptions(options), queryClient);
+    }
+
+export type referenceShiftListResponse200 = {
+  data: RefShiftList
+  status: 200
+}
+
+export type referenceShiftListResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type referenceShiftListResponseSuccess = (referenceShiftListResponse200) & {
+  headers: Headers;
+};
+export type referenceShiftListResponseError = (referenceShiftListResponseDefault) & {
+  headers: Headers;
+};
+
+export const getReferenceShiftListUrl = (params?: ReferenceShiftListParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/reference/shifts?${stringifiedParams}` : `/api/v1/reference/shifts`
+}
+
+/**
+ * FR-81: график смен по местам.
+ * @summary Смены
+ */
+export const referenceShiftList = async (params?: ReferenceShiftListParams, options?: RequestInit): Promise<referenceShiftListResponseSuccess> => {
+
+  const res = await fetch(getReferenceShiftListUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: referenceShiftListResponseError['data'], status?: number} = new globalThis.Error();
+    const data : referenceShiftListResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: referenceShiftListResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as referenceShiftListResponseSuccess
+}
+
+
+
+
+
+export const getReferenceShiftListQueryKey = (params?: MaybeRefOrGetter<ReferenceShiftListParams>,) => {
+    return [
+    'api','v1','reference','shifts', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getReferenceShiftListQueryOptions = <TData = Awaited<ReturnType<typeof referenceShiftList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(params?: MaybeRefOrGetter<ReferenceShiftListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof referenceShiftList>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getReferenceShiftListQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof referenceShiftList>>> = ({ signal }) => referenceShiftList(toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof referenceShiftList>>, TError, TData>
+}
+
+export type ReferenceShiftListQueryResult = NonNullable<Awaited<ReturnType<typeof referenceShiftList>>>
+export type ReferenceShiftListQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Смены
+ */
+
+export function useReferenceShiftList<TData = Awaited<ReturnType<typeof referenceShiftList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ params?: MaybeRefOrGetter<ReferenceShiftListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof referenceShiftList>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getReferenceShiftListQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+
+export type referenceShiftScheduleResponse200 = {
+  data: Receipt
+  status: 200
+}
+
+export type referenceShiftScheduleResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type referenceShiftScheduleResponseSuccess = (referenceShiftScheduleResponse200) & {
+  headers: Headers;
+};
+export type referenceShiftScheduleResponseError = (referenceShiftScheduleResponseDefault) & {
+  headers: Headers;
+};
+
+export const getReferenceShiftScheduleUrl = () => {
+
+
+
+
+  return `/api/v1/reference/shifts`
+}
+
+/**
+ * FR-81.
+ * @summary Запланировать смену
+ */
+export const referenceShiftSchedule = async (scheduleShift: ScheduleShift, options?: RequestInit): Promise<referenceShiftScheduleResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getReferenceShiftScheduleUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(scheduleShift)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: referenceShiftScheduleResponseError['data'], status?: number} = new globalThis.Error();
+    const data : referenceShiftScheduleResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: referenceShiftScheduleResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as referenceShiftScheduleResponseSuccess
+}
+
+
+
+
+
+export const getReferenceShiftScheduleMutationKey = () => ['referenceShiftSchedule'] as const;
+
+export const getReferenceShiftScheduleMutationOptions = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof referenceShiftSchedule>>, TError,ReferenceShiftScheduleMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof referenceShiftSchedule>>, TError,ReferenceShiftScheduleMutationVariables, TContext> => {
+
+const mutationKey = getReferenceShiftScheduleMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof referenceShiftSchedule>>, ReferenceShiftScheduleMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  referenceShiftSchedule(data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReferenceShiftScheduleMutationResult = NonNullable<Awaited<ReturnType<typeof referenceShiftSchedule>>>
+    export type ReferenceShiftScheduleMutationBody = ScheduleShift
+    export type ReferenceShiftScheduleMutationError = globalThis.Error & { info?: Problem; status?: number }
+    export type ReferenceShiftScheduleMutationVariables = {data: ScheduleShift}
+
+    /**
+ * @summary Запланировать смену
+ */
+export const useReferenceShiftSchedule = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof referenceShiftSchedule>>, TError,ReferenceShiftScheduleMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof referenceShiftSchedule>>,
+        TError,
+        ReferenceShiftScheduleMutationVariables,
+        TContext
+      > => {
+      return useMutation(getReferenceShiftScheduleMutationOptions(options), queryClient);
+    }
+
+export type accessRoleListResponse200 = {
+  data: AccessRoleList
+  status: 200
+}
+
+export type accessRoleListResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type accessRoleListResponseSuccess = (accessRoleListResponse200) & {
+  headers: Headers;
+};
+export type accessRoleListResponseError = (accessRoleListResponseDefault) & {
+  headers: Headers;
+};
+
+export const getAccessRoleListUrl = (params?: AccessRoleListParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/roles?${stringifiedParams}` : `/api/v1/roles`
+}
+
+/**
+ * AD-15: роли, наследование, действия, полномочия и виды клейм действующей политики.
+ * @summary Роли и полномочия
+ */
+export const accessRoleList = async (params?: AccessRoleListParams, options?: RequestInit): Promise<accessRoleListResponseSuccess> => {
+
+  const res = await fetch(getAccessRoleListUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: accessRoleListResponseError['data'], status?: number} = new globalThis.Error();
+    const data : accessRoleListResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: accessRoleListResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as accessRoleListResponseSuccess
+}
+
+
+
+
+
+export const getAccessRoleListQueryKey = (params?: MaybeRefOrGetter<AccessRoleListParams>,) => {
+    return [
+    'api','v1','roles', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getAccessRoleListQueryOptions = <TData = Awaited<ReturnType<typeof accessRoleList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(params?: MaybeRefOrGetter<AccessRoleListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof accessRoleList>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getAccessRoleListQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof accessRoleList>>> = ({ signal }) => accessRoleList(toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof accessRoleList>>, TError, TData>
+}
+
+export type AccessRoleListQueryResult = NonNullable<Awaited<ReturnType<typeof accessRoleList>>>
+export type AccessRoleListQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Роли и полномочия
+ */
+
+export function useAccessRoleList<TData = Awaited<ReturnType<typeof accessRoleList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ params?: MaybeRefOrGetter<AccessRoleListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof accessRoleList>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getAccessRoleListQueryOptions(params,options)
 
   const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
@@ -16151,6 +23648,124 @@ export const useSimulationRunStart = <TError = globalThis.Error & { info?: Probl
       return useMutation(getSimulationRunStartMutationOptions(options), queryClient);
     }
 
+export type securityEventListResponse200 = {
+  data: SecurityEventList
+  status: 200
+}
+
+export type securityEventListResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type securityEventListResponseSuccess = (securityEventListResponse200) & {
+  headers: Headers;
+};
+export type securityEventListResponseError = (securityEventListResponseDefault) & {
+  headers: Headers;
+};
+
+export const getSecurityEventListUrl = (params?: SecurityEventListParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/security-events?${stringifiedParams}` : `/api/v1/security-events`
+}
+
+/**
+ * AD-24, FR-118: ошибки аутентификации, недействительные подписи, нарушения целостности, отказы в доступе и допуске, конфликты идемпотентности, выдача привилегий, отзыв ключей, тревоги хранителя и агента.
+ * @summary Шина безопасности
+ */
+export const securityEventList = async (params?: SecurityEventListParams, options?: RequestInit): Promise<securityEventListResponseSuccess> => {
+
+  const res = await fetch(getSecurityEventListUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: securityEventListResponseError['data'], status?: number} = new globalThis.Error();
+    const data : securityEventListResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: securityEventListResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as securityEventListResponseSuccess
+}
+
+
+
+
+
+export const getSecurityEventListQueryKey = (params?: MaybeRefOrGetter<SecurityEventListParams>,) => {
+    return [
+    'api','v1','security-events', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getSecurityEventListQueryOptions = <TData = Awaited<ReturnType<typeof securityEventList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(params?: MaybeRefOrGetter<SecurityEventListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof securityEventList>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getSecurityEventListQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof securityEventList>>> = ({ signal }) => securityEventList(toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof securityEventList>>, TError, TData>
+}
+
+export type SecurityEventListQueryResult = NonNullable<Awaited<ReturnType<typeof securityEventList>>>
+export type SecurityEventListQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Шина безопасности
+ */
+
+export function useSecurityEventList<TData = Awaited<ReturnType<typeof securityEventList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ params?: MaybeRefOrGetter<SecurityEventListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof securityEventList>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getSecurityEventListQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+
 export type qualitySignalListResponse200 = {
   data: QualitySignalList
   status: 200
@@ -16496,6 +24111,124 @@ export function useIngestSourceList<TData = Awaited<ReturnType<typeof ingestSour
  ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getIngestSourceListQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+
+export type accessStampListResponse200 = {
+  data: AccessStampList
+  status: 200
+}
+
+export type accessStampListResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type accessStampListResponseSuccess = (accessStampListResponse200) & {
+  headers: Headers;
+};
+export type accessStampListResponseError = (accessStampListResponseDefault) & {
+  headers: Headers;
+};
+
+export const getAccessStampListUrl = (params?: AccessStampListParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/stamps?${stringifiedParams}` : `/api/v1/stamps`
+}
+
+/**
+ * FR-145: клейма контролёров — вид контроля, область, приказ, срок.
+ * @summary Цифровые клейма
+ */
+export const accessStampList = async (params?: AccessStampListParams, options?: RequestInit): Promise<accessStampListResponseSuccess> => {
+
+  const res = await fetch(getAccessStampListUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: accessStampListResponseError['data'], status?: number} = new globalThis.Error();
+    const data : accessStampListResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: accessStampListResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as accessStampListResponseSuccess
+}
+
+
+
+
+
+export const getAccessStampListQueryKey = (params?: MaybeRefOrGetter<AccessStampListParams>,) => {
+    return [
+    'api','v1','stamps', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getAccessStampListQueryOptions = <TData = Awaited<ReturnType<typeof accessStampList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(params?: MaybeRefOrGetter<AccessStampListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof accessStampList>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getAccessStampListQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof accessStampList>>> = ({ signal }) => accessStampList(toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof accessStampList>>, TError, TData>
+}
+
+export type AccessStampListQueryResult = NonNullable<Awaited<ReturnType<typeof accessStampList>>>
+export type AccessStampListQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Цифровые клейма
+ */
+
+export function useAccessStampList<TData = Awaited<ReturnType<typeof accessStampList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ params?: MaybeRefOrGetter<AccessStampListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof accessStampList>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getAccessStampListQueryOptions(params,options)
 
   const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
@@ -16985,6 +24718,235 @@ export function useJournalTimelineRead<TData = Awaited<ReturnType<typeof journal
 
 
 
+export type securityVerifierReportListResponse200 = {
+  data: VerifierReportList
+  status: 200
+}
+
+export type securityVerifierReportListResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type securityVerifierReportListResponseSuccess = (securityVerifierReportListResponse200) & {
+  headers: Headers;
+};
+export type securityVerifierReportListResponseError = (securityVerifierReportListResponseDefault) & {
+  headers: Headers;
+};
+
+export const getSecurityVerifierReportListUrl = (params?: SecurityVerifierReportListParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/verifier-reports?${stringifiedParams}` : `/api/v1/verifier-reports`
+}
+
+/**
+ * AD-9, AD-46: подписанные отчёты независимого верификатора, полученные у хранителя; вердикт «цело» / «цело с оговорками» / «нарушено».
+ * @summary Отчёты верификатора
+ */
+export const securityVerifierReportList = async (params?: SecurityVerifierReportListParams, options?: RequestInit): Promise<securityVerifierReportListResponseSuccess> => {
+
+  const res = await fetch(getSecurityVerifierReportListUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: securityVerifierReportListResponseError['data'], status?: number} = new globalThis.Error();
+    const data : securityVerifierReportListResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: securityVerifierReportListResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as securityVerifierReportListResponseSuccess
+}
+
+
+
+
+
+export const getSecurityVerifierReportListQueryKey = (params?: MaybeRefOrGetter<SecurityVerifierReportListParams>,) => {
+    return [
+    'api','v1','verifier-reports', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getSecurityVerifierReportListQueryOptions = <TData = Awaited<ReturnType<typeof securityVerifierReportList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(params?: MaybeRefOrGetter<SecurityVerifierReportListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof securityVerifierReportList>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getSecurityVerifierReportListQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof securityVerifierReportList>>> = ({ signal }) => securityVerifierReportList(toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof securityVerifierReportList>>, TError, TData>
+}
+
+export type SecurityVerifierReportListQueryResult = NonNullable<Awaited<ReturnType<typeof securityVerifierReportList>>>
+export type SecurityVerifierReportListQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Отчёты верификатора
+ */
+
+export function useSecurityVerifierReportList<TData = Awaited<ReturnType<typeof securityVerifierReportList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ params?: MaybeRefOrGetter<SecurityVerifierReportListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof securityVerifierReportList>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getSecurityVerifierReportListQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+
+export type securityVerifierReportReadResponse200 = {
+  data: VerifierReport
+  status: 200
+}
+
+export type securityVerifierReportReadResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type securityVerifierReportReadResponseSuccess = (securityVerifierReportReadResponse200) & {
+  headers: Headers;
+};
+export type securityVerifierReportReadResponseError = (securityVerifierReportReadResponseDefault) & {
+  headers: Headers;
+};
+
+export const getSecurityVerifierReportReadUrl = (reportDigest: string,) => {
+
+
+
+
+  return `/api/v1/verifier-reports/${reportDigest}`
+}
+
+/**
+ * AD-9: проверки со статусами «цело» / «отвергнуто» / «не проверяемо», классы подписей раздельно, реестр бумажных решений.
+ * @summary Отчёт верификатора
+ */
+export const securityVerifierReportRead = async (reportDigest: string, options?: RequestInit): Promise<securityVerifierReportReadResponseSuccess> => {
+
+  const res = await fetch(getSecurityVerifierReportReadUrl(reportDigest),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: securityVerifierReportReadResponseError['data'], status?: number} = new globalThis.Error();
+    const data : securityVerifierReportReadResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: securityVerifierReportReadResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as securityVerifierReportReadResponseSuccess
+}
+
+
+
+
+
+export const getSecurityVerifierReportReadQueryKey = (reportDigest: MaybeRefOrGetter<string>,) => {
+    return [
+    'api','v1','verifier-reports',reportDigest
+    ] as const;
+    }
+
+
+export const getSecurityVerifierReportReadQueryOptions = <TData = Awaited<ReturnType<typeof securityVerifierReportRead>>, TError = globalThis.Error & { info?: Problem; status?: number }>(reportDigest: MaybeRefOrGetter<string>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof securityVerifierReportRead>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getSecurityVerifierReportReadQueryKey(reportDigest);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof securityVerifierReportRead>>> = ({ signal }) => securityVerifierReportRead(toValue(reportDigest), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: computed(() => toValue(reportDigest) !== null && toValue(reportDigest) !== undefined), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof securityVerifierReportRead>>, TError, TData>
+}
+
+export type SecurityVerifierReportReadQueryResult = NonNullable<Awaited<ReturnType<typeof securityVerifierReportRead>>>
+export type SecurityVerifierReportReadQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Отчёт верификатора
+ */
+
+export function useSecurityVerifierReportRead<TData = Awaited<ReturnType<typeof securityVerifierReportRead>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ reportDigest: MaybeRefOrGetter<string>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof securityVerifierReportRead>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getSecurityVerifierReportReadQueryOptions(reportDigest,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+
 export type accessWorkplaceListResponse200 = {
   data: PostList
   status: 200
@@ -17102,4 +25064,609 @@ export function useAccessWorkplaceList<TData = Awaited<ReturnType<typeof accessW
 
 
 
+
+export type accessWorkplaceAdmitResponse200 = {
+  data: Receipt
+  status: 200
+}
+
+export type accessWorkplaceAdmitResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type accessWorkplaceAdmitResponseSuccess = (accessWorkplaceAdmitResponse200) & {
+  headers: Headers;
+};
+export type accessWorkplaceAdmitResponseError = (accessWorkplaceAdmitResponseDefault) & {
+  headers: Headers;
+};
+
+export const getAccessWorkplaceAdmitUrl = (workplaceId: string,) => {
+
+
+
+
+  return `/api/v1/workplaces/${workplaceId}/admission`
+}
+
+/**
+ * Барьер 2 (AD-15, FR-83): СКУД в зоне ∧ роль в области места ∧ квалификация на дату ∧ назначение в смене ∧ токен и PIN.
+ * @summary Допуск к рабочему месту
+ */
+export const accessWorkplaceAdmit = async (workplaceId: string,
+    admitWorkplace: AdmitWorkplace, options?: RequestInit): Promise<accessWorkplaceAdmitResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getAccessWorkplaceAdmitUrl(workplaceId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(admitWorkplace)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: accessWorkplaceAdmitResponseError['data'], status?: number} = new globalThis.Error();
+    const data : accessWorkplaceAdmitResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: accessWorkplaceAdmitResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as accessWorkplaceAdmitResponseSuccess
+}
+
+
+
+
+
+export const getAccessWorkplaceAdmitMutationKey = () => ['accessWorkplaceAdmit'] as const;
+
+export const getAccessWorkplaceAdmitMutationOptions = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof accessWorkplaceAdmit>>, TError,AccessWorkplaceAdmitMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof accessWorkplaceAdmit>>, TError,AccessWorkplaceAdmitMutationVariables, TContext> => {
+
+const mutationKey = getAccessWorkplaceAdmitMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof accessWorkplaceAdmit>>, AccessWorkplaceAdmitMutationVariables> = (props) => {
+          const {workplaceId,data} = props ?? {};
+
+          return  accessWorkplaceAdmit(workplaceId,data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AccessWorkplaceAdmitMutationResult = NonNullable<Awaited<ReturnType<typeof accessWorkplaceAdmit>>>
+    export type AccessWorkplaceAdmitMutationBody = AdmitWorkplace
+    export type AccessWorkplaceAdmitMutationError = globalThis.Error & { info?: Problem; status?: number }
+    export type AccessWorkplaceAdmitMutationVariables = {workplaceId: string;data: AdmitWorkplace}
+
+    /**
+ * @summary Допуск к рабочему месту
+ */
+export const useAccessWorkplaceAdmit = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof accessWorkplaceAdmit>>, TError,AccessWorkplaceAdmitMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof accessWorkplaceAdmit>>,
+        TError,
+        AccessWorkplaceAdmitMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAccessWorkplaceAdmitMutationOptions(options), queryClient);
+    }
+
+export type accessOperatorReportDeviationResponse200 = {
+  data: Receipt
+  status: 200
+}
+
+export type accessOperatorReportDeviationResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type accessOperatorReportDeviationResponseSuccess = (accessOperatorReportDeviationResponse200) & {
+  headers: Headers;
+};
+export type accessOperatorReportDeviationResponseError = (accessOperatorReportDeviationResponseDefault) & {
+  headers: Headers;
+};
+
+export const getAccessOperatorReportDeviationUrl = (workplaceId: string,) => {
+
+
+
+
+  return `/api/v1/workplaces/${workplaceId}/deviations`
+}
+
+/**
+ * FR-137: исполнитель сообщает об отклонении или подозрении на дефект (уровень подписи 1).
+ * @summary Сообщить об отклонении
+ */
+export const accessOperatorReportDeviation = async (workplaceId: string,
+    reportDeviation: ReportDeviation, options?: RequestInit): Promise<accessOperatorReportDeviationResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getAccessOperatorReportDeviationUrl(workplaceId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(reportDeviation)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: accessOperatorReportDeviationResponseError['data'], status?: number} = new globalThis.Error();
+    const data : accessOperatorReportDeviationResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: accessOperatorReportDeviationResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as accessOperatorReportDeviationResponseSuccess
+}
+
+
+
+
+
+export const getAccessOperatorReportDeviationMutationKey = () => ['accessOperatorReportDeviation'] as const;
+
+export const getAccessOperatorReportDeviationMutationOptions = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof accessOperatorReportDeviation>>, TError,AccessOperatorReportDeviationMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof accessOperatorReportDeviation>>, TError,AccessOperatorReportDeviationMutationVariables, TContext> => {
+
+const mutationKey = getAccessOperatorReportDeviationMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof accessOperatorReportDeviation>>, AccessOperatorReportDeviationMutationVariables> = (props) => {
+          const {workplaceId,data} = props ?? {};
+
+          return  accessOperatorReportDeviation(workplaceId,data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AccessOperatorReportDeviationMutationResult = NonNullable<Awaited<ReturnType<typeof accessOperatorReportDeviation>>>
+    export type AccessOperatorReportDeviationMutationBody = ReportDeviation
+    export type AccessOperatorReportDeviationMutationError = globalThis.Error & { info?: Problem; status?: number }
+    export type AccessOperatorReportDeviationMutationVariables = {workplaceId: string;data: ReportDeviation}
+
+    /**
+ * @summary Сообщить об отклонении
+ */
+export const useAccessOperatorReportDeviation = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof accessOperatorReportDeviation>>, TError,AccessOperatorReportDeviationMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof accessOperatorReportDeviation>>,
+        TError,
+        AccessOperatorReportDeviationMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAccessOperatorReportDeviationMutationOptions(options), queryClient);
+    }
+
+export type accessOperatorRequestInspectionResponse200 = {
+  data: Receipt
+  status: 200
+}
+
+export type accessOperatorRequestInspectionResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type accessOperatorRequestInspectionResponseSuccess = (accessOperatorRequestInspectionResponse200) & {
+  headers: Headers;
+};
+export type accessOperatorRequestInspectionResponseError = (accessOperatorRequestInspectionResponseDefault) & {
+  headers: Headers;
+};
+
+export const getAccessOperatorRequestInspectionUrl = (workplaceId: string,) => {
+
+
+
+
+  return `/api/v1/workplaces/${workplaceId}/inspection-requests`
+}
+
+/**
+ * FR-137: исполнитель запрашивает контроль на шаге (уровень подписи 1).
+ * @summary Запросить контроль
+ */
+export const accessOperatorRequestInspection = async (workplaceId: string,
+    requestInspection: RequestInspection, options?: RequestInit): Promise<accessOperatorRequestInspectionResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getAccessOperatorRequestInspectionUrl(workplaceId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(requestInspection)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: accessOperatorRequestInspectionResponseError['data'], status?: number} = new globalThis.Error();
+    const data : accessOperatorRequestInspectionResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: accessOperatorRequestInspectionResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as accessOperatorRequestInspectionResponseSuccess
+}
+
+
+
+
+
+export const getAccessOperatorRequestInspectionMutationKey = () => ['accessOperatorRequestInspection'] as const;
+
+export const getAccessOperatorRequestInspectionMutationOptions = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof accessOperatorRequestInspection>>, TError,AccessOperatorRequestInspectionMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof accessOperatorRequestInspection>>, TError,AccessOperatorRequestInspectionMutationVariables, TContext> => {
+
+const mutationKey = getAccessOperatorRequestInspectionMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof accessOperatorRequestInspection>>, AccessOperatorRequestInspectionMutationVariables> = (props) => {
+          const {workplaceId,data} = props ?? {};
+
+          return  accessOperatorRequestInspection(workplaceId,data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AccessOperatorRequestInspectionMutationResult = NonNullable<Awaited<ReturnType<typeof accessOperatorRequestInspection>>>
+    export type AccessOperatorRequestInspectionMutationBody = RequestInspection
+    export type AccessOperatorRequestInspectionMutationError = globalThis.Error & { info?: Problem; status?: number }
+    export type AccessOperatorRequestInspectionMutationVariables = {workplaceId: string;data: RequestInspection}
+
+    /**
+ * @summary Запросить контроль
+ */
+export const useAccessOperatorRequestInspection = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof accessOperatorRequestInspection>>, TError,AccessOperatorRequestInspectionMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof accessOperatorRequestInspection>>,
+        TError,
+        AccessOperatorRequestInspectionMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAccessOperatorRequestInspectionMutationOptions(options), queryClient);
+    }
+
+export type accessWorkplaceReleaseResponse200 = {
+  data: Receipt
+  status: 200
+}
+
+export type accessWorkplaceReleaseResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type accessWorkplaceReleaseResponseSuccess = (accessWorkplaceReleaseResponse200) & {
+  headers: Headers;
+};
+export type accessWorkplaceReleaseResponseError = (accessWorkplaceReleaseResponseDefault) & {
+  headers: Headers;
+};
+
+export const getAccessWorkplaceReleaseUrl = (workplaceId: string,) => {
+
+
+
+
+  return `/api/v1/workplaces/${workplaceId}/release`
+}
+
+/**
+ * FR-83.
+ * @summary Снять допуск к рабочему месту
+ */
+export const accessWorkplaceRelease = async (workplaceId: string,
+    releaseWorkplace: ReleaseWorkplace, options?: RequestInit): Promise<accessWorkplaceReleaseResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getAccessWorkplaceReleaseUrl(workplaceId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(releaseWorkplace)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: accessWorkplaceReleaseResponseError['data'], status?: number} = new globalThis.Error();
+    const data : accessWorkplaceReleaseResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: accessWorkplaceReleaseResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as accessWorkplaceReleaseResponseSuccess
+}
+
+
+
+
+
+export const getAccessWorkplaceReleaseMutationKey = () => ['accessWorkplaceRelease'] as const;
+
+export const getAccessWorkplaceReleaseMutationOptions = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof accessWorkplaceRelease>>, TError,AccessWorkplaceReleaseMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof accessWorkplaceRelease>>, TError,AccessWorkplaceReleaseMutationVariables, TContext> => {
+
+const mutationKey = getAccessWorkplaceReleaseMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof accessWorkplaceRelease>>, AccessWorkplaceReleaseMutationVariables> = (props) => {
+          const {workplaceId,data} = props ?? {};
+
+          return  accessWorkplaceRelease(workplaceId,data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AccessWorkplaceReleaseMutationResult = NonNullable<Awaited<ReturnType<typeof accessWorkplaceRelease>>>
+    export type AccessWorkplaceReleaseMutationBody = ReleaseWorkplace
+    export type AccessWorkplaceReleaseMutationError = globalThis.Error & { info?: Problem; status?: number }
+    export type AccessWorkplaceReleaseMutationVariables = {workplaceId: string;data: ReleaseWorkplace}
+
+    /**
+ * @summary Снять допуск к рабочему месту
+ */
+export const useAccessWorkplaceRelease = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof accessWorkplaceRelease>>, TError,AccessWorkplaceReleaseMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof accessWorkplaceRelease>>,
+        TError,
+        AccessWorkplaceReleaseMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAccessWorkplaceReleaseMutationOptions(options), queryClient);
+    }
+
+export type accessOperatorConfirmStepResponse200 = {
+  data: Receipt
+  status: 200
+}
+
+export type accessOperatorConfirmStepResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type accessOperatorConfirmStepResponseSuccess = (accessOperatorConfirmStepResponse200) & {
+  headers: Headers;
+};
+export type accessOperatorConfirmStepResponseError = (accessOperatorConfirmStepResponseDefault) & {
+  headers: Headers;
+};
+
+export const getAccessOperatorConfirmStepUrl = (workplaceId: string,) => {
+
+
+
+
+  return `/api/v1/workplaces/${workplaceId}/steps/confirm`
+}
+
+/**
+ * FR-137: исполнитель подтверждает шаг ТП у рабочего места (уровень подписи 1).
+ * @summary Подтвердить шаг
+ */
+export const accessOperatorConfirmStep = async (workplaceId: string,
+    confirmStep: ConfirmStep, options?: RequestInit): Promise<accessOperatorConfirmStepResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getAccessOperatorConfirmStepUrl(workplaceId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(confirmStep)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: accessOperatorConfirmStepResponseError['data'], status?: number} = new globalThis.Error();
+    const data : accessOperatorConfirmStepResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: accessOperatorConfirmStepResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as accessOperatorConfirmStepResponseSuccess
+}
+
+
+
+
+
+export const getAccessOperatorConfirmStepMutationKey = () => ['accessOperatorConfirmStep'] as const;
+
+export const getAccessOperatorConfirmStepMutationOptions = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof accessOperatorConfirmStep>>, TError,AccessOperatorConfirmStepMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof accessOperatorConfirmStep>>, TError,AccessOperatorConfirmStepMutationVariables, TContext> => {
+
+const mutationKey = getAccessOperatorConfirmStepMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof accessOperatorConfirmStep>>, AccessOperatorConfirmStepMutationVariables> = (props) => {
+          const {workplaceId,data} = props ?? {};
+
+          return  accessOperatorConfirmStep(workplaceId,data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AccessOperatorConfirmStepMutationResult = NonNullable<Awaited<ReturnType<typeof accessOperatorConfirmStep>>>
+    export type AccessOperatorConfirmStepMutationBody = ConfirmStep
+    export type AccessOperatorConfirmStepMutationError = globalThis.Error & { info?: Problem; status?: number }
+    export type AccessOperatorConfirmStepMutationVariables = {workplaceId: string;data: ConfirmStep}
+
+    /**
+ * @summary Подтвердить шаг
+ */
+export const useAccessOperatorConfirmStep = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof accessOperatorConfirmStep>>, TError,AccessOperatorConfirmStepMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof accessOperatorConfirmStep>>,
+        TError,
+        AccessOperatorConfirmStepMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAccessOperatorConfirmStepMutationOptions(options), queryClient);
+    }
 
