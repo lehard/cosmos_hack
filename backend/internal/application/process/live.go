@@ -13,6 +13,7 @@ import (
 	"ant/internal/contracts/bpmnext"
 	"ant/internal/contracts/catalog"
 	"ant/internal/contracts/errcodes"
+	itemdom "ant/internal/domain/item"
 	"ant/internal/domain/kernel"
 	dp "ant/internal/domain/process"
 )
@@ -842,6 +843,9 @@ func (s *LiveService) StartOperation(ctx context.Context, itemID string, in Star
 		return platform.Receipt{}, platform.NotImplemented("process.operation.start")
 	}
 	who, _ := person(ctx).(string)
+	if err := s.guardRun(ctx, itemID, who, in); err != nil {
+		return platform.Receipt{}, err
+	}
 	if err := s.guard(ctx, itemID, "process.operation.start", dp.StartCommand{StepKey: in.StepKey, RunID: in.OperationRunID, ReworkOf: in.ReworkOf,
 		OperatorID: who, EquipmentID: in.EquipmentID}); err != nil {
 		return platform.Receipt{}, err
@@ -851,6 +855,52 @@ func (s *LiveService) StartOperation(ctx context.Context, itemID string, in Star
 		"equipment_id": in.EquipmentID, "program_ref": in.ProgramRef, "rework_of": in.ReworkOf, "group_id": in.GroupID, "operator_id": person(ctx),
 		"workplace_id": in.WorkplaceID})
 }
+
+// guardRun — гард «Начать» поверх свёртки изделия (FR-137, AD-39):
+//   - номер выполнения уже записан (у этого или другого изделия) — отказ
+//     «выполнение уже начато»; повтор той же команды (event_id = command_id)
+//     — не отказ: приём вернёт прежнюю квитанцию;
+//   - у исполнителя на этом посту есть незавершённое выполнение — отказ «на
+//     посту идёт операция ‹изделие›, сначала завершите её»: одна операция на
+//     человека на посту.
+func (s *LiveService) guardRun(ctx context.Context, itemID, who string, in StartOperation) error {
+	if s.Store == nil {
+		return nil
+	}
+	if in.OperationRunID != "" {
+		ref, ok, err := get[RunRef](ctx, s.Store, ProjectionRuns, in.OperationRunID)
+		if err != nil {
+			return err
+		}
+		repeat := ref.ItemID == itemID && ref.EventID != "" && strings.EqualFold(ref.EventID, in.CommandMeta().CommandID)
+		if ok && ref.ItemID != "" && !repeat {
+			return platform.Fail(errcodes.ProcessRunAlreadyStarted, "run_id", in.OperationRunID, "item", itemLabel(ref.ItemID))
+		}
+		if repeat {
+			return nil
+		}
+	}
+	wp := in.WorkplaceID
+	if wp == "" {
+		wp = in.StationID
+	}
+	if who == "" || wp == "" {
+		return nil
+	}
+	open, _, err := get[OpenRuns](ctx, s.Store, ProjectionOpenRuns, OpenRunsKey)
+	if err != nil {
+		return err
+	}
+	for _, o := range open.Runs {
+		if o.Operator == who && o.Workplace == wp && o.RunID != in.OperationRunID {
+			return platform.Fail(errcodes.ProcessOperationInProgress, "item", itemLabel(o.ItemID))
+		}
+	}
+	return nil
+}
+
+// itemLabel — номер изделия для текста отказа (без кода предприятия и прогона).
+func itemLabel(id string) string { return itemdom.LocalLabel(id) }
 
 // runItem — изделие выполнения операции (проекция process.runs).
 func (s *LiveService) runItem(ctx context.Context, runID string) (string, error) {

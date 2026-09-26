@@ -241,6 +241,8 @@ const (
 	ProcessImplicitMerge Code = "process.implicit_merge"
 	// Контроль без ссылки на требование КД
 	ProcessInspectionWithoutRequirement Code = "process.inspection_without_requirement"
+	// На посту идёт операция
+	ProcessOperationInProgress Code = "process.operation_in_progress"
 	// Не выполнено предусловие операции
 	ProcessPreconditionFailed Code = "process.precondition_failed"
 	// Точка предъявления без роли или полномочия
@@ -251,6 +253,8 @@ const (
 	ProcessQuorumIncomplete Code = "process.quorum_incomplete"
 	// Лимит доработок зоны исчерпан
 	ProcessReworkLimitExceeded Code = "process.rework_limit_exceeded"
+	// Выполнение уже начато
+	ProcessRunAlreadyStarted Code = "process.run_already_started"
 	// Нарушение схемы расширения
 	ProcessSchemaViolation Code = "process.schema_violation"
 	// Истёк срок статуса
@@ -418,11 +422,13 @@ var codes = [...]Info{
 	{Code: ProcessConditionInvalid, Status: 422, Title: "Условие на стрелке не по языку условий", Detail: "Стрелка {element}: {reason}", UIKey: "errors.process.schemaViolation", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: ProcessImplicitMerge, Status: 422, Title: "Неявное слияние стрелок без шлюза", Detail: "У элемента {element} несколько входящих стрелок без шлюза — поставьте явный шлюз слияния", UIKey: "errors.process.schemaViolation", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: ProcessInspectionWithoutRequirement, Status: 200, Title: "Контроль без ссылки на требование КД", Detail: "Предупреждение: контроль без ссылки на требование КД — {element}", UIKey: "errors.process.inspectionWithoutRequirement", Quarantine: false, Severity: "warning", Guard: false, Aliases: nil},
+	{Code: ProcessOperationInProgress, Status: 409, Title: "На посту идёт операция", Detail: "На посту идёт операция {item}, сначала завершите её", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
 	{Code: ProcessPreconditionFailed, Status: 409, Title: "Не выполнено предусловие операции", Detail: "Не выполнено предусловие: {condition}", UIKey: "errors.decision.preconditionFailed", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
 	{Code: ProcessPresentationPointWithoutRole, Status: 422, Title: "Точка предъявления без роли или полномочия", Detail: "Точка предъявления без роли или полномочия: {element}", UIKey: "errors.process.presentationPointWithoutRole", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: ProcessQualificationExpired, Status: 409, Title: "Квалификация исполнителя истекла", Detail: "Квалификация исполнителя {performer} истекла {date} — операция заблокирована", UIKey: "errors.decision.qualificationExpired", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
 	{Code: ProcessQuorumIncomplete, Status: 409, Title: "Не хватает подписей кворума", Detail: "Не хватает подписей кворума: {who}", UIKey: "errors.process.quorumIncomplete", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: ProcessReworkLimitExceeded, Status: 422, Title: "Лимит доработок зоны исчерпан", Detail: "Лимит доработок зоны {zone} исчерпан ({used} из {limit}) — нужно отдельное разрешение уполномоченного", UIKey: "errors.decision.reworkLimitReached", Quarantine: false, Severity: "error", Guard: true, Aliases: []string{"E_REWORK_LIMIT"}},
+	{Code: ProcessRunAlreadyStarted, Status: 409, Title: "Выполнение уже начато", Detail: "Выполнение {run_id} уже начато ({item}) — у новой операции свой номер выполнения", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
 	{Code: ProcessSchemaViolation, Status: 422, Title: "Нарушение схемы расширения", Detail: "Нарушение схемы расширения: {element} — {detail}", UIKey: "errors.process.schemaViolation", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: ProcessStatusExpired, Status: 409, Title: "Истёк срок статуса", Detail: "Истёк срок статуса «{status}» — нужна повторная обработка", UIKey: "errors.decision.statusExpired", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
 	{Code: ProcessStepKeyMissing, Status: 422, Title: "У элемента нет step_key", Detail: "У элемента {element} нет ant:properties/@stepKey", UIKey: "errors.process.schemaViolation", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
