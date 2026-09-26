@@ -6,6 +6,8 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { documentKeys } from '@/entities/document'
+import { sessionKey } from '@/entities/session'
 import { i18n } from '@/shared/i18n'
 import { at } from '@/entities/item/__tests__/fixtures'
 import { useAsIsRequest } from '@/entities/document/__tests__/fixtures'
@@ -17,6 +19,7 @@ beforeEach(() => {
   pinia = createPinia()
   setActivePinia(pinia)
 })
+const SESSION = { demo: true, policy_seq: 1, role: { id: 'approver', title: 'Согласующий' }, user: { id: 'master-07', name: 'Мастер 07' } }
 const norm = (x: string) => x.replace(/\s/g, ' ')
 const mountView = (over = {}, props = {}) =>
   mount(DecisionRequestView, { props: { request: useAsIsRequest(over), now: Date.parse(at('13:30')), ...props }, global: { plugins: [pinia, i18n] } })
@@ -78,6 +81,7 @@ describe('карточка «Требуется ваше решение»', () =
 
   it('контейнер: операций documents ещё нет — «ошибка входа», а не выдуманная карточка (FR-150)', async () => {
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    queryClient.setQueryData(sessionKey, { data: SESSION, status: 200 })
     const w = mount(DecisionRequestCardWidget, {
       props: { widgetId: 'decision-request-card', titleKey: 'desks.decisionCard', slotId: 'card', slice: {}, density: 'comfortable' },
       global: { plugins: [pinia, i18n, [VueQueryPlugin, { queryClient }]] },
@@ -85,5 +89,34 @@ describe('карточка «Требуется ваше решение»', () =
     await vi.waitFor(() => expect(w.find('.widget-frame').attributes('data-state')).toBe('input_error'))
     await flushPromises()
     expect(w.find('[data-testid="decision-request"]').exists()).toBe(false)
+  })
+
+  it('контейнер на кэше: карточка, окно подписи уровня 2 и заверение бумажной подписи', async () => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: Infinity } } })
+    queryClient.setQueryData(documentKeys.list('decision-requests', {}, { axis: 'occurred' }), {
+      data: [useAsIsRequest({ awaiting_attestation: { stage: 2, signer: 'vp-01' } })],
+      headers: new Headers({ 'Ant-Backend': 'fixtures' }),
+    })
+    queryClient.setQueryData(sessionKey, { data: SESSION, status: 200 })
+    const w = mount(DecisionRequestCardWidget, {
+      props: { widgetId: 'decision-request-card', titleKey: 'desks.decisionCard', slotId: 'card', slice: {}, density: 'comfortable' },
+      attachTo: document.body,
+      global: { plugins: [pinia, i18n, [VueQueryPlugin, { queryClient }]] },
+    })
+    await flushPromises()
+    expect(w.find('.widget-frame').attributes('data-mode')).toBe('fixtures')
+    expect(w.find('[data-testid="decision-request"]').exists()).toBe(true)
+    // Заверяет не подписант: мастер загружает скан подписи представителя заказчика.
+    const attest = w.find('[data-testid="attest-panel"]')
+    expect(attest.find('[data-testid="qr-payload"]').text()).toBe('ant:doc:DOC-NCD-142:streebog256:c0ffee')
+    expect(attest.find('[data-testid="attester-is-signer"]').exists()).toBe(false)
+    // Подписать — окно уровня 2 со сводкой; бумага на этапе 2 разрешена.
+    await w.find('[data-testid="sign"]').trigger('click')
+    await flushPromises()
+    const dialog = document.querySelector('[data-testid="sign-confirm"]') as HTMLElement
+    expect(dialog.textContent).toContain('Принять FL-0042 «как есть» по разрешению РО-12/26')
+    expect(dialog.querySelector('[data-testid="sign-paper"]')).not.toBeNull()
+    w.unmount()
+    document.body.innerHTML = ''
   })
 })

@@ -8,12 +8,14 @@
  * Операций модуля documents в контракте пока нет — запрос и подпись стоят на
  * заглушке `api.not_implemented` (entities/document). Подпись: окно уровня 2 →
  * агент токена через порт подписи; без агента — бумага с QR (FR-139): печать
- * здесь, заверение скана — вторым человеком.
+ * здесь; если бумажная подпись этапа ждёт заверения текущим пользователем —
+ * загрузка скана и заверение (заверитель ≠ подписант).
  */
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { NButton } from 'naive-ui'
-import { paperAllowed, useDecisionRequests, useDeclineDocument, usePrintPaper, useSignDocument, type SummaryField } from '@/entities/document'
-import { SignDialog, payloadTypeOf, useSigningPort } from '@/features/sign-decision'
+import { paperAllowed, useAttestPaper, useDecisionRequests, useDeclineDocument, usePrintPaper, useSignDocument, type SummaryField } from '@/entities/document'
+import { useSession } from '@/entities/session'
+import { PaperSignPanel, SignDialog, payloadTypeOf, useSigningPort } from '@/features/sign-decision'
 import { backendModeOf } from '@/shared/api/response'
 import { useProblemText } from '@/shared/i18n/problem'
 import type { WidgetProps } from '@/shared/config/widget'
@@ -37,6 +39,11 @@ const tick = ref(Date.now())
 const timer = setInterval(() => (tick.value = Date.now()), 30_000)
 onBeforeUnmount(() => clearInterval(timer))
 const now = computed(() => (moment.asOf ? Date.parse(moment.asOf) : tick.value))
+
+const session = useSession()
+const currentUser = computed(() => session.data.value?.data?.user.id ?? null)
+const attest = useAttestPaper()
+const attestation = computed(() => request.value?.awaiting_attestation ?? null)
 
 const signDoc = useSignDocument()
 const decline = useDeclineDocument()
@@ -89,6 +96,14 @@ function printPaper(): void {
   print.mutate({ document_id: r.document.document_id, version: r.document.version })
 }
 
+/** Заверить бумажную подпись: скан и учётный номер оригинала (FR-139, AD-43). */
+function attestScan(payload: { file: File; archive_no: string }): void {
+  const r = request.value
+  const a = attestation.value
+  if (!r || !a) return
+  attest.mutate({ document_id: r.document.document_id, version: r.document.version, stage: a.stage, ...payload })
+}
+
 function sendDecline(comment: string): void {
   const r = request.value
   if (!r || r.my_stage == null) return
@@ -129,6 +144,18 @@ function sendDecline(comment: string): void {
       @sign="dialog = 'confirm'"
       @decline="sendDecline"
     />
+    <PaperSignPanel
+      v-if="request && attestation"
+      class="attest"
+      :document="request.document"
+      mode="attest"
+      :expected-signer="attestation.signer"
+      :current-user="currentUser"
+      :busy="attest.isPending.value"
+      :error="attest.error.value ?? undefined"
+      data-testid="attest-panel"
+      @attest="attestScan"
+    />
     <p v-if="decline.error.value" class="error" data-testid="decline-error">{{ problemText(decline.error.value) }}</p>
     <SignDialog
       :show="dialog !== null"
@@ -158,5 +185,11 @@ function sendDecline(comment: string): void {
 
 .error {
   color: #d64545;
+}
+
+.attest {
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px solid #e5e7eb;
 }
 </style>
