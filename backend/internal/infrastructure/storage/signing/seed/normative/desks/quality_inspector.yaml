@@ -1,4 +1,6 @@
-# Стол контролёра качества (PRD §3a): очередь «Ждут моего решения» + карточка + компактный паспорт.
+# Стол контролёра качества (PRD §3a, Д-70): очередь «Ждут моего решения» во всю ширину;
+# щелчок по строке открывает справа окно записи — карточка несоответствия, паспорт изделия
+# и кнопки решения внизу окна (app/record). Виджетов «под списком» нет.
 # Владелец после волны 1 — эпик 11.
 version: 1
 role: quality_inspector
@@ -8,9 +10,6 @@ help_key: quality_inspector # раздел встроенной справки (
 tabs:
   - id: queue
     title_key: desks.decisionQueue
-    layout: queue-main-side
+    layout: single
     slots:
-      - {id: queue, area: left, widget: decision-queue, slice: {sort: [risk, deadline]}}
-      - {id: card, area: main, widget: nc-card, slice: {view: evidence}}
-      - {id: decision, area: main, widget: decision-panel}
-      - {id: passport, area: right, widget: item-passport, slice: {view: compact}}
+      - {id: queue, area: main, widget: decision-queue, slice: {sort: [risk, deadline]}}
