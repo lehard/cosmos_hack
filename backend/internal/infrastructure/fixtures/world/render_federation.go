@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io/fs"
 	"path"
+	"sync"
 	"time"
 
 	fedapp "ant/internal/application/federation"
@@ -56,6 +57,42 @@ type FederationManifest struct {
 type Federation struct {
 	Manifest FederationManifest
 	Files    map[string][]byte
+
+	// verified — итог проверки выписки (файл и партнёр → Verification): байты
+	// выписок неизменны, а проверка подписей ГОСТ Р 34.10-2012 дорогая
+	// (~десятки мс на выписку); без памяти federationViews проверял бы каждую
+	// выписку заново на каждом изделии каждого шага — холодный старт api
+	// строит мир заготовок в памяти и тратил на это ~3 мин CPU.
+	mu       sync.Mutex
+	verified map[string]verifyResult
+}
+
+type verifyResult struct {
+	v   dom.Verification
+	err error
+}
+
+// verify — dom.VerifyExtract выписки file (канал партнёра partner; "" — без
+// корней, для исходящих), с памятью: одна проверка на файл за процесс.
+// Verification только читается (fedapp.ViewOf строит свежий вид), поэтому
+// общий экземпляр безопасен.
+func (f *Federation) verify(file, partner string) (dom.Verification, error) {
+	key := file + "\x00" + partner
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if r, ok := f.verified[key]; ok {
+		return r.v, r.err
+	}
+	var roots []string
+	if partner != "" {
+		roots = f.partnerRoots(partner)
+	}
+	v, err := dom.VerifyExtract(f.Files[file], partner, roots, profiles.Verify)
+	if f.verified == nil {
+		f.verified = map[string]verifyResult{}
+	}
+	f.verified[key] = verifyResult{v: v, err: err}
+	return v, err
 }
 
 // LoadFederation читает scenarios/federation (нет каталога — федерации нет).
@@ -100,7 +137,7 @@ func (c *Ctx) federationViews() []fedapp.PassportExtractView {
 	var out []fedapp.PassportExtractView
 	for _, s := range f.Manifest.Incoming {
 		raw := f.Files[s.File]
-		v, err := dom.VerifyExtract(raw, s.Partner, f.partnerRoots(s.Partner), profiles.Verify)
+		v, err := f.verify(s.File, s.Partner)
 		if err != nil {
 			panic("федерация: выписка " + s.File + " не проходит проверку: " + err.Error())
 		}
@@ -113,7 +150,7 @@ func (c *Ctx) federationViews() []fedapp.PassportExtractView {
 			continue
 		}
 		raw := f.Files[s.File]
-		v, err := dom.VerifyExtract(raw, "", nil, profiles.Verify)
+		v, err := f.verify(s.File, "")
 		if err != nil {
 			panic("федерация: выписка " + s.File + ": " + err.Error())
 		}
