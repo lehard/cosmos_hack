@@ -30,6 +30,19 @@
     "basis_event_id": {
       "$ref": "../common/defs.v1.json#/definitions/uuid",
       "description": "Запись-основание (`item.assembly.recorded`, `genealogy.lot.issued`)."
+    },
+    "group_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Временная группа (садка, групповая операция) для связи grouped_with (FR-15)."
+    },
+    "position": {
+      "type": "string",
+      "maxLength": 128,
+      "description": "Позиция компонента в сборке по спецификации."
+    },
+    "inherited": {
+      "type": "boolean",
+      "description": "Связь перенесена при разделении 1→N или по сборке (происхождение компонента), а не записана напрямую (FR-15)."
     }
   },
   "required": [

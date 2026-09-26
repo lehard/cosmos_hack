@@ -186,6 +186,8 @@ const (
 	FederationMessageSent Type = "federation.message.sent"
 	// Партнёр зарегистрирован
 	FederationPartnerRegistered Type = "federation.partner.registered"
+	// Сдерживание распространено по генеалогии
+	GenealogyContainmentPropagated Type = "genealogy.containment.propagated"
 	// Временная группа расформирована
 	GenealogyGroupDissolved Type = "genealogy.group.dissolved"
 	// Временная группа сформирована
@@ -196,6 +198,8 @@ const (
 	GenealogyLotIssued Type = "genealogy.lot.issued"
 	// Партия принята на входной контроль
 	GenealogyLotRegistered Type = "genealogy.lot.registered"
+	// Результат образца-свидетеля распространён на изделие группы
+	GenealogyWitnessPropagated Type = "genealogy.witness.propagated"
 	// Мера назначена
 	IncidentActionAssigned Type = "incident.action.assigned"
 	// Результативность меры оценена
@@ -509,11 +513,13 @@ var types = [...]Info{
 	{Type: FederationMessageAcknowledged, Title: "Партнёр подтвердил получение", Family: "federation", Emitter: "federation", Role: "api", Kind: "fact", Stream: "partner", Axis: "none", ActionClass: "record", Critical: false, CAGroup: "", GuardRelevant: false, PublishStage: false, Provenance: []string{"partner", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: FederationMessageSent, Title: "Межзаводское сообщение отправлено", Family: "federation", Emitter: "federation", Role: "outbox", Kind: "service", Stream: "partner", Axis: "none", ActionClass: "record", Critical: false, CAGroup: "", GuardRelevant: false, PublishStage: false, Provenance: []string{"server_attested", "genesis"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: FederationPartnerRegistered, Title: "Партнёр зарегистрирован", Family: "federation", Emitter: "federation", Role: "api", Kind: "decision", Stream: "partner", Axis: "none", ActionClass: "permissive", Critical: true, CAGroup: "admin_security", GuardRelevant: true, PublishStage: false, Provenance: []string{"personal", "paper", "genesis", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
+	{Type: GenealogyContainmentPropagated, Title: "Сдерживание распространено по генеалогии", Family: "genealogy", Emitter: "crossitem", Role: "crossitem", Kind: "reaction", Stream: "item", Axis: "none", ActionClass: "protective", Critical: false, CAGroup: "", GuardRelevant: true, PublishStage: false, Provenance: []string{"server_attested"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: GenealogyGroupDissolved, Title: "Временная группа расформирована", Family: "genealogy", Emitter: "crossitem", Role: "api", Kind: "fact", Stream: "group", Axis: "none", ActionClass: "record", Critical: false, CAGroup: "", GuardRelevant: true, PublishStage: false, Provenance: []string{"device", "personal", "paper", "server_attested", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: GenealogyGroupFormed, Title: "Временная группа сформирована", Family: "genealogy", Emitter: "crossitem", Role: "api", Kind: "fact", Stream: "group", Axis: "none", ActionClass: "record", Critical: false, CAGroup: "", GuardRelevant: true, PublishStage: true, Provenance: []string{"device", "personal", "paper", "server_attested", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: GenealogyLinkAdded, Title: "Связь генеалогии добавлена", Family: "genealogy", Emitter: "crossitem", Role: "crossitem", Kind: "reaction", Stream: "item", Axis: "none", ActionClass: "record", Critical: false, CAGroup: "", GuardRelevant: true, PublishStage: false, Provenance: []string{"server_attested"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: GenealogyLotIssued, Title: "Партия выдана в производство", Family: "genealogy", Emitter: "crossitem", Role: "api", Kind: "fact", Stream: "lot", Axis: "none", ActionClass: "record", Critical: false, CAGroup: "", GuardRelevant: true, PublishStage: false, Provenance: []string{"device", "personal", "paper", "server_attested", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: GenealogyLotRegistered, Title: "Партия принята на входной контроль", Family: "genealogy", Emitter: "crossitem", Role: "api", Kind: "fact", Stream: "lot", Axis: "none", ActionClass: "record", Critical: false, CAGroup: "", GuardRelevant: true, PublishStage: false, Provenance: []string{"device", "personal", "paper", "server_attested", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
+	{Type: GenealogyWitnessPropagated, Title: "Результат образца-свидетеля распространён на изделие группы", Family: "genealogy", Emitter: "crossitem", Role: "crossitem", Kind: "reaction", Stream: "item", Axis: "none", ActionClass: "record", Critical: false, CAGroup: "", GuardRelevant: true, PublishStage: false, Provenance: []string{"server_attested"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: IncidentActionAssigned, Title: "Мера назначена", Family: "incident", Emitter: "analysis", Role: "api", Kind: "decision", Stream: "incident", Axis: "none", ActionClass: "record", Critical: false, CAGroup: "", GuardRelevant: false, PublishStage: false, Provenance: []string{"personal", "paper", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: IncidentActionEvaluated, Title: "Результативность меры оценена", Family: "incident", Emitter: "analysis", Role: "api", Kind: "decision", Stream: "incident", Axis: "none", ActionClass: "record", Critical: false, CAGroup: "", GuardRelevant: false, PublishStage: false, Provenance: []string{"personal", "paper", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: IncidentActionImplemented, Title: "Мера внедрена", Family: "incident", Emitter: "analysis", Role: "api", Kind: "decision", Stream: "incident", Axis: "none", ActionClass: "record", Critical: false, CAGroup: "", GuardRelevant: false, PublishStage: false, Provenance: []string{"personal", "paper", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
