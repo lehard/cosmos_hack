@@ -103,9 +103,14 @@ func (s *Service) Step(ctx context.Context, runID string) error {
 		target = rp.plan.LiveFrom.Add(-time.Nanosecond)
 	}
 	afterAction := true
+	// caughtUp — прогон дошёл до target (следующее — позже него); при
+	// исчерпанном бюджете шага — нет, и поминутный тик на target не ставится:
+	// иначе следующие шаги и служебные записи ушли бы в прошлое головы журнала.
+	caughtUp := false
 	for budget := s.d.Batch; budget > 0; budget-- {
 		due := sim.NextDue(rp.plan, rp.points, st.Cursor)
 		if due.At.After(target) {
+			caughtUp = true
 			if catching {
 				if err := s.goLive(ctx, st, rp); err != nil {
 					return s.fail(ctx, st, err)
@@ -158,7 +163,7 @@ func (s *Service) Step(ctx context.Context, runID string) error {
 			t := s.now()
 			st.FinishedAt = &t
 			st.State = StateComplete
-			if _, err := s.record(ctx, st, "simulation.run.finished", rp.plan.End, map[string]any{"run_id": st.RunID, "outcome": "completed"}); err != nil {
+			if _, err := s.record(ctx, st, "simulation.run.finished", notBefore(rp.plan.End, st.LastTick), map[string]any{"run_id": st.RunID, "outcome": "completed"}); err != nil {
 				return s.fail(ctx, st, err)
 			}
 			return s.d.Store.Save(ctx, st)
@@ -166,7 +171,7 @@ func (s *Service) Step(ctx context.Context, runID string) error {
 	}
 	// в интерактиве доменное «сейчас» идёт и между событиями: тик раз в
 	// виртуальную минуту, чтобы столы видели время сценария (AD-37)
-	if !fast && !catching && target.Sub(st.LastTick) >= time.Minute && !target.After(rp.plan.End) {
+	if caughtUp && !fast && !catching && target.Sub(st.LastTick) >= time.Minute && !target.After(rp.plan.End) {
 		if err := s.tick(ctx, st, target.Truncate(time.Second)); err != nil {
 			return s.fail(ctx, st, err)
 		}
@@ -237,7 +242,7 @@ func (s *Service) action(ctx context.Context, st *RunState, rp *runPlan, i int) 
 		st.State = StateWaiting
 		st.Clock = st.Clock.Pause(s.now())
 		st.Steps[key] = StepResult{Operation: a.Operation, At: a.At, Status: "waiting"}
-		if _, err := s.record(ctx, st, "simulation.run.paused", a.At, map[string]any{"run_id": st.RunID, "reason": "waiting_for_decision"}); err != nil {
+		if _, err := s.record(ctx, st, "simulation.run.paused", notBefore(a.At, st.LastTick), map[string]any{"run_id": st.RunID, "reason": "waiting_for_decision"}); err != nil {
 			return err
 		}
 		return errStop
@@ -301,8 +306,17 @@ func (s *Service) waitDone(ctx context.Context, st *RunState) (bool, error) {
 	st.Waiting = nil
 	st.State = StateRunning
 	st.Clock = st.Clock.Resume(s.now())
-	_, err = s.record(ctx, st, "simulation.run.resumed", a.At, map[string]any{"run_id": st.RunID})
+	_, err = s.record(ctx, st, "simulation.run.resumed", notBefore(a.At, st.LastTick), map[string]any{"run_id": st.RunID})
 	return err == nil, err
+}
+
+// notBefore — время служебной записи прогона: не раньше последнего тика
+// (доменное время журнала не убывает, AD-37; шаг мог наступить раньше тика).
+func notBefore(at, last time.Time) time.Time {
+	if at.Before(last) {
+		return last
+	}
+	return at
 }
 
 // Операции выполнения, у которых id выполнения выдаёт стол исполнителя.
@@ -400,7 +414,7 @@ func (s *Service) goLive(ctx context.Context, st *RunState, rp *runPlan) error {
 	st.Live = true
 	st.LiveSeq = st.BasisSeq
 	st.Clock = st.Clock.Rebase(s.now(), rp.plan.LiveFrom)
-	_, err := s.record(ctx, st, "simulation.run.resumed", rp.plan.LiveFrom, map[string]any{"run_id": st.RunID})
+	_, err := s.record(ctx, st, "simulation.run.resumed", notBefore(rp.plan.LiveFrom, st.LastTick), map[string]any{"run_id": st.RunID})
 	return err
 }
 

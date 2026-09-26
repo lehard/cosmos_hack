@@ -213,3 +213,40 @@ func TestShowRunManual(t *testing.T) {
 		}
 	}
 }
+
+// TestShowSmallBatchTime — бюджет шага прогона меньше наступившего (часы
+// ушли далеко вперёд): поминутный тик не встаёт на target раньше, чем прогон
+// до него дошёл, а служебные записи (пауза на решении, продолжение) — не
+// раньше последнего тика: доменное время журнала не убывает (AD-37; фейковый
+// регистратор отвергает убывание, как журнал — journal.time_regression).
+func TestShowSmallBatchTime(t *testing.T) {
+	ctx := context.Background()
+	files := NewFiles(filepath.Join(repo, "scenarios"))
+	ing := simfake.NewIngest()
+	clock := &simfake.Clock{T: time.Date(2026, 9, 26, 9, 0, 0, 0, time.UTC)}
+	d := &desk{a: &simfake.Actor{In: ing}}
+	store := NewMemoryRuns()
+	svc := app.NewServiceWith(app.Deps{Definitions: files, Gateway: ing, Probe: deskProbe{Ingest: ing, d: d}, Actor: d, Recorder: &simfake.Recorder{},
+		Store: store, Infra: clock, Profile: "demo", Batch: 5})
+	started, err := svc.StartRun(ctx, "SHOW-IS2", app.StartRun{Mode: app.ModeInteractive})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var st *app.RunState
+	for i := 0; i < 20000; i++ {
+		clock.Advance(5 * time.Minute) // ×60 — 5 ч прогона на шаг: бюджета в 5 шагов не хватает
+		if err := svc.Step(ctx, started.RunID); err != nil {
+			t.Fatal(err)
+		}
+		st, _, _ = store.Load(ctx, started.RunID)
+		if st.State == app.StateComplete || st.State == app.StateFailed {
+			break
+		}
+		if st.State == app.StateWaiting && st.Waiting != nil && !d.pressed(st.Waiting.Op, st.Waiting.Object, st.Consumed) {
+			d.press(st.Waiting.Op, st.Waiting.Object)
+		}
+	}
+	if st.State != app.StateComplete {
+		t.Fatalf("прогон: %s %s", st.State, st.Error)
+	}
+}
