@@ -9,7 +9,7 @@
    {
     "id": "F-024",
     "order": "ORD-0917",
-    "line": "L-FL-1",
+    "line": "LINE-FL-1",
     "stages": {
      "assembly": "2026-09-25T06:30:00Z",
      "assembly_started": "2026-09-25T06:20:00Z",
@@ -41,9 +41,9 @@
    {
     "id": "F-026",
     "order": "ORD-0917",
-    "line": "L-FL-1",
+    "line": "LINE-FL-1",
     "stages": {
-     "assembly": "2026-09-24T10:00:00Z",
+     "assembly": "2026-09-24T09:12:00Z",
      "assembly_started": "2026-09-24T09:00:00Z",
      "cmm": "2026-09-21T11:58:00Z",
      "edge_prep": "2026-09-22T09:40:00Z",
@@ -64,8 +64,8 @@
      "zt2_presented": "2026-09-21T12:13:00Z",
      "zt3": "2026-09-24T07:00:00Z",
      "zt3_presented": "2026-09-24T06:10:00Z",
-     "zt4": "2026-09-24T10:20:00Z",
-     "zt4_presented": "2026-09-24T10:05:00Z"
+     "zt4": "2026-09-24T10:27:00Z",
+     "zt4_presented": "2026-09-24T10:12:00Z"
     },
     "remarked_at": "2026-09-21T11:24:00Z",
     "until": "leak_test"
@@ -73,7 +73,7 @@
    {
     "id": "F-028",
     "order": "ORD-0917",
-    "line": "L-FL-1",
+    "line": "LINE-FL-1",
     "stages": {
      "assembly": "2026-09-25T05:20:00Z",
      "assembly_started": "2026-09-25T05:00:00Z",
@@ -105,7 +105,7 @@
    {
     "id": "F-030",
     "order": "ORD-0917",
-    "line": "L-FL-1",
+    "line": "LINE-FL-1",
     "stages": {
      "assembly": "2026-09-25T08:25:00Z",
      "assembly_started": "2026-09-25T08:20:00Z",
@@ -137,7 +137,7 @@
    {
     "id": "F-031",
     "order": "ORD-0917",
-    "line": "L-FL-1",
+    "line": "LINE-FL-1",
     "stages": {
      "cmm": "2026-09-21T19:38:00Z",
      "edge_prep": "2026-09-22T20:00:00Z",
@@ -164,7 +164,7 @@
    {
     "id": "F-032",
     "order": "ORD-0917",
-    "line": "L-FL-1",
+    "line": "LINE-FL-1",
     "stages": {
      "cmm": "2026-09-21T15:28:00Z",
      "edge_prep": "2026-09-21T20:05:00Z",
@@ -191,7 +191,7 @@
    {
     "id": "F-033",
     "order": "ORD-0917",
-    "line": "L-FL-1",
+    "line": "LINE-FL-1",
     "stages": {
      "cmm": "2026-09-21T13:48:00Z",
      "edge_prep": "2026-09-22T11:55:00Z",
@@ -213,7 +213,7 @@
    {
     "id": "F-034",
     "order": "ORD-0917",
-    "line": "L-FL-1",
+    "line": "LINE-FL-1",
     "stages": {
      "cmm": "2026-09-22T06:28:00Z",
      "edge_prep": "2026-09-23T04:15:00Z",
@@ -235,7 +235,7 @@
    {
     "id": "F-035",
     "order": "ORD-0917",
-    "line": "L-FL-1",
+    "line": "LINE-FL-1",
     "stages": {
      "cmm": "2026-09-22T07:23:00Z",
      "edge_prep": "2026-09-22T20:40:00Z",
@@ -257,7 +257,7 @@
    {
     "id": "F-036",
     "order": "ORD-0917",
-    "line": "L-FL-1",
+    "line": "LINE-FL-1",
     "stages": {
      "cmm": "2026-09-21T05:28:00Z",
      "edge_prep": "2026-09-21T20:45:00Z",
@@ -279,7 +279,7 @@
    {
     "id": "F-223",
     "order": "ORD-0911",
-    "line": "L-FL-1",
+    "line": "LINE-FL-1",
     "stages": {
      "cmm": "2026-09-21T06:23:00Z",
      "edge_prep": "2026-09-22T11:10:00Z",
@@ -301,7 +301,7 @@
    {
     "id": "F-224",
     "order": "ORD-0911",
-    "line": "L-FL-1",
+    "line": "LINE-FL-1",
     "stages": {
      "cmm": "2026-09-21T07:18:00Z",
      "edge_prep": "2026-09-22T18:30:00Z",
@@ -701,6 +701,26 @@
     }
    },
    {
+    "key": "term-asm",
+    "source_id": "s13-20260925/term-asm-1",
+    "first_seq": 1,
+    "last_seq": 4,
+    "counters": {
+     "records": 4,
+     "deliveries": 4,
+     "unique": 4,
+     "duplicates": 0,
+     "conflicts": 0,
+     "lost": 0,
+     "late": 0,
+     "skewed": 0,
+     "reordered": 0,
+     "invalid": 0,
+     "quarantine": 0,
+     "decisions": 0
+    }
+   },
+   {
     "key": "term-vk",
     "source_id": "s13-20260925/term-vk-1",
     "first_seq": 1,
@@ -762,9 +782,9 @@
    }
   ],
   "totals": {
-   "records": 548,
-   "deliveries": 548,
-   "unique": 548,
+   "records": 552,
+   "deliveries": 552,
+   "unique": 552,
    "duplicates": 0,
    "conflicts": 0,
    "lost": 0,
@@ -773,7 +793,7 @@
    "reordered": 0,
    "invalid": 0,
    "quarantine": 0,
-   "decisions": 324
+   "decisions": 340
   }
  }
 }

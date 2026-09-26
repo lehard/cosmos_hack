@@ -52,13 +52,16 @@ checkpoints:
   - id: S17-03
     what: '«Сбой оборудования, пропуск проверки» (узел EQ8): шаг заблокирован, задачи мастеру М-03 и ОТК-2; ЗТ-СР по Ф-006 закрыта, пока проверки нет'
     check:
-      operation: item.passport.read
+      operation: journal.entry.list
       params:
+        event_type: decision.presentation.resolved
+        limit: 500
         item_id: '{item:F-006}'
-      path: /entries[event_type=decision.presentation.resolved]
+      path: /items[data.step_key=assembly.zt4_zone_presentation]/#
       op: eq
-      value: true
-    mapping: draft
+      value: 0
+    mapping: exact
+    note: 'сведение: ЗТ-СР (в процессе — ЗТ-4 ч.1, предъявление зоны) по Ф-006 не пройдена, пока проверки нет'
     source:
       subject: gate/ZT-SR/F-006
       field:
@@ -68,7 +71,6 @@ checkpoints:
         - QC-02
       op: eq
       value: true
-    note: ЗТ ZT-SR
 - at: '2026-09-23T08:35:00+03:00'
   label: проверка сделана, ЗТ-СР пройдена
   assertions:
@@ -93,13 +95,16 @@ checkpoints:
   - id: S17-05
     what: ЗТ-СР пройдена в 08:30 — после проверки; отметка пропуска осталась в истории
     check:
-      operation: item.passport.read
+      operation: journal.entry.list
       params:
+        event_type: decision.presentation.resolved
+        limit: 500
         item_id: '{item:F-006}'
-      path: /entries[event_type=decision.presentation.resolved]
+      path: /items[data.step_key=assembly.zt4_zone_presentation]/0/occurred_at
       op: eq
-      value: true
-    mapping: draft
+      value: '2026-09-23T08:30:00+03:00'
+    mapping: exact
+    note: 'сведение: ЗТ-СР (ЗТ-4 ч.1) пройдена в 08:30 — после проверки 08:22'
     source:
       subject: gate/ZT-SR/F-006
       field:
@@ -107,7 +112,6 @@ checkpoints:
         skip_record_kept: true
       op: eq
       value: true
-    note: ЗТ ZT-SR
 - at: '2026-09-23T08:35:00+03:00'
   label: чего не должно случиться
   must_not: true
@@ -152,10 +156,11 @@ checkpoints:
       operation: item.passport.read
       params:
         item_id: '{item:F-006}'
-      path: /status
+      path: /nonconformities/#
       op: eq
-      value: true
-    mapping: draft
+      value: 0
+    mapping: exact
+    note: 'сведение: несоответствий по Ф-006 нет'
     source:
       subject: item/F-006
       field:
@@ -166,16 +171,18 @@ checkpoints:
   - id: S17-N4
     what: ЗТ-СР не пройдена раньше проверки
     check:
-      operation: item.passport.read
+      operation: journal.entry.list
       params:
+        event_type: decision.presentation.resolved
+        limit: 500
         item_id: '{item:F-006}'
-      path: /entries[event_type=decision.presentation.resolved]
+      path: /items[data.step_key=assembly.zt4_zone_presentation]/#
       op: eq
-      value: false
-    mapping: draft
+      value: 1
+    mapping: exact
+    note: 'сведение: одно решение на ЗТ-СР — более раннего нет'
     source:
       subject: gate/ZT-SR/F-006
       field: passed_before_check
       op: eq
       value: false
-    note: ЗТ ZT-SR

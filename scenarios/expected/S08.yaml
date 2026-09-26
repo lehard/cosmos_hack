@@ -53,19 +53,21 @@ checkpoints:
   - id: S08-03
     what: ЗТ-4 пройдена с первого предъявления
     check:
-      operation: item.passport.read
+      operation: journal.entry.list
       params:
+        event_type: decision.presentation.resolved
+        limit: 500
         item_id: '{item:F-002}'
-      path: /entries[event_type=decision.presentation.resolved]
+      path: /items[data.step_key=assembly.zt4_acceptance]/0/data/presentation_no
       op: eq
-      value: true
-    mapping: draft
+      value: 1
+    mapping: exact
+    note: 'сведение: решение ЗТ-4 ч.2 по Ф-002 — на первом предъявлении'
     source:
       subject: gate/ZT-4/F-002
       field: first_pass
       op: eq
       value: true
-    note: ЗТ ZT-4
   - id: S08-04
     what: 'Н-4: ложных тревог КТ-4 +1'
     check:
@@ -148,19 +150,20 @@ checkpoints:
     check:
       operation: analytics.metric.drilldown
       params:
-        metric_id: O-2
+        metric_id: items_with_confirmed_nc
+        period: week
       path: /total/value
       op: delta
       value: 0
-    mapping: draft
-    baseline: '2026-09-22T11:19:00+03:00'
+    mapping: exact
+    baseline: '2026-09-22T11:15:00+03:00'
+    note: 'сведение: показатель items_with_confirmed_nc (О-2)'
     source:
       subject: metric/O-2
       field: items
       op: delta
       value: 0
       baseline: '2026-09-22T11:19:00+03:00'
-    note: показатель O-2 каталога процессной сессии (analytics-catalog.md); сопоставление — эпик 25
   - id: S08-N2
     what: отклонение без причины не принимается
     check:

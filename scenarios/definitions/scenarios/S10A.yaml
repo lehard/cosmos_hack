@@ -279,8 +279,8 @@ steps:
   label: S10A/zt3-2-F-017
   note: 'ЗТ-3, второе предъявление: переделка принята → 1С «возврат из брака в производство» [П]'
   decision: nonconformity.presentation.resolve
-  role: QC
-  actor: QC-01
+  role: QC_HEAD
+  actor: QC-HEAD-01
   item: F-017
   params:
     item_id: '{item:F-017}'
@@ -381,8 +381,8 @@ steps:
   label: S10A/zt3-2-F-023
   note: 'ЗТ-3, второе предъявление: переделка принята → 1С «возврат из брака в производство» [П]'
   decision: nonconformity.presentation.resolve
-  role: QC
-  actor: QC-01
+  role: QC_HEAD
+  actor: QC-HEAD-01
   item: F-023
   params:
     item_id: '{item:F-023}'
@@ -424,8 +424,8 @@ steps:
   label: S10A/zt3-2-F-025
   note: 'ЗТ-3, второе предъявление: переделка принята → 1С «возврат из брака в производство» [П]'
   decision: nonconformity.presentation.resolve
-  role: QC
-  actor: QC-01
+  role: QC_HEAD
+  actor: QC-HEAD-01
   item: F-025
   params:
     item_id: '{item:F-025}'
@@ -572,8 +572,8 @@ steps:
   label: S10A/zt3-2-F-015
   note: 'ЗТ-3, второе предъявление: переделка принята → 1С «возврат из брака в производство» [П]'
   decision: nonconformity.presentation.resolve
-  role: QC
-  actor: QC-01
+  role: QC_HEAD
+  actor: QC-HEAD-01
   item: F-015
   params:
     item_id: '{item:F-015}'

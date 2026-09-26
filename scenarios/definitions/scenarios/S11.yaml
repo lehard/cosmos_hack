@@ -101,7 +101,7 @@ steps:
     actor: QC-02
     item: F-003
     params: {item_id: "{item:F-003}"}
-    body: {closing_point: ZT-4, step_key: assembly.zt4_zone_presentation, presentation_no: 1, resolution: accept, method_event_ids: ["{event:F-003/kt4d}"]}
+    body: {closing_point: ZT-4.1, step_key: assembly.zt4_zone_presentation, presentation_no: 1, resolution: accept, method_event_ids: ["{event:F-003/kt4d}"]}
   - at: "2026-09-22T12:10:00+03:00"
     note: "Крышка установлена; дальше по маршруту (Ф-003 позже — «герметично»)"
     decision: access.operator.confirm_step

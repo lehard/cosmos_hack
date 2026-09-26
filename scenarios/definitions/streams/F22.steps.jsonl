@@ -30,13 +30,23 @@
 {"seq":30,"kind":"decision","at":"2026-09-21T09:58:00Z","scenario":"route","label":"F-502/weld/confirm","operation":"access.operator.confirm_step","role":"performer","actor":"W21","params":{"workplace_id":"WP-WELD-1"},"body":{"item_id":"{item:F-502}","step_key":"welding.weld","tp_step":"Режим по карте сверен"},"item":"F-502"}
 {"seq":31,"kind":"decision","at":"2026-09-21T10:00:00Z","scenario":"route","label":"F-502/weld/start","operation":"process.operation.start","role":"performer","actor":"W21","params":{"item_id":"{item:F-502}"},"body":{"equipment_id":"IS-1","operation_code":"SV","operation_run_id":"f22-20261022/SV-502-1","program_ref":"PS-4","station_id":"ST-WELD","step_key":"welding.weld"},"item":"F-502"}
 {"seq":32,"kind":"stand","at":"2026-09-21T10:30:00Z","scenario":"F22","note":"Обрыв связи ИС-1 №1","stand":{"stand":"equipment:IS-1","fault":"offline","until":"2026-09-21T13:30:03+03:00"}}
-{"seq":33,"kind":"stand","at":"2026-09-21T10:30:06Z","scenario":"F22","note":"Обрыв связи ИС-1 №2","stand":{"stand":"equipment:IS-1","fault":"offline","until":"2026-09-21T13:30:09+03:00"}}
-{"seq":34,"kind":"stand","at":"2026-09-21T10:30:12Z","scenario":"F22","note":"Обрыв связи ИС-1 №3","stand":{"stand":"equipment:IS-1","fault":"offline","until":"2026-09-21T13:30:15+03:00"}}
-{"seq":35,"kind":"stand","at":"2026-09-21T10:30:18Z","scenario":"F22","note":"Обрыв связи ИС-1 №4","stand":{"stand":"equipment:IS-1","fault":"offline","until":"2026-09-21T13:30:21+03:00"}}
-{"seq":36,"kind":"stand","at":"2026-09-21T10:30:24Z","scenario":"F22","note":"Обрыв связи ИС-1 №5","stand":{"stand":"equipment:IS-1","fault":"offline","until":"2026-09-21T13:30:27+03:00"}}
-{"seq":37,"kind":"stand","at":"2026-09-21T10:30:30Z","scenario":"F22","note":"Обрыв связи ИС-1 №6","stand":{"stand":"equipment:IS-1","fault":"offline","until":"2026-09-21T13:30:33+03:00"}}
-{"seq":38,"kind":"stand","at":"2026-09-21T10:30:36Z","scenario":"F22","note":"Обрыв связи ИС-1 №7","stand":{"stand":"equipment:IS-1","fault":"offline","until":"2026-09-21T13:30:39+03:00"}}
-{"seq":39,"kind":"stand","at":"2026-09-21T10:30:42Z","scenario":"F22","note":"Обрыв связи ИС-1 №8","stand":{"stand":"equipment:IS-1","fault":"offline","until":"2026-09-21T13:30:45+03:00"}}
-{"seq":40,"kind":"stand","at":"2026-09-21T10:30:48Z","scenario":"F22","note":"Обрыв связи ИС-1 №9","stand":{"stand":"equipment:IS-1","fault":"offline","until":"2026-09-21T13:30:51+03:00"}}
-{"seq":41,"kind":"stand","at":"2026-09-21T10:30:54Z","scenario":"F22","note":"Обрыв связи ИС-1 №10","stand":{"stand":"equipment:IS-1","fault":"offline","until":"2026-09-21T13:30:57+03:00"}}
-{"seq":42,"kind":"decision","at":"2026-09-21T10:45:00Z","scenario":"route","label":"F-502/weld/finish","operation":"process.operation.finish","role":"performer","actor":"W21","params":{"run_id":"f22-20261022/SV-502-1"},"body":{"completion":"completed"},"item":"F-502"}
+{"seq":33,"kind":"stand","at":"2026-09-21T10:30:03Z","scenario":"F22","note":"снять сбой: offline","stand":{"stand":"equipment:IS-1","clear":true}}
+{"seq":34,"kind":"stand","at":"2026-09-21T10:30:06Z","scenario":"F22","note":"Обрыв связи ИС-1 №2","stand":{"stand":"equipment:IS-1","fault":"offline","until":"2026-09-21T13:30:09+03:00"}}
+{"seq":35,"kind":"stand","at":"2026-09-21T10:30:09Z","scenario":"F22","note":"снять сбой: offline","stand":{"stand":"equipment:IS-1","clear":true}}
+{"seq":36,"kind":"stand","at":"2026-09-21T10:30:12Z","scenario":"F22","note":"Обрыв связи ИС-1 №3","stand":{"stand":"equipment:IS-1","fault":"offline","until":"2026-09-21T13:30:15+03:00"}}
+{"seq":37,"kind":"stand","at":"2026-09-21T10:30:15Z","scenario":"F22","note":"снять сбой: offline","stand":{"stand":"equipment:IS-1","clear":true}}
+{"seq":38,"kind":"stand","at":"2026-09-21T10:30:18Z","scenario":"F22","note":"Обрыв связи ИС-1 №4","stand":{"stand":"equipment:IS-1","fault":"offline","until":"2026-09-21T13:30:21+03:00"}}
+{"seq":39,"kind":"stand","at":"2026-09-21T10:30:21Z","scenario":"F22","note":"снять сбой: offline","stand":{"stand":"equipment:IS-1","clear":true}}
+{"seq":40,"kind":"stand","at":"2026-09-21T10:30:24Z","scenario":"F22","note":"Обрыв связи ИС-1 №5","stand":{"stand":"equipment:IS-1","fault":"offline","until":"2026-09-21T13:30:27+03:00"}}
+{"seq":41,"kind":"stand","at":"2026-09-21T10:30:27Z","scenario":"F22","note":"снять сбой: offline","stand":{"stand":"equipment:IS-1","clear":true}}
+{"seq":42,"kind":"stand","at":"2026-09-21T10:30:30Z","scenario":"F22","note":"Обрыв связи ИС-1 №6","stand":{"stand":"equipment:IS-1","fault":"offline","until":"2026-09-21T13:30:33+03:00"}}
+{"seq":43,"kind":"stand","at":"2026-09-21T10:30:33Z","scenario":"F22","note":"снять сбой: offline","stand":{"stand":"equipment:IS-1","clear":true}}
+{"seq":44,"kind":"stand","at":"2026-09-21T10:30:36Z","scenario":"F22","note":"Обрыв связи ИС-1 №7","stand":{"stand":"equipment:IS-1","fault":"offline","until":"2026-09-21T13:30:39+03:00"}}
+{"seq":45,"kind":"stand","at":"2026-09-21T10:30:39Z","scenario":"F22","note":"снять сбой: offline","stand":{"stand":"equipment:IS-1","clear":true}}
+{"seq":46,"kind":"stand","at":"2026-09-21T10:30:42Z","scenario":"F22","note":"Обрыв связи ИС-1 №8","stand":{"stand":"equipment:IS-1","fault":"offline","until":"2026-09-21T13:30:45+03:00"}}
+{"seq":47,"kind":"stand","at":"2026-09-21T10:30:45Z","scenario":"F22","note":"снять сбой: offline","stand":{"stand":"equipment:IS-1","clear":true}}
+{"seq":48,"kind":"stand","at":"2026-09-21T10:30:48Z","scenario":"F22","note":"Обрыв связи ИС-1 №9","stand":{"stand":"equipment:IS-1","fault":"offline","until":"2026-09-21T13:30:51+03:00"}}
+{"seq":49,"kind":"stand","at":"2026-09-21T10:30:51Z","scenario":"F22","note":"снять сбой: offline","stand":{"stand":"equipment:IS-1","clear":true}}
+{"seq":50,"kind":"stand","at":"2026-09-21T10:30:54Z","scenario":"F22","note":"Обрыв связи ИС-1 №10","stand":{"stand":"equipment:IS-1","fault":"offline","until":"2026-09-21T13:30:57+03:00"}}
+{"seq":51,"kind":"stand","at":"2026-09-21T10:30:57Z","scenario":"F22","note":"снять сбой: offline","stand":{"stand":"equipment:IS-1","clear":true}}
+{"seq":52,"kind":"decision","at":"2026-09-21T10:45:00Z","scenario":"route","label":"F-502/weld/finish","operation":"process.operation.finish","role":"performer","actor":"W21","params":{"run_id":"f22-20261022/SV-502-1"},"body":{"completion":"completed"},"item":"F-502"}

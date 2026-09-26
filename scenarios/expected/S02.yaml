@@ -17,10 +17,11 @@ checkpoints:
       operation: nonconformity.card.read
       params:
         nc_id: '{ref:NC-04}'
-      path: /
+      path: /evidence/signals/0/zone_id
       op: eq
-      value: true
-    mapping: draft
+      value: RING-BODY
+    mapping: exact
+    note: 'сведение: зона признака — тело кольца'
     source:
       subject: nc/NC-04
       field:
@@ -37,59 +38,72 @@ checkpoints:
         nc_id: '{ref:NC-04}'
       path: /human_decisions/*/event_type
       op: contains
-      value: &id001
-      - signal
-      - confirmed
-    mapping: draft
+      value:
+      - decision.nonconformity.confirmed
+    mapping: exact
+    note: 'сведение: подтверждение — решение человека'
     source:
       subject: nc/NC-04
       field: status_path
       op: contains
-      value: *id001
-    note: путь статусов — по решениям в карточке
+      value:
+      - signal
+      - confirmed
   - id: S02-03
     what: гипотеза — входной брак, затем причина подтверждена
     check:
-      operation: nonconformity.card.read
+      operation: analysis.hypothesis.list
       params:
         nc_id: '{ref:NC-04}'
-      path: /cause
+      path: /hypotheses[category=incoming]/0/status
       op: eq
-      value: &id002
-        category: incoming
-        status: confirmed
-        lot: LOT-R-117
-        supplier: SUP-3
-    mapping: draft
+      value: confirmed
+    mapping: exact
+    note: 'сведение: гипотеза «входной брак» подтверждена (analysis.cause.conclude)'
     source:
       subject: nc/NC-04
       field: cause
       op: eq
-      value: *id002
+      value:
+        category: incoming
+        status: confirmed
+        lot: LOT-R-117
+        supplier: SUP-3
   - id: S02-04
     what: сварщик не указан как кандидат
     check:
       operation: analysis.hypothesis.list
       params:
         nc_id: '{ref:NC-04}'
-      path: /operator_candidates
+      path: /hypotheses[category=performer]/#
       op: eq
-      value: &id003 []
-    mapping: draft
+      value: 0
+    mapping: exact
+    note: 'сведение: гипотез об исполнителе нет'
     source:
       subject: hypothesis/NC-04
       field: operator_candidates
       op: eq
-      value: *id003
+      value: []
   - id: S02-05
     what: 'область по партии RS-02: 3 изделия, итог 1 подтверждено, 2 исключено'
     check:
       operation: analysis.risk_scope.read
       params:
         incident_id: '{ref:RS-02}'
-      path: /final_groups
+      path: /items/*/known
+      op: set_eq
+      value:
+      - confirmed
+      - excluded
+      - excluded
+    mapping: exact
+    note: 'сведение: итог области по партии: 1 подтверждено, 2 исключено (оси incident: confirmed / excluded)'
+    source:
+      subject: risk_scope/RS-02
+      field: final_groups
       op: eq
-      value: &id004
+      value:
         confirmed:
         - F-019
         excluded:
@@ -97,12 +111,6 @@ checkpoints:
         - F-029
         suspected: []
         unknown: []
-    mapping: draft
-    source:
-      subject: risk_scope/RS-02
-      field: final_groups
-      op: eq
-      value: *id004
   - id: S02-06
     what: исключение Ф-027 и Ф-029 — по заключениям рентгена
     check:
@@ -111,7 +119,7 @@ checkpoints:
         incident_id: '{ref:RS-02}'
       path: /exclusion_basis
       op: contains
-      value: &id005
+      value: &id001
       - xray:F-027
       - xray:F-029
     mapping: draft
@@ -119,7 +127,7 @@ checkpoints:
       subject: risk_scope/RS-02
       field: exclusion_basis
       op: contains
-      value: *id005
+      value: *id001
   - id: S02-07
     what: второе кольцо с порой на складе — НС-05
     check:
@@ -141,10 +149,13 @@ checkpoints:
     what: в 1С один возврат поставщику на 7 колец
     check:
       operation: erp.message.list
-      path: /items
+      params:
+        limit: 500
+      path: /items[action=return_to_supplier]/#
       op: eq
-      value: true
-    mapping: draft
+      value: 1
+    mapping: exact
+    note: 'сведение: одно сообщение «возврат поставщику» (партия П-117)'
     source:
       subject: erp/postings
       field:
@@ -159,19 +170,24 @@ checkpoints:
     what: возврат подтверждён после ошибки 422 и исправления ID
     check:
       operation: erp.message.list
-      path: /items
+      params:
+        limit: 500
+      path: /items[action=return_to_supplier]/0/attempts/*/outcome
       op: eq
-      value: &id006
-      - error_final
-      - acked
-    mapping: draft
+      value:
+      - rejected
+      - accepted
+    mapping: exact
+    note: 'сведение: 422 → исправление соответствия → принято'
     source:
       subject: erp/postings
       field: ack_history
       filter:
         type: return_to_supplier
       op: eq
-      value: *id006
+      value:
+      - error_final
+      - acked
   - id: S02-10
     what: пропуск на КТ-1 помечен «метод не видит этот класс»
     check:
@@ -212,12 +228,14 @@ checkpoints:
     check:
       operation: analytics.metric.drilldown
       params:
-        metric_id: O-6
+        metric_id: incoming_defects
+        period: week
       path: /total/value
       op: delta
       value: 2
-    mapping: draft
-    baseline: '2026-09-23T13:39:00+03:00'
+    mapping: exact
+    baseline: '2026-09-23T13:30:00+03:00'
+    note: 'сведение: показатель incoming_defects (входной брак) за неделю'
     source:
       subject: metric/O-6
       field: count
@@ -227,7 +245,6 @@ checkpoints:
       op: delta
       value: 2
       baseline: '2026-09-23T13:39:00+03:00'
-    note: показатель O-6 каталога процессной сессии (analytics-catalog.md); сопоставление — эпик 25
   - id: S02-13
     what: 'разбор причин (отдельный экземпляр по RS-02) → мера «улучшить обнаружение»: следующие партии колец Поставщика-3 — рентген до сварки [П]; у меры есть план проверки результативности;
       «назначено» ≠ «результативно», расследование открыто'
@@ -262,7 +279,7 @@ checkpoints:
         metric_id: O-4
       path: /includes_nc
       op: not_contains
-      value: &id007
+      value: &id002
       - NC-04
       - NC-05
     mapping: draft
@@ -273,7 +290,7 @@ checkpoints:
         station: welding
         origin: station
       op: not_contains
-      value: *id007
+      value: *id002
     note: показатель O-4 каталога процессной сессии (analytics-catalog.md); сопоставление — эпик 25
   - id: S02-N2
     what: нет гипотезы «процедура» по С-03 для НС-04
@@ -281,16 +298,17 @@ checkpoints:
       operation: analysis.hypothesis.list
       params:
         nc_id: '{ref:NC-04}'
-      path: /categories
-      op: not_contains
-      value: &id008
-      - operator_procedure
-    mapping: draft
+      path: /hypotheses[category=performer]/#
+      op: eq
+      value: 0
+    mapping: exact
+    note: 'сведение: гипотез категории «исполнитель» по НС-04 нет'
     source:
       subject: hypothesis/NC-04
       field: categories
       op: not_contains
-      value: *id008
+      value:
+      - operator_procedure
   - id: S02-N3
     what: О-10 не меняется
     check:
@@ -331,7 +349,7 @@ checkpoints:
         metric_id: O-4
       path: /includes_nc
       op: not_contains
-      value: &id009
+      value: &id003
       - NC-04
       - NC-05
     mapping: draft
@@ -342,5 +360,5 @@ checkpoints:
         cut: line
         origin: line
       op: not_contains
-      value: *id009
+      value: *id003
     note: показатель O-4 каталога процессной сессии (analytics-catalog.md); сопоставление — эпик 25

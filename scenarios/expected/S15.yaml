@@ -33,10 +33,15 @@ checkpoints:
     what: исходное время записи сохранено как есть; рядом — исправленное по правилу время с пометкой
     check:
       operation: journal.entry.list
-      path: /items
+      params:
+        item_id: '{item:F-007}'
+        event_type: inspection.result.recorded
+        limit: 500
+      path: /items[event_id={event:F-007/cmm}]/0/occurred_at
       op: eq
-      value: true
-    mapping: draft
+      value: '2026-09-21T08:32:00+03:00'
+    mapping: exact
+    note: 'сведение: исходное время протокола КИМ (часы источника) сохранено; исправленное время — вывод приёма рядом'
     source:
       subject: event/cmm/F-007
       field:
@@ -47,7 +52,6 @@ checkpoints:
           offset_s: 420
       op: eq
       value: true
-    note: запись cmm/F-007
 - at: '2026-09-21T10:35:00+03:00'
   label: после синхронизации часов
   assertions:
@@ -189,16 +193,20 @@ checkpoints:
     what: исходное occurred_at не перезаписано
     check:
       operation: journal.entry.list
-      path: /items
+      params:
+        item_id: '{item:F-007}'
+        event_type: inspection.result.recorded
+        limit: 500
+      path: /items[event_id={event:F-007/cmm}]/0/occurred_at
       op: eq
-      value: false
-    mapping: draft
+      value: '2026-09-21T08:32:00+03:00'
+    mapping: exact
+    note: 'сведение: исходное occurred_at не перезаписано'
     source:
       subject: event/cmm/F-007
       field: occurred_at_overwritten
       op: eq
       value: false
-    note: запись cmm/F-007
   - id: S15-N4
     what: нет отрицательных интервалов «КИМ → ЗТ-2» в показателях ожидания
     check:

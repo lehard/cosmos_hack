@@ -215,10 +215,11 @@ checkpoints:
       operation: analysis.risk_scope.read
       params:
         incident_id: '{ref:RS-01}'
-      path: /size_after_tamper
+      path: /items[known!=excluded]/#
       op: eq
       value: 6
-    mapping: draft
+    mapping: exact
+    note: 'сведение: в области по-прежнему 6 не исключённых'
     source:
       subject: risk_scope/RS-01
       field: size_after_tamper
@@ -285,10 +286,13 @@ checkpoints:
     what: претензия поставщику и «возврат поставщику» в 1С не отменены из-за подменённого заключения
     check:
       operation: erp.message.list
-      path: /items
+      params:
+        limit: 500
+      path: /items[action=return_to_supplier]/0/status
       op: eq
-      value: false
-    mapping: draft
+      value: acknowledged
+    mapping: exact
+    note: 'сведение: «возврат поставщику» остаётся подтверждённым'
     source:
       subject: erp/postings
       field: cancelled

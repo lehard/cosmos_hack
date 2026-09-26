@@ -31,7 +31,7 @@ import (
 type IngestGateway struct {
 	Ingest appingest.Commands
 	// SentAt — сообщать приёму время отправки пачки по часам источника (FR-33):
-	// момент доставки по виртуальным часам прогона.
+	// момент доставки по виртуальным часам прогона со сдвигом часов источника.
 	SentAt bool
 }
 
@@ -52,7 +52,10 @@ func (g IngestGateway) Deliver(ctx context.Context, _ string, batch []sim.Emissi
 				Payload: base64.StdEncoding.EncodeToString(e.Event), Signatures: []crypto.DsseEnvelopeSignaturesElem{}})
 		}
 		if g.SentAt {
-			t := part[len(part)-1].DeliverAt
+			// часы источника: момент доставки плюс сдвиг часов источника
+			// (occurred_at − истинное время события; S15 — КИМ спешит на 7 мин)
+			last := part[len(part)-1]
+			t := last.DeliverAt.Add(last.OccurredAt.Sub(last.TrueAt))
 			in.SentAt = &t
 		}
 		res, err := g.Ingest.SubmitBatch(ctx, in)

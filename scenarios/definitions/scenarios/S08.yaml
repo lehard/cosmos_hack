@@ -61,11 +61,11 @@ steps:
     item: F-002
     params: {item_id: "{item:F-002}"}
     body:
-      closing_point: ZT-4
+      closing_point: ZT-4.2
       step_key: assembly.zt4_acceptance
       presentation_no: 1
       resolution: accept
-      method_event_ids: ["{event:F-002/kt4d}", "{event:F-002/torque}", "{event:F-002/kt4}"]
+      method_event_ids: ["{event:F-002/kt4d}", "{event:F-002/torque}", "{event:F-002/tools}", "{event:F-002/kt4}"]
 outcome:
   - "Исходный сигнал виден в истории Ф-002 без изменений, рядом — «отклонено контролёром: ОТК-2, 11:35, причина»; это не «признаков нет»."
   - "Несоответствий нет; О-2 не меняется; «сигналы на рассмотрении» −1; ложные тревоги КТ-4 (Н-4) +1; кадр — кандидат для настройки модели."

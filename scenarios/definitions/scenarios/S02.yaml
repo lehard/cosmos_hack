@@ -40,6 +40,9 @@ steps:
       processing_state: completed
       inspector_id: "{person:NDT-01}"
       conclusion_ref: "РК-0923-07"
+      # пора — в теле кольца К-101 партии П-117: находка относится к партии
+      # компонента (по ней разбор открывает область RS-02, FR-61)
+      lot_id: "{local:LOT-R-117}"
       defects:
         - {defect_type_code: I-BASE-PORE, description: "Пора в основном металле кольца", component_ref: "{local:R-101}", zone_id: "{zone:RING-BODY}",
            location: "25 мм от шва, вне зоны нагрева", severity: major, size: {value: 12, scale: 1, unit: mm}}

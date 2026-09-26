@@ -109,8 +109,12 @@ checkpoints:
         item_id: '{item:F-003}'
       path: /status
       op: eq
-      value: true
-    mapping: draft
+      value:
+        containment: none
+        disposition: none
+        summary: in_process
+    mapping: exact
+    note: 'сведение: нет сдерживания, решения и итога «не годно»'
     source:
       subject: item/F-003
       field:

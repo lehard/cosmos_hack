@@ -15,10 +15,11 @@ checkpoints:
     what: задание из 1С принято, связано с внутренним ID
     check:
       operation: erp.order.list
-      path: /items
+      path: /items[external_number=ord-5c2b-0917]/0/order_id
       op: eq
-      value: true
-    mapping: draft
+      value: ORD-0917
+    mapping: exact
+    note: 'сведение: задание 1С ord-5c2b-0917 связано с внутренним ID задания'
     source:
       subject: erp/inbound
       field:
@@ -36,10 +37,13 @@ checkpoints:
       operation: erp.message.list
       params:
         item_id: '{item:F-001}'
-      path: /items
+      path: /items[action=release]/0/attempts/*/outcome
       op: eq
-      value: true
-    mapping: draft
+      value:
+      - transport_error
+      - accepted
+    mapping: exact
+    note: 'сведение: 503 — транспортная ошибка, повтор с тем же бизнес-ключом принят'
     source:
       subject: erp/postings
       field:
@@ -56,10 +60,15 @@ checkpoints:
     what: 'возврат поставщику: 422 → без автоповтора → задача А-01 → соответствие добавлено → подтверждено'
     check:
       operation: erp.message.list
-      path: /items
+      params:
+        limit: 500
+      path: /items[action=return_to_supplier]/0/attempts/*/outcome
       op: eq
-      value: true
-    mapping: draft
+      value:
+      - rejected
+      - accepted
+    mapping: exact
+    note: 'сведение: 422 — отказ без автоповтора, после соответствия ID — повторная отправка принята'
     source:
       subject: erp/postings
       field:
@@ -76,10 +85,11 @@ checkpoints:
     what: таблица соответствий пополнилась договором поставщика
     check:
       operation: reference.external_id.list
-      path: /items
+      path: /items[object_kind=contract,internal_id=SUP-3]/0/external_id
       op: eq
-      value: true
-    mapping: draft
+      value: ctr-0b19-0003/dog-2026-117
+    mapping: exact
+    note: 'сведение: соответствие договора поставщика SUP-3'
     source:
       subject: erp/id_map
       field: exists
@@ -109,10 +119,13 @@ checkpoints:
     what: все отправленные сообщения в итоге подтверждены
     check:
       operation: erp.message.list
-      path: /items
+      params:
+        limit: 500
+      path: /items[status!=acknowledged]/#
       op: eq
       value: 0
-    mapping: draft
+    mapping: exact
+    note: 'сведение: ни одного сообщения не в статусе «подтверждено»'
     source:
       subject: erp/postings
       field: not_acked
@@ -124,10 +137,13 @@ checkpoints:
     what: у каждого сообщения в 1С есть ответ (подтверждение или ошибка); «учтено в 1С» — только по подтверждению; отправка не держит изделие
     check:
       operation: erp.message.list
-      path: /items
+      params:
+        limit: 500
+      path: /items[status!=acknowledged,status!=rejected]/#
       op: eq
-      value: true
-    mapping: draft
+      value: 0
+    mapping: exact
+    note: 'сведение: нет сообщений без ответа 1С (в очереди или отправленных без квитанции)'
     source:
       subject: erp/postings
       field:
@@ -144,11 +160,12 @@ checkpoints:
       operation: erp.message.list
       params:
         item_id: '{item:F-001}'
-      path: /items[action=inspection_result]
+      path: /items[action=inspection_result]/#
       op: eq
-      value: true
-    mapping: draft
+      value: 6
+    mapping: exact
     proposal: true
+    note: 'сведение: ЗТ-2, ЗТ-3, ЗТ-4 ч.1, ЗТ-4 ч.2, ЗТ-5, ЗТ-6 — по результату на каждое подписанное решение'
     source:
       subject: erp/control_results
       field:
@@ -164,7 +181,6 @@ checkpoints:
         item: F-001
       op: eq
       value: true
-    note: предложение процессной сессии «результат контроля» (кейс §3.3)
   - id: I1-09
     what: '[П] результат контроля по решению ЗТ-Р: НС-И1, 6 изделий, «не годно», решение «переделка», подписи комиссии'
     check:
@@ -238,10 +254,13 @@ checkpoints:
     what: повтор не проводит документ дважды
     check:
       operation: erp.message.list
-      path: /items
+      params:
+        item_id: '{item:F-001}'
+      path: /items[action=release]/0/attempts[outcome=accepted]/#
       op: eq
-      value: 0
-    mapping: draft
+      value: 1
+    mapping: exact
+    note: 'сведение: повтор после 503 проведён в 1С один раз'
     source:
       subject: erp/documents
       field: duplicates_by_message_id

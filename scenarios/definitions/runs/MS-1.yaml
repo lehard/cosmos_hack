@@ -32,7 +32,9 @@ orders:
 
 # Партии (§2.3). Фоновые партии прошлого заказа — Чт 10.09.
 lots:
-  - {id: LOT-ZF-191, component: FL-100.01.001, supplier: SUP-1, quantity: 24, certificate: С-191, heat: "5431", arrived: "2026-09-10T08:30:00+03:00"}
+  # Заготовки ЗФ-191 пришли и приняты ЗТ-1 накануне: выдача в производство —
+  # только принятой партии (Ф-201 запускается в Чт 10.09 08:00).
+  - {id: LOT-ZF-191, component: FL-100.01.001, supplier: SUP-1, quantity: 24, certificate: С-191, heat: "5431", arrived: "2026-09-09T14:00:00+03:00"}
   - {id: LOT-R-115,  component: FL-100.01.002, supplier: SUP-2, quantity: 24, certificate: С-115, arrived: "2026-09-10T08:40:00+03:00"}
   - {id: LOT-C-291,  component: FL-100.00.003, supplier: SUP-4, quantity: 24, arrived: "2026-09-10T08:50:00+03:00"}
   - {id: LOT-SL-391, component: FL-100.00.004, supplier: SUP-5, quantity: 30, arrived: "2026-09-10T09:00:00+03:00"}
@@ -88,7 +90,7 @@ items:
     station: WS-2
     welder: WLD-02
     current: [158, 163]
-  skip: [kt2, kt3, kt5]
+  skip: [kt2, kt3, kt5, assembly.tools]
   at: {launch: '2026-09-18T08:30:00+03:00', xray: '2026-09-21T13:00:00+03:00', sent_to_assembly: '2026-09-21T15:55:00+03:00', received_assembly: '2026-09-21T16:00:00+03:00', assembly_started: '2026-09-22T09:00:00+03:00',
     assembly: '2026-09-22T09:10:00+03:00', zt4_presented: '2026-09-22T10:25:00+03:00', zt4: '2026-09-22T10:30:00+03:00', leak_test: '2026-09-22T13:00:00+03:00', zt5_presented: '2026-09-22T14:20:00+03:00',
     zt5: '2026-09-22T14:30:00+03:00', kt5: '2026-09-23T09:30:00+03:00', zt6_presented: '2026-09-23T10:10:00+03:00', zt6: '2026-09-23T10:15:00+03:00', release: '2026-09-23T10:30:00+03:00'}

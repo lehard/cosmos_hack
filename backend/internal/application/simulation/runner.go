@@ -119,6 +119,14 @@ func (s *Service) Step(ctx context.Context, runID string) error {
 				return s.fail(ctx, st, err)
 			}
 			st.Cursor.Emissions = due.To
+			// Носитель, нанесённый устройством (перемаркировка DM после
+			// станка), — такое же основание привязки, как решение человека:
+			// следующие события по этому носителю ждут, пока движок его
+			// обработает (иначе результат КТ-2 уходит в очередь привязки и
+			// ЗТ-2 не видит его — «нет результата контроля»).
+			if carrierChanged(rp.plan.Emissions[due.From:due.To]) {
+				afterAction = true
+			}
 		case sim.DueAction:
 			err := s.action(ctx, st, rp, due.Index)
 			if errors.Is(err, errStop) {
@@ -150,6 +158,16 @@ func (s *Service) Step(ctx context.Context, runID string) error {
 		}
 	}
 	return s.d.Store.Save(ctx, st)
+}
+
+// carrierChanged — в пачке есть нанесение или смена носителя изделия.
+func carrierChanged(batch []sim.Emission) bool {
+	for _, e := range batch {
+		if strings.HasPrefix(e.EventType, "item.carrier.") {
+			return true
+		}
+	}
+	return false
 }
 
 func (s *Service) fail(ctx context.Context, st *RunState, err error) error {
@@ -386,13 +404,9 @@ func (s *Service) stand(ctx context.Context, st *RunState, a sim.Action, key str
 		if a.Stand.Clear {
 			err = s.d.Stands.ClearFaults(ctx, a.Stand.Stand)
 		} else {
-			var until time.Time
-			if a.Stand.Until != "" {
-				if t, perr := sim.ParseTime(a.Stand.Until); perr == nil {
-					until = t
-				}
-			}
-			err = s.d.Stands.SetFault(ctx, a.Stand.Stand, *a.Stand, until)
+			// until определения — время прогона, а stand живёт по InfraClock:
+			// сбой снимает шаг «снять сбой» генератора в момент until
+			err = s.d.Stands.SetFault(ctx, a.Stand.Stand, *a.Stand, time.Time{})
 		}
 		if err != nil {
 			res.Status, res.Detail = "skipped", err.Error()
