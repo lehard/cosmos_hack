@@ -18,6 +18,10 @@ export interface ItemSignature {
      * @maximum 3
      */
   level: number;
+  /** Учётный номер бумажного оригинала в архиве ОТК (AD-43). */
+  paper_original_ref?: string;
+  /** Адрес скана в хранилище материалов: streebog256:… (AD-23, AD-43). */
+  scan_address?: string;
   /** Псевдоним подписанта или id устройства. */
   signer_id: string;
 }

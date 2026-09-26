@@ -4,7 +4,7 @@
  */
 import type { DsseEnvelope } from './dsseEnvelope';
 
-export interface RegisterItem {
+export interface DissolveGroup {
   /**
      * seq, на котором клиент видел объект (basis_seq из ответа чтения): после него в потоках гарда не должно быть новых записей guard_relevant, иначе 409 journal.stale_state (AD-39).
      * @minimum 0
@@ -12,24 +12,6 @@ export interface RegisterItem {
   basis_seq: number;
   /** UUIDv7 клиента; повтор с тем же id возвращает прежний ответ (AD-7). У подписанной команды — event_id пакета. */
   command_id: string;
-  /** @maxLength 128 */
-  entry_step_key?: string;
-  is_assembly?: boolean;
-  /** @maxLength 64 */
-  item_revision: string;
-  /** @maxLength 128 */
-  item_type_id: string;
-  /**
-     * Локальный номер изделия (например, F-031); пусто — система выдаёт сама. Из метки не выводится (AD-16).
-     * @maxLength 96
-     */
-  local_id?: string;
-  lot_ids?: string[];
-  /**
-     * Задание 1С (сквозной сценарий §1.5).
-     * @maxLength 128
-     */
-  order_id?: string;
   /**
      * Версия политики, по которой показаны права (policy_seq сеанса); изменилась — 409 journal.stale_policy (AD-39).
      * @minimum 0

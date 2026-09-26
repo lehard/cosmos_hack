@@ -696,6 +696,17 @@ export const eventCatalog = {
     "caGroup": "admin_security",
     "currentVersion": 1
   },
+  "genealogy.containment.propagated": {
+    "title": "Сдерживание распространено по генеалогии",
+    "emitter": "crossitem",
+    "kind": "reaction",
+    "stream": "item",
+    "axis": "none",
+    "actionClass": "protective",
+    "critical": false,
+    "caGroup": null,
+    "currentVersion": 1
+  },
   "genealogy.group.dissolved": {
     "title": "Временная группа расформирована",
     "emitter": "crossitem",
@@ -745,6 +756,17 @@ export const eventCatalog = {
     "emitter": "crossitem",
     "kind": "fact",
     "stream": "lot",
+    "axis": "none",
+    "actionClass": "record",
+    "critical": false,
+    "caGroup": null,
+    "currentVersion": 1
+  },
+  "genealogy.witness.propagated": {
+    "title": "Результат образца-свидетеля распространён на изделие группы",
+    "emitter": "crossitem",
+    "kind": "reaction",
+    "stream": "item",
     "axis": "none",
     "actionClass": "record",
     "critical": false,
