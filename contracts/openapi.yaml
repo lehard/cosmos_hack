@@ -31255,6 +31255,14 @@ paths:
     get:
       description: "AD-26: определения scenarios/definitions — 8 ситуаций §4.2, 9 проверок §5.1, демо-сценарии, сбои; число утверждений табло и остановок на решениях."
       operationId: simulation.scenario.list
+      parameters:
+        - description: Весь каталог; по умолчанию — только сценарии показа (если отмечены в каталоге).
+          explode: false
+          in: query
+          name: all
+          schema:
+            description: Весь каталог; по умолчанию — только сценарии показа (если отмечены в каталоге).
+            type: boolean
       responses:
         "200":
           content:

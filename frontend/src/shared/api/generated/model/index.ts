@@ -927,6 +927,7 @@ export * from './simulationBoardReadParams';
 export * from './simulationRunListParams';
 export * from './simulationRunPlanParams';
 export * from './simulationRunReadParams';
+export * from './simulationScenarioListParams';
 export * from './sourceList';
 export * from './sourceSwitch';
 export * from './sourceView';

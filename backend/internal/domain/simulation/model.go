@@ -462,6 +462,9 @@ type CatalogEntry struct {
 	Kind string `json:"kind"`
 	// Run — определение прогона, которое запускается (runs/‹run›.yaml).
 	Run string `json:"run"`
+	// Show — сценарий показа: пульт по умолчанию показывает только их
+	// (simulation.scenario.list; остальные — all=true и запуск по id).
+	Show bool `json:"show,omitempty"`
 	// Cards — карточки, чьи утверждения показывает табло (пусто — только своя).
 	Cards    []string `json:"cards,omitempty"`
 	CaseRefs []string `json:"case_refs,omitempty"`

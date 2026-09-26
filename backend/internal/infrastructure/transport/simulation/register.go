@@ -29,8 +29,10 @@ func Register(api *httpapi.API, q app.Queries, c app.Commands) {
 	httpapi.Read(api, httpapi.Get("/scenarios", "Сценарии",
 		"AD-26: определения scenarios/definitions — 8 ситуаций §4.2, 9 проверок §5.1, демо-сценарии, сбои; число утверждений табло и остановок на решениях."),
 		platform.Action{ID: "simulation.scenario.list", Owner: owner, Subject: "run"},
-		func(ctx context.Context, _ *struct{}, _ platform.Moment) (app.ScenarioList, error) {
-			return q.Scenarios(ctx)
+		func(ctx context.Context, in *struct {
+			All bool `query:"all" doc:"Весь каталог; по умолчанию — только сценарии показа (если отмечены в каталоге)."`
+		}, _ platform.Moment) (app.ScenarioList, error) {
+			return q.Scenarios(ctx, in.All)
 		})
 
 	httpapi.Read(api, httpapi.Get("/runs", "Прогоны сценариев", "AD-38: прогоны — отдельные пространства имён run_id."),

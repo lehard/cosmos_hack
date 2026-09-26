@@ -52,7 +52,7 @@ func (a *Adapter) now() time.Time {
 }
 
 // Scenarios — сценарии пульта: сценарии библиотеки заготовок (simulation.scenario.list).
-func (a *Adapter) Scenarios(ctx context.Context) (app.ScenarioList, error) {
+func (a *Adapter) Scenarios(ctx context.Context, _ bool) (app.ScenarioList, error) {
 	rt, err := a.rt()
 	if err != nil {
 		return app.ScenarioList{}, err
