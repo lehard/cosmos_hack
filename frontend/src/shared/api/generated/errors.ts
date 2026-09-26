@@ -88,6 +88,11 @@ export const errorCatalog = {
     "title": "Тот же номер события, другое содержимое",
     "uiKey": "errors.ingest.duplicateConflict"
   },
+  "ingest.source_disabled": {
+    "status": 403,
+    "title": "Источник выключен администратором",
+    "uiKey": "errors.generic"
+  },
   "ingest.batch_too_large": {
     "status": 413,
     "title": "Слишком большая пачка",
@@ -642,6 +647,26 @@ export const errorCatalog = {
     "status": 422,
     "title": "Запись справочника не найдена",
     "uiKey": "errors.integration.refNotFound"
+  },
+  "ops.integration_not_installed": {
+    "status": 409,
+    "title": "Интеграция не установлена",
+    "uiKey": "errors.generic"
+  },
+  "ops.stand_forbidden": {
+    "status": 409,
+    "title": "Стенд в рабочем профиле запрещён",
+    "uiKey": "errors.generic"
+  },
+  "ops.integration_mode_unavailable": {
+    "status": 409,
+    "title": "Режим интеграции не настроен",
+    "uiKey": "errors.generic"
+  },
+  "ops.integration_state_unchanged": {
+    "status": 409,
+    "title": "Интеграция уже в этом состоянии",
+    "uiKey": "errors.generic"
   },
   "simulation.scenario_keys_in_prod": {
     "status": 500,
