@@ -707,6 +707,20 @@ codes:
     ui_key: errors.decision.statusExpired
     guard: true
     refs: [FR-16]
+  process.run_already_started:
+    status: 409
+    title: "Выполнение уже начато"
+    detail: "Выполнение {run_id} уже начато ({item}) — у новой операции свой номер выполнения"
+    ui_key: errors.generic
+    guard: true
+    refs: [FR-47, FR-137, AD-39]
+  process.operation_in_progress:
+    status: 409
+    title: "На посту идёт операция"
+    detail: "На посту идёт операция {item}, сначала завершите её"
+    ui_key: errors.generic
+    guard: true
+    refs: [FR-137, AD-15, AD-39]
   process.task_closed_by_action:
     status: 409
     title: "Задача процесса закрывается действием"
