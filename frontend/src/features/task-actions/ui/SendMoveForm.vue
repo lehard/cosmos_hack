@@ -3,12 +3,13 @@
  * «Отправить» прямо в задаче мастера (FR-16, FR-137): после приёмки на
  * закрывающей точке (ЗТ-3 → «Отправить Ф-001: …») изделие уходит в следующий
  * цех — `process.movement.send` (POST /items/{id}/send). Откуда — цех задачи
- * (`location_id`), шаг — `step_key` задачи; куда — цех, который выбирает мастер
- * (цеха-получателя в задаче нет; справочник мест дорожек процесса не знает —
- * угадывать не будем). Задачу снимает сервер: токен процесса ушёл с шага. Кнопка есть, только если сервер разрешает действие
+ * (`location_id`), шаг — `step_key` задачи; куда — по процессу: шаг отправки
+ * называет получателя (`…send_to_assembly` → сборочный цех), мастера не спрашиваем.
+ * Выбор цеха остаётся только если из шага получатель не выводится. Задачу снимает
+ * сервер: токен процесса ушёл с шага. Кнопка есть, только если сервер разрешает действие
  * над изделием (AD-15); в воспроизведении — только чтение.
  */
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { NAlert, NSelect } from 'naive-ui'
 import { useOperationCommand } from '@/entities/operation'
@@ -47,7 +48,14 @@ const { allowed } = useObjectActions('item', () => props.itemId)
 const size = computed(() => naiveSizeOf(props.density))
 
 const canSend = computed(() => !moment.isReplay && !!props.fromLocationId && !!allowed.value?.has(OPERATION))
+/** Получатель по шагу процесса: `…send_to_‹участок›` → цех дорожки этого участка. */
+const TARGET_BY_SEGMENT: Record<string, string> = { assembly: 'WS-AC', welding: 'WS-WC', machining: 'WS-MC', final: 'WS-QA', qa: 'WS-QA', warehouse: 'WS-SK', incoming: 'WS-SK' }
+const targetFromStep = computed(() => {
+  const m = /send_to_([a-z]+)/.exec(props.stepKey ?? '')
+  return m ? (TARGET_BY_SEGMENT[m[1]!] ?? null) : null
+})
 const to = ref('')
+watch(targetFromStep, (v) => { if (v) to.value = v }, { immediate: true })
 /** id команды — один на намерение: повтор после ошибки уходит с тем же id (AD-7). */
 const commandId = ref(newCommandId())
 const recordedSeq = ref<number | null>(null)
@@ -85,7 +93,8 @@ async function confirm(): Promise<void> {
   <div v-if="canSend || recordedSeq !== null" class="send" data-testid="task-send">
     <template v-if="recordedSeq === null">
       <p class="ant-muted ant-wrap" data-testid="send-from">{{ t('sendAction.from') }}: {{ fromName }}</p>
-      <FormField :label="t('sendAction.to')" required>
+      <p v-if="targetFromStep" class="ant-muted ant-wrap" data-testid="send-to-fixed">{{ t('sendAction.to') }}: {{ toName }}</p>
+      <FormField v-else :label="t('sendAction.to')" required>
         <NSelect v-model:value="to" :size="size" :options="options" filterable data-testid="send-to" />
       </FormField>
       <NAlert v-if="command.error.value" type="error" :bordered="false">{{ problemText(command.error.value) }}</NAlert>
