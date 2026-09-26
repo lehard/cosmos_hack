@@ -17,6 +17,7 @@ func Register(api *httpapi.API, q app.Queries, c app.Commands, gate *app.Gate) {
 	httpapi.Enum[app.Density](api)
 	httpapi.Enum[app.DeskLayout](api)
 	httpapi.Enum[app.DeskArea](api)
+	registerAdmin(api, q, c)
 
 	httpapi.Register(api, httpapi.Get("/auth/personas", "Демо-персоны для входа без пароля",
 		"Демо-трек (эпик 08): экран входа предлагает выбрать демо-персону — псевдоним из стартовой политики (normative/policy) с ролью и областью. "+

@@ -1,0 +1,18 @@
+# Заготовка конфигурации sqlc модуля (AD-1, AD-20): скопируйте в
+# backend/internal/infrastructure/storage/‹модуль›/sqlc.yaml — make generate
+# найдёт её сам (deploy/scripts/generate-go.sh, шаг sqlc).
+# У модуля своя схема Postgres ‹модуль› и свои миграции goose в migrations/
+# (версии — метки времени); запрос к чужой схеме — нарушение (AD-1).
+# sqlc v1.31.1: грамматика PG 17, без синтаксиса только PG 18.
+version: "2"
+sql:
+  - engine: postgresql
+    schema: migrations          # goose-миграции модуля: схема ‹модуль›
+    queries: queries            # *.sql с аннотациями -- name: …
+    gen:
+      go:
+        package: db
+        out: db                 # …/storage/‹модуль›/db/*_gen.go
+        sql_package: pgx/v5
+        output_files_suffix: _gen
+        emit_json_tags: false
