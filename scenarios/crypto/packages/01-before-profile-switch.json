@@ -1,0 +1,19 @@
+{
+  "name": "before-profile-switch",
+  "title": "До смены профиля: ГОСТ — цело (проверка по профилю на момент подписи)",
+  "seq": 50,
+  "committed_at": "2026-09-21T08:50:00.000Z",
+  "envelope": {
+    "payloadType": "application/vnd.ant.event+json; v=1",
+    "payload": "eyJjYXVzYXRpb25faWQiOm51bGwsImNvbW1hbmQiOnsiYmFzaXNfc2VxIjowLCJjbGllbnRfc2lnbmVkX2F0IjoiMjAyNi0wOS0yMVQwODo1MDowMC4wMDBaIiwiY29tbWFuZF9pZCI6IjAxOTI5YTJiLTdjM2QtN2U0Zi04YTViLTAwMDAwMDAwMDA1MCIsImd1YXJkX3N0cmVhbXMiOltdLCJwb2xpY3lfc2VxIjowLCJzaWduYXR1cmVfbGV2ZWwiOjJ9LCJjb3JyZWxhdGlvbl9pZCI6IjAxOTI5YTJiLTdjM2QtN2U0Zi04YTViLTAwMDAwMDAwMDA1MCIsImRhdGEiOnsiaXRlbV9pZCI6IkVOVDAxOkYtMDAxIiwib3V0Y29tZSI6ImFjY2VwdCJ9LCJldmVudF9pZCI6IjAxOTI5YTJiLTdjM2QtN2U0Zi04YTViLTAwMDAwMDAwMDA1MCIsImV2ZW50X3R5cGUiOiJpbnNwZWN0aW9uLnJlc3VsdC5yZWNvcmRlZCIsImludGVncml0eSI6eyJjcnlwdG9fcHJvZmlsZSI6Imdvc3QiLCJmb3JtYXRfdmVyc2lvbiI6MSwic2lnbmVycyI6WyJpbnMtMDFAMSJdfSwiaXRlbV9pZCI6IkVOVDAxOkYtMDAxIiwib2NjdXJyZWRfYXQiOiIyMDI2LTA5LTIxVDA4OjUwOjAwLjAwMFoiLCJzY2hlbWFfdmVyc2lvbiI6MSwic291cmNlX2lkIjoiSU5TLTAxIiwic291cmNlX2tpbmQiOiJtYW51YWxfZW50cnkifQ==",
+    "signatures": [
+      {
+        "keyid": "ins-01@1",
+        "sig": "E42b/2r1qKGnztQaUZX6S6eYoFY9BHyvxr8ZS2sY4SwAeh2Ezu98EUKTRFge0LMDJ8jkU0MOnuPAgRojBnEMnQ=="
+      }
+    ]
+  },
+  "expected": {
+    "status": "valid"
+  }
+}

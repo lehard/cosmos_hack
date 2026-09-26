@@ -67,6 +67,9 @@ func (g IngestGateway) Deliver(ctx context.Context, _ string, batch []sim.Emissi
 				if it.Code != nil {
 					d.Code = *it.Code
 				}
+				if it.Seq != nil {
+					d.Seq = *it.Seq
+				}
 			}
 			out = append(out, d)
 		}
@@ -161,4 +164,21 @@ func (s StandControl) SetFault(ctx context.Context, stand string, a sim.StandAct
 // ClearFaults — снять сбои stand-а.
 func (s StandControl) ClearFaults(ctx context.Context, stand string) error {
 	return s.Control.ClearFaults(ctx, stand)
+}
+
+// PendingTamperer — ЗАГЛУШКА порта Tamperer до слияния эпика 29 (cmd/tamper,
+// make tamper, отдельное подключение суперпользователя БД — AD-26, AD-28):
+// подделку не выполняет и прямо говорит об этом — шаг кнопки «пропущен»,
+// строки табло «подделку поймали» ждут. При сведении дирижёр подставляет в
+// Deps.Tamper реализацию эпика 29; сервис берёт заглушку, только если порт пуст.
+type PendingTamperer struct{}
+
+var _ Tamperer = PendingTamperer{}
+
+// ErrTamperPending — демо-инструмент подделки ещё не подключён.
+var ErrTamperPending = errors.New("демо-инструмент cmd/tamper ещё не подключён (эпик 29): подделка не выполнена")
+
+// Apply — подделка не выполняется (заглушка).
+func (PendingTamperer) Apply(context.Context, string, sim.Tamper, string) error {
+	return ErrTamperPending
 }

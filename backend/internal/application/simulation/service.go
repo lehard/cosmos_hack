@@ -299,7 +299,7 @@ func (s *Service) build(ctx context.Context, st *RunState) (*runPlan, error) {
 	if err != nil {
 		return nil, err
 	}
-	rp := &runPlan{plan: plan, refs: b.Run.Refs}
+	rp := &runPlan{plan: plan, refs: b.Run.Refs, world: b.World}
 	for _, c := range cards(cat.Entries[i]) {
 		ex, ok, err := s.d.Definitions.Expected(ctx, c)
 		if err != nil {
@@ -534,6 +534,14 @@ func (s *Service) view(ctx context.Context, st *RunState) (Run, error) {
 			v.BoardPassed++
 		}
 	}
+	for _, x := range st.Injections {
+		for _, r := range x.Rows {
+			v.BoardTotal++
+			if st.Rows[r.Assertion.ID].Status == sim.StatusPassed {
+				v.BoardPassed++
+			}
+		}
+	}
 	return v, nil
 }
 
@@ -545,26 +553,6 @@ func actionTitle(a sim.Action) string {
 		return a.Label
 	}
 	return a.Operation
-}
-
-// Injections — кнопки цифрового стенда (FR-152): доступность по профилю;
-// сами инъекции — эпик 36.
-func (s *Service) Injections(ctx context.Context, runID string) (InjectionList, error) {
-	if !s.live {
-		return s.Unimplemented.Injections(ctx, runID)
-	}
-	if _, err := s.load(ctx, runID); err != nil {
-		return InjectionList{}, err
-	}
-	demo := s.d.Profile == "demo" || s.d.Profile == "fixtures"
-	return InjectionList{Items: []Injection{
-		{Injection: "duplicate_event", Title: "Прислать повтор события", Description: "Тот же источник и номер ещё раз: ничего не задвоилось (табло S06).", Available: true, NeedsTarget: true},
-		{Injection: "late_event", Title: "Прислать опоздавшее событие", Description: "Встаёт на своё время; история пересчитана с пометкой (S07).", Available: true, NeedsTarget: true},
-		{Injection: "corrupt_frame", Title: "Испортить кадр", Description: "Качество наблюдения 0,3: «оценка невозможна», не «годно» (S04).", Available: true},
-		{Injection: "machine_fault", Title: "Сбой станка / ток вне уставки", Description: "Отклонение источника: область риска (S05).", Available: true},
-		{Injection: "data_loss", Title: "Потерять кусок данных", Description: "Разрыв номеров источника: «нет данных», а не «в норме» (S04).", Available: true},
-		{Injection: "tamper_outside", Title: "Подделать запись в обход системы", Description: "Только демо-инструмент cmd/tamper; проверка целостности находит подмену (S09).", Available: demo},
-	}}, nil
 }
 
 // errStop — прогон остановился на решении человека.

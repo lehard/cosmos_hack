@@ -3791,6 +3791,54 @@ type KeyRevocationRecordedV1 struct {
 	Reason Reason `json:"reason"`
 }
 
+// Сменный рапорт записан — подпись уровня 3 над корнем дерева Меркла отпечатков
+// подписей смены из локального журнала агента токена и итог сверки с журналом
+// сервера; расхождение — тревога agent_journal_mismatch (FR-66, FR-81, AD-12,
+// AD-14).
+type KeyShiftReportRecordedV1 struct {
+	// Число подписей по рапорту агента.
+	LeafCount int `json:"leaf_count"`
+
+	// Рапорт агента совпал с журналом сервера.
+	Matches bool `json:"matches"`
+
+	// Корень по рапорту агента: лист H(0x00‖отпечаток подписи), узел H(0x01‖l‖r), RFC
+	// 6962.
+	MerkleRoot Digest `json:"merkle_root"`
+
+	// Типы записей, по которым расходятся счётчики.
+	MismatchTypes []EventType `json:"mismatch_types,omitempty,omitzero"`
+
+	// Подписант рапорта.
+	PersonID PersonRef `json:"person_id"`
+
+	// Число подписей по журналу сервера.
+	ServerLeafCount *int `json:"server_leaf_count,omitempty,omitzero"`
+
+	// Корень по журналу сервера за то же окно.
+	ServerMerkleRoot *Digest `json:"server_merkle_root,omitempty,omitzero"`
+
+	// Смена.
+	ShiftID ObjectID `json:"shift_id"`
+
+	// Подписанный агентом конверт DSSE класса shift-report
+	// (contracts/crypto/dsse-envelope.schema.json) — как есть.
+	SignedReport KeyShiftReportRecordedV1SignedReport `json:"signed_report"`
+
+	// Начало окна смены.
+	WindowFrom Timestamp `json:"window_from"`
+
+	// Конец окна смены.
+	WindowTo Timestamp `json:"window_to"`
+
+	// Рабочее место.
+	WorkplaceID *ObjectID `json:"workplace_id,omitempty,omitzero"`
+}
+
+// Подписанный агентом конверт DSSE класса shift-report
+// (contracts/crypto/dsse-envelope.schema.json) — как есть.
+type KeyShiftReportRecordedV1SignedReport map[string]interface{}
+
 // Материал помещён в хранилище — фото, видео, скан, протокол, иллюстрация — по
 // адресу H(байты), зашифровано; в журнале — адрес и метаданные: источник, время,
 // изделие, точка контроля, происхождение (FR-102, AD-23).
@@ -5660,8 +5708,15 @@ const SeverityUnknown Severity = "unknown"
 // Инъекция цифрового стенда — кнопка поверх идущего прогона: повтор, опоздавшее
 // событие, испорченный кадр, сбой станка, потеря данных (FR-152).
 type SimulationInjectionAppliedV1 struct {
+	// Записи, внесённые кнопкой через обычный приём (повтор — ни одной).
+	EventIds []UUID `json:"event_ids,omitempty,omitzero"`
+
 	// Кнопка.
 	Injection SimulationInjectionAppliedV1Injection `json:"injection"`
+
+	// Номер нажатия кнопки в прогоне (1, 2, …): повторное нажатие — новая запись, не
+	// повтор (AD-7).
+	Press *int `json:"press,omitempty,omitzero"`
 
 	// Прогон.
 	RunID RunID `json:"run_id"`

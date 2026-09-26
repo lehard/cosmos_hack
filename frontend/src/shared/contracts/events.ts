@@ -5462,6 +5462,69 @@ code?: string
 text: string
 }
 /**
+ * Сменный рапорт записан — подпись уровня 3 над корнем дерева Меркла отпечатков подписей смены из локального журнала агента токена и итог сверки с журналом сервера; расхождение — тревога agent_journal_mismatch (FR-66, FR-81, AD-12, AD-14).
+ * 
+ * This interface was referenced by `EventsContracts`'s JSON-Schema
+ * via the `definition` "KeyShiftReportRecordedV1".
+ */
+export interface KeyShiftReportRecordedV1 {
+/**
+ * Условный идентификатор (псевдоним) сотрудника; соответствие человеку хранит модуль access.
+ */
+person_id: string
+/**
+ * Идентификатор объекта системы или справочника: ASCII, без пробелов.
+ */
+shift_id: string
+/**
+ * Идентификатор объекта системы или справочника: ASCII, без пробелов.
+ */
+workplace_id?: string
+/**
+ * Момент времени: RFC 3339 UTC, ровно три знака после секунд (YYYY-MM-DDTHH:MM:SS.mmmZ).
+ */
+window_from: string
+/**
+ * Момент времени: RFC 3339 UTC, ровно три знака после секунд (YYYY-MM-DDTHH:MM:SS.mmmZ).
+ */
+window_to: string
+/**
+ * Отпечаток по хешу формата цепочки с префиксом алгоритма: `streebog256:‹64 hex›` (AD-44). Им же адресуются материалы.
+ */
+merkle_root: string
+/**
+ * Число подписей по рапорту агента.
+ */
+leaf_count: number
+/**
+ * Отпечаток по хешу формата цепочки с префиксом алгоритма: `streebog256:‹64 hex›` (AD-44). Им же адресуются материалы.
+ */
+server_merkle_root?: string
+/**
+ * Число подписей по журналу сервера.
+ */
+server_leaf_count?: number
+/**
+ * Рапорт агента совпал с журналом сервера.
+ */
+matches: boolean
+/**
+ * Типы записей, по которым расходятся счётчики.
+ * 
+ * Items: Тип события: семейство.сущность.действие — три сегмента латиницей (AD-40).
+ * 
+ * This interface was referenced by `AntDefsV1`'s JSON-Schema
+ * via the `definition` "event_type".
+ */
+mismatch_types?: string[]
+/**
+ * Подписанный агентом конверт DSSE класса shift-report (contracts/crypto/dsse-envelope.schema.json) — как есть.
+ */
+signed_report: {
+
+}
+}
+/**
  * Материал помещён в хранилище — фото, видео, скан, протокол, иллюстрация — по адресу H(байты), зашифровано; в журнале — адрес и метаданные: источник, время, изделие, точка контроля, происхождение (FR-102, AD-23).
  * 
  * This interface was referenced by `EventsContracts`'s JSON-Schema
@@ -7759,6 +7822,21 @@ injection: ("duplicate_event" | "late_event" | "corrupt_frame" | "machine_fault"
  * Идентификатор UUID в нижнем регистре (RFC 9562).
  */
 target_event_id?: string
+/**
+ * Номер нажатия кнопки в прогоне (1, 2, …): повторное нажатие — новая запись, не повтор (AD-7).
+ */
+press?: number
+/**
+ * Записи, внесённые кнопкой через обычный приём (повтор — ни одной).
+ * 
+ * @maxItems 100
+ * 
+ * Items: Идентификатор UUID в нижнем регистре (RFC 9562).
+ * 
+ * This interface was referenced by `AntDefsV1`'s JSON-Schema
+ * via the `definition` "uuid".
+ */
+event_ids?: string[]
 }
 /**
  * Прогон завершён — итог прогона; автосверка — табло «ожидалось → получилось» (FR-108).

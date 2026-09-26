@@ -292,6 +292,8 @@ const (
 	KeyRegistrationRecorded Type = "key.registration.recorded"
 	// Ключ отозван
 	KeyRevocationRecorded Type = "key.revocation.recorded"
+	// Сменный рапорт записан
+	KeyShiftReportRecorded Type = "key.shift_report.recorded"
 	// Материал помещён в хранилище
 	MaterialObjectStored Type = "material.object.stored"
 	// Блокировка передаётся в MES
@@ -572,6 +574,7 @@ var types = [...]Info{
 	{Type: KeyProfileRegistered, Title: "Криптопрофиль зарегистрирован", Family: "key", Emitter: "signing", Role: "init", Kind: "service", Stream: "global", Axis: "none", ActionClass: "record", Critical: false, CAGroup: "", GuardRelevant: true, PublishStage: false, Provenance: []string{"genesis", "personal"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: KeyRegistrationRecorded, Title: "Ключ зарегистрирован актом", Family: "key", Emitter: "signing", Role: "api", Kind: "decision", Stream: "key", Axis: "none", ActionClass: "permissive", Critical: true, CAGroup: "admin_security", GuardRelevant: true, PublishStage: false, Provenance: []string{"personal", "paper", "genesis", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: KeyRevocationRecorded, Title: "Ключ отозван", Family: "key", Emitter: "signing", Role: "api", Kind: "decision", Stream: "key", Axis: "none", ActionClass: "protective", Critical: true, CAGroup: "admin_security", GuardRelevant: true, PublishStage: false, Provenance: []string{"personal", "paper", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
+	{Type: KeyShiftReportRecorded, Title: "Сменный рапорт записан", Family: "key", Emitter: "signing", Role: "api", Kind: "decision", Stream: "key", Axis: "none", ActionClass: "record", Critical: false, CAGroup: "", GuardRelevant: false, PublishStage: false, Provenance: []string{"personal", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: MaterialObjectStored, Title: "Материал помещён в хранилище", Family: "material", Emitter: "materials", Role: "api", Kind: "service", Stream: "global", Axis: "none", ActionClass: "record", Critical: false, CAGroup: "", GuardRelevant: false, PublishStage: false, Provenance: []string{"server_attested", "device", "personal", "scenario"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: MesHoldRequested, Title: "Блокировка передаётся в MES", Family: "mes", Emitter: "mes", Role: "projector", Kind: "reaction", Stream: "erp_message", Axis: "none", ActionClass: "record", Critical: false, CAGroup: "", GuardRelevant: false, PublishStage: false, Provenance: []string{"server_attested"}, Versions: []int{1}, CurrentVersion: 1},
 	{Type: MesHoldResponded, Title: "Ответ MES на блокировку", Family: "mes", Emitter: "mes", Role: "outbox", Kind: "fact", Stream: "erp_message", Axis: "none", ActionClass: "record", Critical: false, CAGroup: "", GuardRelevant: false, PublishStage: false, Provenance: []string{"server_attested", "scenario"}, Versions: []int{1}, CurrentVersion: 1},

@@ -1,0 +1,52 @@
+# Кнопка цифрового стенда «Прислать опоздавшее событие» (FR-152, эпик 36) — ожидаемый
+# видимый результат (кейс §5.1, AD-26). Строки — из сбоя F03 «Позднее событие» и S07:
+# событие случилось раньше цели, пришло сейчас. Плейсхолдеры — см. duplicate_event.yaml.
+scenario: F03
+version: '1'
+title: 'Кнопка стенда: опоздавшее событие'
+run: stand
+source: эпик 36 по F03 и S07 (research/data-collection-sources-and-failures.md §6, process/scenarios-flange.md S07)
+checkpoints:
+- at: apply
+  label: после нажатия
+  assertions:
+  - id: STAND-LATE-01
+    what: опоздавшее событие принято приёмом
+    check:
+      operation: step
+      params:
+        label: '{inj:step}'
+      path: /delivered/0
+      op: eq
+      value: accepted
+    mapping: exact
+  - id: STAND-LATE-02
+    what: встало на время события, а не получения
+    check:
+      operation: item.passport.read
+      params:
+        item_id: '{inj:item}'
+      path: /entries[event_id={inj:event}]/0/occurred_at
+      op: eq
+      value: '{inj:occurred}'
+    mapping: exact
+  - id: STAND-LATE-03
+    what: 'история изделия пересчитана: запись встала раньше цели, хотя пришла позже'
+    check:
+      operation: item.passport.read
+      params:
+        item_id: '{inj:item}'
+      path: /entries/*/event_id
+      op: before
+      value: ['{inj:event}', '{inj:target}']
+    mapping: exact
+  - id: STAND-LATE-04
+    what: 'пометка «поздно»: записано не временем события'
+    check:
+      operation: item.passport.read
+      params:
+        item_id: '{inj:item}'
+      path: /entries[event_id={inj:event}]/0/recorded_at
+      op: ne
+      value: '{inj:occurred}'
+    mapping: exact

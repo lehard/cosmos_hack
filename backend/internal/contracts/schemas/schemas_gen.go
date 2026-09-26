@@ -145,6 +145,7 @@ var Files = [...]string{
 	"contracts/events/key/key.profile.registered.v1.json",
 	"contracts/events/key/key.registration.recorded.v1.json",
 	"contracts/events/key/key.revocation.recorded.v1.json",
+	"contracts/events/key/key.shift_report.recorded.v1.json",
 	"contracts/events/material/material.object.stored.v1.json",
 	"contracts/events/mes/mes.hold.requested.v1.json",
 	"contracts/events/mes/mes.hold.responded.v1.json",

@@ -1,0 +1,39 @@
+# Кнопка цифрового стенда «Сбой станка / ток вне уставки» (FR-152, эпик 36) —
+# ожидаемый видимый результат (кейс §5.1, AD-26). Строки — из S05 и S07: ток
+# 176 А при уставке 160 ± 10 на сварке — специальный процесс (FR-151).
+# Плейсхолдеры — см. duplicate_event.yaml.
+scenario: S05
+version: '1'
+title: 'Кнопка стенда: ток вне уставки'
+run: stand
+source: эпик 36 по S05 и S07 (process/scenarios-flange.md, EV-WS2-0412)
+checkpoints:
+- at: apply
+  label: после нажатия
+  assertions:
+  - id: STAND-MACH-01
+    what: запись «ток вне уставки» принята приёмом
+    check:
+      operation: step
+      params:
+        label: '{inj:step}'
+      path: /delivered/0
+      op: eq
+      value: accepted
+    mapping: exact
+  - id: STAND-MACH-02
+    what: окно нарушения режима сварки открыто по этой записи
+    check:
+      operation: machinelogs.violation.list
+      path: /items/*/deviation_event_ids/*
+      op: contains
+      value: '{inj:event}'
+    mapping: exact
+  - id: STAND-MACH-03
+    what: область риска изменилась
+    check:
+      operation: analysis.incident.list
+      path: /items
+      op: changed
+    mapping: exact
+    baseline: apply
