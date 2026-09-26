@@ -144,6 +144,8 @@ type apiOptions struct {
 	signing *signingapp.Service
 	// federation — партнёры и выписки паспорта (federation.go, эпик 41); nil — 501.
 	federation *federationapp.Service
+	// materials — загрузка и чтение материалов над томом (скан бумажной подписи); nil — 501.
+	materials *materialsapp.Service
 }
 
 // buildAPI собирает HTTP API: общий декоратор (Gate) над портами прав и входа,
@@ -328,7 +330,11 @@ func buildAPI(mux *http.ServeMux, o apiOptions) *httpapi.API {
 		securityhttp.Register(a, q, c)
 	}
 	{
-		q, c := pick[materialsapp.Queries, materialsapp.Commands](a.ModeFor("materials"), materialsapp.NewService(), materialsfx.New())
+		live := o.materials
+		if live == nil {
+			live = materialsapp.NewService()
+		}
+		q, c := pick[materialsapp.Queries, materialsapp.Commands](a.ModeFor("materials"), live, materialsfx.New())
 		materialshttp.Register(a, q, c)
 	}
 	{
