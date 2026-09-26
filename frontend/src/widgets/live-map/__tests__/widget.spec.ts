@@ -119,11 +119,13 @@ describe('виджет «Живая карта»', () => {
     await router.push('/desk?incident=INC-1&run=RUN-7')
     const w = mountWidget()
     await vi.waitFor(() => expect(w.find('.widget-frame').attributes('data-mode')).toBe('live'), WAIT)
-    expect(urls[0]).toBe('/api/v1/live-map?period=shift&incident_id=INC-1&run_id=RUN-7&axis=occurred')
+    // Вместе с картой читаются список процессов и таймлайн — берём запрос карты.
+    const mapUrls = () => urls.filter((u) => u.startsWith('/api/v1/live-map'))
+    expect(mapUrls()[0]).toBe('/api/v1/live-map?period=shift&incident_id=INC-1&run_id=RUN-7&axis=occurred')
     await vi.waitFor(() => expect(document.querySelector('.dot[data-item="ENT:FL-0001"]')).not.toBeNull(), WAIT)
     // Таймлайн сдвинул момент — та же операция на момент (воспроизведение).
     useMomentStore().travel('2026-09-23T11:05:00.000Z')
-    await vi.waitFor(() => expect(urls.at(-1)).toContain('as_of=2026-09-23T11%3A05%3A00.000Z'), WAIT)
+    await vi.waitFor(() => expect(mapUrls().at(-1)).toContain('as_of=2026-09-23T11%3A05%3A00.000Z'), WAIT)
   })
 
   it('без ограничения и инцидента в ответе — карта без них', async () => {
