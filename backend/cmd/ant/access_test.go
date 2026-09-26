@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"slices"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -210,6 +211,27 @@ func TestPermissionListEqualsServerDecision(t *testing.T) {
 				t.Errorf("%s %s: сервер %v, в списке %v", persona, act.ID, ok, !ok)
 			}
 		}
+	}
+}
+
+// Экран входа — только персоны показа (demo_login политики, решение
+// пользователя); скрытые остаются в политике и действуют заголовком.
+func TestPersonaLoginList(t *testing.T) {
+	h, _, _ := testAPI(t, platform.ModeFixtures)
+	code, out, _ := do(t, h, call{method: "GET", path: "/api/v1/auth/personas"})
+	if code != http.StatusOK {
+		t.Fatalf("персоны: %d %v", code, out)
+	}
+	var ids []string
+	items, _ := out["items"].([]any)
+	for _, it := range items {
+		ids = append(ids, it.(map[string]any)["id"].(string))
+	}
+	if want := "INS-01 HQC-01 TEC-01 CWL-01 PM-01 ADM-01"; strings.Join(ids, " ") != want {
+		t.Fatalf("персоны экрана входа: %v, want %s", ids, want)
+	}
+	if code, desk, _ := do(t, h, call{method: "GET", path: "/api/v1/desk", persona: "W21"}); code != http.StatusOK || desk["role"] == "" {
+		t.Fatalf("скрытая персона W21: стол %d %v", code, desk)
 	}
 }
 

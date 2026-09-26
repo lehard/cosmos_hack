@@ -142,20 +142,24 @@ authorities:
 # формах номер показывается как есть.
 stamp_kinds: [incoming, dimensional, visual, weld, assembly, leak_test, final]
 
+# demo_login: true — сотрудник в списке «Выберите сотрудника» экрана входа (access.persona.list,
+# профили demo и fixtures; решение пользователя: шесть персон показа). Остальные остаются в политике:
+# полномочия, сценарии, ключи генезиса, demo-signer; вход по логину и паролю, демо-персоной и
+# заголовком Ant-Demo-Persona — как у всех.
 persons:
-  - {id: INS-01,  name: "Контролёр ОТК 1",           roles: [{role: quality_inspector, scope: ent01/b1}]}
+  - {id: INS-01,  name: "Контролёр ОТК 1",           roles: [{role: quality_inspector, scope: ent01/b1}], demo_login: true}
   - {id: INS-02,  name: "Контролёр ОТК 2",           roles: [{role: quality_inspector, scope: ent01/b1}]}
-  - {id: HQC-01,  name: "Начальник ОТК",             roles: [{role: head_of_qc, scope: ent01}]}
+  - {id: HQC-01,  name: "Начальник ОТК",             roles: [{role: head_of_qc, scope: ent01}], demo_login: true}
   - {id: FOR-SK,  name: "Мастер склада и ВК",        roles: [{role: site_foreman, scope: ent01/b1/sk}]}
   - {id: FOR-MC,  name: "Мастер механического цеха", roles: [{role: site_foreman, scope: ent01/b1/mc}]}
   - {id: FOR-WC,  name: "Мастер сварочного цеха",    roles: [{role: site_foreman, scope: ent01/b1/wc}]}
   - {id: FOR-AC,  name: "Мастер сборочно-испытательного цеха", roles: [{role: site_foreman, scope: ent01/b1/ac}]}
   - {id: HWS-WC,  name: "Начальник сварочного цеха", roles: [{role: head_of_workshop, scope: ent01/b1/wc}]}
   - {id: HWS-AC,  name: "Начальник сборочно-испытательного цеха", roles: [{role: head_of_workshop, scope: ent01/b1/ac}]}
-  - {id: TEC-01,  name: "Технолог",                  roles: [{role: technologist, scope: ent01}]}
-  - {id: CWL-01,  name: "Главный сварщик",           roles: [{role: chief_welder, scope: ent01}]}
-  - {id: PM-01,   name: "Руководитель производства", roles: [{role: production_manager, scope: ent01}]}
-  - {id: ADM-01,  name: "Администратор безопасности", roles: [{role: administrator, scope: ent01}]}
+  - {id: TEC-01,  name: "Технолог",                  roles: [{role: technologist, scope: ent01}], demo_login: true}
+  - {id: CWL-01,  name: "Главный сварщик",           roles: [{role: chief_welder, scope: ent01}], demo_login: true}
+  - {id: PM-01,   name: "Руководитель производства", roles: [{role: production_manager, scope: ent01}], demo_login: true}
+  - {id: ADM-01,  name: "Администратор безопасности", roles: [{role: administrator, scope: ent01}], demo_login: true}
   - {id: AUD-01,  name: "Аудитор ИБ",                roles: [{role: security_auditor, scope: ent01}]}
   - {id: O17,     name: "Оператор ЧПУ O17",          roles: [{role: performer, scope: ent01/b1/mc}]}
   - {id: O18,     name: "Оператор ЧПУ O18",          roles: [{role: performer, scope: ent01/b1/mc}]}

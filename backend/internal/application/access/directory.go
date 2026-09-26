@@ -12,6 +12,10 @@ type Directory struct {
 	Roles []RoleRef
 	// Personas — демо-персоны в порядке политики; роль и область — первые у сотрудника.
 	Personas []DemoPersona
+	// Login — псевдонимы сотрудников экрана входа (demo_login политики):
+	// список «Выберите сотрудника» (access.persona.list). Вход персоной и
+	// заголовок Ant-Demo-Persona — по всем Personas.
+	Login map[string]bool
 	// Desks — столы по id роли, у которой есть свой файл.
 	Desks map[string]Desk
 	// Authorities — полномочия сотрудников (grants.authorities политики):
@@ -75,6 +79,21 @@ func (d *Directory) Persona(id string) (DemoPersona, bool) {
 		}
 	}
 	return DemoPersona{}, false
+}
+
+// LoginPersonas — демо-персоны экрана входа в порядке политики: отмеченные
+// demo_login; никто не отмечен — все (политики тестов и старые копии).
+func (d *Directory) LoginPersonas() []DemoPersona {
+	if len(d.Login) == 0 {
+		return append([]DemoPersona(nil), d.Personas...)
+	}
+	var out []DemoPersona
+	for _, p := range d.Personas {
+		if d.Login[p.ID] {
+			out = append(out, p)
+		}
+	}
+	return out
 }
 
 // Hierarchy — иерархия ролей затравки для accessdom.Roles.Closure.

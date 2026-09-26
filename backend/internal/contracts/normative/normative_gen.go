@@ -1069,6 +1069,11 @@ type PolicySeedGrantsStampsElem struct {
 
 // Сотрудник.
 type PolicySeedPersonsElem struct {
+	// Показывать на экране входа в списке «Выберите сотрудника» (access.persona.list,
+	// профили demo и fixtures). Остальные сотрудники входят по логину и паролю,
+	// демо-персоной и заголовком Ant-Demo-Persona как обычно.
+	DemoLogin *bool `json:"demo_login,omitempty,omitzero"`
+
 	// Псевдоним.
 	ID string `json:"id"`
 

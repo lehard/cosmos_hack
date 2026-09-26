@@ -199,6 +199,10 @@
             },
             "description": "Роли.",
             "minItems": 1
+          },
+          "demo_login": {
+            "type": "boolean",
+            "description": "Показывать на экране входа в списке «Выберите сотрудника» (access.persona.list, профили demo и fixtures). Остальные сотрудники входят по логину и паролю, демо-персоной и заголовком Ant-Demo-Persona как обычно."
           }
         },
         "required": [

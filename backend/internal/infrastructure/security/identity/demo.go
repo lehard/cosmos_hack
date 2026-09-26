@@ -145,7 +145,7 @@ func (d *Demo) DemoPersonas(context.Context) ([]access.DemoPersona, error) {
 	if !d.opts.Personas {
 		return nil, platform.Fail(errcodes.ApiNotFound, "object", "демо-персоны", "id", "")
 	}
-	return append([]access.DemoPersona(nil), d.dir.Personas...), nil
+	return d.dir.LoginPersonas(), nil
 }
 
 func (d *Demo) principal(c claims) platform.Principal {
