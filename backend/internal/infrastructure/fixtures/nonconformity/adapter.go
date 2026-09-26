@@ -11,7 +11,8 @@ import (
 // Adapter — реализация fixtures ведущих портов модуля nonconformity (AD-36):
 // очередь «Ждут моего решения», карточки и список несоответствий, разрешения
 // на отклонение — из мира заготовок; решения контролёра, комиссии и главного
-// сварщика двигают сценарий, если он ждёт именно их (FR-129).
+// сварщика двигают сценарий, если он ждёт именно их (FR-129), и видны поверх
+// мира до сброса прогона (session.go).
 type Adapter struct{}
 
 // New создаёт адаптер заготовок.
@@ -33,9 +34,11 @@ func (Adapter) Queue(ctx context.Context, f app.QueueFilter, m platform.Moment, 
 	if err != nil {
 		return v, err
 	}
+	d := sessionDecisions(ctx, m)
 	out := v.Items[:0]
 	for _, x := range v.Items {
-		if f.Kind == "" || x.Kind == f.Kind {
+		x, keep := d.queueRow(x)
+		if keep && (f.Kind == "" || x.Kind == f.Kind) {
 			out = append(out, x)
 		}
 	}
@@ -57,12 +60,20 @@ func (Adapter) Queue(ctx context.Context, f app.QueueFilter, m platform.Moment, 
 
 // Presentation — точка предъявления изделия (nonconformity.presentation.read, FR-19).
 func (Adapter) Presentation(ctx context.Context, itemID string, m platform.Moment) (app.NCPresentationView, error) {
-	return respond[app.NCPresentationView](ctx, "nonconformity.presentation.read", map[string]string{"item_id": itemID}, &m)
+	v, err := respond[app.NCPresentationView](ctx, "nonconformity.presentation.read", map[string]string{"item_id": itemID}, &m)
+	if err != nil {
+		return v, err
+	}
+	return sessionDecisions(ctx, m).presentation(v), nil
 }
 
 // Card — карточка несоответствия (nonconformity.card.read, FR-51).
 func (Adapter) Card(ctx context.Context, ncID string, m platform.Moment) (app.NCCard, error) {
-	return respond[app.NCCard](ctx, "nonconformity.card.read", map[string]string{"nc_id": ncID}, &m)
+	c, err := respond[app.NCCard](ctx, "nonconformity.card.read", map[string]string{"nc_id": ncID}, &m)
+	if err != nil {
+		return c, err
+	}
+	return sessionDecisions(ctx, m).card(c), nil
 }
 
 // List — несоответствия с фильтром по изделию и статусу (nonconformity.nonconformity.list).
@@ -71,8 +82,13 @@ func (Adapter) List(ctx context.Context, f app.NCFilter, m platform.Moment, _ pl
 	if err != nil {
 		return v, err
 	}
+	d := sessionDecisions(ctx, m)
 	out := v.Items[:0]
 	for _, x := range v.Items {
+		if len(d.of(string(platform.EntityNonconformity), x.NCID))+len(d.of(string(platform.EntityItem), x.ItemID)) > 0 {
+			c := d.card(app.NCCard{NCID: x.NCID, ItemID: x.ItemID, Status: x.Status, Axes: app.NCItemAxes{Disposition: x.Disposition}})
+			x.Status, x.Disposition = c.Status, c.Axes.Disposition
+		}
 		if (f.ItemID == "" || x.ItemID == f.ItemID) && (f.Status == "" || x.Status == f.Status) {
 			out = append(out, x)
 		}
@@ -88,85 +104,85 @@ func (Adapter) Concessions(ctx context.Context, itemID string, m platform.Moment
 
 // Confirm — подтвердить несоответствие (nonconformity.nonconformity.confirm).
 func (Adapter) Confirm(ctx context.Context, ncID string, in app.ConfirmNonconformity) (platform.Receipt, error) {
-	return decide(ctx, "nonconformity.nonconformity.confirm", "nonconformity", ncID, in.CommandMeta())
+	return record(ctx, "nonconformity.nonconformity.confirm", "nonconformity", ncID, in.CommandMeta(), in)
 }
 
 // RejectSignal — отклонить сигнал (nonconformity.signal.reject).
 func (Adapter) RejectSignal(ctx context.Context, itemID string, in app.RejectSignal) (platform.Receipt, error) {
-	return decide(ctx, "nonconformity.signal.reject", "item", itemID, in.CommandMeta())
+	return record(ctx, "nonconformity.signal.reject", "item", itemID, in.CommandMeta(), in)
 }
 
 // RequestRecheck — назначить доп. проверку (nonconformity.recheck.request).
 func (Adapter) RequestRecheck(ctx context.Context, itemID string, in app.RequestRecheck) (platform.Receipt, error) {
-	return decide(ctx, "nonconformity.recheck.request", "item", itemID, in.CommandMeta())
+	return record(ctx, "nonconformity.recheck.request", "item", itemID, in.CommandMeta(), in)
 }
 
 // Isolate — изолировать изделие (nonconformity.item.isolate).
 func (Adapter) Isolate(ctx context.Context, itemID string, in app.IsolateItem) (platform.Receipt, error) {
-	return decide(ctx, "nonconformity.item.isolate", "item", itemID, in.CommandMeta())
+	return record(ctx, "nonconformity.item.isolate", "item", itemID, in.CommandMeta(), in)
 }
 
 // ResolvePresentation — решение на точке предъявления (nonconformity.presentation.resolve).
 func (Adapter) ResolvePresentation(ctx context.Context, itemID string, in app.ResolvePresentation) (platform.Receipt, error) {
-	return decide(ctx, "nonconformity.presentation.resolve", "item", itemID, in.CommandMeta())
+	return record(ctx, "nonconformity.presentation.resolve", "item", itemID, in.CommandMeta(), in)
 }
 
 // ReviewPresentation — пересмотр решения на точке (nonconformity.presentation.review).
 func (Adapter) ReviewPresentation(ctx context.Context, itemID string, in app.ReviewPresentation) (platform.Receipt, error) {
-	return decide(ctx, "nonconformity.presentation.review", "item", itemID, in.CommandMeta())
+	return record(ctx, "nonconformity.presentation.review", "item", itemID, in.CommandMeta(), in)
 }
 
 // ResolveLot — решение по партии (nonconformity.lot.resolve).
 func (Adapter) ResolveLot(ctx context.Context, lotID string, in app.ResolveLot) (platform.Receipt, error) {
-	return decide(ctx, "nonconformity.lot.resolve", "lot", lotID, in.CommandMeta())
+	return record(ctx, "nonconformity.lot.resolve", "lot", lotID, in.CommandMeta(), in)
 }
 
 // SetDisposition — решение по несоответствию (nonconformity.disposition.set).
 func (Adapter) SetDisposition(ctx context.Context, ncID string, in app.SetDisposition) (platform.Receipt, error) {
-	return decide(ctx, "nonconformity.disposition.set", "nonconformity", ncID, in.CommandMeta())
+	return record(ctx, "nonconformity.disposition.set", "nonconformity", ncID, in.CommandMeta(), in)
 }
 
 // VerifyDisposition — подтвердить исполнение решения (nonconformity.disposition.verify).
 func (Adapter) VerifyDisposition(ctx context.Context, ncID string, in app.VerifyDisposition) (platform.Receipt, error) {
-	return decide(ctx, "nonconformity.disposition.verify", "nonconformity", ncID, in.CommandMeta())
+	return record(ctx, "nonconformity.disposition.verify", "nonconformity", ncID, in.CommandMeta(), in)
 }
 
 // SetContainment — уровень сдерживания (nonconformity.containment.set).
 func (Adapter) SetContainment(ctx context.Context, itemID string, in app.SetContainment) (platform.Receipt, error) {
-	return decide(ctx, "nonconformity.containment.set", "item", itemID, in.CommandMeta())
+	return record(ctx, "nonconformity.containment.set", "item", itemID, in.CommandMeta(), in)
 }
 
 // ReleaseContainment — снять блок (nonconformity.containment.release).
 func (Adapter) ReleaseContainment(ctx context.Context, itemID string, in app.ReleaseContainment) (platform.Receipt, error) {
-	return decide(ctx, "nonconformity.containment.release", "item", itemID, in.CommandMeta())
+	return record(ctx, "nonconformity.containment.release", "item", itemID, in.CommandMeta(), in)
 }
 
 // RevokeConcession — отозвать разрешение на отклонение (nonconformity.concession.revoke).
 func (Adapter) RevokeConcession(ctx context.Context, concessionID string, in app.RevokeConcession) (platform.Receipt, error) {
-	return decide(ctx, "nonconformity.concession.revoke", "nonconformity", concessionID, in.CommandMeta())
+	return record(ctx, "nonconformity.concession.revoke", "nonconformity", concessionID, in.CommandMeta(), in)
 }
 
 // GrantConcession — выдать разрешение на отклонение (nonconformity.concession.grant).
 func (Adapter) GrantConcession(ctx context.Context, in app.GrantConcession) (platform.Receipt, error) {
-	return decide(ctx, "nonconformity.concession.grant", "nonconformity", in.ConcessionID, in.CommandMeta())
+	return record(ctx, "nonconformity.concession.grant", "nonconformity", in.ConcessionID, in.CommandMeta(), in)
 }
 
 // WaiveReworkLimit — разрешить сверх лимита доработок (nonconformity.rework_limit.waive).
 func (Adapter) WaiveReworkLimit(ctx context.Context, itemID string, in app.WaiveReworkLimit) (platform.Receipt, error) {
-	return decide(ctx, "nonconformity.rework_limit.waive", "item", itemID, in.CommandMeta())
+	return record(ctx, "nonconformity.rework_limit.waive", "item", itemID, in.CommandMeta(), in)
 }
 
 // SetProcessHold — остановить точку процесса (nonconformity.process_hold.set).
 func (Adapter) SetProcessHold(ctx context.Context, in app.SetProcessHold) (platform.Receipt, error) {
-	return decide(ctx, "nonconformity.process_hold.set", "equipment", "", in.CommandMeta())
+	return record(ctx, "nonconformity.process_hold.set", "equipment", "", in.CommandMeta(), in)
 }
 
 // ReleaseProcessHold — снять остановку (nonconformity.process_hold.release).
 func (Adapter) ReleaseProcessHold(ctx context.Context, holdID string, in app.ReleaseProcessHold) (platform.Receipt, error) {
-	return decide(ctx, "nonconformity.process_hold.release", "equipment", holdID, in.CommandMeta())
+	return record(ctx, "nonconformity.process_hold.release", "equipment", holdID, in.CommandMeta(), in)
 }
 
 // Close — закрыть несоответствие (nonconformity.nonconformity.close).
 func (Adapter) Close(ctx context.Context, ncID string, in app.CloseNonconformity) (platform.Receipt, error) {
-	return decide(ctx, "nonconformity.nonconformity.close", "nonconformity", ncID, in.CommandMeta())
+	return record(ctx, "nonconformity.nonconformity.close", "nonconformity", ncID, in.CommandMeta(), in)
 }
