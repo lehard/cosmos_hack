@@ -14,6 +14,10 @@ type Queries interface {
 	Lot(ctx context.Context, lotID string, m platform.Moment) (LotCard, error)
 	// Groups — временные группы изделий (crossitem.group.list).
 	Groups(ctx context.Context, m platform.Moment) (ItemGroupList, error)
+	// Trace — «партия / плавка / садка → все изделия, включая собранные» (crossitem.trace.read, FR-45).
+	Trace(ctx context.Context, lotID, heatNo, groupID string, m platform.Moment) (Trace, error)
+	// Unbound — события без изделия: неразрешённые и неоднозначные (crossitem.binding.list, AD-41).
+	Unbound(ctx context.Context, m platform.Moment) (UnboundList, error)
 }
 
 // Commands — ведущий порт команд модуля crossitem (AD-39).
@@ -24,6 +28,10 @@ type Commands interface {
 	IssueLot(ctx context.Context, lotID string, in IssueLot) (platform.Receipt, error)
 	// AssignBinding — crossitem.binding.assign.
 	AssignBinding(ctx context.Context, in AssignBinding) (platform.Receipt, error)
+	// FormGroup — crossitem.group.form.
+	FormGroup(ctx context.Context, in FormGroup) (platform.Receipt, error)
+	// DissolveGroup — crossitem.group.dissolve.
+	DissolveGroup(ctx context.Context, groupID string, in DissolveGroup) (platform.Receipt, error)
 }
 
 // Unimplemented — заглушка портов crossitem: каждая операция отвечает 501
@@ -52,6 +60,22 @@ func (Unimplemented) IssueLot(context.Context, string, IssueLot) (platform.Recei
 
 func (Unimplemented) AssignBinding(context.Context, AssignBinding) (platform.Receipt, error) {
 	return platform.Receipt{}, platform.NotImplemented("crossitem.binding.assign")
+}
+
+func (Unimplemented) Trace(context.Context, string, string, string, platform.Moment) (Trace, error) {
+	return Trace{}, platform.NotImplemented("crossitem.trace.read")
+}
+
+func (Unimplemented) Unbound(context.Context, platform.Moment) (UnboundList, error) {
+	return UnboundList{}, platform.NotImplemented("crossitem.binding.list")
+}
+
+func (Unimplemented) FormGroup(context.Context, FormGroup) (platform.Receipt, error) {
+	return platform.Receipt{}, platform.NotImplemented("crossitem.group.form")
+}
+
+func (Unimplemented) DissolveGroup(context.Context, string, DissolveGroup) (platform.Receipt, error) {
+	return platform.Receipt{}, platform.NotImplemented("crossitem.group.dissolve")
 }
 
 var (

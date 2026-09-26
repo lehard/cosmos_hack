@@ -40,6 +40,23 @@
     "document_id": {
       "$ref": "../common/defs.v1.json#/definitions/object_id",
       "description": "Протокол допуска."
+    },
+    "analyzer_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Анализатор (внешняя система видеофиксации и её модель), к которому относится паспорт: например, `vqc-weld`."
+    },
+    "analyzer_kind": {
+      "type": "string",
+      "enum": [
+        "visionqc",
+        "operatorvision"
+      ],
+      "description": "Вид анализатора: визуальный контроль (VisionQC) или контроль действий оператора (OperatorVision)."
+    },
+    "title": {
+      "type": "string",
+      "maxLength": 256,
+      "description": "Название анализатора для людей, например «Визуальный контроль шва (КТ-3)»."
     }
   },
   "required": [

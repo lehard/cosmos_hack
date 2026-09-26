@@ -3,6 +3,105 @@
 
 package normative
 
+// Стартовые паспорта допуска анализаторов для демо
+// (normative/vision/analyzer-passports.v*.yaml; эпик 33, AD-29, AD-33): записи
+// analyzer.passport.admitted, которые роль migrate пишет генезисом в профилях demo
+// и fixtures. Это не допуск по экзамену (полный маршрут — эпик 40): паспорт
+// помечен происхождением genesis.
+type AnalyzerPassportsSeed struct {
+	// occurred_at записей допуска: раньше любого наблюдения демо.
+	AdmittedAt string `json:"admitted_at"`
+
+	// Пометка для людей: демо-затравка, не промышленная валидация.
+	Note *string `json:"note,omitempty,omitzero"`
+
+	// Паспорта допуска.
+	Passports []AnalyzerPassportsSeedPassportsElem `json:"passports"`
+
+	// Профили, в которых паспорта записываются; в prod затравка не пишется никогда.
+	Profiles []AnalyzerPassportsSeedProfilesElem `json:"profiles"`
+
+	// Версия затравки: входит в event_id записей (повтор той же версии — дубль, а не
+	// вторая запись).
+	Version int `json:"version"`
+}
+
+// Паспорт допуска карты контроля.
+type AnalyzerPassportsSeedPassportsElem struct {
+	// Анализатор.
+	AnalyzerID string `json:"analyzer_id"`
+
+	// Визуальный контроль или контроль действий оператора.
+	AnalyzerKind AnalyzerPassportsSeedPassportsElemAnalyzerKind `json:"analyzer_kind"`
+
+	// Протокол допуска (для затравки — условный номер демо).
+	DocumentID string `json:"document_id"`
+
+	// Паспорт.
+	PassportID string `json:"passport_id"`
+
+	// Карта контроля `‹id›@‹версия›` — как в ant:inspection/@recipeRef процесса.
+	RecipeRef string `json:"recipe_ref"`
+
+	// Стадия допуска.
+	Stage AnalyzerPassportsSeedPassportsElemStage `json:"stage"`
+
+	// Название анализатора.
+	Title string `json:"title"`
+
+	// Уровень доверия (contracts/analyzer-trust-levels.yaml).
+	TrustLevel int `json:"trust_level"`
+
+	// Допущенная конфигурация контура — все восемь составляющих вектора версий
+	// (AD-29).
+	Versions AnalyzerPassportsSeedPassportsElemVersions `json:"versions"`
+}
+
+type AnalyzerPassportsSeedPassportsElemAnalyzerKind string
+
+const AnalyzerPassportsSeedPassportsElemAnalyzerKindOperatorvision AnalyzerPassportsSeedPassportsElemAnalyzerKind = "operatorvision"
+const AnalyzerPassportsSeedPassportsElemAnalyzerKindVisionqc AnalyzerPassportsSeedPassportsElemAnalyzerKind = "visionqc"
+
+type AnalyzerPassportsSeedPassportsElemStage string
+
+const AnalyzerPassportsSeedPassportsElemStageActive AnalyzerPassportsSeedPassportsElemStage = "active"
+const AnalyzerPassportsSeedPassportsElemStagePilot AnalyzerPassportsSeedPassportsElemStage = "pilot"
+const AnalyzerPassportsSeedPassportsElemStageShadow AnalyzerPassportsSeedPassportsElemStage = "shadow"
+
+// Допущенная конфигурация контура — все восемь составляющих вектора версий
+// (AD-29).
+type AnalyzerPassportsSeedPassportsElemVersions struct {
+	// Версия анализатора.
+	AnalyzerVersion string `json:"analyzer_version"`
+
+	// Версия приложения источника.
+	AppVersion string `json:"app_version"`
+
+	// Калибровка.
+	Calibration string `json:"calibration"`
+
+	// Конфигурация камеры и света.
+	CameraConfig string `json:"camera_config"`
+
+	// Версия контракта данных источника.
+	ContractVersion string `json:"contract_version"`
+
+	// Ревизия изделия (КД).
+	ItemRevision string `json:"item_revision"`
+
+	// Карта контроля с версией.
+	RecipeRef string `json:"recipe_ref"`
+
+	// Профиль порогов.
+	ThresholdProfile string `json:"threshold_profile"`
+}
+
+type AnalyzerPassportsSeedProfilesElem string
+
+const AnalyzerPassportsSeedProfilesElemDemo AnalyzerPassportsSeedProfilesElem = "demo"
+const AnalyzerPassportsSeedProfilesElemFixtures AnalyzerPassportsSeedProfilesElem = "fixtures"
+const AnalyzerPassportsSeedProfilesElemLoad AnalyzerPassportsSeedProfilesElem = "load"
+
 // Производственный календарь (FR-55): normative/reference/*/calendar.yaml.
 type CalendarSeed struct {
 	// Календарь.
@@ -223,6 +322,68 @@ type EquipmentSeedVerificationsElemResult string
 
 const EquipmentSeedVerificationsElemResultInvalid EquipmentSeedVerificationsElemResult = "invalid"
 const EquipmentSeedVerificationsElemResultValid EquipmentSeedVerificationsElemResult = "valid"
+
+// Иллюстрации к сигналам VisionQC из открытых наборов
+// (normative/vision/illustrations.v*.yaml; FR-102, PRD §11.12): набор, ссылка,
+// лицензия, автор и соответствие классов набора видам дефектов классификатора.
+// Файлы в репозиторий не кладутся; приложить иллюстрацию можно, только если файл
+// есть офлайн на краю, иначе — только ссылка и метаданные.
+type IllustrationsCatalog struct {
+	// Открытые наборы.
+	Datasets []IllustrationsCatalogDatasetsElem `json:"datasets"`
+
+	// Версия каталога.
+	Version int `json:"version"`
+}
+
+// Открытый набор изображений.
+type IllustrationsCatalogDatasetsElem struct {
+	// Автор набора.
+	Author string `json:"author"`
+
+	// Публикация, которую просит цитировать автор.
+	Citation *string `json:"citation,omitempty,omitzero"`
+
+	// Классы набора и виды дефектов классификатора.
+	Classes []IllustrationsCatalogDatasetsElemClassesElem `json:"classes"`
+
+	// Идентификатор набора.
+	ID string `json:"id"`
+
+	// Лицензия.
+	License string `json:"license"`
+
+	// Текст лицензии.
+	LicenseURL *string `json:"license_url,omitempty,omitzero"`
+
+	// Пометка на экране (например, «ИЛЛЮСТРАЦИЯ»).
+	Mark string `json:"mark"`
+
+	// Оговорка: не относится к изделию, не промышленная валидация.
+	Note string `json:"note"`
+
+	// Название набора.
+	Title string `json:"title"`
+
+	// Ссылка на набор.
+	URL string `json:"url"`
+}
+
+// Класс набора.
+type IllustrationsCatalogDatasetsElemClassesElem struct {
+	// Класс (каталог) в наборе.
+	DatasetClass string `json:"dataset_class"`
+
+	// Виды дефектов классификатора, которые иллюстрирует класс; пусто — «признаков
+	// нет».
+	DefectCodes []string `json:"defect_codes"`
+
+	// MIME-тип образца.
+	MediaType string `json:"media_type"`
+
+	// Относительный путь файла-образца внутри распакованного набора.
+	Sample string `json:"sample"`
+}
 
 // Номенклатура, состав, зоны и связи изделия (FR-45, FR-46, PRD §11.15):
 // normative/reference/*/item-types.yaml.

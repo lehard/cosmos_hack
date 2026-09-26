@@ -47,6 +47,10 @@
     "is_assembly": {
       "type": "boolean",
       "description": "Изделие — сборочная единица."
+    },
+    "split_from": {
+      "$ref": "../common/defs.v1.json#/definitions/item_id",
+      "description": "Изделие, из которого выделено новое при разделении 1→N (FR-15): происхождение и партии переносятся; связь пишет межизделийная стадия (genealogy.link.added, relation = split_from)."
     }
   },
   "required": [

@@ -155,7 +155,7 @@ var _ Stands = StandControl{}
 
 // SetFault — включить сбой stand-а.
 func (s StandControl) SetFault(ctx context.Context, stand string, a sim.StandAction, until time.Time) error {
-	return s.Control.SetFault(ctx, stand, appingest.Fault{Kind: appingest.FaultKind(a.Fault), Param: a.Param, Until: until})
+	return s.Control.SetFault(ctx, stand, appingest.Fault{Kind: appingest.FaultKind(a.Fault), Param: a.Param, Until: until, Match: a.Match, Detail: a.Detail})
 }
 
 // ClearFaults — снять сбои stand-а.

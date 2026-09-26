@@ -2,6 +2,7 @@
  * СГЕНЕРИРОВАНО orval (frontend/scripts/generate.mjs) — руками не править (AD-20).
  * Источник: contracts/openapi.yaml
  */
+import type { AdmitPassportAnalyzerKind } from './admitPassportAnalyzerKind';
 import type { AdmitPassportStage } from './admitPassportStage';
 import type { AdmitPassportVersions } from './admitPassportVersions';
 import type { DsseEnvelope } from './dsseEnvelope';
@@ -9,6 +10,8 @@ import type { DsseEnvelope } from './dsseEnvelope';
 export interface AdmitPassport {
   /** @maxLength 128 */
   analyzer_id: string;
+  /** Визуальный контроль или контроль действий оператора; по умолчанию visionqc. */
+  analyzer_kind?: AdmitPassportAnalyzerKind;
   /**
      * seq, на котором клиент видел объект (basis_seq из ответа чтения): после него в потоках гарда не должно быть новых записей guard_relevant, иначе 409 journal.stale_state (AD-39).
      * @minimum 0
@@ -30,6 +33,11 @@ export interface AdmitPassport {
   /** Подписанный пакет DSSE для операций с уровнем подписи ≥ 1 (AD-10, AD-13, AD-14): подписывает агент токена, сервер сверяет отпечаток. */
   signature?: DsseEnvelope;
   stage: AdmitPassportStage;
+  /**
+     * Название анализатора.
+     * @maxLength 256
+     */
+  title?: string;
   /**
      * @minimum 0
      * @maximum 4

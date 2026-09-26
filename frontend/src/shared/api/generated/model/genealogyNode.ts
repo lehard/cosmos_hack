@@ -6,6 +6,8 @@ import type { GenealogyNodeKind } from './genealogyNodeKind';
 import type { GenealogyNodeSummary } from './genealogyNodeSummary';
 
 export interface GenealogyNode {
+  /** Уровень от изделия паспорта: вниз — положительный, вверх — отрицательный. */
+  depth?: number;
   kind: GenealogyNodeKind;
   label: string;
   /** Куда вошёл (сборка). */
@@ -16,5 +18,7 @@ export interface GenealogyNode {
   provenance?: string;
   /** item_id или lot_id. */
   ref: string;
+  /** Связь с изделием паспорта: component_of, assembly, made_from_lot, split_from, split_into, grouped_with. */
+  relation?: string;
   summary?: GenealogyNodeSummary;
 }

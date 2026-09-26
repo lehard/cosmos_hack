@@ -1,0 +1,52 @@
+{
+  "result_id": "CAM-KT3-000006",
+  "seq": 6,
+  "system_id": "vqc-kt3",
+  "camera_id": "CAM-KT3",
+  "creation_time": "2026-09-21T09:35:00.000Z",
+  "part_id": "ENT01:F-236",
+  "part_id_kind": "internal",
+  "station": "KT-3",
+  "result_state": 1,
+  "recipe": {
+    "id": "kt3-weld",
+    "version": "1"
+  },
+  "configuration": {
+    "camera_config": "CAM-KT3/свет-R2",
+    "calibration": "CAL-KT3-2026-01-10",
+    "threshold_profile": "TP-KT3-5"
+  },
+  "software": {
+    "analyzer_version": "vqc-weld 2.3.1",
+    "app_version": "vqc-gw 1.2.0",
+    "contract_version": "1.0"
+  },
+  "product_revision": "Б",
+  "frame": {
+    "quality_bp": 4500,
+    "issues": [
+      "glare"
+    ]
+  },
+  "verdict": "cannot_evaluate",
+  "stages": [
+    {
+      "name": "localize",
+      "version": "vqc-weld 2.3.1",
+      "confidence_bp": 3100,
+      "output": "блик на участке У4 — зона не читается"
+    }
+  ],
+  "zones": [
+    "W-1.U1",
+    "W-1.U2",
+    "W-1.U3",
+    "W-1.U4",
+    "W-1.U5",
+    "W-1.U6",
+    "W-1.U7",
+    "W-1.U8"
+  ],
+  "recommendation": "review"
+}

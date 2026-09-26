@@ -1,0 +1,27 @@
+{
+  "message_id": "4d3e2f1a-5b6c-5d7e-9f8a-0b1c2d3e4f5a",
+  "contract": "qc.v1",
+  "kind": "returned_to_supplier",
+  "occurred_at": "2026-09-23T12:45:00.000Z",
+  "source": {
+    "system": "ant",
+    "enterprise": "ENT01",
+    "business_key": "LOT-R-117/return_to_supplier/ZT-1",
+    "message_version": 1,
+    "closing_point": "ZT-1",
+    "basis_event_ids": [
+      "0192ad10-4c7e-7f21-9b3a-5c6d7e8f9a0e"
+    ]
+  },
+  "lot": {
+    "lot_id": "LOT-R-117",
+    "quantity": 7
+  },
+  "warehouse_from": {
+    "code": "WH-SK"
+  },
+  "claim_basis": "Поры в теле кольца, НС-05: претензия по партии П-117",
+  "nonconformities": [
+    "NC-05"
+  ]
+}

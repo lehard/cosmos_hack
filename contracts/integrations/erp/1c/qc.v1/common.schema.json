@@ -1,0 +1,176 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/integrations/erp/1c/qc.v1/common.schema.json",
+  "title": "QcCommon",
+  "description": "Общие определения HTTP-сервиса «qc» расширения конфигурации 1С «КонтрольКачества», версия контракта qc.v1 (AD-18, FR-91): источник сообщения, изделие, партия, склад, документ-основание.",
+  "definitions": {
+    "uuid": {
+      "type": "string",
+      "description": "Идентификатор UUID в нижнем регистре.",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "timestamp": {
+      "type": "string",
+      "description": "Время RFC 3339 UTC, три знака после секунд.",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$"
+    },
+    "code": {
+      "type": "string",
+      "description": "Код объекта (ASCII, без пробелов).",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$"
+    },
+    "source": {
+      "type": "object",
+      "description": "Источник сообщения: система, предприятие, бизнес-ключ идемпотентности и основание (наши ID).",
+      "properties": {
+        "system": {
+          "type": "string",
+          "enum": [
+            "ant"
+          ],
+          "description": "Система-отправитель."
+        },
+        "enterprise": {
+          "type": "string",
+          "description": "Код предприятия.",
+          "pattern": "^[A-Z0-9][A-Z0-9_-]{0,15}$"
+        },
+        "business_key": {
+          "type": "string",
+          "maxLength": 256,
+          "description": "Бизнес-ключ: субъект, учётное действие, закрывающая точка (AD-7)."
+        },
+        "message_version": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000,
+          "description": "Версия содержимого по бизнес-ключу."
+        },
+        "closing_point": {
+          "type": "string",
+          "maxLength": 48,
+          "description": "Закрывающая точка или цикл брака."
+        },
+        "step_key": {
+          "type": "string",
+          "maxLength": 96,
+          "description": "Шаг процесса."
+        },
+        "basis_event_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/uuid"
+          },
+          "description": "Записи журнала ant — основание."
+        }
+      },
+      "required": [
+        "system",
+        "enterprise",
+        "business_key",
+        "message_version"
+      ],
+      "additionalProperties": false
+    },
+    "item": {
+      "type": "object",
+      "description": "Изделие: наш ID и естественный ключ; ссылки 1С — если сопоставлены.",
+      "properties": {
+        "item_id": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "Наш ID изделия `код_предприятия:локальный_id`."
+        },
+        "designation": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "Обозначение по ЕСКД."
+        },
+        "serial_no": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Заводской номер."
+        },
+        "nomenclature_ref_key": {
+          "$ref": "#/definitions/uuid",
+          "description": "Ref_Key номенклатуры 1С."
+        },
+        "series_ref_key": {
+          "$ref": "#/definitions/uuid",
+          "description": "Ref_Key серии 1С."
+        }
+      },
+      "required": [
+        "item_id"
+      ],
+      "additionalProperties": false
+    },
+    "lot": {
+      "type": "object",
+      "description": "Партия (серия номенклатуры).",
+      "properties": {
+        "lot_id": {
+          "$ref": "#/definitions/code",
+          "description": "Наш ID партии."
+        },
+        "quantity": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100000000,
+          "description": "Количество."
+        },
+        "series_ref_key": {
+          "$ref": "#/definitions/uuid",
+          "description": "Ref_Key серии 1С."
+        }
+      },
+      "required": [
+        "lot_id"
+      ],
+      "additionalProperties": false
+    },
+    "warehouse": {
+      "type": "object",
+      "description": "Склад: код справочника «Склады» 1С (совпадает с кодом склада цеха в нормативном слое ant).",
+      "properties": {
+        "code": {
+          "$ref": "#/definitions/code",
+          "description": "Код склада."
+        },
+        "ref_key": {
+          "$ref": "#/definitions/uuid",
+          "description": "Ref_Key склада 1С."
+        }
+      },
+      "required": [
+        "code"
+      ],
+      "additionalProperties": false
+    },
+    "document": {
+      "type": "object",
+      "description": "Документ-основание ant: вид, номер, отпечаток.",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Вид документа."
+        },
+        "number": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Номер документа."
+        },
+        "digest": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "Отпечаток `streebog256:…`."
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

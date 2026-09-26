@@ -1,0 +1,60 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/genealogy/genealogy.containment.propagated.v1.json",
+  "title": "GenealogyContainmentPropagatedV1",
+  "description": "Сдерживание распространено по генеалогии — адресованная запись стадии изделию: блок партии доходит до изделий из партии и собранных из них; блок компонента — вверх по дереву сборки (AD-42). Ось «сдерживание» меняет nonconformity по этой записи (AD-30); снятие основания блок не снимает — решает человек (AD-27).",
+  "type": "object",
+  "properties": {
+    "level": {
+      "$ref": "../common/defs.v1.json#/definitions/axis_containment",
+      "description": "Уровень сдерживания источника."
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "lot",
+        "component",
+        "split_parent"
+      ],
+      "description": "Откуда пришло: блок партии, блок компонента (вверх по сборке), блок исходного изделия при разделении."
+    },
+    "source_event_id": {
+      "$ref": "../common/defs.v1.json#/definitions/uuid",
+      "description": "Запись сдерживания-источника (`decision.containment.*`, `decision.lot.resolved`)."
+    },
+    "lot_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Партия, если блок партии."
+    },
+    "source_item_id": {
+      "$ref": "../common/defs.v1.json#/definitions/item_id",
+      "description": "Изделие-источник сдерживания (компонент или изделие партии)."
+    },
+    "path": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/item_id",
+        "description": "Изделие."
+      },
+      "description": "Путь по дереву сборки от источника к изделию."
+    },
+    "released": {
+      "type": "boolean",
+      "description": "Основание снято у источника: блок остаётся до решения человека (AD-27, AD-3)."
+    },
+    "basis": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/uuid",
+        "description": "Запись."
+      },
+      "description": "Основания — `event_id` записей."
+    }
+  },
+  "required": [
+    "level",
+    "source",
+    "source_event_id",
+    "basis"
+  ]
+}

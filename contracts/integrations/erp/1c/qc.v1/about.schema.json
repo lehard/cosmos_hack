@@ -1,0 +1,41 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/integrations/erp/1c/qc.v1/about.schema.json",
+  "title": "QcAbout",
+  "description": "Описание HTTP-сервиса «qc» — ответ `GET /‹база›/hs/qc/v1/about`: версии контракта, которые понимает расширение; адаптер сверяет её при старте (AD-18).",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "service": {
+      "type": "string",
+      "enum": [
+        "qc"
+      ],
+      "description": "Имя HTTP-сервиса."
+    },
+    "contract": {
+      "type": "string",
+      "maxLength": 16,
+      "description": "Текущая версия контракта расширения."
+    },
+    "supported": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 16,
+        "description": "Версия."
+      },
+      "description": "Поддерживаемые версии."
+    },
+    "configuration": {
+      "type": "string",
+      "maxLength": 128,
+      "description": "Конфигурация и версия 1С."
+    }
+  },
+  "required": [
+    "service",
+    "contract",
+    "supported"
+  ]
+}

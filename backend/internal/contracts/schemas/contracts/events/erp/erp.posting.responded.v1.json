@@ -41,6 +41,50 @@
     "resulting_status": {
       "$ref": "../common/defs.v1.json#/definitions/axis_erp_accounting",
       "description": "Статус учёта изделия после подтверждения."
+    },
+    "message_id": {
+      "$ref": "../common/defs.v1.json#/definitions/uuid",
+      "description": "Номер сообщения (`X-Message-Id`)."
+    },
+    "action": {
+      "type": "string",
+      "enum": [
+        "accept_into_work",
+        "warehouse_transfer",
+        "scrap_transfer_rework",
+        "scrap_transfer_writeoff",
+        "scrap_transfer_reprocess",
+        "return_to_supplier",
+        "release",
+        "inspection_result",
+        "return_from_defect"
+      ],
+      "description": "Учётное действие сообщения."
+    },
+    "item_id": {
+      "$ref": "../common/defs.v1.json#/definitions/item_id",
+      "description": "Изделие — для оси «учёт в 1С» (AD-30)."
+    },
+    "lot_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Партия."
+    },
+    "receipt": {
+      "type": "string",
+      "maxLength": 64,
+      "description": "Номер квитанции учётной системы; повтор с тем же номером сообщения возвращает ту же квитанцию."
+    },
+    "http_status": {
+      "type": "integer",
+      "minimum": 100,
+      "maximum": 599,
+      "description": "Код ответа HTTP учётной системы."
+    },
+    "attempt": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1000,
+      "description": "Номер попытки отправки, на которую пришёл ответ."
     }
   },
   "required": [

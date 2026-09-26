@@ -96,6 +96,9 @@ type apiOptions struct {
 	// nonconformity — live-реализация nonconformity над журналом и свёрткой
 	// изделия (nonconformity.go, эпик 21); nil — заглушка 501.
 	nonconformity *nonconformityapp.Service
+	// erp — live-реализация erp над проекциями erp.*, каналами обмена и
+	// журналом (outbox.go, эпик 30); nil — заглушка 501.
+	erp *erpapp.Service
 	// ingest — live-приём над журналом ядра (ingest.go); nil — заглушка 501.
 	ingest *ingestapp.Service
 	// identity, directory — вход демо-персоной и каталог политики (демо-трек
@@ -107,6 +110,15 @@ type apiOptions struct {
 	// analytics — live-показатели над строками вклада ядра (analytics.go);
 	// nil — без хранилища (операции 501).
 	analytics *analyticsapp.Service
+	// vision — live-реализация vision над журналом ядра (vision.go, эпик 33); nil — 501.
+	vision *visionapp.Service
+	// notifications — live-реализация notifications над проекциями сроков,
+	// задач и уведомлений (notifications.go, эпик 24); nil — заглушка 501.
+	notifications *notificationsapp.Service
+	// item, crossitem — живые операции изделия и межизделийной стадии
+	// (item.go, эпик 18); nil — заглушка 501.
+	item      *itemapp.Service
+	crossitem *crossitemapp.Service
 	// process — живая карта, версии и команды исполнителя (process.go, эпик 17); nil — 501.
 	process *processapp.Service
 	// security — журнал CA, шина безопасности, индикатор целостности (security.go, эпик 29); nil — 501.
@@ -144,7 +156,11 @@ func buildAPI(mux *http.ServeMux, o apiOptions) *httpapi.API {
 		journalhttp.Register(a, q, c)
 	}
 	{
-		q, c := pick[crossitemapp.Queries, crossitemapp.Commands](a.ModeFor("crossitem"), crossitemapp.NewService(), crossitemfx.New())
+		live := o.crossitem
+		if live == nil {
+			live = crossitemapp.NewService()
+		}
+		q, c := pick[crossitemapp.Queries, crossitemapp.Commands](a.ModeFor("crossitem"), live, crossitemfx.New())
 		crossitemhttp.Register(a, q, c)
 	}
 	{
@@ -168,7 +184,11 @@ func buildAPI(mux *http.ServeMux, o apiOptions) *httpapi.API {
 		processhttp.Register(a, q, c)
 	}
 	{
-		q, c := pick[itemapp.Queries, itemapp.Commands](a.ModeFor("item"), itemapp.NewService(), itemfx.New())
+		live := o.item
+		if live == nil {
+			live = itemapp.NewService()
+		}
+		q, c := pick[itemapp.Queries, itemapp.Commands](a.ModeFor("item"), live, itemfx.New())
 		itemhttp.Register(a, q, c)
 	}
 	{
@@ -204,7 +224,11 @@ func buildAPI(mux *http.ServeMux, o apiOptions) *httpapi.API {
 		machinelogshttp.Register(a, q, c)
 	}
 	{
-		q, c := pick[visionapp.Queries, visionapp.Commands](a.ModeFor("vision"), visionapp.NewService(), visionfx.New())
+		live := o.vision
+		if live == nil {
+			live = visionapp.NewService()
+		}
+		q, c := pick[visionapp.Queries, visionapp.Commands](a.ModeFor("vision"), live, visionfx.New())
 		visionhttp.Register(a, q, c)
 	}
 	{
@@ -235,7 +259,11 @@ func buildAPI(mux *http.ServeMux, o apiOptions) *httpapi.API {
 		materialshttp.Register(a, q, c)
 	}
 	{
-		q, c := pick[notificationsapp.Queries, notificationsapp.Commands](a.ModeFor("notifications"), notificationsapp.NewService(), notificationsfx.New())
+		live := o.notifications
+		if live == nil {
+			live = notificationsapp.NewService()
+		}
+		q, c := pick[notificationsapp.Queries, notificationsapp.Commands](a.ModeFor("notifications"), live, notificationsfx.New())
 		notificationshttp.Register(a, q, c)
 	}
 	{
@@ -247,7 +275,11 @@ func buildAPI(mux *http.ServeMux, o apiOptions) *httpapi.API {
 		analyticshttp.Register(a, q, c)
 	}
 	{
-		q, c := pick[erpapp.Queries, erpapp.Commands](a.ModeFor("erp"), erpapp.NewService(), erpfx.New())
+		live := o.erp
+		if live == nil {
+			live = erpapp.NewService()
+		}
+		q, c := pick[erpapp.Queries, erpapp.Commands](a.ModeFor("erp"), live, erpfx.New())
 		erphttp.Register(a, q, c)
 	}
 	{

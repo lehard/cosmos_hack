@@ -1,0 +1,43 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/integrations/erp/1c/qc.v1/error.schema.json",
+  "title": "QcError",
+  "description": "Ошибка HTTP-сервиса «qc»: `422` — ошибка данных (без автоповтора, карантин исходящих), `400` — нарушение контракта, `409` — конфликт версии, `503` — временная недоступность (повтор с тем же номером сообщения).",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "message_id": {
+      "$ref": "common.schema.json#/definitions/uuid",
+      "description": "Номер сообщения, если разобран."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "rejected",
+        "unavailable"
+      ],
+      "description": "Отклонено или временно недоступно."
+    },
+    "code": {
+      "type": "string",
+      "maxLength": 64,
+      "pattern": "^[A-Z][A-Z0-9_]*$",
+      "description": "Код ошибки сервиса (`SERIES_NOT_FOUND`, `CONTRACT_NOT_FOUND`, `CONTRACT_VERSION`, `SCHEMA_VIOLATION`, `UNAVAILABLE` …)."
+    },
+    "message": {
+      "type": "string",
+      "maxLength": 4000,
+      "description": "Текст ошибки для людей."
+    },
+    "field": {
+      "type": "string",
+      "maxLength": 256,
+      "description": "Поле сообщения, в котором ошибка."
+    }
+  },
+  "required": [
+    "status",
+    "code",
+    "message"
+  ]
+}

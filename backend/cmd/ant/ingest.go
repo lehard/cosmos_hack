@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"ant/cmd/internal/config"
+	crossitemapp "ant/internal/application/crossitem"
 	ingestapp "ant/internal/application/ingest"
 	securityapp "ant/internal/application/security"
 	ingeststore "ant/internal/infrastructure/storage/ingest"
@@ -44,10 +45,12 @@ func ingestLive(ctx context.Context, env *environment) (*ingestapp.Service, erro
 	return ingestapp.NewService(
 		ingestapp.WithConfig(ic),
 		ingestapp.WithDeps(ingestapp.Deps{
-			Journal:     c.journal,
-			Registry:    store,
-			Quarantine:  store,
-			Materials:   mat,
+			Journal:    c.journal,
+			Registry:   store,
+			Quarantine: store,
+			Materials:  mat,
+			// Реестр носителей стадии (эпик 18, AD-41): разрешение до выбора партиции.
+			Carriers:    crossitemapp.ProjectedCarriers{Store: c.engine},
 			DomainClock: clock.SystemDomain{},
 			InfraClock:  clock.System{},
 			// Шина безопасности модуля security (эпик 29) вместо моста эпика 06.

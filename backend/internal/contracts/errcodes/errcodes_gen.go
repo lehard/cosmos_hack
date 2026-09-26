@@ -51,6 +51,10 @@ const (
 	AccessUnauthenticated Code = "access.unauthenticated"
 	// Не своё рабочее место
 	AccessWrongWorkplace Code = "access.wrong_workplace"
+	// Протокол допуска не подписан
+	AnalyzerAdmissionRouteOpen Code = "analyzer.admission_route_open"
+	// Действие с паспортом недоступно в его статусе
+	AnalyzerInvalidTransition Code = "analyzer.invalid_transition"
 	// Нет допущенного анализатора
 	AnalyzerNoQualifiedAnalyzer Code = "analyzer.no_qualified_analyzer"
 	// Вернуть анализатор может только начальник ОТК
@@ -69,10 +73,14 @@ const (
 	ApiReplayReadOnly Code = "api.replay_read_only"
 	// Запрос не соответствует контракту
 	ApiValidationFailed Code = "api.validation_failed"
+	// Канал обмена в режиме degraded
+	ErpChannelDegraded Code = "erp.channel_degraded"
 	// Несовместимое изменение контракта обмена
 	ErpContractIncompatible Code = "erp.contract_incompatible"
 	// Не найден договор с контрагентом
 	ErpContractNotFound Code = "erp.contract_not_found"
+	// Новая версия отправленного сообщения ждёт решения
+	ErpCorrectionPending Code = "erp.correction_pending"
 	// 1С вернула ошибку данных
 	ErpDataError Code = "erp.data_error"
 	// 1С уже провела документ
@@ -83,6 +91,8 @@ const (
 	ErpIdMappingMissing Code = "erp.id_mapping_missing"
 	// 1С не подтвердила приём
 	ErpNoAck Code = "erp.no_ack"
+	// Сообщение не ждёт решения
+	ErpNotQuarantined Code = "erp.not_quarantined"
 	// 1С недоступна
 	ErpUnavailable Code = "erp.unavailable"
 	// Выписка паспорта изменена
@@ -123,6 +133,38 @@ const (
 	IngestUnknownSchemaVersion Code = "ingest.unknown_schema_version"
 	// Источник не зарегистрирован
 	IngestUnknownSource Code = "ingest.unknown_source"
+	// Изделие уже зарегистрировано
+	ItemAlreadyRegistered Code = "item.already_registered"
+	// Изделие уже выпущено
+	ItemAlreadyReleased Code = "item.already_released"
+	// Сборка образует цикл
+	ItemAssemblyCycle Code = "item.assembly_cycle"
+	// Привязываемое событие не найдено
+	ItemBindingSubjectUnknown Code = "item.binding_subject_unknown"
+	// Носитель уже действует у другого изделия
+	ItemCarrierInUse Code = "item.carrier_in_use"
+	// Носитель не нанесён
+	ItemCarrierNotActive Code = "item.carrier_not_active"
+	// Компонент уже в другой сборке
+	ItemComponentAlreadyAssembled Code = "item.component_already_assembled"
+	// Группа изделий составлена неверно
+	ItemGroupInvalid Code = "item.group_invalid"
+	// Группа не действует
+	ItemGroupNotActive Code = "item.group_not_active"
+	// Идентификация не под сомнением
+	ItemIdentificationNotQuestioned Code = "item.identification_not_questioned"
+	// Идентификация изделия под сомнением
+	ItemIdentificationQuestioned Code = "item.identification_questioned"
+	// Вмешательство не открыто
+	ItemInterventionNotOpen Code = "item.intervention_not_open"
+	// Партия уже зарегистрирована
+	ItemLotAlreadyRegistered Code = "item.lot_already_registered"
+	// Партия не принята
+	ItemLotNotAccepted Code = "item.lot_not_accepted"
+	// Изделие не зарегистрировано
+	ItemNotRegistered Code = "item.not_registered"
+	// Зона не описана в КД
+	ItemZoneUnknown Code = "item.zone_unknown"
 	// Журнал только на дописывание
 	JournalAppendOnly Code = "journal.append_only"
 	// Лимит разрешения на отклонение исчерпан
@@ -245,6 +287,8 @@ var codes = [...]Info{
 	{Code: AccessSignatureRequired, Status: 403, Title: "Нужна подпись уполномоченного", Detail: "Не хватает полномочий — нужна подпись: {who}", UIKey: "errors.access.needSignature", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: AccessUnauthenticated, Status: 401, Title: "Нужен вход", Detail: "Сеанс отсутствует или истёк", UIKey: "errors.access.sessionExpired", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: AccessWrongWorkplace, Status: 403, Title: "Не своё рабочее место", Detail: "Подписать можно только на своём рабочем месте: {workplace}", UIKey: "errors.access.wrongWorkplace", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
+	{Code: AnalyzerAdmissionRouteOpen, Status: 409, Title: "Протокол допуска не подписан", Detail: "Протокол допуска {document_id} не подписан: маршрут подписей не закрыт — паспорт не вводится в действие", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
+	{Code: AnalyzerInvalidTransition, Status: 409, Title: "Действие с паспортом недоступно в его статусе", Detail: "Паспорт {passport_id} в статусе «{status}»: действие «{action}» недоступно", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
 	{Code: AnalyzerNoQualifiedAnalyzer, Status: 200, Title: "Нет допущенного анализатора", Detail: "Для карты контроля {recipe_ref} нет допущенного анализатора — контроль ручной", UIKey: "errors.vision.noQualifiedAnalyzer", Quarantine: false, Severity: "warning", Guard: false, Aliases: nil},
 	{Code: AnalyzerReinstateRequiresHeadOfQc, Status: 403, Title: "Вернуть анализатор может только начальник ОТК", Detail: "Вернуть анализатор в работу может только начальник ОТК", UIKey: "errors.vision.returnRequiresHeadOfQc", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
 	{Code: AnalyzerTrustLevelExceeded, Status: 403, Title: "Действие сверх уровня доверия паспорта", Detail: "Уровень доверия {trust_level} не разрешает действие {action}", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
@@ -254,13 +298,16 @@ var codes = [...]Info{
 	{Code: ApiRateLimited, Status: 429, Title: "Слишком много запросов", Detail: "Повторите через {retry_after} с", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: ApiReplayReadOnly, Status: 403, Title: "В режиме воспроизведения действия недоступны", Detail: "Запрос на момент {as_of} только для чтения", UIKey: "errors.decision.replayReadOnly", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: ApiValidationFailed, Status: 400, Title: "Запрос не соответствует контракту", Detail: "Поле {field}: {reason}", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
+	{Code: ErpChannelDegraded, Status: 503, Title: "Канал обмена в режиме degraded", Detail: "Канал {system} в режиме degraded: {detail} — отправка остановлена до восстановления контракта", UIKey: "errors.integration.contractIncompatible", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: ErpContractIncompatible, Status: 422, Title: "Несовместимое изменение контракта обмена", Detail: "Метаданные {system} не совпали с версией контракта адаптера — канал degraded, результат не отправлен", UIKey: "errors.integration.contractIncompatible", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: ErpContractNotFound, Status: 422, Title: "Не найден договор с контрагентом", Detail: "Не найден договор с контрагентом {counterparty}", UIKey: "errors.integration.contractNotFound", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
+	{Code: ErpCorrectionPending, Status: 409, Title: "Новая версия отправленного сообщения ждёт решения", Detail: "Содержимое учётного сообщения {business_key} изменилось после подтверждения 1С — исправление (сторно + новое) только по решению человека", UIKey: "errors.integration.erpDataError", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: ErpDataError, Status: 422, Title: "1С вернула ошибку данных", Detail: "1С вернула ошибку данных {code}: {message}. Автоповтора нет — задача администратору", UIKey: "errors.integration.erpDataError", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: ErpDuplicateInErp, Status: 200, Title: "1С уже провела документ", Detail: "1С уже провела документ с этим номером сообщения — второй не создан", UIKey: "errors.integration.duplicateInErp", Quarantine: false, Severity: "warning", Guard: false, Aliases: nil},
 	{Code: ErpGalaktikaUnavailable, Status: 503, Title: "Галактика:ERP недоступна", Detail: "Галактика:ERP недоступна — повтор с тем же номером сообщения", UIKey: "errors.integration.galaktikaUnavailable", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: ErpIdMappingMissing, Status: 422, Title: "Нет соответствия идентификатора", Detail: "Нет соответствия идентификатора: {object} «{external_id}» — добавьте его в таблицу соответствий", UIKey: "errors.integration.idMappingMissing", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: ErpNoAck, Status: 504, Title: "1С не подтвердила приём", Detail: "1С не подтвердила приём за {time} — статус «учтено в 1С» не поставлен", UIKey: "errors.integration.noAck", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
+	{Code: ErpNotQuarantined, Status: 409, Title: "Сообщение не ждёт решения", Detail: "Учётное сообщение {business_key} в состоянии «{status}» — переотправка и исправление только из карантина", UIKey: "errors.integration.erpDataError", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: ErpUnavailable, Status: 503, Title: "1С недоступна", Detail: "1С недоступна — повтор с тем же номером сообщения через {delay}", UIKey: "errors.integration.erpUnavailable", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: FederationExtractTampered, Status: 422, Title: "Выписка паспорта изменена", Detail: "Выписка паспорта изменена — не принята", UIKey: "errors.federation.extractTampered", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: FederationExtractUnverifiable, Status: 202, Title: "Происхождение не подтверждено", Detail: "Подписи выписки проверить нельзя — принята с пометкой «происхождение не подтверждено»", UIKey: "errors.federation.extractUnverifiable", Quarantine: false, Severity: "warning", Guard: false, Aliases: nil},
@@ -281,6 +328,22 @@ var codes = [...]Info{
 	{Code: IngestUnknownEventType, Status: 422, Title: "Неизвестный тип события", Detail: "Тип «{event_type}» не объявлен в каталоге — сообщение в карантине", UIKey: "errors.ingest.incompatibleChange", Quarantine: true, Severity: "error", Guard: false, Aliases: nil},
 	{Code: IngestUnknownSchemaVersion, Status: 422, Title: "Неизвестная версия контракта", Detail: "Тип {event_type}: версия {version} неизвестна — сообщение в карантине до появления повышателя", UIKey: "errors.ingest.unknownSchemaVersion", Quarantine: true, Severity: "error", Guard: false, Aliases: []string{"E_UNSUPPORTED_VERSION"}},
 	{Code: IngestUnknownSource, Status: 403, Title: "Источник не зарегистрирован", Detail: "Источник «{source_id}» не зарегистрирован — сообщение отклонено", UIKey: "errors.ingest.unknownSource", Quarantine: true, Severity: "error", Guard: false, Aliases: nil},
+	{Code: ItemAlreadyRegistered, Status: 409, Title: "Изделие уже зарегистрировано", Detail: "Изделие {item_id} уже зарегистрировано: ID рождается один раз", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
+	{Code: ItemAlreadyReleased, Status: 409, Title: "Изделие уже выпущено", Detail: "Изделие {item_id} уже сдано на склад выпуска", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
+	{Code: ItemAssemblyCycle, Status: 409, Title: "Сборка образует цикл", Detail: "Изделие {component_item_id} уже содержит {item_id}: цикл в дереве сборки невозможен", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
+	{Code: ItemBindingSubjectUnknown, Status: 404, Title: "Привязываемое событие не найдено", Detail: "Событие {subject_event_id} не найдено среди событий без изделия", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
+	{Code: ItemCarrierInUse, Status: 409, Title: "Носитель уже действует у другого изделия", Detail: "Носитель {carrier_ref} действует у изделия {other_item_id}: сначала снимите его там", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
+	{Code: ItemCarrierNotActive, Status: 409, Title: "Носитель не нанесён", Detail: "У изделия нет действующего носителя {carrier_ref}", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
+	{Code: ItemComponentAlreadyAssembled, Status: 409, Title: "Компонент уже в другой сборке", Detail: "Компонент {component_item_id} уже установлен в {assembly_item_id}", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
+	{Code: ItemGroupInvalid, Status: 422, Title: "Группа изделий составлена неверно", Detail: "{reason}", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
+	{Code: ItemGroupNotActive, Status: 409, Title: "Группа не действует", Detail: "Группа {group_id} не сформирована или уже расформирована", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
+	{Code: ItemIdentificationNotQuestioned, Status: 409, Title: "Идентификация не под сомнением", Detail: "Подтверждать нечего: запись {questioned_event_id} не ставила идентификацию под сомнение или уже снята", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
+	{Code: ItemIdentificationQuestioned, Status: 409, Title: "Идентификация изделия под сомнением", Detail: "Изделие изолировано до повторной идентификации человеком с подписью", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
+	{Code: ItemInterventionNotOpen, Status: 409, Title: "Вмешательство не открыто", Detail: "Вмешательство {intervention_id} не открыто или уже закрыто", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
+	{Code: ItemLotAlreadyRegistered, Status: 409, Title: "Партия уже зарегистрирована", Detail: "Партия {lot_id} уже зарегистрирована", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
+	{Code: ItemLotNotAccepted, Status: 409, Title: "Партия не принята", Detail: "Партия {lot_id} в состоянии «{status}»: выдача в производство — только принятой партии", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
+	{Code: ItemNotRegistered, Status: 409, Title: "Изделие не зарегистрировано", Detail: "Изделие {item_id} не зарегистрировано — сначала регистрация", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
+	{Code: ItemZoneUnknown, Status: 422, Title: "Зона не описана в КД", Detail: "Зона {zone_id} не описана для типа изделия {item_type_id}", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
 	{Code: JournalAppendOnly, Status: 405, Title: "Журнал только на дописывание", Detail: "Изменение и удаление записей журнала невозможны — исправление только новой записью", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: JournalConcessionExhausted, Status: 409, Title: "Лимит разрешения на отклонение исчерпан", Detail: "Разрешение {concession_id}: остаток {remaining} из {limit}", UIKey: "errors.decision.concessionRequired", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
 	{Code: JournalDuplicate, Status: 409, Title: "Запись уже есть в журнале", Detail: "Запись с этим event_id уже записана — повтор не записывается", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},

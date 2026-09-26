@@ -23,9 +23,13 @@ export interface Lot {
   declared_quantity: number;
   /** Номер партии во внешней системе (соответствие — reference.external_id.mapped). */
   external_ref?: string;
+  /** Номер плавки партии. */
+  heat_no?: string;
   /** @minimum 0 */
   issued_quantity: number;
   item_type_id?: string;
+  /** Вид: lot — партия, heat — плавка (FR-45). */
+  kind?: string;
   lot_id: string;
   received_at?: string;
   registered_at?: string;

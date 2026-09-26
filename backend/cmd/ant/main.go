@@ -5,9 +5,9 @@
 //
 // Роль процесса задаётся флагом -role (несколько — через запятую). Все роли
 // спайна зарегистрированы заранее (эпик 02). Работают: api, migrate, worker,
-// crossitem, projector, rebuild (-item ‹id› — одно изделие), stands (каркас
-// эпика 06, stands.go); остальные — заглушки до своих эпиков (scheduler — 24;
-// outbox — 30; init — 05).
+// crossitem, projector, rebuild (-item ‹id› — одно изделие), scheduler (эпик
+// 24, notifications.go), stands (каркас эпика 06, stands.go); остальные —
+// заглушки до своих эпиков (outbox — 30; init — 05).
 // Роли одного процесса делят ядро (пул ant_app, журнал, LISTEN) — core.go.
 //
 // Флаг -openapi ‹файл› — выгрузить спецификацию HTTP API (contracts/openapi.yaml)
@@ -59,7 +59,7 @@ var roles = map[string]role{
 	"worker":    {run: runWorker},
 	"crossitem": {run: runCrossItem},
 	"projector": {run: runProjector},
-	"scheduler": pendingRole("scheduler", "эпик 24: сроки и «наступил срок»", false),
+	"scheduler": {run: runScheduler},
 	"outbox":    pendingRole("outbox", "эпик 30: исходящие сообщения и квитанции", false),
 	"stands":    pendingRole("stands", "эпики 06, 30–33: stand-ы внешних систем и прогоны", false),
 	"init":      pendingRole("init", "эпик 05: ключи, миграции, генезис", true),

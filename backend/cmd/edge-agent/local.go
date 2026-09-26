@@ -86,9 +86,11 @@ func (x *Extractor) Extract(t procs.StandTelemetryV1) []map[string]any {
 //
 //	POST /v1/events    — событие источника или массив событий (JSON) → буфер;
 //	POST /v1/telemetry — сообщение stand-а оборудования (contracts/internal/stands/telemetry.v1.json);
+//	POST /v1/vision/‹система› — сообщение системы видеофиксации (эпик 33, vision.go);
 //	GET  /v1/status    — состояние агента: номер, буфер, последняя ошибка.
-func LocalHandler(a *Agent, x *Extractor) http.Handler {
+func LocalHandler(a *Agent, x *Extractor, vision ...VisionRoute) http.Handler {
 	mux := http.NewServeMux()
+	registerVision(mux, a, vision)
 	mux.HandleFunc("POST /v1/events", func(w http.ResponseWriter, r *http.Request) {
 		b, err := io.ReadAll(http.MaxBytesReader(w, r.Body, 16<<20))
 		if err != nil {

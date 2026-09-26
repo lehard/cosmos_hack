@@ -404,14 +404,32 @@ func (v *run) signatures() {
 // есть в журнале или в записи о карантине.
 func (v *run) sourceSeq() {
 	c := v.checks["source_seq"]
-	seqs := map[string][]int64{}
+	type obs struct {
+		at  time.Time
+		run bool
+	}
+	seqs := map[string]map[int64]obs{}
+	add := func(src string, n int64, o obs) {
+		if seqs[src] == nil {
+			seqs[src] = map[int64]obs{}
+		}
+		if _, ok := seqs[src][n]; !ok {
+			seqs[src][n] = o
+		}
+	}
 	for _, r := range v.idx["main"] {
 		if r.sourceSeq > 0 {
-			seqs[r.sourceID] = append(seqs[r.sourceID], r.sourceSeq)
+			add(r.sourceID, r.sourceSeq, obs{at: r.committedAt, run: r.runID != ""})
 		}
 	}
 	for src, q := range v.quar {
-		seqs[src] = append(seqs[src], q...)
+		for _, n := range q {
+			add(src, n, obs{})
+		}
+	}
+	latest := time.Time{}
+	if es := v.idx["main"]; len(es) > 0 {
+		latest = es[len(es)-1].committedAt
 	}
 	srcs := make([]string, 0, len(seqs))
 	for s := range seqs {
@@ -419,25 +437,31 @@ func (v *run) sourceSeq() {
 	}
 	for _, src := range uniq(srcs) {
 		c.checked++
-		ns := seqs[src]
+		ns := make([]int64, 0, len(seqs[src]))
+		for n := range seqs[src] {
+			ns = append(ns, n)
+		}
 		slices.Sort(ns)
-		ns = slices.Compact(ns)
 		for i := 1; i < len(ns); i++ {
 			if ns[i] == ns[i-1]+1 {
 				continue
 			}
 			from, to := ns[i-1]+1, ns[i]-1
-			declared := slices.ContainsFunc(v.losses[src], func(l [2]int64) bool { return l[0] <= from && l[1] >= to })
-			if declared {
+			if slices.ContainsFunc(v.losses[src], func(l [2]int64) bool { return l[0] <= from && l[1] >= to }) {
 				c.add("not_verifiable", "source_seq_gap.declared", fmt.Sprintf("источник %s: номера %d…%d объявлены потерянными (потеря данных источника)", src, from, to), "", 0, "")
 				continue
 			}
-			// Объявление потери — реакция планировщика ingest.source.loss_suspected
-			// (роль scheduler, эпик 24); пока её нет, разрыв без объявления —
-			// оговорка «не проверяемо», а не нарушение: номер мог не дойти от
-			// устройства. Удаление записи из журнала ловит проверка цепочек.
-			// TODO(24): после планировщика — «отвергнуто».
-			c.add("not_verifiable", "source_seq_gap", fmt.Sprintf("источник %s: номеров %d…%d нет ни в журнале, ни в записи о карантине, потеря не объявлена", src, from, to), "", 0, "")
+			// Потерю объявляет планировщик (ingest.source.loss_suspected, роль
+			// scheduler) после окна ожидания досылки. Разрыв, который после
+			// окна (здесь — MaxGap) так и не объявлен, — нарушение: номер
+			// скрыт; в окне и в прогоне сценария (виртуальное время) — оговорка.
+			next := seqs[src][ns[i]]
+			grace := max(v.in.MaxGap, time.Minute)
+			if !next.run && !next.at.IsZero() && latest.Sub(next.at) > grace {
+				c.reject("source_seq_gap", fmt.Sprintf("источник %s: номеров %d…%d нет ни в журнале, ни в записи о карантине, и потеря не объявлена за %s", src, from, to, grace), "", 0, "")
+				continue
+			}
+			c.add("not_verifiable", "source_seq_gap.pending", fmt.Sprintf("источник %s: номеров %d…%d нет ни в журнале, ни в записи о карантине; потеря ещё не объявлена (окно ожидания или время прогона сценария)", src, from, to), "", 0, "")
 		}
 	}
 }

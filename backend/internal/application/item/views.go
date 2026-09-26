@@ -6,6 +6,8 @@ import "time"
 type ItemLookup struct {
 	ItemID     string `json:"item_id" doc:"Внутренний ID изделия: код_предприятия:локальный_id (AD-16)."`
 	CarrierRef string `json:"carrier_ref,omitempty" doc:"Носитель, по которому найдено: ant:carrier:‹тип›:‹значение›."`
+	// Candidates — носитель действовал у нескольких изделий: не угадываем (FR-34).
+	Candidates []string `json:"candidates,omitempty" doc:"Все изделия с этим носителем на момент, если их несколько (FR-34): выбор — за человеком."`
 }
 
 // ItemStatus — оси статуса изделия (PRD §3b, AD-30): у каждой оси один
@@ -44,6 +46,10 @@ type ItemSignature struct {
 	Level      int    `json:"level" minimum:"0" maximum:"3" doc:"Уровень подписи (AD-13)."`
 	Check      string `json:"check" enum:"valid,rejected,not_verifiable,unchecked" doc:"Статус проверки: цело / отвергнуто / не проверяемо / не проверялась (демо без подписей)."`
 	AttestedBy string `json:"attested_by,omitempty" doc:"Заверитель бумажной подписи (AD-43)."`
+	// PaperOriginalRef, ScanAddress — бумага с заверением (AD-43): учётный
+	// номер бумажного оригинала в архиве ОТК и адрес скана в хранилище материалов.
+	PaperOriginalRef string `json:"paper_original_ref,omitempty" doc:"Учётный номер бумажного оригинала в архиве ОТК (AD-43)."`
+	ScanAddress      string `json:"scan_address,omitempty" doc:"Адрес скана в хранилище материалов: streebog256:… (AD-23, AD-43)."`
 }
 
 // PassportEntry — запись паспорта: факт, решение или реакция — раздельно (кейс §7.2, FR-42).
@@ -62,6 +68,15 @@ type PassportEntry struct {
 	Signatures  []ItemSignature `json:"signatures"`
 	Corrects    string          `json:"corrects,omitempty" doc:"Исправляемая запись (FR-122)."`
 	CARef       string          `json:"ca_ref,omitempty" doc:"Критическое действие (AD-28)."`
+	// BindingBasis, BindingReliability — привязка события к изделию (AD-41,
+	// FR-34): как привязано и насколько надёжно; у событий, привязанных
+	// межизделийной стадией, — основание стадии.
+	BindingBasis       string `json:"binding_basis,omitempty" doc:"Как событие привязано к изделию: internal_id, carrier, post_context, time_window, manual (AD-41)."`
+	BindingReliability string `json:"binding_reliability,omitempty" doc:"Надёжность привязки: unique, probable, ambiguous, unidentified (FR-34)."`
+	// Candidates — кандидаты неоднозначной привязки (FR-34): событие не угадано.
+	Candidates []string `json:"candidates,omitempty" doc:"Кандидаты при неоднозначной привязке события (FR-34)."`
+	// Bound — запись-копия события без изделия, привязанного стадией или человеком.
+	Bound bool `json:"bound,omitempty" doc:"Событие пришло без изделия и привязано позже (AD-41)."`
 }
 
 // ItemDocumentRef — документ изделия (FR-65: «документов собрано из истории»).
@@ -80,6 +95,8 @@ type ItemZone struct {
 	Closed           bool   `json:"closed" doc:"Доступ к зоне закрыт (FR-20)."`
 	ClosedBy         string `json:"closed_by,omitempty" doc:"Шаг, закрывший доступ."`
 	OpenIntervention string `json:"open_intervention,omitempty" doc:"Открытое вмешательство (FR-21)."`
+	InspectionStatus string `json:"inspection_status,omitempty" doc:"Проверка зоны (FR-46): not_inspected — не проверялась, inspected — проверена, stale — устарела после вмешательства."`
+	LastInspection   string `json:"last_inspection,omitempty" doc:"Последний результат контроля зоны (event_id)."`
 }
 
 // ItemCarrier — носитель идентификатора (AD-16).
@@ -96,23 +113,36 @@ type ItemCarrier struct {
 // ItemPassport — паспорт изделия (FR-42, кейс «история изделия»): исходные
 // сигналы, анализ системы, решения людей и итоговый статус — раздельно.
 type ItemPassport struct {
-	ItemID          string            `json:"item_id"`
-	Label           string            `json:"label"`
-	ItemTypeID      string            `json:"item_type_id"`
-	ItemRevision    string            `json:"item_revision"`
-	ProcessVersion  string            `json:"process_version" doc:"Закреплённая версия процесса (хеш, AD-17)."`
-	StepKey         string            `json:"step_key,omitempty"`
-	OrderID         string            `json:"order_id,omitempty" doc:"Задание 1С."`
-	LotIDs          []string          `json:"lot_ids"`
-	Identification  string            `json:"identification" enum:"unique,probable,ambiguous,unidentified" doc:"Идентификация (AD-16): под сомнением — изоляция до повторной идентификации."`
-	Status          ItemStatus        `json:"status"`
-	Entries         []PassportEntry   `json:"entries" doc:"Записи паспорта по времени."`
-	Documents       []ItemDocumentRef `json:"documents"`
-	Zones           []ItemZone        `json:"zones"`
-	Carriers        []ItemCarrier     `json:"carriers"`
-	Incidents       []string          `json:"incidents" doc:"Инциденты, в области которых изделие."`
-	Nonconformities []string          `json:"nonconformities"`
-	BasisSeq        int64             `json:"basis_seq" doc:"seq, на котором построен паспорт (для команд, AD-39)."`
+	ItemID         string            `json:"item_id"`
+	Label          string            `json:"label"`
+	ItemTypeID     string            `json:"item_type_id"`
+	ItemRevision   string            `json:"item_revision"`
+	ProcessVersion string            `json:"process_version" doc:"Закреплённая версия процесса (хеш, AD-17)."`
+	StepKey        string            `json:"step_key,omitempty"`
+	OrderID        string            `json:"order_id,omitempty" doc:"Задание 1С."`
+	LotIDs         []string          `json:"lot_ids"`
+	Identification string            `json:"identification" enum:"unique,probable,ambiguous,unidentified" doc:"Идентификация (AD-16): под сомнением — изоляция до повторной идентификации."`
+	Status         ItemStatus        `json:"status"`
+	Entries        []PassportEntry   `json:"entries" doc:"Записи паспорта по времени."`
+	Documents      []ItemDocumentRef `json:"documents"`
+	Zones          []ItemZone        `json:"zones"`
+	Carriers       []ItemCarrier     `json:"carriers"`
+	Incidents      []string          `json:"incidents" doc:"Инциденты, в области которых изделие."`
+	// IncidentStatuses — статус изделия в каждом инциденте по двум осям (FR-62).
+	IncidentStatuses []ItemIncident `json:"incident_statuses,omitempty" doc:"Статус изделия в каждом инциденте: что известно и что делать (FR-62)."`
+	// Questions — «идентификация под сомнением» (AD-16).
+	Questions []IdentificationQuestion `json:"identification_questions,omitempty" doc:"Идентификация под сомнением: причина, кандидаты; открытое — изоляция до повторной идентификации (AD-16)."`
+	// Witnesses — результаты образца-свидетеля групп изделия (FR-15).
+	Witnesses []WitnessResult `json:"witness_results,omitempty" doc:"Результаты образца-свидетеля садки или групповой операции (FR-15)."`
+	// Holds — сдерживание, пришедшее по генеалогии (AD-42).
+	Holds []GenealogyHold `json:"genealogy_holds,omitempty" doc:"Сдерживание по генеалогии: блок партии или компонента (AD-42)."`
+	// Interventions — вмешательства в собранное изделие (FR-21).
+	Interventions []ItemIntervention `json:"interventions,omitempty" doc:"Вмешательства в собранное изделие (FR-21)."`
+	// RefChanges — изменения справочника с действием в прошлом (AD-31).
+	RefChanges      []ItemRefChange `json:"reference_changes,omitempty" doc:"Изменения справочника с действием в прошлом, затронувшие изделие (AD-31)."`
+	SplitFrom       string          `json:"split_from,omitempty" doc:"Изделие, из которого выделено разделением 1→N (FR-15)."`
+	Nonconformities []string        `json:"nonconformities"`
+	BasisSeq        int64           `json:"basis_seq" doc:"seq, на котором построен паспорт (для команд, AD-39)."`
 }
 
 // ItemHistoryEntry — строка журнала изменений паспорта (FR-43): было / стало / кто / причина.
@@ -143,10 +173,78 @@ type GenealogyNode struct {
 	Position   string `json:"position,omitempty" doc:"Позиция в сборке."`
 	Summary    string `json:"summary,omitempty" enum:"in_process,suspect,reinspection_required,hold,pending_decision,nonconforming,cleared,released,in_rework,in_repair,accepted_with_concession,scrapped,returned"`
 	Provenance string `json:"provenance,omitempty" doc:"Для выписки партнёра — «происхождение подтверждено / не подтверждено» (AD-19)."`
+	Relation   string `json:"relation,omitempty" doc:"Связь с изделием паспорта: component_of, assembly, made_from_lot, split_from, split_into, grouped_with."`
+	Depth      int    `json:"depth,omitempty" doc:"Уровень от изделия паспорта: вниз — положительный, вверх — отрицательный."`
 }
 
 // ItemGenealogy — генеалогия изделия вверх (из чего собрано) и вниз (куда вошло).
 type ItemGenealogy struct {
 	ItemID string          `json:"item_id"`
 	Nodes  []GenealogyNode `json:"nodes"`
+	// Up, Down — запросы вверх и вниз по дереву сборки (FR-45).
+	Up     []string `json:"up,omitempty" doc:"Сборки, в которые вошло изделие, снизу вверх (FR-45)."`
+	Down   []string `json:"down,omitempty" doc:"Компоненты-экземпляры на всех уровнях (FR-45)."`
+	Lots   []string `json:"lots,omitempty" doc:"Партии изделия и партионных компонентов."`
+	Groups []string `json:"groups,omitempty" doc:"Временные группы (садки) изделия."`
+}
+
+// ItemIncident — статус изделия в инциденте по двум осям (FR-62).
+type ItemIncident struct {
+	IncidentID    string `json:"incident_id"`
+	Status        string `json:"status" enum:"confirmed,suspect,excluded,unknown" doc:"Что известно."`
+	Action        string `json:"action" enum:"observe,check,block,release" doc:"Что делать."`
+	ScopeVersion  int    `json:"scope_version" minimum:"0"`
+	ViaAssemblyOf string `json:"via_assembly_of,omitempty" doc:"Попало в область через компонент."`
+}
+
+// IdentificationQuestion — «идентификация под сомнением» (AD-16).
+type IdentificationQuestion struct {
+	Cause          string    `json:"cause" enum:"carrier_unreadable,carrier_mismatch,ambiguous_binding,carrier_missing"`
+	Candidates     []string  `json:"candidates,omitempty"`
+	Basis          []string  `json:"basis"`
+	At             time.Time `json:"at"`
+	QuestionedID   string    `json:"questioned_event_id" doc:"Запись item.identification.questioned — её снимает подтверждение."`
+	SubjectEventID string    `json:"subject_event_id,omitempty" doc:"Событие с неоднозначной привязкой."`
+	Open           bool      `json:"open"`
+	ClosedBy       string    `json:"closed_by,omitempty"`
+}
+
+// WitnessResult — результат образца-свидетеля группы (FR-15).
+type WitnessResult struct {
+	GroupID           string    `json:"group_id"`
+	GroupKind         string    `json:"group_kind"`
+	WitnessItemID     string    `json:"witness_item_id"`
+	InspectionEventID string    `json:"inspection_event_id"`
+	Outcome           string    `json:"outcome"`
+	Method            string    `json:"method,omitempty"`
+	ConclusionRef     string    `json:"conclusion_ref,omitempty"`
+	At                time.Time `json:"at"`
+}
+
+// GenealogyHold — сдерживание, пришедшее по генеалогии (AD-42).
+type GenealogyHold struct {
+	Level         string   `json:"level"`
+	Source        string   `json:"source" doc:"lot — блок партии; component — блок компонента; split_parent — блок исходного изделия."`
+	SourceEventID string   `json:"source_event_id"`
+	LotID         string   `json:"lot_id,omitempty"`
+	SourceItemID  string   `json:"source_item_id,omitempty"`
+	Path          []string `json:"path,omitempty"`
+	Released      bool     `json:"released" doc:"Основание снято у источника; блок снимает человек (AD-27)."`
+}
+
+// ItemIntervention — вмешательство (FR-21).
+type ItemIntervention struct {
+	InterventionID string     `json:"intervention_id"`
+	ZoneIDs        []string   `json:"zone_ids"`
+	Purpose        string     `json:"purpose,omitempty"`
+	OpenedAt       time.Time  `json:"opened_at"`
+	ClosedAt       *time.Time `json:"closed_at,omitempty"`
+	RetestRequired bool       `json:"retest_required,omitempty"`
+}
+
+// ItemRefChange — изменение справочника с действием в прошлом (AD-31).
+type ItemRefChange struct {
+	ReferenceEventID string `json:"reference_event_id"`
+	Kind             string `json:"kind"`
+	ValidFrom        string `json:"valid_from"`
 }
