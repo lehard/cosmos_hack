@@ -107,12 +107,14 @@ const items = computed(() => postItems(post.value, runProfile.value, itemsQ.data
 /** Очередь шага + изделия из открытых задач «Начать» этого шага (шаг изделия меняется только при старте операции). */
 const candidates = computed(() => {
   const base = startCandidates(itemsQ.data.value?.data)
-  const have = new Set(base.map((c) => c.row.item_id))
   const fromTasks = (tasksQ.data.value?.data.items ?? [])
-    .filter((t) => t.state === 'open' && t.operation_id === 'process.operation.start' && t.step_key === stepKey.value && t.item_id && !have.has(t.item_id))
+    .filter((t) => t.state === 'open' && t.operation_id === 'process.operation.start' && t.step_key === stepKey.value && t.item_id)
     .map((t) => ({ row: { item_id: t.item_id!, label: t.item_label ?? t.item_id! } as (typeof base)[number]['row'], blocked: false }))
-  // Есть задачи «Начать» — очередь это они (без сваренного в истории); иначе очередь шага.
-  return fromTasks.length ? fromTasks : base
+  // Очередь — только изделия с открытой задачей «Начать». Список шага (items?step_key) не годится:
+  // шаг изделия в паспорте отстаёт от процесса, там висит уже сваренное из истории (Ф-101, Ф-121…),
+  // и «Начать» по нему даёт отказ «изделие на шаге welding.weld (сейчас: …)».
+  void base
+  return fromTasks
 })
 
 // «Идёт N мин» против нормы шага.
