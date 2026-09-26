@@ -3,18 +3,26 @@
  * «Как было дело» (FR-51, PRD §3a): одна вертикальная лента — до операции →
  * операция (станок, программа, исполнитель, время) → во время → после. У
  * каждой записи время, отметка смысла (норма / обстоятельство / признак
- * дефекта), текст сервера и источник факта (FR-140). Действия исполнителя —
+ * дефекта), текст сервера и источник факта (FR-140); у записи с числами режима —
+ * полоса «уставка / наблюдалось» (один раз на параметр). Действия исполнителя —
  * обстоятельство, а не вина. Узкое окно записи: без горизонтальной прокрутки.
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { SourceMark, entryText } from '@/entities/item'
 import { evidencePhases, recordTone, type NCCard, type RecordTone } from '@/entities/nonconformity'
+import RegimeBar from './RegimeBar.vue'
 
 const props = defineProps<{ card: NCCard }>()
 const { t, d } = useI18n()
 
 const phases = computed(() => evidencePhases(props.card))
+/** Полоса режима — один раз на параметр: у последней по времени записи с числами. */
+const barAt = computed(() => {
+  const last = new Map<string, string>()
+  for (const b of phases.value) for (const r of b.records) if (r.reading) last.set(r.reading.parameter, r.event_id)
+  return new Set(last.values())
+})
 const op = computed(() => props.card.happened.operation ?? null)
 const time = (x: string) => d(new Date(x), 'dateTime')
 const clock = (x: string) => d(new Date(x), 'time')
@@ -60,6 +68,7 @@ const TONE_TEXT: Record<RecordTone, string> = {
             <span v-if="r.author && r.kind === 'decision'" class="muted ant-wrap">{{ r.author }}</span>
           </p>
           <p class="text ant-wrap">{{ entryText(r) }}</p>
+          <RegimeBar v-if="r.reading && barAt.has(r.event_id)" :reading="r.reading" />
         </div>
       </li>
       <li v-if="!block.records.length" class="entry empty">

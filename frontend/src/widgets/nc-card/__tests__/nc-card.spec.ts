@@ -113,6 +113,30 @@ describe('карточка несоответствия', () => {
     expect(w.find('[data-testid="similar-count"]').exists()).toBe(true)
   })
 
+  it('полоса режима: уставка и наблюдение на одной шкале, выход за допуск — крупно; один раз на параметр', () => {
+    const card = ncCard()
+    const reading = { parameter: 'current_a', unit: 'A', scale: 0, setpoint_nominal: 180, setpoint_min: 170, setpoint_max: 190, observed_min: 205, observed_max: 212 }
+    card.happened.during[0]!.reading = reading
+    card.happened.during.push({ ...card.happened.during[0]!, event_id: 'e-cycle', event_type: 'equipment.cycle.summarized', occurred_at: at('08:40'), reading })
+    const w = mountWith(card)
+    const bars = w.findAll('[data-testid="regime-bar"]')
+    expect(bars).toHaveLength(1)
+    expect(w.find('[data-id="e-cycle"] [data-testid="regime-bar"]').exists()).toBe(true)
+    expect(norm(bars[0]!.find('[data-testid="regime-verdict"]').text())).toBe('Ток сварки: макс. 212 А — на 22 А выше допуска')
+    expect(norm(bars[0]!.text())).toContain('уставка 170–190 А')
+    expect(norm(bars[0]!.text())).toContain('наблюдалось 205–212 А')
+    expect(bars[0]!.findAll('.observed[data-out]')).toHaveLength(1)
+  })
+
+  it('режим в пределах уставки — так и написано, без красного', () => {
+    const card = ncCard()
+    card.happened.during[0]!.reading = { parameter: 'voltage_x', unit: 'V', scale: 1, setpoint_min: 200, setpoint_max: 240, observed_min: 210, observed_max: 230 }
+    const bar = mountWith(card).find('[data-testid="regime-bar"]')
+    expect(bar.find('[data-testid="regime-verdict"]').text()).toBe('в пределах уставки')
+    expect(norm(bar.text())).toContain('уставка 20–24 В')
+    expect(bar.findAll('.observed[data-out]')).toHaveLength(0)
+  })
+
   it('что предлагает система: предложение, основания, альтернативы, нехватка сведений; правило — во втором слое', () => {
     const why = mountCard().find('[data-testid="why-system"]')
     expect(why.text()).toContain('Это предложение системы, а не решение')
