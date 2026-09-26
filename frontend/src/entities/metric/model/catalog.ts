@@ -88,5 +88,4 @@ export const DIMENSION_TEXT: Record<MetricSliceDimension, string> = {
   shift: 'analytics.slices.shift',
   defect_type: 'analytics.slices.defectType',
   origin: 'widgets.analytics.dimensions.origin',
-  cause_category: 'widgets.analytics.dimensions.causeCategory',
 }

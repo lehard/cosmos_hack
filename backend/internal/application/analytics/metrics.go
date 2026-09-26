@@ -381,7 +381,8 @@ func dimValue(dim string, r domain.Row) (string, string, string) {
 	case "origin":
 		return "origin", d.Origin, map[string]string{domain.DefectIncoming: "Входной брак", domain.DefectProduction: "Производственные"}[d.Origin]
 	case "cause_category":
-		return "cause_category", d.Ref, causeTitle[d.Ref]
+		// Категория причины — «откуда брак» (измерение origin контракта v1).
+		return "origin", d.Ref, causeTitle[d.Ref]
 	case "comparable":
 		// Сопоставимые работы: тип операции × тип изделия × исполнитель.
 		if d.Performer == "" {

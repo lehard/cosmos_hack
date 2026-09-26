@@ -103,7 +103,7 @@ type MetricRow struct {
 // MetricSlice — значение показателя в срезе (участок, операция, оборудование,
 // исполнитель, смена, вид дефекта, источник: входной брак / производственные ошибки).
 type MetricSlice struct {
-	Dimension string      `json:"dimension" enum:"location,step,equipment,performer,shift,defect_type,origin,cause_category"`
+	Dimension string      `json:"dimension" enum:"location,step,equipment,performer,shift,defect_type,origin" doc:"Измерение среза; origin — откуда брак: входной / производственный или категория подтверждённой причины (входной брак, оборудование, исполнитель…)."`
 	Key       string      `json:"key"`
 	Label     string      `json:"label"`
 	Value     MetricValue `json:"value"`

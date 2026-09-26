@@ -393,7 +393,7 @@ func (c *Ctx) analyticsMetrics() []aMetric {
 		if n.Spec.Cause != nil && !n.Spec.Cause.At.Time().After(c.T) {
 			cat, ce.num = n.Spec.Cause.Category, true
 		}
-		ce.slices = []aSlice{{dim: "cause_category", key: cat, label: causeTitle(cat)}}
+		ce.slices = []aSlice{{dim: "origin", key: cat, label: causeTitle(cat)}}
 		cause.entries = append(cause.entries, ce)
 		isIncoming := n.Spec.Cause != nil && n.Spec.Cause.Category == "incoming"
 		for _, d := range n.Spec.Defects {

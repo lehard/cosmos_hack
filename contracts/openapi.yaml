@@ -6371,6 +6371,7 @@ components:
       additionalProperties: false
       properties:
         dimension:
+          description: "Измерение среза; origin — откуда брак: входной / производственный или категория подтверждённой причины (входной брак, оборудование, исполнитель…)."
           enum:
             - location
             - step
@@ -6379,7 +6380,6 @@ components:
             - shift
             - defect_type
             - origin
-            - cause_category
           type: string
         key:
           type: string
