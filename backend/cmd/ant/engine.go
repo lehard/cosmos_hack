@@ -171,7 +171,7 @@ func journalLive(ctx context.Context, env *environment) (*appjournal.Service, er
 	}
 	live := engineapp.NewLiveUpdates(engineapp.LiveConfig{Log: c.engine, Now: c.codec.Now, Logger: env.log})
 	env.coreH.bg.Go(func() { _ = live.Run(ctx) })
-	return appjournal.NewServiceWith(c.journal, c.listener, appjournal.WithLive(live)), nil
+	return appjournal.NewServiceWith(c.journal, c.listener, appjournal.WithLive(live), appjournal.WithClockMode(c.clock.Mode)), nil
 }
 
 // machinelogsLive — live-реализация ведущих портов machinelogs для роли api

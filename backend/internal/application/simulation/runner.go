@@ -106,6 +106,9 @@ func (s *Service) Step(ctx context.Context, runID string) error {
 		}
 		switch due.Kind {
 		case sim.DueEmissions:
+			// Привязка события по носителю (AD-41) видит носители, которые
+			// стадия уже обработала: сначала движок догоняет журнал (эпик 16).
+			s.settle(ctx, st)
 			if err := s.deliver(ctx, st, rp, due.From, due.To); err != nil {
 				return s.fail(ctx, st, err)
 			}
