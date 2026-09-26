@@ -2,6 +2,8 @@ package simulation
 
 import (
 	"time"
+
+	"ant/internal/application/platform"
 )
 
 // Формы ответов пульта тестовых сценариев (PRD §3a «Тестовые сценарии»,
@@ -36,6 +38,7 @@ type Run struct {
 	State           string     `json:"state" enum:"running,paused,waiting_for_decision,completed,stopped,failed"`
 	Speed           int        `json:"speed" minimum:"1" maximum:"1000" doc:"Ускорение доменных часов ×1…×1000."`
 	Step            int        `json:"step" minimum:"0" doc:"Номер шага сценария (на заготовках — шаг курсора, AD-36)."`
+	StepTitle       string     `json:"step_title,omitempty" doc:"Название текущего шага сценария."`
 	Steps           int        `json:"steps" minimum:"0" doc:"Всего шагов."`
 	ClockAt         time.Time  `json:"clock_at" doc:"Доменное «сейчас» прогона — последняя запись time.clock.ticked (AD-37)."`
 	StartedAt       time.Time  `json:"started_at"`
@@ -52,6 +55,14 @@ type RunWait struct {
 	Role     string `json:"role" doc:"Роль стола, где ждут решения."`
 	Action   string `json:"action" doc:"x-ant-action id ожидаемой операции."`
 	ObjectID string `json:"object_id" doc:"Объект решения (несоответствие, изделие…)."`
+	Title    string `json:"title,omitempty" doc:"Что ждёт сценарий, по-русски: «подтвердить сигнал Ф-017»."`
+}
+
+// StartedRun — квитанция запуска прогона: команда записана, прогон создан
+// под своим run_id (AD-38).
+type StartedRun struct {
+	platform.Receipt
+	RunID string
 }
 
 // RunList — прогоны.

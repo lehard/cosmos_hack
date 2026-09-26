@@ -692,6 +692,7 @@ export * from './simulationRunReadParams';
 export * from './sourceList';
 export * from './sourceView';
 export * from './sourceViewState';
+export * from './startedRun';
 export * from './startOperation';
 export * from './startRun';
 export * from './startRunMode';
