@@ -2,7 +2,7 @@
 
 Что система хранит, как устроена запись журнала и событие, какие есть сущности, статусы, проекции и соглашения. Опоры: AD-2, AD-16, AD-20, AD-23, AD-29, AD-30, AD-37, AD-40, AD-41, AD-44, AD-45, соглашения спайна; FR-27…FR-47, FR-122, FR-123, FR-140; кейс §4.3–§4.7, §7.2.
 
-**Статус.** Написано до кода, по спайну. Источник правды для схем — файлы в `contracts/`; этот документ объясняет их смысл. Имена типов событий, приведённые ниже как примеры, предварительные: окончательный перечень фиксирует каталог `contracts/events/catalog.yaml` (эпик 00). Где выбирать — прав каталог.
+**Статус.** Написано по спайну и сверено с кодом — раздел [«Сверено с кодом»](#сверено-с-кодом). Источник правды для схем — файлы в `contracts/`; этот документ объясняет их смысл. Полный перечень типов событий — каталог `contracts/events/catalog.yaml`. Где выбирать — прав каталог.
 
 ## 1. Три слоя данных
 
@@ -44,7 +44,7 @@ flowchart LR
 | `entry_kind` | `fact` / `reaction` / `decision` / `service` | факт источника; реакция движка; решение человека; служебная (время, политика, ключи, контрольные точки, генезис, карантин) |
 | `source_kind` (у факта) | ручной ввод / станок / датчик / камера / внешняя система / импорт | откуда пришёл факт (FR-140); вывод системы — реакция, а не факт |
 | `reliability` (у факта) | по источнику и способу привязки | насколько надёжен факт и его привязка (FR-34) |
-| `provenance_class` | `device`, `personal`, `paper`, `partner`, `server-attested`, `scenario`, `genesis` | чьей подписью подтверждена запись; разрешающее действие не может опираться только на `server-attested` |
+| `provenance_class` | `device`, `personal`, `paper`, `partner`, `server_attested`, `scenario`, `genesis` | чьей подписью подтверждена запись; разрешающее действие не может опираться только на `server_attested` |
 
 ### 2.2. Открытые и зашифрованные поля
 
@@ -59,7 +59,7 @@ flowchart LR
 | Реакции | `rule_id`, `normative_rev`, `reaction_slot`, `version`, `supersedes`, `basis_seq` |
 | Конкурентность и сборка | `policy_seq`, `domain_build` (хеш доменного пакета) |
 | Происхождение | `provenance_class` |
-| **Зашифровано** (AD-23) | конверт DSSE с содержимым и подписями, `salt` |
+| **Зашифровано** (AD-23) | блок `sealed` (`aead`, `dek_id`, `nonce_b64`, `ciphertext_b64`) над конвертом DSSE с содержимым и подписями и `salt_b64` |
 
 Результат контроля и содержание решения лежат только в зашифрованном блоке; имена типов результат не кодируют (`inspection.result.recorded`, а не `inspection.result.failed`). Метаданные заголовка видны без ключа шифрования — это названное ограничение ([threat-model.md](threat-model.md)).
 
@@ -98,57 +98,62 @@ flowchart LR
 | `event_id`, `event_type`, `schema_version` | те же | `event_type` — `семейство.сущность.действие` |
 | `occurred_at`, `source_id` | те же | RFC 3339 UTC, ровно три знака после секунд |
 | (время поступления) | `received_at` | ставит только ядро |
-| `item_id` | `item_ref` (тип носителя, значение) → после разрешения `item_id` + `carrier_ref` | ID изделия рождается в системе и из метки не выводится (AD-16, AD-41); подробно — `contracts/events/README` |
+| `item_id` | `item_ref` (тип носителя, значение) → после разрешения `item_id` + `carrier_ref` | ID изделия рождается в системе и из метки не выводится (AD-16, AD-41); подробно — `contracts/events/README.md` |
 | `item_type_id` | `item_type_id` | ссылка на номенклатуру |
 | `line_id`, `station_id` | те же | линия и участок (пост) |
 | `operation_run_id` | тот же | повтор операции — новый `operation_run_id` + `rework_of` (FR-47) |
-| `operator_id`, `equipment_id` | те же | исполнитель — условный псевдоним; неизвестный — явное `unknown` (FR-123) |
+| `operator_id`, `equipment_id` | те же | исполнитель — условный псевдоним; неизвестный — `null` («неизвестно», FR-123) |
 | `operation_started_at`, `operation_finished_at` | те же | если доступны |
 | `reported_duration` | `reported_duration` {значение, единица, смысл интервала, происхождение} | смысл: активная обработка / полное время на участке / иное; происхождение: передано источником / вычислено системой (FR-88) |
-| `inspection_result` | тот же | `defect_found` / `no_defect_found` / `unable_to_assess` с кодом причины (FR-36) |
-| `defects` | `defects[]` | код вида по классификатору, описание, зона и место, тяжесть, измеренное значение и допуск (FR-27, FR-125) |
-| `confidence` | `analyzer_confidence` → `confidence_bp` | целые базисные пункты (0…10000), без float (AD-4) |
-| `observation_quality` | `observation_quality` → `*_bp` | отдельно от уверенности |
-| `action_type`, `machine_state` | те же | действия исполнителя; состояние оборудования по классам MTConnect (AD-29) |
+| `inspection_result` | `outcome` | `defect_indicated` / `no_defect_indicated` / `unable_to_assess` с причиной `unable_reason` (FR-36) |
+| `defects` | `defects[]` | код вида по классификатору (`defect_type_code`), описание, зона и место, тяжесть, измеренное значение и допуск (FR-27, FR-125) |
+| `confidence` | `analyzer_confidence_bp` | целые базисные пункты (0…10000), без float (AD-4) |
+| `observation_quality` | `observation_quality_bp` | отдельно от уверенности |
+| `action_type` | отдельные типы семейства `operator` | действия исполнителя (`operator.*`) |
+| `machine_state` | v1: `machine_state`; v2: `execution` + `condition` + `controller_mode` | состояние оборудования по классам MTConnect (AD-29) |
 | `evidence_refs` | тот же | ссылки на материалы по адресу содержимого; отсутствие обрабатывается явно (FR-102) |
-| `analyzer_version` | вектор версий наблюдения | ревизия изделия, карта контроля, камера, калибровка, анализатор, профиль порогов, контракт, приложение (AD-29) |
-| — | `inspection_method`, `processing_state`, `recipe_ref`, `identification_level`, `limitations[]`, `correlation_id`, `causation_id` | дополнительно (FR-27) |
+| `analyzer_version` | `versions.analyzer_version` в векторе версий `versions` | ревизия изделия, карта контроля, камера, калибровка, анализатор, профиль порогов, контракт, приложение (AD-29) |
+| — | `method`, `processing_state`, `versions.recipe_ref`, `item_ref.identification_level`, `limitations[]`, `correlation_id`, `causation_id` | дополнительно (FR-27) |
 
-### 3.2. Пример (иллюстрация, поля предварительные)
+### 3.2. Пример
+
+Эталонное событие сценария F15 (`scenarios/definitions/streams/F15.events.jsonl`, метка `F-501/kt3`; `zone_ids` сокращён). Подписывается целиком: DSSE с `payloadType` = `application/vnd.ant.event+json; v=1`, `payload` — байты JCS этого объекта, `signatures[]` — `{keyid: "‹key_id›@‹версия›", sig}` (`contracts/crypto/dsse-envelope.schema.json`).
 
 ```json
 {
-  "payloadType": "application/vnd.ant.event+json; v=1",
-  "payload": {
-    "format_version": 1,
-    "crypto_profile": "gost",
-    "signers": ["edge:weld-cam-3@1"],
-    "event": {
-      "event_id": "0192f7a2-6c1e-7b4a-9d3e-2f1c0a9b8e77",
-      "event_type": "inspection.result.recorded",
-      "schema_version": 1,
-      "source_id": "edge:weld-cam-3",
-      "source_seq": 1842,
-      "occurred_at": "2026-09-25T10:14:03.512Z",
-      "item_ref": {"carrier": "dpm", "value": "FL100-0034"},
-      "line_id": "L1",
-      "station_id": "KT-3",
-      "operation_run_id": "run-7c1d",
-      "inspection_method": "camera",
-      "processing_state": "completed",
-      "inspection_result": "defect_found",
-      "defects": [{"defect_code": "UNDERCUT", "zone": "weld-2", "severity": "major"}],
-      "analyzer_confidence_bp": 7100,
-      "observation_quality_bp": 8800,
-      "versions": {"recipe": "KT3-weld@4", "camera": "cam-3@2", "calibration": "cal-2026-09-01", "analyzer": "seg-cls@1.3.0", "thresholds": "tp@7", "contract": 1, "app": "0.1.0"},
-      "evidence_refs": []
-    }
-  },
-  "signatures": [{"keyid": "edge:weld-cam-3@1", "sig": "…"}]
+  "event_id": "10ed6e88-3332-534e-b131-1942c326ebee",
+  "event_type": "inspection.result.recorded",
+  "schema_version": 1,
+  "source_id": "f15-20261015/edge-kt3",
+  "source_seq": 1,
+  "source_kind": "camera",
+  "reliability": "medium",
+  "occurred_at": "2026-09-21T09:50:00.000Z",
+  "correlation_id": "10ed6e88-3332-534e-b131-1942c326ebee",
+  "causation_id": null,
+  "run_id": "f15-20261015",
+  "item_ref": {"carrier_type": "dpm_datamatrix", "identification_level": "unique", "value": "f15-20261015/DM:F-501"},
+  "integrity": {"format_version": 1, "crypto_profile": "gost", "signers": ["scenario.edge-kt3@1"]},
+  "data": {
+    "method": "camera",
+    "phase": "after_operation",
+    "step_key": "welding.kt3_camera",
+    "inspection_point": "KT-3",
+    "observation_id": "f15-20261015/KT3-F-501-KT3",
+    "operation_run_id": "f15-20261015/SV-501-1",
+    "outcome": "defect_indicated",
+    "processing_state": "completed",
+    "zone_ids": ["W-1.U1", "W-1.U2", "…", "W-1.U8"],
+    "defects": [{"defect_type_code": "W-SPATTER", "severity": "minor", "zone_id": "W-1.U1"}],
+    "analyzer_confidence_bp": 9500,
+    "observation_quality_bp": 9200,
+    "versions": {"analyzer_version": "vqc-weld 2.3.1", "camera_config": "angle-1", "contract_version": "1.0", "item_revision": "Б", "recipe_ref": "kt3-weld@1"},
+    "is_simulated": true
+  }
 }
 ```
 
-Здесь `evidence_refs` пуст — кадр не приложен, и интерфейс показывает «материал отсутствует», а не пустую рамку (кейс §5.4).
+Здесь `evidence_refs` нет — кадр не приложен, и интерфейс показывает «материал отсутствует», а не пустую рамку (кейс §5.4).
 
 ## 4. Семейства и типы записей
 
@@ -172,7 +177,7 @@ flowchart LR
 
 Кейс §4.3 называет семь групп данных, FR-28 — восемь семейств верхнего уровня. Соответствие групп кейса нашим семействам: справочники → `reference`, `item`; контроль → `inspection`, `quality`; операции → `operation`; действия → `operator`, `decision`; оборудование → `equipment`; интеграции → `erp`, `mes`, `cad`; материалы → `material`.
 
-Примеры типов, названных в спайне: `operation.run.started`, `operation.run.interval_resolved`, `inspection.result.recorded`, `quality.signal.received`, `decision.nonconformity.confirmed`, `item.assembly.recorded`, `binding.link.resolved`, `genealogy.link.added`, `document.version.drafted`, `document.route.closed`, `document.signature.recorded`, `document.version.annulled`, `reference.external_id.mapped`, `reference.change.affects_item`, `access.workplace.admitted`, `access.workplace.revoked`, `obligation.due.set`, `obligation.due.cleared`, `equipment.state.changed`, `security.integrity.checked`, `simulation.run.started`, `ops.processing.failed`.
+Примеры типов, названных в спайне: `operation.run.started`, `operation.run.interval_resolved`, `inspection.result.recorded`, `quality.signal.raised`, `decision.nonconformity.confirmed`, `item.assembly.recorded`, `binding.link.resolved`, `genealogy.link.added`, `document.version.drafted`, `document.route.closed`, `document.signature.recorded`, `document.version.annulled`, `reference.external_id.mapped`, `reference.change.affects_item`, `access.workplace.admitted`, `access.workplace.revoked`, `obligation.due.set`, `obligation.due.cleared`, `equipment.state.changed`, `security.integrity.checked`, `simulation.run.started`, `ops.processing.failed`.
 
 ## 5. Основные сущности
 
@@ -236,7 +241,7 @@ erDiagram
 
 ## 6. Статусы изделия
 
-Словарь статусов — одно перечисление в `contracts`, из него же — цвета статусов на экранах. У каждой оси один модуль-владелец (AD-30).
+Словарь статусов — одно перечисление `contracts/statuses.yaml`, из него же — цвета статусов на экранах. У каждой оси один модуль-владелец (AD-30).
 
 | Ось | Значения | Модуль-владелец | Кем меняется |
 |---|---|---|---|
@@ -264,10 +269,10 @@ erDiagram
 
 ## 8. Хранение: схемы, роли, проекции
 
-- **Схема Postgres на модуль** (AD-1): журнал — схема `journal`; у каждого модуля — своя схема, свои миграции goose (`backend/internal/infrastructure/storage/‹модуль›/migrations`, версии — метки времени) и свои запросы sqlc. Модуль не читает чужих таблиц. Stand-ы внешних систем — схемы `stand_‹система›`; курсор заготовок — схема `fixtures`.
+- **Схема Postgres на модуль** (AD-1): журнал — схемы `journal` и `journal_state`; модуль со своими таблицами — своя схема и свои миграции goose (`backend/internal/infrastructure/storage/‹модуль›/migrations`, версии — метки времени); доступ — pgx, конфигураций sqlc у модулей нет (только заготовка `storage/sqlc.template.yaml`). Модуль не читает чужих таблиц. Stand-ы внешних систем — схемы `stand_‹система›`; курсор заготовок — схема `fixtures`.
 - **Роли БД**: `ant_owner` — DDL, без входа, только для `ant migrate`; `ant_app` — INSERT и SELECT в `journal`, полный доступ к схемам модулей; `ant_verifier` — только SELECT. У `ant_app` нет `UPDATE`/`DELETE`/`TRUNCATE` на журнал; строчный и операторный триггеры запрещают изменения; обойти это может только суперпользователь, и это обнаруживают хранитель и верификатор.
 - **Обёртки ключей шифрования** — таблица `journal.dek_wraps` (только дописывание, вне цепочки).
-- **Потребители журнала** (AD-45) — у каждого имя и охват (`partition` или `global`); курсор `consumer_offsets(имя, партиция, seq)` обновляется в той же транзакции, что и выход потребителя; проектор — чистая функция `(состояние, запись) → состояние`.
+- **Потребители журнала** (AD-45) — у каждого имя и охват (`partition` или `global`); курсор `journal_state.consumer_offsets(name, partition, seq)` обновляется в той же транзакции, что и выход потребителя; проектор — чистая функция `(состояние, запись) → состояние`.
 - **Показатели** строятся только из строк вклада изделия (`item_id`, показатель, срез → значение); воркер заменяет вклад изделия целиком при каждой пересвёртке; агрегат — сумма вкладов; каждая строка хранит id исходных записей для раскрытия до исходных данных (FR-7). Инкременты запрещены — поэтому повтор и позднее событие не искажают показатели.
 
 Проекции и их писатели (затравка; фактический состав — по коду):
@@ -324,20 +329,21 @@ RFC 9457 `application/problem+json`; коды — строки с префикс
   "type": "urn:ant:problem:journal.stale_state",
   "title": "Состояние изменилось после проверки",
   "status": 409,
+  "detail": "В потоке item:ENT01:F-015 после seq 18231 есть новые записи — обновите и проверьте ещё раз",
   "code": "journal.stale_state",
-  "detail": "После basis_seq 18231 в потоке изделия появились новые записи. Обновите карточку и повторите решение.",
-  "instance": "/api/v1/…"
+  "params": {"stream": "item:ENT01:F-015", "basis_seq": "18231"},
+  "basis_seq": 18231
 }
 ```
 
-(Форма `type` и поля — иллюстрация; окончательно — по `contracts/errors.yaml` и `contracts/openapi.yaml`.)
+Форма — `Problem` в `backend/internal/infrastructure/transport/httpapi/problem.go` по схеме `contracts/problem.schema.json`: `type` = `urn:ant:problem:‹код›`, `title` и шаблон `detail` — из `contracts/errors.yaml`; необязательные `instance`, `violations`, `quarantine_id`, `ca_ref`, `allowed_actions`.
 
-## Уточнить после появления кода
+## Сверено с кодом
 
-- Сверить таблицу полей записи с `contracts/journal/entry.schema.json`; добавить ссылку на сгенерированный Go-тип.
-- Заменить список примеров типов событий на выгрузку из `contracts/events/catalog.yaml` (тип, эмитент, вид, поток, ось, класс, критичность).
-- Сверить таблицу «поле кейса → поле контракта» с `contracts/events/README` и именами полей схем (в частности `item_ref`, `confidence_bp`, вектор версий).
-- Пример конверта заменить эталонным сообщением из `scenarios/` или `contracts/events/examples`.
-- Таблицу проекций и писателей сверить со схемами Postgres модулей и конфигурацией sqlc; добавить имена таблиц.
-- Пример `problem+json` заменить фактическим ответом API; проверить форму поля `type`.
-- Добавить ссылку на перечисление статусов в `contracts` и на таблицу цветов.
+- Таблица раздела 2.2 совпадает с `contracts/journal/entry.schema.json`: `reaction_slot` — объект (`rule_id`, `subject`, `trigger_key`); зашифрованный блок `sealed` — AEAD (`kuznyechik_mgm` / `aes_256_gcm`) над `{salt_b64, envelope}`; класс происхождения пишется `server_attested` (snake_case, исправлено в 2.1). `source_kind` и `reliability` — поля конверта `contracts/events/common/envelope.v1.json`, не записи. Go-тип — `JournalEntry` в `backend/internal/contracts/journal/journal_gen.go` (go-jsonschema, `make generate-go`).
+- Каталог `contracts/events/catalog.yaml` — 203 типа в 30 семействах; вид: 83 `decision`, 45 `fact`, 40 `reaction`, 35 `service`; класс: 144 `record`, 28 `protective`, 27 `permissive`, 4 `irreversible`; критических — 58. Эмитенты семейств совпадают с таблицей раздела 4 (исключение `time.clock.ticked` → `simulation` — в `emitter_exceptions`). Полную выгрузку в документ не переносим: поля типа — в самом каталоге, их смысл — `contracts/events/README.md`, раздел «Каталог». Все примеры раздела 4 в каталоге есть; `quality.signal.received` исправлен на `quality.signal.raised`.
+- Таблица 3.1 сверена с `contracts/events/README.md` и схемами `contracts/events/inspection/inspection.result.recorded.v1.json`, `contracts/events/common/defs.v1.json`. Исправлено: `inspection_result` → `outcome` (`defect_indicated` / `no_defect_indicated` / `unable_to_assess`), `analyzer_confidence_bp`, `observation_quality_bp`, `action_type` → типы `operator.*`, `machine_state` v1 / v2, `versions.analyzer_version`, `method`, `item_ref.identification_level`, неизвестный исполнитель — `null`.
+- Пример 3.2 заменён эталонным событием сценария F15 из `scenarios/definitions/streams/F15.events.jsonl`. Примеры пяти случаев изменения контракта — `contracts/events/examples/contract-change/*.json` (`{case, note, expect, message}`, проверка — `contracts/scripts/check-examples.mjs`).
+- Своя схема и миграции goose есть только у `journal` (`journal.entries`, `journal.concession_ledger`, `journal.dek_wraps`, `journal_state.consumer_offsets`, `journal_state.leases`), `engine`, `access` (`credentials`, `sessions`), `erp` (`channels`, `gateway_seen`, `gateway_seq`, `outbox`), `ingest` (`quarantine`, `seen`, `sources`), `process` (`versions`), `fixtures` (`cursor`) и stand-а 1С (`stand_onec`, `backend/internal/infrastructure/integration/erp/onec/stand/migrations/`). Проекции таблицы раздела 8 — строки общей `engine.projections(name, key, item_id, value)` с именем `‹модуль›.‹проекция›` (`process.item`, `quality.item`, `nonconformity.item`, `documents.item`, `crossitem.stage`, `analysis.incident`, `analysis.circumstances`, `machinelogs.item_runs`, `notifications.obligation`, `erp.item_accounting` и др.; константы — `backend/internal/application/‹модуль›/projections.go`); вклады показателей — `engine.contributions`, изменения для SSE — `engine.changes` (`backend/internal/infrastructure/storage/engine/migrations/20260926090000_engine.sql`). У `reference`, `vision` и политики `access` отдельной проекции нет — срез строится из журнала (`storage/reference/doc.go`, `storage/vision/doc.go`, `storage/access/policylog.go`). Конфигураций sqlc нет ни у одного модуля.
+- Пример `problem+json` раздела 11 заменён формой фактического ответа (`newProblem`, `problemFrom` в `backend/internal/infrastructure/transport/httpapi/problem.go`; параметры `stream`, `basis_seq` — `Reject` в `backend/internal/infrastructure/storage/journal/store.go`). `type` = `urn:ant:problem:‹код›` (`problem_type_prefix` в `contracts/errors.yaml`); все коды раздела 11 в каталоге есть. Поле `instance` в схеме есть, код его пока не заполняет.
+- Перечисление статусов — `contracts/statuses.yaml`: шесть осей (`position`, `quality`, `disposition`, `containment`, `erp_accounting`, `incident`), таблица цветов — `palette` (тон → цвет), у значения — `code`, `label`, `tone`. Совпадение кодов с `axis_*` в `contracts/events/common/defs.v1.json` проверяет `contracts/scripts/check-catalog.mjs`; производные — `backend/internal/contracts/statuses/statuses_gen.go` и `frontend/src/shared/api/generated/statuses.ts` (`statusPalette`, `statusAxes`), показ — `frontend/src/shared/ui/StatusTag.vue`.

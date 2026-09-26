@@ -48,7 +48,7 @@ contracts/**/*.json ──make generate-ts (json-schema-to-typescript)──▶ 
 | Затравка нормативного слоя | `contracts/normative/*.schema.json` | AD-17, AD-31 |
 | HTTP API | операции Huma в Go (`backend/internal/infrastructure/transport/‹модуль›`) | AD-20, AD-40 |
 | Правила слоёв | `backend/tools/archgen/layers.json` | AD-1 |
-| SQL модулей | `backend/internal/infrastructure/storage/‹модуль›/sqlc.yaml` + запросы | AD-1 |
+| SQL модулей | `backend/internal/infrastructure/storage/‹модуль›/sqlc.yaml` + запросы — шаг подготовлен (`sqlc.template.yaml`), конфигураций модулей пока нет, запросы на pgx | AD-1 |
 
 ## Версии генераторов
 
@@ -98,7 +98,7 @@ make contract-demo      # воспроизводимое несовместим�
 | `backend/internal/contracts/bpmnext/bpmnext_gen.go`, `contracts/bpmn-ext/ant.xsd`, `docs/bpmn-ext-properties.md` | contractgen | `bpmn-ext/ant.json` |
 | `backend/internal/contracts/schemas/**` — копия схем для встраивания в бинарник: приём проверяет тела теми же схемами | contractgen | `contracts/**/*.json` |
 | `backend/internal/contracts/{events,journal,crypto,procs,normative,problem}/*_gen.go` | go-jsonschema | JSON Schema |
-| `backend/internal/infrastructure/storage/‹модуль›/**` (запросы) | sqlc | SQL модуля |
+| `backend/internal/infrastructure/storage/‹модуль›/**` (запросы) | sqlc — когда у модуля появится `sqlc.yaml` | SQL модуля |
 | `contracts/openapi.yaml` | Huma (`ant -openapi`) | операции Go |
 | `frontend/src/shared/contracts/{events,journal,crypto,procs,constants,catalog}.ts` | json-schema-to-typescript, `gen-ts.mjs` | JSON Schema, YAML |
 | `frontend/src/shared/api/generated/**` | orval, `frontend/scripts/generate.mjs` | `openapi.yaml`, `statuses.yaml`, `errors.yaml`, `asyncapi.yaml` |
