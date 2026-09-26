@@ -107,6 +107,13 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      # Затравка паспортов анализаторов пишет в журнал — уже с KEK (эпик 29).
+      trust-init:
+        condition: service_completed_successfully
+    volumes:
+      - secrets:/run/ant-secrets:ro
+      - ../config/ant.yaml:/etc/ant/ant.yaml:ro
+      - kek:/var/lib/ant-kek:ro
     mem_limit: 128m
     restart: "no"
 
