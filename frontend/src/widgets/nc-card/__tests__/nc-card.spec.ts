@@ -5,13 +5,19 @@
 // Исходный сигнал, анализ системы, решения людей и итоговый статус раздельно.
 import { mount } from '@vue/test-utils'
 import { createPinia } from 'pinia'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { i18n } from '@/shared/i18n'
 import { WIDGET_FRAME_CONTEXT } from '@/shared/ui'
 import { at } from '@/entities/item/__tests__/fixtures'
 import { ncCard } from '@/entities/nonconformity/__tests__/fixtures'
 import type { NCCard } from '@/entities/nonconformity'
 import NcCardView from '../ui/NcCardView.vue'
+
+// Дорожка решения (Ф1) ходит за наблюдением и паспортом — здесь заглушка; сама дорожка проверена в features/decision-trace.
+vi.mock('@/features/decision-trace', async () => {
+  const { defineComponent, h } = await import('vue')
+  return { NcDecisionTrace: defineComponent({ props: { card: { type: Object, required: true } }, setup: () => () => h('div', { 'data-testid': 'nc-decision-trace' }) }) }
+})
 
 const NOW = Date.parse(at('11:23'))
 /** Пробелы в единицах — неразрывные (common.units). */
