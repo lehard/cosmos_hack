@@ -66,7 +66,8 @@ function serve(deny: string[] = []) {
   vi.stubGlobal(
     'fetch',
     vi.fn(async (url: string) => {
-      const [path, query = ''] = String(url).split('?') as [string, string?]
+      const [rawPath, query = ''] = String(url).split('?') as [string, string?]
+      const path = decodeURIComponent(rawPath)
       calls.push(path)
       if (deny.includes(path)) return problem(403, 'access.forbidden')
       if (path === '/api/v1/workplaces/WP-W2') return json(card)

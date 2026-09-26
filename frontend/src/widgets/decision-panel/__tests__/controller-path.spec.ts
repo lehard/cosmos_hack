@@ -39,7 +39,7 @@ const receipt = { command_id: 'x', event_ids: ['d-2'], replayed: false, seq: 127
 
 const json = (body: unknown) => new Response(JSON.stringify(body), { status: 200, headers: { 'Content-Type': 'application/json', 'Ant-Backend': 'fixtures' } })
 const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
-  const u = String(url)
+  const u = decodeURIComponent(String(url))
   if (init?.method === 'POST') return json({ ...receipt, command_id: JSON.parse(String(init.body)).command_id })
   if (u.startsWith('/api/v1/auth/session')) return json(session)
   if (u.startsWith('/api/v1/decision-queue')) return json({ items: queueRows() })
@@ -163,7 +163,7 @@ describe('путь контролёра от сигнала до подписа�
 
     // Команда ушла сгенерированным клиентом с полями контракта.
     const post = fetchMock.mock.calls.find(([, init]) => init?.method === 'POST')!
-    expect(post[0]).toBe('/api/v1/items/ENT:FL-0042/signals/reject')
+    expect(decodeURIComponent(String(post[0]))).toBe('/api/v1/items/ENT:FL-0042/signals/reject')
     const body = JSON.parse(String(post[1]!.body))
     expect(body).toMatchObject({ basis_seq: 1260, policy_seq: 40, workplace_id: 'WP-QC-1', signal_ids: ['SIG-77'], reason: { text: 'Блик на кромке, на повторном снимке признаков нет' } })
     expect(body.command_id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-7/)
