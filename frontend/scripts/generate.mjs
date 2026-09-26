@@ -45,6 +45,14 @@ const header = (src) =>
   `// СГЕНЕРИРОВАНО frontend/scripts/generate.mjs — руками не править (AD-20).\n` +
   `// Источник: ${src.rel}${src.draft ? ' (черновик до появления контракта)' : ''}\n`
 
+/**
+ * Обернуть параметры пути в адресах `/api/…` клиента в encodeURIComponent;
+ * строка запроса (`stringifiedParams`) уже закодирована URLSearchParams.
+ */
+function encodePathParams(code) {
+  return code.replace(/`\/api\/[^`]*`/g, (url) => url.replace(/\$\{(?!stringifiedParams\})(\w+)\}/g, '${encodeURIComponent(String($1))}'))
+}
+
 async function run(outDir) {
   rmSync(outDir, { recursive: true, force: true })
   mkdirSync(outDir, { recursive: true })
@@ -73,6 +81,12 @@ async function run(outDir) {
       },
     },
   })
+
+  // Параметры пути кодируются: id с «/» или «:» (изделие прогона
+  // `ENT01:‹прогон›/I-…`) иначе раскрывается в лишние сегменты пути и сервер
+  // отвечает 404. orval сам не кодирует — правим адреса в сгенерированном клиенте.
+  const clientPath = join(outDir, 'client.ts')
+  writeFileSync(clientPath, encodePathParams(readFileSync(clientPath, 'utf8')))
 
   // Словарь статусов (AD-30): коды осей, тексты по умолчанию и тона цвета.
   const st = parse(readFileSync(sources.statuses.path, 'utf8'))
