@@ -9,7 +9,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch, type Component } from
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import {
-  Alarm, ChartLine, ClipboardCheck, Clock, Components, Dashboard, Database, Eye, FileAnalytics, FileText, GitBranch,
+  Affiliate, Alarm, ChartLine, ClipboardCheck, Clock, Components, Dashboard, Database, Eye, FileAnalytics, FileText, GitBranch,
   History, Key, Layout2, ListCheck, Lock, PlugConnected, Point, Search, Shield, Signature, Sitemap, Target, Terminal,
   Tool, Users,
 } from '@vicons/tabler'
@@ -54,6 +54,7 @@ const ICONS: Record<string, Component> = {
   decision: Signature,
   terminal: Terminal,
   documents: FileText,
+  federation: Affiliate,
 }
 
 const tabs = computed(() => desk.data.value?.data?.tabs ?? [])

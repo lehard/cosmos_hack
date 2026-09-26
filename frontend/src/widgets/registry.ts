@@ -83,6 +83,8 @@ export const widgetRegistry = {
   'vision-adaptation': { titleKey: 'widgets.visionAdaptation.title', epic: 40, load: () => import('./vision-adaptation') },
   // ── эпик 48: Управление интеграциями ──
   'integrations': { titleKey: 'widgets.integrations.title', epic: 48, load: () => import('./integrations') },
+  // ── эпик 41: Федерация предприятий — партнёры и выписки паспорта ──
+  'federation': { titleKey: 'widgets.federation.title', epic: 41, load: () => import('./federation') },
 } satisfies Record<string, WidgetDefinition>
 
 /** id виджета из реестра. */

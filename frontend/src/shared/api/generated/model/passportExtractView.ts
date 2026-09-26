@@ -11,6 +11,10 @@ export interface PassportExtractView {
   checkpoint?: string;
   /** Содержимое выписки. */
   content: PassportExtractViewContent;
+  /** Подписанный пакет выписки — конверт DSSE (JSON): его скачивают и проверяют у получателя без доступа к журналу отправителя (AD-19). */
+  envelope?: string;
   extract: PassportExtract;
+  /** Почему такой статус происхождения — для человека. */
+  origin_reason?: string;
   signatures: PartnerSignature[];
 }

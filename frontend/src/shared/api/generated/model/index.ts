@@ -714,6 +714,7 @@ export * from './reactionRuleOutcome';
 export * from './reactionRuleSeverity';
 export * from './reason';
 export * from './receipt';
+export * from './receiveExtract';
 export * from './receiveMovement';
 export * from './receiveMovementDestinationKind';
 export * from './receiveMovementInspectionOnReceipt';

@@ -18,6 +18,9 @@
  *   FR-157): состояние, канал, ошибки, карантин, кнопки включения.
  * - `document` — строки реестра документов (раздел «Документы»): маршрут
  *   подписей, содержимое, версии, «Подписать / Отказать / Печать с QR / Скачать».
+ * - `extract`, `partner` — строки раздела «Партнёры и выписки» (эпик 41, FR-131,
+ *   FR-132): выписка паспорта с подписями и статусом происхождения; партнёр с
+ *   корнями доверия и отправкой выписки.
  * Заявка на решение редкого подписанта — это сам стол согласующего (одна
  * карточка с подписью), паспорт изделия из неё открывается окном `item`.
  * Новый тип — строка здесь и компонент в kinds/.
@@ -36,6 +39,8 @@ export const recordKinds: Record<string, RecordKindDefinition> = {
   person: { load: () => import('./kinds/PersonRecord.vue') },
   integration: { load: () => import('./kinds/IntegrationRecord.vue') },
   document: { load: () => import('./kinds/DocumentRecord.vue') },
+  extract: { load: () => import('./kinds/ExtractRecord.vue') },
+  partner: { load: () => import('./kinds/PartnerRecord.vue') },
 }
 
 /** Типы, которые окно умеет показывать. */
