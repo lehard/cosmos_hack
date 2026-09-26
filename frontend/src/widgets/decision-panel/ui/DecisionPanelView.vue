@@ -137,6 +137,21 @@ const stage = computed(() => {
   const s = props.card.status
   return s === 'draft' ? 0 : s === 'confirmed' ? 1 : 2
 })
+/** Что означает вариант и чем закончится (UI-26) — тексты, а не вычисления: условия проверяет сервер (гарды). */
+const DISPOSITION_MEANING: Record<Disposition, string> = {
+  rework: 'widgets.decisions.option.reworkMeaning',
+  repair: 'widgets.decisions.option.repairMeaning',
+  use_as_is: 'widgets.decisions.option.useAsIsMeaning',
+  scrap: 'widgets.decisions.option.scrapMeaning',
+  return_to_supplier: 'widgets.decisions.option.returnMeaning',
+}
+const DISPOSITION_OUTCOME: Record<Disposition, string> = {
+  rework: 'widgets.decisions.option.reworkOutcome',
+  repair: 'widgets.decisions.option.concessionOutcome',
+  use_as_is: 'widgets.decisions.option.concessionOutcome',
+  scrap: 'widgets.decisions.option.scrapOutcome',
+  return_to_supplier: 'widgets.decisions.option.returnOutcome',
+}
 const reasonLabel = computed(() => (draft.action === 'reject_signal' ? t('decisions.signal.rejectReasonLabel') : t('widgets.decisions.reasonLabel')))
 </script>
 
@@ -152,6 +167,7 @@ const reasonLabel = computed(() => (draft.action === 'reject_signal' ? t('decisi
     <p v-if="!actions.length" class="muted" data-testid="nothing">{{ t('widgets.decisions.nothingToDecide') }}</p>
 
     <section v-if="signalActions.length" class="group" data-group="signal">
+      <h4 v-if="stage > 0">{{ t('widgets.decisions.containmentTitle') }}</h4>
       <ActionButton overflow="wrap"
         v-for="a in signalActions"
         :key="a"
@@ -165,19 +181,24 @@ const reasonLabel = computed(() => (draft.action === 'reject_signal' ? t('decisi
       />
     </section>
 
-    <section v-if="dispositionOpen" class="group" data-group="disposition">
+    <section v-if="dispositionOpen" class="options" data-group="disposition">
       <h4>{{ t('decisions.disposition.title') }}</h4>
-      <ActionButton overflow="wrap"
+      <button
         v-for="d in DISPOSITIONS"
         :key="d"
-        :size="size"
-        :type="chosen.action === 'disposition' && draft.disposition === d ? 'primary' : 'default'"
-        :secondary="!(chosen.action === 'disposition' && draft.disposition === d)"
-        :disabled="!canAct || busy"
+        type="button"
+        class="option"
         :data-disposition="d"
+        :aria-pressed="chosen.action === 'disposition' && draft.disposition === d"
+        :disabled="!canAct || busy"
         @click="choose('disposition', d)"
-        :label="t(DISPOSITION_LABEL[d], { operation: reworkOperation })"
-      />
+      >
+        <span class="option-title ant-wrap">{{ t(DISPOSITION_LABEL[d], { operation: reworkOperation }) }}</span>
+        <span class="option-meaning ant-wrap">{{ t(DISPOSITION_MEANING[d]) }}</span>
+        <span class="option-terms ant-wrap" :data-concession="needsConcession(d) || undefined">
+          {{ needsConcession(d) ? t('widgets.decisions.option.needsConcession') : t('widgets.decisions.option.noConcession') }} · {{ t(DISPOSITION_OUTCOME[d]) }}
+        </span>
+      </button>
       <p class="muted">{{ t('decisions.disposition.decisionDoesNotWaitForCause') }}</p>
     </section>
 
@@ -291,9 +312,71 @@ const reasonLabel = computed(() => (draft.action === 'reject_signal' ? t('decisi
   align-items: center;
 }
 
-.group h4 {
+.group h4,
+.options h4 {
   flex-basis: 100%;
   margin: 0;
+}
+
+/* Варианты решения по изделию — карточки: название, смысл, условия и итог. */
+.options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--ant-space-2);
+}
+
+.options h4,
+.options > .muted {
+  grid-column: 1 / -1;
+}
+
+.option {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: var(--ant-space-2) var(--ant-space-3);
+  border: 1px solid var(--ant-border);
+  border-radius: var(--ant-radius-md);
+  background: var(--ant-surface);
+  color: var(--ant-text);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.option:hover:not(:disabled) {
+  border-color: var(--ant-border-strong);
+  background: var(--ant-surface-hover);
+}
+
+.option[aria-pressed='true'] {
+  border-color: var(--ant-accent);
+  background: var(--ant-accent-soft);
+  box-shadow: inset 0 0 0 1px var(--ant-accent);
+}
+
+.option:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.option-title {
+  font-weight: var(--ant-fw-bold);
+}
+
+.option-meaning {
+  color: var(--ant-text-2);
+  font-size: var(--ant-fs-meta);
+}
+
+.option-terms {
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-xs);
+}
+
+.option-terms[data-concession] {
+  color: var(--ant-status-attention-text);
 }
 
 .form {
