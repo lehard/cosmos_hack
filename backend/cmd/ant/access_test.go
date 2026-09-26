@@ -227,11 +227,11 @@ func TestPersonaLoginList(t *testing.T) {
 	for _, it := range items {
 		ids = append(ids, it.(map[string]any)["id"].(string))
 	}
-	if want := "INS-01 HQC-01 TEC-01 CWL-01 PM-01 ADM-01"; strings.Join(ids, " ") != want {
+	if want := "INS-01 HQC-01 FOR-WC TEC-01 CWL-01 PM-01 ADM-01 AUD-01 W21"; strings.Join(ids, " ") != want {
 		t.Fatalf("персоны экрана входа: %v, want %s", ids, want)
 	}
-	if code, desk, _ := do(t, h, call{method: "GET", path: "/api/v1/desk", persona: "W21"}); code != http.StatusOK || desk["role"] == "" {
-		t.Fatalf("скрытая персона W21: стол %d %v", code, desk)
+	if code, desk, _ := do(t, h, call{method: "GET", path: "/api/v1/desk", persona: "W22"}); code != http.StatusOK || desk["role"] == "" {
+		t.Fatalf("скрытая персона W22: стол %d %v", code, desk)
 	}
 }
 

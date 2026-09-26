@@ -66,7 +66,7 @@ func TestDemoSession(t *testing.T) {
 	for _, p := range ps {
 		ids = append(ids, p.ID)
 	}
-	if want := "INS-01 HQC-01 TEC-01 CWL-01 PM-01 ADM-01"; strings.Join(ids, " ") != want {
+	if want := "INS-01 HQC-01 FOR-WC TEC-01 CWL-01 PM-01 ADM-01 AUD-01 W21"; strings.Join(ids, " ") != want {
 		t.Fatalf("персоны экрана входа: %v, want %s", ids, want)
 	}
 	if got, _ := idp.Identify(ctx, access.Credentials{DemoPersona: "FOR-SK"}); got.PersonID != "FOR-SK" || got.Role != "site_foreman" {
