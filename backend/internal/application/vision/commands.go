@@ -24,6 +24,7 @@ type ReinstatePassport struct {
 	platform.CommandHeader
 	SuspensionEventID string         `json:"suspension_event_id" format:"uuid"`
 	Reason            AnalyzerReason `json:"reason"`
+	RunID             string         `json:"run_id,omitempty" maxLength:"128" doc:"Прогон сценария, в котором паспорт приостановлен автооткатом (AD-38); пусто — живая работа."`
 }
 
 // RetirePassport — вывести паспорт из действия (analyzer.passport.retired).

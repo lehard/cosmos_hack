@@ -67,7 +67,7 @@ func (s *Service) AdmitPassport(ctx context.Context, in AdmitPassport) (platform
 		PreviousPassportID: oid(a.PreviousPassportID), AnalyzerID: oid(a.AnalyzerID), Title: sp(in.Title)}
 	k := ev.AnalyzerPassportAdmittedV1AnalyzerKind(kind)
 	d.AnalyzerKind = &k
-	return s.write(ctx, catalog.AnalyzerPassportAdmitted, dom.Stream(a.PassportID), d, meta, now)
+	return s.write(ctx, catalog.AnalyzerPassportAdmitted, dom.Stream(a.PassportID), d, meta, now, "")
 }
 
 // ReinstatePassport — вернуть анализатор после отката (FR-101): только
@@ -79,20 +79,23 @@ func (s *Service) ReinstatePassport(ctx context.Context, passportID string, in R
 	if r, ok, err := s.replayed(ctx, dom.Stream(passportID), catalog.AnalyzerPassportReinstated, in.CommandMeta()); err != nil || ok {
 		return r, err
 	}
-	reg, err := s.registry(ctx, platform.Moment{})
+	reg, err := s.registry(ctx, platform.Moment{RunID: in.RunID})
 	if err != nil {
 		return platform.Receipt{}, err
 	}
-	p := platform.PrincipalFrom(ctx)
-	if _, err := dom.GuardReinstate(reg, passportID, in.SuspensionEventID, p.Role, p.HasRole(dom.RoleHeadOfQC)); err != nil {
+	principal := platform.PrincipalFrom(ctx)
+	p, err := dom.GuardReinstate(reg, passportID, in.SuspensionEventID, principal.Role, principal.HasRole(dom.RoleHeadOfQC))
+	if err != nil {
 		return platform.Receipt{}, err
 	}
+	// Возврат действует там же, где приостановка: в прогоне сценария — в нём (AD-38).
+	susp, _ := p.LastSuspension()
 	now, err := s.now(ctx)
 	if err != nil {
 		return platform.Receipt{}, err
 	}
 	d := ev.AnalyzerPassportReinstatedV1{PassportID: ev.ObjectID(passportID), SuspensionEventID: ev.UUID(in.SuspensionEventID), Reason: reason(in.Reason)}
-	return s.write(ctx, catalog.AnalyzerPassportReinstated, dom.Stream(passportID), d, in.CommandMeta(), now)
+	return s.write(ctx, catalog.AnalyzerPassportReinstated, dom.Stream(passportID), d, in.CommandMeta(), now, susp.RunID)
 }
 
 // RetirePassport — вывести паспорт из действия; старые наблюдения сохраняют
@@ -116,5 +119,5 @@ func (s *Service) RetirePassport(ctx context.Context, passportID string, in Reti
 		return platform.Receipt{}, err
 	}
 	d := ev.AnalyzerPassportRetiredV1{PassportID: ev.ObjectID(passportID), Reason: reason(in.Reason)}
-	return s.write(ctx, catalog.AnalyzerPassportRetired, dom.Stream(passportID), d, in.CommandMeta(), now)
+	return s.write(ctx, catalog.AnalyzerPassportRetired, dom.Stream(passportID), d, in.CommandMeta(), now, "")
 }

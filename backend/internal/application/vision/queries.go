@@ -33,8 +33,9 @@ func within(m platform.Moment, r kernel.Record) bool {
 }
 
 // registry — реестр паспортов и проверок на момент m (AD-22). Паспорта —
-// нормативный слой всего предприятия: прогоны сценариев (AD-38) их не
-// меняют, поэтому run_id не фильтрует.
+// нормативный слой всего предприятия; автооткат и возврат в прогоне сценария
+// (AD-38) пишутся с run_id прогона и видны только в нём: записи без run_id —
+// всем, с run_id — только своему прогону.
 func (s *Service) registry(ctx context.Context, m platform.Moment) (dom.Registry, error) {
 	var recs []kernel.Record
 	for _, t := range analyzerTypes {
@@ -120,10 +121,26 @@ func passportView(p dom.Passport, basis int64) AnalyzerPassport {
 		v.PreviousPassportID = ptr(p.PreviousPassportID)
 	}
 	if st, ok := p.LastSuspension(); ok {
-		v.Suspension = &AnalyzerSuspension{EventID: st.EventID, Trigger: st.Trigger, Fallback: st.Fallback, At: st.At.UTC()}
+		v.Suspension = &AnalyzerSuspension{EventID: st.EventID, Trigger: st.Trigger, Fallback: st.Fallback, At: st.At.UTC(), Basis: st.Basis}
+		if st.Note != "" {
+			v.Suspension.Note = ptr(st.Note)
+		}
+		if st.RunID != "" {
+			v.Suspension.RunID = ptr(st.RunID)
+		}
 		if st.FallbackPassportID != "" {
 			v.Suspension.FallbackPassportID = ptr(st.FallbackPassportID)
 		}
+	}
+	for _, h := range p.History {
+		x := AnalyzerStatus{Status: h.Status, At: h.At.UTC(), EventID: h.EventID}
+		if h.Trigger != "" {
+			x.Trigger = ptr(h.Trigger)
+		}
+		if h.Note != "" {
+			x.Note = ptr(h.Note)
+		}
+		v.History = append(v.History, x)
 	}
 	return v
 }
@@ -141,7 +158,9 @@ func (s *Service) Passport(ctx context.Context, passportID string, m platform.Mo
 	if !ok {
 		return AnalyzerPassport{}, notFound(passportID)
 	}
-	return passportView(p, reg.BasisSeq), nil
+	v := passportView(p, reg.BasisSeq)
+	v.Monitor = s.monitor(ctx, passportID, m)
+	return v, nil
 }
 
 // Checks — отчёты проверки анализатора (vision.check.list) по порядку записи;

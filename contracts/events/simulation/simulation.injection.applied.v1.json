@@ -17,7 +17,8 @@
         "corrupt_frame",
         "machine_fault",
         "data_loss",
-        "tamper_outside"
+        "tamper_outside",
+        "light_change"
       ],
       "description": "Кнопка."
     },

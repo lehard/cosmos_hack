@@ -28,3 +28,8 @@ tabs:
     layout: single
     slots:
       - {id: health, area: main, widget: system-health}
+  - id: vision-adaptation
+    title_key: widgets.visionAdaptation.title
+    layout: single
+    slots:
+      - {id: adaptation, area: main, widget: vision-adaptation}

@@ -105,7 +105,7 @@ type Board struct {
 
 // Injection — кнопка цифрового стенда (FR-152, AD-26): инъекция поверх идущего прогона.
 type Injection struct {
-	Injection   string `json:"injection" enum:"duplicate_event,late_event,corrupt_frame,machine_fault,data_loss,tamper_outside"`
+	Injection   string `json:"injection" enum:"duplicate_event,late_event,corrupt_frame,machine_fault,data_loss,tamper_outside,light_change"`
 	Title       string `json:"title"`
 	Description string `json:"description,omitempty" doc:"Что произойдёт и где это видно (столы, табло)."`
 	Available   bool   `json:"available" doc:"Доступна в текущем состоянии прогона и профиле (tamper_outside — только fixtures и demo)."`

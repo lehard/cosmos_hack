@@ -45,6 +45,30 @@ func Register(api *httpapi.API, q app.Queries, c app.Commands) {
 			return q.Checks(ctx, in.PassportID, m, in.Page())
 		})
 
+	httpapi.Read(api, httpapi.Get("/vision/escapes", "Пропуски брака и перепроверка",
+		"FR-100: поздняя находка связана с ранними «признаков нет» той же зоны и их версиями; список изделий, пропущенных той же версией модели, — на перепроверку."),
+		platform.Action{ID: "vision.escape.list", Owner: owner, Subject: "analyzer_passport"},
+		func(ctx context.Context, in *struct{ httpapi.MomentQuery }, m platform.Moment) (app.AdaptationEscapeList, error) {
+			return q.Escapes(ctx, m)
+		})
+
+	httpapi.Read(api, httpapi.Get("/vision/observations/{event_id}", "Наблюдение анализатора: какими версиями и почему",
+		"FR-98: по давнему наблюдению — вектор версий, ступени, признаки, паспорт и уровень доверия на момент наблюдения, почему изделие признано подозрительным."),
+		platform.Action{ID: "vision.observation.read", Owner: owner, Subject: "analyzer_passport"},
+		func(ctx context.Context, in *struct {
+			EventID string `path:"event_id" maxLength:"64" doc:"event_id наблюдения (inspection.result.recorded)."`
+			httpapi.MomentQuery
+		}, m platform.Moment) (app.ObservationAccount, error) {
+			return q.Observation(ctx, in.EventID, m)
+		})
+
+	httpapi.Read(api, httpapi.Get("/vision/labeled-examples", "Размеченные примеры",
+		"FR-99: подтверждённые решения контролёров по сигналам анализатора — ответ анализатора и ответ эксперта раздельно, со ссылкой на наблюдение."),
+		platform.Action{ID: "vision.example.list", Owner: owner, Subject: "analyzer_passport"},
+		func(ctx context.Context, in *struct{ httpapi.MomentQuery }, m platform.Moment) (app.LabeledExampleList, error) {
+			return q.Examples(ctx, m)
+		})
+
 	httpapi.Do(api, httpapi.Post("/analyzer-passports", "Допустить версию анализатора",
 		"FR-98: допуск по закрытому маршруту протокола допуска (начальник ОТК + технолог + метролог) — разрешающее действие, изменение контроля (AD-28)."),
 		platform.Action{ID: "vision.passport.admit", Class: platform.ClassPermissive, Critical: true, CAGroup: "control_change", Owner: owner,
