@@ -185,7 +185,8 @@ func Register[I, O any](a *API, route Route, act platform.Action, h func(ctx con
 	}
 	mode := a.ModeFor(act.Owner)
 	huma.Register(a.huma, op, func(ctx context.Context, in *I) (*O, error) {
-		if err := a.before(ctx, act, in); err != nil {
+		ctx, err := a.before(ctx, act, in)
+		if err != nil {
 			return nil, err
 		}
 		out, err := h(ctx, in)
@@ -201,7 +202,9 @@ func Register[I, O any](a *API, route Route, act platform.Action, h func(ctx con
 
 // before — общий декоратор до вызова порта: момент чтения, запрет команд в
 // воспроизведении, права и гарды через Gate (AD-15, AD-21, AD-36, AD-39).
-func (a *API) before(ctx context.Context, act platform.Action, in any) error {
+// Возвращает контекст команды с проверками политики субъекта: journal.Append
+// отвергнет запись по устаревшей политике (journal.stale_policy, AD-39).
+func (a *API) before(ctx context.Context, act platform.Action, in any) (context.Context, error) {
 	var obj platform.ObjectRef
 	if o, ok := in.(objecter); ok {
 		obj = o.Object()
@@ -213,19 +216,20 @@ func (a *API) before(ctx context.Context, act platform.Action, in any) error {
 	if m, ok := in.(momenter); ok {
 		mo, err := m.Moment()
 		if err != nil {
-			return problemFrom(platformValidation("query", err.Error()), act.ID)
+			return ctx, problemFrom(platformValidation("query", err.Error()), act.ID)
 		}
 		if mo.IsReplay() && act.IsCommand() {
-			return problemFrom(platformFail("api.replay_read_only"), act.ID)
+			return ctx, problemFrom(platformFail("api.replay_read_only"), act.ID)
 		}
 	}
 	if a.cfg.Gate == nil {
-		return nil
+		return ctx, nil
 	}
-	if err := a.cfg.Gate.Authorize(ctx, platform.PrincipalFrom(ctx), act, obj, meta); err != nil {
-		return problemFrom(err, act.ID)
+	ctx, err := a.cfg.Gate.Admit(ctx, platform.PrincipalFrom(ctx), act, obj, meta)
+	if err != nil {
+		return ctx, problemFrom(err, act.ID)
 	}
-	return nil
+	return ctx, nil
 }
 
 func actionExtension(act platform.Action) map[string]any {
