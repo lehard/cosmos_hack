@@ -10442,10 +10442,16 @@ components:
     ProcessVersion:
       additionalProperties: false
       properties:
+        approval_document_id:
+          description: Лист утверждения (документ с маршрутом кворума, FR-23); есть с отправки на утверждение.
+          type: string
         author:
           type:
             - string
             - "null"
+        base_version_id:
+          description: Версия, от которой начат черновик.
+          type: string
         basis_seq:
           format: int64
           type: integer
@@ -10466,6 +10472,9 @@ components:
           description: Хеш версии — H(байты XML как загружены), AD-17.
           type: string
         label:
+          type: string
+        process_id:
+          description: Процесс версии (UI-11).
           type: string
         quorum:
           $ref: "#/components/schemas/VersionQuorum"
@@ -10528,6 +10537,12 @@ components:
     ProcessVersionSummary:
       additionalProperties: false
       properties:
+        approval_document_id:
+          description: Лист утверждения (FR-23).
+          type: string
+        base_version_id:
+          description: Версия, от которой начат черновик.
+          type: string
         created_at:
           format: date-time
           type: string

@@ -35,6 +35,8 @@ const props = withDefaults(
     incidentMode?: boolean
     /** Выбранный узел (step_key). */
     selected?: string | null
+    /** Слой «нормы» (FR-156, эпик 39): step_key узлов с нормативной опорой. */
+    normSteps?: ReadonlySet<string>
   }>(),
   {
     counters: () => new Map(),
@@ -45,6 +47,7 @@ const props = withDefaults(
     dataGaps: () => new Set(),
     incidentMode: false,
     selected: null,
+    normSteps: () => new Set(),
   },
 )
 
@@ -91,7 +94,7 @@ const index = shallowRef<DiagramIndex | null>(null)
 
 /** Метки на фигурах: id элемента → маркеры, чтобы снимать только свои. */
 const applied = new Map<string, Set<string>>()
-const MARKERS = { bottleneck: 'ant-bottleneck', anomaly: 'ant-anomaly', gap: 'ant-data-gap', selected: 'ant-selected' } as const
+const MARKERS = { bottleneck: 'ant-bottleneck', anomaly: 'ant-anomaly', gap: 'ant-data-gap', selected: 'ant-selected', norm: 'ant-norm' } as const
 
 function applyMarkers(): void {
   if (!viewer || !index.value) return
@@ -108,6 +111,7 @@ function applyMarkers(): void {
   for (const key of props.anomalies.keys()) mark(key, MARKERS.anomaly)
   for (const key of props.dataGaps) mark(key, MARKERS.gap)
   mark(props.selected, MARKERS.selected)
+  for (const key of props.normSteps) mark(key, MARKERS.norm)
   for (const [id, set] of applied) for (const m of set) if (!want.get(id)?.has(m)) canvas.removeMarker(id, m)
   for (const [id, set] of want) for (const m of set) if (!applied.get(id)?.has(m)) canvas.addMarker(id, m)
   applied.clear()
@@ -206,7 +210,7 @@ watch(
     if (xml !== old) void load(xml)
   },
 )
-watch(() => [props.bottleneck, props.anomalies, props.dataGaps, props.selected], applyMarkers)
+watch(() => [props.bottleneck, props.anomalies, props.dataGaps, props.selected, props.normSteps], applyMarkers)
 
 /** Для тестов и родителя: индекс открытой схемы. */
 defineExpose({ index })
@@ -295,6 +299,13 @@ defineExpose({ index })
 
 .canvas :deep(.djs-element.ant-data-gap .djs-visual > :first-child) {
   fill: var(--ant-border) !important;
+}
+
+/* Слой «нормы» (FR-156): узел с нормативной опорой — пунктирная обводка акцентом. */
+.canvas :deep(.djs-element.ant-norm .djs-visual > :first-child) {
+  stroke: var(--ant-accent) !important;
+  stroke-dasharray: 6 3;
+  stroke-width: 3px !important;
 }
 
 .canvas :deep(.djs-element.ant-selected .djs-visual > :first-child) {

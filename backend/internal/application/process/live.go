@@ -83,6 +83,9 @@ type LiveService struct {
 	Counters NodeCounterSource
 	// Recorder — запись решений normative.version.* в журнал; nil — не пишутся.
 	Recorder *Recorder
+	// Approvals — лист утверждения версии (documents, эпик 28); nil — путь
+	// утверждения недоступен (501).
+	Approvals ApprovalDocs
 }
 
 var (
@@ -521,6 +524,12 @@ func (s *LiveService) quorum(ctx context.Context, v VersionRecord) (*VersionQuor
 	if s.Bundles != nil && s.Bundles.Quorum != nil {
 		q = s.Bundles.Quorum
 	}
+	// На утверждении подписи ещё в листе утверждения — прогресс по его маршруту.
+	if v.Status == dp.StatusOnApproval && v.ApprovalDocumentID != "" && s.Approvals != nil {
+		if r, err := s.Approvals.Route(ctx, v.ApprovalDocumentID); err == nil {
+			return &VersionQuorum{Have: r.Have, Need: r.Need}, nil
+		}
+	}
 	a, err := q.Approval(ctx, v)
 	if err != nil {
 		return nil, err
@@ -558,7 +567,7 @@ func (s *LiveService) Versions(ctx context.Context, processID string, m platform
 			return out, err
 		}
 		out.Items = append(out.Items, ProcessVersionSummary{VersionID: v.ID, ProcessID: pid, Label: v.Label, Status: v.Status, Hash: v.Hash, CreatedAt: v.CreatedAt,
-			EffectiveFrom: v.EffectiveFrom, Quorum: q, ItemsInWork: inWork[v.ID]})
+			EffectiveFrom: v.EffectiveFrom, Quorum: q, ItemsInWork: inWork[v.ID], BaseVersionID: v.BaseVersionID, ApprovalDocumentID: v.ApprovalDocumentID})
 	}
 	return out, nil
 }
@@ -582,7 +591,7 @@ func (s *LiveService) Version(ctx context.Context, versionID string, m platform.
 		return ProcessVersion{}, err
 	}
 	out := ProcessVersion{VersionID: v.ID, Label: v.Label, Status: v.Status, Hash: v.Hash, CreatedAt: v.CreatedAt, EffectiveFrom: v.EffectiveFrom,
-		Quorum: q, Elements: []ProcessElement{}}
+		Quorum: q, Elements: []ProcessElement{}, ProcessID: ProcessOf(v).ID, BaseVersionID: v.BaseVersionID, ApprovalDocumentID: v.ApprovalDocumentID}
 	if v.Author != "" {
 		a := v.Author
 		out.Author = &a
