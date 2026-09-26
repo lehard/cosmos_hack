@@ -29,6 +29,13 @@ ENV CGO_ENABLED=0 GOFLAGS="-mod=vendor -buildvcs=false" GOTOOLCHAIN=local GOPROX
 COPY third_party/ /src/third_party/
 COPY backend/ ./
 COPY --from=frontend /src/frontend/dist/ ./internal/infrastructure/transport/webui/dist/
+# Пакет подписи в браузере (Д-72, вариант page — хранилище страницы): то же
+# ядро агента токена в WASM, раздаётся интерфейсом по /signer/ (встроен в ant).
+RUN --mount=type=cache,target=/root/.cache/go-build,id=ant-gobuild \
+    mkdir -p ./internal/infrastructure/transport/webui/dist/signer \
+    && GOOS=js GOARCH=wasm go build -trimpath -ldflags "-s -w -X ant/cmd/token-agent/internal/agent.Build=${VERSION}" \
+         -o ./internal/infrastructure/transport/webui/dist/signer/signer.wasm ./cmd/token-agent/wasm \
+    && cp "$(go env GOROOT)/lib/wasm/wasm_exec.js" ./internal/infrastructure/transport/webui/dist/signer/
 RUN --mount=type=cache,target=/root/.cache/go-build,id=ant-gobuild \
     go build -trimpath -ldflags "-s -w -X main.version=${VERSION}" -o /out/ant ./cmd/ant \
     && for c in keeper verifier tamper demo-signer; do \

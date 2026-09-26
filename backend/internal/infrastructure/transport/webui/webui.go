@@ -22,8 +22,11 @@ var dist embed.FS
 
 // contentSecurityPolicy — только собственные ресурсы, без внешних адресов
 // (закрытый контур). 'unsafe-inline' для стилей нужен Naive UI (CSS-in-JS).
+// 'wasm-unsafe-eval' — пакет подписи signer.wasm для ключа в хранилище
+// страницы (Д-72, вариант page: планшет, телефон без расширений); сам код
+// WASM — только свой (/signer/signer.wasm из той же сборки).
 const contentSecurityPolicy = "default-src 'self'; " +
-	"script-src 'self'; " +
+	"script-src 'self' 'wasm-unsafe-eval'; " +
 	"style-src 'self' 'unsafe-inline'; " +
 	"img-src 'self' data: blob:; " +
 	"font-src 'self' data:; " +
