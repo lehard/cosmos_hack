@@ -137,6 +137,21 @@ const stage = computed(() => {
   const s = props.card.status
   return s === 'draft' ? 0 : s === 'confirmed' ? 1 : 2
 })
+/** Вариант коротко и его условие (UI-52): что можно сделать и что требует разрешения. */
+const DISPOSITION_SHORT: Record<Disposition, string> = {
+  rework: 'widgets.decisions.option.reworkShort',
+  repair: 'widgets.decisions.option.repairShort',
+  use_as_is: 'widgets.decisions.option.useAsIsShort',
+  scrap: 'widgets.decisions.option.scrapShort',
+  return_to_supplier: 'widgets.decisions.option.returnShort',
+}
+const DISPOSITION_TERM: Record<Disposition, string> = {
+  rework: 'widgets.decisions.option.reworkTerm',
+  repair: 'widgets.decisions.option.needsConcessionShort',
+  use_as_is: 'widgets.decisions.option.needsConcessionShort',
+  scrap: 'widgets.decisions.option.scrapTerm',
+  return_to_supplier: 'widgets.decisions.option.returnTerm',
+}
 /** Что означает вариант и чем закончится (UI-26) — тексты, а не вычисления: условия проверяет сервер (гарды). */
 const DISPOSITION_MEANING: Record<Disposition, string> = {
   rework: 'widgets.decisions.option.reworkMeaning',
@@ -152,16 +167,26 @@ const DISPOSITION_OUTCOME: Record<Disposition, string> = {
   scrap: 'widgets.decisions.option.scrapOutcome',
   return_to_supplier: 'widgets.decisions.option.returnOutcome',
 }
+/** Состояние шага словами: пройден — что установлено, текущий — что нужно, будущий — «ещё не начато». */
+function stageState(i: number): string {
+  if (i < stage.value) return t(`widgets.decisions.stageDone.${STAGES[i]}`)
+  if (i > stage.value) return t('widgets.decisions.stageNext')
+  return t(`widgets.decisions.stageNow.${STAGES[i]}`)
+}
 const reasonLabel = computed(() => (draft.action === 'reject_signal' ? t('decisions.signal.rejectReasonLabel') : t('widgets.decisions.reasonLabel')))
 </script>
 
 <template>
   <div class="panel" :class="`density-${density}`" data-testid="decision-panel">
     <p v-if="!canAct" class="muted" data-testid="replay-note">{{ t('common.modes.replayReadOnly') }}</p>
+    <!-- Ход решения (UI-52): пройденный шаг свёрнут одной строкой, текущий — главный, будущий — «ещё не начато». -->
     <ol class="stages" data-testid="stages" :aria-label="t('widgets.decisions.stage.title')">
       <li v-for="(st, i) in STAGES" :key="st" class="stage" :data-stage="st" :data-state="i < stage ? 'done' : i === stage ? 'current' : 'next'">
-        <span class="stage-no">{{ i + 1 }}</span>
-        <span class="ant-ellipsis">{{ t(`widgets.decisions.stage.${st}`) }}</span>
+        <span class="stage-no">{{ i < stage ? '✓' : i + 1 }}</span>
+        <span class="stage-text ant-wrap">
+          <strong>{{ t(`widgets.decisions.stage.${st}`) }}</strong>
+          <span class="stage-state" data-testid="stage-state">{{ stageState(i) }}</span>
+        </span>
       </li>
     </ol>
     <p v-if="!actions.length" class="muted" data-testid="nothing">{{ t('widgets.decisions.nothingToDecide') }}</p>
@@ -183,6 +208,7 @@ const reasonLabel = computed(() => (draft.action === 'reject_signal' ? t('decisi
 
     <section v-if="dispositionOpen" class="options" data-group="disposition">
       <h4>{{ t('decisions.disposition.title') }}</h4>
+      <!-- Выбор судьбы изделия — компактно: название и условие; смысл и итог — после выбора. -->
       <button
         v-for="d in DISPOSITIONS"
         :key="d"
@@ -193,11 +219,8 @@ const reasonLabel = computed(() => (draft.action === 'reject_signal' ? t('decisi
         :disabled="!canAct || busy"
         @click="choose('disposition', d)"
       >
-        <span class="option-title ant-wrap">{{ t(DISPOSITION_LABEL[d], { operation: reworkOperation }) }}</span>
-        <span class="option-meaning ant-wrap">{{ t(DISPOSITION_MEANING[d]) }}</span>
-        <span class="option-terms ant-wrap" :data-concession="needsConcession(d) || undefined">
-          {{ needsConcession(d) ? t('widgets.decisions.option.needsConcession') : t('widgets.decisions.option.noConcession') }} · {{ t(DISPOSITION_OUTCOME[d]) }}
-        </span>
+        <span class="option-title ant-wrap">{{ t(DISPOSITION_SHORT[d]) }}</span>
+        <span class="option-terms ant-wrap" :data-concession="needsConcession(d) || undefined">{{ t(DISPOSITION_TERM[d]) }}</span>
       </button>
       <p class="muted">{{ t('decisions.disposition.decisionDoesNotWaitForCause') }}</p>
     </section>
@@ -212,6 +235,11 @@ const reasonLabel = computed(() => (draft.action === 'reject_signal' ? t('decisi
         <p class="muted">{{ t('decisions.signal.requestRecheckWaiting') }}</p>
       </template>
 
+      <template v-if="draft.action === 'disposition' && draft.disposition">
+        <p class="chosen-title ant-wrap" data-testid="chosen-title">{{ t(DISPOSITION_LABEL[draft.disposition], { operation: reworkOperation }) }}</p>
+        <p class="ant-wrap">{{ t(DISPOSITION_MEANING[draft.disposition]) }}</p>
+        <p class="muted ant-wrap" data-testid="chosen-outcome">{{ t(DISPOSITION_OUTCOME[draft.disposition]) }}</p>
+      </template>
       <template v-if="draft.action === 'disposition'">
         <p v-if="draft.disposition === 'rework' || draft.disposition === 'repair'" class="muted">{{ t('decisions.disposition.afterReworkNote') }}</p>
         <p v-if="draft.disposition === 'repair'" class="muted">{{ t('hints.reworkVsRepair') }}</p>
@@ -401,11 +429,11 @@ const reasonLabel = computed(() => (draft.action === 'reject_signal' ? t('decisi
   font-size: var(--ant-fs-meta);
 }
 
-/* Этапы: номер в кружке, текущий — акцентом, пройденные — приглушены. */
+/* Ход решения: шаги сверху вниз, текущий — акцентом, пройденные — зелёной галочкой. */
 .stages {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--ant-space-1) var(--ant-space-4);
+  flex-direction: column;
+  gap: var(--ant-space-1);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -415,9 +443,31 @@ const reasonLabel = computed(() => (draft.action === 'reject_signal' ? t('decisi
 
 .stage {
   display: flex;
-  gap: var(--ant-space-1);
-  align-items: center;
+  gap: var(--ant-space-2);
+  align-items: flex-start;
   min-width: 0;
+}
+
+.stage-text {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--ant-space-2);
+  min-width: 0;
+}
+
+.stage-state {
+  font-weight: normal;
+}
+
+.stage[data-state='current'] {
+  padding: var(--ant-space-1) var(--ant-space-2);
+  border-radius: var(--ant-radius-md);
+  background: var(--ant-accent-soft);
+}
+
+.chosen-title {
+  margin: 0;
+  font-weight: var(--ant-fw-bold);
 }
 
 .stage-no {
@@ -445,7 +495,12 @@ const reasonLabel = computed(() => (draft.action === 'reject_signal' ? t('decisi
 
 .stage[data-state='done'] .stage-no {
   border-color: var(--ant-status-success);
-  color: var(--ant-status-success);
+  background: var(--ant-status-success);
+  color: var(--ant-surface);
+}
+
+.stage[data-state='done'] .stage-state {
+  color: var(--ant-status-success-text);
 }
 
 .muted {

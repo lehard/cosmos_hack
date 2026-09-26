@@ -121,6 +121,25 @@ async function submit(withAgent: boolean): Promise<void> {
   }
 }
 
+// ── коротко на первом слое (UI-54) ──
+const WHY_MAIN = 2
+const whyAll = ref(false)
+const whyShown = computed(() => (whyAll.value ? (review.value?.why_significant ?? []) : (review.value?.why_significant ?? []).slice(0, WHY_MAIN)))
+/**
+ * Последствия выбранного действия: бизнес — на виду (до трёх), остальное — под
+ * «Технические последствия». Если сервер разделил их сам (technical_consequences) —
+ * берём его разделение; иначе первые три — главные (сервер ставит их первыми).
+ */
+const MAIN_EFFECTS = 3
+const techOpen = ref(false)
+const effects = computed(() => {
+  const a = chosen.value as (NCPresentationAction & { technical_consequences?: string[] }) | null
+  if (!a) return { main: [] as string[], technical: [] as string[] }
+  if (a.technical_consequences) return { main: a.consequences, technical: a.technical_consequences }
+  return { main: a.consequences.slice(0, MAIN_EFFECTS), technical: a.consequences.slice(MAIN_EFFECTS) }
+})
+watch(chosen, () => (techOpen.value = false))
+
 const OUTCOME_KEY: Record<string, string> = {
   accept: 'widgets.presentation.outcome.accept',
   accept_with_concession: 'widgets.presentation.outcome.acceptWithConcession',
@@ -144,12 +163,6 @@ const outcomeText = (o: string) => (OUTCOME_KEY[o] ? t(OUTCOME_KEY[o]!) : `UNKNO
       <!-- 1. Контекст: пересмотр — «тогда | сейчас»; предъявление — что предъявлено и результаты контроля. -->
       <section v-if="review" class="hero review" data-zone="review">
         <p class="kicker">{{ t('widgets.presentation.reviewKicker') }}</p>
-        <p class="lead ant-wrap" data-testid="previous-decision">
-          {{ entryText(review.decision) }}
-        </p>
-        <p class="meta ant-wrap">
-          {{ time(review.decision.occurred_at) }}<template v-if="review.decision.author"> · {{ review.decision.author }}</template> · {{ t('widgets.presentation.keptUnchanged') }}
-        </p>
         <div class="compare">
           <div class="side then" data-testid="then">
             <h4>{{ t('widgets.presentation.then') }}</h4>
@@ -163,6 +176,11 @@ const outcomeText = (o: string) => (OUTCOME_KEY[o] ? t(OUTCOME_KEY[o]!) : `UNKNO
               </li>
               <li v-if="!review.known_at_decision.length" class="muted">{{ t('empty.noRecords') }}</li>
             </ul>
+            <!-- Прежнее решение — итог колонки «тогда». -->
+            <p class="decided ant-wrap" data-testid="previous-decision">
+              <span class="muted">{{ t('widgets.presentation.decidedThen') }}:</span> {{ entryText(review.decision) }}
+            </p>
+            <p class="muted ant-wrap">{{ time(review.decision.occurred_at) }}<template v-if="review.decision.author"> · {{ review.decision.author }}</template></p>
           </div>
           <div class="side now" data-testid="now">
             <h4>{{ t('widgets.presentation.now') }}</h4>
@@ -178,11 +196,15 @@ const outcomeText = (o: string) => (OUTCOME_KEY[o] ? t(OUTCOME_KEY[o]!) : `UNKNO
             </ul>
           </div>
         </div>
+        <p class="conclusion ant-wrap" data-testid="review-conclusion">{{ t('widgets.presentation.conclusion') }}</p>
+        <p class="muted ant-wrap" data-testid="kept">{{ t('widgets.presentation.keptUnchanged') }}</p>
         <template v-if="review.why_significant?.length">
-          <h4>{{ t('widgets.presentation.whySignificant') }}</h4>
           <ul class="list" data-testid="why-significant">
-            <li v-for="w in review.why_significant" :key="w" class="ant-wrap">{{ w }}</li>
+            <li v-for="w in whyShown" :key="w" class="ant-wrap">{{ w }}</li>
           </ul>
+          <button v-if="review.why_significant.length > WHY_MAIN" type="button" class="more" data-testid="toggle-why" @click="whyAll = !whyAll">
+            {{ whyAll ? t('widgets.presentation.whyLess') : t('widgets.presentation.whyMore', { n: review.why_significant.length - WHY_MAIN }) }}
+          </button>
         </template>
       </section>
 
@@ -242,11 +264,19 @@ const outcomeText = (o: string) => (OUTCOME_KEY[o] ? t(OUTCOME_KEY[o]!) : `UNKNO
           </button>
         </div>
         <div v-if="chosen" class="chosen" data-testid="chosen">
-          <template v-if="chosen.consequences.length">
+          <template v-if="effects.main.length">
             <p class="chosen-title">{{ t('widgets.presentation.afterDecision') }}</p>
             <ul class="list" data-testid="consequences">
-              <li v-for="c in chosen.consequences" :key="c" class="ant-wrap">{{ c }}</li>
+              <li v-for="c in effects.main" :key="c" class="ant-wrap">{{ c }}</li>
             </ul>
+            <template v-if="effects.technical.length">
+              <button type="button" class="more" data-testid="toggle-technical" @click="techOpen = !techOpen">
+                {{ techOpen ? t('widgets.presentation.technicalHide') : t('widgets.presentation.technicalShow', { n: effects.technical.length }) }}
+              </button>
+              <ul v-if="techOpen" class="list muted" data-testid="technical-consequences">
+                <li v-for="c in effects.technical" :key="c" class="ant-wrap">{{ c }}</li>
+              </ul>
+            </template>
           </template>
           <label class="field">
             <span>{{ needReason ? t('widgets.presentation.reasonRequired') : t('widgets.presentation.reasonOptional') }}</span>
@@ -505,6 +535,28 @@ h4 {
   display: flex;
   flex-direction: column;
   gap: var(--ant-space-1);
+}
+
+.conclusion {
+  font-weight: var(--ant-fw-bold);
+}
+
+.decided {
+  margin-top: var(--ant-space-2);
+  padding-top: var(--ant-space-2);
+  border-top: 1px solid var(--ant-border);
+  font-weight: var(--ant-fw-bold);
+}
+
+.more {
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ant-accent);
+  font: inherit;
+  font-size: var(--ant-fs-meta);
+  cursor: pointer;
 }
 
 .receipt {

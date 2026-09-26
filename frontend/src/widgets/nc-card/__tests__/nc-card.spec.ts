@@ -137,6 +137,21 @@ describe('карточка несоответствия', () => {
     expect(bar.findAll('.observed[data-out]')).toHaveLength(0)
   })
 
+  it('история коротко: до 3 главных событий в фазе, признаки и обстоятельства — первыми; вся история по кнопке', async () => {
+    const card = ncCard()
+    const base = card.happened.before[0]!
+    card.happened.before = [
+      { ...base, event_id: 'b1', occurred_at: at('07:10'), params: {} },
+      { ...base, event_id: 'b2', occurred_at: at('07:20'), params: {} },
+      { ...base, event_id: 'b3', occurred_at: at('07:30'), params: { outcome: 'no_defect_indicated' } },
+      { ...base, event_id: 'b4', occurred_at: at('07:40'), params: { outcome: 'unable_to_assess' } },
+    ]
+    const w = mountWith(card)
+    expect(w.findAll('[data-id^="b"]').map((e) => e.attributes('data-id'))).toEqual(['b1', 'b3', 'b4'])
+    await w.find('[data-testid="toggle-history"]').trigger('click')
+    expect(w.findAll('[data-id^="b"]')).toHaveLength(4)
+  })
+
   it('что предлагает система: предложение, основания, альтернативы, нехватка сведений; правило — во втором слое', () => {
     const why = mountCard().find('[data-testid="why-system"]')
     expect(why.text()).toContain('Это предложение системы, а не решение')
