@@ -1,0 +1,54 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/incident/incident.suggestion.recorded.v1.json",
+  "title": "IncidentSuggestionRecordedV1",
+  "description": "Предложение записано — предложение генератора (ограничение линии, область риска, кандидат в правило, адаптация VisionQC, карта дефицита данных) с основаниями и ответственным; ничего не применяет само. Недетерминированный генератор — источник факта (AD-3, FR-63).",
+  "type": "object",
+  "properties": {
+    "suggestion_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Предложение."
+    },
+    "generator": {
+      "type": "string",
+      "description": "Генератор (порт + адаптер).",
+      "maxLength": 64
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "bottleneck",
+        "risk_scope",
+        "reaction_rule_candidate",
+        "analyzer_adaptation",
+        "data_deficit",
+        "other"
+      ],
+      "description": "Вид предложения."
+    },
+    "responsible_id": {
+      "$ref": "../common/defs.v1.json#/definitions/person_ref",
+      "description": "Ответственный."
+    },
+    "statement": {
+      "type": "string",
+      "maxLength": 4000,
+      "description": "Суть предложения."
+    },
+    "basis": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/uuid"
+      },
+      "description": "Основания — `event_id` записей, на которые опирается запись.",
+      "uniqueItems": true
+    }
+  },
+  "required": [
+    "suggestion_id",
+    "generator",
+    "kind",
+    "statement",
+    "basis"
+  ]
+}

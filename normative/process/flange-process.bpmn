@@ -1,0 +1,2945 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ============================================================================
+  КОПИЯ ant (эпик 00 «Контракты v1»), затравка нормативного слоя — normative/process/flange-process.bpmn.
+  Исходник — черновик 0.1 процессной сессии (process/flange-process.bpmn); смысл маршрута не менялся.
+  Изменения этой копии:
+    • у каждого узла — ant:properties/@stepKey и свойства FR-12 по дескриптору contracts/bpmn-ext/ant.json
+      (вид шага, цех и склад дорожки, метод контроля и покрытие, зоны, точка предъявления, предусловия,
+      документы шага, карта реакций, нормы времени, лимиты доработок, специальный процесс, заверитель бумаги,
+      учётное действие событий «в 1С», тип события-триггера у событий-сообщений);
+    • неявные слияния стрелок без шлюза заменены явными шлюзами J_‹узел› (решение дирижёра Д-6);
+    • язык условий — urn:ant:expr:1 (contracts/bpmn-ext/README.md, решение Д-7); `||` записано как `or`;
+    • terminate на концах «Списано», старт по сообщению из 1С и граничный таймер окна кромок — поддерживаются
+      как есть (решения Д-4, Д-5, Д-8).
+  Разделы «СВОЙСТВА СОСЕДЕЙ НЕ ЗАПОЛНЕНЫ» и «УСЛОВИЯ НА СТРЕЛКАХ» комментария ниже относятся к исходнику.
+  ============================================================================
+-->
+<!--
+  ============================================================================
+  Процесс «Фланец люка гермокорпуса в сборе» — стартовый процесс (seed) для платформы ant.
+  BPMN 2.0 XML. Черновик 0.1, пользователь процессной сессии его ещё не утвердил.
+  Источник: process/flange-process-bpmn.md (Mermaid, таблица узлов, раздел 6 «Как перенести в BPMN 2.0»).
+  ID узлов совпадают с ID в flange-process-bpmn.md (S0, V1 … KE, N0 … NV).
+
+  ИМЕНА
+    Имена узлов, событий и статусов — наши: process-events-catalog.md (номера Е-.. и технические имена),
+    scenarios-flange-expected.yaml. Сопоставление с контрактом соседей — позже, одним шагом.
+
+  ЧТО ЕСТЬ У КАЖДОГО УЗЛА
+    bpmn:documentation — 2–5 строк простым русским языком: что происходит на шаге, кто выполняет
+    и подписывает, какие документы и записи появляются, контрольная точка (КТ) или закрывающая точка (ЗТ),
+    что может пойти не так. Последняя строка — события нашего каталога, если они есть на шаге.
+    Пометки в тексте: [ПП] — проектное предположение (нормы времени, очереди, камеры, стенды, лимиты
+    не проверены на реальном производстве); [П] — наше допущение.
+
+  СВОЙСТВА СОСЕДЕЙ НЕ ЗАПОЛНЕНЫ
+    Метод контроля, зона, точка предъявления и роль, «закрывает доступ к зоне», лимиты доработок,
+    предусловия, документы шага, нормы времени, буферы, step_key — это свойства схемы расширения
+    соседей (их PRD FR-12, архитектура AD-17, AD-20). Их проставит архитектура соседей по своей схеме.
+    Здесь эти сведения есть только в тексте documentation и в подписях стрелок (например, «≤ 3»).
+
+  НОРМАТИВНЫЕ ОПОРЫ — ant:normRef (структура от архитектуры соседей)
+    xmlns:ant="urn:ant:bpmn-ext:1"
+    <ant:normRef standard="…" clause="…">   по одному элементу на каждую опору, внутри bpmn:extensionElements узла
+      <ant:check>        что проверить на шаге, 1–2 фразы
+      <ant:systemAction> что делает система на этом шаге, 1–2 фразы
+    Пункты — только из research/ru-normative-anchors.md (сверены с текстом стандартов), без утверждений
+    из его раздела «Чего НЕ говорить». Где опоры нет, ant:normRef у узла нет.
+    Итого: опоры есть у 33 узлов, всего 53 элемента ant:normRef.
+
+  УСЛОВИЯ НА СТРЕЛКАХ
+    Язык выражений у соседей не определён. Здесь expressionLanguage="urn:alexs:expr:simple":
+    сравнение переменной со значением, например decision == 'accept'. Переменные:
+      decision        итог закрывающей точки: accept | accept_with_concession | reject | insufficient_data
+      nc.outcome      итог подпроцесса Н: rework_or_repair | use_as_is | scrapped | returned
+      disposition     решение по изделию: rework | repair | use_as_is | scrap | return_to_supplier
+      test.result     итог испытания: tight | leak | invalid
+      tools.accounted, plan.radiography_required — true | false
+
+  ЭЛЕМЕНТЫ BPMN
+    collaboration: участник «Фланец люка» (5 дорожек-цехов) и участник «Подпроцесс Н „Брак“».
+    serviceTask — автоматизированный и инструментальный контроль (ждёт результат от источника);
+    userTask — контроль человеком и закрывающие точки с подписью; task — операция, перемещение, склад;
+    exclusiveGateway, parallelGateway; start / end / промежуточные события; события-сообщения обмена с 1С;
+    граничный таймер WT на сварке W2 (окно кромок 8 ч; в md это была развилка перед сваркой);
+    callActivity (VN, MN, WN, AN, TN, KN) на общий процесс Process_NC, итог — по концу подпроцесса.
+    V1–V3 выполняются по каждой партии (сказано в documentation); мультиэкземпляр не используем.
+    Проверить у соседей: terminateEventDefinition на концах «Списано», старт по сообщению из 1С,
+    слияние нескольких стрелок в задаче без шлюза.
+
+  ДИАГРАММА
+    Раздел bpmndi есть: у каждого участника, дорожки и узла — BPMNShape с dc:Bounds, у каждой стрелки —
+    BPMNEdge с di:waypoint. Простая сетка: колонка 140 px, дорожка 400 px (три ряда), ортогональные стрелки.
+    Файл открывается в bpmn-js без auto-layout. Раскладка черновая: её можно поправить в модельере.
+  ============================================================================
+-->
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xmlns:ant="urn:ant:bpmn-ext:1"
+                  id="Definitions_Flange"
+                  targetNamespace="urn:alexs:process:flange-assembly"
+                  expressionLanguage="urn:ant:expr:1"
+                  exporter="process-session (prd-common), hand-made generator"
+                  exporterVersion="0.1-draft">
+  <bpmn:message id="Msg_ErpOrder" name="Из 1С: производственное задание" />
+  <bpmn:message id="Msg_ErpLotReceived" name="Из 1С: поступила партия" />
+  <bpmn:message id="Msg_ErpIssueToProduction" name="В 1С: принято в работу" />
+  <bpmn:message id="Msg_ErpTransfer" name="В 1С: перемещение между складами цехов" />
+  <bpmn:message id="Msg_ErpScrapTransferRework" name="В 1С: перевод в брак (переделка)" />
+  <bpmn:message id="Msg_ErpScrapTransferWriteoff" name="В 1С: перевод в брак (списание)" />
+  <bpmn:message id="Msg_ErpReturnToSupplier" name="В 1С: возврат поставщику" />
+  <bpmn:message id="Msg_ErpReleaseGood" name="В 1С: выпуск годного" />
+  <bpmn:collaboration id="Collaboration_Flange">
+    <bpmn:documentation>Фланец люка гермокорпуса в сборе ФЛ-100.00.000 СБ: маршрут от задания 1С до выпуска годного. Экземпляр процесса — одно изделие.</bpmn:documentation>
+    <bpmn:participant id="Participant_Flange" name="Фланец люка в сборе ФЛ-100.00.000 СБ — маршрут по цехам" processRef="Process_Flange" />
+    <bpmn:participant id="Participant_NC" name="Подпроцесс Н «Брак» — вызывается из любой ЗТ (callActivity)" processRef="Process_NC" />
+  </bpmn:collaboration>
+  <bpmn:process id="Process_Flange" name="Фланец люка гермокорпуса в сборе" isExecutable="true">
+    <bpmn:documentation>Один маршрут фланца в сборе: склад и входной контроль → механический → сварочный → сборочно-испытательный → ОТК и выпуск. Шесть закрывающих точек (ЗТ-1…ЗТ-6), решение по браку (ЗТ-Р) и закрытие вскрытия (ЗТ-В). Нормы времени и очереди — проектные предположения [ПП].</bpmn:documentation>
+    <bpmn:laneSet id="LaneSet_Flange">
+      <bpmn:lane id="Lane_SK" name="Склад и входной контроль">
+        <bpmn:extensionElements>
+          <ant:properties workshop="WS-SK" warehouse="WH-SK" />
+        </bpmn:extensionElements>
+        <bpmn:flowNodeRef>S0</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>S1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>J_S1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>V1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>V2</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>J_V2</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>V3</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>VG</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>VN</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>VNG</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>V4</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>J_V4</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>VP</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>V5</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>E1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>V6</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>E1b</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>V7</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>E4</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_MC" name="Механический цех">
+        <bpmn:extensionElements>
+          <ant:properties workshop="WS-MC" warehouse="WH-MC" />
+        </bpmn:extensionElements>
+        <bpmn:flowNodeRef>M1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>J_M1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>M2</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>J_M2</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>M3</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>M4</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>MG</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>MN</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>MNG</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>MX</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>M5</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>J_M5</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_WC" name="Сварочный цех">
+        <bpmn:extensionElements>
+          <ant:properties workshop="WS-WC" warehouse="WH-WC" />
+        </bpmn:extensionElements>
+        <bpmn:flowNodeRef>W0</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>E2</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>WJ</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>W1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>J_W1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>W2</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>WT</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>W3</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>J_W3</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>WR</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>W4</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>W5</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>J_W5</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>WG</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>WN</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>WNG</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>WX</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>W6</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>J_W6</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_AC" name="Сборочно-испытательный цех">
+        <bpmn:extensionElements>
+          <ant:properties workshop="WS-AC" warehouse="WH-AC" />
+        </bpmn:extensionElements>
+        <bpmn:flowNodeRef>A0</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>E3</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>AJ</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>A1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>J_A1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>A2</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>J_A2</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>A3</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>A3G</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>A3C</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>A4</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>A5</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>A6</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>A7</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>A7G</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>AV</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>J_AV</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>A8</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>J_A8</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>A9</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>AG</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>AN</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>ANG</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>AX</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>J_AX</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>T1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>J_T1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>T2</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>TG</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>TN</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>TNG</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_QA" name="ОТК и выпуск">
+        <bpmn:extensionElements>
+          <ant:properties workshop="WS-QA" warehouse="WH-FG" />
+        </bpmn:extensionElements>
+        <bpmn:flowNodeRef>K2</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>J_K2</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>K3</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>KG</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>KN</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>KNG</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>KX</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>K4</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>J_K4</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>E5</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>KE</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="S0" name="Задание из 1С">
+      <bpmn:documentation>Процесс начинается, когда из 1С приходит производственное задание на фланцы.
+Сообщение принимает адаптер 1С; в системе появляется задание и план изделий с ожидаемыми контрольными точками.
+Записи: заказ на производство и этап производства (1С), сменное задание. На изделие фиксируются ревизии КД и ТП.
+Что может пойти не так: задание пришло дважды — повтор с тем же номером второй раз не учитывается; неизвестная номенклатура — отчёт о расхождении, без автосоздания.
+События (наш каталог): Е-01 erp.order_received.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="order.received" triggerEventType="erp.order.received" />
+      </bpmn:extensionElements>
+      <bpmn:outgoing>Flow_S0_S1</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MED_S0" messageRef="Msg_ErpOrder" />
+    </bpmn:startEvent>
+    <bpmn:exclusiveGateway id="J_S1">
+      <bpmn:documentation>Явное слияние веток перед «Партии поступили (из 1С)»: неявные слияния стрелок без шлюза запрещены (решение Д-6). Входят: Flow_S0_S1, Flow_VNG_S1.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="incoming.lots_received.merge" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_S0_S1</bpmn:incoming>
+      <bpmn:incoming>Flow_VNG_S1</bpmn:incoming>
+      <bpmn:outgoing>Flow_J_S1</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_J_S1" sourceRef="J_S1" targetRef="S1" />
+    <bpmn:intermediateCatchEvent id="S1" name="Партии поступили (из 1С)">
+      <bpmn:documentation>Ждём сообщения 1С о приходе партий: заготовки фланца, патрубка, крышки, уплотнения, крепежа.
+Кладовщик принимает партию на склад; её статус — «на входном контроле», запускать в работу нельзя.
+Записи: приходный документ 1С, сертификат поставщика. Сюда же возвращаемся, если партию вернули или списали: ждём новую.
+Что может пойти не так: нет сертификата; партия физически пришла, а в 1С её нет.
+События (наш каталог): Е-03 erp.batch_received.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="incoming.lots_received" triggerEventType="erp.lot.received" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_J_S1</bpmn:incoming>
+      <bpmn:outgoing>Flow_S1_V1</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MED_S1" messageRef="Msg_ErpLotReceived" />
+    </bpmn:intermediateCatchEvent>
+    <bpmn:task id="V1" name="Приём партий на входной контроль">
+      <bpmn:documentation>Кладовщик передаёт партию в зону входного контроля, контролёр ВК её регистрирует. Шаг выполняется по каждой партии.
+Запись: журнал регистрации продукции, поступившей на ВК (ф. 3 ГОСТ РВ 0015-308).
+Норма 15–30 мин на партию, ожидание в зоне ВК — до 1 смены [ПП].
+Что может пойти не так: количество не совпадает с приходным документом, упаковка повреждена.
+События (наш каталог): Е-04 batch.registered.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="incoming.lot_registration" stepKind="movement" />
+        <ant:document template="incoming-register" />
+        <ant:norm timeMinMinutes="15" timeMaxMinutes="30" queueNormMinutes="480" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_S1_V1</bpmn:incoming>
+      <bpmn:outgoing>Flow_V1_V2</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:exclusiveGateway id="J_V2">
+      <bpmn:documentation>Явное слияние веток перед «КТ-1 Камера входного контроля»: неявные слияния стрелок без шлюза запрещены (решение Д-6). Входят: Flow_V1_V2, Flow_VG_V2.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="incoming.kt1_camera.merge" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_V1_V2</bpmn:incoming>
+      <bpmn:incoming>Flow_VG_V2</bpmn:incoming>
+      <bpmn:outgoing>Flow_J_V2</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_J_V2" sourceRef="J_V2" targetRef="V2" />
+    <bpmn:serviceTask id="V2" name="КТ-1 Камера входного контроля">
+      <bpmn:documentation>Камера снимает детали партии по зонам; крепёж и уплотнение — выборочно. Снимки — «нулевое» состояние для сравнения «до / после».
+Выполняет VisionQC (край КТ-1). Исход один из трёх: признаки обнаружены / признаков нет / оценка невозможна.
+Запись: протокол входного контроля, снимки — приложение. Контрольная точка КТ-1.
+Что может пойти не так: блик или нерезкий кадр → «оценка невозможна», это не «годно»; внутренние поры камера не видит.
+События (наш каталог): Е-06 inspection.result.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="incoming.kt1_camera" stepKind="automated_inspection" inspectionPoint="KT-1" />
+        <ant:inspection method="camera" phase="incoming" coverage="M-DENT M-SCRATCH M-BURR H-DAMAGE" recipeRef="kt1-camera@1" observationQualityMinBp="6000" />
+        <ant:zoneRef zone="F-FACE" />
+        <ant:zoneRef zone="F-OUTER" />
+        <ant:document template="incoming-inspection-protocol" />
+        <ant:reactionMap ref="flange-reactions@1" />
+        <ant:normRef standard="ГОСТ Р 58876-2020" clause="8.5.1 c)">
+          <ant:check>Результат контроля на КТ-1 записан: исход, качество наблюдения, уверенность анализатора.</ant:check>
+          <ant:systemAction>Система записывает наблюдение как факт с одним из трёх исходов; «оценка невозможна» не засчитывается как «годно».</ant:systemAction>
+        </ant:normRef>
+        <ant:normRef standard="ГОСТ Р 58876-2020" clause="8.5.1.1">
+          <ant:check>Камера и анализатор КТ-1 допущены к производству: известны версия анализатора и карта контроля, по которым прошёл допуск.</ant:check>
+          <ant:systemAction>Система хранит в каждом наблюдении версию анализатора и карту контроля; без действующего паспорта допуска результат идёт к человеку.</ant:systemAction>
+        </ant:normRef>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_J_V2</bpmn:incoming>
+      <bpmn:outgoing>Flow_V2_V3</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:userTask id="V3" name="ЗТ-1 Приёмка партии ОТК">
+      <bpmn:documentation>Контролёр ОТК смотрит документы поставщика и снимки и решает: партия годна, мало данных или не годна.
+Подписывает контролёр ОТК электронной подписью; ВП — если деталь в перечне.
+Записи: протокол ВК, журнал результатов ВК (ф. 4 ГОСТ РВ 0015-308), ярлык соответствия или несоответствия (ГОСТ 24297, прил. В, Г). Закрывающая точка ЗТ-1: без подписи партия в работу не идёт.
+Что может пойти не так: нет сертификата или «оценка невозможна» — это не «годно».
+События (наш каталог): Е-05 inspection.result, Е-08 decision.gate_passed.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="incoming.zt1_lot_acceptance" stepKind="human_inspection" paperAttester="site_foreman" closingPoint="ZT-1" />
+        <ant:inspection method="supplier_documents" phase="incoming" coverage="I-CERT" />
+        <ant:presentationPoint authority="qc_acceptance" role="quality_inspector" stampKind="incoming" waitLimitMinutes="480" repeatAuthority="qc_acceptance_repeat" />
+        <ant:document template="incoming-inspection-act" />
+        <ant:document template="incoming-results-register" />
+        <ant:document template="lot-conformity-label" />
+        <ant:normRef standard="ГОСТ Р 58876-2020" clause="8.5.2">
+          <ant:check>Средство приёмки на ЗТ-1 — электронная подпись контролёра — под управлением: видно, кто подписал решение, по какой роли и когда.</ant:check>
+          <ant:systemAction>Точка не пропускает изделие без подписи уполномоченного лица; подпись хранится с автором, ролью и временем.</ant:systemAction>
+        </ant:normRef>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_V2_V3</bpmn:incoming>
+      <bpmn:outgoing>Flow_V3_VG</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="VG" name="Партия?">
+      <bpmn:documentation>Развилка по решению ЗТ-1.
+«Годна» → маркировка; «мало данных» → повторная съёмка или ручной осмотр; «не годна» → подпроцесс брака.
+Ветку выбирает подпись контролёра, а не система.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="incoming.zt1_decision" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_V3_VG</bpmn:incoming>
+      <bpmn:outgoing>Flow_VG_V4</bpmn:outgoing>
+      <bpmn:outgoing>Flow_VG_V2</bpmn:outgoing>
+      <bpmn:outgoing>Flow_VG_VN</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:callActivity id="VN" name="Брак партии (Н)" calledElement="Process_NC">
+      <bpmn:documentation>Вызов общего подпроцесса брака для партии: изоляция, решение, итог.
+Решает технолог или комиссия; для партии возможен возврат поставщику с основанием претензии.
+Записи: заявление о несоответствии, решение по несоответствующей продукции, рекламационный акт при возврате.
+Что может пойти не так: часть партии уже выдана в работу — тогда нужна область риска по партии.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="incoming.lot_nonconformity" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_VG_VN</bpmn:incoming>
+      <bpmn:outgoing>Flow_VN_VNG</bpmn:outgoing>
+    </bpmn:callActivity>
+    <bpmn:exclusiveGateway id="VNG" name="Итог Н (партия)">
+      <bpmn:documentation>Развилка по итогу подпроцесса брака для партии.
+«Как есть» по разрешению на отклонение → маркировка; «возврат» или «списание» → ждём новую партию.
+«Как есть» без подписанного разрешения невозможно.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="incoming.lot_nonconformity_outcome" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_VN_VNG</bpmn:incoming>
+      <bpmn:outgoing>Flow_VNG_V4</bpmn:outgoing>
+      <bpmn:outgoing>Flow_VNG_S1</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:exclusiveGateway id="J_V4">
+      <bpmn:documentation>Явное слияние веток перед «Маркировка DataMatrix»: неявные слияния стрелок без шлюза запрещены (решение Д-6). Входят: Flow_VG_V4, Flow_VNG_V4.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="incoming.marking.merge" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_VG_V4</bpmn:incoming>
+      <bpmn:incoming>Flow_VNG_V4</bpmn:incoming>
+      <bpmn:outgoing>Flow_J_V4</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_J_V4" sourceRef="J_V4" targetRef="V4" />
+    <bpmn:task id="V4" name="Маркировка DataMatrix">
+      <bpmn:documentation>Оператор маркировки наносит код DataMatrix на заготовку, патрубок и крышку; крепёж и уплотнение учитываются партией.
+Появляется связь «партия, плавка → экземпляр»: дальше события привязываются к детали надёжно.
+Запись: сопроводительная бирка. Норма 1–2 мин на деталь [ПП].
+Что может пойти не так: код нечитаем или снят при мехобработке — нужна перемаркировка.
+События (наш каталог): Е-07 item.marked.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="incoming.marking" stepKind="operation" />
+        <ant:document template="item-tag" />
+        <ant:norm timeMinMinutes="1" timeMaxMinutes="2" />
+        <ant:normRef standard="ГОСТ Р 58876-2020" clause="8.5.2, примечание">
+          <ant:check>По экземпляру прослеживаются партия и плавка заготовки.</ant:check>
+          <ant:systemAction>При маркировке DataMatrix система связывает экземпляр с партией и плавкой.</ant:systemAction>
+        </ant:normRef>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_J_V4</bpmn:incoming>
+      <bpmn:outgoing>Flow_V4_VP</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:parallelGateway id="VP" name="Раздать по цехам">
+      <bpmn:documentation>Параллельная раздача после входного контроля: три ветки идут одновременно.
+Заготовка → механический цех; патрубок → склад до сварки; крышка, уплотнение, крепёж → склад до сборки.
+Ветки встречаются на слияниях «Фланец + патрубок» и «Узел + крышка + уплотнение + крепёж».</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="incoming.distribute" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_V4_VP</bpmn:incoming>
+      <bpmn:outgoing>Flow_VP_V5</bpmn:outgoing>
+      <bpmn:outgoing>Flow_VP_V6</bpmn:outgoing>
+      <bpmn:outgoing>Flow_VP_V7</bpmn:outgoing>
+    </bpmn:parallelGateway>
+    <bpmn:task id="V5" name="Выдача заготовки фланца в механический цех">
+      <bpmn:documentation>Кладовщик выдаёт заготовку в механический цех; система открывает паспорт изделия и ставит его на маршрут.
+Записи: сопроводительная карта (её формирует система), бирка с QR, требование-накладная [П].
+Это исполнение ЗТ-1: следом в 1С уходит «принято в работу».
+Что может пойти не так: попытка выдать заготовку из непринятой партии — система её блокирует.
+События (наш каталог): Е-09 item.registered.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="incoming.issue_blank" stepKind="movement" />
+        <ant:precondition kind="lot_accepted" mode="block" />
+        <ant:document template="traveler" />
+        <ant:document template="item-tag" />
+        <ant:document template="requisition" />
+        <ant:normRef standard="ГОСТ Р 58876-2020" clause="8.5.2, примечание">
+          <ant:check>У изделия с начала маршрута ведутся последовательные записи этапов изготовления.</ant:check>
+          <ant:systemAction>При выдаче заготовки система открывает паспорт изделия и сопроводительную карту.</ant:systemAction>
+        </ant:normRef>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_VP_V5</bpmn:incoming>
+      <bpmn:outgoing>Flow_V5_E1</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:intermediateThrowEvent id="E1" name="В 1С: принято в работу (заготовка)">
+      <bpmn:documentation>Система отправляет в 1С учётное событие «принято в работу» по заготовке фланца.
+Статус «учтено в 1С» ставится только после ответа 1С.
+Что может пойти не так: 1С недоступна (503) — повтор с тем же номером сообщения; ошибка данных (4xx) — без автоповтора, задача администратору.
+События (наш каталог): erp.posting_sent, Е-75 integration.ack / integration.error.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="incoming.erp_accept_blank" erpAction="accept_into_work" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_V5_E1</bpmn:incoming>
+      <bpmn:outgoing>Flow_E1_M1</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MED_E1" messageRef="Msg_ErpIssueToProduction" />
+    </bpmn:intermediateThrowEvent>
+    <bpmn:task id="V6" name="Склад: патрубок — выдача в сварочный цех">
+      <bpmn:documentation>Патрубок ждёт на складе покупных и выдаётся в сварочный цех «под сварку», не раньше.
+Выполняет кладовщик; запись — требование-накладная [П]. Ожидание — часы или дни [ПП].
+Что может пойти не так: патрубок выдан слишком рано и лежит в цехе без учёта.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="incoming.issue_pipe" stepKind="storage" bufferPlace="true" />
+        <ant:document template="requisition" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_VP_V6</bpmn:incoming>
+      <bpmn:outgoing>Flow_V6_E1b</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:intermediateThrowEvent id="E1b" name="В 1С: принято в работу (патрубок)">
+      <bpmn:documentation>В 1С уходит «принято в работу» при выдаче патрубка в сварку [П, по аналогии с крышкой и крепежом].
+Ответ 1С записывается отдельным событием.
+Что может пойти не так: как у выдачи заготовки — повтор при 503, задача администратору при 4xx.
+События (наш каталог): erp.posting_sent, Е-75 integration.ack / integration.error.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="incoming.erp_accept_pipe" erpAction="accept_into_work" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_V6_E1b</bpmn:incoming>
+      <bpmn:outgoing>Flow_E1b_WJ</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MED_E1b" messageRef="Msg_ErpIssueToProduction" />
+    </bpmn:intermediateThrowEvent>
+    <bpmn:task id="V7" name="Склад: крышка, уплотнение, крепёж — выдача на сборку">
+      <bpmn:documentation>Кладовщик выдаёт на сборку крышку, уплотнение и партию крепежа; сборщик сканирует.
+Появляется связь «партия крепежа → изделия» — она нужна для области риска.
+Запись: требование-накладная [П]. Норма 10–15 мин [ПП].
+Что может пойти не так: партию крепежа не отсканировали — потом не найти, какие изделия её получили.
+События (наш каталог): Е-50 batch.issued.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="incoming.issue_assembly_parts" stepKind="movement" />
+        <ant:document template="requisition" />
+        <ant:norm timeMinMinutes="10" timeMaxMinutes="15" />
+        <ant:normRef standard="ГОСТ Р 58876-2020" clause="8.5.2, примечание">
+          <ant:check>Можно проследить, какие изделия получили крепёж одной партии.</ant:check>
+          <ant:systemAction>Система записывает партию крепежа при выдаче на сборку.</ant:systemAction>
+        </ant:normRef>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_VP_V7</bpmn:incoming>
+      <bpmn:outgoing>Flow_V7_E4</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:intermediateThrowEvent id="E4" name="В 1С: принято в работу (покупные на сборку)">
+      <bpmn:documentation>В 1С уходит «принято в работу» по покупным деталям, выданным на сборку.
+Статус «учтено в 1С» — только после ответа 1С.
+Что может пойти не так: как у выдачи заготовки — повтор при 503, задача администратору при 4xx.
+События (наш каталог): erp.posting_sent, Е-75 integration.ack / integration.error.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="incoming.erp_accept_parts" erpAction="accept_into_work" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_V7_E4</bpmn:incoming>
+      <bpmn:outgoing>Flow_E4_AJ</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MED_E4" messageRef="Msg_ErpIssueToProduction" />
+    </bpmn:intermediateThrowEvent>
+    <bpmn:exclusiveGateway id="J_M1">
+      <bpmn:documentation>Явное слияние веток перед «Мехобработка фланца на ЧПУ»: неявные слияния стрелок без шлюза запрещены (решение Д-6). Входят: Flow_E1_M1, Flow_MNG_M1.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="machining.cnc.merge" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_E1_M1</bpmn:incoming>
+      <bpmn:incoming>Flow_MNG_M1</bpmn:incoming>
+      <bpmn:outgoing>Flow_J_M1</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_J_M1" sourceRef="J_M1" targetRef="M1" />
+    <bpmn:task id="M1" name="Мехобработка фланца на ЧПУ">
+      <bpmn:documentation>Оператор ЧПУ обрабатывает фланец на станке. Перед началом система проверяет допуск оператора, исправность станка, ревизии УП и КД и что изделие не заблокировано.
+Записи: отметка исполнителя в сопроводительной карте, сменный рапорт; акт первой детали — при смене УП, оснастки или КД. Журнал станка даёт сводку выполнения.
+Норма 40–90 мин (база 60), наладка 1–2 ч на партию, очередь перед станком 0–4 ч [ПП]. Переделка — не больше 1 раза.
+Что может пойти не так: авария или предупреждение станка, ручная коррекция подачи, износ инструмента. Это обстоятельства операции, а не вина оператора.
+События (наш каталог): Е-10 operation.started, Е-11 operation.paused / resumed, Е-12 operation.finished, Е-13 operation.precondition_failed, Е-14…Е-16 machine.state, Е-20…Е-23 operator.action.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="machining.cnc" stepKind="operation" operationCode="010" reworkLimit="1" reworkLimitScope="item" />
+        <ant:precondition kind="qualification" mode="block" ref="cnc_operator" />
+        <ant:precondition kind="equipment_verification" mode="block" ref="CNC-1" />
+        <ant:precondition kind="document_revision" mode="block" ref="program+kd" />
+        <ant:precondition kind="item_blocked" mode="block" />
+        <ant:document template="traveler" />
+        <ant:document template="first-article-act" />
+        <ant:norm timeMinutes="60" timeMinMinutes="40" timeMaxMinutes="90" queueNormMinutes="240" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_J_M1</bpmn:incoming>
+      <bpmn:outgoing>Flow_M1_M2</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:exclusiveGateway id="J_M2">
+      <bpmn:documentation>Явное слияние веток перед «КТ-2 Камера, косой свет (до / после)»: неявные слияния стрелок без шлюза запрещены (решение Д-6). Входят: Flow_M1_M2, Flow_MG_M2.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="machining.kt2_camera.merge" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_M1_M2</bpmn:incoming>
+      <bpmn:incoming>Flow_MG_M2</bpmn:incoming>
+      <bpmn:outgoing>Flow_J_M2</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_J_M2" sourceRef="J_M2" targetRef="M2" />
+    <bpmn:serviceTask id="M2" name="КТ-2 Камера, косой свет (до / после)">
+      <bpmn:documentation>Камера с косым светом снимает фланец после мехобработки и сравнивает с «до» (КТ-1) по каждой зоне.
+Выполняет VisionQC (край КТ-2). Ищет риски, забоины, заусенцы, вибрационную рябь; размеры не меряет.
+Контрольная точка КТ-2. Тот же свет и то же приспособление, что «до».
+Что может пойти не так: «не сравнить» с «до» или плохой кадр → «оценка невозможна»; результат не пришёл за 10 мин → «нет данных контроля».
+События (наш каталог): Е-17 inspection.result.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="machining.kt2_camera" stepKind="automated_inspection" inspectionPoint="KT-2" />
+        <ant:inspection method="camera" phase="after_operation" coverage="M-DENT M-SCRATCH M-BURR M-CHATTER" recipeRef="kt2-oblique@1" observationQualityMinBp="6000" />
+        <ant:zoneRef zone="F-FACE" />
+        <ant:zoneRef zone="F-HOLES" />
+        <ant:zoneRef zone="F-OUTER" />
+        <ant:reactionMap ref="flange-reactions@1" />
+        <ant:normRef standard="ГОСТ Р 58876-2020" clause="8.5.1 c)">
+          <ant:check>Результат контроля на КТ-2 записан: исход, качество наблюдения, уверенность анализатора.</ant:check>
+          <ant:systemAction>Система записывает наблюдение как факт с одним из трёх исходов; «оценка невозможна» не засчитывается как «годно».</ant:systemAction>
+        </ant:normRef>
+        <ant:normRef standard="ГОСТ Р 58876-2020" clause="8.5.1.1">
+          <ant:check>Камера и анализатор КТ-2 допущены к производству: известны версия анализатора и карта контроля, по которым прошёл допуск.</ant:check>
+          <ant:systemAction>Система хранит в каждом наблюдении версию анализатора и карту контроля; без действующего паспорта допуска результат идёт к человеку.</ant:systemAction>
+        </ant:normRef>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_J_M2</bpmn:incoming>
+      <bpmn:outgoing>Flow_M2_M3</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="M3" name="КТ-2 КИМ: размеры">
+      <bpmn:documentation>Оператор КИМ меряет размеры фланца по чертежу; размеры проверяет только КИМ.
+Запись: протокол КИМ, карта измерений — значение против допуска.
+Предусловие — действующая калибровка КИМ. Очередь к КИМ 0,5–2 ч [ПП].
+Что может пойти не так: «не измерено» — это «нет данных», а не «годно»; КИМ оказалась непригодной — прежние результаты пересматривают.
+События (наш каталог): Е-18 inspection.result.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="machining.kt2_cmm" stepKind="automated_inspection" inspectionPoint="KT-2" />
+        <ant:inspection method="cmm" phase="after_operation" coverage="M-DIM" />
+        <ant:requirement characteristic="Размеры фланца по чертежу" tolerance="по КД [ПП]" kdRef="ФЛ-100.01.001 ред. Б" />
+        <ant:zoneRef zone="F-FACE" />
+        <ant:zoneRef zone="F-HOLES" />
+        <ant:precondition kind="equipment_verification" mode="block" ref="CMM-1" />
+        <ant:document template="cmm-protocol" />
+        <ant:reactionMap ref="flange-reactions@1" />
+        <ant:norm queueNormMinutes="120" />
+        <ant:normRef standard="ГОСТ Р 58876-2020" clause="8.5.1 c)">
+          <ant:check>Протокол КИМ записан: значение против допуска по каждой характеристике.</ant:check>
+          <ant:systemAction>Система хранит протокол КИМ; «не измерено» — это «нет данных», а не «годно».</ant:systemAction>
+        </ant:normRef>
+        <ant:normRef standard="ГОСТ Р 58876-2020" clause="7.1.5.2">
+          <ant:check>КИМ с действующей калибровкой; если её признали непригодной, прежние результаты пересмотрены.</ant:check>
+          <ant:systemAction>Предусловие шага блокирует измерение с истёкшей калибровкой; при непригодности КИМ система помечает прежние результаты «под сомнением».</ant:systemAction>
+        </ant:normRef>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_M2_M3</bpmn:incoming>
+      <bpmn:outgoing>Flow_M3_M4</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:userTask id="M4" name="ЗТ-2 Приёмка ОТК">
+      <bpmn:documentation>Контролёр ОТК смотрит результаты камеры и КИМ и решает: принять и передать на сварку, назначить доп. проверку или не принять.
+Подписывает контролёр ОТК электронной подписью.
+Записи: отметка ОТК в сопроводительной карте, журнал предъявления ОТК. Закрывающая точка ЗТ-2. Нельзя принять, если не пришёл результат одного из методов.
+Что может пойти не так: ожидание контролёра дольше 30–60 мин — изделия копятся.
+События (наш каталог): Е-19 decision.gate_passed.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="machining.zt2_acceptance" stepKind="human_inspection" paperAttester="site_foreman" closingPoint="ZT-2" />
+        <ant:presentationPoint authority="qc_acceptance" role="quality_inspector" stampKind="dimensional" waitLimitMinutes="60" repeatAuthority="qc_acceptance_repeat" />
+        <ant:document template="presentation-log" />
+        <ant:document template="traveler" />
+        <ant:normRef standard="ГОСТ Р 58876-2020" clause="8.5.2">
+          <ant:check>Средство приёмки на ЗТ-2 — электронная подпись контролёра — под управлением: видно, кто подписал решение, по какой роли и когда.</ant:check>
+          <ant:systemAction>Точка не пропускает изделие без подписи уполномоченного лица; подпись хранится с автором, ролью и временем.</ant:systemAction>
+        </ant:normRef>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_M3_M4</bpmn:incoming>
+      <bpmn:outgoing>Flow_M4_MG</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="MG" name="Годно?">
+      <bpmn:documentation>Развилка по решению ЗТ-2.
+«Годно» → отправка в сварочный цех; «мало данных» → снова камера КТ-2; «не годно» → подпроцесс брака.
+Ветку выбирает подпись контролёра, а не система.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="machining.zt2_decision" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_M4_MG</bpmn:incoming>
+      <bpmn:outgoing>Flow_MG_M5</bpmn:outgoing>
+      <bpmn:outgoing>Flow_MG_M2</bpmn:outgoing>
+      <bpmn:outgoing>Flow_MG_MN</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:callActivity id="MN" name="Брак (Н)" calledElement="Process_NC">
+      <bpmn:documentation>Вызов подпроцесса брака после ЗТ-2: изоляция, решение по изделию, итог.
+Решают технолог или комиссия по движку полномочий.
+Записи: заявление о несоответствии, решение по несоответствующей продукции, акт о браке — при списании и переделке.
+Что может пойти не так: изделие изолировано в системе, но физически не перенесено — тревога.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="machining.nonconformity" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_MG_MN</bpmn:incoming>
+      <bpmn:outgoing>Flow_MN_MNG</bpmn:outgoing>
+    </bpmn:callActivity>
+    <bpmn:exclusiveGateway id="MNG" name="Итог Н">
+      <bpmn:documentation>Развилка по итогу подпроцесса брака.
+Переделка (не больше 1 раза, если хватает припуска) → снова мехобработка, новое выполнение со ссылкой на прежнее; «как есть» по разрешению → в сварочный цех; «списано» → конец.
+Сверх лимита переделка заблокирована: только ремонт по разрешению или списание.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="machining.nonconformity_outcome" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_MN_MNG</bpmn:incoming>
+      <bpmn:outgoing>Flow_MNG_M1</bpmn:outgoing>
+      <bpmn:outgoing>Flow_MNG_M5</bpmn:outgoing>
+      <bpmn:outgoing>Flow_MNG_MX</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:endEvent id="MX" name="Списано">
+      <bpmn:documentation>Фланец списан после мехобработки; маршрут изделия заканчивается.
+В 1С уже ушёл «перевод в брак (списание)» из подпроцесса брака; оформлен акт о браке.
+Патрубок и покупные детали возвращаются на склад отдельной задачей [П].</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="machining.scrapped" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_MNG_MX</bpmn:incoming>
+      <bpmn:terminateEventDefinition id="TerED_MX" />
+    </bpmn:endEvent>
+    <bpmn:exclusiveGateway id="J_M5">
+      <bpmn:documentation>Явное слияние веток перед «Отправка в сварочный цех»: неявные слияния стрелок без шлюза запрещены (решение Д-6). Входят: Flow_MG_M5, Flow_MNG_M5.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="machining.send_to_welding.merge" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_MG_M5</bpmn:incoming>
+      <bpmn:incoming>Flow_MNG_M5</bpmn:incoming>
+      <bpmn:outgoing>Flow_J_M5</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_J_M5" sourceRef="J_M5" targetRef="M5" />
+    <bpmn:task id="M5" name="Отправка в сварочный цех">
+      <bpmn:documentation>Мастер или кладовщик отправляет фланец в сварочный цех (скан); изделие в пути.
+Запись: маршрутный лист (межцеховой сдаточный документ).
+Транспорт — 2 рейса в смену, 15 мин в пути; межцеховая кладовая 0,5–4 ч [ПП].
+Что может пойти не так: долгое ожидание в кладовой → уведомление мастеру; повреждение при перемещении.
+События (наш каталог): Е-30 movement.sent.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="machining.send_to_welding" stepKind="movement" />
+        <ant:document template="route-sheet" />
+        <ant:norm timeMinutes="15" queueNormMinutes="240" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_J_M5</bpmn:incoming>
+      <bpmn:outgoing>Flow_M5_W0</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:userTask id="W0" name="Приёмка цехом: осмотр, подпись мастера">
+      <bpmn:documentation>Мастер сварочного цеха принимает фланец и осматривает его.
+Подписывает принимающий мастер; это часть ЗТ-2.
+Записи: маршрутный лист, накладная на передачу между цехами.
+Осмотр закрывает окно «повреждение при перемещении». Нашли повреждение → сигнал.
+События (наш каталог): Е-31 movement.received.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="welding.receive" stepKind="movement" paperAttester="head_of_workshop" />
+        <ant:document template="route-sheet" />
+        <ant:document template="interworkshop-transfer" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_M5_W0</bpmn:incoming>
+      <bpmn:outgoing>Flow_W0_E2</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:intermediateThrowEvent id="E2" name="В 1С: перемещение МЦ → СЦ">
+      <bpmn:documentation>В 1С уходит «перемещение между складами»: механический цех → сварочный.
+Уходит только после подписи принимающего мастера; «учтено в 1С» — после ответа 1С.
+Что может пойти не так: ошибка 1С — повтор с тем же номером (503) или задача администратору (4xx).
+События (наш каталог): erp.posting_sent, Е-75 integration.ack / integration.error.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="welding.erp_transfer_in" erpAction="warehouse_transfer" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_W0_E2</bpmn:incoming>
+      <bpmn:outgoing>Flow_E2_WJ</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MED_E2" messageRef="Msg_ErpTransfer" />
+    </bpmn:intermediateThrowEvent>
+    <bpmn:parallelGateway id="WJ" name="Фланец + патрубок">
+      <bpmn:documentation>Слияние ждёт обе детали: фланец из механического цеха и патрубок со склада.
+Сварщик сканирует обе детали. История узла = история фланца + история патрубка.
+Что может пойти не так: патрубок из партии, которую позже признают браком, — узел попадает в область риска по партии.
+События (наш каталог): Е-41 assembly.component_linked.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="welding.join_parts" />
+        <ant:normRef standard="ГОСТ Р 58876-2020" clause="8.5.2, примечание">
+          <ant:check>У сварного узла прослеживаются компоненты: фланец и патрубок.</ant:check>
+          <ant:systemAction>Сварщик сканирует обе детали; история узла объединяет историю фланца и патрубка.</ant:systemAction>
+        </ant:normRef>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_E1b_WJ</bpmn:incoming>
+      <bpmn:incoming>Flow_E2_WJ</bpmn:incoming>
+      <bpmn:outgoing>Flow_WJ_W1</bpmn:outgoing>
+    </bpmn:parallelGateway>
+    <bpmn:exclusiveGateway id="J_W1">
+      <bpmn:documentation>Явное слияние веток перед «Подготовка кромок»: неявные слияния стрелок без шлюза запрещены (решение Д-6). Входят: Flow_WJ_W1, Flow_WT_W1, Flow_WNG_W1.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="welding.edge_prep.merge" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_WJ_W1</bpmn:incoming>
+      <bpmn:incoming>Flow_WT_W1</bpmn:incoming>
+      <bpmn:incoming>Flow_WNG_W1</bpmn:incoming>
+      <bpmn:outgoing>Flow_J_W1</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_J_W1" sourceRef="J_W1" targetRef="W1" />
+    <bpmn:task id="W1" name="Подготовка кромок">
+      <bpmn:documentation>Сварщик или слесарь зачищает и травит кромки под сварку.
+Запись: журнал сварочных работ (время подготовки кромок).
+Конец шага запускает окно 8 ч до начала сварки [ПП, по аналогии с ПНАЭ Г-7-022-90 п. 5.2.6]. Травить кромки можно не больше 3 раз.
+Что может пойти не так: кромки подготовили «впрок», и окно истекло в очереди.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="welding.edge_prep" stepKind="operation" operationCode="020" reworkLimit="3" reworkLimitScope="loop" />
+        <ant:document template="welding-log" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_J_W1</bpmn:incoming>
+      <bpmn:outgoing>Flow_W1_W2</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="W2" name="Сварка фланца с патрубком">
+      <bpmn:documentation>Сварщик сваривает фланец с патрубком на источнике ИС-1 или ИС-2; источник пишет ток, напряжение, скорость.
+Это специальный процесс: его результат нельзя полностью оценить последующим контролем (ГОСТ Р 58633 п. 3.17, п. 6.7). Перед началом проверяются аттестация сварщика на дату, сроки проволоки и газа, исправность источника, окно кромок.
+Записи: журнал сварочных работ, журнал параметров спецпроцесса, клеймо сварщика у шва.
+Что может пойти не так: ток вне уставки 160 ± 10 А [ПП] — нарушение режима даже без видимого дефекта; все изделия окна нарушения идут в несоответствие.
+События (наш каталог): Е-40 operation.started, Е-42 machine.parameters, Е-43 machine.state.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="welding.weld" stepKind="operation" specialProcess="true" operationCode="030" reworkLimit="3" reworkLimitScope="zone" />
+        <ant:zoneRef zone="W-1.U1" />
+        <ant:zoneRef zone="W-1.U2" />
+        <ant:zoneRef zone="W-1.U3" />
+        <ant:zoneRef zone="W-1.U4" />
+        <ant:zoneRef zone="W-1.U5" />
+        <ant:zoneRef zone="W-1.U6" />
+        <ant:zoneRef zone="W-1.U7" />
+        <ant:zoneRef zone="W-1.U8" />
+        <ant:precondition kind="qualification" mode="block" ref="welder_argon_arc_amg6" />
+        <ant:precondition kind="material_expiry" mode="block" ref="wire+gas" />
+        <ant:precondition kind="equipment_verification" mode="block" ref="IS-1|IS-2" />
+        <ant:precondition kind="time_window" mode="block" ref="edge_prep&lt;=PT8H" />
+        <ant:precondition kind="item_blocked" mode="block" />
+        <ant:document template="welding-log" />
+        <ant:document template="special-process-log" />
+        <ant:normRef standard="ГОСТ Р 58633-2020" clause="3.17, 6.7">
+          <ant:check>Сварка отмечена как специальный процесс: её результат нельзя полностью оценить последующим контролем.</ant:check>
+          <ant:systemAction>Система помечает шаг как специальный процесс и хранит журнал параметров каждого выполнения.</ant:systemAction>
+        </ant:normRef>
+        <ant:normRef standard="ГОСТ Р 58633-2020" clause="7.1">
+          <ant:check>Фактические значения ключевых характеристик сварки (ток, напряжение, скорость) зарегистрированы.</ant:check>
+          <ant:systemAction>Источник пишет параметры шва; система хранит сводку на каждое выполнение сварки и сравнивает её с уставкой.</ant:systemAction>
+        </ant:normRef>
+        <ant:normRef standard="ГОСТ Р 59861-2021" clause="7.4.14">
+          <ant:check>При нарушении режима работы приостановлены до установления и устранения причин.</ant:check>
+          <ant:systemAction>Система выдаёт сигнал нарушения режима и предлагает остановить источник; остановку ставит и снимает уполномоченный человек.</ant:systemAction>
+        </ant:normRef>
+        <ant:normRef standard="ГОСТ Р 58633-2020" clause="8.2">
+          <ant:check>У сварщика действующая аттестация на дату операции (по аналогии: при аттестации процесса проверяют квалификацию исполнителей и допуск).</ant:check>
+          <ant:systemAction>Предусловие шага блокирует начало сварки без действующей аттестации сварщика.</ant:systemAction>
+        </ant:normRef>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_W1_W2</bpmn:incoming>
+      <bpmn:outgoing>Flow_W2_W3</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:boundaryEvent id="WT" name="Окно кромок 8 ч истекло" attachedToRef="W2" cancelActivity="true">
+      <bpmn:documentation>Таймер: от конца подготовки кромок до начала сварки прошло больше 8 ч [ПП].
+Сварку начинать нельзя: кромки готовят заново, счётчик травлений +1 (не больше 3).
+Что может пойти не так: очередь перед сваркой дольше 8 ч — лишнее травление и потеря металла.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="welding.edge_window_expired" timerScope="until_started" />
+      </bpmn:extensionElements>
+      <bpmn:outgoing>Flow_WT_W1</bpmn:outgoing>
+      <bpmn:timerEventDefinition id="TED_WT">
+        <bpmn:timeDuration xsi:type="bpmn:tFormalExpression">PT8H</bpmn:timeDuration>
+      </bpmn:timerEventDefinition>
+    </bpmn:boundaryEvent>
+    <bpmn:exclusiveGateway id="J_W3">
+      <bpmn:documentation>Явное слияние веток перед «КТ-3 Камера на шов (участки 40 мм)»: неявные слияния стрелок без шлюза запрещены (решение Д-6). Входят: Flow_W2_W3, Flow_WG_W3.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="welding.kt3_camera.merge" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_W2_W3</bpmn:incoming>
+      <bpmn:incoming>Flow_WG_W3</bpmn:incoming>
+      <bpmn:outgoing>Flow_J_W3</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_J_W3" sourceRef="J_W3" targetRef="W3" />
+    <bpmn:serviceTask id="W3" name="КТ-3 Камера на шов (участки 40 мм)">
+      <bpmn:documentation>Камера проходит вдоль шва по участкам 40 мм (У1…У8) и ищет подрез, брызги, поры на поверхности, кратер, прожог.
+Выполняет VisionQC. Прожог или подрез → карантин и черновик карточки несоответствия (правило R-07).
+Контрольная точка КТ-3. Порог качества наблюдения 0,6 [П]: ниже порога «признаков нет» считается «оценка невозможна».
+Что может пойти не так: «признаков нет» не закрывает внутренние дефекты — нужен рентген; высокая уверенность на плохом кадре не засчитывается.
+События (наш каталог): Е-44 inspection.result.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="welding.kt3_camera" stepKind="automated_inspection" inspectionPoint="KT-3" />
+        <ant:inspection method="camera" phase="after_operation" coverage="W-UNDERCUT W-SPATTER W-PORE-S W-CRATER W-BURNTHRU" recipeRef="kt3-weld@1" observationQualityMinBp="6000" />
+        <ant:requirement characteristic="Шов W-1: поверхностные дефекты" tolerance="не допускаются [ПП]" kdRef="ФЛ-100.01.000 ред. Б" />
+        <ant:zoneRef zone="W-1.U1" />
+        <ant:zoneRef zone="W-1.U2" />
+        <ant:zoneRef zone="W-1.U3" />
+        <ant:zoneRef zone="W-1.U4" />
+        <ant:zoneRef zone="W-1.U5" />
+        <ant:zoneRef zone="W-1.U6" />
+        <ant:zoneRef zone="W-1.U7" />
+        <ant:zoneRef zone="W-1.U8" />
+        <ant:reactionMap ref="flange-reactions@1" />
+        <ant:normRef standard="ГОСТ Р 58876-2020" clause="8.5.1 c)">
+          <ant:check>Результат контроля на КТ-3 записан: исход, качество наблюдения, уверенность анализатора.</ant:check>
+          <ant:systemAction>Система записывает наблюдение как факт с одним из трёх исходов; «оценка невозможна» не засчитывается как «годно».</ant:systemAction>
+        </ant:normRef>
+        <ant:normRef standard="ГОСТ Р 58876-2020" clause="8.5.1.1">
+          <ant:check>Камера и анализатор КТ-3 допущены к производству: известны версия анализатора и карта контроля, по которым прошёл допуск.</ant:check>
+          <ant:systemAction>Система хранит в каждом наблюдении версию анализатора и карту контроля; без действующего паспорта допуска результат идёт к человеку.</ant:systemAction>
+        </ant:normRef>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_J_W3</bpmn:incoming>
+      <bpmn:outgoing>Flow_W3_WR</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="WR" name="РК по КД?">
+      <bpmn:documentation>Развилка по плану контроля: назначен ли рентген шва по КД.
+Да → рентген; нет → сразу приёмка ОТК. В сценариях рентген обязателен [П].
+Если рентген назначен, без заключения ЗТ-3 не пройти.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="welding.radiography_required" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_W3_WR</bpmn:incoming>
+      <bpmn:outgoing>Flow_WR_W4</bpmn:outgoing>
+      <bpmn:outgoing>Flow_WR_W5</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="W4" name="КТ-3 Рентген шва">
+      <bpmn:documentation>Дефектоскопист лаборатории НК снимает шов, расшифровывает снимки и пишет заключение: внутренние поры, несплавления, прожог в корне.
+Запись: заключение НК (ГОСТ 7512). Юридически значимо заключение, а не снимок.
+Предусловие — квалификация дефектоскописта. Узкое место № 1: очередь в лабораторию 4–24 ч [ПП].
+Что может пойти не так: заключение не пришло — ЗТ-3 закрыта; долгая очередь задерживает обнаружение дефектов.
+События (наш каталог): Е-45 inspection.result.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="welding.kt3_radiography" stepKind="automated_inspection" inspectionPoint="KT-3" />
+        <ant:inspection method="radiography" phase="after_operation" coverage="W-PORE-I W-LOF W-BURNTHRU" />
+        <ant:zoneRef zone="W-1.U1" />
+        <ant:zoneRef zone="W-1.U2" />
+        <ant:zoneRef zone="W-1.U3" />
+        <ant:zoneRef zone="W-1.U4" />
+        <ant:zoneRef zone="W-1.U5" />
+        <ant:zoneRef zone="W-1.U6" />
+        <ant:zoneRef zone="W-1.U7" />
+        <ant:zoneRef zone="W-1.U8" />
+        <ant:precondition kind="qualification" mode="block" ref="ndt_radiography_level2" />
+        <ant:document template="ndt-conclusion" />
+        <ant:reactionMap ref="flange-reactions@1" />
+        <ant:norm queueNormMinutes="1440" />
+        <ant:normRef standard="ГОСТ Р 58876-2020" clause="8.5.1 c)">
+          <ant:check>Заключение рентгена записано по каждому участку шва.</ant:check>
+          <ant:systemAction>Система хранит заключение лаборатории НК и не пропускает ЗТ-3 без него, если рентген назначен.</ant:systemAction>
+        </ant:normRef>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_WR_W4</bpmn:incoming>
+      <bpmn:outgoing>Flow_W4_W5</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="J_W5">
+      <bpmn:documentation>Явное слияние веток перед «ЗТ-3 Приёмка ОТК»: неявные слияния стрелок без шлюза запрещены (решение Д-6). Входят: Flow_WR_W5, Flow_W4_W5.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="welding.zt3_acceptance.merge" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_WR_W5</bpmn:incoming>
+      <bpmn:incoming>Flow_W4_W5</bpmn:incoming>
+      <bpmn:outgoing>Flow_J_W5</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_J_W5" sourceRef="J_W5" targetRef="W5" />
+    <bpmn:userTask id="W5" name="ЗТ-3 Приёмка ОТК">
+      <bpmn:documentation>Контролёр ОТК смотрит камеру по всем участкам шва, заключение рентгена и журнал сварки и решает: годно, мало данных, не годно.
+Подписывает контролёр ОТК; главный сварщик — при ремонте шва.
+Записи: отметка ОТК, журнал предъявления, клеймо сварщика. Закрывающая точка ЗТ-3. Журнал сварки должен быть в норме или разобран.
+Что может пойти не так: решение принято до прихода опоздавшего журнала — система ставит на нём метку «пересмотрите».
+События (наш каталог): Е-47 decision.gate_passed.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="welding.zt3_acceptance" stepKind="human_inspection" paperAttester="head_of_workshop" closingPoint="ZT-3" />
+        <ant:presentationPoint authority="qc_acceptance" role="quality_inspector" stampKind="weld" waitLimitMinutes="60" repeatAuthority="qc_acceptance_repeat" />
+        <ant:document template="presentation-log" />
+        <ant:document template="traveler" />
+        <ant:normRef standard="ГОСТ Р 58876-2020" clause="8.5.2">
+          <ant:check>Средство приёмки на ЗТ-3 — электронная подпись контролёра — под управлением: видно, кто подписал решение, по какой роли и когда.</ant:check>
+          <ant:systemAction>Точка не пропускает изделие без подписи уполномоченного лица; подпись хранится с автором, ролью и временем.</ant:systemAction>
+        </ant:normRef>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_J_W5</bpmn:incoming>
+      <bpmn:outgoing>Flow_W5_WG</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="WG" name="Годно?">
+      <bpmn:documentation>Развилка по решению ЗТ-3.
+«Годно» → отправка в сборочный цех; «мало данных» → снова камера на шов; «не годно» → подпроцесс брака.
+Ветку выбирает подпись контролёра, а не система.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="welding.zt3_decision" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_W5_WG</bpmn:incoming>
+      <bpmn:outgoing>Flow_WG_W6</bpmn:outgoing>
+      <bpmn:outgoing>Flow_WG_W3</bpmn:outgoing>
+      <bpmn:outgoing>Flow_WG_WN</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:callActivity id="WN" name="Брак (Н)" calledElement="Process_NC">
+      <bpmn:documentation>Вызов подпроцесса брака после ЗТ-3.
+Решают технолог и комиссия; при ремонте шва — с главным сварщиком.
+Записи: заявление о несоответствии, решение по несоответствующей продукции, при необходимости — разрешение на отклонение.
+Что может пойти не так: решение не принято за 3 рабочих дня — эскалация.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="welding.nonconformity" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_WG_WN</bpmn:incoming>
+      <bpmn:outgoing>Flow_WN_WNG</bpmn:outgoing>
+    </bpmn:callActivity>
+    <bpmn:exclusiveGateway id="WNG" name="Итог Н">
+      <bpmn:documentation>Развилка по итогу подпроцесса брака.
+Ремонт участка шва (не больше 3 раз на участок [ПП, по аналогии с ПНАЭ Г-7-022-90 п. 8.13]) → снова кромки и сварка, потом камера и рентген заново; «как есть» по разрешению → в сборку; «списано» → конец.
+Второй и третий ремонт — с согласия главного сварщика; сверх лимита — только разрешение на отклонение или списание.
+События (наш каталог): Е-46 rework.limit_reached.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="welding.nonconformity_outcome" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_WN_WNG</bpmn:incoming>
+      <bpmn:outgoing>Flow_WNG_W1</bpmn:outgoing>
+      <bpmn:outgoing>Flow_WNG_W6</bpmn:outgoing>
+      <bpmn:outgoing>Flow_WNG_WX</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:endEvent id="WX" name="Списано">
+      <bpmn:documentation>Сварной узел списан; маршрут изделия заканчивается.
+В 1С уже ушёл «перевод в брак (списание)»; оформлен акт о браке.
+Покупные детали для сборки возвращаются на склад отдельной задачей [П].</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="welding.scrapped" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_WNG_WX</bpmn:incoming>
+      <bpmn:terminateEventDefinition id="TerED_WX" />
+    </bpmn:endEvent>
+    <bpmn:exclusiveGateway id="J_W6">
+      <bpmn:documentation>Явное слияние веток перед «Отправка в сборочный цех»: неявные слияния стрелок без шлюза запрещены (решение Д-6). Входят: Flow_WG_W6, Flow_WNG_W6.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="welding.send_to_assembly.merge" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_WG_W6</bpmn:incoming>
+      <bpmn:incoming>Flow_WNG_W6</bpmn:incoming>
+      <bpmn:outgoing>Flow_J_W6</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_J_W6" sourceRef="J_W6" targetRef="W6" />
+    <bpmn:task id="W6" name="Отправка в сборочный цех">
+      <bpmn:documentation>Мастер или кладовщик отправляет сварной узел в сборочно-испытательный цех (скан).
+Запись: маршрутный лист.
+Межцеховая кладовая 0,5–4 ч, 2 рейса в смену [ПП].
+Что может пойти не так: долгое ожидание → уведомление мастеру; повреждение при перемещении.
+События (наш каталог): Е-30 movement.sent.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="welding.send_to_assembly" stepKind="movement" />
+        <ant:document template="route-sheet" />
+        <ant:norm queueNormMinutes="240" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_J_W6</bpmn:incoming>
+      <bpmn:outgoing>Flow_W6_A0</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:userTask id="A0" name="Приёмка цехом: осмотр, подпись мастера">
+      <bpmn:documentation>Мастер сборочно-испытательного цеха принимает сварной узел и осматривает его.
+Подписывает принимающий мастер; это часть ЗТ-3.
+Записи: маршрутный лист, накладная на передачу между цехами.
+Нашли повреждение при приёмке → сигнал.
+События (наш каталог): Е-31 movement.received.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="assembly.receive" stepKind="movement" paperAttester="head_of_workshop" />
+        <ant:document template="route-sheet" />
+        <ant:document template="interworkshop-transfer" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_W6_A0</bpmn:incoming>
+      <bpmn:outgoing>Flow_A0_E3</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:intermediateThrowEvent id="E3" name="В 1С: перемещение СЦ → СИЦ">
+      <bpmn:documentation>В 1С уходит «перемещение между складами»: сварочный цех → сборочно-испытательный.
+Уходит после подписи принимающего мастера; «учтено в 1С» — после ответа 1С.
+Что может пойти не так: ошибка 1С — повтор (503) или задача администратору (4xx).
+События (наш каталог): erp.posting_sent, Е-75 integration.ack / integration.error.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="assembly.erp_transfer_in" erpAction="warehouse_transfer" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_A0_E3</bpmn:incoming>
+      <bpmn:outgoing>Flow_E3_AJ</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MED_E3" messageRef="Msg_ErpTransfer" />
+    </bpmn:intermediateThrowEvent>
+    <bpmn:parallelGateway id="AJ" name="Узел + крышка + уплотнение + крепёж">
+      <bpmn:documentation>Слияние ждёт все компоненты сборки: сварной узел и покупные детали со склада.
+Сборщик сканирует компоненты до установки: после установки коды не видны.
+Что может пойти не так: компонент не отсканировали — связь «партия → изделие» потеряна.
+События (наш каталог): Е-51 assembly.component_linked.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="assembly.join_parts" />
+        <ant:normRef standard="ГОСТ Р 58876-2020" clause="8.5.2, примечание">
+          <ant:check>У сборки прослеживаются компоненты: сварной узел, крышка, партии уплотнения и крепежа.</ant:check>
+          <ant:systemAction>Сборщик сканирует компоненты до установки; система связывает их с изделием.</ant:systemAction>
+        </ant:normRef>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_E4_AJ</bpmn:incoming>
+      <bpmn:incoming>Flow_E3_AJ</bpmn:incoming>
+      <bpmn:outgoing>Flow_AJ_A1</bpmn:outgoing>
+    </bpmn:parallelGateway>
+    <bpmn:exclusiveGateway id="J_A1">
+      <bpmn:documentation>Явное слияние веток перед «Установка уплотнения»: неявные слияния стрелок без шлюза запрещены (решение Д-6). Входят: Flow_AJ_A1, Flow_AV_A1.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="assembly.seal_install.merge" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_AJ_A1</bpmn:incoming>
+      <bpmn:incoming>Flow_AV_A1</bpmn:incoming>
+      <bpmn:outgoing>Flow_J_A1</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_J_A1" sourceRef="J_A1" targetRef="A1" />
+    <bpmn:task id="A1" name="Установка уплотнения">
+      <bpmn:documentation>Сборщик ставит уплотнение в канавку фланца.
+Запись: карта сборки. Норма 5–10 мин [ПП].
+После вскрытия уплотнение ставят только новое.
+Что может пойти не так: уплотнение из партии, которую позже признают браком.
+События (наш каталог): Е-51 assembly.component_linked.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="assembly.seal_install" stepKind="operation" operationCode="040" />
+        <ant:zoneRef zone="S-1" />
+        <ant:precondition kind="material_expiry" mode="block" ref="seal" />
+        <ant:document template="assembly-card" />
+        <ant:norm timeMinMinutes="5" timeMaxMinutes="10" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_J_A1</bpmn:incoming>
+      <bpmn:outgoing>Flow_A1_A2</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:exclusiveGateway id="J_A2">
+      <bpmn:documentation>Явное слияние веток перед «КТ-4d Камера зоны (УФ)»: неявные слияния стрелок без шлюза запрещены (решение Д-6). Входят: Flow_A1_A2, Flow_A3C_A2.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="assembly.kt4d_zone_camera.merge" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_A1_A2</bpmn:incoming>
+      <bpmn:incoming>Flow_A3C_A2</bpmn:incoming>
+      <bpmn:outgoing>Flow_J_A2</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_J_A2" sourceRef="J_A2" targetRef="A2" />
+    <bpmn:serviceTask id="A2" name="КТ-4d Камера зоны (УФ)">
+      <bpmn:documentation>Камера с УФ-светом смотрит канавку уплотнения и полость до установки крышки: посторонние предметы, стружка, масло.
+Выполняет VisionQC. Запись: снимки в карте сборки. Контрольная точка КТ-4d.
+Что может пойти не так: зона плохо видна → «оценка невозможна»; после очистки съёмка повторяется.
+События (наш каталог): Е-52 inspection.result.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="assembly.kt4d_zone_camera" stepKind="automated_inspection" inspectionPoint="KT-4d" />
+        <ant:inspection method="camera" phase="before_zone_closure" coverage="A-FOD" recipeRef="kt4d-uv@1" observationQualityMinBp="6000" />
+        <ant:zoneRef zone="S-1" />
+        <ant:zoneRef zone="CAV" />
+        <ant:reactionMap ref="flange-reactions@1" />
+        <ant:normRef standard="ГОСТ Р 58876-2020" clause="8.5.1 c)">
+          <ant:check>Результат контроля на КТ-4d записан: исход, качество наблюдения, уверенность анализатора.</ant:check>
+          <ant:systemAction>Система записывает наблюдение как факт с одним из трёх исходов; «оценка невозможна» не засчитывается как «годно».</ant:systemAction>
+        </ant:normRef>
+        <ant:normRef standard="ГОСТ Р 58876-2020" clause="8.5.1.1">
+          <ant:check>Камера и анализатор КТ-4d допущены к производству: известны версия анализатора и карта контроля, по которым прошёл допуск.</ant:check>
+          <ant:systemAction>Система хранит в каждом наблюдении версию анализатора и карту контроля; без действующего паспорта допуска результат идёт к человеку.</ant:systemAction>
+        </ant:normRef>
+        <ant:normRef standard="ГОСТ Р 58876-2020" clause="8.5.1 p)">
+          <ant:check>Канавка и полость проверены на посторонние предметы до закрытия крышкой.</ant:check>
+          <ant:systemAction>Камера с УФ-светом ищет посторонние предметы и масло; признак → очистка и повторная проверка.</ant:systemAction>
+        </ant:normRef>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_J_A2</bpmn:incoming>
+      <bpmn:outgoing>Flow_A2_A3</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:userTask id="A3" name="ЗТ-4 ч.1 Предъявление зоны ОТК">
+      <bpmn:documentation>Скрытые работы: контролёр ОТК смотрит зону до установки крышки и подтверждает, что она чистая и инструмент из полости вышел.
+Подписывает контролёр ОТК. Запись: отметка ОТК о скрытых работах в карте сборки.
+Закрывающая точка ЗТ-4, часть 1. После установки крышки эту зону уже не проверить.
+Что может пойти не так: контролёр идёт 15–60 мин, сборщик простаивает [ПП].
+События (наш каталог): Е-52 inspection.result.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="assembly.zt4_zone_presentation" stepKind="human_inspection" paperAttester="site_foreman" closingPoint="ZT-4.1" />
+        <ant:zoneRef zone="S-1" />
+        <ant:zoneRef zone="CAV" />
+        <ant:presentationPoint authority="qc_acceptance" role="quality_inspector" stampKind="assembly" waitLimitMinutes="60" repeatAuthority="qc_acceptance_repeat" />
+        <ant:document template="assembly-card" />
+        <ant:normRef standard="ГОСТ Р 58876-2020" clause="8.5.1 m)">
+          <ant:check>Зона уплотнения проверена и подписана до установки крышки, пока её ещё можно проверить.</ant:check>
+          <ant:systemAction>Точка ЗТ-4 ч.1 стоит перед установкой крышки; без подписи шаг «Установка крышки» блокируется.</ant:systemAction>
+        </ant:normRef>
+        <ant:normRef standard="ГОСТ Р 58876-2020" clause="8.5.1 p)">
+          <ant:check>Контролёр подтвердил, что в зоне нет посторонних предметов и инструмент вышел.</ant:check>
+          <ant:systemAction>Отметка о скрытых работах входит в подпись ЗТ-4 ч.1.</ant:systemAction>
+        </ant:normRef>
+        <ant:normRef standard="ГОСТ Р 58876-2020" clause="8.5.2">
+          <ant:check>Средство приёмки на ЗТ-4 ч.1 — электронная подпись контролёра — под управлением: видно, кто подписал решение, по какой роли и когда.</ant:check>
+          <ant:systemAction>Точка не пропускает изделие без подписи уполномоченного лица; подпись хранится с автором, ролью и временем.</ant:systemAction>
+        </ant:normRef>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_A2_A3</bpmn:incoming>
+      <bpmn:outgoing>Flow_A3_A3G</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="A3G" name="Зона чистая?">
+      <bpmn:documentation>Развилка по решению ЗТ-4 ч.1.
+«Да» → установка крышки; «нет» → очистка зоны и снова камера КТ-4d.
+Крышку ставить нельзя, пока зона не принята.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="assembly.zone_clean_decision" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_A3_A3G</bpmn:incoming>
+      <bpmn:outgoing>Flow_A3G_A4</bpmn:outgoing>
+      <bpmn:outgoing>Flow_A3G_A3C</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:task id="A3C" name="Очистка зоны">
+      <bpmn:documentation>Сборщик убирает посторонние предметы, стружку и масло из канавки и полости.
+После очистки — снова съёмка КТ-4d и предъявление ОТК. Норма 5–15 мин [ПП].
+Что может пойти не так: очистка не помогла — повторный цикл; откуда грязь, выясняют отдельно.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="assembly.zone_cleaning" stepKind="operation" />
+        <ant:zoneRef zone="S-1" />
+        <ant:zoneRef zone="CAV" />
+        <ant:norm timeMinMinutes="5" timeMaxMinutes="15" />
+        <ant:normRef standard="ГОСТ Р 58876-2020" clause="8.5.4 b)">
+          <ant:check>Посторонние объекты удалены, зона проверена повторно.</ant:check>
+          <ant:systemAction>После очистки система снова требует съёмку КТ-4d и предъявление ОТК.</ant:systemAction>
+        </ant:normRef>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_A3G_A3C</bpmn:incoming>
+      <bpmn:outgoing>Flow_A3C_A2</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="A4" name="Установка крышки">
+      <bpmn:documentation>Сборщик ставит крышку. Этот шаг закрывает доступ к зоне уплотнения и полости.
+Предусловие: ЗТ-4 ч.1 пройдена; без неё шаг блокируется с указанием зоны.
+Запись: карта сборки. Норма 5–10 мин [ПП].
+Что может пойти не так: крышку поставили до проверки зоны — нарушение, зону придётся вскрывать.
+События (наш каталог): Е-51 assembly.component_linked.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="assembly.cover_install" stepKind="operation" closesZoneAccess="S-1 CAV" operationCode="050" />
+        <ant:precondition kind="zone_check" mode="block" ref="S-1" />
+        <ant:precondition kind="zone_check" mode="block" ref="CAV" />
+        <ant:document template="assembly-card" />
+        <ant:norm timeMinMinutes="5" timeMaxMinutes="10" />
+        <ant:normRef standard="ГОСТ Р 58876-2020" clause="8.5.1 m)">
+          <ant:check>Крышка не установлена раньше подписанной проверки зоны.</ant:check>
+          <ant:systemAction>Система блокирует шаг, закрывающий доступ к зоне, и показывает, какая зона не проверена.</ant:systemAction>
+        </ant:normRef>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_A3G_A4</bpmn:incoming>
+      <bpmn:outgoing>Flow_A4_A5</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="A5" name="Установка крепежа">
+      <bpmn:documentation>Сборщик ставит 12 болтов с шайбами и сканирует партию крепежа.
+Запись: карта сборки; связь «партия крепежа → изделие». Норма 10–15 мин [ПП].
+Что может пойти не так: крепёж из дефектной партии («на вход завезли брак») — замена через вскрытие.
+События (наш каталог): Е-50 batch.issued, Е-51 assembly.component_linked.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="assembly.fasteners_install" stepKind="operation" operationCode="060" />
+        <ant:zoneRef zone="J-1" />
+        <ant:document template="assembly-card" />
+        <ant:norm timeMinMinutes="10" timeMaxMinutes="15" />
+        <ant:normRef standard="ГОСТ Р 58876-2020" clause="8.5.2, примечание">
+          <ant:check>Можно проследить, на какие изделия установлен крепёж одной партии.</ant:check>
+          <ant:systemAction>Сборщик сканирует партию крепежа; система связывает её с изделием.</ant:systemAction>
+        </ant:normRef>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_A4_A5</bpmn:incoming>
+      <bpmn:outgoing>Flow_A5_A6</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="A6" name="Затяжка по схеме">
+      <bpmn:documentation>Сборщик затягивает крепёж крест-накрест в 2–3 прохода (например, 30 % → 70 % → 100 % момента) ключом с записью момента и ставит метки краской [ПП].
+Запись: журнал затяжек. Момент видит только ключ, камера его не видит.
+Предусловие — действующая поверка ключа.
+Что может пойти не так: момент вне нормы → сигнал; у ключа истекла поверка — прежние результаты под сомнением.
+События (наш каталог): Е-53 machine.parameters.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="assembly.torque" stepKind="operation" operationCode="070" />
+        <ant:inspection method="torque" phase="assembly" coverage="A-TORQUE" />
+        <ant:requirement characteristic="Момент затяжки болтов J-1" tolerance="по схеме крест-накрест, 30 % → 70 % → 100 % [ПП]" kdRef="ФЛ-100.00.000 СБ ред. Б" />
+        <ant:zoneRef zone="J-1" />
+        <ant:precondition kind="equipment_verification" mode="block" ref="TW-1" />
+        <ant:document template="torque-log" />
+        <ant:normRef standard="ГОСТ Р 58876-2020" clause="7.1.5.2">
+          <ant:check>Ключ с действующей поверкой; если его признали непригодным, прежние затяжки пересмотрены.</ant:check>
+          <ant:systemAction>Предусловие шага блокирует затяжку ключом с истёкшей поверкой; при непригодности ключа система помечает прежние результаты «под сомнением».</ant:systemAction>
+        </ant:normRef>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_A5_A6</bpmn:incoming>
+      <bpmn:outgoing>Flow_A6_A7</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:userTask id="A7" name="Учёт инструмента (FOD)">
+      <bpmn:documentation>Сборщик и мастер проверяют, что весь инструмент, который входил в зону, вернулся. Источник — OperatorVision или «теневая доска» [ПП].
+Подтверждает мастер. Запись: отметка в карте сборки [П].
+Этап сборки не закрыть, пока не вернулись все инструменты.
+Что может пойти не так: инструмента нет — поиск; если он под крышкой — вскрытие.
+События (наш каталог): Е-24 operator_action.detected.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="assembly.tool_accounting" stepKind="human_inspection" />
+        <ant:document template="assembly-card" />
+        <ant:normRef standard="ГОСТ Р 58876-2020" clause="8.5.1 p)">
+          <ant:check>Весь инструмент, вошедший в зону, вернулся до закрытия этапа.</ant:check>
+          <ant:systemAction>Система не закрывает этап сборки, пока учёт инструмента не подтверждён; нет инструмента → поиск или вскрытие.</ant:systemAction>
+        </ant:normRef>
+        <ant:normRef standard="ГОСТ Р 58876-2020" clause="8.5.1 g)">
+          <ant:check>Приняты меры против ошибок, связанных с человеческим фактором: забытый инструмент выявляется до закрытия этапа.</ant:check>
+          <ant:systemAction>Система сверяет инструмент по данным «Контроля действий оператора» или теневой доски; такое наблюдение — гипотеза и в показатели по людям не идёт.</ant:systemAction>
+        </ant:normRef>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_A6_A7</bpmn:incoming>
+      <bpmn:outgoing>Flow_A7_A7G</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="A7G" name="Инструмент на месте?">
+      <bpmn:documentation>Развилка по учёту инструмента.
+«Да» → камера сборки КТ-4; «нет» → поиск, а если инструмент под крышкой — вскрытие.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="assembly.tool_accounting_decision" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_A7_A7G</bpmn:incoming>
+      <bpmn:outgoing>Flow_A7G_A8</bpmn:outgoing>
+      <bpmn:outgoing>Flow_A7G_AV</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:exclusiveGateway id="J_AV">
+      <bpmn:documentation>Явное слияние веток перед «Вскрытие: снять крепёж и крышку»: неявные слияния стрелок без шлюза запрещены (решение Д-6). Входят: Flow_A7G_AV, Flow_ANG_AV, Flow_TNG_AV, Flow_KNG_AV.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="assembly.intervention.merge" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_A7G_AV</bpmn:incoming>
+      <bpmn:incoming>Flow_ANG_AV</bpmn:incoming>
+      <bpmn:incoming>Flow_TNG_AV</bpmn:incoming>
+      <bpmn:incoming>Flow_KNG_AV</bpmn:incoming>
+      <bpmn:outgoing>Flow_J_AV</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_J_AV" sourceRef="J_AV" targetRef="AV" />
+    <bpmn:task id="AV" name="Вскрытие: снять крепёж и крышку">
+      <bpmn:documentation>Мастер с согласия ОТК снимает крепёж и крышку: чтобы достать инструмент, заменить уплотнение после течи или переделать сборку.
+Запись о вскрытии (форма предприятия) [П]: что сняли, какая зона, кто, зачем. Прежние результаты контроля зоны помечаются «устарели».
+Пока вскрытие открыто, приёмка и выпуск запрещены. Закрывает его контролёр на ЗТ-4 ч.2 (ЗТ-В). Переборка — не больше 2 раз [ПП].
+Что может пойти не так: вскрыли после испытания — испытание нужно повторить; уплотнение ставят только новое.
+События (наш каталог): Е-120 intervention.opened.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="assembly.intervention" stepKind="operation" reworkLimit="2" reworkLimitScope="item" />
+        <ant:zoneRef zone="J-1" />
+        <ant:zoneRef zone="S-1" />
+        <ant:zoneRef zone="CAV" />
+        <ant:document template="intervention-record" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_J_AV</bpmn:incoming>
+      <bpmn:outgoing>Flow_AV_A1</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:exclusiveGateway id="J_A8">
+      <bpmn:documentation>Явное слияние веток перед «КТ-4 Камера сборки»: неявные слияния стрелок без шлюза запрещены (решение Д-6). Входят: Flow_A7G_A8, Flow_AG_A8.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="assembly.kt4_camera.merge" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_A7G_A8</bpmn:incoming>
+      <bpmn:incoming>Flow_AG_A8</bpmn:incoming>
+      <bpmn:outgoing>Flow_J_A8</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_J_A8" sourceRef="J_A8" targetRef="A8" />
+    <bpmn:serviceTask id="A8" name="КТ-4 Камера сборки">
+      <bpmn:documentation>Камера проверяет наличие и положение крепежа, метки затяжки, ориентацию крышки.
+Выполняет VisionQC. «Нет крепежа» — критичный признак: изоляция по правилу R-15.
+Контрольная точка КТ-4. Момент затяжки камера не видит — он в журнале ключа.
+Что может пойти не так: плохой кадр → «оценка невозможна» → повторная съёмка.
+События (наш каталог): Е-54 inspection.result.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="assembly.kt4_camera" stepKind="automated_inspection" inspectionPoint="KT-4" />
+        <ant:inspection method="camera" phase="assembly" coverage="A-FASTENER-MISSING A-MARK-MISSING A-COVER-ORIENT" recipeRef="kt4-assembly@1" observationQualityMinBp="6000" />
+        <ant:zoneRef zone="J-1" />
+        <ant:reactionMap ref="flange-reactions@1" />
+        <ant:normRef standard="ГОСТ Р 58876-2020" clause="8.5.1 c)">
+          <ant:check>Результат контроля на КТ-4 записан: исход, качество наблюдения, уверенность анализатора.</ant:check>
+          <ant:systemAction>Система записывает наблюдение как факт с одним из трёх исходов; «оценка невозможна» не засчитывается как «годно».</ant:systemAction>
+        </ant:normRef>
+        <ant:normRef standard="ГОСТ Р 58876-2020" clause="8.5.1.1">
+          <ant:check>Камера и анализатор КТ-4 допущены к производству: известны версия анализатора и карта контроля, по которым прошёл допуск.</ant:check>
+          <ant:systemAction>Система хранит в каждом наблюдении версию анализатора и карту контроля; без действующего паспорта допуска результат идёт к человеку.</ant:systemAction>
+        </ant:normRef>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_J_A8</bpmn:incoming>
+      <bpmn:outgoing>Flow_A8_A9</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:userTask id="A9" name="ЗТ-4 ч.2 Приёмка сборки ОТК">
+      <bpmn:documentation>Контролёр ОТК смотрит камеру сборки, журнал ключа и результат КТ-4d и решает: годно, мало данных, не годно.
+Подписывает контролёр ОТК. Записи: карта сборки, журнал предъявления.
+Закрывающая точка ЗТ-4; после вскрытия здесь же закрывается запись о вскрытии (ЗТ-В).
+Что может пойти не так: нет одного из результатов — приёмка заблокирована.
+События (наш каталог): Е-55 decision.gate_passed, Е-121 intervention.closed.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="assembly.zt4_acceptance" stepKind="human_inspection" paperAttester="site_foreman" closingPoint="ZT-4.2" />
+        <ant:presentationPoint authority="qc_acceptance" role="quality_inspector" stampKind="assembly" waitLimitMinutes="60" repeatAuthority="qc_acceptance_repeat" />
+        <ant:document template="presentation-log" />
+        <ant:document template="assembly-card" />
+        <ant:document template="intervention-record" />
+        <ant:normRef standard="ГОСТ Р 58876-2020" clause="8.5.1 n)">
+          <ant:check>Есть свидетельства, что все операции и проверки сборки завершены: камера, журнал ключа, КТ-4d.</ant:check>
+          <ant:systemAction>Без любого из этих результатов приёмка сборки заблокирована.</ant:systemAction>
+        </ant:normRef>
+        <ant:normRef standard="ГОСТ Р 58876-2020" clause="8.5.2">
+          <ant:check>Средство приёмки на ЗТ-4 ч.2 — электронная подпись контролёра — под управлением: видно, кто подписал решение, по какой роли и когда.</ant:check>
+          <ant:systemAction>Точка не пропускает изделие без подписи уполномоченного лица; подпись хранится с автором, ролью и временем.</ant:systemAction>
+        </ant:normRef>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_A8_A9</bpmn:incoming>
+      <bpmn:outgoing>Flow_A9_AG</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="AG" name="Годно?">
+      <bpmn:documentation>Развилка по решению ЗТ-4 ч.2.
+«Годно» → испытание на герметичность; «мало данных» → снова камера сборки; «не годно» → подпроцесс брака.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="assembly.zt4_decision" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_A9_AG</bpmn:incoming>
+      <bpmn:outgoing>Flow_AG_T1</bpmn:outgoing>
+      <bpmn:outgoing>Flow_AG_A8</bpmn:outgoing>
+      <bpmn:outgoing>Flow_AG_AN</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:callActivity id="AN" name="Брак (Н)" calledElement="Process_NC">
+      <bpmn:documentation>Вызов подпроцесса брака после приёмки сборки.
+Решают технолог и комиссия. Записи: заявление о несоответствии, решение по несоответствующей продукции.
+Что может пойти не так: изделие не перенесли в изолятор физически — тревога.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="assembly.nonconformity" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_AG_AN</bpmn:incoming>
+      <bpmn:outgoing>Flow_AN_ANG</bpmn:outgoing>
+    </bpmn:callActivity>
+    <bpmn:exclusiveGateway id="ANG" name="Итог Н">
+      <bpmn:documentation>Развилка по итогу подпроцесса брака.
+Переделка (не больше 2 переборок [ПП]) → вскрытие; «как есть» по разрешению → испытание; «списано» → конец.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="assembly.nonconformity_outcome" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_AN_ANG</bpmn:incoming>
+      <bpmn:outgoing>Flow_ANG_AV</bpmn:outgoing>
+      <bpmn:outgoing>Flow_ANG_T1</bpmn:outgoing>
+      <bpmn:outgoing>Flow_ANG_AX</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:exclusiveGateway id="J_AX">
+      <bpmn:documentation>Явное слияние веток перед «Списано»: неявные слияния стрелок без шлюза запрещены (решение Д-6). Входят: Flow_ANG_AX, Flow_TNG_AX.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="assembly.scrapped.merge" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ANG_AX</bpmn:incoming>
+      <bpmn:incoming>Flow_TNG_AX</bpmn:incoming>
+      <bpmn:outgoing>Flow_J_AX</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_J_AX" sourceRef="J_AX" targetRef="AX" />
+    <bpmn:endEvent id="AX" name="Списано">
+      <bpmn:documentation>Сборка списана — после приёмки сборки или после течи; маршрут изделия заканчивается.
+В 1С уже ушёл «перевод в брак (списание)»; оформлен акт о браке.
+Разборку на годные части («перевод в брак (переработка)») в схеме не рисуем.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="assembly.scrapped" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_J_AX</bpmn:incoming>
+      <bpmn:terminateEventDefinition id="TerED_AX" />
+    </bpmn:endEvent>
+    <bpmn:exclusiveGateway id="J_T1">
+      <bpmn:documentation>Явное слияние веток перед «Испытание на герметичность»: неявные слияния стрелок без шлюза запрещены (решение Д-6). Входят: Flow_AG_T1, Flow_ANG_T1, Flow_TG_T1.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="testing.leak_test.merge" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_AG_T1</bpmn:incoming>
+      <bpmn:incoming>Flow_ANG_T1</bpmn:incoming>
+      <bpmn:incoming>Flow_TG_T1</bpmn:incoming>
+      <bpmn:outgoing>Flow_J_T1</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_J_T1" sourceRef="J_T1" targetRef="T1" />
+    <bpmn:serviceTask id="T1" name="Испытание на герметичность">
+      <bpmn:documentation>Испытатель ставит сборку на стенд с течеискателем: подготовка, наддув и выдержка, измерение — около 60 мин плюс 15 мин смена оснастки [ПП].
+Записи: журнал стенда (давление, выдержка, фон), программа и методика испытаний.
+Предусловия: поверка стенда и течеискателя, контрольная течь проверена. Узкое место № 2.
+Что может пойти не так: давление не набрано → «оценка невозможна»; течь → брак, вскрытие и повторное испытание.
+События (наш каталог): Е-60 operation.started, Е-61 machine.parameters, Е-62 inspection.result.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="testing.leak_test" stepKind="automated_inspection" operationCode="080" reworkLimit="2" reworkLimitScope="loop" />
+        <ant:inspection method="leak_test" phase="test" coverage="T-LEAK" />
+        <ant:requirement characteristic="Герметичность сборки" tolerance="утечка не более нормы КД [ПП]" kdRef="ФЛ-100.00.000 СБ ред. Б" />
+        <ant:precondition kind="equipment_verification" mode="block" ref="LEAK-1" />
+        <ant:document template="test-program" />
+        <ant:document template="test-protocol" />
+        <ant:reactionMap ref="flange-reactions@1" />
+        <ant:norm timeMinutes="75" />
+        <ant:normRef standard="ГОСТ Р 58876-2020" clause="7.1.5.2">
+          <ant:check>Стенд и течеискатель с действующей поверкой, контрольная течь проверена.</ant:check>
+          <ant:systemAction>Предусловия шага блокируют испытание на стенде с истёкшей поверкой или без проверки контрольной течи.</ant:systemAction>
+        </ant:normRef>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_J_T1</bpmn:incoming>
+      <bpmn:outgoing>Flow_T1_T2</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:userTask id="T2" name="ЗТ-5 Протокол испытаний">
+      <bpmn:documentation>Испытатель и контролёр ОТК подписывают протокол; ПЗ или ВП — если изделие в перечне приёмок.
+Запись: протокол испытаний (подписи исполнителя, ОТК, ПЗ; номер пломбы).
+Закрывающая точка ЗТ-5.
+Что может пойти не так: представитель заказчика приходит по извещению, ожидание 1–8 ч [ПП].
+События (наш каталог): Е-63 decision.gate_passed.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="testing.zt5_protocol" stepKind="human_inspection" paperAttester="head_of_qc" closingPoint="ZT-5" />
+        <ant:presentationPoint authority="qc_acceptance" role="quality_inspector" stampKind="leak_test" waitLimitMinutes="480" repeatAuthority="qc_acceptance_repeat" customerAcceptance="true" />
+        <ant:document template="test-protocol" />
+        <ant:normRef standard="ГОСТ Р 58876-2020" clause="8.5.2">
+          <ant:check>Средство приёмки на ЗТ-5 — электронная подпись контролёра — под управлением: видно, кто подписал решение, по какой роли и когда.</ant:check>
+          <ant:systemAction>Точка не пропускает изделие без подписи уполномоченного лица; подпись хранится с автором, ролью и временем.</ant:systemAction>
+        </ant:normRef>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_T1_T2</bpmn:incoming>
+      <bpmn:outgoing>Flow_T2_TG</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="TG" name="Результат испытания?">
+      <bpmn:documentation>Развилка по итогу испытания.
+«Герметично» → окончательный контроль; «недостоверно» → повтор (не больше 2 раз [ПП]); «течь» → подпроцесс брака.
+Течь связывается с зоной шва и её прежними наблюдениями: если КТ-3 сказала «признаков нет», это пропуск брака.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="testing.result_decision" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_T2_TG</bpmn:incoming>
+      <bpmn:outgoing>Flow_TG_T1</bpmn:outgoing>
+      <bpmn:outgoing>Flow_TG_TN</bpmn:outgoing>
+      <bpmn:outgoing>Flow_TG_K2</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:callActivity id="TN" name="Брак: течь (Н)" calledElement="Process_NC">
+      <bpmn:documentation>Вызов подпроцесса брака по течи.
+Решают технолог и комиссия. Место течи связывается с зоной и прежними наблюдениями этой зоны.
+Записи: заявление о несоответствии, решение по несоответствующей продукции.
+Что может пойти не так: течь по шву требует ремонта в сварочном цехе [П, в схеме не нарисовано].</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="testing.nonconformity" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_TG_TN</bpmn:incoming>
+      <bpmn:outgoing>Flow_TN_TNG</bpmn:outgoing>
+    </bpmn:callActivity>
+    <bpmn:exclusiveGateway id="TNG" name="Итог Н (течь)">
+      <bpmn:documentation>Развилка по итогу подпроцесса брака после течи.
+Замена уплотнения → вскрытие, потом ЗТ-4 и испытание заново; «списано» → конец.
+Течь по шву → ремонт в сварочном цехе [П, не нарисовано].</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="testing.nonconformity_outcome" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_TN_TNG</bpmn:incoming>
+      <bpmn:outgoing>Flow_TNG_AV</bpmn:outgoing>
+      <bpmn:outgoing>Flow_TNG_AX</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:exclusiveGateway id="J_K2">
+      <bpmn:documentation>Явное слияние веток перед «КТ-5 Камера окончательного контроля (4 ракурса)»: неявные слияния стрелок без шлюза запрещены (решение Д-6). Входят: Flow_TG_K2, Flow_KG_K2.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="final.kt5_camera.merge" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_TG_K2</bpmn:incoming>
+      <bpmn:incoming>Flow_KG_K2</bpmn:incoming>
+      <bpmn:outgoing>Flow_J_K2</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_J_K2" sourceRef="J_K2" targetRef="K2" />
+    <bpmn:serviceTask id="K2" name="КТ-5 Камера окончательного контроля (4 ракурса)">
+      <bpmn:documentation>Камера снимает изделие с 4 ракурсов на поворотном столе (по желанию): повреждения при перемещении, маркировка, комплектность.
+Выполняет VisionQC. Контрольная точка КТ-5. Запись: снимки в истории изделия.
+Что может пойти не так: признак дефекта → сигнал; плохой кадр → «оценка невозможна».
+События (наш каталог): Е-70 inspection.result.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="final.kt5_camera" stepKind="automated_inspection" inspectionPoint="KT-5" />
+        <ant:inspection method="camera" phase="final" coverage="H-DAMAGE H-MARKING A-FASTENER-MISSING" recipeRef="kt5-final@1" observationQualityMinBp="6000" />
+        <ant:zoneRef zone="F-OUTER" />
+        <ant:zoneRef zone="J-1" />
+        <ant:reactionMap ref="flange-reactions@1" />
+        <ant:normRef standard="ГОСТ Р 58876-2020" clause="8.5.1 c)">
+          <ant:check>Результат контроля на КТ-5 записан: исход, качество наблюдения, уверенность анализатора.</ant:check>
+          <ant:systemAction>Система записывает наблюдение как факт с одним из трёх исходов; «оценка невозможна» не засчитывается как «годно».</ant:systemAction>
+        </ant:normRef>
+        <ant:normRef standard="ГОСТ Р 58876-2020" clause="8.5.1.1">
+          <ant:check>Камера и анализатор КТ-5 допущены к производству: известны версия анализатора и карта контроля, по которым прошёл допуск.</ant:check>
+          <ant:systemAction>Система хранит в каждом наблюдении версию анализатора и карту контроля; без действующего паспорта допуска результат идёт к человеку.</ant:systemAction>
+        </ant:normRef>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_J_K2</bpmn:incoming>
+      <bpmn:outgoing>Flow_K2_K3</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:userTask id="K3" name="ЗТ-6 Окончательный контроль ОТК">
+      <bpmn:documentation>Контролёр ОТК смотрит сводку всех методов маршрута и решает: принять, мало данных, не принять. ВП или ПЗ — если изделие в перечне.
+Записи: журнал предъявления ОТК, извещение о предъявлении ВП или ПЗ, свидетельство о приёмке в паспорте или формуляре.
+Закрывающая точка ЗТ-6. Повторное предъявление подписывает сотрудник уровнем выше; нельзя принимать изделие, которое сам делал.
+Что может пойти не так: нет результата какого-то метода, открыто несоответствие или вскрытие — пройти нельзя.
+События (наш каталог): Е-71 item.inspection_summary, Е-72 item.presented, Е-73 decision.gate_passed.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="final.zt6_acceptance" stepKind="human_inspection" paperAttester="head_of_qc" closingPoint="ZT-6" />
+        <ant:presentationPoint authority="qc_acceptance" role="quality_inspector" stampKind="final" waitLimitMinutes="240" repeatAuthority="qc_acceptance_repeat" customerAcceptance="true" />
+        <ant:precondition kind="open_intervention" mode="block" />
+        <ant:document template="presentation-log" />
+        <ant:document template="customer-presentation-notice" />
+        <ant:document template="acceptance-certificate" />
+        <ant:normRef standard="ГОСТ Р 58876-2020" clause="8.5.1 n)">
+          <ant:check>Есть свидетельства, что все запланированные операции и проверки маршрута завершены или задокументированы.</ant:check>
+          <ant:systemAction>Система показывает сводку методов маршрута; нет результата, открыто несоответствие или вскрытие — ЗТ-6 не пройти.</ant:systemAction>
+        </ant:normRef>
+        <ant:normRef standard="ГОСТ Р 58876-2020" clause="8.6 b)">
+          <ant:check>Видно, кто санкционировал приёмку изделия.</ant:check>
+          <ant:systemAction>Подпись ЗТ-6 хранится с автором, ролью и полномочием.</ant:systemAction>
+        </ant:normRef>
+        <ant:normRef standard="ГОСТ Р 58876-2020" clause="8.5.2">
+          <ant:check>Средство приёмки на ЗТ-6 — электронная подпись контролёра — под управлением: видно, кто подписал решение, по какой роли и когда.</ant:check>
+          <ant:systemAction>Точка не пропускает изделие без подписи уполномоченного лица; подпись хранится с автором, ролью и временем.</ant:systemAction>
+        </ant:normRef>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_K2_K3</bpmn:incoming>
+      <bpmn:outgoing>Flow_K3_KG</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="KG" name="Принять?">
+      <bpmn:documentation>Развилка по решению ЗТ-6.
+«Годно» или «годно по разрешению на отклонение» → склад готовой продукции; «мало данных» → снова камера КТ-5; «не годно» → подпроцесс брака.
+«Годно по разрешению на отклонение» — не то же, что «годно».</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="final.zt6_decision" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_K3_KG</bpmn:incoming>
+      <bpmn:outgoing>Flow_KG_K4</bpmn:outgoing>
+      <bpmn:outgoing>Flow_KG_K2</bpmn:outgoing>
+      <bpmn:outgoing>Flow_KG_KN</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:callActivity id="KN" name="Брак (Н)" calledElement="Process_NC">
+      <bpmn:documentation>Вызов подпроцесса брака на окончательном контроле.
+Решают технолог и комиссия; для «как есть» — все подписи разрешения, включая ПЗ или ВП.
+Записи: заявление о несоответствии, решение по несоответствующей продукции.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="final.nonconformity" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_KG_KN</bpmn:incoming>
+      <bpmn:outgoing>Flow_KN_KNG</bpmn:outgoing>
+    </bpmn:callActivity>
+    <bpmn:exclusiveGateway id="KNG" name="Итог Н">
+      <bpmn:documentation>Развилка по итогу подпроцесса брака.
+Переделка → вскрытие и повторная сборка; «как есть» по разрешению → склад; «списано» → конец.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="final.nonconformity_outcome" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_KN_KNG</bpmn:incoming>
+      <bpmn:outgoing>Flow_KNG_AV</bpmn:outgoing>
+      <bpmn:outgoing>Flow_KNG_K4</bpmn:outgoing>
+      <bpmn:outgoing>Flow_KNG_KX</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:endEvent id="KX" name="Списано">
+      <bpmn:documentation>Изделие списано на окончательном контроле; маршрут заканчивается.
+В 1С уже ушёл «перевод в брак (списание)»; оформлен акт о браке.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="final.scrapped" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_KNG_KX</bpmn:incoming>
+      <bpmn:terminateEventDefinition id="TerED_KX" />
+    </bpmn:endEvent>
+    <bpmn:exclusiveGateway id="J_K4">
+      <bpmn:documentation>Явное слияние веток перед «Сдача на склад готовой продукции»: неявные слияния стрелок без шлюза запрещены (решение Д-6). Входят: Flow_KG_K4, Flow_KNG_K4.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="final.release_to_warehouse.merge" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_KG_K4</bpmn:incoming>
+      <bpmn:incoming>Flow_KNG_K4</bpmn:incoming>
+      <bpmn:outgoing>Flow_J_K4</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_J_K4" sourceRef="J_K4" targetRef="K4" />
+    <bpmn:task id="K4" name="Сдача на склад готовой продукции">
+      <bpmn:documentation>Кладовщик принимает изделие на склад готовой продукции.
+Записи: паспорт или формуляр, маршрутный лист на склад. Норма 10–15 мин [ПП].
+Это исполнение ЗТ-6: следом в 1С уходит «выпуск годного».
+Что может пойти не так: «учтено в 1С» ставится только после ответа 1С.
+События (наш каталог): Е-74 item.released.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="final.release_to_warehouse" stepKind="movement" />
+        <ant:document template="passport" />
+        <ant:document template="route-sheet" />
+        <ant:norm timeMinMinutes="10" timeMaxMinutes="15" />
+        <ant:normRef standard="ГОСТ Р 58876-2020" clause="8.6">
+          <ant:check>Выпуск изделия зарегистрирован и сохранён.</ant:check>
+          <ant:systemAction>Система регистрирует сдачу на склад готовой продукции с паспортом или формуляром и отправляет в 1С «выпуск годного».</ant:systemAction>
+        </ant:normRef>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_J_K4</bpmn:incoming>
+      <bpmn:outgoing>Flow_K4_E5</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:intermediateThrowEvent id="E5" name="В 1С: выпуск годного">
+      <bpmn:documentation>В 1С уходит «выпуск годного»; по разрешению на отклонение — с номером разрешения, после переделки — с признаком.
+Статус «учтено в 1С» меняется только после подтверждения 1С.
+Что может пойти не так: 503 — повтор с тем же номером, 1С не проведёт документ дважды; 4xx — задача администратору.
+События (наш каталог): erp.posting_sent, Е-75 integration.ack / integration.error.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="final.erp_release" erpAction="release" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_K4_E5</bpmn:incoming>
+      <bpmn:outgoing>Flow_E5_KE</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MED_E5" messageRef="Msg_ErpReleaseGood" />
+    </bpmn:intermediateThrowEvent>
+    <bpmn:endEvent id="KE" name="Изделие выпущено">
+      <bpmn:documentation>Конец маршрута: фланец в сборе выпущен и сдан на склад готовой продукции.
+В паспорте изделия есть записи всех этапов изготовления и проверки и подписи на всех закрывающих точках.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="final.released" />
+        <ant:normRef standard="ГОСТ Р 58876-2020" clause="8.5.2, примечание">
+          <ant:check>По выпущенному изделию можно восстановить последовательные записи этапов изготовления (производство, монтаж, проверка/верификация).</ant:check>
+          <ant:systemAction>Паспорт изделия собирается из журнала событий: операции, результаты контроля, решения и подписи по всем точкам.</ant:systemAction>
+        </ant:normRef>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_E5_KE</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_S0_S1" sourceRef="S0" targetRef="J_S1" />
+    <bpmn:sequenceFlow id="Flow_S1_V1" sourceRef="S1" targetRef="V1" />
+    <bpmn:sequenceFlow id="Flow_V1_V2" sourceRef="V1" targetRef="J_V2" />
+    <bpmn:sequenceFlow id="Flow_V2_V3" sourceRef="V2" targetRef="V3" />
+    <bpmn:sequenceFlow id="Flow_V3_VG" sourceRef="V3" targetRef="VG" />
+    <bpmn:sequenceFlow id="Flow_VG_V4" name="годна" sourceRef="VG" targetRef="J_V4">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">decision == 'accept'</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_VG_V2" name="мало данных: повтор, осмотр" sourceRef="VG" targetRef="J_V2">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">decision == 'insufficient_data'</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_VG_VN" name="не годна" sourceRef="VG" targetRef="VN">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">decision == 'reject'</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_VN_VNG" sourceRef="VN" targetRef="VNG" />
+    <bpmn:sequenceFlow id="Flow_VNG_V4" name="как есть по разрешению" sourceRef="VNG" targetRef="J_V4">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">nc.outcome == 'use_as_is'</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_VNG_S1" name="возврат или списание: ждать новую партию" sourceRef="VNG" targetRef="J_S1">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">nc.outcome == 'scrapped' or nc.outcome == 'returned'</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_V4_VP" sourceRef="V4" targetRef="VP" />
+    <bpmn:sequenceFlow id="Flow_VP_V5" sourceRef="VP" targetRef="V5" />
+    <bpmn:sequenceFlow id="Flow_V5_E1" sourceRef="V5" targetRef="E1" />
+    <bpmn:sequenceFlow id="Flow_E1_M1" sourceRef="E1" targetRef="J_M1" />
+    <bpmn:sequenceFlow id="Flow_VP_V6" sourceRef="VP" targetRef="V6" />
+    <bpmn:sequenceFlow id="Flow_V6_E1b" sourceRef="V6" targetRef="E1b" />
+    <bpmn:sequenceFlow id="Flow_E1b_WJ" sourceRef="E1b" targetRef="WJ" />
+    <bpmn:sequenceFlow id="Flow_VP_V7" sourceRef="VP" targetRef="V7" />
+    <bpmn:sequenceFlow id="Flow_V7_E4" sourceRef="V7" targetRef="E4" />
+    <bpmn:sequenceFlow id="Flow_E4_AJ" sourceRef="E4" targetRef="AJ" />
+    <bpmn:sequenceFlow id="Flow_M1_M2" sourceRef="M1" targetRef="J_M2" />
+    <bpmn:sequenceFlow id="Flow_M2_M3" sourceRef="M2" targetRef="M3" />
+    <bpmn:sequenceFlow id="Flow_M3_M4" sourceRef="M3" targetRef="M4" />
+    <bpmn:sequenceFlow id="Flow_M4_MG" sourceRef="M4" targetRef="MG" />
+    <bpmn:sequenceFlow id="Flow_MG_M5" name="годно" sourceRef="MG" targetRef="J_M5">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">decision == 'accept'</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_MG_M2" name="мало данных" sourceRef="MG" targetRef="J_M2">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">decision == 'insufficient_data'</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_MG_MN" name="не годно" sourceRef="MG" targetRef="MN">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">decision == 'reject'</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_MN_MNG" sourceRef="MN" targetRef="MNG" />
+    <bpmn:sequenceFlow id="Flow_MNG_M1" name="переделка ≤ 1" sourceRef="MNG" targetRef="J_M1">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">nc.outcome == 'rework_or_repair'</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_MNG_M5" name="как есть по разрешению" sourceRef="MNG" targetRef="J_M5">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">nc.outcome == 'use_as_is'</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_MNG_MX" name="списано" sourceRef="MNG" targetRef="MX">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">nc.outcome == 'scrapped'</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_M5_W0" sourceRef="M5" targetRef="W0" />
+    <bpmn:sequenceFlow id="Flow_W0_E2" sourceRef="W0" targetRef="E2" />
+    <bpmn:sequenceFlow id="Flow_E2_WJ" sourceRef="E2" targetRef="WJ" />
+    <bpmn:sequenceFlow id="Flow_WJ_W1" sourceRef="WJ" targetRef="J_W1" />
+    <bpmn:sequenceFlow id="Flow_W1_W2" sourceRef="W1" targetRef="W2" />
+    <bpmn:sequenceFlow id="Flow_W2_W3" sourceRef="W2" targetRef="J_W3" />
+    <bpmn:sequenceFlow id="Flow_WT_W1" name="истекло: подготовить заново" sourceRef="WT" targetRef="J_W1" />
+    <bpmn:sequenceFlow id="Flow_W3_WR" sourceRef="W3" targetRef="WR" />
+    <bpmn:sequenceFlow id="Flow_WR_W4" name="да" sourceRef="WR" targetRef="W4">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">plan.radiography_required == true</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_WR_W5" name="нет" sourceRef="WR" targetRef="J_W5">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">plan.radiography_required == false</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_W4_W5" sourceRef="W4" targetRef="J_W5" />
+    <bpmn:sequenceFlow id="Flow_W5_WG" sourceRef="W5" targetRef="WG" />
+    <bpmn:sequenceFlow id="Flow_WG_W6" name="годно" sourceRef="WG" targetRef="J_W6">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">decision == 'accept'</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_WG_W3" name="мало данных" sourceRef="WG" targetRef="J_W3">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">decision == 'insufficient_data'</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_WG_WN" name="не годно" sourceRef="WG" targetRef="WN">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">decision == 'reject'</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_WN_WNG" sourceRef="WN" targetRef="WNG" />
+    <bpmn:sequenceFlow id="Flow_WNG_W1" name="ремонт участка шва ≤ 3 на участок" sourceRef="WNG" targetRef="J_W1">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">nc.outcome == 'rework_or_repair'</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_WNG_W6" name="как есть по разрешению" sourceRef="WNG" targetRef="J_W6">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">nc.outcome == 'use_as_is'</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_WNG_WX" name="списано" sourceRef="WNG" targetRef="WX">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">nc.outcome == 'scrapped'</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_W6_A0" sourceRef="W6" targetRef="A0" />
+    <bpmn:sequenceFlow id="Flow_A0_E3" sourceRef="A0" targetRef="E3" />
+    <bpmn:sequenceFlow id="Flow_E3_AJ" sourceRef="E3" targetRef="AJ" />
+    <bpmn:sequenceFlow id="Flow_AJ_A1" sourceRef="AJ" targetRef="J_A1" />
+    <bpmn:sequenceFlow id="Flow_A1_A2" sourceRef="A1" targetRef="J_A2" />
+    <bpmn:sequenceFlow id="Flow_A2_A3" sourceRef="A2" targetRef="A3" />
+    <bpmn:sequenceFlow id="Flow_A3_A3G" sourceRef="A3" targetRef="A3G" />
+    <bpmn:sequenceFlow id="Flow_A3G_A4" name="да" sourceRef="A3G" targetRef="A4">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">decision == 'accept'</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_A3G_A3C" name="нет" sourceRef="A3G" targetRef="A3C">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">decision == 'reject'</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_A3C_A2" sourceRef="A3C" targetRef="J_A2" />
+    <bpmn:sequenceFlow id="Flow_A4_A5" sourceRef="A4" targetRef="A5" />
+    <bpmn:sequenceFlow id="Flow_A5_A6" sourceRef="A5" targetRef="A6" />
+    <bpmn:sequenceFlow id="Flow_A6_A7" sourceRef="A6" targetRef="A7" />
+    <bpmn:sequenceFlow id="Flow_A7_A7G" sourceRef="A7" targetRef="A7G" />
+    <bpmn:sequenceFlow id="Flow_A7G_A8" name="да" sourceRef="A7G" targetRef="J_A8">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">tools.accounted == true</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_A7G_AV" name="нет: поиск; под крышкой → вскрытие" sourceRef="A7G" targetRef="J_AV">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">tools.accounted == false</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_AV_A1" sourceRef="AV" targetRef="J_A1" />
+    <bpmn:sequenceFlow id="Flow_A8_A9" sourceRef="A8" targetRef="A9" />
+    <bpmn:sequenceFlow id="Flow_A9_AG" sourceRef="A9" targetRef="AG" />
+    <bpmn:sequenceFlow id="Flow_AG_T1" name="годно" sourceRef="AG" targetRef="J_T1">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">decision == 'accept'</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_AG_A8" name="мало данных" sourceRef="AG" targetRef="J_A8">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">decision == 'insufficient_data'</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_AG_AN" name="не годно" sourceRef="AG" targetRef="AN">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">decision == 'reject'</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_AN_ANG" sourceRef="AN" targetRef="ANG" />
+    <bpmn:sequenceFlow id="Flow_ANG_AV" name="переделка ≤ 2" sourceRef="ANG" targetRef="J_AV">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">nc.outcome == 'rework_or_repair'</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_ANG_T1" name="как есть по разрешению" sourceRef="ANG" targetRef="J_T1">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">nc.outcome == 'use_as_is'</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_ANG_AX" name="списано" sourceRef="ANG" targetRef="J_AX">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">nc.outcome == 'scrapped'</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_T1_T2" sourceRef="T1" targetRef="T2" />
+    <bpmn:sequenceFlow id="Flow_T2_TG" sourceRef="T2" targetRef="TG" />
+    <bpmn:sequenceFlow id="Flow_TG_T1" name="недостоверно: повтор ≤ 2" sourceRef="TG" targetRef="J_T1">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">test.result == 'invalid'</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_TG_TN" name="течь" sourceRef="TG" targetRef="TN">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">test.result == 'leak'</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_TG_K2" name="герметично" sourceRef="TG" targetRef="J_K2">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">test.result == 'tight'</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_TN_TNG" sourceRef="TN" targetRef="TNG" />
+    <bpmn:sequenceFlow id="Flow_TNG_AV" name="замена уплотнения через вскрытие" sourceRef="TNG" targetRef="J_AV">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">nc.outcome == 'rework_or_repair'</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_TNG_AX" name="списано" sourceRef="TNG" targetRef="J_AX">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">nc.outcome == 'scrapped'</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_K2_K3" sourceRef="K2" targetRef="K3" />
+    <bpmn:sequenceFlow id="Flow_K3_KG" sourceRef="K3" targetRef="KG" />
+    <bpmn:sequenceFlow id="Flow_KG_K4" name="годно или годно по разрешению на отклонение" sourceRef="KG" targetRef="J_K4">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">decision == 'accept' or decision == 'accept_with_concession'</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_KG_K2" name="мало данных" sourceRef="KG" targetRef="J_K2">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">decision == 'insufficient_data'</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_KG_KN" name="не годно" sourceRef="KG" targetRef="KN">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">decision == 'reject'</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_KN_KNG" sourceRef="KN" targetRef="KNG" />
+    <bpmn:sequenceFlow id="Flow_KNG_AV" name="переделка: вскрытие" sourceRef="KNG" targetRef="J_AV">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">nc.outcome == 'rework_or_repair'</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_KNG_K4" name="как есть по разрешению" sourceRef="KNG" targetRef="J_K4">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">nc.outcome == 'use_as_is'</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_KNG_KX" name="списано" sourceRef="KNG" targetRef="KX">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">nc.outcome == 'scrapped'</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_K4_E5" sourceRef="K4" targetRef="E5" />
+    <bpmn:sequenceFlow id="Flow_E5_KE" sourceRef="E5" targetRef="KE" />
+  </bpmn:process>
+  <bpmn:process id="Process_NC" name="Подпроцесс Н «Брак»" isExecutable="true">
+    <bpmn:documentation>Общий подпроцесс брака: изоляция → решение по изделию (ЗТ-Р) → итог. Физически идёт в том цехе, где нашли брак. Итог возвращается в развилку «итог Н» у той ЗТ, которая вызвала подпроцесс.</bpmn:documentation>
+    <bpmn:startEvent id="N0" name="«Не годно» на ЗТ">
+      <bpmn:documentation>Подпроцесс начинается, когда на закрывающей точке подписано «не годно».
+Это подтверждённое несоответствие: его подтвердил контролёр ОТК, а не система.
+Вызывается из шести мест маршрута; физически брак обрабатывают в том цехе, где его нашли.
+События (наш каталог): Е-90 decision.signal_confirmed.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="nc.start" />
+      </bpmn:extensionElements>
+      <bpmn:outgoing>Flow_N0_N1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:task id="N1" name="Изоляция">
+      <bpmn:documentation>Контролёр решает изолировать изделие; мастер физически переносит его в изолятор цеха и подтверждает перемещение.
+Записи: ярлык несоответствующей продукции или бирка «Брак» с QR, журнал изолятора.
+На рабочем месте — не дольше смены, дальше — изолятор до решения [ПП].
+Что может пойти не так: «изолировано в системе, физически не перемещено» — тревога.
+События (наш каталог): Е-84 containment.hold_applied, Е-93 decision.item_isolated, movement.isolator_confirmed.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="nc.isolation" stepKind="movement" />
+        <ant:document template="isolator-log" />
+        <ant:document template="nc-label" />
+        <ant:normRef standard="ГОСТ Р 58876-2020" clause="8.7.1">
+          <ant:check>Приняты меры, чтобы несоответствие не повлияло на другие процессы и продукцию: изделие изолировано.</ant:check>
+          <ant:systemAction>Система изолирует изделие и не даёт двигать его дальше; мастер подтверждает физический перенос, иначе тревога.</ant:systemAction>
+        </ant:normRef>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_N0_N1</bpmn:incoming>
+      <bpmn:outgoing>Flow_N1_N2</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:userTask id="N2" name="ЗТ-Р Решение по изделию">
+      <bpmn:documentation>Технолог или комиссия решает судьбу изделия: переделка, ремонт, как есть, списать, вернуть поставщику. Кто подписывает — по движку полномочий.
+Записи: заявление о несоответствии, решение по несоответствующей продукции (протокол комиссии), акт о браке — при списании и переделке.
+Закрывающая точка ЗТ-Р. Срок решения — 3 рабочих дня [П]; искать причину для этого не нужно, расследование идёт отдельно.
+Что может пойти не так: срок просрочен — эскалация; лимит доработок исчерпан — только ремонт по разрешению или списание.
+События (наш каталог): Е-94 decision.disposition_set, Е-97 nc.disposition_overdue.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="nc.zt_r_disposition" stepKind="human_inspection" paperAttester="head_of_qc" closingPoint="ZT-R" />
+        <ant:presentationPoint authority="nc_disposition" role="technologist" waitLimitWorkDays="3" />
+        <ant:document template="nc-statement" />
+        <ant:document template="nc-disposition" />
+        <ant:document template="scrap-act" />
+        <ant:normRef standard="ГОСТ Р 58876-2020" clause="8.7.1">
+          <ant:check>Решение по несоответствию принимают лица с определёнными полномочиями.</ant:check>
+          <ant:systemAction>Движок полномочий вычисляет, чьи подписи нужны для выбранного варианта; без них решение не исполняется.</ant:systemAction>
+        </ant:normRef>
+        <ant:normRef standard="ГОСТ Р 58876-2020" clause="8.7.2 d)">
+          <ant:check>Записано, кто принял решение и по какому полномочию.</ant:check>
+          <ant:systemAction>Решение хранится с автором, ролью, полномочием и временем.</ant:systemAction>
+        </ant:normRef>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_N1_N2</bpmn:incoming>
+      <bpmn:outgoing>Flow_N2_NG</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="NG" name="Вариант решения">
+      <bpmn:documentation>Развилка по решению ЗТ-Р.
+Переделка по ТП → «перевод в брак (переделка)»; ремонт или «как есть» → разрешение на отклонение; списать → «перевод в брак (списание)»; вернуть поставщику → только для входного контроля.
+Система сама решение не выбирает: только придерживает изделие.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="nc.disposition_decision" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_N2_NG</bpmn:incoming>
+      <bpmn:outgoing>Flow_NG_E8</bpmn:outgoing>
+      <bpmn:outgoing>Flow_NG_N3</bpmn:outgoing>
+      <bpmn:outgoing>Flow_NG_E6</bpmn:outgoing>
+      <bpmn:outgoing>Flow_NG_E7</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:userTask id="N3" name="Разрешение на отклонение">
+      <bpmn:documentation>Оформляется разрешение на отклонение: технолог, ОТК, держатель КД, ПЗ или ВП — подписывают все.
+Действует только после всех подписей. Запись: разрешение (запрос) на отклонение. Срок 1–5 рабочих дней [ПП].
+Что может пойти не так: не получена одна из подписей — решение «ремонт» или «как есть» не исполняется.
+События (наш каталог): Е-95 permit.approved.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="nc.concession" stepKind="human_inspection" paperAttester="head_of_qc" />
+        <ant:presentationPoint authority="concession_approval" role="technologist" waitLimitWorkDays="5" customerAcceptance="true" />
+        <ant:document template="concession" />
+        <ant:normRef standard="ГОСТ Р 58876-2020" clause="8.7.1">
+          <ant:check>Ремонт и «как есть» — только с разрешения уполномоченного представителя организации, ответственной за проектирование.</ant:check>
+          <ant:systemAction>Без подписи держателя КД разрешение не действует, и решение не исполняется.</ant:systemAction>
+        </ant:normRef>
+        <ant:normRef standard="ГОСТ Р 58876-2020" clause="8.7.2 c)">
+          <ant:check>Полученное разрешение на отклонение сохранено вместе с решением.</ant:check>
+          <ant:systemAction>Разрешение хранится как подписанный документ; решение ссылается на него.</ant:systemAction>
+        </ant:normRef>
+        <ant:normRef standard="ГОСТ Р ИСО 9000-2015" clause="3.12.5">
+          <ant:check>Для уже изготовленного изделия оформлено разрешение на отклонение, а не разрешение на отступление.</ant:check>
+          <ant:systemAction>Система называет документ «разрешение на отклонение» и связывает его с конкретными изделиями и лимитом.</ant:systemAction>
+        </ant:normRef>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_NG_N3</bpmn:incoming>
+      <bpmn:outgoing>Flow_N3_NG2</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="NG2" name="Ремонт или как есть?">
+      <bpmn:documentation>Развилка после подписанного разрешения на отклонение.
+«Ремонт» → «перевод в брак (переделка)» и возврат на операцию; «как есть» → изделие идёт дальше со статусом «годно по разрешению на отклонение».</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="nc.repair_or_as_is" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_N3_NG2</bpmn:incoming>
+      <bpmn:outgoing>Flow_NG2_E8</bpmn:outgoing>
+      <bpmn:outgoing>Flow_NG2_NA</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:exclusiveGateway id="J_E8">
+      <bpmn:documentation>Явное слияние веток перед «В 1С: перевод в брак (переделка)»: неявные слияния стрелок без шлюза запрещены (решение Д-6). Входят: Flow_NG_E8, Flow_NG2_E8.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="nc.erp_scrap_rework.merge" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_NG_E8</bpmn:incoming>
+      <bpmn:incoming>Flow_NG2_E8</bpmn:incoming>
+      <bpmn:outgoing>Flow_J_E8</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_J_E8" sourceRef="J_E8" targetRef="E8" />
+    <bpmn:intermediateThrowEvent id="E8" name="В 1С: перевод в брак (переделка)">
+      <bpmn:documentation>В 1С уходит «перевод в брак (переделка)» — и для переделки, и для ремонта.
+Ответ 1С записывается отдельным событием.
+Что может пойти не так: 1С недоступна — повтор с тем же номером; ошибка данных — задача администратору.
+События (наш каталог): erp.posting_sent, Е-75 integration.ack / integration.error.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="nc.erp_scrap_rework" erpAction="scrap_transfer_rework" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_J_E8</bpmn:incoming>
+      <bpmn:outgoing>Flow_E8_NR</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MED_E8" messageRef="Msg_ErpScrapTransferRework" />
+    </bpmn:intermediateThrowEvent>
+    <bpmn:endEvent id="NR" name="Итог: переделка или ремонт">
+      <bpmn:documentation>Подпроцесс заканчивается итогом «переделка или ремонт».
+Изделие возвращается на свою операцию: новое выполнение со ссылкой на прежнее, потом заново весь контроль операции.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="nc.end_rework_or_repair" outcome="rework_or_repair" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_E8_NR</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:endEvent id="NA" name="Итог: как есть">
+      <bpmn:documentation>Подпроцесс заканчивается итогом «как есть» по разрешению на отклонение.
+В 1С сейчас ничего не уходит; позже — «выпуск годного» с номером разрешения.
+Статус изделия — «годно по разрешению на отклонение», это не «годно».</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="nc.end_use_as_is" outcome="use_as_is" />
+        <ant:normRef standard="ГОСТ Р ИСО 9000-2015" clause="3.12.5">
+          <ant:check>Изделие, принятое по разрешению на отклонение, отличается от годного.</ant:check>
+          <ant:systemAction>Система ставит статус «годно по разрешению на отклонение», отдельный от «годно».</ant:systemAction>
+        </ant:normRef>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_NG2_NA</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:intermediateThrowEvent id="E6" name="В 1С: перевод в брак (списание)">
+      <bpmn:documentation>В 1С уходит «перевод в брак (списание)».
+Основание — решение по несоответствующей продукции и акт о браке.
+Что может пойти не так: 1С недоступна — повтор с тем же номером; ошибка данных — задача администратору.
+События (наш каталог): erp.posting_sent, Е-75 integration.ack / integration.error.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="nc.erp_scrap_writeoff" erpAction="scrap_transfer_writeoff" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_NG_E6</bpmn:incoming>
+      <bpmn:outgoing>Flow_E6_NS</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MED_E6" messageRef="Msg_ErpScrapTransferWriteoff" />
+    </bpmn:intermediateThrowEvent>
+    <bpmn:endEvent id="NS" name="Итог: списано">
+      <bpmn:documentation>Подпроцесс заканчивается итогом «списано». Оформлен акт о браке.
+Вызвавшая точка завершает маршрут изделия.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="nc.end_scrapped" outcome="scrapped" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_E6_NS</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:intermediateThrowEvent id="E7" name="В 1С: возврат поставщику">
+      <bpmn:documentation>В 1С уходит «возврат поставщику» с основанием претензии: заключения, акт входного контроля.
+Только для необработанных изделий партии (входной контроль).
+Что может пойти не так: в 1С нет договора с поставщиком (ошибка 422) — без автоповтора; администратор добавляет соответствие ID, затем повтор с тем же номером.
+События (наш каталог): erp.posting_sent, Е-75 integration.ack / integration.error.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="nc.erp_return_to_supplier" erpAction="return_to_supplier" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_NG_E7</bpmn:incoming>
+      <bpmn:outgoing>Flow_E7_NV</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MED_E7" messageRef="Msg_ErpReturnToSupplier" />
+    </bpmn:intermediateThrowEvent>
+    <bpmn:endEvent id="NV" name="Итог: возвращено поставщику">
+      <bpmn:documentation>Подпроцесс заканчивается итогом «возвращено поставщику». Оформлен рекламационный акт.
+Вызвавшая точка ждёт новую партию.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <ant:properties stepKey="nc.end_returned" outcome="returned" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_E7_NV</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_N0_N1" sourceRef="N0" targetRef="N1" />
+    <bpmn:sequenceFlow id="Flow_N1_N2" sourceRef="N1" targetRef="N2" />
+    <bpmn:sequenceFlow id="Flow_N2_NG" sourceRef="N2" targetRef="NG" />
+    <bpmn:sequenceFlow id="Flow_NG_E8" name="переделка по ТП" sourceRef="NG" targetRef="J_E8">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">disposition == 'rework'</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_NG_N3" name="ремонт или как есть" sourceRef="NG" targetRef="N3">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">disposition == 'repair' or disposition == 'use_as_is'</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_NG_E6" name="списать" sourceRef="NG" targetRef="E6">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">disposition == 'scrap'</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_NG_E7" name="вернуть поставщику (только входной)" sourceRef="NG" targetRef="E7">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">disposition == 'return_to_supplier'</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_N3_NG2" sourceRef="N3" targetRef="NG2" />
+    <bpmn:sequenceFlow id="Flow_NG2_E8" name="ремонт" sourceRef="NG2" targetRef="J_E8">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">disposition == 'repair'</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_NG2_NA" name="как есть" sourceRef="NG2" targetRef="NA">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">disposition == 'use_as_is'</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_E8_NR" sourceRef="E8" targetRef="NR" />
+    <bpmn:sequenceFlow id="Flow_E6_NS" sourceRef="E6" targetRef="NS" />
+    <bpmn:sequenceFlow id="Flow_E7_NV" sourceRef="E7" targetRef="NV" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_Flange" name="Фланец люка — маршрут и подпроцесс брака">
+    <bpmndi:BPMNPlane id="BPMNPlane_Flange" bpmnElement="Collaboration_Flange">
+      <bpmndi:BPMNShape id="Participant_Flange_di" bpmnElement="Participant_Flange" isHorizontal="true">
+        <dc:Bounds x="100" y="60" width="7660" height="2000" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_SK_di" bpmnElement="Lane_SK" isHorizontal="true">
+        <dc:Bounds x="130" y="60" width="7630" height="400" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_MC_di" bpmnElement="Lane_MC" isHorizontal="true">
+        <dc:Bounds x="130" y="460" width="7630" height="400" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_WC_di" bpmnElement="Lane_WC" isHorizontal="true">
+        <dc:Bounds x="130" y="860" width="7630" height="400" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_AC_di" bpmnElement="Lane_AC" isHorizontal="true">
+        <dc:Bounds x="130" y="1260" width="7630" height="400" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_QA_di" bpmnElement="Lane_QA" isHorizontal="true">
+        <dc:Bounds x="130" y="1660" width="7630" height="400" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Participant_NC_di" bpmnElement="Participant_NC" isHorizontal="true">
+        <dc:Bounds x="100" y="2140" width="1080" height="500" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S0_di" bpmnElement="S0">
+        <dc:Bounds x="212" y="112" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="S1_di" bpmnElement="S1">
+        <dc:Bounds x="352" y="112" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="J_S1_di" bpmnElement="J_S1" isMarkerVisible="true">
+        <dc:Bounds x="316" y="115" width="30" height="30" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="V1_di" bpmnElement="V1">
+        <dc:Bounds x="460" y="90" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="V2_di" bpmnElement="V2">
+        <dc:Bounds x="600" y="90" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="J_V2_di" bpmnElement="J_V2" isMarkerVisible="true">
+        <dc:Bounds x="564" y="115" width="30" height="30" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="V3_di" bpmnElement="V3">
+        <dc:Bounds x="740" y="90" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="VG_di" bpmnElement="VG" isMarkerVisible="true">
+        <dc:Bounds x="905" y="105" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="VN_di" bpmnElement="VN">
+        <dc:Bounds x="880" y="210" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="VNG_di" bpmnElement="VNG" isMarkerVisible="true">
+        <dc:Bounds x="1045" y="225" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="V4_di" bpmnElement="V4">
+        <dc:Bounds x="1020" y="90" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="J_V4_di" bpmnElement="J_V4" isMarkerVisible="true">
+        <dc:Bounds x="984" y="115" width="30" height="30" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="VP_di" bpmnElement="VP">
+        <dc:Bounds x="1185" y="105" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="V5_di" bpmnElement="V5">
+        <dc:Bounds x="1300" y="90" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="E1_di" bpmnElement="E1">
+        <dc:Bounds x="1472" y="112" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="V6_di" bpmnElement="V6">
+        <dc:Bounds x="1300" y="210" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="E1b_di" bpmnElement="E1b">
+        <dc:Bounds x="1472" y="232" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="V7_di" bpmnElement="V7">
+        <dc:Bounds x="1300" y="330" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="E4_di" bpmnElement="E4">
+        <dc:Bounds x="1472" y="352" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="M1_di" bpmnElement="M1">
+        <dc:Bounds x="1580" y="490" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="J_M1_di" bpmnElement="J_M1" isMarkerVisible="true">
+        <dc:Bounds x="1544" y="515" width="30" height="30" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="M2_di" bpmnElement="M2">
+        <dc:Bounds x="1720" y="490" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="J_M2_di" bpmnElement="J_M2" isMarkerVisible="true">
+        <dc:Bounds x="1684" y="515" width="30" height="30" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="M3_di" bpmnElement="M3">
+        <dc:Bounds x="1860" y="490" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="M4_di" bpmnElement="M4">
+        <dc:Bounds x="2000" y="490" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="MG_di" bpmnElement="MG" isMarkerVisible="true">
+        <dc:Bounds x="2165" y="505" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="MN_di" bpmnElement="MN">
+        <dc:Bounds x="2140" y="610" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="MNG_di" bpmnElement="MNG" isMarkerVisible="true">
+        <dc:Bounds x="2305" y="625" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="MX_di" bpmnElement="MX">
+        <dc:Bounds x="2452" y="632" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="M5_di" bpmnElement="M5">
+        <dc:Bounds x="2280" y="490" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="J_M5_di" bpmnElement="J_M5" isMarkerVisible="true">
+        <dc:Bounds x="2244" y="515" width="30" height="30" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="W0_di" bpmnElement="W0">
+        <dc:Bounds x="2560" y="890" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="E2_di" bpmnElement="E2">
+        <dc:Bounds x="2732" y="912" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="WJ_di" bpmnElement="WJ">
+        <dc:Bounds x="2865" y="905" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="W1_di" bpmnElement="W1">
+        <dc:Bounds x="2980" y="890" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="J_W1_di" bpmnElement="J_W1" isMarkerVisible="true">
+        <dc:Bounds x="2944" y="915" width="30" height="30" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="W2_di" bpmnElement="W2">
+        <dc:Bounds x="3120" y="890" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="WT_di" bpmnElement="WT">
+        <dc:Bounds x="3170" y="952" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="W3_di" bpmnElement="W3">
+        <dc:Bounds x="3260" y="890" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="J_W3_di" bpmnElement="J_W3" isMarkerVisible="true">
+        <dc:Bounds x="3224" y="915" width="30" height="30" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="WR_di" bpmnElement="WR" isMarkerVisible="true">
+        <dc:Bounds x="3425" y="905" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="W4_di" bpmnElement="W4">
+        <dc:Bounds x="3540" y="1010" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="W5_di" bpmnElement="W5">
+        <dc:Bounds x="3680" y="890" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="J_W5_di" bpmnElement="J_W5" isMarkerVisible="true">
+        <dc:Bounds x="3644" y="915" width="30" height="30" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="WG_di" bpmnElement="WG" isMarkerVisible="true">
+        <dc:Bounds x="3845" y="905" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="WN_di" bpmnElement="WN">
+        <dc:Bounds x="3820" y="1010" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="WNG_di" bpmnElement="WNG" isMarkerVisible="true">
+        <dc:Bounds x="3985" y="1025" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="WX_di" bpmnElement="WX">
+        <dc:Bounds x="4132" y="1032" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="W6_di" bpmnElement="W6">
+        <dc:Bounds x="3960" y="890" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="J_W6_di" bpmnElement="J_W6" isMarkerVisible="true">
+        <dc:Bounds x="3924" y="915" width="30" height="30" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A0_di" bpmnElement="A0">
+        <dc:Bounds x="4240" y="1290" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="E3_di" bpmnElement="E3">
+        <dc:Bounds x="4412" y="1312" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="AJ_di" bpmnElement="AJ">
+        <dc:Bounds x="4545" y="1305" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A1_di" bpmnElement="A1">
+        <dc:Bounds x="4660" y="1290" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="J_A1_di" bpmnElement="J_A1" isMarkerVisible="true">
+        <dc:Bounds x="4624" y="1315" width="30" height="30" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A2_di" bpmnElement="A2">
+        <dc:Bounds x="4800" y="1290" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="J_A2_di" bpmnElement="J_A2" isMarkerVisible="true">
+        <dc:Bounds x="4764" y="1315" width="30" height="30" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A3_di" bpmnElement="A3">
+        <dc:Bounds x="4940" y="1290" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A3G_di" bpmnElement="A3G" isMarkerVisible="true">
+        <dc:Bounds x="5105" y="1305" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A3C_di" bpmnElement="A3C">
+        <dc:Bounds x="5080" y="1410" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A4_di" bpmnElement="A4">
+        <dc:Bounds x="5220" y="1290" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A5_di" bpmnElement="A5">
+        <dc:Bounds x="5360" y="1290" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A6_di" bpmnElement="A6">
+        <dc:Bounds x="5500" y="1290" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A7_di" bpmnElement="A7">
+        <dc:Bounds x="5640" y="1290" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A7G_di" bpmnElement="A7G" isMarkerVisible="true">
+        <dc:Bounds x="5805" y="1305" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="AV_di" bpmnElement="AV">
+        <dc:Bounds x="5500" y="1530" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="J_AV_di" bpmnElement="J_AV" isMarkerVisible="true">
+        <dc:Bounds x="5464" y="1555" width="30" height="30" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A8_di" bpmnElement="A8">
+        <dc:Bounds x="5920" y="1290" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="J_A8_di" bpmnElement="J_A8" isMarkerVisible="true">
+        <dc:Bounds x="5884" y="1315" width="30" height="30" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="A9_di" bpmnElement="A9">
+        <dc:Bounds x="6060" y="1290" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="AG_di" bpmnElement="AG" isMarkerVisible="true">
+        <dc:Bounds x="6225" y="1305" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="AN_di" bpmnElement="AN">
+        <dc:Bounds x="6200" y="1410" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ANG_di" bpmnElement="ANG" isMarkerVisible="true">
+        <dc:Bounds x="6365" y="1425" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="AX_di" bpmnElement="AX">
+        <dc:Bounds x="6512" y="1552" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="J_AX_di" bpmnElement="J_AX" isMarkerVisible="true">
+        <dc:Bounds x="6476" y="1555" width="30" height="30" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="T1_di" bpmnElement="T1">
+        <dc:Bounds x="6340" y="1290" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="J_T1_di" bpmnElement="J_T1" isMarkerVisible="true">
+        <dc:Bounds x="6304" y="1315" width="30" height="30" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="T2_di" bpmnElement="T2">
+        <dc:Bounds x="6480" y="1290" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="TG_di" bpmnElement="TG" isMarkerVisible="true">
+        <dc:Bounds x="6645" y="1305" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="TN_di" bpmnElement="TN">
+        <dc:Bounds x="6620" y="1410" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="TNG_di" bpmnElement="TNG" isMarkerVisible="true">
+        <dc:Bounds x="6645" y="1545" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="K2_di" bpmnElement="K2">
+        <dc:Bounds x="6900" y="1690" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="J_K2_di" bpmnElement="J_K2" isMarkerVisible="true">
+        <dc:Bounds x="6864" y="1715" width="30" height="30" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="K3_di" bpmnElement="K3">
+        <dc:Bounds x="7040" y="1690" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="KG_di" bpmnElement="KG" isMarkerVisible="true">
+        <dc:Bounds x="7205" y="1705" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="KN_di" bpmnElement="KN">
+        <dc:Bounds x="7180" y="1810" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="KNG_di" bpmnElement="KNG" isMarkerVisible="true">
+        <dc:Bounds x="7345" y="1825" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="KX_di" bpmnElement="KX">
+        <dc:Bounds x="7492" y="1832" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="K4_di" bpmnElement="K4">
+        <dc:Bounds x="7320" y="1690" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="J_K4_di" bpmnElement="J_K4" isMarkerVisible="true">
+        <dc:Bounds x="7284" y="1715" width="30" height="30" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="E5_di" bpmnElement="E5">
+        <dc:Bounds x="7492" y="1712" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="KE_di" bpmnElement="KE">
+        <dc:Bounds x="7632" y="1712" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="N0_di" bpmnElement="N0">
+        <dc:Bounds x="212" y="2192" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="N1_di" bpmnElement="N1">
+        <dc:Bounds x="320" y="2170" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="N2_di" bpmnElement="N2">
+        <dc:Bounds x="460" y="2170" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="NG_di" bpmnElement="NG" isMarkerVisible="true">
+        <dc:Bounds x="625" y="2185" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="N3_di" bpmnElement="N3">
+        <dc:Bounds x="740" y="2290" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="NG2_di" bpmnElement="NG2" isMarkerVisible="true">
+        <dc:Bounds x="905" y="2305" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="E8_di" bpmnElement="E8">
+        <dc:Bounds x="912" y="2192" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="J_E8_di" bpmnElement="J_E8" isMarkerVisible="true">
+        <dc:Bounds x="876" y="2195" width="30" height="30" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="NR_di" bpmnElement="NR">
+        <dc:Bounds x="1052" y="2192" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="NA_di" bpmnElement="NA">
+        <dc:Bounds x="1052" y="2312" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="E6_di" bpmnElement="E6">
+        <dc:Bounds x="772" y="2432" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="NS_di" bpmnElement="NS">
+        <dc:Bounds x="912" y="2432" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="E7_di" bpmnElement="E7">
+        <dc:Bounds x="772" y="2552" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="NV_di" bpmnElement="NV">
+        <dc:Bounds x="912" y="2552" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_S0_S1_di" bpmnElement="Flow_S0_S1">
+        <di:waypoint x="248" y="130" />
+        <di:waypoint x="316" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_S1_V1_di" bpmnElement="Flow_S1_V1">
+        <di:waypoint x="388" y="130" />
+        <di:waypoint x="460" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_V1_V2_di" bpmnElement="Flow_V1_V2">
+        <di:waypoint x="560" y="130" />
+        <di:waypoint x="564" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_V2_V3_di" bpmnElement="Flow_V2_V3">
+        <di:waypoint x="700" y="130" />
+        <di:waypoint x="740" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_V3_VG_di" bpmnElement="Flow_V3_VG">
+        <di:waypoint x="840" y="130" />
+        <di:waypoint x="905" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_VG_V4_di" bpmnElement="Flow_VG_V4">
+        <di:waypoint x="955" y="130" />
+        <di:waypoint x="984" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_VG_V2_di" bpmnElement="Flow_VG_V2">
+        <di:waypoint x="930" y="105" />
+        <di:waypoint x="930" y="68" />
+        <di:waypoint x="650" y="68" />
+        <di:waypoint x="650" y="78" />
+        <di:waypoint x="579" y="78" />
+        <di:waypoint x="579" y="115" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_VG_VN_di" bpmnElement="Flow_VG_VN">
+        <di:waypoint x="930" y="155" />
+        <di:waypoint x="930" y="210" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_VN_VNG_di" bpmnElement="Flow_VN_VNG">
+        <di:waypoint x="980" y="250" />
+        <di:waypoint x="1045" y="250" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_VNG_V4_di" bpmnElement="Flow_VNG_V4">
+        <di:waypoint x="1070" y="225" />
+        <di:waypoint x="1070" y="182" />
+        <di:waypoint x="999" y="182" />
+        <di:waypoint x="999" y="145" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_VNG_S1_di" bpmnElement="Flow_VNG_S1">
+        <di:waypoint x="1070" y="275" />
+        <di:waypoint x="1070" y="448" />
+        <di:waypoint x="370" y="448" />
+        <di:waypoint x="370" y="160" />
+        <di:waypoint x="331" y="160" />
+        <di:waypoint x="331" y="145" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_V4_VP_di" bpmnElement="Flow_V4_VP">
+        <di:waypoint x="1120" y="130" />
+        <di:waypoint x="1185" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_VP_V5_di" bpmnElement="Flow_VP_V5">
+        <di:waypoint x="1235" y="130" />
+        <di:waypoint x="1300" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_V5_E1_di" bpmnElement="Flow_V5_E1">
+        <di:waypoint x="1400" y="130" />
+        <di:waypoint x="1472" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_E1_M1_di" bpmnElement="Flow_E1_M1">
+        <di:waypoint x="1508" y="130" />
+        <di:waypoint x="1630" y="130" />
+        <di:waypoint x="1630" y="478" />
+        <di:waypoint x="1559" y="478" />
+        <di:waypoint x="1559" y="515" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_VP_V6_di" bpmnElement="Flow_VP_V6">
+        <di:waypoint x="1235" y="130" />
+        <di:waypoint x="1267.5" y="130" />
+        <di:waypoint x="1267.5" y="250" />
+        <di:waypoint x="1300" y="250" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_V6_E1b_di" bpmnElement="Flow_V6_E1b">
+        <di:waypoint x="1400" y="250" />
+        <di:waypoint x="1472" y="250" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_E1b_WJ_di" bpmnElement="Flow_E1b_WJ">
+        <di:waypoint x="1508" y="250" />
+        <di:waypoint x="2890" y="250" />
+        <di:waypoint x="2890" y="905" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_VP_V7_di" bpmnElement="Flow_VP_V7">
+        <di:waypoint x="1235" y="130" />
+        <di:waypoint x="1267.5" y="130" />
+        <di:waypoint x="1267.5" y="370" />
+        <di:waypoint x="1300" y="370" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_V7_E4_di" bpmnElement="Flow_V7_E4">
+        <di:waypoint x="1400" y="370" />
+        <di:waypoint x="1472" y="370" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_E4_AJ_di" bpmnElement="Flow_E4_AJ">
+        <di:waypoint x="1508" y="370" />
+        <di:waypoint x="4570" y="370" />
+        <di:waypoint x="4570" y="1305" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_M1_M2_di" bpmnElement="Flow_M1_M2">
+        <di:waypoint x="1680" y="530" />
+        <di:waypoint x="1684" y="530" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_M2_M3_di" bpmnElement="Flow_M2_M3">
+        <di:waypoint x="1820" y="530" />
+        <di:waypoint x="1860" y="530" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_M3_M4_di" bpmnElement="Flow_M3_M4">
+        <di:waypoint x="1960" y="530" />
+        <di:waypoint x="2000" y="530" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_M4_MG_di" bpmnElement="Flow_M4_MG">
+        <di:waypoint x="2100" y="530" />
+        <di:waypoint x="2165" y="530" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_MG_M5_di" bpmnElement="Flow_MG_M5">
+        <di:waypoint x="2215" y="530" />
+        <di:waypoint x="2244" y="530" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_MG_M2_di" bpmnElement="Flow_MG_M2">
+        <di:waypoint x="2190" y="505" />
+        <di:waypoint x="2190" y="468" />
+        <di:waypoint x="1770" y="468" />
+        <di:waypoint x="1770" y="478" />
+        <di:waypoint x="1699" y="478" />
+        <di:waypoint x="1699" y="515" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_MG_MN_di" bpmnElement="Flow_MG_MN">
+        <di:waypoint x="2190" y="555" />
+        <di:waypoint x="2190" y="610" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_MN_MNG_di" bpmnElement="Flow_MN_MNG">
+        <di:waypoint x="2240" y="650" />
+        <di:waypoint x="2305" y="650" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_MNG_M1_di" bpmnElement="Flow_MNG_M1">
+        <di:waypoint x="2330" y="675" />
+        <di:waypoint x="2330" y="848" />
+        <di:waypoint x="1630" y="848" />
+        <di:waypoint x="1630" y="582" />
+        <di:waypoint x="1559" y="582" />
+        <di:waypoint x="1559" y="545" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_MNG_M5_di" bpmnElement="Flow_MNG_M5">
+        <di:waypoint x="2330" y="625" />
+        <di:waypoint x="2330" y="582" />
+        <di:waypoint x="2259" y="582" />
+        <di:waypoint x="2259" y="545" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_MNG_MX_di" bpmnElement="Flow_MNG_MX">
+        <di:waypoint x="2355" y="650" />
+        <di:waypoint x="2452" y="650" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_M5_W0_di" bpmnElement="Flow_M5_W0">
+        <di:waypoint x="2380" y="530" />
+        <di:waypoint x="2610" y="530" />
+        <di:waypoint x="2610" y="890" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_W0_E2_di" bpmnElement="Flow_W0_E2">
+        <di:waypoint x="2660" y="930" />
+        <di:waypoint x="2732" y="930" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_E2_WJ_di" bpmnElement="Flow_E2_WJ">
+        <di:waypoint x="2768" y="930" />
+        <di:waypoint x="2865" y="930" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_WJ_W1_di" bpmnElement="Flow_WJ_W1">
+        <di:waypoint x="2915" y="930" />
+        <di:waypoint x="2944" y="930" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_W1_W2_di" bpmnElement="Flow_W1_W2">
+        <di:waypoint x="3080" y="930" />
+        <di:waypoint x="3120" y="930" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_W2_W3_di" bpmnElement="Flow_W2_W3">
+        <di:waypoint x="3220" y="930" />
+        <di:waypoint x="3224" y="930" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_WT_W1_di" bpmnElement="Flow_WT_W1">
+        <di:waypoint x="3188" y="988" />
+        <di:waypoint x="3188" y="1248" />
+        <di:waypoint x="3030" y="1248" />
+        <di:waypoint x="3030" y="982" />
+        <di:waypoint x="2959" y="982" />
+        <di:waypoint x="2959" y="945" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_W3_WR_di" bpmnElement="Flow_W3_WR">
+        <di:waypoint x="3360" y="930" />
+        <di:waypoint x="3425" y="930" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_WR_W4_di" bpmnElement="Flow_WR_W4">
+        <di:waypoint x="3475" y="930" />
+        <di:waypoint x="3507.5" y="930" />
+        <di:waypoint x="3507.5" y="1050" />
+        <di:waypoint x="3540" y="1050" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_WR_W5_di" bpmnElement="Flow_WR_W5">
+        <di:waypoint x="3475" y="930" />
+        <di:waypoint x="3644" y="930" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_W4_W5_di" bpmnElement="Flow_W4_W5">
+        <di:waypoint x="3640" y="1050" />
+        <di:waypoint x="3660" y="1050" />
+        <di:waypoint x="3660" y="930" />
+        <di:waypoint x="3644" y="930" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_W5_WG_di" bpmnElement="Flow_W5_WG">
+        <di:waypoint x="3780" y="930" />
+        <di:waypoint x="3845" y="930" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_WG_W6_di" bpmnElement="Flow_WG_W6">
+        <di:waypoint x="3895" y="930" />
+        <di:waypoint x="3924" y="930" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_WG_W3_di" bpmnElement="Flow_WG_W3">
+        <di:waypoint x="3870" y="905" />
+        <di:waypoint x="3870" y="868" />
+        <di:waypoint x="3310" y="868" />
+        <di:waypoint x="3310" y="878" />
+        <di:waypoint x="3239" y="878" />
+        <di:waypoint x="3239" y="915" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_WG_WN_di" bpmnElement="Flow_WG_WN">
+        <di:waypoint x="3870" y="955" />
+        <di:waypoint x="3870" y="1010" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_WN_WNG_di" bpmnElement="Flow_WN_WNG">
+        <di:waypoint x="3920" y="1050" />
+        <di:waypoint x="3985" y="1050" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_WNG_W1_di" bpmnElement="Flow_WNG_W1">
+        <di:waypoint x="4010" y="1075" />
+        <di:waypoint x="4010" y="1242" />
+        <di:waypoint x="3030" y="1242" />
+        <di:waypoint x="3030" y="982" />
+        <di:waypoint x="2959" y="982" />
+        <di:waypoint x="2959" y="945" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_WNG_W6_di" bpmnElement="Flow_WNG_W6">
+        <di:waypoint x="4010" y="1025" />
+        <di:waypoint x="4010" y="982" />
+        <di:waypoint x="3939" y="982" />
+        <di:waypoint x="3939" y="945" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_WNG_WX_di" bpmnElement="Flow_WNG_WX">
+        <di:waypoint x="4035" y="1050" />
+        <di:waypoint x="4132" y="1050" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_W6_A0_di" bpmnElement="Flow_W6_A0">
+        <di:waypoint x="4060" y="930" />
+        <di:waypoint x="4290" y="930" />
+        <di:waypoint x="4290" y="1290" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_A0_E3_di" bpmnElement="Flow_A0_E3">
+        <di:waypoint x="4340" y="1330" />
+        <di:waypoint x="4412" y="1330" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_E3_AJ_di" bpmnElement="Flow_E3_AJ">
+        <di:waypoint x="4448" y="1330" />
+        <di:waypoint x="4545" y="1330" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_AJ_A1_di" bpmnElement="Flow_AJ_A1">
+        <di:waypoint x="4595" y="1330" />
+        <di:waypoint x="4624" y="1330" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_A1_A2_di" bpmnElement="Flow_A1_A2">
+        <di:waypoint x="4760" y="1330" />
+        <di:waypoint x="4764" y="1330" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_A2_A3_di" bpmnElement="Flow_A2_A3">
+        <di:waypoint x="4900" y="1330" />
+        <di:waypoint x="4940" y="1330" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_A3_A3G_di" bpmnElement="Flow_A3_A3G">
+        <di:waypoint x="5040" y="1330" />
+        <di:waypoint x="5105" y="1330" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_A3G_A4_di" bpmnElement="Flow_A3G_A4">
+        <di:waypoint x="5155" y="1330" />
+        <di:waypoint x="5220" y="1330" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_A3G_A3C_di" bpmnElement="Flow_A3G_A3C">
+        <di:waypoint x="5130" y="1355" />
+        <di:waypoint x="5130" y="1410" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_A3C_A2_di" bpmnElement="Flow_A3C_A2">
+        <di:waypoint x="5130" y="1490" />
+        <di:waypoint x="5130" y="1648" />
+        <di:waypoint x="4850" y="1648" />
+        <di:waypoint x="4850" y="1382" />
+        <di:waypoint x="4779" y="1382" />
+        <di:waypoint x="4779" y="1345" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_A4_A5_di" bpmnElement="Flow_A4_A5">
+        <di:waypoint x="5320" y="1330" />
+        <di:waypoint x="5360" y="1330" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_A5_A6_di" bpmnElement="Flow_A5_A6">
+        <di:waypoint x="5460" y="1330" />
+        <di:waypoint x="5500" y="1330" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_A6_A7_di" bpmnElement="Flow_A6_A7">
+        <di:waypoint x="5600" y="1330" />
+        <di:waypoint x="5640" y="1330" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_A7_A7G_di" bpmnElement="Flow_A7_A7G">
+        <di:waypoint x="5740" y="1330" />
+        <di:waypoint x="5805" y="1330" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_A7G_A8_di" bpmnElement="Flow_A7G_A8">
+        <di:waypoint x="5855" y="1330" />
+        <di:waypoint x="5884" y="1330" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_A7G_AV_di" bpmnElement="Flow_A7G_AV">
+        <di:waypoint x="5830" y="1355" />
+        <di:waypoint x="5830" y="1642" />
+        <di:waypoint x="5550" y="1642" />
+        <di:waypoint x="5550" y="1622" />
+        <di:waypoint x="5479" y="1622" />
+        <di:waypoint x="5479" y="1585" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_AV_A1_di" bpmnElement="Flow_AV_A1">
+        <di:waypoint x="5550" y="1610" />
+        <di:waypoint x="5550" y="1636" />
+        <di:waypoint x="4710" y="1636" />
+        <di:waypoint x="4710" y="1382" />
+        <di:waypoint x="4639" y="1382" />
+        <di:waypoint x="4639" y="1345" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_A8_A9_di" bpmnElement="Flow_A8_A9">
+        <di:waypoint x="6020" y="1330" />
+        <di:waypoint x="6060" y="1330" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_A9_AG_di" bpmnElement="Flow_A9_AG">
+        <di:waypoint x="6160" y="1330" />
+        <di:waypoint x="6225" y="1330" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_AG_T1_di" bpmnElement="Flow_AG_T1">
+        <di:waypoint x="6275" y="1330" />
+        <di:waypoint x="6304" y="1330" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_AG_A8_di" bpmnElement="Flow_AG_A8">
+        <di:waypoint x="6250" y="1305" />
+        <di:waypoint x="6250" y="1268" />
+        <di:waypoint x="5970" y="1268" />
+        <di:waypoint x="5970" y="1278" />
+        <di:waypoint x="5899" y="1278" />
+        <di:waypoint x="5899" y="1315" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_AG_AN_di" bpmnElement="Flow_AG_AN">
+        <di:waypoint x="6250" y="1355" />
+        <di:waypoint x="6250" y="1410" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_AN_ANG_di" bpmnElement="Flow_AN_ANG">
+        <di:waypoint x="6300" y="1450" />
+        <di:waypoint x="6365" y="1450" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ANG_AV_di" bpmnElement="Flow_ANG_AV">
+        <di:waypoint x="6390" y="1475" />
+        <di:waypoint x="6390" y="1630" />
+        <di:waypoint x="5550" y="1630" />
+        <di:waypoint x="5550" y="1622" />
+        <di:waypoint x="5479" y="1622" />
+        <di:waypoint x="5479" y="1585" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ANG_T1_di" bpmnElement="Flow_ANG_T1">
+        <di:waypoint x="6390" y="1425" />
+        <di:waypoint x="6390" y="1382" />
+        <di:waypoint x="6319" y="1382" />
+        <di:waypoint x="6319" y="1345" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ANG_AX_di" bpmnElement="Flow_ANG_AX">
+        <di:waypoint x="6415" y="1450" />
+        <di:waypoint x="6463.5" y="1450" />
+        <di:waypoint x="6463.5" y="1570" />
+        <di:waypoint x="6476" y="1570" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_T1_T2_di" bpmnElement="Flow_T1_T2">
+        <di:waypoint x="6440" y="1330" />
+        <di:waypoint x="6480" y="1330" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_T2_TG_di" bpmnElement="Flow_T2_TG">
+        <di:waypoint x="6580" y="1330" />
+        <di:waypoint x="6645" y="1330" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_TG_T1_di" bpmnElement="Flow_TG_T1">
+        <di:waypoint x="6670" y="1305" />
+        <di:waypoint x="6670" y="1273" />
+        <di:waypoint x="6390" y="1273" />
+        <di:waypoint x="6390" y="1278" />
+        <di:waypoint x="6319" y="1278" />
+        <di:waypoint x="6319" y="1315" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_TG_TN_di" bpmnElement="Flow_TG_TN">
+        <di:waypoint x="6670" y="1355" />
+        <di:waypoint x="6670" y="1410" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_TG_K2_di" bpmnElement="Flow_TG_K2">
+        <di:waypoint x="6695" y="1330" />
+        <di:waypoint x="6950" y="1330" />
+        <di:waypoint x="6950" y="1678" />
+        <di:waypoint x="6879" y="1678" />
+        <di:waypoint x="6879" y="1715" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_TN_TNG_di" bpmnElement="Flow_TN_TNG">
+        <di:waypoint x="6670" y="1490" />
+        <di:waypoint x="6670" y="1545" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_TNG_AV_di" bpmnElement="Flow_TNG_AV">
+        <di:waypoint x="6670" y="1595" />
+        <di:waypoint x="6670" y="1648" />
+        <di:waypoint x="5550" y="1648" />
+        <di:waypoint x="5550" y="1622" />
+        <di:waypoint x="5479" y="1622" />
+        <di:waypoint x="5479" y="1585" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_TNG_AX_di" bpmnElement="Flow_TNG_AX">
+        <di:waypoint x="6645" y="1570" />
+        <di:waypoint x="6560" y="1570" />
+        <di:waypoint x="6560" y="1540" />
+        <di:waypoint x="6491" y="1540" />
+        <di:waypoint x="6491" y="1555" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_K2_K3_di" bpmnElement="Flow_K2_K3">
+        <di:waypoint x="7000" y="1730" />
+        <di:waypoint x="7040" y="1730" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_K3_KG_di" bpmnElement="Flow_K3_KG">
+        <di:waypoint x="7140" y="1730" />
+        <di:waypoint x="7205" y="1730" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_KG_K4_di" bpmnElement="Flow_KG_K4">
+        <di:waypoint x="7255" y="1730" />
+        <di:waypoint x="7284" y="1730" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_KG_K2_di" bpmnElement="Flow_KG_K2">
+        <di:waypoint x="7230" y="1705" />
+        <di:waypoint x="7230" y="1668" />
+        <di:waypoint x="6950" y="1668" />
+        <di:waypoint x="6950" y="1678" />
+        <di:waypoint x="6879" y="1678" />
+        <di:waypoint x="6879" y="1715" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_KG_KN_di" bpmnElement="Flow_KG_KN">
+        <di:waypoint x="7230" y="1755" />
+        <di:waypoint x="7230" y="1810" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_KN_KNG_di" bpmnElement="Flow_KN_KNG">
+        <di:waypoint x="7280" y="1850" />
+        <di:waypoint x="7345" y="1850" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_KNG_AV_di" bpmnElement="Flow_KNG_AV">
+        <di:waypoint x="7370" y="1875" />
+        <di:waypoint x="7370" y="2048" />
+        <di:waypoint x="5550" y="2048" />
+        <di:waypoint x="5550" y="1622" />
+        <di:waypoint x="5479" y="1622" />
+        <di:waypoint x="5479" y="1585" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_KNG_K4_di" bpmnElement="Flow_KNG_K4">
+        <di:waypoint x="7370" y="1825" />
+        <di:waypoint x="7370" y="1782" />
+        <di:waypoint x="7299" y="1782" />
+        <di:waypoint x="7299" y="1745" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_KNG_KX_di" bpmnElement="Flow_KNG_KX">
+        <di:waypoint x="7395" y="1850" />
+        <di:waypoint x="7492" y="1850" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_K4_E5_di" bpmnElement="Flow_K4_E5">
+        <di:waypoint x="7420" y="1730" />
+        <di:waypoint x="7492" y="1730" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_E5_KE_di" bpmnElement="Flow_E5_KE">
+        <di:waypoint x="7528" y="1730" />
+        <di:waypoint x="7632" y="1730" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_N0_N1_di" bpmnElement="Flow_N0_N1">
+        <di:waypoint x="248" y="2210" />
+        <di:waypoint x="320" y="2210" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_N1_N2_di" bpmnElement="Flow_N1_N2">
+        <di:waypoint x="420" y="2210" />
+        <di:waypoint x="460" y="2210" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_N2_NG_di" bpmnElement="Flow_N2_NG">
+        <di:waypoint x="560" y="2210" />
+        <di:waypoint x="625" y="2210" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_NG_E8_di" bpmnElement="Flow_NG_E8">
+        <di:waypoint x="675" y="2210" />
+        <di:waypoint x="876" y="2210" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_NG_N3_di" bpmnElement="Flow_NG_N3">
+        <di:waypoint x="675" y="2210" />
+        <di:waypoint x="707.5" y="2210" />
+        <di:waypoint x="707.5" y="2330" />
+        <di:waypoint x="740" y="2330" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_NG_E6_di" bpmnElement="Flow_NG_E6">
+        <di:waypoint x="675" y="2210" />
+        <di:waypoint x="723.5" y="2210" />
+        <di:waypoint x="723.5" y="2450" />
+        <di:waypoint x="772" y="2450" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_NG_E7_di" bpmnElement="Flow_NG_E7">
+        <di:waypoint x="675" y="2210" />
+        <di:waypoint x="723.5" y="2210" />
+        <di:waypoint x="723.5" y="2570" />
+        <di:waypoint x="772" y="2570" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_N3_NG2_di" bpmnElement="Flow_N3_NG2">
+        <di:waypoint x="840" y="2330" />
+        <di:waypoint x="905" y="2330" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_NG2_E8_di" bpmnElement="Flow_NG2_E8">
+        <di:waypoint x="930" y="2305" />
+        <di:waypoint x="930" y="2240" />
+        <di:waypoint x="891" y="2240" />
+        <di:waypoint x="891" y="2225" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_NG2_NA_di" bpmnElement="Flow_NG2_NA">
+        <di:waypoint x="955" y="2330" />
+        <di:waypoint x="1052" y="2330" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_E8_NR_di" bpmnElement="Flow_E8_NR">
+        <di:waypoint x="948" y="2210" />
+        <di:waypoint x="1052" y="2210" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_E6_NS_di" bpmnElement="Flow_E6_NS">
+        <di:waypoint x="808" y="2450" />
+        <di:waypoint x="912" y="2450" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_E7_NV_di" bpmnElement="Flow_E7_NV">
+        <di:waypoint x="808" y="2570" />
+        <di:waypoint x="912" y="2570" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_J_S1_di" bpmnElement="Flow_J_S1">
+        <di:waypoint x="346" y="130" />
+        <di:waypoint x="352" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_J_V2_di" bpmnElement="Flow_J_V2">
+        <di:waypoint x="594" y="130" />
+        <di:waypoint x="600" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_J_V4_di" bpmnElement="Flow_J_V4">
+        <di:waypoint x="1014" y="130" />
+        <di:waypoint x="1020" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_J_M1_di" bpmnElement="Flow_J_M1">
+        <di:waypoint x="1574" y="530" />
+        <di:waypoint x="1580" y="530" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_J_M2_di" bpmnElement="Flow_J_M2">
+        <di:waypoint x="1714" y="530" />
+        <di:waypoint x="1720" y="530" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_J_M5_di" bpmnElement="Flow_J_M5">
+        <di:waypoint x="2274" y="530" />
+        <di:waypoint x="2280" y="530" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_J_W1_di" bpmnElement="Flow_J_W1">
+        <di:waypoint x="2974" y="930" />
+        <di:waypoint x="2980" y="930" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_J_W3_di" bpmnElement="Flow_J_W3">
+        <di:waypoint x="3254" y="930" />
+        <di:waypoint x="3260" y="930" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_J_W5_di" bpmnElement="Flow_J_W5">
+        <di:waypoint x="3674" y="930" />
+        <di:waypoint x="3680" y="930" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_J_W6_di" bpmnElement="Flow_J_W6">
+        <di:waypoint x="3954" y="930" />
+        <di:waypoint x="3960" y="930" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_J_A1_di" bpmnElement="Flow_J_A1">
+        <di:waypoint x="4654" y="1330" />
+        <di:waypoint x="4660" y="1330" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_J_A2_di" bpmnElement="Flow_J_A2">
+        <di:waypoint x="4794" y="1330" />
+        <di:waypoint x="4800" y="1330" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_J_AV_di" bpmnElement="Flow_J_AV">
+        <di:waypoint x="5494" y="1570" />
+        <di:waypoint x="5500" y="1570" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_J_A8_di" bpmnElement="Flow_J_A8">
+        <di:waypoint x="5914" y="1330" />
+        <di:waypoint x="5920" y="1330" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_J_AX_di" bpmnElement="Flow_J_AX">
+        <di:waypoint x="6506" y="1570" />
+        <di:waypoint x="6512" y="1570" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_J_T1_di" bpmnElement="Flow_J_T1">
+        <di:waypoint x="6334" y="1330" />
+        <di:waypoint x="6340" y="1330" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_J_K2_di" bpmnElement="Flow_J_K2">
+        <di:waypoint x="6894" y="1730" />
+        <di:waypoint x="6900" y="1730" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_J_K4_di" bpmnElement="Flow_J_K4">
+        <di:waypoint x="7314" y="1730" />
+        <di:waypoint x="7320" y="1730" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_J_E8_di" bpmnElement="Flow_J_E8">
+        <di:waypoint x="906" y="2210" />
+        <di:waypoint x="912" y="2210" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

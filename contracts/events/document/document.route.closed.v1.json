@@ -1,0 +1,37 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/document/document.route.closed.v1.json",
+  "title": "DocumentRouteClosedV1",
+  "description": "Маршрут подписей закрыт — все обязательные подписи проверены над текущим отпечатком: полномочие и клеймо на `seq`, разделение обязанностей; модули-исполнители действуют только по этой реакции (AD-43).",
+  "type": "object",
+  "properties": {
+    "document_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Документ."
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100000,
+      "description": "Версия."
+    },
+    "doc_digest": {
+      "$ref": "../common/defs.v1.json#/definitions/digest",
+      "description": "Отпечаток."
+    },
+    "signature_event_ids": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/uuid"
+      },
+      "description": "Засчитанные подписи.",
+      "uniqueItems": true
+    }
+  },
+  "required": [
+    "document_id",
+    "version",
+    "doc_digest",
+    "signature_event_ids"
+  ]
+}

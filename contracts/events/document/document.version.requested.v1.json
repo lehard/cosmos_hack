@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/document/document.version.requested.v1.json",
+  "title": "DocumentVersionRequestedV1",
+  "description": "Запрошено оформление документа — человек запрашивает документ с маршрутом: «Запросить решение», выдача прав, назначение контролёра (FR-136, AD-12).",
+  "type": "object",
+  "properties": {
+    "document_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Будущий документ."
+    },
+    "template_ref": {
+      "type": "string",
+      "description": "Шаблон `‹id›@‹версия›` из нормативного слоя.",
+      "maxLength": 128
+    },
+    "subject_ref": {
+      "$ref": "../common/defs.v1.json#/definitions/stream_ref",
+      "description": "Объект документа: изделие, партия, политика, ключ, версия процесса."
+    },
+    "source_event_ids": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/uuid"
+      },
+      "description": "События-источники.",
+      "uniqueItems": true
+    }
+  },
+  "required": [
+    "document_id",
+    "template_ref",
+    "subject_ref"
+  ]
+}

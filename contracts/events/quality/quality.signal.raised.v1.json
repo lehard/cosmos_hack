@@ -1,0 +1,87 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/quality/quality.signal.raised.v1.json",
+  "title": "QualitySignalRaisedV1",
+  "description": "Сигнал о признаке дефекта или нарушении — система сверила факт с нормой и картой реакций: это не брак, а первый из четырёх статусов (кейс §2.3); без требования КД — вопрос технологу (FR-48).",
+  "type": "object",
+  "properties": {
+    "signal_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Идентификатор сигнала."
+    },
+    "basis_kind": {
+      "type": "string",
+      "enum": [
+        "inspection_result",
+        "equipment_deviation",
+        "check_skipped",
+        "damage_on_receipt",
+        "leak",
+        "special_process_violation",
+        "operator_report"
+      ],
+      "description": "На чём основан сигнал."
+    },
+    "defect_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Физический дефект (ключ изделие + зона + место, без вида, FR-37)."
+    },
+    "zone_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Зона."
+    },
+    "defect_type_code": {
+      "type": "string",
+      "description": "Вид дефекта по классификатору; неизвестный — с флагом.",
+      "maxLength": 32
+    },
+    "defect_type_known": {
+      "type": "boolean",
+      "description": "Вид есть в классификаторе (FR-125)."
+    },
+    "severity": {
+      "$ref": "../common/defs.v1.json#/definitions/severity"
+    },
+    "requirement_ref": {
+      "type": "string",
+      "description": "Требование КД: характеристика, допуск, ревизия; отсутствует — вопрос инженерам, а не брак.",
+      "maxLength": 256
+    },
+    "analyzer_confidence_bp": {
+      "$ref": "../common/defs.v1.json#/definitions/bp",
+      "description": "Уверенность из наблюдения."
+    },
+    "observation_quality_bp": {
+      "$ref": "../common/defs.v1.json#/definitions/bp",
+      "description": "Качество наблюдения."
+    },
+    "reaction_outcome": {
+      "type": "string",
+      "enum": [
+        "pass_to_next",
+        "manual_review",
+        "isolate",
+        "question_to_technologist"
+      ],
+      "description": "Реакция карты реакций."
+    },
+    "reaction_map_ref": {
+      "type": "string",
+      "description": "Карта реакций и строка: `‹id›@‹версия›#‹строка›`.",
+      "maxLength": 128
+    },
+    "trust_level": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4,
+      "description": "Уровень доверия паспорта анализатора, разрешивший действие (AD-29), если сигнал от анализатора."
+    }
+  },
+  "required": [
+    "signal_id",
+    "basis_kind",
+    "severity",
+    "reaction_outcome",
+    "reaction_map_ref"
+  ]
+}

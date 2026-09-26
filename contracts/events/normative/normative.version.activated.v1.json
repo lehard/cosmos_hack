@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/normative/normative.version.activated.v1.json",
+  "title": "NormativeVersionActivatedV1",
+  "description": "Версия процесса введена в действие — после закрытия маршрута кворума; действует только для изделий, запущенных после (PRD §11.9, FR-23).",
+  "type": "object",
+  "properties": {
+    "version_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Версия."
+    },
+    "process_version_hash": {
+      "$ref": "../common/defs.v1.json#/definitions/digest",
+      "description": "Хеш."
+    },
+    "route_closed_event_id": {
+      "$ref": "../common/defs.v1.json#/definitions/uuid",
+      "description": "Закрытие маршрута кворума."
+    }
+  },
+  "required": [
+    "version_id",
+    "process_version_hash",
+    "route_closed_event_id"
+  ]
+}

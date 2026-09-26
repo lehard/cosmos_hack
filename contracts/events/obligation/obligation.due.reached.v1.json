@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/obligation/obligation.due.reached.v1.json",
+  "title": "ObligationDueReachedV1",
+  "description": "Наступил срок — планировщик по проекции сроков: `event_id` = UUIDv5(`obligation_id`, `due_at`) — повтор не дублирует (AD-4).",
+  "type": "object",
+  "properties": {
+    "obligation_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Обязательство."
+    },
+    "due_at": {
+      "$ref": "../common/defs.v1.json#/definitions/timestamp",
+      "description": "Срок."
+    }
+  },
+  "required": [
+    "obligation_id",
+    "due_at"
+  ]
+}

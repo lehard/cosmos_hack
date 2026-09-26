@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/access/access.workplace.admitted.v1.json",
+  "title": "AccessWorkplaceAdmittedV1",
+  "description": "Допуск к рабочему месту открыт — правило домена выполнено: СКУД в зоне ∧ роль в области места ∧ квалификация на дату ∧ назначение на пост ∧ токен и PIN (AD-15, FR-83).",
+  "type": "object",
+  "properties": {
+    "workplace_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Рабочее место."
+    },
+    "workplace_session_id": {
+      "$ref": "../common/defs.v1.json#/definitions/uuid",
+      "description": "Сеанс рабочего места."
+    },
+    "person_id": {
+      "$ref": "../common/defs.v1.json#/definitions/person_ref",
+      "description": "Сотрудник."
+    },
+    "shift_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Смена."
+    },
+    "checks_event_ids": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/uuid"
+      },
+      "description": "Факты, на которых основан допуск (СКУД, назначение, квалификация).",
+      "uniqueItems": true
+    }
+  },
+  "required": [
+    "workplace_id",
+    "workplace_session_id",
+    "person_id"
+  ]
+}

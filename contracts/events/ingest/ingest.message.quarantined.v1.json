@@ -1,0 +1,47 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/ingest/ingest.message.quarantined.v1.json",
+  "title": "IngestMessageQuarantinedV1",
+  "description": "Сообщение помещено в карантин — содержимое — вне журнала (MaterialStore, зашифровано), в журнале — факт помещения: источник, номер, отпечаток, код причины (AD-2, FR-30).",
+  "type": "object",
+  "properties": {
+    "source_id": {
+      "$ref": "../common/defs.v1.json#/definitions/source_id",
+      "description": "Источник."
+    },
+    "source_seq": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991,
+      "description": "Номер у источника, если прочитан."
+    },
+    "event_id": {
+      "$ref": "../common/defs.v1.json#/definitions/uuid",
+      "description": "`event_id`, если прочитан."
+    },
+    "fingerprint": {
+      "$ref": "../common/defs.v1.json#/definitions/digest",
+      "description": "Отпечаток исходных байтов."
+    },
+    "material_address": {
+      "$ref": "../common/defs.v1.json#/definitions/digest",
+      "description": "Адрес содержимого в хранилище материалов."
+    },
+    "problem_code": {
+      "type": "string",
+      "description": "Код причины из contracts/errors.yaml.",
+      "maxLength": 96
+    },
+    "detail": {
+      "type": "string",
+      "maxLength": 4000,
+      "description": "Подробности ошибки."
+    }
+  },
+  "required": [
+    "source_id",
+    "fingerprint",
+    "material_address",
+    "problem_code"
+  ]
+}

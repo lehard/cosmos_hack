@@ -1,0 +1,60 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/incident/incident.cause.concluded.v1.json",
+  "title": "IncidentCauseConcludedV1",
+  "description": "Вывод о причине — причина подтверждена или «не установлена» с обоснованием; обязателен ответ «чем проверили» (FR-59). Необратимое инженерное решение (AD-27).",
+  "type": "object",
+  "properties": {
+    "incident_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Инцидент."
+    },
+    "nc_ids": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/object_id",
+        "description": "Несоответствие."
+      },
+      "description": "Несоответствия.",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "conclusion": {
+      "type": "string",
+      "enum": [
+        "confirmed",
+        "not_established"
+      ],
+      "description": "Итог."
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "incoming",
+        "equipment",
+        "performer",
+        "handling",
+        "assembly",
+        "documentation",
+        "not_established"
+      ],
+      "description": "Категория подтверждённой причины."
+    },
+    "verification": {
+      "type": "string",
+      "maxLength": 4000,
+      "description": "Чем проверили."
+    },
+    "reason": {
+      "$ref": "../common/defs.v1.json#/definitions/reason",
+      "description": "Причина: код и текст."
+    }
+  },
+  "required": [
+    "incident_id",
+    "nc_ids",
+    "conclusion",
+    "verification",
+    "reason"
+  ]
+}

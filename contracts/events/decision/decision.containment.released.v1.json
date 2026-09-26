@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/decision/decision.containment.released.v1.json",
+  "title": "DecisionContainmentReleasedV1",
+  "description": "Сдерживание снято — разрешающее действие: только человеком или явно делегированным правилом; снятие блока ≠ годность (AD-27, AD-30).",
+  "type": "object",
+  "properties": {
+    "released_event_ids": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/uuid"
+      },
+      "description": "Записи сдерживания, которые снимаются.",
+      "uniqueItems": true
+    },
+    "reason": {
+      "$ref": "../common/defs.v1.json#/definitions/reason",
+      "description": "Основание снятия."
+    }
+  },
+  "required": [
+    "released_event_ids",
+    "reason"
+  ]
+}

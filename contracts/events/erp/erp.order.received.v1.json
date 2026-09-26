@@ -1,0 +1,52 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/erp/erp.order.received.v1.json",
+  "title": "ErpOrderReceivedV1",
+  "description": "Получено производственное задание — из 1С (или Галактики) пришло задание: номенклатура, количество, срок, ревизии КД и ТП; повтор с тем же номером второй раз не учитывается (FR-91).",
+  "type": "object",
+  "properties": {
+    "order_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Внутренний ID задания."
+    },
+    "external_system": {
+      "type": "string",
+      "enum": [
+        "onec",
+        "galaktika"
+      ],
+      "description": "Система."
+    },
+    "external_number": {
+      "type": "string",
+      "description": "Номер задания во внешней системе.",
+      "maxLength": 64
+    },
+    "item_type_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Номенклатура (внутренний ID; соответствие — `reference.external_id.mapped`)."
+    },
+    "quantity": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1000000,
+      "description": "Количество."
+    },
+    "due_date": {
+      "$ref": "../common/defs.v1.json#/definitions/date",
+      "description": "Срок."
+    },
+    "item_revision": {
+      "type": "string",
+      "description": "Ревизия КД и ТП.",
+      "maxLength": 64
+    }
+  },
+  "required": [
+    "order_id",
+    "external_system",
+    "external_number",
+    "item_type_id",
+    "quantity"
+  ]
+}

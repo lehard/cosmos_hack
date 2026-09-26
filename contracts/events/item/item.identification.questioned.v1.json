@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/item/item.identification.questioned.v1.json",
+  "title": "ItemIdentificationQuestionedV1",
+  "description": "Идентификация изделия под сомнением — потеря или неоднозначность идентификации: изделие изолируется до повторной идентификации человеком с подписью (AD-16).",
+  "type": "object",
+  "properties": {
+    "cause_kind": {
+      "type": "string",
+      "enum": [
+        "carrier_unreadable",
+        "carrier_mismatch",
+        "ambiguous_binding",
+        "carrier_missing"
+      ],
+      "description": "Что случилось с идентификацией."
+    },
+    "candidates": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/item_id",
+        "description": "Кандидат."
+      },
+      "description": "Кандидаты при неоднозначности.",
+      "uniqueItems": true
+    },
+    "basis": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/uuid"
+      },
+      "description": "Основания — `event_id` записей, на которые опирается запись.",
+      "uniqueItems": true
+    }
+  },
+  "required": [
+    "cause_kind",
+    "basis"
+  ]
+}

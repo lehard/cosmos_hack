@@ -1,0 +1,34 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/operation/operation.run.paused.v1.json",
+  "title": "OperationRunPausedV1",
+  "description": "Операция приостановлена — перерыв внутри выполнения операции: наладка, сбой, ожидание, конец смены.",
+  "type": "object",
+  "properties": {
+    "operation_run_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Идентификатор выполнения операции; повтор операции — новый идентификатор со ссылкой `rework_of` (FR-47)."
+    },
+    "pause_reason": {
+      "type": "string",
+      "enum": [
+        "setup",
+        "failure",
+        "waiting",
+        "shift_end",
+        "other",
+        "unknown"
+      ],
+      "description": "Причина паузы."
+    },
+    "note": {
+      "type": "string",
+      "maxLength": 4000,
+      "description": "Пояснение."
+    }
+  },
+  "required": [
+    "operation_run_id",
+    "pause_reason"
+  ]
+}

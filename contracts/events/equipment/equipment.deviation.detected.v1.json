@@ -1,0 +1,61 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/equipment/equipment.deviation.detected.v1.json",
+  "title": "EquipmentDeviationDetectedV1",
+  "description": "Отклонение оборудования выделено — выделитель значимых событий: параметр вне уставки, перегрузка, предупреждение ресурса инструмента, ручное изменение режима (подача 130 %), внеплановая смена программы; самостоятельный сигнал даже без дефекта (FR-121, FR-147).",
+  "type": "object",
+  "properties": {
+    "equipment_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Оборудование."
+    },
+    "station_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Участок."
+    },
+    "deviation_kind": {
+      "type": "string",
+      "enum": [
+        "out_of_setpoint",
+        "overload",
+        "tool_life_warning",
+        "manual_override",
+        "unplanned_program_change",
+        "alarm",
+        "other"
+      ],
+      "description": "Вид отклонения."
+    },
+    "parameter": {
+      "type": "string",
+      "description": "Параметр.",
+      "maxLength": 64
+    },
+    "value": {
+      "$ref": "../common/defs.v1.json#/definitions/measurement",
+      "description": "Значение."
+    },
+    "setpoint": {
+      "$ref": "../common/defs.v1.json#/definitions/tolerance",
+      "description": "Уставка."
+    },
+    "started_at": {
+      "$ref": "../common/defs.v1.json#/definitions/timestamp",
+      "description": "Начало отклонения."
+    },
+    "ended_at": {
+      "$ref": "../common/defs.v1.json#/definitions/timestamp",
+      "description": "Конец отклонения, если известен."
+    },
+    "code": {
+      "type": "string",
+      "description": "Код у источника.",
+      "maxLength": 64
+    }
+  },
+  "required": [
+    "equipment_id",
+    "deviation_kind",
+    "started_at"
+  ]
+}

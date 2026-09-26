@@ -1,0 +1,61 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/reference/reference.equipment.defined.v1.json",
+  "title": "ReferenceEquipmentDefinedV1",
+  "description": "Оборудование определено — станок, источник, средство контроля: вид, место, класс; реестр средств измерений (ГОСТ Р 58876 п. 7.1.5.2).",
+  "type": "object",
+  "properties": {
+    "equipment_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Оборудование."
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "cnc_machine",
+        "welding_source",
+        "camera",
+        "cmm",
+        "leak_tester",
+        "torque_wrench",
+        "xray",
+        "test_bench",
+        "other"
+      ],
+      "description": "Вид."
+    },
+    "location_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Место."
+    },
+    "name": {
+      "type": "string",
+      "description": "Название.",
+      "maxLength": 128
+    },
+    "is_measuring_instrument": {
+      "type": "boolean",
+      "description": "Средство измерений — нужна поверка или калибровка."
+    },
+    "source_id": {
+      "$ref": "../common/defs.v1.json#/definitions/source_id",
+      "description": "Источник событий оборудования (edge-агент)."
+    },
+    "valid_from": {
+      "$ref": "../common/defs.v1.json#/definitions/timestamp",
+      "description": "Начало действия (доменное время)."
+    },
+    "valid_until": {
+      "$ref": "../common/defs.v1.json#/definitions/timestamp",
+      "description": "Окончание действия; отсутствует — бессрочно."
+    }
+  },
+  "required": [
+    "equipment_id",
+    "kind",
+    "location_id",
+    "name",
+    "is_measuring_instrument",
+    "valid_from"
+  ]
+}

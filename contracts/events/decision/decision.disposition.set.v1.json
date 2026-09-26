@@ -1,0 +1,54 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/decision/decision.disposition.set.v1.json",
+  "title": "DecisionDispositionSetV1",
+  "description": "Решение по изделию принято — переделка / ремонт / как есть / списать / вернуть поставщику; ремонт и «как есть» — только по действующему разрешению на отклонение; исполнение — после закрытия маршрута подписей (FR-53, AD-43).",
+  "type": "object",
+  "properties": {
+    "nc_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Несоответствие."
+    },
+    "disposition": {
+      "type": "string",
+      "enum": [
+        "rework",
+        "repair",
+        "use_as_is",
+        "scrap",
+        "return_to_supplier"
+      ],
+      "description": "Вариант решения."
+    },
+    "scrap_kind": {
+      "type": "string",
+      "enum": [
+        "writeoff",
+        "reprocess"
+      ],
+      "description": "Для списания: списание / переработка (разборка на годные части)."
+    },
+    "concession_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Разрешение на отклонение — обязательно для ремонта и «как есть» (гард `nonconformity.concession_required`)."
+    },
+    "document_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Документ решения с маршрутом подписей."
+    },
+    "claim_basis": {
+      "type": "string",
+      "maxLength": 4000,
+      "description": "Основание претензии для возврата поставщику."
+    },
+    "reason": {
+      "$ref": "../common/defs.v1.json#/definitions/reason",
+      "description": "Причина: код и текст."
+    }
+  },
+  "required": [
+    "nc_id",
+    "disposition",
+    "reason"
+  ]
+}

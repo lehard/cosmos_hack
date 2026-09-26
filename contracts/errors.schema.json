@@ -1,0 +1,98 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/errors.schema.json",
+  "title": "ErrorCatalog",
+  "description": "Схема файла contracts/errors.yaml — каталога кодов ошибок RFC 9457 (FR-28).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "problem_type_prefix",
+    "codes"
+  ],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Версия каталога."
+    },
+    "problem_type_prefix": {
+      "type": "string",
+      "const": "urn:ant:problem:",
+      "description": "Префикс поля type."
+    },
+    "codes": {
+      "type": "object",
+      "description": "Код → описание.",
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9]*\\.[a-z][a-z0-9_]*$"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "status",
+          "title",
+          "detail",
+          "ui_key",
+          "refs"
+        ],
+        "properties": {
+          "status": {
+            "type": "integer",
+            "minimum": 200,
+            "maximum": 599,
+            "description": "HTTP-статус."
+          },
+          "severity": {
+            "enum": [
+              "error",
+              "warning"
+            ],
+            "description": "Отказ или принято с пометкой."
+          },
+          "title": {
+            "type": "string",
+            "description": "Заголовок по-русски."
+          },
+          "detail": {
+            "type": "string",
+            "description": "Шаблон пояснения с {параметрами}."
+          },
+          "ui_key": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9_.]+$",
+            "description": "Ключ текста интерфейса."
+          },
+          "quarantine": {
+            "type": "boolean",
+            "description": "Сообщение приёма уходит в карантин."
+          },
+          "guard": {
+            "type": "boolean",
+            "description": "Код отказа доменного гарда."
+          },
+          "aliases": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^E_[A-Z_]+$"
+            },
+            "description": "Рабочие коды процессной сессии."
+          },
+          "proposal": {
+            "type": "boolean",
+            "description": "Предложение, ждёт утверждения пользователем."
+          },
+          "refs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Опоры."
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,105 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/normative/lot-templates.schema.json",
+  "title": "LotTemplatesSeed",
+  "description": "Шаблоны партий фикстур генезиса (AD-38): normative/reference/*/lot-templates.yaml.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 999,
+      "description": "Версия."
+    },
+    "lots": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Партия.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Идентификатор.",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$"
+          },
+          "item_type_id": {
+            "type": "string",
+            "description": "Тип.",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$"
+          },
+          "supplier_id": {
+            "type": "string",
+            "description": "Поставщик.",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$"
+          },
+          "heat_no": {
+            "type": "string",
+            "description": "Плавка.",
+            "maxLength": 64
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100000000,
+            "description": "Количество."
+          },
+          "certificate_no": {
+            "type": "string",
+            "description": "Сертификат.",
+            "maxLength": 64
+          },
+          "expiry_date": {
+            "type": "string",
+            "description": "Срок годности.",
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+          }
+        },
+        "required": [
+          "id",
+          "item_type_id",
+          "supplier_id",
+          "quantity"
+        ]
+      },
+      "description": "Партии.",
+      "minItems": 1
+    },
+    "suppliers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Поставщик.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Идентификатор.",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$"
+          },
+          "name": {
+            "type": "string",
+            "description": "Название.",
+            "maxLength": 256
+          },
+          "partner_code": {
+            "type": "string",
+            "description": "Код партнёра федерации.",
+            "pattern": "^[A-Z0-9][A-Z0-9_-]{0,15}$"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "description": "Поставщики."
+    }
+  },
+  "required": [
+    "version",
+    "lots",
+    "suppliers"
+  ]
+}

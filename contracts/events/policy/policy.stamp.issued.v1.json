@@ -1,0 +1,48 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/policy/policy.stamp.issued.v1.json",
+  "title": "PolicyStampIssuedV1",
+  "description": "Цифровое клеймо выдано — цифровое клеймо контролёра: по приказу, одно на вид контроля, с областью и сроком (FR-145); выдачу согласует начальник ОТК (AD-11).",
+  "type": "object",
+  "properties": {
+    "person_id": {
+      "$ref": "../common/defs.v1.json#/definitions/person_ref",
+      "description": "Контролёр."
+    },
+    "stamp_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Клеймо (номер)."
+    },
+    "inspection_kind": {
+      "$ref": "../common/defs.v1.json#/definitions/code",
+      "description": "Вид контроля."
+    },
+    "scope": {
+      "type": "string",
+      "description": "Область действия: путь `здание/цех/участок/рабочее место` (иерархия областей, AD-15).",
+      "pattern": "^[a-z0-9_-]+(/[a-z0-9_-]+)*$",
+      "maxLength": 256
+    },
+    "order_ref": {
+      "type": "string",
+      "description": "Приказ.",
+      "maxLength": 128
+    },
+    "valid_from": {
+      "$ref": "../common/defs.v1.json#/definitions/timestamp",
+      "description": "Начало действия (доменное время)."
+    },
+    "valid_until": {
+      "$ref": "../common/defs.v1.json#/definitions/timestamp",
+      "description": "Окончание действия; отсутствует — бессрочно."
+    }
+  },
+  "required": [
+    "person_id",
+    "stamp_id",
+    "inspection_kind",
+    "scope",
+    "order_ref",
+    "valid_from"
+  ]
+}

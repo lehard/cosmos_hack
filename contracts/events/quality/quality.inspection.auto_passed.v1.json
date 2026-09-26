@@ -1,0 +1,33 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/quality/quality.inspection.auto_passed.v1.json",
+  "title": "QualityInspectionAutoPassedV1",
+  "description": "Уверенный результат пропущен к следующему контролю — анализатор сам пропускает к следующему контролю только уверенные «признаков нет» — по делегированному правилу режима 2 и только при уровне доверия паспорта 4; «брак» и «оценка невозможна» всегда идут к человеку; часть пропущенных выборочно перепроверяет человек (FR-48, AD-27, AD-29). Закрывающую точку не проходит.",
+  "type": "object",
+  "properties": {
+    "observation_event_id": {
+      "$ref": "../common/defs.v1.json#/definitions/uuid",
+      "description": "Наблюдение `inspection.result.recorded`."
+    },
+    "passport_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Паспорт допуска, разрешивший пропуск."
+    },
+    "trust_level": {
+      "type": "integer",
+      "minimum": 4,
+      "maximum": 4,
+      "description": "Уровень доверия паспорта — только 4."
+    },
+    "sampled_for_human_recheck": {
+      "type": "boolean",
+      "description": "Попало в выборочную перепроверку человеком."
+    }
+  },
+  "required": [
+    "observation_event_id",
+    "passport_id",
+    "trust_level",
+    "sampled_for_human_recheck"
+  ]
+}

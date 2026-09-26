@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/simulation/simulation.run.resumed.v1.json",
+  "title": "SimulationRunResumedV1",
+  "description": "Прогон продолжен — поток возобновлён без потерь и дублей (FR-129).",
+  "type": "object",
+  "properties": {
+    "run_id": {
+      "$ref": "../common/defs.v1.json#/definitions/run_id",
+      "description": "Прогон."
+    }
+  },
+  "required": [
+    "run_id"
+  ]
+}

@@ -1,0 +1,14 @@
+# Шаблоны партий фикстур генезиса (AD-33, AD-38): прогон сценария копирует их в свои записи с run_id. [ПП]
+version: 1
+lots:
+  - {id: LOT-BLANK-01, item_type_id: FL-100.01.001, supplier_id: SUP-METAL, heat_no: "П-2211", quantity: 20, certificate_no: "С-8841"}
+  - {id: LOT-PIPE-01,  item_type_id: FL-100.01.002, supplier_id: SUP-PIPE,  heat_no: "П-7302", quantity: 20, certificate_no: "С-1190"}
+  - {id: LOT-COVER-01, item_type_id: FL-100.00.003, supplier_id: SUP-METAL, heat_no: "П-2212", quantity: 20, certificate_no: "С-8842"}
+  - {id: LOT-SEAL-01,  item_type_id: FL-100.00.004, supplier_id: SUP-SEAL,  quantity: 40, certificate_no: "С-5520", expiry_date: "2027-06-30"}
+  - {id: LOT-BOLT-01,  item_type_id: FL-100.00.005, supplier_id: SUP-FAST,  quantity: 500, certificate_no: "С-3310"}
+  - {id: LOT-WASH-01,  item_type_id: FL-100.00.006, supplier_id: SUP-FAST,  quantity: 500, certificate_no: "С-3311"}
+suppliers:
+  - {id: SUP-METAL, name: "Металлургический завод (партнёр федерации)", partner_code: MET01}
+  - {id: SUP-PIPE,  name: "Поставщик патрубков"}
+  - {id: SUP-SEAL,  name: "Поставщик уплотнений"}
+  - {id: SUP-FAST,  name: "Поставщик крепежа"}

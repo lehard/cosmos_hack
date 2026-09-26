@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/quality/quality.inspection.missing.v1.json",
+  "title": "QualityInspectionMissingV1",
+  "description": "Нет данных контроля — ожидаемый по процессу результат не поступил: «неизвестно», не «годно»; задача на контроль (FR-35).",
+  "type": "object",
+  "properties": {
+    "step_key": {
+      "$ref": "../common/defs.v1.json#/definitions/step_key",
+      "description": "Ключ шага процесса (`ant:properties/@stepKey`), к которому относится запись."
+    },
+    "inspection_point": {
+      "type": "string",
+      "description": "Точка контроля.",
+      "maxLength": 32
+    },
+    "method": {
+      "$ref": "../common/defs.v1.json#/definitions/inspection_method"
+    },
+    "after_operation_run_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Идентификатор выполнения операции; повтор операции — новый идентификатор со ссылкой `rework_of` (FR-47)."
+    },
+    "missing_reason": {
+      "type": "string",
+      "enum": [
+        "result_not_received",
+        "check_skipped",
+        "point_manual_mode",
+        "not_covered_by_method",
+        "unknown"
+      ],
+      "description": "Почему нет данных."
+    }
+  },
+  "required": [
+    "step_key",
+    "missing_reason"
+  ]
+}

@@ -1,0 +1,448 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/normative/policy.schema.json",
+  "title": "PolicySeed",
+  "description": "Стартовая политика доступа (AD-15, AD-33): normative/policy/policy.v*.yaml; генезис превращает её в записи policy.* и access.*.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 999,
+      "description": "Версия."
+    },
+    "enterprise_code": {
+      "type": "string",
+      "description": "Код предприятия.",
+      "pattern": "^[A-Z0-9][A-Z0-9_-]{0,15}$"
+    },
+    "scopes": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Области.",
+      "properties": {
+        "root": {
+          "type": "string",
+          "description": "Корень.",
+          "pattern": "^[a-z0-9_-]+(/[a-z0-9_-]+)*$"
+        },
+        "paths": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "description": "Путь области.",
+            "pattern": "^[a-z0-9_-]+(/[a-z0-9_-]+)*$"
+          },
+          "description": "Области.",
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "root",
+        "paths"
+      ]
+    },
+    "roles": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Роль.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Идентификатор роли.",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "title": {
+            "type": "string",
+            "description": "Название.",
+            "maxLength": 128
+          },
+          "case_role": {
+            "type": "boolean",
+            "description": "Одна из пяти ролей кейса."
+          },
+          "inherits": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "Роль.",
+              "pattern": "^[a-z][a-z0-9_]*$"
+            },
+            "description": "Наследуемые роли.",
+            "uniqueItems": true
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "Действие.",
+              "pattern": "^([a-z][a-z0-9_]*|\\*)\\.([a-z][a-z0-9_]*|\\*)\\.([a-z][a-z0-9_]*|\\*)$"
+            },
+            "description": "Действия.",
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "actions"
+        ]
+      },
+      "description": "Роли.",
+      "minItems": 5
+    },
+    "authorities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Полномочие.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Идентификатор.",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "title": {
+            "type": "string",
+            "description": "Название.",
+            "maxLength": 256
+          }
+        },
+        "required": [
+          "id",
+          "title"
+        ]
+      },
+      "description": "Полномочия."
+    },
+    "stamp_kinds": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "description": "Вид контроля.",
+        "pattern": "^[a-z][a-z0-9_]*$"
+      },
+      "description": "Виды контроля для клейм.",
+      "uniqueItems": true
+    },
+    "persons": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Сотрудник.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Псевдоним.",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$"
+          },
+          "name": {
+            "type": "string",
+            "description": "Условное имя.",
+            "maxLength": 128
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "description": "Роль в области.",
+              "properties": {
+                "role": {
+                  "type": "string",
+                  "description": "Роль.",
+                  "pattern": "^[a-z][a-z0-9_]*$"
+                },
+                "scope": {
+                  "type": "string",
+                  "description": "Область.",
+                  "pattern": "^[a-z0-9_-]+(/[a-z0-9_-]+)*$"
+                }
+              },
+              "required": [
+                "role",
+                "scope"
+              ]
+            },
+            "description": "Роли.",
+            "minItems": 1
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "roles"
+        ]
+      },
+      "description": "Сотрудники."
+    },
+    "grants": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Выдачи.",
+      "properties": {
+        "authorities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "Полномочие сотрудника.",
+            "properties": {
+              "person": {
+                "type": "string",
+                "description": "Кто.",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$"
+              },
+              "authority": {
+                "type": "string",
+                "description": "Полномочие.",
+                "pattern": "^[a-z][a-z0-9_]*$"
+              },
+              "scope": {
+                "type": "string",
+                "description": "Область.",
+                "pattern": "^[a-z0-9_-]+(/[a-z0-9_-]+)*$"
+              },
+              "limits": {
+                "type": "object",
+                "additionalProperties": false,
+                "description": "Рамки.",
+                "properties": {
+                  "max_severity": {
+                    "type": "string",
+                    "enum": [
+                      "critical",
+                      "major",
+                      "minor"
+                    ],
+                    "description": "Наибольшая тяжесть."
+                  },
+                  "item_type_ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "description": "Тип.",
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$"
+                    },
+                    "description": "Типы."
+                  }
+                },
+                "required": []
+              }
+            },
+            "required": [
+              "person",
+              "authority",
+              "scope"
+            ]
+          },
+          "description": "Полномочия."
+        },
+        "stamps": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "Цифровое клеймо.",
+            "properties": {
+              "person": {
+                "type": "string",
+                "description": "Кто.",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$"
+              },
+              "stamp_id": {
+                "type": "string",
+                "description": "Номер клейма.",
+                "maxLength": 64
+              },
+              "kind": {
+                "type": "string",
+                "description": "Вид контроля.",
+                "pattern": "^[a-z][a-z0-9_]*$"
+              },
+              "scope": {
+                "type": "string",
+                "description": "Область.",
+                "pattern": "^[a-z0-9_-]+(/[a-z0-9_-]+)*$"
+              },
+              "order_ref": {
+                "type": "string",
+                "description": "Приказ.",
+                "maxLength": 128
+              }
+            },
+            "required": [
+              "person",
+              "stamp_id",
+              "kind",
+              "scope",
+              "order_ref"
+            ]
+          },
+          "description": "Клейма."
+        },
+        "qualifications": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "Квалификация.",
+            "properties": {
+              "person": {
+                "type": "string",
+                "description": "Кто.",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$"
+              },
+              "qualification": {
+                "type": "string",
+                "description": "Вид.",
+                "pattern": "^[a-z][a-z0-9_]*$"
+              },
+              "scope": {
+                "type": "string",
+                "description": "Область.",
+                "pattern": "^[a-z0-9_-]+(/[a-z0-9_-]+)*$"
+              },
+              "valid_until": {
+                "type": "string",
+                "description": "До.",
+                "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$"
+              },
+              "certificate_ref": {
+                "type": "string",
+                "description": "Удостоверение.",
+                "maxLength": 128
+              }
+            },
+            "required": [
+              "person",
+              "qualification",
+              "scope",
+              "valid_until"
+            ]
+          },
+          "description": "Квалификации."
+        }
+      },
+      "required": [
+        "authorities",
+        "stamps",
+        "qualifications"
+      ]
+    },
+    "separation_of_duties": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Правило разделения обязанностей.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Идентификатор.",
+            "pattern": "^SOD-[0-9]+$"
+          },
+          "statement": {
+            "type": "string",
+            "description": "Формулировка.",
+            "maxLength": 500
+          },
+          "conflicting_actions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "Действие.",
+              "pattern": "^([a-z][a-z0-9_]*|\\*)\\.([a-z][a-z0-9_]*|\\*)\\.([a-z][a-z0-9_]*|\\*)$"
+            },
+            "description": "Несовместимые действия.",
+            "minItems": 2
+          }
+        },
+        "required": [
+          "id",
+          "statement",
+          "conflicting_actions"
+        ]
+      },
+      "description": "Разделение обязанностей."
+    },
+    "second_signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Вторая подпись независимой стороны (AD-11).",
+      "properties": {
+        "qc_authorities_stamps_keys": {
+          "type": "string",
+          "description": "Полномочие.",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "production_authorities_keys": {
+          "type": "string",
+          "description": "Полномочие.",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "admin_and_audit_privileges": {
+          "type": "string",
+          "description": "Полномочие.",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        }
+      },
+      "required": [
+        "qc_authorities_stamps_keys",
+        "production_authorities_keys",
+        "admin_and_audit_privileges"
+      ]
+    },
+    "audit": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Параметры аудита (AD-8).",
+      "properties": {
+        "checkpoint_interval_s": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 86400,
+          "description": "Интервал, с."
+        },
+        "checkpoint_max_gap_s": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 864000,
+          "description": "Предельный разрыв, с."
+        },
+        "security_bus_subscribers": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "description": "Подписчик.",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "description": "Подписчики."
+        }
+      },
+      "required": [
+        "checkpoint_interval_s",
+        "checkpoint_max_gap_s"
+      ]
+    }
+  },
+  "required": [
+    "version",
+    "enterprise_code",
+    "scopes",
+    "roles",
+    "authorities",
+    "stamp_kinds",
+    "persons",
+    "grants",
+    "separation_of_duties",
+    "second_signature",
+    "audit"
+  ]
+}

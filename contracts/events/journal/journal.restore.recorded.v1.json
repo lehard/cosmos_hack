@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/journal/journal.restore.recorded.v1.json",
+  "title": "JournalRestoreRecordedV1",
+  "description": "Акт восстановления — журнал из копии старше контрольной точки принимается только при подписанном акте (администратор безопасности + Аудитор ИБ) с диапазоном потерянных номеров (AD-34, описание).",
+  "type": "object",
+  "properties": {
+    "lost_from_seq": {
+      "$ref": "../common/defs.v1.json#/definitions/seq",
+      "description": "С какого номера потеряно."
+    },
+    "lost_to_seq": {
+      "$ref": "../common/defs.v1.json#/definitions/seq",
+      "description": "По какой номер."
+    },
+    "document_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Акт."
+    },
+    "reason": {
+      "$ref": "../common/defs.v1.json#/definitions/reason",
+      "description": "Причина: код и текст."
+    }
+  },
+  "required": [
+    "lost_from_seq",
+    "lost_to_seq",
+    "document_id",
+    "reason"
+  ]
+}

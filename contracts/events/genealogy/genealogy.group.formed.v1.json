@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/genealogy/genealogy.group.formed.v1.json",
+  "title": "GenealogyGroupFormedV1",
+  "description": "Временная группа сформирована — садка или групповая операция над N изделиями: общий журнал режима, результат образца-свидетеля распространяется на группу (FR-15).",
+  "type": "object",
+  "properties": {
+    "group_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Группа."
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "charge",
+        "batch_operation",
+        "transport",
+        "other"
+      ],
+      "description": "Вид группы."
+    },
+    "item_ids": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/item_id",
+        "description": "Изделие."
+      },
+      "description": "Изделия группы.",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "witness_item_id": {
+      "$ref": "../common/defs.v1.json#/definitions/item_id",
+      "description": "Образец-свидетель."
+    }
+  },
+  "required": [
+    "group_id",
+    "kind",
+    "item_ids"
+  ]
+}

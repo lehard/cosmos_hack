@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/decision/decision.nonconformity.drafted.v1.json",
+  "title": "DecisionNonconformityDraftedV1",
+  "description": "Черновик карточки несоответствия — система собрала карточку для контролёра: сигналы, обстоятельства до и после, чего не хватает (режим 1, FR-50).",
+  "type": "object",
+  "properties": {
+    "nc_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Несоответствие."
+    },
+    "signal_ids": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/object_id",
+        "description": "Сигнал."
+      },
+      "description": "Сигналы карточки.",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "document_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Черновик заявления о несоответствии (`document.version.drafted`)."
+    }
+  },
+  "required": [
+    "nc_id",
+    "signal_ids"
+  ]
+}

@@ -1,0 +1,19 @@
+# Перечень действий уровня подписи 1 — вкомпилирован в агент токена (AD-13, AD-14, PRD §11.16):
+# только факты исполнителя и физические подтверждения мастера. Всё остальное агент на уровне 1 отклоняет сам
+# (signing.level_not_allowed): «годен» контролёра, заключения ОТК, критические действия — не ниже уровня 2.
+version: 1
+event_types:
+  - operation.run.started          # начал
+  - operation.run.paused
+  - operation.run.resumed
+  - operation.run.finished         # закончил
+  - operation.movement.sent        # переместил
+  - operation.movement.received    # принял, подтвердил перемещение в изолятор
+  - operator.step.confirmed
+  - operator.inspection.requested  # запросил контроль
+  - operator.deviation.reported    # сообщил о подозрении на дефект
+  - item.carrier.applied           # нанёс носитель
+  - item.carrier.removed           # снял носитель
+  - item.presentation.recorded     # мастер предъявил
+  - genealogy.lot.issued           # выдал партию
+  - item.assembly.recorded         # установил компонент (скан до установки)

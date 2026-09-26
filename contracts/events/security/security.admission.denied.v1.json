@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/security/security.admission.denied.v1.json",
+  "title": "SecurityAdmissionDeniedV1",
+  "description": "Отказ в допуске к рабочему месту — условие допуска не выполнено; отказ фиксируется в журнале критических действий (FR-77, FR-83).",
+  "type": "object",
+  "properties": {
+    "person_id": {
+      "$ref": "../common/defs.v1.json#/definitions/person_ref",
+      "description": "Сотрудник."
+    },
+    "workplace_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Рабочее место."
+    },
+    "failed_checks": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "not_in_zone",
+          "no_role_in_scope",
+          "qualification_invalid",
+          "not_assigned",
+          "no_token",
+          "wrong_pin"
+        ],
+        "description": "Невыполненное условие."
+      },
+      "description": "Невыполненные условия.",
+      "minItems": 1,
+      "uniqueItems": true
+    }
+  },
+  "required": [
+    "person_id",
+    "workplace_id",
+    "failed_checks"
+  ]
+}

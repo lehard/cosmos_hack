@@ -1,0 +1,18 @@
+# Повышатель equipment.state.changed v1 → v2 (AD-20, FR-110): декларативная таблица — источник для генерации
+# чистой функции в сгенерированном пакете (эпик 02). Журнал хранит исходный конверт v1 без изменений; повышение —
+# при чтении (воркер, воспроизведение, верификатор). Смысл не додумывается: чего нет в v1 — `unknown` (FR-123).
+from: 1
+to: 2
+event_type: equipment.state.changed
+remove: [/machine_state]
+map:
+  - from: /machine_state
+    cases:
+      running: {/execution: running, /condition: normal}
+      idle:    {/execution: idle,    /condition: normal}
+      stopped: {/execution: stopped, /condition: normal}
+      warning: {/execution: unknown, /condition: warning}
+      alarm:   {/execution: unknown, /condition: fault}
+    default: {/execution: unknown, /condition: unknown}
+set:
+  /controller_mode: unknown

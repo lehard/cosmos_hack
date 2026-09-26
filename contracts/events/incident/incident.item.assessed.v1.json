@@ -1,0 +1,39 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/incident/incident.item.assessed.v1.json",
+  "title": "IncidentItemAssessedV1",
+  "description": "Изделие в области проверено — контролёр проверил изделие из области: подтверждено / исключено; «под подозрением» стало «красным» или «зелёным» (FR-62).",
+  "type": "object",
+  "properties": {
+    "incident_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Инцидент."
+    },
+    "item_id": {
+      "$ref": "../common/defs.v1.json#/definitions/item_id",
+      "description": "Изделие (внутренний ID)."
+    },
+    "assessment": {
+      "type": "string",
+      "enum": [
+        "confirmed",
+        "excluded"
+      ],
+      "description": "Итог проверки."
+    },
+    "evidence_event_ids": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/uuid"
+      },
+      "description": "Чем проверили.",
+      "uniqueItems": true
+    }
+  },
+  "required": [
+    "incident_id",
+    "item_id",
+    "assessment",
+    "evidence_event_ids"
+  ]
+}

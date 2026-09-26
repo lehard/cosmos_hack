@@ -1,0 +1,39 @@
+# Константы контракта v1. Генерируются в Go и TS вместе с типами (эпик 02).
+
+# Пространство имён UUIDv5 системы (AD-3, «Соглашения/Идентификаторы»):
+#   reaction_id = UUIDv5(NS_ANT, слот ‖ версия); производные id — UUIDv5 от NS_ANT.
+# Значение зафиксировано как UUIDv5(NAMESPACE_URL, "urn:ant:ns:1") и больше не меняется.
+NS_ANT: "4b82fbf1-fc9e-5a06-91c6-8c100ebac4ef"
+
+# Пространство имён расширения BPMN (AD-17); дескриптор — contracts/bpmn-ext/ant.json.
+BPMN_EXT_URI: "urn:ant:bpmn-ext:1"
+BPMN_EXT_PREFIX: "ant"
+
+# payloadType пакета DSSE (AD-10): application/vnd.ant.‹класс›+json; v=‹версия›.
+# Классы — contracts/crypto/payload-classes.yaml.
+PAYLOAD_TYPE_TEMPLATE: "application/vnd.ant.{class}+json; v={version}"
+
+# Контекстная строка ML-DSA для профиля pq: "ant/" + payloadType (AD-10).
+MLDSA_CONTEXT_TEMPLATE: "ant/{payload_type}"
+
+# QR (соглашения): документ и носитель.
+QR_DOCUMENT_TEMPLATE: "ant:doc:{doc_id}:{doc_digest}"
+QR_CARRIER_TEMPLATE: "ant:carrier:{carrier_type}:{value}"
+
+# Формат цепочки журнала v1 (AD-44): H = Стрибог-256, префикс отпечатков — streebog256.
+CHAIN_FORMAT_VERSION: 1
+HASH_ALGORITHM: "streebog256"
+DIGEST_PREFIX: "streebog256:"
+
+# Базовый URI идентификаторов схем ($id). Домен .invalid зарезервирован (RFC 2606) —
+# схемы по сети никогда не загружаются, $id лишь повторяет путь файла от contracts/.
+SCHEMA_BASE_URI: "https://ant.invalid/contracts/"
+
+# Тип проблемы RFC 9457: urn:ant:problem:‹код› (коды — contracts/errors.yaml).
+PROBLEM_TYPE_PREFIX: "urn:ant:problem:"
+
+# Время: RFC 3339 UTC, ровно три знака после секунд.
+TIMESTAMP_PATTERN: "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$"
+
+# Целые в подписываемом JSON — в пределах ±(2^53−1) (AD-10); большие — строками.
+MAX_SAFE_INTEGER: 9007199254740991

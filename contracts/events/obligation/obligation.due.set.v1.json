@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/obligation/obligation.due.set.v1.json",
+  "title": "ObligationDueSetV1",
+  "description": "Срок установлен — срок решения, точки предъявления, таймера BPMN: `due_at` — по производственному календарю и графику смен; эмитит только notifications (AD-4).",
+  "type": "object",
+  "properties": {
+    "obligation_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Обязательство."
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "nc_disposition",
+        "presentation_wait",
+        "bpmn_timer",
+        "isolation_move",
+        "task",
+        "containment_review",
+        "recheck",
+        "source_loss_window"
+      ],
+      "description": "Вид срока."
+    },
+    "subject_ref": {
+      "$ref": "../common/defs.v1.json#/definitions/stream_ref",
+      "description": "Субъект срока."
+    },
+    "due_at": {
+      "$ref": "../common/defs.v1.json#/definitions/timestamp",
+      "description": "Срок."
+    },
+    "owner_role_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Роль, отвечающая за срок."
+    },
+    "step_key": {
+      "$ref": "../common/defs.v1.json#/definitions/step_key",
+      "description": "Ключ шага процесса (`ant:properties/@stepKey`), к которому относится запись."
+    }
+  },
+  "required": [
+    "obligation_id",
+    "kind",
+    "subject_ref",
+    "due_at"
+  ]
+}

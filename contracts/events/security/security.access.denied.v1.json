@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/security/security.access.denied.v1.json",
+  "title": "SecurityAccessDeniedV1",
+  "description": "Отказ в доступе — вызов API или действие отклонено по политике, месту сеанса или доменному гарду (FR-85, AD-24).",
+  "type": "object",
+  "properties": {
+    "person_id": {
+      "$ref": "../common/defs.v1.json#/definitions/person_ref",
+      "description": "Кто пытался."
+    },
+    "action_id": {
+      "type": "string",
+      "description": "Действие каталога операций.",
+      "maxLength": 128
+    },
+    "object_ref": {
+      "$ref": "../common/defs.v1.json#/definitions/stream_ref",
+      "description": "Объект."
+    },
+    "problem_code": {
+      "type": "string",
+      "description": "Код ошибки из contracts/errors.yaml.",
+      "maxLength": 96
+    }
+  },
+  "required": [
+    "action_id",
+    "problem_code"
+  ]
+}

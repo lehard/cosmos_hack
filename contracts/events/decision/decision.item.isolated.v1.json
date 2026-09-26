@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/decision/decision.item.isolated.v1.json",
+  "title": "DecisionItemIsolatedV1",
+  "description": "Изделие изолировано — контролёр изолировал изделие до решения; срок — по политике (FR-55). Положение «в изоляции» вычисляет process; физическое перемещение — `operation.movement.received` в изолятор.",
+  "type": "object",
+  "properties": {
+    "isolator_location_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Изолятор."
+    },
+    "decision_due_at": {
+      "$ref": "../common/defs.v1.json#/definitions/timestamp",
+      "description": "Срок решения по производственному календарю."
+    },
+    "reason": {
+      "$ref": "../common/defs.v1.json#/definitions/reason",
+      "description": "Причина: код и текст."
+    }
+  },
+  "required": [
+    "reason"
+  ]
+}

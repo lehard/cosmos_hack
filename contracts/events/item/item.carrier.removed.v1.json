@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/item/item.carrier.removed.v1.json",
+  "title": "ItemCarrierRemovedV1",
+  "description": "Носитель снят — носитель снят с изделия (временная бирка снята, код снят мехобработкой); разрешение носителя учитывает «снят» на `occurred_at` (AD-41).",
+  "type": "object",
+  "properties": {
+    "carrier_type": {
+      "$ref": "../common/defs.v1.json#/definitions/carrier_type"
+    },
+    "value": {
+      "type": "string",
+      "description": "Значение снятого носителя.",
+      "maxLength": 256
+    },
+    "reason": {
+      "$ref": "../common/defs.v1.json#/definitions/reason",
+      "description": "Причина: код и текст."
+    }
+  },
+  "required": [
+    "carrier_type",
+    "value"
+  ]
+}

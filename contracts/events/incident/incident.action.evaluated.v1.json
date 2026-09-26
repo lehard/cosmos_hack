@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/incident/incident.action.evaluated.v1.json",
+  "title": "IncidentActionEvaluatedV1",
+  "description": "Результативность меры оценена — сравнение метрики до и после; провал — мера снова открыта, разбор заново (FR-64).",
+  "type": "object",
+  "properties": {
+    "action_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Мера."
+    },
+    "incident_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Инцидент."
+    },
+    "result": {
+      "type": "string",
+      "enum": [
+        "effective",
+        "failed"
+      ],
+      "description": "Итог."
+    },
+    "evidence": {
+      "type": "string",
+      "maxLength": 4000,
+      "description": "Данные окна."
+    }
+  },
+  "required": [
+    "action_id",
+    "incident_id",
+    "result"
+  ]
+}

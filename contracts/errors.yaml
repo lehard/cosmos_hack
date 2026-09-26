@@ -1,0 +1,649 @@
+# Коды ошибок ant v1 (FR-28, «Соглашения/Ошибки API», AD-39).
+# Ответ API при ошибке — RFC 9457 `application/problem+json` по схеме contracts/problem.schema.json:
+#   type = "urn:ant:problem:‹код›", title, status, detail, instance, code = ‹код› (+ params, violations, …).
+# Код — строка с префиксом семейства: ‹семейство›.‹причина› (латиница, snake_case).
+# Поля:
+#   status   — HTTP-статус (для кодов, которые не уходят в HTTP, — статус «как если бы»);
+#   title    — русский заголовок; detail — шаблон пояснения с параметрами {name};
+#   ui_key   — ключ текста интерфейса (ui-texts/ru.json процессной сессии; ключи переименуются под коды при передаче текстов);
+#   quarantine — сообщение приёма уходит в карантин (FR-29, FR-30);
+#   severity — error | warning (warning — принято с пометкой, не отказ);
+#   guard    — код отказа доменного гарда модуля-владельца (AD-39);
+#   aliases  — рабочие коды процессной сессии (E_*), сведённые к нашему коду;
+#   proposal — предложение эпика 00, ждёт утверждения пользователем.
+version: 1
+problem_type_prefix: "urn:ant:problem:"
+
+codes:
+  # ── api: общие ответы операций ──
+  api.not_implemented:
+    status: 501
+    title: "Операция ещё не реализована"
+    detail: "Операция {operation_id} объявлена в контракте, реализация — в работе"
+    ui_key: errors.generic
+    refs: [эпик 02]
+  api.validation_failed:
+    status: 400
+    title: "Запрос не соответствует контракту"
+    detail: "Поле {field}: {reason}"
+    ui_key: errors.generic
+    refs: [FR-28, AD-20]
+  api.not_found:
+    status: 404
+    title: "Объект не найден"
+    detail: "{object} «{id}» не найден"
+    ui_key: empty.notFound
+    refs: []
+  api.replay_read_only:
+    status: 403
+    title: "В режиме воспроизведения действия недоступны"
+    detail: "Запрос на момент {as_of} только для чтения"
+    ui_key: errors.decision.replayReadOnly
+    refs: [FR-4, AD-21, AD-22]
+  api.rate_limited:
+    status: 429
+    title: "Слишком много запросов"
+    detail: "Повторите через {retry_after} с"
+    ui_key: errors.generic
+    refs: [AD-15]
+
+  # ── ingest: приём и пять случаев изменения контракта (FR-29, AD-20) ──
+  ingest.unknown_schema_version:
+    status: 422
+    title: "Неизвестная версия контракта"
+    detail: "Тип {event_type}: версия {version} неизвестна — сообщение в карантине до появления повышателя"
+    ui_key: errors.ingest.unknownSchemaVersion
+    quarantine: true
+    aliases: [E_UNSUPPORTED_VERSION]
+    refs: [FR-29, кейс §4.7, AD-20]
+  ingest.missing_required_field:
+    status: 422
+    title: "Нет обязательного поля"
+    detail: "Нет обязательного поля «{field}» — сообщение в карантине"
+    ui_key: errors.ingest.missingRequiredField
+    quarantine: true
+    aliases: [E_MISSING_FIELD]
+    refs: [FR-29, кейс §4.7, AD-20]
+  ingest.unknown_enum_value:
+    status: 202
+    severity: warning
+    title: "Неизвестное значение перечисления — принято с пометкой"
+    detail: "Поле «{field}»: значение «{value}» сохранено как UNKNOWN({value}) с флагом"
+    ui_key: errors.ingest.unknownEnumValueAccepted
+    aliases: [E_UNKNOWN_ENUM]
+    refs: [FR-29, кейс §4.7, AD-20]
+  ingest.unknown_enum_value_critical:
+    status: 422
+    title: "Неизвестное значение в поле, важном для безопасности"
+    detail: "Поле «{field}»: значение «{value}» неизвестно — сообщение в карантине"
+    ui_key: errors.ingest.unknownEnumValueQuarantined
+    quarantine: true
+    refs: [FR-29, AD-20]
+  ingest.schema_violation:
+    status: 422
+    title: "Сообщение не соответствует схеме"
+    detail: "{event_type} v{version}: {reason} — несовместимое изменение возможно только новой мажорной версией"
+    ui_key: errors.ingest.incompatibleChange
+    quarantine: true
+    refs: [FR-29, FR-30, AD-20]
+  ingest.unknown_event_type:
+    status: 422
+    title: "Неизвестный тип события"
+    detail: "Тип «{event_type}» не объявлен в каталоге — сообщение в карантине"
+    ui_key: errors.ingest.incompatibleChange
+    quarantine: true
+    refs: [FR-28, AD-40]
+  ingest.canonical_form_violation:
+    status: 422
+    title: "Подписанные байты не в каноническом виде"
+    detail: "{reason}: повторяющиеся ключи, целые вне ±(2^53−1), строки не в NFC или идентификатор не ASCII"
+    ui_key: errors.ingest.signatureInvalid
+    quarantine: true
+    refs: [AD-10]
+  ingest.signature_invalid:
+    status: 422
+    title: "Подпись сообщения недействительна"
+    detail: "Ключ {key_ref}: {reason} — сообщение отклонено, событие безопасности записано"
+    ui_key: errors.ingest.signatureInvalid
+    quarantine: true
+    refs: [FR-26, AD-2, AD-10]
+  ingest.unknown_source:
+    status: 403
+    title: "Источник не зарегистрирован"
+    detail: "Источник «{source_id}» не зарегистрирован — сообщение отклонено"
+    ui_key: errors.ingest.unknownSource
+    quarantine: true
+    refs: [FR-26]
+  ingest.revoked_key:
+    status: 403
+    title: "Ключ источника отозван"
+    detail: "Ключ {key_ref} отозван — сообщение отклонено и попало на шину безопасности"
+    ui_key: errors.ingest.revokedKey
+    quarantine: true
+    refs: [FR-26, FR-70]
+  ingest.duplicate_conflict:
+    status: 409
+    title: "Тот же номер события, другое содержимое"
+    detail: "{source_id}/{event_id}: содержимое отличается — конфликт целостности записан в журнал критических действий"
+    ui_key: errors.ingest.duplicateConflict
+    aliases: [E_ID_CONFLICT]
+    refs: [FR-31, AD-7]
+  ingest.batch_too_large:
+    status: 413
+    title: "Слишком большая пачка"
+    detail: "В пачке {count} сообщений, допустимо {limit}"
+    ui_key: errors.generic
+    refs: [FR-39]
+
+  # ── journal: запись и конкурентность (AD-39, AD-44) ──
+  journal.stale_state:
+    status: 409
+    title: "Состояние изменилось после проверки"
+    detail: "В потоке {stream} после seq {basis_seq} есть новые записи — обновите и проверьте ещё раз"
+    ui_key: errors.staleState
+    refs: [AD-39]
+  journal.stale_policy:
+    status: 409
+    title: "Политика доступа изменилась"
+    detail: "Политика изменилась после seq {policy_seq} — повторите действие"
+    ui_key: errors.staleState
+    refs: [AD-15, AD-39]
+  journal.concession_exhausted:
+    status: 409
+    title: "Лимит разрешения на отклонение исчерпан"
+    detail: "Разрешение {concession_id}: остаток {remaining} из {limit}"
+    ui_key: errors.decision.concessionRequired
+    guard: true
+    refs: [FR-54, AD-39]
+  journal.append_only:
+    status: 405
+    title: "Журнал только на дописывание"
+    detail: "Изменение и удаление записей журнала невозможны — исправление только новой записью"
+    ui_key: errors.generic
+    refs: [FR-71, AD-2]
+  journal.fenced:
+    status: 503
+    title: "Запись отвергнута: аренда партиции утрачена"
+    detail: "Эпоха аренды партиции {partition} устарела — копия больше не пишет"
+    ui_key: errors.generic
+    refs: [AD-6, AD-44]
+  journal.time_regression:
+    status: 500
+    title: "Убывание времени записи"
+    detail: "committed_at или recorded_at убывает по seq — запись отвергнута"
+    ui_key: errors.generic
+    refs: [AD-37]
+
+  # ── access: вход, права, допуск (AD-15) ──
+  access.unauthenticated:
+    status: 401
+    title: "Нужен вход"
+    detail: "Сеанс отсутствует или истёк"
+    ui_key: errors.access.sessionExpired
+    refs: [FR-128]
+  access.login_failed:
+    status: 401
+    title: "Неверный логин или пароль"
+    detail: "Неверный логин или пароль"
+    ui_key: errors.access.loginFailed
+    refs: [FR-128]
+  access.account_pending:
+    status: 403
+    title: "Заявка не активирована"
+    detail: "Учётная запись ещё не активирована администратором"
+    ui_key: errors.access.accountPending
+    refs: [FR-128]
+  access.forbidden:
+    status: 403
+    title: "Нет полномочий на это действие"
+    detail: "Действие {action_id} над {object} не разрешено политикой"
+    ui_key: errors.access.forbidden
+    refs: [FR-85, AD-15]
+  access.signature_required:
+    status: 403
+    title: "Нужна подпись уполномоченного"
+    detail: "Не хватает полномочий — нужна подпись: {who}"
+    ui_key: errors.access.needSignature
+    refs: [FR-146, AD-43]
+  access.wrong_workplace:
+    status: 403
+    title: "Не своё рабочее место"
+    detail: "Подписать можно только на своём рабочем месте: {workplace}"
+    ui_key: errors.access.wrongWorkplace
+    guard: true
+    refs: [FR-78, FR-137, AD-15]
+  access.self_grant:
+    status: 403
+    title: "Выдача прав себе"
+    detail: "Расширение собственных прав — только со второй подписью независимой стороны: {who}"
+    ui_key: errors.access.selfGrant
+    guard: true
+    refs: [FR-85, AD-11, PRD §11.16]
+  access.not_in_zone:
+    status: 403
+    title: "Нет в зоне по СКУД"
+    detail: "По данным СКУД вы не в зоне {zone}"
+    ui_key: errors.access.notInZone
+    guard: true
+    refs: [FR-83]
+  access.admission_denied:
+    status: 403
+    title: "Отказ в допуске к рабочему месту"
+    detail: "Не выполнено: {checks}"
+    ui_key: errors.access.forbidden
+    guard: true
+    refs: [FR-83, AD-15]
+  access.no_stamp:
+    status: 403
+    title: "Нет действующего цифрового клейма"
+    detail: "Нет действующего цифрового клейма по виду контроля «{kind}»"
+    ui_key: errors.decision.noStamp
+    guard: true
+    refs: [FR-145]
+  access.separation_of_duties:
+    status: 403
+    title: "Разделение обязанностей"
+    detail: "Вы участвовали в изготовлении этого изделия — принять его на точке предъявления нельзя"
+    ui_key: errors.decision.separationOfDuties
+    guard: true
+    refs: [FR-56]
+
+  # ── signing: подписи, ключи, бумага (AD-10…14, AD-43) ──
+  signing.agent_not_found:
+    status: 424
+    title: "Агент токена не найден"
+    detail: "Агент токена не отвечает — подпишите на бумаге с заверением"
+    ui_key: errors.signing.agentNotFound
+    refs: [FR-69, FR-139]
+  signing.token_missing:
+    status: 424
+    title: "Токен не вставлен"
+    detail: "Токен не вставлен"
+    ui_key: errors.signing.tokenMissing
+    refs: [FR-69]
+  signing.pin_wrong:
+    status: 424
+    title: "Неверный ПИН-код"
+    detail: "Неверный ПИН-код"
+    ui_key: errors.signing.pinWrong
+    refs: [FR-69]
+  signing.key_revoked:
+    status: 422
+    title: "Ключ отозван"
+    detail: "Ключ {key_ref} отозван — подпись этим ключом не принимается"
+    ui_key: errors.signing.certRevoked
+    refs: [FR-68, FR-79]
+  signing.key_unavailable:
+    status: 422
+    severity: warning
+    title: "Ключ недоступен — проверить подпись нельзя"
+    detail: "Ключ {key_ref} недоступен: статус «не проверяемо», а не «подпись действительна»"
+    ui_key: errors.signing.keyUnavailable
+    refs: [FR-76, AD-32]
+  signing.foreign_key:
+    status: 403
+    title: "Чужой ключ"
+    detail: "Пользователь сеанса не совпадает с субъектом ключа {key_ref} — тревога записана"
+    ui_key: errors.access.forbidden
+    refs: [AD-11]
+  signing.profile_downgrade:
+    status: 422
+    title: "Понижение криптопрофиля"
+    detail: "Для {object_class} на момент подписи обязателен профиль {required}, а подписано {actual}"
+    ui_key: errors.signing.packageTampered
+    refs: [AD-10, AD-32]
+  signing.package_tampered:
+    status: 422
+    title: "Пакет изменён"
+    detail: "Подпись не сходится с содержимым пакета — отклонён"
+    ui_key: errors.signing.packageTampered
+    refs: [FR-76, AD-10]
+  signing.document_changed:
+    status: 409
+    title: "Документ изменён после подписи"
+    detail: "Отпечаток документа {doc_id} изменился — подпись недействительна, нужна новая версия"
+    ui_key: errors.signing.documentChanged
+    refs: [AD-12]
+  signing.qr_mismatch:
+    status: 422
+    title: "QR-отпечаток на скане не совпадает с документом"
+    detail: "Скан с QR {qr_digest} не относится к документу {doc_digest} — скан не принят"
+    ui_key: errors.signing.qrMismatch
+    refs: [FR-139, AD-43]
+  signing.attester_is_signer:
+    status: 422
+    title: "Заверитель совпадает с подписантом"
+    detail: "Бумажную подпись заверяет второй человек — заверитель ≠ подписант"
+    ui_key: errors.signing.attesterIsSigner
+    guard: true
+    refs: [FR-139, AD-43]
+  signing.paper_forbidden:
+    status: 422
+    title: "Бумага на этом этапе запрещена"
+    detail: "Этап {stage} маршрута не допускает подпись на бумаге или заверитель не задан"
+    ui_key: errors.signing.paperForbidden
+    guard: true
+    refs: [AD-43]
+  signing.no_signature_path:
+    status: 422
+    title: "Нет пути подписи"
+    detail: "Нет ни агента токена, ни подписи на бумаге — закрывающее решение не подписывается"
+    ui_key: errors.signing.noSignaturePath
+    refs: [FR-69, FR-139]
+  signing.level_not_allowed:
+    status: 422
+    title: "Уровень подписи не допускается"
+    detail: "Действие {action_id} требует уровня {required}; агент отклонил уровень {actual}"
+    ui_key: errors.generic
+    refs: [FR-66, AD-13, PRD §11.16]
+  signing.unknown_doc_format:
+    status: 422
+    title: "Неизвестная версия формата документа"
+    detail: "doc_format_version {version} агенту неизвестен — подпись не выполнена"
+    ui_key: errors.generic
+    refs: [AD-12]
+
+  # ── nonconformity: гарды несоответствий и решений (модуль nonconformity, семейство decision) ──
+  nonconformity.concession_required:
+    status: 422
+    title: "Нужно действующее разрешение на отклонение"
+    detail: "«{decision}» без действующего разрешения на отклонение не подписывается"
+    ui_key: errors.decision.concessionRequired
+    guard: true
+    aliases: [E_PERMIT_REQUIRED]
+    refs: [FR-53, FR-54, решение дирижёра Д-9]
+  nonconformity.reject_reason_required:
+    status: 422
+    title: "Нужна причина отклонения"
+    detail: "Укажите, почему сигнал отклонён"
+    ui_key: errors.decision.rejectReasonRequired
+    guard: true
+    refs: [FR-52]
+  nonconformity.return_only_unprocessed:
+    status: 422
+    title: "Вернуть поставщику можно только необработанное"
+    detail: "Изделие {item_id} уже обрабатывалось — «вернуть поставщику» недопустимо"
+    ui_key: errors.decision.returnOnlyUnprocessed
+    guard: true
+    refs: [FR-53]
+  nonconformity.approvals_missing:
+    status: 409
+    title: "Не хватает подписей"
+    detail: "Не хватает подписей: {who} — решение не исполняется"
+    ui_key: errors.decision.approvalsMissing
+    guard: true
+    refs: [FR-50, AD-43]
+  nonconformity.item_blocked:
+    status: 409
+    title: "Изделие заблокировано"
+    detail: "Изделие заблокировано — операция запрещена до решения"
+    ui_key: errors.decision.itemBlocked
+    guard: true
+    refs: [FR-49, AD-30]
+  nonconformity.gate_without_signature:
+    status: 403
+    title: "Точка предъявления без подписи"
+    detail: "Без подписи {role} изделие не проходит точку предъявления — попытка записана в журнал критических действий"
+    ui_key: errors.decision.gateWithoutSignature
+    guard: true
+    refs: [FR-19, FR-44]
+  nonconformity.method_result_missing:
+    status: 409
+    title: "Нет результата метода контроля"
+    detail: "Нельзя принять: нет результата {method} на {inspection_point} — «нет данных» ≠ «годно»"
+    ui_key: empty.inspectionMissing
+    guard: true
+    refs: [FR-14, FR-35]
+  nonconformity.intervention_open:
+    status: 409
+    title: "Открыто вмешательство"
+    detail: "Открыта запись вмешательства — приёмка и отгрузка запрещены"
+    ui_key: errors.decision.interventionOpen
+    guard: true
+    refs: [FR-21]
+  nonconformity.concession_not_applicable:
+    status: 422
+    title: "Разрешение на отклонение не применимо"
+    detail: "Разрешение {concession_id}: {reason} (истёк срок, отозвано, изделие вне области)"
+    ui_key: errors.decision.concessionRequired
+    guard: true
+    refs: [FR-54]
+
+  # ── process: загрузка BPMN и гарды процесса (FR-11, FR-13, FR-17, FR-20) ──
+  process.unsupported_element:
+    status: 422
+    title: "Неподдерживаемый элемент BPMN"
+    detail: "Неподдерживаемый элемент BPMN: {element}"
+    ui_key: errors.process.unsupportedElement
+    refs: [FR-11, AD-17]
+  process.schema_violation:
+    status: 422
+    title: "Нарушение схемы расширения"
+    detail: "Нарушение схемы расширения: {element} — {detail}"
+    ui_key: errors.process.schemaViolation
+    refs: [FR-13, AD-17]
+  process.step_key_missing:
+    status: 422
+    title: "У элемента нет step_key"
+    detail: "У элемента {element} нет ant:properties/@stepKey"
+    ui_key: errors.process.schemaViolation
+    refs: [AD-17]
+  process.unreachable_node:
+    status: 422
+    title: "Недостижимый узел"
+    detail: "Недостижимый узел: {element}"
+    ui_key: errors.process.unreachableNode
+    refs: [FR-13]
+  process.closing_path_without_human:
+    status: 422
+    title: "Закрывающий путь без контроля человеком"
+    detail: "Закрывающий путь без контроля человеком: {element}"
+    ui_key: errors.process.closingPathWithoutHuman
+    refs: [FR-13, FR-44]
+  process.presentation_point_without_role:
+    status: 422
+    title: "Точка предъявления без роли или полномочия"
+    detail: "Точка предъявления без роли или полномочия: {element}"
+    ui_key: errors.process.presentationPointWithoutRole
+    refs: [FR-13, FR-19]
+  process.inspection_without_requirement:
+    status: 200
+    severity: warning
+    title: "Контроль без ссылки на требование КД"
+    detail: "Предупреждение: контроль без ссылки на требование КД — {element}"
+    ui_key: errors.process.inspectionWithoutRequirement
+    refs: [FR-13]
+  process.version_tampered:
+    status: 409
+    title: "Содержимое действующей версии изменено"
+    detail: "Хеш версии {version_id} не совпадает с подписанным — версия не исполняется"
+    ui_key: errors.process.versionTampered
+    refs: [FR-23, AD-17]
+  process.quorum_incomplete:
+    status: 409
+    title: "Не хватает подписей кворума"
+    detail: "Не хватает подписей кворума: {who}"
+    ui_key: errors.process.quorumIncomplete
+    refs: [FR-23]
+  process.precondition_failed:
+    status: 409
+    title: "Не выполнено предусловие операции"
+    detail: "Не выполнено предусловие: {condition}"
+    ui_key: errors.decision.preconditionFailed
+    guard: true
+    refs: [FR-17]
+  process.qualification_expired:
+    status: 409
+    title: "Квалификация исполнителя истекла"
+    detail: "Квалификация исполнителя {performer} истекла {date} — операция заблокирована"
+    ui_key: errors.decision.qualificationExpired
+    guard: true
+    refs: [FR-17, FR-80]
+  process.zone_check_required:
+    status: 409
+    title: "Сначала проверка зоны"
+    detail: "Операция закрывает доступ к зоне {zone} — сначала завершите её проверку"
+    ui_key: errors.decision.zoneCheckRequired
+    guard: true
+    refs: [FR-20]
+  process.rework_limit_exceeded:
+    status: 422
+    title: "Лимит доработок зоны исчерпан"
+    detail: "Лимит доработок зоны {zone} исчерпан ({used} из {limit}) — нужно отдельное разрешение уполномоченного"
+    ui_key: errors.decision.reworkLimitReached
+    guard: true
+    aliases: [E_REWORK_LIMIT]
+    refs: [FR-18, решение дирижёра Д-9]
+  process.implicit_merge:
+    status: 422
+    title: "Неявное слияние стрелок без шлюза"
+    detail: "У элемента {element} несколько входящих стрелок без шлюза — поставьте явный шлюз слияния"
+    ui_key: errors.process.schemaViolation
+    refs: [FR-11, FR-13, решение дирижёра Д-6]
+  process.condition_invalid:
+    status: 422
+    title: "Условие на стрелке не по языку условий"
+    detail: "Стрелка {element}: {reason}"
+    ui_key: errors.process.schemaViolation
+    refs: [FR-11, FR-13, решение дирижёра Д-7]
+  process.status_expired:
+    status: 409
+    title: "Истёк срок статуса"
+    detail: "Истёк срок статуса «{status}» — нужна повторная обработка"
+    ui_key: errors.decision.statusExpired
+    guard: true
+    refs: [FR-16]
+
+  # ── incident: область риска (FR-61, FR-144) ──
+  incident.auto_exclude_forbidden:
+    status: 403
+    title: "Автоматически исключить нельзя"
+    detail: "Исключить изделие из области риска автоматически нельзя — нужен человек или делегированное правило"
+    ui_key: errors.decision.autoExcludeForbidden
+    guard: true
+    refs: [FR-61, FR-144, AD-27]
+  incident.basis_required:
+    status: 422
+    title: "Нужно основание"
+    detail: "Сужение области риска — только с основанием: доказательство, автор, время"
+    ui_key: riskScope.basisRequired
+    guard: true
+    refs: [FR-61]
+
+  # ── erp / mes: внешние учётные системы (FR-91, FR-96) ──
+  erp.unavailable:
+    status: 503
+    title: "1С недоступна"
+    detail: "1С недоступна — повтор с тем же номером сообщения через {delay}"
+    ui_key: errors.integration.erpUnavailable
+    refs: [FR-96]
+  erp.data_error:
+    status: 422
+    title: "1С вернула ошибку данных"
+    detail: "1С вернула ошибку данных {code}: {message}. Автоповтора нет — задача администратору"
+    ui_key: errors.integration.erpDataError
+    refs: [FR-96]
+  erp.id_mapping_missing:
+    status: 422
+    title: "Нет соответствия идентификатора"
+    detail: "Нет соответствия идентификатора: {object} «{external_id}» — добавьте его в таблицу соответствий"
+    ui_key: errors.integration.idMappingMissing
+    refs: [FR-95, AD-18]
+  erp.contract_not_found:
+    status: 422
+    title: "Не найден договор с контрагентом"
+    detail: "Не найден договор с контрагентом {counterparty}"
+    ui_key: errors.integration.contractNotFound
+    refs: [FR-91]
+  erp.no_ack:
+    status: 504
+    title: "1С не подтвердила приём"
+    detail: "1С не подтвердила приём за {time} — статус «учтено в 1С» не поставлен"
+    ui_key: errors.integration.noAck
+    refs: [FR-91, AD-30]
+  erp.duplicate_in_erp:
+    status: 200
+    severity: warning
+    title: "1С уже провела документ"
+    detail: "1С уже провела документ с этим номером сообщения — второй не создан"
+    ui_key: errors.integration.duplicateInErp
+    refs: [FR-96, AD-7]
+  erp.contract_incompatible:
+    status: 422
+    title: "Несовместимое изменение контракта обмена"
+    detail: "Метаданные {system} не совпали с версией контракта адаптера — канал degraded, результат не отправлен"
+    ui_key: errors.integration.contractIncompatible
+    refs: [AD-18, FR-111]
+  erp.galaktika_unavailable:
+    status: 503
+    title: "Галактика:ERP недоступна"
+    detail: "Галактика:ERP недоступна — повтор с тем же номером сообщения"
+    ui_key: errors.integration.galaktikaUnavailable
+    refs: [FR-92]
+  mes.unavailable:
+    status: 503
+    title: "MES недоступна"
+    detail: "MES недоступна — блок изделия не передан, повтор"
+    ui_key: errors.integration.mesUnavailable
+    refs: [FR-93]
+
+  # ── analyzer: паспорта допуска (FR-98, FR-101) ──
+  analyzer.no_qualified_analyzer:
+    status: 200
+    severity: warning
+    title: "Нет допущенного анализатора"
+    detail: "Для карты контроля {recipe_ref} нет допущенного анализатора — контроль ручной"
+    ui_key: errors.vision.noQualifiedAnalyzer
+    refs: [FR-98]
+  analyzer.reinstate_requires_head_of_qc:
+    status: 403
+    title: "Вернуть анализатор может только начальник ОТК"
+    detail: "Вернуть анализатор в работу может только начальник ОТК"
+    ui_key: errors.vision.returnRequiresHeadOfQc
+    guard: true
+    refs: [FR-101, AD-27]
+  analyzer.trust_level_exceeded:
+    status: 403
+    title: "Действие сверх уровня доверия паспорта"
+    detail: "Уровень доверия {trust_level} не разрешает действие {action}"
+    ui_key: errors.generic
+    guard: true
+    refs: [AD-29, contracts/analyzer-trust-levels.yaml]
+
+  # ── federation (FR-132) ──
+  federation.extract_tampered:
+    status: 422
+    title: "Выписка паспорта изменена"
+    detail: "Выписка паспорта изменена — не принята"
+    ui_key: errors.federation.extractTampered
+    refs: [FR-132]
+  federation.extract_unverifiable:
+    status: 202
+    severity: warning
+    title: "Происхождение не подтверждено"
+    detail: "Подписи выписки проверить нельзя — принята с пометкой «происхождение не подтверждено»"
+    ui_key: errors.federation.extractUnverifiable
+    refs: [FR-132, AD-19]
+
+  # ── reference: справочники и соответствия внешних ID ──
+  reference.not_found:
+    status: 422
+    title: "Запись справочника не найдена"
+    detail: "Не найдена запись справочника: {field} — в том числе ответ 1С «в справочнике не найдена запись»"
+    ui_key: errors.integration.refNotFound
+    aliases: [E_REF_NOT_FOUND]
+    refs: [FR-91, FR-95, решение дирижёра Д-9]
+
+  # ── simulation (AD-26, AD-38) ──
+  simulation.scenario_keys_in_prod:
+    status: 500
+    title: "Ключи сценариев в профиле prod"
+    detail: "В реестре есть ключи класса scenario или в составе есть demo-signer — профиль prod не стартует"
+    ui_key: errors.generic
+    refs: [AD-26]
+  simulation.run_not_found:
+    status: 404
+    title: "Прогон не найден"
+    detail: "Прогон {run_id} не найден"
+    ui_key: empty.scenarioNotStarted
+    refs: [AD-38]

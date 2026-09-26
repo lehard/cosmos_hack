@@ -1,0 +1,35 @@
+# Перечень шаблонов документов, на которые ссылаются шаги процесса (ant:document/@template) — затравка.
+# Поля, отрисовку и маршруты подписей шаблонов строит эпик 28 «Документы» по каталогу документов спайна
+# (класс: record — генерируется из журнала; decision — черновик + маршрут подписей; input — внешняя запись).
+version: 1
+templates:
+  - {id: incoming-register,            title: "Журнал регистрации продукции, поступившей на входной контроль", class: record}
+  - {id: incoming-inspection-protocol, title: "Протокол входного контроля (снимки — приложение)",            class: record}
+  - {id: incoming-inspection-act,      title: "Акт входного контроля",                                        class: record}
+  - {id: incoming-results-register,    title: "Журнал результатов входного контроля",                         class: record}
+  - {id: lot-conformity-label,         title: "Ярлык соответствия / несоответствия партии (QR)",              class: record}
+  - {id: item-tag,                     title: "Бирка изделия с QR",                                           class: record}
+  - {id: traveler,                     title: "Сопроводительная карта изделия",                               class: record}
+  - {id: requisition,                  title: "Требование-накладная",                                         class: record}
+  - {id: first-article-act,            title: "Акт первой детали",                                            class: record}
+  - {id: cmm-protocol,                 title: "Протокол КИМ, карта измерений",                                class: input}
+  - {id: presentation-log,             title: "Журнал предъявления ОТК",                                      class: record}
+  - {id: route-sheet,                  title: "Маршрутный лист межцеховой передачи",                          class: record}
+  - {id: interworkshop-transfer,       title: "Накладная на передачу между цехами",                           class: record}
+  - {id: welding-log,                  title: "Журнал сварочных работ",                                       class: record}
+  - {id: special-process-log,          title: "Журнал параметров специального процесса",                      class: record}
+  - {id: ndt-conclusion,               title: "Заключение неразрушающего контроля",                           class: input}
+  - {id: assembly-card,                title: "Карта сборки (отметки скрытых работ)",                         class: record}
+  - {id: torque-log,                   title: "Журнал затяжек",                                               class: record}
+  - {id: intervention-record,          title: "Запись вмешательства (вскрытия)",                              class: record}
+  - {id: test-program,                 title: "Программа и методика испытаний",                               class: input}
+  - {id: test-protocol,                title: "Протокол испытаний на герметичность",                          class: record}
+  - {id: customer-presentation-notice, title: "Извещение о предъявлении ВП / ПЗ",                           class: decision}
+  - {id: acceptance-certificate,       title: "Свидетельство о приёмке (паспорт, формуляр)",                  class: decision}
+  - {id: passport,                     title: "Паспорт / формуляр изделия",                                   class: decision}
+  - {id: isolator-log,                 title: "Журнал изолятора",                                             class: record}
+  - {id: nc-label,                     title: "Ярлык «Брак» / НП (QR)",                                       class: record}
+  - {id: nc-statement,                 title: "Заявление о несоответствии",                                   class: record}
+  - {id: nc-disposition,               title: "Решение по несоответствующей продукции",                       class: decision}
+  - {id: scrap-act,                    title: "Акт о браке",                                                  class: decision}
+  - {id: concession,                   title: "Разрешение на отклонение",                                     class: decision}

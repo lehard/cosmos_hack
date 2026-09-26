@@ -1,0 +1,45 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/binding/binding.link.resolved.v1.json",
+  "title": "BindingLinkResolvedV1",
+  "description": "Событие привязано к изделию — межизделийная стадия разрешила носитель или контекст: одно изделие или кандидаты; надёжность привязки — от носителя (AD-41, FR-34).",
+  "type": "object",
+  "properties": {
+    "subject_event_id": {
+      "$ref": "../common/defs.v1.json#/definitions/uuid",
+      "description": "Привязываемое событие."
+    },
+    "item_id": {
+      "$ref": "../common/defs.v1.json#/definitions/item_id",
+      "description": "Изделие (если однозначно)."
+    },
+    "candidates": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/item_id",
+        "description": "Кандидат."
+      },
+      "description": "Кандидаты при неоднозначности.",
+      "uniqueItems": true
+    },
+    "binding_basis": {
+      "type": "string",
+      "enum": [
+        "carrier",
+        "post_context",
+        "time_window",
+        "manual"
+      ],
+      "description": "Как привязано."
+    },
+    "binding_reliability": {
+      "$ref": "../common/defs.v1.json#/definitions/identification_level",
+      "description": "Надёжность привязки."
+    }
+  },
+  "required": [
+    "subject_event_id",
+    "binding_basis",
+    "binding_reliability"
+  ]
+}

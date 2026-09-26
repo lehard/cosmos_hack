@@ -1,0 +1,33 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/decision/decision.containment.applied.v1.json",
+  "title": "DecisionContainmentAppliedV1",
+  "description": "Сдерживание применено правилом — утверждённое правило придержало изделие: наблюдать / доп. проверка / блок; автоматика изолирует, но не списывает (режим 2, FR-49, AD-27).",
+  "type": "object",
+  "properties": {
+    "level": {
+      "$ref": "../common/defs.v1.json#/definitions/axis_containment",
+      "description": "Уровень сдерживания."
+    },
+    "incident_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Инцидент, если сдерживание по области риска."
+    },
+    "lot_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Партия, если блок партии."
+    },
+    "basis": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/uuid"
+      },
+      "description": "Основания — `event_id` записей, на которые опирается запись.",
+      "uniqueItems": true
+    }
+  },
+  "required": [
+    "level",
+    "basis"
+  ]
+}

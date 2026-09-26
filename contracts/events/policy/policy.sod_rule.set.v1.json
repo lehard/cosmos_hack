@@ -1,0 +1,39 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/policy/policy.sod_rule.set.v1.json",
+  "title": "PolicySodRuleSetV1",
+  "description": "Правило разделения обязанностей — например, «кто участвовал в изготовлении, не принимает изделие на точке предъявления» (FR-56); «заверитель ≠ подписант» (AD-43).",
+  "type": "object",
+  "properties": {
+    "rule_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Правило."
+    },
+    "statement": {
+      "type": "string",
+      "maxLength": 4000,
+      "description": "Формулировка."
+    },
+    "conflicting_actions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "description": "Действие каталога операций.",
+        "maxLength": 128
+      },
+      "description": "Несовместимые действия одного лица над одним объектом.",
+      "minItems": 2,
+      "uniqueItems": true
+    },
+    "enabled": {
+      "type": "boolean",
+      "description": "Действует."
+    }
+  },
+  "required": [
+    "rule_id",
+    "statement",
+    "conflicting_actions",
+    "enabled"
+  ]
+}

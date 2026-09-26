@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/security/security.idempotency.conflict.v1.json",
+  "title": "SecurityIdempotencyConflictV1",
+  "description": "Конфликт идемпотентности — тот же `source_id + event_id`, другое содержимое — конфликт целостности; частота ограничена по источнику (FR-31, AD-7).",
+  "type": "object",
+  "properties": {
+    "source_id": {
+      "$ref": "../common/defs.v1.json#/definitions/source_id",
+      "description": "Источник."
+    },
+    "event_id": {
+      "$ref": "../common/defs.v1.json#/definitions/uuid",
+      "description": "Идентификатор события."
+    },
+    "first_payload_digest": {
+      "$ref": "../common/defs.v1.json#/definitions/digest",
+      "description": "Отпечаток первого содержимого."
+    },
+    "conflicting_payload_digest": {
+      "$ref": "../common/defs.v1.json#/definitions/digest",
+      "description": "Отпечаток нового содержимого."
+    }
+  },
+  "required": [
+    "source_id",
+    "event_id",
+    "first_payload_digest",
+    "conflicting_payload_digest"
+  ]
+}

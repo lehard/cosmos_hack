@@ -1,0 +1,39 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/access/access.assignment.set.v1.json",
+  "title": "AccessAssignmentSetV1",
+  "description": "Назначение на пост — исполнителя назначает мастер (только допущенного по квалификации); контролёра — по документу «запрос мастера → согласование начальника ОТК» (PRD §11.18).",
+  "type": "object",
+  "properties": {
+    "person_id": {
+      "$ref": "../common/defs.v1.json#/definitions/person_ref",
+      "description": "Сотрудник."
+    },
+    "workplace_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Пост (рабочее место)."
+    },
+    "shift_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Смена."
+    },
+    "assignee_role": {
+      "type": "string",
+      "enum": [
+        "performer",
+        "quality_inspector"
+      ],
+      "description": "Кого назначают."
+    },
+    "approval_document_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Документ согласования начальника ОТК — для контролёра обязателен."
+    }
+  },
+  "required": [
+    "person_id",
+    "workplace_id",
+    "shift_id",
+    "assignee_role"
+  ]
+}

@@ -1,0 +1,77 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/erp/erp.posting.requested.v1.json",
+  "title": "ErpPostingRequestedV1",
+  "description": "Учётное сообщение сформировано — исходящее учётное действие на закрывающей точке с бизнес-ключом идемпотентности (субъект, действие, точка); очередь отправки — проекция журнала; при воспроизведении ничего не отправляется (AD-7, AD-18).",
+  "type": "object",
+  "properties": {
+    "business_key": {
+      "type": "string",
+      "description": "Бизнес-ключ: субъект, учётное действие, закрывающая точка.",
+      "maxLength": 256
+    },
+    "external_system": {
+      "type": "string",
+      "enum": [
+        "onec",
+        "galaktika"
+      ],
+      "description": "Система."
+    },
+    "action": {
+      "type": "string",
+      "enum": [
+        "accept_into_work",
+        "warehouse_transfer",
+        "scrap_transfer_rework",
+        "scrap_transfer_writeoff",
+        "scrap_transfer_reprocess",
+        "return_to_supplier",
+        "release",
+        "inspection_result"
+      ],
+      "description": "Учётное действие порта учёта."
+    },
+    "item_id": {
+      "$ref": "../common/defs.v1.json#/definitions/item_id",
+      "description": "Изделие."
+    },
+    "lot_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Партия."
+    },
+    "from_warehouse_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Склад-отправитель."
+    },
+    "to_warehouse_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Склад-получатель."
+    },
+    "concession_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Разрешение на отклонение для выпуска."
+    },
+    "after_rework": {
+      "type": "boolean",
+      "description": "Выпуск после переделки."
+    },
+    "claim_basis": {
+      "type": "string",
+      "maxLength": 4000,
+      "description": "Основание претензии для возврата."
+    },
+    "message_version": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1000,
+      "description": "Версия содержимого по бизнес-ключу; другое содержимое — только исправлением по решению человека."
+    }
+  },
+  "required": [
+    "business_key",
+    "external_system",
+    "action",
+    "message_version"
+  ]
+}

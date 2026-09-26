@@ -1,0 +1,41 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/incident/incident.operator_error.confirmed.v1.json",
+  "title": "IncidentOperatorErrorConfirmedV1",
+  "description": "Ошибка исполнителя подтверждена — юридически значимый факт: только уполномоченным после письменного объяснения работника (ТК РФ ст. 247); система взысканий не рассчитывает (FR-59).",
+  "type": "object",
+  "properties": {
+    "incident_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Инцидент."
+    },
+    "nc_ids": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/object_id",
+        "description": "Несоответствие."
+      },
+      "description": "Несоответствия.",
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "operator_id": {
+      "$ref": "../common/defs.v1.json#/definitions/person_ref",
+      "description": "Исполнитель."
+    },
+    "explanation_document_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Письменное объяснение работника."
+    },
+    "commission_document_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Решение комиссии."
+    }
+  },
+  "required": [
+    "incident_id",
+    "nc_ids",
+    "operator_id",
+    "explanation_document_id"
+  ]
+}

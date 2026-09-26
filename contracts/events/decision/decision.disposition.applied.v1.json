@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/decision/decision.disposition.applied.v1.json",
+  "title": "DecisionDispositionAppliedV1",
+  "description": "Решение по изделию применено правилом — типовая переделка по утверждённому техпроцессу по явно делегированному правилу режима 2 (PRD §11.9); необратимые решения правилом не принимаются.",
+  "type": "object",
+  "properties": {
+    "nc_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Несоответствие."
+    },
+    "disposition": {
+      "type": "string",
+      "enum": [
+        "rework"
+      ],
+      "description": "Только переделка."
+    }
+  },
+  "required": [
+    "nc_id",
+    "disposition"
+  ]
+}

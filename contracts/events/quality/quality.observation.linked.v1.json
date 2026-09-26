@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/quality/quality.observation.linked.v1.json",
+  "title": "QualityObservationLinkedV1",
+  "description": "Наблюдение связано с известным дефектом — тот же физический дефект увидели ещё раз (другая камера, следующая КТ); число дефектов не растёт (FR-37).",
+  "type": "object",
+  "properties": {
+    "defect_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Дефект."
+    },
+    "observation_event_id": {
+      "$ref": "../common/defs.v1.json#/definitions/uuid",
+      "description": "Новое наблюдение."
+    },
+    "defect_type_code": {
+      "type": "string",
+      "description": "Уточнённый вид, если изменился.",
+      "maxLength": 32
+    }
+  },
+  "required": [
+    "defect_id",
+    "observation_event_id"
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/reference/reference.calendar.defined.v1.json",
+  "title": "ReferenceCalendarDefinedV1",
+  "description": "Производственный календарь — рабочие и нерабочие дни — для сроков в рабочих днях (FR-55, AD-4).",
+  "type": "object",
+  "properties": {
+    "calendar_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Календарь."
+    },
+    "year": {
+      "type": "integer",
+      "minimum": 2000,
+      "maximum": 2100,
+      "description": "Год."
+    },
+    "weekly_days_off": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "mon",
+          "tue",
+          "wed",
+          "thu",
+          "fri",
+          "sat",
+          "sun"
+        ],
+        "description": "День недели."
+      },
+      "description": "Еженедельные выходные.",
+      "uniqueItems": true
+    },
+    "non_working_days": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/date"
+      },
+      "description": "Нерабочие дни сверх еженедельных (праздники).",
+      "uniqueItems": true
+    },
+    "shortened_days": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/date"
+      },
+      "description": "Сокращённые дни.",
+      "uniqueItems": true
+    }
+  },
+  "required": [
+    "calendar_id",
+    "year",
+    "non_working_days"
+  ]
+}

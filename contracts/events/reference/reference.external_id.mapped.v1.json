@@ -1,0 +1,52 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/reference/reference.external_id.mapped.v1.json",
+  "title": "ReferenceExternalIdMappedV1",
+  "description": "Соответствие внешнего идентификатора — внешний ID не становится нашим ключом — хранится соответствие; конфликт — сигнал, не перезапись (FR-95, AD-18).",
+  "type": "object",
+  "properties": {
+    "system": {
+      "type": "string",
+      "enum": [
+        "onec",
+        "galaktika",
+        "mes",
+        "kompas",
+        "skud",
+        "partner",
+        "other"
+      ],
+      "description": "Внешняя система."
+    },
+    "object_kind": {
+      "type": "string",
+      "enum": [
+        "item_type",
+        "order",
+        "lot",
+        "supplier",
+        "warehouse",
+        "item",
+        "person",
+        "equipment",
+        "contract"
+      ],
+      "description": "Вид объекта."
+    },
+    "external_id": {
+      "type": "string",
+      "description": "ID во внешней системе.",
+      "maxLength": 128
+    },
+    "internal_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Наш ID."
+    }
+  },
+  "required": [
+    "system",
+    "object_kind",
+    "external_id",
+    "internal_id"
+  ]
+}

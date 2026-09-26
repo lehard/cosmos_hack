@@ -1,0 +1,34 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/operation/operation.movement.sent.v1.json",
+  "title": "OperationMovementSentV1",
+  "description": "Изделие отправлено — изделие отправлено между участками, цехами или на склад; идёт время ожидания (FR-16).",
+  "type": "object",
+  "properties": {
+    "from_location_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Откуда (участок, цех, склад)."
+    },
+    "to_location_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Куда."
+    },
+    "container_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Тара."
+    },
+    "sent_by": {
+      "$ref": "../common/defs.v1.json#/definitions/person_ref",
+      "description": "Кто сдал."
+    },
+    "step_key": {
+      "$ref": "../common/defs.v1.json#/definitions/step_key",
+      "description": "Ключ шага процесса (`ant:properties/@stepKey`), к которому относится запись."
+    }
+  },
+  "required": [
+    "from_location_id",
+    "to_location_id",
+    "sent_by"
+  ]
+}

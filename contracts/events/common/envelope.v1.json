@@ -1,0 +1,276 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/common/envelope.v1.json",
+  "title": "EventEnvelopeV1",
+  "description": "Конверт события v1 (кейс §4.4, FR-27, стиль CloudEvents): общий для всех типов записей — фактов источников, реакций движка, решений людей и служебных. Подписывается целиком (DSSE над каноническим JSON, AD-10). Время поступления и записи (`received_at`, `recorded_at`) ставит только ядро — в записи журнала, не здесь. Схема открыта: новые необязательные поля принимаются и сохраняются (FR-29).",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "$ref": "defs.v1.json#/definitions/uuid"
+    },
+    "event_type": {
+      "$ref": "defs.v1.json#/definitions/event_type"
+    },
+    "schema_version": {
+      "type": "integer",
+      "description": "Мажорная версия схемы `data` для этого типа; несовместимое изменение — только новая мажорная версия (AD-20, FR-29).",
+      "minimum": 1,
+      "maximum": 999
+    },
+    "source_id": {
+      "$ref": "defs.v1.json#/definitions/source_id"
+    },
+    "source_seq": {
+      "type": "integer",
+      "description": "Порядковый номер у источника (на `source_id`): обязателен для устройств, шлюзов и агентов токена; по нему верификатор проверяет непрерывность (AD-7, AD-9).",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "source_kind": {
+      "$ref": "defs.v1.json#/definitions/source_kind"
+    },
+    "reliability": {
+      "$ref": "defs.v1.json#/definitions/reliability"
+    },
+    "occurred_at": {
+      "$ref": "defs.v1.json#/definitions/timestamp"
+    },
+    "correlation_id": {
+      "$ref": "defs.v1.json#/definitions/uuid"
+    },
+    "causation_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+      "description": "Непосредственная причина — `event_id` записи, вызвавшей эту; null — корневое событие."
+    },
+    "run_id": {
+      "$ref": "defs.v1.json#/definitions/run_id"
+    },
+    "item_id": {
+      "$ref": "defs.v1.json#/definitions/item_id"
+    },
+    "item_ref": {
+      "$ref": "defs.v1.json#/definitions/item_ref"
+    },
+    "corrects": {
+      "type": "object",
+      "description": "Исправление ранее записанного события новой записью (FR-122, AD-2): было — исправляемая запись, стало — эта запись, кто — подписант, причина — здесь. Любая запись с `corrects` — критическое действие группы «защищённые данные».",
+      "properties": {
+        "event_id": {
+          "$ref": "defs.v1.json#/definitions/uuid"
+        },
+        "reason": {
+          "$ref": "defs.v1.json#/definitions/reason"
+        }
+      },
+      "required": [
+        "event_id",
+        "reason"
+      ],
+      "title": "Corrects"
+    },
+    "reaction": {
+      "type": "object",
+      "description": "Метаданные реакции движка (AD-3); обязательны для записей вида «реакция».",
+      "properties": {
+        "rule_id": {
+          "$ref": "defs.v1.json#/definitions/object_id"
+        },
+        "rule_rev": {
+          "type": "string",
+          "description": "Ревизия нормативного слоя, в которой действует правило (хеш версии процесса или номер).",
+          "maxLength": 128
+        },
+        "automation_mode": {
+          "type": "integer",
+          "description": "Режим автоматизации правила 1–5 (FR-50).",
+          "minimum": 1,
+          "maximum": 5
+        },
+        "slot": {
+          "type": "object",
+          "description": "Слот реакции: правило, субъект, ключ срабатывания. `event_id` реакции = UUIDv5(NS_ANT, слот ‖ версия).",
+          "properties": {
+            "rule_id": {
+              "$ref": "defs.v1.json#/definitions/object_id"
+            },
+            "subject": {
+              "$ref": "defs.v1.json#/definitions/stream_ref"
+            },
+            "trigger_key": {
+              "type": "string",
+              "description": "Ключ срабатывания внутри субъекта.",
+              "maxLength": 256
+            }
+          },
+          "required": [
+            "rule_id",
+            "subject",
+            "trigger_key"
+          ],
+          "title": "ReactionSlot"
+        },
+        "version": {
+          "type": "integer",
+          "description": "Версия слота: 1 — первая, пересмотр — следующая.",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "supersedes": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+          "description": "`event_id` заменяемой версии слота; null у первой версии."
+        },
+        "revised_due_to": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+          "description": "Запись, из-за которой вывод пересмотрен («пересмотрен из-за события ‹id›», FR-32); null у первой версии."
+        },
+        "causes": {
+          "type": "array",
+          "items": {
+            "$ref": "defs.v1.json#/definitions/uuid"
+          },
+          "description": "Причины вывода — отсортированный список `event_id` записей, влияющих на вывод (вычисляет доменная функция правила).",
+          "uniqueItems": true
+        },
+        "basis_seq": {
+          "$ref": "defs.v1.json#/definitions/seq"
+        }
+      },
+      "required": [
+        "rule_id",
+        "automation_mode",
+        "slot",
+        "version",
+        "supersedes",
+        "causes",
+        "basis_seq"
+      ],
+      "title": "ReactionMeta"
+    },
+    "command": {
+      "type": "object",
+      "description": "Метаданные команды человека (AD-39, AD-14); обязательны для записей вида «решение».",
+      "properties": {
+        "command_id": {
+          "$ref": "defs.v1.json#/definitions/uuid"
+        },
+        "basis_seq": {
+          "$ref": "defs.v1.json#/definitions/seq"
+        },
+        "guard_streams": {
+          "type": "array",
+          "items": {
+            "$ref": "defs.v1.json#/definitions/stream_ref"
+          },
+          "description": "Потоки, которые проверил гард команды: после `basis_seq` в них не должно быть новых записей `guard_relevant`.",
+          "uniqueItems": true
+        },
+        "policy_seq": {
+          "$ref": "defs.v1.json#/definitions/seq"
+        },
+        "signature_level": {
+          "type": "integer",
+          "description": "Уровень подписи 0–3 (AD-13).",
+          "minimum": 0,
+          "maximum": 3
+        },
+        "workplace_id": {
+          "$ref": "defs.v1.json#/definitions/object_id"
+        },
+        "workplace_session_id": {
+          "$ref": "defs.v1.json#/definitions/uuid"
+        },
+        "seen_checkpoint": {
+          "$ref": "defs.v1.json#/definitions/seq"
+        },
+        "client_signed_at": {
+          "$ref": "defs.v1.json#/definitions/timestamp"
+        },
+        "on_behalf_of": {
+          "$ref": "defs.v1.json#/definitions/person_ref"
+        }
+      },
+      "required": [
+        "command_id",
+        "basis_seq",
+        "guard_streams",
+        "policy_seq",
+        "signature_level"
+      ],
+      "title": "CommandMeta"
+    },
+    "integrity": {
+      "type": "object",
+      "description": "Метаданные целостности под подписью (AD-10, кейс §6.3): версия формата, криптопрофиль, подписанты. Сами подписи — в конверте DSSE вокруг события.",
+      "properties": {
+        "format_version": {
+          "type": "integer",
+          "description": "Версия формата подписанного пакета.",
+          "minimum": 1,
+          "maximum": 999
+        },
+        "crypto_profile": {
+          "type": "string",
+          "enum": [
+            "gost",
+            "pq",
+            "hybrid"
+          ],
+          "description": "Криптопрофиль (AD-10): `gost`, `pq` (демонстрационный), `hybrid` (обе подписи обязательны)."
+        },
+        "signers": {
+          "type": "array",
+          "items": {
+            "$ref": "defs.v1.json#/definitions/key_ref"
+          },
+          "description": "Обязательные подписанты пакета: `key_id@версия` каждого ключа; лишние подписи и повторы одного ключа не засчитываются.",
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "subject_ref": {
+          "$ref": "defs.v1.json#/definitions/digest"
+        },
+        "verification_params": {
+          "type": "object",
+          "description": "Открытые параметры проверки, если профиль их требует.",
+          "additionalProperties": {
+            "type": "string",
+            "maxLength": 512
+          }
+        }
+      },
+      "required": [
+        "format_version",
+        "crypto_profile",
+        "signers"
+      ],
+      "title": "Integrity"
+    },
+    "data": {
+      "type": "object",
+      "description": "Содержимое, специфичное для типа: схема `contracts/events/‹семейство›/‹event_type›.v‹schema_version›.json` (полиморфизм через `event_type`, AD-20)."
+    }
+  },
+  "required": [
+    "event_id",
+    "event_type",
+    "schema_version",
+    "source_id",
+    "occurred_at",
+    "correlation_id",
+    "causation_id",
+    "integrity",
+    "data"
+  ]
+}

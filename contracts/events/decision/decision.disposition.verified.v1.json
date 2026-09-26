@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/decision/decision.disposition.verified.v1.json",
+  "title": "DecisionDispositionVerifiedV1",
+  "description": "Исполнение решения проверено — повторный контроль после переделки или ремонта пройден по всем методам операции: «исполнено» ≠ «проверено» (FR-53).",
+  "type": "object",
+  "properties": {
+    "nc_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Несоответствие."
+    },
+    "recheck_event_ids": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/uuid"
+      },
+      "description": "Результаты повторного контроля.",
+      "uniqueItems": true
+    }
+  },
+  "required": [
+    "nc_id",
+    "recheck_event_ids"
+  ]
+}
