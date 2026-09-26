@@ -535,6 +535,14 @@ func (g *gen) briefWeld(p *ItemPlan, until int) {
 		Role: "storekeeper", Actor: g.ids.Person(r.Storekeeper), Binds: p.ID, Item: p.ID,
 		Body: map[string]any{"item_type_id": w.ItemType, "item_revision": w.ItemRevision, "order_id": "{local:" + p.Order + "}",
 			"lot_ids": []any{"{local:" + blank + "}"}, "entry_step_key": "welding.edge_prep"}})
+	// Бирка — как в полном пути: факты поста и камеры КТ-3 идут с носителем
+	// TAG:‹изделие›; без нанесённой бирки они не привязываются к изделию —
+	// токен процесса стоит на кромках (висит задача «Начать: Сварка…»), а
+	// метка изделия — I-… вместо Ф-1xx.
+	g.act(Action{Kind: ActionDecision, At: at["launch"].Add(time.Minute), Scenario: "route", Label: p.ID + "/launch/tag/item.carrier.apply",
+		Operation: "item.carrier.apply", Role: "storekeeper", Actor: g.ids.Person(r.Storekeeper), Item: p.ID,
+		Params: map[string]any{"item_id": "{item:" + p.ID + "}"},
+		Body:   map[string]any{"carrier_type": "tag_qr", "value": "{carrier:TAG:" + p.ID + "}", "is_temporary": true}})
 	it.Stages["launch"] = at["launch"]
 	g.recordWeld(p, at)
 	it.Stages["weld"] = start
