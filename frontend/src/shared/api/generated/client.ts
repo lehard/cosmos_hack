@@ -372,6 +372,7 @@ import type {
   SimulationRunListParams,
   SimulationRunPlanParams,
   SimulationRunReadParams,
+  SimulationScenarioListParams,
   SourceList,
   SplitItem,
   StartOperation,
@@ -27351,21 +27352,28 @@ export type simulationScenarioListResponseError = (simulationScenarioListRespons
   headers: Headers;
 };
 
-export const getSimulationScenarioListUrl = () => {
+export const getSimulationScenarioListUrl = (params?: SimulationScenarioListParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/v1/scenarios`
+  return stringifiedParams.length > 0 ? `/api/v1/scenarios?${stringifiedParams}` : `/api/v1/scenarios`
 }
 
 /**
  * AD-26: определения scenarios/definitions — 8 ситуаций §4.2, 9 проверок §5.1, демо-сценарии, сбои; число утверждений табло и остановок на решениях.
  * @summary Сценарии
  */
-export const simulationScenarioList = async ( options?: RequestInit): Promise<simulationScenarioListResponseSuccess> => {
+export const simulationScenarioList = async (params?: SimulationScenarioListParams, options?: RequestInit): Promise<simulationScenarioListResponseSuccess> => {
 
-  const res = await fetch(getSimulationScenarioListUrl(),
+  const res = await fetch(getSimulationScenarioListUrl(params),
   {
     ...options,
     method: 'GET'
@@ -27392,23 +27400,23 @@ export const simulationScenarioList = async ( options?: RequestInit): Promise<si
 
 
 
-export const getSimulationScenarioListQueryKey = () => {
+export const getSimulationScenarioListQueryKey = (params?: MaybeRefOrGetter<SimulationScenarioListParams>,) => {
     return [
-    'api','v1','scenarios'
+    'api','v1','scenarios', ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getSimulationScenarioListQueryOptions = <TData = Awaited<ReturnType<typeof simulationScenarioList>>, TError = globalThis.Error & { info?: Problem; status?: number }>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof simulationScenarioList>>, TError, TData>>, fetch?: RequestInit}
+export const getSimulationScenarioListQueryOptions = <TData = Awaited<ReturnType<typeof simulationScenarioList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(params?: MaybeRefOrGetter<SimulationScenarioListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof simulationScenarioList>>, TError, TData>>, fetch?: RequestInit}
 ) => {
 
 const {query: queryOptions, fetch: fetchOptions} = options ?? {};
 
-  const queryKey =  getSimulationScenarioListQueryKey();
+  const queryKey =  getSimulationScenarioListQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof simulationScenarioList>>> = ({ signal }) => simulationScenarioList({ signal, ...fetchOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof simulationScenarioList>>> = ({ signal }) => simulationScenarioList(toValue(params), { signal, ...fetchOptions });
 
 
 
@@ -27426,11 +27434,11 @@ export type SimulationScenarioListQueryError = globalThis.Error & { info?: Probl
  */
 
 export function useSimulationScenarioList<TData = Awaited<ReturnType<typeof simulationScenarioList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof simulationScenarioList>>, TError, TData>>, fetch?: RequestInit}
+ params?: MaybeRefOrGetter<SimulationScenarioListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof simulationScenarioList>>, TError, TData>>, fetch?: RequestInit}
  , queryClient?: QueryClient
  ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const queryOptions = getSimulationScenarioListQueryOptions(options)
+  const queryOptions = getSimulationScenarioListQueryOptions(params,options)
 
   const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
