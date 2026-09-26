@@ -62,13 +62,28 @@ defineSlots<{
   author(props: { id: string; authorName: string | null }): unknown
 }>()
 
-const { t, n, d } = useI18n()
+const { t, d } = useI18n()
 const moment = useMomentStore()
 
 const versions = computed(() => props.model.versions)
 const current = computed(() => currentVersion(props.model))
 const reduction = computed(() => scopeReduction(props.model))
 const issues = computed(() => scopeIssues(props.model))
+
+/** Раскрытая ступень пути: выбранная щелчком, иначе последняя (текущая). */
+const picked_version = ref<number | null>(null)
+const openIndex = computed(() => {
+  const i = versions.value.findIndex((v) => v.scope_version === picked_version.value)
+  return i >= 0 ? i : versions.value.length - 1
+})
+const openVersion = computed(() => versions.value[openIndex.value] ?? null)
+const openDelta = computed(() => (openVersion.value ? deltaOf(openVersion.value, openIndex.value) : null))
+/** Под числом — одна строка: кто изменил область. */
+function shortTitle(v: ScopeVersion): string {
+  if (v.change === 'computed') return t('widgets.analysis.riskScope.shortComputed')
+  if (v.change === 'narrowed') return v.trigger?.kind === 'late_event' ? t('widgets.analysis.riskScope.shortLate') : t('widgets.analysis.riskScope.shortNarrowed')
+  return t('widgets.analysis.riskScope.shortExpanded')
+}
 
 const dateTime = (x: string) => d(new Date(x), 'dateTime')
 
@@ -181,90 +196,71 @@ function submit(): void {
 
 <template>
   <div class="scope" :class="`density-${density}`" data-testid="risk-scope">
-    <!-- Итог крупно: сколько изделий сейчас в области и путь, которым она сузилась. -->
-    <header class="summary">
-      <p class="headline ant-wrap">
-        <span class="now" data-testid="scope-now">{{ current?.size ?? 0 }}</span>
-        <span class="now-text">{{ t('widgets.analysis.riskScope.nowInScope', { items: t('plural.items', { n: current?.size ?? 0 }, current?.size ?? 0) }) }}</span>
-      </p>
-      <ol v-if="versions.length > 1" class="path" :aria-label="t('riskScope.meltingScope')" data-testid="scope-path">
-        <li v-for="v in versions" :key="v.scope_version" :data-change="v.change">{{ v.size }}</li>
-      </ol>
-      <p v-if="reduction && versions.length > 1" class="muted">
-        <span data-testid="reduction">{{ t('riskScope.reduction', { from: reduction.from, to: reduction.to }) }}</span>
-        · {{ t('riskScope.reductionPercent', { percent: n(reduction.ratio, 'percent') }) }}
-      </p>
-      <p class="context muted ant-wrap">
-        <template v-if="model.common_factor">{{ t('riskScope.commonFactor', { factor: `${t(FACTOR_TEXT[model.common_factor.factor])}: ${model.common_factor.label || model.common_factor.value}` }) }}</template>
-        <template v-if="model.last_known_good"> · {{ t('riskScope.lastKnownGood', { what: model.last_known_good.label, time: dateTime(model.last_known_good.at) }) }}</template>
-        <template v-else> · {{ t('ncCard.causalWindow.lowerBound') }}: {{ t('empty.noDataUnknown') }}</template>
-      </p>
-      <!-- Что известно об изделиях: серое (нет данных) — не зелёное (исключено с основанием). -->
-      <ul class="counts" data-testid="known-counts">
-        <li v-for="k in KNOWN_ORDER" :key="k" :data-known="k" :style="{ '--tone': toneOf(k), '--tone-soft': toneOf(k, 'soft') }">
-          <span class="count-n">{{ byKnown[k].length }}</span>
-          <span class="count-l">{{ t(KNOWN_TEXT[k]) }}</span>
-        </li>
-      </ul>
-      <p class="muted ant-wrap" data-testid="not-defective">{{ t('riskScope.notDefective') }}. {{ t('riskScope.narrowOnlyByHuman') }}</p>
-    </header>
-
     <NAlert v-if="issues.length" type="error" :bordered="false" :show-icon="false" class="note" data-testid="issues">
       <div v-for="(x, i) in issues" :key="i">{{ t(ISSUE_TEXT[x.kind], { version: x.version }) }}</div>
       <div>{{ t('riskScope.basisRequired') }}</div>
     </NAlert>
 
-    <!-- Ступени: каждое изменение области — сколько, почему, по чему, кто и когда (FR-61). -->
-    <section class="steps" :aria-label="t('riskScope.versions')">
-      <h4>{{ t('widgets.analysis.riskScope.whyThisSize', { n: current?.size ?? 0 }) }}</h4>
-      <ol>
-        <li
-          v-for="(v, i) in versions"
-          :key="v.scope_version"
-          class="step"
+    <!-- Герой: путь области 34 → 13 → 6; число — кнопка, под ним одна строка, что произошло. -->
+    <ol class="path" :aria-label="t('riskScope.meltingScope')" data-testid="scope-path">
+      <li v-for="v in versions" :key="v.scope_version" class="path-item" :data-change="v.change">
+        <button
+          type="button"
+          class="step-btn"
+          :aria-pressed="v.scope_version === openVersion?.scope_version"
           :data-version="v.scope_version"
-          :data-change="v.change"
           :data-basis="hasBasis(v) || v.change !== 'narrowed' ? undefined : 'missing'"
-          data-testid="version-line"
+          data-testid="path-step"
+          @click="picked_version = v.scope_version"
         >
-          <div class="step-size">
-            <span class="size" data-testid="size">{{ v.size }}</span>
-            <span v-if="deltaOf(v, i)" class="delta">{{ deltaOf(v, i) }}</span>
-          </div>
-          <div class="step-body">
-            <p class="step-title">{{ stepTitle(v) }}</p>
-            <p v-if="v.trigger && v.trigger.kind !== 'human' && v.trigger.kind !== 'computed'" class="step-trigger ant-wrap" :data-kind="v.trigger.kind" data-testid="step-trigger">
-              {{ t(`widgets.analysis.riskScope.trigger.${codeToKey(v.trigger.kind)}`) }}: {{ v.trigger.label }}
-            </p>
-            <p class="step-basis ant-wrap" :class="{ bad: v.change === 'narrowed' && !hasBasis(v) }">
-              <template v-if="v.reason?.text.trim()">{{ v.reason.text }}</template>
-              <template v-else-if="v.change === 'narrowed'">{{ t('riskScope.basis') }}: {{ t('widgets.analysis.riskScope.noBasis') }}</template>
-            </p>
-            <p class="step-meta muted ant-wrap">
-              <template v-if="v.author"><slot name="author" :id="v.author" :author-name="v.author_name ?? null">{{ v.author_name || v.author }}</slot></template>
-              <template v-else>{{ t('widgets.analysis.riskScope.systemAuthor') }}</template>
-              · {{ dateTime(v.recorded_at) }}
-              <template v-if="v.evidence_event_ids.length"> · {{ t('widgets.analysis.riskScope.evidence', { n: v.evidence_event_ids.length }) }}</template>
-            </p>
-            <ul v-if="v.evidence?.length" class="step-evidence" data-testid="step-evidence">
-              <li v-for="r in v.evidence" :key="r.event_id" class="ant-wrap">{{ d(new Date(r.occurred_at), 'dateTime') }} · {{ recordText(r) }}</li>
-            </ul>
-            <p v-if="v.change !== 'computed' && (v.items_removed?.length || v.items_added?.length)" class="step-items ant-wrap" data-testid="step-items">
-              <template v-if="v.items_removed?.length">{{ t('widgets.analysis.riskScope.itemsRemoved') }}: </template>
-              <button v-for="id in v.items_removed ?? []" :key="`r-${id}`" type="button" class="item-link" @click="emit('open-item', id)">{{ labelOf(id) }}</button>
-              <template v-if="v.items_added?.length">{{ t('widgets.analysis.riskScope.itemsAdded') }}: </template>
-              <button v-for="id in v.items_added ?? []" :key="`a-${id}`" type="button" class="item-link" @click="emit('open-item', id)">{{ labelOf(id) }}</button>
-            </p>
-            <p v-if="whereText(v)" class="step-where muted ant-wrap">{{ t('riskScope.breakdown.title') }}: {{ whereText(v) }}</p>
-          </div>
-        </li>
-      </ol>
+          <span class="size" data-testid="size">{{ v.size }}</span>
+          <span class="step-short ant-clamp-2">{{ shortTitle(v) }}</span>
+        </button>
+      </li>
+    </ol>
+    <p class="muted ant-wrap" data-testid="not-defective">
+      <template v-if="reduction && versions.length > 1"><span data-testid="reduction">{{ t('riskScope.reduction', { from: reduction.from, to: reduction.to }) }}</span> · </template>{{ t('widgets.analysis.riskScope.onlyByEvidence') }}
+    </p>
+
+    <!-- Выбранная ступень: почему такой размер — основание, повод, доказательства, кто исключён, кто и когда. -->
+    <section v-if="openVersion" class="step" :data-version="openVersion.scope_version" :data-change="openVersion.change" data-testid="version-line">
+      <p class="step-title">
+        {{ stepTitle(openVersion) }}
+        <span v-if="openDelta" class="delta">{{ openDelta }}</span>
+      </p>
+      <p v-if="openVersion.trigger && openVersion.trigger.kind !== 'human' && openVersion.trigger.kind !== 'computed'" class="step-trigger ant-wrap" :data-kind="openVersion.trigger.kind" data-testid="step-trigger">
+        {{ t(`widgets.analysis.riskScope.trigger.${codeToKey(openVersion.trigger.kind)}`) }}: {{ openVersion.trigger.label }}
+      </p>
+      <p class="step-basis ant-wrap" :class="{ bad: openVersion.change === 'narrowed' && !hasBasis(openVersion) }">
+        <template v-if="openVersion.reason?.text.trim()">{{ openVersion.reason.text }}</template>
+        <template v-else-if="openVersion.change === 'narrowed'">{{ t('riskScope.basis') }}: {{ t('widgets.analysis.riskScope.noBasis') }}</template>
+      </p>
+      <p v-if="openVersion.change === 'computed' && (model.common_factor || model.last_known_good)" class="muted ant-wrap">
+        <template v-if="model.common_factor">{{ t('riskScope.commonFactor', { factor: `${t(FACTOR_TEXT[model.common_factor.factor])}: ${model.common_factor.label || model.common_factor.value}` }) }}</template>
+        <template v-if="model.last_known_good"> · {{ t('riskScope.lastKnownGood', { what: model.last_known_good.label, time: dateTime(model.last_known_good.at) }) }}</template>
+      </p>
+      <ul v-if="openVersion.evidence?.length" class="step-evidence" data-testid="step-evidence">
+        <li v-for="r in openVersion.evidence" :key="r.event_id" class="ant-wrap">{{ d(new Date(r.occurred_at), 'dateTime') }} · {{ recordText(r) }}</li>
+      </ul>
+      <p v-if="openVersion.change !== 'computed' && (openVersion.items_removed?.length || openVersion.items_added?.length)" class="step-items ant-wrap" data-testid="step-items">
+        <template v-if="openVersion.items_removed?.length">{{ t('widgets.analysis.riskScope.itemsRemoved') }}: </template>
+        <button v-for="id in openVersion.items_removed ?? []" :key="`r-${id}`" type="button" class="item-link" @click="emit('open-item', id)">{{ labelOf(id) }}</button>
+        <template v-if="openVersion.items_added?.length">{{ t('widgets.analysis.riskScope.itemsAdded') }}: </template>
+        <button v-for="id in openVersion.items_added ?? []" :key="`a-${id}`" type="button" class="item-link" @click="emit('open-item', id)">{{ labelOf(id) }}</button>
+      </p>
+      <p class="step-meta muted ant-wrap">
+        <template v-if="openVersion.author"><slot name="author" :id="openVersion.author" :author-name="openVersion.author_name ?? null">{{ openVersion.author_name || openVersion.author }}</slot></template>
+        <template v-else>{{ t('widgets.analysis.riskScope.systemAuthor') }}</template>
+        · {{ dateTime(openVersion.recorded_at) }}
+        <template v-if="openVersion.evidence_event_ids.length"> · {{ t('widgets.analysis.riskScope.evidence', { n: openVersion.evidence_event_ids.length }) }}</template>
+        <template v-if="whereText(openVersion)"> · {{ t('riskScope.breakdown.title') }}: {{ whereText(openVersion) }}</template>
+      </p>
       <p v-if="model.shipped_to_partners" class="muted">{{ t('riskScope.partners.shippedToPartners', { n: model.shipped_to_partners }) }}</p>
     </section>
 
-    <!-- Изделия по тому, что о них известно; щелчок — окно изделия (Д-70). -->
-    <section v-if="model.items.length" class="items">
-      <h4>{{ t('widgets.analysis.riskScope.items') }}</h4>
+    <!-- Изделия области — по раскрытию: серое (нет данных) — не зелёное (исключено с основанием). -->
+    <details v-if="model.items.length" class="items" data-testid="items">
+      <summary>{{ t('widgets.analysis.riskScope.itemsSummary', { n: current?.size ?? 0 }) }}</summary>
       <template v-for="k in KNOWN_ORDER" :key="k">
         <component
           :is="k === 'excluded' ? 'details' : 'div'"
@@ -287,7 +283,7 @@ function submit(): void {
           </ul>
         </component>
       </template>
-    </section>
+    </details>
 
     <footer class="actions">
       <ActionButton overflow="wrap" :size="naiveSizeOf(density)" type="primary" secondary :disabled="!canNarrow || busy || moment.isReplay" data-testid="narrow" @click="openForm('narrow')" :label="t('riskScope.narrow')" />
@@ -359,141 +355,28 @@ h4 {
 }
 
 /* Итог: число крупно, путь сужения, счётчики «что известно». */
-.summary {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ant-space-2);
-  min-width: 0;
-}
 
-.headline {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--ant-space-2);
-  align-items: baseline;
-}
 
-.now {
-  font-size: var(--ant-fs-display);
-  font-weight: var(--ant-fw-bold);
-  line-height: 1;
-}
 
-.now-text {
-  font-size: var(--ant-fs-title);
-  font-weight: var(--ant-fw-bold);
-}
 
-.path {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--ant-space-1);
-  align-items: center;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  font-size: var(--ant-fs-title);
-  font-weight: var(--ant-fw-bold);
-}
 
-.path li + li::before {
-  margin-right: var(--ant-space-1);
-  color: var(--ant-text-3);
-  content: '→';
-}
 
-.path li[data-change='narrowed'] {
-  color: var(--ant-status-success-text);
-}
 
-.path li[data-change='expanded'] {
-  color: var(--ant-status-danger-text);
-}
 
-.counts {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
-  gap: var(--ant-space-2);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
 
-.counts li {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  padding: var(--ant-space-2) var(--ant-space-3);
-  border-left: 4px solid var(--tone);
-  border-radius: var(--ant-radius-md);
-  background: var(--tone-soft);
-}
 
-.count-n {
-  font-size: var(--ant-fs-title);
-  font-weight: var(--ant-fw-bold);
-}
 
-.count-l {
-  color: var(--ant-text-2);
-}
 
 /* Ступени области. */
-.steps ol {
-  display: flex;
-  flex-direction: column;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
 
-.step {
-  display: grid;
-  grid-template-columns: 56px minmax(0, 1fr);
-  gap: var(--ant-space-3);
-  padding: var(--ant-space-3) 0;
-  border-top: 1px solid var(--ant-border);
-}
 
-.step:first-child {
-  border-top: 0;
-}
 
-.step-size {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-}
 
-.size {
-  font-size: var(--ant-fs-title);
-  font-weight: var(--ant-fw-bold);
-  font-variant-numeric: tabular-nums;
-}
 
-.delta {
-  color: var(--ant-status-success-text);
-  font-weight: var(--ant-fw-bold);
-}
 
-.step[data-change='expanded'] .delta {
-  color: var(--ant-status-danger-text);
-}
 
-.step-body {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ant-space-1);
-  min-width: 0;
-}
 
-.step-title {
-  font-weight: var(--ant-fw-bold);
-}
 
-.step[data-change='expanded'] .step-title {
-  color: var(--ant-status-danger-text);
-}
 
 .step-basis.bad {
   color: var(--ant-status-danger-text);
@@ -570,11 +453,6 @@ h4 {
 }
 
 /* Изделия группами по тому, что известно. */
-.items {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ant-space-3);
-}
 
 .group {
   display: flex;
@@ -673,5 +551,114 @@ summary.group-title {
   border-radius: var(--ant-radius-sm);
   font: inherit;
   resize: vertical;
+}
+
+/* Путь области: числа-кнопки со стрелками; выбранная ступень выделена. */
+.path {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ant-space-2);
+  align-items: stretch;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.path-item {
+  display: flex;
+  align-items: center;
+}
+
+.path-item + .path-item::before {
+  margin-right: var(--ant-space-2);
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-display);
+  content: '→';
+}
+
+.step-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 110px;
+  max-width: 200px;
+  padding: var(--ant-space-2) var(--ant-space-3);
+  border: 1px solid var(--ant-border);
+  border-radius: var(--ant-radius-md);
+  background: var(--ant-surface);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.step-btn:hover {
+  background: var(--ant-surface-hover);
+}
+
+.step-btn[aria-pressed='true'] {
+  border-color: var(--ant-accent);
+  background: var(--ant-accent-soft);
+}
+
+.step-btn[data-basis='missing'] {
+  border-color: var(--ant-status-danger);
+}
+
+.size {
+  font-size: var(--ant-fs-display);
+  font-weight: var(--ant-fw-bold);
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.path-item[data-change='narrowed'] .size {
+  color: var(--ant-status-success-text);
+}
+
+.path-item[data-change='expanded'] .size {
+  color: var(--ant-status-danger-text);
+}
+
+.step-short {
+  color: var(--ant-text-2);
+  font-size: var(--ant-fs-meta);
+}
+
+/* Раскрытая ступень. */
+.step {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ant-space-1);
+  min-width: 0;
+  padding: var(--ant-space-3) var(--ant-space-4);
+  border-left: 4px solid var(--ant-accent);
+  border-radius: var(--ant-radius-md);
+  background: var(--ant-surface-subtle);
+}
+
+.step-title {
+  font-weight: var(--ant-fw-bold);
+}
+
+.delta {
+  margin-left: var(--ant-space-2);
+  color: var(--ant-status-success-text);
+}
+
+.step[data-change='expanded'] .delta,
+.step[data-change='expanded'] .step-title {
+  color: var(--ant-status-danger-text);
+}
+
+.items summary {
+  font-weight: var(--ant-fw-bold);
+  cursor: pointer;
+}
+
+.items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ant-space-3);
 }
 </style>
