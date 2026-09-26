@@ -27,7 +27,13 @@ var _ platform.SignatureChecker = (*Service)(nil)
 // подпись сама (акты ключей и сменный рапорт модуля signing, подписи этапов
 // документов классом document-signature) или не пишет записей.
 func (s *Service) CheckRequest(ctx context.Context, act platform.Action, rq platform.SignedRequest) (platform.Signature, bool, error) {
-	if s.d.Registry == nil || act.SignatureLevel < 1 || ownCheck(act) {
+	if s.d.Registry == nil || act.SignatureLevel < 1 {
+		return platform.Signature{}, true, nil
+	}
+	if ownCheck(act) {
+		if slices.Contains(act.Emits, catalog.DocumentSignatureRecorded) {
+			return s.checkDocumentSignature(ctx, rq)
+		}
 		return platform.Signature{}, true, nil
 	}
 	body, err := requestBody(rq.Body)
@@ -106,4 +112,35 @@ func signedItem(payload []byte) string {
 	}
 	_ = json.Unmarshal(payload, &ev)
 	return ev.ItemID
+}
+
+// checkDocumentSignature — подпись этапа документа пакетом класса
+// document-signature (AD-12, AD-14, эпик 28): агент токена подписал
+// содержимое документа (signing_payload_b64), отпечаток содержимого равен
+// doc_digest команды, подписант — пользователь сеанса. Без конверта —
+// прежний путь модуля documents (подпись над отпечатком или демо, Д-30).
+func (s *Service) checkDocumentSignature(ctx context.Context, rq platform.SignedRequest) (platform.Signature, bool, error) {
+	env, payload, err := dom.ParseEnvelope(rq.Meta.Signature)
+	if err != nil || len(env.Signatures) == 0 {
+		return platform.Signature{}, true, nil
+	}
+	if class, _, _ := dom.ParsePayloadType(env.PayloadType); class != dom.ClassDocumentSignature {
+		return platform.Signature{}, true, nil
+	}
+	body, err := requestBody(rq.Body)
+	if err != nil {
+		return platform.Signature{}, false, fail(errcodes.ApiValidationFailed, "тело команды не JSON-объект", "field", "body", "reason", err.Error())
+	}
+	actor := platform.PrincipalFrom(ctx).PersonID
+	a, err := s.verify(ctx, rq.Meta.Signature, payload, dom.ClassDocumentSignature, actor, false)
+	if err != nil {
+		return platform.Signature{}, false, err
+	}
+	if want, _ := body["doc_digest"].(string); want != "" && dom.Digest(payload) != want {
+		return platform.Signature{}, false, fail(errcodes.SigningDocumentChanged, "подписано содержимое с отпечатком "+dom.Digest(payload)+
+			", а команда называет "+want+" — подпишите заново", "doc_id", rq.Params["document_id"])
+	}
+	return platform.Signature{Status: string(a.Status), Method: a.Method, Provenance: a.Provenance, SignerPersonID: a.SignerPersonID,
+		KeyStorage: a.KeyStorage, StorageVariant: a.StorageVariant, KeyRefs: a.KeyRefs,
+		Envelope: json.RawMessage(bytes.Clone(rq.Meta.Signature))}, false, nil
 }

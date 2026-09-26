@@ -199,6 +199,35 @@
         },
         "on_behalf_of": {
           "$ref": "defs.v1.json#/definitions/person_ref"
+        },
+        "signature": {
+          "type": "object",
+          "description": "Подписанный пакет команды — поле `signature` запроса, как есть (конверт DSSE, contracts/crypto/dsse-envelope.schema.json): подписан запрос JCS{operation, params, body} (Д-59). Принят модулем signing (CheckCommand) до записи; сам конверт записи — сервера. Его пересчитывает верификатор (AD-9). Отсутствует — демо без агента токена (Д-30)."
+        },
+        "signature_method": {
+          "type": "string",
+          "enum": [
+            "token_agent",
+            "paper",
+            "demo_signer"
+          ],
+          "description": "Способ подписи команды: агент токена или ключ в браузере, бумага с заверением, демо-подписант сценариев."
+        },
+        "key_storage": {
+          "type": "string",
+          "enum": [
+            "hardware_token",
+            "software_browser"
+          ],
+          "description": "Класс хранения ключа подписанта по акту регистрации (AD-11, AD-14, Д-72): физический ключ или ключ в браузере. Берётся из реестра ключей, а не из заявления клиента."
+        },
+        "key_storage_variant": {
+          "type": "string",
+          "enum": [
+            "extension",
+            "page"
+          ],
+          "description": "Разновидность хранения ключа в браузере: в расширении или в хранилище страницы."
         }
       },
       "required": [

@@ -85,6 +85,8 @@ type DocumentView struct {
 	Content           map[string]any          `json:"content" doc:"Канонические данные документа (JCS без rendering_hash)."`
 	RenderingHash     string                  `json:"rendering_hash" doc:"H(render(шаблон@версия, content))."`
 	DocDigest         string                  `json:"doc_digest" doc:"Отпечаток документа streebog256:…; в QR печатной рамки."`
+	// SigningPayloadB64 — содержимое для подписи агентом токена (AD-14, эпик 28).
+	SigningPayloadB64 string `json:"signing_payload_b64,omitempty" doc:"Содержимое для подписи (AD-12, AD-14): base64 канонических байт {content, rendering_hash, template_ref, doc_format_version}, отпечаток которых — doc_digest."`
 	SummaryFields     []DocumentSummaryField  `json:"summary_fields" doc:"Поля сводки уровня 2 — входят в отпечаток (AD-12)."`
 	SourceEventIDs    []string                `json:"source_event_ids" doc:"События-источники документа."`
 	Stages            []DocumentApprovalStage `json:"stages" doc:"Обязательные подписи — замороженный набор (AD-43)."`
@@ -171,6 +173,8 @@ type RoutedDocument struct {
 	DocType     string               `json:"doc_type"`
 	Title       string               `json:"title"`
 	DocDigest   string               `json:"doc_digest" doc:"Отпечаток — входит в QR бумажного экземпляра (AD-43)."`
+	// SigningPayloadB64 — содержимое для подписи агентом токена (AD-14, эпик 28).
+	SigningPayloadB64 string `json:"signing_payload_b64,omitempty" doc:"Содержимое для подписи (AD-12, AD-14): base64 канонических байт {content, rendering_hash, template_ref, doc_format_version}, отпечаток которых — doc_digest. Агент токена подписывает содержимое, а не отпечаток, и пересчитывает отпечаток сам."`
 	Status      string               `json:"status" enum:"drafted,in_route,closed,annulled" doc:"Те же значения, что у документов паспорта."`
 	DraftedAt   time.Time            `json:"drafted_at"`
 	Route       []DocumentRouteStage `json:"route"`

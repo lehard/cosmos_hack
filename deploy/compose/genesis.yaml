@@ -101,6 +101,41 @@ services:
     volumes:
       - ant-keys:/var/lib/ant-keys:ro
 
+  # Демо-персоны сценариев (AD-26, AD-33, Д-59): обычный клиент ant — вход
+  # под персоной, те же операции API, подпись ключом класса scenario только
+  # запросов, совпадающих с шагом scenarios/definitions. Ключи — том
+  # demo-signer-keys от ant init (генезис). Нет в профиле prod: служба
+  # запускается профилем compose demo (make demo, --profile demo).
+  demo-signer:
+    image: ${ANT_IMAGE:-ant:local}
+    entrypoint: ["/demo-signer"]
+    command: ["serve"]
+    profiles: [demo]
+    environment:
+      ANT_PROFILE: ${ANT_PROFILE:-demo}
+      DEMO_SIGNER_KEYS: /var/lib/demo-signer/keys
+      DEMO_SIGNER_POLICY: /etc/ant/normative/policy/policy.v1.yaml
+      DEMO_SIGNER_SCENARIOS: /etc/ant/scenarios
+      DEMO_SIGNER_ANT: http://ant:8080
+      DEMO_SIGNER_LISTEN: ":8445"
+    depends_on:
+      init:
+        condition: service_completed_successfully
+      ant:
+        condition: service_healthy
+    volumes:
+      - demo-signer-keys:/var/lib/demo-signer/keys:ro
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    # HTTP-проверки в distroless нет: живость — по журналу службы и GET /healthz изнутри сети.
+    healthcheck:
+      disable: true
+    mem_limit: 64m
+    restart: unless-stopped
+    labels:
+      ant.project: ant
+
 # keeper-data, verifier-data, ant-pki, kek — тома эпика 29 (compose.yaml).
 volumes:
   ant-keys:

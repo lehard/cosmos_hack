@@ -3,6 +3,7 @@ package documents
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"slices"
 	"strconv"
@@ -197,7 +198,8 @@ func (s *Service) Document(ctx context.Context, documentID string, version int, 
 	out := DocumentView{DocumentID: d.ID, Version: ver.No, Template: d.TemplateRef, DocFormatVersion: dom.DocFormatVersion, Title: d.Title,
 		Subject: drill(d.Subject), Status: d.Status(), Content: content, RenderingHash: built.RenderingHash, DocDigest: built.Digest,
 		SummaryFields: summaryFields(built.Content), SourceEventIDs: []string{}, Stages: []DocumentApprovalStage{}, Signatures: []DocumentSignatureView{},
-		QR: dom.QR(d.ID, built.Digest), BasisSeq: v.BasisSeq, DocType: d.DocType, Class: d.Class, Live: live, Verification: ver.Verification}
+		QR: dom.QR(d.ID, built.Digest), BasisSeq: v.BasisSeq, DocType: d.DocType, Class: d.Class, Live: live, Verification: ver.Verification,
+		SigningPayloadB64: signingPayload(built.Content, built.RenderingHash, d.TemplateRef, built.Digest)}
 	if !live && ver.No != d.Current().No {
 		out.Status = versionStatus(ver)
 	}
@@ -541,7 +543,8 @@ func (s *Service) request(_ context.Context, v *view, d *dom.Doc, person string)
 	}
 	rq := DecisionRequest{
 		Document: RoutedDocument{DocumentID: d.ID, Version: cur.No, TemplateRef: d.TemplateRef, DocType: d.DocType, Title: d.Title, DocDigest: cur.Digest,
-			Status: status, DraftedAt: cur.At, Route: route, BasisSeq: v.BasisSeq},
+			Status: status, DraftedAt: cur.At, Route: route, BasisSeq: v.BasisSeq,
+			SigningPayloadB64: signingPayload(cur.Content, cur.RenderingHash, d.TemplateRef, cur.Digest)},
 		Evidence: []DecisionEvidence{}, SimilarAccepted: []SimilarDecision{}, SimilarRejected: []SimilarDecision{},
 	}
 	for _, r := range cur.Sources {
@@ -611,4 +614,16 @@ func proposal(d *dom.Doc, v *view) (DecisionProposal, DecisionEscalation) {
 // streamEntries — записи потока документа (для проверки повтора команды, AD-7).
 func (s *Service) streamEntries(ctx context.Context, documentID string) ([]jc.JournalEntry, error) {
 	return s.readAll(ctx, appjournal.ReadQuery{Stream: streamOf(documentID)})
+}
+
+// signingPayload — содержимое для подписи агентом токена (AD-12, AD-14):
+// канонические байты, от которых взят отпечаток; base64. Отпечаток по ним не
+// сходится с записанным (шаблон сменился) — пусто: подписывать нечего,
+// остаётся бумага.
+func signingPayload(content json.RawMessage, renderingHash, templateRef, digest string) string {
+	in, err := dom.DigestInput(content, renderingHash, templateRef, dom.DocFormatVersion)
+	if err != nil || dom.Hash(in) != digest {
+		return ""
+	}
+	return base64.StdEncoding.EncodeToString(in)
 }

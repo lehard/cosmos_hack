@@ -137,6 +137,9 @@ type apiOptions struct {
 	// эпик 31); nil — заглушка 501.
 	mes *mesapp.Service
 	cad *cadapp.Service
+	// signing — ключи, профили, акты и проверка подписи команд уровня ≥ 1
+	// общим декоратором (signing.go, Д-59); nil — 501 и без проверки подписи.
+	signing *signingapp.Service
 }
 
 // buildAPI собирает HTTP API: общий декоратор (Gate) над портами прав и входа,
@@ -162,7 +165,12 @@ func buildAPI(mux *http.ServeMux, o apiOptions) *httpapi.API {
 		// (AD-39), редких подписантов и объяснения прав своим кодом.
 		gate.Policy = x.policy
 	}
-	a := httpapi.New(mux, httpapi.Config{Mode: o.mode, ModuleModes: o.moduleModes, Gate: gate, Identity: idp})
+	hc := httpapi.Config{Mode: o.mode, ModuleModes: o.moduleModes, Gate: gate, Identity: idp}
+	if o.signing != nil {
+		// Д-59: подпись команд уровня ≥ 1 — signing.CheckCommand по ExpectRequest.
+		hc.Signatures = o.signing
+	}
+	a := httpapi.New(mux, hc)
 	gate.SetCatalog(a.Actions)
 
 	{
@@ -268,7 +276,11 @@ func buildAPI(mux *http.ServeMux, o apiOptions) *httpapi.API {
 		documentshttp.Register(a, q, c)
 	}
 	{
-		q, c := pick[signingapp.Queries, signingapp.Commands](a.ModeFor("signing"), signingapp.NewService(), signingfx.New())
+		live := o.signing
+		if live == nil {
+			live = signingapp.NewService()
+		}
+		q, c := pick[signingapp.Queries, signingapp.Commands](a.ModeFor("signing"), live, signingfx.New())
 		signinghttp.Register(a, q, c)
 	}
 	{
@@ -391,4 +403,13 @@ func (o apiOptions) accessDirectory() *accessapp.Directory {
 		return nil
 	}
 	return o.access.directory
+}
+
+// policyAuthorities — полномочия по проекции политики (эпик 26); нет доступа
+// или проекции — false (модули остаются на стартовом каталоге).
+func (o apiOptions) policyAuthorities() (accessapp.PolicyAuthorities, bool) {
+	if o.access == nil {
+		return accessapp.PolicyAuthorities{}, false
+	}
+	return o.access.authorities()
 }

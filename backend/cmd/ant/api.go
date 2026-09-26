@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -143,13 +144,20 @@ func runAPI(ctx context.Context, env *environment) error {
 		}
 	}
 	if modeOf(opts, "nonconformity") == platform.ModeLive {
-		if opts.nonconformity, err = nonconformityLive(ctx, env, opts.accessDirectory()); err != nil {
+		if opts.nonconformity, err = nonconformityLive(ctx, env, opts.accessDirectory(), opts.policyAuthorities); err != nil {
 			return err
 		}
 	}
 	if modeOf(opts, "documents") == platform.ModeLive {
 		// Документы-проекции журнала и маршруты подписей (эпик 28).
 		if opts.documents, err = documentsLive(ctx, env); err != nil {
+			return err
+		}
+	}
+	if modeOf(opts, "signing") == platform.ModeLive || modeOf(opts, "nonconformity") == platform.ModeLive {
+		// Подписи и ключи (эпик 27) и проверка подписи команд уровня ≥ 1 в
+		// декораторе (пачка стыков Д-59).
+		if opts.signing, err = signingLive(ctx, env, opts.access); err != nil {
 			return err
 		}
 	}
@@ -205,6 +213,21 @@ func runAPI(ctx context.Context, env *environment) error {
 	attachSimulation(env, opts.simulation, simProxy, api, mux)
 	mux.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/problem+json")
+		if what, ok := appendOnly(r); ok {
+			// Д-62, AD-28: попытка правки журнала или журнала критических
+			// действий через API — 405 (код семейства api), а не 404.
+			w.Header().Set("Allow", "GET")
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"type":   "urn:ant:problem:api.method_not_allowed",
+				"title":  "Метод не разрешён",
+				"status": http.StatusMethodNotAllowed,
+				"code":   "api.method_not_allowed",
+				"detail": what + " только дописывается: " + r.Method + " " + r.URL.Path + " не поддерживается — записи не правятся и не удаляются (AD-2, AD-28)",
+				"params": map[string]string{"object": what, "method": r.Method},
+			})
+			return
+		}
 		w.WriteHeader(http.StatusNotFound)
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"type":   "urn:ant:problem:api.not_found",
@@ -296,4 +319,21 @@ func moduleModes(m map[string]string) map[string]platform.Mode {
 		out[k] = platform.Mode(v)
 	}
 	return out
+}
+
+// appendOnly — запрос на изменение журнала или журнала критических действий
+// (методы, кроме чтения, по путям, у которых есть только чтение): такие
+// журналы только дописываются системой (AD-2, AD-28, Д-62).
+func appendOnly(r *http.Request) (string, bool) {
+	if r.Method == http.MethodGet || r.Method == http.MethodHead {
+		return "", false
+	}
+	p := r.URL.Path
+	switch {
+	case p == "/api/v1/journal" || strings.HasPrefix(p, "/api/v1/journal/"):
+		return "Журнал событий", true
+	case p == "/api/v1/critical-actions" || strings.HasPrefix(p, "/api/v1/critical-actions/"):
+		return "Журнал критических действий", true
+	}
+	return "", false
 }
