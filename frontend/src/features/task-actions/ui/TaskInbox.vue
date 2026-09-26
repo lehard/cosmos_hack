@@ -129,7 +129,7 @@ const kindKey = (task: TaskEntry) => (taskNotificationKind(task.kind) === 'decis
       <!-- Своё действие задачи — глаголом (реестр operationId → форма или окно). -->
       <template v-if="isOpenTask(task) && canAct && !acked[task.task_id] && actionOf(task).kind !== 'ack'">
         <template v-for="a in [actionOf(task)]" :key="a.kind">
-          <ReceiveAction v-if="a.kind === 'form' && a.form === 'receive'" :item-id="a.itemId" :basis-seq="basisSeq" :to-location-id="(task as unknown as { location_id?: string | null }).location_id ?? null" data-testid="task-receive" />
+          <ReceiveAction v-if="a.kind === 'form' && a.form === 'receive'" :item-id="a.itemId" :basis-seq="basisSeq" :to-location-id="(task as unknown as { location_id?: string | null }).location_id ?? null" :step-key="task.step_key ?? null" data-testid="task-receive" />
           <template v-else-if="a.kind === 'form' && a.form === 'isolator_move'">
             <div v-if="moving !== task.task_id" class="line">
               <ActionButton :size="size" type="primary" secondary :label="t(a.verbKey)" data-testid="open-isolator-move" @click="moving = task.task_id" />
