@@ -22,6 +22,8 @@ export interface NCConclusionVersion {
      */
   revised_due_to: string | null;
   rule_id: string;
+  /** Ревизия нормативного слоя правила (FR-50): карта реакций, версия. */
+  rule_rev?: string;
   /** @minimum 1 */
   version: number;
 }

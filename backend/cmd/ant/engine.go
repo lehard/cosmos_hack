@@ -12,6 +12,7 @@ import (
 	engineapp "ant/internal/application/engine"
 	appjournal "ant/internal/application/journal"
 	machinelogsapp "ant/internal/application/machinelogs"
+	nonconformityapp "ant/internal/application/nonconformity"
 	qualityapp "ant/internal/application/quality"
 	mldomain "ant/internal/domain/machinelogs"
 	"ant/internal/infrastructure/storage/journal/clock"
@@ -29,7 +30,6 @@ import (
 // (AddContributor) — одна строка на модуль, как в buildAPI.
 func engineRegistry() *engineapp.Registry {
 	r := engineapp.NewRegistry()
-	mustRegister(qualityapp.Register(r)) // эпик 20: quality.item, quality.index, вклады показателей качества
 	// machinelogs (эпик 23): профили выполнения изделия, индекс выполнений,
 	// состояние и журнал оборудования, окна нарушений специального процесса.
 	if err := machinelogsapp.RegisterProjections(r, mldomain.Env{}); err != nil {
@@ -42,6 +42,10 @@ func engineRegistry() *engineapp.Registry {
 	if err := analyticsapp.Register(r); err != nil {
 		panic(err)
 	}
+	// nonconformity (эпик 21): оси «решение по изделию» и «сдерживание»,
+	// изоляция и несоответствия изделия.
+	mustRegister(nonconformityapp.RegisterProjections(r))
+	mustRegister(qualityapp.Register(r)) // эпик 20: quality.item, quality.index, вклады показателей качества
 	return r
 }
 

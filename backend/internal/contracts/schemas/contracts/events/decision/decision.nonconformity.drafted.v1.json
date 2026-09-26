@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://ant.invalid/contracts/events/decision/decision.nonconformity.drafted.v1.json",
   "title": "DecisionNonconformityDraftedV1",
-  "description": "Черновик карточки несоответствия — система собрала карточку для контролёра: сигналы, обстоятельства до и после, чего не хватает (режим 1, FR-50).",
+  "description": "Черновик карточки несоответствия — система собрала карточку для контролёра: сигналы, обстоятельства до и после, чего не хватает (режим 1, FR-50). Те же данные — полезная нагрузка функции-намерения nonconformity «черновик несоответствия» (draft_nonconformity), которую вызывают quality и machinelogs.",
   "type": "object",
   "properties": {
     "nc_id": {
@@ -22,6 +22,86 @@
     "document_id": {
       "$ref": "../common/defs.v1.json#/definitions/object_id",
       "description": "Черновик заявления о несоответствии (`document.version.drafted`)."
+    },
+    "basis_kind": {
+      "type": "string",
+      "enum": [
+        "inspection_result",
+        "equipment_deviation",
+        "check_skipped",
+        "damage_on_receipt",
+        "leak",
+        "special_process_violation",
+        "operator_report"
+      ],
+      "description": "На чём основан сигнал."
+    },
+    "severity": {
+      "$ref": "../common/defs.v1.json#/definitions/severity"
+    },
+    "defect_type_code": {
+      "type": "string",
+      "maxLength": 32,
+      "description": "Вид дефекта по классификатору; неизвестный — с флагом."
+    },
+    "zone_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Зона."
+    },
+    "step_key": {
+      "$ref": "../common/defs.v1.json#/definitions/step_key",
+      "description": "Ключ шага процесса (`ant:properties/@stepKey`), к которому относится запись."
+    },
+    "operation_run_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Выполнение операции, после которой найден признак."
+    },
+    "requirement_ref": {
+      "type": "string",
+      "maxLength": 256,
+      "description": "Требование КД: характеристика, допуск, ревизия."
+    },
+    "reaction_outcome": {
+      "type": "string",
+      "enum": [
+        "pass_to_next",
+        "manual_review",
+        "isolate",
+        "question_to_technologist"
+      ],
+      "description": "Реакция карты реакций (FR-48): isolate — сдерживание правилом."
+    },
+    "reaction_map_ref": {
+      "type": "string",
+      "maxLength": 128,
+      "description": "Карта реакций и строка: `‹id›@‹версия›#‹строка›`."
+    },
+    "closing_point": {
+      "type": "string",
+      "maxLength": 16,
+      "description": "Закрывающая точка предъявления (`ZT-…`), если черновик возник на ней."
+    },
+    "presentation_no": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Номер предъявления, если черновик возник на точке предъявления."
+    },
+    "missing_information": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "tool_unknown",
+          "cycle_end_time_unknown",
+          "no_observation_after_operation",
+          "no_observation_before_operation",
+          "operator_unknown",
+          "equipment_log_missing",
+          "other"
+        ]
+      },
+      "uniqueItems": true,
+      "description": "Нехватка сведений для разбора (перечисление, как у incident.hypothesis.computed)."
     }
   },
   "required": [

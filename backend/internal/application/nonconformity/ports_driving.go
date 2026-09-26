@@ -46,6 +46,7 @@ type Commands interface {
 	SetContainment(ctx context.Context, itemID string, in SetContainment) (platform.Receipt, error)
 	ReleaseContainment(ctx context.Context, itemID string, in ReleaseContainment) (platform.Receipt, error)
 	RevokeConcession(ctx context.Context, concessionID string, in RevokeConcession) (platform.Receipt, error)
+	GrantConcession(ctx context.Context, in GrantConcession) (platform.Receipt, error)
 	WaiveReworkLimit(ctx context.Context, itemID string, in WaiveReworkLimit) (platform.Receipt, error)
 	SetProcessHold(ctx context.Context, in SetProcessHold) (platform.Receipt, error)
 	ReleaseProcessHold(ctx context.Context, holdID string, in ReleaseProcessHold) (platform.Receipt, error)
@@ -104,6 +105,9 @@ func (Unimplemented) ReleaseContainment(context.Context, string, ReleaseContainm
 }
 func (Unimplemented) RevokeConcession(context.Context, string, RevokeConcession) (platform.Receipt, error) {
 	return nr("nonconformity.concession.revoke")
+}
+func (Unimplemented) GrantConcession(context.Context, GrantConcession) (platform.Receipt, error) {
+	return nr("nonconformity.concession.grant")
 }
 func (Unimplemented) WaiveReworkLimit(context.Context, string, WaiveReworkLimit) (platform.Receipt, error) {
 	return nr("nonconformity.rework_limit.waive")

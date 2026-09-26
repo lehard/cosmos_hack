@@ -298,6 +298,16 @@ export const errorCatalog = {
     "title": "Разрешение на отклонение не применимо",
     "uiKey": "errors.decision.concessionRequired"
   },
+  "nonconformity.invalid_transition": {
+    "status": 409,
+    "title": "Решение недопустимо в этом состоянии",
+    "uiKey": "errors.generic"
+  },
+  "nonconformity.process_hold_not_active": {
+    "status": 409,
+    "title": "Остановка точки процесса не действует",
+    "uiKey": "errors.generic"
+  },
   "process.unsupported_element": {
     "status": 422,
     "title": "Неподдерживаемый элемент BPMN",

@@ -90,7 +90,7 @@ func Modules(s Stage, r kernel.Record) (Stage, []kernel.Addressed) {
 	out = append(out, a...)
 	s.Reference, a = reference.Stage(s.Reference, r)
 	out = append(out, a...)
-	s.Machinelogs, a = machinelogs.Stage(s.Machinelogs, r)
+	s.Machinelogs, a = machinelogs.StageWith(machinelogs.StagePorts{Register: nonconformity.RegisterWindowNC})(s.Machinelogs, r)
 	out = append(out, a...)
 	s.Documents, a = documents.Stage(s.Documents, r)
 	out = append(out, a...)

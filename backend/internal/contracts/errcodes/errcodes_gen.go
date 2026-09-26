@@ -147,10 +147,14 @@ const (
 	NonconformityGateWithoutSignature Code = "nonconformity.gate_without_signature"
 	// Открыто вмешательство
 	NonconformityInterventionOpen Code = "nonconformity.intervention_open"
+	// Решение недопустимо в этом состоянии
+	NonconformityInvalidTransition Code = "nonconformity.invalid_transition"
 	// Изделие заблокировано
 	NonconformityItemBlocked Code = "nonconformity.item_blocked"
 	// Нет результата метода контроля
 	NonconformityMethodResultMissing Code = "nonconformity.method_result_missing"
+	// Остановка точки процесса не действует
+	NonconformityProcessHoldNotActive Code = "nonconformity.process_hold_not_active"
 	// Нужна причина отклонения
 	NonconformityRejectReasonRequired Code = "nonconformity.reject_reason_required"
 	// Вернуть поставщику можно только необработанное
@@ -285,8 +289,10 @@ var codes = [...]Info{
 	{Code: NonconformityConcessionRequired, Status: 422, Title: "Нужно действующее разрешение на отклонение", Detail: "«{decision}» без действующего разрешения на отклонение не подписывается", UIKey: "errors.decision.concessionRequired", Quarantine: false, Severity: "error", Guard: true, Aliases: []string{"E_PERMIT_REQUIRED"}},
 	{Code: NonconformityGateWithoutSignature, Status: 403, Title: "Точка предъявления без подписи", Detail: "Без подписи {role} изделие не проходит точку предъявления — попытка записана в журнал критических действий", UIKey: "errors.decision.gateWithoutSignature", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
 	{Code: NonconformityInterventionOpen, Status: 409, Title: "Открыто вмешательство", Detail: "Открыта запись вмешательства — приёмка и отгрузка запрещены", UIKey: "errors.decision.interventionOpen", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
+	{Code: NonconformityInvalidTransition, Status: 409, Title: "Решение недопустимо в этом состоянии", Detail: "«{action}» недопустимо: несоответствие {nc_id} в состоянии «{status}»", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
 	{Code: NonconformityItemBlocked, Status: 409, Title: "Изделие заблокировано", Detail: "Изделие заблокировано — операция запрещена до решения", UIKey: "errors.decision.itemBlocked", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
 	{Code: NonconformityMethodResultMissing, Status: 409, Title: "Нет результата метода контроля", Detail: "Нельзя принять: нет результата {method} на {inspection_point} — «нет данных» ≠ «годно»", UIKey: "empty.inspectionMissing", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
+	{Code: NonconformityProcessHoldNotActive, Status: 409, Title: "Остановка точки процесса не действует", Detail: "Остановка {hold_id} не найдена или уже снята", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
 	{Code: NonconformityRejectReasonRequired, Status: 422, Title: "Нужна причина отклонения", Detail: "Укажите, почему сигнал отклонён", UIKey: "errors.decision.rejectReasonRequired", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
 	{Code: NonconformityReturnOnlyUnprocessed, Status: 422, Title: "Вернуть поставщику можно только необработанное", Detail: "Изделие {item_id} уже обрабатывалось — «вернуть поставщику» недопустимо", UIKey: "errors.decision.returnOnlyUnprocessed", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
 	{Code: ProcessClosingPathWithoutHuman, Status: 422, Title: "Закрывающий путь без контроля человеком", Detail: "Закрывающий путь без контроля человеком: {element}", UIKey: "errors.process.closingPathWithoutHuman", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},

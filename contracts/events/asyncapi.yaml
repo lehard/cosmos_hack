@@ -170,6 +170,10 @@ channels:
         $ref: "#/components/messages/decision.process_hold.set.v1"
       decision.process_hold.released.v1:
         $ref: "#/components/messages/decision.process_hold.released.v1"
+      decision.clean_point.assigned.v1:
+        $ref: "#/components/messages/decision.clean_point.assigned.v1"
+      decision.concession.granted.v1:
+        $ref: "#/components/messages/decision.concession.granted.v1"
   erp:
     address: journal/erp
     title: "Журнал: семейство erp"
@@ -754,6 +758,8 @@ operations:
       - $ref: "#/channels/decision/messages/decision.rework_limit.waived.v1"
       - $ref: "#/channels/decision/messages/decision.process_hold.set.v1"
       - $ref: "#/channels/decision/messages/decision.process_hold.released.v1"
+      - $ref: "#/channels/decision/messages/decision.clean_point.assigned.v1"
+      - $ref: "#/channels/decision/messages/decision.concession.granted.v1"
   journal.erp:
     action: send
     title: ant записывает записи семейства erp
@@ -2075,7 +2081,7 @@ components:
     decision.nonconformity.drafted.v1:
       name: decision.nonconformity.drafted.v1
       title: Черновик карточки несоответствия
-      summary: "Черновик карточки несоответствия — система собрала карточку для контролёра: сигналы, обстоятельства до и после, чего не хватает (режим 1, FR-50)."
+      summary: "Черновик карточки несоответствия — система собрала карточку для контролёра: сигналы, обстоятельства до и после, чего не хватает (режим 1, FR-50). Те же данные — полезная нагрузка функции-намерения nonconformity «черновик несоответствия» (draft_nonconformity), которую вызывают quality и machinelogs."
       contentType: application/json
       payload:
         allOf:
@@ -2505,6 +2511,52 @@ components:
       x-ant-kind: decision
       x-ant-emitter: nonconformity
       x-ant-stream: equipment
+      x-ant-axis: none
+      x-ant-action-class: permissive
+      x-ant-critical: true
+      x-ant-current: true
+    decision.clean_point.assigned.v1:
+      name: decision.clean_point.assigned.v1
+      title: Изделие в точке чистоты
+      summary: "Изделие попало в «точку чистоты» (FR-49): после снятия стопа точки процесса первые N изделий, прошедших её, проходят усиленный контроль; межизделийная стадия адресует запись в поток изделия."
+      contentType: application/json
+      payload:
+        allOf:
+          - $ref: ./common/envelope.v1.json
+          - type: object
+            properties:
+              event_type:
+                const: decision.clean_point.assigned
+              schema_version:
+                const: 1
+              data:
+                $ref: ./decision/decision.clean_point.assigned.v1.json
+      x-ant-kind: reaction
+      x-ant-emitter: nonconformity
+      x-ant-stream: item
+      x-ant-axis: containment
+      x-ant-action-class: protective
+      x-ant-critical: false
+      x-ant-current: true
+    decision.concession.granted.v1:
+      name: decision.concession.granted.v1
+      title: Разрешение на отклонение выдано
+      summary: "Разрешение на отклонение выдано (ГОСТ Р ИСО 9000 п. 3.12.5, FR-54): номер, пункт КД/ТУ, область действия, лимит количества, срок; лимит открывается атомарно с записью, расход — атомарно с решением (AD-39)."
+      contentType: application/json
+      payload:
+        allOf:
+          - $ref: ./common/envelope.v1.json
+          - type: object
+            properties:
+              event_type:
+                const: decision.concession.granted
+              schema_version:
+                const: 1
+              data:
+                $ref: ./decision/decision.concession.granted.v1.json
+      x-ant-kind: decision
+      x-ant-emitter: nonconformity
+      x-ant-stream: concession
       x-ant-axis: none
       x-ant-action-class: permissive
       x-ant-critical: true

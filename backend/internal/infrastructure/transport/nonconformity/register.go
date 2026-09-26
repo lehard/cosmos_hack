@@ -177,6 +177,15 @@ func Register(api *httpapi.API, q app.Queries, c app.Commands) {
 			return c.ResolveLot(ctx, in.LotID, in.Body)
 		})
 
+	httpapi.Do(api, httpapi.Post("/concessions", "Выдать разрешение на отклонение",
+		"FR-54, Д-24: номер, пункт КД/ТУ, область действия, лимит количества, срок; лимит открывается атомарно с записью (AD-39). "+
+			"Внешние полномочия (режим 5) — маршрут подписей документа разрешения."),
+		platform.Action{ID: "nonconformity.concession.grant", Class: platform.ClassPermissive, Critical: true, CAGroup: "nc_decision", Owner: owner,
+			Subject: "nonconformity", Emits: emits(catalog.DecisionConcessionGranted), SignatureLevel: 2},
+		func(ctx context.Context, in *struct{ Body app.GrantConcession }) (platform.Receipt, error) {
+			return c.GrantConcession(ctx, in.Body)
+		})
+
 	httpapi.Do(api, httpapi.Post("/concessions/{concession_id}/revoke", "Отозвать разрешение на отклонение",
 		"FR-54: отзыв разрешения — защитное действие; расход лимита прекращается."),
 		platform.Action{ID: "nonconformity.concession.revoke", Class: platform.ClassProtective, Critical: true, CAGroup: "nc_decision", Owner: owner,

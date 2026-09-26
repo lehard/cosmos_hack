@@ -212,6 +212,28 @@ export const eventCatalog = {
     "caGroup": null,
     "currentVersion": 1
   },
+  "decision.clean_point.assigned": {
+    "title": "Изделие в точке чистоты",
+    "emitter": "nonconformity",
+    "kind": "reaction",
+    "stream": "item",
+    "axis": "containment",
+    "actionClass": "protective",
+    "critical": false,
+    "caGroup": null,
+    "currentVersion": 1
+  },
+  "decision.concession.granted": {
+    "title": "Разрешение на отклонение выдано",
+    "emitter": "nonconformity",
+    "kind": "decision",
+    "stream": "concession",
+    "axis": "none",
+    "actionClass": "permissive",
+    "critical": true,
+    "caGroup": "nc_decision",
+    "currentVersion": 1
+  },
   "decision.concession.revoked": {
     "title": "Разрешение на отклонение отозвано",
     "emitter": "nonconformity",

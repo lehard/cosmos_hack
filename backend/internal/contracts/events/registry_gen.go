@@ -31,6 +31,8 @@ var dataTypes = [...]DataType{
 	{Type: "binding.link.assigned", Version: 1, New: func() any { return new(BindingLinkAssignedV1) }},
 	{Type: "binding.link.resolved", Version: 1, New: func() any { return new(BindingLinkResolvedV1) }},
 	{Type: "cad.assembly.imported", Version: 1, New: func() any { return new(CadAssemblyImportedV1) }},
+	{Type: "decision.clean_point.assigned", Version: 1, New: func() any { return new(DecisionCleanPointAssignedV1) }},
+	{Type: "decision.concession.granted", Version: 1, New: func() any { return new(DecisionConcessionGrantedV1) }},
 	{Type: "decision.concession.revoked", Version: 1, New: func() any { return new(DecisionConcessionRevokedV1) }},
 	{Type: "decision.containment.applied", Version: 1, New: func() any { return new(DecisionContainmentAppliedV1) }},
 	{Type: "decision.containment.released", Version: 1, New: func() any { return new(DecisionContainmentReleasedV1) }},

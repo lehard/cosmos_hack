@@ -47,6 +47,8 @@ var Files = [...]string{
 	"contracts/events/common/defs.v1.json",
 	"contracts/events/common/envelope.v1.json",
 	"contracts/events/common/sse-entity-changed.v1.json",
+	"contracts/events/decision/decision.clean_point.assigned.v1.json",
+	"contracts/events/decision/decision.concession.granted.v1.json",
 	"contracts/events/decision/decision.concession.revoked.v1.json",
 	"contracts/events/decision/decision.containment.applied.v1.json",
 	"contracts/events/decision/decision.containment.released.v1.json",
