@@ -33,7 +33,7 @@ func (s *Service) Circumstances(ctx context.Context, ncID string, m platform.Mom
 		return Circumstances{}, err
 	}
 	out := Circumstances{NCID: ncID, Records: []CircumstanceRecord{}, MissingInformation: append([]string{}, a.Missing...),
-		ConclusionIsCategorical: a.Categorical, BasisSeq: max(iv.BasisSeq, n.Seq)}
+		ConclusionIsCategorical: a.Categorical, BasisSeq: max(iv.BasisSeq, n.Seq, s.incidentBasis(ctx, n))}
 	if r := a.Operation; r != nil {
 		out.Operation = &OperationSpan{OperationRunID: r.RunID, Label: operationLabel(*r), StartedAt: r.Started, FinishedAt: r.Finished}
 	}
@@ -67,7 +67,7 @@ func (s *Service) Hypotheses(ctx context.Context, ncID string, m platform.Moment
 		return Hypotheses{}, err
 	}
 	out := Hypotheses{NCID: ncID, Version: n.Versions, Hypotheses: []Hypothesis{}, MissingInformation: append([]string{}, a.Missing...),
-		ConclusionIsCategorical: a.Categorical, SimilarCases: similar, BasisSeq: max(iv.BasisSeq, n.Seq)}
+		ConclusionIsCategorical: a.Categorical, SimilarCases: similar, BasisSeq: max(iv.BasisSeq, n.Seq, s.incidentBasis(ctx, n))}
 	refs := refIndex(iv.State, a)
 	rejected := map[string]*dom.ReasonRecord{}
 	for _, h := range n.Hypotheses {
@@ -471,6 +471,24 @@ func (s *Service) driftOption(ctx context.Context, v dom.IncidentRecord, views [
 	o.Label = fmt.Sprintf("Исключить выполненные на %s до выхода режима из уставки (%d) — журнал %s", name, len(o.ItemIDs), name)
 	o.ReasonText = fmt.Sprintf("Журнал %s: режим впервые вне уставки %s; выполнения на %s до этого — в уставке", name, at, name)
 	return []NarrowOption{o}
+}
+
+// incidentBasis — basis_seq потоков инцидентов несоответствия: команды из
+// разбора и гипотез (запрос измерения, вывод о причине) проверяются по потоку
+// инцидента (AD-39), поэтому чтение, с которого их шлют, отдаёт и его seq —
+// иначе после сужения области команда получает journal.stale_state.
+func (s *Service) incidentBasis(ctx context.Context, n dom.NCRecord) int64 {
+	var out int64
+	for _, id := range n.IncidentIDs {
+		if v, err := s.incident(ctx, id); err == nil {
+			out = max(out, v.BasisSeq)
+		}
+	}
+	// Инцидент команды (тот же выбор, что у RequestMeasurement).
+	if v, err := s.ncIncident(ctx, n); err == nil {
+		out = max(out, v.BasisSeq)
+	}
+	return out
 }
 
 // labelOf — метка изделия из проекции разбора; нет — номер из id.
