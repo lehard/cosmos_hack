@@ -91,6 +91,12 @@ function customSpeed(v: number | null): void {
 
 // Целевые события для кнопок стенда, которым нужна запись (повтор, опоздание, подделка).
 const targets = reactive<Record<string, string>>({})
+/**
+ * Кнопки, которые принимают целевое событие, даже если оно необязательно
+ * (FR-152, эпик 36): пусто — сервер берёт последнее подходящее событие прогона.
+ */
+const TARGETABLE: ReadonlySet<Injection['injection']> = new Set(['duplicate_event', 'late_event', 'corrupt_frame', 'machine_fault', 'tamper_outside'])
+const hasTarget = (item: Injection) => item.needs_target || TARGETABLE.has(item.injection)
 watch(
   () => props.run?.run_id,
   () => Object.keys(targets).forEach((k) => delete targets[k]),
@@ -280,11 +286,11 @@ function inject(item: Injection): void {
               {{ item.title }}
             </NButton>
             <NInput
-              v-if="item.needs_target"
+              v-if="hasTarget(item)"
               v-model:value="targets[item.injection]"
               size="small"
               class="target"
-              :placeholder="t('widgets.scenarios.stand.target')"
+              :placeholder="t(item.needs_target ? 'widgets.scenarios.stand.target' : 'widgets.scenarios.stand.targetOptional')"
               :aria-label="t('widgets.scenarios.stand.target')"
             />
             <span v-if="item.description" class="muted">{{ item.description }}</span>
