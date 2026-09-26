@@ -1,0 +1,201 @@
+<script setup lang="ts">
+/**
+ * Участок — представление (PRD §3a «Мастер участка — Участок», FR-81, UJ-7):
+ * операции цеха — очередь, в работе, длительность против нормы, повторные
+ * выполнения против лимита доработок, незавершённые операции, аномалии; рядом с
+ * растущей очередью — факты участка («почему растёт очередь»); посты —
+ * назначенный и присутствие, текущая деталь, оборудование и текущее выполнение.
+ * Элементы и токены дизайн-системы «Главный» (shared/ui/README.md).
+ */
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { NAlert, NTag } from 'naive-ui'
+import type { RefEquipment } from '@/entities/equipment'
+import { toolLifeOf } from '@/entities/equipment'
+import { normText, overNorm, type ProcessStep } from '@/entities/live-map'
+import { formatValue, MetricNumber, type MetricValue } from '@/entities/metric'
+import { PRESENCE_TEXT, presenceTagType } from '@/entities/workplace'
+import type { Density } from '@/shared/config/widget'
+import { naiveSizeOf } from '@/shared/config/widget'
+import { useProblemText } from '@/shared/i18n/problem'
+import { ActionButton, DataTable, EmptyState, SectionPanel } from '@/shared/ui'
+import { minutesOf } from '../model/norms'
+import { queueFacts, type StationPost, type StationStep } from '../model/station'
+import { anomalyText, factText } from '../model/texts'
+import PostRun from './PostRun.vue'
+
+const props = withDefaults(
+  defineProps<{
+    /** Название цеха участка; null — цех не определён, показан весь завод. */
+    workshopName: string | null
+    steps: readonly StationStep[] | null
+    stepsError?: unknown
+    posts: readonly StationPost[] | null
+    postsError?: unknown
+    registry?: readonly RefEquipment[] | null
+    stepIndex: ReadonlyMap<string, ProcessStep>
+    /** Момент просмотра (для «идёт N мин»). */
+    at: Date
+    density?: Density
+  }>(),
+  { stepsError: undefined, postsError: undefined, registry: null, density: 'comfortable' },
+)
+const emit = defineEmits<{ item: [itemId: string]; node: [stepKey: string] }>()
+const { t, te, n } = useI18n()
+const problemText = useProblemText()
+const size = computed(() => naiveSizeOf(props.density))
+
+const value = (v: MetricValue) => formatValue({ t, n: (x, f) => n(x, f) }, v)
+const durationOver = (s: StationStep) => overNorm(minutesOf(s.meanDuration), s.step.norm)
+const factLine = (s: StationStep) => queueFacts(s, props.posts ?? [], props.registry).map((f) => factText(t, f, value))
+</script>
+
+<template>
+  <div class="station" data-testid="station-view">
+    <p class="ant-muted ant-wrap" data-testid="workshop">
+      {{ workshopName ? t('widgets.shopFloor.station.workshop', { name: workshopName }) : t('widgets.shopFloor.station.noWorkshop') }}
+    </p>
+
+    <SectionPanel :title="t('widgets.shopFloor.station.steps')" variant="plain" data-testid="steps">
+      <NAlert v-if="stepsError && !steps" type="error" :bordered="false">{{ problemText(stepsError) }}</NAlert>
+      <EmptyState v-else-if="steps && !steps.length" compact :title="t('widgets.shopFloor.station.noSteps')" />
+      <div v-else-if="steps" class="list">
+        <SectionPanel v-for="s in steps" :key="s.step.stepKey" variant="subtle" :data-step="s.step.stepKey" :data-growing="s.growing || undefined">
+          <div class="row">
+            <ActionButton text :size="size" :label="s.step.name" @click="emit('node', s.step.stepKey)" />
+            <span v-if="s.step.operationCode" class="ant-muted">{{ t('widgets.shopFloor.station.operationCode', { code: s.step.operationCode }) }}</span>
+            <NTag v-if="s.step.specialProcess" size="small" :bordered="false" type="info">{{ t('widgets.shopFloor.station.specialProcess') }}</NTag>
+          </div>
+          <div class="row" data-testid="counters">
+            <NTag size="small" :bordered="false" :type="s.growing ? 'warning' : 'default'" data-testid="queue">
+              {{ t('liveMap.counters.inQueue') }}: {{ s.counters ? s.counters.queue : '—' }}
+            </NTag>
+            <NTag size="small" :bordered="false">{{ t('liveMap.counters.inWork') }}: {{ s.counters ? s.counters.in_progress : '—' }}</NTag>
+            <NTag v-if="s.counters?.nonconformities" size="small" :bordered="false" type="error">
+              {{ t('plural.nonconformities', { n: s.counters.nonconformities }, s.counters.nonconformities) }}
+            </NTag>
+            <NTag v-if="s.bottleneck" size="small" :bordered="false" type="warning" data-testid="bottleneck">
+              {{ t('liveMap.bottleneck') }}<template v-if="s.bottleneck.wait"> · {{ s.bottleneck.wait }}</template>
+            </NTag>
+            <NTag v-for="a in s.anomalies" :key="a.kind" size="small" :bordered="false" type="warning" :data-anomaly="a.kind">
+              <span class="ant-ellipsis" :title="anomalyText(t, te, a)">{{ anomalyText(t, te, a) }}</span>
+            </NTag>
+            <NTag v-if="s.dataGap" size="small" :bordered="false" data-testid="data-gap">{{ t('widgets.shopFloor.station.dataGap') }}</NTag>
+          </div>
+          <div class="facts">
+            <div class="row" data-testid="duration">
+              <span class="ant-muted">{{ t('widgets.shopFloor.station.meanDuration') }}:</span>
+              <MetricNumber v-if="s.meanDuration" :value="s.meanDuration" />
+              <span v-else class="ant-muted">{{ t('empty.noDataUnknown') }}</span>
+              <span class="ant-muted">· {{ normText(t, s.step.norm) }}</span>
+              <NTag v-if="durationOver(s)" size="small" :bordered="false" type="error">{{ t('widgets.shopFloor.station.overNorm') }}</NTag>
+            </div>
+            <div class="row" data-testid="reworks">
+              <span class="ant-muted">{{ t('widgets.shopFloor.station.reworkRuns') }}:</span>
+              <MetricNumber v-if="s.reworkRuns" :value="s.reworkRuns" :show-origin="false" />
+              <span v-else class="ant-muted">{{ t('empty.noDataUnknown') }}</span>
+              <span v-if="s.step.reworkLimit !== null" class="ant-muted">
+                · {{ t('widgets.shopFloor.station.reworkLimit', { limit: s.step.reworkLimit, scope: t(`widgets.shopFloor.station.reworkScope.${s.step.reworkLimitScope ?? 'item'}`) }) }}
+              </span>
+            </div>
+            <div class="row" data-testid="unfinished">
+              <span class="ant-muted">{{ t('analytics.metrics.unfinishedOperations.title') }}:</span>
+              <MetricNumber v-if="s.unfinished" :value="s.unfinished" :show-origin="false" />
+              <span v-else class="ant-muted">{{ t('empty.noDataUnknown') }}</span>
+            </div>
+          </div>
+          <NAlert v-if="s.growing" type="warning" :bordered="false" :title="t('widgets.shopFloor.why.title', { step: s.step.name })" data-testid="why">
+            <p class="ant-muted ant-wrap">{{ t('widgets.shopFloor.why.factsNotCause') }}</p>
+            <p v-for="(line, i) in factLine(s)" :key="i" class="ant-wrap" data-testid="why-fact">{{ line }}</p>
+            <p v-if="!factLine(s).length" class="ant-wrap">{{ t('widgets.shopFloor.why.none') }}</p>
+          </NAlert>
+        </SectionPanel>
+      </div>
+    </SectionPanel>
+
+    <SectionPanel :title="t('widgets.shopFloor.station.posts')" variant="plain" data-testid="posts">
+      <NAlert v-if="postsError && !posts" type="error" :bordered="false">{{ problemText(postsError) }}</NAlert>
+      <EmptyState v-else-if="posts && !posts.length" compact :title="t('empty.noRecords')" />
+      <DataTable v-else-if="posts" :caption="t('widgets.shopFloor.station.posts')">
+        <thead>
+          <tr>
+            <th>{{ t('liveMap.posts.station') }}</th>
+            <th>{{ t('liveMap.posts.assigned') }}</th>
+            <th>{{ t('liveMap.posts.currentItem') }}</th>
+            <th>{{ t('common.words.equipment') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="p in posts" :key="p.post.workplace_id" :data-workplace="p.post.workplace_id" :data-presence="p.post.presence">
+            <th scope="row"><span class="ant-wrap">{{ p.post.station }}</span></th>
+            <td>
+              <div class="cell">
+                <span class="ant-wrap">{{ p.post.assigned?.display ?? t('liveMap.posts.notAssigned') }}</span>
+                <NTag size="small" :bordered="false" :type="presenceTagType(p.post.presence)">
+                  <span class="ant-wrap">{{ t(PRESENCE_TEXT[p.post.presence]) }}</span>
+                </NTag>
+              </div>
+            </td>
+            <td>
+              <ActionButton
+                v-if="p.post.current_item"
+                text
+                type="primary"
+                :size="size"
+                :label="p.post.current_item.label"
+                :hint="t('common.actions.openPassport')"
+                data-testid="current-item"
+                @click="emit('item', p.post.current_item.item_id)"
+              />
+              <span v-else class="ant-muted">—</span>
+            </td>
+            <td>
+              <span v-if="!p.equipment.length" class="ant-muted">—</span>
+              <div v-for="e in p.equipment" :key="e.equipment_id" class="cell" :data-equipment="e.equipment_id">
+                <div class="row">
+                  <span class="ant-wrap">{{ e.title }}</span>
+                  <NTag size="small" :bordered="false" :type="e.condition === 'fault' ? 'error' : e.condition === 'warning' ? 'warning' : 'default'">
+                    {{ t(`widgets.shopFloor.execution.${e.execution}`) }}
+                  </NTag>
+                  <span v-if="toolLifeOf(e)" class="ant-muted">{{ t('timeline.equipment.toolLife', toolLifeOf(e)!) }}</span>
+                </div>
+                <p v-for="w in e.warnings" :key="`${w.kind}-${w.since}`" class="warning ant-clamp-2" :title="w.text" data-testid="equipment-warning">{{ w.text }}</p>
+                <PostRun v-if="e.current_run_id" :run-id="e.current_run_id" :steps="stepIndex" :at="at" @item="(id) => emit('item', id)" />
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </DataTable>
+    </SectionPanel>
+  </div>
+</template>
+
+<style scoped>
+.station,
+.list,
+.facts,
+.cell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ant-gap);
+  min-width: 0;
+}
+
+.facts,
+.cell {
+  gap: var(--ant-space-1);
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ant-space-1) var(--ant-space-2);
+  align-items: center;
+  min-width: 0;
+}
+
+.warning {
+  color: var(--ant-status-attention-text);
+  font-size: var(--ant-fs-meta);
+}
+</style>
