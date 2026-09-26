@@ -9,8 +9,9 @@ import { computed, onBeforeUnmount, onMounted, ref, watch, type Component } from
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import {
-  Alarm, ChartLine, ClipboardCheck, Clock, Components, Dashboard, Database, FileAnalytics, GitBranch, History, Key,
-  Layout2, ListCheck, Lock, Point, Search, Shield, Signature, Sitemap, Target, Terminal, Tool, Users,
+  Alarm, ChartLine, ClipboardCheck, Clock, Components, Dashboard, Database, Eye, FileAnalytics, GitBranch, History,
+  Key, Layout2, ListCheck, Lock, PlugConnected, Point, Search, Shield, Signature, Sitemap, Target, Terminal, Tool,
+  Users,
 } from '@vicons/tabler'
 import { useDesk } from '@/entities/desk'
 import { SideNav, type SideNavItem } from '@/shared/ui'
@@ -46,6 +47,8 @@ const ICONS: Record<string, Component> = {
   scenarios: Terminal,
   access: Key,
   sources: Database,
+  integrations: PlugConnected,
+  'vision-adaptation': Eye,
   components: Components,
   queue: ListCheck,
   decision: Signature,
