@@ -10,6 +10,16 @@ checkpoints:
 - at: apply
   label: после нажатия
   assertions:
+  - id: STAND-LOSS-00
+    what: записи до и после разрыва приняты — потерянные не выдуманы
+    check:
+      operation: step
+      params:
+        label: '{inj:step}'
+      path: /delivered
+      op: eq
+      value: [accepted, accepted]
+    mapping: exact
   - id: STAND-LOSS-01
     what: разрыв номеров источника учтён
     check:

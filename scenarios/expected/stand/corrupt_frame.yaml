@@ -10,6 +10,16 @@ checkpoints:
 - at: apply
   label: после нажатия
   assertions:
+  - id: STAND-FRAME-00
+    what: кадр принят приёмом как есть — плохое наблюдение не отбрасывается
+    check:
+      operation: step
+      params:
+        label: '{inj:step}'
+      path: /delivered/0
+      op: eq
+      value: accepted
+    mapping: exact
   - id: STAND-FRAME-01
     what: 'исходный результат сохранён: качество 0,30'
     check:
