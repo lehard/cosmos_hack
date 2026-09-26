@@ -10,6 +10,7 @@ import (
 	accessapp "ant/internal/application/access"
 	documentsapp "ant/internal/application/documents"
 	appjournal "ant/internal/application/journal"
+	opsapp "ant/internal/application/ops"
 	referenceapp "ant/internal/application/reference"
 	accessdom "ant/internal/domain/access"
 	"ant/internal/infrastructure/fixtures/world"
@@ -79,6 +80,20 @@ func (r referenceShiftWindows) ShiftsAt(ctx context.Context, at time.Time) ([]ac
 		out = append(out, accessapp.ShiftWindow{ID: s.ShiftID, Start: s.From, End: s.To})
 	}
 	return out, nil
+}
+
+// skudProbe — «проверить соединение» со СКУД (эпик 48, AD-47): сверка
+// ответной стороны по about — версия протокола skud.v1.
+func skudProbe(ctx context.Context, env *environment) opsapp.ProbeResult {
+	c := skud.NewClient(skudBaseURL(env), env.cfg.Access.SKUD.Timeout)
+	a, err := c.About(ctx)
+	switch {
+	case err == nil:
+		return opsapp.ProbeResult{Result: opsapp.ProbeOK, Endpoint: c.Endpoint(), Detail: a.System + " отвечает, протокол " + a.Contract}
+	case a.Contract != "":
+		return opsapp.ProbeResult{Result: opsapp.ProbeDegraded, Endpoint: c.Endpoint(), Detail: err.Error()}
+	}
+	return opsapp.ProbeResult{Result: opsapp.ProbeUnreachable, Endpoint: c.Endpoint(), Detail: err.Error()}
 }
 
 // switchedSKUD — журнал СКУД, который не опрашивается у выключенной
