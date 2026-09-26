@@ -397,3 +397,24 @@ WHERE name = 'nonconformity.item' AND key = $1`, itemID); err != nil {
 	res.Detail = strings.Join(done, "; ")
 	return res, nil
 }
+
+// Targets — n последних фактов изделий (результаты контроля первыми), от
+// новых к старым: make tamper бьёт атакой 2 по более ранней записи, атакой 1
+// — по более поздней (пересчёт цепочки иначе «залечил» бы звено атаки 1).
+func (t *Tamperer) Targets(ctx context.Context, n int) ([]string, error) {
+	rows, err := t.Conn.Query(ctx, `SELECT seq FROM journal.entries WHERE chain = 'main' AND item_id IS NOT NULL AND entry_kind = 'fact'
+ORDER BY (event_type = 'inspection.result.recorded') DESC, seq DESC LIMIT $1`, n)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []string
+	for rows.Next() {
+		var s int64
+		if err := rows.Scan(&s); err != nil {
+			return nil, err
+		}
+		out = append(out, "seq:"+strconv.FormatInt(s, 10))
+	}
+	return out, rows.Err()
+}

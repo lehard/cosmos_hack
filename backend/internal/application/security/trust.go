@@ -29,6 +29,10 @@ type HeadsSender struct {
 	// MaxLinks — звеньев в одной передаче (догон большого журнала — частями).
 	MaxLinks int
 	Log      *slog.Logger
+
+	// lastReject — последний отказ хранителя: повтор того же отказа тревогу
+	// не дублирует.
+	lastReject string
 }
 
 // Chains — цепочки журнала в порядке передачи.
@@ -82,9 +86,13 @@ func (h *HeadsSender) Once(ctx context.Context) error {
 		_, err = h.Keeper.SubmitHeads(ctx, sub)
 		var rej *RejectedError
 		if errors.As(err, &rej) {
-			h.alert(ctx, rej, sub)
+			if rej.Detail != h.lastReject {
+				h.alert(ctx, rej, sub)
+				h.lastReject = rej.Detail
+			}
 			return err
 		}
+		h.lastReject = ""
 		if err != nil || !full {
 			return err
 		}

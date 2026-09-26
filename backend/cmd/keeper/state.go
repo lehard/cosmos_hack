@@ -152,7 +152,14 @@ func (s *Store) last() (app.Checkpoint, bool) {
 }
 
 // alarm — тревога хранителя (в его том и в состояние для GET /v1/status).
+// Повтор той же тревоги подряд (сервер снова шлёт переписанную цепочку) —
+// одна запись.
 func (s *Store) alarm(kind, chain string, seq int64, detail string) {
+	if n := len(s.alarms); n > 0 {
+		if l := s.alarms[n-1]; l.Alert == kind && l.Chain == chain && l.Seq == seq && kind != "heads_silent" {
+			return
+		}
+	}
 	a := app.KeeperAlarm{No: int64(len(s.alarms)) + 1, Alert: kind, Chain: chain, Seq: seq, Detail: detail,
 		At: s.now().UTC().Format(time.RFC3339Nano)}
 	s.alarms = append(s.alarms, a)

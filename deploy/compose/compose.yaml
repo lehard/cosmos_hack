@@ -4,13 +4,18 @@
 # migrate (разовая роль: схемы journal, engine, ingest, fixtures) → ant (роли api, worker,
 # crossitem, projector в одном процессе — делят пул и LISTEN; фронтенд встроен).
 # ant входит в БД как ant_admin и работает ролью ant_app (SET ROLE, AD-1).
+# trust-init (разово: ключи хранителя и верификатора, trust-anchors, демо-УЦ
+# mTLS, KEK) → keeper (хранитель контрольных точек, свой том) → verifier
+# (независимый верификатор по расписанию, роль БД ant_verifier) — эпик 29.
+# Подделка в обход системы — make tamper (служба tamper, профиль tools).
 # Следующие эпики добавляют сюда init (ключи, генезис), отдельные ant-worker ×N
-# (нагрузочный профиль, эпик 35), keeper, verifier, edge-agent, demo-signer.
+# (нагрузочный профиль, эпик 35), edge-agent, demo-signer.
 # Пересборка проекций — make rebuild [ITEM=‹item_id›].
 #
 # Память — под ~2,4 ГБ на всю систему (спайн, AD-25). Сейчас занято:
-#   postgres 768 МБ + ant 384 МБ (+ разовые secrets-init 32 МБ, migrate 128 МБ);
-#   остаток ~1,2 ГБ — воркерам, хранителю, верификатору и stand-ам.
+#   postgres 768 МБ + ant 384 МБ + keeper 48 МБ + verifier 256 МБ (+ разовые
+#   secrets-init 32 МБ, trust-init 32 МБ, migrate 128 МБ);
+#   остаток ~0,9 ГБ — воркерам и stand-ам.
 #
 # Переменные (необязательно): ANT_PROFILE (fixtures | demo | load | prod),
 # ANT_HTTP_PORT (порт на машине, по умолчанию 8480), ANT_HTTP_BIND
@@ -26,13 +31,17 @@ x-ant-image: &ant-image
     labels:
       ant.project: ant
 
+x-ant-env: &ant-env
+  ANT_PROFILE: ${ANT_PROFILE:-demo}
+  ANT_DB_HOST: postgres
+  ANT_DB_USER: ant_admin
+  ANT_DB_NAME: ant
+  ANT_DB_PASSWORD_FILE: /run/ant-secrets/ant/db_password
+  # Доверие (эпик 29): хранитель по mTLS, KEK шифрования при хранении.
+  ANT_SECURITY_KEEPER_URL: https://keeper:8444
+
 x-ant-common: &ant-common
-  environment:
-    ANT_PROFILE: ${ANT_PROFILE:-demo}
-    ANT_DB_HOST: postgres
-    ANT_DB_USER: ant_admin
-    ANT_DB_NAME: ant
-    ANT_DB_PASSWORD_FILE: /run/ant-secrets/ant/db_password
+  environment: *ant-env
   volumes:
     - secrets:/run/ant-secrets:ro
     - ../config/ant.yaml:/etc/ant/ant.yaml:ro
@@ -101,11 +110,105 @@ services:
     mem_limit: 128m
     restart: "no"
 
-  ant:
+  # Разовая подготовка доверия (эпик 29; до эпика 05 «ant init»): ключи
+  # хранителя и верификатора (hybrid: ГОСТ + ML-DSA-65), trust-anchors, демо-УЦ
+  # mTLS и сертификаты ant, verifier, tamper, KEK шифрования при хранении.
+  # Повтор ничего не перезаписывает. Сети нет.
+  trust-init:
+    <<: *ant-image
+    entrypoint: ["/keeper"]
+    command: ["-init", "-data", "/var/lib/keeper", "-init-verifier", "/var/lib/verifier", "-init-ant", "/var/lib/ant-pki",
+              "-init-tamper", "/var/lib/ant-tamper", "-init-kek", "/var/lib/ant-kek/kek"]
+    volumes:
+      - keeper-data:/var/lib/keeper
+      - verifier-data:/var/lib/verifier
+      - ant-pki:/var/lib/ant-pki
+      - tamper-pki:/var/lib/ant-tamper
+      - kek:/var/lib/ant-kek
+    network_mode: none
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 32m
+    restart: "no"
+    labels:
+      ant.project: ant
+
+  # Хранитель контрольных точек (AD-8, AD-46): свой том, mTLS; принимает
+  # головы обеих цепочек со звеньями, подписывает точки hybrid, сам поднимает
+  # тревогу при молчании сервера дольше 2N. N — policy.audit.* (TODO(26): из
+  # журнала; пока ANT_KEEPER_INTERVAL = security.interval ant).
+  keeper:
+    <<: *ant-image
+    entrypoint: ["/keeper"]
+    environment:
+      ANT_KEEPER_INTERVAL: 10s
+    depends_on:
+      trust-init:
+        condition: service_completed_successfully
+    volumes:
+      - keeper-data:/var/lib/keeper
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    healthcheck:
+      test: ["CMD", "/keeper", "-healthcheck"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 3s
+    mem_limit: 48m
+    restart: unless-stopped
+    labels:
+      ant.project: ant
+
+  # Независимый верификатор (AD-9, AD-46): роль БД ant_verifier (только
+  # чтение), trust-anchors и ключ — свой том, контрольные точки — у хранителя;
+  # отчёт подписывает и сдаёт хранителю. make verify — проверка по запросу.
+  verifier:
     <<: [*ant-image, *ant-common]
-    command: ["-role=api,worker,crossitem,projector"]
+    entrypoint: ["/verifier"]
+    command: []
     depends_on:
       migrate:
+        condition: service_completed_successfully
+      keeper:
+        condition: service_healthy
+    volumes:
+      - secrets:/run/ant-secrets:ro
+      - ../config/ant.yaml:/etc/ant/ant.yaml:ro
+      - verifier-data:/var/lib/verifier:ro
+      - kek:/var/lib/ant-kek:ro
+    mem_limit: 256m
+    restart: unless-stopped
+
+  # Демо-инструмент подделки в обход системы (AD-28, make tamper): подключение
+  # суперпользователя БД; только профили fixtures и demo. Не запускается
+  # docker compose up — только make tamper (профиль tools).
+  tamper:
+    <<: [*ant-image, *ant-common]
+    entrypoint: ["/tamper"]
+    command: []
+    profiles: [tools]
+    volumes:
+      - secrets:/run/ant-secrets:ro
+      - ../config/ant.yaml:/etc/ant/ant.yaml:ro
+      - kek:/var/lib/ant-kek:ro
+    mem_limit: 64m
+    restart: "no"
+
+  ant:
+    <<: [*ant-image, *ant-common]
+    # security — эпик 29: головы хранителю, отчёты верификатора, шина безопасности.
+    command: ["-role=api,worker,crossitem,projector,security"]
+    environment:
+      <<: *ant-env
+      ANT_SECURITY_EXPORT_FILE: /var/lib/ant-export/security-events.jsonl
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      # KEK и сертификат mTLS должны быть до первой записи журнала (AD-23).
+      trust-init:
         condition: service_completed_successfully
     ports:
       - "${ANT_HTTP_BIND:-127.0.0.1}:${ANT_HTTP_PORT:-8480}:8080"
@@ -114,6 +217,11 @@ services:
       - ../config/ant.yaml:/etc/ant/ant.yaml:ro
       # Хранилище материалов по адресу содержимого (materials.dir, AD-23).
       - materials:/var/lib/ant/materials
+      # Доверие (эпик 29): сертификат mTLS, KEK (только чтение), экспорт шины
+      # безопасности во внешний мониторинг ИБ (JSON-строки).
+      - ant-pki:/var/lib/ant-pki:ro
+      - kek:/var/lib/ant-kek:ro
+      - security-export:/var/lib/ant-export
     tmpfs:
       - /tmp:size=64m
     healthcheck:
@@ -133,5 +241,23 @@ volumes:
     labels:
       ant.project: ant
   secrets:
+    labels:
+      ant.project: ant
+  keeper-data:
+    labels:
+      ant.project: ant
+  verifier-data:
+    labels:
+      ant.project: ant
+  ant-pki:
+    labels:
+      ant.project: ant
+  tamper-pki:
+    labels:
+      ant.project: ant
+  kek:
+    labels:
+      ant.project: ant
+  security-export:
     labels:
       ant.project: ant

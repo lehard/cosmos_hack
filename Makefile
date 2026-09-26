@@ -225,14 +225,19 @@ sim-streams: ## Пересобрать потоки прогонов scenarios/d
 .PHONY: contract-demo tamper keys load verify rebuild token-agent
 contract-demo: ## Ломающее изменение контракта краснеет до отправки в 1С (FR-111; эпик 30 — отправка в stand 1С)
 	$(NODE_RUN_CONTRACTS) sh -c 'test -d node_modules && test ! package-lock.json -nt node_modules/.package-lock.json || npm ci --prefer-offline --no-audit --no-fund --loglevel=error; node contract-demo.mjs'
-tamper: ## Подделка в обход системы и её обнаружение (эпики 29, 36)
-	@echo "tamper: пока пусто — эпики 29, 36 (FR-74, FR-152)"
+# make tamper [ATTACK=1|2|3|all] — три атаки AD-28 демо-инструментом (профили
+# fixtures и demo), попытка того же через API и независимая проверка следом.
+tamper: ## Подделка в обход системы и её обнаружение: три атаки (AD-28), попытка через API, верификатор (эпик 29)
+	$(COMPOSE) --profile tools run --rm --no-deps tamper -attack $(or $(ATTACK),all) -api http://ant:8080
+	@echo; echo "Независимая проверка (верификатор, отчёт — хранителю):"
+	@$(COMPOSE) run --rm --no-deps verifier -once || test $$? -eq 3
+	@echo; echo "Индикатор целостности на столах загорится, когда ant заберёт отчёт у хранителя (security.interval)."
 keys: ## Ключи и генезис доверия (эпик 05)
 	@echo "keys: пока пусто — эпик 05 (AD-33)"
 load: ## Нагрузочный прогон 1 и N воркеров (эпик 35)
 	@echo "load: пока пусто — эпик 35 (FR-107)"
-verify: ## Независимый верификатор журнала (эпик 29)
-	@echo "verify: пока пусто — эпик 29 (AD-9)"
+verify: ## Независимый верификатор журнала: проверка по запросу, подписанный отчёт — хранителю (эпик 29, AD-9)
+	@$(COMPOSE) run --rm --no-deps verifier -once || test $$? -eq 3
 rebuild: ## Пересборка проекций из журнала (ant rebuild; ITEM=‹item_id› — одно изделие: повтор после «обработка остановлена»)
 	@# Полная пересборка — при остановленных worker и projector (служба ant),
 	@# после неё служба запускается снова; -item — на работающей системе.
