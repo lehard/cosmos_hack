@@ -7,6 +7,11 @@
  * `reference.equipment.list`), текущее выполнение (`machinelogs.run_profile.read`).
  * Разделы читаются независимо: отказ одной операции не прячет остальные.
  *
+ * Наверху — что пришло и ждёт: задачи процесса «Принять в цех» (форма прямо
+ * здесь, `notifications.task.list`) и изделия на входе участка (очередь первой
+ * операции, `item.item.list`); затем посты; затем операции. Нехватка данных
+ * источника в шапке не показывается — коротко у операции.
+ *
  * Срез: `scope: own_station` — цех по области роли сеанса (справочник мест,
  * `reference.location.list`); `workshop: WS-…` — цех явно; иначе весь завод;
  * `run_id` — прогон сценария (AD-38).
@@ -16,19 +21,18 @@ import { useEquipmentRegistry, useEquipmentStates } from '@/entities/equipment'
 import { operationsOf, parseProcessSteps, useLiveMap } from '@/entities/live-map'
 import { useAnalyticsOverview } from '@/entities/metric'
 import { resolveWorkshop, useLocations } from '@/entities/reference'
+import { useItemsAtStep } from '@/entities/operation'
 import { useSession } from '@/entities/session'
-import { usePosts } from '@/entities/workplace'
-import { useAlerts } from '@/entities/notification'
 import { useTasks } from '@/entities/task'
+import { taskActionOf, type ProcessTask } from '@/features/task-actions'
+import { usePosts } from '@/entities/workplace'
 import { useDrillDown } from '@/features/drill-down'
-import { AssignPostDrawer } from '@/features/post-assignment'
 import type { DrillRef } from '@/shared/model/drill'
 import { backendModeOf } from '@/shared/api/response'
 import type { WidgetProps } from '@/shared/config/widget'
 import { useMomentStore } from '@/shared/model/moment'
 import { WidgetFrame } from '@/shared/ui'
-import { buildPosts, buildSteps, stationState } from '../model/station'
-import { nowActions } from '../model/now'
+import { buildPosts, buildSteps, type EntryItem, type IncomingTask } from '../model/station'
 import StationPostsView from './StationPostsView.vue'
 
 const props = defineProps<WidgetProps>()
@@ -66,16 +70,30 @@ const timer = setInterval(() => (now.value = new Date()), 30_000)
 onBeforeUnmount(() => clearInterval(timer))
 const at = computed(() => (moment.asOf ? new Date(moment.asOf) : now.value))
 
-// «Требует действий»: открытые задачи мастера, несостыковки изоляции, люди не на месте, посты без исполнителя.
-const runParams = computed(() => (run.value ? { run_id: run.value } : {}))
-const tasksQ = useTasks(runParams)
-const alertsQ = useAlerts(runParams)
-const actions = computed(() => nowActions(tasksQ.data.value?.data.items ?? [], alertsQ.data.value?.data ?? [], postsQ.data.value?.data ?? []))
-const assignTo = ref<{ id: string; title: string } | null>(null)
-const shift = computed(() => session.data.value?.data.shift ?? null)
+// Что пришло и ждёт: открытые задачи приёмки (действие process.movement.receive).
+const tasksQ = useTasks(computed(() => (run.value ? { run_id: run.value } : {})))
+const incoming = computed<IncomingTask[]>(() =>
+  (tasksQ.data.value?.data.items ?? [])
+    .filter((t) => t.state === 'open')
+    .flatMap((t) => {
+      const a = taskActionOf(t as ProcessTask)
+      return a.kind === 'form' && a.form === 'receive' ? [{ taskId: t.task_id, itemId: a.itemId, title: t.title }] : []
+    }),
+)
+// Изделия на входе участка — очередь первой операции цеха.
+const entryStep = computed(() => {
+  const first = steps.value?.[0]
+  return first && (first.counters?.queue ?? 0) > 0 ? first.step.stepKey : null
+})
+const entryQ = useItemsAtStep(entryStep)
+const entryItems = computed<EntryItem[]>(() => {
+  if (!entryStep.value) return []
+  const waiting = new Set(incoming.value.map((r) => r.itemId))
+  return (entryQ.data.value?.data ?? []).filter((i) => !waiting.has(i.item_id)).map((i) => ({ item_id: i.item_id, label: i.label }))
+})
 
 const allFailed = computed(() => !!mapQ.error.value && !steps.value && !!postsQ.error.value && !posts.value)
-const state = computed(() => (allFailed.value ? 'input_error' : stationState(steps.value ?? [], posts.value ?? [])))
+const state = computed(() => (allFailed.value ? 'input_error' : 'normal'))
 </script>
 
 <template>
@@ -97,23 +115,14 @@ const state = computed(() => (allFailed.value ? 'input_error' : stationState(ste
       :step-index="parsed.byKey"
       :at="at"
       :density="density"
+      :incoming="incoming"
+      :entry-items="entryItems"
+      :basis-seq="tasksQ.data.value?.data.basis_seq ?? 0"
+      :can-act="!moment.isReplay"
       @item="(id) => drill.open({ entity: 'item', id })"
-      :shift-title="shift?.title ?? null"
-      :actions="actions"
-      @assign="(id, title) => (assignTo = { id, title })"
-      @open="(ref) => drill.open(ref)"
       @node="(key) => drill.open({ entity: 'operation', id: key } as unknown as DrillRef)"
       @workplace="(id) => drill.open({ entity: 'workplace', id })"
       @person="(id) => drill.open({ entity: 'person', id } as unknown as DrillRef)"
-    />
-    <AssignPostDrawer
-      :show="!!assignTo"
-      :workplace-id="assignTo?.id ?? null"
-      :workplace-title="assignTo?.title ?? ''"
-      :shift-id="shift?.id ?? null"
-      :shift-title="shift?.title ?? null"
-      :can-act="!moment.isReplay"
-      @close="assignTo = null"
     />
   </WidgetFrame>
 </template>

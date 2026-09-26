@@ -15,16 +15,16 @@ import { toolLifeOf } from '@/entities/equipment'
 import { normText, overNorm, type ProcessStep } from '@/entities/live-map'
 import { formatValue, MetricNumber, type MetricValue } from '@/entities/metric'
 import { PRESENCE_TEXT, presenceTagType } from '@/entities/workplace'
+import { ReceiveAction } from '@/features/item-receive'
 import type { Density } from '@/shared/config/widget'
 import { naiveSizeOf } from '@/shared/config/widget'
 import { useProblemText } from '@/shared/i18n/problem'
-import { ActionButton, EmptyState, SectionPanel } from '@/shared/ui'
+import { ActionButton, DataTable, EmptyState, SectionPanel } from '@/shared/ui'
 import { minutesOf } from '../model/norms'
-import { queueFacts, type StationPost, type StationStep } from '../model/station'
+import { queueFacts, type EntryItem, type IncomingTask, type StationPost, type StationStep } from '../model/station'
 import { anomalyText, factText } from '../model/texts'
-import { postTone, shiftSummary, type NowAction } from '../model/now'
-import type { DrillRef } from '@/shared/model/drill'
 import PostRun from './PostRun.vue'
+
 
 const props = withDefaults(
   defineProps<{
@@ -39,112 +39,115 @@ const props = withDefaults(
     /** Момент просмотра (для «идёт N мин»). */
     at: Date
     density?: Density
-    /** Смена сеанса — в строке состояния. */
-    shiftTitle?: string | null
-    /** «Требует действий»: задачи и несостыковки (model/now). */
-    actions?: readonly NowAction[]
+    /** Задачи приёмки — форма «Принять в цех» прямо здесь. */
+    incoming?: readonly IncomingTask[]
+    /** Изделия на входе участка. */
+    entryItems?: readonly EntryItem[]
+    /** seq для basis_seq приёмки (голова журнала при чтении задач, AD-39). */
+    basisSeq?: number
+    canAct?: boolean
   }>(),
-  { stepsError: undefined, postsError: undefined, registry: null, density: 'comfortable', shiftTitle: null, actions: () => [] },
+  { stepsError: undefined, postsError: undefined, registry: null, density: 'comfortable', incoming: () => [], entryItems: () => [], basisSeq: 0, canAct: true },
 )
-const emit = defineEmits<{
-  item: [itemId: string]
-  node: [stepKey: string]
-  workplace: [workplaceId: string]
-  person: [personId: string]
-  assign: [workplaceId: string, station: string]
-  open: [ref: DrillRef]
-}>()
+const emit = defineEmits<{ item: [itemId: string]; node: [stepKey: string]; workplace: [workplaceId: string]; person: [personId: string] }>()
 const { t, te, n } = useI18n()
 const problemText = useProblemText()
 const size = computed(() => naiveSizeOf(props.density))
 
 const value = (v: MetricValue) => formatValue({ t, n: (x, f) => n(x, f) }, v)
 const durationOver = (s: StationStep) => overNorm(minutesOf(s.meanDuration), s.step.norm)
-const summary = computed(() => shiftSummary(props.actions, (props.posts ?? []).map((p) => p.post), props.steps))
-/** Статистики смены по операции нет совсем — одной строкой, а не тремя «нет данных». */
-const noStats = (s: StationStep) => !s.meanDuration && !s.reworkRuns && !s.unfinished
-function actionText(a: NowAction): string {
-  switch (a.kind) {
-    case 'not_moved':
-      return t('widgets.shopFloor.now.notMoved', { item: a.item ?? '—' })
-    case 'presence':
-      return t('widgets.shopFloor.now.presence', { person: a.person, post: a.post, presence: t(PRESENCE_TEXT[a.presence!]) })
-    case 'unassigned':
-      return t('widgets.shopFloor.now.unassigned', { post: a.post })
-    default:
-      return a.title ?? ''
-  }
-}
-function act(a: NowAction): void {
-  if (a.kind === 'unassigned' && a.workplaceId) emit('assign', a.workplaceId, a.post ?? '')
-  else if (a.kind === 'presence' && a.workplaceId) emit('workplace', a.workplaceId)
-  else if (a.ref) emit('open', a.ref)
-}
-const actLabel = (a: NowAction) => t(`widgets.shopFloor.now.act.${a.kind}`)
+/** Показатели операции, которые пришли: пустые строки «нет данных» не показываем. */
+const hasFacts = (s: StationStep) => !!(s.meanDuration || s.reworkRuns || s.unfinished)
 const factLine = (s: StationStep) => queueFacts(s, props.posts ?? [], props.registry).map((f) => factText(t, f, value))
 </script>
 
 <template>
   <div class="station" data-testid="station-view">
-    <!-- Строка состояния: «как у меня дела?» одной строкой. -->
-    <div class="status-line" data-testid="status-line">
-      <strong class="ant-wrap" data-testid="workshop">{{ workshopName ?? t('widgets.shopFloor.station.noWorkshop') }}<template v-if="shiftTitle"> · {{ shiftTitle }}</template></strong>
-      <span :data-tone="summary.actions ? 'warn' : undefined">{{ t('widgets.shopFloor.now.sumActions', { n: summary.actions }, summary.actions) }}</span>
-      <span>{{ t('widgets.shopFloor.now.sumWorking', { n: summary.working }, summary.working) }}</span>
-      <span v-if="summary.unassigned" data-tone="warn">{{ t('widgets.shopFloor.now.sumUnassigned', { n: summary.unassigned }, summary.unassigned) }}</span>
-      <span>{{ t('widgets.shopFloor.now.sumInWork', { n: summary.inWork }, summary.inWork) }}</span>
-    </div>
+    <p class="ant-muted ant-wrap" data-testid="workshop">
+      {{ workshopName ? t('widgets.shopFloor.station.workshop', { name: workshopName }) : t('widgets.shopFloor.station.noWorkshop') }}
+    </p>
 
-    <!-- Требует действий: задачи и несостыковки цифрового и физического. -->
-    <section class="actions-block" :data-empty="!actions.length || undefined" data-testid="now-actions">
-      <h3 v-if="actions.length" class="block-title">{{ t('widgets.shopFloor.now.title') }} · {{ actions.length }}</h3>
-      <p v-else class="calm" data-testid="now-calm">✓ {{ t('widgets.shopFloor.now.calm') }}</p>
-      <ul v-if="actions.length" class="action-list">
-        <li v-for="a in actions" :key="a.key" class="action" :data-tone="a.tone" :data-kind="a.kind">
-          <span class="dot" aria-hidden="true" />
-          <span class="action-text ant-wrap">
-            <span v-if="a.kind === 'not_moved' || a.kind === 'presence'" class="kind">{{ t('widgets.shopFloor.now.mismatch') }}</span>
-            {{ actionText(a) }}
-          </span>
-          <ActionButton text type="primary" :size="size" :label="actLabel(a)" :data-testid="`act-${a.kind}`" @click="act(a)" />
+    <!-- Главное наверху: что пришло и ждёт, что в работе на постах. -->
+    <SectionPanel :title="t('stationDesk.incoming')" variant="plain" data-testid="incoming">
+      <p v-if="!incoming.length && !entryItems.length" class="ant-muted" data-testid="nothing-incoming">{{ t('stationDesk.nothingIncoming') }}</p>
+      <ul v-else class="incoming">
+        <li v-for="r in incoming" :key="r.taskId" class="incoming-row" :data-incoming="r.itemId">
+          <strong class="ant-wrap">{{ r.title }}</strong>
+          <ReceiveAction v-if="canAct" :item-id="r.itemId" :basis-seq="basisSeq" />
+        </li>
+        <li v-if="entryItems.length" class="incoming-row" data-testid="entry-items">
+          <span class="ant-muted">{{ t('stationDesk.atEntry') }}:</span>
+          <div class="row">
+            <ActionButton
+              v-for="i in entryItems"
+              :key="i.item_id"
+              text
+              type="primary"
+              :size="size"
+              :label="i.label"
+              :hint="t('common.actions.openPassport')"
+              @click="emit('item', i.item_id)"
+            />
+          </div>
         </li>
       </ul>
-    </section>
+    </SectionPanel>
 
-    <SectionPanel :title="t('widgets.shopFloor.station.posts')" variant="plain" data-testid="posts">
+    <SectionPanel :title="t('stationDesk.atPosts')" variant="plain" data-testid="posts">
       <NAlert v-if="postsError && !posts" type="error" :bordered="false">{{ problemText(postsError) }}</NAlert>
       <EmptyState v-else-if="posts && !posts.length" compact :title="t('empty.noRecords')" />
-      <!-- Посты карточками: состояние поста целиком за один взгляд. -->
-      <div v-else-if="posts" class="post-cards">
-        <article v-for="p in posts" :key="p.post.workplace_id" class="post-card" :data-tone="postTone(p.post)" :data-workplace="p.post.workplace_id" :data-presence="p.post.presence">
-          <header class="post-head">
-            <span class="dot" aria-hidden="true" />
-            <ActionButton text type="primary" :size="size" :label="p.post.station" data-testid="open-post" @click="emit('workplace', p.post.workplace_id)" />
-          </header>
-          <p class="post-line">
-            <ActionButton v-if="p.post.assigned" text :size="size" :label="p.post.assigned.display" data-testid="open-person" @click="emit('person', p.post.assigned.person_id)" />
-            <span v-else class="muted">{{ t('liveMap.posts.notAssigned') }}</span>
-            <NTag v-if="p.post.assigned" size="small" :bordered="false" :type="presenceTagType(p.post.presence)"><span class="ant-wrap">{{ t(PRESENCE_TEXT[p.post.presence]) }}</span></NTag>
-          </p>
-          <p v-if="p.post.current_item" class="post-line">
-            <span class="muted">{{ t('liveMap.posts.currentItem') }}:</span>
-            <ActionButton text type="primary" :size="size" :label="p.post.current_item.label" :hint="t('common.actions.openPassport')" data-testid="current-item" @click="emit('item', p.post.current_item.item_id)" />
-          </p>
-          <div v-for="e in p.equipment" :key="e.equipment_id" class="post-eq" :data-equipment="e.equipment_id">
-            <p class="post-line">
-              <span class="ant-wrap">{{ e.title }}</span>
-              <NTag size="small" :bordered="false" :type="e.condition === 'fault' ? 'error' : e.condition === 'warning' ? 'warning' : 'default'">{{ t(`widgets.shopFloor.execution.${e.execution}`) }}</NTag>
-              <span v-if="toolLifeOf(e)" class="muted">{{ t('timeline.equipment.toolLife', toolLifeOf(e)!) }}</span>
-            </p>
-            <p v-for="w in e.warnings" :key="`${w.kind}-${w.since}`" class="warning ant-clamp-2" :title="w.text" data-testid="equipment-warning">{{ w.text }}</p>
-            <PostRun v-if="e.current_run_id" :run-id="e.current_run_id" :steps="stepIndex" :at="at" @item="(id) => emit('item', id)" />
-          </div>
-          <footer class="post-foot">
-            <ActionButton v-if="!p.post.assigned || p.post.presence === 'not_assigned'" size="small" type="primary" secondary :label="t('widgets.shopFloor.now.act.unassigned')" data-testid="assign-post" @click="emit('assign', p.post.workplace_id, p.post.station)" />
-            <ActionButton size="small" quaternary :label="t('widgets.shopFloor.now.openPost')" @click="emit('workplace', p.post.workplace_id)" />
-          </footer>
-        </article>
-      </div>
+      <DataTable v-else-if="posts" :caption="t('widgets.shopFloor.station.posts')">
+        <thead>
+          <tr>
+            <th>{{ t('liveMap.posts.station') }}</th>
+            <th>{{ t('liveMap.posts.assigned') }}</th>
+            <th>{{ t('liveMap.posts.currentItem') }}</th>
+            <th>{{ t('common.words.equipment') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="p in posts" :key="p.post.workplace_id" :data-workplace="p.post.workplace_id" :data-presence="p.post.presence">
+            <th scope="row">
+              <ActionButton text type="primary" :size="size" :label="p.post.station" data-testid="open-post" @click="emit('workplace', p.post.workplace_id)" />
+            </th>
+            <td class="assigned">
+              <div class="cell">
+                <ActionButton v-if="p.post.assigned" text type="primary" :size="size" :label="p.post.assigned.display" data-testid="open-person" @click="emit('person', p.post.assigned.person_id)" />
+                <NTag v-if="p.post.presence !== 'unknown'" size="small" :bordered="false" :type="presenceTagType(p.post.presence)">
+                  <span class="ant-wrap">{{ t(PRESENCE_TEXT[p.post.presence]) }}</span>
+                </NTag>
+              </div>
+            </td>
+            <td>
+              <ActionButton
+                v-if="p.post.current_item"
+                text
+                type="primary"
+                :size="size"
+                :label="p.post.current_item.label"
+                :hint="t('common.actions.openPassport')"
+                data-testid="current-item"
+                @click="emit('item', p.post.current_item.item_id)"
+              />
+              <span v-else class="ant-muted">—</span>
+            </td>
+            <td>
+              <span v-if="!p.equipment.length" class="ant-muted">—</span>
+              <div v-for="e in p.equipment" :key="e.equipment_id" class="cell" :data-equipment="e.equipment_id">
+                <div class="row">
+                  <span class="ant-wrap">{{ e.title }}</span>
+                  <NTag v-if="e.execution !== 'unknown'" size="small" :bordered="false" :type="e.condition === 'fault' ? 'error' : e.condition === 'warning' ? 'warning' : 'default'">
+                    {{ t(`widgets.shopFloor.execution.${e.execution}`) }}
+                  </NTag>
+                  <span v-if="toolLifeOf(e)" class="ant-muted">{{ t('timeline.equipment.toolLife', toolLifeOf(e)!) }}</span>
+                </div>
+                <p v-for="w in e.warnings" :key="`${w.kind}-${w.since}`" class="warning ant-clamp-2" :title="w.text" data-testid="equipment-warning">{{ w.text }}</p>
+                <PostRun v-if="e.current_run_id" :run-id="e.current_run_id" :steps="stepIndex" :at="at" :current-item="p.post.current_item ?? null" @item="(id) => emit('item', id)" />
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </DataTable>
     </SectionPanel>
 
     <SectionPanel :title="t('widgets.shopFloor.station.steps')" variant="plain" data-testid="steps">
@@ -172,29 +175,25 @@ const factLine = (s: StationStep) => queueFacts(s, props.posts ?? [], props.regi
             <NTag v-for="a in s.anomalies" :key="a.kind" size="small" :bordered="false" type="warning" :data-anomaly="a.kind">
               <span class="ant-ellipsis" :title="anomalyText(t, te, a)">{{ anomalyText(t, te, a) }}</span>
             </NTag>
-            <NTag v-if="s.dataGap" size="small" :bordered="false" data-testid="data-gap">{{ t('widgets.shopFloor.station.dataGap') }}</NTag>
+            <span v-if="s.dataGap" class="ant-muted" data-testid="data-gap">{{ t('stationDesk.noSource') }}</span>
           </div>
-          <p v-if="noStats(s)" class="ant-muted ant-wrap" data-testid="no-stats">{{ t('widgets.shopFloor.now.noStats') }} · {{ normText(t, s.step.norm) }}</p>
-          <div v-else class="facts">
-            <div class="row" data-testid="duration">
+          <div v-if="hasFacts(s)" class="facts">
+            <div v-if="s.meanDuration" class="row" data-testid="duration">
               <span class="ant-muted">{{ t('widgets.shopFloor.station.meanDuration') }}:</span>
-              <MetricNumber v-if="s.meanDuration" :value="s.meanDuration" />
-              <span v-else class="ant-muted">{{ t('empty.noDataUnknown') }}</span>
+              <MetricNumber :value="s.meanDuration" />
               <span class="ant-muted">· {{ normText(t, s.step.norm) }}</span>
               <NTag v-if="durationOver(s)" size="small" :bordered="false" type="error">{{ t('widgets.shopFloor.station.overNorm') }}</NTag>
             </div>
-            <div class="row" data-testid="reworks">
+            <div v-if="s.reworkRuns" class="row" data-testid="reworks">
               <span class="ant-muted">{{ t('widgets.shopFloor.station.reworkRuns') }}:</span>
-              <MetricNumber v-if="s.reworkRuns" :value="s.reworkRuns" :show-origin="false" />
-              <span v-else class="ant-muted">{{ t('empty.noDataUnknown') }}</span>
+              <MetricNumber :value="s.reworkRuns" :show-origin="false" />
               <span v-if="s.step.reworkLimit !== null" class="ant-muted">
                 · {{ t('widgets.shopFloor.station.reworkLimit', { limit: s.step.reworkLimit, scope: t(`widgets.shopFloor.station.reworkScope.${s.step.reworkLimitScope ?? 'item'}`) }) }}
               </span>
             </div>
-            <div class="row" data-testid="unfinished">
+            <div v-if="s.unfinished" class="row" data-testid="unfinished">
               <span class="ant-muted">{{ t('analytics.metrics.unfinishedOperations.title') }}:</span>
-              <MetricNumber v-if="s.unfinished" :value="s.unfinished" :show-origin="false" />
-              <span v-else class="ant-muted">{{ t('empty.noDataUnknown') }}</span>
+              <MetricNumber :value="s.unfinished" :show-origin="false" />
             </div>
           </div>
           <NAlert v-if="s.growing" type="warning" :bordered="false" :title="t('widgets.shopFloor.why.title', { step: s.step.name })" data-testid="why">
@@ -209,8 +208,20 @@ const factLine = (s: StationStep) => queueFacts(s, props.posts ?? [], props.regi
 </template>
 
 <style scoped>
+.assigned {
+  min-width: 12em;
+}
+
+.assigned :deep(.ant-wrap) {
+  overflow-wrap: normal;
+  word-break: normal;
+  white-space: nowrap;
+}
+
 .station,
 .list,
+.incoming,
+.incoming-row,
 .facts,
 .cell {
   display: flex;
@@ -253,160 +264,22 @@ const factLine = (s: StationStep) => queueFacts(s, props.posts ?? [], props.regi
   background: var(--ant-status-attention-soft);
 }
 
-.status-line {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--ant-space-1) var(--ant-space-4);
-  align-items: baseline;
-  color: var(--ant-text-2);
-}
-
-.status-line [data-tone='warn'] {
+.warning {
   color: var(--ant-status-attention-text);
-  font-weight: var(--ant-fw-bold);
+  font-size: var(--ant-fs-meta);
 }
-
-.actions-block {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ant-space-2);
-  padding: var(--ant-space-3) var(--ant-space-4);
-  border: 1px solid var(--ant-status-attention);
-  border-left-width: 4px;
-  border-radius: var(--ant-radius-lg);
-  background: var(--ant-status-attention-soft);
-}
-
-.actions-block[data-empty] {
-  padding: var(--ant-space-2) var(--ant-space-4);
-  border-color: var(--ant-status-success);
-  background: var(--ant-status-success-soft);
-}
-
-.block-title,
-.calm {
-  margin: 0;
-  font-size: var(--ant-fs-title);
-}
-
-.calm {
-  color: var(--ant-status-success-text);
-  font-size: var(--ant-fs-body);
-  font-weight: var(--ant-fw-bold);
-}
-
-.action-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ant-space-1);
+.incoming {
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.action {
-  display: flex;
-  gap: var(--ant-space-2);
-  align-items: center;
-  min-width: 0;
-  padding: var(--ant-space-1) var(--ant-space-2);
-  border-radius: var(--ant-radius-md);
-  background: var(--ant-surface);
+.incoming-row {
+  padding: var(--ant-space-2) 0;
+  border-bottom: 1px solid var(--ant-border);
 }
 
-.action-text {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-.kind {
-  margin-right: var(--ant-space-1);
-  color: var(--ant-status-danger-text);
-  font-size: var(--ant-fs-meta);
-  font-weight: var(--ant-fw-bold);
-  text-transform: uppercase;
-}
-
-.dot {
-  flex: none;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--ant-status-neutral);
-}
-
-.action[data-tone='danger'] .dot {
-  background: var(--ant-status-danger);
-}
-
-.action[data-tone='warn'] .dot {
-  background: var(--ant-status-attention);
-}
-
-.post-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: var(--ant-space-3);
-}
-
-.post-card {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ant-space-1);
-  min-width: 0;
-  padding: var(--ant-space-3);
-  border: 1px solid var(--ant-border);
-  border-top: 4px solid var(--ant-border-strong);
-  border-radius: var(--ant-radius-lg);
-  background: var(--ant-surface);
-}
-
-.post-card[data-tone='ok'] {
-  border-top-color: var(--ant-status-success);
-}
-
-.post-card[data-tone='warn'] {
-  border-top-color: var(--ant-status-attention);
-}
-
-.post-card[data-tone='ok'] .post-head .dot {
-  background: var(--ant-status-success);
-}
-
-.post-card[data-tone='warn'] .post-head .dot {
-  background: var(--ant-status-attention);
-}
-
-.post-head,
-.post-line,
-.post-foot {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--ant-space-1) var(--ant-space-2);
-  align-items: center;
-  min-width: 0;
-  margin: 0;
-}
-
-.post-foot {
-  margin-top: auto;
-  padding-top: var(--ant-space-2);
-}
-
-.post-eq {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.muted {
-  color: var(--ant-text-3);
-  font-size: var(--ant-fs-meta);
-}
-
-.warning {
-  color: var(--ant-status-attention-text);
-  font-size: var(--ant-fs-meta);
+.incoming-row:last-child {
+  border-bottom: 0;
 }
 </style>

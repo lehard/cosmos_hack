@@ -63,7 +63,7 @@ describe('виджет «Участок»', () => {
   it('мастер видит, почему растёт очередь у поста сварки (UJ-7)', async () => {
     mockApi(routes())
     const w = await mountWidget(StationPostsWidget, props)
-    expect(w.find('[data-testid="workshop"]').text()).toContain('Сварочный цех')
+    expect(w.find('[data-testid="workshop"]').text()).toBe('Участок: Сварочный цех')
     const weld = w.find('[data-step="welding.weld"]')
     expect(weld.attributes('data-growing')).toBe('true')
     expect(weld.find('[data-testid="queue"]').text()).toBe('В очереди: 7')
@@ -91,9 +91,9 @@ describe('виджет «Участок»', () => {
     expect(plain(weld.find('[data-testid="reworks"]').text())).toContain('2')
     expect(plain(weld.find('[data-testid="reworks"]').text())).toContain('лимит доработок на зону: 3')
     expect(plain(weld.find('[data-testid="unfinished"]').text())).toContain('1')
-    // Нет ни одного показателя за смену — одной строкой, а не тремя «неизвестно».
-    expect(w.find('[data-step="welding.edge_prep"] [data-testid="no-stats"]').text()).toContain('Статистика смены по операции ещё не накоплена')
+    // Нет показателя — строки нет (не ноль и не стена «нет данных»).
     expect(w.find('[data-step="welding.edge_prep"] [data-testid="reworks"]').exists()).toBe(false)
+    expect(w.text()).not.toContain('Нет данных — неизвестно')
   })
 
   it('посты: присутствие, текущая деталь, оборудование, ресурс инструмента, текущее выполнение', async () => {
@@ -112,27 +112,43 @@ describe('виджет «Участок»', () => {
     expect(w.find('.widget-frame').attributes('data-state')).toBe('normal')
   })
 
-  it('«Сейчас»: строка состояния и «требует действий» — несостыковка присутствия и пост без исполнителя, с действием', async () => {
-    mockApi(routes())
-    const w = await mountWidget(StationPostsWidget, props)
-    expect(plain(w.find('[data-testid="status-line"]').text())).toContain('требуют действия')
-    const acts = w.find('[data-testid="now-actions"]')
-    const presence = acts.find('[data-kind="presence"]')
-    expect(presence.text()).toContain('Несостыковка')
-    expect(presence.text()).toContain('Сварщик W21 на посту «Пост сварки 2»')
-    const unassigned = acts.find('[data-kind="unassigned"]')
-    expect(unassigned.text()).toContain('Пост «Пост ОТК сварочного цеха» без исполнителя')
-    expect(unassigned.find('[data-testid="act-unassigned"]').text()).toBe('Назначить')
-    // Посты — карточками с тоном состояния.
-    expect(w.find('[data-testid="posts"] [data-workplace="WP-WELD-1"]').attributes('data-tone')).toBe('ok')
-    expect(w.find('[data-testid="posts"] [data-workplace="WP-WELD-2"]').attributes('data-tone')).toBe('warn')
-  })
-
-  it('узел без данных источника — «оценка невозможна»', async () => {
+  it('узел без данных источника — коротко у операции, шапка без «оценка невозможна»', async () => {
     mockApi(routes({ 'GET /api/v1/live-map': liveMap({ data_gaps: ['welding.weld'] }) }))
     const w = await mountWidget(StationPostsWidget, props)
-    expect(w.find('.widget-frame').attributes('data-state')).toBe('unable_to_assess')
-    expect(w.find('[data-step="welding.weld"] [data-testid="data-gap"]').text()).toBe('Нет данных источника — оценка невозможна')
+    expect(w.find('.widget-frame').attributes('data-state')).toBe('normal')
+    expect(w.find('[data-step="welding.weld"] [data-testid="data-gap"]').text()).toBe('нет данных источника')
+  })
+
+  it('наверху — что пришло и ждёт: задача «Принять в цех» с формой; затем посты, затем операции', async () => {
+    const item = 'ENT01:show-is2-20260921-1/I-3CDF7159'
+    const task = {
+      task_id: 'T-RCV',
+      kind: 'other',
+      title: 'Принять в цех Ф-001',
+      state: 'open',
+      assignee_role: 'site_foreman',
+      assignee_id: null,
+      created_at: '2026-09-21T05:00:00Z',
+      due_at: null,
+      overdue: false,
+      operation: 'process.movement.receive',
+      item_id: item,
+      item_label: 'Ф-001',
+    }
+    mockApi(
+      routes({
+        'GET /api/v1/tasks': { items: [task] },
+        'GET /api/v1/journal/head': { seq: 500, ca_seq: 1, clock_mode: 'system', recorded_at: '2026-09-21T05:00:00Z' },
+        'GET /api/v1/permissions': { policy_seq: 3, items: [{ action: 'process.movement.receive', subject: 'item', action_class: 'record' }] },
+      }),
+    )
+    const w = await mountWidget(StationPostsWidget, props)
+    const order = w.findAll('[data-testid="incoming"], [data-testid="posts"], [data-testid="steps"]').map((e) => e.attributes('data-testid'))
+    expect(order).toEqual(['incoming', 'posts', 'steps'])
+    const row = w.find(`[data-incoming="${item}"]`)
+    expect(row.text()).toContain('Принять в цех Ф-001')
+    expect(row.text()).not.toContain('I-3CDF7159')
+    expect(row.find('[data-action="receive-item"]').exists()).toBe(true)
   })
 
   it('справочник мест недоступен — участок не определён, показано всё предприятие; ошибки разделов — отдельно', async () => {

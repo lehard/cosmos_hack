@@ -42,6 +42,8 @@ const ICONS: Record<string, Component> = {
   circumstances: History,
   risk: Target,
   investigation: Target,
+  workbench: Dashboard,
+  actions: ClipboardCheck,
   journal: ListDetails,
   'decisions-journal': Gavel,
   integrity: Shield,

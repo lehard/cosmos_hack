@@ -66,7 +66,8 @@ function serve(deny: string[] = []) {
   vi.stubGlobal(
     'fetch',
     vi.fn(async (url: string) => {
-      const [path, query = ''] = String(url).split('?') as [string, string?]
+      const [rawPath, query = ''] = String(url).split('?') as [string, string?]
+      const path = decodeURIComponent(rawPath)
       calls.push(path)
       if (deny.includes(path)) return problem(403, 'access.forbidden')
       if (path === '/api/v1/workplaces/WP-W2') return json(card)
@@ -121,8 +122,11 @@ describe('окно поста', () => {
     expect(rows[0]).toContain('Допуск к рабочему месту снят автоматически: выход из зоны')
     expect(rows[0]).not.toContain('zone_exit')
     expect(rows[1]).toContain('Ключ вставлен')
-    // Только новые операции — без журнала, назначений и панели «Посты».
-    expect(calls.every((p) => p.startsWith('/api/v1/workplaces/WP-W2'))).toBe(true)
+    // Только операции окна поста — без журнала, назначений и панели «Посты»: карточка и
+    // история поста, оборудование поста и окно участка по его остановкам (FR-49), права над оборудованием.
+    const own = (p: string) =>
+      p.startsWith('/api/v1/workplaces/WP-W2') || p === '/api/v1/equipment' || /^\/api\/v1\/process\/steps\/[^/]+\/station-view$/.test(p) || p === '/api/v1/permissions'
+    expect(calls.filter((p) => !own(p))).toEqual([])
     w.unmount()
   })
 

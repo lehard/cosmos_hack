@@ -130,5 +130,9 @@ export const toNcGroup = (a: ApiNcGroup): NcGroup => ({
   nc_count: a.nc_count,
   investigation: a.investigation,
   last_found_at: a.last_found_at,
-  nc_ids: (a as ApiNcGroup & { nc_ids?: string[] }).nc_ids ?? [],
+  nc_ids: a.nc_ids ?? [],
+  defect_type_label: a.defect_type_label ?? null,
+  operation_label: a.operation_label ?? null,
+  equipment_label: a.equipment_label ?? null,
+  incident_id: a.incident_id ?? null,
 })

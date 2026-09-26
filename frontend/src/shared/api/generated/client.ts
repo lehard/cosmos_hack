@@ -372,6 +372,7 @@ import type {
   SimulationRunListParams,
   SimulationRunPlanParams,
   SimulationRunReadParams,
+  SimulationScenarioListParams,
   SourceList,
   SplitItem,
   StartOperation,
@@ -799,7 +800,7 @@ export const getAnalysisCommonFactorsReadUrl = (groupKey: string,
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/analysis/groups/${groupKey}/common-factors?${stringifiedParams}` : `/api/v1/analysis/groups/${groupKey}/common-factors`
+  return stringifiedParams.length > 0 ? `/api/v1/analysis/groups/${encodeURIComponent(String(groupKey))}/common-factors?${stringifiedParams}` : `/api/v1/analysis/groups/${encodeURIComponent(String(groupKey))}/common-factors`
 }
 
 /**
@@ -1040,7 +1041,7 @@ export const getAnalyticsControlChartReadUrl = (stepKey: string,
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/analytics/control-charts/${stepKey}?${stringifiedParams}` : `/api/v1/analytics/control-charts/${stepKey}`
+  return stringifiedParams.length > 0 ? `/api/v1/analytics/control-charts/${encodeURIComponent(String(stepKey))}?${stringifiedParams}` : `/api/v1/analytics/control-charts/${encodeURIComponent(String(stepKey))}`
 }
 
 /**
@@ -1163,7 +1164,7 @@ export const getAnalyticsMetricDrilldownUrl = (metricId: string,
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/analytics/metrics/${metricId}/contributions?${stringifiedParams}` : `/api/v1/analytics/metrics/${metricId}/contributions`
+  return stringifiedParams.length > 0 ? `/api/v1/analytics/metrics/${encodeURIComponent(String(metricId))}/contributions?${stringifiedParams}` : `/api/v1/analytics/metrics/${encodeURIComponent(String(metricId))}/contributions`
 }
 
 /**
@@ -1406,7 +1407,7 @@ export const getVisionPassportReadUrl = (passportId: string,
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/analyzer-passports/${passportId}?${stringifiedParams}` : `/api/v1/analyzer-passports/${passportId}`
+  return stringifiedParams.length > 0 ? `/api/v1/analyzer-passports/${encodeURIComponent(String(passportId))}?${stringifiedParams}` : `/api/v1/analyzer-passports/${encodeURIComponent(String(passportId))}`
 }
 
 /**
@@ -1529,7 +1530,7 @@ export const getVisionCheckListUrl = (passportId: string,
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/analyzer-passports/${passportId}/checks?${stringifiedParams}` : `/api/v1/analyzer-passports/${passportId}/checks`
+  return stringifiedParams.length > 0 ? `/api/v1/analyzer-passports/${encodeURIComponent(String(passportId))}/checks?${stringifiedParams}` : `/api/v1/analyzer-passports/${encodeURIComponent(String(passportId))}/checks`
 }
 
 /**
@@ -1644,7 +1645,7 @@ export const getVisionPassportReinstateUrl = (passportId: string,) => {
 
 
 
-  return `/api/v1/analyzer-passports/${passportId}/reinstate`
+  return `/api/v1/analyzer-passports/${encodeURIComponent(String(passportId))}/reinstate`
 }
 
 /**
@@ -1765,7 +1766,7 @@ export const getVisionPassportRetireUrl = (passportId: string,) => {
 
 
 
-  return `/api/v1/analyzer-passports/${passportId}/retire`
+  return `/api/v1/analyzer-passports/${encodeURIComponent(String(passportId))}/retire`
 }
 
 /**
@@ -4000,7 +4001,7 @@ export const getNonconformityConcessionRevokeUrl = (concessionId: string,) => {
 
 
 
-  return `/api/v1/concessions/${concessionId}/revoke`
+  return `/api/v1/concessions/${encodeURIComponent(String(concessionId))}/revoke`
 }
 
 /**
@@ -4357,7 +4358,7 @@ export const getSecurityCriticalActionReadUrl = (caRef: string,) => {
 
 
 
-  return `/api/v1/critical-actions/${caRef}`
+  return `/api/v1/critical-actions/${encodeURIComponent(String(caRef))}`
 }
 
 /**
@@ -4714,7 +4715,7 @@ export const getDocumentsDecisionCardReadUrl = (documentId: string,
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/decision-cards/${documentId}?${stringifiedParams}` : `/api/v1/decision-cards/${documentId}`
+  return stringifiedParams.length > 0 ? `/api/v1/decision-cards/${encodeURIComponent(String(documentId))}?${stringifiedParams}` : `/api/v1/decision-cards/${encodeURIComponent(String(documentId))}`
 }
 
 /**
@@ -5660,7 +5661,7 @@ export const getDocumentsDocumentReadUrl = (documentId: string,
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/documents/${documentId}?${stringifiedParams}` : `/api/v1/documents/${documentId}`
+  return stringifiedParams.length > 0 ? `/api/v1/documents/${encodeURIComponent(String(documentId))}?${stringifiedParams}` : `/api/v1/documents/${encodeURIComponent(String(documentId))}`
 }
 
 /**
@@ -5775,7 +5776,7 @@ export const getDocumentsVersionAnnulUrl = (documentId: string,) => {
 
 
 
-  return `/api/v1/documents/${documentId}/annul`
+  return `/api/v1/documents/${encodeURIComponent(String(documentId))}/annul`
 }
 
 /**
@@ -5896,7 +5897,7 @@ export const getDocumentsPaperAttestUrl = (documentId: string,) => {
 
 
 
-  return `/api/v1/documents/${documentId}/paper-signatures`
+  return `/api/v1/documents/${encodeURIComponent(String(documentId))}/paper-signatures`
 }
 
 /**
@@ -6017,7 +6018,7 @@ export const getDocumentsPaperStatusSetUrl = (documentId: string,) => {
 
 
 
-  return `/api/v1/documents/${documentId}/paper-status`
+  return `/api/v1/documents/${encodeURIComponent(String(documentId))}/paper-status`
 }
 
 /**
@@ -6146,7 +6147,7 @@ export const getDocumentsPaperPrintViewUrl = (documentId: string,
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/documents/${documentId}/print?${stringifiedParams}` : `/api/v1/documents/${documentId}/print`
+  return stringifiedParams.length > 0 ? `/api/v1/documents/${encodeURIComponent(String(documentId))}/print?${stringifiedParams}` : `/api/v1/documents/${encodeURIComponent(String(documentId))}/print`
 }
 
 /**
@@ -6261,7 +6262,7 @@ export const getDocumentsPaperPrintUrl = (documentId: string,) => {
 
 
 
-  return `/api/v1/documents/${documentId}/print`
+  return `/api/v1/documents/${encodeURIComponent(String(documentId))}/print`
 }
 
 /**
@@ -6390,7 +6391,7 @@ export const getDocumentsDocumentRenderUrl = (documentId: string,
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/documents/${documentId}/rendering?${stringifiedParams}` : `/api/v1/documents/${documentId}/rendering`
+  return stringifiedParams.length > 0 ? `/api/v1/documents/${encodeURIComponent(String(documentId))}/rendering?${stringifiedParams}` : `/api/v1/documents/${encodeURIComponent(String(documentId))}/rendering`
 }
 
 /**
@@ -6505,7 +6506,7 @@ export const getDocumentsSignatureDeclineUrl = (documentId: string,) => {
 
 
 
-  return `/api/v1/documents/${documentId}/route/declines`
+  return `/api/v1/documents/${encodeURIComponent(String(documentId))}/route/declines`
 }
 
 /**
@@ -6626,7 +6627,7 @@ export const getDocumentsSignatureRecordUrl = (documentId: string,) => {
 
 
 
-  return `/api/v1/documents/${documentId}/route/signatures`
+  return `/api/v1/documents/${encodeURIComponent(String(documentId))}/route/signatures`
 }
 
 /**
@@ -6747,7 +6748,7 @@ export const getDocumentsDocumentSignUrl = (documentId: string,) => {
 
 
 
-  return `/api/v1/documents/${documentId}/signatures`
+  return `/api/v1/documents/${encodeURIComponent(String(documentId))}/signatures`
 }
 
 /**
@@ -7112,7 +7113,7 @@ export const getMachinelogsEquipmentReadUrl = (equipmentId: string,
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/equipment/${equipmentId}?${stringifiedParams}` : `/api/v1/equipment/${equipmentId}`
+  return stringifiedParams.length > 0 ? `/api/v1/equipment/${encodeURIComponent(String(equipmentId))}?${stringifiedParams}` : `/api/v1/equipment/${encodeURIComponent(String(equipmentId))}`
 }
 
 /**
@@ -7235,7 +7236,7 @@ export const getMachinelogsTimelineReadUrl = (equipmentId: string,
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/equipment/${equipmentId}/timeline?${stringifiedParams}` : `/api/v1/equipment/${equipmentId}/timeline`
+  return stringifiedParams.length > 0 ? `/api/v1/equipment/${encodeURIComponent(String(equipmentId))}/timeline?${stringifiedParams}` : `/api/v1/equipment/${encodeURIComponent(String(equipmentId))}/timeline`
 }
 
 /**
@@ -7587,7 +7588,7 @@ export const getErpMessageReadUrl = (businessKey: string,
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/erp/messages/${businessKey}?${stringifiedParams}` : `/api/v1/erp/messages/${businessKey}`
+  return stringifiedParams.length > 0 ? `/api/v1/erp/messages/${encodeURIComponent(String(businessKey))}?${stringifiedParams}` : `/api/v1/erp/messages/${encodeURIComponent(String(businessKey))}`
 }
 
 /**
@@ -7702,7 +7703,7 @@ export const getErpPostingCompensateUrl = (businessKey: string,) => {
 
 
 
-  return `/api/v1/erp/messages/${businessKey}/compensation`
+  return `/api/v1/erp/messages/${encodeURIComponent(String(businessKey))}/compensation`
 }
 
 /**
@@ -7823,7 +7824,7 @@ export const getErpPostingResendUrl = (businessKey: string,) => {
 
 
 
-  return `/api/v1/erp/messages/${businessKey}/resend`
+  return `/api/v1/erp/messages/${encodeURIComponent(String(businessKey))}/resend`
 }
 
 /**
@@ -8188,7 +8189,7 @@ export const getJournalEventReadUrl = (eventId: string,
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/events/${eventId}?${stringifiedParams}` : `/api/v1/events/${eventId}`
+  return stringifiedParams.length > 0 ? `/api/v1/events/${encodeURIComponent(String(eventId))}?${stringifiedParams}` : `/api/v1/events/${encodeURIComponent(String(eventId))}`
 }
 
 /**
@@ -9015,7 +9016,7 @@ export const getAnalysisActionAssignUrl = (incidentId: string,) => {
 
 
 
-  return `/api/v1/incidents/${incidentId}/actions`
+  return `/api/v1/incidents/${encodeURIComponent(String(incidentId))}/actions`
 }
 
 /**
@@ -9137,7 +9138,7 @@ export const getAnalysisActionEvaluateUrl = (incidentId: string,
 
 
 
-  return `/api/v1/incidents/${incidentId}/actions/${actionId}/evaluation`
+  return `/api/v1/incidents/${encodeURIComponent(String(incidentId))}/actions/${encodeURIComponent(String(actionId))}/evaluation`
 }
 
 /**
@@ -9260,7 +9261,7 @@ export const getAnalysisActionImplementUrl = (incidentId: string,
 
 
 
-  return `/api/v1/incidents/${incidentId}/actions/${actionId}/implemented`
+  return `/api/v1/incidents/${encodeURIComponent(String(incidentId))}/actions/${encodeURIComponent(String(actionId))}/implemented`
 }
 
 /**
@@ -9382,7 +9383,7 @@ export const getAnalysisAnalysisScopeUrl = (incidentId: string,) => {
 
 
 
-  return `/api/v1/incidents/${incidentId}/analysis-scope`
+  return `/api/v1/incidents/${encodeURIComponent(String(incidentId))}/analysis-scope`
 }
 
 /**
@@ -9503,7 +9504,7 @@ export const getAnalysisCauseConcludeUrl = (incidentId: string,) => {
 
 
 
-  return `/api/v1/incidents/${incidentId}/cause`
+  return `/api/v1/incidents/${encodeURIComponent(String(incidentId))}/cause`
 }
 
 /**
@@ -9624,7 +9625,7 @@ export const getAnalysisIncidentCloseUrl = (incidentId: string,) => {
 
 
 
-  return `/api/v1/incidents/${incidentId}/close`
+  return `/api/v1/incidents/${encodeURIComponent(String(incidentId))}/close`
 }
 
 /**
@@ -9745,7 +9746,7 @@ export const getAnalysisItemAssessUrl = (incidentId: string,) => {
 
 
 
-  return `/api/v1/incidents/${incidentId}/items/assess`
+  return `/api/v1/incidents/${encodeURIComponent(String(incidentId))}/items/assess`
 }
 
 /**
@@ -9874,7 +9875,7 @@ export const getAnalysisRiskScopeReadUrl = (incidentId: string,
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/incidents/${incidentId}/risk-scope?${stringifiedParams}` : `/api/v1/incidents/${incidentId}/risk-scope`
+  return stringifiedParams.length > 0 ? `/api/v1/incidents/${encodeURIComponent(String(incidentId))}/risk-scope?${stringifiedParams}` : `/api/v1/incidents/${encodeURIComponent(String(incidentId))}/risk-scope`
 }
 
 /**
@@ -9989,7 +9990,7 @@ export const getAnalysisScopeExpandUrl = (incidentId: string,) => {
 
 
 
-  return `/api/v1/incidents/${incidentId}/scope/expand`
+  return `/api/v1/incidents/${encodeURIComponent(String(incidentId))}/scope/expand`
 }
 
 /**
@@ -10110,7 +10111,7 @@ export const getAnalysisScopeNarrowUrl = (incidentId: string,) => {
 
 
 
-  return `/api/v1/incidents/${incidentId}/scope/narrow`
+  return `/api/v1/incidents/${encodeURIComponent(String(incidentId))}/scope/narrow`
 }
 
 /**
@@ -11051,7 +11052,7 @@ export const getCrossitemGroupDissolveUrl = (groupId: string,) => {
 
 
 
-  return `/api/v1/item-groups/${groupId}/dissolve`
+  return `/api/v1/item-groups/${encodeURIComponent(String(groupId))}/dissolve`
 }
 
 /**
@@ -11528,7 +11529,7 @@ export const getItemAssemblyRecordUrl = (itemId: string,) => {
 
 
 
-  return `/api/v1/items/${itemId}/assembly`
+  return `/api/v1/items/${encodeURIComponent(String(itemId))}/assembly`
 }
 
 /**
@@ -11649,7 +11650,7 @@ export const getItemCarrierApplyUrl = (itemId: string,) => {
 
 
 
-  return `/api/v1/items/${itemId}/carriers`
+  return `/api/v1/items/${encodeURIComponent(String(itemId))}/carriers`
 }
 
 /**
@@ -11770,7 +11771,7 @@ export const getItemCarrierRemoveUrl = (itemId: string,) => {
 
 
 
-  return `/api/v1/items/${itemId}/carriers/remove`
+  return `/api/v1/items/${encodeURIComponent(String(itemId))}/carriers/remove`
 }
 
 /**
@@ -11891,7 +11892,7 @@ export const getNonconformityContainmentSetUrl = (itemId: string,) => {
 
 
 
-  return `/api/v1/items/${itemId}/containment`
+  return `/api/v1/items/${encodeURIComponent(String(itemId))}/containment`
 }
 
 /**
@@ -12012,7 +12013,7 @@ export const getNonconformityContainmentReleaseUrl = (itemId: string,) => {
 
 
 
-  return `/api/v1/items/${itemId}/containment/release`
+  return `/api/v1/items/${encodeURIComponent(String(itemId))}/containment/release`
 }
 
 /**
@@ -12141,7 +12142,7 @@ export const getQualityCoverageReadUrl = (itemId: string,
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/items/${itemId}/coverage?${stringifiedParams}` : `/api/v1/items/${itemId}/coverage`
+  return stringifiedParams.length > 0 ? `/api/v1/items/${encodeURIComponent(String(itemId))}/coverage?${stringifiedParams}` : `/api/v1/items/${encodeURIComponent(String(itemId))}/coverage`
 }
 
 /**
@@ -12264,7 +12265,7 @@ export const getItemGenealogyReadUrl = (itemId: string,
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/items/${itemId}/genealogy?${stringifiedParams}` : `/api/v1/items/${itemId}/genealogy`
+  return stringifiedParams.length > 0 ? `/api/v1/items/${encodeURIComponent(String(itemId))}/genealogy?${stringifiedParams}` : `/api/v1/items/${encodeURIComponent(String(itemId))}/genealogy`
 }
 
 /**
@@ -12387,7 +12388,7 @@ export const getItemHistoryListUrl = (itemId: string,
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/items/${itemId}/history?${stringifiedParams}` : `/api/v1/items/${itemId}/history`
+  return stringifiedParams.length > 0 ? `/api/v1/items/${encodeURIComponent(String(itemId))}/history?${stringifiedParams}` : `/api/v1/items/${encodeURIComponent(String(itemId))}/history`
 }
 
 /**
@@ -12502,7 +12503,7 @@ export const getItemIdentificationConfirmUrl = (itemId: string,) => {
 
 
 
-  return `/api/v1/items/${itemId}/identification/confirm`
+  return `/api/v1/items/${encodeURIComponent(String(itemId))}/identification/confirm`
 }
 
 /**
@@ -12631,7 +12632,7 @@ export const getQualityInspectionListUrl = (itemId: string,
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/items/${itemId}/inspections?${stringifiedParams}` : `/api/v1/items/${itemId}/inspections`
+  return stringifiedParams.length > 0 ? `/api/v1/items/${encodeURIComponent(String(itemId))}/inspections?${stringifiedParams}` : `/api/v1/items/${encodeURIComponent(String(itemId))}/inspections`
 }
 
 /**
@@ -12746,7 +12747,7 @@ export const getItemInterventionOpenUrl = (itemId: string,) => {
 
 
 
-  return `/api/v1/items/${itemId}/interventions`
+  return `/api/v1/items/${encodeURIComponent(String(itemId))}/interventions`
 }
 
 /**
@@ -12868,7 +12869,7 @@ export const getItemInterventionCloseUrl = (itemId: string,
 
 
 
-  return `/api/v1/items/${itemId}/interventions/${interventionId}/close`
+  return `/api/v1/items/${encodeURIComponent(String(itemId))}/interventions/${encodeURIComponent(String(interventionId))}/close`
 }
 
 /**
@@ -12990,7 +12991,7 @@ export const getNonconformityItemIsolateUrl = (itemId: string,) => {
 
 
 
-  return `/api/v1/items/${itemId}/isolate`
+  return `/api/v1/items/${encodeURIComponent(String(itemId))}/isolate`
 }
 
 /**
@@ -13111,7 +13112,7 @@ export const getProcessMovementSendUrl = (itemId: string,) => {
 
 
 
-  return `/api/v1/items/${itemId}/movements`
+  return `/api/v1/items/${encodeURIComponent(String(itemId))}/movements`
 }
 
 /**
@@ -13232,7 +13233,7 @@ export const getProcessMovementReceiveUrl = (itemId: string,) => {
 
 
 
-  return `/api/v1/items/${itemId}/movements/receive`
+  return `/api/v1/items/${encodeURIComponent(String(itemId))}/movements/receive`
 }
 
 /**
@@ -13353,7 +13354,7 @@ export const getProcessOperationStartUrl = (itemId: string,) => {
 
 
 
-  return `/api/v1/items/${itemId}/operations`
+  return `/api/v1/items/${encodeURIComponent(String(itemId))}/operations`
 }
 
 /**
@@ -13482,7 +13483,7 @@ export const getItemPassportReadUrl = (itemId: string,
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/items/${itemId}/passport?${stringifiedParams}` : `/api/v1/items/${itemId}/passport`
+  return stringifiedParams.length > 0 ? `/api/v1/items/${encodeURIComponent(String(itemId))}/passport?${stringifiedParams}` : `/api/v1/items/${encodeURIComponent(String(itemId))}/passport`
 }
 
 /**
@@ -13597,7 +13598,7 @@ export const getItemPresentationRecordUrl = (itemId: string,) => {
 
 
 
-  return `/api/v1/items/${itemId}/presentations`
+  return `/api/v1/items/${encodeURIComponent(String(itemId))}/presentations`
 }
 
 /**
@@ -13726,7 +13727,7 @@ export const getNonconformityPresentationReadUrl = (itemId: string,
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/items/${itemId}/presentations/current?${stringifiedParams}` : `/api/v1/items/${itemId}/presentations/current`
+  return stringifiedParams.length > 0 ? `/api/v1/items/${encodeURIComponent(String(itemId))}/presentations/current?${stringifiedParams}` : `/api/v1/items/${encodeURIComponent(String(itemId))}/presentations/current`
 }
 
 /**
@@ -13841,7 +13842,7 @@ export const getNonconformityPresentationResolveUrl = (itemId: string,) => {
 
 
 
-  return `/api/v1/items/${itemId}/presentations/resolve`
+  return `/api/v1/items/${encodeURIComponent(String(itemId))}/presentations/resolve`
 }
 
 /**
@@ -13962,7 +13963,7 @@ export const getNonconformityPresentationReviewUrl = (itemId: string,) => {
 
 
 
-  return `/api/v1/items/${itemId}/presentations/review`
+  return `/api/v1/items/${encodeURIComponent(String(itemId))}/presentations/review`
 }
 
 /**
@@ -14083,7 +14084,7 @@ export const getNonconformityRecheckRequestUrl = (itemId: string,) => {
 
 
 
-  return `/api/v1/items/${itemId}/recheck`
+  return `/api/v1/items/${encodeURIComponent(String(itemId))}/recheck`
 }
 
 /**
@@ -14204,7 +14205,7 @@ export const getItemReleaseRecordUrl = (itemId: string,) => {
 
 
 
-  return `/api/v1/items/${itemId}/release`
+  return `/api/v1/items/${encodeURIComponent(String(itemId))}/release`
 }
 
 /**
@@ -14325,7 +14326,7 @@ export const getNonconformityReworkLimitWaiveUrl = (itemId: string,) => {
 
 
 
-  return `/api/v1/items/${itemId}/rework-limit/waive`
+  return `/api/v1/items/${encodeURIComponent(String(itemId))}/rework-limit/waive`
 }
 
 /**
@@ -14446,7 +14447,7 @@ export const getNonconformitySignalRejectUrl = (itemId: string,) => {
 
 
 
-  return `/api/v1/items/${itemId}/signals/reject`
+  return `/api/v1/items/${encodeURIComponent(String(itemId))}/signals/reject`
 }
 
 /**
@@ -14567,7 +14568,7 @@ export const getItemItemSplitUrl = (itemId: string,) => {
 
 
 
-  return `/api/v1/items/${itemId}/split`
+  return `/api/v1/items/${encodeURIComponent(String(itemId))}/split`
 }
 
 /**
@@ -14924,7 +14925,7 @@ export const getJournalEntryReadUrl = (seq: number,) => {
 
 
 
-  return `/api/v1/journal/${seq}`
+  return `/api/v1/journal/${encodeURIComponent(String(seq))}`
 }
 
 /**
@@ -15281,7 +15282,7 @@ export const getSigningKeyReadUrl = (keyRef: string,
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/keys/${keyRef}?${stringifiedParams}` : `/api/v1/keys/${keyRef}`
+  return stringifiedParams.length > 0 ? `/api/v1/keys/${encodeURIComponent(String(keyRef))}?${stringifiedParams}` : `/api/v1/keys/${encodeURIComponent(String(keyRef))}`
 }
 
 /**
@@ -15396,7 +15397,7 @@ export const getSigningKeyRevokeUrl = (keyRef: string,) => {
 
 
 
-  return `/api/v1/keys/${keyRef}/revocation`
+  return `/api/v1/keys/${encodeURIComponent(String(keyRef))}/revocation`
 }
 
 /**
@@ -15761,7 +15762,7 @@ export const getCrossitemLotReadUrl = (lotId: string,
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/lots/${lotId}?${stringifiedParams}` : `/api/v1/lots/${lotId}`
+  return stringifiedParams.length > 0 ? `/api/v1/lots/${encodeURIComponent(String(lotId))}?${stringifiedParams}` : `/api/v1/lots/${encodeURIComponent(String(lotId))}`
 }
 
 /**
@@ -15876,7 +15877,7 @@ export const getCrossitemLotIssueUrl = (lotId: string,) => {
 
 
 
-  return `/api/v1/lots/${lotId}/issues`
+  return `/api/v1/lots/${encodeURIComponent(String(lotId))}/issues`
 }
 
 /**
@@ -15997,7 +15998,7 @@ export const getCrossitemLotRegisterUrl = (lotId: string,) => {
 
 
 
-  return `/api/v1/lots/${lotId}/registration`
+  return `/api/v1/lots/${encodeURIComponent(String(lotId))}/registration`
 }
 
 /**
@@ -16118,7 +16119,7 @@ export const getNonconformityLotResolveUrl = (lotId: string,) => {
 
 
 
-  return `/api/v1/lots/${lotId}/resolve`
+  return `/api/v1/lots/${encodeURIComponent(String(lotId))}/resolve`
 }
 
 /**
@@ -16367,7 +16368,7 @@ export const getMaterialsMaterialReadUrl = (address: string,) => {
 
 
 
-  return `/api/v1/materials/${address}`
+  return `/api/v1/materials/${encodeURIComponent(String(address))}`
 }
 
 /**
@@ -16488,7 +16489,7 @@ export const getMaterialsMaterialContentUrl = (address: string,) => {
 
 
 
-  return `/api/v1/materials/${address}/content`
+  return `/api/v1/materials/${encodeURIComponent(String(address))}/content`
 }
 
 /**
@@ -17197,7 +17198,7 @@ export const getNonconformityCardReadUrl = (ncId: string,
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/nonconformities/${ncId}?${stringifiedParams}` : `/api/v1/nonconformities/${ncId}`
+  return stringifiedParams.length > 0 ? `/api/v1/nonconformities/${encodeURIComponent(String(ncId))}?${stringifiedParams}` : `/api/v1/nonconformities/${encodeURIComponent(String(ncId))}`
 }
 
 /**
@@ -17320,7 +17321,7 @@ export const getAnalysisCircumstancesReadUrl = (ncId: string,
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/nonconformities/${ncId}/circumstances?${stringifiedParams}` : `/api/v1/nonconformities/${ncId}/circumstances`
+  return stringifiedParams.length > 0 ? `/api/v1/nonconformities/${encodeURIComponent(String(ncId))}/circumstances?${stringifiedParams}` : `/api/v1/nonconformities/${encodeURIComponent(String(ncId))}/circumstances`
 }
 
 /**
@@ -17435,7 +17436,7 @@ export const getNonconformityNonconformityCloseUrl = (ncId: string,) => {
 
 
 
-  return `/api/v1/nonconformities/${ncId}/close`
+  return `/api/v1/nonconformities/${encodeURIComponent(String(ncId))}/close`
 }
 
 /**
@@ -17556,7 +17557,7 @@ export const getNonconformityNonconformityConfirmUrl = (ncId: string,) => {
 
 
 
-  return `/api/v1/nonconformities/${ncId}/confirm`
+  return `/api/v1/nonconformities/${encodeURIComponent(String(ncId))}/confirm`
 }
 
 /**
@@ -17677,7 +17678,7 @@ export const getNonconformityDispositionSetUrl = (ncId: string,) => {
 
 
 
-  return `/api/v1/nonconformities/${ncId}/disposition`
+  return `/api/v1/nonconformities/${encodeURIComponent(String(ncId))}/disposition`
 }
 
 /**
@@ -17798,7 +17799,7 @@ export const getNonconformityDispositionVerifyUrl = (ncId: string,) => {
 
 
 
-  return `/api/v1/nonconformities/${ncId}/disposition/verify`
+  return `/api/v1/nonconformities/${encodeURIComponent(String(ncId))}/disposition/verify`
 }
 
 /**
@@ -17927,7 +17928,7 @@ export const getAnalysisHypothesisListUrl = (ncId: string,
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/nonconformities/${ncId}/hypotheses?${stringifiedParams}` : `/api/v1/nonconformities/${ncId}/hypotheses`
+  return stringifiedParams.length > 0 ? `/api/v1/nonconformities/${encodeURIComponent(String(ncId))}/hypotheses?${stringifiedParams}` : `/api/v1/nonconformities/${encodeURIComponent(String(ncId))}/hypotheses`
 }
 
 /**
@@ -18042,7 +18043,7 @@ export const getAnalysisHypothesisRecordUrl = (ncId: string,) => {
 
 
 
-  return `/api/v1/nonconformities/${ncId}/hypotheses`
+  return `/api/v1/nonconformities/${encodeURIComponent(String(ncId))}/hypotheses`
 }
 
 /**
@@ -18163,7 +18164,7 @@ export const getAnalysisHypothesisRejectUrl = (ncId: string,) => {
 
 
 
-  return `/api/v1/nonconformities/${ncId}/hypotheses/reject`
+  return `/api/v1/nonconformities/${encodeURIComponent(String(ncId))}/hypotheses/reject`
 }
 
 /**
@@ -18284,7 +18285,7 @@ export const getAnalysisMeasurementRequestUrl = (ncId: string,) => {
 
 
 
-  return `/api/v1/nonconformities/${ncId}/measurements`
+  return `/api/v1/nonconformities/${encodeURIComponent(String(ncId))}/measurements`
 }
 
 /**
@@ -18413,7 +18414,7 @@ export const getAnalysisSimilarListUrl = (ncId: string,
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/nonconformities/${ncId}/similar?${stringifiedParams}` : `/api/v1/nonconformities/${ncId}/similar`
+  return stringifiedParams.length > 0 ? `/api/v1/nonconformities/${encodeURIComponent(String(ncId))}/similar?${stringifiedParams}` : `/api/v1/nonconformities/${encodeURIComponent(String(ncId))}/similar`
 }
 
 /**
@@ -18646,7 +18647,7 @@ export const getProcessOperationFinishUrl = (runId: string,) => {
 
 
 
-  return `/api/v1/operation-runs/${runId}/finish`
+  return `/api/v1/operation-runs/${encodeURIComponent(String(runId))}/finish`
 }
 
 /**
@@ -18767,7 +18768,7 @@ export const getProcessOperationPauseUrl = (runId: string,) => {
 
 
 
-  return `/api/v1/operation-runs/${runId}/pause`
+  return `/api/v1/operation-runs/${encodeURIComponent(String(runId))}/pause`
 }
 
 /**
@@ -18896,7 +18897,7 @@ export const getMachinelogsRunProfileReadUrl = (runId: string,
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/operation-runs/${runId}/profile?${stringifiedParams}` : `/api/v1/operation-runs/${runId}/profile`
+  return stringifiedParams.length > 0 ? `/api/v1/operation-runs/${encodeURIComponent(String(runId))}/profile?${stringifiedParams}` : `/api/v1/operation-runs/${encodeURIComponent(String(runId))}/profile`
 }
 
 /**
@@ -19011,7 +19012,7 @@ export const getProcessOperationResumeUrl = (runId: string,) => {
 
 
 
-  return `/api/v1/operation-runs/${runId}/resume`
+  return `/api/v1/operation-runs/${encodeURIComponent(String(runId))}/resume`
 }
 
 /**
@@ -19354,7 +19355,7 @@ export const getOpsIntegrationCheckUrl = (system: string,) => {
 
 
 
-  return `/api/v1/ops/integrations/${system}/check`
+  return `/api/v1/ops/integrations/${encodeURIComponent(String(system))}/check`
 }
 
 /**
@@ -19475,7 +19476,7 @@ export const getOpsIntegrationSetUrl = (system: string,) => {
 
 
 
-  return `/api/v1/ops/integrations/${system}/state`
+  return `/api/v1/ops/integrations/${encodeURIComponent(String(system))}/state`
 }
 
 /**
@@ -19707,7 +19708,7 @@ export const getOpsSourceDisableUrl = (sourceId: string,) => {
 
 
 
-  return `/api/v1/ops/sources/${sourceId}/disable`
+  return `/api/v1/ops/sources/${encodeURIComponent(String(sourceId))}/disable`
 }
 
 /**
@@ -19828,7 +19829,7 @@ export const getOpsSourceEnableUrl = (sourceId: string,) => {
 
 
 
-  return `/api/v1/ops/sources/${sourceId}/enable`
+  return `/api/v1/ops/sources/${encodeURIComponent(String(sourceId))}/enable`
 }
 
 /**
@@ -20067,7 +20068,7 @@ export const getOpsProcessingRetryUrl = (itemId: string,) => {
 
 
 
-  return `/api/v1/ops/stopped-items/${itemId}/retry`
+  return `/api/v1/ops/stopped-items/${encodeURIComponent(String(itemId))}/retry`
 }
 
 /**
@@ -21022,7 +21023,7 @@ export const getFederationExtractReadUrl = (extractDigest: string,) => {
 
 
 
-  return `/api/v1/passport-extracts/${extractDigest}`
+  return `/api/v1/passport-extracts/${encodeURIComponent(String(extractDigest))}`
 }
 
 /**
@@ -21615,7 +21616,7 @@ export const getAccessPersonReadUrl = (personId: string,
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/persons/${personId}?${stringifiedParams}` : `/api/v1/persons/${personId}`
+  return stringifiedParams.length > 0 ? `/api/v1/persons/${encodeURIComponent(String(personId))}?${stringifiedParams}` : `/api/v1/persons/${encodeURIComponent(String(personId))}`
 }
 
 /**
@@ -21730,7 +21731,7 @@ export const getAccessAccountActivateUrl = (personId: string,) => {
 
 
 
-  return `/api/v1/persons/${personId}/account`
+  return `/api/v1/persons/${encodeURIComponent(String(personId))}/account`
 }
 
 /**
@@ -21859,7 +21860,7 @@ export const getAccessPersonCardUrl = (personId: string,
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/persons/${personId}/card?${stringifiedParams}` : `/api/v1/persons/${personId}/card`
+  return stringifiedParams.length > 0 ? `/api/v1/persons/${encodeURIComponent(String(personId))}/card?${stringifiedParams}` : `/api/v1/persons/${encodeURIComponent(String(personId))}/card`
 }
 
 /**
@@ -21974,7 +21975,7 @@ export const getAccessQualificationGrantUrl = (personId: string,) => {
 
 
 
-  return `/api/v1/persons/${personId}/qualifications`
+  return `/api/v1/persons/${encodeURIComponent(String(personId))}/qualifications`
 }
 
 /**
@@ -22095,7 +22096,7 @@ export const getAccessQualificationRevokeUrl = (personId: string,) => {
 
 
 
-  return `/api/v1/persons/${personId}/qualifications/revocations`
+  return `/api/v1/persons/${encodeURIComponent(String(personId))}/qualifications/revocations`
 }
 
 /**
@@ -22336,7 +22337,7 @@ export const getNonconformityProcessHoldReleaseUrl = (holdId: string,) => {
 
 
 
-  return `/api/v1/process-holds/${holdId}/release`
+  return `/api/v1/process-holds/${encodeURIComponent(String(holdId))}/release`
 }
 
 /**
@@ -22465,7 +22466,7 @@ export const getNonconformityStationReadUrl = (stepKey: string,
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/process/steps/${stepKey}/station-view?${stringifiedParams}` : `/api/v1/process/steps/${stepKey}/station-view`
+  return stringifiedParams.length > 0 ? `/api/v1/process/steps/${encodeURIComponent(String(stepKey))}/station-view?${stringifiedParams}` : `/api/v1/process/steps/${encodeURIComponent(String(stepKey))}/station-view`
 }
 
 /**
@@ -22826,7 +22827,7 @@ export const getProcessVersionReadUrl = (versionId: string,
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/process/versions/${versionId}?${stringifiedParams}` : `/api/v1/process/versions/${versionId}`
+  return stringifiedParams.length > 0 ? `/api/v1/process/versions/${encodeURIComponent(String(versionId))}?${stringifiedParams}` : `/api/v1/process/versions/${encodeURIComponent(String(versionId))}`
 }
 
 /**
@@ -22941,7 +22942,7 @@ export const getProcessVersionActivateUrl = (versionId: string,) => {
 
 
 
-  return `/api/v1/process/versions/${versionId}/activate`
+  return `/api/v1/process/versions/${encodeURIComponent(String(versionId))}/activate`
 }
 
 /**
@@ -23062,7 +23063,7 @@ export const getProcessVersionBpmnUrl = (versionId: string,) => {
 
 
 
-  return `/api/v1/process/versions/${versionId}/bpmn`
+  return `/api/v1/process/versions/${encodeURIComponent(String(versionId))}/bpmn`
 }
 
 /**
@@ -23181,7 +23182,7 @@ export const getProcessVersionDiffUrl = (versionId: string,
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/process/versions/${versionId}/diff?${stringifiedParams}` : `/api/v1/process/versions/${versionId}/diff`
+  return stringifiedParams.length > 0 ? `/api/v1/process/versions/${encodeURIComponent(String(versionId))}/diff?${stringifiedParams}` : `/api/v1/process/versions/${encodeURIComponent(String(versionId))}/diff`
 }
 
 /**
@@ -23305,7 +23306,7 @@ export const getProcessNodeReadUrl = (versionId: string,
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/process/versions/${versionId}/nodes/${stepKey}?${stringifiedParams}` : `/api/v1/process/versions/${versionId}/nodes/${stepKey}`
+  return stringifiedParams.length > 0 ? `/api/v1/process/versions/${encodeURIComponent(String(versionId))}/nodes/${encodeURIComponent(String(stepKey))}?${stringifiedParams}` : `/api/v1/process/versions/${encodeURIComponent(String(versionId))}/nodes/${encodeURIComponent(String(stepKey))}`
 }
 
 /**
@@ -23424,7 +23425,7 @@ export const getProcessVersionRetireUrl = (versionId: string,) => {
 
 
 
-  return `/api/v1/process/versions/${versionId}/retire`
+  return `/api/v1/process/versions/${encodeURIComponent(String(versionId))}/retire`
 }
 
 /**
@@ -23545,7 +23546,7 @@ export const getProcessVersionSubmitUrl = (versionId: string,) => {
 
 
 
-  return `/api/v1/process/versions/${versionId}/submit`
+  return `/api/v1/process/versions/${encodeURIComponent(String(versionId))}/submit`
 }
 
 /**
@@ -24020,7 +24021,7 @@ export const getIngestQuarantineReadUrl = (quarantineId: string,) => {
 
 
 
-  return `/api/v1/quarantine/${quarantineId}`
+  return `/api/v1/quarantine/${encodeURIComponent(String(quarantineId))}`
 }
 
 /**
@@ -24131,7 +24132,7 @@ export const getIngestMessageReprocessUrl = (quarantineId: string,) => {
 
 
 
-  return `/api/v1/quarantine/${quarantineId}/reprocess`
+  return `/api/v1/quarantine/${encodeURIComponent(String(quarantineId))}/reprocess`
 }
 
 /**
@@ -24846,7 +24847,7 @@ export const getReferenceEquipmentVerifyUrl = (equipmentId: string,) => {
 
 
 
-  return `/api/v1/reference/equipment/${equipmentId}/verification`
+  return `/api/v1/reference/equipment/${encodeURIComponent(String(equipmentId))}/verification`
 }
 
 /**
@@ -26279,7 +26280,7 @@ export const getSimulationRunReadUrl = (runId: string,
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/runs/${runId}?${stringifiedParams}` : `/api/v1/runs/${runId}`
+  return stringifiedParams.length > 0 ? `/api/v1/runs/${encodeURIComponent(String(runId))}?${stringifiedParams}` : `/api/v1/runs/${encodeURIComponent(String(runId))}`
 }
 
 /**
@@ -26402,7 +26403,7 @@ export const getSimulationBoardReadUrl = (runId: string,
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/runs/${runId}/board?${stringifiedParams}` : `/api/v1/runs/${runId}/board`
+  return stringifiedParams.length > 0 ? `/api/v1/runs/${encodeURIComponent(String(runId))}/board?${stringifiedParams}` : `/api/v1/runs/${encodeURIComponent(String(runId))}/board`
 }
 
 /**
@@ -26517,7 +26518,7 @@ export const getSimulationInjectionListUrl = (runId: string,) => {
 
 
 
-  return `/api/v1/runs/${runId}/injections`
+  return `/api/v1/runs/${encodeURIComponent(String(runId))}/injections`
 }
 
 /**
@@ -26628,7 +26629,7 @@ export const getSimulationInjectionApplyUrl = (runId: string,) => {
 
 
 
-  return `/api/v1/runs/${runId}/injections`
+  return `/api/v1/runs/${encodeURIComponent(String(runId))}/injections`
 }
 
 /**
@@ -26749,7 +26750,7 @@ export const getSimulationRunPauseUrl = (runId: string,) => {
 
 
 
-  return `/api/v1/runs/${runId}/pause`
+  return `/api/v1/runs/${encodeURIComponent(String(runId))}/pause`
 }
 
 /**
@@ -26878,7 +26879,7 @@ export const getSimulationRunPlanUrl = (runId: string,
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/runs/${runId}/plan?${stringifiedParams}` : `/api/v1/runs/${runId}/plan`
+  return stringifiedParams.length > 0 ? `/api/v1/runs/${encodeURIComponent(String(runId))}/plan?${stringifiedParams}` : `/api/v1/runs/${encodeURIComponent(String(runId))}/plan`
 }
 
 /**
@@ -26993,7 +26994,7 @@ export const getSimulationRunResumeUrl = (runId: string,) => {
 
 
 
-  return `/api/v1/runs/${runId}/resume`
+  return `/api/v1/runs/${encodeURIComponent(String(runId))}/resume`
 }
 
 /**
@@ -27114,7 +27115,7 @@ export const getSimulationRunSetSpeedUrl = (runId: string,) => {
 
 
 
-  return `/api/v1/runs/${runId}/speed`
+  return `/api/v1/runs/${encodeURIComponent(String(runId))}/speed`
 }
 
 /**
@@ -27235,7 +27236,7 @@ export const getSimulationRunStopUrl = (runId: string,) => {
 
 
 
-  return `/api/v1/runs/${runId}/stop`
+  return `/api/v1/runs/${encodeURIComponent(String(runId))}/stop`
 }
 
 /**
@@ -27351,21 +27352,28 @@ export type simulationScenarioListResponseError = (simulationScenarioListRespons
   headers: Headers;
 };
 
-export const getSimulationScenarioListUrl = () => {
+export const getSimulationScenarioListUrl = (params?: SimulationScenarioListParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/v1/scenarios`
+  return stringifiedParams.length > 0 ? `/api/v1/scenarios?${stringifiedParams}` : `/api/v1/scenarios`
 }
 
 /**
  * AD-26: определения scenarios/definitions — 8 ситуаций §4.2, 9 проверок §5.1, демо-сценарии, сбои; число утверждений табло и остановок на решениях.
  * @summary Сценарии
  */
-export const simulationScenarioList = async ( options?: RequestInit): Promise<simulationScenarioListResponseSuccess> => {
+export const simulationScenarioList = async (params?: SimulationScenarioListParams, options?: RequestInit): Promise<simulationScenarioListResponseSuccess> => {
 
-  const res = await fetch(getSimulationScenarioListUrl(),
+  const res = await fetch(getSimulationScenarioListUrl(params),
   {
     ...options,
     method: 'GET'
@@ -27392,23 +27400,23 @@ export const simulationScenarioList = async ( options?: RequestInit): Promise<si
 
 
 
-export const getSimulationScenarioListQueryKey = () => {
+export const getSimulationScenarioListQueryKey = (params?: MaybeRefOrGetter<SimulationScenarioListParams>,) => {
     return [
-    'api','v1','scenarios'
+    'api','v1','scenarios', ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getSimulationScenarioListQueryOptions = <TData = Awaited<ReturnType<typeof simulationScenarioList>>, TError = globalThis.Error & { info?: Problem; status?: number }>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof simulationScenarioList>>, TError, TData>>, fetch?: RequestInit}
+export const getSimulationScenarioListQueryOptions = <TData = Awaited<ReturnType<typeof simulationScenarioList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(params?: MaybeRefOrGetter<SimulationScenarioListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof simulationScenarioList>>, TError, TData>>, fetch?: RequestInit}
 ) => {
 
 const {query: queryOptions, fetch: fetchOptions} = options ?? {};
 
-  const queryKey =  getSimulationScenarioListQueryKey();
+  const queryKey =  getSimulationScenarioListQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof simulationScenarioList>>> = ({ signal }) => simulationScenarioList({ signal, ...fetchOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof simulationScenarioList>>> = ({ signal }) => simulationScenarioList(toValue(params), { signal, ...fetchOptions });
 
 
 
@@ -27426,11 +27434,11 @@ export type SimulationScenarioListQueryError = globalThis.Error & { info?: Probl
  */
 
 export function useSimulationScenarioList<TData = Awaited<ReturnType<typeof simulationScenarioList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof simulationScenarioList>>, TError, TData>>, fetch?: RequestInit}
+ params?: MaybeRefOrGetter<SimulationScenarioListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof simulationScenarioList>>, TError, TData>>, fetch?: RequestInit}
  , queryClient?: QueryClient
  ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const queryOptions = getSimulationScenarioListQueryOptions(options)
+  const queryOptions = getSimulationScenarioListQueryOptions(params,options)
 
   const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
@@ -27467,7 +27475,7 @@ export const getSimulationRunStartUrl = (scenarioId: string,) => {
 
 
 
-  return `/api/v1/scenarios/${scenarioId}/runs`
+  return `/api/v1/scenarios/${encodeURIComponent(String(scenarioId))}/runs`
 }
 
 /**
@@ -27952,7 +27960,7 @@ export const getQualitySignalReadUrl = (signalId: string,
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/signals/${signalId}?${stringifiedParams}` : `/api/v1/signals/${signalId}`
+  return stringifiedParams.length > 0 ? `/api/v1/signals/${encodeURIComponent(String(signalId))}?${stringifiedParams}` : `/api/v1/signals/${encodeURIComponent(String(signalId))}`
 }
 
 /**
@@ -28659,7 +28667,7 @@ export const getAnalysisSuggestionForwardUrl = (suggestionId: string,) => {
 
 
 
-  return `/api/v1/suggestions/${suggestionId}/forward`
+  return `/api/v1/suggestions/${encodeURIComponent(String(suggestionId))}/forward`
 }
 
 /**
@@ -28780,7 +28788,7 @@ export const getAnalysisSuggestionResolveUrl = (suggestionId: string,) => {
 
 
 
-  return `/api/v1/suggestions/${suggestionId}/resolve`
+  return `/api/v1/suggestions/${encodeURIComponent(String(suggestionId))}/resolve`
 }
 
 /**
@@ -29019,7 +29027,7 @@ export const getNotificationsTaskAcknowledgeUrl = (taskId: string,) => {
 
 
 
-  return `/api/v1/tasks/${taskId}/acknowledge`
+  return `/api/v1/tasks/${encodeURIComponent(String(taskId))}/acknowledge`
 }
 
 /**
@@ -29376,7 +29384,7 @@ export const getSecurityVerifierReportReadUrl = (reportDigest: string,) => {
 
 
 
-  return `/api/v1/verifier-reports/${reportDigest}`
+  return `/api/v1/verifier-reports/${encodeURIComponent(String(reportDigest))}`
 }
 
 /**
@@ -29731,7 +29739,7 @@ export const getVisionObservationReadUrl = (eventId: string,
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/vision/observations/${eventId}?${stringifiedParams}` : `/api/v1/vision/observations/${eventId}`
+  return stringifiedParams.length > 0 ? `/api/v1/vision/observations/${encodeURIComponent(String(eventId))}?${stringifiedParams}` : `/api/v1/vision/observations/${encodeURIComponent(String(eventId))}`
 }
 
 /**
@@ -29972,7 +29980,7 @@ export const getAccessWorkplaceReadUrl = (workplaceId: string,
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/workplaces/${workplaceId}?${stringifiedParams}` : `/api/v1/workplaces/${workplaceId}`
+  return stringifiedParams.length > 0 ? `/api/v1/workplaces/${encodeURIComponent(String(workplaceId))}?${stringifiedParams}` : `/api/v1/workplaces/${encodeURIComponent(String(workplaceId))}`
 }
 
 /**
@@ -30087,7 +30095,7 @@ export const getAccessWorkplaceAdmitUrl = (workplaceId: string,) => {
 
 
 
-  return `/api/v1/workplaces/${workplaceId}/admission`
+  return `/api/v1/workplaces/${encodeURIComponent(String(workplaceId))}/admission`
 }
 
 /**
@@ -30216,7 +30224,7 @@ export const getAccessCandidateListUrl = (workplaceId: string,
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/workplaces/${workplaceId}/candidates?${stringifiedParams}` : `/api/v1/workplaces/${workplaceId}/candidates`
+  return stringifiedParams.length > 0 ? `/api/v1/workplaces/${encodeURIComponent(String(workplaceId))}/candidates?${stringifiedParams}` : `/api/v1/workplaces/${encodeURIComponent(String(workplaceId))}/candidates`
 }
 
 /**
@@ -30331,7 +30339,7 @@ export const getAccessOperatorReportDeviationUrl = (workplaceId: string,) => {
 
 
 
-  return `/api/v1/workplaces/${workplaceId}/deviations`
+  return `/api/v1/workplaces/${encodeURIComponent(String(workplaceId))}/deviations`
 }
 
 /**
@@ -30460,7 +30468,7 @@ export const getAccessWorkplaceHistoryUrl = (workplaceId: string,
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/workplaces/${workplaceId}/history?${stringifiedParams}` : `/api/v1/workplaces/${workplaceId}/history`
+  return stringifiedParams.length > 0 ? `/api/v1/workplaces/${encodeURIComponent(String(workplaceId))}/history?${stringifiedParams}` : `/api/v1/workplaces/${encodeURIComponent(String(workplaceId))}/history`
 }
 
 /**
@@ -30575,7 +30583,7 @@ export const getAccessOperatorRequestInspectionUrl = (workplaceId: string,) => {
 
 
 
-  return `/api/v1/workplaces/${workplaceId}/inspection-requests`
+  return `/api/v1/workplaces/${encodeURIComponent(String(workplaceId))}/inspection-requests`
 }
 
 /**
@@ -30696,7 +30704,7 @@ export const getAccessWorkplaceReleaseUrl = (workplaceId: string,) => {
 
 
 
-  return `/api/v1/workplaces/${workplaceId}/release`
+  return `/api/v1/workplaces/${encodeURIComponent(String(workplaceId))}/release`
 }
 
 /**
@@ -30817,7 +30825,7 @@ export const getAccessOperatorConfirmStepUrl = (workplaceId: string,) => {
 
 
 
-  return `/api/v1/workplaces/${workplaceId}/steps/confirm`
+  return `/api/v1/workplaces/${encodeURIComponent(String(workplaceId))}/steps/confirm`
 }
 
 /**

@@ -96,9 +96,9 @@ func (s *Service) now() time.Time {
 }
 
 // Scenarios — сценарии пульта из каталога определений (simulation.scenario.list).
-func (s *Service) Scenarios(ctx context.Context) (ScenarioList, error) {
+func (s *Service) Scenarios(ctx context.Context, all bool) (ScenarioList, error) {
 	if !s.live {
-		return s.Unimplemented.Scenarios(ctx)
+		return s.Unimplemented.Scenarios(ctx, all)
 	}
 	cat, err := s.d.Definitions.Catalog(ctx)
 	if err != nil {
@@ -106,7 +106,13 @@ func (s *Service) Scenarios(ctx context.Context) (ScenarioList, error) {
 	}
 	out := ScenarioList{Items: []Scenario{}}
 	bundles := map[string]sim.Bundle{}
+	// Пульт показа (Д-85): по умолчанию — только сценарии показа, если они
+	// отмечены в каталоге (show: true); весь каталог — all=true.
+	onlyShow := !all && slices.ContainsFunc(cat.Entries, func(e sim.CatalogEntry) bool { return e.Show })
 	for _, e := range cat.Entries {
+		if onlyShow && !e.Show {
+			continue
+		}
 		b, ok := bundles[e.Run]
 		if !ok {
 			if b, err = s.d.Definitions.Bundle(ctx, e.Run); err != nil {
@@ -144,8 +150,21 @@ func cards(e sim.CatalogEntry) []string {
 	return []string{e.ID}
 }
 
-// countStops — сколько раз интерактивный прогон остановится на решении человека.
+// countStops — сколько раз интерактивный прогон остановится на решении
+// человека. Прогон с живой частью (Д-85) — по плану генератора: там
+// остановка — каждое решение живой части, включая «Начать»/«Выполнено» сварок.
 func countStops(b sim.Bundle, only []string) int {
+	if b.Run.Live != nil {
+		if p, err := sim.Generate(b, sim.Params{RunID: "count"}); err == nil {
+			n := 0
+			for _, a := range p.Actions {
+				if a.Kind == sim.ActionDecision && a.Stop {
+					n++
+				}
+			}
+			return n
+		}
+	}
 	n := 0
 	for _, sc := range b.Scenarios {
 		if !slices.Contains(only, sc.ID) {
@@ -534,6 +553,10 @@ func (s *Service) view(ctx context.Context, st *RunState) (Run, error) {
 	}
 	clock := st.Clock.Now(s.now())
 	if !st.LastTick.IsZero() && clock.After(st.LastTick) && st.Mode != ModeInteractive {
+		clock = st.LastTick
+	}
+	if st.Mode == ModeInteractive && !st.Live && !rp.plan.LiveFrom.IsZero() && !st.LastTick.IsZero() {
+		// история проигрывается без часов (Д-85): «сейчас» — последний тик, а не ×скорость
 		clock = st.LastTick
 	}
 	v := Run{RunID: st.RunID, ScenarioID: st.Entry, ScenarioVersion: st.Version, Seed: st.Seed, Mode: st.Mode, State: st.State,

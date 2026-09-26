@@ -132,7 +132,17 @@ export function queueFacts(step: StationStep, posts: readonly StationPost[], reg
   return facts
 }
 
-/** Состояние виджета: есть узлы без данных источника или посты без данных присутствия — «оценка невозможна». */
-export function stationState(steps: readonly StationStep[], posts: readonly StationPost[]): 'normal' | 'unable_to_assess' {
-  return steps.some((s) => s.dataGap) || posts.some((p) => p.post.presence === 'unknown') ? 'unable_to_assess' : 'normal'
+/** Что пришло и ждёт приёмки: задача процесса «Принять в цех» с изделием. */
+export interface IncomingTask {
+  taskId: string
+  itemId: string
+  /** Заголовок задачи («Принять в цех Ф-001»). */
+  title: string
 }
+
+/** Изделие на входе участка (очередь первой операции). */
+export interface EntryItem {
+  item_id: string
+  label: string
+}
+

@@ -22,11 +22,11 @@ checkpoints:
       value: released
     mapping: exact
   - id: SHOW-00b
-    what: позапрошлая партия Ф-101 выпущена
+    what: прошлая партия Ф-202 выпущена
     check:
       operation: item.passport.read
       params:
-        item_id: '{item:F-101}'
+        item_id: '{item:F-202}'
       path: /status/summary
       op: eq
       value: released

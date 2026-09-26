@@ -10,12 +10,14 @@ import { computed, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { NAlert, NInput, NTag } from 'naive-ui'
 import { useSession } from '@/entities/session'
-import { isIsolatorMoveTask, isOpenTask, taskNotificationKind, useAcknowledgeTask, type AcknowledgeTaskOutcome, type TaskEntry } from '@/entities/task'
+import { isOpenTask, taskNotificationKind, useAcknowledgeTask, type AcknowledgeTaskOutcome, type TaskEntry } from '@/entities/task'
+import { ReceiveAction } from '@/features/item-receive'
 import type { DrillRef } from '@/shared/model/drill'
 import { naiveSizeOf, type Density } from '@/shared/config/widget'
 import { useProblemText } from '@/shared/i18n/problem'
 import { newCommandId } from '@/shared/lib/command-id'
 import { ActionButton, EmptyState } from '@/shared/ui'
+import { taskActionOf, taskItemLabel, type ProcessTask, type TaskAction } from '../model/actions'
 import IsolatorMoveConfirm from './IsolatorMoveConfirm.vue'
 
 const props = withDefaults(
@@ -48,6 +50,25 @@ const commandIds = new Map<string, string>()
 const lastError = ref<{ task: string; error: unknown } | null>(null)
 /** Отмеченные в этом сеансе: исход и номер записи — кнопки у задачи прячутся, итог виден (UI-37). */
 const acked = reactive<Record<string, { outcome: AcknowledgeTaskOutcome; seq: number }>>({})
+
+/** Действие каждой задачи — по operationId из реестра (model/actions.ts). */
+const actions = computed(() => new Map<string, TaskAction>(props.tasks.map((task) => [task.task_id, taskActionOf(task as ProcessTask)])))
+const actionOf = (task: TaskEntry): TaskAction => actions.value.get(task.task_id) ?? { kind: 'ack', ref: task.ref ?? null }
+const itemLabel = (task: TaskEntry) => taskItemLabel(task as ProcessTask)
+const opOf = (task: TaskEntry) => (task as ProcessTask).operation ?? task.kind
+
+/**
+ * Действие исполнителя — на его терминале: если терминал на этом столе, кнопка
+ * ведёт к нему; иначе открывается окно изделия.
+ */
+function goTerminal(a: Extract<TaskAction, { kind: 'terminal' }>): void {
+  const el = typeof document !== 'undefined' ? document.querySelector<HTMLElement>('[data-widget="performer-terminal"]') : null
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    return
+  }
+  if (a.ref) emit('open', a.ref)
+}
 
 const time = (iso: string | null | undefined) => (iso ? d(new Date(iso), 'dateTime') : '')
 
@@ -101,25 +122,43 @@ const kindKey = (task: TaskEntry) => (taskNotificationKind(task.kind) === 'decis
         <span v-if="task.due_at" class="ant-muted">{{ t('common.words.deadline') }}: {{ time(task.due_at) }}</span>
       </div>
       <p class="ant-clamp-2" :title="task.title" data-testid="task-title">{{ task.title }}</p>
-      <div v-if="task.ref && canOpen(task.ref)" class="line">
+      <p v-if="itemLabel(task) && !task.title.includes(itemLabel(task)!)" class="ant-muted ant-ellipsis" data-testid="task-item">
+        {{ t('common.words.item') }}: {{ itemLabel(task) }}
+      </p>
+
+      <!-- Своё действие задачи — глаголом (реестр operationId → форма или окно). -->
+      <template v-if="isOpenTask(task) && canAct && !acked[task.task_id] && actionOf(task).kind !== 'ack'">
+        <template v-for="a in [actionOf(task)]" :key="a.kind">
+          <ReceiveAction v-if="a.kind === 'form' && a.form === 'receive'" :item-id="a.itemId" :basis-seq="basisSeq" data-testid="task-receive" />
+          <template v-else-if="a.kind === 'form' && a.form === 'isolator_move'">
+            <div v-if="moving !== task.task_id" class="line">
+              <ActionButton :size="size" type="primary" secondary :label="t(a.verbKey)" data-testid="open-isolator-move" @click="moving = task.task_id" />
+            </div>
+            <IsolatorMoveConfirm v-else :item-id="a.itemId" :density="density" :can-act="canAct" verbose />
+          </template>
+          <div v-else-if="a.kind === 'window' && canOpen(a.ref)" class="line">
+            <ActionButton :size="size" type="primary" :label="t(a.verbKey)" data-testid="task-action" :data-action="opOf(task)" @click="emit('open', a.ref)" />
+          </div>
+          <div v-else-if="a.kind === 'terminal'" class="line">
+            <ActionButton :size="size" type="primary" :label="t(a.verbKey)" data-testid="task-action" :data-action="opOf(task)" @click="goTerminal(a)" />
+          </div>
+        </template>
+      </template>
+
+      <!-- Паспорт изделия — ссылкой, если действие само окно не открывает. -->
+      <div v-if="task.ref && canOpen(task.ref) && (actionOf(task).kind === 'ack' || actionOf(task).kind === 'form')" class="line">
         <ActionButton
           text
           type="primary"
           :size="size"
-          :label="task.ref.entity === 'item' ? t('common.actions.openPassport') : t('common.actions.open')"
+          :label="task.ref.entity === 'item' ? t('common.actions.openPassport') : t('taskActions.verb.goTo')"
           data-testid="open-ref"
           @click="emit('open', task.ref)"
         />
       </div>
 
-      <template v-if="isOpenTask(task) && canAct && !acked[task.task_id]">
-        <template v-if="isIsolatorMoveTask(task)">
-          <div v-if="moving !== task.task_id" class="line">
-            <ActionButton :size="size" type="primary" secondary :label="t('decisions.containment.confirmIsolatorMove')" data-testid="open-isolator-move" @click="moving = task.task_id" />
-          </div>
-          <IsolatorMoveConfirm v-else :item-id="task.ref!.id" :density="density" :can-act="canAct" verbose />
-        </template>
-        <div v-else class="line">
+      <template v-if="isOpenTask(task) && canAct && !acked[task.task_id] && actionOf(task).kind === 'ack'">
+        <div class="line">
           <ActionButton
             :size="size"
             type="primary"

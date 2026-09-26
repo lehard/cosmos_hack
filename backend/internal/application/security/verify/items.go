@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"maps"
 	"slices"
+	"time"
 
 	engineapp "ant/internal/application/engine"
 	"ant/internal/contracts/catalog"
@@ -59,7 +60,8 @@ func safeFold(fold engine.Folder, b engine.Bundle, in []kernel.Record) (s engine
 
 func (v *run) item(ctx context.Context, id string, fold engine.Folder) error {
 	creac, ccov, cproj := v.checks["reactions"], v.checks["coverage"], v.checks["projections"]
-	in, err := v.in.Codec.LoadItem(ctx, id, 0)
+	part := kernel.PartitionOf(id, max(v.in.Partitions, 1))
+	cursor, stored, in, err := v.settle(ctx, id, part)
 	if err != nil {
 		var pe *engineapp.ProcessingError
 		if errorsAs(err, &pe) {
@@ -76,8 +78,15 @@ func (v *run) item(ctx context.Context, id string, fold engine.Folder) error {
 		return nil
 	}
 	// Реакции по basis_seq: группы по основанию, по порядку записи.
+	// Реакции, записанные после головы, до которой прочитаны цепочки, в
+	// отчёт этой проверки не входят (их basis_seq в индексе ещё нет) — их
+	// сверит следующая проверка.
+	head := v.lastSeq("main")
 	groups := map[int64][]engine.Recorded{}
 	for _, r := range in.Recorded {
+		if r.Seq > head {
+			continue
+		}
 		b := v.byIDSeq(r.EventID)
 		groups[b] = append(groups[b], r)
 	}
@@ -140,11 +149,6 @@ func (v *run) item(ctx context.Context, id string, fold engine.Folder) error {
 	}
 	// Покрытие и проекции — только для изделий, чей вход обработан воркером.
 	ccov.checked++
-	part := kernel.PartitionOf(id, max(v.in.Partitions, 1))
-	cursor, err := v.in.Projections.WorkerCursor(ctx, part)
-	if err != nil {
-		return err
-	}
 	if cursor < in.Last.Seq {
 		ccov.unverifiable("coverage.pending", fmt.Sprintf("изделие %s: вход до seq %d ещё не обработан воркером (курсор %d) — реакции и проекции сверяются после обработки", id, in.Last.Seq, cursor))
 		return nil
@@ -165,7 +169,59 @@ func (v *run) item(ctx context.Context, id string, fold engine.Folder) error {
 			ccov.reject("coverage.missing", fmt.Sprintf("изделие %s: реакция %s (%s) следует из журнала до seq %d, но не записана", id, p.Reaction.Type, p.Change, in.Last.Seq), "main", in.Last.Seq, "")
 		}
 	}
-	return v.projections(ctx, id, cproj, snap, rs, in)
+	return v.projections(id, cproj, snap, rs, in, stored)
+}
+
+// settleAttempts — сколько раз снимок изделия перечитывается, пока воркер
+// не догонит его вход (изделие в потоке прогона); не догнал — «вход ещё не
+// обработан» (не проверяемо, не нарушение).
+const settleAttempts = 5
+
+// defaultSettleWait — пауза между попытками снимка по умолчанию.
+const defaultSettleWait = 150 * time.Millisecond
+
+// settle — согласованный снимок изделия без общей транзакции (AD-9, AD-45):
+// курсор воркера партиции → проекции изделия → вход изделия, строго в этом
+// порядке. Воркер пишет проекции и курсор в транзакциях Append (курсор — в
+// последней транзакции пачки), поэтому:
+//   - проекции прочитаны после курсора — в них есть обработка всего входа
+//     до курсора;
+//   - вход прочитан после проекций — в нём есть всё, что успели отразить
+//     проекции (они не бывают «новее» входа).
+//
+// Значит, при последней записи входа не дальше курсора проекции ровно
+// отражают прочитанный вход. Иначе (изделие обрабатывается прямо сейчас) —
+// снимок перечитывается. Прежний порядок «вход → курсор → проекции» во время
+// живого прогона давал ложное «проекция расходится с журналом»: воркер
+// успевал свернуть новую запись между чтением входа и проекций (basis_seq в
+// проекции новее, чем во входе).
+func (v *run) settle(ctx context.Context, id string, part int) (cursor int64, stored map[string][]byte, in engineapp.ItemInput, err error) {
+	wait := v.in.SettleWait
+	if wait <= 0 {
+		wait = defaultSettleWait
+	}
+	for attempt := 1; ; attempt++ {
+		if cursor, err = v.in.Projections.WorkerCursor(ctx, part); err != nil {
+			return
+		}
+		if stored, err = v.in.Projections.ItemRows(ctx, id); err != nil {
+			return
+		}
+		if in, err = v.in.Codec.LoadItem(ctx, id, 0); err != nil {
+			return
+		}
+		if in.Stopped || len(in.Input) == 0 || in.Last.Seq <= cursor || attempt >= settleAttempts {
+			return
+		}
+		t := time.NewTimer(wait)
+		select {
+		case <-ctx.Done():
+			t.Stop()
+			err = ctx.Err()
+			return
+		case <-t.C:
+		}
+	}
 }
 
 func (v *run) byIDSeq(eventID string) int64 {
@@ -176,15 +232,12 @@ func (v *run) byIDSeq(eventID string) int64 {
 }
 
 // projections — проекции состояния изделия против пересвёртки (AD-9, AD-28).
-func (v *run) projections(ctx context.Context, id string, c *check, snap engine.Snapshot, rs []kernel.Reaction, in engineapp.ItemInput) error {
+// stored — проекции из того же согласованного снимка, что и вход (settle).
+func (v *run) projections(id string, c *check, snap engine.Snapshot, rs []kernel.Reaction, in engineapp.ItemInput, stored map[string][]byte) error {
 	effects, err := v.in.Registry.ItemEffects(id, snap, rs, in.Input)
 	if err != nil {
 		c.unverifiable("projections.view", fmt.Sprintf("изделие %s: %v", id, err))
 		return nil
-	}
-	stored, err := v.in.Projections.ItemRows(ctx, id)
-	if err != nil {
-		return err
 	}
 	for _, e := range effects {
 		switch x := e.(type) {

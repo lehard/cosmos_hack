@@ -43,7 +43,7 @@ func adapter(t *testing.T) (*Adapter, *loader.Runtime) {
 func TestPult(t *testing.T) {
 	a, rt := adapter(t)
 	ctx := context.Background()
-	sl, err := a.Scenarios(ctx)
+	sl, err := a.Scenarios(ctx, false)
 	if err != nil || len(sl.Items) != 1 || sl.Items[0].Decisions != 1 || sl.Items[0].CaseRefs[0] != "§1.5" {
 		t.Fatalf("сценарии: %+v %v", sl, err)
 	}
