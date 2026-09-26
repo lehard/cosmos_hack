@@ -391,6 +391,10 @@ func TestProcessApprovalSheet(t *testing.T) {
 	if d = w.doc(acc.DocumentID, 0); d.Status != dom.StatusRouteClosed {
 		t.Fatalf("лист: %s", d.Status)
 	}
+	sh, ok, err := w.docs.ApprovalSheet(context.Background(), "process_version:flange-2")
+	if err != nil || !ok || !sh.Closed || sh.RouteClosedEventID == "" || len(sh.Signatures) != 3 || sh.Signatures[2].Role != "production_manager" {
+		t.Fatalf("лист для process: %+v %v %v", sh, ok, err)
+	}
 	// Отказ в согласовании и повтор команды (AD-7).
 	acc2, _ := w.docs.RequestVersion(as("TEC-01", "technologist"), app.RequestVersion{CommandHeader: hdr(), SubjectRef: "process_version:flange-3", Action: "process.version.submit"})
 	h := hdr()
