@@ -157,6 +157,20 @@ func (s *Service) process(ctx context.Context, raw []byte, mc msgCtx) (Result, e
 	}
 	q.authed = true
 
+	// 2а. Выключенный администратором источник или интеграция (FR-157, AD-28,
+	// AD-47; хвост эпика 34): приём отвергает, сообщение — в карантин до
+	// повторного включения (ручной ввод человека не отключается).
+	if g := s.deps.Gate; g != nil && mc.Manual == nil {
+		blocked, why, err := g.SourceBlocked(ctx, h.SourceID)
+		if err != nil {
+			return Result{}, err
+		}
+		if blocked {
+			q.dec = dom.Decision{Code: errcodes.IngestSourceDisabled, Detail: "источник «" + h.SourceID + "» выключен (" + why + ") — сообщение отклонено"}
+			return s.finishQ(start)(s.quarantine(ctx, q))
+		}
+	}
+
 	// 3. Схема теми же JSON Schema и пять случаев FR-29 (кейс §4.7, AD-20).
 	dec, err := s.checkContract(canon, h)
 	if err != nil {

@@ -572,7 +572,8 @@ func renderOps(c *Ctx) []loader.Response {
 		}
 	}
 	h.Verifier = &opsapp.VerifierReportRef{Verdict: verdict, CheckedAt: checked, ReportRef: Digest([]byte("verifier/" + verdict))}
-	out := []loader.Response{resp("ops.health.read", h), resp("ops.stopped_item.list", opsapp.StoppedItemList{Items: []opsapp.StoppedItem{}})}
+	out := []loader.Response{resp("ops.health.read", h), resp("ops.stopped_item.list", opsapp.StoppedItemList{Items: []opsapp.StoppedItem{}}),
+		resp("ops.integration.list", c.integrations())}
 	if c.N == 0 {
 		mods := []opsapp.ModuleMode{}
 		for _, m := range []string{"access", "analysis", "analytics", "erp", "ingest", "item", "journal", "machinelogs", "nonconformity", "notifications", "ops", "process", "quality", "security", "simulation", "vision"} {
@@ -588,4 +589,61 @@ func renderOps(c *Ctx) []loader.Response {
 		}, Modules: mods, Enabled: []string{"onec"}}))
 	}
 	return out
+}
+
+// integrations — экран «Интеграции» (ops.integration.list, FR-157; эпик 48):
+// в мире заготовок установлены стенды 1С, КОМПАС-3D, VisionQC, контроля
+// действий оператора и демо-УЦ; Галактика, MES, СКУД и партнёры — «не
+// установлена». Канал 1С — как в erp.channel.list того же шага.
+func (c *Ctx) integrations() opsapp.IntegrationList {
+	queued, rejected := int64(0), int64(0)
+	var last time.Time
+	var lastErr *opsapp.IntegrationError
+	for _, e := range c.M.ERP {
+		if e.At.After(c.T) {
+			continue
+		}
+		m := c.erpMessage(e)
+		switch {
+		case len(m.Attempts) == 0:
+			queued++
+		case m.Status == "rejected":
+			rejected++
+		}
+		if n := len(m.Attempts); n > 0 {
+			a := m.Attempts[n-1]
+			if a.At.After(last) {
+				last = a.At
+			}
+			if a.Outcome == "rejected" && a.ErrorMessage != nil {
+				lastErr = &opsapp.IntegrationError{At: a.At, Detail: *a.ErrorMessage}
+			}
+		}
+	}
+	since := c.M.Steps[0]
+	check := func(ep string) *opsapp.IntegrationCheck {
+		return &opsapp.IntegrationCheck{Result: "ok", Endpoint: ptr(ep), Detail: ptr("ответная сторона отвечает, версия контракта совпала"), At: since, Seq: 1}
+	}
+	onec := opsapp.IntegrationEntry{System: "onec", Installed: true, State: "stand", Default: true, StandAvailable: true,
+		Channel: ptr("ok"), Endpoint: ptr("http://stands:8090/onec"), CheckedAt: tptr(c.T), Queued: ptr(queued), Quarantined: ptr(rejected),
+		LastError: lastErr, LastCheck: check("http://stands:8090/onec"), BasisSeq: 0}
+	if !last.IsZero() {
+		onec.LastExchangeAt = tptr(last)
+	}
+	if rejected > 0 {
+		onec.Channel, onec.Detail = ptr("degraded"), ptr("Ошибка данных: не найден договор с поставщиком — нужна правка соответствий")
+	}
+	stand := func(sys, ep string) opsapp.IntegrationEntry {
+		return opsapp.IntegrationEntry{System: sys, Installed: true, State: "stand", Default: true, StandAvailable: true,
+			Channel: ptr("ok"), Endpoint: ptr(ep), CheckedAt: tptr(c.T), LastExchangeAt: tptr(c.T), LastCheck: check(ep)}
+	}
+	absent := func(sys string) opsapp.IntegrationEntry {
+		return opsapp.IntegrationEntry{System: sys, State: "disabled", Default: true}
+	}
+	ca := stand("ca", "https://ca.stand/ocsp")
+	ca.Detail = ptr("Демо-УЦ: выпуск и отзыв сертификатов mTLS, OCSP")
+	return opsapp.IntegrationList{Profile: "fixtures", Items: []opsapp.IntegrationEntry{
+		onec, absent("galaktika"), absent("mes"), stand("kompas", "file:///var/lib/ant/exchange/kompas"), absent("skud"),
+		ca, stand("visionqc", "http://stands:8090/visionqc"), stand("operatorvision", "http://stands:8090/operatorvision"), absent("partner"),
+	}}
 }

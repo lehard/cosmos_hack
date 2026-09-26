@@ -143,3 +143,70 @@ type SwitchSource struct {
 	platform.CommandHeader
 	Reason OpsReason `json:"reason"`
 }
+
+// Формы экрана «Интеграции» стола администратора (FR-157, AD-47; эпик 48).
+
+// IntegrationDecision — последнее решение администратора о состоянии интеграции.
+type IntegrationDecision struct {
+	State    string    `json:"state" enum:"enabled,disabled,stand"`
+	Previous *string   `json:"previous,omitempty" enum:"enabled,disabled,stand"`
+	Reason   string    `json:"reason"`
+	Actor    string    `json:"actor,omitempty" doc:"Кто решил (псевдоним)."`
+	At       time.Time `json:"at"`
+	Seq      int64     `json:"seq"`
+}
+
+// IntegrationCheck — последняя проверка соединения (ops.integration.checked).
+type IntegrationCheck struct {
+	Result   string    `json:"result" enum:"ok,degraded,unreachable,not_supported"`
+	Detail   *string   `json:"detail,omitempty"`
+	Endpoint *string   `json:"endpoint,omitempty"`
+	At       time.Time `json:"at"`
+	Seq      int64     `json:"seq"`
+}
+
+// IntegrationError — последний сбой канала (ops.integration.degraded, AD-18).
+type IntegrationError struct {
+	At     time.Time `json:"at"`
+	Detail string    `json:"detail"`
+}
+
+// IntegrationEntry — внешняя система на экране «Интеграции».
+type IntegrationEntry struct {
+	System    string `json:"system" enum:"onec,galaktika,mes,kompas,skud,ca,visionqc,operatorvision,partner" doc:"Внешняя система."`
+	Installed bool   `json:"installed" doc:"Установлена конфигурацией (integrations.enabled); нет — «не установлена», кнопок нет."`
+	State     string `json:"state" enum:"enabled,disabled,stand" doc:"enabled — включена (реальная система), disabled — выключена, stand — стенд (эмулятор)."`
+	Default   bool   `json:"default" doc:"Решений не было — состояние по умолчанию профиля (prod — реальная, demo и fixtures — стенд)."`
+	// StandAvailable, RealAvailable — какие режимы можно включить: заданы адресом в конфигурации и разрешены профилем.
+	StandAvailable bool                 `json:"stand_available" doc:"Можно переключить на стенд: стенд задан конфигурацией и профиль не prod."`
+	RealAvailable  bool                 `json:"real_available" doc:"Можно переключить на реальную систему: её адрес задан конфигурацией."`
+	Channel        *string              `json:"channel,omitempty" enum:"ok,degraded,disabled" doc:"Живое состояние канала обмена (сверка ответной стороны, AD-18)."`
+	Detail         *string              `json:"detail,omitempty"`
+	Endpoint       *string              `json:"endpoint,omitempty" doc:"Адрес ответной стороны без секретов."`
+	CheckedAt      *time.Time           `json:"checked_at,omitempty"`
+	LastExchangeAt *time.Time           `json:"last_exchange_at,omitempty" doc:"Последний обмен с системой."`
+	Queued         *int64               `json:"queued,omitempty" minimum:"0" doc:"Исходящих в очереди (у выключенной копятся до включения)."`
+	Quarantined    *int64               `json:"quarantined,omitempty" minimum:"0" doc:"Исходящих в карантине — ждут ручной переотправки (FR-96)."`
+	LastError      *IntegrationError    `json:"last_error,omitempty" doc:"Последний сбой канала."`
+	LastCheck      *IntegrationCheck    `json:"last_check,omitempty" doc:"Последняя проверка соединения."`
+	LastDecision   *IntegrationDecision `json:"last_decision,omitempty" doc:"Последнее решение администратора."`
+	BasisSeq       int64                `json:"basis_seq" minimum:"0" doc:"basis_seq для следующей команды над интеграцией (AD-39)."`
+}
+
+// IntegrationList — экран «Интеграции» (ops.integration.list).
+type IntegrationList struct {
+	Profile string             `json:"profile" enum:"fixtures,demo,load,prod" doc:"В prod стенд запрещён."`
+	Items   []IntegrationEntry `json:"items"`
+}
+
+// SetIntegrationState — задать состояние интеграции (ops.integration.state_set).
+type SetIntegrationState struct {
+	platform.CommandHeader
+	State  string    `json:"state" enum:"enabled,disabled,stand" doc:"enabled — включить реальную систему; disabled — выключить; stand — переключить на стенд (в prod — отказ ops.stand_forbidden)."`
+	Reason OpsReason `json:"reason"`
+}
+
+// CheckIntegration — проверить соединение (ops.integration.checked).
+type CheckIntegration struct {
+	platform.CommandHeader
+}

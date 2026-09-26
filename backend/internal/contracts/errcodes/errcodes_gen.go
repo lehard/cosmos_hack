@@ -135,6 +135,8 @@ const (
 	IngestSchemaViolation Code = "ingest.schema_violation"
 	// Подпись сообщения недействительна
 	IngestSignatureInvalid Code = "ingest.signature_invalid"
+	// Источник выключен администратором
+	IngestSourceDisabled Code = "ingest.source_disabled"
 	// Неизвестное значение перечисления — принято с пометкой
 	IngestUnknownEnumValue Code = "ingest.unknown_enum_value"
 	// Неизвестное значение в поле, важном для безопасности
@@ -215,6 +217,14 @@ const (
 	NonconformityRejectReasonRequired Code = "nonconformity.reject_reason_required"
 	// Вернуть поставщику можно только необработанное
 	NonconformityReturnOnlyUnprocessed Code = "nonconformity.return_only_unprocessed"
+	// Режим интеграции не настроен
+	OpsIntegrationModeUnavailable Code = "ops.integration_mode_unavailable"
+	// Интеграция не установлена
+	OpsIntegrationNotInstalled Code = "ops.integration_not_installed"
+	// Интеграция уже в этом состоянии
+	OpsIntegrationStateUnchanged Code = "ops.integration_state_unchanged"
+	// Стенд в рабочем профиле запрещён
+	OpsStandForbidden Code = "ops.stand_forbidden"
 	// Закрывающий путь без контроля человеком
 	ProcessClosingPathWithoutHuman Code = "process.closing_path_without_human"
 	// Условие на стрелке не по языку условий
@@ -345,6 +355,7 @@ var codes = [...]Info{
 	{Code: IngestRevokedKey, Status: 403, Title: "Ключ источника отозван", Detail: "Ключ {key_ref} отозван — сообщение отклонено и попало на шину безопасности", UIKey: "errors.ingest.revokedKey", Quarantine: true, Severity: "error", Guard: false, Aliases: nil},
 	{Code: IngestSchemaViolation, Status: 422, Title: "Сообщение не соответствует схеме", Detail: "{event_type} v{version}: {reason} — несовместимое изменение возможно только новой мажорной версией", UIKey: "errors.ingest.incompatibleChange", Quarantine: true, Severity: "error", Guard: false, Aliases: nil},
 	{Code: IngestSignatureInvalid, Status: 422, Title: "Подпись сообщения недействительна", Detail: "Ключ {key_ref}: {reason} — сообщение отклонено, событие безопасности записано", UIKey: "errors.ingest.signatureInvalid", Quarantine: true, Severity: "error", Guard: false, Aliases: nil},
+	{Code: IngestSourceDisabled, Status: 403, Title: "Источник выключен администратором", Detail: "Источник «{source_id}» выключен ({reason}) — сообщение отклонено и сохранено в карантине", UIKey: "errors.generic", Quarantine: true, Severity: "error", Guard: false, Aliases: nil},
 	{Code: IngestUnknownEnumValue, Status: 202, Title: "Неизвестное значение перечисления — принято с пометкой", Detail: "Поле «{field}»: значение «{value}» сохранено как UNKNOWN({value}) с флагом", UIKey: "errors.ingest.unknownEnumValueAccepted", Quarantine: false, Severity: "warning", Guard: false, Aliases: []string{"E_UNKNOWN_ENUM"}},
 	{Code: IngestUnknownEnumValueCritical, Status: 422, Title: "Неизвестное значение в поле, важном для безопасности", Detail: "Поле «{field}»: значение «{value}» неизвестно — сообщение в карантине", UIKey: "errors.ingest.unknownEnumValueQuarantined", Quarantine: true, Severity: "error", Guard: false, Aliases: nil},
 	{Code: IngestUnknownEventType, Status: 422, Title: "Неизвестный тип события", Detail: "Тип «{event_type}» не объявлен в каталоге — сообщение в карантине", UIKey: "errors.ingest.incompatibleChange", Quarantine: true, Severity: "error", Guard: false, Aliases: nil},
@@ -385,6 +396,10 @@ var codes = [...]Info{
 	{Code: NonconformityProcessHoldNotActive, Status: 409, Title: "Остановка точки процесса не действует", Detail: "Остановка {hold_id} не найдена или уже снята", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
 	{Code: NonconformityRejectReasonRequired, Status: 422, Title: "Нужна причина отклонения", Detail: "Укажите, почему сигнал отклонён", UIKey: "errors.decision.rejectReasonRequired", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
 	{Code: NonconformityReturnOnlyUnprocessed, Status: 422, Title: "Вернуть поставщику можно только необработанное", Detail: "Изделие {item_id} уже обрабатывалось — «вернуть поставщику» недопустимо", UIKey: "errors.decision.returnOnlyUnprocessed", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
+	{Code: OpsIntegrationModeUnavailable, Status: 409, Title: "Режим интеграции не настроен", Detail: "Для {system} не задан адрес режима «{state}» в конфигурации — переключение невозможно", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
+	{Code: OpsIntegrationNotInstalled, Status: 409, Title: "Интеграция не установлена", Detail: "Система {system} не установлена конфигурацией (integrations.enabled) — включить её с экрана нельзя", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
+	{Code: OpsIntegrationStateUnchanged, Status: 409, Title: "Интеграция уже в этом состоянии", Detail: "{system} уже в состоянии «{state}» — решение не записано", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
+	{Code: OpsStandForbidden, Status: 409, Title: "Стенд в рабочем профиле запрещён", Detail: "Профиль {profile}: переключить {system} на стенд нельзя — только реальная система или «выключена»", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
 	{Code: ProcessClosingPathWithoutHuman, Status: 422, Title: "Закрывающий путь без контроля человеком", Detail: "Закрывающий путь без контроля человеком: {element}", UIKey: "errors.process.closingPathWithoutHuman", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: ProcessConditionInvalid, Status: 422, Title: "Условие на стрелке не по языку условий", Detail: "Стрелка {element}: {reason}", UIKey: "errors.process.schemaViolation", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: ProcessImplicitMerge, Status: 422, Title: "Неявное слияние стрелок без шлюза", Detail: "У элемента {element} несколько входящих стрелок без шлюза — поставьте явный шлюз слияния", UIKey: "errors.process.schemaViolation", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},

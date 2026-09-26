@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/ops/ops.integration.state_set.v1.json",
+  "title": "OpsIntegrationStateSetV1",
+  "description": "Состояние интеграции задано — администратор включил, выключил или переключил «стенд ↔ реальная система» установленную конфигурацией внешнюю систему; процессы подхватывают состояние без перезапуска (AD-47, FR-157; единолично — Д-71).",
+  "type": "object",
+  "properties": {
+    "system": {
+      "type": "string",
+      "enum": [
+        "onec",
+        "galaktika",
+        "mes",
+        "kompas",
+        "skud",
+        "ca",
+        "visionqc",
+        "operatorvision",
+        "partner"
+      ],
+      "description": "Внешняя система."
+    },
+    "state": {
+      "type": "string",
+      "enum": [
+        "enabled",
+        "disabled",
+        "stand"
+      ],
+      "description": "enabled — включена, реальная система; disabled — выключена: исходящие копятся в очереди, входящие отвергаются приёмом; stand — включена, обмен со стендом (эмулятором). В профиле prod stand запрещён."
+    },
+    "previous": {
+      "type": "string",
+      "enum": [
+        "enabled",
+        "disabled",
+        "stand"
+      ],
+      "description": "Состояние до решения (по умолчанию профиля, если решений не было)."
+    },
+    "reason": {
+      "$ref": "../common/defs.v1.json#/definitions/reason",
+      "description": "Основание: код и текст."
+    }
+  },
+  "required": [
+    "system",
+    "state",
+    "reason"
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/ops/ops.integration.checked.v1.json",
+  "title": "OpsIntegrationCheckedV1",
+  "description": "Соединение с внешней системой проверено по кнопке администратора — та же сверка ответной стороны, что при старте адаптера: метаданные, версия контракта (AD-18, AD-47).",
+  "type": "object",
+  "properties": {
+    "system": {
+      "type": "string",
+      "enum": [
+        "onec",
+        "galaktika",
+        "mes",
+        "kompas",
+        "skud",
+        "ca",
+        "visionqc",
+        "operatorvision",
+        "partner"
+      ],
+      "description": "Внешняя система."
+    },
+    "result": {
+      "type": "string",
+      "enum": [
+        "ok",
+        "degraded",
+        "unreachable",
+        "not_supported"
+      ],
+      "description": "ok — ответная сторона отвечает, контракт совпал; degraded — контракт не совпал; unreachable — не отвечает; not_supported — у адаптера нет проверки."
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "enabled",
+        "disabled",
+        "stand"
+      ],
+      "description": "Состояние интеграции на момент проверки."
+    },
+    "endpoint": {
+      "type": "string",
+      "maxLength": 512,
+      "description": "Адрес ответной стороны без секретов."
+    },
+    "detail": {
+      "type": "string",
+      "maxLength": 4000,
+      "description": "Что ответила или почему не ответила ответная сторона."
+    }
+  },
+  "required": [
+    "system",
+    "result"
+  ]
+}

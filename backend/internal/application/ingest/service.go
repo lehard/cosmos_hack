@@ -1,6 +1,7 @@
 package ingest
 
 import (
+	"context"
 	"sync"
 	"time"
 
@@ -101,6 +102,18 @@ type Deps struct {
 	InfraClock  journal.InfraClock
 	// Telemetry — метрики /metrics (FR-41); nil — только Stats.
 	Telemetry platform.Telemetry
+	// Gate — выключенные источники и интеграции (ops.source.disabled,
+	// ops.integration.state_set; AD-28, AD-47, эпик 48): входящие от них
+	// отвергаются с кодом ingest.source_disabled и остаются в карантине;
+	// nil — не проверяется.
+	Gate SourceGate
+}
+
+// SourceGate — порт ops «отвергать ли источник» (эпик 48): решение
+// администратора читается на лету, без перезапуска приёма.
+type SourceGate interface {
+	// SourceBlocked — источник отключён или его система выключена; why — основание.
+	SourceBlocked(ctx context.Context, sourceID string) (blocked bool, why string, err error)
 }
 
 // Service — реализация live ведущих портов модуля ingest (AD-36).

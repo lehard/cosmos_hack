@@ -23,6 +23,11 @@ tabs:
     slots:
       - {id: sources, area: main, widget: sources}
       - {id: quarantine, area: right, widget: quarantine, slice: {view: summary}}
+  - id: integrations
+    title_key: widgets.integrations.title
+    layout: single
+    slots:
+      - {id: integrations, area: main, widget: integrations}
   - id: components
     title_key: desks.components
     layout: single

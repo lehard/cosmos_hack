@@ -92,7 +92,8 @@ func mesOutbox(ctx context.Context, env *environment, c *core, intake *ingestapp
 	return &mesapp.Outbox{
 		Sender: &mesapp.Sender{Journal: c.journal, Codec: c.codec, Store: c.engine, Channel: ch,
 			Clock: c.domainClock(), Now: c.codec.Now, Max: cfg.RetryMax, Log: log},
-		Gateway: &mesapp.Gateway{Channel: ch, Intake: mesIntake{intake}, Env: mesEnvOf(c, steps), Log: log},
+		// Эпик 48: входящие выключенной MES не опрашиваются.
+		Gateway: &mesapp.Gateway{Channel: switchedMES{Channel: ch, sw: integrationSwitch(env, c)}, Intake: mesIntake{intake}, Env: mesEnvOf(c, steps), Log: log},
 		Poll:    cfg.Poll, PullEvery: cfg.PullEvery, Recheck: cfg.Recheck, Now: c.codec.Now, Log: log,
 	}, nil
 }

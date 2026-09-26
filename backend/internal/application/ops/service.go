@@ -9,6 +9,7 @@ import (
 	engineapp "ant/internal/application/engine"
 	appjournal "ant/internal/application/journal"
 	"ant/internal/application/platform"
+	dom "ant/internal/domain/ops"
 )
 
 // Config — зависимости live-реализации модуля ops.
@@ -30,6 +31,13 @@ type Config struct {
 	Partitions int
 	// Enabled — включённые внешние системы (integrations.enabled).
 	Enabled []string
+	// Installed — установленные конфигурацией интеграции и заданные режимы
+	// (стенд, реальная система) — экран «Интеграции» (FR-157, AD-47).
+	Installed []dom.Installed
+	// Probe — «проверить соединение» (nil — «у адаптера нет проверки»).
+	Probe Probe
+	// Switch — порт состояния интеграций этой копии: сбрасывается после решения.
+	Switch *IntegrationSwitch
 	// Profile, Version, Mode — профиль конфигурации, версия бинарника, режим ведущих портов.
 	Profile string
 	Version string

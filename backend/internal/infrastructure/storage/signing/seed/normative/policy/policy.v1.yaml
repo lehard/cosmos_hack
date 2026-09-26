@@ -70,7 +70,7 @@ roles:
     case_role: true
     domain: admin
     inherits: [staff]
-    actions: ["access.person.register", "access.account.activate", "access.policy.grant", "access.policy.revoke", "documents.version.request", "documents.document.request", "documents.request.list", "signing.key.register", "signing.key.revoke", "ops.source.disable", "ops.source.enable", "ops.processing.retry", "ingest.message.reprocess", "ingest.import.submit", "erp.posting.resend", "crossitem.binding.assign", "simulation.*.*", "reference.*.define", "ops.*.read", "ingest.*.read", "access.*.read", "journal.*.read", "security.*.read"]
+    actions: ["access.person.register", "access.account.activate", "access.policy.grant", "access.policy.revoke", "documents.version.request", "documents.document.request", "documents.request.list", "signing.key.register", "signing.key.revoke", "ops.source.disable", "ops.source.enable", "ops.integration.set", "ops.integration.check", "ops.processing.retry", "ingest.message.reprocess", "ingest.import.submit", "erp.posting.resend", "crossitem.binding.assign", "simulation.*.*", "reference.*.define", "ops.*.read", "ingest.*.read", "access.*.read", "journal.*.read", "security.*.read"]
   # ── дополнительные роли (PRD §2, AD-15) ──
   - id: performer
     title: "Исполнитель"

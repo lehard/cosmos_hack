@@ -563,6 +563,10 @@ channels:
         $ref: "#/components/messages/ops.source.enabled.v1"
       ops.integration.degraded.v1:
         $ref: "#/components/messages/ops.integration.degraded.v1"
+      ops.integration.state_set.v1:
+        $ref: "#/components/messages/ops.integration.state_set.v1"
+      ops.integration.checked.v1:
+        $ref: "#/components/messages/ops.integration.checked.v1"
   facts:
     address: /api/v1/ingest/events
     title: Приём фактов от источников
@@ -1049,6 +1053,8 @@ operations:
       - $ref: "#/channels/ops/messages/ops.source.disabled.v1"
       - $ref: "#/channels/ops/messages/ops.source.enabled.v1"
       - $ref: "#/channels/ops/messages/ops.integration.degraded.v1"
+      - $ref: "#/channels/ops/messages/ops.integration.state_set.v1"
+      - $ref: "#/channels/ops/messages/ops.integration.checked.v1"
   ingest.facts:
     action: receive
     title: ant принимает факты
@@ -5726,6 +5732,52 @@ components:
                 const: 1
               data:
                 $ref: ./ops/ops.integration.degraded.v1.json
+      x-ant-kind: service
+      x-ant-emitter: ops
+      x-ant-stream: source
+      x-ant-axis: none
+      x-ant-action-class: record
+      x-ant-critical: false
+      x-ant-current: true
+    ops.integration.state_set.v1:
+      name: ops.integration.state_set.v1
+      title: Состояние интеграции задано
+      summary: Состояние интеграции задано — администратор включил, выключил или переключил «стенд ↔ реальная система» установленную конфигурацией внешнюю систему; процессы подхватывают состояние без перезапуска (AD-47, FR-157; единолично — Д-71).
+      contentType: application/json
+      payload:
+        allOf:
+          - $ref: ./common/envelope.v1.json
+          - type: object
+            properties:
+              event_type:
+                const: ops.integration.state_set
+              schema_version:
+                const: 1
+              data:
+                $ref: ./ops/ops.integration.state_set.v1.json
+      x-ant-kind: decision
+      x-ant-emitter: ops
+      x-ant-stream: source
+      x-ant-axis: none
+      x-ant-action-class: permissive
+      x-ant-critical: true
+      x-ant-current: true
+    ops.integration.checked.v1:
+      name: ops.integration.checked.v1
+      title: Соединение с интеграцией проверено
+      summary: "Соединение с внешней системой проверено по кнопке администратора — та же сверка ответной стороны, что при старте адаптера: метаданные, версия контракта (AD-18, AD-47)."
+      contentType: application/json
+      payload:
+        allOf:
+          - $ref: ./common/envelope.v1.json
+          - type: object
+            properties:
+              event_type:
+                const: ops.integration.checked
+              schema_version:
+                const: 1
+              data:
+                $ref: ./ops/ops.integration.checked.v1.json
       x-ant-kind: service
       x-ant-emitter: ops
       x-ant-stream: source

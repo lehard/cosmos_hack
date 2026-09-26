@@ -1988,6 +1988,35 @@ components:
         - basis_seq
         - policy_seq
       type: object
+    CheckIntegration:
+      additionalProperties: false
+      properties:
+        basis_seq:
+          description: "seq, на котором клиент видел объект (basis_seq из ответа чтения): после него в потоках гарда не должно быть новых записей guard_relevant, иначе 409 journal.stale_state (AD-39)."
+          format: int64
+          minimum: 0
+          type: integer
+        command_id:
+          description: UUIDv7 клиента; повтор с тем же id возвращает прежний ответ (AD-7). У подписанной команды — event_id пакета.
+          format: uuid
+          type: string
+        policy_seq:
+          description: Версия политики, по которой показаны права (policy_seq сеанса); изменилась — 409 journal.stale_policy (AD-39).
+          format: int64
+          minimum: 0
+          type: integer
+        signature:
+          $ref: "#/components/schemas/DsseEnvelope"
+          description: "Подписанный пакет DSSE для операций с уровнем подписи ≥ 1 (AD-10, AD-13, AD-14): подписывает агент токена, сервер сверяет отпечаток."
+        workplace_id:
+          description: Рабочее место сеанса (барьер 2, AD-15).
+          maxLength: 128
+          type: string
+      required:
+        - command_id
+        - basis_seq
+        - policy_seq
+      type: object
     CircumstanceRecord:
       additionalProperties: false
       properties:
@@ -6589,6 +6618,181 @@ components:
         next_cursor:
           type: string
       required:
+        - items
+      type: object
+    IntegrationCheck:
+      additionalProperties: false
+      properties:
+        at:
+          format: date-time
+          type: string
+        detail:
+          type: string
+        endpoint:
+          type: string
+        result:
+          enum:
+            - ok
+            - degraded
+            - unreachable
+            - not_supported
+          type: string
+        seq:
+          format: int64
+          type: integer
+      required:
+        - result
+        - at
+        - seq
+      type: object
+    IntegrationDecision:
+      additionalProperties: false
+      properties:
+        actor:
+          description: Кто решил (псевдоним).
+          type: string
+        at:
+          format: date-time
+          type: string
+        previous:
+          enum:
+            - enabled
+            - disabled
+            - stand
+          type: string
+        reason:
+          type: string
+        seq:
+          format: int64
+          type: integer
+        state:
+          enum:
+            - enabled
+            - disabled
+            - stand
+          type: string
+      required:
+        - state
+        - reason
+        - at
+        - seq
+      type: object
+    IntegrationEntry:
+      additionalProperties: false
+      properties:
+        basis_seq:
+          description: basis_seq для следующей команды над интеграцией (AD-39).
+          format: int64
+          minimum: 0
+          type: integer
+        channel:
+          description: Живое состояние канала обмена (сверка ответной стороны, AD-18).
+          enum:
+            - ok
+            - degraded
+            - disabled
+          type: string
+        checked_at:
+          format: date-time
+          type: string
+        default:
+          description: Решений не было — состояние по умолчанию профиля (prod — реальная, demo и fixtures — стенд).
+          type: boolean
+        detail:
+          type: string
+        endpoint:
+          description: Адрес ответной стороны без секретов.
+          type: string
+        installed:
+          description: Установлена конфигурацией (integrations.enabled); нет — «не установлена», кнопок нет.
+          type: boolean
+        last_check:
+          $ref: "#/components/schemas/IntegrationCheck"
+          description: Последняя проверка соединения.
+        last_decision:
+          $ref: "#/components/schemas/IntegrationDecision"
+          description: Последнее решение администратора.
+        last_error:
+          $ref: "#/components/schemas/IntegrationError"
+          description: Последний сбой канала.
+        last_exchange_at:
+          description: Последний обмен с системой.
+          format: date-time
+          type: string
+        quarantined:
+          description: Исходящих в карантине — ждут ручной переотправки (FR-96).
+          format: int64
+          minimum: 0
+          type: integer
+        queued:
+          description: Исходящих в очереди (у выключенной копятся до включения).
+          format: int64
+          minimum: 0
+          type: integer
+        real_available:
+          description: "Можно переключить на реальную систему: её адрес задан конфигурацией."
+          type: boolean
+        stand_available:
+          description: "Можно переключить на стенд: стенд задан конфигурацией и профиль не prod."
+          type: boolean
+        state:
+          description: enabled — включена (реальная система), disabled — выключена, stand — стенд (эмулятор).
+          enum:
+            - enabled
+            - disabled
+            - stand
+          type: string
+        system:
+          description: Внешняя система.
+          enum:
+            - onec
+            - galaktika
+            - mes
+            - kompas
+            - skud
+            - ca
+            - visionqc
+            - operatorvision
+            - partner
+          type: string
+      required:
+        - system
+        - installed
+        - state
+        - default
+        - stand_available
+        - real_available
+        - basis_seq
+      type: object
+    IntegrationError:
+      additionalProperties: false
+      properties:
+        at:
+          format: date-time
+          type: string
+        detail:
+          type: string
+      required:
+        - at
+        - detail
+      type: object
+    IntegrationList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: "#/components/schemas/IntegrationEntry"
+          type: array
+        profile:
+          description: В prod стенд запрещён.
+          enum:
+            - fixtures
+            - demo
+            - load
+            - prod
+          type: string
+      required:
+        - profile
         - items
       type: object
     IntegrationState:
@@ -14469,6 +14673,46 @@ components:
           type: string
       required:
         - disposition
+        - reason
+        - command_id
+        - basis_seq
+        - policy_seq
+      type: object
+    SetIntegrationState:
+      additionalProperties: false
+      properties:
+        basis_seq:
+          description: "seq, на котором клиент видел объект (basis_seq из ответа чтения): после него в потоках гарда не должно быть новых записей guard_relevant, иначе 409 journal.stale_state (AD-39)."
+          format: int64
+          minimum: 0
+          type: integer
+        command_id:
+          description: UUIDv7 клиента; повтор с тем же id возвращает прежний ответ (AD-7). У подписанной команды — event_id пакета.
+          format: uuid
+          type: string
+        policy_seq:
+          description: Версия политики, по которой показаны права (policy_seq сеанса); изменилась — 409 journal.stale_policy (AD-39).
+          format: int64
+          minimum: 0
+          type: integer
+        reason:
+          $ref: "#/components/schemas/OpsReason"
+        signature:
+          $ref: "#/components/schemas/DsseEnvelope"
+          description: "Подписанный пакет DSSE для операций с уровнем подписи ≥ 1 (AD-10, AD-13, AD-14): подписывает агент токена, сервер сверяет отпечаток."
+        state:
+          description: enabled — включить реальную систему; disabled — выключить; stand — переключить на стенд (в prod — отказ ops.stand_forbidden).
+          enum:
+            - enabled
+            - disabled
+            - stand
+          type: string
+        workplace_id:
+          description: Рабочее место сеанса (барьер 2, AD-15).
+          maxLength: 128
+          type: string
+      required:
+        - state
         - reason
         - command_id
         - basis_seq
@@ -24761,6 +25005,135 @@ paths:
         critical: false
         id: ops.health.read
         owner: ops
+        subject: integrity
+  /api/v1/ops/integrations:
+    get:
+      description: "FR-157, AD-47: внешние системы — установлена ли конфигурацией, включена / выключена / стенд, живой канал, последний обмен, ошибки, очередь и карантин исходящих, последняя проверка соединения."
+      operationId: ops.integration.list
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IntegrationList"
+          description: OK
+          headers:
+            Ant-Backend:
+              schema:
+                $ref: "#/components/schemas/BackendMode"
+                description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Error
+      summary: Интеграции
+      tags:
+        - ops
+      x-ant-action:
+        class: read
+        critical: false
+        id: ops.integration.list
+        owner: ops
+        subject: integrity
+  /api/v1/ops/integrations/{system}/check:
+    post:
+      description: "AD-18, AD-47: сверка ответной стороны, как при старте адаптера; итог — служебная запись ops.integration.checked."
+      operationId: ops.integration.check
+      parameters:
+        - description: Внешняя система.
+          in: path
+          name: system
+          required: true
+          schema:
+            description: Внешняя система.
+            maxLength: 64
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CheckIntegration"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Receipt"
+          description: OK
+          headers:
+            Ant-Backend:
+              schema:
+                $ref: "#/components/schemas/BackendMode"
+                description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Error
+      summary: Проверить соединение
+      tags:
+        - ops
+      x-ant-action:
+        class: record
+        critical: false
+        emits:
+          - ops.integration.checked
+        id: ops.integration.check
+        owner: ops
+        subject: integrity
+  /api/v1/ops/integrations/{system}/state:
+    post:
+      description: "FR-157, AD-47: критическое действие администратора, единолично (Д-71) — запись ops.integration.state_set; процессы подхватывают без перезапуска; выключенная — исходящие копятся в очереди, входящие отвергаются приёмом. В prod стенд — отказ ops.stand_forbidden."
+      operationId: ops.integration.set
+      parameters:
+        - description: "Внешняя система: onec, galaktika, mes, kompas, skud, ca, visionqc, operatorvision, partner."
+          in: path
+          name: system
+          required: true
+          schema:
+            description: "Внешняя система: onec, galaktika, mes, kompas, skud, ca, visionqc, operatorvision, partner."
+            maxLength: 64
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetIntegrationState"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Receipt"
+          description: OK
+          headers:
+            Ant-Backend:
+              schema:
+                $ref: "#/components/schemas/BackendMode"
+                description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Error
+      summary: Включить, выключить, стенд ↔ реальная
+      tags:
+        - ops
+      x-ant-action:
+        ca_group: admin_security
+        class: permissive
+        critical: true
+        emits:
+          - ops.integration.state_set
+        id: ops.integration.set
+        owner: ops
+        signature_level: 2
         subject: integrity
   /api/v1/ops/settings:
     get:

@@ -69,6 +69,8 @@ func ingestLive(ctx context.Context, env *environment) (*ingestapp.Service, erro
 			Telemetry:   env.telemetry(),
 			// Шина безопасности модуля security (эпик 29) вместо моста эпика 06.
 			Security: securityapp.IngestBus{Enc: securityEncoder(cfg)},
+			// Эпик 48: выключенные источники и интеграции отвергаются (AD-28, AD-47).
+			Gate: integrationSwitch(env, c),
 		}),
 	), nil
 }
