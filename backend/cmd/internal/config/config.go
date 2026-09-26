@@ -125,9 +125,15 @@ type Config struct {
 
 	// ERP — каналы обмена с учётными системами (эпики 30, 31; AD-18:
 	// включённые системы и адреса — конфигурация). Порт учёта обслуживает одну
-	// учётную систему на экземпляр: "galaktika" в integrations.enabled — канал
-	// Галактики, иначе "onec" — канал 1С (docs/new-adapter.md, §5).
+	// учётную систему на экземпляр: Ledger, если она в integrations.enabled;
+	// иначе "galaktika" в integrations.enabled — канал Галактики, иначе "onec"
+	// — канал 1С (docs/new-adapter.md, §5).
 	ERP struct {
+		// Ledger — какая из установленных учётных систем обслуживает порт учёта
+		// (onec | galaktika; пусто — правило выше). Эпик 43: в demo установлены
+		// обе, учётный обмен переключается на Галактику ANT_ERP_LEDGER=galaktika
+		// с перезапуском ролей outbox и projector.
+		Ledger    string    `yaml:"ledger"`
 		OneC      OneC      `yaml:"onec"`
 		Galaktika Galaktika `yaml:"galaktika"`
 	} `yaml:"erp"`
@@ -199,7 +205,8 @@ type Galaktika struct {
 	Transport string `yaml:"transport"`
 	// Dir — корень каталога обмена (out/ ack/ in/ in-ack/ about.xml).
 	Dir string `yaml:"dir"`
-	// BaseURL — адрес REST-фасада (`http(s)://‹хост›/galaktika/esb/v1`).
+	// BaseURL — адрес REST-фасада (`http(s)://‹хост›/galaktika/esb/v1`);
+	// пусто со stand: true — фасад stand-а Галактики роли stands этого хоста.
 	BaseURL string `yaml:"base_url"`
 	// Node — наш узел обмена; Peer — узел Галактики (пусто — из about).
 	Node string `yaml:"node"`
@@ -227,7 +234,8 @@ type Galaktika struct {
 // B2MML — канал MES по подмножеству B2MML-JSON (эпик 31, mes.isa95.v1):
 // HTTP-привязка, учётные данные файлом, повторы и опросы роли outbox.
 type B2MML struct {
-	// BaseURL — адрес HTTP-привязки (`http(s)://‹хост›/b2mml`); пусто — канал не собирается.
+	// BaseURL — адрес HTTP-привязки (`http(s)://‹хост›/b2mml`); пусто со
+	// stand: true — stand MES роли stands этого хоста (эпик 43), иначе канал не собирается.
 	BaseURL string `yaml:"base_url"`
 	// LogicalID — наш логический ID отправителя (пусто — ant).
 	LogicalID string `yaml:"logical_id"`
@@ -361,6 +369,11 @@ func (c *Config) Validate() error {
 	}
 	if c.Engine.LeaseTTL < 0 {
 		errs = append(errs, errors.New("engine.lease_ttl должно быть ≥ 0 (0 — 10 с)"))
+	}
+	switch c.ERP.Ledger {
+	case "", "onec", "galaktika":
+	default:
+		errs = append(errs, fmt.Errorf("erp.ledger = %q, допустимы onec | galaktika", c.ERP.Ledger))
 	}
 	switch c.Log.Level {
 	case "debug", "info", "warn", "error":

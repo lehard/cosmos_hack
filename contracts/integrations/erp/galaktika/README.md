@@ -51,4 +51,4 @@
 
 **Контрактные тесты:** `go test ./internal/infrastructure/integration/erp/...` — эталоны по схемам и XSD,
 сигнал порта → эталонные пакеты, общий контрактный тест порта учёта `application/erp/ledgertest` на обоих
-транспортах Галактики и на stand-е 1С. Stand Галактики — эпик 43.
+транспортах Галактики, на stand-е 1С и на stand-е Галактики (эпик 43, `…/erp/galaktika/stand`).

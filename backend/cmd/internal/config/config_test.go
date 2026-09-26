@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"testing"
 	"time"
 )
@@ -89,5 +90,32 @@ func TestEnvNames(t *testing.T) {
 		if !found {
 			t.Errorf("нет %s в %v", want, names)
 		}
+	}
+}
+
+// Эпик 43: в demo Галактика и MES установлены stand-ами, учётный обмен ведёт
+// 1С; профиль накладывается на defaults, не стирая соседние ключи;
+// ANT_ERP_LEDGER переключает учётный обмен на Галактику.
+func TestDemoStandsGalaktikaMES(t *testing.T) {
+	path := repoConfig(t)
+	cfg, err := Load(path, env(map[string]string{"ANT_PROFILE": "demo"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, s := range []string{"onec", "galaktika", "mes"} {
+		if !slices.Contains(cfg.Integrations.Enabled, s) {
+			t.Errorf("demo: %s не установлена: %v", s, cfg.Integrations.Enabled)
+		}
+	}
+	g := cfg.ERP.Galaktika
+	if cfg.ERP.Ledger != "onec" || !g.Stand || g.Dir != "/var/lib/ant/exchange/galaktika" || g.Transport != "exchange-dir" || !cfg.MES.B2MML.Stand || cfg.MES.B2MML.RetryMax == 0 {
+		t.Errorf("demo: erp %+v, mes %+v", cfg.ERP, cfg.MES)
+	}
+	cfg, err = Load(path, env(map[string]string{"ANT_PROFILE": "demo", "ANT_ERP_LEDGER": "galaktika"}))
+	if err != nil || cfg.ERP.Ledger != "galaktika" {
+		t.Fatalf("ANT_ERP_LEDGER: %+v %v", cfg.ERP.Ledger, err)
+	}
+	if _, err := Load(path, env(map[string]string{"ANT_ERP_LEDGER": "sap"})); err == nil {
+		t.Error("erp.ledger = sap должна отвергаться")
 	}
 }

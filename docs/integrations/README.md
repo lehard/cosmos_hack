@@ -5,8 +5,8 @@
 | Система | Документ | Что в MVP |
 |---|---|---|
 | 1С:ERP 2.5 / ERP УХ | [1c.md](1c.md) | живой двусторонний обмен со stand-ом 1С (эмулятор кейса) |
-| Галактика ERP | [galaktika.md](galaktika.md) | адаптер в коде, контракт, эталонные сообщения, контрактные тесты; stand — в очереди работ |
-| MES (нейтральный контракт ISA-95 / B2MML) | [mes.md](mes.md) | адаптер в коде, контракт, эталонные сообщения, контрактные тесты; stand — в очереди работ |
+| Галактика ERP | [galaktika.md](galaktika.md) | адаптер в коде, контракт, эталонные сообщения, контрактные тесты; stand в роли `stands` (эпик 43), в `demo` установлен |
+| MES (нейтральный контракт ISA-95 / B2MML) | [mes.md](mes.md) | адаптер в коде, контракт, эталонные сообщения, контрактные тесты; stand в роли `stands` (эпик 43), в `demo` установлен |
 | КОМПАС-3D | [kompas.md](kompas.md) | импорт файла условной сборки; прямое подключение — описание |
 | СКУД | [skud.md](skud.md) | живой опрос журнала проходов stand-а СКУД; присутствие на постах, допуск к рабочему месту |
 
@@ -170,8 +170,8 @@ sequenceDiagram
 | Порт учёта и сценарии модуля `erp` | `backend/internal/application/erp/` |
 | Доменные правила «какое учётное действие на какой закрывающей точке» | `backend/internal/domain/erp/` |
 | Клиент и stand 1С | `backend/internal/infrastructure/integration/erp/1c/`, `…/erp/1c/stand/` |
-| Клиент Галактики (stand — в очереди) | `backend/internal/infrastructure/integration/erp/galaktika/` |
-| Клиент MES (stand — в очереди) | `backend/internal/infrastructure/integration/mes/b2mml/` |
+| Клиент и stand Галактики | `backend/internal/infrastructure/integration/erp/galaktika/`, `…/galaktika/stand/` |
+| Клиент и stand MES | `backend/internal/infrastructure/integration/mes/b2mml/`, `…/b2mml/stand/` |
 | Импорт файла сборки КОМПАС | `backend/internal/infrastructure/integration/cad/kompas/` |
 | Схемы, манифест метаданных 1С, эталонные сообщения | `contracts/integrations/erp/1c/`, `contracts/integrations/erp/galaktika/`, `contracts/integrations/mes/`, `contracts/integrations/cad/assembly.schema.json` |
 | Типы событий `erp.*`, `mes.*`, `cad.*`, `reference.*` | `contracts/events/catalog.yaml`, `contracts/events/‹семейство›/` |

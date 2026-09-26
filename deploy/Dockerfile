@@ -43,7 +43,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build,id=ant-gobuild \
 # Каталоги томов (materials.dir; хранитель, верификатор, сертификат mTLS ant,
 # KEK, экспорт шины безопасности — эпик 29): именованный том при первом
 # подключении наследует владельца — пользователя исполнения 65532.
-RUN mkdir -p /out/var/lib/ant/materials /out/var/lib/keeper /out/var/lib/verifier /out/var/lib/ant-pki \
+RUN mkdir -p /out/var/lib/ant/materials /out/var/lib/ant/exchange/galaktika /out/var/lib/keeper /out/var/lib/verifier /out/var/lib/ant-pki \
     /out/var/lib/ant-kek /out/var/lib/ant-export /out/var/lib/ant-tamper
 
 # ------------------------------------------------------------ исполнение --

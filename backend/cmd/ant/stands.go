@@ -5,13 +5,17 @@ import (
 	"errors"
 	"net"
 	"net/http"
+	"slices"
 	"strings"
 	"time"
 
+	"ant/internal/infrastructure/integration/erp/galaktika"
+	galstand "ant/internal/infrastructure/integration/erp/galaktika/stand"
 	onecstand "ant/internal/infrastructure/integration/erp/onec/stand"
 	"ant/internal/infrastructure/integration/ingest/stands"
 	cncstand "ant/internal/infrastructure/integration/machinelogs/cnc/stand"
 	weldstand "ant/internal/infrastructure/integration/machinelogs/welder/stand"
+	messtand "ant/internal/infrastructure/integration/mes/b2mml/stand"
 	ovstand "ant/internal/infrastructure/integration/vision/operatorvision/stand"
 	vqcstand "ant/internal/infrastructure/integration/vision/visionqc/stand"
 )
@@ -33,7 +37,7 @@ func init() {
 //	stands.edge_url (ANT_STANDS_EDGE_URL) — локальный вход edge-агента для телеметрии (пусто — stand оборудования выключен);
 //	stands.interval (ANT_STANDS_INTERVAL) — период телеметрии (по умолчанию 5s).
 //
-// Stand-ы Галактики, MES и VisionQC (эпики 31–33, 43) добавляются в реестр здесь.
+// Stand-ы Галактики и MES (эпик 43) и VisionQC (эпик 33) добавляются в реестр здесь.
 //
 // Реестр — один на процесс (standsRegistry): его служебный порт сбоев
 // (StandControl) нужен и симуляции, которую собирает роль api.
@@ -63,6 +67,21 @@ func runStands(ctx context.Context, env *environment) error {
 			return err
 		}
 		reg.Add(ss)
+	}
+	// Эпик 43 (FR-92, FR-93): stand-ы Галактики и MES — если система
+	// установлена (integrations.enabled) на месте stand-а (stand: true).
+	// Галактика: каталог обмена erp.galaktika.dir (том compose) и REST-фасад
+	// /stand/galaktika/esb/v1/, страница /stand/galaktika/; MES: привязка
+	// B2MML /stand/mes/b2mml/, страница /stand/mes/.
+	if g := env.cfg.ERP.Galaktika; slices.Contains(env.cfg.Integrations.Enabled, galstand.Name) && g.Stand {
+		dir := ""
+		if g.Transport == "" || g.Transport == galaktika.TransportDir {
+			dir = g.Dir
+		}
+		reg.Add(galstand.New(galstand.Options{Dir: dir, Log: env.log.With("stand", galstand.Name)}))
+	}
+	if mesEnabled(env) && env.cfg.MES.B2MML.Stand {
+		reg.Add(messtand.New(messtand.Options{}))
 	}
 	if edge := strings.TrimSpace(sc.EdgeURL); edge != "" {
 		iv := sc.Interval
@@ -121,4 +140,18 @@ func onecStand(ctx context.Context, env *environment) (*onecstand.Stand, error) 
 		env.log.Warn("stand 1С: БД недоступна — состояние в памяти", "err", err)
 	}
 	return onecstand.New(opt)
+}
+
+// standURL — адрес протокола stand-а роли stands этого хоста
+// (http://127.0.0.1‹stands.addr›/stand/‹path›): адаптер со stand: true и без
+// своего адреса обращается к stand-у своего экземпляра (эпик 43).
+func standURL(env *environment, path string) string {
+	addr := env.cfg.Stands.Addr
+	if addr == "" {
+		addr = ":8491"
+	}
+	if strings.HasPrefix(addr, ":") {
+		addr = "127.0.0.1" + addr
+	}
+	return "http://" + addr + "/stand/" + path
 }
