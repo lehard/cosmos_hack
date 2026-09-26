@@ -82,3 +82,23 @@ func isCode(err error, code errcodes.Code) bool {
 	var e *platform.Error
 	return errors.As(err, &e) && e.Code == code
 }
+
+// TestAdmissionInSession — допуск к посту ставит пост и смену в сеанс, снятие — убирает.
+func TestAdmissionInSession(t *testing.T) {
+	setup(t)
+	a := New()
+	ctx := platform.WithPrincipal(context.Background(), platform.Principal{PersonID: "INS-01", Role: "quality_inspector"})
+	if _, err := a.AdmitWorkplace(ctx, "WP-QC-WC", app.AdmitWorkplace{CommandHeader: platform.CommandHeader{CommandID: "c-admit"}}); err != nil {
+		t.Fatal(err)
+	}
+	s, err := a.Session(ctx)
+	if err != nil || s.Workplace == nil || s.Workplace.ID != "WP-QC-WC" || s.Shift == nil || s.Shift.ID == "" {
+		t.Fatalf("сеанс после допуска: %+v %v", s, err)
+	}
+	if _, err := a.ReleaseWorkplace(ctx, "WP-QC-WC", app.ReleaseWorkplace{CommandHeader: platform.CommandHeader{CommandID: "c-release"}}); err != nil {
+		t.Fatal(err)
+	}
+	if s, _ := a.Session(ctx); s.Workplace != nil {
+		t.Fatalf("пост остался после снятия допуска: %+v", s.Workplace)
+	}
+}

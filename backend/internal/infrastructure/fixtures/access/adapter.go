@@ -30,13 +30,65 @@ func (Adapter) Personas(ctx context.Context) (app.DemoPersonaList, error) {
 	return respond[app.DemoPersonaList](ctx, "access.persona.list", nil, nil)
 }
 
-// Session — сеанс субъекта запроса (access.session.read): персона мира заготовок.
+// Session — сеанс субъекта запроса (access.session.read): персона мира
+// заготовок — пост и смена по назначениям мира; поверх — допуск и снятие
+// допуска этой сессии (access.workplace.admit / release, эпик 37).
 func (Adapter) Session(ctx context.Context) (app.Session, error) {
 	p := platform.PrincipalFrom(ctx)
 	if p.Anonymous() {
 		return app.Session{}, platform.Fail(errcodes.AccessUnauthenticated)
 	}
-	return respond[app.Session](ctx, "access.session.read", map[string]string{"persona": p.PersonID}, nil)
+	s, err := respond[app.Session](ctx, "access.session.read", map[string]string{"persona": p.PersonID}, nil)
+	if err != nil {
+		return s, err
+	}
+	return withAdmission(ctx, s), nil
+}
+
+// withAdmission — пост сеанса по допускам сессии: последний допуск персоны
+// ставит пост (название — из панели «Посты» мира, смена — из команды или
+// назначения мира), снятие допуска с этого поста — убирает.
+func withAdmission(ctx context.Context, s app.Session) app.Session {
+	rt, err := runtime()
+	if err != nil {
+		return s
+	}
+	for _, f := range rt.Facts(ctx, nil, "workplace") {
+		if f.Actor != s.User.ID {
+			continue
+		}
+		switch b := f.Body.(type) {
+		case app.AdmitWorkplace:
+			s.Workplace = &app.SessionWorkplace{ID: f.ID, Title: postTitle(ctx, f.ID)}
+			if b.ShiftID != "" && (s.Shift == nil || s.Shift.ID != b.ShiftID) {
+				s.Shift = &app.SessionShift{ID: b.ShiftID, Title: shiftTitle[b.ShiftID]}
+			}
+			if s.Shift == nil {
+				s.Shift = &app.SessionShift{ID: "SHIFT-1", Title: shiftTitle["SHIFT-1"]}
+			}
+		case app.ReleaseWorkplace:
+			if s.Workplace != nil && s.Workplace.ID == f.ID {
+				s.Workplace = nil
+			}
+		}
+	}
+	return s
+}
+
+// shiftTitle — смены графика мира заготовок (normative/reference/shifts).
+var shiftTitle = map[string]string{"SHIFT-1": "Первая смена 08:00–16:30", "SHIFT-2": "Вторая смена 16:30–01:00"}
+
+// postTitle — название поста из панели «Посты» мира; нет — id.
+func postTitle(ctx context.Context, id string) string {
+	l, err := respond[app.PostList](ctx, "access.workplace.list", nil, nil)
+	if err == nil {
+		for _, r := range l.Items {
+			if r.WorkplaceID == id && r.Station != "" {
+				return r.Station
+			}
+		}
+	}
+	return id
 }
 
 // Desks — стол активной роли субъекта (access.desk.read, AD-21).
@@ -103,14 +155,24 @@ func (Adapter) OpenSession(ctx context.Context, rq app.SessionCreate) (app.Sessi
 func (Adapter) CloseSession(context.Context, string) error { return nil }
 
 // AdmitWorkplace — допуск к рабочему месту (access.workplace.admit, эпик 37):
-// на заготовках — квитанция шага курсора; присутствие поста — у мира заготовок.
+// на заготовках — квитанция и факт сессии: пост и смена появляются в сеансе
+// сотрудника (withAdmission) до сброса прогона.
 func (Adapter) AdmitWorkplace(ctx context.Context, workplaceID string, in app.AdmitWorkplace) (platform.Receipt, error) {
-	return decide(ctx, "access.workplace.admit", "workplace", workplaceID, in.CommandMeta())
+	return record(ctx, "access.workplace.admit", workplaceID, in.CommandMeta(), in)
 }
 
-// ReleaseWorkplace — снять допуск (access.workplace.release, эпик 37).
+// ReleaseWorkplace — снять допуск (access.workplace.release, эпик 37): пост уходит из сеанса.
 func (Adapter) ReleaseWorkplace(ctx context.Context, workplaceID string, in app.ReleaseWorkplace) (platform.Receipt, error) {
-	return decide(ctx, "access.workplace.release", "workplace", workplaceID, in.CommandMeta())
+	return record(ctx, "access.workplace.release", workplaceID, in.CommandMeta(), in)
+}
+
+// record — команда над постом: квитанция и факт сессии.
+func record(ctx context.Context, op, workplaceID string, meta platform.CommandMeta, body any) (platform.Receipt, error) {
+	rt, err := runtime()
+	if err != nil {
+		return platform.Receipt{}, err
+	}
+	return rt.Record(ctx, op, loader.ObjectRef{Kind: "workplace", ID: workplaceID}, meta, body)
 }
 
 // GrantQualification — выдать квалификацию (access.qualification.grant, эпик 37).

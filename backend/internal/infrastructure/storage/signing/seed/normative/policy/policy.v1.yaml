@@ -26,6 +26,9 @@ scopes:
 # подлинность такого сообщения даёт подпись пакета (AD-10) и реестр источников, а не сеанс.
 unauthenticated_role: device_source
 
+# Исполнителю — карточка своего поста (access.workplace.read в области его назначения): терминал (FR-137).
+# Загрузка скана бумажной подписи (materials.material.upload) — тем, кто заверяет бумагу (documents.paper.attest):
+# мастер (и начальник цеха по наследованию), начальник ОТК; источник без сеанса — по-прежнему device_source.
 # Окна «Пост» и «Сотрудник» раздела «Посты» (UI-16): карточки access.workplace.read, access.workplace.history,
 # access.person.card — руководителю производства, мастеру (и начальнику цеха по наследованию), начальнику ОТК;
 # администратору и Аудитору ИБ — через access.*.read. Учётные записи (access.person.read) и весь журнал им не нужны.
@@ -54,7 +57,7 @@ roles:
     title: "Мастер участка"
     case_role: true
     inherits: [staff]
-    actions: ["process.movement.send", "process.movement.receive", "item.presentation.record", "item.carrier.apply", "item.carrier.remove", "item.intervention.open", "access.assignment.set", "access.assignment.clear", "access.assignment.list", "notifications.task.acknowledge", "nonconformity.process_hold.set", "reference.shift.schedule", "ingest.event.submit", "documents.document.sign", "documents.signature.*", "documents.version.request", "documents.paper.print", "documents.document.request", "documents.paper.attest", "item.*.read", "process.*.read", "quality.*.read", "analysis.suggestion.resolve", "access.workplace.read", "access.workplace.history", "access.person.card"]
+    actions: ["process.movement.send", "process.movement.receive", "item.presentation.record", "item.carrier.apply", "item.carrier.remove", "item.intervention.open", "access.assignment.set", "access.assignment.clear", "access.assignment.list", "notifications.task.acknowledge", "nonconformity.process_hold.set", "reference.shift.schedule", "ingest.event.submit", "documents.document.sign", "documents.signature.*", "documents.version.request", "documents.paper.print", "documents.document.request", "documents.paper.attest", "item.*.read", "process.*.read", "quality.*.read", "analysis.suggestion.resolve", "access.workplace.read", "access.workplace.history", "access.person.card", "materials.material.upload"]
   - id: technologist
     title: "Технолог"
     case_role: true
@@ -75,7 +78,7 @@ roles:
   - id: performer
     title: "Исполнитель"
     inherits: [staff]
-    actions: ["process.operation.start", "process.operation.pause", "process.operation.resume", "process.operation.finish", "access.operator.confirm_step", "access.operator.report_deviation", "access.operator.request_inspection", "process.movement.receive", "notifications.task.acknowledge", "item.assembly.record", "item.intervention.open", "ingest.event.submit", "access.workplace.admit", "access.workplace.release"]
+    actions: ["process.operation.start", "process.operation.pause", "process.operation.resume", "process.operation.finish", "access.operator.confirm_step", "access.operator.report_deviation", "access.operator.request_inspection", "process.movement.receive", "notifications.task.acknowledge", "item.assembly.record", "item.intervention.open", "ingest.event.submit", "access.workplace.admit", "access.workplace.release", "access.workplace.read"]
   - id: storekeeper
     title: "Кладовщик"
     inherits: [performer]
@@ -100,7 +103,7 @@ roles:
     inherits: [staff]
     actions: ["security.*.read", "access.*.read", "journal.*.read", "access.audit.set_parameters", "signing.key.register", "signing.profile.register", "documents.request.list", "documents.decision_card.read", "documents.document.sign", "documents.signature.*"]
   # ── руководящие подписанты — наследники базовых ролей ──
-  - {id: head_of_qc,       title: "Начальник ОТК",           inherits: [quality_inspector], actions: ["vision.passport.reinstate", "vision.passport.admit", "vision.passport.retire", "nonconformity.containment.release", "nonconformity.concession.revoke", "access.assignment.set", "analysis.action.assign", "signing.key.register", "documents.paper.attest", "analysis.suggestion.resolve", "access.workplace.read", "access.workplace.history", "access.person.card"]}
+  - {id: head_of_qc,       title: "Начальник ОТК",           inherits: [quality_inspector], actions: ["vision.passport.reinstate", "vision.passport.admit", "vision.passport.retire", "nonconformity.containment.release", "nonconformity.concession.revoke", "access.assignment.set", "analysis.action.assign", "signing.key.register", "documents.paper.attest", "analysis.suggestion.resolve", "access.workplace.read", "access.workplace.history", "access.person.card", "materials.material.upload"]}
   - {id: head_of_workshop, title: "Начальник цеха",          inherits: [site_foreman],      actions: ["nonconformity.containment.release"]}
   - {id: chief_welder,     title: "Главный сварщик",         inherits: [technologist],      actions: []}
   - {id: metrologist,      title: "Метролог",                inherits: [approver, staff],   actions: ["reference.equipment.verify"]}

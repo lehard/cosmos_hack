@@ -200,6 +200,14 @@ func (s *Service) sessionOf(ctx context.Context, p platform.Principal) Session {
 		PolicySeq: p.PolicySeq,
 		Demo:      p.Demo,
 	}
+	// Режим заготовок (присутствия по СКУД нет): пост и смена сеанса — по
+	// назначениям мира заготовок (сеанс демо-персоны запасной реализации), чтобы
+	// терминал исполнителя и столы работали с «своим» постом (FR-137).
+	if s.presence == nil {
+		if fx, err := s.Queries.Session(platform.WithPrincipal(ctx, p)); err == nil && fx.User.ID == p.PersonID {
+			out.Workplace, out.Shift = fx.Workplace, fx.Shift
+		}
+	}
 	// Эпик 37: рабочее место сеанса — открытый допуск сотрудника (барьер 2).
 	if pr, ok, err := s.presenceNow(ctx); err == nil && ok {
 		if ss, ok := pr.SessionOf(p.PersonID); ok {
