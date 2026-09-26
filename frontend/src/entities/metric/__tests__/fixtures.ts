@@ -94,6 +94,8 @@ export const drilldown = (): MetricDrilldown => ({
 export const chart = (): ControlChart => ({
   step_key: 'welding.weld',
   metric_id: 'current_a',
+  title: 'Ток сварки',
+  chart_kind: 'xmr',
   center: { value: 160, scale: 0, unit: 'A' },
   upper: { value: 170, scale: 0, unit: 'A' },
   lower: { value: 150, scale: 0, unit: 'A' },

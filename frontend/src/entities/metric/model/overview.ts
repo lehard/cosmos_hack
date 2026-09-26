@@ -42,8 +42,11 @@ export interface OverviewModel {
   other: MetricRow[]
 }
 
-const isOperationsMetric = (id: string) => /rework|unfinished|repeat|representation/.test(id)
-const isItemsMetric = (id: string) => /items/.test(id)
+/** Операции (повторные, незавершённые): по полю `counts`, для старых ответов — по id. */
+const isOperationsMetric = (row: MetricRow) =>
+  row.counts ? row.counts === 'operations' || row.counts === 'presentations' : /rework|unfinished|repeat|representation/.test(row.metric_id)
+/** Изделия с дефектами (а не дефекты): по полю `counts`, для старых ответов — по id. */
+const isItemsMetric = (row: MetricRow) => (row.counts ? row.counts === 'items' : /items/.test(row.metric_id))
 
 /**
  * Разложить строки показателей по разделам.
@@ -73,8 +76,8 @@ export function toOverviewModel(rows: readonly MetricRow[]): OverviewModel {
         m.inspection.push(row)
         break
       case 'defects':
-        if (isOperationsMetric(row.metric_id)) m.operations.push(row)
-        else if (isItemsMetric(row.metric_id)) m.items.push(row)
+        if (isOperationsMetric(row)) m.operations.push(row)
+        else if (isItemsMetric(row)) m.items.push(row)
         else m.defects.push(row)
         break
       case 'causes':

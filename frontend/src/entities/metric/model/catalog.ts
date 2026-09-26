@@ -48,15 +48,23 @@ export type Account = 'incoming' | 'equipment' | 'people' | 'hypotheses'
 /** Порядок граф раздельного учёта на экране. */
 export const ACCOUNTS: readonly Account[] = ['incoming', 'equipment', 'people', 'hypotheses']
 
+/** Графа контракта (`MetricRow.account`, эпик 25) → графа экрана. */
+const ACCOUNT_OF_CONTRACT: Record<NonNullable<MetricRow['account']>, Account> = {
+  incoming: 'incoming',
+  equipment: 'equipment',
+  performer: 'people',
+  hypotheses: 'hypotheses',
+}
+
 /**
  * Графа раздельного учёта строки показателя или null — строка не из раздельного
- * учёта. Оборудование и исполнители — по разделу контракта (`group`); входной
- * брак — по происхождению (срез `origin=incoming` или id показателя); гипотезы —
- * по id показателя. Отдельных разделов «входной брак» и «гипотезы» в контракте
- * v1 нет — см. отчёт эпика 15 (предложение расширить `MetricRow.group`).
+ * учёта. Сервер указывает графу полем `account` (FR-87); если его нет (старый
+ * ответ) — по разделу `group`, происхождению среза и id показателя.
  */
-export function accountOf(row: Pick<MetricRow, 'metric_id' | 'group' | 'slices'>): Account | null {
-  if (/incoming/.test(row.metric_id) || row.slices.some((s) => s.dimension === 'origin' && s.key === 'incoming')) return 'incoming'
+export function accountOf(row: Pick<MetricRow, 'metric_id' | 'group' | 'slices' | 'account'>): Account | null {
+  if (row.account) return ACCOUNT_OF_CONTRACT[row.account] ?? null
+  if ('account' in row) return null
+  if (/incoming/.test(row.metric_id) || row.slices.some((s) => s.dimension === 'origin' && (s.key === 'incoming' || s.key === 'origin:incoming'))) return 'incoming'
   if (/hypothes/.test(row.metric_id)) return 'hypotheses'
   if (row.group === 'equipment') return 'equipment'
   if (row.group === 'people') return 'people'
@@ -80,4 +88,5 @@ export const DIMENSION_TEXT: Record<MetricSliceDimension, string> = {
   shift: 'analytics.slices.shift',
   defect_type: 'analytics.slices.defectType',
   origin: 'widgets.analytics.dimensions.origin',
+  cause_category: 'widgets.analytics.dimensions.causeCategory',
 }

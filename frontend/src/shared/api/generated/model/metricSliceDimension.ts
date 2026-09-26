@@ -14,4 +14,5 @@ export const MetricSliceDimension = {
   shift: 'shift',
   defect_type: 'defect_type',
   origin: 'origin',
+  cause_category: 'cause_category',
 } as const;

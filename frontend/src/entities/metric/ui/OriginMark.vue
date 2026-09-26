@@ -6,16 +6,20 @@
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { originOf, type MetricValue } from '../model/value'
+import { meaningOf, originOf, type MetricValue } from '../model/value'
 
-const props = defineProps<{ value: Pick<MetricValue, 'origin' | 'unit'> }>()
+const props = defineProps<{ value: Pick<MetricValue, 'origin' | 'unit' | 'meaning' | 'meaning_note'> }>()
 const { t } = useI18n()
 const info = computed(() => originOf(props.value))
+const meaning = computed(() => meaningOf(props.value))
 </script>
 
 <template>
   <span v-if="info" class="origin" :data-origin="info.code" :data-warn="info.warn || undefined" :title="t('widgets.analytics.origin.hint')">
     {{ t(info.key) }}
+  </span>
+  <span v-if="meaning" class="origin meaning" :data-meaning="meaning.code" data-testid="meaning" :title="meaning.note ?? t('widgets.analytics.meaning.hint')">
+    {{ t(meaning.key) }}
   </span>
 </template>
 

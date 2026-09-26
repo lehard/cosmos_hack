@@ -2178,10 +2178,18 @@ components:
     ContributionRow:
       additionalProperties: false
       properties:
+        at:
+          description: Момент, к которому относится вклад (FR-3).
+          format: date-time
+          type: string
         item_id:
+          description: Изделие; для строк вне изделия (простой оборудования) — id объекта из ref.
           type: string
         label:
           type: string
+        ref:
+          $ref: "#/components/schemas/DrillRef"
+          description: Объект строки вне изделия — куда провалиться (FR-7).
         slice_key:
           type: string
         source_event_ids:
@@ -2190,7 +2198,7 @@ components:
             type: string
           type: array
         source_kinds:
-          description: "Происхождение: источник факта (FR-140)."
+          description: "Виды источника исходных записей (FR-140), а не виды записей: manual_entry, machine, sensor, camera, external_system, import — для фактов; manual_entry — решение человека; system — вывод системы."
           items:
             type: string
           type: array
@@ -2209,6 +2217,12 @@ components:
       properties:
         center:
           $ref: "#/components/schemas/MetricValue"
+        chart_kind:
+          description: "Вид карты: p — доля дефектных по подгруппам; xmr — индивидуальные значения и скользящий размах."
+          enum:
+            - p
+            - xmr
+          type: string
         lower:
           $ref: "#/components/schemas/MetricValue"
         metric_id:
@@ -2219,11 +2233,15 @@ components:
           type: array
         step_key:
           type: string
+        title:
+          description: Название показателя карты («Доля результатов контроля с признаком дефекта», «Длительность операции»).
+          type: string
         upper:
           $ref: "#/components/schemas/MetricValue"
       required:
         - step_key
         - metric_id
+        - title
         - center
         - upper
         - lower
@@ -6298,6 +6316,26 @@ components:
     MetricRow:
       additionalProperties: false
       properties:
+        account:
+          description: "Графа раздельного учёта FR-87: входной брак / оборудование / исполнители / гипотезы; нет — показатель вне раздельного учёта."
+          enum:
+            - incoming
+            - equipment
+            - performer
+            - hypotheses
+          type: string
+        counts:
+          description: "Что считается: изделия / физические дефекты / несоответствия / выполнения операций / наблюдения (результаты контроля) / предъявления / гипотезы / время. Для долей — чья это доля."
+          enum:
+            - items
+            - defects
+            - nonconformities
+            - operations
+            - observations
+            - presentations
+            - hypotheses
+            - time
+          type: string
         group:
           description: "Раздел: раздельный учёт кейса §2.4, §5.2."
           enum:
@@ -6341,6 +6379,7 @@ components:
             - shift
             - defect_type
             - origin
+            - cause_category
           type: string
         key:
           type: string
@@ -6395,6 +6434,17 @@ components:
     MetricValue:
       additionalProperties: false
       properties:
+        meaning:
+          description: "Для длительностей: смысл интервала — активная обработка / полное время на участке / иной интервал (пояснение — meaning_note)."
+          enum:
+            - active_processing
+            - time_at_station
+            - other
+          type: string
+        meaning_note:
+          description: "Пояснение смысла интервала: от чего до чего считается время."
+          maxLength: 500
+          type: string
         origin:
           description: "Для длительностей: передано источником / вычислено системой."
           enum:
