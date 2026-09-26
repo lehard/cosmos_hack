@@ -286,6 +286,9 @@ func buildAPI(mux *http.ServeMux, o apiOptions) *httpapi.API {
 			// access (в режиме fixtures панель «Посты» — у заготовок).
 			if a.ModeFor("access") == platform.ModeLive {
 				opts = append(opts, accessapp.WithLiveRoster(x.facts))
+				if x.wplog != nil {
+					opts = append(opts, accessapp.WithWorkplaceLog(x.wplog))
+				}
 			}
 			if o.documents != nil && a.ModeFor("documents") == platform.ModeLive {
 				bridge := accessapp.DocumentsBridge{Docs: o.documents}

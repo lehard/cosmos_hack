@@ -1,0 +1,28 @@
+/**
+ * СГЕНЕРИРОВАНО orval (frontend/scripts/generate.mjs) — руками не править (AD-20).
+ * Источник: contracts/openapi.yaml
+ */
+import type { PostItem } from './postItem';
+import type { PostPerson } from './postPerson';
+import type { WorkplaceAssignee } from './workplaceAssignee';
+import type { WorkplaceCardPresence } from './workplaceCardPresence';
+
+export interface WorkplaceCard {
+  /** Нет — никто не назначен. */
+  assigned?: PostPerson;
+  /** Назначения текущей смены поста. */
+  assignments: WorkplaceAssignee[];
+  /** Нет — на посту нет изделия. */
+  current_item?: PostItem;
+  /** На месте; по СКУД на месте, но ключ не вставлен; ключ вставлен, а владельца нет в зоне; нет ни в зоне, ни ключа; никто не назначен; неизвестно. */
+  presence: WorkplaceCardPresence;
+  /** Область поста: здание → цех → участок → рабочее место. */
+  scope?: string;
+  /** Смена, назначения которой показаны; пусто — назначений нет. */
+  shift_id?: string;
+  /** Участок (пост) — подпись. */
+  station: string;
+  workplace_id: string;
+  /** Цех (FR-130). */
+  workshop?: string;
+}

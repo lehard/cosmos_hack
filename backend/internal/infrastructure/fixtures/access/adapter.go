@@ -64,6 +64,27 @@ func (Adapter) Workplaces(ctx context.Context, workshop string, m platform.Momen
 	return v, nil
 }
 
+// WorkplaceCard — карточка поста (access.workplace.read, UI-16).
+func (Adapter) WorkplaceCard(ctx context.Context, workplaceID string, m platform.Moment) (app.WorkplaceCard, error) {
+	return respond[app.WorkplaceCard](ctx, "access.workplace.read", map[string]string{"workplace_id": workplaceID}, &m)
+}
+
+// WorkplaceHistory — история поста (access.workplace.history, UI-16): весь
+// список шага из мира заготовок, страница — здесь.
+func (Adapter) WorkplaceHistory(ctx context.Context, workplaceID string, m platform.Moment, p platform.Page) (app.WorkplaceHistory, error) {
+	v, err := respond[app.WorkplaceHistory](ctx, "access.workplace.history", map[string]string{"workplace_id": workplaceID}, &m)
+	if err != nil {
+		return v, err
+	}
+	v.Items, v.NextCursor = app.PageOf(v.Items, p)
+	return v, nil
+}
+
+// PersonCard — карточка сотрудника (access.person.card, UI-16).
+func (Adapter) PersonCard(ctx context.Context, personID string, m platform.Moment) (app.PersonCard, error) {
+	return respond[app.PersonCard](ctx, "access.person.card", map[string]string{"person_id": personID}, &m)
+}
+
 // OpenSession — вход демо-персоной (access.session.create): сеанс персоны из
 // мира заготовок и токен «demo.‹персона›». Вход по логину на заготовках не
 // поддержан — только демо-персоны.

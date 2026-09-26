@@ -96,6 +96,150 @@ responses:
     body: {"status":"ok","checked_at":"2026-09-18T05:00:00Z","report_ref":"streebog256:be349924aba429bdcaf35578982882bd1bdd66ecb231513d534ae54f0184e846","interval_seconds":900,"server_side":true}
   - op: access.workplace.list
     body: {"items":[{"workplace_id":"WP-ASM-1","station":"Пост сборки 1","workshop":"WS-AC","assigned":{"person_id":"A31","display":"Сборщик A31"},"presence":"present","current_item":{"item_id":"ENT01:F-216","label":"Ф-216"}},{"workplace_id":"WP-CMM-1","station":"Пост КИМ 1","workshop":"WS-MC","presence":"not_assigned"},{"workplace_id":"WP-CNC-1","station":"Пост ЧПУ 1","workshop":"WS-MC","assigned":{"person_id":"O17","display":"Оператор ЧПУ O17"},"presence":"present"},{"workplace_id":"WP-FINAL-1","station":"Пост окончательного контроля","workshop":"WS-QA","presence":"not_assigned"},{"workplace_id":"WP-LEAK-1","station":"Стенд герметичности","workshop":"WS-AC","assigned":{"person_id":"T41","display":"Испытатель T41"},"presence":"present"},{"workplace_id":"WP-QC-AC","station":"Пост ОТК сборочно-испытательного цеха","workshop":"WS-AC","assigned":{"person_id":"INS-02","display":"Контролёр ОТК 2"},"presence":"present"},{"workplace_id":"WP-QC-MC","station":"Пост ОТК механического цеха","workshop":"WS-MC","presence":"not_assigned"},{"workplace_id":"WP-QC-WC","station":"Пост ОТК сварочного цеха","workshop":"WS-WC","assigned":{"person_id":"INS-01","display":"Контролёр ОТК 1"},"presence":"present"},{"workplace_id":"WP-VK-1","station":"Пост входного контроля 1","workshop":"WS-SK","assigned":{"person_id":"STK-51","display":"Кладовщик"},"presence":"present"},{"workplace_id":"WP-WELD-1","station":"Пост сварки 1 (источник ИС-1)","workshop":"WS-WC","presence":"not_assigned"},{"workplace_id":"WP-WELD-2","station":"Пост сварки 2 (источник ИС-2)","workshop":"WS-WC","assigned":{"person_id":"W21","display":"Сварщик W21"},"presence":"present"}]}
+  - op: access.workplace.read
+    params: {"workplace_id":"WP-ASM-1"}
+    body: {"workplace_id":"WP-ASM-1","station":"Пост сборки 1","workshop":"WS-AC","assigned":{"person_id":"A31","display":"Сборщик A31"},"presence":"present","current_item":{"item_id":"ENT01:F-216","label":"Ф-216"},"scope":"ent01/b1/ac/asm/wp1","shift_id":"SHIFT-1","assignments":[{"person_id":"A31","person_display":"Сборщик A31","shift_id":"SHIFT-1","assignee_role":"performer","qualification_ok":true}]}
+  - op: access.workplace.history
+    params: {"workplace_id":"WP-ASM-1"}
+    body: {"workplace_id":"WP-ASM-1","items":[{"seq":6,"at":"2026-09-18T04:45:00Z","event_type":"access.assignment.set","kind":"assigned","person_id":"A31","person_display":"Сборщик A31","shift_id":"SHIFT-1"},{"seq":5,"at":"2026-09-17T13:25:00Z","event_type":"access.token.presence_changed","kind":"token_out","person_id":"A31","person_display":"Сборщик A31","shift_id":"SHIFT-1"},{"seq":4,"at":"2026-09-17T13:25:00Z","event_type":"access.workplace.released","kind":"released","person_id":"A31","person_display":"Сборщик A31","shift_id":"SHIFT-1"},{"seq":3,"at":"2026-09-17T05:05:00Z","event_type":"access.workplace.admitted","kind":"admitted","person_id":"A31","person_display":"Сборщик A31","shift_id":"SHIFT-1"},{"seq":2,"at":"2026-09-17T05:05:00Z","event_type":"access.token.presence_changed","kind":"token_in","person_id":"A31","person_display":"Сборщик A31","shift_id":"SHIFT-1"}]}
+  - op: access.workplace.read
+    params: {"workplace_id":"WP-CMM-1"}
+    body: {"workplace_id":"WP-CMM-1","station":"Пост КИМ 1","workshop":"WS-MC","presence":"not_assigned","scope":"ent01/b1/mc/cmm/wp1","assignments":[]}
+  - op: access.workplace.history
+    params: {"workplace_id":"WP-CMM-1"}
+    body: {"workplace_id":"WP-CMM-1","items":[]}
+  - op: access.workplace.read
+    params: {"workplace_id":"WP-CNC-1"}
+    body: {"workplace_id":"WP-CNC-1","station":"Пост ЧПУ 1","workshop":"WS-MC","assigned":{"person_id":"O17","display":"Оператор ЧПУ O17"},"presence":"present","scope":"ent01/b1/mc/cnc/wp1","shift_id":"SHIFT-1","assignments":[{"person_id":"O17","person_display":"Оператор ЧПУ O17","shift_id":"SHIFT-1","assignee_role":"performer","qualification_ok":true}]}
+  - op: access.workplace.history
+    params: {"workplace_id":"WP-CNC-1"}
+    body: {"workplace_id":"WP-CNC-1","items":[{"seq":11,"at":"2026-09-18T04:45:00Z","event_type":"access.assignment.set","kind":"assigned","person_id":"O17","person_display":"Оператор ЧПУ O17","shift_id":"SHIFT-1"},{"seq":10,"at":"2026-09-17T21:55:00Z","event_type":"access.token.presence_changed","kind":"token_out","person_id":"O18","person_display":"Оператор ЧПУ O18","shift_id":"SHIFT-2"},{"seq":9,"at":"2026-09-17T21:55:00Z","event_type":"access.workplace.released","kind":"released","person_id":"O18","person_display":"Оператор ЧПУ O18","shift_id":"SHIFT-2"},{"seq":8,"at":"2026-09-17T13:35:00Z","event_type":"access.workplace.admitted","kind":"admitted","person_id":"O18","person_display":"Оператор ЧПУ O18","shift_id":"SHIFT-2"},{"seq":7,"at":"2026-09-17T13:35:00Z","event_type":"access.token.presence_changed","kind":"token_in","person_id":"O18","person_display":"Оператор ЧПУ O18","shift_id":"SHIFT-2"},{"seq":6,"at":"2026-09-17T13:25:00Z","event_type":"access.token.presence_changed","kind":"token_out","person_id":"O17","person_display":"Оператор ЧПУ O17","shift_id":"SHIFT-1"},{"seq":5,"at":"2026-09-17T13:25:00Z","event_type":"access.workplace.released","kind":"released","person_id":"O17","person_display":"Оператор ЧПУ O17","shift_id":"SHIFT-1"},{"seq":4,"at":"2026-09-17T13:15:00Z","event_type":"access.assignment.set","kind":"assigned","person_id":"O18","person_display":"Оператор ЧПУ O18","shift_id":"SHIFT-2"},{"seq":3,"at":"2026-09-17T05:05:00Z","event_type":"access.workplace.admitted","kind":"admitted","person_id":"O17","person_display":"Оператор ЧПУ O17","shift_id":"SHIFT-1"},{"seq":2,"at":"2026-09-17T05:05:00Z","event_type":"access.token.presence_changed","kind":"token_in","person_id":"O17","person_display":"Оператор ЧПУ O17","shift_id":"SHIFT-1"}]}
+  - op: access.workplace.read
+    params: {"workplace_id":"WP-FINAL-1"}
+    body: {"workplace_id":"WP-FINAL-1","station":"Пост окончательного контроля","workshop":"WS-QA","presence":"not_assigned","scope":"ent01/b1/qa/final/wp1","assignments":[]}
+  - op: access.workplace.history
+    params: {"workplace_id":"WP-FINAL-1"}
+    body: {"workplace_id":"WP-FINAL-1","items":[]}
+  - op: access.workplace.read
+    params: {"workplace_id":"WP-LEAK-1"}
+    body: {"workplace_id":"WP-LEAK-1","station":"Стенд герметичности","workshop":"WS-AC","assigned":{"person_id":"T41","display":"Испытатель T41"},"presence":"present","scope":"ent01/b1/ac/leak/wp1","shift_id":"SHIFT-1","assignments":[{"person_id":"T41","person_display":"Испытатель T41","shift_id":"SHIFT-1","assignee_role":"performer","qualification_ok":true}]}
+  - op: access.workplace.history
+    params: {"workplace_id":"WP-LEAK-1"}
+    body: {"workplace_id":"WP-LEAK-1","items":[{"seq":6,"at":"2026-09-18T04:45:00Z","event_type":"access.assignment.set","kind":"assigned","person_id":"T41","person_display":"Испытатель T41","shift_id":"SHIFT-1"},{"seq":5,"at":"2026-09-17T13:25:00Z","event_type":"access.token.presence_changed","kind":"token_out","person_id":"T41","person_display":"Испытатель T41","shift_id":"SHIFT-1"},{"seq":4,"at":"2026-09-17T13:25:00Z","event_type":"access.workplace.released","kind":"released","person_id":"T41","person_display":"Испытатель T41","shift_id":"SHIFT-1"},{"seq":3,"at":"2026-09-17T05:05:00Z","event_type":"access.workplace.admitted","kind":"admitted","person_id":"T41","person_display":"Испытатель T41","shift_id":"SHIFT-1"},{"seq":2,"at":"2026-09-17T05:05:00Z","event_type":"access.token.presence_changed","kind":"token_in","person_id":"T41","person_display":"Испытатель T41","shift_id":"SHIFT-1"}]}
+  - op: access.workplace.read
+    params: {"workplace_id":"WP-QC-AC"}
+    body: {"workplace_id":"WP-QC-AC","station":"Пост ОТК сборочно-испытательного цеха","workshop":"WS-AC","assigned":{"person_id":"INS-02","display":"Контролёр ОТК 2"},"presence":"present","scope":"ent01/b1/ac/qc","shift_id":"SHIFT-1","assignments":[{"person_id":"INS-02","person_display":"Контролёр ОТК 2","shift_id":"SHIFT-1","assignee_role":"quality_inspector","qualification_ok":true}]}
+  - op: access.workplace.history
+    params: {"workplace_id":"WP-QC-AC"}
+    body: {"workplace_id":"WP-QC-AC","items":[{"seq":6,"at":"2026-09-18T04:45:00Z","event_type":"access.assignment.set","kind":"assigned","person_id":"INS-02","person_display":"Контролёр ОТК 2","shift_id":"SHIFT-1"},{"seq":5,"at":"2026-09-17T13:25:00Z","event_type":"access.token.presence_changed","kind":"token_out","person_id":"INS-02","person_display":"Контролёр ОТК 2","shift_id":"SHIFT-1"},{"seq":4,"at":"2026-09-17T13:25:00Z","event_type":"access.workplace.released","kind":"released","person_id":"INS-02","person_display":"Контролёр ОТК 2","shift_id":"SHIFT-1"},{"seq":3,"at":"2026-09-17T05:05:00Z","event_type":"access.workplace.admitted","kind":"admitted","person_id":"INS-02","person_display":"Контролёр ОТК 2","shift_id":"SHIFT-1"},{"seq":2,"at":"2026-09-17T05:05:00Z","event_type":"access.token.presence_changed","kind":"token_in","person_id":"INS-02","person_display":"Контролёр ОТК 2","shift_id":"SHIFT-1"}]}
+  - op: access.workplace.read
+    params: {"workplace_id":"WP-QC-MC"}
+    body: {"workplace_id":"WP-QC-MC","station":"Пост ОТК механического цеха","workshop":"WS-MC","presence":"not_assigned","scope":"ent01/b1/mc/qc","assignments":[]}
+  - op: access.workplace.history
+    params: {"workplace_id":"WP-QC-MC"}
+    body: {"workplace_id":"WP-QC-MC","items":[]}
+  - op: access.workplace.read
+    params: {"workplace_id":"WP-QC-WC"}
+    body: {"workplace_id":"WP-QC-WC","station":"Пост ОТК сварочного цеха","workshop":"WS-WC","assigned":{"person_id":"INS-01","display":"Контролёр ОТК 1"},"presence":"present","scope":"ent01/b1/wc/qc","shift_id":"SHIFT-1","assignments":[{"person_id":"INS-01","person_display":"Контролёр ОТК 1","shift_id":"SHIFT-1","assignee_role":"quality_inspector","qualification_ok":true}]}
+  - op: access.workplace.history
+    params: {"workplace_id":"WP-QC-WC"}
+    body: {"workplace_id":"WP-QC-WC","items":[{"seq":6,"at":"2026-09-18T04:45:00Z","event_type":"access.assignment.set","kind":"assigned","person_id":"INS-01","person_display":"Контролёр ОТК 1","shift_id":"SHIFT-1"},{"seq":5,"at":"2026-09-17T13:25:00Z","event_type":"access.token.presence_changed","kind":"token_out","person_id":"INS-01","person_display":"Контролёр ОТК 1","shift_id":"SHIFT-1"},{"seq":4,"at":"2026-09-17T13:25:00Z","event_type":"access.workplace.released","kind":"released","person_id":"INS-01","person_display":"Контролёр ОТК 1","shift_id":"SHIFT-1"},{"seq":3,"at":"2026-09-17T05:05:00Z","event_type":"access.workplace.admitted","kind":"admitted","person_id":"INS-01","person_display":"Контролёр ОТК 1","shift_id":"SHIFT-1"},{"seq":2,"at":"2026-09-17T05:05:00Z","event_type":"access.token.presence_changed","kind":"token_in","person_id":"INS-01","person_display":"Контролёр ОТК 1","shift_id":"SHIFT-1"}]}
+  - op: access.workplace.read
+    params: {"workplace_id":"WP-VK-1"}
+    body: {"workplace_id":"WP-VK-1","station":"Пост входного контроля 1","workshop":"WS-SK","assigned":{"person_id":"STK-51","display":"Кладовщик"},"presence":"present","scope":"ent01/b1/sk/vk/wp1","shift_id":"SHIFT-1","assignments":[{"person_id":"STK-51","person_display":"Кладовщик","shift_id":"SHIFT-1","assignee_role":"performer","qualification_ok":true}]}
+  - op: access.workplace.history
+    params: {"workplace_id":"WP-VK-1"}
+    body: {"workplace_id":"WP-VK-1","items":[{"seq":6,"at":"2026-09-18T04:45:00Z","event_type":"access.assignment.set","kind":"assigned","person_id":"STK-51","person_display":"Кладовщик","shift_id":"SHIFT-1"},{"seq":5,"at":"2026-09-17T13:25:00Z","event_type":"access.token.presence_changed","kind":"token_out","person_id":"STK-51","person_display":"Кладовщик","shift_id":"SHIFT-1"},{"seq":4,"at":"2026-09-17T13:25:00Z","event_type":"access.workplace.released","kind":"released","person_id":"STK-51","person_display":"Кладовщик","shift_id":"SHIFT-1"},{"seq":3,"at":"2026-09-17T05:05:00Z","event_type":"access.workplace.admitted","kind":"admitted","person_id":"STK-51","person_display":"Кладовщик","shift_id":"SHIFT-1"},{"seq":2,"at":"2026-09-17T05:05:00Z","event_type":"access.token.presence_changed","kind":"token_in","person_id":"STK-51","person_display":"Кладовщик","shift_id":"SHIFT-1"}]}
+  - op: access.workplace.read
+    params: {"workplace_id":"WP-WELD-1"}
+    body: {"workplace_id":"WP-WELD-1","station":"Пост сварки 1 (источник ИС-1)","workshop":"WS-WC","presence":"not_assigned","scope":"ent01/b1/wc/weld/wp1","assignments":[]}
+  - op: access.workplace.history
+    params: {"workplace_id":"WP-WELD-1"}
+    body: {"workplace_id":"WP-WELD-1","items":[]}
+  - op: access.workplace.read
+    params: {"workplace_id":"WP-WELD-2"}
+    body: {"workplace_id":"WP-WELD-2","station":"Пост сварки 2 (источник ИС-2)","workshop":"WS-WC","assigned":{"person_id":"W21","display":"Сварщик W21"},"presence":"present","scope":"ent01/b1/wc/weld/wp2","shift_id":"SHIFT-1","assignments":[{"person_id":"W21","person_display":"Сварщик W21","shift_id":"SHIFT-1","assignee_role":"performer","qualification_ok":true}]}
+  - op: access.workplace.history
+    params: {"workplace_id":"WP-WELD-2"}
+    body: {"workplace_id":"WP-WELD-2","items":[{"seq":11,"at":"2026-09-18T04:45:00Z","event_type":"access.assignment.set","kind":"assigned","person_id":"W21","person_display":"Сварщик W21","shift_id":"SHIFT-1"},{"seq":10,"at":"2026-09-17T21:55:00Z","event_type":"access.token.presence_changed","kind":"token_out","person_id":"W22","person_display":"Сварщик W22","shift_id":"SHIFT-2"},{"seq":9,"at":"2026-09-17T21:55:00Z","event_type":"access.workplace.released","kind":"released","person_id":"W22","person_display":"Сварщик W22","shift_id":"SHIFT-2"},{"seq":8,"at":"2026-09-17T13:35:00Z","event_type":"access.workplace.admitted","kind":"admitted","person_id":"W22","person_display":"Сварщик W22","shift_id":"SHIFT-2"},{"seq":7,"at":"2026-09-17T13:35:00Z","event_type":"access.token.presence_changed","kind":"token_in","person_id":"W22","person_display":"Сварщик W22","shift_id":"SHIFT-2"},{"seq":6,"at":"2026-09-17T13:25:00Z","event_type":"access.token.presence_changed","kind":"token_out","person_id":"W21","person_display":"Сварщик W21","shift_id":"SHIFT-1"},{"seq":5,"at":"2026-09-17T13:25:00Z","event_type":"access.workplace.released","kind":"released","person_id":"W21","person_display":"Сварщик W21","shift_id":"SHIFT-1"},{"seq":4,"at":"2026-09-17T13:15:00Z","event_type":"access.assignment.set","kind":"assigned","person_id":"W22","person_display":"Сварщик W22","shift_id":"SHIFT-2"},{"seq":3,"at":"2026-09-17T05:05:00Z","event_type":"access.workplace.admitted","kind":"admitted","person_id":"W21","person_display":"Сварщик W21","shift_id":"SHIFT-1"},{"seq":2,"at":"2026-09-17T05:05:00Z","event_type":"access.token.presence_changed","kind":"token_in","person_id":"W21","person_display":"Сварщик W21","shift_id":"SHIFT-1"}]}
+  - op: access.person.card
+    params: {"person_id":"INS-01"}
+    body: {"person_id":"INS-01","display_name":"Контролёр ОТК 1","roles":[{"role_id":"quality_inspector","scope":"ent01/b1","valid_from":"2026-01-01T00:00:00Z"}],"qualifications":[],"posts":[{"workplace_id":"WP-QC-WC","station":"Пост ОТК сварочного цеха","shift_id":"SHIFT-1","assignee_role":"quality_inspector"}],"policy_seq":1}
+  - op: access.person.card
+    params: {"person_id":"INS-02"}
+    body: {"person_id":"INS-02","display_name":"Контролёр ОТК 2","roles":[{"role_id":"quality_inspector","scope":"ent01/b1","valid_from":"2026-01-01T00:00:00Z"}],"qualifications":[],"posts":[{"workplace_id":"WP-QC-AC","station":"Пост ОТК сборочно-испытательного цеха","shift_id":"SHIFT-1","assignee_role":"quality_inspector"}],"policy_seq":1}
+  - op: access.person.card
+    params: {"person_id":"HQC-01"}
+    body: {"person_id":"HQC-01","display_name":"Начальник ОТК","roles":[{"role_id":"head_of_qc","scope":"ent01","valid_from":"2026-01-01T00:00:00Z"}],"qualifications":[],"posts":[],"policy_seq":1}
+  - op: access.person.card
+    params: {"person_id":"FOR-SK"}
+    body: {"person_id":"FOR-SK","display_name":"Мастер склада и ВК","roles":[{"role_id":"site_foreman","scope":"ent01/b1/sk","valid_from":"2026-01-01T00:00:00Z"}],"qualifications":[],"posts":[],"policy_seq":1}
+  - op: access.person.card
+    params: {"person_id":"FOR-MC"}
+    body: {"person_id":"FOR-MC","display_name":"Мастер механического цеха","roles":[{"role_id":"site_foreman","scope":"ent01/b1/mc","valid_from":"2026-01-01T00:00:00Z"}],"qualifications":[],"posts":[],"policy_seq":1}
+  - op: access.person.card
+    params: {"person_id":"FOR-WC"}
+    body: {"person_id":"FOR-WC","display_name":"Мастер сварочного цеха","roles":[{"role_id":"site_foreman","scope":"ent01/b1/wc","valid_from":"2026-01-01T00:00:00Z"}],"qualifications":[],"posts":[],"policy_seq":1}
+  - op: access.person.card
+    params: {"person_id":"FOR-AC"}
+    body: {"person_id":"FOR-AC","display_name":"Мастер сборочно-испытательного цеха","roles":[{"role_id":"site_foreman","scope":"ent01/b1/ac","valid_from":"2026-01-01T00:00:00Z"}],"qualifications":[],"posts":[],"policy_seq":1}
+  - op: access.person.card
+    params: {"person_id":"HWS-WC"}
+    body: {"person_id":"HWS-WC","display_name":"Начальник сварочного цеха","roles":[{"role_id":"head_of_workshop","scope":"ent01/b1/wc","valid_from":"2026-01-01T00:00:00Z"}],"qualifications":[],"posts":[],"policy_seq":1}
+  - op: access.person.card
+    params: {"person_id":"HWS-AC"}
+    body: {"person_id":"HWS-AC","display_name":"Начальник сборочно-испытательного цеха","roles":[{"role_id":"head_of_workshop","scope":"ent01/b1/ac","valid_from":"2026-01-01T00:00:00Z"}],"qualifications":[],"posts":[],"policy_seq":1}
+  - op: access.person.card
+    params: {"person_id":"TEC-01"}
+    body: {"person_id":"TEC-01","display_name":"Технолог","roles":[{"role_id":"technologist","scope":"ent01","valid_from":"2026-01-01T00:00:00Z"}],"qualifications":[],"posts":[],"policy_seq":1}
+  - op: access.person.card
+    params: {"person_id":"CWL-01"}
+    body: {"person_id":"CWL-01","display_name":"Главный сварщик","roles":[{"role_id":"chief_welder","scope":"ent01","valid_from":"2026-01-01T00:00:00Z"}],"qualifications":[],"posts":[],"policy_seq":1}
+  - op: access.person.card
+    params: {"person_id":"PM-01"}
+    body: {"person_id":"PM-01","display_name":"Руководитель производства","roles":[{"role_id":"production_manager","scope":"ent01","valid_from":"2026-01-01T00:00:00Z"}],"qualifications":[],"posts":[],"policy_seq":1}
+  - op: access.person.card
+    params: {"person_id":"ADM-01"}
+    body: {"person_id":"ADM-01","display_name":"Администратор безопасности","roles":[{"role_id":"administrator","scope":"ent01","valid_from":"2026-01-01T00:00:00Z"}],"qualifications":[],"posts":[],"policy_seq":1}
+  - op: access.person.card
+    params: {"person_id":"AUD-01"}
+    body: {"person_id":"AUD-01","display_name":"Аудитор ИБ","roles":[{"role_id":"security_auditor","scope":"ent01","valid_from":"2026-01-01T00:00:00Z"}],"qualifications":[],"posts":[],"policy_seq":1}
+  - op: access.person.card
+    params: {"person_id":"O17"}
+    body: {"person_id":"O17","display_name":"Оператор ЧПУ O17","roles":[{"role_id":"performer","scope":"ent01/b1/mc","valid_from":"2026-01-01T00:00:00Z"}],"qualifications":[{"person_id":"O17","qualification_id":"cnc_operator","scope":"ent01/b1/mc","valid_from":"2026-01-01T00:00:00Z","valid_until":"2027-12-31T00:00:00Z","status":"valid"}],"posts":[{"workplace_id":"WP-CNC-1","station":"Пост ЧПУ 1","shift_id":"SHIFT-1","assignee_role":"performer"}],"policy_seq":1}
+  - op: access.person.card
+    params: {"person_id":"O18"}
+    body: {"person_id":"O18","display_name":"Оператор ЧПУ O18","roles":[{"role_id":"performer","scope":"ent01/b1/mc","valid_from":"2026-01-01T00:00:00Z"}],"qualifications":[{"person_id":"O18","qualification_id":"cnc_operator","scope":"ent01/b1/mc","valid_from":"2026-01-01T00:00:00Z","valid_until":"2027-12-31T00:00:00Z","status":"valid"}],"posts":[],"policy_seq":1}
+  - op: access.person.card
+    params: {"person_id":"K16"}
+    body: {"person_id":"K16","display_name":"Оператор КИМ K16","roles":[{"role_id":"performer","scope":"ent01/b1/mc","valid_from":"2026-01-01T00:00:00Z"}],"qualifications":[{"person_id":"K16","qualification_id":"cmm_operator","scope":"ent01/b1/mc","valid_from":"2026-01-01T00:00:00Z","valid_until":"2027-12-31T00:00:00Z","status":"valid"}],"posts":[],"policy_seq":1}
+  - op: access.person.card
+    params: {"person_id":"W21"}
+    body: {"person_id":"W21","display_name":"Сварщик W21","roles":[{"role_id":"performer","scope":"ent01/b1/wc","valid_from":"2026-01-01T00:00:00Z"}],"qualifications":[{"person_id":"W21","qualification_id":"welder_argon_arc_amg6","scope":"ent01/b1/wc","certificate_ref":"НАКС [ПП]","valid_from":"2026-01-01T00:00:00Z","valid_until":"2027-06-30T00:00:00Z","status":"valid"}],"posts":[{"workplace_id":"WP-WELD-2","station":"Пост сварки 2 (источник ИС-2)","shift_id":"SHIFT-1","assignee_role":"performer"}],"policy_seq":1}
+  - op: access.person.card
+    params: {"person_id":"W22"}
+    body: {"person_id":"W22","display_name":"Сварщик W22","roles":[{"role_id":"performer","scope":"ent01/b1/wc","valid_from":"2026-01-01T00:00:00Z"}],"qualifications":[{"person_id":"W22","qualification_id":"welder_argon_arc_amg6","scope":"ent01/b1/wc","certificate_ref":"НАКС [ПП]","valid_from":"2026-01-01T00:00:00Z","valid_until":"2026-12-31T00:00:00Z","status":"valid"}],"posts":[],"policy_seq":1}
+  - op: access.person.card
+    params: {"person_id":"A31"}
+    body: {"person_id":"A31","display_name":"Сборщик A31","roles":[{"role_id":"performer","scope":"ent01/b1/ac","valid_from":"2026-01-01T00:00:00Z"}],"qualifications":[{"person_id":"A31","qualification_id":"assembler_torque","scope":"ent01/b1/ac","valid_from":"2026-01-01T00:00:00Z","valid_until":"2027-12-31T00:00:00Z","status":"valid"}],"posts":[{"workplace_id":"WP-ASM-1","station":"Пост сборки 1","shift_id":"SHIFT-1","assignee_role":"performer"}],"policy_seq":1}
+  - op: access.person.card
+    params: {"person_id":"T41"}
+    body: {"person_id":"T41","display_name":"Испытатель T41","roles":[{"role_id":"performer","scope":"ent01/b1/ac","valid_from":"2026-01-01T00:00:00Z"}],"qualifications":[{"person_id":"T41","qualification_id":"leak_test_operator","scope":"ent01/b1/ac","valid_from":"2026-01-01T00:00:00Z","valid_until":"2027-12-31T00:00:00Z","status":"valid"}],"posts":[{"workplace_id":"WP-LEAK-1","station":"Стенд герметичности","shift_id":"SHIFT-1","assignee_role":"performer"}],"policy_seq":1}
+  - op: access.person.card
+    params: {"person_id":"STK-51"}
+    body: {"person_id":"STK-51","display_name":"Кладовщик","roles":[{"role_id":"storekeeper","scope":"ent01/b1","valid_from":"2026-01-01T00:00:00Z"}],"qualifications":[],"posts":[{"workplace_id":"WP-VK-1","station":"Пост входного контроля 1","shift_id":"SHIFT-1","assignee_role":"performer"}],"policy_seq":1}
+  - op: access.person.card
+    params: {"person_id":"NDT-61"}
+    body: {"person_id":"NDT-61","display_name":"Дефектоскопист","roles":[{"role_id":"ndt_specialist","scope":"ent01/b1/ndt","valid_from":"2026-01-01T00:00:00Z"}],"qualifications":[{"person_id":"NDT-61","qualification_id":"ndt_radiography_level2","scope":"ent01/b1/ndt","valid_from":"2026-01-01T00:00:00Z","valid_until":"2027-03-31T00:00:00Z","status":"valid"}],"posts":[],"policy_seq":1}
+  - op: access.person.card
+    params: {"person_id":"CR-71"}
+    body: {"person_id":"CR-71","display_name":"Представитель заказчика","roles":[{"role_id":"customer_representative","scope":"ent01","valid_from":"2026-01-01T00:00:00Z"}],"qualifications":[],"posts":[],"policy_seq":1}
+  - op: access.person.card
+    params: {"person_id":"DA-81"}
+    body: {"person_id":"DA-81","display_name":"Держатель КД","roles":[{"role_id":"design_authority","scope":"ent01","valid_from":"2026-01-01T00:00:00Z"}],"qualifications":[],"posts":[],"policy_seq":1}
+  - op: access.person.card
+    params: {"person_id":"MET-82"}
+    body: {"person_id":"MET-82","display_name":"Метролог","roles":[{"role_id":"metrologist","scope":"ent01","valid_from":"2026-01-01T00:00:00Z"}],"qualifications":[],"posts":[],"policy_seq":1}
   - op: item.item.lookup
     params: {"q":"F-201"}
     body: {"item_id":"ENT01:F-201","carrier_ref":"ant:carrier:dpm_datamatrix:F-201"}

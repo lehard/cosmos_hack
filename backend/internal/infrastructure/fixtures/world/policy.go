@@ -18,6 +18,10 @@ import (
 type Policy struct {
 	Roles   []PolicyRole   `yaml:"roles"`
 	Persons []PolicyPerson `yaml:"persons"`
+	// Grants — выдачи затравки; здесь нужны только квалификации (карточка сотрудника, UI-16).
+	Grants struct {
+		Qualifications []PolicyQualification `yaml:"qualifications"`
+	} `yaml:"grants"`
 	// Desks — столы ролей: id роли → содержимое normative/desks/‹роль›.yaml.
 	Desks map[string]map[string]any `yaml:"-"`
 }
@@ -37,6 +41,15 @@ type PolicyPerson struct {
 		Role  string `yaml:"role"`
 		Scope string `yaml:"scope"`
 	} `yaml:"roles"`
+}
+
+// PolicyQualification — квалификация сотрудника из затравки (FR-80).
+type PolicyQualification struct {
+	Person         string `yaml:"person"`
+	Qualification  string `yaml:"qualification"`
+	Scope          string `yaml:"scope"`
+	ValidUntil     string `yaml:"valid_until"`
+	CertificateRef string `yaml:"certificate_ref"`
 }
 
 // LoadPolicy читает normative/policy/policy.v1.yaml и normative/desks/*.yaml из fsys.

@@ -42,6 +42,8 @@ type Service struct {
 	// facts — запись фактов исполнителя в журнал.
 	live  bool
 	facts itemapp.Writer
+	// wplog — история поста из журнала (access.workplace.history, UI-16).
+	wplog WorkplaceLog
 	// now — доменное «сейчас» (DomainClock, AD-37).
 	now func(ctx context.Context) (time.Time, error)
 }

@@ -110,6 +110,31 @@ func Register(api *httpapi.API, q app.Queries, c app.Commands, gate *app.Gate) {
 			return q.Workplaces(ctx, in.Workshop, m)
 		})
 
+	httpapi.Read(api, httpapi.Get("/workplaces/{workplace_id}", "Пост",
+		"UI-16, FR-6, FR-81: карточка окна «Пост» — строка панели «Посты» (кто назначен, на месте ли, текущее изделие) и назначения текущей смены поста. "+
+			"Права — в области роли (пост — место операции, барьер 3)."),
+		platform.Action{ID: "access.workplace.read", Owner: "access", Subject: "workplace"},
+		func(ctx context.Context, in *workplaceReadIn, m platform.Moment) (app.WorkplaceCard, error) {
+			return q.WorkplaceCard(ctx, in.WorkplaceID, m)
+		})
+	httpapi.Read(api, httpapi.Get("/workplaces/{workplace_id}/history", "История поста",
+		"UI-16, FR-81, FR-83, FR-84: события поста, новые сверху — назначение и снятие, токен вставлен и извлечён, допуск открыт, завершён, снят, "+
+			"отклонение присутствия. Без доступа ко всему журналу (journal.entry.list)."),
+		platform.Action{ID: "access.workplace.history", Owner: "access", Subject: "workplace"},
+		func(ctx context.Context, in *workplaceHistoryIn, m platform.Moment) (app.WorkplaceHistory, error) {
+			return q.WorkplaceHistory(ctx, in.WorkplaceID, m, in.Page())
+		})
+	httpapi.Read(api, httpapi.Get("/persons/{person_id}/card", "Карточка сотрудника",
+		"UI-16, FR-80, FR-81: окно «Сотрудник» — имя, подразделение, роли в областях, квалификации со сроками, текущие посты. "+
+			"Без логина и состояния учётной записи (их отдаёт access.person.read администратору)."),
+		platform.Action{ID: "access.person.card", Owner: "access", Subject: "policy"},
+		func(ctx context.Context, in *struct {
+			PersonID string `path:"person_id" maxLength:"64" doc:"Псевдоним сотрудника."`
+			httpapi.MomentQuery
+		}, m platform.Moment) (app.PersonCard, error) {
+			return q.PersonCard(ctx, in.PersonID, m)
+		})
+
 	type permissionsIn struct {
 		Subject platform.EntityKind `query:"subject" doc:"Вид объекта."`
 		ID      string              `query:"id" maxLength:"128" doc:"Идентификатор объекта."`
@@ -145,6 +170,29 @@ func Register(api *httpapi.API, q app.Queries, c app.Commands, gate *app.Gate) {
 			v, err := gate.Explain(ctx, platform.PrincipalFrom(ctx), in.Action, platform.ObjectRef{Kind: string(in.Subject), ID: in.ID})
 			return httpapi.OK(v), err
 		})
+}
+
+// workplaceReadIn — чтение карточки поста.
+type workplaceReadIn struct {
+	WorkplaceID string `path:"workplace_id" maxLength:"128" doc:"Пост (рабочее место)."`
+	httpapi.MomentQuery
+}
+
+// Object — пост карточки (права по объекту: область роли, барьер 3).
+func (w *workplaceReadIn) Object() platform.ObjectRef {
+	return platform.ObjectRef{Kind: "workplace", ID: w.WorkplaceID}
+}
+
+// workplaceHistoryIn — чтение истории поста страницами.
+type workplaceHistoryIn struct {
+	WorkplaceID string `path:"workplace_id" maxLength:"128" doc:"Пост (рабочее место)."`
+	httpapi.MomentQuery
+	httpapi.PageQuery
+}
+
+// Object — пост истории (права по объекту: область роли, барьер 3).
+func (w *workplaceHistoryIn) Object() platform.ObjectRef {
+	return platform.ObjectRef{Kind: "workplace", ID: w.WorkplaceID}
 }
 
 // sessionCreateIn — тело входа и адрес клиента (ограничение частоты попыток,

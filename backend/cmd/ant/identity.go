@@ -33,6 +33,8 @@ type accessBundle struct {
 	decisions accessapp.DecisionWriter
 	// facts — запись фактов исполнителя (терминал, FR-137) в журнал ядра (эпик 26).
 	facts itemapp.Writer
+	// wplog — история поста из журнала (access.workplace.history, UI-16).
+	wplog accessapp.WorkplaceLog
 	// now — доменное «сейчас» (AD-37) для сроков полномочий и записей решений.
 	now func(ctx context.Context) (time.Time, error)
 }
@@ -89,6 +91,7 @@ func accessLive(ctx context.Context, env *environment) (*accessBundle, error) {
 	b.creds = accessstore.NewCredentials(c.pool)
 	b.decisions = accessapp.JournalDecisions{Journal: c.journal, DomainBuild: c.codec.DomainBuild, Now: c.codec.Now}
 	b.facts = c.itemWriter(env)
+	b.wplog = accessstore.WorkplaceLog{Journal: c.journal, Codec: c.codec}
 
 	switch cfg.Ports.Adapters["identity_provider"] {
 	case "demo":

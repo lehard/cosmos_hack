@@ -219,7 +219,8 @@ func TestPersonaDesksAndButtons(t *testing.T) {
 	shell := []string{"access.session.read", "access.desk.read", "access.permission.list", "notifications.summary.read", "security.integrity.read", "journal.stream.subscribe", "item.item.lookup"}
 	want := map[string][]string{
 		"INS-01": {"nonconformity.queue.list", "item.passport.read", "nonconformity.card.read", "nonconformity.presentation.resolve", "nonconformity.signal.reject", "nonconformity.item.isolate"},
-		"PM-01":  {"process.live_map.read", "analytics.tile.list", "notifications.attention.list", "access.workplace.list", "process.version.list", "process.version.activate", "journal.timeline.read"},
+		"PM-01": {"process.live_map.read", "analytics.tile.list", "notifications.attention.list", "access.workplace.list", "process.version.list", "process.version.activate", "journal.timeline.read",
+			"access.workplace.read", "access.workplace.history", "access.person.card"},
 		"TEC-01": {"analysis.incident.list", "analysis.risk_scope.read", "analysis.scope.narrow", "analysis.cause.conclude", "analysis.hypothesis.list", "process.version.diff"},
 		"ADM-01": {"simulation.run.start", "simulation.scenario.list", "ingest.quarantine.list", "ops.health.read", "access.person.list", "access.account.activate", "access.person.register", "journal.entry.list"},
 		"AUD-01": {"security.critical_action.list", "access.grant.list", "security.event.list", "security.verifier_report.list", "access.audit.set_parameters"},
@@ -235,6 +236,23 @@ func TestPersonaDesksAndButtons(t *testing.T) {
 				t.Errorf("%s: нет действия своего стола %s", persona, a)
 			}
 		}
+	}
+	// UI-16: окна «Пост» и «Сотрудник» у руководителя — карточки без учётной записи;
+	// мастер видит посты только своей области (барьер 3).
+	for _, path := range []string{"/api/v1/workplaces/WP-WELD-2", "/api/v1/workplaces/WP-WELD-2/history", "/api/v1/persons/W21/card"} {
+		code, out, _ := do(t, h, call{method: "GET", path: path, persona: "PM-01"})
+		if code != http.StatusOK {
+			t.Fatalf("руководитель %s: %d %v", path, code, out)
+		}
+		if _, ok := out["login"]; ok {
+			t.Fatalf("%s: логин в карточке: %v", path, out)
+		}
+	}
+	if code, out, _ := do(t, h, call{method: "GET", path: "/api/v1/workplaces/WP-WELD-2", persona: "FOR-WC"}); code != http.StatusOK || out["workplace_id"] != "WP-WELD-2" {
+		t.Fatalf("мастер — свой пост: %d %v", code, out)
+	}
+	if code, out, _ := do(t, h, call{method: "GET", path: "/api/v1/workplaces/WP-CNC-1", persona: "FOR-WC"}); code != http.StatusForbidden {
+		t.Fatalf("мастер — пост чужого цеха: %d %v", code, out)
 	}
 	// Заготовки отвечают персонам по их правам: очередь контролёра — 200, чужая команда — 403.
 	if code, out, _ := do(t, h, call{method: "GET", path: "/api/v1/decision-queue", persona: "INS-01"}); code != http.StatusOK {
