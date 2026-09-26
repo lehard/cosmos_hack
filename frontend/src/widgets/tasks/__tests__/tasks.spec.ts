@@ -54,7 +54,7 @@ describe('задачи и уведомления', () => {
     expect(summary.find('[data-kind="task"]').text()).toBe('Задача: 2')
     expect(summary.find('[data-kind="decision_request"]').text()).toBe('Запрос решения: 1')
 
-    const open = w.findAll('[data-testid="section-tasks"] > .n-list [data-task]')
+    const open = w.findAll('[data-testid="section-tasks"] [data-task][data-state="open"]')
     expect(open.map((t) => t.attributes('data-task'))).toEqual(['TASK-003', 'TASK-004'])
     expect(open[0]!.text()).toContain('Просрочена')
     expect(open[0]!.text()).toContain('Перенести Ф-017 в изолятор и подтвердить')

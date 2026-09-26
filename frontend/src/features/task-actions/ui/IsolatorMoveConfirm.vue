@@ -8,12 +8,13 @@
  */
 import { computed, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NAlert, NButton, NFlex, NInput, NRadio, NRadioGroup, NSelect, NText } from 'naive-ui'
+import { NAlert, NInput, NRadio, NRadioGroup, NSelect } from 'naive-ui'
 import type { Density } from '@/shared/config/widget'
 import { naiveSizeOf } from '@/shared/config/widget'
 import { codeToKey } from '@/shared/i18n'
 import { useProblemText } from '@/shared/i18n/problem'
 import { newCommandId } from '@/shared/lib/command-id'
+import { ActionButton, FormField } from '@/shared/ui'
 import { INSPECTION_ON_RECEIPT, type IsolatorMoveDraft } from '../model/isolation'
 import { useIsolatorMove } from '../model/use-isolator-move'
 
@@ -80,39 +81,44 @@ async function submit(): Promise<void> {
       <NAlert v-if="recordedSeq !== null" type="info" :bordered="false" data-testid="receipt-pending">
         {{ t('widgets.shopFloor.isolator.pending', { seq: recordedSeq }) }}
       </NAlert>
-      <form @submit.prevent="submit">
-        <NFlex vertical :size="8">
-          <label>
-            <NText depth="3">{{ t('widgets.shopFloor.isolator.to') }}</NText>
-            <NSelect
-              v-if="options.length"
-              v-model:value="draft.to_location_id"
-              :size="size"
-              :options="options"
-              :consistent-menu-width="false"
-              data-testid="isolator"
-            />
-            <NInput v-else v-model:value="draft.to_location_id" :size="size" data-testid="isolator" />
-          </label>
-          <NText depth="3">{{ t('widgets.shopFloor.isolator.inspection') }}</NText>
+      <form class="form" @submit.prevent="submit">
+        <FormField :label="t('widgets.shopFloor.isolator.to')">
+          <NSelect v-if="options.length" v-model:value="draft.to_location_id" :size="size" :options="options" :consistent-menu-width="false" data-testid="isolator" />
+          <NInput v-else v-model:value="draft.to_location_id" :size="size" data-testid="isolator" />
+        </FormField>
+        <FormField :label="t('widgets.shopFloor.isolator.inspection')">
           <NRadioGroup v-model:value="draft.inspection_on_receipt" :size="size" data-testid="inspection-on-receipt">
-            <NFlex :size="12" wrap>
-              <NRadio v-for="v in INSPECTION_ON_RECEIPT" :key="v" :value="v">{{ t(`widgets.shopFloor.isolator.receipt.${codeToKey(v)}`) }}</NRadio>
-            </NFlex>
+            <NRadio v-for="v in INSPECTION_ON_RECEIPT" :key="v" :value="v">{{ t(`widgets.shopFloor.isolator.receipt.${codeToKey(v)}`) }}</NRadio>
           </NRadioGroup>
-          <NButton type="primary" :size="size" :disabled="!ready" :loading="move.busy.value" data-testid="confirm-isolator-move" @click="submit">
-            {{ t('decisions.containment.confirmIsolatorMove') }}
-          </NButton>
-          <NAlert v-if="move.commandError.value" type="error" :bordered="false" data-testid="command-error">
-            {{ problemText(move.commandError.value) }}
-          </NAlert>
-        </NFlex>
+        </FormField>
+        <ActionButton
+          type="primary"
+          :size="size"
+          :disabled="!ready"
+          :loading="move.busy.value"
+          :label="t('decisions.containment.confirmIsolatorMove')"
+          data-testid="confirm-isolator-move"
+          @click="submit"
+        />
+        <NAlert v-if="move.commandError.value" type="error" :bordered="false" data-testid="command-error">
+          {{ problemText(move.commandError.value) }}
+        </NAlert>
       </form>
     </template>
     <NAlert v-else-if="move.state.value === 'moved' && (recordedSeq !== null || verbose)" type="success" :bordered="false" data-testid="moved">
       {{ t('timeline.operation.isolatorConfirmed') }}<template v-if="recordedSeq !== null"> · {{ t('widgets.shopFloor.recorded', { seq: recordedSeq }) }}</template>
     </NAlert>
-    <NText v-else-if="verbose && move.state.value === 'none'" depth="3" data-testid="not-isolated">{{ t('widgets.shopFloor.isolator.notIsolated') }}</NText>
-    <NText v-else-if="verbose && move.state.value === 'unknown' && !move.loading.value" depth="3">{{ t('empty.noDataUnknown') }}</NText>
+    <p v-else-if="verbose && move.state.value === 'none'" class="ant-muted" data-testid="not-isolated">{{ t('widgets.shopFloor.isolator.notIsolated') }}</p>
+    <p v-else-if="verbose && move.state.value === 'unknown' && !move.loading.value" class="ant-muted">{{ t('empty.noDataUnknown') }}</p>
   </div>
 </template>
+
+<style scoped>
+.isolator-move,
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ant-space-2);
+  min-width: 0;
+}
+</style>

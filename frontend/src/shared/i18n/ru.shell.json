@@ -781,6 +781,7 @@
         "verificationExpired": "срок поверки истёк — работать нельзя"
       },
       "verification": {
+        "title": "Поверка",
         "validUntil": "Поверка до {date}",
         "expiring": "Поверка истекает {date}",
         "expired": "Срок поверки истёк {date}",

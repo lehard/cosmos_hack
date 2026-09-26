@@ -7,13 +7,14 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { NButton, NFlex, NScrollbar, NTag, NText } from 'naive-ui'
+import { NAlert, NScrollbar, NTag } from 'naive-ui'
 import type { NotificationSummary } from '@/entities/notification'
 import { useTasks } from '@/entities/task'
 import { useDrillDown } from '@/features/drill-down'
 import { TaskInbox } from '@/features/task-actions'
 import { useProblemText } from '@/shared/i18n/problem'
 import type { DrillRef } from '@/shared/model/drill'
+import { ActionButton } from '@/shared/ui'
 import { useMomentStore } from '@/shared/model/moment'
 
 defineProps<{ summary: NotificationSummary | null }>()
@@ -39,15 +40,15 @@ function open(ref: DrillRef): void {
 </script>
 
 <template>
-  <NFlex vertical :size="8" class="notifications-panel" data-testid="notifications-panel">
-    <NText strong>{{ t('common.header.notifications') }}</NText>
-    <NFlex v-if="summary?.by_kind" :size="6" :wrap="true">
+  <div class="notifications-panel" data-testid="notifications-panel">
+    <strong>{{ t('common.header.notifications') }}</strong>
+    <div v-if="summary?.by_kind" class="line">
       <NTag v-for="k in KINDS" :key="k.key" size="small" :bordered="false" :type="summary.by_kind[k.key] ? k.type : 'default'" :data-kind="k.key">
         {{ t(k.text) }}: {{ summary.by_kind[k.key] }}
       </NTag>
-    </NFlex>
-    <NScrollbar style="max-height: 420px">
-      <NText v-if="tasksQ.error.value && !tasks" type="error">{{ problemText(tasksQ.error.value) }}</NText>
+    </div>
+    <NScrollbar class="scroll">
+      <NAlert v-if="tasksQ.error.value && !tasks" type="error" :bordered="false">{{ problemText(tasksQ.error.value) }}</NAlert>
       <TaskInbox
         v-else-if="tasks"
         :tasks="tasks"
@@ -58,12 +59,28 @@ function open(ref: DrillRef): void {
         @open="open"
       />
     </NScrollbar>
-    <NButton text type="primary" size="small" @click="router.push('/desk').then(() => emit('close'))">{{ t('widgets.shopFloor.tasks.toDesk') }}</NButton>
-  </NFlex>
+    <div>
+      <ActionButton text type="primary" size="small" :label="t('widgets.shopFloor.tasks.toDesk')" @click="router.push('/desk').then(() => emit('close'))" />
+    </div>
+  </div>
 </template>
 
 <style scoped>
 .notifications-panel {
-  width: min(420px, 90vw);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ant-space-2);
+  width: min(var(--ant-w-side), 90vw);
+  min-width: 0;
+}
+
+.line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ant-space-1) var(--ant-space-2);
+}
+
+.scroll {
+  max-height: 60vh;
 }
 </style>

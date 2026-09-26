@@ -9,7 +9,7 @@
  */
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NAlert, NButton, NDivider, NEllipsis, NFlex, NInput, NRadio, NRadioGroup, NSelect, NTag, NText } from 'naive-ui'
+import { NAlert, NInput, NRadio, NRadioGroup, NSelect, NTag } from 'naive-ui'
 import { SummaryTag } from '@/entities/item'
 import type { ProcessStep } from '@/entities/live-map'
 import type { RunProfile } from '@/entities/equipment'
@@ -20,7 +20,7 @@ import { naiveSizeOf } from '@/shared/config/widget'
 import { codeToKey } from '@/shared/i18n'
 import { useProblemText } from '@/shared/i18n/problem'
 import { formatMinutes } from '@/shared/lib/duration'
-import { StatusTag } from '@/shared/ui'
+import { ActionButton, EmptyState, FormField, SectionPanel, StatusTag } from '@/shared/ui'
 import type { ItemRow } from '@/entities/operation'
 import type { PostItem, TerminalWarning } from '../model/terminal'
 
@@ -59,7 +59,6 @@ const emit = defineEmits<{
 const { t } = useI18n()
 const problemText = useProblemText()
 const size = computed(() => naiveSizeOf(props.density))
-const tagSize = computed(() => (props.density === 'large' ? 'medium' : 'small'))
 
 const stepOptions = computed(() => props.operations.map((s) => ({ label: s.operationCode ? `${s.operationCode} · ${s.name}` : s.name, value: s.stepKey })))
 const itemOptions = computed(() =>
@@ -100,47 +99,48 @@ function submitDeviation(): void {
 </script>
 
 <template>
-  <NFlex vertical :size="12" data-testid="terminal">
-    <NFlex :size="8" align="center" :wrap="true" data-testid="workplace">
-      <NText strong>{{ workplace ? t('common.header.workplace', { workplace: workplace.title }) : t('widgets.shopFloor.terminal.noWorkplace') }}</NText>
-      <NText v-if="shiftTitle" depth="3">· {{ t('common.words.shift') }}: {{ shiftTitle }}</NText>
-    </NFlex>
-    <NText depth="3">{{ t('terminal.onlyOwnWorkplace') }}</NText>
+  <div class="terminal" data-testid="terminal">
+    <div class="line" data-testid="workplace">
+      <strong class="ant-wrap">{{ workplace ? t('common.header.workplace', { workplace: workplace.title }) : t('widgets.shopFloor.terminal.noWorkplace') }}</strong>
+      <span v-if="shiftTitle" class="ant-muted ant-wrap">· {{ t('common.words.shift') }}: {{ shiftTitle }}</span>
+    </div>
+    <p class="ant-muted ant-wrap">{{ t('terminal.onlyOwnWorkplace') }}</p>
 
-    <NFlex v-if="warnings.length" vertical :size="6" data-testid="warnings">
+    <div v-if="warnings.length" class="stack" data-testid="warnings">
       <NAlert v-for="(w, i) in warnings" :key="i" :type="w.kind === 'unusable' ? 'error' : 'warning'" :bordered="false" :data-warning="w.kind">
         {{ warningText(w) }}
       </NAlert>
-    </NFlex>
+    </div>
 
     <!-- Текущая операция и «остановить». -->
-    <section data-testid="current-run">
-      <NDivider title-placement="left">{{ t('widgets.shopFloor.terminal.currentOperation') }}</NDivider>
-      <NFlex v-if="run" vertical :size="8">
-        <NFlex :size="8" align="center" :wrap="true">
-          <NText strong><NEllipsis :tooltip="{ width: 360 }">{{ runStep?.name ?? run.step_key }}</NEllipsis></NText>
-          <NButton text type="primary" :size="size" @click="emit('open', run.item_id)">{{ items.find((i) => i.item_id === run!.item_id)?.label ?? run.item_id }}</NButton>
-          <NText v-if="runMinutes !== null" :type="runOver ? 'error' : undefined">{{ t('widgets.shopFloor.station.runFor', { time: formatMinutes(t, runMinutes) }) }}</NText>
-          <NText depth="3">{{ runNorm }}</NText>
-          <NTag v-if="runOver" :size="tagSize" type="error" :bordered="false">{{ t('widgets.shopFloor.station.overNorm') }}</NTag>
-        </NFlex>
+    <SectionPanel :title="t('widgets.shopFloor.terminal.currentOperation')" variant="subtle" data-testid="current-run">
+      <template v-if="run">
+        <div class="line">
+          <strong class="ant-wrap">{{ runStep?.name ?? run.step_key }}</strong>
+          <ActionButton
+            text
+            type="primary"
+            :size="size"
+            :label="items.find((i) => i.item_id === run!.item_id)?.label ?? run.item_id"
+            :hint="t('common.actions.openPassport')"
+            @click="emit('open', run.item_id)"
+          />
+          <span v-if="runMinutes !== null" :class="{ over: runOver }">{{ t('widgets.shopFloor.station.runFor', { time: formatMinutes(t, runMinutes) }) }}</span>
+          <span class="ant-muted">{{ runNorm }}</span>
+          <NTag v-if="runOver" size="small" type="error" :bordered="false">{{ t('widgets.shopFloor.station.overNorm') }}</NTag>
+        </div>
         <NRadioGroup v-model:value="completion" :size="size">
-          <NFlex :size="16" :wrap="true">
-            <NRadio value="completed">{{ t('widgets.shopFloor.terminal.completion.completed') }}</NRadio>
-            <NRadio value="interrupted">{{ t('widgets.shopFloor.terminal.completion.interrupted') }}</NRadio>
-          </NFlex>
+          <NRadio value="completed">{{ t('widgets.shopFloor.terminal.completion.completed') }}</NRadio>
+          <NRadio value="interrupted">{{ t('widgets.shopFloor.terminal.completion.interrupted') }}</NRadio>
         </NRadioGroup>
-        <NButton type="warning" :size="size" block :disabled="actionsOff || !!run.finished_at" data-testid="stop" @click="emit('finish', completion)">
-          {{ t('terminal.stopOperation') }}
-        </NButton>
-      </NFlex>
-      <NText v-else depth="3">{{ t('widgets.shopFloor.station.noRun') }}</NText>
-    </section>
+        <ActionButton type="warning" :size="size" block :disabled="actionsOff || !!run.finished_at" :label="t('terminal.stopOperation')" data-testid="stop" @click="emit('finish', completion)" />
+      </template>
+      <EmptyState v-else compact :title="t('widgets.shopFloor.station.noRun')" />
+    </SectionPanel>
 
     <!-- Начать операцию. -->
-    <section data-testid="start">
-      <NDivider title-placement="left">{{ t('terminal.startOperation') }}</NDivider>
-      <NFlex vertical :size="8">
+    <SectionPanel :title="t('terminal.startOperation')" variant="subtle" data-testid="start">
+      <FormField :label="t('common.words.operation')">
         <NSelect
           :value="stepKey"
           :options="stepOptions"
@@ -150,9 +150,10 @@ function submitDeviation(): void {
           data-testid="step"
           @update:value="(v: string) => emit('update:stepKey', v)"
         />
-        <NText v-if="itemsError" type="error">{{ problemText(itemsError) }}</NText>
+      </FormField>
+      <NAlert v-if="itemsError" type="error" :bordered="false">{{ problemText(itemsError) }}</NAlert>
+      <FormField v-else :label="t('common.words.item')" :hint="t('terminal.inspectionFirst')">
         <NSelect
-          v-else
           v-model:value="startItem"
           :options="itemOptions"
           :size="size"
@@ -161,33 +162,39 @@ function submitDeviation(): void {
           :consistent-menu-width="false"
           data-testid="start-item"
         />
-        <NButton type="primary" :size="size" block :disabled="actionsOff || !stepKey || !startItem || !!run" data-testid="start-operation" @click="startItem && emit('start', startItem)">
-          {{ t('terminal.startOperation') }}
-        </NButton>
-        <NText v-if="run" depth="3">{{ t('widgets.shopFloor.terminal.finishFirst') }}</NText>
-      </NFlex>
-    </section>
+      </FormField>
+      <ActionButton
+        type="primary"
+        :size="size"
+        block
+        :disabled="actionsOff || !stepKey || !startItem || !!run"
+        :label="t('terminal.startOperation')"
+        data-testid="start-operation"
+        @click="startItem && emit('start', startItem)"
+      />
+      <p v-if="run" class="ant-muted ant-wrap">{{ t('widgets.shopFloor.terminal.finishFirst') }}</p>
+    </SectionPanel>
 
     <!-- Изделия у поста: статус и перемещение в изолятор (FR-55). -->
-    <section data-testid="items">
-      <NDivider title-placement="left">{{ t('terminal.currentItems') }}</NDivider>
-      <NText v-if="!items.length" depth="3">{{ t('empty.noRecords') }}</NText>
-      <NFlex v-for="i in items" :key="i.item_id" vertical :size="6" :data-item="i.item_id">
-        <NFlex :size="8" align="center" :wrap="true">
-          <NButton text type="primary" :size="size" @click="emit('open', i.item_id)">{{ i.label }}</NButton>
+    <SectionPanel :title="t('terminal.currentItems')" variant="subtle" data-testid="items">
+      <EmptyState v-if="!items.length" compact :title="t('empty.noRecords')" />
+      <div v-for="i in items" :key="i.item_id" class="stack" :data-item="i.item_id">
+        <div class="line">
+          <ActionButton text type="primary" :size="size" :label="i.label" :hint="t('common.actions.openPassport')" @click="emit('open', i.item_id)" />
           <StatusTag v-if="i.row" axis="position" :code="i.row.status.position" />
           <SummaryTag v-if="i.row && i.row.status.summary !== 'in_process'" :code="i.row.status.summary" />
-        </NFlex>
+        </div>
         <IsolatorMoveConfirm :item-id="i.item_id" :can-act="canAct && !!workplace" :density="density" />
-      </NFlex>
-    </section>
+      </div>
+    </SectionPanel>
 
     <!-- Сообщить об отклонении и запросить контроль. -->
-    <section data-testid="deviation">
-      <NDivider title-placement="left">{{ t('terminal.reportDeviation') }}</NDivider>
-      <form @submit.prevent="submitDeviation">
-        <NFlex vertical :size="8">
-          <NSelect v-if="itemChoice.length" v-model:value="deviationItem" :options="itemChoice" :size="size" clearable :placeholder="t('common.words.item')" data-testid="deviation-item" />
+    <SectionPanel :title="t('terminal.reportDeviation')" variant="subtle" data-testid="deviation">
+      <form class="stack" @submit.prevent="submitDeviation">
+        <FormField v-if="itemChoice.length" :label="t('common.words.item')">
+          <NSelect v-model:value="deviationItem" :options="itemChoice" :size="size" clearable :placeholder="t('common.words.item')" data-testid="deviation-item" />
+        </FormField>
+        <FormField :label="t('common.words.comment')" required>
           <NInput
             v-model:value="deviationText"
             type="textarea"
@@ -197,24 +204,63 @@ function submitDeviation(): void {
             :placeholder="t('widgets.shopFloor.terminal.deviationPlaceholder')"
             data-testid="deviation-text"
           />
-          <NButton type="warning" secondary :size="size" block attr-type="submit" :disabled="actionsOff || !deviationText.trim()" data-testid="report-deviation">
-            {{ t('terminal.reportDeviation') }}
-          </NButton>
-        </NFlex>
+        </FormField>
+        <ActionButton
+          type="warning"
+          secondary
+          :size="size"
+          block
+          attr-type="submit"
+          :disabled="actionsOff || !deviationText.trim()"
+          :label="t('terminal.reportDeviation')"
+          data-testid="report-deviation"
+        />
       </form>
-    </section>
+    </SectionPanel>
 
-    <section data-testid="inspection">
-      <NDivider title-placement="left">{{ t('terminal.requestInspection') }}</NDivider>
-      <NFlex vertical :size="8">
-        <NSelect v-if="itemChoice.length" v-model:value="inspectionItem" :options="itemChoice" :size="size" clearable :placeholder="t('common.words.item')" data-testid="inspection-item" />
-        <NButton secondary type="primary" :size="size" block :disabled="actionsOff || !stepKey" data-testid="request-inspection" @click="emit('inspection', inspectionItem)">
-          {{ t('terminal.requestInspection') }}
-        </NButton>
-      </NFlex>
-    </section>
+    <SectionPanel :title="t('terminal.requestInspection')" variant="subtle" data-testid="inspection">
+      <FormField v-if="itemChoice.length" :label="t('common.words.item')">
+        <NSelect v-model:value="inspectionItem" :options="itemChoice" :size="size" clearable :placeholder="t('common.words.item')" data-testid="inspection-item" />
+      </FormField>
+      <ActionButton
+        secondary
+        type="primary"
+        :size="size"
+        block
+        :disabled="actionsOff || !stepKey"
+        :label="t('terminal.requestInspection')"
+        data-testid="request-inspection"
+        @click="emit('inspection', inspectionItem)"
+      />
+    </SectionPanel>
 
     <NAlert v-if="result" type="success" :bordered="false" data-testid="result">{{ result }}</NAlert>
     <NAlert v-if="error" type="error" :bordered="false" data-testid="command-error">{{ problemText(error) }}</NAlert>
-  </NFlex>
+  </div>
 </template>
+
+<style scoped>
+.terminal,
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ant-gap);
+  min-width: 0;
+}
+
+.stack {
+  gap: var(--ant-space-2);
+}
+
+.line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ant-space-1) var(--ant-space-2);
+  align-items: center;
+  min-width: 0;
+}
+
+.over {
+  color: var(--ant-status-danger-text);
+}
+</style>

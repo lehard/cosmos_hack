@@ -6,9 +6,10 @@
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NButton, NFlex, NTag, NText } from 'naive-ui'
+import { NTag } from 'naive-ui'
 import { CONTROLLER_ASSIGNMENT_TEMPLATE, useWorkplaceDocuments, type DocumentSummary } from '@/entities/workplace'
 import { codeToKey } from '@/shared/i18n'
+import { ActionButton } from '@/shared/ui'
 import { isControllerApproval } from '../model/shift'
 
 const props = withDefaults(defineProps<{ workplaceId: string; canAct?: boolean; size?: 'small' | 'medium' | 'large' }>(), { canAct: true, size: 'medium' })
@@ -22,13 +23,36 @@ const tagType = (s: DocumentSummary['status']) => (s === 'route_closed' ? 'succe
 </script>
 
 <template>
-  <NFlex v-if="docs.length" vertical :size="4" data-testid="approvals">
-    <NFlex v-for="doc in docs" :key="doc.document_id" :size="6" align="center" :wrap="true" :data-document="doc.document_id" :data-status="doc.status">
+  <div v-if="docs.length" class="approvals" data-testid="approvals">
+    <div v-for="doc in docs" :key="doc.document_id" class="line" :data-document="doc.document_id" :data-status="doc.status">
       <NTag size="small" :bordered="false" :type="tagType(doc.status)">{{ t(`widgets.shopFloor.shift.approvalStatus.${codeToKey(doc.status)}`) }}</NTag>
-      <NText depth="3">{{ doc.document_id }}<template v-if="doc.closed_at"> · {{ d(new Date(doc.closed_at), 'dateTime') }}</template></NText>
-      <NButton v-if="doc.status === 'route_closed' && canAct" :size="size" secondary type="primary" data-testid="use-approval" @click="emit('use', doc)">
-        {{ t('widgets.shopFloor.shift.assignByApproval') }}
-      </NButton>
-    </NFlex>
-  </NFlex>
+      <span class="ant-muted ant-wrap">{{ doc.document_id }}<template v-if="doc.closed_at"> · {{ d(new Date(doc.closed_at), 'dateTime') }}</template></span>
+      <ActionButton
+        v-if="doc.status === 'route_closed' && canAct"
+        :size="size"
+        secondary
+        type="primary"
+        :label="t('widgets.shopFloor.shift.assignByApproval')"
+        data-testid="use-approval"
+        @click="emit('use', doc)"
+      />
+    </div>
+  </div>
 </template>
+
+<style scoped>
+.approvals {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ant-space-1);
+  min-width: 0;
+}
+
+.line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ant-space-1) var(--ant-space-2);
+  align-items: center;
+  min-width: 0;
+}
+</style>

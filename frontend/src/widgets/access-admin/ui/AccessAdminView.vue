@@ -13,6 +13,7 @@ import type { AccessPerson, AccessRoleList, AccessStamp, GrantPolicyKind } from 
 import { ACCESS_SECTIONS, activationReady, grantReady as isReady, PASSWORD_MIN, type AccessSection, type ActivationDraft, type GrantDraft } from '../model/draft'
 import type { Density } from '@/shared/config/widget'
 import { useProblemText } from '@/shared/i18n/problem'
+import { ActionButton, FormField } from '@/shared/ui'
 
 const props = withDefaults(
   defineProps<{
@@ -156,48 +157,48 @@ function confirmRevoke(p: AccessPerson): void {
               {{ t(`widgets.admin.access.accountStatus.${p.account_status}`) }}
               <template v-if="canActivate(p)">
                 <form v-if="activating === p.person_id" class="activation" data-testid="activation" @submit.prevent="confirmActivation(p)">
-                  <label>
-                    <span>{{ t('access.username') }}</span>
+                  <FormField :label="t('access.username')" required>
                     <NInput v-model:value="activation.login" size="small" data-testid="activation-login" />
-                  </label>
-                  <label>
-                    <span>{{ t('access.password') }}</span>
+                  </FormField>
+                  <FormField
+                    :label="t('access.password')"
+                    :required="p.account_status !== 'pending'"
+                    :hint="
+                      p.account_status === 'pending'
+                        ? t('widgets.admin.access.activation.passwordByRequest', { min: PASSWORD_MIN })
+                        : t('widgets.admin.access.activation.passwordRequired', { min: PASSWORD_MIN })
+                    "
+                  >
                     <NInput
                       v-model:value="activation.password"
                       type="password"
                       show-password-on="click"
                       size="small"
-                      autocomplete="new-password"
                       :input-props="{ autocomplete: 'new-password' }"
                       data-testid="activation-password"
                     />
-                    <span class="muted">{{
-                      p.account_status === 'pending'
-                        ? t('widgets.admin.access.activation.passwordByRequest', { min: PASSWORD_MIN })
-                        : t('widgets.admin.access.activation.passwordRequired', { min: PASSWORD_MIN })
-                    }}</span>
-                  </label>
-                  <label>
-                    <span>{{ t('widgets.admin.access.activation.role') }}</span>
+                  </FormField>
+                  <FormField :label="t('widgets.admin.access.activation.role')">
                     <NSelect v-if="roleOptions.length" v-model:value="activation.initial_role_id" size="small" filterable clearable :options="roleOptions" data-testid="activation-role" />
                     <NInput v-else v-model:value="activation.initial_role_id" size="small" data-testid="activation-role" />
-                  </label>
-                  <label>
-                    <span>{{ t('access.scope') }} <span class="muted">({{ t('access.scopeLevels') }})</span></span>
+                  </FormField>
+                  <FormField :label="t('access.scope')" :hint="`${t('access.scopeLevels')}. ${t('widgets.admin.access.activation.scopeHint')}`">
                     <NInput v-model:value="activation.scope" size="small" data-testid="activation-scope" />
-                    <span class="muted">{{ t('widgets.admin.access.activation.scopeHint') }}</span>
-                  </label>
+                  </FormField>
                   <div class="inline">
-                    <NButton size="tiny" type="primary" attr-type="submit" :disabled="!canAct || busy || !activationReady(activation, p.account_status === 'pending')" data-testid="confirm-activation">
-                      {{ t('widgets.admin.access.activation.submit') }}
-                    </NButton>
-                    <NButton size="tiny" quaternary @click="activating = null">{{ t('common.actions.cancel') }}</NButton>
+                    <ActionButton
+                      size="small"
+                      type="primary"
+                      attr-type="submit"
+                      :disabled="!canAct || busy || !activationReady(activation, p.account_status === 'pending')"
+                      :label="t('widgets.admin.access.activation.submit')"
+                      data-testid="confirm-activation"
+                    />
+                    <ActionButton size="small" quaternary :label="t('common.actions.cancel')" @click="activating = null" />
                   </div>
                 </form>
                 <div v-else>
-                  <NButton size="tiny" secondary :disabled="!canAct || busy" data-testid="activate" @click="startActivation(p)">
-                    {{ t('widgets.admin.access.activation.open') }}
-                  </NButton>
+                  <ActionButton size="tiny" secondary :disabled="!canAct || busy" :label="t('widgets.admin.access.activation.open')" data-testid="activate" @click="startActivation(p)" />
                 </div>
               </template>
             </td>
@@ -351,15 +352,9 @@ th {
 .activation {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  max-width: 320px;
-  margin-top: 4px;
-}
-
-.activation label {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+  gap: var(--ant-space-2);
+  max-width: var(--ant-w-side-min);
+  margin-top: var(--ant-space-1);
 }
 
 .grant-form {

@@ -5,15 +5,18 @@
  * квалификация, на месте ли. Исполнителя назначает мастер — только допущенного
  * по квалификации (окончательно решает сервер); контролёра — запросом с
  * согласованием начальника ОТК, назначение — по закрытому маршруту документа.
+ * Элементы и токены «Главного»: посты — панели секций, действия — ToolBar и
+ * ActionButton.
  */
 import { computed, reactive } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NAlert, NButton, NDivider, NEllipsis, NFlex, NInput, NList, NListItem, NSelect, NTag, NText } from 'naive-ui'
+import { NAlert, NInput, NSelect, NTag } from 'naive-ui'
 import type { RefShift } from '@/entities/reference'
 import { PRESENCE_TEXT, presenceTagType, type AccessAssignment, type DocumentSummary } from '@/entities/workplace'
 import type { Density } from '@/shared/config/widget'
 import { naiveSizeOf } from '@/shared/config/widget'
 import { useProblemText } from '@/shared/i18n/problem'
+import { ActionButton, EmptyState, SectionPanel, ToolBar } from '@/shared/ui'
 import { shiftLabel, type AssigneeRole, type Candidate, type ShiftPostRow } from '../model/shift'
 import PostApprovals from './PostApprovals.vue'
 
@@ -48,7 +51,6 @@ const emit = defineEmits<{
 const { t, d } = useI18n()
 const problemText = useProblemText()
 const size = computed(() => naiveSizeOf(props.density))
-const tagSize = computed(() => (props.density === 'large' ? 'medium' : 'small'))
 const time = (iso: string) => d(new Date(iso), 'time')
 
 const shiftOptions = computed(() => (props.shifts ?? []).map((s) => ({ label: shiftLabel(s, time), value: s.shift_id })))
@@ -82,144 +84,174 @@ function confirmClear(a: AccessAssignment): void {
 </script>
 
 <template>
-  <NFlex vertical :size="12" data-testid="shift-view">
-    <NFlex :size="8" align="center" :wrap="true">
-      <NText depth="3">
+  <div class="shift" data-testid="shift-view">
+    <ToolBar>
+      <span class="ant-muted ant-wrap">
         {{ workshopName ? t('widgets.shopFloor.station.workshop', { name: workshopName }) : t('widgets.shopFloor.station.noWorkshop') }}
-      </NText>
-      <NText depth="3">·</NText>
-      <NText>{{ t('common.words.shift') }}:</NText>
-      <NSelect
-        v-if="shiftOptions.length"
-        :value="shiftId"
-        :options="shiftOptions"
-        :size="size"
-        :consistent-menu-width="false"
-        style="min-width: 220px; max-width: 100%"
-        data-testid="shift"
-        @update:value="(v: string) => emit('update:shiftId', v)"
-      />
-      <NText v-else-if="shiftsError" type="error">{{ problemText(shiftsError) }}</NText>
-      <NText v-else depth="3">{{ shiftId ?? '—' }}</NText>
-    </NFlex>
-    <NText depth="3">{{ t('access.onlyQualified') }} · {{ t('widgets.shopFloor.shift.controllerRule') }}</NText>
+      </span>
+      <template #end>
+        <span>{{ t('common.words.shift') }}:</span>
+        <NSelect
+          v-if="shiftOptions.length"
+          class="picker"
+          :value="shiftId"
+          :options="shiftOptions"
+          :size="size"
+          :consistent-menu-width="false"
+          data-testid="shift"
+          @update:value="(v: string) => emit('update:shiftId', v)"
+        />
+        <span v-else-if="shiftsError" class="error ant-wrap">{{ problemText(shiftsError) }}</span>
+        <span v-else class="ant-muted">{{ shiftId ?? '—' }}</span>
+      </template>
+    </ToolBar>
+    <p class="ant-muted ant-wrap">{{ t('access.onlyQualified') }} · {{ t('widgets.shopFloor.shift.controllerRule') }}</p>
     <NAlert v-if="assignmentsError" type="warning" :bordered="false" data-testid="assignments-error">
       {{ t('widgets.shopFloor.shift.planUnavailable') }}: {{ problemText(assignmentsError) }}
     </NAlert>
 
-    <NDivider title-placement="left">{{ t('access.shiftsAndAssignments') }}</NDivider>
-    <NText v-if="rowsError && !rows" type="error">{{ problemText(rowsError) }}</NText>
-    <NText v-else-if="rows && !rows.length" depth="3">{{ t('empty.noRecords') }}</NText>
-    <NList v-else-if="rows" :show-divider="true">
-      <NListItem v-for="r in rows" :key="r.post.workplace_id" :data-workplace="r.post.workplace_id">
-        <NFlex vertical :size="6">
-          <NFlex :size="8" align="center" :wrap="true">
-            <NText strong><NEllipsis :tooltip="{ width: 360 }">{{ r.post.station }}</NEllipsis></NText>
-            <NText depth="3">{{ t('widgets.shopFloor.shift.fact') }}:</NText>
-            <NText>{{ r.post.assigned?.display ?? t('liveMap.posts.notAssigned') }}</NText>
-            <NTag :size="tagSize" :bordered="false" :type="presenceTagType(r.post.presence)">{{ t(PRESENCE_TEXT[r.post.presence]) }}</NTag>
-          </NFlex>
+    <SectionPanel :title="t('access.shiftsAndAssignments')" variant="plain">
+      <NAlert v-if="rowsError && !rows" type="error" :bordered="false">{{ problemText(rowsError) }}</NAlert>
+      <EmptyState v-else-if="rows && !rows.length" compact :title="t('empty.noRecords')" />
+      <div v-else-if="rows" class="posts">
+        <SectionPanel v-for="r in rows" :key="r.post.workplace_id" :title="r.post.station" variant="subtle" :data-workplace="r.post.workplace_id">
+          <template #extra>
+            <span class="ant-muted">{{ t('widgets.shopFloor.shift.fact') }}:</span>
+            <span class="ant-wrap">{{ r.post.assigned?.display ?? t('liveMap.posts.notAssigned') }}</span>
+            <NTag size="small" :bordered="false" :type="presenceTagType(r.post.presence)"><span class="ant-wrap">{{ t(PRESENCE_TEXT[r.post.presence]) }}</span></NTag>
+          </template>
 
           <!-- Исполнители: план смены. -->
-          <NFlex :size="6" align="center" :wrap="true" data-testid="performers">
-            <NText depth="3">{{ t('widgets.shopFloor.shift.performer') }}:</NText>
-            <NText v-if="!r.performers.length" depth="3">{{ t('liveMap.posts.notAssigned') }}</NText>
-            <NFlex v-for="a in r.performers" :key="clearKey(a)" :size="6" align="center" :wrap="true" :data-assigned="a.person_id">
-              <NText>{{ personName(a.person_id) }}</NText>
-              <NTag :size="tagSize" :bordered="false" :type="a.admitted ? 'success' : 'warning'">
+          <div class="line" data-testid="performers">
+            <span class="ant-muted">{{ t('widgets.shopFloor.shift.performer') }}:</span>
+            <span v-if="!r.performers.length" class="ant-muted">{{ t('liveMap.posts.notAssigned') }}</span>
+            <div v-for="a in r.performers" :key="clearKey(a)" class="line" :data-assigned="a.person_id">
+              <span class="ant-wrap">{{ personName(a.person_id) }}</span>
+              <NTag size="small" :bordered="false" :type="a.admitted ? 'success' : 'warning'">
                 {{ t(a.admitted ? 'widgets.shopFloor.people.admitted' : 'widgets.shopFloor.people.notAdmitted') }}
               </NTag>
-              <NTag v-if="!a.qualification_ok" :size="tagSize" :bordered="false" type="error">{{ t('widgets.shopFloor.people.qualificationNotOk') }}</NTag>
+              <NTag v-if="!a.qualification_ok" size="small" :bordered="false" type="error">{{ t('widgets.shopFloor.people.qualificationNotOk') }}</NTag>
               <template v-if="canAct">
-                <NButton v-if="clearing[clearKey(a)] === undefined" :size="size" quaternary data-testid="clear" @click="clearing[clearKey(a)] = ''">
-                  {{ t('widgets.shopFloor.shift.clear') }}
-                </NButton>
-                <form v-else @submit.prevent="confirmClear(a)">
-                  <NFlex :size="6" align="center" :wrap="true">
-                    <NInput v-model:value="clearReason[clearKey(a)]" :size="size" :placeholder="t('widgets.shopFloor.shift.clearReason')" data-testid="clear-reason" />
-                    <NButton :size="size" type="warning" attr-type="submit" :disabled="busy || !(clearReason[clearKey(a)] ?? '').trim()" data-testid="confirm-clear">
-                      {{ t('widgets.shopFloor.shift.clear') }}
-                    </NButton>
-                  </NFlex>
+                <ActionButton v-if="clearing[clearKey(a)] === undefined" :size="size" quaternary :label="t('widgets.shopFloor.shift.clear')" data-testid="clear" @click="clearing[clearKey(a)] = ''" />
+                <form v-else class="line" @submit.prevent="confirmClear(a)">
+                  <NInput v-model:value="clearReason[clearKey(a)]" class="grow" :size="size" :placeholder="t('widgets.shopFloor.shift.clearReason')" data-testid="clear-reason" />
+                  <ActionButton
+                    :size="size"
+                    type="warning"
+                    attr-type="submit"
+                    :disabled="busy || !(clearReason[clearKey(a)] ?? '').trim()"
+                    :label="t('widgets.shopFloor.shift.clear')"
+                    data-testid="confirm-clear"
+                  />
                 </form>
               </template>
-            </NFlex>
-          </NFlex>
-          <NFlex v-if="canAct" :size="6" align="center" :wrap="true">
+            </div>
+          </div>
+          <ToolBar v-if="canAct">
             <NSelect
               v-model:value="pick[r.post.workplace_id]"
+              class="picker"
               :size="size"
               :options="performerOptions"
               :placeholder="t('access.assignToPost')"
               filterable
               clearable
               :consistent-menu-width="false"
-              style="min-width: 220px; max-width: 100%; flex: 1"
               data-testid="performer-pick"
             />
-            <NButton
+            <ActionButton
               :size="size"
               type="primary"
               :disabled="busy || !pick[r.post.workplace_id] || !shiftId"
+              :label="t('access.assignToPost')"
               data-testid="assign-performer"
               @click="emit('assign', r.post.workplace_id, 'performer', pick[r.post.workplace_id]!, null)"
-            >
-              {{ t('access.assignToPost') }}
-            </NButton>
-          </NFlex>
+            />
+          </ToolBar>
 
           <!-- Контролёр: запрос мастера → согласование начальника ОТК (PRD §11.18). -->
-          <NFlex :size="6" align="center" :wrap="true" data-testid="inspectors">
-            <NText depth="3">{{ t('widgets.shopFloor.shift.inspector') }}:</NText>
-            <NText v-if="!r.inspectors.length" depth="3">{{ t('liveMap.posts.notAssigned') }}</NText>
-            <NFlex v-for="a in r.inspectors" :key="clearKey(a)" :size="6" align="center" :wrap="true" :data-assigned="a.person_id">
-              <NText>{{ personName(a.person_id) }}</NText>
-              <NText v-if="a.approval_document_id" depth="3">{{ t('widgets.shopFloor.shift.byDocument', { doc: a.approval_document_id }) }}</NText>
-            </NFlex>
-          </NFlex>
+          <div class="line" data-testid="inspectors">
+            <span class="ant-muted">{{ t('widgets.shopFloor.shift.inspector') }}:</span>
+            <span v-if="!r.inspectors.length" class="ant-muted">{{ t('liveMap.posts.notAssigned') }}</span>
+            <div v-for="a in r.inspectors" :key="clearKey(a)" class="line" :data-assigned="a.person_id">
+              <span class="ant-wrap">{{ personName(a.person_id) }}</span>
+              <span v-if="a.approval_document_id" class="ant-muted ant-wrap">{{ t('widgets.shopFloor.shift.byDocument', { doc: a.approval_document_id }) }}</span>
+            </div>
+          </div>
           <PostApprovals :workplace-id="r.post.workplace_id" :can-act="canAct" :size="size" @use="(doc) => (approval[r.post.workplace_id] = doc)" />
-          <NFlex v-if="canAct" :size="6" align="center" :wrap="true">
+          <ToolBar v-if="canAct">
             <NSelect
               v-model:value="inspectorPick[r.post.workplace_id]"
+              class="picker"
               :size="size"
               :options="inspectorOptions"
               :placeholder="t('widgets.shopFloor.shift.inspectorPick')"
               filterable
               clearable
               :consistent-menu-width="false"
-              style="min-width: 220px; max-width: 100%; flex: 1"
               data-testid="inspector-pick"
             />
-            <template v-if="approval[r.post.workplace_id]">
-              <NButton
-                :size="size"
-                type="primary"
-                :disabled="busy || !inspectorPick[r.post.workplace_id] || !shiftId"
-                data-testid="assign-inspector"
-                @click="emit('assign', r.post.workplace_id, 'quality_inspector', inspectorPick[r.post.workplace_id]!, approval[r.post.workplace_id]!.document_id)"
-              >
-                {{ t('widgets.shopFloor.shift.assignByDocument', { doc: approval[r.post.workplace_id]!.document_id }) }}
-              </NButton>
-            </template>
+            <ActionButton
+              v-if="approval[r.post.workplace_id]"
+              :size="size"
+              type="primary"
+              :disabled="busy || !inspectorPick[r.post.workplace_id] || !shiftId"
+              :label="t('widgets.shopFloor.shift.assignByDocument', { doc: approval[r.post.workplace_id]!.document_id })"
+              data-testid="assign-inspector"
+              @click="emit('assign', r.post.workplace_id, 'quality_inspector', inspectorPick[r.post.workplace_id]!, approval[r.post.workplace_id]!.document_id)"
+            />
             <template v-else>
-              <NInput v-model:value="comment[r.post.workplace_id]" :size="size" :placeholder="t('common.words.comment')" style="flex: 1; min-width: 160px" data-testid="request-comment" />
-              <NButton
+              <NInput v-model:value="comment[r.post.workplace_id]" class="grow" :size="size" :placeholder="t('common.words.comment')" data-testid="request-comment" />
+              <ActionButton
                 :size="size"
                 secondary
                 type="primary"
                 :disabled="busy || !inspectorPick[r.post.workplace_id] || !shiftId"
+                :label="t('widgets.shopFloor.shift.requestInspector')"
                 data-testid="request-inspector"
                 @click="emit('requestController', r.post.workplace_id, inspectorPick[r.post.workplace_id]!, (comment[r.post.workplace_id] ?? '').trim())"
-              >
-                <NEllipsis>{{ t('widgets.shopFloor.shift.requestInspector') }}</NEllipsis>
-              </NButton>
+              />
             </template>
-          </NFlex>
-        </NFlex>
-      </NListItem>
-    </NList>
+          </ToolBar>
+        </SectionPanel>
+      </div>
+    </SectionPanel>
 
     <NAlert v-if="result" type="success" :bordered="false" data-testid="result">{{ result }}</NAlert>
     <NAlert v-if="error" type="error" :bordered="false" data-testid="command-error">{{ problemText(error) }}</NAlert>
-  </NFlex>
+  </div>
 </template>
+
+<style scoped>
+.shift,
+.posts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ant-gap);
+  min-width: 0;
+}
+
+.line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ant-space-1) var(--ant-space-2);
+  align-items: center;
+  min-width: 0;
+}
+
+/* Список выбора растягивается по строке и не уже боковой панели стола. */
+.picker {
+  flex: 1 1 var(--ant-w-side-min);
+  min-width: 0;
+  max-width: var(--ant-w-side);
+}
+
+.grow {
+  flex: 1 1 var(--ant-w-queue-min);
+  min-width: 0;
+}
+
+.error {
+  color: var(--ant-status-danger-text);
+}
+</style>

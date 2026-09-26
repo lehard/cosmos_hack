@@ -7,10 +7,11 @@
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NButton, NFlex, NTag, NText } from 'naive-ui'
+import { NTag } from 'naive-ui'
 import { useRunProfile } from '@/entities/equipment'
 import { elapsedMinutes, normText, overNorm, type ProcessStep } from '@/entities/live-map'
 import { formatMinutes } from '@/shared/lib/duration'
+import { ActionButton } from '@/shared/ui'
 
 const props = defineProps<{
   runId: string
@@ -28,14 +29,26 @@ const over = computed(() => (step.value ? overNorm(minutes.value, step.value.nor
 </script>
 
 <template>
-  <NFlex v-if="run" :size="6" align="center" :wrap="true" :data-run="runId" :data-over="over || undefined">
-    <NText>{{ step?.name ?? run.step_key }}</NText>
-    <NText v-if="minutes !== null" :type="over ? 'error' : undefined">
-      {{ t('widgets.shopFloor.station.runFor', { time: formatMinutes(t, minutes) }) }}
-    </NText>
-    <NText depth="3">{{ step ? normText(t, step.norm) : t('widgets.shopFloor.station.noNorm') }}</NText>
+  <div v-if="run" class="run" :data-run="runId" :data-over="over || undefined">
+    <span class="ant-wrap">{{ step?.name ?? run.step_key }}</span>
+    <span v-if="minutes !== null" :class="{ over }">{{ t('widgets.shopFloor.station.runFor', { time: formatMinutes(t, minutes) }) }}</span>
+    <span class="ant-muted">{{ normText(t, step?.norm) }}</span>
     <NTag v-if="over" size="small" type="error" :bordered="false">{{ t('widgets.shopFloor.station.overNorm') }}</NTag>
-    <NButton v-if="run.item_id" text type="primary" size="small" @click="emit('item', run.item_id)">{{ run.item_id }}</NButton>
-  </NFlex>
-  <NText v-else-if="profile.error.value" depth="3">{{ t('empty.noDataUnknown') }}</NText>
+    <ActionButton v-if="run.item_id" text type="primary" size="small" :label="run.item_id" :hint="t('common.actions.openPassport')" @click="emit('item', run.item_id)" />
+  </div>
+  <span v-else-if="profile.error.value" class="ant-muted">{{ t('empty.noDataUnknown') }}</span>
 </template>
+
+<style scoped>
+.run {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ant-space-1) var(--ant-space-2);
+  align-items: center;
+  min-width: 0;
+}
+
+.over {
+  color: var(--ant-status-danger-text);
+}
+</style>

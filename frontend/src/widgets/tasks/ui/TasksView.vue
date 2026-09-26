@@ -6,7 +6,7 @@
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NCollapse, NCollapseItem, NDivider, NEllipsis, NFlex, NList, NListItem, NTag, NText, NButton } from 'naive-ui'
+import { NAlert, NCollapse, NCollapseItem, NTag } from 'naive-ui'
 import type { NotificationSummary } from '@/entities/notification'
 import type { TaskEntry } from '@/entities/task'
 import { TaskInbox } from '@/features/task-actions'
@@ -14,6 +14,7 @@ import type { DrillRef } from '@/shared/model/drill'
 import type { Density } from '@/shared/config/widget'
 import { naiveSizeOf } from '@/shared/config/widget'
 import { useProblemText } from '@/shared/i18n/problem'
+import { ActionButton, EmptyState, SectionPanel } from '@/shared/ui'
 import type { NoticeRow, TaskSection } from '../model/slice'
 
 const props = withDefaults(
@@ -48,57 +49,96 @@ const KINDS = [
 </script>
 
 <template>
-  <NFlex vertical :size="12" data-testid="tasks-view">
-    <NFlex v-if="summary?.by_kind" :size="8" :wrap="true" data-testid="summary">
-      <NTag v-for="k in KINDS" :key="k.key" :size="size" :bordered="false" :type="summary.by_kind[k.key] ? k.type : 'default'" :data-kind="k.key">
+  <div class="tasks" data-testid="tasks-view">
+    <div v-if="summary?.by_kind" class="line" data-testid="summary">
+      <NTag v-for="k in KINDS" :key="k.key" size="small" :bordered="false" :type="summary.by_kind[k.key] ? k.type : 'default'" :data-kind="k.key">
         {{ t(k.text) }}: {{ summary.by_kind[k.key] }}
       </NTag>
-    </NFlex>
+    </div>
 
-    <section v-if="sections.includes('task')" data-testid="section-tasks">
-      <NDivider title-placement="left">{{ t('desks.tasks') }}</NDivider>
-      <NText v-if="tasksError && !open" type="error">{{ problemText(tasksError) }}</NText>
+    <SectionPanel v-if="sections.includes('task')" :title="t('desks.tasks')" variant="plain" data-testid="section-tasks">
+      <NAlert v-if="tasksError && !open" type="error" :bordered="false">{{ problemText(tasksError) }}</NAlert>
       <TaskInbox v-else-if="open" :tasks="open" :basis-seq="basisSeq" :can-act="canAct" :density="density" :can-open="canOpen" @open="(r) => emit('open', r)" />
       <NCollapse v-if="closed.length" data-testid="closed-tasks">
         <NCollapseItem :title="t('widgets.shopFloor.tasks.closed', { n: closed.length })" name="closed">
           <TaskInbox :tasks="closed" :basis-seq="basisSeq" :can-act="false" :density="density" :can-open="canOpen" @open="(r) => emit('open', r)" />
         </NCollapseItem>
       </NCollapse>
-    </section>
+    </SectionPanel>
 
-    <section v-if="sections.includes('escalation')" data-testid="section-escalations">
-      <NDivider title-placement="left">{{ t('widgets.shopFloor.tasks.escalations') }}</NDivider>
-      <NText v-if="escalationsError && !escalations" type="error">{{ problemText(escalationsError) }}</NText>
-      <NText v-else-if="escalations && !escalations.length" depth="3">{{ t('empty.queueEmpty') }}</NText>
-      <NList v-else-if="escalations" :show-divider="true">
-        <NListItem v-for="r in escalations" :key="r.id" :data-escalation="r.id">
-          <NFlex vertical :size="4">
-            <NText :type="r.severe ? 'error' : 'warning'"><NEllipsis :line-clamp="3" :tooltip="{ width: 360 }">{{ r.text }}</NEllipsis></NText>
-            <div v-if="r.ref && canOpen(r.ref)">
-              <NButton text type="primary" :size="size" @click="emit('open', r.ref)">{{ t('common.actions.open') }} · {{ r.ref.id }}</NButton>
-            </div>
-          </NFlex>
-        </NListItem>
-      </NList>
-    </section>
+    <SectionPanel v-if="sections.includes('escalation')" :title="t('widgets.shopFloor.tasks.escalations')" variant="plain" data-testid="section-escalations">
+      <NAlert v-if="escalationsError && !escalations" type="error" :bordered="false">{{ problemText(escalationsError) }}</NAlert>
+      <EmptyState v-else-if="escalations && !escalations.length" compact :title="t('empty.queueEmpty')" />
+      <ul v-else-if="escalations" class="notices">
+        <li v-for="r in escalations" :key="r.id" class="notice" :data-escalation="r.id">
+          <p class="ant-clamp-2" :class="r.severe ? 'severe' : 'mild'" :title="r.text">{{ r.text }}</p>
+          <div v-if="r.ref && canOpen(r.ref)">
+            <ActionButton text type="primary" :size="size" :label="`${t('common.actions.open')} · ${r.ref.id}`" @click="emit('open', r.ref)" />
+          </div>
+        </li>
+      </ul>
+    </SectionPanel>
 
-    <section v-if="sections.includes('alarm')" data-testid="section-alarms">
-      <NDivider title-placement="left">{{ t('liveMap.alerts.title') }}</NDivider>
-      <NText v-if="alertsError && !alerts" type="error">{{ problemText(alertsError) }}</NText>
-      <NText v-else-if="alerts && !alerts.length" depth="3">{{ t('empty.noAlerts') }}</NText>
-      <NList v-else-if="alerts" :show-divider="true">
-        <NListItem v-for="r in alerts" :key="r.id" :data-alert="r.id">
-          <NFlex vertical :size="4">
-            <NFlex :size="8" align="baseline" :wrap="false">
-              <NText v-if="r.time" depth="3">{{ r.time }}</NText>
-              <NText :type="r.severe ? 'error' : 'warning'"><NEllipsis :line-clamp="3" :tooltip="{ width: 360 }">{{ r.text }}</NEllipsis></NText>
-            </NFlex>
-            <div v-if="r.ref && canOpen(r.ref)">
-              <NButton text type="primary" :size="size" @click="emit('open', r.ref)">{{ t('common.actions.open') }} · {{ r.ref.id }}</NButton>
-            </div>
-          </NFlex>
-        </NListItem>
-      </NList>
-    </section>
-  </NFlex>
+    <SectionPanel v-if="sections.includes('alarm')" :title="t('liveMap.alerts.title')" variant="plain" data-testid="section-alarms">
+      <NAlert v-if="alertsError && !alerts" type="error" :bordered="false">{{ problemText(alertsError) }}</NAlert>
+      <EmptyState v-else-if="alerts && !alerts.length" compact :title="t('empty.noAlerts')" />
+      <ul v-else-if="alerts" class="notices">
+        <li v-for="r in alerts" :key="r.id" class="notice" :data-alert="r.id">
+          <p class="ant-clamp-2" :title="r.text">
+            <span v-if="r.time" class="ant-muted">{{ r.time }} · </span><span :class="r.severe ? 'severe' : 'mild'">{{ r.text }}</span>
+          </p>
+          <div v-if="r.ref && canOpen(r.ref)">
+            <ActionButton text type="primary" :size="size" :label="`${t('common.actions.open')} · ${r.ref.id}`" @click="emit('open', r.ref)" />
+          </div>
+        </li>
+      </ul>
+    </SectionPanel>
+  </div>
 </template>
+
+<style scoped>
+.tasks {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ant-gap);
+  min-width: 0;
+}
+
+.line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ant-space-1) var(--ant-space-2);
+  align-items: center;
+  min-width: 0;
+}
+
+.notices {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.notice {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ant-space-1);
+  min-width: 0;
+  padding: var(--ant-space-2) 0;
+  border-bottom: 1px solid var(--ant-border);
+}
+
+.notice:last-child {
+  border-bottom: 0;
+}
+
+.severe {
+  color: var(--ant-status-danger-text);
+}
+
+.mild {
+  color: var(--ant-status-attention-text);
+}
+</style>

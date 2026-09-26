@@ -8,13 +8,14 @@
  */
 import { computed, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NAlert, NButton, NEllipsis, NFlex, NInput, NList, NListItem, NTag, NText } from 'naive-ui'
+import { NAlert, NInput, NTag } from 'naive-ui'
 import { useSession } from '@/entities/session'
 import { isIsolatorMoveTask, isOpenTask, taskNotificationKind, useAcknowledgeTask, type AcknowledgeTaskOutcome, type TaskEntry } from '@/entities/task'
 import type { DrillRef } from '@/shared/model/drill'
 import { naiveSizeOf, type Density } from '@/shared/config/widget'
 import { useProblemText } from '@/shared/i18n/problem'
 import { newCommandId } from '@/shared/lib/command-id'
+import { ActionButton, EmptyState } from '@/shared/ui'
 import IsolatorMoveConfirm from './IsolatorMoveConfirm.vue'
 
 const props = withDefaults(
@@ -36,7 +37,6 @@ const problemText = useProblemText()
 const session = useSession()
 const ack = useAcknowledgeTask()
 const size = computed(() => naiveSizeOf(props.density))
-const small = computed(() => (props.density === 'large' ? 'medium' : 'small'))
 
 /** Раскрыто подтверждение перемещения у задачи. */
 const moving = ref<string | null>(null)
@@ -83,63 +83,126 @@ const kindKey = (task: TaskEntry) => (taskNotificationKind(task.kind) === 'decis
 </script>
 
 <template>
-  <NText v-if="!tasks.length" depth="3" data-testid="task-inbox">{{ t('empty.noTasks') }}</NText>
-  <NList v-else :show-divider="true" data-testid="task-inbox">
-    <NListItem
+  <EmptyState v-if="!tasks.length" compact :title="t('empty.noTasks')" data-testid="task-inbox" />
+  <ul v-else class="task-inbox" data-testid="task-inbox">
+    <li
       v-for="task in tasks"
       :key="task.task_id"
+      class="task"
       :data-task="task.task_id"
       :data-kind="task.kind"
       :data-state="task.state"
       :data-overdue="task.overdue || undefined"
     >
-      <NFlex vertical :size="4">
-        <NFlex :size="8" align="center" :wrap="true">
-          <NTag :size="small" :bordered="false" :type="taskNotificationKind(task.kind) === 'decision_request' ? 'info' : 'default'">{{ t(kindKey(task)) }}</NTag>
-          <NTag :size="small" :bordered="false" :type="task.state === 'open' ? (task.overdue ? 'error' : 'warning') : 'default'">{{ t(stateKey(task)) }}</NTag>
-          <NText v-if="task.due_at" depth="3">{{ t('common.words.deadline') }}: {{ time(task.due_at) }}</NText>
-        </NFlex>
-        <NEllipsis :line-clamp="2" :tooltip="{ width: 360 }" data-testid="task-title">{{ task.title }}</NEllipsis>
-        <div v-if="task.ref && canOpen(task.ref)">
-          <NButton text type="primary" :size="size" data-testid="open-ref" @click="emit('open', task.ref)">
-            {{ task.ref.entity === 'item' ? t('common.actions.openPassport') : t('common.actions.open') }} · {{ task.ref.id }}
-          </NButton>
-        </div>
+      <div class="line">
+        <NTag size="small" :bordered="false" :type="taskNotificationKind(task.kind) === 'decision_request' ? 'info' : 'default'">{{ t(kindKey(task)) }}</NTag>
+        <NTag size="small" :bordered="false" :type="task.state === 'open' ? (task.overdue ? 'error' : 'warning') : 'default'">{{ t(stateKey(task)) }}</NTag>
+        <span v-if="task.due_at" class="ant-muted">{{ t('common.words.deadline') }}: {{ time(task.due_at) }}</span>
+      </div>
+      <p class="ant-clamp-2" :title="task.title" data-testid="task-title">{{ task.title }}</p>
+      <div v-if="task.ref && canOpen(task.ref)" class="line">
+        <ActionButton
+          text
+          type="primary"
+          :size="size"
+          :label="`${task.ref.entity === 'item' ? t('common.actions.openPassport') : t('common.actions.open')} · ${task.ref.id}`"
+          data-testid="open-ref"
+          @click="emit('open', task.ref)"
+        />
+      </div>
 
-        <template v-if="isOpenTask(task) && canAct">
-          <template v-if="isIsolatorMoveTask(task)">
-            <NButton v-if="moving !== task.task_id" :size="size" type="primary" secondary data-testid="open-isolator-move" @click="moving = task.task_id">
-              <NEllipsis>{{ t('decisions.containment.confirmIsolatorMove') }}</NEllipsis>
-            </NButton>
-            <IsolatorMoveConfirm v-else :item-id="task.ref!.id" :density="density" :can-act="canAct" verbose />
-          </template>
-          <NFlex v-else :size="8" :wrap="true">
-            <NButton :size="size" type="primary" secondary :loading="ack.isPending.value && ack.variables.value?.task_id === task.task_id" data-testid="ack-done" @click="acknowledge(task, 'done')">
-              {{ t('widgets.shopFloor.tasks.outcome.done') }}
-            </NButton>
-            <NButton :size="size" secondary data-testid="ack-accepted" @click="acknowledge(task, 'accepted')">{{ t('widgets.shopFloor.tasks.outcome.accepted') }}</NButton>
-            <NButton :size="size" quaternary data-testid="ack-decline" @click="declining = declining === task.task_id ? null : task.task_id">
-              {{ t('widgets.shopFloor.tasks.outcome.declined') }}
-            </NButton>
-          </NFlex>
-          <form v-if="declining === task.task_id" @submit.prevent="acknowledge(task, 'declined')">
-            <NFlex :size="8" align="center" :wrap="true">
-              <NInput
-                v-model:value="notes[task.task_id]"
-                :size="size"
-                :placeholder="t('widgets.shopFloor.tasks.declineNote')"
-                :aria-label="t('widgets.shopFloor.tasks.declineNote')"
-                data-testid="decline-note"
-              />
-              <NButton :size="size" type="warning" attr-type="submit" :disabled="!(notes[task.task_id] ?? '').trim()" data-testid="confirm-decline">
-                {{ t('widgets.shopFloor.tasks.outcome.declined') }}
-              </NButton>
-            </NFlex>
-          </form>
+      <template v-if="isOpenTask(task) && canAct">
+        <template v-if="isIsolatorMoveTask(task)">
+          <div v-if="moving !== task.task_id" class="line">
+            <ActionButton :size="size" type="primary" secondary :label="t('decisions.containment.confirmIsolatorMove')" data-testid="open-isolator-move" @click="moving = task.task_id" />
+          </div>
+          <IsolatorMoveConfirm v-else :item-id="task.ref!.id" :density="density" :can-act="canAct" verbose />
         </template>
-        <NText v-if="acked[task.task_id]" type="success" data-testid="acked">{{ t('widgets.shopFloor.recorded', { seq: acked[task.task_id] }) }}</NText>
-        <NAlert v-if="lastError?.task === task.task_id" type="error" :bordered="false" data-testid="ack-error">{{ problemText(lastError.error) }}</NAlert>
-      </NFlex>
-    </NListItem>
-  </NList>
+        <div v-else class="line">
+          <ActionButton
+            :size="size"
+            type="primary"
+            secondary
+            :loading="ack.isPending.value && ack.variables.value?.task_id === task.task_id"
+            :label="t('widgets.shopFloor.tasks.outcome.done')"
+            data-testid="ack-done"
+            @click="acknowledge(task, 'done')"
+          />
+          <ActionButton :size="size" secondary :label="t('widgets.shopFloor.tasks.outcome.accepted')" data-testid="ack-accepted" @click="acknowledge(task, 'accepted')" />
+          <ActionButton
+            :size="size"
+            quaternary
+            :label="t('widgets.shopFloor.tasks.outcome.declined')"
+            data-testid="ack-decline"
+            @click="declining = declining === task.task_id ? null : task.task_id"
+          />
+        </div>
+        <form v-if="declining === task.task_id" class="line" @submit.prevent="acknowledge(task, 'declined')">
+          <NInput
+            v-model:value="notes[task.task_id]"
+            class="grow"
+            :size="size"
+            :placeholder="t('widgets.shopFloor.tasks.declineNote')"
+            :aria-label="t('widgets.shopFloor.tasks.declineNote')"
+            data-testid="decline-note"
+          />
+          <ActionButton
+            :size="size"
+            type="warning"
+            attr-type="submit"
+            :disabled="!(notes[task.task_id] ?? '').trim()"
+            :label="t('widgets.shopFloor.tasks.outcome.declined')"
+            data-testid="confirm-decline"
+          />
+        </form>
+      </template>
+      <p v-if="acked[task.task_id]" class="ok ant-wrap" data-testid="acked">{{ t('widgets.shopFloor.recorded', { seq: acked[task.task_id] }) }}</p>
+      <NAlert v-if="lastError?.task === task.task_id" type="error" :bordered="false" data-testid="ack-error">{{ problemText(lastError.error) }}</NAlert>
+    </li>
+  </ul>
 </template>
+
+<style scoped>
+.task-inbox {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.task {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ant-space-1);
+  min-width: 0;
+  padding: var(--ant-space-3) 0;
+  border-bottom: 1px solid var(--ant-border);
+}
+
+.task:first-child {
+  padding-top: 0;
+}
+
+.task:last-child {
+  border-bottom: 0;
+}
+
+.line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ant-space-1) var(--ant-space-2);
+  align-items: center;
+  min-width: 0;
+}
+
+.grow {
+  flex: 1 1 var(--ant-w-queue-min);
+  min-width: 0;
+}
+
+.ok {
+  color: var(--ant-status-success-text);
+}
+</style>
