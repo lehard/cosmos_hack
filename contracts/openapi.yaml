@@ -3105,6 +3105,35 @@ components:
         - layout
         - slots
       type: object
+    DissolveGroup:
+      additionalProperties: false
+      properties:
+        basis_seq:
+          description: "seq, на котором клиент видел объект (basis_seq из ответа чтения): после него в потоках гарда не должно быть новых записей guard_relevant, иначе 409 journal.stale_state (AD-39)."
+          format: int64
+          minimum: 0
+          type: integer
+        command_id:
+          description: UUIDv7 клиента; повтор с тем же id возвращает прежний ответ (AD-7). У подписанной команды — event_id пакета.
+          format: uuid
+          type: string
+        policy_seq:
+          description: Версия политики, по которой показаны права (policy_seq сеанса); изменилась — 409 journal.stale_policy (AD-39).
+          format: int64
+          minimum: 0
+          type: integer
+        signature:
+          $ref: "#/components/schemas/DsseEnvelope"
+          description: "Подписанный пакет DSSE для операций с уровнем подписи ≥ 1 (AD-10, AD-13, AD-14): подписывает агент токена, сервер сверяет отпечаток."
+        workplace_id:
+          description: Рабочее место сеанса (барьер 2, AD-15).
+          maxLength: 128
+          type: string
+      required:
+        - command_id
+        - basis_seq
+        - policy_seq
+      type: object
     DocumentApprovalStage:
       additionalProperties: false
       properties:
@@ -4117,9 +4146,92 @@ components:
         - basis_seq
         - policy_seq
       type: object
+    FormGroup:
+      additionalProperties: false
+      properties:
+        basis_seq:
+          description: "seq, на котором клиент видел объект (basis_seq из ответа чтения): после него в потоках гарда не должно быть новых записей guard_relevant, иначе 409 journal.stale_state (AD-39)."
+          format: int64
+          minimum: 0
+          type: integer
+        command_id:
+          description: UUIDv7 клиента; повтор с тем же id возвращает прежний ответ (AD-7). У подписанной команды — event_id пакета.
+          format: uuid
+          type: string
+        group_id:
+          description: ID группы; пусто — система выдаёт сама.
+          maxLength: 128
+          type: string
+        item_ids:
+          items:
+            type: string
+          maxItems: 500
+          minItems: 1
+          type: array
+        kind:
+          enum:
+            - charge
+            - batch_operation
+            - transport
+            - other
+          type: string
+        policy_seq:
+          description: Версия политики, по которой показаны права (policy_seq сеанса); изменилась — 409 journal.stale_policy (AD-39).
+          format: int64
+          minimum: 0
+          type: integer
+        signature:
+          $ref: "#/components/schemas/DsseEnvelope"
+          description: "Подписанный пакет DSSE для операций с уровнем подписи ≥ 1 (AD-10, AD-13, AD-14): подписывает агент токена, сервер сверяет отпечаток."
+        witness_item_id:
+          description: Образец-свидетель.
+          maxLength: 128
+          type: string
+        workplace_id:
+          description: Рабочее место сеанса (барьер 2, AD-15).
+          maxLength: 128
+          type: string
+      required:
+        - kind
+        - item_ids
+        - command_id
+        - basis_seq
+        - policy_seq
+      type: object
+    GenealogyHold:
+      additionalProperties: false
+      properties:
+        level:
+          type: string
+        lot_id:
+          type: string
+        path:
+          items:
+            type: string
+          type: array
+        released:
+          description: Основание снято у источника; блок снимает человек (AD-27).
+          type: boolean
+        source:
+          description: lot — блок партии; component — блок компонента; split_parent — блок исходного изделия.
+          type: string
+        source_event_id:
+          type: string
+        source_item_id:
+          type: string
+      required:
+        - level
+        - source
+        - source_event_id
+        - released
+      type: object
     GenealogyNode:
       additionalProperties: false
       properties:
+        depth:
+          description: "Уровень от изделия паспорта: вниз — положительный, вверх — отрицательный."
+          format: int64
+          type: integer
         kind:
           enum:
             - item
@@ -4139,6 +4251,9 @@ components:
           type: string
         ref:
           description: item_id или lot_id.
+          type: string
+        relation:
+          description: "Связь с изделием паспорта: component_of, assembly, made_from_lot, split_from, split_into, grouped_with."
           type: string
         summary:
           enum:
@@ -4459,6 +4574,44 @@ components:
         - status
         - supporting
         - contradicting
+      type: object
+    IdentificationQuestion:
+      additionalProperties: false
+      properties:
+        at:
+          format: date-time
+          type: string
+        basis:
+          items:
+            type: string
+          type: array
+        candidates:
+          items:
+            type: string
+          type: array
+        cause:
+          enum:
+            - carrier_unreadable
+            - carrier_mismatch
+            - ambiguous_binding
+            - carrier_missing
+          type: string
+        closed_by:
+          type: string
+        open:
+          type: boolean
+        questioned_event_id:
+          description: Запись item.identification.questioned — её снимает подтверждение.
+          type: string
+        subject_event_id:
+          description: Событие с неоднозначной привязкой.
+          type: string
+      required:
+        - cause
+        - basis
+        - at
+        - questioned_event_id
+        - open
       type: object
     ImplementAction:
       additionalProperties: false
@@ -5295,11 +5448,31 @@ components:
     ItemGenealogy:
       additionalProperties: false
       properties:
+        down:
+          description: Компоненты-экземпляры на всех уровнях (FR-45).
+          items:
+            type: string
+          type: array
+        groups:
+          description: Временные группы (садки) изделия.
+          items:
+            type: string
+          type: array
         item_id:
           type: string
+        lots:
+          description: Партии изделия и партионных компонентов.
+          items:
+            type: string
+          type: array
         nodes:
           items:
             $ref: "#/components/schemas/GenealogyNode"
+          type: array
+        up:
+          description: Сборки, в которые вошло изделие, снизу вверх (FR-45).
+          items:
+            type: string
           type: array
       required:
         - item_id
@@ -5389,6 +5562,64 @@ components:
         - recorded_at
         - field
       type: object
+    ItemIncident:
+      additionalProperties: false
+      properties:
+        action:
+          description: Что делать.
+          enum:
+            - observe
+            - check
+            - block
+            - release
+          type: string
+        incident_id:
+          type: string
+        scope_version:
+          format: int64
+          minimum: 0
+          type: integer
+        status:
+          description: Что известно.
+          enum:
+            - confirmed
+            - suspect
+            - excluded
+            - unknown
+          type: string
+        via_assembly_of:
+          description: Попало в область через компонент.
+          type: string
+      required:
+        - incident_id
+        - status
+        - action
+        - scope_version
+      type: object
+    ItemIntervention:
+      additionalProperties: false
+      properties:
+        closed_at:
+          format: date-time
+          type: string
+        intervention_id:
+          type: string
+        opened_at:
+          format: date-time
+          type: string
+        purpose:
+          type: string
+        retest_required:
+          type: boolean
+        zone_ids:
+          items:
+            type: string
+          type: array
+      required:
+        - intervention_id
+        - zone_ids
+        - opened_at
+      type: object
     ItemList:
       additionalProperties: false
       properties:
@@ -5404,6 +5635,11 @@ components:
     ItemLookup:
       additionalProperties: false
       properties:
+        candidates:
+          description: "Все изделия с этим носителем на момент, если их несколько (FR-34): выбор — за человеком."
+          items:
+            type: string
+          type: array
         carrier_ref:
           description: "Носитель, по которому найдено: ant:carrier:‹тип›:‹значение›."
           type: string
@@ -5433,6 +5669,11 @@ components:
           items:
             $ref: "#/components/schemas/PassportEntry"
           type: array
+        genealogy_holds:
+          description: "Сдерживание по генеалогии: блок партии или компонента (AD-42)."
+          items:
+            $ref: "#/components/schemas/GenealogyHold"
+          type: array
         identification:
           description: "Идентификация (AD-16): под сомнением — изоляция до повторной идентификации."
           enum:
@@ -5441,10 +5682,25 @@ components:
             - ambiguous
             - unidentified
           type: string
+        identification_questions:
+          description: "Идентификация под сомнением: причина, кандидаты; открытое — изоляция до повторной идентификации (AD-16)."
+          items:
+            $ref: "#/components/schemas/IdentificationQuestion"
+          type: array
+        incident_statuses:
+          description: "Статус изделия в каждом инциденте: что известно и что делать (FR-62)."
+          items:
+            $ref: "#/components/schemas/ItemIncident"
+          type: array
         incidents:
           description: Инциденты, в области которых изделие.
           items:
             type: string
+          type: array
+        interventions:
+          description: Вмешательства в собранное изделие (FR-21).
+          items:
+            $ref: "#/components/schemas/ItemIntervention"
           type: array
         item_id:
           type: string
@@ -5468,10 +5724,23 @@ components:
         process_version:
           description: Закреплённая версия процесса (хеш, AD-17).
           type: string
+        reference_changes:
+          description: Изменения справочника с действием в прошлом, затронувшие изделие (AD-31).
+          items:
+            $ref: "#/components/schemas/ItemRefChange"
+          type: array
+        split_from:
+          description: Изделие, из которого выделено разделением 1→N (FR-15).
+          type: string
         status:
           $ref: "#/components/schemas/ItemStatus"
         step_key:
           type: string
+        witness_results:
+          description: Результаты образца-свидетеля садки или групповой операции (FR-15).
+          items:
+            $ref: "#/components/schemas/WitnessResult"
+          type: array
         zones:
           items:
             $ref: "#/components/schemas/ItemZone"
@@ -5492,6 +5761,20 @@ components:
         - incidents
         - nonconformities
         - basis_seq
+      type: object
+    ItemRefChange:
+      additionalProperties: false
+      properties:
+        kind:
+          type: string
+        reference_event_id:
+          type: string
+        valid_from:
+          type: string
+      required:
+        - reference_event_id
+        - kind
+        - valid_from
       type: object
     ItemRow:
       additionalProperties: false
@@ -5553,6 +5836,12 @@ components:
           maximum: 3
           minimum: 0
           type: integer
+        paper_original_ref:
+          description: Учётный номер бумажного оригинала в архиве ОТК (AD-43).
+          type: string
+        scan_address:
+          description: "Адрес скана в хранилище материалов: streebog256:… (AD-23, AD-43)."
+          type: string
         signer_id:
           description: Псевдоним подписанта или id устройства.
           type: string
@@ -5649,6 +5938,12 @@ components:
           type: boolean
         closed_by:
           description: Шаг, закрывший доступ.
+          type: string
+        inspection_status:
+          description: "Проверка зоны (FR-46): not_inspected — не проверялась, inspected — проверена, stale — устарела после вмешательства."
+          type: string
+        last_inspection:
+          description: Последний результат контроля зоны (event_id).
           type: string
         open_intervention:
           description: Открытое вмешательство (FR-21).
@@ -6071,11 +6366,17 @@ components:
         external_ref:
           description: Номер партии во внешней системе (соответствие — reference.external_id.mapped).
           type: string
+        heat_no:
+          description: Номер плавки партии.
+          type: string
         issued_quantity:
           format: int64
           minimum: 0
           type: integer
         item_type_id:
+          type: string
+        kind:
+          description: "Вид: lot — партия, heat — плавка (FR-45)."
           type: string
         lot_id:
           type: string
@@ -6140,6 +6441,9 @@ components:
         external_ref:
           description: Номер партии во внешней системе (соответствие — reference.external_id.mapped).
           type: string
+        heat_no:
+          description: Номер плавки партии.
+          type: string
         issued_quantity:
           format: int64
           minimum: 0
@@ -6154,6 +6458,9 @@ components:
           items:
             $ref: "#/components/schemas/LotItem"
           type: array
+        kind:
+          description: "Вид: lot — партия, heat — плавка (FR-45)."
+          type: string
         lot_id:
           type: string
         received_at:
@@ -6214,6 +6521,9 @@ components:
     LotItem:
       additionalProperties: false
       properties:
+        assembled:
+          description: Сборка, в которую вошло изделие партии (FR-45).
+          type: boolean
         item_id:
           type: string
         label:
@@ -6223,6 +6533,9 @@ components:
           enum:
             - made_from_lot
             - issued
+          type: string
+        via:
+          description: Изделие партии, через которое сборка попала в список.
           type: string
       required:
         - item_id
@@ -7797,9 +8110,23 @@ components:
         author:
           description: Автор (псевдоним) или источник.
           type: string
+        binding_basis:
+          description: "Как событие привязано к изделию: internal_id, carrier, post_context, time_window, manual (AD-41)."
+          type: string
+        binding_reliability:
+          description: "Надёжность привязки: unique, probable, ambiguous, unidentified (FR-34)."
+          type: string
+        bound:
+          description: Событие пришло без изделия и привязано позже (AD-41).
+          type: boolean
         ca_ref:
           description: Критическое действие (AD-28).
           type: string
+        candidates:
+          description: Кандидаты при неоднозначной привязке события (FR-34).
+          items:
+            type: string
+          type: array
         corrects:
           description: Исправляемая запись (FR-122).
           type: string
@@ -9532,6 +9859,10 @@ components:
           type: string
         item_type_id:
           maxLength: 128
+          type: string
+        local_id:
+          description: Локальный номер изделия (например, F-031); пусто — система выдаёт сама. Из метки не выводится (AD-16).
+          maxLength: 96
           type: string
         lot_ids:
           items:
@@ -12037,6 +12368,62 @@ components:
         - quarantined
         - basis_seq
       type: object
+    SplitItem:
+      additionalProperties: false
+      properties:
+        basis_seq:
+          description: "seq, на котором клиент видел объект (basis_seq из ответа чтения): после него в потоках гарда не должно быть новых записей guard_relevant, иначе 409 journal.stale_state (AD-39)."
+          format: int64
+          minimum: 0
+          type: integer
+        command_id:
+          description: UUIDv7 клиента; повтор с тем же id возвращает прежний ответ (AD-7). У подписанной команды — event_id пакета.
+          format: uuid
+          type: string
+        parts:
+          items:
+            $ref: "#/components/schemas/SplitPart"
+          maxItems: 100
+          minItems: 1
+          type: array
+        policy_seq:
+          description: Версия политики, по которой показаны права (policy_seq сеанса); изменилась — 409 journal.stale_policy (AD-39).
+          format: int64
+          minimum: 0
+          type: integer
+        signature:
+          $ref: "#/components/schemas/DsseEnvelope"
+          description: "Подписанный пакет DSSE для операций с уровнем подписи ≥ 1 (AD-10, AD-13, AD-14): подписывает агент токена, сервер сверяет отпечаток."
+        workplace_id:
+          description: Рабочее место сеанса (барьер 2, AD-15).
+          maxLength: 128
+          type: string
+      required:
+        - parts
+        - command_id
+        - basis_seq
+        - policy_seq
+      type: object
+    SplitPart:
+      additionalProperties: false
+      properties:
+        item_id:
+          description: Внутренний ID части; пусто — ‹исходный›-‹n›.
+          maxLength: 128
+          type: string
+        item_revision:
+          maxLength: 64
+          type: string
+        item_type_id:
+          description: Тип части; пусто — тип исходного.
+          maxLength: 128
+          type: string
+        lot_ids:
+          description: Дополнительные партии части (партии исходного переносятся сами).
+          items:
+            type: string
+          type: array
+      type: object
     StartOperation:
       additionalProperties: false
       properties:
@@ -12426,6 +12813,84 @@ components:
         - at
         - kind
       type: object
+    Trace:
+      additionalProperties: false
+      properties:
+        group_id:
+          type: string
+        heat_no:
+          type: string
+        items:
+          items:
+            $ref: "#/components/schemas/TraceItem"
+          type: array
+        lot_id:
+          type: string
+      required:
+        - items
+      type: object
+    TraceItem:
+      additionalProperties: false
+      properties:
+        assembled:
+          type: boolean
+        item_id:
+          type: string
+        label:
+          type: string
+        relation:
+          description: made_from_lot — из партии или плавки; grouped_with — в садке; assembled — собрано из них.
+          type: string
+        via:
+          description: Изделие, через которое сборка попала в список.
+          type: string
+      required:
+        - item_id
+        - label
+        - relation
+        - assembled
+      type: object
+    UnboundEvent:
+      additionalProperties: false
+      properties:
+        basis:
+          description: carrier — по носителю; manual — человеком.
+          type: string
+        bound_to:
+          type: string
+        candidates:
+          items:
+            type: string
+          type: array
+        carrier_ref:
+          type: string
+        event_id:
+          type: string
+        event_type:
+          type: string
+        occurred_at:
+          format: date-time
+          type: string
+        run_id:
+          type: string
+        source_id:
+          type: string
+      required:
+        - event_id
+        - event_type
+        - occurred_at
+        - candidates
+      type: object
+    UnboundList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: "#/components/schemas/UnboundEvent"
+          type: array
+      required:
+        - items
+      type: object
     VerifierCheckRow:
       additionalProperties: false
       properties:
@@ -12768,6 +13233,34 @@ components:
         - command_id
         - basis_seq
         - policy_seq
+      type: object
+    WitnessResult:
+      additionalProperties: false
+      properties:
+        at:
+          format: date-time
+          type: string
+        conclusion_ref:
+          type: string
+        group_id:
+          type: string
+        group_kind:
+          type: string
+        inspection_event_id:
+          type: string
+        method:
+          type: string
+        outcome:
+          type: string
+        witness_item_id:
+          type: string
+      required:
+        - group_id
+        - group_kind
+        - witness_item_id
+        - inspection_event_id
+        - outcome
+        - at
       type: object
 info:
   description: "HTTP API системы ant — доверенная система контроля качества. Сгенерировано из операций Huma (backend/internal/infrastructure/transport); руками не править (AD-20). Каждая операция несёт x-ant-action: id (он же operationId, ключ прав Casbin и @casl), класс (AD-27), критичность (AD-28), модуль-владелец (AD-40), гарды (AD-39), эмитируемые типы записей журнала. Чтение принимает axis и as_of (AD-21, AD-22); команды — command_id, basis_seq, policy_seq (AD-7, AD-39); режим fixtures | live — в заголовке ответа Ant-Backend (AD-36); ошибки — RFC 9457 problem+json с кодом из contracts/errors.yaml."
@@ -14075,6 +14568,61 @@ paths:
         id: crossitem.binding.assign
         owner: crossitem
         signature_level: 2
+        subject: item
+  /api/v1/bindings/unbound:
+    get:
+      description: "AD-41, FR-34: события, пришедшие без изделия, — неразрешённые и неоднозначные (с кандидатами) — очередь ручной привязки."
+      operationId: crossitem.binding.list
+      parameters:
+        - description: "Ось момента: occurred — «как было» (по умолчанию), recorded — «что мы знали» (AD-37)."
+          explode: false
+          in: query
+          name: axis
+          schema:
+            $ref: "#/components/schemas/Axis"
+            description: "Ось момента: occurred — «как было» (по умолчанию), recorded — «что мы знали» (AD-37)."
+        - description: "Момент (RFC 3339 UTC); пусто — «сейчас». Задан — воспроизведение: команды выключены (AD-21)."
+          explode: false
+          in: query
+          name: as_of
+          schema:
+            description: "Момент (RFC 3339 UTC); пусто — «сейчас». Задан — воспроизведение: команды выключены (AD-21)."
+            format: date-time
+            type: string
+        - description: "Прогон сценария: данные в его пространстве имён (AD-38)."
+          explode: false
+          in: query
+          name: run_id
+          schema:
+            description: "Прогон сценария: данные в его пространстве имён (AD-38)."
+            maxLength: 128
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnboundList"
+          description: OK
+          headers:
+            Ant-Backend:
+              schema:
+                $ref: "#/components/schemas/BackendMode"
+                description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Error
+      summary: События без изделия
+      tags:
+        - crossitem
+      x-ant-action:
+        class: read
+        critical: false
+        id: crossitem.binding.list
+        owner: crossitem
         subject: item
   /api/v1/cad/assemblies:
     get:
@@ -15933,6 +16481,85 @@ paths:
         id: quality.escape.list
         owner: quality
         subject: analyzer_passport
+  /api/v1/genealogy/trace:
+    get:
+      description: "FR-45: изделия, сделанные из партии или плавки или бывшие в садке, и все сборки, в которые они вошли (владелец генеалогии — межизделийная стадия, AD-42)."
+      operationId: crossitem.trace.read
+      parameters:
+        - description: Партия.
+          explode: false
+          in: query
+          name: lot_id
+          schema:
+            description: Партия.
+            maxLength: 128
+            type: string
+        - description: Плавка.
+          explode: false
+          in: query
+          name: heat_no
+          schema:
+            description: Плавка.
+            maxLength: 64
+            type: string
+        - description: Садка или иная временная группа.
+          explode: false
+          in: query
+          name: group_id
+          schema:
+            description: Садка или иная временная группа.
+            maxLength: 128
+            type: string
+        - description: "Ось момента: occurred — «как было» (по умолчанию), recorded — «что мы знали» (AD-37)."
+          explode: false
+          in: query
+          name: axis
+          schema:
+            $ref: "#/components/schemas/Axis"
+            description: "Ось момента: occurred — «как было» (по умолчанию), recorded — «что мы знали» (AD-37)."
+        - description: "Момент (RFC 3339 UTC); пусто — «сейчас». Задан — воспроизведение: команды выключены (AD-21)."
+          explode: false
+          in: query
+          name: as_of
+          schema:
+            description: "Момент (RFC 3339 UTC); пусто — «сейчас». Задан — воспроизведение: команды выключены (AD-21)."
+            format: date-time
+            type: string
+        - description: "Прогон сценария: данные в его пространстве имён (AD-38)."
+          explode: false
+          in: query
+          name: run_id
+          schema:
+            description: "Прогон сценария: данные в его пространстве имён (AD-38)."
+            maxLength: 128
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Trace"
+          description: OK
+          headers:
+            Ant-Backend:
+              schema:
+                $ref: "#/components/schemas/BackendMode"
+                description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Error
+      summary: Партия, плавка или садка → все изделия
+      tags:
+        - crossitem
+      x-ant-action:
+        class: read
+        critical: false
+        id: crossitem.trace.read
+        owner: crossitem
+        subject: lot
   /api/v1/grants:
     get:
       description: "AD-15: журнал выдачи и отзыва ролей, полномочий, клейм, квалификаций, параметров аудита — для Аудитора ИБ; со второй подписью и CA."
@@ -16908,6 +17535,92 @@ paths:
         critical: false
         id: crossitem.group.list
         owner: crossitem
+        subject: item
+    post:
+      description: "FR-15: садка, групповая операция, транспорт; результат образца-свидетеля распространяется на все изделия группы (genealogy.witness.propagated, AD-42)."
+      operationId: crossitem.group.form
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FormGroup"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Receipt"
+          description: OK
+          headers:
+            Ant-Backend:
+              schema:
+                $ref: "#/components/schemas/BackendMode"
+                description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Error
+      summary: Сформировать группу изделий
+      tags:
+        - crossitem
+      x-ant-action:
+        class: record
+        critical: false
+        emits:
+          - genealogy.group.formed
+        id: crossitem.group.form
+        owner: crossitem
+        signature_level: 1
+        subject: item
+  /api/v1/item-groups/{group_id}/dissolve:
+    post:
+      description: "FR-15: разгруппировка."
+      operationId: crossitem.group.dissolve
+      parameters:
+        - in: path
+          name: group_id
+          required: true
+          schema:
+            maxLength: 128
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DissolveGroup"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Receipt"
+          description: OK
+          headers:
+            Ant-Backend:
+              schema:
+                $ref: "#/components/schemas/BackendMode"
+                description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Error
+      summary: Расформировать группу изделий
+      tags:
+        - crossitem
+      x-ant-action:
+        class: record
+        critical: false
+        emits:
+          - genealogy.group.dissolved
+        id: crossitem.group.dissolve
+        owner: crossitem
+        signature_level: 1
         subject: item
   /api/v1/items:
     get:
@@ -18351,6 +19064,53 @@ paths:
         id: nonconformity.signal.reject
         owner: nonconformity
         signature_level: 2
+        subject: item
+  /api/v1/items/{item_id}/split:
+    post:
+      description: "FR-15: части регистрируются как новые изделия (item.item.registered с split_from); происхождение и партии исходного переносит межизделийная стадия (genealogy.link.added, AD-42)."
+      operationId: item.item.split
+      parameters:
+        - in: path
+          name: item_id
+          required: true
+          schema:
+            maxLength: 128
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SplitItem"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Receipt"
+          description: OK
+          headers:
+            Ant-Backend:
+              schema:
+                $ref: "#/components/schemas/BackendMode"
+                description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Error
+      summary: Разделить изделие 1→N
+      tags:
+        - item
+      x-ant-action:
+        class: record
+        critical: false
+        emits:
+          - item.item.registered
+        id: item.item.split
+        owner: item
+        signature_level: 1
         subject: item
   /api/v1/journal:
     get:

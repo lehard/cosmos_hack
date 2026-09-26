@@ -36,3 +36,19 @@ type AssignBinding struct {
 	Method         string        `json:"method" enum:"scan,select_expected,manual_entry"`
 	Reason         BindingReason `json:"reason"`
 }
+
+// FormGroup — сформировать временную группу: садку, групповую операцию,
+// транспорт (genealogy.group.formed, FR-15): результат образца-свидетеля
+// распространяется на всю группу.
+type FormGroup struct {
+	platform.CommandHeader
+	GroupID       string   `json:"group_id,omitempty" maxLength:"128" doc:"ID группы; пусто — система выдаёт сама."`
+	Kind          string   `json:"kind" enum:"charge,batch_operation,transport,other"`
+	ItemIDs       []string `json:"item_ids" minItems:"1" maxItems:"500"`
+	WitnessItemID string   `json:"witness_item_id,omitempty" maxLength:"128" doc:"Образец-свидетель."`
+}
+
+// DissolveGroup — расформировать группу (genealogy.group.dissolved, FR-15).
+type DissolveGroup struct {
+	platform.CommandHeader
+}

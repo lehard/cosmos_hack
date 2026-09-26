@@ -313,6 +313,86 @@ export const errorCatalog = {
     "title": "Остановка точки процесса не действует",
     "uiKey": "errors.generic"
   },
+  "item.not_registered": {
+    "status": 409,
+    "title": "Изделие не зарегистрировано",
+    "uiKey": "errors.generic"
+  },
+  "item.already_registered": {
+    "status": 409,
+    "title": "Изделие уже зарегистрировано",
+    "uiKey": "errors.generic"
+  },
+  "item.carrier_in_use": {
+    "status": 409,
+    "title": "Носитель уже действует у другого изделия",
+    "uiKey": "errors.generic"
+  },
+  "item.carrier_not_active": {
+    "status": 409,
+    "title": "Носитель не нанесён",
+    "uiKey": "errors.generic"
+  },
+  "item.identification_not_questioned": {
+    "status": 409,
+    "title": "Идентификация не под сомнением",
+    "uiKey": "errors.generic"
+  },
+  "item.identification_questioned": {
+    "status": 409,
+    "title": "Идентификация изделия под сомнением",
+    "uiKey": "errors.generic"
+  },
+  "item.intervention_not_open": {
+    "status": 409,
+    "title": "Вмешательство не открыто",
+    "uiKey": "errors.generic"
+  },
+  "item.zone_unknown": {
+    "status": 422,
+    "title": "Зона не описана в КД",
+    "uiKey": "errors.generic"
+  },
+  "item.assembly_cycle": {
+    "status": 409,
+    "title": "Сборка образует цикл",
+    "uiKey": "errors.generic"
+  },
+  "item.component_already_assembled": {
+    "status": 409,
+    "title": "Компонент уже в другой сборке",
+    "uiKey": "errors.generic"
+  },
+  "item.already_released": {
+    "status": 409,
+    "title": "Изделие уже выпущено",
+    "uiKey": "errors.generic"
+  },
+  "item.lot_not_accepted": {
+    "status": 409,
+    "title": "Партия не принята",
+    "uiKey": "errors.generic"
+  },
+  "item.lot_already_registered": {
+    "status": 409,
+    "title": "Партия уже зарегистрирована",
+    "uiKey": "errors.generic"
+  },
+  "item.group_invalid": {
+    "status": 422,
+    "title": "Группа изделий составлена неверно",
+    "uiKey": "errors.generic"
+  },
+  "item.group_not_active": {
+    "status": 409,
+    "title": "Группа не действует",
+    "uiKey": "errors.generic"
+  },
+  "item.binding_subject_unknown": {
+    "status": 404,
+    "title": "Привязываемое событие не найдено",
+    "uiKey": "errors.generic"
+  },
   "process.unsupported_element": {
     "status": 422,
     "title": "Неподдерживаемый элемент BPMN",

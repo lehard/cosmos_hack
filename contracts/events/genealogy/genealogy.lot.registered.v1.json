@@ -26,6 +26,23 @@
     "registered_by": {
       "$ref": "../common/defs.v1.json#/definitions/person_ref",
       "description": "Контролёр ВК."
+    },
+    "lot_kind": {
+      "type": "string",
+      "enum": [
+        "lot",
+        "heat"
+      ],
+      "description": "Вид: партия материала или покупных / плавка (FR-45). Садка — временная группа genealogy.group.formed (kind = charge)."
+    },
+    "heat_no": {
+      "type": "string",
+      "maxLength": 64,
+      "description": "Номер плавки партии (запрос «плавка → все изделия», FR-45)."
+    },
+    "item_type_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Номенклатура партии."
     }
   },
   "required": [

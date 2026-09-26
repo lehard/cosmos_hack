@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"slices"
 	"strings"
+	"time"
 
 	engineapp "ant/internal/application/engine"
 	appjournal "ant/internal/application/journal"
@@ -24,6 +26,11 @@ const (
 	// при смене лидера, пишется в транзакции с курсором и адресованными записями.
 	StateProjection = "crossitem.stage"
 	stateKey        = "state"
+	// CarrierProjection — реестр носителей стадии для приёма (AD-41): ключ
+	// `‹тип›:‹значение›`, значение — интервалы действия носителя у изделий
+	// (domain/crossitem.CarrierSpan). Пишется в той же транзакции, что и
+	// состояние стадии.
+	CarrierProjection = "crossitem.carrier"
 )
 
 // IsStageInput — запись — вход межизделийной стадии (AD-42): факты и команды
@@ -95,6 +102,7 @@ func (s *StageRunner) Apply(ctx context.Context, st crossitem.Stage, batch []jc.
 	var rq appjournal.AppendRequest
 	var changes []engineapp.Change
 	touched := false
+	carrierItems := map[string]bool{}
 	for _, e := range batch {
 		if !IsStageInput(e) {
 			continue
@@ -118,6 +126,10 @@ func (s *StageRunner) Apply(ctx context.Context, st crossitem.Stage, batch []jc.
 		var out []kernel.Addressed
 		st, out = fold(st, d.Record)
 		touched = true
+		switch d.Record.Type {
+		case catalog.ItemCarrierApplied, catalog.ItemCarrierRemoved, catalog.ItemItemRegistered:
+			carrierItems[d.Record.ItemID] = true
+		}
 		for _, a := range out {
 			pend, err := s.Codec.Encode(ctx, addressedOut(a, d.Record))
 			if err != nil {
@@ -136,6 +148,11 @@ func (s *StageRunner) Apply(ctx context.Context, st crossitem.Stage, batch []jc.
 			return st, rq, err
 		}
 		rq.Effects = append(rq.Effects, engineapp.ProjectionPut{Name: StateProjection, Key: stateKey, Value: raw})
+		carriers, err := carrierEffects(st.Own.Genealogy, carrierItems)
+		if err != nil {
+			return st, rq, err
+		}
+		rq.Effects = append(rq.Effects, carriers...)
 	}
 	if len(changes) > 0 {
 		rq.Effects = append(rq.Effects, engineapp.Notify{Changes: changes})
@@ -171,4 +188,61 @@ func addressedOut(a kernel.Addressed, cause kernel.Record) engineapp.Out {
 		}
 	}
 	return o
+}
+
+// carrierEffects — строки реестра носителей для изделий, чьи носители
+// изменились в пачке (AD-41).
+func carrierEffects(g crossitem.Genealogy, items map[string]bool) ([]appjournal.Effect, error) {
+	if len(items) == 0 {
+		return nil, nil
+	}
+	var out []appjournal.Effect
+	for _, key := range sortedKeys(g.Carriers) {
+		spans := g.Carriers[key]
+		if !slices.ContainsFunc(spans, func(sp crossitem.CarrierSpan) bool { return items[sp.ItemID] }) {
+			continue
+		}
+		raw, err := json.Marshal(spans)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, engineapp.ProjectionPut{Name: CarrierProjection, Key: key, Value: raw})
+	}
+	return out, nil
+}
+
+// ProjectedCarriers — реестр носителей на момент для приёма (порт
+// domain/crossitem.CarrierRegistry, AD-41): строки проекции crossitem.carrier,
+// которые пишет стадия. Носителя в реестре ещё нет (стадия отстаёт) — пусто:
+// событие идёт в поток стадии, и стадия разрешает его своим реестром в
+// порядке журнала.
+type ProjectedCarriers struct {
+	Store engineapp.ProjectionStore
+	// Timeout — предел чтения (0 — 2 с).
+	Timeout time.Duration
+}
+
+var _ crossitem.CarrierRegistry = ProjectedCarriers{}
+
+// Lookup — изделия, у которых носитель ref действовал в момент at.
+func (p ProjectedCarriers) Lookup(ref crossitem.CarrierRef, at time.Time) []string {
+	if p.Store == nil {
+		return nil
+	}
+	t := p.Timeout
+	if t == 0 {
+		t = 2 * time.Second
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), t)
+	defer cancel()
+	key := ref.Type + ":" + ref.Value
+	raw, ok, err := p.Store.Get(ctx, CarrierProjection, key)
+	if err != nil || !ok {
+		return nil
+	}
+	var spans []crossitem.CarrierSpan
+	if json.Unmarshal(raw, &spans) != nil {
+		return nil
+	}
+	return crossitem.Genealogy{Carriers: map[string][]crossitem.CarrierSpan{key: spans}}.CarrierAt(key, at)
 }

@@ -390,6 +390,10 @@ channels:
         $ref: "#/components/messages/genealogy.group.formed.v1"
       genealogy.group.dissolved.v1:
         $ref: "#/components/messages/genealogy.group.dissolved.v1"
+      genealogy.witness.propagated.v1:
+        $ref: "#/components/messages/genealogy.witness.propagated.v1"
+      genealogy.containment.propagated.v1:
+        $ref: "#/components/messages/genealogy.containment.propagated.v1"
   normative:
     address: journal/normative
     title: "Журнал: семейство normative"
@@ -919,6 +923,8 @@ operations:
       - $ref: "#/channels/genealogy/messages/genealogy.link.added.v1"
       - $ref: "#/channels/genealogy/messages/genealogy.group.formed.v1"
       - $ref: "#/channels/genealogy/messages/genealogy.group.dissolved.v1"
+      - $ref: "#/channels/genealogy/messages/genealogy.witness.propagated.v1"
+      - $ref: "#/channels/genealogy/messages/genealogy.containment.propagated.v1"
   journal.normative:
     action: send
     title: ant записывает записи семейства normative
@@ -4241,6 +4247,52 @@ components:
       x-ant-stream: group
       x-ant-axis: none
       x-ant-action-class: record
+      x-ant-critical: false
+      x-ant-current: true
+    genealogy.witness.propagated.v1:
+      name: genealogy.witness.propagated.v1
+      title: Результат образца-свидетеля распространён на изделие группы
+      summary: "Результат образца-свидетеля распространён на изделие группы — адресованная запись стадии каждому изделию садки или групповой операции: результат контроля свидетеля виден в паспортах всех изделий группы (FR-15, AD-42)."
+      contentType: application/json
+      payload:
+        allOf:
+          - $ref: ./common/envelope.v1.json
+          - type: object
+            properties:
+              event_type:
+                const: genealogy.witness.propagated
+              schema_version:
+                const: 1
+              data:
+                $ref: ./genealogy/genealogy.witness.propagated.v1.json
+      x-ant-kind: reaction
+      x-ant-emitter: crossitem
+      x-ant-stream: item
+      x-ant-axis: none
+      x-ant-action-class: record
+      x-ant-critical: false
+      x-ant-current: true
+    genealogy.containment.propagated.v1:
+      name: genealogy.containment.propagated.v1
+      title: Сдерживание распространено по генеалогии
+      summary: "Сдерживание распространено по генеалогии — адресованная запись стадии изделию: блок партии доходит до изделий из партии и собранных из них; блок компонента — вверх по дереву сборки (AD-42). Ось «сдерживание» меняет nonconformity по этой записи (AD-30); снятие основания блок не снимает — решает человек (AD-27)."
+      contentType: application/json
+      payload:
+        allOf:
+          - $ref: ./common/envelope.v1.json
+          - type: object
+            properties:
+              event_type:
+                const: genealogy.containment.propagated
+              schema_version:
+                const: 1
+              data:
+                $ref: ./genealogy/genealogy.containment.propagated.v1.json
+      x-ant-kind: reaction
+      x-ant-emitter: crossitem
+      x-ant-stream: item
+      x-ant-axis: none
+      x-ant-action-class: protective
       x-ant-critical: false
       x-ant-current: true
     normative.version.loaded.v1:

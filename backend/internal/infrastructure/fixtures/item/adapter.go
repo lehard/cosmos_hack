@@ -133,3 +133,8 @@ func (Adapter) RecordAssembly(ctx context.Context, itemID string, in app.RecordA
 func (Adapter) RecordRelease(ctx context.Context, itemID string, in app.RecordRelease) (platform.Receipt, error) {
 	return decide(ctx, "item.release.record", "item", itemID, in.CommandMeta())
 }
+
+// Split — разделение 1→N (item.item.split, FR-15).
+func (Adapter) Split(ctx context.Context, itemID string, in app.SplitItem) (platform.Receipt, error) {
+	return decide(ctx, "item.item.split", "item", itemID, in.CommandMeta())
+}

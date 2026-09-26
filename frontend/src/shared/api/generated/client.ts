@@ -96,9 +96,11 @@ import type {
   ControlChart,
   CriticalAction,
   CriticalActionList,
+  CrossitemBindingListParams,
   CrossitemGroupListParams,
   CrossitemLotListParams,
   CrossitemLotReadParams,
+  CrossitemTraceReadParams,
   CryptoProfileList,
   DecisionCard,
   DecisionQueue,
@@ -108,6 +110,7 @@ import type {
   DefineLocation,
   DemoPersonaList,
   Desk,
+  DissolveGroup,
   DocumentList,
   DocumentRendering,
   DocumentView,
@@ -131,6 +134,7 @@ import type {
   FederationExtractListParams,
   FederationPartnerListParams,
   FinishOperation,
+  FormGroup,
   GrantConcession,
   GrantPolicy,
   GrantQualification,
@@ -316,6 +320,7 @@ import type {
   SimulationRunListParams,
   SimulationRunReadParams,
   SourceList,
+  SplitItem,
   StartOperation,
   StartRun,
   StartedRun,
@@ -324,6 +329,8 @@ import type {
   SwitchSource,
   TaskList,
   TimelineData,
+  Trace,
+  UnboundList,
   VerifierReport,
   VerifierReportList,
   VerifyDisposition,
@@ -3076,6 +3083,124 @@ export const useCrossitemBindingAssign = <TError = globalThis.Error & { info?: P
       > => {
       return useMutation(getCrossitemBindingAssignMutationOptions(options), queryClient);
     }
+
+export type crossitemBindingListResponse200 = {
+  data: UnboundList
+  status: 200
+}
+
+export type crossitemBindingListResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type crossitemBindingListResponseSuccess = (crossitemBindingListResponse200) & {
+  headers: Headers;
+};
+export type crossitemBindingListResponseError = (crossitemBindingListResponseDefault) & {
+  headers: Headers;
+};
+
+export const getCrossitemBindingListUrl = (params?: CrossitemBindingListParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/bindings/unbound?${stringifiedParams}` : `/api/v1/bindings/unbound`
+}
+
+/**
+ * AD-41, FR-34: события, пришедшие без изделия, — неразрешённые и неоднозначные (с кандидатами) — очередь ручной привязки.
+ * @summary События без изделия
+ */
+export const crossitemBindingList = async (params?: CrossitemBindingListParams, options?: RequestInit): Promise<crossitemBindingListResponseSuccess> => {
+
+  const res = await fetch(getCrossitemBindingListUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: crossitemBindingListResponseError['data'], status?: number} = new globalThis.Error();
+    const data : crossitemBindingListResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: crossitemBindingListResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as crossitemBindingListResponseSuccess
+}
+
+
+
+
+
+export const getCrossitemBindingListQueryKey = (params?: MaybeRefOrGetter<CrossitemBindingListParams>,) => {
+    return [
+    'api','v1','bindings','unbound', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getCrossitemBindingListQueryOptions = <TData = Awaited<ReturnType<typeof crossitemBindingList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(params?: MaybeRefOrGetter<CrossitemBindingListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof crossitemBindingList>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getCrossitemBindingListQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof crossitemBindingList>>> = ({ signal }) => crossitemBindingList(toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof crossitemBindingList>>, TError, TData>
+}
+
+export type CrossitemBindingListQueryResult = NonNullable<Awaited<ReturnType<typeof crossitemBindingList>>>
+export type CrossitemBindingListQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary События без изделия
+ */
+
+export function useCrossitemBindingList<TData = Awaited<ReturnType<typeof crossitemBindingList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ params?: MaybeRefOrGetter<CrossitemBindingListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof crossitemBindingList>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getCrossitemBindingListQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
 
 export type cadAssemblyListResponse200 = {
   data: CadAssemblyList
@@ -6771,6 +6896,124 @@ export function useQualityEscapeList<TData = Awaited<ReturnType<typeof qualityEs
 
 
 
+export type crossitemTraceReadResponse200 = {
+  data: Trace
+  status: 200
+}
+
+export type crossitemTraceReadResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type crossitemTraceReadResponseSuccess = (crossitemTraceReadResponse200) & {
+  headers: Headers;
+};
+export type crossitemTraceReadResponseError = (crossitemTraceReadResponseDefault) & {
+  headers: Headers;
+};
+
+export const getCrossitemTraceReadUrl = (params?: CrossitemTraceReadParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/genealogy/trace?${stringifiedParams}` : `/api/v1/genealogy/trace`
+}
+
+/**
+ * FR-45: изделия, сделанные из партии или плавки или бывшие в садке, и все сборки, в которые они вошли (владелец генеалогии — межизделийная стадия, AD-42).
+ * @summary Партия, плавка или садка → все изделия
+ */
+export const crossitemTraceRead = async (params?: CrossitemTraceReadParams, options?: RequestInit): Promise<crossitemTraceReadResponseSuccess> => {
+
+  const res = await fetch(getCrossitemTraceReadUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: crossitemTraceReadResponseError['data'], status?: number} = new globalThis.Error();
+    const data : crossitemTraceReadResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: crossitemTraceReadResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as crossitemTraceReadResponseSuccess
+}
+
+
+
+
+
+export const getCrossitemTraceReadQueryKey = (params?: MaybeRefOrGetter<CrossitemTraceReadParams>,) => {
+    return [
+    'api','v1','genealogy','trace', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getCrossitemTraceReadQueryOptions = <TData = Awaited<ReturnType<typeof crossitemTraceRead>>, TError = globalThis.Error & { info?: Problem; status?: number }>(params?: MaybeRefOrGetter<CrossitemTraceReadParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof crossitemTraceRead>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getCrossitemTraceReadQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof crossitemTraceRead>>> = ({ signal }) => crossitemTraceRead(toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof crossitemTraceRead>>, TError, TData>
+}
+
+export type CrossitemTraceReadQueryResult = NonNullable<Awaited<ReturnType<typeof crossitemTraceRead>>>
+export type CrossitemTraceReadQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Партия, плавка или садка → все изделия
+ */
+
+export function useCrossitemTraceRead<TData = Awaited<ReturnType<typeof crossitemTraceRead>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ params?: MaybeRefOrGetter<CrossitemTraceReadParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof crossitemTraceRead>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getCrossitemTraceReadQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+
 export type accessGrantListResponse200 = {
   data: AccessGrantHistory
   status: 200
@@ -9162,6 +9405,247 @@ export function useCrossitemGroupList<TData = Awaited<ReturnType<typeof crossite
 
 
 
+
+export type crossitemGroupFormResponse200 = {
+  data: Receipt
+  status: 200
+}
+
+export type crossitemGroupFormResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type crossitemGroupFormResponseSuccess = (crossitemGroupFormResponse200) & {
+  headers: Headers;
+};
+export type crossitemGroupFormResponseError = (crossitemGroupFormResponseDefault) & {
+  headers: Headers;
+};
+
+export const getCrossitemGroupFormUrl = () => {
+
+
+
+
+  return `/api/v1/item-groups`
+}
+
+/**
+ * FR-15: садка, групповая операция, транспорт; результат образца-свидетеля распространяется на все изделия группы (genealogy.witness.propagated, AD-42).
+ * @summary Сформировать группу изделий
+ */
+export const crossitemGroupForm = async (formGroup: FormGroup, options?: RequestInit): Promise<crossitemGroupFormResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getCrossitemGroupFormUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(formGroup)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: crossitemGroupFormResponseError['data'], status?: number} = new globalThis.Error();
+    const data : crossitemGroupFormResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: crossitemGroupFormResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as crossitemGroupFormResponseSuccess
+}
+
+
+
+
+
+export const getCrossitemGroupFormMutationKey = () => ['crossitemGroupForm'] as const;
+
+export const getCrossitemGroupFormMutationOptions = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof crossitemGroupForm>>, TError,CrossitemGroupFormMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof crossitemGroupForm>>, TError,CrossitemGroupFormMutationVariables, TContext> => {
+
+const mutationKey = getCrossitemGroupFormMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof crossitemGroupForm>>, CrossitemGroupFormMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  crossitemGroupForm(data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CrossitemGroupFormMutationResult = NonNullable<Awaited<ReturnType<typeof crossitemGroupForm>>>
+    export type CrossitemGroupFormMutationBody = FormGroup
+    export type CrossitemGroupFormMutationError = globalThis.Error & { info?: Problem; status?: number }
+    export type CrossitemGroupFormMutationVariables = {data: FormGroup}
+
+    /**
+ * @summary Сформировать группу изделий
+ */
+export const useCrossitemGroupForm = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof crossitemGroupForm>>, TError,CrossitemGroupFormMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof crossitemGroupForm>>,
+        TError,
+        CrossitemGroupFormMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCrossitemGroupFormMutationOptions(options), queryClient);
+    }
+
+export type crossitemGroupDissolveResponse200 = {
+  data: Receipt
+  status: 200
+}
+
+export type crossitemGroupDissolveResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type crossitemGroupDissolveResponseSuccess = (crossitemGroupDissolveResponse200) & {
+  headers: Headers;
+};
+export type crossitemGroupDissolveResponseError = (crossitemGroupDissolveResponseDefault) & {
+  headers: Headers;
+};
+
+export const getCrossitemGroupDissolveUrl = (groupId: string,) => {
+
+
+
+
+  return `/api/v1/item-groups/${groupId}/dissolve`
+}
+
+/**
+ * FR-15: разгруппировка.
+ * @summary Расформировать группу изделий
+ */
+export const crossitemGroupDissolve = async (groupId: string,
+    dissolveGroup: DissolveGroup, options?: RequestInit): Promise<crossitemGroupDissolveResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getCrossitemGroupDissolveUrl(groupId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(dissolveGroup)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: crossitemGroupDissolveResponseError['data'], status?: number} = new globalThis.Error();
+    const data : crossitemGroupDissolveResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: crossitemGroupDissolveResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as crossitemGroupDissolveResponseSuccess
+}
+
+
+
+
+
+export const getCrossitemGroupDissolveMutationKey = () => ['crossitemGroupDissolve'] as const;
+
+export const getCrossitemGroupDissolveMutationOptions = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof crossitemGroupDissolve>>, TError,CrossitemGroupDissolveMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof crossitemGroupDissolve>>, TError,CrossitemGroupDissolveMutationVariables, TContext> => {
+
+const mutationKey = getCrossitemGroupDissolveMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof crossitemGroupDissolve>>, CrossitemGroupDissolveMutationVariables> = (props) => {
+          const {groupId,data} = props ?? {};
+
+          return  crossitemGroupDissolve(groupId,data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CrossitemGroupDissolveMutationResult = NonNullable<Awaited<ReturnType<typeof crossitemGroupDissolve>>>
+    export type CrossitemGroupDissolveMutationBody = DissolveGroup
+    export type CrossitemGroupDissolveMutationError = globalThis.Error & { info?: Problem; status?: number }
+    export type CrossitemGroupDissolveMutationVariables = {groupId: string;data: DissolveGroup}
+
+    /**
+ * @summary Расформировать группу изделий
+ */
+export const useCrossitemGroupDissolve = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof crossitemGroupDissolve>>, TError,CrossitemGroupDissolveMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof crossitemGroupDissolve>>,
+        TError,
+        CrossitemGroupDissolveMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCrossitemGroupDissolveMutationOptions(options), queryClient);
+    }
 
 export type itemItemListResponse200 = {
   data: ItemList
@@ -12312,6 +12796,127 @@ export const useNonconformitySignalReject = <TError = globalThis.Error & { info?
         TContext
       > => {
       return useMutation(getNonconformitySignalRejectMutationOptions(options), queryClient);
+    }
+
+export type itemItemSplitResponse200 = {
+  data: Receipt
+  status: 200
+}
+
+export type itemItemSplitResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type itemItemSplitResponseSuccess = (itemItemSplitResponse200) & {
+  headers: Headers;
+};
+export type itemItemSplitResponseError = (itemItemSplitResponseDefault) & {
+  headers: Headers;
+};
+
+export const getItemItemSplitUrl = (itemId: string,) => {
+
+
+
+
+  return `/api/v1/items/${itemId}/split`
+}
+
+/**
+ * FR-15: части регистрируются как новые изделия (item.item.registered с split_from); происхождение и партии исходного переносит межизделийная стадия (genealogy.link.added, AD-42).
+ * @summary Разделить изделие 1→N
+ */
+export const itemItemSplit = async (itemId: string,
+    splitItem: SplitItem, options?: RequestInit): Promise<itemItemSplitResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getItemItemSplitUrl(itemId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(splitItem)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: itemItemSplitResponseError['data'], status?: number} = new globalThis.Error();
+    const data : itemItemSplitResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: itemItemSplitResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as itemItemSplitResponseSuccess
+}
+
+
+
+
+
+export const getItemItemSplitMutationKey = () => ['itemItemSplit'] as const;
+
+export const getItemItemSplitMutationOptions = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof itemItemSplit>>, TError,ItemItemSplitMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof itemItemSplit>>, TError,ItemItemSplitMutationVariables, TContext> => {
+
+const mutationKey = getItemItemSplitMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof itemItemSplit>>, ItemItemSplitMutationVariables> = (props) => {
+          const {itemId,data} = props ?? {};
+
+          return  itemItemSplit(itemId,data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ItemItemSplitMutationResult = NonNullable<Awaited<ReturnType<typeof itemItemSplit>>>
+    export type ItemItemSplitMutationBody = SplitItem
+    export type ItemItemSplitMutationError = globalThis.Error & { info?: Problem; status?: number }
+    export type ItemItemSplitMutationVariables = {itemId: string;data: SplitItem}
+
+    /**
+ * @summary Разделить изделие 1→N
+ */
+export const useItemItemSplit = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof itemItemSplit>>, TError,ItemItemSplitMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof itemItemSplit>>,
+        TError,
+        ItemItemSplitMutationVariables,
+        TContext
+      > => {
+      return useMutation(getItemItemSplitMutationOptions(options), queryClient);
     }
 
 export type journalEntryListResponse200 = {

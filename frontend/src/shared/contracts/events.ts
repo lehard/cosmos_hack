@@ -609,6 +609,45 @@ binding_basis: ("carrier" | "post_context" | "time_window" | "manual")
  * Надёжность привязки.
  */
 binding_reliability: ("unique" | "probable" | "ambiguous" | "unidentified")
+/**
+ * Носитель события `‹тип›:‹значение›`, по которому разрешалась привязка (AD-41).
+ */
+carrier_ref?: string
+/**
+ * Копия привязываемого события без изделия (тип, время, источник, data): свёртка изделия видит содержимое события в своём потоке (AD-5, AD-41).
+ */
+subject?: {
+/**
+ * Тип события каталога.
+ */
+event_type: string
+/**
+ * Версия схемы data.
+ */
+schema_version?: number
+/**
+ * Время возникновения события.
+ */
+occurred_at: string
+/**
+ * Источник события.
+ */
+source_id?: string
+/**
+ * Вид источника (FR-140).
+ */
+source_kind?: string
+/**
+ * data события как в журнале.
+ */
+data: {
+
+}
+}
+/**
+ * Изделие прежней привязки при перепривязке: событие у него больше не учитывается (AD-41).
+ */
+previous_item_id?: string
 }
 /**
  * Условная сборка импортирована — структура сборки из файла КОМПАС (идентификатор, версия, компоненты, количество, связи; геометрии нет — явно); связи переводятся в зоны и ограничения нормативного слоя (FR-94, PRD §11.15). Схема файла — `contracts/integrations/cad/assembly.schema.json` (эпик 31).
@@ -3347,6 +3386,50 @@ endpoint?: string
 document_id: string
 }
 /**
+ * Сдерживание распространено по генеалогии — адресованная запись стадии изделию: блок партии доходит до изделий из партии и собранных из них; блок компонента — вверх по дереву сборки (AD-42). Ось «сдерживание» меняет nonconformity по этой записи (AD-30); снятие основания блок не снимает — решает человек (AD-27).
+ * 
+ * This interface was referenced by `EventsContracts`'s JSON-Schema
+ * via the `definition` "GenealogyContainmentPropagatedV1".
+ */
+export interface GenealogyContainmentPropagatedV1 {
+/**
+ * Уровень сдерживания источника.
+ */
+level: ("none" | "observe" | "additional_check" | "item_hold" | "lot_hold")
+/**
+ * Откуда пришло: блок партии, блок компонента (вверх по сборке), блок исходного изделия при разделении.
+ */
+source: ("lot" | "component" | "split_parent")
+/**
+ * Идентификатор UUID в нижнем регистре (RFC 9562).
+ */
+source_event_id: string
+/**
+ * Идентификатор объекта системы или справочника: ASCII, без пробелов.
+ */
+lot_id?: string
+/**
+ * Внутренний идентификатор изделия: `код_предприятия:локальный_id` (AD-16). Из метки не выводится; в прогоне локальная часть несёт префикс прогона.
+ */
+source_item_id?: string
+/**
+ * Путь по дереву сборки от источника к изделию.
+ * 
+ * Items: Внутренний идентификатор изделия: `код_предприятия:локальный_id` (AD-16). Из метки не выводится; в прогоне локальная часть несёт префикс прогона.
+ */
+path?: string[]
+/**
+ * Основание снято у источника: блок остаётся до решения человека (AD-27, AD-3).
+ */
+released?: boolean
+/**
+ * Основания — `event_id` записей.
+ * 
+ * Items: Идентификатор UUID в нижнем регистре (RFC 9562).
+ */
+basis: string[]
+}
+/**
  * Временная группа расформирована — разгруппировка (FR-15).
  * 
  * This interface was referenced by `EventsContracts`'s JSON-Schema
@@ -3413,6 +3496,18 @@ relation: ("component_of" | "made_from_lot" | "split_from" | "grouped_with")
  * Идентификатор UUID в нижнем регистре (RFC 9562).
  */
 basis_event_id: string
+/**
+ * Идентификатор объекта системы или справочника: ASCII, без пробелов.
+ */
+group_id?: string
+/**
+ * Позиция компонента в сборке по спецификации.
+ */
+position?: string
+/**
+ * Связь перенесена при разделении 1→N или по сборке (происхождение компонента), а не записана напрямую (FR-15).
+ */
+inherited?: boolean
 }
 /**
  * Партия выдана в производство — какие изделия или задания получили материал или покупные из партии — связь «партия → изделия» для области риска (FR-45).
@@ -3475,6 +3570,65 @@ certificate_present: boolean
  * Условный идентификатор (псевдоним) сотрудника; соответствие человеку хранит модуль access.
  */
 registered_by: string
+/**
+ * Вид: партия материала или покупных / плавка (FR-45). Садка — временная группа genealogy.group.formed (kind = charge).
+ */
+lot_kind?: ("lot" | "heat")
+/**
+ * Номер плавки партии (запрос «плавка → все изделия», FR-45).
+ */
+heat_no?: string
+/**
+ * Идентификатор объекта системы или справочника: ASCII, без пробелов.
+ */
+item_type_id?: string
+}
+/**
+ * Результат образца-свидетеля распространён на изделие группы — адресованная запись стадии каждому изделию садки или групповой операции: результат контроля свидетеля виден в паспортах всех изделий группы (FR-15, AD-42).
+ * 
+ * This interface was referenced by `EventsContracts`'s JSON-Schema
+ * via the `definition` "GenealogyWitnessPropagatedV1".
+ */
+export interface GenealogyWitnessPropagatedV1 {
+/**
+ * Идентификатор объекта системы или справочника: ASCII, без пробелов.
+ */
+group_id: string
+/**
+ * Вид группы.
+ */
+group_kind: ("charge" | "batch_operation" | "transport" | "other")
+/**
+ * Внутренний идентификатор изделия: `код_предприятия:локальный_id` (AD-16). Из метки не выводится; в прогоне локальная часть несёт префикс прогона.
+ */
+witness_item_id: string
+/**
+ * Идентификатор UUID в нижнем регистре (RFC 9562).
+ */
+inspection_event_id: string
+/**
+ * Исход контроля свидетеля.
+ */
+outcome: ("defect_indicated" | "no_defect_indicated" | "unable_to_assess")
+/**
+ * Метод контроля свидетеля.
+ */
+method?: string
+/**
+ * Стабильный ключ шага процесса из расширения BPMN (`ant:properties/@stepKey`, AD-17).
+ * 
+ * This interface was referenced by `AntDefsV1`'s JSON-Schema
+ * via the `definition` "step_key".
+ */
+step_key?: string
+/**
+ * Точка контроля.
+ */
+inspection_point?: string
+/**
+ * Номер заключения или протокола испытаний.
+ */
+conclusion_ref?: string
 }
 /**
  * Мера назначена — коррекция или корректирующее действие; без плана проверки результативности мера не создаётся (FR-64).
@@ -3846,7 +4000,7 @@ common_factor: ("equipment" | "tool" | "fixture" | "program" | "lot" | "heat" | 
  */
 factor_ref?: string
 /**
- * Операция (шаг процесса), через которую действует фактор; для партии компонента — отсутствует.
+ * Стабильный ключ шага процесса из расширения BPMN (`ant:properties/@stepKey`, AD-17).
  */
 step_key?: string
 /**
@@ -4422,7 +4576,7 @@ method: ("camera" | "cmm" | "radiography" | "ultrasonic" | "penetrant" | "leak_t
  */
 phase: ("incoming" | "before_operation" | "after_operation" | "before_zone_closure" | "assembly" | "test" | "final" | "other")
 /**
- * Ключ шага процесса (`ant:properties/@stepKey`), к которому относится запись.
+ * Стабильный ключ шага процесса из расширения BPMN (`ant:properties/@stepKey`, AD-17).
  */
 step_key?: string
 /**
@@ -4687,7 +4841,7 @@ value?: string
  */
 read_outcome: ("readable" | "unreadable" | "mismatch")
 /**
- * Ключ шага процесса (`ant:properties/@stepKey`), к которому относится запись.
+ * Стабильный ключ шага процесса из расширения BPMN (`ant:properties/@stepKey`, AD-17).
  */
 step_key?: string
 }
@@ -4851,13 +5005,17 @@ process_version_hash: string
  */
 normative_rev: string
 /**
- * Ключ шага процесса (`ant:properties/@stepKey`), к которому относится запись.
+ * Стабильный ключ шага процесса из расширения BPMN (`ant:properties/@stepKey`, AD-17).
  */
 entry_step_key?: string
 /**
  * Изделие — сборочная единица.
  */
 is_assembly?: boolean
+/**
+ * Внутренний идентификатор изделия: `код_предприятия:локальный_id` (AD-16). Из метки не выводится; в прогоне локальная часть несёт префикс прогона.
+ */
+split_from?: string
 }
 /**
  * Изделие предъявлено — мастер предъявляет изделие ОТК или представителю заказчика на точке предъявления; номер предъявления растёт, повторное требует подписи выше (FR-19).
@@ -4867,7 +5025,7 @@ is_assembly?: boolean
  */
 export interface ItemPresentationRecordedV1 {
 /**
- * Ключ шага процесса (`ant:properties/@stepKey`), к которому относится запись.
+ * Стабильный ключ шага процесса из расширения BPMN (`ant:properties/@stepKey`, AD-17).
  */
 step_key: string
 /**
@@ -5532,7 +5690,7 @@ due_at: string
  */
 owner_role_id?: string
 /**
- * Ключ шага процесса (`ant:properties/@stepKey`), к которому относится запись.
+ * Стабильный ключ шага процесса из расширения BPMN (`ant:properties/@stepKey`, AD-17).
  */
 step_key?: string
 /**
@@ -5596,7 +5754,7 @@ blocked_operations?: number
  */
 export interface OperationMessageThrownV1 {
 /**
- * Ключ шага процесса (`ant:properties/@stepKey`), к которому относится запись.
+ * Стабильный ключ шага процесса из расширения BPMN (`ant:properties/@stepKey`, AD-17).
  */
 step_key: string
 /**
@@ -5645,7 +5803,7 @@ inspection_on_receipt: ("no_damage" | "damage_found" | "not_inspected")
  */
 received_by: string
 /**
- * Ключ шага процесса (`ant:properties/@stepKey`), к которому относится запись.
+ * Стабильный ключ шага процесса из расширения BPMN (`ant:properties/@stepKey`, AD-17).
  */
 step_key?: string
 }
@@ -5673,7 +5831,7 @@ container_id?: string
  */
 sent_by: string
 /**
- * Ключ шага процесса (`ant:properties/@stepKey`), к которому относится запись.
+ * Стабильный ключ шага процесса из расширения BPMN (`ant:properties/@stepKey`, AD-17).
  */
 step_key?: string
 }
@@ -5689,7 +5847,7 @@ export interface OperationPreconditionFailedV1 {
  */
 operation_run_id?: string
 /**
- * Ключ шага процесса (`ant:properties/@stepKey`), к которому относится запись.
+ * Стабильный ключ шага процесса из расширения BPMN (`ant:properties/@stepKey`, AD-17).
  */
 step_key: string
 /**
@@ -5787,7 +5945,7 @@ interval_end?: string
  */
 interval_origin: ("source_reported" | "system_computed")
 /**
- * Ключ шага процесса (`ant:properties/@stepKey`), к которому относится запись.
+ * Стабильный ключ шага процесса из расширения BPMN (`ant:properties/@stepKey`, AD-17).
  */
 step_key?: string
 /**
@@ -5843,7 +6001,7 @@ operation_run_id: string
  */
 operation_code: string
 /**
- * Ключ шага процесса (`ant:properties/@stepKey`), к которому относится запись.
+ * Стабильный ключ шага процесса из расширения BPMN (`ant:properties/@stepKey`, AD-17).
  */
 step_key: string
 /**
@@ -5981,7 +6139,7 @@ operator_id: string
  */
 inspection_point?: string
 /**
- * Ключ шага процесса (`ant:properties/@stepKey`), к которому относится запись.
+ * Стабильный ключ шага процесса из расширения BPMN (`ant:properties/@stepKey`, AD-17).
  */
 step_key: string
 reason?: Reason35
@@ -6053,7 +6211,7 @@ workplace_id?: string
  */
 operator_id: string
 /**
- * Ключ шага процесса (`ant:properties/@stepKey`), к которому относится запись.
+ * Стабильный ключ шага процесса из расширения BPMN (`ant:properties/@stepKey`, AD-17).
  */
 step_key: string
 }
@@ -6153,7 +6311,7 @@ workplace_id?: string
  */
 operator_id: string
 /**
- * Ключ шага процесса (`ant:properties/@stepKey`), к которому относится запись.
+ * Стабильный ключ шага процесса из расширения BPMN (`ant:properties/@stepKey`, AD-17).
  */
 step_key: string
 /**
@@ -6739,7 +6897,7 @@ sampled_for_human_recheck: boolean
  */
 export interface QualityInspectionMissingV1 {
 /**
- * Ключ шага процесса (`ant:properties/@stepKey`), к которому относится запись.
+ * Стабильный ключ шага процесса из расширения BPMN (`ant:properties/@stepKey`, AD-17).
  */
 step_key: string
 /**

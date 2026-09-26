@@ -110,6 +110,10 @@ type apiOptions struct {
 	// notifications — live-реализация notifications над проекциями сроков,
 	// задач и уведомлений (notifications.go, эпик 24); nil — заглушка 501.
 	notifications *notificationsapp.Service
+	// item, crossitem — живые операции изделия и межизделийной стадии
+	// (item.go, эпик 18); nil — заглушка 501.
+	item      *itemapp.Service
+	crossitem *crossitemapp.Service
 	// process — живая карта, версии и команды исполнителя (process.go, эпик 17); nil — 501.
 	process *processapp.Service
 }
@@ -145,7 +149,11 @@ func buildAPI(mux *http.ServeMux, o apiOptions) *httpapi.API {
 		journalhttp.Register(a, q, c)
 	}
 	{
-		q, c := pick[crossitemapp.Queries, crossitemapp.Commands](a.ModeFor("crossitem"), crossitemapp.NewService(), crossitemfx.New())
+		live := o.crossitem
+		if live == nil {
+			live = crossitemapp.NewService()
+		}
+		q, c := pick[crossitemapp.Queries, crossitemapp.Commands](a.ModeFor("crossitem"), live, crossitemfx.New())
 		crossitemhttp.Register(a, q, c)
 	}
 	{
@@ -169,7 +177,11 @@ func buildAPI(mux *http.ServeMux, o apiOptions) *httpapi.API {
 		processhttp.Register(a, q, c)
 	}
 	{
-		q, c := pick[itemapp.Queries, itemapp.Commands](a.ModeFor("item"), itemapp.NewService(), itemfx.New())
+		live := o.item
+		if live == nil {
+			live = itemapp.NewService()
+		}
+		q, c := pick[itemapp.Queries, itemapp.Commands](a.ModeFor("item"), live, itemfx.New())
 		itemhttp.Register(a, q, c)
 	}
 	{

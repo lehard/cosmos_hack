@@ -37,6 +37,38 @@ func Register(api *httpapi.API, q app.Queries, c app.Commands) {
 		func(ctx context.Context, in *struct{ httpapi.MomentQuery }, m platform.Moment) (app.ItemGroupList, error) {
 			return q.Groups(ctx, m)
 		})
+	httpapi.Read(api, httpapi.Get("/genealogy/trace", "Партия, плавка или садка → все изделия",
+		"FR-45: изделия, сделанные из партии или плавки или бывшие в садке, и все сборки, в которые они вошли (владелец генеалогии — межизделийная стадия, AD-42)."),
+		platform.Action{ID: "crossitem.trace.read", Owner: owner, Subject: "lot"},
+		func(ctx context.Context, in *struct {
+			LotID   string `query:"lot_id" maxLength:"128" doc:"Партия."`
+			HeatNo  string `query:"heat_no" maxLength:"64" doc:"Плавка."`
+			GroupID string `query:"group_id" maxLength:"128" doc:"Садка или иная временная группа."`
+			httpapi.MomentQuery
+		}, m platform.Moment) (app.Trace, error) {
+			return q.Trace(ctx, in.LotID, in.HeatNo, in.GroupID, m)
+		})
+	httpapi.Read(api, httpapi.Get("/bindings/unbound", "События без изделия",
+		"AD-41, FR-34: события, пришедшие без изделия, — неразрешённые и неоднозначные (с кандидатами) — очередь ручной привязки."),
+		platform.Action{ID: "crossitem.binding.list", Owner: owner, Subject: "item"},
+		func(ctx context.Context, in *struct{ httpapi.MomentQuery }, m platform.Moment) (app.UnboundList, error) {
+			return q.Unbound(ctx, m)
+		})
+
+	httpapi.Do(api, httpapi.Post("/item-groups", "Сформировать группу изделий",
+		"FR-15: садка, групповая операция, транспорт; результат образца-свидетеля распространяется на все изделия группы (genealogy.witness.propagated, AD-42)."),
+		platform.Action{ID: "crossitem.group.form", Class: platform.ClassRecord, Owner: owner, Subject: "item", Emits: emits(catalog.GenealogyGroupFormed), SignatureLevel: 1},
+		func(ctx context.Context, in *struct{ Body app.FormGroup }) (platform.Receipt, error) {
+			return c.FormGroup(ctx, in.Body)
+		})
+	httpapi.Do(api, httpapi.Post("/item-groups/{group_id}/dissolve", "Расформировать группу изделий", "FR-15: разгруппировка."),
+		platform.Action{ID: "crossitem.group.dissolve", Class: platform.ClassRecord, Owner: owner, Subject: "item", Emits: emits(catalog.GenealogyGroupDissolved), SignatureLevel: 1},
+		func(ctx context.Context, in *struct {
+			GroupID string `path:"group_id" maxLength:"128"`
+			Body    app.DissolveGroup
+		}) (platform.Receipt, error) {
+			return c.DissolveGroup(ctx, in.GroupID, in.Body)
+		})
 
 	type lotCmd[B any] struct {
 		LotID string `path:"lot_id" maxLength:"128"`

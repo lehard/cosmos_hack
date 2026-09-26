@@ -49,6 +49,13 @@ type Record struct {
 	BasisSeq int64
 	// Corrects — event_id исправляемой записи (FR-122) или пусто.
 	Corrects string
+	// CarrierRef — носитель события `‹тип›:‹значение›` (поле carrier_ref записи,
+	// AD-41): у события без изделия по нему межизделийная стадия разрешает
+	// привязку; IdentificationLevel — уровень идентификации из item_ref
+	// источника (unique | probable | ambiguous | unidentified, FR-34). Пусто —
+	// носителя нет.
+	CarrierRef          string
+	IdentificationLevel string
 	// Actor — автор решения человека: key_id@версия первого подписанта
 	// конверта (AD-10); пусто у фактов устройств и реакций. Нужен гардам
 	// разделения обязанностей (FR-56) и задаче «решение принято до новых
