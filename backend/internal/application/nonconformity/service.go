@@ -51,6 +51,9 @@ type Deps struct {
 	// точке предъявления подписывает обладатель полномочия точки,
 	// process State.Gates[step].Authority); nil — без проверки.
 	Authorities AuthorityCheck
+	// Equipment — названия оборудования по справочнику (equipment_label
+	// карточки); nil — названий нет.
+	Equipment EquipmentNames
 }
 
 // AuthorityCheck — есть ли у сотрудника person полномочие authority

@@ -48,6 +48,7 @@ func renderNonconformity(c *Ctx) []loader.Response {
 		s := ncapp.NCSummary{NCID: n.ID, Number: n.Number, Status: n.Status(c.M, c.T), ItemID: id, ItemLabel: label, Severity: "major", StepKey: n.StepKey, Disposition: "none", FoundAt: n.SignalAt}
 		if len(n.Spec.Defects) > 0 {
 			s.DefectTypeCode = ptr(n.Spec.Defects[0].Kind)
+			s.DefectTypeLabel = defectLabel(n.Spec.Defects[0].Kind)
 		}
 		if d := n.DispositionAt(c.M); d != nil && !d.After(c.T) {
 			s.Disposition = n.Disposition(c.M)
@@ -179,7 +180,7 @@ func (c *Ctx) card(n *NC) ncapp.NCCard {
 		}
 	}
 	if run != nil && len(n.Spec.Items) == 0 && n.Spec.Component == "" {
-		card.Happened.Operation = &ncapp.NCOperationContext{OperationRunID: run.ID, StepKey: run.StepKey, Label: run.Label + " — сварка фланца с кольцом", EquipmentID: ptr(run.Equipment),
+		card.Happened.Operation = &ncapp.NCOperationContext{OperationRunID: run.ID, StepKey: run.StepKey, Label: run.Label + " — сварка фланца с кольцом", EquipmentID: ptr(run.Equipment), EquipmentLabel: nameOf(c.M.names.Equipment, run.Equipment),
 			ProgramRef: ptr(run.Program), PerformerID: ptr(run.Performer), StartedAt: tptr(run.From), FinishedAt: tptr(run.To)}
 		for _, e := range c.itemEvents(it) {
 			switch {
@@ -205,6 +206,12 @@ func (c *Ctx) card(n *NC) ncapp.NCCard {
 		v := c.signalView(s)
 		src := ncapp.NCSourceSignal{SignalID: v.SignalID, BasisKind: v.BasisKind, DefectTypeCode: v.DefectTypeCode, DefectTypeKnown: v.DefectTypeKnown, ZoneID: v.ZoneID,
 			Severity: v.Severity, AnalyzerConfidenceBP: v.AnalyzerConfidenceBP, ObservationQualityBP: v.ObservationQualityBP, Stages: []ncapp.NCAnalyzerStage{}, Versions: v.Versions, EvidenceRefs: []string{}}
+		if v.DefectTypeCode != nil {
+			src.DefectTypeLabel = defectLabel(*v.DefectTypeCode)
+		}
+		if v.ZoneID != nil {
+			src.ZoneLabel = nameOf(c.M.names.Zones, *v.ZoneID)
+		}
 		for _, st := range v.Stages {
 			src.Stages = append(src.Stages, ncapp.NCAnalyzerStage{Stage: st.Stage, Version: st.Version, ConfidenceBP: st.ConfidenceBP, OutputNote: st.OutputNote})
 		}

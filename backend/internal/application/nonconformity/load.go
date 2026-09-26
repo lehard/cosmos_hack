@@ -41,6 +41,8 @@ type itemView struct {
 	// команд, чтобы проверка AD-39 не считала устаревшим то, что клиент видел.
 	BasisSeq int64
 	Env      dom.Env
+	// Labels — названия видов дефектов и зон из того же нормативного слоя.
+	Labels labels
 }
 
 // State — состояние модуля nonconformity изделия.
@@ -140,6 +142,7 @@ func (s *Service) loadItem(ctx context.Context, itemID string, m platform.Moment
 	b.Nonconformity.Quality = b.Quality
 	b.Nonconformity.Process = b.Process
 	v.Env = b.Nonconformity
+	v.Labels = labelsOf(b)
 	if err := func() (err error) {
 		defer func() {
 			if p := recover(); p != nil {

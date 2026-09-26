@@ -38,6 +38,8 @@ func nonconformityLive(ctx context.Context, env *environment, dir *accessapp.Dir
 			DomainClock: c.domainClock(), Routes: routes, Now: c.codec.Now, Authorities: auth,
 			// Срок решения — по производственному календарю справочника (эпик 19, FR-55).
 			Calendar: referenceapp.WorkingCalendar{Source: c.refSource},
+			// Названия оборудования карточки (equipment_label) — справочник оборудования.
+			Equipment: referenceapp.EquipmentNames{Source: c.refSource},
 		}),
 		nonconformityapp.WithConfig(nonconformityapp.Config{
 			DomainBuild: c.codec.DomainBuild, Partitions: env.cfg.Engine.Partitions,

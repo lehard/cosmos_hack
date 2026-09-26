@@ -14,6 +14,8 @@ export interface NCSummary {
   /** Сдерживание изделия. */
   containment?: NCSummaryContainment;
   defect_type_code?: string;
+  /** Вид дефекта по-русски — из классификатора видов дефектов; нет в классификаторе — поля нет. */
+  defect_type_label?: string;
   disposition: NCSummaryDisposition;
   found_at: string;
   /** Системное расследование (FR-51). */
