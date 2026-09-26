@@ -51,7 +51,7 @@ func (c *Ctx) signalView(s SignalView) qualityapp.QualitySignal {
 	it := c.M.itemByID[s.Item]
 	q := qualityapp.QualitySignal{SignalID: s.ID, ItemID: FullID(it.ID), ItemLabel: it.Label, StepKey: s.Step, BasisKind: "inspection_result",
 		DefectTypeKnown: s.Kind != "", Severity: "major", ReactionMapRef: "reaction-map@1", State: "open", RaisedAt: s.At,
-		Stages: []qualityapp.QualityAnalyzerStage{}, EvidenceRefs: []string{}, BasisSeq: c.ItemSeq(it)}
+		Stages: []qualityapp.QualityAnalyzerStage{}, EvidenceRefs: c.M.observationRefs(it, s.At), BasisSeq: c.ItemSeq(it)}
 	if s.Zone != "" {
 		q.ZoneID = ptr(s.Zone)
 	}
@@ -112,7 +112,7 @@ func renderQuality(c *Ctx) []loader.Response {
 				continue
 			}
 			r := qualityapp.InspectionResult{EventID: e.ID, Seq: ptr(e.Seq), ItemID: FullID(it.ID), StepKey: e.StepKey, Method: methodOf(e), Outcome: e.Params["outcome"],
-				ProcessingState: "completed", Defects: []qualityapp.InspectionDefect{}, SourceKind: sourceKindOf(e), Reliability: "high", OccurredAt: e.Occurred, EvidenceRefs: []string{}}
+				ProcessingState: "completed", Defects: []qualityapp.InspectionDefect{}, SourceKind: sourceKindOf(e), Reliability: "high", OccurredAt: e.Occurred, EvidenceRefs: e.evidenceRefs()}
 			if r.SourceKind == "" {
 				r.SourceKind, r.Reliability = "camera", "medium"
 			}

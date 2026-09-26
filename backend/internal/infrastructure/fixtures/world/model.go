@@ -137,6 +137,8 @@ type Event struct {
 	Late       bool
 	CARef      string
 	Entity     loader.Change
+	// Materials — материалы наблюдения (иллюстрации, illustrations.go): адреса — в evidence_refs.
+	Materials []*illustration
 }
 
 // Build разворачивает описание мира: разбирает времена, строит маршруты
