@@ -88,6 +88,7 @@ const state = computed(() => mapDataState(data.value))
       v-model:range="range"
       :data="data"
       :processes="processes.data.value ?? []"
+      :replay="moment.asOf !== null"
       :density="density"
       @select-process="selectProcess"
       @select-version="(id) => (versionId = id)"

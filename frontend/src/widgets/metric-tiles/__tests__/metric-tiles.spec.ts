@@ -53,13 +53,11 @@ describe('плитки показателей', () => {
   })
 
   it('нажатие на плитку выбирает число для раскрытия; смена периода — новый запрос с period', async () => {
-    const calls = mockApi({ 'GET /api/v1/metrics/tiles': tiles() })
-    // Запоминаем полные адреса: mockApi хранит путь без параметров.
+    // Сервер подменён здесь же: нужны полные адреса с параметрами (mockApi хранит только путь).
     const urls: string[] = []
-    const inner = globalThis.fetch
-    vi.stubGlobal('fetch', (url: string, init?: RequestInit) => {
+    vi.stubGlobal('fetch', async (url: string) => {
       urls.push(url)
-      return inner(url, init)
+      return new Response(JSON.stringify(tiles()), { status: 200, headers: { 'Content-Type': 'application/json', 'Ant-Backend': 'fixtures' } })
     })
     const w = await mountWidget(MetricTilesWidget, props)
     await w.find('[data-metric="items_with_confirmed_nc"] button').trigger('click')
@@ -67,7 +65,7 @@ describe('плитки показателей', () => {
     expect(focus.pick).toEqual({ metricId: 'items_with_confirmed_nc', title: 'Изделия с подтверждёнными несоответствиями' })
     focus.period = 'week'
     await new Promise((r) => setTimeout(r, 0))
-    await vi.waitFor(() => expect(calls.length).toBe(2))
+    await vi.waitFor(() => expect(urls.length).toBe(2))
     expect(new URL(urls[0]!, 'http://ant.local').searchParams.get('period')).toBe('shift')
     expect(new URL(urls[1]!, 'http://ant.local').searchParams.get('period')).toBe('week')
   })

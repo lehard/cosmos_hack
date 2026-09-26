@@ -207,7 +207,7 @@ const formatTooltip = (v: number) => d(new Date(v), 'dateTime')
 /* Одна строка постоянной высоты: кнопки — ползунок с метками — момент — ось. */
 .timeline--compact {
   flex-direction: row;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   gap: var(--ant-space-3);
   align-items: center;
 }
@@ -218,8 +218,8 @@ const formatTooltip = (v: number) => d(new Date(v), 'dateTime')
 }
 
 .timeline--compact .track {
-  flex: 1 1 auto;
-  min-width: 160px;
+  flex: 1 1 240px;
+  min-width: 0;
   padding-top: 12px;
 }
 
