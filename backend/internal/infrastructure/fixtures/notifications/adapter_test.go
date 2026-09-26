@@ -73,3 +73,46 @@ func TestTasksAddressedAndAcknowledged(t *testing.T) {
 		t.Fatalf("сводка не пересчитана: было %+v, стало %+v", before, s)
 	}
 }
+
+// TestTasksScopedBySession — область сеанса на заготовках (как live,
+// app.InScope): начальник сварочного цеха (ent01/b1/wc) не видит задач
+// мастера сборочно-испытательного цеха (WS-AC); та же роль с областью ent01 —
+// видит.
+func TestTasksScopedBySession(t *testing.T) {
+	a := New()
+	ids := func(scope string) map[string]string {
+		ctx := platform.WithPrincipal(context.Background(), platform.Principal{PersonID: "HWS-WC", Role: "head_of_workshop",
+			Roles: []string{"head_of_workshop", "site_foreman", "staff", "employee"}, Scope: scope})
+		l, err := a.Tasks(ctx, app.TaskFilter{}, platform.Moment{}, platform.Page{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		out := map[string]string{}
+		for _, x := range l.Items {
+			loc := ""
+			if x.LocationID != nil {
+				loc = *x.LocationID
+			}
+			out[x.TaskID] = loc
+		}
+		return out
+	}
+	wc, ent := ids("ent01/b1/wc"), ids("ent01")
+	for id, loc := range wc {
+		if loc != "" && loc != "WS-WC" {
+			t.Errorf("область ent01/b1/wc видит задачу %s на %s", id, loc)
+		}
+	}
+	ac := 0
+	for id, loc := range ent {
+		if loc == "WS-AC" {
+			ac++
+			if _, ok := wc[id]; ok {
+				t.Errorf("задача WS-AC %s в области сварочного цеха", id)
+			}
+		}
+	}
+	if ac == 0 || len(ent) != len(wc)+ac {
+		t.Fatalf("область ent01: %d задач (WS-AC — %d), сварочный цех: %d", len(ent), ac, len(wc))
+	}
+}

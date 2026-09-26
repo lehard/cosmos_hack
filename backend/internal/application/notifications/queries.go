@@ -27,6 +27,8 @@ type viewer struct {
 	all    bool
 	roles  []string
 	person string
+	// p — субъект сеанса: его область сужает задачи с местом (InScope).
+	p platform.Principal
 }
 
 func viewerOf(ctx context.Context) viewer {
@@ -36,7 +38,13 @@ func viewerOf(ctx context.Context) viewer {
 	}
 	// Роль с наследованием (начальник ОТК видит задачи контролёра, начальник
 	// цеха — мастера) — из сеанса: одна функция наследования access (AD-15).
-	return viewer{roles: p.EffectiveRoles(), person: p.PersonID, all: false}
+	return viewer{roles: p.EffectiveRoles(), person: p.PersonID, all: false, p: p}
+}
+
+// sees — задача видна субъекту: адресована ему и её место — в его области
+// (InScope; задачи без места — только по адресности).
+func (v viewer) sees(t notif.TaskRecord, places Places) bool {
+	return v.addressed(t.Role, t.Person) && (v.all || InScope(v.p, t.LocationID, places))
 }
 
 // addressed — задача или уведомление адресовано субъекту.
@@ -84,7 +92,7 @@ func (s *Service) Summary(ctx context.Context, m platform.Moment) (NotificationS
 		return NotificationSummary{}, err
 	}
 	for _, t := range ts {
-		if t.State != notif.TaskOpen || !inRun(m, t.RunID) || t.CreatedAt.After(now) || !v.addressed(t.Role, t.Person) {
+		if t.State != notif.TaskOpen || !inRun(m, t.RunID) || t.CreatedAt.After(now) || !v.sees(t, s.cfg.Places) {
 			continue
 		}
 		if decisionKind(t.Kind) {
@@ -286,7 +294,8 @@ func alertKind(basis string) string {
 }
 
 // Tasks — задачи и уведомления пользователя (notifications.task.list, FR-57):
-// адресные, со сроком и признаком просрочки; новые сверху.
+// адресные и в области сеанса (место задачи входит в область персоны,
+// InScope), со сроком и признаком просрочки; новые сверху.
 func (s *Service) Tasks(ctx context.Context, f TaskFilter, m platform.Moment, p platform.Page) (TaskList, error) {
 	if !s.live() {
 		return s.Unimplemented.Tasks(ctx, f, m, p)
@@ -302,7 +311,7 @@ func (s *Service) Tasks(ctx context.Context, f TaskFilter, m platform.Moment, p 
 	}
 	out := []TaskEntry{}
 	for _, t := range ts {
-		if !inRun(m, t.RunID) || t.CreatedAt.After(now) || !v.addressed(t.Role, t.Person) {
+		if !inRun(m, t.RunID) || t.CreatedAt.After(now) || !v.sees(t, s.cfg.Places) {
 			continue
 		}
 		if f.State != "" && t.State != f.State {

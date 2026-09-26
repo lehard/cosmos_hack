@@ -3,10 +3,13 @@ package notifications
 import (
 	"context"
 	"slices"
+	"sync"
 
 	app "ant/internal/application/notifications"
 	"ant/internal/application/platform"
 	"ant/internal/infrastructure/fixtures/loader"
+	"ant/internal/infrastructure/fixtures/world"
+	"ant/internal/infrastructure/security/identity"
 )
 
 // Adapter — реализация fixtures ведущих портов модуля notifications (AD-36):
@@ -79,8 +82,19 @@ func (Adapter) Alerts(ctx context.Context, m platform.Moment, _ platform.Page) (
 	return respond[app.AlertList](ctx, "notifications.alert.list", byRole(ctx), &m)
 }
 
+// places — справочник мест встроенного нормативного слоя (область задач,
+// app.InScope — как у live); не прочитался — задачи сужаются только адресностью.
+var places = sync.OnceValue(func() app.Places {
+	p, err := identity.LoadPlaces(world.Inputs())
+	if err != nil {
+		return nil
+	}
+	return p
+})
+
 // Tasks — задачи пользователя (notifications.task.list) с фильтром по
-// состоянию и месту: ответ мира, поверх — отметки сессии, затем адресность.
+// состоянию и месту: ответ мира, поверх — отметки сессии, затем адресность и
+// область сеанса (место задачи входит в область персоны, app.InScope).
 func (Adapter) Tasks(ctx context.Context, f app.TaskFilter, m platform.Moment, _ platform.Page) (app.TaskList, error) {
 	v, err := respond[app.TaskList](ctx, "notifications.task.list", byRole(ctx, "state", f.State, "location_id", f.LocationID), &m)
 	if err != nil {
@@ -98,7 +112,7 @@ func (Adapter) Tasks(ctx context.Context, f app.TaskFilter, m platform.Moment, _
 			x.State = o
 			x.Overdue = false
 		}
-		if !addressed(p, x) {
+		if !addressed(p, x) || x.LocationID != nil && !app.InScope(p, *x.LocationID, places()) {
 			continue
 		}
 		if f.State != "" && x.State != f.State {
