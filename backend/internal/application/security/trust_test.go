@@ -49,12 +49,14 @@ type fakeKeeper struct {
 	status KeeperStatus
 }
 
-func (k *fakeKeeper) LatestCheckpoint(context.Context) (Checkpoint, error) { return Checkpoint{}, ErrNotFound }
+func (k *fakeKeeper) LatestCheckpoint(context.Context) (Checkpoint, error) {
+	return Checkpoint{}, ErrNotFound
+}
 func (k *fakeKeeper) SubmitHeads(_ context.Context, s HeadsSubmission) (Checkpoint, error) {
 	k.subs = append(k.subs, s)
 	return Checkpoint{}, nil
 }
-func (k *fakeKeeper) LatestReport(context.Context) (Report, error)  { return k.report, nil }
+func (k *fakeKeeper) LatestReport(context.Context) (Report, error) { return k.report, nil }
 func (k *fakeKeeper) Status(context.Context) (KeeperStatus, error) { return k.status, nil }
 
 // AD-8: головы и звенья обеих цепочек уходят хранителю; AD-46: ant забирает
