@@ -174,8 +174,6 @@ channels:
         $ref: "#/components/messages/decision.process_hold.released.v1"
       decision.clean_point.assigned.v1:
         $ref: "#/components/messages/decision.clean_point.assigned.v1"
-      decision.concession.granted.v1:
-        $ref: "#/components/messages/decision.concession.granted.v1"
   erp:
     address: journal/erp
     title: "Журнал: семейство erp"
@@ -764,7 +762,6 @@ operations:
       - $ref: "#/channels/decision/messages/decision.process_hold.set.v1"
       - $ref: "#/channels/decision/messages/decision.process_hold.released.v1"
       - $ref: "#/channels/decision/messages/decision.clean_point.assigned.v1"
-      - $ref: "#/channels/decision/messages/decision.concession.granted.v1"
   journal.erp:
     action: send
     title: ant записывает записи семейства erp
@@ -2566,29 +2563,6 @@ components:
       x-ant-axis: containment
       x-ant-action-class: protective
       x-ant-critical: false
-      x-ant-current: true
-    decision.concession.granted.v1:
-      name: decision.concession.granted.v1
-      title: Разрешение на отклонение выдано
-      summary: "Разрешение на отклонение выдано (ГОСТ Р ИСО 9000 п. 3.12.5, FR-54): номер, пункт КД/ТУ, область действия, лимит количества, срок; лимит открывается атомарно с записью, расход — атомарно с решением (AD-39)."
-      contentType: application/json
-      payload:
-        allOf:
-          - $ref: ./common/envelope.v1.json
-          - type: object
-            properties:
-              event_type:
-                const: decision.concession.granted
-              schema_version:
-                const: 1
-              data:
-                $ref: ./decision/decision.concession.granted.v1.json
-      x-ant-kind: decision
-      x-ant-emitter: nonconformity
-      x-ant-stream: concession
-      x-ant-axis: none
-      x-ant-action-class: permissive
-      x-ant-critical: true
       x-ant-current: true
     erp.order.received.v1:
       name: erp.order.received.v1
