@@ -38,6 +38,25 @@ describe('карточка несоответствия', () => {
     expect(hero.find('.meta').text()).toContain('Сварка')
   })
 
+  it('названия из справочников вместо кодов: вид дефекта, зона, оборудование; нет названия — прежний текст', async () => {
+    const card = ncCard()
+    const sig = card.evidence.signals[0]!
+    sig.defect_type_label = 'Пора'
+    sig.zone_label = 'Шов 1, участок 40–80 мм'
+    card.happened.operation!.equipment_label = 'Сварочный источник ИС-3'
+    const w = mountWith(card)
+    expect(w.find('[data-testid="headline"]').text()).toBe('Пора')
+    expect(w.find('[data-testid="zone"]').text()).toBe('Шов 1, участок 40–80 мм')
+    expect(w.find('[data-testid="requirement"] .observed').text()).toContain('Пора · Шов 1, участок 40–80 мм')
+    expect(w.find('[data-testid="operation"]').text()).toContain('Сварочный источник ИС-3')
+    await w.find('[data-testid="toggle-details"]').trigger('click')
+    expect(w.find('[data-testid="defect-type"]').text()).toBe('Пора (W-POR)')
+    expect(w.find('[data-testid="zone-detail"]').text()).toBe('Шов 1, участок 40–80 мм (Z-weld-1)')
+    // Неизвестный вид — название не подставляется.
+    sig.defect_type_known = false
+    expect(mountWith(card).find('[data-testid="headline"]').text()).toBe('КТ-3, камера: обнаружен признак дефекта')
+  })
+
   it('два статуса: по изделию и системное расследование — из карточки, а не «нет данных»', () => {
     const two = mountCard().find('[data-testid="two-statuses"]').text()
     expect(two).toContain('По изделию: Черновик карточки')

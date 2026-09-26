@@ -40,11 +40,14 @@ const dec = (bp: number) => n(bpToFraction(bp), 'decimal2')
         <span data-testid="defect-type">
           <template v-if="!signal.defect_type_code">{{ t('common.words.unknown') }}</template>
           <template v-else-if="!signal.defect_type_known">{{ t('inspection.unknownDefectType', { code: signal.defect_type_code }) }}</template>
+          <template v-else-if="signal.defect_type_label">{{ signal.defect_type_label }} <span class="muted">({{ signal.defect_type_code }})</span></template>
           <template v-else>{{ signal.defect_type_code }}</template>
         </span>
       </KeyValue>
       <KeyValue :label="t('common.words.severity')" :value="codeText(SEVERITY_TEXT, signal.severity, t)" />
-      <KeyValue v-if="signal.zone_id" :label="t('common.words.zone')" :value="signal.zone_id" />
+      <KeyValue v-if="signal.zone_id" :label="t('common.words.zone')">
+        <span data-testid="zone-detail">{{ signal.zone_label ?? signal.zone_id }}<span v-if="signal.zone_label" class="muted"> ({{ signal.zone_id }})</span></span>
+      </KeyValue>
     </KeyValueList>
 
     <section v-if="signal.stages.length" class="block">
