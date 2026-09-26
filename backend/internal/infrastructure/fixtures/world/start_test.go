@@ -35,7 +35,7 @@ func TestStartFromStartStep(t *testing.T) {
 			t.Fatalf("до точки старта есть ожидание решения: шаг %d", n)
 		}
 	}
-	sl, err := a.Scenarios(ctx)
+	sl, err := a.Scenarios(ctx, false)
 	if err != nil || len(sl.Items) == 0 || sl.Items[0].StartStep == nil || *sl.Items[0].StartStep != start || sl.Items[0].StartTitle == "" {
 		t.Fatalf("точка старта в списке сценариев: %+v %v", sl, err)
 	}

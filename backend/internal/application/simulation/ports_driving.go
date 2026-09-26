@@ -9,7 +9,8 @@ import (
 // Queries — ведущий порт чтения модуля simulation (AD-36): пульт тестовых сценариев.
 type Queries interface {
 	// Scenarios — определения сценариев (simulation.scenario.list).
-	Scenarios(ctx context.Context) (ScenarioList, error)
+	// all — весь каталог; иначе — только сценарии показа (если отмечены).
+	Scenarios(ctx context.Context, all bool) (ScenarioList, error)
 	// Runs — прогоны (simulation.run.list).
 	Runs(ctx context.Context, p platform.Page) (RunList, error)
 	// Run — состояние прогона: шаг, доменные часы, пауза, скорость (simulation.run.read).
@@ -39,7 +40,7 @@ type Unimplemented struct{}
 
 func ni(op string) error { return platform.NotImplemented(op) }
 
-func (Unimplemented) Scenarios(context.Context) (ScenarioList, error) {
+func (Unimplemented) Scenarios(context.Context, bool) (ScenarioList, error) {
 	return ScenarioList{}, ni("simulation.scenario.list")
 }
 func (Unimplemented) Runs(context.Context, platform.Page) (RunList, error) {

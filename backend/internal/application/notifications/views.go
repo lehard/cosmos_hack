@@ -68,7 +68,7 @@ type AlertList struct {
 // notifications (task.task.created, AD-40); цена задержки — для эскалаций.
 type TaskEntry struct {
 	TaskID       string             `json:"task_id"`
-	Kind         string             `json:"kind" enum:"physical_move,isolate_move,recheck,decision_required,review_after_new_data,protection_basis_changed,resign,remark_carrier,remove_temporary_carrier,inspection_missing,admin_resend,other"`
+	Kind         string             `json:"kind" enum:"physical_move,isolate_move,recheck,decision_required,review_after_new_data,protection_basis_changed,resign,remark_carrier,remove_temporary_carrier,inspection_missing,admin_resend,process_step,other"`
 	Title        string             `json:"title"`
 	State        string             `json:"state" enum:"open,done,accepted,declined,withdrawn"`
 	AssigneeRole string             `json:"assignee_role"`
@@ -78,6 +78,10 @@ type TaskEntry struct {
 	DueAt        *time.Time         `nullable:"true" json:"due_at" doc:"Срок по производственному календарю (AD-4); null — без срока."`
 	Overdue      bool               `json:"overdue"`
 	Ref          *platform.DrillRef `json:"ref,omitempty" doc:"Субъект задачи."`
+	ItemID       *string            `json:"item_id,omitempty" doc:"Изделие задачи (субъект — изделие)."`
+	ItemLabel    *string            `json:"item_label,omitempty" doc:"Метка изделия для людей: номер с бирки (Ф-001), DM-код или номер из id — показывать вместо item_id."`
+	OperationID  *string            `json:"operation_id,omitempty" doc:"Задача процесса (kind process_step): операция API, которой исполнитель продвигает изделие (process.movement.receive, process.operation.start, process.operation.finish, process.movement.send)."`
+	StepKey      *string            `json:"step_key,omitempty" doc:"Шаг процесса (step_key BPMN), на котором стоит изделие."`
 }
 
 // TaskList — задачи пользователя.

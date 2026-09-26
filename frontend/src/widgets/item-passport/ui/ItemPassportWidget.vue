@@ -8,7 +8,7 @@
  * Срез `view: compact` — узкая панель; `full` — страница и окно. Состояние рамки — по оси качества:
  * «заблокировано» не делает паспорт «дефектным» (NFR-UI-4).
  */
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { qualityState, useItemGenealogy, useItemHistory, usePassport } from '@/entities/item'
 import { useDrillDown } from '@/features/drill-down'
@@ -36,6 +36,21 @@ const genealogyQ = useItemGenealogy(itemId, () => ({ ...opts.value, enabled: vie
 
 const passport = computed(() => passportQ.data.value?.data ?? null)
 const state = computed(() => (passport.value ? qualityState(passport.value.status) : 'normal'))
+
+// Ошибка чтения паспорта держится до первых данных: перечитывание по SSE во
+// время прогона сбрасывает ошибку запроса без данных обратно в «загрузку», и
+// окно изделия при 404 крутилось бы бесконечно вместо понятной ошибки.
+const lastError = ref<unknown>(null)
+watch(
+  () => passportQ.error.value,
+  (e) => {
+    if (e) lastError.value = e
+  },
+)
+watch([passport, itemId], ([p], [, prevId]) => {
+  if (p || itemId.value !== prevId) lastError.value = null
+})
+const passportError = computed(() => (passport.value ? undefined : (passportQ.error.value ?? lastError.value ?? undefined)))
 </script>
 
 <template>
@@ -44,8 +59,8 @@ const state = computed(() => (passport.value ? qualityState(passport.value.statu
     :density="density"
     :mode="backendModeOf(passportQ.data.value)"
     :state="state"
-    :loading="!!itemId && passportQ.isPending.value && !passport"
-    :error="passport ? undefined : passportQ.error.value"
+    :loading="!!itemId && passportQ.isPending.value && !passport && !passportError"
+    :error="passportError"
     :empty="!itemId"
     empty-key="widgets.passport.noItem"
     :data-widget="widgetId"

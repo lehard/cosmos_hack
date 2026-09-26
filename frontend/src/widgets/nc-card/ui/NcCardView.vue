@@ -29,13 +29,21 @@ import {
   conclusionVersions,
   deadlineOf,
   decisionsBeforeRevision,
+  emergenceWindow,
+  observationEventId,
   extraZoneHistory,
   type NCCard,
 } from '@/entities/nonconformity'
 import type { Density } from '@/shared/config/widget'
 import { formatMinutes } from '@/shared/lib/duration'
 import { ActionButton, KeyValue, KeyValueList, StatusTag, WIDGET_FRAME_CONTEXT } from '@/shared/ui'
+import type { InspectionCoverage } from '@/shared/api/generated/model'
+import CameraObservation from './CameraObservation.vue'
+import CoverageMap from './CoverageMap.vue'
 import EvidenceMaterial from './EvidenceMaterial.vue'
+import OutcomeLegend from './OutcomeLegend.vue'
+import type { SeamZone } from '../model/seam'
+import SeamScheme from './SeamScheme.vue'
 import NcSignal from './NcSignal.vue'
 import NcSystemAnalysis from './NcSystemAnalysis.vue'
 import NcTimeline from './NcTimeline.vue'
@@ -51,8 +59,12 @@ const props = withDefaults(
     view?: 'evidence' | 'full'
     /** Есть экран паспорта. */
     canOpenItem?: boolean
+    /** Участки шва изделия с состоянием проверки (схема шва); пусто — схемы нет. */
+    seamZones?: readonly SeamZone[]
+    /** Покрытие контролем изделия (`quality.coverage.read`); null — раздела нет. */
+    coverage?: InspectionCoverage | null
   }>(),
-  { density: 'comfortable', view: 'full', canOpenItem: true },
+  { density: 'comfortable', view: 'full', canOpenItem: true, seamZones: () => [], coverage: null },
 )
 const emit = defineEmits<{ 'open-item': [itemId: string] }>()
 const { t, n, d, te } = useI18n()
@@ -102,6 +114,11 @@ const evidence = computed(() => {
         : 'ncCard.evidence.verdict.partial'
   return { checks, complete, verdict }
 })
+/** Схема шва — только если участок сигнала среди участков шва изделия. */
+const seamHits = computed(() => props.card.evidence.signals.map((x) => x.zone_id).filter((z): z is string => !!z))
+const showSeam = computed(() => props.seamZones.length > 0 && props.seamZones.some((z) => seamHits.value.includes(z.zone_id)))
+const emergence = computed(() => emergenceWindow(props.card))
+const observationId = computed(() => observationEventId(props.card))
 const dec = (bp: number) => n(bpToFraction(bp), 'decimal2')
 const time = (x: string) => d(new Date(x), 'dateTime')
 const mode = (m: number) => (te(`decisions.automationMode.mode${m}`) ? t(`decisions.automationMode.mode${m}`) : `UNKNOWN(${m})`)
@@ -179,6 +196,7 @@ const inWindow = computed(() => !!frame.plain)
         <EvidenceMaterial v-for="ref in materials" :key="ref" :address="ref" />
       </div>
       <p v-else-if="signal" class="no-material muted ant-wrap" data-testid="no-material">{{ t('ncCard.material.none') }}</p>
+      <SeamScheme v-if="showSeam" :zones="seamZones" :hits="seamHits" />
 
       <!-- Полнота доказательств — состояние, а не отсутствие интерфейса (UI-51). -->
       <div v-if="signal" class="completeness" :data-complete="evidence.complete || undefined" data-testid="evidence-completeness">
@@ -211,8 +229,21 @@ const inWindow = computed(() => !!frame.plain)
     <!-- 3. Как было дело -->
     <section class="zone" data-zone="timeline">
       <h3 class="ant-wrap">{{ t('ncCard.sections.howItWent') }}</h3>
+      <!-- Окно возникновения: последняя чистая проверка → первая с признаком (не вина, а где искать). -->
+      <p v-if="emergence" class="emergence ant-wrap" data-testid="emergence">
+        <template v-if="emergence.clean">{{ t('ncCard.emergence.between', { clean: entryText(emergence.clean), cleanAt: time(emergence.clean.occurred_at), first: entryText(emergence.first), firstAt: time(emergence.first.occurred_at) }) }}</template>
+        <template v-else>{{ t('ncCard.emergence.noClean', { first: entryText(emergence.first), firstAt: time(emergence.first.occurred_at) }) }}</template>
+        <span class="muted">{{ t('ncCard.emergence.note') }}</span>
+      </p>
       <NcTimeline :card="card" />
+      <OutcomeLegend />
       <p v-if="card.evidence.similar_count" class="similar ant-wrap" data-testid="similar-count">{{ t('widgets.ncCard.similarCount', { n: card.evidence.similar_count }) }}</p>
+    </section>
+
+    <!-- 3б. Чем проверено: покрытие методами контроля (камера видит не всё). -->
+    <section v-if="coverage" class="zone" data-zone="coverage">
+      <h3 class="ant-wrap">{{ t('ncCard.sections.coverage') }}</h3>
+      <CoverageMap :coverage="coverage" />
     </section>
 
     <!-- 4. Что предлагает система -->
@@ -255,6 +286,10 @@ const inWindow = computed(() => !!frame.plain)
         @click="detailsOpen = !detailsOpen"
       />
       <div v-if="detailsOpen" class="details-body" data-testid="details">
+        <template v-if="observationId">
+          <h4 class="ant-wrap">{{ t('ncCard.camera.title') }}</h4>
+          <CameraObservation :event-id="observationId" />
+        </template>
         <h4 class="ant-wrap">{{ t('ncCard.layers.sourceSignal') }}</h4>
         <NcSignal v-for="s in card.evidence.signals" :key="s.signal_id" :signal="s" />
         <template v-if="current">
@@ -505,6 +540,21 @@ p {
 .req-text {
   font-size: var(--ant-fs-title);
   font-weight: var(--ant-fw-bold);
+}
+
+.emergence {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--ant-space-2) var(--ant-space-3);
+  border-left: 3px solid var(--ant-status-danger);
+  border-radius: 0 var(--ant-radius-md) var(--ant-radius-md) 0;
+  background: var(--ant-surface-subtle);
+  font-weight: var(--ant-fw-bold);
+}
+
+.emergence .muted {
+  font-weight: normal;
 }
 
 .similar {

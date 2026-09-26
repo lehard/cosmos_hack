@@ -182,6 +182,10 @@ type TaskRecord struct {
 	ClosedAt   time.Time  `json:"closed_at"`
 	Note       string     `json:"note,omitempty"`
 	Seq        int64      `json:"seq"`
+	// ItemLabel, Operation, StepKey — метка изделия и действие задачи процесса.
+	ItemLabel string `json:"item_label,omitempty"`
+	Operation string `json:"operation,omitempty"`
+	StepKey   string `json:"step_key,omitempty"`
 }
 
 // TaskKeys — ключи проекции задач (task_id).
@@ -215,6 +219,10 @@ func StepTask(v TaskRecord, r kernel.Record) TaskRecord {
 			return v
 		}
 		v.TaskID, v.Kind, v.Title, v.Role, v.Person, v.LocationID, v.Subject = d.TaskID, d.Kind, d.Title, d.AssigneeRoleID, d.AssigneePersonID, d.LocationID, d.SubjectRef
+		v.ItemLabel, v.Operation, v.StepKey = d.ItemLabel, d.OperationID, d.StepKey
+		if d.ItemID != "" {
+			v.ItemID = d.ItemID
+		}
 		v.DueAt = nil
 		if t, ok := ParseTime(d.DueAt); ok {
 			v.DueAt = &t

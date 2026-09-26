@@ -8,7 +8,9 @@
  */
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
+import { usePassport, useCoverage } from '@/entities/item'
 import { ncCardState, useNcCard } from '@/entities/nonconformity'
+import { useItemTypes } from '@/entities/reference'
 import { useDrillDown } from '@/features/drill-down'
 import { backendModeOf } from '@/shared/api/response'
 import type { WidgetProps } from '@/shared/config/widget'
@@ -30,6 +32,22 @@ const view = computed<'evidence' | 'full'>(() => (props.slice.view === 'evidence
 const query = useNcCard(ncId, runId)
 const card = computed(() => query.data.value?.data ?? null)
 const state = computed(() => (card.value ? ncCardState(card.value) : 'normal'))
+
+// Камера (разбор «Камеры + ИИ»): участки шва — зоны типа изделия вида «участок шва»
+// с состоянием проверки из паспорта; покрытие контролем по изделию.
+const itemId = computed(() => card.value?.item_id ?? null)
+const readOpts = computed(() => (runId.value ? { run_id: runId.value } : {}))
+const passportQ = usePassport(itemId, readOpts)
+const typesQ = useItemTypes()
+const coverageQ = useCoverage(itemId, readOpts)
+const seamZones = computed(() => {
+  const passport = passportQ.data.value?.data
+  const type = passport ? typesQ.data.value?.data.find((x) => x.item_type_id === passport.item_type_id) : null
+  if (!type) return []
+  const status = new Map((passport?.zones ?? []).map((z) => [z.zone_id, z.inspection_status]))
+  return type.zones.filter((z) => z.kind === 'weld_section').map((z) => ({ zone_id: z.zone_id, name: z.name, status: status.get(z.zone_id) }))
+})
+const coverage = computed(() => (coverageQ.data.value?.status === 200 ? coverageQ.data.value.data : null))
 
 // Обратный отсчёт срока (FR-55): раз в 30 с; в воспроизведении — момент воспроизведения.
 // «Сейчас» — по часам сервера (Ant-Now); в воспроизведении — момент воспроизведения.
@@ -55,6 +73,8 @@ const now = computed(() => (moment.asOf ? Date.parse(moment.asOf) : serverNow.va
       :now="now"
       :density="density"
       :view="view"
+      :seam-zones="seamZones"
+      :coverage="coverage"
       @open-item="(id) => drill.open({ entity: 'item', id })"
     />
   </WidgetFrame>

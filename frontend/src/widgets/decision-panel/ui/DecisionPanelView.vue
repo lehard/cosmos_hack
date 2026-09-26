@@ -12,7 +12,7 @@
  * - «Почему вы можете / не можете»; нет полномочий — «Запросить решение» вместо
  *   подписи (FR-146). Подпись — окном уровня 2 (виджет открывает его по `sign`).
  */
-import { computed, reactive, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { NAlert, NInput, NSelect } from 'naive-ui'
 import {
@@ -104,6 +104,7 @@ watch(
 )
 
 function choose(action: DecisionAction, disposition: Disposition | null = null): void {
+  techOpen.value = false
   chosen.action = action
   draft.action = action
   draft.disposition = disposition
@@ -111,6 +112,19 @@ function choose(action: DecisionAction, disposition: Disposition | null = null):
 }
 
 const operation = computed(() => (chosen.action ? DECISION_ACTIONS[chosen.action].operation : null))
+/**
+ * Действие сервера (п. 15): доступность для вошедшего, почему, деловые и
+ * технические последствия. Только их показываем — интерфейс ничего не досчитывает.
+ */
+const serverActions = computed(() => props.card.to_decide.actions ?? [])
+function serverActionFor(action: DecisionAction, disposition: Disposition | null = null) {
+  const op = DECISION_ACTIONS[action].operation
+  return serverActions.value.find((a) => a.operation === op && (action !== 'disposition' || a.disposition === disposition)) ?? null
+}
+const chosenServer = computed(() => (chosen.action ? serverActionFor(chosen.action, draft.disposition) : null))
+const techOpen = ref(false)
+/** Кому передано исполнение решения по изделию — от сервера (стык с мастером). */
+const handoff = computed(() => props.card.handoff ?? null)
 /** Есть ли право на выбранное действие; null — неизвестно (список прав не пришёл). */
 const permitted = computed<boolean | null>(() => (operation.value && props.allowed ? props.allowed.has(operation.value) : null))
 const usable = computed(() => usableConcessions(props.concessions, draft.disposition))
@@ -171,6 +185,7 @@ const DISPOSITION_OUTCOME: Record<Disposition, string> = {
 function stageState(i: number): string {
   if (i < stage.value) return t(`widgets.decisions.stageDone.${STAGES[i]}`)
   if (i > stage.value) return t('widgets.decisions.stageNext')
+  if (STAGES[i] === 'execution' && handoff.value) return t('widgets.decisions.handoff', { who: handoff.value.role_label, what: handoff.value.task_title, status: handoff.value.status_label })
   return t(`widgets.decisions.stageNow.${STAGES[i]}`)
 }
 const reasonLabel = computed(() => (draft.action === 'reject_signal' ? t('decisions.signal.rejectReasonLabel') : t('widgets.decisions.reasonLabel')))
@@ -216,11 +231,14 @@ const reasonLabel = computed(() => (draft.action === 'reject_signal' ? t('decisi
         class="option"
         :data-disposition="d"
         :aria-pressed="chosen.action === 'disposition' && draft.disposition === d"
-        :disabled="!canAct || busy"
+        :data-allowed="serverActionFor('disposition', d)?.allowed === false ? 'false' : undefined"
+        :disabled="!canAct || busy || serverActionFor('disposition', d)?.allowed === false"
+        :title="serverActionFor('disposition', d)?.why_available"
         @click="choose('disposition', d)"
       >
         <span class="option-title ant-wrap">{{ t(DISPOSITION_SHORT[d]) }}</span>
         <span class="option-terms ant-wrap" :data-concession="needsConcession(d) || undefined">{{ t(DISPOSITION_TERM[d]) }}</span>
+        <span v-if="serverActionFor('disposition', d)?.allowed === false" class="option-why ant-wrap" data-testid="option-why">{{ serverActionFor('disposition', d)!.why_available }}</span>
       </button>
       <p class="muted">{{ t('decisions.disposition.decisionDoesNotWaitForCause') }}</p>
     </section>
@@ -240,6 +258,24 @@ const reasonLabel = computed(() => (draft.action === 'reject_signal' ? t('decisi
         <p class="ant-wrap">{{ t(DISPOSITION_MEANING[draft.disposition]) }}</p>
         <p class="muted ant-wrap" data-testid="chosen-outcome">{{ t(DISPOSITION_OUTCOME[draft.disposition]) }}</p>
       </template>
+      <!-- Что произойдёт — от сервера: деловые на виду, технические по раскрытию (UI-52). -->
+      <div v-if="chosenServer" class="effects" data-testid="effects">
+        <p class="muted ant-wrap" data-testid="why-available">{{ chosenServer.why_available }}</p>
+        <template v-if="chosenServer.consequences.length">
+          <p class="chosen-title">{{ t('widgets.presentation.afterDecision') }}</p>
+          <ul class="effects-list" data-testid="consequences">
+            <li v-for="c in chosenServer.consequences" :key="c" class="ant-wrap">{{ c }}</li>
+          </ul>
+        </template>
+        <template v-if="chosenServer.technical_consequences.length">
+          <button type="button" class="more" data-testid="toggle-technical" @click="techOpen = !techOpen">
+            {{ techOpen ? t('widgets.presentation.technicalHide') : t('widgets.presentation.technicalShow', { n: chosenServer.technical_consequences.length }) }}
+          </button>
+          <ul v-if="techOpen" class="effects-list muted" data-testid="technical-consequences">
+            <li v-for="c in chosenServer.technical_consequences" :key="c" class="ant-wrap">{{ c }}</li>
+          </ul>
+        </template>
+      </div>
       <template v-if="draft.action === 'disposition'">
         <p v-if="draft.disposition === 'rework' || draft.disposition === 'repair'" class="muted">{{ t('decisions.disposition.afterReworkNote') }}</p>
         <p v-if="draft.disposition === 'repair'" class="muted">{{ t('hints.reworkVsRepair') }}</p>
@@ -313,6 +349,9 @@ const reasonLabel = computed(() => (draft.action === 'reject_signal' ? t('decisi
         <span class="muted">{{ t('widgets.decisions.recordedNow') }}:</span>
         <StatusTag axis="position" :code="card.axes.position" />
         <StatusTag axis="containment" :code="card.axes.containment" />
+      </p>
+      <p v-if="handoff" class="handoff ant-wrap" data-testid="receipt-handoff">
+        {{ t('widgets.decisions.handedTo', { who: handoff.role_label }) }}<template v-if="handoff.person"> ({{ handoff.person }})</template>: {{ handoff.task_title }} · {{ handoff.status_label }}
       </p>
       <p class="muted" data-testid="receipt-ref">
         {{ t('widgets.decisions.recorded', { seq: receipt.seq }) }}<template v-if="receipt.ca_ref"> · {{ receipt.ca_ref }}</template>
@@ -467,6 +506,44 @@ const reasonLabel = computed(() => (draft.action === 'reject_signal' ? t('decisi
 
 .chosen-title {
   margin: 0;
+  font-weight: var(--ant-fw-bold);
+}
+
+.effects {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ant-space-1);
+  padding: var(--ant-space-2) var(--ant-space-3);
+  border-left: 3px solid var(--ant-accent);
+  border-radius: 0 var(--ant-radius-md) var(--ant-radius-md) 0;
+  background: var(--ant-surface-subtle);
+}
+
+.effects-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding-left: var(--ant-space-5);
+}
+
+.more {
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ant-accent);
+  font: inherit;
+  font-size: var(--ant-fs-meta);
+  cursor: pointer;
+}
+
+.option-why {
+  color: var(--ant-status-attention-text);
+  font-size: var(--ant-fs-xs);
+}
+
+.handoff {
   font-weight: var(--ant-fw-bold);
 }
 

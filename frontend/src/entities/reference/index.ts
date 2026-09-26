@@ -8,13 +8,13 @@
  */
 import { computed, toValue, type MaybeRefOrGetter } from 'vue'
 import { keepPreviousData, useQuery } from '@tanstack/vue-query'
-import { referenceLocationList, referenceShiftList } from '@/shared/api/generated/client'
-import type { RefLocation, RefLocationKind, RefShift } from '@/shared/api/generated/model'
+import { referenceItemTypeList, referenceLocationList, referenceShiftList } from '@/shared/api/generated/client'
+import type { RefItemType, RefLocation, RefLocationKind, RefShift, RefZone } from '@/shared/api/generated/model'
 import { entityKeys } from '@/shared/api/keys'
 import type { Envelope } from '@/shared/api/response'
 import { useMomentStore } from '@/shared/model/moment'
 
-export type { RefLocation, RefLocationKind, RefShift }
+export type { RefItemType, RefLocation, RefLocationKind, RefShift, RefZone }
 
 export const referenceKeys = entityKeys('reference')
 
@@ -117,4 +117,19 @@ export function resolveWorkshop(slice: Record<string, unknown>, locations: reado
   if (slice.scope === 'all') return null
   const ws = workshopByScope(locations, sessionScope)
   return ws ? { id: ws.location_id, name: ws.name } : null
+}
+
+/** Типы изделий с зонами (участки шва и др.) — `reference.item_type.list`. */
+export function useItemTypes() {
+  const moment = useMomentStore()
+  return useQuery({
+    queryKey: computed(() => referenceKeys.list('item-types', moment.params)),
+    queryFn: async ({ signal }): Promise<Envelope<RefItemType[]>> => {
+      const res = await referenceItemTypeList({ ...moment.params }, { signal })
+      return { data: res.data.items, headers: res.headers }
+    },
+    placeholderData: keepPreviousData,
+    retry: false,
+    staleTime: 60_000,
+  })
 }

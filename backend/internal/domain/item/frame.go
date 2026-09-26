@@ -3,6 +3,7 @@ package item
 import (
 	"encoding/json"
 	"slices"
+	"strings"
 	"time"
 
 	"ant/internal/contracts/catalog"
@@ -408,4 +409,45 @@ func decode[T any](r kernel.Record) (T, bool) {
 		return v, false
 	}
 	return v, json.Unmarshal(r.Data, &v) == nil
+}
+
+// LocalLabel — номер детали для людей по id: локальная часть без кода
+// предприятия и префикса прогона; машинные F-/R-/C- — кириллицей, как на бирке.
+func LocalLabel(id string) string {
+	local := id
+	if i := strings.IndexByte(local, ':'); i >= 0 {
+		local = local[i+1:]
+	}
+	if i := strings.LastIndexByte(local, '/'); i >= 0 {
+		local = local[i+1:]
+	}
+	for _, r := range [][2]string{{"F-", "Ф-"}, {"R-", "К-"}, {"C-", "КР-"}} {
+		if strings.HasPrefix(local, r[0]) {
+			return r[1] + local[len(r[0]):]
+		}
+	}
+	return local
+}
+
+// DisplayLabel — метка изделия для задач, очередей и окон (кейс §4.6: люди
+// видят номер детали, а не внутренний id): номер с бирки (Ф-001), иначе
+// DM-код, иначе номер из id. Префикс прогона у значения носителя снимается.
+func (s State) DisplayLabel(itemID string) string {
+	for _, typ := range []string{"tag_qr", "dpm_datamatrix", "route_card"} {
+		for _, c := range s.Carriers {
+			if c.Type != typ || !c.Active() || c.Value == "" {
+				continue
+			}
+			v := c.Value
+			if i := strings.LastIndexByte(v, '/'); i >= 0 {
+				v = v[i+1:]
+			}
+			v = strings.TrimPrefix(v, "TAG:")
+			if typ == "dpm_datamatrix" {
+				return v
+			}
+			return LocalLabel(v)
+		}
+	}
+	return LocalLabel(itemID)
 }
