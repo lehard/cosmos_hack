@@ -1,6 +1,6 @@
 # Путеводитель для проверяющих
 
-«Главный» — доверенная система контроля качества деталей для единичного и мелкосерийного производства ракетно-космической отрасли (решение кейса КосмоХакатона 2026 «Интеллектуальный контроль качества деталей»). В коде система называется `ant`: `backend/cmd/ant`, переменные `ANT_*`.
+«Главный» — платформа управления производством: доверенная система контроля качества деталей для единичного и мелкосерийного производства ракетно-космической отрасли (решение кейса КосмоХакатона 2026 «Интеллектуальный контроль качества деталей»). В коде система называется `ant`: `backend/cmd/ant`, переменные `ANT_*`.
 
 Построчное соответствие каждого пункта кейса и критерия архитектурным решениям и коду, со статусом без натяжек, — в [case-compliance.md](case-compliance.md).
 
@@ -10,7 +10,7 @@
 - **что увидеть** — экран, вывод команды, табло «ожидалось → получилось»;
 - **где в коде** — пути к файлам и метки требований `// FR-…, кейс §…` в комментариях.
 
-Критерии идут по убыванию баллов: сначала сквозной процесс работы с браком и модуль сбора данных (60 из 130 баллов вместе), затем интеграции и понимание отрасли. Состояние отмечено так: без пометки — работает в `main`; **в работе** — функция в ветке другого эпика, её место в коде и документации указано.
+Критерии идут по убыванию баллов: сначала сквозной процесс работы с браком и модуль сбора данных (60 из 130 баллов вместе), затем интеграции и понимание отрасли. Состояние отмечено так: без пометки — работает в `main`; **в работе** — только материалы защиты (эпик 45) и то, что в [case-compliance.md](case-compliance.md) отмечено «частично» (🟡); сводка — в разделе [«Что в работе»](#что-в-работе).
 
 Руководства пользователей — [docs/guides/](guides/README.md); архитектура — [architecture.md](architecture.md).
 
@@ -39,10 +39,11 @@
 **Команда.** Нужен только Docker (Engine ≥ 24, Compose ≥ 2.29.7). В корне репозитория:
 
 ```sh
-docker compose up          # или make demo — то же в фоне с ожиданием готовности
+make demo                  # в фоне, с ожиданием готовности и службой demo-signer для «Автопроверки»
+docker compose up          # то же без demo-signer: сценарии — в режиме «Интерактивно»
 ```
 
-**Что увидеть.** Первый запуск собирает образ (несколько минут), дальше — секунды. Интерфейс — <http://127.0.0.1:8480/>; `/readyz` отвечает 200 после самопроверки; страница «глазами 1С» — <http://127.0.0.1:8491/stand/1c/>. На экране входа раскройте «Демо-вход: выберите сотрудника» — пароль не нужен:
+**Что увидеть.** Первый запуск собирает образ (несколько минут), дальше — секунды. Интерфейс — <http://127.0.0.1:8480/>; `/readyz` отвечает 200 после самопроверки, `/metrics` — метрики Prometheus. Stand-ы внешних систем на порту 8491: 1С «глазами 1С» — <http://127.0.0.1:8491/stand/1c/>, Галактика — <http://127.0.0.1:8491/stand/galaktika/>, MES — <http://127.0.0.1:8491/stand/mes/>, СКУД — <http://127.0.0.1:8491/stand/skud/>. Генезис доверия (ключи в тома, блок генезиса, ключи демо-персон в `.demo-keys/token-agent/`) делает разовая служба `init` при первом запуске; повторить — `make keys`. На экране входа раскройте «Демо-вход: выберите сотрудника» — пароль не нужен:
 
 | Кто | Демо-персона | Стол |
 |---|---|---|
@@ -71,14 +72,14 @@ docker run --rm -v "$PWD":/src -w /src/backend -e GOTOOLCHAIN=local golang:1.27.
 |---|---:|---|---|
 | О2 / Т6 Сквозной процесс работы с браком | 15 + 15 | MS-1 на пульте; INS-01 → карточка; TEC-01 → область риска 34 → 13 → 6 | `backend/internal/domain/nonconformity/`, `backend/internal/domain/quality/`, `backend/internal/domain/analysis/` |
 | О3 / Т7 Сбор и обработка данных | 15 + 15 | `go run ./cmd/edge-agent demo`; `make sim-check`; кнопки цифрового стенда | `backend/internal/application/ingest/pipeline.go`, `backend/internal/domain/ingest/` |
-| Т2 Интеграции | 12 | страница «глазами 1С»; `make contract-demo` | `backend/internal/application/erp/`, `backend/internal/infrastructure/integration/erp/onec/` |
+| Т2 Интеграции | 12 | страница «глазами 1С»; stand-ы Галактики и MES; экран «Интеграции»; `make contract-demo` | `backend/internal/application/erp/`, `backend/internal/infrastructure/integration/` |
 | О1 Понимание отрасли | 10 | стол технолога → «Процесс»; карточка несоответствия → «Требование» | `normative/`, `docs/normative-anchors.md` |
 | Т1 Воспроизводимость | 8 | `docker compose up` на чистой машине | `deploy/`, `compose.yaml`, `backend/cmd/ant/api.go` |
 | Т3 ИБ и аудит | 5 | `make tamper`; AUD-01 → «Журнал критических действий» | `backend/internal/application/security/`, `backend/internal/infrastructure/security/casbin/` |
-| О9 Криптозащита | 5 | `make verify`; `make gogost-verify` | `backend/internal/domain/signing/profiles.go`, `backend/internal/infrastructure/security/hybrid/` |
+| О9 Криптозащита | 5 | `make verify`; `make gogost-verify`; подпись решения через расширение (`make token-agent`) | `backend/internal/domain/signing/profiles.go`, `backend/internal/infrastructure/security/hybrid/`, `extension/` |
 | О7 Кодогенерация | 5 | `make generate`, `make check-generated` | `contracts/`, `backend/tools/contractgen/` |
 | О8 Рассинхронизация | 5 | `make contract-demo`, `make check-compat` | `contracts/scripts/`, `frontend/scripts/check-shell.mjs` |
-| О6 Расширяемость | 5 | столы ролей — данные; порты с ключами конфигурации | `backend/internal/application/platform/ports.go`, `normative/desks/` |
+| О6 Расширяемость | 5 | столы ролей — данные; порты с ключами конфигурации; [new-adapter.md](new-adapter.md); `deploy/k8s/` | `backend/internal/application/platform/ports.go`, `normative/desks/` |
 | О5 Доп. улучшения | 5 | цифровой стенд, воспроизведение «что мы знали», контрольные карты | см. раздел |
 | Т5 Документация | 5 | `node docs/scripts/check-docs.mjs` | `docs/` |
 | О4 Презентация | 5 | прогон MS-1 — источник видео | `docs/guides/demo_scenarios.md` |
@@ -90,7 +91,7 @@ docker run --rm -v "$PWD":/src -w /src/backend -e GOTOOLCHAIN=local golang:1.27.
 ### Команда или действие
 
 1. `make demo`, вход ADM-01 → «Тестовые сценарии» → MS-1, режим «Интерактивно» → «Запустить сценарий».
-2. Когда пульт напишет «Сценарий ждёт решения: Контролёр качества — подтвердить сигнал как несоответствие», войдите INS-01. В очереди «Ждут моего решения» — сигнал камеры по Ф-017 (прожог после сварки). Откройте карточку, нажмите «Подтвердить несоответствие — изолировать до решения», подтвердите сводку («Подтвердить без агента токена — демо»).
+2. Когда пульт напишет «Сценарий ждёт решения: Контролёр качества — подтвердить сигнал как несоответствие», войдите INS-01. В очереди «Ждут моего решения» — сигнал камеры по Ф-017 (прожог после сварки). Откройте карточку, нажмите «Подтвердить несоответствие — изолировать до решения», подтвердите сводку: с расширением «Главный — подпись» — PIN и подпись ключом INS-01 ([guides/sign_extension.md](guides/sign_extension.md)), без него — «Подтвердить без агента токена — демо».
 3. Следующие остановки MS-1 — у технолога TEC-01: «Область риска» → «Сузить область — указать основание» (34 → 13, затем после опоздавшего журнала ИС-2 — 13 → 6), решение комиссии «переделка» по шести изделиям и «Подтвердить причину — указать, чем проверили»; в четверг главный сварщик CWL-01 списывает Ф-021 после неудачной переварки. Между ними контролёр INS-01 пересматривает решение по Ф-015 с меткой «пересмотрите». На вкладке «Разбор обстоятельств» — три дорожки (изделие, человек, оборудование), окно возможного возникновения и таблица общих факторов «источник 3 из 3, сварщики разные». Остальные шаги людей в прогоне подписывает демо-подписант.
 4. Отдельные корнер-кейсы — сценарии пульта: S02 (входной брак), S10A и S10B (переделка и лимит), S11 и S17 (действия исполнителя), S04 (оценка невозможна), S14 (общий фактор — один сварщик).
 5. Без интерфейса — правила домена тестами: `go test ./internal/domain/quality/... ./internal/domain/nonconformity/... ./internal/domain/analysis/... ./internal/domain/process/...`.
@@ -187,7 +188,11 @@ docker run --rm -v "$PWD":/src -w /src/backend -e GOTOOLCHAIN=local golang:1.27.
 
 1. `make demo`, откройте <http://127.0.0.1:8491/stand/1c/> — страница «глазами 1С»: журнал обмена, документы 1С по сообщениям, где числится изделие, включённые сбои.
 2. Запустите MS-1 или I1 на пульте. ADM-01 → «Источники» → интеграции: статус обмена, очередь исходящих, «Отправить повторно — с тем же номером сообщения».
-3. `make contract-demo` — ломающее изменение исходящего сообщения в 1С обнаруживается сборкой до отправки.
+3. ADM-01 → «Интеграции»: 1С, Галактика, MES, СКУД, партнёры — «установлена», режим «стенд» или «реальная», «Проверить соединение»; включение и выключение — критическое действие администратора с записью в журнал, без перезапуска (FR-157, AD-47).
+4. Stand-ы Галактики и MES: <http://127.0.0.1:8491/stand/galaktika/> (кнопки «Выдать задание», «Оприходовать» партию, журнал обмена и документы Галактики) и <http://127.0.0.1:8491/stand/mes/> (задание, выдача и завершение операции, полученные блоки ОТК). Учётный обмен в `demo` ведёт 1С; переключить на Галактику — `ANT_ERP_LEDGER=galaktika docker compose up -d`.
+5. КОМПАС-3D: импорт файла условной сборки ФЛ-100.00.000 СБ операцией `cad.assembly.import` (`POST /api/v1/cad/assemblies`) — дерево, зоны, лимит ремонтов шва; см. [integrations/kompas.md](integrations/kompas.md).
+6. `make contract-demo` — ломающее изменение исходящего сообщения в 1С обнаруживается сборкой до отправки.
+7. Без интерфейса: `go test ./internal/application/erp/... ./internal/infrastructure/integration/...` — общий контрактный тест порта учёта (1С и Галактика на обоих транспортах), клиенты и stand-ы MES и КОМПАС.
 
 ### Что увидеть
 
@@ -209,11 +214,16 @@ docker run --rm -v "$PWD":/src -w /src/backend -e GOTOOLCHAIN=local golang:1.27.
 | Контракт обмена с 1С | `contracts/integrations/erp/1c/` | FR-110 |
 | Смена эмулятора на настоящую 1С — адрес в конфигурации | `deploy/config/ant.yaml` (`erp.onec.base_url`) | AD-18 |
 | Видеофиксация как внешние системы: VisionQC, OperatorVision | `backend/internal/infrastructure/integration/vision/` | FR-97, FR-126 |
-| Галактика:ERP, MES (B2MML), КОМПАС-3D (импорт условной сборки) — **в работе** | каркас: `backend/internal/infrastructure/integration/erp/galaktika/`, `backend/internal/domain/mes/`, `backend/internal/domain/cad/` | FR-92, FR-93, FR-94 |
+| Галактика:ERP — порт учёта на двух транспортах (каталог обмена, REST-фасад), контракт `gal.qc.v1`, stand | `backend/internal/infrastructure/integration/erp/galaktika/`, `backend/internal/infrastructure/integration/erp/galaktika/stand/`, `contracts/integrations/erp/galaktika/` | FR-92, AD-35 |
+| Общий контрактный тест порта учёта для 1С и Галактики | `backend/internal/application/erp/ledgertest/` | FR-92, FR-114 |
+| MES: подмножество B2MML-JSON `mes.isa95.v1`, задания и операции внутрь, блоки ОТК наружу, stand | `backend/internal/infrastructure/integration/mes/b2mml/`, `backend/internal/infrastructure/integration/mes/b2mml/stand/`, `backend/internal/application/mes/`, `backend/internal/domain/mes/`, `contracts/integrations/mes/` | FR-93 |
+| КОМПАС-3D: импорт файла условной сборки, дерево, зоны, ограничения, расхождения | `backend/internal/infrastructure/integration/cad/kompas/`, `backend/internal/application/cad/`, `backend/internal/domain/cad/`, `contracts/integrations/cad/assembly.schema.json` | FR-94 |
+| СКУД: журнал проходов, присутствие на постах | `backend/internal/infrastructure/integration/access/skud/`, `backend/cmd/ant/access_skud.go` | FR-82 |
+| Управление интеграциями: установлена, включена, стенд ↔ реальная, проверка соединения | `backend/cmd/ant/integrations.go`, `backend/internal/application/ops/`, `frontend/src/widgets/integrations/` | FR-157, AD-47 |
 
 Описание всех четырёх систем — [integrations/README.md](integrations/README.md), [integrations/1c.md](integrations/1c.md), [integrations/galaktika.md](integrations/galaktika.md), [integrations/mes.md](integrations/mes.md), [integrations/kompas.md](integrations/kompas.md).
 
-**В работе.** Адаптеры Галактики (контракт `gal.qc.v1`, каталог обмена и REST-фасад), MES (подмножество B2MML-JSON `mes.isa95.v1`, блоки изделий и партий наружу), КОМПАС-3D (импорт файла условной сборки) и общий контрактный тест порта учёта для 1С и Галактики — эпик 31, в сведении волны 3; пример подключения нового адаптера — docs/new-adapter.md приходит вместе с ним.
+Пример подключения нового адаптера на Галактике — [new-adapter.md](new-adapter.md). Границы: все четыре системы проверены на stand-ах, с настоящими — нет; форматы Галактики и MES — проектные предположения; прямое подключение к КОМПАС-3D через COM — описание.
 
 ## О1. Понимание производственных процессов и специфики отрасли (10)
 
@@ -321,15 +331,18 @@ docker run --rm -v "$PWD":/src -w /src/backend -e GOTOOLCHAIN=local golang:1.27.
 ### Команда или действие
 
 1. Прочитайте [threat-model.md](threat-model.md) и [crypto.md](crypto.md).
-2. `make verify` — отчёт верификатора подписан гибридным ключом (ГОСТ Р 34.10-2012 + ML-DSA-65), контрольные точки хранителя — тоже.
-3. `make check-third-party` (входит в `make check`) и `make gogost-verify` — библиотека GoGOST сверена побайтно с архивом автора и его подписью.
-4. Тесты криптоядра: `go test ./internal/domain/signing/... ./internal/infrastructure/security/...`.
+2. Генезис доверия: служба `init` при первом `docker compose up` (повтор — `make keys`, ничего не меняет): ключи в тома 0400, блок генезиса, подписанный ключом-якорем `hybrid`, который затем уничтожается; ключи демо-персон — в `.demo-keys/token-agent/`. В профилях `demo` и `fixtures` они детерминированы (решение Д-82): одинаковы на любой машине и после сброса.
+3. Подпись решения ключом человека: `make token-agent` собирает пакет рабочего места (расширение «Главный — подпись» с пакетом подписи WASM, агент токена), установка — [guides/sign_extension.md](guides/sign_extension.md). Загрузите файл ключа INS-01 в расширение под PIN, примите решение по Ф-017 — в паспорте подпись проверена, класс хранения «ключ в браузере» (решение Д-72).
+4. `make verify` — отчёт верификатора подписан гибридным ключом (ГОСТ Р 34.10-2012 + ML-DSA-65), контрольные точки хранителя — тоже.
+5. `make check-third-party` (входит в `make check`) и `make gogost-verify` — библиотека GoGOST сверена побайтно с архивом автора и его подписью.
+6. Тесты криптоядра: `go test ./internal/domain/signing/... ./internal/infrastructure/security/...`.
 
 ### Что увидеть
 
 - Криптопрофили `gost`, `pq`, `hybrid` в реестре профилей; смена профиля — только повышение и только актом; понижение отклоняется.
 - Единый конверт подписанного пакета (DSSE v1 над каноническим JSON): у каждой подписи — ключ с версией, а профиль и алгоритм ключа — в реестре ключей; поэтому старую подпись можно проверить и после смены профиля.
 - Ключи людей и устройств — вне сервера; реестр ключей с актами выпуска, ротации, отзыва и датой компрометации.
+- Два способа подписи за одним портом (AD-14, Д-72): физический ключ через агент токена (эталон) и ключ в браузере под PIN (умышленно сниженный порог ради работы с любого компьютера). Класс хранения ключа (`hardware_token` / `software_browser`) записан в акт регистрации и виден в подписи, аудите и отчёте `make verify`.
 
 ### Где в коде
 
@@ -344,8 +357,11 @@ docker run --rm -v "$PWD":/src -w /src/backend -e GOTOOLCHAIN=local golang:1.27.
 | Уровни подписи 0–3 и сменный рапорт (дерево Меркла) | `backend/internal/domain/signing/levels.go`, `backend/internal/domain/signing/merkle.go` | FR-66 |
 | Бумага — равноправный путь подписи | `backend/internal/domain/signing/paper.go` | FR-139, AD-43 |
 | Тест-векторы профилей | `contracts/crypto/`, `scenarios/crypto/` | FR-119 |
+| Генезис доверия: роль `init`, блок генезиса, детерминированные ключи демо-персон | `backend/cmd/ant/init.go`, `backend/internal/infrastructure/storage/signing/genesis.go`, `backend/internal/infrastructure/storage/signing/demokeys.go`, `deploy/compose/genesis.yaml` | FR-109, AD-33, Д-82 |
+| Класс хранения ключа в реестре | `backend/internal/domain/signing/registry.go` | FR-69, AD-14, Д-72 |
+| Расширение «Главный — подпись», пакет подписи WASM, агент токена | `extension/`, `backend/cmd/token-agent/`, `backend/cmd/token-agent/wasm/`, `frontend/src/features/sign-decision/` | FR-69, AD-14 |
 
-**В работе.** `make keys` и разовая служба `init` (генезис доверия: ключи в тома, блок генезиса, подписанный якорем `hybrid`) — эпик 05, в сведении волны 3; агент токена и браузерное расширение (`make token-agent`, окно подтверждения подписи) — эпик 38. До них демонстрационный профиль принимает решения людей без подписи с пометкой «подпись не проверялась» (решение Д-30).
+Запасной путь демо-профиля — кнопка «Подтвердить без агента токена — демо» (решение Д-30): решение записывается с пометкой «подпись не проверялась»; на защите показываем подпись через расширение. Агент токена — рабочий каркас под macOS и Linux; ключа в хранилище страницы (без расширения, для планшета) во фронтенде нет.
 
 ## О7. Спецификации и кодогенерация (5)
 
@@ -408,7 +424,10 @@ docker run --rm -v "$PWD":/src -w /src/backend -e GOTOOLCHAIN=local golang:1.27.
 
 1. `make check-backend` — правила слоёв (depguard), детерминизм домена (forbidigo и свой анализатор), самопроверка: пробные нарушения должны краснеть.
 2. Откройте `deploy/config/ant.yaml` — ключи адаптеров портов, число партиций, режим `fixtures | live` по модулю.
-3. Откройте `normative/desks/technologist.yaml` — стол роли собирается из виджетов конфигурацией.
+3. Откройте `deploy/k8s/` — манифесты Kubernetes: `api` и `worker` с HPA, лидерские роли, разовая миграция, доверие; описание — `deploy/k8s/README.md`.
+4. Нагрузочный прогон «1 = N» — `make load` (раздельные прогоны одного seed на 1 и N воркерах со сравнением `rebuild_hash` и `state_hash`, падение копии воркера посреди прогона). Подготовлен, но по решению Д-75 на общей машине разработки не запускался — только на выделенном стенде.
+5. [new-adapter.md](new-adapter.md) — подключение Галактики как нового адаптера без правки ядра.
+6. Откройте `normative/desks/technologist.yaml` — стол роли собирается из виджетов конфигурацией.
 
 ### Что увидеть
 
@@ -428,11 +447,14 @@ docker run --rm -v "$PWD":/src -w /src/backend -e GOTOOLCHAIN=local golang:1.27.
 | Сборка модулей в точке входа | `backend/cmd/ant/modules.go` | AD-1 |
 | Партиция по изделию и аренды партиций | `backend/internal/domain/kernel/partition.go`, `backend/internal/infrastructure/storage/journal/lease.go` | AD-6, FR-112 |
 | Столы ролей — данные; реестр виджетов (FSD) | `normative/desks/`, `frontend/src/widgets/registry.ts` | NFR-EXT-1, NFR-UI-1 |
-| Порт учётной системы — пример «новый адаптер без правки ядра» | `backend/internal/application/erp/ports.go` | FR-114 |
+| Порт учётной системы — пример «новый адаптер без правки ядра» | `backend/internal/application/erp/ports.go`, `backend/internal/infrastructure/integration/erp/galaktika/`, [new-adapter.md](new-adapter.md) | FR-114 |
+| Нагрузочный прогон 1 и N воркеров | `scenarios/load/load.sh`, `scenarios/load/compose.load.yaml`, `scenarios/load/README.md`, `backend/cmd/ant/load.go` | FR-107, AD-6 |
+| Манифесты Kubernetes | `deploy/k8s/` | AD-25, FR-107 |
+| Метрики Prometheus `/metrics` | `backend/internal/infrastructure/observability/telemetry/prometheus.go`, `backend/cmd/ant/ops.go` | FR-41, FR-113 |
 
 Масштабирование, состояние, повторы и порядок — [scaling.md](scaling.md); OpenTelemetry и Kafka — [observability-kafka-otel.md](observability-kafka-otel.md).
 
-**В работе.** Нагрузочный прогон на 1 и N обработчиках со сравнением хеша проекций (`make load`) и манифесты Kubernetes (`deploy/k8s/`) — эпик 35; пример нового адаптера docs/new-adapter.md на Галактике — эпик 31.
+Границы: замеров «1 = N» нет — `make load` не запускался (Д-75); у хранилища и транспорта есть порты и ключи конфигурации, но второго адаптера (Kafka, OpenTelemetry) нет — только описание.
 
 ## О5. Дополнительные отраслевые улучшения (5)
 
@@ -451,9 +473,14 @@ docker run --rm -v "$PWD":/src -w /src/backend -e GOTOOLCHAIN=local golang:1.27.
 | Специальный процесс: несоответствие на всё окно нарушения режима | сценарий S05 | `backend/internal/domain/nonconformity/register.go` | FR-151 |
 | Контроль действий оператора: шаг остановлен до дефекта | сценарий S11 | `backend/internal/domain/vision/operator.go` | FR-126 |
 | Журналы оборудования: профиль выполнения, ресурс инструмента, ручные изменения режима | карточка → «Оборудование во время операции» | `backend/internal/domain/machinelogs/profile.go` | FR-147, FR-148 |
+| СКУД, допуск к рабочему месту, цифровые клейма ОТК при подписи | FOR-WC → «Участок» → «Посты»; stand СКУД — кнопка «сварщик вышел из зоны» | `backend/internal/infrastructure/integration/access/skud/`, `backend/internal/domain/access/presence.go`, `frontend/src/features/workplace-admission/`, `frontend/src/widgets/station-posts/` | FR-82…FR-84, FR-145 |
+| Редактор процесса: реестр, загрузка и скачивание `.bpmn`, новая версия в bpmn-js, утверждение кворумом, слой «нормы» на карте | TEC-01 → «Процесс»; PM-01 → «Процессы» | `backend/internal/application/process/processes.go`, `backend/internal/application/process/approval.go`, `frontend/src/features/process-editor/`, `frontend/src/widgets/process-registry/`, `frontend/src/features/norms-layer/` | FR-22, FR-23, FR-25, FR-156 |
+| Адаптация VisionQC: карты контроля, паспорта допуска, автооткат по дрейфу, эталону, расхождениям и пропускам брака | начальник ОТК HQC-01 или ADM-01 → «Адаптация VisionQC» | `backend/internal/domain/vision/rollback.go`, `backend/internal/domain/vision/adaptation.go`, `backend/internal/application/vision/`, `frontend/src/widgets/vision-adaptation/` | FR-98, FR-101 |
+| Межзаводская кооперация: подписанные выписки паспорта, проверка без доступа к журналу отправителя | HQC-01 или ADM-01 → «Партнёры и выписки»; подделка — `scenarios/federation/` | `backend/internal/domain/federation/extract.go`, `backend/internal/application/federation/`, `frontend/src/widgets/federation/` | FR-132, AD-19 |
+| Предложения, корректирующие меры с проверкой эффективности, карта дефицита данных | PM-01 → «Предложения», «Меры и качество», «Карта дефицита данных»; TEC-01 → «Меры и качество» | `backend/internal/domain/analysis/suggestions.go`, `backend/internal/domain/analysis/actions.go`, `backend/internal/domain/analysis/deficit.go`, `frontend/src/widgets/proposals/`, `frontend/src/widgets/corrective-actions/`, `frontend/src/widgets/data-deficit-map/` | FR-63, FR-64, FR-143 |
 | Predictive, MobileOps, путь внедрения для неоцифрованных предприятий | описание | [target-components.md](target-components.md) | FR-116 |
 
-**В работе.** Предложения (ограничение линии, оценка потерь) и карта дефицита данных на живых данных — эпик 42 (сейчас вкладки руководителя показывают заготовку); межзаводская кооперация и выписка паспорта — эпик 41 (описание — [federation.md](federation.md)); СКУД, допуск к рабочему месту и цифровые клейма на живых данных — эпик 37; редактор процесса и кворум — эпик 39; адаптация VisionQC с паспортами допуска и откатом — эпик 40.
+Подробно: федерация — [federation.md](federation.md), адаптация VisionQC — [vision-camera-project.md](vision-camera-project.md), СКУД — [integrations/skud.md](integrations/skud.md). Границы: у федерации работает наша сторона обмена, предприятие-партнёр — описание и интерфейсы (HTTP-адаптер `integration/federation/partner` — каркас); сбор снимков, обучение и экзамен кандидата анализатора — описание (кейс §2.2).
 
 ## Т5. Полнота и качество документации (5)
 
@@ -517,16 +544,17 @@ docker run --rm -v "$PWD":/src -w /src/backend -e GOTOOLCHAIN=local golang:1.27.
 
 ## Что в работе
 
-| Функция | Критерий | Эпик | Что есть сейчас |
+Всё, что перечислено в критериях выше, слито в `main`, кроме строк этой таблицы. Построчные статусы — в [case-compliance.md](case-compliance.md) (🟡 — частично).
+
+| Что | Критерий | Где | Что есть сейчас |
 |---|---|---|---|
-| Галактика:ERP, MES, КОМПАС-3D; общий контрактный тест порта учёта; docs/new-adapter.md | Т2, О6 | 31 (сведение волны 3) | каркас пакетов, описание в `docs/integrations/` |
-| Генезис доверия: служба `init`, `make keys` | О9, Т3 | 05 (сведение волны 3) | `trust-init` создаёт ключи хранителя, верификатора, демо-УЦ и KEK |
-| Агент токена и расширение браузера, `make token-agent` | О9, Т3 | 38 | «Подтвердить без агента токена — демо», подпись на бумаге |
-| Управление политикой доступа и обязательные подписи | Т3 | 26 | стартовая политика `normative/policy/policy.v1.yaml`, Casbin |
-| Нагрузочный прогон `make load`, манифесты `deploy/k8s/` | О6 | 35 | описание в [scaling.md](scaling.md) |
-| СКУД, допуск к рабочему месту, цифровые клейма на живых данных | О1, О5 | 37 | клейма в политике, панель «Посты» |
-| Редактор процесса и кворум | О1, О5 | 39 | версии и отличия на вкладке «Процесс» |
-| Адаптация VisionQC: карты контроля, паспорта допуска, откат | О5 | 40 | паспорта анализаторов, гарды допуска |
-| Межзаводская кооперация, выписка паспорта | О5 | 41 | описание в [federation.md](federation.md) |
-| Предложения, корректирующие меры, карта дефицита данных | О5 | 42 | заготовки вкладок руководителя |
-| Заморозка, холодный старт, видео и слайды | О4, Т1 | 45 | — |
+| Заморозка, холодный старт на чистой машине, видео и слайды | О4, Т1 | эпик 45 | сценарий защиты по минутам — [guides/demo_scenarios.md](guides/demo_scenarios.md); прогон MS-1 на пульте |
+| Интерактивные остановки MS-1 у всех пяти ролей кейса | О2, О4 | case-compliance B6 | остановки у контролёра, технолога и главного сварщика; мастер, руководитель и администратор видят прогон на своих столах |
+| Сравнение `state_hash` прогонов на 1 и N обработчиках | О6, Т7 | case-compliance K8, Q3 | `make load` подготовлен, по Д-75 не запускался |
+| Второй адаптер хранилища и транспорта (Kafka, OpenTelemetry) | О6 | case-compliance K4 | порты и ключи конфигурации, описание — [observability-kafka-otel.md](observability-kafka-otel.md) |
+| TLS к Postgres | Т3 | case-compliance N6 | mTLS на отрезке ant ↔ хранитель ↔ верификатор; к БД `sslmode: disable` |
+| Ротация KEK с перешифрованием, акт восстановления | О9, Т3 | case-compliance N8, Q11 | описание — [crypto.md](crypto.md), [backup-restore.md](backup-restore.md) |
+| Ключ в хранилище страницы (подпись без расширения) | О9 | case-compliance, серая зона 1 | расширение с ключом в браузере, агент токена, бумага с заверением, демо-кнопка Д-30 |
+| edge-агент службой compose для живых stand-ов VisionQC и OperatorVision | О3 | case-compliance F7 | `go run ./cmd/edge-agent demo`; stand-ы оборудования в роли `stands` |
+| Срез аналитики «по линиям», доля ошибок по группе сопоставимых работ | О2 | case-compliance I2, I6 | срез по постам; числитель и знаменатель — раздельные показатели |
+| Сбор снимков, обучение и экзамен кандидата анализатора | О5 | case-compliance G1 | паспорта допуска, автооткат, страница адаптации; остальное — описание в [vision-camera-project.md](vision-camera-project.md) |

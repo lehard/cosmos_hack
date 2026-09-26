@@ -3,8 +3,8 @@
 Документ отвечает на вопрос кейса §3.2: как в системе «Главный» представлен каждый из десяти компонентов целевой системы, что из этого работает в MVP, а что описано как архитектура. Здесь же — Predictive и MobileOps, путь внедрения из четырёх ступеней и упрощённый режим для неоцифрованных предприятий.
 
 - **Опоры:** FR-116, FR-142, FR-141, FR-143, PRD §11.14, §11.6; AD-1, AD-18, AD-25, AD-27, AD-29, AD-35; раздел спайна «Окружения и упрощённый режим»; кейс §3.2, §3.1; критерии О5, О6, Т2, Т5.
-- **Связанные документы:** [architecture.md](architecture.md) — архитектура целиком; [vision-camera-project.md](vision-camera-project.md) — проект комплекса «камеры + ИИ»; [threat-model.md](threat-model.md) — модель угроз; [integrations/README.md](integrations/README.md) — внешние системы; [federation.md](federation.md) — межзаводская кооперация; [assumptions.md](assumptions.md) — допущения и проектные предположения; [architecture-spine.md](architecture-spine.md) — спайн (AD-1…AD-46); [prd.md](prd.md) — требования.
-- **Статус:** проект. Пути кода даны по дереву спайна; источник правды — код, когда он появится.
+- **Связанные документы:** [architecture.md](architecture.md) — архитектура целиком; [vision-camera-project.md](vision-camera-project.md) — проект комплекса «камеры + ИИ»; [threat-model.md](threat-model.md) — модель угроз; [integrations/README.md](integrations/README.md) — внешние системы; [federation.md](federation.md) — межзаводская кооперация; [assumptions.md](assumptions.md) — допущения и проектные предположения; [architecture-spine.md](architecture-spine.md) — спайн (AD-1…AD-47); [prd.md](prd.md) — требования.
+- **Статус:** сверено с кодом `main` на 26.09.2026 (раздел «Сверено с кодом» в конце); Predictive и MobileOps — описание, так разрешает кейс.
 
 Всё, что касается оборудования, беспроводных сетей, роботов, датчиков и чисел, не подтверждённых измерениями на производстве, помечено **«проектное предположение»** (NFR-DOC-2).
 
@@ -224,11 +224,10 @@ flowchart LR
 
 Пример подключения нового адаптера по шагам — [new-adapter.md](new-adapter.md).
 
-## Уточнить после появления кода
+## Сверено с кодом
 
-- Точные пути модулей и адаптеров в таблице раздела 1 (сверить с деревом `backend/internal/**`).
-- Имя порта сигналов анализатора в `application/vision` и тип записи прогноза (`analyzer.risk.observed` — предварительно) по каталогу `contracts/events/catalog.yaml`.
-- Имена stand-ов VisionQC, OperatorVision, станка ЧПУ, сварочного источника и stand-а перемещений; какие события перемещения реально отдаёт stand в прототипе.
-- Имя адаптера импорта CSV/Excel и адаптера «допуск подтверждает мастер» (если появится в коде).
-- Ссылки на операции API карты дефицита данных (`operationId` в `contracts/openapi.yaml`).
-- Сверить таблицу отдельных процессов с `deploy/compose` (фактический состав контейнеров).
+- Пути модулей и адаптеров в таблице раздела 1 совпадают с деревом `backend/internal/**`.
+- Типа записи прогноза Predictive в каталоге нет — Predictive остаётся описанием; события перемещения `operation.movement.sent` / `operation.movement.received` в `contracts/events/catalog.yaml` есть.
+- Stand-ы роли `stands`: 1С, Галактика, MES, СКУД, УЦ, VisionQC, OperatorVision, станок ЧПУ, сварочный источник (`backend/internal/infrastructure/integration/**/stand/`, общий каркас — `backend/internal/infrastructure/integration/ingest/stands/`).
+- Импорт CSV/Excel — операция `ingest.import.submit` (`backend/internal/application/ingest/importcsv.go`); карта дефицита данных — `analysis.data_deficit.read` (`backend/internal/domain/analysis/deficit.go`, экран `frontend/src/widgets/data-deficit-map/`).
+- Состав контейнеров — `deploy/compose/compose.yaml` и `deploy/compose/genesis.yaml`: разовые `secrets-init`, `trust-init`, `migrate`, `init`; постоянные `postgres`, `keeper`, `verifier`, `ant`; `demo-signer` — профилем `demo`; `tamper` — профилем `tools`. Edge-агент службой compose не поднимается (case-compliance F7).
