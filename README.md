@@ -43,7 +43,7 @@
 Нужен только Docker ([требования к машине](#требования-к-машине)).
 
 ```sh
-git clone <адрес репозитория> cosmo-controller && cd cosmo-controller
+git clone https://gitverse.ru/hackrus.experts/kosmo-moskva_kb_poehali_18.git cosmo-controller && cd cosmo-controller
 make demo
 ```
 
