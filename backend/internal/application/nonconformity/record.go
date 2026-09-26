@@ -69,6 +69,9 @@ func (s *Service) write(ctx context.Context, d decision) (platform.Receipt, erro
 	if !ok || info.Emitter != string(dom.Module) || info.Kind != catalog.KindDecision {
 		return platform.Receipt{}, errors.New("nonconformity: решение чужого типа или не решение: " + string(d.Type))
 	}
+	if r, ok, err := s.replayed(ctx, d.Stream, d.Type, id); err != nil || ok {
+		return r, err
+	}
 	data, err := json.Marshal(d.Data)
 	if err != nil {
 		return platform.Receipt{}, err
@@ -152,6 +155,21 @@ func (s *Service) write(ctx context.Context, d decision) (platform.Receipt, erro
 		r.RecordedAt = res.Committed.UTC()
 	}
 	return r, nil
+}
+
+// replayed — команда с этим command_id уже записана (AD-7): прежняя
+// квитанция. Проверяется до гарда: повтор не должен получать отказ гарда или
+// 409 из-за собственной первой записи.
+func (s *Service) replayed(ctx context.Context, stream string, t catalog.Type, commandID string) (platform.Receipt, bool, error) {
+	id := strings.ToLower(commandID)
+	if _, err := uuid.Parse(id); err != nil || id == "" {
+		return platform.Receipt{}, false, nil
+	}
+	r, err := s.replay(ctx, decision{Stream: stream, Type: t}, id)
+	if err != nil || r.Seq == 0 {
+		return platform.Receipt{}, false, err
+	}
+	return r, true, nil
 }
 
 // replay — прежняя квитанция команды с тем же command_id (AD-7).

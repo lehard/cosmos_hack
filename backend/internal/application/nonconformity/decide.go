@@ -51,6 +51,9 @@ type itemCommand struct {
 }
 
 func (s *Service) onItem(ctx context.Context, v *itemView, c itemCommand) (platform.Receipt, error) {
+	if r, ok, err := s.replayed(ctx, "item:"+v.ItemID, c.Type, c.Meta.CommandID); err != nil || ok {
+		return r, err
+	}
 	now, err := s.now(ctx, v.RunID)
 	if err != nil {
 		return platform.Receipt{}, err
@@ -286,6 +289,9 @@ func (s *Service) GrantConcession(ctx context.Context, in GrantConcession) (plat
 	if id == "" {
 		id = "CON-" + shortID(in.CommandID)
 	}
+	if r, ok, err := s.replayed(ctx, "concession:"+id, catalog.DecisionConcessionGranted, in.CommandID); err != nil || ok {
+		return r, err
+	}
 	book, err := s.concessionBook(ctx, platform.Moment{})
 	if err != nil {
 		return platform.Receipt{}, err
@@ -324,6 +330,9 @@ func (s *Service) RevokeConcession(ctx context.Context, concessionID string, in 
 	if !s.live() {
 		return s.Unimplemented.RevokeConcession(ctx, concessionID, in)
 	}
+	if r, ok, err := s.replayed(ctx, "concession:"+concessionID, catalog.DecisionConcessionRevoked, in.CommandID); err != nil || ok {
+		return r, err
+	}
 	book, err := s.concessionBook(ctx, platform.Moment{})
 	if err != nil {
 		return platform.Receipt{}, err
@@ -360,6 +369,11 @@ func (s *Service) SetProcessHold(ctx context.Context, in SetProcessHold) (platfo
 	}
 	data := dom.ProcessHoldSetData{HoldID: id, Level: in.Level, EquipmentID: in.EquipmentID, ToolID: in.ToolID, ProgramRef: in.ProgramRef,
 		StepKey: in.StepKey, IncidentID: in.IncidentID, ReleaseCondition: in.ReleaseCondition, Reason: reasonOf(in.Reason)}
+	if st := dom.HoldStream(data); st != "" {
+		if r, ok, err := s.replayed(ctx, st, catalog.DecisionProcessHoldSet, in.CommandID); err != nil || ok {
+			return r, err
+		}
+	}
 	book, err := s.holdBook(ctx)
 	if err != nil {
 		return platform.Receipt{}, err
@@ -387,6 +401,11 @@ func (s *Service) ReleaseProcessHold(ctx context.Context, holdID string, in Rele
 		return platform.Receipt{}, err
 	}
 	data := dom.ProcessHoldReleasedData{HoldID: holdID, CleanPointItems: in.CleanPointItems, Reason: reasonOf(in.Reason)}
+	if h, ok := book.Holds[holdID]; ok {
+		if r, ok, err := s.replayed(ctx, h.Stream, catalog.DecisionProcessHoldReleased, in.CommandID); err != nil || ok {
+			return r, err
+		}
+	}
 	if err := dom.HoldGuard(book, kernel.Command{Action: dom.ActProcessHoldRelease, Payload: data}); err != nil {
 		return platform.Receipt{}, err
 	}
