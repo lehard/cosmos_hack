@@ -216,4 +216,3 @@ func TestShowIncidentScope(t *testing.T) {
 		t.Fatalf("v3: %d изделий %v, ждали %v", size(rs), left, want)
 	}
 }
-

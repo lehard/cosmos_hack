@@ -558,7 +558,7 @@ func (g *gen) briefWeld(p *ItemPlan, until int) {
 				"step_key": "welding.kt3_camera", "inspection_point": "KT-3", "operation_run_id": runID, "zone_ids": zones,
 				"outcome": "no_defect_indicated", "processing_state": "completed", "analyzer_confidence_bp": rnd.Between(9300, 9700),
 				"observation_quality_bp": rnd.Between(8800, 9500),
-				"versions": map[string]any{"analyzer_version": "vqc-weld 2.3.1", "contract_version": "1.0", "recipe_ref": "kt3-weld@1", "item_revision": w.ItemRevision}}})
+				"versions":               map[string]any{"analyzer_version": "vqc-weld 2.3.1", "contract_version": "1.0", "recipe_ref": "kt3-weld@1", "item_revision": w.ItemRevision}}})
 		it.Stages["kt3"] = at["kt3"]
 	}
 }

@@ -146,6 +146,28 @@ steps:
     component_type_id: FL-100.01.002
     position: R-003
     quantity: 1
+- at: '2026-09-21T07:40:00+03:00'
+  label: SHOW/plan-W21-WP-WELD-1
+  note: 'История: план смены — мастер FOR-WC назначает сварщика W21 на пост ИС-1 (смена SHIFT-1)'
+  decision: access.assignment.set
+  role: MASTER
+  actor: MST-02
+  body:
+    workplace_id: WP-WELD-1
+    shift_id: SHIFT-1
+    person_id: '{person:WLD-02}'
+    assignee_role: performer
+- at: '2026-09-21T07:41:00+03:00'
+  label: SHOW/plan-W21-WP-WELD-2
+  note: 'История: план смены — мастер FOR-WC назначает сварщика W21 на пост ИС-2 (смена SHIFT-1)'
+  decision: access.assignment.set
+  role: MASTER
+  actor: MST-02
+  body:
+    workplace_id: WP-WELD-2
+    shift_id: SHIFT-1
+    person_id: '{person:WLD-02}'
+    assignee_role: performer
 - at: '2026-09-21T08:00:00+03:00'
   system: 'Начало показа: часы прогона идут, партия Ф-001…Ф-003 на входе сварочного цеха, у мастера FOR-WC — задачи «принять»'
 - at: '2026-09-21T08:01:00+03:00'
