@@ -10,7 +10,8 @@
  * 3. «Как было дело» — одна лента до → операция → во время → после, похожие случаи;
  * 4. «Что предлагает система» — предложение, основания, альтернативы, чего не
  *    хватает; решение принимает человек;
- * 5. «Решения людей» и итоговый статус по осям;
+ * 5. «Решения людей» и «изделие сейчас» (положение и сдерживание); пять осей
+ *    статуса — по кнопке «Технические статусы»;
  * 6. «Подробности для проверки» (второй слой, свёрнут) — исходный сигнал целиком:
  *    ступени и версии анализатора, материалы, правило и режим, история зоны.
  * Исходный сигнал, анализ системы, решения людей и итоговый статус — раздельно (AD-2).
@@ -88,6 +89,8 @@ const headline = computed(() => {
 const observed = computed(() => [headline.value, signal.value?.zone_label].filter(Boolean).join(' · '))
 
 const detailsOpen = ref(props.view === 'evidence')
+/** Пять осей статуса — технические подробности: в первом слое одно «изделие сейчас». */
+const axesOpen = ref(false)
 watch(
   () => props.card.nc_id,
   () => (detailsOpen.value = props.view === 'evidence'),
@@ -189,8 +192,13 @@ const inWindow = computed(() => !!frame.plain)
         </li>
         <li v-if="!card.human_decisions.length" class="muted">{{ t('empty.noDecisionIsNotNoData') }}</li>
       </ul>
-      <h4 class="ant-wrap">{{ t('ncCard.layers.finalStatus') }}</h4>
-      <KeyValueList data-testid="final-status">
+      <p class="item-now" data-testid="item-now">
+        <span class="muted">{{ t('ncCard.itemNow') }}:</span>
+        <StatusTag axis="position" :code="card.axes.position" />
+        <StatusTag v-if="card.axes.containment !== 'none'" axis="containment" :code="card.axes.containment" />
+        <ActionButton size="tiny" quaternary data-testid="toggle-axes" :label="axesOpen ? t('ncCard.axes.hide') : t('ncCard.axes.show')" @click="axesOpen = !axesOpen" />
+      </p>
+      <KeyValueList v-if="axesOpen" data-testid="final-status">
         <KeyValue v-for="axis in STATUS_AXES_ORDER" :key="axis" :label="t(AXIS_TEXT[axis])">
           <StatusTag :axis="axis" :code="card.axes[axis]" />
         </KeyValue>
@@ -425,6 +433,13 @@ p {
 
 .details {
   align-items: flex-start;
+}
+
+.item-now {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ant-space-1) var(--ant-space-2);
+  align-items: center;
 }
 
 .details-body {

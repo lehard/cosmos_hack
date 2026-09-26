@@ -24,16 +24,19 @@ const mountView = (props = {}) =>
   mount(DecisionQueueView, { props: { rows: queueRows(), sort: 'risk', now: Date.parse(at('11:23')), ...props }, global: { plugins: [pinia, i18n] } })
 
 describe('очередь «Ждут моего решения»', () => {
-  it('задачи, а не записи: группы по тому, что нужно сделать, со счётчиком; строки в порядке сервера', () => {
+  it('задачи, а не записи: группы по тому, что нужно сделать, со счётчиком; строки в порядке сервера', async () => {
     const w = mountView()
     const groups = w.findAll('section.group')
     expect(groups.map((g) => g.find('.group-title').text())).toEqual([
       expect.stringContaining('Подтвердить или отклонить сигнал'),
       expect.stringContaining('Решить, что делать с изделием'),
-      expect.stringContaining('Принять на точке предъявления'),
+      expect.stringContaining('Плановая приёмка на точках предъявления'),
     ])
     expect(groups.map((g) => g.find('[data-testid="group-count"]').text())).toEqual(['1', '1', '1'])
     expect(groups[1]!.find('[data-testid="group-overdue"]').text()).toBe('просрочено: 1')
+    // Плановая приёмка свёрнута, пока её не раскрыли.
+    expect(w.findAll('li.row')).toHaveLength(2)
+    await w.find('[data-testid="toggle-routine"]').trigger('click')
     const rows = w.findAll('li.row')
     expect(rows.map((r) => r.attributes('data-key'))).toEqual(['signal:SIG-77', 'isolated:NC-0139', 'presentation:PR-5'])
     expect(rows[0]!.text()).toContain('FL-0042')
@@ -47,10 +50,11 @@ describe('очередь «Ждут моего решения»', () => {
     expect(rows[2]!.text()).toContain('Тяжесть: Неизвестно')
   })
 
-  it('группы идут в порядке первой своей строки: порядок сервера не теряется', () => {
+  it('группы идут в порядке первой своей строки: порядок сервера не теряется', async () => {
     const [a, b, c] = queueRows()
     const w = mountView({ rows: [c!, a!, { ...b!, kind: 'presentation', object_id: 'PR-6' }] })
     expect(w.findAll('section.group').map((g) => g.attributes('data-group'))).toEqual(['presentation', 'signal'])
+    await w.find('[data-testid="toggle-routine"]').trigger('click')
     expect(w.findAll('li.row').map((r) => r.attributes('data-key'))).toEqual(['presentation:PR-5', 'presentation:PR-6', 'signal:SIG-77'])
   })
 
@@ -67,8 +71,24 @@ describe('очередь «Ждут моего решения»', () => {
     expect(rows[2]!.find('[data-testid="row-title"]').text()).toBe('Трещина · кромка')
   })
 
+  it('сначала исключения: сводка сверху, пересмотр — крупным блоком, открытая строка приёмки раскрывает группу', () => {
+    const [a, b, c] = queueRows()
+    const review = { ...c!, kind: 'review' as const, object_id: 'REV-1', title: 'Решение ЗТ-3 принято до новых данных — пересмотрите', review_since: at('10:20') }
+    const w = mountView({ rows: [a!, b!, c!, review] })
+    const sum = norm(w.find('[data-testid="queue-summary"]').text())
+    expect(sum).toContain('1 решение на пересмотр')
+    expect(sum).toContain('2 по отклонениям')
+    expect(sum).toContain('1 плановая приёмка')
+    const hero = w.find('li.row.hero')
+    expect(hero.attributes('data-key')).toBe('review:REV-1')
+    expect(hero.text()).toContain('Изменились данные после принятого решения')
+    expect(hero.text()).toContain('Пересмотреть')
+    expect(mountView({ selected: 'presentation:PR-5' }).find('[data-key="presentation:PR-5"]').exists()).toBe(true)
+  })
+
   it('выбор мышью и с клавиатуры', async () => {
     const w = mountView({ selected: 'signal:SIG-77' })
+    await w.find('[data-testid="toggle-routine"]').trigger('click')
     await w.findAll('li.row')[2]!.trigger('click')
     expect(w.emitted('select')?.[0]?.[0]).toMatchObject({ object_id: 'PR-5' })
     await w.find('[data-testid="queue-groups"]').trigger('keydown', { key: 'ArrowDown' })
@@ -99,6 +119,8 @@ describe('очередь «Ждут моего решения»', () => {
     })
     await flushPromises()
     const rows = () => w.findAll('li.row')
+    expect(rows()).toHaveLength(2)
+    await w.find('[data-testid="toggle-routine"]').trigger('click')
     expect(rows()).toHaveLength(3)
     // Ничего не открывается само: окно — только по щелчку.
     expect(router.currentRoute.value.query.open).toBeUndefined()
