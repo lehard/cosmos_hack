@@ -212,6 +212,17 @@ export const eventCatalog = {
     "caGroup": null,
     "currentVersion": 1
   },
+  "decision.concession.granted": {
+    "title": "Разрешение на отклонение выдано",
+    "emitter": "nonconformity",
+    "kind": "decision",
+    "stream": "concession",
+    "axis": "none",
+    "actionClass": "permissive",
+    "critical": true,
+    "caGroup": "nc_decision",
+    "currentVersion": 1
+  },
   "decision.concession.revoked": {
     "title": "Разрешение на отклонение отозвано",
     "emitter": "nonconformity",
@@ -1288,6 +1299,17 @@ export const eventCatalog = {
     "actionClass": "irreversible",
     "critical": true,
     "caGroup": "control_change",
+    "currentVersion": 1
+  },
+  "normative.version.drafted": {
+    "title": "Черновик версии процесса сохранён",
+    "emitter": "process",
+    "kind": "decision",
+    "stream": "process_version",
+    "axis": "none",
+    "actionClass": "record",
+    "critical": false,
+    "caGroup": null,
     "currentVersion": 1
   },
   "normative.version.loaded": {
