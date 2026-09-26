@@ -65,7 +65,7 @@ describe('смысл статусов на экране (NFR-UI-4)', () => {
   })
 
   it('уверенность 0,87 — не «вероятность брака 87 %»', () => {
-    const w = mount(NcCardView, { props: { card: ncCard(), now: 0 }, global: g() })
+    const w = mount(NcCardView, { props: { card: ncCard(), now: 0 }, global: { ...g(), stubs: { EvidenceMaterial: true } } })
     const c = w.find('[data-testid="confidence"]').text()
     expect(c).toContain('0,87')
     expect(c).toContain('Уверенность — не вероятность брака')
@@ -75,7 +75,7 @@ describe('смысл статусов на экране (NFR-UI-4)', () => {
   it('нет уверенности — «нет данных — неизвестно», а не ноль и не «годно»', () => {
     const card = ncCard()
     delete card.evidence.signals[0]!.analyzer_confidence_bp
-    const w = mount(NcCardView, { props: { card, now: 0 }, global: g() })
+    const w = mount(NcCardView, { props: { card, now: 0 }, global: { ...g(), stubs: { EvidenceMaterial: true } } })
     expect(w.find('[data-testid="confidence"]').text()).toBe('Нет данных — неизвестно')
   })
 

@@ -80,3 +80,17 @@ export { codeText } from '@/entities/item'
 
 /** Доля в базисных пунктах → число 0…1 для формата `decimal2` (уверенность 0,87 — не 87 %). */
 export const bpToFraction = (bp: number): number => bp / 10_000
+
+/** Статус системного расследования в карточке (FR-51) → текст словаря `statuses.ncInvestigation`. */
+export const INVESTIGATION_TEXT: Record<'none' | 'open' | 'closed', string> = {
+  none: 'statuses.ncInvestigation.notStarted',
+  open: 'statuses.ncInvestigation.inProgress',
+  closed: 'statuses.ncInvestigation.closed',
+}
+
+/** Вид строки очереди → группа-задача с глаголом (UI-25): что от контролёра нужно. */
+export const QUEUE_GROUP_TEXT: Record<DecisionQueueRowKind, string> = {
+  signal: 'widgets.decisionQueue.group.signal',
+  isolated: 'widgets.decisionQueue.group.isolated',
+  presentation: 'widgets.decisionQueue.group.presentation',
+}

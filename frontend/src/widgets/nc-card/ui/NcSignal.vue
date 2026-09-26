@@ -1,8 +1,9 @@
 <script setup lang="ts">
 /**
- * Исходный сигнал (FR-51, FR-38, кейс §2.3): на чём основан, вид дефекта,
- * тяжесть, зона, уверенность анализатора и качество наблюдения — раздельно,
- * ступени и вектор версий, материалы. Сигнал — сообщение о признаке дефекта,
+ * Исходный сигнал целиком — второй слой карточки, «Подробности» (FR-51, FR-38,
+ * кейс §2.3): на чём основан, вид дефекта, тяжесть, зона, ступени и вектор
+ * версий, адреса материалов. Уверенность и качество наблюдения — в первом слое
+ * карточки, рядом друг с другом. Сигнал — сообщение о признаке дефекта,
  * а не брак; решения людей его не меняют. Уверенность 0,87 — не «вероятность
  * брака 87 %» (NFR-UI-4).
  */
@@ -32,7 +33,7 @@ const dec = (bp: number) => n(bpToFraction(bp), 'decimal2')
 
 <template>
   <article class="signal" :data-signal="signal.signal_id" :data-severity="signal.severity" data-testid="source-signal">
-    <RecordLine :record="signal.record" />
+    <RecordLine :record="signal.record" technical />
     <KeyValueList>
       <KeyValue :label="t('common.words.basis')" :value="codeText(BASIS_KIND_TEXT, signal.basis_kind, t)" />
       <KeyValue :label="t('common.words.defectType')">
@@ -44,19 +45,6 @@ const dec = (bp: number) => n(bpToFraction(bp), 'decimal2')
       </KeyValue>
       <KeyValue :label="t('common.words.severity')" :value="codeText(SEVERITY_TEXT, signal.severity, t)" />
       <KeyValue v-if="signal.zone_id" :label="t('common.words.zone')" :value="signal.zone_id" />
-      <KeyValue :label="t('inspection.analyzerConfidence')">
-        <span data-testid="confidence" :title="t('hints.analyzerConfidence')">
-          <template v-if="signal.analyzer_confidence_bp != null">
-            {{ dec(signal.analyzer_confidence_bp) }} <span class="muted">— {{ t('inspection.confidenceIsNotProbability') }}</span>
-          </template>
-          <template v-else>{{ t('empty.noDataUnknown') }}</template>
-        </span>
-      </KeyValue>
-      <KeyValue :label="t('inspection.observationQuality')">
-        <span data-testid="observation-quality" :title="t('hints.observationQuality')">{{
-          signal.observation_quality_bp != null ? dec(signal.observation_quality_bp) : t('empty.noDataUnknown')
-        }}</span>
-      </KeyValue>
     </KeyValueList>
 
     <section v-if="signal.stages.length" class="block">
@@ -87,7 +75,7 @@ const dec = (bp: number) => n(bpToFraction(bp), 'decimal2')
       <ul v-if="signal.evidence_refs.length">
         <li v-for="ref in signal.evidence_refs" :key="ref" class="ant-wrap"><code>{{ ref }}</code></li>
       </ul>
-      <p v-else class="muted ant-wrap" data-testid="no-material">{{ t('empty.materialNotProvided') }}</p>
+      <p v-else class="muted ant-wrap">{{ t('empty.materialNotProvided') }}</p>
     </section>
     <p class="muted ant-wrap">{{ t('inspection.outcomeNote.defectFound') }} · {{ t('decisions.signal.originalSignalKept') }}</p>
   </article>

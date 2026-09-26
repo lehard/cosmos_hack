@@ -1,15 +1,17 @@
 <script setup lang="ts">
 /**
- * Очередь «Ждут моего решения» (PRD §3a, FR-55, FR-57): точки предъявления,
- * сигналы на рассмотрение, изолированные изделия со сроком решения (обратный
- * отсчёт). Порядок — по риску или по сроку — считает сервер; здесь
- * переключатель и показ. Щелчок или Enter по строке — открыть запись в правом
- * окне (Д-70). Работа с клавиатуры: ↑/↓ — соседняя строка.
+ * Очередь «Ждут моего решения» (PRD §3a, FR-55, FR-57, UI-25) — задачи, а не
+ * записи: строки сгруппированы по тому, что от контролёра нужно («подтвердить
+ * или отклонить сигнал», «решить, что делать с изделием», «принять на точке
+ * предъявления»), у группы счётчик и число просроченных. Порядок — по риску или
+ * по сроку — считает сервер: группы идут в порядке первой своей строки, строки
+ * внутри — как прислал сервер. Щелчок или Enter по строке — открыть запись в
+ * правом окне (Д-70). Работа с клавиатуры: ↑/↓ — соседняя строка сквозь группы.
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { NRadioButton, NRadioGroup } from 'naive-ui'
-import { QUEUE_KIND_TEXT, SEVERITY_TEXT, codeText, deadlineOf, rowKey, type DecisionQueueRow, type QueueSort } from '@/entities/nonconformity'
+import { QUEUE_GROUP_TEXT, SEVERITY_TEXT, codeText, deadlineOf, rowKey, type DecisionQueueRow, type QueueSort } from '@/entities/nonconformity'
 import type { Density } from '@/shared/config/widget'
 import { formatMinutes } from '@/shared/lib/duration'
 
@@ -40,10 +42,24 @@ const items = computed(() =>
   }),
 )
 
+type Item = (typeof items.value)[number]
+/** Группы по виду задачи в порядке первой строки группы (порядок сервера сохраняется). */
+const groups = computed(() => {
+  const map = new Map<string, { kind: DecisionQueueRow['kind']; items: Item[] }>()
+  for (const it of items.value) {
+    const g = map.get(it.row.kind) ?? { kind: it.row.kind, items: [] }
+    g.items.push(it)
+    map.set(it.row.kind, g)
+  }
+  return [...map.values()].map((g) => ({ ...g, overdue: g.items.filter((x) => x.overdue).length }))
+})
+/** Строки в порядке показа — для ↑/↓ сквозь группы. */
+const flat = computed(() => groups.value.flatMap((g) => g.items))
+
 function move(delta: number): void {
-  if (!items.value.length) return
-  const i = items.value.findIndex((x) => x.key === props.selected)
-  const next = items.value[Math.min(items.value.length - 1, Math.max(0, i < 0 ? 0 : i + delta))]
+  if (!flat.value.length) return
+  const i = flat.value.findIndex((x) => x.key === props.selected)
+  const next = flat.value[Math.min(flat.value.length - 1, Math.max(0, i < 0 ? 0 : i + delta))]
   if (next) emit('select', next.row)
 }
 </script>
@@ -57,34 +73,40 @@ function move(delta: number): void {
       </NRadioGroup>
       <span class="hint" data-testid="open-hint">{{ t('widgets.decisionQueue.openHint') }}</span>
     </div>
-    <ol class="rows" tabindex="0" :aria-label="t('desks.decisionQueue')" @keydown.down.prevent="move(1)" @keydown.up.prevent="move(-1)">
-      <li
-        v-for="{ row, key, overdue, due } in items"
-        :key="key"
-        class="row"
-        :data-key="key"
-        :data-kind="row.kind"
-        :data-severity="row.severity"
-        :data-overdue="overdue || undefined"
-        :aria-selected="key === selected"
-        tabindex="-1"
-        @click="emit('select', row)"
-        @keydown.enter.prevent="emit('select', row)"
-      >
-        <div class="line">
-          <span class="kind">{{ codeText(QUEUE_KIND_TEXT, row.kind, t) }}</span>
-          <strong>{{ row.item_label }}</strong>
-          <span v-if="row.presentation_no" class="muted">{{ t('decisions.gate.presentationNumber', { n: row.presentation_no }) }}</span>
-        </div>
-        <div class="line">
-          <span>{{ row.title }}</span>
-        </div>
-        <div class="line meta">
-          <span>{{ t('common.words.severity') }}: {{ codeText(SEVERITY_TEXT, row.severity, t) }}</span>
-          <span v-if="due" class="due" data-testid="due">{{ due }}</span>
-        </div>
-      </li>
-    </ol>
+    <div class="groups" tabindex="0" :aria-label="t('desks.decisionQueue')" data-testid="queue-groups" @keydown.down.prevent="move(1)" @keydown.up.prevent="move(-1)">
+      <section v-for="g in groups" :key="g.kind" class="group" :data-group="g.kind">
+        <h4 class="group-title">
+          <span class="ant-ellipsis">{{ t(QUEUE_GROUP_TEXT[g.kind]) }}</span>
+          <span class="count" data-testid="group-count">{{ g.items.length }}</span>
+          <span v-if="g.overdue" class="overdue-count" data-testid="group-overdue">{{ t('widgets.decisionQueue.overdueCount', { n: g.overdue }) }}</span>
+        </h4>
+        <ol class="rows">
+          <li
+            v-for="{ row, key, overdue, due } in g.items"
+            :key="key"
+            class="row"
+            :data-key="key"
+            :data-kind="row.kind"
+            :data-severity="row.severity"
+            :data-overdue="overdue || undefined"
+            :aria-selected="key === selected"
+            tabindex="-1"
+            @click="emit('select', row)"
+            @keydown.enter.prevent="emit('select', row)"
+          >
+            <div class="line head">
+              <strong class="item">{{ row.item_label }}</strong>
+              <span class="title ant-ellipsis" :title="row.title">{{ row.title }}</span>
+              <span v-if="due" class="due" data-testid="due">{{ due }}</span>
+            </div>
+            <div class="line meta">
+              <span>{{ t('common.words.severity') }}: {{ codeText(SEVERITY_TEXT, row.severity, t) }}</span>
+              <span v-if="row.presentation_no">{{ t('decisions.gate.presentationNumber', { n: row.presentation_no }) }}</span>
+            </div>
+          </li>
+        </ol>
+      </section>
+    </div>
   </div>
 </template>
 
@@ -113,6 +135,46 @@ function move(delta: number): void {
   font-size: var(--ant-fs-lg);
 }
 
+.groups {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ant-space-4);
+  outline: none;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ant-space-2);
+  min-width: 0;
+}
+
+.group-title {
+  display: flex;
+  gap: var(--ant-space-2);
+  align-items: baseline;
+  min-width: 0;
+  margin: 0;
+  color: var(--ant-text-2);
+  font-size: var(--ant-fs-meta);
+  font-weight: var(--ant-fw-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.count {
+  padding: 0 var(--ant-space-2);
+  border-radius: var(--ant-radius-pill);
+  background: var(--ant-surface-subtle);
+  color: var(--ant-text);
+}
+
+.overdue-count {
+  color: var(--ant-status-danger);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
 .rows {
   display: flex;
   flex-direction: column;
@@ -120,7 +182,6 @@ function move(delta: number): void {
   margin: 0;
   padding: 0;
   list-style: none;
-  outline: none;
 }
 
 .row {
@@ -149,10 +210,30 @@ function move(delta: number): void {
   flex-wrap: wrap;
   gap: 2px 8px;
   align-items: baseline;
+  min-width: 0;
 }
 
-.kind,
-.muted,
+/* Изделие и срок — по краям, причина между ними сжимается с многоточием. */
+.head {
+  flex-wrap: nowrap;
+}
+
+.item {
+  flex: none;
+}
+
+.title {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.due {
+  flex: none;
+  margin-left: auto;
+  color: var(--ant-text-2);
+  font-size: var(--ant-fs-meta);
+}
+
 .meta {
   color: var(--ant-text-3);
   font-size: var(--ant-fs-meta);

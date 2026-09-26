@@ -14,7 +14,7 @@ export const ncCard = (over: Partial<NCCard> = {}): NCCard => ({
   axes: { position: 'isolated', quality: 'signal', disposition: 'none', containment: 'item_hold', erp_accounting: 'accepted_into_work' },
   happened: {
     before: [
-      { event_id: 'e-kt2', event_type: 'inspection.result.recorded', kind: 'fact', occurred_at: at('07:55'), summary: 'КТ-2: признаки не обнаружены', source_kind: 'camera', seq: 1201 },
+      { event_id: 'e-kt2', event_type: 'inspection.result.recorded', kind: 'fact', occurred_at: at('07:55'), summary: 'КТ-2: признаки не обнаружены', source_kind: 'camera', seq: 1201, params: { method: 'camera', outcome: 'no_defect_indicated' } },
     ],
     operation: { operation_run_id: 'run-weld-0042', label: 'Сварка', step_key: 'weld', equipment_id: 'ИС-3', tool_id: 'Горелка Г-2', program_ref: 'P-17 rev.4', started_at: at('08:10'), finished_at: at('08:40') },
     during: [

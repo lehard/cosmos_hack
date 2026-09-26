@@ -35,7 +35,7 @@ import {
 import { AuthorityNote, type Explanation } from '@/features/decision-authority'
 import { naiveSizeOf, type Density } from '@/shared/config/widget'
 import { useProblemText } from '@/shared/i18n/problem'
-import { ActionButton } from '@/shared/ui'
+import { ActionButton, StatusTag } from '@/shared/ui'
 
 const props = withDefaults(
   defineProps<{
@@ -127,12 +127,28 @@ const concessionOptions = computed(() =>
 const actionLabels = computed(() => Object.fromEntries(Object.values(DECISION_ACTIONS).map((d) => [d.operation, t(d.labelKey, { method: '', nextStep: '', operation: '' })])))
 /** Операция, на которую вернуть при переделке, — операция несоответствия. */
 const reworkOperation = computed(() => props.card.happened.operation?.label ?? t('widgets.decisions.reworkOperation'))
+/**
+ * Этап решения по несоответствию (UI-26): 1 — что это (подтвердить, отклонить,
+ * доп. контроль), 2 — что делать с изделием, 3 — исполнение и закрытие. Этап —
+ * по статусу карточки «по изделию», кнопки — по допустимым решениям сервера.
+ */
+const STAGES = ['identify', 'disposition', 'execution'] as const
+const stage = computed(() => {
+  const s = props.card.status
+  return s === 'draft' ? 0 : s === 'confirmed' ? 1 : 2
+})
 const reasonLabel = computed(() => (draft.action === 'reject_signal' ? t('decisions.signal.rejectReasonLabel') : t('widgets.decisions.reasonLabel')))
 </script>
 
 <template>
   <div class="panel" :class="`density-${density}`" data-testid="decision-panel">
     <p v-if="!canAct" class="muted" data-testid="replay-note">{{ t('common.modes.replayReadOnly') }}</p>
+    <ol class="stages" data-testid="stages" :aria-label="t('widgets.decisions.stage.title')">
+      <li v-for="(st, i) in STAGES" :key="st" class="stage" :data-stage="st" :data-state="i < stage ? 'done' : i === stage ? 'current' : 'next'">
+        <span class="stage-no">{{ i + 1 }}</span>
+        <span class="ant-ellipsis">{{ t(`widgets.decisions.stage.${st}`) }}</span>
+      </li>
+    </ol>
     <p v-if="!actions.length" class="muted" data-testid="nothing">{{ t('widgets.decisions.nothingToDecide') }}</p>
 
     <section v-if="signalActions.length" class="group" data-group="signal">
@@ -242,9 +258,17 @@ const reasonLabel = computed(() => (draft.action === 'reject_signal' ? t('decisi
     </section>
 
     <NAlert v-if="error" type="error" :bordered="false" :show-icon="false" data-testid="command-error">{{ problemText(error) }}</NAlert>
-    <p v-if="receipt" class="receipt" data-testid="receipt">
-      {{ t('widgets.decisions.recorded', { seq: receipt.seq }) }}<template v-if="receipt.ca_ref"> · {{ receipt.ca_ref }}</template>
-    </p>
+    <section v-if="receipt" class="receipt" data-testid="receipt">
+      <p class="receipt-title">{{ t('widgets.decisions.recordedTitle') }}</p>
+      <p class="receipt-now" data-testid="receipt-now">
+        <span class="muted">{{ t('widgets.decisions.recordedNow') }}:</span>
+        <StatusTag axis="position" :code="card.axes.position" />
+        <StatusTag axis="containment" :code="card.axes.containment" />
+      </p>
+      <p class="muted" data-testid="receipt-ref">
+        {{ t('widgets.decisions.recorded', { seq: receipt.seq }) }}<template v-if="receipt.ca_ref"> · {{ receipt.ca_ref }}</template>
+      </p>
+    </section>
   </div>
 </template>
 
@@ -289,9 +313,56 @@ const reasonLabel = computed(() => (draft.action === 'reject_signal' ? t('decisi
 
 .muted,
 .warn,
-.receipt {
+.receipt p {
   margin: 0;
   font-size: var(--ant-fs-meta);
+}
+
+/* Этапы: номер в кружке, текущий — акцентом, пройденные — приглушены. */
+.stages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ant-space-1) var(--ant-space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-meta);
+}
+
+.stage {
+  display: flex;
+  gap: var(--ant-space-1);
+  align-items: center;
+  min-width: 0;
+}
+
+.stage-no {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--ant-border-strong);
+  border-radius: 50%;
+  font-size: var(--ant-fs-xs);
+}
+
+.stage[data-state='current'] {
+  color: var(--ant-text);
+  font-weight: var(--ant-fw-bold);
+}
+
+.stage[data-state='current'] .stage-no {
+  border-color: var(--ant-accent);
+  background: var(--ant-accent);
+  color: var(--ant-surface);
+}
+
+.stage[data-state='done'] .stage-no {
+  border-color: var(--ant-status-success);
+  color: var(--ant-status-success);
 }
 
 .muted {
@@ -310,6 +381,24 @@ const reasonLabel = computed(() => (draft.action === 'reject_signal' ? t('decisi
 }
 
 .receipt {
-  color: var(--ant-status-success);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ant-space-1);
+  padding: var(--ant-space-2) var(--ant-space-3);
+  border-left: 3px solid var(--ant-status-success);
+  border-radius: 0 var(--ant-radius-md) var(--ant-radius-md) 0;
+  background: var(--ant-status-success-soft);
+}
+
+.receipt-title {
+  color: var(--ant-status-success-text);
+  font-weight: var(--ant-fw-bold);
+}
+
+.receipt-now {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ant-space-1) var(--ant-space-2);
+  align-items: center;
 }
 </style>

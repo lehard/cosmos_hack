@@ -168,7 +168,7 @@ describe('путь контролёра от сигнала до подписа�
     expect(body).toMatchObject({ basis_seq: 1260, policy_seq: 40, workplace_id: 'WP-QC-1', signal_ids: ['SIG-77'], reason: { text: 'Блик на кромке, на повторном снимке признаков нет' } })
     expect(body.command_id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-7/)
     expect(body.signature).toBeUndefined()
-    expect($('[data-testid="receipt"]')!.textContent!.trim()).toBe('Решение записано в журнал: запись № 1270 · CA-312')
+    expect($('[data-testid="receipt-ref"]')!.textContent!.trim()).toBe('Запись журнала № 1270 · CA-312')
     ctx.w.unmount()
   })
 

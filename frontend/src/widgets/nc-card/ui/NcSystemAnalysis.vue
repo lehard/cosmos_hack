@@ -13,7 +13,16 @@ import { codeToKey } from '@/shared/i18n'
 import RecordLine from './RecordLine.vue'
 import { ActionButton } from '@/shared/ui'
 
-const props = defineProps<{ analysis: NCSystemAnalysis }>()
+const props = withDefaults(
+  defineProps<{
+    analysis: NCSystemAnalysis
+    /** Свой заголовок «Почему система это предлагает» (в карточке его несёт раздел). */
+    titled?: boolean
+    /** Правило и режим автоматизации (в карточке — во втором слое, «Подробности»). */
+    showRule?: boolean
+  }>(),
+  { titled: true, showRule: true },
+)
 const { t, te, d } = useI18n()
 
 const versions = computed(() => conclusionVersions(props.analysis.versions))
@@ -29,15 +38,15 @@ const missing = (m: string) => {
 
 <template>
   <section class="why" data-testid="why-system">
-    <h4 class="ant-wrap">{{ t('ncCard.whySystemSuggests.title') }}</h4>
+    <h4 v-if="titled" class="ant-wrap">{{ t('ncCard.whySystemSuggests.title') }}</h4>
     <p class="note ant-wrap">{{ t('ncCard.whySystemSuggests.notAVerdict') }}</p>
 
     <article v-if="versions.current" class="version" data-testid="conclusion-current" :data-version="versions.current.version">
       <p class="head">
-        <strong class="ant-wrap">{{ codeText(OUTCOME_TEXT, versions.current.outcome, t) }}</strong>
+        <strong class="outcome ant-wrap">{{ codeText(OUTCOME_TEXT, versions.current.outcome, t) }}</strong>
         <span class="muted">{{ t('widgets.ncCard.conclusionVersion', { version: versions.current.version }) }} · {{ time(versions.current.recorded_at) }}</span>
       </p>
-      <p class="muted ant-wrap">{{ t('widgets.ncCard.rule', { ruleId: versions.current.rule_id }) }} · {{ t('decisions.automationMode.title') }}: {{ mode(versions.current) }}</p>
+      <p v-if="showRule" class="muted ant-wrap">{{ t('widgets.ncCard.rule', { ruleId: versions.current.rule_id }) }} · {{ t('decisions.automationMode.title') }}: {{ mode(versions.current) }}</p>
       <p v-if="versions.current.revised_due_to" class="revised ant-wrap" data-testid="revised">
         {{ t('timeline.marks.revised', { eventId: versions.current.revised_due_to }) }}
       </p>
@@ -134,6 +143,10 @@ h5 {
   flex-direction: column;
   gap: var(--ant-space-1);
   min-width: 0;
+}
+
+.outcome {
+  font-size: var(--ant-fs-title);
 }
 
 .version.old {
