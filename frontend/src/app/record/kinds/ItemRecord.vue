@@ -9,6 +9,7 @@ import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import { SummaryTag, usePassport } from '@/entities/item'
 import { ContainmentAction } from '@/features/containment'
+import { ReceiveAction } from '@/features/item-receive'
 import { useDrillDown } from '@/features/drill-down'
 import { ActionButton, RecordDrawer } from '@/shared/ui'
 import WidgetHost from '@/widgets/WidgetHost.vue'
@@ -50,7 +51,19 @@ const openPage = () => drill.openPage({ entity: 'item', id: props.id })
       :frame="{ hideTitle: true, plain: true }"
     />
     <template v-if="passport" #actions>
-      <ContainmentAction :item-id="id" :item-label="passport.label ?? id" :basis-seq="passport.basis_seq" />
+      <div class="actions-row">
+        <ReceiveAction :item-id="id" :basis-seq="passport.basis_seq" />
+        <ContainmentAction :item-id="id" :item-label="passport.label ?? id" :basis-seq="passport.basis_seq" />
+      </div>
     </template>
 </RecordDrawer>
 </template>
+
+<style scoped>
+.actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ant-space-3);
+  align-items: flex-start;
+}
+</style>
