@@ -215,8 +215,26 @@ func TestViolationWindowNCsJoinIncident(t *testing.T) {
 		t.Fatalf("инцидентов %d", len(f.st.Analysis.Incidents))
 	}
 	inc := f.st.Analysis.Incidents[strings.TrimPrefix(opened[0].Stream, "incident:")]
-	if len(inc.NCs) != len(ncs) {
-		t.Fatalf("несоответствия окна в инциденте: %v, выдано %d", inc.NCs, len(ncs))
+	// Несоответствие окна — групповое (NC-G1, S05): один id на окно, запись —
+	// в поток каждого изделия окна.
+	var ids []string
+	for _, a := range ncs {
+		b, err := json.Marshal(a.Data)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var d struct {
+			NCID string `json:"nc_id"`
+		}
+		if err := json.Unmarshal(b, &d); err != nil {
+			t.Fatal(err)
+		}
+		if !slices.Contains(ids, d.NCID) {
+			ids = append(ids, d.NCID)
+		}
+	}
+	if len(ids) != 1 || !slices.Equal(inc.NCs, ids) {
+		t.Fatalf("несоответствия окна в инциденте: %v, выдано %v (%d записей)", inc.NCs, ids, len(ncs))
 	}
 }
 

@@ -26,7 +26,7 @@ func RegisterWindowNC(q machinelogs.NCRequest) (kernel.Addressed, error) {
 	}
 	ncID := q.NCID
 	if ncID == "" {
-		ncID = WindowNCID(q.WindowEventID, q.OperationRunID)
+		ncID = WindowNCID(q.WindowEventID)
 	}
 	data := ev.DecisionNonconformityRegisteredV1{
 		NcID:                   ev.ObjectID(ncID),

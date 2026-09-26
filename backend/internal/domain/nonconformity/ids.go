@@ -10,10 +10,11 @@ import (
 // Детерминированные идентификаторы модуля (AD-4, «Соглашения/Идентификаторы»):
 // UUIDv5 от NS_ANT — одинаковы у воркера, воспроизведения и верификатора.
 
-// WindowNCID — id несоответствия окна нарушения специального процесса для
-// выполнения операции (FR-151).
-func WindowNCID(windowEventID, operationRunID string) string {
-	return kernel.UUIDv5(constants.NsAnt, "nc\x1fwindow\x1f"+windowEventID+"\x1f"+operationRunID)
+// WindowNCID — id группового несоответствия окна нарушения специального
+// процесса (FR-151): один на окно, общий для всех выполнений и изделий окна
+// (решение комиссии одно — NC-G1, S05).
+func WindowNCID(windowEventID string) string {
+	return kernel.UUIDv5(constants.NsAnt, "nc\x1fwindow\x1f"+windowEventID)
 }
 
 // DraftNCID — id несоответствия-черновика изделия по его сигналам (FR-51):

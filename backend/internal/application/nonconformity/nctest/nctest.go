@@ -88,9 +88,16 @@ func Run(itemID string, at time.Time, runID, operator string) appjournal.Pending
 // процесса (адресованная запись стадии, FR-151).
 func Registered(itemID string, at time.Time, runID string) (appjournal.Pending, string) {
 	window := ID()
-	ncID := nc.WindowNCID(window, runID)
+	ncID := nc.WindowNCID(window)
 	return Record(catalog.DecisionNonconformityRegistered, itemID, at, nc.RegisteredData{NCID: ncID, ViolationWindowEventID: window,
 		OperationRunID: runID, StepKey: "welding.weld"}), ncID
+}
+
+// RegisteredIn — регистрация группового несоответствия окна window у
+// изделия (один id на окно, FR-151): у всех изделий окна nc_id общий.
+func RegisteredIn(itemID string, at time.Time, runID, window string) appjournal.Pending {
+	return Record(catalog.DecisionNonconformityRegistered, itemID, at, nc.RegisteredData{NCID: nc.WindowNCID(window), ViolationWindowEventID: window,
+		OperationRunID: runID, StepKey: "welding.weld"})
 }
 
 // SignalOf — id сигнала результата контроля (модель quality).

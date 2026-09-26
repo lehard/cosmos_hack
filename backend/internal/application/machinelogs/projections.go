@@ -315,7 +315,8 @@ func violationStep(_ string, prev json.RawMessage, r kernel.Record) (json.RawMes
 			i = len(v.Windows) - 1
 		}
 		w := v.Windows[i]
-		if !slices.ContainsFunc(w.NCs, func(n ViolationNC) bool { return n.NcID == d.NcID }) {
+		// Несоответствие окна — групповое (один id на окно): строка — на изделие.
+		if !slices.ContainsFunc(w.NCs, func(n ViolationNC) bool { return n.NcID == d.NcID && n.ItemID == r.ItemID }) {
 			w.NCs = append(slices.Clone(w.NCs), ViolationNC{NcID: d.NcID, ItemID: r.ItemID, OperationRunID: d.Run})
 		}
 		w.RunIDs = addStr(w.RunIDs, d.Run)

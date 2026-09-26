@@ -504,6 +504,76 @@ func (s *State) executed(n NC, r kernel.Record) {
 	if n.Disposition == "use_as_is" {
 		s.effect(Effect{Kind: "set_quality", Value: string(statuses.QualityAcceptedWithConcession)}, r)
 	}
+	switch n.Disposition {
+	case "rework", "repair", "use_as_is":
+		s.releaseDecided(n, r)
+	}
+}
+
+// releaseDecided — исполняемое решение по изделию (переделка, ремонт, как
+// есть) выводит изделие из изоляции на исполнение решения (BPMN: подпроцесс
+// брака «изоляция → ЗТ-Р → итог», выход из него снимает изоляцию): снимаются
+// изоляция и сдерживание, основанное на решённых несоответствиях — этом и
+// подтверждённых до решения (Covered). Разрешающее действие — подписанное
+// решение людей (AD-27). Сдерживание по области инцидента и доп. проверки не
+// трогаются: их основания живут своим порядком.
+func (s *State) releaseDecided(n NC, r kernel.Record) {
+	decided := map[string]bool{n.ID: true}
+	for _, o := range s.NCs {
+		if o.ID != n.ID && o.Status == StatusConfirmed && !s.confirmedAt(o).After(r.OccurredAt) {
+			decided[o.ID] = true
+		}
+	}
+	for i := range s.Containment {
+		c := &s.Containment[i]
+		if !c.Released && c.NCID != "" && decided[c.NCID] {
+			c.Released, c.ReleasedBy = true, r.EventID
+		}
+	}
+	if s.Isolation != nil && !s.Isolation.Released {
+		s.Isolation.Released = true
+		for i := range s.Containment {
+			if c := &s.Containment[i]; c.Key == s.Isolation.EventID && !c.Released {
+				c.Released, c.ReleasedBy = true, r.EventID
+			}
+		}
+	}
+}
+
+// confirmedAt — когда несоответствие стало подтверждённым: решение
+// контролёра или (регистрация правилом) момент регистрации.
+func (s State) confirmedAt(n NC) time.Time {
+	if n.ConfirmedEventID != "" {
+		for _, d := range s.Decisions {
+			if d.EventID == n.ConfirmedEventID {
+				return d.At
+			}
+		}
+	}
+	return n.FoundAt
+}
+
+// Covered — подтверждённое несоответствие без своего решения покрыто
+// исполняемым решением по изделию, принятым после его подтверждения (ось
+// «решение по изделию» — одна на изделие, AD-30): групповое решение комиссии
+// (NC-G1) решает судьбу изделия и по его собственным несоответствиям,
+// подтверждённым раньше. Подтверждённое позже — ждёт нового решения.
+func (s State) Covered(n NC) bool {
+	if n.Status != StatusConfirmed {
+		return false
+	}
+	at := s.confirmedAt(n)
+	for _, o := range s.NCs {
+		if o.ID == n.ID || o.Disposition == "" || !o.Executed || o.DispositionEventID == "" {
+			continue
+		}
+		for _, d := range s.Decisions {
+			if d.EventID == o.DispositionEventID && !d.At.Before(at) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func (s *State) decision(r kernel.Record, ncID, summary string) {

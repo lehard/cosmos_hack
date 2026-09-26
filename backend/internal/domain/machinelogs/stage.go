@@ -43,7 +43,8 @@ type StageEnv = Env
 // NCRequest — запрос регистрации несоответствия выполнению операции в окне
 // нарушения режима специального процесса (FR-151).
 type NCRequest struct {
-	// NCID — детерминированный id несоответствия (UUIDv5 окна и выполнения).
+	// NCID — детерминированный id группового несоответствия окна (UUIDv5
+	// окна): один на все выполнения окна (FR-151, решение комиссии — одно).
 	NCID           string    `json:"nc_id"`
 	ItemID         string    `json:"item_id"`
 	OperationRunID string    `json:"operation_run_id"`
@@ -383,7 +384,10 @@ func (st *stage) windowRun(wid, id string) {
 	st.s.Windows[wid] = w
 	q := NCRequest{ItemID: run.ItemID, OperationRunID: id, StepKey: run.StepKey, EquipmentID: w.EquipmentID, RunID: w.RunID,
 		WindowEventID: w.EventID, WindowStart: w.Start, WindowEnd: *w.End}
-	q.NCID = "NC-SP-" + kernel.UUIDv5(constants.NsAnt, "machinelogs.special_process\x1f"+q.Key())
+	// Групповое несоответствие (NC-G1, S05): один id на окно нарушения —
+	// решение комиссии одно на все изделия окна и приходит каждому из них;
+	// запись в поток каждого изделия — своя (ключ окна и выполнения).
+	q.NCID = "NC-SP-" + kernel.UUIDv5(constants.NsAnt, "machinelogs.special_process\x1f"+w.EventID)
 	q.Causes = append(slices.Clone(w.Causes), run.Causes...)
 	slices.SortStableFunc(q.Causes, func(a, b Cause) int { return cmp.Compare(a.EventID, b.EventID) })
 	if st.p.Register == nil {

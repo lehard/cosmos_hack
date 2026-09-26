@@ -363,3 +363,47 @@ func TestConcessionGuard(t *testing.T) {
 		t.Fatal("отозванное применимо")
 	}
 }
+
+// NC-G1, S05/S10A: групповое решение «переделка» по несоответствию окна
+// покрывает подтверждённое раньше несоответствие изделия (ось «решение по
+// изделию» одна, AD-30) и выводит изделие из изоляции на исполнение;
+// подтверждённое позже — ждёт своего решения.
+func TestGroupDispositionCoversEarlierNC(t *testing.T) {
+	var j journal
+	j.add(catalog.OperationRunStarted, map[string]any{"operation_run_id": "RUN-1", "operation_code": "020", "step_key": "welding.weld", "operator_id": "op-7"}, "")
+	insp := j.add(catalog.InspectionResultRecorded, map[string]any{"step_key": "welding.kt3_camera", "outcome": "defect_indicated"}, "")
+	j.add(catalog.DecisionNonconformityConfirmed, nc.ConfirmedData{NCID: nc.DraftNCID(item, []string{"SIG-1"}), SignalIDs: []string{"SIG-1"}, Severity: "major",
+		Reason: nc.Reason{Text: "прожог"}}, "qc-1")
+	iso := j.add(catalog.DecisionItemIsolated, nc.IsolatedData{Reason: nc.Reason{Text: "до решения"}}, "qc-1")
+	a, err := nc.RegisterWindowNC(mlRequest())
+	if err != nil {
+		t.Fatal(err)
+	}
+	j.add(catalog.DecisionNonconformityRegistered, a.Data, "")
+	intents := map[string][]kernel.Intent{insp.EventID: {draftIntent(insp, "isolate", "SIG-1")}}
+	s, _ := fold(nc.Env{}, j.recs, intents)
+	if len(s.NCs) != 2 || !s.Isolated() || !s.Blocked() {
+		t.Fatalf("до решения: %+v", s)
+	}
+	group := s.NCs[1].ID
+	j.add(catalog.DecisionDispositionSet, nc.DispositionSetData{NCID: group, Disposition: "rework", Reason: nc.Reason{Text: "переделка ×6"}}, "tech-1")
+	s, _ = fold(nc.Env{}, j.recs, intents)
+	if !s.Covered(s.NCs[0]) || s.Isolated() || s.Blocked() {
+		t.Fatalf("групповое решение не покрыло НС изделия: covered=%v isolated=%v containment=%+v (изоляция %s)", s.Covered(s.NCs[0]), s.Isolated(), s.Containment, iso.EventID)
+	}
+	accept := kernel.Command{Action: nc.ActPresentation, Payload: nc.PresentationResolvedData{StepKey: "welding.zt3_acceptance", ClosingPoint: "ZT-3",
+		Resolution: "accept", PresentationNo: 2}}
+	if err := nc.Guard(s, nc.Env{}, nc.Upstream{}, accept); err != nil {
+		t.Fatalf("приёмка после группового решения: %v", err)
+	}
+	// Новое несоответствие после решения — не покрыто: приёмка ждёт.
+	j.add(catalog.DecisionNonconformityConfirmed, nc.ConfirmedData{NCID: nc.DraftNCID(item, []string{"SIG-2"}), SignalIDs: []string{"SIG-2"}, Severity: "major",
+		Reason: nc.Reason{Text: "поры"}}, "qc-1")
+	insp2 := j.add(catalog.InspectionResultRecorded, map[string]any{"step_key": "welding.kt3_radiography", "outcome": "defect_indicated"}, "")
+	intents[insp2.EventID] = []kernel.Intent{draftIntent(insp2, "manual_review", "SIG-2")}
+	j.recs[len(j.recs)-2], j.recs[len(j.recs)-1] = j.recs[len(j.recs)-1], j.recs[len(j.recs)-2]
+	s, _ = fold(nc.Env{}, j.recs, intents)
+	if err := nc.Guard(s, nc.Env{}, nc.Upstream{}, accept); code(err) != errcodes.NonconformityItemBlocked {
+		t.Fatalf("новое несоответствие не держит приёмку: %v", err)
+	}
+}

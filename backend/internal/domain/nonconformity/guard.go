@@ -182,7 +182,7 @@ func guardPresentation(s State, env Env, up Upstream, cmd kernel.Command, p Pres
 	for _, n := range s.NCs {
 		// Открытое несоответствие без исполняемого решения — изделие не
 		// принимается (снятие блока ≠ годность, AD-30).
-		decided := (n.Status == StatusDispositionSet && n.Executed) || n.Status == StatusVerified
+		decided := (n.Status == StatusDispositionSet && n.Executed) || n.Status == StatusVerified || s.Covered(n)
 		if n.Open() && !decided {
 			return kernel.Refuse(errcodes.NonconformityItemBlocked)
 		}
