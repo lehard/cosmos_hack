@@ -52,6 +52,8 @@ const emit = defineEmits<{
 }>()
 
 const { t, d } = useI18n()
+/** Почему назначать нельзя — одна причина на экран (исполнителей и контролёров). */
+const blockedReason = computed(() => props.performerBlocked ?? props.inspectorBlocked ?? null)
 const problemText = useProblemText()
 const size = computed(() => naiveSizeOf(props.density))
 const time = (iso: string) => d(new Date(iso), 'time')
@@ -109,7 +111,11 @@ function confirmClear(a: AccessAssignment): void {
       </template>
     </ToolBar>
     <p class="ant-muted ant-wrap">{{ t('access.onlyQualified') }} · {{ t('widgets.shopFloor.shift.controllerRule') }}</p>
-    <NAlert v-if="assignmentsError" type="warning" :bordered="false" data-testid="assignments-error">
+    <!-- Одна плашка сверху: почему назначить нельзя и что делать (UI-48) — вместо повтора под каждым постом. -->
+    <NAlert v-if="canAct && blockedReason" type="warning" :bordered="false" :title="t('widgets.shopFloor.shift.cannotAssignTitle')" data-testid="shift-blocked">
+      {{ blockedReason }}
+    </NAlert>
+    <NAlert v-else-if="assignmentsError" type="warning" :bordered="false" data-testid="assignments-error">
       {{ t('widgets.shopFloor.shift.planUnavailable') }}: {{ problemText(assignmentsError) }}
     </NAlert>
 
@@ -150,7 +156,7 @@ function confirmClear(a: AccessAssignment): void {
               </template>
             </div>
           </div>
-          <ToolBar v-if="canAct">
+          <ToolBar v-if="canAct && !performerBlocked">
             <NSelect
               v-model:value="pick[r.post.workplace_id]"
               class="picker"
@@ -172,7 +178,6 @@ function confirmClear(a: AccessAssignment): void {
               @click="emit('assign', r.post.workplace_id, 'performer', pick[r.post.workplace_id]!, null)"
             />
           </ToolBar>
-          <p v-if="canAct && performerBlocked" class="blocked ant-wrap" data-testid="performer-blocked">{{ performerBlocked }}</p>
 
           <!-- Контролёр: запрос мастера → согласование начальника ОТК (PRD §11.18). -->
           <div class="line" data-testid="inspectors">
@@ -184,7 +189,7 @@ function confirmClear(a: AccessAssignment): void {
             </div>
           </div>
           <PostApprovals :workplace-id="r.post.workplace_id" :can-act="canAct" :size="size" @use="(doc) => (approval[r.post.workplace_id] = doc)" />
-          <ToolBar v-if="canAct">
+          <ToolBar v-if="canAct && !inspectorBlocked">
             <NSelect
               v-model:value="inspectorPick[r.post.workplace_id]"
               class="picker"
@@ -219,7 +224,6 @@ function confirmClear(a: AccessAssignment): void {
               />
             </template>
           </ToolBar>
-          <p v-if="canAct && inspectorBlocked" class="blocked ant-wrap" data-testid="inspector-blocked">{{ inspectorBlocked }}</p>
         </SectionPanel>
       </div>
     </SectionPanel>
@@ -260,10 +264,5 @@ function confirmClear(a: AccessAssignment): void {
 
 .error {
   color: var(--ant-status-danger-text);
-}
-.blocked {
-  margin: 0;
-  color: var(--ant-status-attention-text);
-  font-size: var(--ant-fs-meta);
 }
 </style>
