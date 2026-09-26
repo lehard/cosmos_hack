@@ -11,7 +11,8 @@ go test ./cmd/token-agent/...
 mkdir -p "$OUT/extension" "$OUT/bin"
 GOOS=js GOARCH=wasm go build -trimpath -ldflags="$LD" -o "$OUT/extension/signer.wasm" ./cmd/token-agent/wasm
 cp "$(go env GOROOT)/lib/wasm/wasm_exec.js" "$OUT/extension/"
-for t in darwin/arm64 darwin/amd64 linux/amd64; do
-  GOOS="${t%/*}" GOARCH="${t#*/}" go build -trimpath -ldflags="$LD" -o "$OUT/bin/token-agent-${t%/*}-${t#*/}" ./cmd/token-agent
+for t in darwin/arm64 darwin/amd64 linux/amd64 linux/arm64 windows/amd64; do
+  ext=""; [ "${t%/*}" = windows ] && ext=".exe"
+  GOOS="${t%/*}" GOARCH="${t#*/}" go build -trimpath -ldflags="$LD" -o "$OUT/bin/token-agent-${t%/*}-${t#*/}${ext}" ./cmd/token-agent
 done
 echo "собрано: $OUT"
