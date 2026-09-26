@@ -14,3 +14,13 @@ export function backendModeOf(response: { headers?: Headers } | undefined | null
   const value = response?.headers?.get(BACKEND_HEADER)
   return value === 'fixtures' || value === 'live' ? value : null
 }
+
+/**
+ * Ответ в форме сгенерированного клиента: тело и заголовки (из заголовка
+ * `Ant-Backend` виджет берёт метку режима fixtures | live — backendModeOf).
+ * Обёртки entities/* отдают виджетам тело уже распакованным (без `items`).
+ */
+export interface Envelope<T> {
+  data: T
+  headers?: Headers
+}

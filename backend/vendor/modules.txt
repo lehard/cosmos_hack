@@ -48,12 +48,20 @@ github.com/pressly/goose/v3/internal/sqlparser
 github.com/pressly/goose/v3/lock
 github.com/pressly/goose/v3/lock/internal/store
 github.com/pressly/goose/v3/lock/internal/table
+# github.com/santhosh-tekuri/jsonschema/v6 v6.0.3
+## explicit; go 1.21
+github.com/santhosh-tekuri/jsonschema/v6
+github.com/santhosh-tekuri/jsonschema/v6/kind
 # github.com/sethvargo/go-retry v0.4.0
 ## explicit; go 1.25
 github.com/sethvargo/go-retry
 # go.stargrave.org/gogost/v7 v7.0.0 => ../third_party/gogost
 ## explicit; go 1.24
+go.stargrave.org/gogost/v7/gost28147
+go.stargrave.org/gogost/v7/gost3410
 go.stargrave.org/gogost/v7/gost34112012256
+go.stargrave.org/gogost/v7/gost34112012512
+go.stargrave.org/gogost/v7/gost341194
 go.stargrave.org/gogost/v7/internal/gost34112012
 # go.uber.org/multierr v1.11.0
 ## explicit; go 1.19
@@ -68,11 +76,18 @@ golang.org/x/sync/semaphore
 # golang.org/x/text v0.41.0
 ## explicit; go 1.25.0
 golang.org/x/text/cases
+golang.org/x/text/feature/plural
 golang.org/x/text/internal
+golang.org/x/text/internal/catmsg
+golang.org/x/text/internal/format
 golang.org/x/text/internal/language
 golang.org/x/text/internal/language/compact
+golang.org/x/text/internal/number
+golang.org/x/text/internal/stringset
 golang.org/x/text/internal/tag
 golang.org/x/text/language
+golang.org/x/text/message
+golang.org/x/text/message/catalog
 golang.org/x/text/runes
 golang.org/x/text/secure/bidirule
 golang.org/x/text/secure/precis

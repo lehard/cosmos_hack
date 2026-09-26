@@ -1,10 +1,16 @@
 package security
 
-import app "ant/internal/application/security"
+import (
+	"context"
 
-// Adapter — реализация fixtures ведущих портов модуля security. В волне 1 —
-// заглушка: все операции отвечают 501 (app.Unimplemented).
+	app "ant/internal/application/security"
+)
+
+// Adapter — реализация fixtures ведущих портов модуля security (AD-36):
+// индикатор целостности «по данным сервера» — из мира заготовок на шаге
+// курсора (в главной истории нарушение появляется после подмены записи, S09).
 type Adapter struct {
+	// Unimplemented — операции, которых нет в мире заготовок, отвечают 501.
 	app.Unimplemented
 }
 
@@ -15,3 +21,8 @@ var (
 	_ app.Queries  = (*Adapter)(nil)
 	_ app.Commands = (*Adapter)(nil)
 )
+
+// Integrity — состояние целостности журнала (security.integrity.read, AD-46).
+func (Adapter) Integrity(ctx context.Context) (app.IntegrityStatus, error) {
+	return respond[app.IntegrityStatus](ctx, "security.integrity.read", nil, nil)
+}

@@ -4461,6 +4461,10 @@ components:
           maxItems: 1000
           minItems: 1
           type: array
+        sent_at:
+          description: "Время отправки пачки по часам источника: по нему приём оценивает расхождение часов источника (FR-33); задержка досылки буфера сдвигом часов не считается."
+          format: date-time
+          type: string
         source_id:
           description: Источник пачки (устройство, шлюз, терминал); в прогоне — ‹run_id›/‹источник› (AD-38).
           maxLength: 128

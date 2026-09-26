@@ -2,21 +2,21 @@
  * Источник данных виджета разбора: то, что контейнер виджета передаёт рамке
  * (загрузка, ошибка, режим fixtures | live) и представлению (данные).
  *
- * Пока операций чтения analysis нет в contracts/openapi.yaml, источник пуст:
- * виджет честно показывает «записей нет», а не выдуманные данные — заготовок в
- * коде интерфейса нет (PRD §11.10, FR-150). Когда операции появятся, источник
- * становится запросом Vue Query через сгенерированный клиент с ключами
- * `incidentKeys` / `processVersionKeys` и параметрами момента.
+ * Источник — запрос Vue Query через сгенерированный клиент (api.ts сущностей incident и process-version);
+ * пустой источник — когда нечего читать (ничего не выбрано). Заготовок данных в
+ * коде интерфейса нет (PRD §11.10, FR-150).
  */
 import { ref, type Ref } from 'vue'
 import type { BackendMode } from '@/shared/api/generated/model'
 
 /** Источник данных виджета. */
 export interface WidgetSource<T> {
-  data: Ref<T | null>
-  isPending: Ref<boolean>
-  error: Ref<unknown>
-  mode: Ref<BackendMode | null>
+  data: Readonly<Ref<T | null>>
+  isPending: Readonly<Ref<boolean>>
+  error: Readonly<Ref<unknown>>
+  mode: Readonly<Ref<BackendMode | null>>
+  /** `seq`, на котором построен ответ, — `basis_seq` команд (AD-39); null — нет. */
+  basisSeq: Readonly<Ref<number | null>>
 }
 
 /** Источник без операции API: данных нет, ошибки нет. */
@@ -25,4 +25,5 @@ export const emptySource = <T>(): WidgetSource<T> => ({
   isPending: ref(false),
   error: ref(undefined),
   mode: ref(null),
+  basisSeq: ref(null),
 })

@@ -15,3 +15,24 @@ func TestNewReactionForeignType(t *testing.T) {
 		t.Fatal("item не эмитит quality.signal.raised — ждали ошибку AD-40")
 	}
 }
+
+// Эталон партиции (AD-6, AD-41): FNV-1a 32 над байтами item_id mod P —
+// одна функция у приёма, движка, стадии и верификатора; значения
+// посчитаны независимо (offset 0x811c9dc5, prime 0x01000193).
+func TestPartitionOf(t *testing.T) {
+	for _, c := range []struct {
+		item string
+		p    int
+		want int
+	}{
+		{"ENT01:I-1", 16, 14}, // 0xca2c5c0e
+		{"ENT01:I-7", 16, 4},  // 0xcc2c5f34
+		{"ENT01:I-7", 64, 52},
+		{"ENT01:I-7", 1, 0},
+		{"ENT01:I-7", 0, 0},
+	} {
+		if got := PartitionOf(c.item, c.p); got != c.want {
+			t.Errorf("PartitionOf(%q, %d) = %d, ждали %d", c.item, c.p, got, c.want)
+		}
+	}
+}

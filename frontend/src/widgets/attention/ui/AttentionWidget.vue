@@ -27,14 +27,16 @@ const entries = computed(() => query.data.value?.data ?? null)
 /** Текст строки — только ключами liveMap.attention (NFR-UI-3). */
 function text(e: AttentionEntry): string {
   if (e.kind === 'overdue_decision') {
+    const items = e.items ?? 0
+    const operations = e.operations ?? 0
     return t('liveMap.attention.overdueDecision', {
-      target: e.target,
-      overdue: formatMinutes(t, e.overdue_minutes),
-      items: t('plural.items', { n: e.items }, e.items),
-      operations: t('plural.operations', { n: e.operations }, e.operations),
+      target: e.target ?? '—',
+      overdue: formatMinutes(t, e.overdue_minutes ?? 0),
+      items: t('plural.items', { n: items }, items),
+      operations: t('plural.operations', { n: operations }, operations),
     })
   }
-  return t(e.kind === 'unverified_measures' ? 'liveMap.attention.unverifiedMeasures' : 'liveMap.attention.temporaryMeasures', { n: e.n })
+  return t(e.kind === 'unverified_measures' ? 'liveMap.attention.unverifiedMeasures' : 'liveMap.attention.temporaryMeasures', { n: e.n ?? 0 })
 }
 
 const rows = computed(() =>

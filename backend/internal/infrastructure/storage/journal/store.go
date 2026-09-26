@@ -16,6 +16,7 @@ import (
 	app "ant/internal/application/journal"
 	jc "ant/internal/contracts/journal"
 	dj "ant/internal/domain/journal"
+	enginestore "ant/internal/infrastructure/storage/engine"
 )
 
 // Канал LISTEN/NOTIFY «есть новое» (AD-6): полезная нагрузка — только seq
@@ -45,6 +46,19 @@ type Store struct {
 	clock    app.InfraClock
 	batchMax int
 	skew     time.Duration
+	effects  []EffectApplier
+}
+
+// EffectApplier — применяющий эффекты модуля-писателя проекций внутри
+// транзакции Append (AD-44, AD-45): handled = false — эффект не этого
+// модуля. Эффект, который не взял ни один применяющий, — ошибка записи:
+// курсор без своей проекции не сдвигается.
+type EffectApplier func(ctx context.Context, tx pgx.Tx, e app.Effect) (handled bool, err error)
+
+// EngineEffects — применяющий эффекты движка (проекции каркаса, вклады,
+// журнал изменений для SSE; storage/engine.ApplyEffect). Подключён всегда.
+func EngineEffects(ctx context.Context, tx pgx.Tx, e app.Effect) (bool, error) {
+	return enginestore.ApplyEffect(ctx, tx, e)
 }
 
 // Option — настройка Store.
@@ -56,10 +70,16 @@ func WithBatchMax(k int) Option { return func(s *Store) { s.batchMax = k } }
 // WithSkew — допустимое отставание часов копии от головы цепочки.
 func WithSkew(d time.Duration) Option { return func(s *Store) { s.skew = d } }
 
+// WithEffects — применяющие эффекты модулей со своими проекциями (сверх
+// движка), по порядку: эффект применяет первый, кто его взял.
+func WithEffects(a ...EffectApplier) Option {
+	return func(s *Store) { s.effects = append(s.effects, a...) }
+}
+
 // NewStore создаёт хранилище журнала над пулом pgx. Часы — InfraClock
 // (committed_at, проверка аренд; AD-37).
 func NewStore(pool *pgxpool.Pool, clock app.InfraClock, opts ...Option) *Store {
-	s := &Store{pool: pool, clock: clock, batchMax: DefaultBatchMax, skew: DefaultSkew}
+	s := &Store{pool: pool, clock: clock, batchMax: DefaultBatchMax, skew: DefaultSkew, effects: []EffectApplier{EngineEffects}}
 	for _, o := range opts {
 		o(s)
 	}
@@ -70,7 +90,8 @@ var _ app.JournalStore = (*Store)(nil)
 
 type txKey struct{}
 
-// Tx — транзакция Append из контекста AppendRequest.Project: адаптеры
+// Tx — транзакция Append из контекста AppendRequest.Project и применяющих
+// эффекты (EffectApplier): адаптеры
 // проекций модулей пишут свои таблицы в той же транзакции, что и записи
 // журнала и курсор потребителя (AD-45). Вне Project — nil, false.
 func Tx(ctx context.Context) (pgx.Tx, bool) {
@@ -89,7 +110,8 @@ type head struct {
 // транзакция: проверка аренды с эпохой (ErrFenced) → pg_advisory_xact_lock
 // основной цепочки, затем ca → проверки AD-39 → чтение голов, звенья, INSERT
 // → леджер разрешений, курсор потребителя, выход потребителя (Project) →
-// NOTIFY. Блокировка головы держится до фиксации, поэтому видимость по seq
+// NOTIFY. Выход потребителя — эффекты (Effects, применяют адаптеры хранения
+// модулей-писателей) и Project. Блокировка головы держится до фиксации, поэтому видимость по seq
 // монотонна и вилка цепочки невозможна при любом числе копий.
 func (s *Store) Append(ctx context.Context, rq app.AppendRequest) (app.AppendResult, error) {
 	var res app.AppendResult
@@ -236,11 +258,34 @@ ON CONFLICT (name, partition) DO UPDATE SET seq = GREATEST(consumer_offsets.seq,
 			return err
 		}
 	}
-	// 7. Выход потребителя в таблицы модуля — в той же транзакции.
+	// 7. Выход потребителя в таблицы модулей — в той же транзакции: эффекты
+	// (проекции, вклады, журнал изменений), затем Project.
+	tctx := context.WithValue(ctx, txKey{}, tx)
+	for _, e := range rq.Effects {
+		if err := s.applyEffect(tctx, tx, e); err != nil {
+			return err
+		}
+	}
 	if rq.Project != nil {
-		return rq.Project(context.WithValue(ctx, txKey{}, tx), *res)
+		return rq.Project(tctx, *res)
 	}
 	return nil
+}
+
+func (s *Store) applyEffect(ctx context.Context, tx pgx.Tx, e app.Effect) error {
+	if e == nil {
+		return fmt.Errorf("%w: пустой эффект", app.ErrInvalidEntry)
+	}
+	for _, apply := range s.effects {
+		handled, err := apply(ctx, tx, e)
+		if err != nil {
+			return err
+		}
+		if handled {
+			return nil
+		}
+	}
+	return fmt.Errorf("%w: эффект %s никто не применяет (Store: WithEffects)", app.ErrInvalidEntry, e.EffectKind())
 }
 
 // committedAt — committed_at не убывает по seq (AD-37): отставание часов

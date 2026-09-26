@@ -2,10 +2,12 @@
 // похожие случаи (FR-60).
 import { mount } from '@vue/test-utils'
 import { createPinia } from 'pinia'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { i18n } from '@/shared/i18n'
-import { weldHypotheses } from '@/entities/incident/__tests__/fixtures'
+import { mockApi, mountWidget, permissions, settle } from '@/entities/incident/__tests__/api-mock'
+import { ncGroups, weldHypotheses } from '@/entities/incident/__tests__/fixtures'
 import HypothesisView from '../ui/HypothesisView.vue'
+import HypothesisWidget from '../ui/HypothesisWidget.vue'
 
 const mountView = (props: Record<string, unknown> = {}) =>
   mount(HypothesisView, { props: { model: weldHypotheses(), ...props }, global: { plugins: [createPinia(), i18n] } })
@@ -30,16 +32,28 @@ describe('гипотезы причины', () => {
     expect(eq.text()).toContain('Почему возник')
   })
 
-  it('кнопки «подтвердить причину / отклонить / запросить измерение»', async () => {
+  it('кнопки «подтвердить причину / отклонить / запросить измерение» открывают форму с обязательными полями', async () => {
     const w = mountView()
-    const eq = w.find('article[data-category="equipment"]')
-    expect(eq.find('[data-testid="request-measurement"]').text()).toBe('Запросить измерение — ток источника ИС-3 на эталонном образце')
-    await eq.find('[data-testid="confirm"]').trigger('click')
-    await eq.find('[data-testid="reject"]').trigger('click')
-    await eq.find('[data-testid="request-measurement"]').trigger('click')
+    const eq = () => w.find('article[data-category="equipment"]')
+    expect(eq().find('[data-testid="request-measurement"]').text()).toBe('Запросить измерение — ток источника ИС-3 на эталонном образце')
+
+    await eq().find('[data-testid="confirm"]').trigger('click')
+    expect(eq().find('[data-testid="form-submit"]').attributes('disabled')).toBeDefined()
+    await eq().find('[data-testid="form-first"]').setValue('Эталонный образец: ток 212 А воспроизводит прожог')
+    await eq().find('[data-testid="form-second"]').setValue('Отклонение режима подтверждено измерением')
+    await eq().find('form').trigger('submit')
     expect(w.emitted('confirm')?.[0]?.[0]).toMatchObject({ hypothesis_id: 'h-equipment' })
-    expect(w.emitted('reject')?.[0]?.[0]).toMatchObject({ hypothesis_id: 'h-equipment' })
-    expect(w.emitted('request-measurement')?.[0]?.[0]).toMatchObject({ hypothesis_id: 'h-equipment' })
+    expect(w.emitted('confirm')?.[0]?.[1]).toEqual({ verification: 'Эталонный образец: ток 212 А воспроизводит прожог', reason: 'Отклонение режима подтверждено измерением' })
+
+    await eq().find('[data-testid="reject"]').trigger('click')
+    await eq().find('[data-testid="form-first"]').setValue('Журнал станка не подтверждает')
+    await eq().find('form').trigger('submit')
+    expect(w.emitted('reject')?.[0]?.[1]).toEqual({ reason: 'Журнал станка не подтверждает' })
+
+    await eq().find('[data-testid="request-measurement"]').trigger('click')
+    expect((eq().find('[data-testid="form-first"]').element as HTMLTextAreaElement).value).toBe('ток источника ИС-3 на эталонном образце')
+    await eq().find('form').trigger('submit')
+    expect(w.emitted('request-measurement')?.[0]?.[1]).toEqual({ what: 'ток источника ИС-3 на эталонном образце' })
   })
 
   it('ошибка исполнителя — только после расследования и объяснения работника', () => {
@@ -47,9 +61,10 @@ describe('гипотезы причины', () => {
     expect(perf.find('[data-testid="performer-note"]').text()).toContain('письменного объяснения работника')
   })
 
-  it('без доступных команд кнопки выключены', () => {
-    const w = mountView({ canAct: false })
+  it('без права на действие его кнопка выключена, остальные — нет', () => {
+    const w = mountView({ canConfirm: false })
     for (const b of w.findAll('[data-testid="confirm"]')) expect(b.attributes('disabled')).toBeDefined()
+    for (const b of w.findAll('[data-testid="reject"]')) expect(b.attributes('disabled')).toBeUndefined()
   })
 
   it('довод по клику уходит на дорожки; вход из общего фактора подписан', async () => {
@@ -69,5 +84,41 @@ describe('гипотезы причины', () => {
     const s = mountView().find('[data-testid="similar-cases"]').text()
     expect(s).toContain('НС-0117: причина (подтверждена) — Оборудование, мера — Замена кабеля массы ИС-3, результат — Результативно')
     expect(s).toContain('НС-0098: причина (гипотеза) — Исполнитель (отклонение от процедуры), мера — не назначена, результат — Неизвестно')
+  })
+})
+
+describe('виджет гипотез: чтение и команды через API', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  const routes = (actions: [string, string][]) => ({
+    'GET /api/v1/analysis/groups': { items: [{ ...ncGroups()[1], nc_ids: ['NC-0142'] }] },
+    'GET /api/v1/incidents': { items: [{ incident_id: 'INC-12', label: 'И-12', size: 6, initial_size: 34, scope_version: 3, status: 'open', opened_at: '2026-09-23T08:53:00.000Z' }] },
+    'GET /api/v1/nonconformities/NC-0142/hypotheses': { ...weldHypotheses(), basis_seq: 1250 },
+    'GET /api/v1/permissions': permissions(actions),
+    'POST /api/v1/nonconformities/NC-0142/hypotheses/reject': { command_id: 'c', seq: 1300, event_ids: ['e'], replayed: false },
+  })
+
+  it('кнопки — по списку прав сервера', async () => {
+    mockApi(routes([['analysis.hypothesis.reject', 'nonconformity']]))
+    const w = await mountWidget(HypothesisWidget, { widgetId: 'hypothesis', titleKey: 'ncCard.hypotheses.title' })
+    const eq = w.find('article[data-category="equipment"]')
+    expect(eq.find('[data-testid="reject"]').attributes('disabled')).toBeUndefined()
+    expect(eq.find('[data-testid="confirm"]').attributes('disabled')).toBeDefined()
+    expect(eq.find('[data-testid="request-measurement"]').attributes('disabled')).toBeDefined()
+  })
+
+  it('«отклонить» уходит командой с basis_seq ответа и policy_seq политики', async () => {
+    const calls = mockApi(routes([['analysis.hypothesis.reject', 'nonconformity']]))
+    const w = await mountWidget(HypothesisWidget, { widgetId: 'hypothesis', titleKey: 'ncCard.hypotheses.title' })
+    const eq = () => w.find('article[data-category="equipment"]')
+    await eq().find('[data-testid="reject"]').trigger('click')
+    await eq().find('[data-testid="form-first"]').setValue('Журнал станка не подтверждает')
+    await eq().find('form').trigger('submit')
+    await settle()
+    const post = calls.find((c) => c.method === 'POST')
+    expect(post?.path).toBe('/api/v1/nonconformities/NC-0142/hypotheses/reject')
+    expect(post?.body).toMatchObject({ hypothesis_id: 'h-equipment', reason: { text: 'Журнал станка не подтверждает' }, basis_seq: 1250, policy_seq: 7 })
+    expect((post?.body as { command_id: string }).command_id).toMatch(/^[0-9a-f-]{36}$/)
+    expect(w.find('[data-testid="command-sent"]').exists()).toBe(true)
   })
 })

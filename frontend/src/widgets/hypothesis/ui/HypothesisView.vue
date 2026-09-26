@@ -6,7 +6,7 @@
  * только после расследования, письменного объяснения и решения уполномоченного.
  * Уверенность вывода — не вероятность вины (NFR-UI-4).
  */
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { NAlert, NButton } from 'naive-ui'
 import { describeRecord, isOpen, recordColor, sortByTime, sortHypotheses, type Hypothesis, type HypothesesModel, type JournalRecordRef, type SimilarCase } from '@/entities/incident'
@@ -20,18 +20,24 @@ const props = withDefaults(
     density?: Density
     /** Подпись общего фактора, из которого технолог вошёл в гипотезу. */
     fromFactor?: string | null
-    /** Доступны ли команды (подтвердить / отклонить / запросить измерение). */
-    canAct?: boolean
+    /** Доступно ли «подтвердить причину» (право `analysis.cause.conclude`). */
+    canConfirm?: boolean
+    /** Доступно ли «отклонить» (право `analysis.hypothesis.reject`). */
+    canReject?: boolean
+    /** Доступно ли «запросить измерение» (право `analysis.measurement.request`). */
+    canMeasure?: boolean
+    /** Команда отправляется — формы выключены. */
+    busy?: boolean
   }>(),
-  { density: 'compact', fromFactor: null, canAct: true },
+  { density: 'compact', fromFactor: null, canConfirm: true, canReject: true, canMeasure: true, busy: false },
 )
 const emit = defineEmits<{
-  /** Подтвердить причину. */
-  confirm: [h: Hypothesis]
-  /** Отклонить гипотезу. */
-  reject: [h: Hypothesis]
-  /** Запросить измерение. */
-  'request-measurement': [h: Hypothesis]
+  /** Подтвердить причину: чем проверили и основание. */
+  confirm: [h: Hypothesis, input: { verification: string; reason: string }]
+  /** Отклонить гипотезу с основанием. */
+  reject: [h: Hypothesis, input: { reason: string }]
+  /** Запросить измерение: что измерить. */
+  'request-measurement': [h: Hypothesis, input: { what: string }]
   /** Показать запись-довод на дорожках. */
   'select-record': [eventId: string]
   /** Открыть похожий случай. */
@@ -51,6 +57,38 @@ const label = (r: JournalRecordRef) => {
 const category = (c: string | null) => (c ? t(`statuses.causeCategory.${codeToKey(c)}`) : t('statuses.causeCategory.notEstablished'))
 const status = (h: Hypothesis) => t(`statuses.hypothesis.${codeToKey(h.status)}`)
 const time = (x: string) => d(new Date(x), 'dateTime')
+
+/** Открытая форма решения по гипотезе: у каждого решения — обязательные поля. */
+type FormKind = 'confirm' | 'reject' | 'measure'
+const form = ref<{ id: string; kind: FormKind } | null>(null)
+const first = ref('')
+const second = ref('')
+
+function openForm(h: Hypothesis, kind: FormKind): void {
+  form.value = { id: h.hypothesis_id, kind }
+  first.value = kind === 'measure' ? (h.measurement_hint ?? '') : ''
+  second.value = ''
+}
+
+const formReady = computed(() => {
+  if (!form.value) return false
+  if (form.value.kind === 'confirm') return first.value.trim() !== '' && second.value.trim() !== ''
+  return first.value.trim() !== ''
+})
+
+function submit(h: Hypothesis): void {
+  if (!form.value || !formReady.value) return
+  if (form.value.kind === 'confirm') emit('confirm', h, { verification: first.value.trim(), reason: second.value.trim() })
+  else if (form.value.kind === 'reject') emit('reject', h, { reason: first.value.trim() })
+  else emit('request-measurement', h, { what: first.value.trim() })
+  form.value = null
+}
+
+const FIRST_LABEL: Record<FormKind, string> = {
+  confirm: 'decisions.cause.verifiedBy',
+  reject: 'common.words.basis',
+  measure: 'widgets.analysis.hypothesis.measureWhat',
+}
 
 function caseLine(c: SimilarCase): string {
   return t('ncCard.similarCases.line', {
@@ -113,16 +151,33 @@ function caseLine(c: SimilarCase): string {
       </div>
 
       <footer v-if="isOpen(h)" class="card-actions">
-        <NButton :size="size" type="primary" secondary :disabled="!canAct || moment.isReplay" data-testid="confirm" @click="emit('confirm', h)">
+        <NButton :size="size" type="primary" secondary :disabled="!canConfirm || busy || moment.isReplay" data-testid="confirm" @click="openForm(h, 'confirm')">
           {{ t('decisions.cause.confirmCause') }}
         </NButton>
-        <NButton :size="size" :disabled="!canAct || moment.isReplay" data-testid="reject" @click="emit('reject', h)">
+        <NButton :size="size" :disabled="!canReject || busy || moment.isReplay" data-testid="reject" @click="openForm(h, 'reject')">
           {{ t('decisions.cause.rejectHypothesis') }}
         </NButton>
-        <NButton :size="size" :disabled="!canAct || moment.isReplay" data-testid="request-measurement" @click="emit('request-measurement', h)">
+        <NButton :size="size" :disabled="!canMeasure || busy || moment.isReplay" data-testid="request-measurement" @click="openForm(h, 'measure')">
           {{ t('decisions.cause.requestMeasurement', { what: h.measurement_hint ?? category(h.category) }) }}
         </NButton>
         <p v-if="h.category === 'performer'" class="muted legal" data-testid="performer-note">{{ t('decisions.cause.performerErrorPrerequisites') }}</p>
+
+        <form v-if="form?.id === h.hypothesis_id" class="form" :data-form="form.kind" @submit.prevent="submit(h)">
+          <label>
+            <span>{{ t(FIRST_LABEL[form.kind]) }}</span>
+            <textarea v-model="first" rows="2" required data-testid="form-first" />
+          </label>
+          <label v-if="form.kind === 'confirm'">
+            <span>{{ t('common.words.basis') }}</span>
+            <textarea v-model="second" rows="2" required data-testid="form-second" />
+          </label>
+          <div class="form-actions">
+            <NButton :size="size" type="primary" attr-type="submit" :disabled="!formReady || busy || moment.isReplay" data-testid="form-submit">
+              {{ t('common.actions.send') }}
+            </NButton>
+            <NButton :size="size" quaternary data-testid="form-cancel" @click="form = null">{{ t('common.actions.cancel') }}</NButton>
+          </div>
+        </form>
       </footer>
     </article>
 
@@ -273,6 +328,36 @@ function caseLine(c: SimilarCase): string {
   flex-wrap: wrap;
   gap: 6px;
   align-items: center;
+}
+
+.form {
+  display: flex;
+  flex-basis: 100%;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #f8fafc;
+}
+
+.form label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.form textarea {
+  font: inherit;
+  padding: 4px 6px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  resize: vertical;
+}
+
+.form-actions {
+  display: flex;
+  gap: 6px;
 }
 
 .legal {

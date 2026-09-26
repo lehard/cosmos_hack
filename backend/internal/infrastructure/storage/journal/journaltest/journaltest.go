@@ -23,6 +23,8 @@ import (
 	app "ant/internal/application/journal"
 	jc "ant/internal/contracts/journal"
 	dj "ant/internal/domain/journal"
+	"ant/internal/domain/kernel"
+	enginestore "ant/internal/infrastructure/storage/engine"
 	store "ant/internal/infrastructure/storage/journal"
 	"ant/internal/infrastructure/storage/journal/migrator"
 )
@@ -68,7 +70,7 @@ func cmpOr(a, b string) string {
 
 var dbCounter atomic.Int64
 
-// NewDB — чистая база с ролями и миграциями журнала.
+// NewDB — чистая база с ролями и миграциями журнала и движка (Sets).
 func NewDB(t *testing.T) *DB {
 	t.Helper()
 	ctx := context.Background()
@@ -100,7 +102,7 @@ func NewDB(t *testing.T) *DB {
 	if err := migrator.EnsureRoles(ctx, ac); err != nil {
 		t.Fatal(err)
 	}
-	applied, err := migrator.Up(ctx, admin.ConnConfig, nil, migrator.Set{Module: "journal", FS: store.Migrations, Dir: store.MigrationsDir})
+	applied, err := migrator.Up(ctx, admin.ConnConfig, nil, Sets()...)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -173,7 +175,7 @@ func Entry(eventType string, kind jc.JournalEntryEntryKind, stream string, item 
 	if item != "" {
 		it := item
 		e.ItemID = &it
-		e.Partition = dj.Partition(item, 4)
+		e.Partition = kernel.PartitionOf(item, 4)
 	}
 	return app.Pending{Entry: e, Envelope: Envelope(eventType, map[string]any{"v": 1})}
 }
@@ -212,5 +214,14 @@ func MigrateAgain(d *DB) ([]migrator.Applied, error) {
 	if err := migrator.EnsureRoles(ctx, c); err != nil {
 		return nil, err
 	}
-	return migrator.Up(ctx, d.Admin.ConnConfig, nil, migrator.Set{Module: "journal", FS: store.Migrations, Dir: store.MigrationsDir})
+	return migrator.Up(ctx, d.Admin.ConnConfig, nil, Sets()...)
+}
+
+// Sets — миграции тестовой базы, как у ant migrate для ядра: журнал и
+// хранение движка (проекции, вклады, журнал изменений — эффекты Append).
+func Sets() []migrator.Set {
+	return []migrator.Set{
+		{Module: "journal", FS: store.Migrations, Dir: store.MigrationsDir},
+		{Module: "engine", FS: enginestore.Migrations, Dir: enginestore.MigrationsDir},
+	}
 }

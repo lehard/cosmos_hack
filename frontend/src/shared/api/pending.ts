@@ -28,14 +28,8 @@ export function notImplementedError(operationId: string): ApiError {
   })
 }
 
-/**
- * Ответ в форме сгенерированного клиента: тело и заголовки (из заголовка
- * `Ant-Backend` виджет берёт метку режима fixtures | live — backendModeOf).
- */
-export interface Envelope<T> {
-  data: T
-  headers?: Headers
-}
+/** Ответ в форме сгенерированного клиента — общий тип shared/api/response.ts (эпик 10). */
+export type { Envelope } from './response'
 
 /**
  * Функция запроса для операции, которой ещё нет в контракте.
