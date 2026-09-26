@@ -108,9 +108,10 @@ func openCore(ctx context.Context, env *environment) (*core, error) {
 	c := &core{
 		pool: pool,
 		// Эффекты модулей со своими таблицами в транзакции Append (AD-45):
-		// очередь исходящих erp (эпик 30).
-		journal: journalstore.NewStore(pool, infra, journalstore.WithBatchMax(batch),
-			journalstore.WithEffects(erpstore.ApplyEffect)),
+		// очередь исходящих erp (эпик 30); доверие (эпик 29): записи CA в той
+		// же транзакции и шифрование при хранении.
+		journal: journalstore.NewStore(pool, infra, append([]journalstore.Option{journalstore.WithBatchMax(batch),
+			journalstore.WithEffects(erpstore.ApplyEffect)}, trustOptions(cfg, env)...)...),
 		leases:   journalstore.NewLeases(pool, infra),
 		listener: journalstore.NewListener(pool, env.log),
 		engine:   &enginestore.Store{Pool: pool},

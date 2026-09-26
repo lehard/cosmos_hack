@@ -72,6 +72,26 @@ type AppendRequest struct {
 	Project func(ctx context.Context, res AppendResult) error
 }
 
+// CriticalBuilder — построитель записей журнала критических действий (AD-8,
+// AD-28): Append вызывает его в своей транзакции после того, как записи
+// основной пачки получили seq и commit, и дописывает возвращённые записи в
+// цепочку ca той же транзакцией. Реализация — application/security
+// (domain/security.BuildCA); модули записей CA сами не создают.
+type CriticalBuilder interface {
+	// Critical — записи CA для записей основной пачки batch. next — номер
+	// следующей записи цепочки ca (CA-‹n›): первый вызов берёт блокировку
+	// головы ca (порядок main → ca сохраняется) и читает её; каждый вызов
+	// резервирует следующий номер. Записей не нужно — nil.
+	Critical(ctx context.Context, batch []Sealed, next func() (int64, error)) ([]Pending, error)
+}
+
+// Sealed — запись основной пачки после вычисления звена: открытые поля с
+// seq, commit и link и канонический конверт (для CriticalBuilder).
+type Sealed struct {
+	Entry    jc.JournalEntry
+	Envelope []byte
+}
+
 // Effect — запись проекции в транзакции Append (AD-45: один писатель на
 // проекцию, курсор и проекция атомарно).
 type Effect interface {

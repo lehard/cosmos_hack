@@ -142,6 +142,12 @@ func runAPI(ctx context.Context, env *environment) error {
 			return err
 		}
 	}
+	if modeOf(opts, "security") == platform.ModeLive {
+		// Журнал CA, шина безопасности, индикатор целостности (эпик 29).
+		if opts.security, err = securityLive(ctx, env); err != nil {
+			return err
+		}
+	}
 	buildAPI(mux, opts)
 	mux.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/problem+json")

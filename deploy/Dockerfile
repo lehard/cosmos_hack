@@ -30,10 +30,14 @@ COPY third_party/ /src/third_party/
 COPY backend/ ./
 COPY --from=frontend /src/frontend/dist/ ./internal/infrastructure/transport/webui/dist/
 RUN --mount=type=cache,target=/root/.cache/go-build,id=ant-gobuild \
-    go build -trimpath -ldflags "-s -w -X main.version=${VERSION}" -o /out/ant ./cmd/ant
-# Каталог тома материалов (materials.dir): именованный том при первом
+    go build -trimpath -ldflags "-s -w -X main.version=${VERSION}" -o /out/ant ./cmd/ant \
+    && for c in keeper verifier tamper; do \
+         go build -trimpath -ldflags "-s -w -X main.version=${VERSION}" -o /out/$c ./cmd/$c || exit 1; done
+# Каталоги томов (materials.dir; хранитель, верификатор, сертификат mTLS ant,
+# KEK, экспорт шины безопасности — эпик 29): именованный том при первом
 # подключении наследует владельца — пользователя исполнения 65532.
-RUN mkdir -p /out/var/lib/ant/materials
+RUN mkdir -p /out/var/lib/ant/materials /out/var/lib/keeper /out/var/lib/verifier /out/var/lib/ant-pki \
+    /out/var/lib/ant-kek /out/var/lib/ant-export /out/var/lib/ant-tamper
 
 # ------------------------------------------------------------ исполнение --
 FROM ${RUNTIME_IMAGE}
@@ -43,7 +47,10 @@ LABEL ant.project="ant" \
       org.opencontainers.image.description="Доверенная система контроля качества деталей" \
       org.opencontainers.image.version="${VERSION}"
 COPY --from=backend /out/ant /ant
-COPY --from=backend --chown=65532:65532 /out/var/lib/ant /var/lib/ant
+# Отдельные процессы по границам доверия (эпик 29, AD-8, AD-9, AD-28): хранитель,
+# верификатор и демо-инструмент подделки — в том же образе, свои службы compose.
+COPY --from=backend /out/keeper /out/verifier /out/tamper /
+COPY --from=backend --chown=65532:65532 /out/var/lib/ /var/lib/
 COPY deploy/config/ant.yaml /etc/ant/ant.yaml
 USER 65532:65532
 EXPOSE 8080

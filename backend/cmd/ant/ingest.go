@@ -6,6 +6,7 @@ import (
 	"ant/cmd/internal/config"
 	crossitemapp "ant/internal/application/crossitem"
 	ingestapp "ant/internal/application/ingest"
+	securityapp "ant/internal/application/security"
 	ingeststore "ant/internal/infrastructure/storage/ingest"
 	"ant/internal/infrastructure/storage/journal/clock"
 	materialsstore "ant/internal/infrastructure/storage/materials"
@@ -28,7 +29,7 @@ func ingestLive(ctx context.Context, env *environment) (*ingestapp.Service, erro
 		return nil, err
 	}
 	cfg := env.cfg
-	mat, err := materialsstore.NewVolume(cfg.Materials.Dir)
+	mat, err := materialsstore.NewVolume(cfg.Materials.Dir, materialsOptions(cfg)...)
 	if err != nil {
 		return nil, err
 	}
@@ -52,6 +53,8 @@ func ingestLive(ctx context.Context, env *environment) (*ingestapp.Service, erro
 			Carriers:    crossitemapp.ProjectedCarriers{Store: c.engine},
 			DomainClock: clock.SystemDomain{},
 			InfraClock:  clock.System{},
+			// Шина безопасности модуля security (эпик 29) вместо моста эпика 06.
+			Security: securityapp.IngestBus{Enc: securityEncoder(cfg)},
 		}),
 	), nil
 }

@@ -12,11 +12,13 @@ import (
 	engineapp "ant/internal/application/engine"
 	appjournal "ant/internal/application/journal"
 	"ant/internal/application/platform"
+	"ant/internal/application/security"
 	"ant/internal/contracts/catalog"
 	jc "ant/internal/contracts/journal"
 	"ant/internal/domain/engine"
 	"ant/internal/domain/kernel"
 	dom "ant/internal/domain/nonconformity"
+	domsecurity "ant/internal/domain/security"
 )
 
 // SourceAPI — source_id решений, принятых операциями API модуля.
@@ -59,7 +61,7 @@ func signer(person string) string {
 //
 // Конверт — DSSE без подписей (демо без агента токена, Д-30): подпись
 // личным ключом собирает агент токена (эпики 27, 38); запись критического
-// действия (AD-28) — через CriticalActions эпика 29.
+// действия (AD-28) — через CriticalActions (security.Execute, эпик 29).
 func (s *Service) write(ctx context.Context, d decision) (platform.Receipt, error) {
 	id := strings.ToLower(d.Meta.CommandID)
 	if _, err := uuid.Parse(id); err != nil || id == "" {
@@ -137,7 +139,14 @@ func (s *Service) write(ctx context.Context, d decision) (platform.Receipt, erro
 		e.PolicySeq = &p
 	}
 	rq := appjournal.AppendRequest{Batch: []appjournal.Pending{{Entry: e, Envelope: sealed}}, Checks: d.Checks, ConcessionGrants: d.Grants}
-	res, err := s.d.Journal.Append(ctx, rq)
+	// AD-28: критическое действие — через сервис доверенных решений: запись
+	// CA строится в транзакции этого Append (эпик 29).
+	var res appjournal.AppendResult
+	err = security.Execute(ctx, domsecurity.Command{ActorID: d.Actor, PolicySeq: d.Meta.PolicySeq}, func(ctx context.Context) error {
+		var err error
+		res, err = s.d.Journal.Append(ctx, rq)
+		return err
+	})
 	if errors.Is(err, appjournal.ErrDuplicate) {
 		return s.replay(ctx, d, id)
 	}

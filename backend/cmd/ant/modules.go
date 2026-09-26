@@ -121,6 +121,8 @@ type apiOptions struct {
 	crossitem *crossitemapp.Service
 	// process — живая карта, версии и команды исполнителя (process.go, эпик 17); nil — 501.
 	process *processapp.Service
+	// security — журнал CA, шина безопасности, индикатор целостности (security.go, эпик 29); nil — 501.
+	security *securityapp.Service
 }
 
 // buildAPI собирает HTTP API: общий декоратор (Gate) над портами прав и входа,
@@ -245,7 +247,11 @@ func buildAPI(mux *http.ServeMux, o apiOptions) *httpapi.API {
 		accesshttp.Register(a, live, live, gate)
 	}
 	{
-		q, c := pick[securityapp.Queries, securityapp.Commands](a.ModeFor("security"), securityapp.NewService(), securityfx.New())
+		live := o.security
+		if live == nil {
+			live = securityapp.NewService()
+		}
+		q, c := pick[securityapp.Queries, securityapp.Commands](a.ModeFor("security"), live, securityfx.New())
 		securityhttp.Register(a, q, c)
 	}
 	{

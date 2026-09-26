@@ -12,11 +12,13 @@ import (
 	engineapp "ant/internal/application/engine"
 	appjournal "ant/internal/application/journal"
 	"ant/internal/application/platform"
+	"ant/internal/application/security"
 	"ant/internal/contracts/catalog"
 	jc "ant/internal/contracts/journal"
 	dom "ant/internal/domain/analysis"
 	"ant/internal/domain/engine"
 	"ant/internal/domain/kernel"
+	domsecurity "ant/internal/domain/security"
 )
 
 // Ведомые порты модуля analysis.
@@ -131,7 +133,14 @@ func (w JournalDecisions) Write(ctx context.Context, d Decision) (platform.Recei
 			rq.Checks = append(rq.Checks, appjournal.Check{Stream: s, BasisSeq: d.Meta.BasisSeq})
 		}
 	}
-	res, err := w.Journal.Append(ctx, rq)
+	// AD-28: критическое действие — через сервис доверенных решений: запись
+	// CA строится в транзакции этого Append (эпик 29).
+	var res appjournal.AppendResult
+	err = security.Execute(ctx, domsecurity.Command{ActorID: d.Actor, PolicySeq: d.Meta.PolicySeq}, func(ctx context.Context) error {
+		var err error
+		res, err = w.Journal.Append(ctx, rq)
+		return err
+	})
 	if errors.Is(err, appjournal.ErrDuplicate) {
 		return w.replay(ctx, d, id)
 	}

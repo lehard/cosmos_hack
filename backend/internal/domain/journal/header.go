@@ -2,6 +2,7 @@ package journal
 
 import (
 	"encoding/base64"
+	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -135,45 +136,33 @@ func ValidatePending(e jc.JournalEntry) error {
 	return nil
 }
 
-// SealedPlain — пометка dek_id блока, который пока не зашифрован.
-// TODO(29): шифрование при хранении (AD-23, DEK/KEK) — эпик 29; до него
-// блок sealed несёт JCS(plain_block) открыто, base64 в ciphertext_b64.
+// SealedPlain — пометка dek_id блока, который не зашифрован: записи демо-трека
+// до эпика 29 и записи хранилища без KEK (разработка, тесты). Шифрование при
+// хранении (AD-23) — sealed_block с aead и dek_id, обёртки DEK — journal.dek_wraps.
 const SealedPlain = "plain"
 
-// PlainSealed — блок sealed демо-трека: plain_block {salt_b64, envelope}
-// открыто (TODO(29)).
-func PlainSealed(salt, envelope []byte) (jc.SealedBlock, error) {
+// SaltSize — длина соли записи: 128 случайных бит (AD-23).
+const SaltSize = 16
+
+// PlainBlock — JCS(plain_block {salt_b64, envelope}): то, что шифруется AEAD
+// (contracts/journal/chain-format.v1.md, AD-23).
+func PlainBlock(salt, envelope []byte) ([]byte, error) {
 	env, err := Canonical(envelope)
 	if err != nil {
-		return jc.SealedBlock{}, err
+		return nil, err
 	}
 	pb, err := json.Marshal(struct {
 		SaltB64  string          `json:"salt_b64"`
 		Envelope json.RawMessage `json:"envelope"`
 	}{base64.StdEncoding.EncodeToString(salt), env})
 	if err != nil {
-		return jc.SealedBlock{}, err
+		return nil, err
 	}
-	pb, err = Canonical(pb)
-	if err != nil {
-		return jc.SealedBlock{}, err
-	}
-	return jc.SealedBlock{DekID: SealedPlain, CiphertextB64: base64.StdEncoding.EncodeToString(pb)}, nil
+	return Canonical(pb)
 }
 
-// ErrSealed — блок зашифрован, а ключа нет (или формат блока неизвестен).
-var ErrSealed = errors.New("journal: блок записи зашифрован — нужен KEK (эпик 29)")
-
-// OpenPlain раскрывает блок sealed демо-трека и сверяет commit (AD-23:
-// после расшифрования commit проверяется всегда). Возвращает соль и JCS конверта.
-func OpenPlain(e jc.JournalEntry) (salt, envelope []byte, err error) {
-	if e.Sealed.DekID != SealedPlain {
-		return nil, nil, ErrSealed
-	}
-	pb, err := base64.StdEncoding.DecodeString(e.Sealed.CiphertextB64)
-	if err != nil {
-		return nil, nil, fmt.Errorf("sealed: %w", err)
-	}
+// ParsePlainBlock — соль и JCS конверта из plain_block.
+func ParsePlainBlock(pb []byte) (salt, envelope []byte, err error) {
 	var blk struct {
 		SaltB64  string          `json:"salt_b64"`
 		Envelope json.RawMessage `json:"envelope"`
@@ -187,6 +176,44 @@ func OpenPlain(e jc.JournalEntry) (salt, envelope []byte, err error) {
 	}
 	envelope, err = Canonical(blk.Envelope)
 	if err != nil {
+		return nil, nil, err
+	}
+	return salt, envelope, nil
+}
+
+// AAD — дополнительные данные AEAD блока записи: chain ‖ seq ‖ commit (ASCII
+// chain, seq — 8 байт big-endian, commit — 32 байта; chain-format.v1.md).
+// Перенос шифротекста в другую запись или цепочку не расшифровывается.
+func AAD(chain string, seq int64, commit Digest) []byte {
+	b := make([]byte, 0, len(chain)+8+32)
+	b = append(b, chain...)
+	b = binary.BigEndian.AppendUint64(b, uint64(seq))
+	return append(b, commit[:]...)
+}
+
+// PlainSealed — открытый блок sealed (dek_id = plain): plain_block в base64.
+func PlainSealed(salt, envelope []byte) (jc.SealedBlock, error) {
+	pb, err := PlainBlock(salt, envelope)
+	if err != nil {
+		return jc.SealedBlock{}, err
+	}
+	return jc.SealedBlock{DekID: SealedPlain, CiphertextB64: base64.StdEncoding.EncodeToString(pb)}, nil
+}
+
+// ErrSealed — блок зашифрован, а ключа нет (или формат блока неизвестен).
+var ErrSealed = errors.New("journal: блок записи зашифрован — нужен KEK")
+
+// OpenPlain раскрывает открытый блок sealed и сверяет commit (AD-23: после
+// расшифрования commit проверяется всегда). Возвращает соль и JCS конверта.
+func OpenPlain(e jc.JournalEntry) (salt, envelope []byte, err error) {
+	if e.Sealed.DekID != SealedPlain {
+		return nil, nil, ErrSealed
+	}
+	pb, err := base64.StdEncoding.DecodeString(e.Sealed.CiphertextB64)
+	if err != nil {
+		return nil, nil, fmt.Errorf("sealed: %w", err)
+	}
+	if salt, envelope, err = ParsePlainBlock(pb); err != nil {
 		return nil, nil, err
 	}
 	if err := VerifyCommit(e, salt, envelope); err != nil {
