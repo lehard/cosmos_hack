@@ -30,25 +30,25 @@ const time = (x: string) => d(new Date(x), 'dateTime')
   flex-wrap: wrap;
   gap: 2px 8px;
   align-items: baseline;
-  font-size: 12px;
+  font-size: var(--ant-fs-meta);
 }
 
 .time {
-  color: #6b7280;
+  color: var(--ant-text-3);
   font-variant-numeric: tabular-nums;
 }
 
 .text {
-  font-weight: 600;
+  font-weight: var(--ant-fw-bold);
 }
 
 .kind,
 .muted {
-  color: #6b7280;
-  font-size: 11px;
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-xs);
 }
 
 .mark {
-  color: #b45309;
+  color: var(--ant-status-attention-text);
 }
 </style>

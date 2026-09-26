@@ -1,0 +1,167 @@
+/*
+ * Базовые стили «Главного» (NFR-UI-2, UI-3): документ, заголовки, ссылки, фокус,
+ * полосы прокрутки и служебные классы переполнения текста. Значения — только
+ * переменные --ant-* из токенов (theme/tokens.ts → theme/css.ts).
+ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app,
+#app > .n-config-provider {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: var(--ant-font);
+  font-size: var(--ant-fs-md);
+  line-height: var(--ant-lh-normal);
+  color: var(--ant-text);
+  background: var(--ant-bg-app);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-variant-numeric: tabular-nums;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  font-weight: var(--ant-fw-bold);
+  line-height: var(--ant-lh-tight);
+  color: var(--ant-text);
+}
+
+h1 {
+  font-size: var(--ant-fs-xxl);
+}
+
+h2 {
+  font-size: var(--ant-fs-xl);
+}
+
+h3 {
+  font-size: var(--ant-fs-lg);
+}
+
+h4 {
+  font-size: var(--ant-fs-md);
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: var(--ant-accent);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+code,
+kbd,
+samp {
+  font-family: var(--ant-font-mono);
+}
+
+:focus-visible {
+  outline: 2px solid var(--ant-accent);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--ant-accent-soft-border);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--ant-n-300) transparent;
+}
+
+/* --- служебные классы переполнения (UI-2): каждый текст в shared/ui несёт один из них --- */
+
+/** Одна строка, лишнее — многоточие (полный текст — в title или подсказке). */
+.ant-ellipsis {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/** Перенос строк, в том числе длинных слов и кодов. */
+.ant-wrap {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+/** Контейнер произвольного содержимого: может сжиматься, длинные слова переносятся. */
+.ant-box {
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+/** Не больше двух строк, дальше — многоточие. */
+.ant-clamp-2 {
+  display: -webkit-box;
+  min-width: 0;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+/** Номера, коды, отпечатки — моноширинно. */
+.ant-mono {
+  font-family: var(--ant-font-mono);
+  font-size: 0.95em;
+}
+
+/** Числа в таблицах и показателях — одинаковой ширины. */
+.ant-num {
+  font-variant-numeric: tabular-nums;
+}
+
+/** Вторичный текст. */
+.ant-muted {
+  color: var(--ant-text-3);
+}
+
+/** Скрыть визуально, оставить для чтения с экрана. */
+.ant-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* --- страховка для элементов Naive UI вне shared/ui (UI-2) ---
+   Кнопка не шире своего контейнера, подпись не вылезает за её край; для
+   многоточия с подсказкой или переноса — ActionButton. */
+.n-button {
+  max-width: 100%;
+}
+
+.n-button .n-button__content {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.n-radio-group {
+  max-width: 100%;
+}

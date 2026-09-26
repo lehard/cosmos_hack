@@ -9,7 +9,7 @@
  * последние записи; `full` — страница паспорта.
  */
 import { useI18n } from 'vue-i18n'
-import { NAlert, NButton, NSpin, NTabPane, NTabs } from 'naive-ui'
+import { NAlert, NSpin, NTabPane, NTabs } from 'naive-ui'
 import type { ItemGenealogy, ItemHistory, ItemPassport } from '@/entities/item'
 import { naiveSizeOf, type Density } from '@/shared/config/widget'
 import { useProblemText } from '@/shared/i18n/problem'
@@ -20,6 +20,7 @@ import PassportEntries from './PassportEntries.vue'
 import PassportGenealogy from './PassportGenealogy.vue'
 import PassportHeader from './PassportHeader.vue'
 import PassportZones from './PassportZones.vue'
+import { ActionButton } from '@/shared/ui'
 
 withDefaults(
   defineProps<{
@@ -79,7 +80,7 @@ const COMPACT_ENTRIES = 5
 
     <template v-if="view === 'compact'">
       <PassportEntries :entries="passport.entries" :limit="COMPACT_ENTRIES" :filterable="false" />
-      <NButton :size="naiveSizeOf(density)" secondary data-testid="open-full" @click="emit('open-full')">{{ t('common.actions.openPassport') }}</NButton>
+      <ActionButton :size="naiveSizeOf(density)" secondary data-testid="open-full" @click="emit('open-full')" :label="t('common.actions.openPassport')" />
     </template>
 
     <NTabs v-else type="line" default-value="entries" animated>
@@ -114,10 +115,10 @@ const COMPACT_ENTRIES = 5
   display: flex;
   flex-direction: column;
   gap: 10px;
-  font-size: 13px;
+  font-size: var(--ant-fs-body);
 }
 
 .density-large {
-  font-size: 16px;
+  font-size: var(--ant-fs-lg);
 }
 </style>

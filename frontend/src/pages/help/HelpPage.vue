@@ -7,11 +7,11 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
-import { NCard, NEmpty, NList, NListItem, NText } from 'naive-ui'
 import { useDesk } from '@/entities/desk'
 import { useSession } from '@/entities/session'
 import { helpGuide, parseHelp } from '@/shared/help'
 import { codeToKey } from '@/shared/i18n'
+import { AppPage, EmptyState, KeyValue, KeyValueList, SectionPanel } from '@/shared/ui'
 import { isWidgetId, widgetRegistry } from '@/widgets/registry'
 
 const { t, te } = useI18n()
@@ -48,14 +48,11 @@ const contents = computed(() =>
 </script>
 
 <template>
-  <div class="help">
-    <NCard :title="`${t('shell.help.title')}: ${roleTitle}`">
-      <template #header-extra>
-        <NText depth="3">{{ t('shell.help.offline') }}</NText>
-      </template>
-      <p v-if="roleTask">{{ roleTask }}</p>
+  <AppPage class="help" :title="`${t('shell.help.title')}: ${roleTitle}`" :subtitle="roleTask || undefined">
+    <template #meta>{{ t('shell.help.offline') }}</template>
 
-      <article v-if="guide" class="guide" data-testid="help-guide">
+    <SectionPanel>
+      <article v-if="guide" class="guide ant-wrap" data-testid="help-guide">
         <template v-for="(b, i) in guide" :key="i">
           <h2 v-if="b.kind === 'h' && b.level === 2">{{ b.text }}</h2>
           <h3 v-else-if="b.kind === 'h'">{{ b.text }}</h3>
@@ -65,33 +62,45 @@ const contents = computed(() =>
           </ul>
         </template>
       </article>
-      <NEmpty v-else :description="t('shell.help.noGuide')" />
-    </NCard>
+      <EmptyState v-else :title="t('shell.help.noGuide')" />
+    </SectionPanel>
 
-    <NCard v-if="contents.length" :title="t('shell.help.deskContents')">
-      <NList>
-        <NListItem v-for="tab in contents" :key="tab.id">
-          <NText strong>{{ tab.title }}</NText>
-          <NText depth="3">: {{ tab.widgets.join(', ') }}</NText>
-        </NListItem>
-      </NList>
-    </NCard>
-  </div>
+    <SectionPanel v-if="contents.length" :title="t('shell.help.deskContents')">
+      <KeyValueList>
+        <KeyValue v-for="tab in contents" :key="tab.id" :label="tab.title" :value="tab.widgets.join(', ')" />
+      </KeyValueList>
+    </SectionPanel>
+  </AppPage>
 </template>
 
 <style scoped>
 .help {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
   max-width: 960px;
 }
 
+.guide {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ant-space-3);
+  line-height: var(--ant-lh-normal);
+}
+
 .guide h2 {
-  font-size: 18px;
+  margin-top: var(--ant-space-2);
+  font-size: var(--ant-fs-xl);
 }
 
 .guide h3 {
-  font-size: 16px;
+  margin-top: var(--ant-space-1);
+  font-size: var(--ant-fs-lg);
+}
+
+.guide ul {
+  margin: 0;
+  padding-left: var(--ant-space-5);
+}
+
+.guide li + li {
+  margin-top: var(--ant-space-1);
 }
 </style>

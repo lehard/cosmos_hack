@@ -10,7 +10,7 @@
  */
 import { computed, toValue, type MaybeRefOrGetter } from 'vue'
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
-import { accessGrantList, accessPersonList, accessPolicyGrant, accessPolicyRevoke, accessRoleList, accessStampList } from '@/shared/api/generated/client'
+import { accessAccountActivate, accessGrantList, accessPersonList, accessPolicyGrant, accessPolicyRevoke, accessRoleList, accessStampList } from '@/shared/api/generated/client'
 import type {
   AccessGrantEntry,
   AccessGrantEntryAction,
@@ -20,6 +20,7 @@ import type {
   AccessRole,
   AccessRoleList,
   AccessStamp,
+  ActivateAccount,
   GrantPolicy,
   GrantPolicyKind,
   RevokePolicy,
@@ -37,6 +38,7 @@ export type {
   AccessRole,
   AccessRoleList,
   AccessStamp,
+  ActivateAccount,
   GrantPolicy,
   GrantPolicyKind,
   RevokePolicy,
@@ -114,6 +116,25 @@ export function usePolicyCommand() {
   const queryClient = useQueryClient()
   return useMutation<Awaited<ReturnType<typeof send>>, ApiError, PolicyCommand>({
     mutationFn: send,
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: policyKeys.all }),
+  })
+}
+
+/** Активация учётной записи: сотрудник и тело команды. */
+export interface ActivateAccountVars {
+  person_id: string
+  body: ActivateAccount
+}
+
+/**
+ * Активировать учётную запись (`access.account.activate`, FR-128, эпик 08):
+ * по заявке сотрудника или заведённую администратором — с начальным паролем
+ * (на сервере — только хеш argon2id), начальной ролью и её областью.
+ */
+export function useActivateAccount() {
+  const queryClient = useQueryClient()
+  return useMutation<Awaited<ReturnType<typeof accessAccountActivate>>, ApiError, ActivateAccountVars>({
+    mutationFn: (v) => accessAccountActivate(v.person_id, v.body),
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: policyKeys.all }),
   })
 }

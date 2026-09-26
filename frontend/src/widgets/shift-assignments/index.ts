@@ -1,6 +1,6 @@
 /**
- * Виджет «shift-assignments» — публичный вход (FSD). Заготовка оболочки (эпик 03);
- * наполняет эпик 13 «Участок, терминал и задачи». Оболочка грузит его через
- * widgets/registry.ts и передаёт WidgetProps (shared/config/widget.ts).
+ * Виджет «shift-assignments» — публичный вход (FSD): «Смена» стола мастера
+ * (PRD §3a, FR-81, PRD §11.18; эпик 13) — план и факт смены, назначение
+ * исполнителей мастером, контролёра — по согласованию начальника ОТК.
  */
 export { default } from './ui/ShiftAssignmentsWidget.vue'

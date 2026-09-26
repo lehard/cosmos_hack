@@ -38,6 +38,8 @@ import { useMomentStore } from '@/shared/model/moment'
 
 export type { DrillRef, Envelope, MapIncident, MapItem, TimelineData, TimelineMark, TimelineMarkKind }
 
+export * from './model/steps'
+
 export const liveMapKeys = entityKeys('live_map')
 
 // ───────────────────── типы контракта под именами виджетов ─────────────────────

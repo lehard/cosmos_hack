@@ -10,13 +10,14 @@
  */
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NButton, NInput } from 'naive-ui'
+import { NInput } from 'naive-ui'
 import { countedOf, routeProgress, type DecisionRequest } from '@/entities/document'
 import { SignatureMark } from '@/entities/item'
 import { DISPOSITION_STATUS_TEXT, deadlineOf } from '@/entities/nonconformity'
 import { naiveSizeOf, type Density } from '@/shared/config/widget'
 import { eventCatalog } from '@/shared/contracts/catalog'
 import { formatMinutes } from '@/shared/lib/duration'
+import { ActionButton, EmptyState } from '@/shared/ui'
 
 const props = withDefaults(
   defineProps<{
@@ -96,7 +97,7 @@ const comment = ref('')
 
     <section class="block" data-testid="evidence">
       <h4>{{ t('decisions.decisionCard.evidence') }}</h4>
-      <p v-if="!request.evidence.length" class="muted">{{ t('empty.noRecords') }}</p>
+      <EmptyState v-if="!request.evidence.length" compact :title="t('empty.noRecords')" />
       <ul>
         <li v-for="e in request.evidence" :key="e.event_id">
           <span class="muted">{{ time(e.occurred_at) }}</span>
@@ -158,21 +159,15 @@ const comment = ref('')
     <p v-if="!myTurn" class="muted" data-testid="not-my-turn">{{ t('widgets.decisionRequest.notYourStage') }}</p>
 
     <footer class="buttons">
-      <NButton type="primary" :size="size" :disabled="!canAct || busy || !myTurn" :loading="busy" data-testid="sign" @click="emit('sign')">
-        {{ t('decisions.decisionCard.sign', { decision: decisionWord }) }}
-      </NButton>
-      <NButton :size="size" :disabled="!canAct || busy || !myTurn" data-testid="decline-open" @click="declining = !declining">
-        {{ t('decisions.decisionCard.decline') }}
-      </NButton>
+      <ActionButton overflow="wrap" type="primary" :size="size" :disabled="!canAct || busy || !myTurn" :loading="busy" data-testid="sign" @click="emit('sign')" :label="t('decisions.decisionCard.sign', { decision: decisionWord })" />
+      <ActionButton overflow="wrap" :size="size" :disabled="!canAct || busy || !myTurn" data-testid="decline-open" @click="declining = !declining" :label="t('decisions.decisionCard.decline')" />
     </footer>
     <div v-if="declining" class="decline" data-testid="decline">
       <label>
         <span>{{ t('decisions.decisionCard.declineCommentLabel') }}</span>
         <NInput v-model:value="comment" type="textarea" :autosize="{ minRows: 2, maxRows: 4 }" :size="size" data-testid="decline-comment" />
       </label>
-      <NButton :size="size" :disabled="!comment.trim() || busy" data-testid="decline-send" @click="emit('decline', comment.trim())">
-        {{ t('common.actions.send') }}
-      </NButton>
+      <ActionButton overflow="wrap" :size="size" :disabled="!comment.trim() || busy" data-testid="decline-send" @click="emit('decline', comment.trim())" :label="t('common.actions.send')" />
     </div>
   </article>
 </template>
@@ -182,11 +177,11 @@ const comment = ref('')
   display: flex;
   flex-direction: column;
   gap: 10px;
-  font-size: 14px;
+  font-size: var(--ant-fs-md);
 }
 
 .density-large {
-  font-size: 16px;
+  font-size: var(--ant-fs-lg);
 }
 
 .block h4,
@@ -197,12 +192,12 @@ const comment = ref('')
 
 .lead {
   font-size: 1.1em;
-  font-weight: 600;
+  font-weight: var(--ant-fw-bold);
 }
 
 .muted {
-  color: #6b7280;
-  font-size: 12px;
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-meta);
 }
 
 ul,
@@ -218,27 +213,27 @@ ol {
 }
 
 .stages li[data-mine] > p {
-  color: #2f6fdb;
+  color: var(--ant-accent);
 }
 
 .material {
   margin-left: 6px;
-  font-size: 12px;
+  font-size: var(--ant-fs-meta);
 }
 
 .material[data-illustration] {
-  color: #b45309;
-  font-weight: 700;
+  color: var(--ant-status-attention-text);
+  font-weight: var(--ant-fw-bold);
 }
 
 .deadline {
   margin: 0;
-  color: #6b7280;
+  color: var(--ant-text-3);
 }
 
 .deadline[data-overdue] {
-  color: #d64545;
-  font-weight: 700;
+  color: var(--ant-status-danger);
+  font-weight: var(--ant-fw-bold);
 }
 
 .buttons,

@@ -8,11 +8,12 @@
  */
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NAlert, NButton } from 'naive-ui'
+import { NAlert } from 'naive-ui'
 import { describeRecord, isOpen, recordColor, sortByTime, sortHypotheses, type Hypothesis, type HypothesesModel, type JournalRecordRef, type SimilarCase } from '@/entities/incident'
 import { codeToKey } from '@/shared/i18n'
 import { naiveSizeOf, type Density } from '@/shared/config/widget'
 import { useMomentStore } from '@/shared/model/moment'
+import { ActionButton } from '@/shared/ui'
 
 const props = withDefaults(
   defineProps<{
@@ -151,15 +152,9 @@ function caseLine(c: SimilarCase): string {
       </div>
 
       <footer v-if="isOpen(h)" class="card-actions">
-        <NButton :size="size" type="primary" secondary :disabled="!canConfirm || busy || moment.isReplay" data-testid="confirm" @click="openForm(h, 'confirm')">
-          {{ t('decisions.cause.confirmCause') }}
-        </NButton>
-        <NButton :size="size" :disabled="!canReject || busy || moment.isReplay" data-testid="reject" @click="openForm(h, 'reject')">
-          {{ t('decisions.cause.rejectHypothesis') }}
-        </NButton>
-        <NButton :size="size" :disabled="!canMeasure || busy || moment.isReplay" data-testid="request-measurement" @click="openForm(h, 'measure')">
-          {{ t('decisions.cause.requestMeasurement', { what: h.measurement_hint ?? category(h.category) }) }}
-        </NButton>
+        <ActionButton overflow="wrap" :size="size" type="primary" secondary :disabled="!canConfirm || busy || moment.isReplay" data-testid="confirm" @click="openForm(h, 'confirm')" :label="t('decisions.cause.confirmCause')" />
+        <ActionButton overflow="wrap" :size="size" :disabled="!canReject || busy || moment.isReplay" data-testid="reject" @click="openForm(h, 'reject')" :label="t('decisions.cause.rejectHypothesis')" />
+        <ActionButton overflow="wrap" :size="size" :disabled="!canMeasure || busy || moment.isReplay" data-testid="request-measurement" @click="openForm(h, 'measure')" :label="t('decisions.cause.requestMeasurement', { what: h.measurement_hint ?? category(h.category) })" />
         <p v-if="h.category === 'performer'" class="muted legal" data-testid="performer-note">{{ t('decisions.cause.performerErrorPrerequisites') }}</p>
 
         <form v-if="form?.id === h.hypothesis_id" class="form" :data-form="form.kind" @submit.prevent="submit(h)">
@@ -172,10 +167,8 @@ function caseLine(c: SimilarCase): string {
             <textarea v-model="second" rows="2" required data-testid="form-second" />
           </label>
           <div class="form-actions">
-            <NButton :size="size" type="primary" attr-type="submit" :disabled="!formReady || busy || moment.isReplay" data-testid="form-submit">
-              {{ t('common.actions.send') }}
-            </NButton>
-            <NButton :size="size" quaternary data-testid="form-cancel" @click="form = null">{{ t('common.actions.cancel') }}</NButton>
+            <ActionButton overflow="wrap" :size="size" type="primary" attr-type="submit" :disabled="!formReady || busy || moment.isReplay" data-testid="form-submit" :label="t('common.actions.send')" />
+            <ActionButton overflow="wrap" :size="size" quaternary data-testid="form-cancel" @click="form = null" :label="t('common.actions.cancel')" />
           </div>
         </form>
       </footer>
@@ -198,11 +191,11 @@ function caseLine(c: SimilarCase): string {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  font-size: 13px;
+  font-size: var(--ant-fs-body);
 }
 
 .density-large {
-  font-size: 16px;
+  font-size: var(--ant-fs-lg);
 }
 
 .meta,
@@ -214,7 +207,7 @@ function caseLine(c: SimilarCase): string {
 
 .meta,
 .muted {
-  color: #6b7280;
+  color: var(--ant-text-3);
 }
 
 .note {
@@ -230,8 +223,8 @@ function caseLine(c: SimilarCase): string {
 
 .chip-text {
   padding: 1px 8px;
-  border-radius: 10px;
-  background: #f3f4f6;
+  border-radius: var(--ant-radius-lg);
+  background: var(--ant-n-100);
 }
 
 .card {
@@ -239,8 +232,8 @@ function caseLine(c: SimilarCase): string {
   flex-direction: column;
   gap: 6px;
   padding: 8px 10px;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
+  border: 1px solid var(--ant-border);
+  border-radius: var(--ant-radius-md);
 }
 
 .card[data-status='rejected'] {
@@ -248,7 +241,7 @@ function caseLine(c: SimilarCase): string {
 }
 
 .card[data-status='confirmed'] {
-  border-color: #1f2937;
+  border-color: var(--ant-text);
 }
 
 .card-head {
@@ -259,15 +252,15 @@ function caseLine(c: SimilarCase): string {
 }
 
 .category {
-  font-weight: 700;
+  font-weight: var(--ant-fw-bold);
 }
 
 .status,
 .branch {
   padding: 0 6px;
-  border-radius: 8px;
-  background: #f3f4f6;
-  font-size: 11px;
+  border-radius: var(--ant-radius-lg);
+  background: var(--ant-n-100);
+  font-size: var(--ant-fs-xs);
 }
 
 .args {
@@ -283,7 +276,7 @@ function caseLine(c: SimilarCase): string {
 }
 
 .arg[data-side='against'] h4 {
-  color: #6b7280;
+  color: var(--ant-text-3);
 }
 
 .arg ul,
@@ -336,9 +329,9 @@ function caseLine(c: SimilarCase): string {
   flex-direction: column;
   gap: 6px;
   padding: 8px;
-  border: 1px solid #cbd5e1;
-  border-radius: 6px;
-  background: #f8fafc;
+  border: 1px solid var(--ant-n-300);
+  border-radius: var(--ant-radius-md);
+  background: var(--ant-surface-subtle);
 }
 
 .form label {
@@ -350,8 +343,8 @@ function caseLine(c: SimilarCase): string {
 .form textarea {
   font: inherit;
   padding: 4px 6px;
-  border: 1px solid #cbd5e1;
-  border-radius: 4px;
+  border: 1px solid var(--ant-n-300);
+  border-radius: var(--ant-radius-sm);
   resize: vertical;
 }
 
@@ -362,6 +355,6 @@ function caseLine(c: SimilarCase): string {
 
 .legal {
   flex-basis: 100%;
-  font-size: 12px;
+  font-size: var(--ant-fs-meta);
 }
 </style>

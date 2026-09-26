@@ -6,11 +6,11 @@
  */
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NButton } from 'naive-ui'
 import { codeText, LAYER_TEXT, SOURCE_KIND_TEXT } from '@/entities/item'
 import { MetricNumber, sumCheck, type MetricPick } from '@/entities/metric'
 import type { ContributionRow, DrillRef, MetricDrilldown } from '@/shared/api/generated/model'
 import SourceRecords from './SourceRecords.vue'
+import { ActionButton } from '@/shared/ui'
 
 const props = defineProps<{ pick: MetricPick; drilldown: MetricDrilldown; hasMore: boolean; loadingMore: boolean }>()
 const emit = defineEmits<{ openItem: [itemId: string]; openRef: [ref: DrillRef]; more: [] }>()
@@ -86,7 +86,7 @@ const kindText = (code: string) => codeText(KIND_TEXT, code, t)
         </template>
       </li>
     </ul>
-    <NButton v-if="hasMore" size="small" :loading="loadingMore" data-testid="more" @click="emit('more')">{{ t('common.actions.showAll') }}</NButton>
+    <ActionButton v-if="hasMore" size="small" :loading="loadingMore" data-testid="more" @click="emit('more')" :label="t('common.actions.showAll')" />
   </div>
 </template>
 
@@ -94,7 +94,7 @@ const kindText = (code: string) => codeText(KIND_TEXT, code, t)
 .ids {
   margin: 0;
   padding-left: 18px;
-  font-size: 12px;
+  font-size: var(--ant-fs-meta);
 }
 
 .drilldown {
@@ -116,34 +116,34 @@ const kindText = (code: string) => codeText(KIND_TEXT, code, t)
 }
 
 .title {
-  font-weight: 600;
+  font-weight: var(--ant-fw-bold);
 }
 
 .slice,
 .period {
   margin: 0;
-  color: #6b7280;
-  font-size: 12px;
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-meta);
 }
 
 .total {
-  font-size: 18px;
-  font-weight: 600;
+  font-size: var(--ant-fs-xl);
+  font-weight: var(--ant-fw-bold);
 }
 
 .check {
   margin: 0;
-  font-size: 12px;
+  font-size: var(--ant-fs-meta);
 }
 
 .check[data-check='mismatch'] {
-  color: #d64545;
-  font-weight: 600;
+  color: var(--ant-status-danger);
+  font-weight: var(--ant-fw-bold);
 }
 
 .empty {
   margin: 0;
-  color: #6b7280;
+  color: var(--ant-text-3);
 }
 
 .rows {
@@ -156,7 +156,7 @@ const kindText = (code: string) => codeText(KIND_TEXT, code, t)
 
 .row {
   padding: 6px 0;
-  border-bottom: 1px solid #f0f1f3;
+  border-bottom: 1px solid var(--ant-n-100);
 }
 
 .line {
@@ -168,22 +168,22 @@ const kindText = (code: string) => codeText(KIND_TEXT, code, t)
 
 .line.sub {
   margin-top: 2px;
-  font-size: 12px;
+  font-size: var(--ant-fs-meta);
 }
 
 .item {
   padding: 0;
   border: 0;
   background: none;
-  color: #1f2937;
+  color: var(--ant-text);
   font: inherit;
   text-decoration: underline;
   cursor: pointer;
 }
 
 .slice-key {
-  color: #6b7280;
-  font-size: 12px;
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-meta);
 }
 
 .value {
@@ -192,23 +192,23 @@ const kindText = (code: string) => codeText(KIND_TEXT, code, t)
 
 .kind {
   padding: 0 6px;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  color: #4b5563;
-  font-size: 11px;
+  border: 1px solid var(--ant-border-strong);
+  border-radius: var(--ant-radius-lg);
+  color: var(--ant-text-2);
+  font-size: var(--ant-fs-xs);
 }
 
 .toggle {
   padding: 0;
   border: 0;
   background: none;
-  color: #2f6fdb;
+  color: var(--ant-accent);
   font: inherit;
   cursor: pointer;
 }
 
 .toggle:disabled {
-  color: #9ca3af;
+  color: var(--ant-n-400);
   cursor: default;
 }
 </style>

@@ -6,10 +6,11 @@
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NButton, NEmpty } from 'naive-ui'
+import { NEmpty } from 'naive-ui'
 import type { MapItem, NodeCounters } from '@/entities/live-map'
 import type { StepNode } from '../model/bpmn'
 import { dotLook, sortForDots } from '../model/overlays'
+import { ActionButton } from '@/shared/ui'
 
 const props = defineProps<{
   node: StepNode
@@ -53,7 +54,7 @@ const list = computed(() =>
           <code class="key">{{ node.stepKey }}</code>
         </div>
       </div>
-      <NButton size="tiny" quaternary @click="emit('close')">{{ t('common.actions.close') }}</NButton>
+      <ActionButton overflow="wrap" size="tiny" quaternary @click="emit('close')" :label="t('common.actions.close')" />
     </header>
 
     <p v-if="node.documentation" class="doc" data-testid="node-doc">{{ node.documentation }}</p>
@@ -69,9 +70,7 @@ const list = computed(() =>
       </template>
     </dl>
 
-    <NButton size="small" secondary block data-action="open-node" @click="emit('open-node', node.stepKey)">
-      {{ t('liveMap.drillDown.nodeItems') }}
-    </NButton>
+    <ActionButton overflow="wrap" size="small" secondary block data-action="open-node" @click="emit('open-node', node.stepKey)" :label="t('liveMap.drillDown.nodeItems')" />
 
     <h4 class="sub">{{ t('common.words.items') }}</h4>
     <NEmpty v-if="!list.length" size="small" :description="t('empty.noRecords')" />
@@ -93,9 +92,9 @@ const list = computed(() =>
   flex-direction: column;
   gap: 10px;
   padding: 12px;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  background: #fff;
+  border: 1px solid var(--ant-border);
+  border-radius: var(--ant-radius-md);
+  background: var(--ant-surface);
 }
 
 .head {
@@ -107,25 +106,25 @@ const list = computed(() =>
 
 .name {
   margin: 0;
-  font-size: 15px;
+  font-size: var(--ant-fs-title);
 }
 
 .meta {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  color: #6b7280;
-  font-size: 12px;
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-meta);
 }
 
 .key {
-  font-family: 'PT Mono', monospace;
+  font-family: var(--ant-font-mono);
 }
 
 .doc {
   margin: 0;
   white-space: pre-line;
-  font-size: 13px;
+  font-size: var(--ant-fs-body);
   line-height: 1.45;
 }
 
@@ -134,18 +133,18 @@ const list = computed(() =>
   grid-template-columns: 1fr auto;
   gap: 4px 12px;
   margin: 0;
-  font-size: 13px;
+  font-size: var(--ant-fs-body);
 }
 
 .counters dd {
   margin: 0;
-  font-weight: 700;
+  font-weight: var(--ant-fw-bold);
   text-align: right;
 }
 
 .sub {
   margin: 4px 0 0;
-  font-size: 13px;
+  font-size: var(--ant-fs-body);
 }
 
 .items {
@@ -166,7 +165,7 @@ const list = computed(() =>
   width: 100%;
   padding: 4px;
   border: 0;
-  border-radius: 4px;
+  border-radius: var(--ant-radius-sm);
   background: transparent;
   font: inherit;
   text-align: left;
@@ -174,7 +173,7 @@ const list = computed(() =>
 }
 
 .item:hover {
-  background: #f3f4f6;
+  background: var(--ant-n-100);
 }
 
 .dot {
@@ -189,12 +188,12 @@ const list = computed(() =>
 }
 
 .label {
-  font-family: 'PT Mono', monospace;
+  font-family: var(--ant-font-mono);
 }
 
 .status {
   margin-left: auto;
-  color: #6b7280;
-  font-size: 12px;
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-meta);
 }
 </style>

@@ -39,17 +39,18 @@ const tabDensity = computed<Density>(() => props.tab.density ?? props.density)
 </template>
 
 <style scoped>
-/* Широкая раскладка (PRD §3a): основная область + правая панель контекста. */
+/* Широкая раскладка (PRD §3a): основная область + правая панель контекста.
+   Ширины и промежутки — токены (shared/ui/theme). */
 .desk-grid {
   display: grid;
-  gap: 16px;
+  gap: var(--ant-space-5);
   align-items: start;
 }
 
 .area {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--ant-space-5);
   min-width: 0;
 }
 
@@ -58,18 +59,27 @@ const tabDensity = computed<Density>(() => props.tab.density ?? props.density)
 }
 
 .layout-main-side {
-  grid-template: 'main right' auto / minmax(0, 1fr) minmax(320px, 400px);
+  grid-template: 'main right' auto / minmax(0, 1fr) minmax(var(--ant-w-side-min), var(--ant-w-side));
 }
 
 .layout-queue-main-side {
-  grid-template: 'left main right' auto / minmax(280px, 360px) minmax(0, 1fr) minmax(320px, 400px);
+  grid-template: 'left main right' auto / minmax(var(--ant-w-queue-min), var(--ant-w-queue)) minmax(0, 1fr) minmax(var(--ant-w-side-min), var(--ant-w-side));
 }
 
 .layout-overview {
   grid-template:
     'top top' auto
     'main right' auto
-    'bottom bottom' auto / minmax(0, 1fr) minmax(320px, 400px);
+    'bottom bottom' auto / minmax(0, 1fr) minmax(var(--ant-w-side-min), var(--ant-w-side));
+}
+
+/* Меньше 1600 px: контекст уходит под основную область, очередь остаётся слева. */
+@media (max-width: 1599px) {
+  .layout-queue-main-side {
+    grid-template:
+      'left main' auto
+      'left right' auto / minmax(var(--ant-w-queue-min), var(--ant-w-queue)) minmax(0, 1fr);
+  }
 }
 
 @media (max-width: 1279px) {

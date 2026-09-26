@@ -114,13 +114,13 @@ const state = computed(() =>
   gap: 8px;
   padding: 4px 8px;
   border-left: 3px solid;
-  font-size: 13px;
+  font-size: var(--ant-fs-body);
 }
 
 .time {
   flex: none;
-  color: #6b7280;
-  font-family: 'PT Mono', monospace;
+  color: var(--ant-text-3);
+  font-family: var(--ant-font-mono);
 }
 
 .link {

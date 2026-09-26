@@ -50,7 +50,7 @@ const text = computed(() => {
   gap: 6px;
   align-items: center;
   white-space: nowrap;
-  font-size: 13px;
+  font-size: var(--ant-fs-sm);
 }
 
 .dot {

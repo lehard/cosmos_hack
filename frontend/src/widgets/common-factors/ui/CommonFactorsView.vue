@@ -7,10 +7,10 @@
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NButton } from 'naive-ui'
 import { FACTOR_TEXT, isCommonToAll, sortFactors, type CommonFactorRow, type CommonFactorsModel } from '@/entities/incident'
 import { naiveSizeOf, type Density } from '@/shared/config/widget'
 import { useMomentStore } from '@/shared/model/moment'
+import { ActionButton, DataTable } from '@/shared/ui'
 
 const props = withDefaults(defineProps<{ model: CommonFactorsModel; density?: Density }>(), { density: 'compact' })
 const emit = defineEmits<{
@@ -36,7 +36,7 @@ const share = (r: CommonFactorRow) => (n.value > 0 ? Math.min(100, (r.matches / 
     </p>
     <p class="muted" :title="t('hints.commonFactors')">{{ t('ncCard.commonFactors.subtitle') }}</p>
 
-    <table class="table">
+    <DataTable class="table">
       <thead>
         <tr>
           <th>{{ t('widgets.analysis.factors.factor') }}</th>
@@ -65,28 +65,26 @@ const share = (r: CommonFactorRow) => (n.value > 0 ? Math.min(100, (r.matches / 
             <span class="num">{{ t('common.words.outOf', { a: r.matches, b: n }) }}</span>
           </td>
           <td class="actions">
-            <NButton
+            <ActionButton overflow="wrap"
               :size="naiveSizeOf(density)"
               quaternary
               :disabled="moment.isReplay || r.value === null"
               data-testid="to-hypothesis"
               @click="emit('to-hypothesis', r)"
-            >
-              {{ t('ncCard.commonFactors.toHypothesis') }}
-            </NButton>
-            <NButton
+              :label="t('ncCard.commonFactors.toHypothesis')"
+            />
+            <ActionButton overflow="wrap"
               :size="naiveSizeOf(density)"
               quaternary
               :disabled="moment.isReplay || r.value === null"
               data-testid="to-narrow-scope"
               @click="emit('to-narrow-scope', r)"
-            >
-              {{ t('ncCard.commonFactors.toNarrowScope') }}
-            </NButton>
+              :label="t('ncCard.commonFactors.toNarrowScope')"
+            />
           </td>
         </tr>
       </tbody>
-    </table>
+    </DataTable>
   </div>
 </template>
 
@@ -95,11 +93,11 @@ const share = (r: CommonFactorRow) => (n.value > 0 ? Math.min(100, (r.matches / 
   display: flex;
   flex-direction: column;
   gap: 6px;
-  font-size: 13px;
+  font-size: var(--ant-fs-body);
 }
 
 .density-large {
-  font-size: 16px;
+  font-size: var(--ant-fs-lg);
 }
 
 .group,
@@ -108,43 +106,28 @@ const share = (r: CommonFactorRow) => (n.value > 0 ? Math.min(100, (r.matches / 
 }
 
 .muted {
-  color: #6b7280;
+  color: var(--ant-text-3);
 }
 
-.table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.table th {
-  padding: 4px 6px;
-  color: #6b7280;
-  font-weight: 400;
-  text-align: left;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.table td {
-  padding: 4px 6px;
-  border-bottom: 1px solid #f3f4f6;
+td {
   vertical-align: middle;
 }
 
 tr.common td {
-  background: #f8fafc;
+  background: var(--ant-surface-subtle);
 }
 
 tr.common .factor {
-  font-weight: 700;
+  font-weight: var(--ant-fw-bold);
 }
 
 .badge {
   margin-left: 6px;
   padding: 0 6px;
-  border-radius: 8px;
-  background: #e0e7ff;
-  color: #1e3a8a;
-  font-size: 11px;
+  border-radius: var(--ant-radius-lg);
+  background: var(--ant-accent-soft-border);
+  color: var(--ant-accent-pressed);
+  font-size: var(--ant-fs-xs);
   white-space: nowrap;
 }
 
@@ -157,8 +140,8 @@ tr.common .factor {
   width: 64px;
   height: 6px;
   margin-right: 6px;
-  border-radius: 3px;
-  background: #e5e7eb;
+  border-radius: var(--ant-radius-sm);
+  background: var(--ant-border);
   vertical-align: middle;
   overflow: hidden;
 }
@@ -166,15 +149,14 @@ tr.common .factor {
 .fill {
   display: block;
   height: 100%;
-  background: #2f6fdb;
+  background: var(--ant-accent);
 }
 
 .num {
-  font-family: 'PT Mono', monospace;
+  font-family: var(--ant-font-mono);
 }
 
 .actions {
-  white-space: nowrap;
   text-align: right;
 }
 </style>

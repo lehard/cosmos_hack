@@ -12,6 +12,7 @@ import { useI18n } from 'vue-i18n'
 import { statusPalette } from '@/shared/api/generated/statuses'
 import { chartGeometry, formatValue, type ControlChart, type ControlChartPoint, type MetricValue } from '@/entities/metric'
 import type { DrillRef } from '@/shared/model/drill'
+import { DataTable } from '@/shared/ui'
 
 const props = defineProps<{ chart: ControlChart }>()
 const emit = defineEmits<{ open: [ref: DrillRef] }>()
@@ -81,7 +82,7 @@ function openPoint(p: ControlChartPoint): void {
       >
         <title>{{ pointTitle(p.point) }}</title>
         <circle class="hit" :cx="p.x" :cy="p.y" r="10" />
-        <rect v-if="p.point.out_of_control" :x="p.x - 5" :y="p.y - 5" width="10" height="10" :fill="DANGER" stroke="#fff" stroke-width="2" :transform="`rotate(45 ${p.x} ${p.y})`" />
+        <rect v-if="p.point.out_of_control" :x="p.x - 5" :y="p.y - 5" width="10" height="10" :fill="DANGER" style="stroke: var(--ant-surface)" stroke-width="2" :transform="`rotate(45 ${p.x} ${p.y})`" />
         <circle v-else :cx="p.x" :cy="p.y" r="4" class="dot" />
       </g>
     </svg>
@@ -100,7 +101,7 @@ function openPoint(p: ControlChartPoint): void {
 
     <details class="table-view">
       <summary>{{ t('widgets.analytics.chart.table') }}</summary>
-      <table>
+      <DataTable>
         <thead>
           <tr>
             <th scope="col">{{ t('common.words.time') }}</th>
@@ -115,7 +116,7 @@ function openPoint(p: ControlChartPoint): void {
             <td>{{ p.out_of_control ? t('widgets.analytics.chart.outOfControl') : t('widgets.analytics.chart.inControl') }}</td>
           </tr>
         </tbody>
-      </table>
+      </DataTable>
     </details>
   </div>
 </template>
@@ -131,15 +132,15 @@ function openPoint(p: ControlChartPoint): void {
 .empty,
 .inside {
   margin: 0;
-  color: #6b7280;
-  font-size: 12px;
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-meta);
 }
 
 .limits {
   display: flex;
   gap: 16px;
   margin: 0;
-  font-size: 12px;
+  font-size: var(--ant-fs-meta);
 }
 
 .limits div {
@@ -148,7 +149,7 @@ function openPoint(p: ControlChartPoint): void {
 }
 
 .limits dt {
-  color: #6b7280;
+  color: var(--ant-text-3);
 }
 
 .limits dd {
@@ -162,32 +163,32 @@ function openPoint(p: ControlChartPoint): void {
 }
 
 .limit {
-  stroke: #9ca3af;
+  stroke: var(--ant-n-400);
   stroke-width: 1;
   stroke-dasharray: 4 3;
 }
 
 .center {
-  stroke: #6b7280;
+  stroke: var(--ant-text-3);
   stroke-width: 1;
 }
 
 .axis {
-  fill: #6b7280;
+  fill: var(--ant-text-3);
   font-size: 10px;
 }
 
 .series {
   fill: none;
-  stroke: #4b5563;
+  stroke: var(--ant-text-2);
   stroke-width: 2;
   stroke-linejoin: round;
   vector-effect: non-scaling-stroke;
 }
 
 .dot {
-  fill: #4b5563;
-  stroke: #fff;
+  fill: var(--ant-text-2);
+  stroke: var(--ant-surface);
   stroke-width: 2;
 }
 
@@ -200,12 +201,12 @@ function openPoint(p: ControlChartPoint): void {
 }
 
 .outside {
-  font-size: 13px;
+  font-size: var(--ant-fs-body);
 }
 
 .outside-title {
   margin: 0 0 4px;
-  font-weight: 600;
+  font-weight: var(--ant-fw-bold);
 }
 
 .outside ul {
@@ -215,33 +216,23 @@ function openPoint(p: ControlChartPoint): void {
 }
 
 .mark {
-  color: #d64545;
+  color: var(--ant-status-danger);
 }
 
 .link {
   padding: 0;
   border: 0;
   background: none;
-  color: #2f6fdb;
+  color: var(--ant-accent);
   font: inherit;
   cursor: pointer;
 }
 
 .table-view {
-  font-size: 12px;
-}
-
-.table-view table {
-  border-collapse: collapse;
-}
-
-.table-view th,
-.table-view td {
-  padding: 2px 10px 2px 0;
-  text-align: left;
+  font-size: var(--ant-fs-meta);
 }
 
 .table-view tr[data-out] td {
-  font-weight: 600;
+  font-weight: var(--ant-fw-bold);
 }
 </style>

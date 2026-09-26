@@ -64,9 +64,9 @@ function previousText(tile: MetricTile): string | null {
   width: 100%;
   height: 100%;
   padding: 8px 10px;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  background: #fff;
+  border: 1px solid var(--ant-border);
+  border-radius: var(--ant-radius-md);
+  background: var(--ant-surface);
   color: inherit;
   font: inherit;
   text-align: left;
@@ -75,30 +75,30 @@ function previousText(tile: MetricTile): string | null {
 
 .tile-button:hover,
 .tile-button:focus-visible {
-  border-color: #6b7280;
+  border-color: var(--ant-text-3);
 }
 
 .tile-title {
-  color: #4b5563;
-  font-size: 12px;
+  color: var(--ant-text-2);
+  font-size: var(--ant-fs-meta);
   line-height: 1.3;
 }
 
 .tile-value {
-  font-size: 22px;
-  font-weight: 600;
+  font-size: var(--ant-fs-xxl);
+  font-weight: var(--ant-fw-bold);
 }
 
 .density-large .tile-value {
-  font-size: 28px;
+  font-size: var(--ant-fs-display);
 }
 
 .density-compact .tile-value {
-  font-size: 18px;
+  font-size: var(--ant-fs-xl);
 }
 
 .tile-previous {
-  color: #6b7280;
-  font-size: 11px;
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-xs);
 }
 </style>

@@ -6,6 +6,7 @@
  */
 import { useI18n } from 'vue-i18n'
 import { CARRIER_STATE_TEXT, CARRIER_TYPE_TEXT, codeText, type ItemCarrier } from '@/entities/item'
+import { EmptyState } from '@/shared/ui'
 
 defineProps<{ carriers: ItemCarrier[] }>()
 const { t, d } = useI18n()
@@ -14,7 +15,7 @@ const time = (x: string) => d(new Date(x), 'dateTime')
 
 <template>
   <section class="carriers" data-testid="passport-carriers">
-    <p v-if="!carriers.length" class="muted">{{ t('empty.noRecords') }}</p>
+    <EmptyState v-if="!carriers.length" compact :title="t('empty.noRecords')" />
     <ul v-else>
       <li v-for="c in carriers" :key="`${c.carrier_type}:${c.value}`" :data-state="c.state">
         <span>{{ codeText(CARRIER_TYPE_TEXT, c.carrier_type, t) }}</span>
@@ -46,14 +47,14 @@ li {
 
 .status {
   padding: 0 6px;
-  border-radius: 8px;
-  background: #f3f4f6;
-  font-size: 12px;
+  border-radius: var(--ant-radius-lg);
+  background: var(--ant-n-100);
+  font-size: var(--ant-fs-meta);
 }
 
 .muted {
   margin: 0;
-  color: #6b7280;
-  font-size: 12px;
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-meta);
 }
 </style>
