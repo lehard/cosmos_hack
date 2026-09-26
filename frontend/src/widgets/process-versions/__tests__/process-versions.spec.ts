@@ -43,6 +43,36 @@ describe('раздел «Процесс»', () => {
     expect(r.text()).toContain('Автоматизированный контроль')
   })
 
+  it('свойства расширения BPMN — подписями, значения — словами; код — только без перевода', async () => {
+    const [, active] = processVersions()
+    const props = { triggerEventType: 'erp.order.received', stepKind: 'human_inspection', paperAttester: 'site_foreman', closingPoint: 'ZT-1', erpAction: 'unknown_action', futureAttr: 'x' }
+    const v = { ...active!, elements: [{ id: 'n1', step_key: 'order.received', kind: 'humanInspection' as const, name: 'Приёмка', properties: props as never }] }
+    const w = mountView({ versions: [v], selected: v.version_id })
+    await w.find('[data-testid="mode-view"]').trigger('click')
+    const text = (k: string) => w.find(`[data-prop="${k}"]`).text()
+    expect(text('triggerEventType')).toBe('Событие-триггерПолучено производственное задание')
+    expect(text('stepKind')).toBe('Вид шагаКонтроль человеком')
+    expect(text('paperAttester')).toBe('Кто заверяет бумажную подписьМастер участка')
+    expect(text('closingPoint')).toBe('Закрывающая точкаZT-1')
+    expect(text('erpAction')).toBe('Учётное действие в 1Сunknown_action')
+    expect(text('futureAttr')).toBe('futureAttrx')
+    expect(w.text()).not.toContain('process.properties')
+    // «Шаг:» — обычным шрифтом, код шага — отдельно моноширинным.
+    const step = w.find('.step')
+    expect(step.text()).toBe('Шаг: order.received')
+    expect(step.find('code').text()).toBe('order.received')
+  })
+
+  it('отличия: свойство и значения — словами', () => {
+    const [draft, active] = processVersions()
+    const w = mountView({
+      selected: draft!.version_id,
+      versions: [draft, active],
+      diff: [{ kind: 'propertyChanged', element: 'Приёмка', property: 'stepKind', from: 'movement', to: 'human_inspection' }],
+    })
+    expect(w.find('[data-testid="diff"] li').text()).toBe('«Приёмка»: Вид шага Перемещение → Контроль человеком')
+  })
+
   it('у действующей версии отличий от себя нет — так и написано', () => {
     const w = mountView({ selected: 'pv-0.1' })
     expect(w.find('[data-testid="diff"]').text()).toContain('Это действующая версия')
