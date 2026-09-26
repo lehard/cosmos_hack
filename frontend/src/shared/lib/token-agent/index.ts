@@ -111,14 +111,24 @@ export function extensionRequest(
 /** Время ожидания подписи: человек читает сводку и вводит PIN. */
 export const SIGN_TIMEOUT_MS = SIGN_MS
 
-/** Перечитать состояние ключа у расширения. */
+/** Промахов подряд у расширения, которое уже отвечало. */
+let misses = 0
+
+/**
+ * Перечитать состояние ключа у расширения. Расширение, которое уже отвечало,
+ * может не успеть за 1,5 с (занято окном подписи, служба просыпается) —
+ * «расширения нет» только после двух промахов подряд, иначе прежнее состояние.
+ */
 export async function refreshTokenStatus(): Promise<TokenStatus> {
   const r = await extensionRequest({ type: 'status' })
   if (r.type !== 'status' || !r.status) {
+    misses += 1
+    if (present && misses < 2 && status.value !== 'agent_missing') return status.value
     status.value = 'agent_missing'
     info.value = null
     return status.value
   }
+  misses = 0
   present = true
   const s = r.status as TokenInfo
   info.value = s

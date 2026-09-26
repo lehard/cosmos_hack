@@ -54,6 +54,8 @@ const problemText = useProblemText()
 
 const value = (f: SummaryField) => f.value ?? (f.valueKey ? t(f.valueKey, f.valueParams ?? {}) : t('common.words.unknown'))
 const ready = computed(() => tokenReady(props.tokenStatus))
+/** Демо без агента — только если расширения нет совсем и ничего не отправляется (UI-32). */
+const showDemo = computed(() => props.demoUnsigned && props.tokenStatus === 'agent_missing' && !props.busy)
 /** Нет ни агента, ни бумаги — подписать нечем. */
 const noPath = computed(() => !ready.value && !props.paperAllowed && !props.demoUnsigned)
 const tokenNote = computed(() =>
@@ -76,13 +78,13 @@ const tokenNote = computed(() =>
 
     <p class="muted" :title="t('hints.tokenAgent')">{{ t('widgets.signing.trustedWindow') }}</p>
     <p v-if="tokenNote" class="muted" data-testid="token-note">{{ tokenNote }}</p>
-    <p v-if="demoUnsigned && !ready" class="muted" data-testid="demo-note">{{ t('widgets.signing.demoUnsignedNote') }}</p>
+    <p v-if="showDemo" class="muted" data-testid="demo-note">{{ t('widgets.signing.demoUnsignedNote') }}</p>
     <NAlert v-if="noPath" type="error" :bordered="false" :show-icon="false" data-testid="no-path">{{ t('errors.signing.noSignaturePath') }}</NAlert>
     <NAlert v-if="error" type="error" :bordered="false" :show-icon="false" data-testid="sign-error">{{ problemText(error) }}</NAlert>
 
     <footer class="buttons">
       <ActionButton overflow="wrap" type="primary" :disabled="!ready || busy" :loading="busy" data-testid="confirm-token" @click="emit('confirm-token')" :label="t('decisions.signature.confirmWithToken')" />
-      <ActionButton overflow="wrap" v-if="demoUnsigned && !ready" type="primary" secondary :disabled="busy" :loading="busy" data-testid="confirm-unsigned" @click="emit('confirm-unsigned')" :label="t('widgets.signing.demoUnsigned')" />
+      <ActionButton overflow="wrap" v-if="showDemo" type="primary" secondary :disabled="busy" :loading="busy" data-testid="confirm-unsigned" @click="emit('confirm-unsigned')" :label="t('widgets.signing.demoUnsigned')" />
       <ActionButton overflow="wrap" v-if="paperAllowed" :disabled="busy" data-testid="sign-paper" @click="emit('sign-paper')" :label="t('decisions.signature.signOnPaper')" />
       <ActionButton overflow="wrap" quaternary :disabled="busy" data-testid="cancel" @click="emit('cancel')" :label="t('common.actions.cancel')" />
     </footer>
