@@ -2,7 +2,7 @@
 
 Ответ на вопрос кейса §3.1: «как переданная заказчику система может быть впоследствии дополнена экспортом метрик через OpenTelemetry или подключением брокера сообщений, например Kafka? Необходимо указать затрагиваемые модули, интерфейсы, настройки и проверки». Опоры: AD-6, AD-7, AD-18, AD-35, AD-45; FR-41, FR-113, FR-114; критерий О6.
 
-**Статус.** В MVP построены структурированные логи и метрики Prometheus; адаптеры OpenTelemetry и Kafka — описание (PRD §6.2, раздел «Отложено» спайна). Порты, в которые они встают, есть в коде с первого дня. Имена ключей конфигурации ниже — предлагаемые; точные появятся вместе с адаптером.
+**Статус.** В MVP построены структурированные логи и метрики Prometheus (`/metrics`); адаптеры OpenTelemetry и Kafka — описание (PRD §6.2, раздел «Отложено» спайна). Порты, в которые они встают, и их ключи конфигурации есть в коде: `ports.adapters.telemetry`, `ports.adapters.work_feed`, `ports.adapters.publisher` в `deploy/config/ant.yaml`. Значение `otlp` ключа `telemetry` сейчас отвергается при старте с сообщением «адаптер otlp описан (FR-113), в MVP не собран»; секций `telemetry.otlp` и `transport.kafka` в конфигурации нет — они появятся вместе с адаптером (ниже помечены «добавит адаптер»).
 
 ## 1. Принцип
 
@@ -15,11 +15,11 @@
 | Механизм | Где | Что даёт |
 |---|---|---|
 | Логи | `backend/internal/infrastructure/observability/logging` (`slog`, JSON) | поля `event_id`, `correlation_id`, `item_id`, `run_id`, `module`; без содержимого записей и без секретов |
-| Метрики | порт `Telemetry`, адаптер Prometheus; `/metrics` | задержка приёма, `ant_event_to_sse_seconds` (бюджет FR-2), дубли, отказы, объём карантина, полнота (FR-41), состояние аренд и партиций, очередь outbox, ошибки интеграций |
+| Метрики | порт `Telemetry` (`backend/internal/application/platform/ports.go`), адаптер Prometheus (`backend/internal/infrastructure/observability/telemetry/prometheus.go`); `GET /metrics` роли api (`backend/cmd/ant/api.go`, `backend/cmd/ant/ops.go`) | приём: `ant_ingest_messages_total`, `ant_ingest_latency_seconds`, `ant_ingest_delivery_delay_seconds`, `ant_ingest_quarantine_open`, `ant_ingest_source_completeness_bp` (FR-41), `ant_ingest_signature_unverified_total`; движок: `ant_fold_seconds`, `ant_event_to_sse_seconds` (бюджет FR-2), `ant_processing_failed_total`; эксплуатация: `ant_ops_component_up`, `ant_ops_queue_pending`, `ant_ops_consumer_lag_seq`, `ant_ops_outbox_quarantined`, `ant_ops_integration_degraded`, `ant_ops_quarantine_open`, `ant_ops_stopped_items` |
 | Проверки живости | `/healthz`, `/readyz` | процесс жив; самопроверка после старта пройдена, БД отвечает |
 | Состояние компонентов | модуль `ops`, стол администратора | сервисы, очереди, карантин, интеграции, остановленные изделия, последний отчёт верификатора (FR-127) |
-| Транспорт работы | порт `WorkFeed`, адаптер «партиции в Postgres» | партиции по `hash(item_id)`, аренды с эпохой, `LISTEN/NOTIFY` как сигнал «есть новое» |
-| Исходящие | порт `Publisher`, адаптер HTTP с повтором | бизнес-ключ идемпотентности, повтор только при транспортных ошибках |
+| Транспорт работы | порт `WorkFeed` (`ports.adapters.work_feed: postgres`), адаптер «партиции в Postgres» | партиции по `hash(item_id)`, аренды с эпохой, `LISTEN/NOTIFY` как сигнал «есть новое» |
+| Исходящие | порт `Publisher` (`ports.adapters.publisher: http`), адаптер HTTP с повтором | бизнес-ключ идемпотентности, повтор только при транспортных ошибках |
 | Шина безопасности | семейство `security` журнала + подписчики | экспорт во внешний мониторинг ИБ — JSON-строки в файл или syslog (AD-24) |
 
 Счётчики дублей, отказов, задержки и объём карантина — операционные метрики, а не проекции журнала (AD-7).
@@ -32,7 +32,7 @@
 |---|---|---|
 | infrastructure/observability | новый пакет `backend/internal/infrastructure/observability/otel` | адаптер порта `Telemetry` на OTLP (метрики; по желанию — трассы и логи) |
 | cmd | `backend/cmd/ant` (сборка зависимостей), так же `keeper`, `verifier`, `edge-agent` | выбор адаптера по ключу конфигурации |
-| конфигурация | `deploy/config/ant.yaml` | секция `telemetry` |
+| конфигурация | `deploy/config/ant.yaml` | значение `otlp` ключа `ports.adapters.telemetry` + секция `telemetry.otlp` (добавит адаптер) |
 | deploy | `deploy/compose`, `deploy/k8s` | коллектор OpenTelemetry внутри контура (отдельный контейнер) |
 | **не меняются** | `domain/*`, `application/*`, `contracts/*`, фронтенд | — |
 
@@ -40,13 +40,37 @@
 
 ### 3.2. Интерфейс
 
-Порт `Telemetry` (эскиз, окончательно — в коде): счётчики, гистограммы и датчики по имени метрики с метками; опционально — начало и конец спана с атрибутами `correlation_id`, `event_id`, `item_id`, `run_id`. Трассы связываются по `correlation_id` / `causation_id` конверта события, поэтому путь «источник → приём → журнал → свёртка → outbox → 1С» виден одной трассой даже через асинхронные границы.
+Порт `Telemetry` объявлен в `backend/internal/application/platform/ports.go`:
 
-### 3.3. Настройки (предлагаемые)
+```go
+type Telemetry interface {
+	Counter(name string, delta int64, labels ...string)
+	Observe(name string, value time.Duration, labels ...string)
+	Gauge(name string, value int64, labels ...string)
+}
+```
+
+Адаптеры в MVP — `prometheus` (по умолчанию), `memory` (для тестов), `nop`; выбор — `telemetry.New` по ключу `ports.adapters.telemetry` (`backend/internal/infrastructure/observability/telemetry/select.go`). Адаптер OTLP реализует тот же интерфейс; трассы — расширение порта (начало и конец спана с атрибутами `correlation_id`, `event_id`, `item_id`, `run_id`). Трассы связываются по `correlation_id` / `causation_id` конверта события, поэтому путь «источник → приём → журнал → свёртка → outbox → 1С» виден одной трассой даже через асинхронные границы.
+
+### 3.3. Настройки
+
+Сейчас в `deploy/config/ant.yaml`:
 
 ```yaml
+defaults:
+  ports:
+    adapters:
+      telemetry: prometheus   # prometheus | memory | nop; otlp — отвергается до появления адаптера
+```
+
+Добавит адаптер OTLP (предлагаемые ключи):
+
+```yaml
+defaults:
+  ports:
+    adapters:
+      telemetry: otlp           # или prometheus
 telemetry:
-  exporter: prometheus        # prometheus | otlp | both
   otlp:
     endpoint: otel-collector:4317   # коллектор в закрытом контуре
     protocol: grpc                  # grpc | http
@@ -60,11 +84,11 @@ telemetry:
     sample_ratio_bp: 1000           # 10 %, без float (AD-4 для единообразия)
 ```
 
-Переменные — по общему правилу `ANT_TELEMETRY_EXPORTER`, `ANT_TELEMETRY_OTLP_ENDPOINT` и т. д. Секретов в переменных нет: сертификаты — файлами в томах.
+Переменные — по общему правилу: `ANT_PORTS_ADAPTERS_TELEMETRY`, `ANT_TELEMETRY_OTLP_ENDPOINT` и т. д. Секретов в переменных нет: сертификаты — файлами в томах.
 
 ### 3.4. Проверки
 
-- **Контрактный тест порта `Telemetry`** с экспортёром в память: одна и та же последовательность вызовов даёт одинаковый набор метрик у адаптеров Prometheus и OTLP.
+- **Контрактный тест порта `Telemetry`** — `TestTelemetryContract` в `backend/internal/infrastructure/observability/telemetry/telemetry_test.go` (уже проходят `prometheus` и `memory`): одна и та же последовательность вызовов даёт одинаковый набор метрик; адаптер OTLP добавляется в тот же тест.
 - **Смоук-проверка в compose**: коллектор получает метрики `ant_event_to_sse_seconds` и счётчик дублей после прогона короткого сценария.
 - **Закрытый контур**: экспорт идёт только на коллектор внутри контура; при недоступности коллектора система работает, метрики теряются, а не блокируют обработку (буфер экспортёра ограничен).
 - Ограничение: в логи и атрибуты спанов не попадают содержимое записей и секреты (то же правило, что для логов).
@@ -90,28 +114,41 @@ telemetry:
 | infrastructure/integration | мосты stand-ов или реальных систем, если получатель читает из Kafka | новый адаптер получателя |
 | infrastructure/storage/journal/feed | источник для публикации в Kafka — тот же курсор по `seq` (transactional outbox над журналом) | ничего нового в журнале |
 | cmd | `backend/cmd/ant` | выбор адаптера по ключу конфигурации |
-| конфигурация, deploy | `deploy/config/ant.yaml`, `deploy/compose`, `deploy/k8s` | секция `transport.work_feed`, брокер в контуре |
+| конфигурация, deploy | `deploy/config/ant.yaml`, `deploy/compose`, `deploy/k8s` | значения `kafka` / `broker` ключей `ports.adapters.work_feed` и `ports.adapters.publisher` + секция `transport.kafka` (добавит адаптер), брокер в контуре |
 | **не меняются** | `domain/*`, `application/*`, `contracts/events`, `contracts/openapi.yaml`, фронтенд | — |
 
-### 4.3. Настройки (предлагаемые)
+### 4.3. Настройки
+
+Сейчас в `deploy/config/ant.yaml`:
 
 ```yaml
+defaults:
+  ports:
+    adapters:
+      work_feed: postgres     # (kafka — описание)
+      publisher: http         # (broker — описание)
+  engine:
+    partitions: 16            # P; в профиле load — 64
+```
+
+Добавит адаптер Kafka (предлагаемые ключи):
+
+```yaml
+defaults:
+  ports:
+    adapters:
+      work_feed: kafka
+      publisher: broker
 transport:
-  work_feed:
-    adapter: postgres            # postgres | kafka
-    kafka:
-      brokers: ["kafka-1:9093", "kafka-2:9093"]
-      topic: ant.work
-      partitions: 64             # = engine.partitions (P)
-      consumer_group: ant-worker
-      tls_ca_file: /run/ant-secrets/kafka/ca.pem
-      client_cert_file: /run/ant-secrets/kafka/client.pem
-      client_key_file: /run/ant-secrets/kafka/client.key
-  publisher:
-    erp_1c:
-      adapter: http              # http | kafka
-      kafka:
-        topic: ant.out.erp.1c
+  kafka:
+    brokers: ["kafka-1:9093", "kafka-2:9093"]
+    work_topic: ant.work         # партиций топика = engine.partitions (P)
+    consumer_group: ant-worker
+    out_topics:
+      onec: ant.out.erp.1c
+    tls_ca_file: /run/ant-secrets/kafka/ca.pem
+    client_cert_file: /run/ant-secrets/kafka/client.pem
+    client_key_file: /run/ant-secrets/kafka/client.key
 ```
 
 ### 4.4. Правила, которые адаптер обязан соблюсти
@@ -132,10 +169,8 @@ transport:
 
 Apache Kafka и OpenTelemetry — открытое ПО; используются внутри закрытого контура без обращения к внешним сервисам (NFR-SEC-1, NFR-SEC-2). Выбор дистрибутива брокера и коллектора для значимого объекта КИИ — решение заказчика по его требованиям (Указ № 166); архитектура от этого не зависит, потому что адаптеры стоят за портами.
 
-## Уточнить после появления кода
+## Сверено с кодом
 
-- Заменить эскиз порта `Telemetry` ссылкой на его объявление в коде; перечислить фактические имена метрик из `/metrics`.
-- Проверить имена пакетов адаптеров (`observability/otel`, `transport/journal/kafka`) по дереву кода.
-- Сверить предлагаемые ключи конфигурации с `deploy/config/ant.yaml`, когда появится секция телеметрии.
-- Добавить ссылку на контрактные тесты портов `WorkFeed`, `Publisher`, `Telemetry`.
-- Если к сдаче будет реализован хотя бы один адаптер (например, OTLP), перевести его раздел из описания в «сделано» и дать команду проверки.
+- Порты и ключи — `backend/internal/application/platform/ports.go` (`PortTelemetry`, `PortWorkFeed`, `PortPublisher`), значения — `deploy/config/ant.yaml`, секция `ports.adapters`.
+- Адаптеры телеметрии и выбор по ключу — `backend/internal/infrastructure/observability/telemetry/`; контрактный тест — `TestTelemetryContract`, обработчик `/metrics` — `TestPrometheusHandler`, отказ `otlp` — `TestNewByKey`.
+- Пакетов `observability/otel` и `transport/‹…›/kafka` нет: это место будущих адаптеров.
