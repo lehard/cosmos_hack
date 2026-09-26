@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -197,6 +198,13 @@ func row(ov analytics.AnalyticsOverview, id string) analytics.MetricRow {
 // world — пять изделий, одно с подтверждённым дефектом, повтор операции,
 // простой оборудования, вывод о причине и гипотеза.
 func world(t *testing.T) *pipe {
+	p := worldFacts(t)
+	p.settle()
+	return p
+}
+
+// worldFacts — факты world без ожидания воркера (тест дописывает свои).
+func worldFacts(t *testing.T) *pipe {
 	p := newPipe(t)
 	for i := range 5 {
 		perf := "W21"
@@ -214,7 +222,6 @@ func world(t *testing.T) *pipe {
 	p.fact("", "eq-2", catalog.EquipmentStateChanged, 80*time.Minute, `{"equipment_id":"IS-2","execution":"running","controller_mode":"automatic","condition":"normal"}`, "machine")
 	p.fact("", "cause", catalog.IncidentCauseConcluded, 150*time.Minute, `{"incident_id":"INC-1","nc_ids":["NC-2"],"conclusion":"confirmed","category":"equipment","verification":"осциллограмма тока","reason":{"text":"ток вне уставки"}}`, "")
 	p.fact("", "hyp", catalog.IncidentHypothesisRecorded, 140*time.Minute, `{"incident_id":"INC-1","nc_ids":["NC-2"],"branch":"why_made","category":"equipment","statement":"просадка тока"}`, "")
-	p.settle()
 	return p
 }
 
@@ -240,6 +247,38 @@ func TestOverviewOnFakes(t *testing.T) {
 	lt := row(ov, "comparable_runs")
 	if len(lt.Slices) == 0 || lt.Slices[0].Dimension != "performer" {
 		t.Errorf("сопоставимые работы по исполнителям: %+v", lt.Slices)
+	}
+}
+
+// Б-30 (кейс §2.4, I2 и I6): дефекты по линиям и доля подтверждённых ошибок
+// исполнителя на сопоставимых работах — числитель только по решению
+// уполномоченного, знаменатель — выполнения группы.
+func TestDefectsByLineAndPerformerErrorRate(t *testing.T) {
+	p := worldFacts(t)
+	p.fact("", "err-2", catalog.IncidentOperatorErrorConfirmed, 160*time.Minute, `{"incident_id":"INC-1","nc_ids":["NC-2"],"operator_id":"W21","reason":{"text":"нарушен режим"}}`, "")
+	p.settle()
+	ov := p.overview(platform.Moment{})
+
+	byLine := row(ov, "defects_by_line")
+	if byLine.Total.Value != 1 || len(byLine.Slices) != 1 || byLine.Slices[0].Key != "location:line/LINE-FL-1" || byLine.Slices[0].Value.Value != 1 {
+		t.Errorf("дефекты по линиям: %+v / %+v", byLine.Total, byLine.Slices)
+	}
+
+	rate := row(ov, "performer_error_rate")
+	if rate.Total.Value <= 0 {
+		t.Fatalf("доля ошибок исполнителя: %+v", rate.Total)
+	}
+	var w21, w22 int64 = -1, -1
+	for _, s := range rate.Slices {
+		switch {
+		case strings.HasPrefix(s.Label, "W21"):
+			w21 = s.Value.Value
+		case strings.HasPrefix(s.Label, "W22"):
+			w22 = s.Value.Value
+		}
+	}
+	if w21 <= 0 || w22 != 0 {
+		t.Errorf("ошибка — только у W21 среди его сопоставимых работ: W21=%d W22=%d (%+v)", w21, w22, rate.Slices)
 	}
 }
 

@@ -513,6 +513,16 @@ export const errorCatalog = {
     "title": "Истёк срок статуса",
     "uiKey": "errors.decision.statusExpired"
   },
+  "process.run_already_started": {
+    "status": 409,
+    "title": "Выполнение уже начато",
+    "uiKey": "errors.generic"
+  },
+  "process.operation_in_progress": {
+    "status": 409,
+    "title": "На посту идёт операция",
+    "uiKey": "errors.generic"
+  },
   "process.task_closed_by_action": {
     "status": 409,
     "title": "Задача процесса закрывается действием",
