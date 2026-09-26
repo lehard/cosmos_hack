@@ -179,7 +179,7 @@ func loadRegistry(t *testing.T) (*dom.Registry, *dom.ProfileBook, map[string][]b
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	reg, book, pubs := dom.NewRegistry(), dom.NewProfileBook(nil), map[string][]byte{}
 	sc := bufio.NewScanner(f)
 	for sc.Scan() {

@@ -398,3 +398,35 @@ func ExpectRequest(operation string, params map[string]string, body any, eventTy
 	return Expect{Class: dom.ClassEvent, EventType: eventType, CommandID: commandID, ItemID: itemID, Data: data, Actor: actor,
 		Level: level, Critical: critical}, nil
 }
+
+// CheckBatch — пакетная подпись уровня 2 (AD-13, PRD §11.16): «подписать:
+// N изделий, операция X, годен» — одно окно агента, одно касание токена,
+// N подписей. Каждая подпись проверяется как одиночная (CheckCommand), затем
+// пачка должна быть однородной (domain/signing.Summarize) и подписанной одним
+// человеком: подписант видел одно окно и подписал ровно то, что в нём сказано.
+func (s *Service) CheckBatch(ctx context.Context, raws [][]byte, exps []Expect) ([]Accepted, dom.BatchSummary, error) {
+	if len(raws) != len(exps) || len(raws) == 0 {
+		return nil, dom.BatchSummary{}, fail(errcodes.ApiValidationFailed, "пачка пуста или не совпадает с командами", "field", "signature", "reason", "пачка")
+	}
+	out := make([]Accepted, 0, len(raws))
+	items := make([]dom.BatchItem, 0, len(raws))
+	for i, raw := range raws {
+		a, err := s.CheckCommand(ctx, raw, exps[i])
+		if err != nil {
+			return nil, dom.BatchSummary{}, err
+		}
+		if a.Status == dom.StatusUnsigned {
+			return nil, dom.BatchSummary{}, fail(errcodes.SigningNoSignaturePath, "пачка уровня 2 — только подписанная агентом")
+		}
+		if len(out) > 0 && a.SignerPersonID != out[0].SignerPersonID {
+			return nil, dom.BatchSummary{}, fail(errcodes.SigningForeignKey, "пачку подписывает один человек", "key_ref", firstRef(a.Verdict))
+		}
+		out = append(out, a)
+		items = append(items, dom.BatchItem{Payload: a.Payload})
+	}
+	sum, err := dom.Summarize(items)
+	if err != nil {
+		return nil, sum, fail(errcodes.SigningLevelNotAllowed, err.Error(), "action_id", exps[0].EventType, "required", "2", "actual", "пачка")
+	}
+	return out, sum, nil
+}

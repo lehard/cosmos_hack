@@ -1,6 +1,9 @@
 package signing
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"maps"
+)
 
 // CommandEvent — событие-команда, которое подписывает человек (агент токена,
 // demo-signer): «payload_b64 — событие-команда» протокола агента (AD-14,
@@ -73,9 +76,9 @@ var HeaderFields = []string{"command_id", "basis_seq", "policy_seq", "workplace_
 // (агент токена, demo-signer) и сервер (Expect.Data) — подписанное совпадает
 // с исполняемым побайтно после JCS.
 func RequestData(operation string, params map[string]string, body map[string]any) (json.RawMessage, error) {
-	b := make(map[string]any, len(body))
-	for k, v := range body {
-		b[k] = v
+	b := maps.Clone(body)
+	if b == nil {
+		b = map[string]any{}
 	}
 	for _, h := range HeaderFields {
 		delete(b, h)

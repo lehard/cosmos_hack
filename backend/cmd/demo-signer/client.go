@@ -48,7 +48,7 @@ func (c *Client) Login(ctx context.Context, persona string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer rs.Body.Close()
+	defer func() { _ = rs.Body.Close() }()
 	_, _ = io.Copy(io.Discard, rs.Body)
 	if rs.StatusCode/100 != 2 {
 		return "", fmt.Errorf("вход персоной %s: HTTP %d", persona, rs.StatusCode)
@@ -77,7 +77,7 @@ func (c *Client) Op(ctx context.Context, id string) (Operation, error) {
 		if err != nil {
 			return Operation{}, err
 		}
-		defer rs.Body.Close()
+		defer func() { _ = rs.Body.Close() }()
 		var spec struct {
 			Paths map[string]map[string]struct {
 				OperationID string `json:"operationId"`
@@ -140,7 +140,7 @@ func (c *Client) Do(ctx context.Context, persona, opID string, params map[string
 	if err != nil {
 		return 0, nil, err
 	}
-	defer rs.Body.Close()
+	defer func() { _ = rs.Body.Close() }()
 	b, err := io.ReadAll(rs.Body)
 	return rs.StatusCode, b, err
 }

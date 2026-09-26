@@ -400,3 +400,25 @@ func TestIngestKeys(t *testing.T) {
 		t.Fatalf("%+v %v", res, err)
 	}
 }
+
+// AD-13: пачка уровня 2 — три изделия, одна операция, «годен», один подписант.
+func TestBatch(t *testing.T) {
+	w := newWorld(t, false)
+	var raws [][]byte
+	var exps []app.Expect
+	for _, item := range []string{"ENT01:F-050", "ENT01:F-051", "ENT01:F-052"} {
+		ce, exp := decision(item, 2, dom.ProfileGost, "ins-01@1")
+		raws, exps = append(raws, w.signCmd(ce, "ins-01@1")), append(exps, exp)
+	}
+	acc, sum, err := w.svc.CheckBatch(as("INS-01"), raws, exps)
+	if err != nil || len(acc) != 3 || sum.Count != 3 || sum.EventType != "inspection.result.recorded" {
+		t.Fatalf("%+v %v", sum, err)
+	}
+	// В пачку подложено другое решение — вся пачка отклоняется.
+	ce, exp := decision("ENT01:F-053", 2, dom.ProfileGost, "ins-01@1")
+	ce.Data = json.RawMessage(`{"inspection_point":"weld.zt3","item_id":"ENT01:F-053","outcome":"reject"}`)
+	exp.Data = ce.Data
+	if _, _, err := w.svc.CheckBatch(as("INS-01"), append(raws, w.signCmd(ce, "ins-01@1")), append(exps, exp)); code(err) != string(errcodes.SigningLevelNotAllowed) {
+		t.Fatalf("неоднородная пачка: %v", err)
+	}
+}
