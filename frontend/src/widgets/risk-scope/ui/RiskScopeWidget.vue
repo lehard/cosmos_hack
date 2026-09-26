@@ -11,7 +11,7 @@ import { computed, inject } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { NAlert } from 'naive-ui'
 import { routerKey } from 'vue-router'
-import { scopeState, useAnalysisCommands, useAnalysisFocusStore, useCan } from '@/entities/incident'
+import { scopeState, useAnalysisCommands, useAnalysisFocusStore, useCan, useCircumstances, useFocusedNc } from '@/entities/incident'
 import type { WidgetProps } from '@/shared/config/widget'
 import { useProblemText } from '@/shared/i18n/problem'
 import { useRecordLink } from '@/shared/model/record'
@@ -41,11 +41,15 @@ const sent = computed(() => mutations.some((m) => m.isSuccess.value))
 const canNarrow = computed(() => can('analysis.scope.narrow', 'incident', src.incidentId.value))
 const canExpand = computed(() => can('analysis.scope.expand', 'incident', src.incidentId.value))
 
-function change(kind: 'narrow' | 'expand', input: { item_ids: string[]; reason: string }): void {
+/** Доказательства для сужения — записи дорожек несоответствия расследования (primary_nc_id). */
+const circumstances = useCircumstances(useFocusedNc())
+const evidenceOptions = computed(() => circumstances.data.value?.records ?? [])
+
+function change(kind: 'narrow' | 'expand', input: { item_ids: string[]; reason: string; evidence_event_ids: string[] }): void {
   const incidentId = src.incidentId.value
   if (!incidentId) return
   mutations.forEach((m) => m.reset())
-  const body = { item_ids: input.item_ids, reason: { text: input.reason }, evidence_event_ids: [], basis_seq: src.basisSeq.value ?? 0 }
+  const body = { item_ids: input.item_ids, reason: { text: input.reason }, evidence_event_ids: input.evidence_event_ids, basis_seq: src.basisSeq.value ?? 0 }
   if (kind === 'narrow') cmd.narrowScope.mutate({ incidentId, body })
   else cmd.expandScope.mutate({ incidentId, body })
 }
@@ -88,6 +92,7 @@ const pick = (e: Event) => (focus.incidentId = (e.target as HTMLSelectElement).v
       :can-narrow="canNarrow"
       :can-expand="canExpand"
       :busy="busy"
+      :evidence-options="evidenceOptions"
       @narrow="(input) => change('narrow', input)"
       @expand="(input) => change('expand', input)"
       @open-item="openItem"
