@@ -16,6 +16,10 @@
  *   профиль, роли, пост сейчас, квалификации;
  * - `integration` — строки экрана «Интеграции» стола администратора (эпик 48,
  *   FR-157): состояние, канал, ошибки, карантин, кнопки включения.
+ * - `presentation` — строки очереди контролёра «плановая приёмка» и «пересмотреть
+ *   решение» (id — изделие): окно решения на точке предъявления — «тогда |
+ *   сейчас» для пересмотра, результаты методов, действия с последствиями
+ *   сервера, подпись (UI-28, Д-81); паспорт — ссылкой;
  * - `document` — строки реестра документов (раздел «Документы»): маршрут
  *   подписей, содержимое, версии, «Подписать / Отказать / Печать с QR / Скачать».
  * - `extract`, `partner` — строки раздела «Партнёры и выписки» (эпик 41, FR-131,
@@ -39,6 +43,7 @@ export const recordKinds: Record<string, RecordKindDefinition> = {
   person: { load: () => import('./kinds/PersonRecord.vue') },
   integration: { load: () => import('./kinds/IntegrationRecord.vue') },
   document: { load: () => import('./kinds/DocumentRecord.vue') },
+  presentation: { load: () => import('./kinds/PresentationRecord.vue') },
   extract: { load: () => import('./kinds/ExtractRecord.vue') },
   partner: { load: () => import('./kinds/PartnerRecord.vue') },
 }

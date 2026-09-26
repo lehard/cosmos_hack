@@ -114,7 +114,7 @@ describe('очередь «Ждут моего решения»', () => {
       props: { widgetId: 'decision-queue', titleKey: 'desks.decisionQueue', slotId: 'queue', slice: { sort: ['deadline', 'risk'] }, density: 'comfortable' },
       global: {
         plugins: [pinia, i18n, router, [VueQueryPlugin, { queryClient }]],
-        provide: { [RECORD_DRAWER as symbol]: { kinds: new Set(['nonconformity', 'item']) } },
+        provide: { [RECORD_DRAWER as symbol]: { kinds: new Set(['nonconformity', 'item', 'presentation']) } },
       },
     })
     await flushPromises()
@@ -129,10 +129,10 @@ describe('очередь «Ждут моего решения»', () => {
     await flushPromises()
     expect(router.currentRoute.value.query.open).toBe('nonconformity:NC-0142')
     expect(rows()[0]!.attributes('aria-selected')).toBe('true')
-    // Точка предъявления без несоответствия — окно изделия.
+    // Точка предъявления без несоответствия — окно решения на точке, а не паспорт (UI-28).
     await rows()[2]!.trigger('click')
     await flushPromises()
-    expect(router.currentRoute.value.query.open).toMatch(/^item:/)
+    expect(router.currentRoute.value.query.open).toBe('presentation:ENT:FL-0031')
     expect(rows()[2]!.attributes('aria-selected')).toBe('true')
   })
 })

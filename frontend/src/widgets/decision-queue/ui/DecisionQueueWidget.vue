@@ -15,6 +15,7 @@ import { backendModeOf } from '@/shared/api/response'
 import type { WidgetProps } from '@/shared/config/widget'
 import { useMomentStore } from '@/shared/model/moment'
 import { useServerNow } from '@/shared/model/server-clock'
+import type { DrillRef } from '@/shared/model/drill'
 import { useRecordLink } from '@/shared/model/record'
 import { WidgetFrame } from '@/shared/ui'
 import DecisionQueueView from './DecisionQueueView.vue'
@@ -32,8 +33,15 @@ const runId = computed(() => str(route?.query.run) ?? str(props.slice.run_id))
 const query = useDecisionQueue(sort, runId)
 const rows = computed(() => query.data.value?.data?.items ?? null)
 
-/** Что открыть по строке: несоответствие, если оно есть, иначе изделие. */
-const refOf = (row: DecisionQueueRow) => (row.nc_id ? { entity: 'nonconformity' as const, id: row.nc_id } : { entity: 'item' as const, id: row.item_id })
+/**
+ * Что открыть по строке: несоответствие, если оно есть; точка предъявления и
+ * пересмотр — окно решения на точке (UI-28), а не паспорт; иначе изделие.
+ */
+const refOf = (row: DecisionQueueRow): DrillRef => {
+  if (row.nc_id) return { entity: 'nonconformity', id: row.nc_id }
+  if (row.kind === 'presentation' || row.kind === 'review') return { entity: 'presentation', id: row.item_id } as unknown as DrillRef
+  return { entity: 'item', id: row.item_id }
+}
 
 /** Строка, открытая в окне сейчас. */
 const selected = computed(() => {
