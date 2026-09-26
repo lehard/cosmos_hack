@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	appjournal "ant/internal/application/journal"
 	"ant/internal/application/ingest"
+	appjournal "ant/internal/application/journal"
 	"ant/internal/contracts/catalog"
 	jc "ant/internal/contracts/journal"
 	dj "ant/internal/domain/journal"
