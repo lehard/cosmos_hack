@@ -12,7 +12,7 @@
  * загрузка скана и заверение (заверитель ≠ подписант). Паспорт изделия —
  * правым окном записи (Д-70), не панелью сбоку.
  */
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { paperAllowed, useAttestPaper, useDecisionRequests, useDeclineDocument, usePrintPaper, useSignDocument, type SummaryField } from '@/entities/document'
 import { useSession } from '@/entities/session'
 import { useDrillDown } from '@/features/drill-down'
@@ -21,6 +21,7 @@ import { backendModeOf } from '@/shared/api/response'
 import { useProblemText } from '@/shared/i18n/problem'
 import type { WidgetProps } from '@/shared/config/widget'
 import { useMomentStore } from '@/shared/model/moment'
+import { useServerNow } from '@/shared/model/server-clock'
 import { ActionButton, WidgetFrame } from '@/shared/ui'
 import DecisionRequestView from './DecisionRequestView.vue'
 
@@ -37,10 +38,9 @@ watch(list, () => (index.value = 0))
 const request = computed(() => list.value?.[index.value] ?? null)
 const myStage = computed(() => request.value?.document.route.find((s) => s.stage === request.value?.my_stage) ?? null)
 
-const tick = ref(Date.now())
-const timer = setInterval(() => (tick.value = Date.now()), 30_000)
-onBeforeUnmount(() => clearInterval(timer))
-const now = computed(() => (moment.asOf ? Date.parse(moment.asOf) : tick.value))
+// «Сейчас» — по часам сервера (Ant-Now); в воспроизведении — момент воспроизведения.
+const serverNow = useServerNow()
+const now = computed(() => (moment.asOf ? Date.parse(moment.asOf) : serverNow.value))
 
 const session = useSession()
 const currentUser = computed(() => session.data.value?.data?.user.id ?? null)
