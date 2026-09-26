@@ -2,7 +2,17 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/json"
+	"errors"
+	"fmt"
 	"strings"
+	"time"
+	"uuid"
+
+	engineapp "ant/internal/application/engine"
+	jc "ant/internal/contracts/journal"
+	"ant/internal/domain/engine"
 
 	ingestapp "ant/internal/application/ingest"
 	itemapp "ant/internal/application/item"
@@ -28,10 +38,12 @@ import (
 // enterpriseCode — код предприятия в item_id (AD-16; мир сценариев — ENT01).
 const enterpriseCode = "ENT01"
 
-// itemBypass — live-команды item поверх ручного ввода приёма.
+// itemBypass — live-команды item: факты — ручным вводом приёма, решения
+// (регистрация, вмешательство) — записью решения в журнал.
 type itemBypass struct {
 	itemapp.Unimplemented
 	facts ingestFacts
+	rec   itemRecorder
 	// active — действующая версия процесса: хеш и ревизия для закрепления при
 	// регистрации (AD-17).
 	active func(ctx context.Context) (processapp.VersionRecord, error)
@@ -83,7 +95,7 @@ func (b itemBypass) Register(ctx context.Context, in itemapp.RegisterItem) (plat
 	if in.IsAssembly {
 		data["is_assembly"] = true
 	}
-	return b.fact(ctx, in.CommandMeta(), catalog.ItemItemRegistered, id, data)
+	return b.rec.decide(ctx, in.CommandMeta(), catalog.ItemItemRegistered, id, data)
 }
 
 // ApplyCarrier — нанести носитель (item.carrier.applied).
@@ -135,7 +147,7 @@ func (b itemBypass) OpenIntervention(ctx context.Context, itemID string, in item
 	if len(in.RemovedComponents) > 0 {
 		data["removed_components"] = in.RemovedComponents
 	}
-	return b.fact(ctx, in.CommandMeta(), catalog.ItemInterventionOpened, itemID, data)
+	return b.rec.decide(ctx, in.CommandMeta(), catalog.ItemInterventionOpened, itemID, data)
 }
 
 var _ itemapp.Commands = itemBypass{}
@@ -150,7 +162,9 @@ func itemLive(ctx context.Context, env *environment, ingest *ingestapp.Service) 
 	if err != nil {
 		return nil, err
 	}
-	return itemBypass{facts: ingestFacts{ingest}, active: func(ctx context.Context) (processapp.VersionRecord, error) {
+	rec := itemRecorder{journal: c.journal, domainBuild: c.codec.DomainBuild, partitions: env.cfg.Engine.Partitions,
+		scenario: scenarioClock(env.cfg), clock: c.domainClock()}
+	return itemBypass{facts: ingestFacts{ingest}, rec: rec, active: func(ctx context.Context) (processapp.VersionRecord, error) {
 		vs, err := c.versions.List(ctx)
 		if err != nil {
 			return processapp.VersionRecord{}, err
@@ -158,4 +172,80 @@ func itemLive(ctx context.Context, env *environment, ingest *ingestapp.Service) 
 		v, _ := processapp.Active(vs)
 		return v, nil
 	}}, nil
+}
+
+// itemRecorder — решение модуля item (item.item.registered,
+// item.intervention.opened) одной записью journal.Append (AD-44): поток
+// изделия, партиция изделия, прогон из контекста (AD-38), occurred_at —
+// доменное «сейчас» (AD-37). Конверт DSSE без подписей (Д-30).
+type itemRecorder struct {
+	journal     appjournal.JournalStore
+	domainBuild string
+	partitions  int
+	scenario    bool
+	clock       appjournal.DomainClock
+}
+
+func (r itemRecorder) decide(ctx context.Context, meta platform.CommandMeta, t catalog.Type, itemID string, data map[string]any) (platform.Receipt, error) {
+	info, ok := catalog.Lookup(t)
+	if !ok || info.Kind != catalog.KindDecision {
+		return platform.Receipt{}, fmt.Errorf("item: %s — не решение", t)
+	}
+	id := strings.ToLower(meta.CommandID)
+	if _, err := uuid.Parse(id); err != nil || id == "" {
+		id = uuid.NewV7().String()
+	}
+	now, err := r.clock.Now(ctx)
+	if err != nil {
+		return platform.Receipt{}, err
+	}
+	occurred := engineapp.FormatTime(now)
+	stream := "item:" + itemID
+	actor := actorOf(ctx)
+	signer := "anonymous@1"
+	if actor != "" {
+		signer = strings.ToLower(actor) + "@1"
+	}
+	run := appjournal.RunFrom(ctx)
+	env := map[string]any{"event_id": id, "event_type": string(t), "schema_version": info.CurrentVersion, "source_id": processapp.SourceAPI,
+		"source_kind": "manual_entry", "occurred_at": occurred, "correlation_id": id, "causation_id": nil, "item_id": itemID,
+		"command":   map[string]any{"command_id": id, "basis_seq": meta.BasisSeq, "guard_streams": []string{stream}, "policy_seq": meta.PolicySeq},
+		"integrity": map[string]any{"format_version": 1, "crypto_profile": "gost", "signers": []string{signer}},
+		"data":      data}
+	prov := jc.JournalEntryProvenanceClassPersonal
+	if run != "" {
+		env["run_id"] = run
+		prov = jc.JournalEntryProvenanceClassScenario
+	}
+	canon, err := engine.Canonical(env)
+	if err != nil {
+		return platform.Receipt{}, err
+	}
+	sealed, _ := json.Marshal(map[string]any{"payloadType": engineapp.PayloadTypeEvent,
+		"payload": base64.StdEncoding.EncodeToString(canon), "signatures": []string{}})
+	e := jc.JournalEntry{Chain: jc.JournalEntryChainMain, EntryKind: jc.JournalEntryEntryKindDecision, EventType: string(t),
+		SchemaVersion: info.CurrentVersion, EventID: id, SourceID: processapp.SourceAPI, Stream: stream, ItemID: &itemID,
+		Partition: kernel.PartitionOf(itemID, r.partitions), OccurredAt: occurred, ReceivedAt: engineapp.FormatTime(time.Now().UTC()),
+		CorrelationID: id, ProvenanceClass: prov, DomainBuild: r.domainBuild}
+	if run != "" {
+		e.RunID = &run
+	}
+	if r.scenario {
+		e.RecordedAt = occurred
+	}
+	res, err := r.journal.Append(ctx, appjournal.AppendRequest{Batch: []appjournal.Pending{{Entry: e, Envelope: sealed}}})
+	if errors.Is(err, appjournal.ErrDuplicate) {
+		return platform.Receipt{CommandID: id, EventIDs: []string{id}, Replayed: true}, nil
+	}
+	if err != nil {
+		if pe, ok := appjournal.Problem(err); ok {
+			return platform.Receipt{}, pe
+		}
+		return platform.Receipt{}, err
+	}
+	rc := platform.Receipt{CommandID: id, EventIDs: []string{id}, RecordedAt: now}
+	if len(res.Seqs) > 0 {
+		rc.Seq = res.Seqs[0]
+	}
+	return rc, nil
 }
