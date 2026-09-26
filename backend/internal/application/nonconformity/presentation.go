@@ -53,7 +53,7 @@ func (s *Service) Presentation(ctx context.Context, itemID string, m platform.Mo
 			}
 		}
 		for _, r := range rv.facts {
-			review.NewFacts = append(review.NewFacts, ref(r, summaryOf(r)))
+			review.NewFacts = append(review.NewFacts, ref(r, s.factSummary(ctx, r)))
 		}
 		out.Review = review
 		open, reviewed = &rv, d

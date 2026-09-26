@@ -682,6 +682,30 @@ func happened(v *itemView, n dom.NC) NCHappened {
 }
 
 // summaryOf — строка записи для людей.
+// factSummary — новый факт пересмотра словами по источнику, как в очереди
+// контролёра: «журнал «Сварочный источник ИС-2»: отклонение режима — ток
+// сварки»; кода записи в тексте нет (он — в event_id и ссылке). Нет названия
+// оборудования в справочнике — общая формулировка summaryOf.
+func (s *Service) factSummary(ctx context.Context, r kernel.Record) string {
+	if r.Type != catalog.EquipmentDeviationDetected || s.d.Equipment == nil {
+		return summaryOf(r)
+	}
+	var d struct {
+		EquipmentID string `json:"equipment_id"`
+		Parameter   string `json:"parameter"`
+	}
+	_ = json.Unmarshal(r.Data, &d)
+	name, ok := s.d.Equipment.EquipmentName(ctx, d.EquipmentID, r.OccurredAt)
+	if !ok || name == "" {
+		return summaryOf(r)
+	}
+	out := "журнал «" + name + "»: отклонение режима"
+	if d.Parameter != "" {
+		out += " — " + strings.ToLower(parameterName(d.Parameter))
+	}
+	return out
+}
+
 func summaryOf(r kernel.Record) string {
 	switch r.Type {
 	case catalog.InspectionResultRecorded:
