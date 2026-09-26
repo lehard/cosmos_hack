@@ -89,6 +89,7 @@ func (c *Ctx) queue() ncapp.DecisionQueue {
 			Title: fmt.Sprintf("Сигнал: %s %s", defectTitle(s.Kind), zoneTitle(s.Zone)), Severity: "major", BasisSeq: c.ItemSeq(it)}
 		if s.NC != nil {
 			row.NCID = ptr(s.NC.ID)
+			row.Reason = c.M.ncEssence(s.NC)
 		}
 		q.Items = append(q.Items, row)
 	}
@@ -115,8 +116,14 @@ func (c *Ctx) queue() ncapp.DecisionQueue {
 		}
 		it := n.Items[0]
 		due := workingDaysAfter(c.M, n.ConfirmedAt, 3)
+		// Суть — в заголовке и полем reason (вид дефекта и зона по справочникам).
+		title := n.Number + ": ждёт решения по изделию"
+		why := c.M.ncEssence(n)
+		if why != nil {
+			title = n.Number + ": " + *why + " — ждёт решения по изделию"
+		}
 		q.Items = append(q.Items, ncapp.DecisionQueueRow{Kind: "isolated", ObjectID: n.ID, NCID: ptr(n.ID), ItemID: FullID(it.ID), ItemLabel: it.Label, StepKey: n.StepKey,
-			Title: fmt.Sprintf("%s: ждёт решения по изделию", n.Number), Severity: "major", DueAt: tptr(due), Overdue: due.Before(c.T), BasisSeq: c.ItemSeq(it)})
+			Title: title, Reason: why, Severity: "major", DueAt: tptr(due), Overdue: due.Before(c.T), BasisSeq: c.ItemSeq(it)})
 	}
 	for _, it := range c.Existing() {
 		st := c.S(it)
@@ -282,6 +289,29 @@ func (c *Ctx) card(n *NC) ncapp.NCCard {
 		card.ToDecide.Decisions = []string{"nonconformity.disposition.verify"}
 	}
 	return card
+}
+
+// ncEssence — суть несоответствия: виды дефектов и зоны («Прожог · Шов W-1,
+// участок У2 (40–80 мм)»; несколько дефектов — через «; »); зоны нет в
+// справочнике — только вид.
+func (m *Model) ncEssence(n *NC) *string {
+	var parts []string
+	for _, d := range n.Spec.Defects {
+		l := defectLabel(d.Kind)
+		if l == nil {
+			continue
+		}
+		p := *l
+		if z := nameOf(m.names.Zones, d.Zone); z != nil {
+			p += " · " + *z
+		}
+		parts = append(parts, p)
+	}
+	if len(parts) == 0 {
+		return nil
+	}
+	s := strings.Join(parts, "; ")
+	return &s
 }
 
 // lateArrival — что пришло после решения, словами: журнал оборудования

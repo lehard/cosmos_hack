@@ -123,12 +123,12 @@ func (s *Service) queueRows(v *itemView, now time.Time) []DecisionQueueRow {
 		switch n.Status {
 		case dom.StatusDraft:
 			rows = append(rows, DecisionQueueRow{Kind: "signal", ObjectID: n.ID, NCID: &id, ItemID: v.ItemID, ItemLabel: label,
-				StepKey: n.Draft.StepKey, Title: ncTitle(v, n), Severity: severity(n.Severity), DueAt: isoDue, Overdue: overdue, BasisSeq: v.BasisSeq})
+				StepKey: n.Draft.StepKey, Title: ncTitle(v, n), Reason: essence(v, n), Severity: severity(n.Severity), DueAt: isoDue, Overdue: overdue, BasisSeq: v.BasisSeq})
 			waiting = true
 		case dom.StatusConfirmed:
 			// Подтверждено — ждёт решения по несоответствию (у спецпроцесса — комиссии).
 			rows = append(rows, DecisionQueueRow{Kind: "isolated", ObjectID: n.ID, NCID: &id, ItemID: v.ItemID, ItemLabel: label,
-				StepKey: n.Draft.StepKey, Title: ncTitle(v, n), Severity: severity(n.Severity), DueAt: isoDue, Overdue: overdue, BasisSeq: v.BasisSeq})
+				StepKey: n.Draft.StepKey, Title: ncTitle(v, n), Reason: essence(v, n), Severity: severity(n.Severity), DueAt: isoDue, Overdue: overdue, BasisSeq: v.BasisSeq})
 			waiting = true
 		}
 	}
@@ -250,6 +250,24 @@ func ncTitle(v *itemView, n dom.NC) string {
 		return "Подтверждено: " + strings.TrimPrefix(what, "Признак ")
 	}
 	return what
+}
+
+// essence — суть несоответствия для строки очереди: вид дефекта и зона по
+// справочникам; ничего не нашлось — nil.
+func essence(v *itemView, n dom.NC) *string {
+	var parts []string
+	if l := nameIn(v.Labels.defects, &n.DefectTypeCode); l != nil {
+		parts = append(parts, *l)
+	}
+	zone := n.Draft.ZoneID
+	if l := nameIn(v.Labels.zones, &zone); l != nil {
+		parts = append(parts, *l)
+	}
+	if len(parts) == 0 {
+		return nil
+	}
+	s := strings.Join(parts, " · ")
+	return &s
 }
 
 // stepName — название шага по описанию процесса изделия; нет — "".
