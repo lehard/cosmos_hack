@@ -6,10 +6,9 @@ const all = () => true
 const idle = { dirty: false, routeClosed: false, editing: false }
 
 describe('кнопки окна версии', () => {
-  it('черновик: сохранить — только с изменениями, отправить — только сохранённое', () => {
+  it('черновик: «Править схему» (на весь экран, UI-34) и «Отправить» — только сохранённое', () => {
     expect(actionsFor('draft', all, idle)).toEqual([
-      { action: 'newDraft', enabled: true },
-      { action: 'saveDraft', enabled: false },
+      { action: 'edit', enabled: true },
       { action: 'submit', enabled: true },
     ])
     expect(actionsFor('draft', all, { ...idle, dirty: true }).find((a) => a.action === 'submit')?.enabled).toBe(false)
