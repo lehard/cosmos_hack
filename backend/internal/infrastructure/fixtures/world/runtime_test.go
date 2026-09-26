@@ -86,7 +86,9 @@ func TestRuntime(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if st, _, _ := rt.State(ctx); st.Step != wait+1 || rec.Seq != loader.StepSeq(wait+1) {
+	// Номер квитанции — в диапазоне сессионных команд шага (не один seq шага на все команды).
+	lo := int64(wait+1)*loader.SeqPerStep + loader.SeqSessionAt
+	if st, _, _ := rt.State(ctx); st.Step != wait+1 || rec.Seq <= lo || rec.Seq >= int64(wait+1)*loader.SeqPerStep+loader.SeqChangesAt {
 		t.Fatalf("решение не продвинуло сценарий: шаг %d, seq %d", st.Step, rec.Seq)
 	}
 	// Идущий прогон ×1000: за минуту реального времени часы уходят вперёд до следующего ожидания.
