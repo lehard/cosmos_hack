@@ -5,7 +5,6 @@ import (
 
 	"ant/cmd/internal/config"
 	appvision "ant/internal/application/vision"
-	"ant/internal/infrastructure/storage/journal/clock"
 )
 
 // Сборка модуля vision (эпик 33): живые операции паспортов допуска над

@@ -9,7 +9,6 @@ import (
 	referenceapp "ant/internal/application/reference"
 	dom "ant/internal/domain/reference"
 	referencefx "ant/internal/infrastructure/fixtures/reference"
-	"ant/internal/infrastructure/storage/journal/clock"
 	referencestore "ant/internal/infrastructure/storage/reference"
 )
 
