@@ -231,6 +231,8 @@ steps:
   params:
     workplace_id: WP-WELD-1
   body:
+    key_ref: w21@1  # демо-ключ W21 (Д-82): робот открывает допуск, как человек с ключом в расширении
+    pin_verified: true
     shift_id: SHIFT-1
 - at: '2026-09-21T08:15:00+03:00'
   label: SHOW/weld-SV-001-1
@@ -325,6 +327,8 @@ steps:
   params:
     workplace_id: WP-WELD-2
   body:
+    key_ref: w21@1  # демо-ключ W21 (Д-82): робот открывает допуск, как человек с ключом в расширении
+    pin_verified: true
     shift_id: SHIFT-1
 - at: '2026-09-21T09:20:00+03:00'
   label: SHOW/weld-SV-002-1
@@ -540,6 +544,8 @@ steps:
   params:
     workplace_id: WP-WELD-1
   body:
+    key_ref: w21@1  # демо-ключ W21 (Д-82): робот открывает допуск, как человек с ключом в расширении
+    pin_verified: true
     shift_id: SHIFT-1
 - at: '2026-09-21T11:14:00+03:00'
   ref: Е-112
