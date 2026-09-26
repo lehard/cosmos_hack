@@ -3,10 +3,12 @@ package documents
 import (
 	"context"
 	"net/url"
+	"slices"
 	"strconv"
 
 	app "ant/internal/application/documents"
 	"ant/internal/application/platform"
+	"ant/internal/contracts/errcodes"
 	dom "ant/internal/domain/documents"
 	"ant/internal/infrastructure/fixtures/loader"
 )
@@ -16,7 +18,9 @@ import (
 // отрисовка и печатная форма — из мира заготовок (генератор world строит их
 // той же отрисовкой domain/documents, что и live); команды подписи, отказа,
 // печати и заверения мир не меняют, кроме шага ожидания именно этого решения.
-// Карточки редких подписантов — пока 501 (app.Unimplemented).
+// Запросы решения и карточки редких подписантов — из тех же документов по
+// правилу live: ближайший незакрытый этап вправе подписать пользователь
+// сеанса (app.RequestFromView, app.CardFromView).
 type Adapter struct {
 	app.Unimplemented
 }
@@ -81,6 +85,52 @@ func (Adapter) Document(ctx context.Context, documentID string, version int, m p
 // Render — каноническая отрисовка (documents.document.render).
 func (Adapter) Render(ctx context.Context, documentID string, version int) (app.DocumentRendering, error) {
 	return respond[app.DocumentRendering](ctx, opRender, docParams(documentID, version), nil)
+}
+
+// DecisionRequests — запросы решения, ждущие подписи пользователя сеанса
+// (documents.request.list, FR-136): документы реестра с этапом, который ждёт
+// подписи, где пользователь — среди тех, кто вправе подписать.
+func (Adapter) DecisionRequests(ctx context.Context, m platform.Moment) (app.DecisionRequestList, error) {
+	out := app.DecisionRequestList{Items: []app.DecisionRequest{}}
+	l, err := all(ctx, m)
+	if err != nil {
+		return out, err
+	}
+	person := platform.PrincipalFrom(ctx).PersonID
+	for _, d := range l.Items {
+		if d.Awaiting == nil || (person != "" && !slices.Contains(d.Awaiting.Candidates, person)) {
+			continue
+		}
+		v, err := Adapter{}.Document(ctx, d.DocumentID, 0, m)
+		if err != nil {
+			return out, err
+		}
+		if rq, ok := app.RequestFromView(v, d.ItemIDs, person); ok {
+			out.Items = append(out.Items, rq)
+		}
+	}
+	return out, nil
+}
+
+// DecisionCard — карточка «требуется ваше решение» (documents.decision_card.read, FR-136).
+func (Adapter) DecisionCard(ctx context.Context, documentID string, m platform.Moment) (app.DecisionCard, error) {
+	v, err := Adapter{}.Document(ctx, documentID, 0, m)
+	if err != nil {
+		return app.DecisionCard{}, err
+	}
+	var items []string
+	if l, err := all(ctx, m); err == nil {
+		for _, d := range l.Items {
+			if d.DocumentID == documentID {
+				items = d.ItemIDs
+			}
+		}
+	}
+	card, ok := app.CardFromView(v, items, platform.PrincipalFrom(ctx).PersonID)
+	if !ok {
+		return app.DecisionCard{}, platform.Fail(errcodes.ApiNotFound, "document_id", documentID, "reason", "версия не ждёт подписей")
+	}
+	return card, nil
 }
 
 // PrintView — печатная форма (documents.paper.print_view, FR-139): отрисовка

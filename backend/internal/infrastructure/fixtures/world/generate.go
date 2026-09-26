@@ -115,6 +115,9 @@ func Generate(fsys fs.FS) (map[string][]byte, error) {
 		return nil, err
 	}
 	names, err := LoadNames(fsys)
+	if err != nil {
+		return nil, err
+	}
 	templates, err := LoadTemplates(fsys)
 	if err != nil {
 		return nil, err

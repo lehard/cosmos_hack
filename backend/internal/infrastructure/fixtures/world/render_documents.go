@@ -397,6 +397,42 @@ func (m *Model) documents() []*wdoc {
 			{Title: "Представитель заказчика — заключение", Role: "customer_representative", Authority: "customer_acceptance", Level: 2, Paper: true},
 		}}}}))
 
+	// Редкие подписанты (FR-136): у держателя КД, метролога и представителя
+	// заказчика на начальном шаге есть запрос решения — стол «Требуется ваше
+	// решение» не пустой; к концу истории запросы подписаны.
+	req := func(id, title string, subject platform.DrillRef, label string, items []string, fields []wfield, v wver) {
+		add(flange(&wdoc{ID: id, Template: dom.TemplateDecisionRequest, Title: title, Subject: subject, SubjectLabel: label, Items: items, Fields: fields, Versions: []wver{v}}))
+	}
+	req("DOC-REQ-DA-F-023", "Запрос решения: переварка корня шва W-1 на Ф-023 — согласование держателя КД",
+		platform.DrillRef{Entity: platform.EntityItem, ID: FullID("F-023")}, "Ф-023", f("F-023"),
+		[]wfield{{"subject", "Объект", "Ф-023, шов W-1, участок У3 (прожог в корне, РК-0923-10)"},
+			{"decision", "Что решается", "Допустима ли переварка корня шва W-1 с зачисткой до основного металла вместо списания"},
+			{"comment", "Комментарий", "Глубина зачистки 1,8 мм при толщине стенки 6 мм; требование КД к шву сохраняется, повторный рентген обязателен"},
+			{"requested_by", "Запросил", "TEC-01"}, {"requested_at", "Дата запроса", "23.09.2026 13:35"}, {"sources", "Основания", "РК-0923-10, НС-03, ТП ФЛ-100.00.000"}},
+		wver{At: at(23, 13, 35), Stages: []wstage{
+			{Title: "Согласующий — держатель КД", Role: "design_authority", Authority: "concession_approval", Level: 2, Paper: true, Sig: sig("DA-81", at(24, 9, 40), keyBrowser)},
+		}})
+	req("DOC-REQ-MET-KT3", "Запрос решения: допуск камеры КТ-3 после перекалибровки",
+		platform.DrillRef{Entity: platform.EntityEquipment, ID: "CAM-KT3"}, "Камера КТ-3", f("F-025"),
+		[]wfield{{"subject", "Объект", "Камера КТ-3 сварочного участка (анализатор VisionQC)"},
+			{"decision", "Что решается", "Допуск камеры к работе после перекалибровки освещения"},
+			{"comment", "Комментарий", "Блик на Ф-025: «признаков нет, 0,91» при качестве кадра 0,34; после перекалибровки — контрольный набор 40 кадров, качество ≥ 0,8"},
+			{"requested_by", "Запросил", "HQC-01"}, {"requested_at", "Дата запроса", "23.09.2026 13:10"}, {"sources", "Основания", "Кадры Ф-025, протокол перекалибровки ПК-0923-02"}},
+		wver{At: at(23, 13, 10), Stages: []wstage{
+			{Title: "Метролог — согласование", Role: "metrologist", Authority: "analyzer_admission", Level: 2, Sig: sig("MET-82", at(24, 11, 0), keyBrowser)},
+			{Title: "Начальник ОТК — допуск", Role: "head_of_qc", Authority: "analyzer_admission", Level: 2, Sig: sig("HQC-01", at(24, 11, 20), keyHW)},
+		}})
+	req("DOC-REQ-CR-RS-01", "Запрос решения: продолжение приёмки ВП по заданию ЗП-0917 при открытом инциденте RS-01",
+		platform.DrillRef{Entity: platform.EntityIncident, ID: "RS-01"}, "Инцидент ИС-2 (RS-01)", nil,
+		[]wfield{{"subject", "Объект", "Задание ЗП-0917, инцидент RS-01"},
+			{"decision", "Что решается", "Продолжать приёмку ВП изделий вне области риска RS-01"},
+			{"comment", "Комментарий", "Область риска сужена до 6 изделий; остальные сварены на ИС-1 или до отказа регулятора ИС-2 и придержаны не будут"},
+			{"requested_by", "Запросил", "HQC-01"}, {"requested_at", "Дата запроса", "23.09.2026 13:20"}, {"sources", "Основания", "Область риска RS-01, версия 3"}},
+		wver{At: at(23, 13, 20), Stages: []wstage{
+			{Title: "Начальник ОТК", Role: "head_of_qc", Authority: "nc_disposition", Level: 2, Paper: true, Sig: sig("HQC-01", at(23, 13, 25), keyHW)},
+			{Title: "Представитель заказчика", Role: "customer_representative", Authority: "customer_acceptance", Level: 2, Paper: true, Sig: sig("CR-71", at(23, 15, 32), keyHW)},
+		}})
+
 	// Сопроводительные карты: Ф-001 зафиксирована и подписана, изделия истории — собираются.
 	for _, id := range []string{"F-001", "F-015", "F-017", "F-019", "F-021", "F-023", "F-025"} {
 		it := m.itemByID[id]
