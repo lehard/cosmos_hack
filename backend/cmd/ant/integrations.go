@@ -2,11 +2,13 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
 
 	"ant/cmd/internal/config"
+	engineapp "ant/internal/application/engine"
 	erpapp "ant/internal/application/erp"
 	mesapp "ant/internal/application/mes"
 	opsapp "ant/internal/application/ops"
@@ -98,8 +100,6 @@ func (l switchedLedger) Pull(ctx context.Context) ([]erpapp.Inbound, error) {
 }
 
 // switchedMES — канал MES, который не опрашивает входящие выключенной MES.
-// Отправку блоков в выключенную MES отправитель эпика 31 не откладывает
-// (у него нет очереди к отправке) — см. отчёт эпика 48.
 type switchedMES struct {
 	mesapp.Channel
 	sw *opsapp.IntegrationSwitch
@@ -169,4 +169,19 @@ func probeOf(endpoint, detail string, err error, contract func(error) (string, b
 		r.Detail = "ответная сторона отвечает, версия контракта совпала"
 	}
 	return r
+}
+
+// switchedBlocks — проекции для отправителя блоков MES: у выключенной MES
+// индекс неподтверждённых блоков пуст — блоки остаются в проекции
+// «ждут отправки» и уходят после включения (AD-47), попытки не тратятся.
+type switchedBlocks struct {
+	engineapp.ProjectionStore
+	sw *opsapp.IntegrationSwitch
+}
+
+func (p switchedBlocks) Get(ctx context.Context, name, key string) (json.RawMessage, bool, error) {
+	if name == mesapp.ProjectionBlockIndex && !p.sw.Active(ctx, "mes") {
+		return nil, false, nil
+	}
+	return p.ProjectionStore.Get(ctx, name, key)
 }

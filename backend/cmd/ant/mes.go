@@ -90,7 +90,8 @@ func mesOutbox(ctx context.Context, env *environment, c *core, intake *ingestapp
 	info := ch.Info()
 	log.Info("outbox: канал MES", "system", info.System, "endpoint", info.Endpoint, "stand", info.Stand)
 	return &mesapp.Outbox{
-		Sender: &mesapp.Sender{Journal: c.journal, Codec: c.codec, Store: c.engine, Channel: ch,
+		// Эпик 48: блоки выключенной MES ждут в проекции (switchedBlocks).
+		Sender: &mesapp.Sender{Journal: c.journal, Codec: c.codec, Store: switchedBlocks{ProjectionStore: c.engine, sw: integrationSwitch(env, c)}, Channel: ch,
 			Clock: c.domainClock(), Now: c.codec.Now, Max: cfg.RetryMax, Log: log},
 		// Эпик 48: входящие выключенной MES не опрашиваются.
 		Gateway: &mesapp.Gateway{Channel: switchedMES{Channel: ch, sw: integrationSwitch(env, c)}, Intake: mesIntake{intake}, Env: mesEnvOf(c, steps), Log: log},
