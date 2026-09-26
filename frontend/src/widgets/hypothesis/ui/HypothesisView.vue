@@ -160,23 +160,17 @@ function caseLine(c: SimilarCase): string {
         </header>
         <p v-if="h.statement" class="kind muted ant-wrap">{{ t('common.words.hypothesis') }} · {{ category(h.category) }}</p>
 
-        <div v-if="confidence(h) != null" class="confidence" :title="t('hints.analyzerConfidence')" data-testid="confidence">
+        <p v-if="h.category === 'incoming'" class="muted">{{ t('hints.incomingDefect') }}</p>
+
+        <p class="support ant-wrap" data-testid="support">
+          {{ t('widgets.analysis.hypothesis.supportLine', { pro: h.supporting.length, con: h.contradicting.length }) }}
+        </p>
+        <details class="more" data-testid="more">
+          <summary>{{ t('widgets.analysis.hypothesis.moreTitle') }}</summary>
+          <div v-if="confidence(h) != null" class="confidence" :title="t('hints.analyzerConfidence')" data-testid="confidence">
           <span class="meter" aria-hidden="true"><span class="meter-fill" :style="{ width: `${confidence(h)! * 100}%` }" /></span>
           <span class="muted ant-wrap">{{ t('widgets.analysis.hypothesis.confidence', { value: n(confidence(h)!, 'decimal2') }) }}</span>
         </div>
-        <p v-if="h.category === 'incoming'" class="muted">{{ t('hints.incomingDefect') }}</p>
-
-        <!-- Что проверить следующим: проверка, которая подтвердит или ослабит гипотезу. -->
-        <div v-if="isOpen(h) && nextText(h)" class="next" data-testid="next-check">
-          <p class="next-title">{{ t('widgets.analysis.hypothesis.nextCheck') }}</p>
-          <p class="next-text ant-wrap">{{ nextText(h) }}</p>
-          <p v-if="h.next_check?.could_exclude" class="next-gain ant-wrap" data-testid="next-gain">
-            {{ t('widgets.analysis.hypothesis.couldExclude', { n: h.next_check.could_exclude, of: h.next_check.scope_size }) }}
-          </p>
-          <p v-if="h.next_check?.unlocks_text" class="next-unlocks ant-wrap">{{ h.next_check.unlocks_text }}</p>
-          <ActionButton overflow="wrap" :size="size" type="primary" :disabled="!canMeasure || busy || moment.isReplay" data-testid="request-measurement" @click="openForm(h, 'measure')" :label="t('widgets.analysis.hypothesis.requestCheck')" />
-        </div>
-
         <div class="args">
           <section class="arg" data-side="for">
             <h5>{{ t('ncCard.commonFactors.argumentsFor') }} · {{ h.supporting.length }}</h5>
@@ -209,6 +203,19 @@ function caseLine(c: SimilarCase): string {
             </li>
           </ol>
         </details>
+        </details>
+
+        <!-- Что проверить следующим: проверка, которая подтвердит или ослабит гипотезу. -->
+        <div v-if="isOpen(h) && nextText(h)" class="next" data-testid="next-check">
+          <p class="next-title">{{ t('widgets.analysis.hypothesis.nextCheck') }}</p>
+          <p class="next-text ant-wrap">{{ nextText(h) }}</p>
+          <p v-if="h.next_check?.could_exclude" class="next-gain ant-wrap" data-testid="next-gain">
+            {{ t('widgets.analysis.hypothesis.couldExclude', { n: h.next_check.could_exclude, of: h.next_check.scope_size }) }}
+          </p>
+          <p v-if="h.next_check?.unlocks_text" class="next-unlocks ant-wrap">{{ h.next_check.unlocks_text }}</p>
+          <ActionButton overflow="wrap" :size="size" type="primary" :disabled="!canMeasure || busy || moment.isReplay" data-testid="request-measurement" @click="openForm(h, 'measure')" :label="t('widgets.analysis.hypothesis.requestCheck')" />
+        </div>
+
 
         <footer v-if="isOpen(h)" class="card-actions">
           <ActionButton overflow="wrap" :size="size" type="primary" secondary :disabled="!canConfirm || busy || moment.isReplay" data-testid="confirm" @click="openForm(h, 'confirm')" :label="t('decisions.cause.confirmCause')" />
@@ -427,6 +434,22 @@ p {
 .next-unlocks {
   color: var(--ant-text-2);
   font-size: var(--ant-fs-meta);
+}
+
+.support {
+  color: var(--ant-text-2);
+}
+
+.more summary {
+  color: var(--ant-accent);
+  font-size: var(--ant-fs-meta);
+  cursor: pointer;
+}
+
+.more {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ant-space-2);
 }
 
 .history summary {
