@@ -87,7 +87,9 @@ func (p *PresenceProjection) catchUp(ctx context.Context, force bool) error {
 		now = p.Now()
 	}
 	head := p.log.Head()
-	due := force || !p.loaded || (head > p.lastHead) || (head == 0 && now.Sub(p.lastRead) >= p.Every)
+	// Журнал сдвинулся (или сигнала нет) — перечитать не чаще Every: панель
+	// «Посты» меняется за Every + период опроса СКУД (FR-6: не позднее 2 с).
+	due := force || !p.loaded || ((head > p.lastHead || head == 0) && now.Sub(p.lastRead) >= p.Every)
 	if !due {
 		return nil
 	}
