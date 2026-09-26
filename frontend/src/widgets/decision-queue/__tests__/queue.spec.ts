@@ -1,12 +1,13 @@
 // Очередь «Ждут моего решения»: точки предъявления, сигналы, изолированные
 // изделия со сроком; порядок по риску или сроку считает сервер; выбор строки
-// связывает виджеты стола; работа с клавиатуры (PRD §3a, FR-55).
+// открывает запись в правом окне (Д-70); работа с клавиатуры (PRD §3a, FR-55).
 import { flushPromises, mount } from '@vue/test-utils'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createMemoryHistory, createRouter } from 'vue-router'
-import { nonconformityKeys, useDecisionFocusStore } from '@/entities/nonconformity'
+import { nonconformityKeys } from '@/entities/nonconformity'
+import { RECORD_DRAWER } from '@/shared/model/record'
 import { i18n } from '@/shared/i18n'
 import { at } from '@/entities/item/__tests__/fixtures'
 import { queueRows } from '@/entities/nonconformity/__tests__/fixtures'
@@ -51,7 +52,7 @@ describe('очередь «Ждут моего решения»', () => {
     expect(w.emitted('update:sort')?.[0]).toEqual(['deadline'])
   })
 
-  it('контейнер: порядок уходит на сервер, первая строка выбрана для карточки и паспорта', async () => {
+  it('контейнер: порядок уходит на сервер; щелчок открывает окно записи в адресе, строка выделена', async () => {
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: Infinity } } })
     const router = createRouter({ history: createMemoryHistory(), routes: [{ path: '/', component: { template: '<div />' } }] })
     await router.push('/')
@@ -62,13 +63,25 @@ describe('очередь «Ждут моего решения»', () => {
     })
     const w = mount(DecisionQueueWidget, {
       props: { widgetId: 'decision-queue', titleKey: 'desks.decisionQueue', slotId: 'queue', slice: { sort: ['deadline', 'risk'] }, density: 'comfortable' },
-      global: { plugins: [pinia, i18n, router, [VueQueryPlugin, { queryClient }]] },
+      global: {
+        plugins: [pinia, i18n, router, [VueQueryPlugin, { queryClient }]],
+        provide: { [RECORD_DRAWER as symbol]: { kinds: new Set(['nonconformity', 'item']) } },
+      },
     })
     await flushPromises()
-    expect(w.findAll('li.row')).toHaveLength(3)
-    const focus = useDecisionFocusStore()
-    expect(focus.rowId).toBe('signal:SIG-77')
-    expect(focus.ncId).toBe('NC-0142')
-    expect(focus.itemId).toBe('ENT:FL-0042')
+    const rows = () => w.findAll('li.row')
+    expect(rows()).toHaveLength(3)
+    // Ничего не открывается само: окно — только по щелчку.
+    expect(router.currentRoute.value.query.open).toBeUndefined()
+    expect(rows().some((r) => r.attributes('aria-selected') === 'true')).toBe(false)
+    await rows()[0]!.trigger('click')
+    await flushPromises()
+    expect(router.currentRoute.value.query.open).toBe('nonconformity:NC-0142')
+    expect(rows()[0]!.attributes('aria-selected')).toBe('true')
+    // Точка предъявления без несоответствия — окно изделия.
+    await rows()[2]!.trigger('click')
+    await flushPromises()
+    expect(router.currentRoute.value.query.open).toMatch(/^item:/)
+    expect(rows()[2]!.attributes('aria-selected')).toBe('true')
   })
 })

@@ -3,11 +3,13 @@
  * Хост виджета: по id из стола находит виджет в реестре, лениво грузит его и
  * передаёт WidgetProps. Неизвестный id (стол разошёлся с реестром, хотя make check
  * это ловит) — рамка в состоянии «ошибка входа», а не пустое место.
+ * `frame` — как рамка встроена (UI-6, Д-70): без повторного заголовка на вкладке
+ * стола, без обводки в окне записи.
  */
-import { computed, defineAsyncComponent, type Component } from 'vue'
+import { computed, defineAsyncComponent, provide, type Component } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { Density } from '@/shared/config/widget'
-import { WidgetFrame } from '@/shared/ui'
+import { WIDGET_FRAME_CONTEXT, WidgetFrame, type FrameContext } from '@/shared/ui'
 import { isWidgetId, widgetRegistry, type WidgetId } from './registry'
 
 const props = withDefaults(
@@ -16,9 +18,20 @@ const props = withDefaults(
     slotId: string
     slice?: Record<string, unknown>
     density?: Density
+    frame?: FrameContext
   }>(),
-  { slice: () => ({}), density: 'comfortable' },
+  { slice: () => ({}), density: 'comfortable', frame: () => ({}) },
 )
+
+// Геттеры — чтобы рамка видела смену свойства без пересоздания виджета.
+provide(WIDGET_FRAME_CONTEXT, {
+  get hideTitle() {
+    return props.frame.hideTitle
+  },
+  get plain() {
+    return props.frame.plain
+  },
+})
 
 const { t } = useI18n()
 

@@ -1,14 +1,16 @@
 <script setup lang="ts">
 /**
- * Шапка (PRD §3a): пользователь, роль, смена, статус токена, индикатор
- * целостности «по данным сервера», уведомления, поиск по номеру детали; плюс
- * момент просмотра, режим данных fixtures | live, справка и выход.
- * Имя системы — «Главный» (Д-65). Длинные имена и роли — многоточие с подсказкой.
+ * Шапка (PRD §3a, Д-70, UI-4): спокойная — поиск изделия, уведомления,
+ * целостность журнала «по данным сервера», токен, пользователь, справка, выход.
+ * Момент просмотра появляется только при просмотре прошлого (с кнопкой
+ * «Вернуться к текущему»); режим данных fixtures | live — в меню пользователя
+ * одной строкой с пояснением. Имя системы — «Главный» (Д-65). Длинные имена и
+ * роли — многоточие с подсказкой.
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { NButton, NIcon, NTooltip } from 'naive-ui'
+import { NButton, NIcon, NPopover, NTooltip } from 'naive-ui'
 import { Help, Logout } from '@vicons/tabler'
 import { useLogout, useSession } from '@/entities/session'
 import { backendModeOf } from '@/shared/api'
@@ -55,9 +57,6 @@ async function onLogout() {
 
     <div class="right">
       <MomentIndicator />
-      <span v-if="mode" class="mode" data-testid="backend-mode">
-        {{ t(mode === 'fixtures' ? 'common.modes.backendFixtures' : 'common.modes.backendLive') }}
-      </span>
       <NTooltip v-if="live === 'closed'">
         <template #trigger>
           <span class="live-off" />
@@ -68,13 +67,27 @@ async function onLogout() {
       <TokenStatus />
       <span class="divider" aria-hidden="true" />
       <NotificationsBell />
-      <div v-if="s" class="user" data-testid="header-user" :title="[s.user.name, roleTitle].join(' · ')">
-        <span class="user-name ant-ellipsis">{{ s.user.name }}</span>
-        <span class="user-role ant-ellipsis">
-          {{ roleTitle }}<template v-if="s.shift"> · {{ t('common.words.shift') }}: {{ s.shift.title }}</template>
-          <template v-if="s.workplace"> · {{ t('common.header.workplace', { workplace: s.workplace.title }) }}</template>
-        </span>
-      </div>
+      <NPopover v-if="s" trigger="click" placement="bottom-end" :style="{ maxWidth: '360px' }">
+        <template #trigger>
+          <button type="button" class="user" data-testid="header-user" :title="[s.user.name, roleTitle].join(' · ')" :aria-label="t('shell.header.userMenu')">
+            <span class="user-name ant-ellipsis">{{ s.user.name }}</span>
+            <span class="user-role ant-ellipsis">
+              {{ roleTitle }}<template v-if="s.shift"> · {{ t('common.words.shift') }}: {{ s.shift.title }}</template>
+              <template v-if="s.workplace"> · {{ t('common.header.workplace', { workplace: s.workplace.title }) }}</template>
+            </span>
+          </button>
+        </template>
+        <div class="user-menu" data-testid="user-menu">
+          <p class="menu-name ant-wrap">{{ s.user.name }}</p>
+          <p class="menu-line ant-wrap">{{ roleTitle }}</p>
+          <p v-if="s.shift" class="menu-line ant-wrap">{{ t('common.words.shift') }}: {{ s.shift.title }}</p>
+          <p v-if="s.workplace" class="menu-line ant-wrap">{{ t('common.header.workplace', { workplace: s.workplace.title }) }}</p>
+          <div v-if="mode" class="menu-mode" data-testid="backend-mode" :data-mode="mode">
+            <span class="menu-caption ant-ellipsis">{{ t('shell.header.dataMode') }}</span>
+            <p class="menu-line ant-wrap">{{ mode === 'fixtures' ? t('hints.fixturesMode') : `${t('common.modes.backendLive')} — ${t('shell.header.liveModeHint')}` }}</p>
+          </div>
+        </div>
+      </NPopover>
       <NTooltip>
         <template #trigger>
           <NButton quaternary circle :aria-label="t('common.actions.helpForRole')" @click="router.push({ name: 'help' })">
@@ -126,17 +139,6 @@ async function onLogout() {
   font-size: var(--ant-fs-sm);
 }
 
-.mode {
-  flex: none;
-  padding: 0 6px;
-  border: 1px solid var(--ant-border-strong);
-  border-radius: var(--ant-radius-sm);
-  color: var(--ant-text-2);
-  font-size: var(--ant-fs-xs);
-  line-height: 20px;
-  white-space: nowrap;
-}
-
 .divider {
   flex: none;
   width: 1px;
@@ -148,9 +150,59 @@ async function onLogout() {
   display: flex;
   flex: 0 1 auto;
   flex-direction: column;
+  align-items: flex-start;
   min-width: 0;
   max-width: 280px;
+  padding: 2px 6px;
+  border: 0;
+  border-radius: var(--ant-radius-sm);
+  background: none;
+  color: inherit;
+  font: inherit;
   line-height: var(--ant-lh-tight);
+  text-align: left;
+  cursor: pointer;
+}
+
+.user > span {
+  max-width: 100%;
+}
+
+.user:hover {
+  background: var(--ant-surface-hover);
+}
+
+.user-menu {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ant-space-1);
+  font-size: var(--ant-fs-sm);
+}
+
+.user-menu p {
+  margin: 0;
+}
+
+.menu-name {
+  font-weight: var(--ant-fw-bold);
+}
+
+.menu-line {
+  color: var(--ant-text-2);
+}
+
+.menu-mode {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: var(--ant-space-2);
+  padding-top: var(--ant-space-2);
+  border-top: 1px solid var(--ant-border);
+}
+
+.menu-caption {
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-xs);
 }
 
 .user-name {

@@ -130,19 +130,17 @@ describe('вид паспорта', () => {
 })
 
 describe('контейнер паспорта на кэше запроса (AD-21)', () => {
-  it('изделие из выбора в очереди, состояние рамки — по оси качества, метка режима', async () => {
+  it('изделие из среза (окно записи), состояние рамки — по оси качества, режим данных', async () => {
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: Infinity } } })
     const router = createRouter({ history: createMemoryHistory(), routes: [{ path: '/', component: { template: '<div />' } }] })
     await router.push('/')
-    const { useDecisionFocusStore } = await import('@/entities/nonconformity')
-    useDecisionFocusStore().select({ kind: 'signal', object_id: 'SIG-77', item_id: 'ENT:FL-0042', nc_id: 'NC-0142' })
     queryClient.setQueryData(itemKeys.one('ENT:FL-0042', 'passport', { axis: 'occurred' }), {
       data: flangePassport(),
       status: 200,
       headers: new Headers({ 'Ant-Backend': 'fixtures' }),
     })
     const w = mount(ItemPassportWidget, {
-      props: { widgetId: 'item-passport', titleKey: 'desks.passport', slotId: 'passport', slice: { view: 'compact' }, density: 'comfortable' },
+      props: { widgetId: 'item-passport', titleKey: 'desks.passport', slotId: 'passport', slice: { item_id: 'ENT:FL-0042', view: 'compact' }, density: 'comfortable' },
       global: { plugins: [pinia, i18n, router, [VueQueryPlugin, { queryClient }]] },
     })
     await flushPromises()

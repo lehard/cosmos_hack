@@ -5,6 +5,7 @@
  */
 import { computed } from 'vue'
 import { LAYOUT_AREAS, type Density, type DeskTab } from '@/entities/desk'
+import { isWidgetId, widgetRegistry } from '@/widgets/registry'
 import WidgetHost from '@/widgets/WidgetHost.vue'
 
 const props = defineProps<{ tab: DeskTab; density: Density }>()
@@ -20,6 +21,9 @@ const areas = computed(() => {
 })
 
 const tabDensity = computed<Density>(() => props.tab.density ?? props.density)
+
+/** Заголовок панели совпадает с заголовком страницы или вкладки — второй раз не пишем (UI-6). */
+const repeatsTitle = (widget: string): boolean => isWidgetId(widget) && widgetRegistry[widget].titleKey === props.tab.title_key
 </script>
 
 <template>
@@ -32,6 +36,7 @@ const tabDensity = computed<Density>(() => props.tab.density ?? props.density)
         :slot-id="slot.id"
         :slice="slot.slice ?? {}"
         :density="slot.density ?? tabDensity"
+        :frame="{ hideTitle: repeatsTitle(slot.widget) }"
         :data-slot="slot.id"
       />
     </div>

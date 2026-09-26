@@ -7,9 +7,14 @@
  * маршрут с именем вида сущности, если его уже зарегистрировал эпик-владелец
  * экрана (например, `nonconformity` — эпик 11). Нет маршрута — ссылка неактивна,
  * а не ведёт в пустоту.
+ *
+ * Д-70 (UI-7): если оболочка поставила правое окно записи и у него есть
+ * содержимое для этого вида, ссылка открывает окно (`?open=‹тип›:‹id›`) поверх
+ * текущего стола — пользователь не теряет список. Страница целиком — `openPage`.
  */
 import { useRouter, type RouteLocationRaw } from 'vue-router'
 import type { DrillRef } from '@/shared/model/drill'
+import { useRecordLink } from '@/shared/model/record'
 
 export type { DrillRef }
 
@@ -23,16 +28,22 @@ export function drillTarget(ref: DrillRef, hasRoute: (name: string) => boolean):
 /** Переходы к деталям для виджетов. */
 export function useDrillDown() {
   const router = useRouter()
+  const record = useRecordLink()
   const target = (ref: DrillRef) => drillTarget(ref, (name) => router.hasRoute(name))
+  /** Перейти на страницу; false — экрана ещё нет. */
+  function openPage(ref: DrillRef): boolean {
+    const to = target(ref)
+    if (!to) return false
+    void router.push(to)
+    return true
+  }
   return {
-    /** Есть ли экран для ссылки. */
-    canOpen: (ref: DrillRef): boolean => target(ref) !== null,
-    /** Перейти; false — экрана ещё нет. */
+    /** Есть ли окно записи или экран для ссылки. */
+    canOpen: (ref: DrillRef): boolean => record.canOpen(ref) || target(ref) !== null,
+    /** Открыть: окно записи справа, иначе страницу; false — показать нечем. */
     open(ref: DrillRef): boolean {
-      const to = target(ref)
-      if (!to) return false
-      void router.push(to)
-      return true
+      return record.open(ref) || openPage(ref)
     },
+    openPage,
   }
 }
