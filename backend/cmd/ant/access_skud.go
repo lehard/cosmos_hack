@@ -3,9 +3,12 @@ package main
 import (
 	"context"
 	"errors"
+	"io/fs"
 	"slices"
 	"strings"
 	"time"
+
+	"go.yaml.in/yaml/v3"
 
 	accessapp "ant/internal/application/access"
 	documentsapp "ant/internal/application/documents"
@@ -66,20 +69,73 @@ func (b *accessBundle) stampRegistry() documentsapp.StampRegistry {
 // «по графику должен быть, ключа нет»: смены, идущие в момент at.
 type referenceShiftWindows struct{ src *referenceapp.JournalSource }
 
-// ShiftsAt — смены справочника, идущие в момент at.
+// ShiftsAt — смены справочника, идущие в момент at; смен в справочнике нет
+// (мастер их ещё не завёл) — шаблоны смен нормативного слоя
+// (normative/reference/flange/shifts.yaml).
 func (r referenceShiftWindows) ShiftsAt(ctx context.Context, at time.Time) ([]accessapp.ShiftWindow, error) {
-	if r.src == nil {
-		return nil, nil
+	var out []accessapp.ShiftWindow
+	if r.src != nil {
+		b, err := r.src.Book(ctx, 0)
+		if err != nil {
+			return nil, err
+		}
+		for _, s := range b.ShiftsBetween(at, at.Add(time.Nanosecond), "") {
+			out = append(out, accessapp.ShiftWindow{ID: s.ShiftID, Start: s.From, End: s.To})
+		}
 	}
-	b, err := r.src.Book(ctx, 0)
+	if len(out) > 0 {
+		return out, nil
+	}
+	return patternShiftsAt(at), nil
+}
+
+// patternShiftsAt — смены шаблонов нормативного слоя, идущие в момент at
+// (время шаблона — в часовом поясе файла; смена через полночь — до утра).
+func patternShiftsAt(at time.Time) []accessapp.ShiftWindow {
+	b, err := fs.ReadFile(world.Inputs(), "normative/reference/flange/shifts.yaml")
 	if err != nil {
-		return nil, err
+		return nil
+	}
+	var f struct {
+		TimeZone string `yaml:"time_zone"`
+		Patterns []struct {
+			ID     string `yaml:"id"`
+			Starts string `yaml:"starts"`
+			Ends   string `yaml:"ends"`
+		} `yaml:"patterns"`
+	}
+	if yaml.Unmarshal(b, &f) != nil {
+		return nil
+	}
+	loc, err := time.LoadLocation(f.TimeZone)
+	if err != nil {
+		loc = time.UTC
+	}
+	clock := func(day time.Time, hm string) (time.Time, bool) {
+		t, err := time.Parse("15:04", hm)
+		if err != nil {
+			return time.Time{}, false
+		}
+		return time.Date(day.Year(), day.Month(), day.Day(), t.Hour(), t.Minute(), 0, 0, loc), true
 	}
 	var out []accessapp.ShiftWindow
-	for _, s := range b.ShiftsBetween(at, at.Add(time.Nanosecond), "") {
-		out = append(out, accessapp.ShiftWindow{ID: s.ShiftID, Start: s.From, End: s.To})
+	local := at.In(loc)
+	for _, p := range f.Patterns {
+		for _, day := range []time.Time{local.AddDate(0, 0, -1), local} {
+			from, ok1 := clock(day, p.Starts)
+			to, ok2 := clock(day, p.Ends)
+			if !ok1 || !ok2 {
+				continue
+			}
+			if !to.After(from) {
+				to = to.AddDate(0, 0, 1)
+			}
+			if !at.Before(from) && at.Before(to) {
+				out = append(out, accessapp.ShiftWindow{ID: p.ID, Start: from, End: to})
+			}
+		}
 	}
-	return out, nil
+	return out
 }
 
 // skudProbe — «проверить соединение» со СКУД (эпик 48, AD-47): сверка
