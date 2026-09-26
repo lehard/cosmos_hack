@@ -385,13 +385,16 @@ func (t *Tamperer) UpdateAndRechain(ctx context.Context, target string, change m
 // ProjectionUpdate — атака 3: правка проекции в обход системы, журнал не
 // тронут. Без change — сдерживание изделия «заблокировано» → «разрешено»
 // (проекция nonconformity.item); изделие пусто — первое заблокированное.
-func (t *Tamperer) ProjectionUpdate(ctx context.Context, itemID string, change map[string]any) (Result, error) {
+func (t *Tamperer) ProjectionUpdate(ctx context.Context, itemID string, change map[string]any, exclude ...string) (Result, error) {
 	if err := t.allowed(); err != nil {
 		return Result{}, err
 	}
 	if itemID == "" {
+		if exclude == nil {
+			exclude = []string{}
+		}
 		err := t.Conn.QueryRow(ctx, `SELECT item_id FROM engine.projections WHERE name = 'nonconformity.item'
-AND value->>'containment' IN ('item_hold', 'lot_hold') ORDER BY item_id LIMIT 1`).Scan(&itemID)
+AND value->>'containment' IN ('item_hold', 'lot_hold') ORDER BY (item_id = ANY($1)), item_id LIMIT 1`, exclude).Scan(&itemID)
 		if err != nil {
 			return Result{}, fmt.Errorf("tamper: заблокированного изделия в проекции сдерживания нет: %w", err)
 		}
@@ -424,23 +427,62 @@ WHERE name = 'nonconformity.item' AND key = $1`, itemID); err != nil {
 	return res, nil
 }
 
-// Targets — n последних фактов изделий (результаты контроля первыми), от
-// новых к старым: make tamper бьёт атакой 2 по более ранней записи, атакой 1
+// Targets — n записей для атак 1 и 2 от новых к старым: результаты контроля
+// «признаки дефекта» (правка «брак → годно», UJ-5) первыми, затем прочие
+// факты изделий. make tamper бьёт атакой 2 по более ранней записи, атакой 1
 // — по более поздней (пересчёт цепочки иначе «залечил» бы звено атаки 1).
 func (t *Tamperer) Targets(ctx context.Context, n int) ([]string, error) {
 	rows, err := t.Conn.Query(ctx, `SELECT seq FROM journal.entries WHERE chain = 'main' AND item_id IS NOT NULL AND entry_kind = 'fact'
-ORDER BY (event_type = 'inspection.result.recorded') DESC, seq DESC LIMIT $1`, n)
+ORDER BY (event_type = 'inspection.result.recorded') DESC, seq DESC LIMIT 300`)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-	var out []string
+	var seqs []int64
 	for rows.Next() {
 		var s int64
 		if err := rows.Scan(&s); err != nil {
+			rows.Close()
 			return nil, err
 		}
-		out = append(out, "seq:"+strconv.FormatInt(s, 10))
+		seqs = append(seqs, s)
 	}
-	return out, rows.Err()
+	rows.Close()
+	var defects, other []string
+	items := map[string]bool{}
+	err = pgx.BeginTxFunc(ctx, t.Conn, pgx.TxOptions{AccessMode: pgx.ReadOnly}, func(tx pgx.Tx) error {
+		for _, s := range seqs {
+			r, err := t.read(ctx, tx, s)
+			if err != nil {
+				return err
+			}
+			ref := "seq:" + strconv.FormatInt(s, 10)
+			_, env, _, err := t.block(ctx, tx, r)
+			var e jc.JournalEntry
+			_ = json.Unmarshal([]byte(r.header), &e)
+			item := ""
+			if e.ItemID != nil {
+				item = *e.ItemID
+			}
+			if err == nil && strings.Contains(string(decodePayload(env)), `"outcome":"defect_indicated"`) && !items[item] {
+				items[item] = true
+				defects = append(defects, ref)
+			} else {
+				other = append(other, ref)
+			}
+		}
+		return nil
+	})
+	out := append(defects, other...)
+	return out[:min(n, len(out))], err
+}
+
+func decodePayload(env []byte) []byte {
+	var d struct {
+		Payload string `json:"payload"`
+	}
+	if json.Unmarshal(env, &d) != nil {
+		return nil
+	}
+	b, _ := base64.StdEncoding.DecodeString(d.Payload)
+	return b
 }

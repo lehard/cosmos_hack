@@ -139,6 +139,7 @@ func attacks(ctx context.Context, cfg *config.Config, which, target, item, chang
 			t1, t2 = ts[0], ts[1]
 		}
 	}
+	var touched []string
 	for _, a := range list {
 		var r storagesecurity.Result
 		var err error
@@ -148,12 +149,16 @@ func attacks(ctx context.Context, cfg *config.Config, which, target, item, chang
 		case "2":
 			r, err = t.UpdateAndRechain(ctx, t2, ch)
 		case "3":
-			r, err = t.ProjectionUpdate(ctx, item, ch)
+			// Другое изделие, чем у атак 1 и 2: каждая находка — своя.
+			r, err = t.ProjectionUpdate(ctx, item, ch, touched...)
 		default:
 			return fmt.Errorf("атака %q: допустимы 1, 2, 3, all", a)
 		}
 		if err != nil {
 			return fmt.Errorf("атака %s: %w", a, err)
+		}
+		if r.ItemID != "" {
+			touched = append(touched, r.ItemID)
 		}
 		report(out, r)
 	}

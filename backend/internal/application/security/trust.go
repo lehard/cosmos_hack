@@ -19,7 +19,8 @@ import (
 // HeadsSender — передача голов обеих цепочек хранителю (AD-8, FR-72): раз в
 // N секунд — головы main и ca и звенья от последней принятой хранителем
 // головы. Отказ хранителя (звенья не сходятся — цепочку переписали; откат) —
-// тревога security.keeper.alert в шине безопасности. Пустая передача (новых
+// тревога хранителя, которую IntegrityPoller пишет в шину безопасности
+// (security.keeper.alert). Пустая передача (новых
 // записей нет) — сигнал жизни: хранитель поднимает тревогу сам, если голов
 // нет дольше 2N секунд.
 type HeadsSender struct {
@@ -86,10 +87,12 @@ func (h *HeadsSender) Once(ctx context.Context) error {
 		_, err = h.Keeper.SubmitHeads(ctx, sub)
 		var rej *RejectedError
 		if errors.As(err, &rej) {
-			if rej.Detail != h.lastReject {
-				h.alert(ctx, rej, sub)
-				h.lastReject = rej.Detail
+			// Тревогу поднимает сам хранитель (AD-8); в журнал её пишет
+			// IntegrityPoller — здесь только журнал процесса, без повторов.
+			if rej.Detail != h.lastReject && h.Log != nil {
+				h.Log.Error("хранитель отверг головы — цепочку переписали или откатили", "code", rej.Code, "detail", rej.Detail)
 			}
+			h.lastReject = rej.Detail
 			return err
 		}
 		h.lastReject = ""
@@ -98,29 +101,6 @@ func (h *HeadsSender) Once(ctx context.Context) error {
 		}
 	}
 	return nil
-}
-
-// alert — тревога хранителя в шину безопасности (отказ принять головы).
-func (h *HeadsSender) alert(ctx context.Context, rej *RejectedError, sub HeadsSubmission) {
-	alert := "fork_attempt"
-	if rej.Code == "rollback_attempt" {
-		alert = rej.Code
-	}
-	chain := "main"
-	var seq int64
-	for _, hd := range sub.Heads {
-		if hd.Chain == chain {
-			seq = hd.Seq
-		}
-	}
-	if strings.Contains(rej.Detail, "цепочка ca") {
-		chain = "ca"
-	}
-	if _, err := h.Emit.Emit(ctx, Out{Type: catalog.SecurityKeeperAlert, OccurredAt: time.Now(), Data: map[string]any{
-		"alert": alert, "chain": chain, "last_seq": seq, "detail": clip(rej.Detail, 4000),
-	}}); err != nil && h.Log != nil {
-		h.Log.Error("хранитель: тревога не записана", "err", err)
-	}
 }
 
 // Run — передача раз в interval до отмены ctx.

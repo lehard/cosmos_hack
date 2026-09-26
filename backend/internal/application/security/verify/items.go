@@ -245,7 +245,7 @@ func (v *run) mismatch(c *check, id, name string, want, got []byte) {
 			break
 		}
 	}
-	c.reject("projection_mismatch", fmt.Sprintf("проекция расходится с журналом: «%s» изделия %s%s", name, id, field), "", 0, v.lastCA("item:"+id, nil))
+	c.reject("projection_mismatch", fmt.Sprintf("проекция расходится с журналом: «%s» изделия %s%s", name, id, field), "", 0, "")
 }
 
 func short(b []byte) string {

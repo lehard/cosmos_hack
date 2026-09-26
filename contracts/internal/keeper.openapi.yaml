@@ -83,6 +83,19 @@ paths:
           content:
             application/problem+json:
               schema: {$ref: '../problem.schema.json'}
+    get:
+      operationId: keeper.reports.list
+      summary: Отчёты верификатора, новые сверху
+      parameters:
+        - {name: limit, in: query, required: false, schema: {type: integer, minimum: 1, maximum: 1000}, description: Сколько выдать}
+      responses:
+        '200':
+          description: Пакеты DSSE отчётов
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '../crypto/dsse-envelope.schema.json'}
   /v1/verifier-reports/latest:
     get:
       operationId: keeper.reports.latest
@@ -117,20 +130,6 @@ paths:
           content:
             application/problem+json:
               schema: {$ref: '../problem.schema.json'}
-  /v1/verifier-reports:
-    get:
-      operationId: keeper.reports.list
-      summary: Отчёты верификатора, новые сверху
-      parameters:
-        - {name: limit, in: query, required: false, schema: {type: integer, minimum: 1, maximum: 1000}, description: Сколько выдать}
-      responses:
-        '200':
-          description: Пакеты DSSE отчётов
-          content:
-            application/json:
-              schema:
-                type: array
-                items: {$ref: '../crypto/dsse-envelope.schema.json'}
   /v1/links:
     get:
       operationId: keeper.links.list

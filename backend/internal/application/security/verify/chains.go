@@ -262,6 +262,9 @@ func (v *run) checkpoints() {
 		return es[i].link, true
 	}
 	prevDigest := ""
+	// Расхождение головы с точкой повторяется во всех точках после
+	// переписанной записи: в отчёт — первая точка и число остальных.
+	headMismatch := map[string]int{}
 	for i, cp := range v.in.Checkpoints {
 		c.checked++
 		p := cp.Payload
@@ -283,9 +286,16 @@ func (v *run) checkpoints() {
 			case !ok:
 				c.reject("checkpoint_mismatch.rollback", fmt.Sprintf("контрольная точка №%d (время хранителя %s): записи seq %d цепочки %s в журнале нет — записи удалены (откат)", no, p.KeeperTime, h.Seq, h.Chain), string(h.Chain), int64(h.Seq), "")
 			case l != h.Link:
-				c.reject("checkpoint_mismatch", fmt.Sprintf("голова цепочки %s seq %d не совпадает с контрольной точкой №%d хранителя (время хранителя %s) — цепочку переписали после точки",
-					h.Chain, h.Seq, no, p.KeeperTime), string(h.Chain), int64(h.Seq), "")
+				if headMismatch[string(h.Chain)]++; headMismatch[string(h.Chain)] == 1 {
+					c.reject("checkpoint_mismatch", fmt.Sprintf("голова цепочки %s seq %d не совпадает с контрольной точкой №%d хранителя (время хранителя %s) — цепочку переписали после точки",
+						h.Chain, h.Seq, no, p.KeeperTime), string(h.Chain), int64(h.Seq), "")
+				}
 			}
+		}
+	}
+	for _, chain := range []string{"main", "ca"} {
+		if n := headMismatch[chain]; n > 1 {
+			c.reject("checkpoint_mismatch.more", fmt.Sprintf("цепочка %s: не совпадает ещё %d контрольных точек после первой", chain, n-1), chain, 0, "")
 		}
 	}
 	// Звенья, принятые хранителем: место переписанной записи — точно.
