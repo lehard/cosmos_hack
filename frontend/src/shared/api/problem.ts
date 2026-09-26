@@ -28,6 +28,8 @@ export interface ProblemMessage {
   params: Record<string, string>
   /** Заголовок из ответа — если текста по ключу нет. */
   fallback?: string
+  /** Пояснение сервера (problem.detail) — человекочитаемое, важнее общего заголовка. */
+  detail?: string
 }
 
 /**
@@ -40,5 +42,5 @@ export function problemMessage(err: unknown): ProblemMessage {
     return { key: isNetworkError(err) ? 'errors.network' : 'errors.loadFailed', params: {} }
   }
   const entry = (errorCatalog as Record<string, { uiKey: string | null } | undefined>)[problem.code]
-  return { key: entry?.uiKey ?? 'errors.generic', params: problem.params ?? {}, fallback: problem.title }
+  return { key: entry?.uiKey ?? 'errors.generic', params: problem.params ?? {}, fallback: problem.title, detail: problem.detail }
 }
