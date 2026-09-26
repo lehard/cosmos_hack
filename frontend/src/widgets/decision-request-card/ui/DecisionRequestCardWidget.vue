@@ -9,11 +9,13 @@
  * заглушке `api.not_implemented` (entities/document). Подпись: окно уровня 2 →
  * агент токена через порт подписи; без агента — бумага с QR (FR-139): печать
  * здесь; если бумажная подпись этапа ждёт заверения текущим пользователем —
- * загрузка скана и заверение (заверитель ≠ подписант).
+ * загрузка скана и заверение (заверитель ≠ подписант). Паспорт изделия —
+ * правым окном записи (Д-70), не панелью сбоку.
  */
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { paperAllowed, useAttestPaper, useDecisionRequests, useDeclineDocument, usePrintPaper, useSignDocument, type SummaryField } from '@/entities/document'
 import { useSession } from '@/entities/session'
+import { useDrillDown } from '@/features/drill-down'
 import { PaperSignPanel, SignDialog, payloadTypeOf, useSigningPort } from '@/features/sign-decision'
 import { backendModeOf } from '@/shared/api/response'
 import { useProblemText } from '@/shared/i18n/problem'
@@ -26,6 +28,7 @@ defineProps<WidgetProps>()
 const problemText = useProblemText()
 const moment = useMomentStore()
 const port = useSigningPort()
+const drill = useDrillDown()
 
 const query = useDecisionRequests()
 const list = computed(() => query.data.value?.data ?? null)
@@ -141,6 +144,7 @@ function sendDecline(comment: string): void {
       :density="density"
       @sign="dialog = 'confirm'"
       @decline="sendDecline"
+      @open-item="(id) => drill.open({ entity: 'item', id })"
     />
     <PaperSignPanel
       v-if="request && attestation"

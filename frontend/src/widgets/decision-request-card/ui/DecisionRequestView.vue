@@ -35,6 +35,8 @@ const emit = defineEmits<{
   sign: []
   /** Не согласовать — с замечанием. */
   decline: [comment: string]
+  /** Открыть паспорт изделия (Д-70: правым окном). */
+  'open-item': [itemId: string]
 }>()
 
 const { t, te, d } = useI18n()
@@ -83,6 +85,7 @@ const comment = ref('')
         <template v-if="request.proposal.nc_number"> · {{ t('ncCard.number', { number: request.proposal.nc_number }) }}</template>
         · {{ request.document.template_ref }}
       </p>
+      <ActionButton text type="primary" :size="size" data-testid="open-item" :label="t('common.actions.openPassport')" @click="emit('open-item', request.proposal.item_id)" />
       <p v-if="request.proposal.kind === 'concession' || request.proposal.code === 'use_as_is' || request.proposal.code === 'repair'" class="muted" data-testid="concession-note">
         {{ t('decisions.concession.resultStatus') }}
       </p>

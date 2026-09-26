@@ -1,22 +1,23 @@
 // Путь контролёра на столе от сигнала до подписанного решения (эпик 11, «Что
-// ожидаем в итоге»): очередь → карточка → панель решений → окно подписи
-// уровня 2 → команда через сгенерированный клиент → квитанция с номером
-// критического действия. Сервер подменён ответами в форме контракта (режим
-// fixtures); интерфейс ходит только через API (FR-150).
-import { defineComponent, h, ref } from 'vue'
+// ожидаем в итоге»): очередь → щелчок по строке → правое окно несоответствия
+// (Д-70: карточка, внизу — панель решений) → окно подписи уровня 2 → команда
+// через сгенерированный клиент → квитанция с номером критического действия.
+// Сервер подменён ответами в форме контракта (режим fixtures); интерфейс ходит
+// только через API (FR-150). Окно записи выводится в body — ищем через document.
+import { defineComponent, h, provide, ref } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { createPinia, setActivePinia } from 'pinia'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { provideSigningPort, type SignRequest } from '@/features/sign-decision'
 import { i18n } from '@/shared/i18n'
+import { RECORD_DRAWER } from '@/shared/model/record'
+import RecordDrawerHost from '@/app/record/RecordDrawerHost.vue'
+import { RECORD_KINDS, recordKinds } from '@/app/record/registry'
 import { flangePassport } from '@/entities/item/__tests__/fixtures'
 import { ncCard, queueRows } from '@/entities/nonconformity/__tests__/fixtures'
 import DecisionQueueWidget from '@/widgets/decision-queue/ui/DecisionQueueWidget.vue'
-import ItemPassportWidget from '@/widgets/item-passport/ui/ItemPassportWidget.vue'
-import NcCardWidget from '@/widgets/nc-card/ui/NcCardWidget.vue'
-import DecisionPanelWidget from '../ui/DecisionPanelWidget.vue'
 
 const session = {
   demo: true,
@@ -48,15 +49,32 @@ const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
   return new Response(JSON.stringify({ code: 'api.not_found', title: 'нет', status: 404 }), { status: 404 })
 })
 
+/** Стол контролёра, как его собирает оболочка: очередь и окно записи. */
 const Desk = defineComponent({
-  setup: () => () =>
-    h('div', [
-      h(DecisionQueueWidget, { widgetId: 'decision-queue', titleKey: 'desks.decisionQueue', slotId: 'queue', slice: { sort: ['risk', 'deadline'] }, density: 'comfortable' }),
-      h(NcCardWidget, { widgetId: 'nc-card', titleKey: 'desks.ncCard', slotId: 'card', slice: { view: 'evidence' }, density: 'comfortable' }),
-      h(DecisionPanelWidget, { widgetId: 'decision-panel', titleKey: 'decisions.panelTitle', slotId: 'decision', slice: {}, density: 'comfortable' }),
-      h(ItemPassportWidget, { widgetId: 'item-passport', titleKey: 'desks.passport', slotId: 'passport', slice: { view: 'compact' }, density: 'comfortable' }),
-    ]),
+  setup() {
+    provide(RECORD_DRAWER, { kinds: RECORD_KINDS })
+    return () =>
+      h('div', [
+        h(DecisionQueueWidget, { widgetId: 'decision-queue', titleKey: 'desks.decisionQueue', slotId: 'queue', slice: { sort: ['risk', 'deadline'] }, density: 'comfortable' }),
+        h(RecordDrawerHost),
+      ])
+  },
 })
+
+const $ = <T extends Element = HTMLElement>(sel: string) => document.querySelector<T>(sel)
+const has = (sel: string) => expect($(sel)).not.toBeNull()
+// Содержимое окна (виджеты) грузится лениво — первая загрузка дольше секунды.
+const until = (check: () => void) => vi.waitFor(check, { timeout: 5000 })
+
+// Первый импорт содержимого окна (с виджетами) в тестах долгий — грузим заранее.
+beforeAll(async () => {
+  await Promise.all([
+    ...Object.values(recordKinds).map((k) => k.load()),
+    import('@/widgets/nc-card'),
+    import('@/widgets/decision-panel'),
+    import('@/widgets/item-passport'),
+  ])
+}, 60_000)
 
 beforeEach(() => {
   setActivePinia(createPinia())
@@ -81,47 +99,67 @@ async function mountDesk(root: ReturnType<typeof defineComponent> = Desk) {
     ],
   })
   await router.push('/')
-  return mount(root, { attachTo: document.body, global: { plugins: [pinia, i18n, router, [VueQueryPlugin, { queryClient }]] } })
+  const w = mount(root, { attachTo: document.body, global: { plugins: [pinia, i18n, router, [VueQueryPlugin, { queryClient }]] } })
+  return { w, router }
+}
+
+/** Щелчок по первой строке очереди — окно несоответствия с панелью решений внизу. */
+async function openFirstRow(ctx: Awaited<ReturnType<typeof mountDesk>>): Promise<void> {
+  await until(() => expect(ctx.w.findAll('li.row').length).toBeGreaterThan(0))
+  await ctx.w.findAll('li.row')[0]!.trigger('click')
+  await flushPromises()
+  expect(ctx.router.currentRoute.value.query.open).toBe('nonconformity:NC-0142')
+  await until(() => has('[data-record="nonconformity"] [data-testid="record-drawer-actions"]'))
+}
+
+/** Написать причину в панели решений окна. */
+function typeReason(text: string): void {
+  const area = $<HTMLTextAreaElement>('[data-testid="record-drawer-actions"] [data-testid="reason"] textarea')!
+  area.value = text
+  area.dispatchEvent(new Event('input'))
 }
 
 /** Выбрать действие, написать причину и открыть окно подписи. */
-async function decide(w: Awaited<ReturnType<typeof mountDesk>>, action: string, reason: string): Promise<HTMLElement> {
-  await vi.waitFor(() => expect(w.find(`[data-action="${action}"]`).exists()).toBe(true))
-  await w.find(`[data-action="${action}"]`).trigger('click')
-  await w.find('[data-testid="reason"] textarea').setValue(reason)
-  await vi.waitFor(() => expect(w.find('[data-testid="sign"]').attributes('disabled')).toBeUndefined())
-  await w.find('[data-testid="sign"]').trigger('click')
+async function decide(action: string, reason: string): Promise<HTMLElement> {
+  await until(() => has(`[data-action="${action}"]`))
+  $(`[data-action="${action}"]`)!.click()
   await flushPromises()
-  return document.querySelector('[data-testid="sign-confirm"]') as HTMLElement
+  typeReason(reason)
+  await until(() => expect($('[data-testid="sign"]')!.hasAttribute('disabled')).toBe(false))
+  $('[data-testid="sign"]')!.click()
+  await flushPromises()
+  return $('[data-testid="sign-confirm"]') as HTMLElement
 }
 
 describe('путь контролёра от сигнала до подписанного решения', () => {
   it('очередь → карточка → отклонить сигнал с причиной → окно уровня 2 → квитанция', async () => {
-    const w = await mountDesk()
+    const ctx = await mountDesk()
 
-    // Очередь пришла, первая строка выбрана: карточка, панель и паспорт — того же изделия.
-    await vi.waitFor(() => expect(w.find('[data-testid="nc-card"]').exists()).toBe(true))
-    expect(w.find('[data-widget="nc-card"]').attributes('data-mode')).toBe('fixtures')
-    await vi.waitFor(() => expect(w.find('[data-testid="item-passport"]').exists()).toBe(true))
-    expect(w.find('[data-testid="passport-head"]').text()).toContain('FL-0042')
+    // Ничего не открыто само; щелчок по строке — окно несоответствия: карточка
+    // того же изделия, внизу — панель решений.
+    expect($('[data-record]')).toBeNull()
+    await openFirstRow(ctx)
+    await until(() => has('[data-record="nonconformity"] [data-testid="nc-card"]'))
+    expect($('[data-widget="nc-card"]')!.getAttribute('data-mode')).toBe('fixtures')
+    expect($('[data-testid="record-drawer-head"]')!.textContent).toContain('НС-0142')
 
     // Отклонить сигнал: без причины подписать нельзя, с причиной — окно подписи.
-    await vi.waitFor(() => expect(w.find('[data-action="reject_signal"]').exists()).toBe(true))
-    await w.find('[data-action="reject_signal"]').trigger('click')
-    await vi.waitFor(() => expect(w.find('[data-testid="sign"]').exists()).toBe(true))
-    expect(w.find('[data-testid="sign"]').attributes('disabled')).toBeDefined()
-    await w.find('[data-testid="reason"] textarea').setValue('Блик на кромке, на повторном снимке признаков нет')
-    await vi.waitFor(() => expect(w.find('[data-testid="sign"]').attributes('disabled')).toBeUndefined())
-    await w.find('[data-testid="sign"]').trigger('click')
+    await until(() => has('[data-testid="record-drawer-actions"] [data-action="reject_signal"]'))
+    $('[data-action="reject_signal"]')!.click()
+    await until(() => has('[data-testid="sign"]'))
+    expect($('[data-testid="sign"]')!.hasAttribute('disabled')).toBe(true)
+    typeReason('Блик на кромке, на повторном снимке признаков нет')
+    await until(() => expect($('[data-testid="sign"]')!.hasAttribute('disabled')).toBe(false))
+    $('[data-testid="sign"]')!.click()
     await flushPromises()
 
     // Окно уровня 2: сводка решения; агента нет, демо-профиль — подтверждение без агента.
-    const dialog = document.querySelector('[data-testid="sign-confirm"]') as HTMLElement
+    const dialog = $('[data-testid="sign-confirm"]') as HTMLElement
     expect(dialog).not.toBeNull()
     expect(dialog.textContent).toContain('Отклонить сигнал — изделие продолжает маршрут')
     expect(dialog.textContent).toContain('НС-0142')
     ;(dialog.querySelector('[data-testid="confirm-unsigned"]') as HTMLButtonElement).click()
-    await vi.waitFor(() => expect(w.find('[data-testid="receipt"]').exists()).toBe(true))
+    await until(() => has('[data-testid="receipt"]'))
 
     // Команда ушла сгенерированным клиентом с полями контракта.
     const post = fetchMock.mock.calls.find(([, init]) => init?.method === 'POST')!
@@ -130,8 +168,8 @@ describe('путь контролёра от сигнала до подписа�
     expect(body).toMatchObject({ basis_seq: 1260, policy_seq: 40, workplace_id: 'WP-QC-1', signal_ids: ['SIG-77'], reason: { text: 'Блик на кромке, на повторном снимке признаков нет' } })
     expect(body.command_id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-7/)
     expect(body.signature).toBeUndefined()
-    expect(w.find('[data-testid="receipt"]').text()).toBe('Решение записано в журнал: запись № 1270 · CA-312')
-    w.unmount()
+    expect($('[data-testid="receipt"]')!.textContent!.trim()).toBe('Решение записано в журнал: запись № 1270 · CA-312')
+    ctx.w.unmount()
   })
 
   it('агент токена подписал уровнем 2 — команда уходит с конвертом DSSE (AD-13, AD-14)', async () => {
@@ -149,15 +187,16 @@ describe('путь контролёра от сигнала до подписа�
         return () => h(Desk)
       },
     })
-    const w = await mountDesk(WithAgent)
-    const dialog = await decide(w, 'confirm_nc', 'Пора в шве подтверждена повторным снимком')
+    const ctx = await mountDesk(WithAgent)
+    await openFirstRow(ctx)
+    const dialog = await decide('confirm_nc', 'Пора в шве подтверждена повторным снимком')
     expect(dialog.querySelector('[data-testid="confirm-unsigned"]')).toBeNull()
     ;(dialog.querySelector('[data-testid="confirm-token"]') as HTMLButtonElement).click()
-    await vi.waitFor(() => expect(w.find('[data-testid="receipt"]').exists()).toBe(true))
+    await until(() => has('[data-testid="receipt"]'))
     expect(requests[0]).toMatchObject({ level: 2, payload_type: 'application/vnd.ant.event+json; v=1', event_type: 'decision.nonconformity.confirmed' })
     const post = fetchMock.mock.calls.find(([, init]) => init?.method === 'POST')!
     expect(post[0]).toBe('/api/v1/nonconformities/NC-0142/confirm')
     expect(JSON.parse(String(post[1]!.body))).toMatchObject({ severity: 'major', signal_ids: ['SIG-77'], signature: envelope })
-    w.unmount()
+    ctx.w.unmount()
   })
 })
