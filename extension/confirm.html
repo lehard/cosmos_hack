@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <title>Главный — подтверждение подписи</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="brand">
+      <img src="icon128.png" alt="" />
+      <div>
+        <div class="name">Главный — подпись</div>
+        <div class="sub">Окно расширения: сводку посчитал пакет подписи, а не страница</div>
+      </div>
+    </header>
+    <main>
+      <section class="card">
+        <h2 id="title">Проверьте перед подписью</h2>
+        <p class="muted" id="origin"></p>
+        <dl class="summary" id="summary" data-testid="summary"></dl>
+      </section>
+      <section class="card">
+        <div class="row"><span class="muted">Ключ:</span> <span id="key"></span></div>
+        <p class="warn" id="storage-note">
+          Ключ в браузере — умышленно сниженный порог безопасности ради работы с любого устройства. Система рассчитана на
+          физические ключи (агент токена).
+        </p>
+        <div id="pin-box" hidden>
+          <label for="pin">PIN ключа</label>
+          <input id="pin" type="password" autocomplete="off" inputmode="numeric" />
+        </div>
+        <p class="error" id="error" role="alert"></p>
+        <div class="actions">
+          <button id="cancel" type="button">Отказать</button>
+          <button id="sign" type="button" class="primary">Подписать</button>
+        </div>
+      </section>
+    </main>
+    <script src="wasm_exec.js"></script>
+    <script src="common.js"></script>
+    <script src="confirm.js"></script>
+  </body>
+</html>

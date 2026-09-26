@@ -64,6 +64,12 @@ const ShiftReportV1CryptoProfileHybrid ShiftReportV1CryptoProfile = "hybrid"
 // Запрос одной подписи: агент сам разбирает содержимое, сам считает отпечаток
 // пакетом domain/documents и сам вычисляет поля сводки (AD-14).
 type SignBlock struct {
+	// Запрос-команда по соглашению «подписан запрос» (domain/signing.RequestData):
+	// агент сам собирает событие-команду из операции, параметров пути и тела
+	// (payload_b64 — тело команды в JSON) тем же пакетом, что и сервер, и сам считает
+	// отпечаток и сводку (AD-14).
+	CommandRequest *SignBlockCommandRequest `json:"command_request,omitempty,omitzero"`
+
 	// Версия формата документа; неизвестную агент отвергает
 	// (signing.unknown_doc_format).
 	DocFormatVersion *int `json:"doc_format_version,omitempty,omitzero"`
@@ -90,6 +96,39 @@ type SignBlock struct {
 	// Шаблон документа `‹id›@‹версия›`, если подписывается документ.
 	TemplateRef *string `json:"template_ref,omitempty,omitzero"`
 }
+
+// Запрос-команда по соглашению «подписан запрос» (domain/signing.RequestData):
+// агент сам собирает событие-команду из операции, параметров пути и тела
+// (payload_b64 — тело команды в JSON) тем же пакетом, что и сервер, и сам считает
+// отпечаток и сводку (AD-14).
+type SignBlockCommandRequest struct {
+	// Изделие события-команды.
+	ItemID *string `json:"item_id,omitempty,omitzero"`
+
+	// Подписи значений для сводки (например, название изделия); справочно — отпечаток
+	// по ним не считается.
+	Labels SignBlockCommandRequestLabels `json:"labels,omitempty,omitzero"`
+
+	// operationId команды.
+	Operation string `json:"operation"`
+
+	// Параметры пути операции.
+	Params SignBlockCommandRequestParams `json:"params,omitempty,omitzero"`
+
+	// Прогон сценария, если команда в прогоне.
+	RunID *string `json:"run_id,omitempty,omitzero"`
+
+	// Последняя известная странице контрольная точка (агент берёт большую из своей и
+	// этой).
+	SeenCheckpoint *int `json:"seen_checkpoint,omitempty,omitzero"`
+}
+
+// Подписи значений для сводки (например, название изделия); справочно — отпечаток
+// по ним не считается.
+type SignBlockCommandRequestLabels map[string]string
+
+// Параметры пути операции.
+type SignBlockCommandRequestParams map[string]string
 
 // Сообщение stand-а оборудования (станок ЧПУ, сварочный источник, стенд) →
 // edge-агенту (AD-18, AD-46, FR-149): отсчёты и события по классификации
@@ -332,12 +371,22 @@ type TokenAgentResponseV1HelloKeysElem struct {
 	// Ключ.
 	KeyRef string `json:"key_ref"`
 
+	// Класс хранения ключа (AD-11, AD-14, Д-72): hardware_token — физический ключ
+	// через агент токена (эталон); software_browser — ключ в браузере, зашифрованный
+	// под PIN (умышленно сниженный порог).
+	KeyStorage *TokenAgentResponseV1HelloKeysElemKeyStorage `json:"key_storage,omitempty,omitzero"`
+
 	// Субъект.
 	PersonID string `json:"person_id"`
 
 	// Профиль.
 	Profile TokenAgentResponseV1HelloKeysElemProfile `json:"profile"`
 }
+
+type TokenAgentResponseV1HelloKeysElemKeyStorage string
+
+const TokenAgentResponseV1HelloKeysElemKeyStorageHardwareToken TokenAgentResponseV1HelloKeysElemKeyStorage = "hardware_token"
+const TokenAgentResponseV1HelloKeysElemKeyStorageSoftwareBrowser TokenAgentResponseV1HelloKeysElemKeyStorage = "software_browser"
 
 type TokenAgentResponseV1HelloKeysElemProfile string
 
@@ -373,12 +422,22 @@ type TokenAgentResponseV1SignedElem struct {
 	// Envelope corresponds to the JSON schema field "envelope".
 	Envelope crypto.DsseEnvelope `json:"envelope"`
 
+	// Класс хранения ключа (AD-11, AD-14, Д-72): hardware_token — физический ключ
+	// через агент токена (эталон); software_browser — ключ в браузере, зашифрованный
+	// под PIN (умышленно сниженный порог).
+	KeyStorage *TokenAgentResponseV1SignedElemKeyStorage `json:"key_storage,omitempty,omitzero"`
+
 	// Номер в локальном журнале подписанного.
 	LocalJournalSeq int `json:"local_journal_seq"`
 
 	// Поля сводки уровня 2 (3–7), которые агент вычислил сам из содержимого.
 	Summary []TokenAgentResponseV1SignedElemSummaryElem `json:"summary,omitempty,omitzero"`
 }
+
+type TokenAgentResponseV1SignedElemKeyStorage string
+
+const TokenAgentResponseV1SignedElemKeyStorageHardwareToken TokenAgentResponseV1SignedElemKeyStorage = "hardware_token"
+const TokenAgentResponseV1SignedElemKeyStorageSoftwareBrowser TokenAgentResponseV1SignedElemKeyStorage = "software_browser"
 
 // Поле сводки.
 type TokenAgentResponseV1SignedElemSummaryElem struct {
@@ -391,11 +450,25 @@ type TokenAgentResponseV1SignedElemSummaryElem struct {
 
 // Состояние токена.
 type TokenAgentResponseV1Status struct {
+	// Ключи, загруженные в агент (без PIN — открытые сведения).
+	KeyRefs []string `json:"key_refs,omitempty,omitzero"`
+
+	// Класс хранения ключа (AD-11, AD-14, Д-72): hardware_token — физический ключ
+	// через агент токена (эталон); software_browser — ключ в браузере, зашифрованный
+	// под PIN (умышленно сниженный порог).
+	KeyStorage *TokenAgentResponseV1StatusKeyStorage `json:"key_storage,omitempty,omitzero"`
+
 	// Владелец.
 	PersonID *string `json:"person_id,omitempty,omitzero"`
 
 	// PIN введён в этой смене.
 	PinUnlocked bool `json:"pin_unlocked"`
+
+	// Разновидность хранения ключа в браузере: extension — в расширении (окно
+	// подтверждения — страница расширения); page — в хранилище страницы (планшет,
+	// телефон; сводку показывает код, отданный сервером, — доверенного отображения
+	// нет).
+	StorageVariant *TokenAgentResponseV1StatusStorageVariant `json:"storage_variant,omitempty,omitzero"`
 
 	// Токен вставлен.
 	TokenPresent bool `json:"token_present"`
@@ -403,6 +476,16 @@ type TokenAgentResponseV1Status struct {
 	// Рабочее место из конфигурации агента.
 	WorkplaceID *string `json:"workplace_id,omitempty,omitzero"`
 }
+
+type TokenAgentResponseV1StatusKeyStorage string
+
+const TokenAgentResponseV1StatusKeyStorageHardwareToken TokenAgentResponseV1StatusKeyStorage = "hardware_token"
+const TokenAgentResponseV1StatusKeyStorageSoftwareBrowser TokenAgentResponseV1StatusKeyStorage = "software_browser"
+
+type TokenAgentResponseV1StatusStorageVariant string
+
+const TokenAgentResponseV1StatusStorageVariantExtension TokenAgentResponseV1StatusStorageVariant = "extension"
+const TokenAgentResponseV1StatusStorageVariantPage TokenAgentResponseV1StatusStorageVariant = "page"
 
 type TokenAgentResponseV1Type string
 

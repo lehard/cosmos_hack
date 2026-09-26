@@ -217,6 +217,9 @@ type RegistrationData struct {
 	DocumentID           string   `json:"document_id,omitempty"`
 	ValidFrom            string   `json:"valid_from"`
 	ValidUntil           string   `json:"valid_until,omitempty"`
+	// KeyStorage, StorageVariant — класс хранения ключа человека (AD-11, AD-14, Д-72).
+	KeyStorage     string `json:"key_storage,omitempty"`
+	StorageVariant string `json:"storage_variant,omitempty"`
 }
 
 // RegistrationFromData — регистрация домена из data записи.
@@ -232,7 +235,8 @@ func RegistrationFromData(raw []byte) (dom.Registration, error) {
 func (d RegistrationData) Registration() (dom.Registration, error) {
 	g := dom.Registration{KeyRef: d.KeyRef, SubjectKind: d.SubjectKind, SubjectID: d.SubjectID, ProfileID: d.ProfileID,
 		Algorithm: d.Algorithm, PublicKeyB64: d.PublicKeyB64, Fingerprint: d.Fingerprint, PayloadClasses: d.PayloadClasses,
-		Rotates: d.Rotates, SubjectConfirmation: d.SubjectConfirmation, DocumentID: d.DocumentID}
+		Rotates: d.Rotates, SubjectConfirmation: d.SubjectConfirmation, DocumentID: d.DocumentID,
+		KeyStorage: d.KeyStorage, StorageVariant: d.StorageVariant}
 	var err error
 	if d.ValidFrom != "" {
 		if g.ValidFrom, err = time.Parse(time.RFC3339Nano, d.ValidFrom); err != nil {

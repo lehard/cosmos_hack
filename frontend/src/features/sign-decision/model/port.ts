@@ -1,37 +1,42 @@
 /**
  * Порт подписи решения (FR-66, FR-69, FR-139; AD-13, AD-14, AD-43). Один порт —
- * два пути: агент токена (уровень 2 — доверенное окно агента и касание токена)
- * и бумага с заверением вторым человеком.
+ * адаптеры за ним (Д-72): ключ в браузере (расширение «Главный — подпись»,
+ * пакет подписи WASM) и физический ключ (то же расширение — транслятор к
+ * агенту токена по Native Messaging), плюс бумага с заверением вторым человеком.
  *
- * Сервер закрытых ключей не хранит и кода подписи не отдаёт (FR-69): подпись
- * делает агент токена через браузерное расширение по Native Messaging
- * (contracts/internal/token-agent, `sign` / `sign_batch`). Пока расширения нет
- * (эпик 38), порт — заглушка: агент «не найден», `sign` отвечает кодом
- * `signing.agent_not_found`, и интерфейс предлагает бумагу. Эпик 38 подставляет
- * настоящую реализацию через `provideSigningPort`, не трогая виджеты.
+ * Сервер закрытых ключей не хранит (FR-69): подпись делает расширение
+ * (contracts/internal/token-agent, `sign` / `sign_batch`); окно подтверждения
+ * уровня 2 — окно расширения или агента, сводку в нём пакет подписи считает
+ * сам. Расширения нет — `sign` отвечает `signing.agent_not_found`, и интерфейс
+ * предлагает бумагу. Тесты подставляют свой порт через `provideSigningPort`.
  */
-import { inject, provide, type InjectionKey, type Ref } from 'vue'
+import { inject, provide, readonly, ref, type InjectionKey, type Ref } from 'vue'
 import type { DsseEnvelope } from '@/shared/api/generated/model'
 import type { ApiError } from '@/shared/api/problem'
 import { PAYLOAD_TYPE_TEMPLATE } from '@/shared/contracts/constants'
 import type { SignBlock } from '@/shared/contracts/procs'
-import { useTokenStatus, type TokenStatus } from '@/shared/lib/token-agent'
+import { extensionRequest, SIGN_TIMEOUT_MS, useTokenStatus, type TokenStatus } from '@/shared/lib/token-agent'
 
 /**
- * Запрос подписи уровня 2: блок `sign` протокола агента. Сводку для окна агент
- * считает сам из содержимого (AD-14) — страница только показывает свою копию
- * «проверьте перед подписью».
+ * Запрос подписи: блок `sign` протокола агента. Для команды решения —
+ * `command_request` (операция, параметры пути, изделие) и тело команды в
+ * `payload_b64`: событие-команду, отпечаток и сводку расширение собирает само
+ * тем же пакетом, что сервер (AD-12, AD-14). Страница показывает только свою
+ * копию «проверьте перед подписью».
  */
-export type SignRequest = Pick<SignBlock, 'level' | 'payload_type' | 'payload_b64' | 'event_type' | 'template_ref' | 'doc_format_version' | 'expected_doc_digest'>
+export type SignRequest = Pick<
+  SignBlock,
+  'level' | 'payload_type' | 'payload_b64' | 'event_type' | 'template_ref' | 'doc_format_version' | 'expected_doc_digest' | 'command_request'
+>
 
-/** Результат подписи агентом — конверт DSSE для поля `signature` команды (AD-10). */
+/** Результат подписи — конверт DSSE для поля `signature` команды (AD-10). */
 export type SignResult = DsseEnvelope
 
 /** Порт подписи. */
 export interface SigningPort {
-  /** Состояние токена на рабочем месте. */
+  /** Состояние ключа на рабочем месте. */
   status: Readonly<Ref<TokenStatus>>
-  /** Подписать агентом токена; окно подтверждения — в агенте. */
+  /** Подписать; окно подтверждения — в расширении или агенте. */
   sign(request: SignRequest): Promise<SignResult>
 }
 
@@ -51,26 +56,57 @@ export function agentNotFoundError(): ApiError {
   })
 }
 
+/**
+ * Отказ расширения или агента в форме ошибки клиента API: текст — по коду из
+ * каталога ошибок (signing.level_not_allowed, signing.pin_wrong, signing.cancelled…).
+ * @param code — код ошибки
+ * @param message — пояснение расширения или агента
+ */
+export function agentError(code: string, message?: string): ApiError {
+  if (code === 'signing.agent_not_found') return agentNotFoundError()
+  return Object.assign(new Error(message ?? code), {
+    status: 422,
+    info: { type: `urn:ant:problem:${code}`, title: message ?? code, status: 422, code, detail: message },
+  })
+}
+
 /** Заглушка порта: агента нет — остаётся подпись на бумаге (AD-43). */
 export function createStubSigningPort(): SigningPort {
   return {
-    status: useTokenStatus(),
+    status: readonly(ref<TokenStatus>('agent_missing')),
     sign: async () => {
       throw agentNotFoundError()
     },
   }
 }
 
+/**
+ * Порт через расширение «Главный — подпись» (эпик 38): уровень 2 — окно
+ * расширения (или агента токена) со сводкой, посчитанной пакетом подписи;
+ * уровень 1 вне перечня расширение отклоняет само.
+ */
+export function createExtensionSigningPort(): SigningPort {
+  return {
+    status: useTokenStatus(),
+    sign: async (request) => {
+      const r = await extensionRequest({ type: 'sign', sign: request }, SIGN_TIMEOUT_MS)
+      const env = r.type === 'signed' ? r.signed?.[0]?.envelope : undefined
+      if (env) return env as SignResult
+      throw agentError(r.error?.code ?? 'signing.agent_not_found', r.error?.message)
+    },
+  }
+}
+
 const SIGNING_PORT: InjectionKey<SigningPort> = Symbol('signing-port')
 
-/** Подставить реализацию порта (эпик 38 — расширение агента токена; тесты). */
+/** Подставить реализацию порта (тесты, другие адаптеры). */
 export const provideSigningPort = (port: SigningPort): void => provide(SIGNING_PORT, port)
 
-/** Порт подписи: подставленный или заглушка. */
-export const useSigningPort = (): SigningPort => inject(SIGNING_PORT, null) ?? createStubSigningPort()
+/** Порт подписи: подставленный или через расширение. */
+export const useSigningPort = (): SigningPort => inject(SIGNING_PORT, null) ?? createExtensionSigningPort()
 
-/** Можно ли подписать агентом прямо сейчас. */
-export const tokenReady = (status: TokenStatus): boolean => status === 'inserted'
+/** Можно ли подписать ключом сейчас: ключ готов или PIN спросит окно подписи. */
+export const tokenReady = (status: TokenStatus): boolean => status === 'inserted' || status === 'locked'
 
 /** Класс подписанного пакета (contracts/crypto/payload-classes.yaml). */
 export type PayloadClass = 'event' | 'document-signature' | 'paper-attestation'

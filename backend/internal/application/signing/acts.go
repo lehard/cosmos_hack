@@ -44,7 +44,8 @@ func (s *Service) RegisterKey(ctx context.Context, in RegisterKey) (platform.Rec
 	data := RegistrationData{KeyRef: in.KeyRef, SubjectKind: in.SubjectKind, SubjectID: in.SubjectID, ProfileID: in.ProfileID,
 		Algorithm: in.Algorithm, PublicKeyB64: in.PublicKeyB64, Fingerprint: dom.Digest(pub), PayloadClasses: in.PayloadClasses,
 		Rotates: in.Rotates, ProofOfPossessionB64: in.ProofOfPossessionB64, SubjectConfirmation: in.SubjectConfirmation,
-		DocumentID: in.DocumentID, ValidFrom: in.ValidFrom, ValidUntil: in.ValidUntil}
+		DocumentID: in.DocumentID, ValidFrom: in.ValidFrom, ValidUntil: in.ValidUntil,
+		KeyStorage: in.KeyStorage, StorageVariant: in.StorageVariant}
 	g, err := data.Registration()
 	if err != nil {
 		return platform.Receipt{}, fail(errcodes.ApiValidationFailed, err.Error(), "field", "valid_from", "reason", err.Error())

@@ -120,9 +120,15 @@
       "role": "Роль",
       "shift": "Смена",
       "tokenStatus": "Токен",
-      "tokenInserted": "Токен вставлен",
-      "tokenMissing": "@:errors.signing.tokenMissing",
+      "tokenInserted": "Ключ готов к подписи",
+      "tokenLocked": "Ключ загружен — PIN спросит окно подписи",
+      "tokenMissing": "Ключ не загружен: «Главный — подпись» → «Управление ключом»",
       "tokenAgentMissing": "Агент токена не найден — доступна подпись на бумаге",
+      "tokenWho": "{person} · {storage}",
+      "tokenStorage": {
+        "hardware_token": "физический ключ",
+        "software_browser": "ключ в браузере"
+      },
       "integrity": "Целостность журнала",
       "integrityOk": "Цело · проверено {time}",
       "integrityViolated": "Нарушена целостность",

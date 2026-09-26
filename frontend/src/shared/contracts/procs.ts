@@ -229,6 +229,39 @@ expected_doc_digest?: string
  * Ключ, которым просят подписать.
  */
 key_ref?: string
+/**
+ * Запрос-команда по соглашению «подписан запрос» (domain/signing.RequestData): агент сам собирает событие-команду из операции, параметров пути и тела (payload_b64 — тело команды в JSON) тем же пакетом, что и сервер, и сам считает отпечаток и сводку (AD-14).
+ */
+command_request?: {
+/**
+ * operationId команды.
+ */
+operation: string
+/**
+ * Параметры пути операции.
+ */
+params?: {
+[k: string]: string | undefined
+}
+/**
+ * Изделие события-команды.
+ */
+item_id?: string
+/**
+ * Прогон сценария, если команда в прогоне.
+ */
+run_id?: string
+/**
+ * Последняя известная странице контрольная точка (агент берёт большую из своей и этой).
+ */
+seen_checkpoint?: number
+/**
+ * Подписи значений для сводки (например, название изделия); справочно — отпечаток по ним не считается.
+ */
+labels?: {
+[k: string]: string | undefined
+}
+}
 }
 /**
  * Ответ агента токена расширению по Native Messaging (AD-14, AD-46). Вид — поле `type`.
@@ -285,6 +318,10 @@ profile: ("gost" | "pq")
  * Субъект.
  */
 person_id: string
+/**
+ * Класс хранения ключа (AD-11, AD-14, Д-72): hardware_token — физический ключ через агент токена (эталон); software_browser — ключ в браузере, зашифрованный под PIN (умышленно сниженный порог).
+ */
+key_storage?: ("hardware_token" | "software_browser")
 }[]
 }
 /**
@@ -307,6 +344,22 @@ person_id?: string
  * Рабочее место из конфигурации агента.
  */
 workplace_id?: string
+/**
+ * Класс хранения ключа (AD-11, AD-14, Д-72): hardware_token — физический ключ через агент токена (эталон); software_browser — ключ в браузере, зашифрованный под PIN (умышленно сниженный порог).
+ */
+key_storage?: ("hardware_token" | "software_browser")
+/**
+ * Разновидность хранения ключа в браузере: extension — в расширении (окно подтверждения — страница расширения); page — в хранилище страницы (планшет, телефон; сводку показывает код, отданный сервером, — доверенного отображения нет).
+ */
+storage_variant?: ("extension" | "page")
+/**
+ * Ключи, загруженные в агент (без PIN — открытые сведения).
+ * 
+ * @maxItems 4
+ * 
+ * Items: Ключ.
+ */
+key_refs?: []|[string]|[string, string]|[string, string, string]|[string, string, string, string]
 }
 /**
  * Подписанные пакеты (один или пачка).
@@ -589,6 +642,10 @@ local_journal_seq: number
  * Время подписи по часам клиента — справочно, в порядок не входит (AD-37).
  */
 client_signed_at: string
+/**
+ * Класс хранения ключа (AD-11, AD-14, Д-72): hardware_token — физический ключ через агент токена (эталон); software_browser — ключ в браузере, зашифрованный под PIN (умышленно сниженный порог).
+ */
+key_storage?: ("hardware_token" | "software_browser")
 }, ...({
 envelope: DsseEnvelope
 /**
@@ -863,6 +920,10 @@ local_journal_seq: number
  * Время подписи по часам клиента — справочно, в порядок не входит (AD-37).
  */
 client_signed_at: string
+/**
+ * Класс хранения ключа (AD-11, AD-14, Д-72): hardware_token — физический ключ через агент токена (эталон); software_browser — ключ в браузере, зашифрованный под PIN (умышленно сниженный порог).
+ */
+key_storage?: ("hardware_token" | "software_browser")
 })[]]
 shift_report?: ShiftReportV1
 /**

@@ -23,6 +23,8 @@ type RegisterKey struct {
 	ReceiptAttestedBy    string   `json:"receipt_attested_by,omitempty" maxLength:"64" doc:"Первичная выдача: кто заверил расписку (≠ субъект, AD-43)."`
 	ValidFrom            string   `json:"valid_from" format:"date-time"`
 	ValidUntil           string   `json:"valid_until,omitempty" format:"date-time"`
+	KeyStorage           string   `json:"key_storage,omitempty" enum:"hardware_token,software_browser" doc:"Класс хранения ключа человека (AD-11, AD-14, Д-72): физический ключ или ключ в браузере под PIN."`
+	StorageVariant       string   `json:"storage_variant,omitempty" enum:"extension,page" doc:"Где лежит ключ в браузере: расширение или хранилище страницы."`
 }
 
 // RevokeKey — акт отзыва ключа (key.revocation.recorded, AD-11): «скомпрометирован

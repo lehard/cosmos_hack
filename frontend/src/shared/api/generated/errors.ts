@@ -268,6 +268,16 @@ export const errorCatalog = {
     "title": "Неизвестная версия формата документа",
     "uiKey": "errors.generic"
   },
+  "signing.cancelled": {
+    "status": 409,
+    "title": "Подпись отменена",
+    "uiKey": "errors.generic"
+  },
+  "signing.rate_limited": {
+    "status": 429,
+    "title": "Слишком часто",
+    "uiKey": "errors.generic"
+  },
   "document.stage_not_open": {
     "status": 409,
     "title": "Этап маршрута не ждёт подписи",

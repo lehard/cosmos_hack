@@ -249,6 +249,8 @@ const (
 	SigningAgentNotFound Code = "signing.agent_not_found"
 	// Заверитель совпадает с подписантом
 	SigningAttesterIsSigner Code = "signing.attester_is_signer"
+	// Подпись отменена
+	SigningCancelled Code = "signing.cancelled"
 	// Документ изменён после подписи
 	SigningDocumentChanged Code = "signing.document_changed"
 	// Чужой ключ
@@ -271,6 +273,8 @@ const (
 	SigningProfileDowngrade Code = "signing.profile_downgrade"
 	// QR-отпечаток на скане не совпадает с документом
 	SigningQrMismatch Code = "signing.qr_mismatch"
+	// Слишком часто
+	SigningRateLimited Code = "signing.rate_limited"
 	// Токен не вставлен
 	SigningTokenMissing Code = "signing.token_missing"
 	// Неизвестная версия формата документа
@@ -392,6 +396,7 @@ var codes = [...]Info{
 	{Code: ReferenceNotFound, Status: 422, Title: "Запись справочника не найдена", Detail: "Не найдена запись справочника: {field} — в том числе ответ 1С «в справочнике не найдена запись»", UIKey: "errors.integration.refNotFound", Quarantine: false, Severity: "error", Guard: false, Aliases: []string{"E_REF_NOT_FOUND"}},
 	{Code: SigningAgentNotFound, Status: 424, Title: "Агент токена не найден", Detail: "Агент токена не отвечает — подпишите на бумаге с заверением", UIKey: "errors.signing.agentNotFound", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: SigningAttesterIsSigner, Status: 422, Title: "Заверитель совпадает с подписантом", Detail: "Бумажную подпись заверяет второй человек — заверитель ≠ подписант", UIKey: "errors.signing.attesterIsSigner", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
+	{Code: SigningCancelled, Status: 409, Title: "Подпись отменена", Detail: "Подписант отказался в окне подтверждения — ничего не подписано", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: SigningDocumentChanged, Status: 409, Title: "Документ изменён после подписи", Detail: "Отпечаток документа {doc_id} изменился — подпись недействительна, нужна новая версия", UIKey: "errors.signing.documentChanged", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: SigningForeignKey, Status: 403, Title: "Чужой ключ", Detail: "Пользователь сеанса не совпадает с субъектом ключа {key_ref} — тревога записана", UIKey: "errors.access.forbidden", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: SigningKeyRevoked, Status: 422, Title: "Ключ отозван", Detail: "Ключ {key_ref} отозван — подпись этим ключом не принимается", UIKey: "errors.signing.certRevoked", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
@@ -403,6 +408,7 @@ var codes = [...]Info{
 	{Code: SigningPinWrong, Status: 424, Title: "Неверный ПИН-код", Detail: "Неверный ПИН-код", UIKey: "errors.signing.pinWrong", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: SigningProfileDowngrade, Status: 422, Title: "Понижение криптопрофиля", Detail: "Для {object_class} на момент подписи обязателен профиль {required}, а подписано {actual}", UIKey: "errors.signing.packageTampered", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: SigningQrMismatch, Status: 422, Title: "QR-отпечаток на скане не совпадает с документом", Detail: "Скан с QR {qr_digest} не относится к документу {doc_digest} — скан не принят", UIKey: "errors.signing.qrMismatch", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
+	{Code: SigningRateLimited, Status: 429, Title: "Слишком часто", Detail: "Агент ограничил частоту подписей уровня 1 — подождите {retry_after} с", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: SigningTokenMissing, Status: 424, Title: "Токен не вставлен", Detail: "Токен не вставлен", UIKey: "errors.signing.tokenMissing", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: SigningUnknownDocFormat, Status: 422, Title: "Неизвестная версия формата документа", Detail: "doc_format_version {version} агенту неизвестен — подпись не выполнена", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: SimulationRunNotFound, Status: 404, Title: "Прогон не найден", Detail: "Прогон {run_id} не найден", UIKey: "empty.scenarioNotStarted", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},

@@ -4049,6 +4049,12 @@ type KeyRegistrationRecordedV1 struct {
 	// Регистрируемый ключ `key_id@версия`.
 	KeyRef KeyRef `json:"key_ref"`
 
+	// Класс хранения ключа (AD-11, AD-14, Д-72): hardware_token — физический ключ
+	// через агент токена (эталон); software_browser — ключ в браузере, зашифрованный
+	// под PIN (умышленно сниженный порог). Для ключей людей; у системных ключей и
+	// устройств отсутствует. Виден в подписи, аудите и отчёте верификатора.
+	KeyStorage *KeyRegistrationRecordedV1KeyStorage `json:"key_storage,omitempty,omitzero"`
+
 	// Допустимые классы пакетов для ключа.
 	PayloadClasses []Class `json:"payload_classes"`
 
@@ -4063,6 +4069,12 @@ type KeyRegistrationRecordedV1 struct {
 
 	// Предыдущий ключ при ротации.
 	Rotates *KeyRef `json:"rotates,omitempty,omitzero"`
+
+	// Разновидность хранения ключа в браузере: extension — в расширении (окно
+	// подтверждения — страница расширения); page — в хранилище страницы (планшет,
+	// телефон; сводку показывает код, отданный сервером, — доверенного отображения
+	// нет).
+	StorageVariant *KeyRegistrationRecordedV1StorageVariant `json:"storage_variant,omitempty,omitzero"`
 
 	// Подтверждение субъекта: подпись действующим ключом при ротации / бумажная
 	// расписка с отпечатком при первичной выдаче.
@@ -4086,10 +4098,20 @@ type KeyRegistrationRecordedV1Algorithm string
 const KeyRegistrationRecordedV1AlgorithmGost34102012256ParamsetA KeyRegistrationRecordedV1Algorithm = "gost3410_2012_256_paramset_a"
 const KeyRegistrationRecordedV1AlgorithmMlDsa65 KeyRegistrationRecordedV1Algorithm = "ml_dsa_65"
 
+type KeyRegistrationRecordedV1KeyStorage string
+
+const KeyRegistrationRecordedV1KeyStorageHardwareToken KeyRegistrationRecordedV1KeyStorage = "hardware_token"
+const KeyRegistrationRecordedV1KeyStorageSoftwareBrowser KeyRegistrationRecordedV1KeyStorage = "software_browser"
+
 type KeyRegistrationRecordedV1ProfileID string
 
 const KeyRegistrationRecordedV1ProfileIDGost KeyRegistrationRecordedV1ProfileID = "gost"
 const KeyRegistrationRecordedV1ProfileIDPq KeyRegistrationRecordedV1ProfileID = "pq"
+
+type KeyRegistrationRecordedV1StorageVariant string
+
+const KeyRegistrationRecordedV1StorageVariantExtension KeyRegistrationRecordedV1StorageVariant = "extension"
+const KeyRegistrationRecordedV1StorageVariantPage KeyRegistrationRecordedV1StorageVariant = "page"
 
 type KeyRegistrationRecordedV1SubjectConfirmation string
 

@@ -4,7 +4,9 @@
  */
 import type { DsseEnvelope } from './dsseEnvelope';
 import type { RegisterKeyAlgorithm } from './registerKeyAlgorithm';
+import type { RegisterKeyKeyStorage } from './registerKeyKeyStorage';
 import type { RegisterKeyProfileId } from './registerKeyProfileId';
+import type { RegisterKeyStorageVariant } from './registerKeyStorageVariant';
 import type { RegisterKeySubjectConfirmation } from './registerKeySubjectConfirmation';
 import type { RegisterKeySubjectKind } from './registerKeySubjectKind';
 
@@ -21,6 +23,8 @@ export interface RegisterKey {
   document_id?: string;
   /** key_id@версия. */
   key_ref: string;
+  /** Класс хранения ключа человека (AD-11, AD-14, Д-72): физический ключ или ключ в браузере под PIN. */
+  key_storage?: RegisterKeyKeyStorage;
   /** @minItems 1 */
   payload_classes: string[];
   /**
@@ -46,6 +50,8 @@ export interface RegisterKey {
   rotates?: string;
   /** Подписанный пакет DSSE для операций с уровнем подписи ≥ 1 (AD-10, AD-13, AD-14): подписывает агент токена, сервер сверяет отпечаток. */
   signature?: DsseEnvelope;
+  /** Где лежит ключ в браузере: расширение или хранилище страницы. */
+  storage_variant?: RegisterKeyStorageVariant;
   subject_confirmation: RegisterKeySubjectConfirmation;
   /** @maxLength 128 */
   subject_id: string;
