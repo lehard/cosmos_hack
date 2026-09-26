@@ -217,11 +217,13 @@ import type {
   MetricTileList,
   NCCard,
   NCList,
+  NCPresentationView,
   NcGroupList,
   NodeCounterSet,
   NonconformityCardReadParams,
   NonconformityConcessionListParams,
   NonconformityNonconformityListParams,
+  NonconformityPresentationReadParams,
   NonconformityQueueListParams,
   NotificationSummary,
   NotificationsAlertListParams,
@@ -13560,6 +13562,129 @@ export const useItemPresentationRecord = <TError = globalThis.Error & { info?: P
       > => {
       return useMutation(getItemPresentationRecordMutationOptions(options), queryClient);
     }
+
+export type nonconformityPresentationReadResponse200 = {
+  data: NCPresentationView
+  status: 200
+}
+
+export type nonconformityPresentationReadResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type nonconformityPresentationReadResponseSuccess = (nonconformityPresentationReadResponse200) & {
+  headers: Headers;
+};
+export type nonconformityPresentationReadResponseError = (nonconformityPresentationReadResponseDefault) & {
+  headers: Headers;
+};
+
+export const getNonconformityPresentationReadUrl = (itemId: string,
+    params?: NonconformityPresentationReadParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/items/${itemId}/presentations/current?${stringifiedParams}` : `/api/v1/items/${itemId}/presentations/current`
+}
+
+/**
+ * FR-19, FR-56: ждущее решения предъявление (шаг, ЗТ, номер, результаты методов, куда передаётся при «Принять») и решения, которые пройдут гарды для вошедшего; у пересмотра решения, принятого до новых данных (AD-3), — прежнее решение, его основание и что пришло после. Всё, что нужно команде nonconformity.presentation.resolve.
+ * @summary Точка предъявления изделия
+ */
+export const nonconformityPresentationRead = async (itemId: string,
+    params?: NonconformityPresentationReadParams, options?: RequestInit): Promise<nonconformityPresentationReadResponseSuccess> => {
+
+  const res = await fetch(getNonconformityPresentationReadUrl(itemId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: nonconformityPresentationReadResponseError['data'], status?: number} = new globalThis.Error();
+    const data : nonconformityPresentationReadResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: nonconformityPresentationReadResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as nonconformityPresentationReadResponseSuccess
+}
+
+
+
+
+
+export const getNonconformityPresentationReadQueryKey = (itemId: MaybeRefOrGetter<string>,
+    params?: MaybeRefOrGetter<NonconformityPresentationReadParams>,) => {
+    return [
+    'api','v1','items',itemId,'presentations','current', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getNonconformityPresentationReadQueryOptions = <TData = Awaited<ReturnType<typeof nonconformityPresentationRead>>, TError = globalThis.Error & { info?: Problem; status?: number }>(itemId: MaybeRefOrGetter<string>,
+    params?: MaybeRefOrGetter<NonconformityPresentationReadParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof nonconformityPresentationRead>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getNonconformityPresentationReadQueryKey(itemId,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof nonconformityPresentationRead>>> = ({ signal }) => nonconformityPresentationRead(toValue(itemId),toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: computed(() => toValue(itemId) !== null && toValue(itemId) !== undefined), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof nonconformityPresentationRead>>, TError, TData>
+}
+
+export type NonconformityPresentationReadQueryResult = NonNullable<Awaited<ReturnType<typeof nonconformityPresentationRead>>>
+export type NonconformityPresentationReadQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Точка предъявления изделия
+ */
+
+export function useNonconformityPresentationRead<TData = Awaited<ReturnType<typeof nonconformityPresentationRead>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ itemId: MaybeRefOrGetter<string>,
+    params?: MaybeRefOrGetter<NonconformityPresentationReadParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof nonconformityPresentationRead>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getNonconformityPresentationReadQueryOptions(itemId,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
 
 export type nonconformityPresentationResolveResponse200 = {
   data: Receipt

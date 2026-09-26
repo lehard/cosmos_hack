@@ -14,6 +14,8 @@ type BpmnNode struct {
 	Props                              map[string]string
 	Norms                              []BpmnNorm
 	Next                               []string
+	// Cond — условие стрелки к узлу-цели (id цели → текст conditionExpression).
+	Cond map[string]string
 }
 
 // BpmnNorm — нормативная опора узла (ant:normRef).
@@ -45,7 +47,7 @@ func ParseBpmn(b []byte) (map[string]*BpmnNode, []*BpmnNode, error) {
 	var order []*BpmnNode
 	laneOf := map[string]string{}
 	byID := map[string]*BpmnNode{}
-	var flows [][2]string
+	var flows [][3]string
 	var walk func(x xnode, lane string)
 	walk = func(x xnode, lane string) {
 		switch x.XMLName.Local {
@@ -56,7 +58,13 @@ func ParseBpmn(b []byte) (map[string]*BpmnNode, []*BpmnNode, error) {
 				}
 			}
 		case "sequenceFlow":
-			flows = append(flows, [2]string{x.attr("sourceRef"), x.attr("targetRef")})
+			cond := ""
+			for _, c := range x.Children {
+				if c.XMLName.Local == "conditionExpression" {
+					cond = strings.TrimSpace(c.Content)
+				}
+			}
+			flows = append(flows, [3]string{x.attr("sourceRef"), x.attr("targetRef"), cond})
 		}
 		id := x.attr("id")
 		var props *xnode
@@ -113,6 +121,12 @@ func ParseBpmn(b []byte) (map[string]*BpmnNode, []*BpmnNode, error) {
 	for _, f := range flows {
 		if s, t := byID[f[0]], byID[f[1]]; s != nil && t != nil {
 			s.Next = append(s.Next, t.ID)
+			if f[2] != "" {
+				if s.Cond == nil {
+					s.Cond = map[string]string{}
+				}
+				s.Cond[t.ID] = f[2]
+			}
 		}
 	}
 	return byKey, order, nil
