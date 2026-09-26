@@ -71,6 +71,16 @@ const persons = computed(() => personsQ.data.value?.data?.items ?? [])
 const roles = computed(() => rolesQ.data.value?.data?.items ?? [])
 const performers = computed(() => candidates(persons.value, rolesInheriting(roles.value, 'performer'), workshopScope.value, qualificationsQ.data.value?.data))
 const inspectors = computed(() => candidates(persons.value, rolesInheriting(roles.value, 'quality_inspector'), workshopScope.value, qualificationsQ.data.value?.data))
+/**
+ * Почему назначить нельзя — словами, а не пустым списком «нет данных» (UI-46):
+ * нет права читать сотрудников цеха, смена не выбрана, нет допущенных по роли и области.
+ */
+function blocked(list: readonly unknown[]): string | null {
+  if (personsQ.error.value || rolesQ.error.value) return t('widgets.shopFloor.shift.noPeopleAccess')
+  if (!shiftId.value) return t('widgets.shopFloor.shift.pickShiftFirst')
+  if (personsQ.data.value && !list.length) return t('widgets.shopFloor.shift.noCandidates')
+  return null
+}
 const personName = (id: string) => persons.value.find((p) => p.person_id === id)?.display_name ?? id
 
 const assignCmd = useAssignmentCommand()
@@ -168,6 +178,8 @@ const allFailed = computed(() => !rows.value && !!postsQ.error.value && !!assign
       :performers="performers"
       :inspectors="inspectors"
       :person-name="personName"
+      :performer-blocked="blocked(performers)"
+      :inspector-blocked="blocked(inspectors)"
       :can-act="!moment.isReplay"
       :busy="busy"
       :error="error"

@@ -14,6 +14,7 @@ import { useEquipmentRegistry, useEquipmentStates } from '@/entities/equipment'
 import { resolveWorkshop, useLocations } from '@/entities/reference'
 import { useSession } from '@/entities/session'
 import { useAssignments, usePosts, useQualifications } from '@/entities/workplace'
+import { useDrillDown } from '@/features/drill-down'
 import { backendModeOf } from '@/shared/api/response'
 import type { WidgetProps } from '@/shared/config/widget'
 import { WidgetFrame } from '@/shared/ui'
@@ -21,6 +22,7 @@ import { buildEquipment, buildPeople, peopleEquipmentState } from '../model/peop
 import PeopleEquipmentView from './PeopleEquipmentView.vue'
 
 const props = defineProps<WidgetProps>()
+const drill = useDrillDown()
 const session = useSession()
 const locationsQ = useLocations()
 
@@ -68,6 +70,8 @@ const state = computed(() => (allFailed.value ? 'input_error' : peopleEquipmentS
     :data-widget="widgetId"
   >
     <PeopleEquipmentView
+      @workplace="(id) => drill.open({ entity: 'workplace', id })"
+      @person="(id) => drill.open({ entity: 'person', id })"
       :workshop-name="workshop?.name ?? null"
       :people="people"
       :people-error="postsQ.error.value ?? undefined"

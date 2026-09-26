@@ -107,6 +107,14 @@ describe('задачи и уведомления', () => {
     expect(task().find('[data-testid="moved"]').exists()).toBe(true)
   })
 
+  it('открытых задач нет — одной строкой, выполненные ниже; аномалия узла открывает окно операции (UI-44, UI-45)', async () => {
+    const { routes } = world()
+    mockApi({ ...routes, 'GET /api/v1/tasks': { items: tasks().filter((t) => t.state !== 'open'), basis_seq: 9100 } })
+    const w = await mountWidget(TasksWidget, props)
+    expect(w.find('[data-testid="no-open-tasks"]').text()).toBe('Открытых задач нет')
+    expect(w.find('[data-testid="closed-tasks"]').exists()).toBe(true)
+  })
+
   it('срез стола: только задачи; своё рабочее место', () => {
     expect(sectionsOf({ kinds: ['task'] })).toEqual(['task'])
     expect(sectionsOf({ kinds: ['nonsense'] })).toEqual(['task', 'alarm', 'escalation'])
