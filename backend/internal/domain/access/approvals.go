@@ -62,10 +62,6 @@ type ApprovalContext struct {
 	CustomerAcceptance bool
 }
 
-// Policy — политика доступа на basis_seq. ЗАГОТОВКА: наполняет эпик 26
-// (полномочия с рамками, клейма, делегирование, эскалация).
-type Policy struct{}
-
 // ApprovalStage — этап обязательных подписей, замороженный при
 // document.version.drafted (AD-43): номер по порядку после отбора условий и
 // сколько засчитанных подписей нужно.
