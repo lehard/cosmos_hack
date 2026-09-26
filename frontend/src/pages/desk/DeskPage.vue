@@ -14,7 +14,7 @@ import { useRoute } from 'vue-router'
 import { NAlert, NSpin } from 'naive-ui'
 import { EmptyState } from '@/shared/ui'
 import { useDesk } from '@/entities/desk'
-import { isWidgetId, widgetRegistry } from '@/widgets/registry'
+import { fillsSection } from '@/widgets/registry'
 import { useProblemText } from '@/shared/i18n/problem'
 import DeskTabView from './ui/DeskTabView.vue'
 
@@ -25,7 +25,7 @@ const desk = useDesk()
 
 const d = computed(() => desk.data.value?.data)
 /** Раздел с виджетом «на всю высоту» (живая карта) — страница без прокрутки. */
-const fill = computed(() => active.value?.layout === 'single' && active.value.slots.some((s) => isWidgetId(s.widget) && widgetRegistry[s.widget].fill === true))
+const fill = computed(() => active.value?.layout === 'single' && active.value.slots.some((s) => fillsSection(s.widget)))
 const active = computed(() => {
   const tabs = d.value?.tabs ?? []
   const wanted = typeof route.params.tab === 'string' ? route.params.tab : ''

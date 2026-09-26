@@ -82,3 +82,6 @@ export type WidgetId = keyof typeof widgetRegistry
 
 /** Есть ли такой виджет (стол пришёл с сервера строкой). */
 export const isWidgetId = (id: string): id is WidgetId => Object.hasOwn(widgetRegistry, id)
+
+/** Виджет занимает всю высоту раздела стола (признак `fill`). */
+export const fillsSection = (id: string): boolean => isWidgetId(id) && (widgetRegistry[id] as WidgetDefinition).fill === true

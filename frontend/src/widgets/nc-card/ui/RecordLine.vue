@@ -15,12 +15,12 @@ const time = (x: string) => d(new Date(x), 'dateTime')
 <template>
   <div class="record" :data-kind="record.kind" :data-event="record.event_type" :data-id="record.event_id">
     <time class="time">{{ time(record.occurred_at) }}</time>
-    <span class="text">{{ entryText(record) }}</span>
+    <span class="text ant-wrap">{{ entryText(record) }}</span>
     <span class="kind">{{ t(LAYER_TEXT[record.kind]) }}</span>
     <SourceMark :record="record" />
-    <span v-if="record.author" class="muted">{{ record.author }}</span>
+    <span v-if="record.author" class="muted ant-wrap">{{ record.author }}</span>
     <span v-if="record.seq != null" class="muted">{{ t('widgets.analysis.circumstances.journalRecord', { seq: record.seq }) }}</span>
-    <span v-if="mark" class="mark" data-testid="record-mark">{{ mark }}</span>
+    <span v-if="mark" class="mark ant-wrap" data-testid="record-mark">{{ mark }}</span>
   </div>
 </template>
 
@@ -28,8 +28,9 @@ const time = (x: string) => d(new Date(x), 'dateTime')
 .record {
   display: flex;
   flex-wrap: wrap;
-  gap: 2px 8px;
+  gap: 2px var(--ant-space-2);
   align-items: baseline;
+  min-width: 0;
   font-size: var(--ant-fs-meta);
 }
 

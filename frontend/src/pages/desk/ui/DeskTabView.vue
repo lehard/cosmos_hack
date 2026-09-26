@@ -7,7 +7,7 @@
  */
 import { computed } from 'vue'
 import { LAYOUT_AREAS, type Density, type DeskTab } from '@/entities/desk'
-import { isWidgetId, widgetRegistry } from '@/widgets/registry'
+import { fillsSection } from '@/widgets/registry'
 import WidgetHost from '@/widgets/WidgetHost.vue'
 
 const props = defineProps<{ tab: DeskTab; density: Density }>()
@@ -25,7 +25,7 @@ const areas = computed(() => {
 const tabDensity = computed<Density>(() => props.tab.density ?? props.density)
 
 /** Виджет растягивается на всю высоту раздела. */
-const fills = (widget: string): boolean => props.tab.layout === 'single' && isWidgetId(widget) && widgetRegistry[widget].fill === true
+const fills = (widget: string): boolean => props.tab.layout === 'single' && fillsSection(widget)
 const fill = computed(() => props.tab.slots.some((s) => fills(s.widget)))
 
 </script>
