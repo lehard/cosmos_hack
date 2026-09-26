@@ -10,7 +10,7 @@ import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import {
   Alarm, ChartLine, ClipboardCheck, Clock, Components, Dashboard, Database, FileAnalytics, GitBranch, History, Key,
-  Layout2, ListCheck, Lock, Point, Search, Shield, Signature, Target, Terminal, Users,
+  Layout2, ListCheck, Lock, Point, Search, Shield, Signature, Sitemap, Target, Terminal, Tool, Users,
 } from '@vicons/tabler'
 import { useDesk } from '@/entities/desk'
 import { SideNav, type SideNavItem } from '@/shared/ui'
@@ -26,6 +26,8 @@ const desk = useDesk()
  */
 const ICONS: Record<string, Component> = {
   overview: Dashboard,
+  processes: Sitemap,
+  posts: Tool,
   proposals: ClipboardCheck,
   analytics: ChartLine,
   'data-deficit': Search,
