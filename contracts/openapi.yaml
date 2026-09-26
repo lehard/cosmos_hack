@@ -2305,6 +2305,13 @@ components:
             - not_covered_by_method
             - unknown
           type: string
+        outcome:
+          description: Действующий исход полученного результата; «оценка невозможна» — нужен повторный контроль (FR-36).
+          enum:
+            - defect_indicated
+            - no_defect_indicated
+            - unable_to_assess
+          type: string
         required:
           type: boolean
         status:
@@ -2640,6 +2647,42 @@ components:
         - risk_rank
         - overdue
         - basis_seq
+      type: object
+    DefectTypeCoverage:
+      additionalProperties: false
+      properties:
+        code:
+          type: string
+        event_ids:
+          items:
+            type: string
+          type: array
+        methods:
+          items:
+            type: string
+          type: array
+        name:
+          type: string
+        severity:
+          enum:
+            - critical
+            - major
+            - minor
+            - unknown
+          type: string
+        status:
+          description: "not_checked — не проверено методом, способным выявить: не годность."
+          enum:
+            - defect
+            - no_defect
+            - unable
+            - not_checked
+          type: string
+      required:
+        - code
+        - name
+        - severity
+        - status
       type: object
     DefineCalendar:
       additionalProperties: false
@@ -4705,6 +4748,20 @@ components:
           items:
             $ref: "#/components/schemas/CoveragePoint"
           type: array
+        quality_state:
+          description: Состояние качества изделия.
+          enum:
+            - not_inspected
+            - conforming
+            - accepted_with_concession
+            - unable_to_assess
+            - signal
+            - nonconforming
+          type: string
+        types:
+          items:
+            $ref: "#/components/schemas/DefectTypeCoverage"
+          type: array
       required:
         - item_id
         - complete
@@ -4734,9 +4791,39 @@ components:
       required:
         - severity
       type: object
+    InspectionMeasurement:
+      additionalProperties: false
+      properties:
+        characteristic:
+          type: string
+        source_verdict:
+          enum:
+            - within
+            - outside
+            - not_measured
+          type: string
+        tolerance:
+          type: string
+        value:
+          type: string
+        verdict:
+          description: Строже из оценки источника и расчёта системы.
+          enum:
+            - within
+            - outside
+            - not_measured
+          type: string
+      required:
+        - characteristic
+        - source_verdict
+        - verdict
+      type: object
     InspectionResult:
       additionalProperties: false
       properties:
+        analyzer:
+          description: Наблюдение анализатора (VisionQC).
+          type: boolean
         analyzer_confidence_bp:
           format: int64
           maximum: 10000
@@ -4757,6 +4844,11 @@ components:
         limitations:
           items:
             type: string
+          type: array
+        measurements:
+          description: Измерения «значение против допуска» (FR-36).
+          items:
+            $ref: "#/components/schemas/InspectionMeasurement"
           type: array
         method:
           enum:
@@ -4795,12 +4887,18 @@ components:
             - aborted
             - failed
           type: string
+        reinterpreted:
+          description: "Почему система изменила исход: processing_not_completed, poor_observation, measurement_outside, not_measured."
+          type: string
         reliability:
           enum:
             - high
             - medium
             - low
             - unknown
+          type: string
+        reported_outcome:
+          description: Исход, сообщённый источником.
           type: string
         seq:
           format: int64
@@ -4815,7 +4913,27 @@ components:
             - external_system
             - import
           type: string
+        stages:
+          description: Ступени анализатора (FR-38).
+          items:
+            $ref: "#/components/schemas/QualityAnalyzerStage"
+          type: array
         step_key:
+          type: string
+        superseded:
+          description: Наблюдение исправлено более поздней записью (FR-122).
+          type: boolean
+        trust_level:
+          description: Уровень доверия паспорта анализатора на момент наблюдения (AD-29).
+          format: int64
+          maximum: 4
+          minimum: 0
+          type: integer
+        trust_note:
+          description: admitted, no_qualified_analyzer, suspended:…, shadow, analyzer_version_mismatch.
+          type: string
+        unable_reason:
+          description: Код причины «оценка невозможна».
           type: string
       required:
         - event_id
@@ -8142,6 +8260,12 @@ components:
           maximum: 10000
           minimum: 0
           type: integer
+        automation_mode:
+          description: Режим автоматизации, с которым исполнена реакция (FR-50).
+          format: int64
+          maximum: 5
+          minimum: 0
+          type: integer
         basis_kind:
           enum:
             - inspection_result
@@ -8156,6 +8280,12 @@ components:
           description: seq, на котором построен ответ (AD-39).
           format: int64
           type: integer
+        closed_by_event_id:
+          description: «Оценка невозможна» или пропуск проверки закрыты этим результатом повторного контроля (человек сигнал не рассматривал).
+          type: string
+        containment:
+          description: Предложенный уровень сдерживания (ось nonconformity).
+          type: string
         defect_id:
           type: string
         defect_type_code:
@@ -8171,15 +8301,28 @@ components:
           type: string
         item_label:
           type: string
+        limits:
+          description: "Почему реакция ограничена: mode_requires_human, trust_level_N, permissive_not_delegated, critical_hold."
+          items:
+            type: string
+          type: array
         observation_event_id:
           description: Исходный результат контроля.
           type: string
+        observation_ids:
+          description: "Все наблюдения сигнала: повторные наблюдения одного дефекта (FR-37)."
+          items:
+            type: string
+          type: array
         observation_quality_bp:
           description: Качество наблюдения, б. п.
           format: int64
           maximum: 10000
           minimum: 0
           type: integer
+        proposed_outcome:
+          description: Реакция карты до ограничений, если она ограничена (FR-144).
+          type: string
         raised_at:
           format: date-time
           type: string
@@ -8192,6 +8335,12 @@ components:
             - manual_review
             - isolate
             - question_to_technologist
+          type: string
+        requirement_ref:
+          description: Требование КД; нет — вопрос технологу, а не брак (FR-48).
+          type: string
+        rule_title:
+          description: Правило карты реакций.
           type: string
         severity:
           enum:
@@ -8221,6 +8370,12 @@ components:
           maximum: 4
           minimum: 0
           type: integer
+        unable_reason:
+          description: Код причины «оценка невозможна».
+          type: string
+        unable_to_assess:
+          description: Сигнал «оценка невозможна» — повторный контроль, а не признак дефекта (FR-36).
+          type: boolean
         versions:
           additionalProperties:
             type: string

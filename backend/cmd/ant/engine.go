@@ -11,6 +11,7 @@ import (
 	engineapp "ant/internal/application/engine"
 	appjournal "ant/internal/application/journal"
 	machinelogsapp "ant/internal/application/machinelogs"
+	qualityapp "ant/internal/application/quality"
 	mldomain "ant/internal/domain/machinelogs"
 	"ant/internal/infrastructure/storage/journal/clock"
 	"ant/internal/infrastructure/storage/journal/feed"
@@ -27,6 +28,7 @@ import (
 // (AddContributor) — одна строка на модуль, как в buildAPI.
 func engineRegistry() *engineapp.Registry {
 	r := engineapp.NewRegistry()
+	mustRegister(qualityapp.Register(r)) // эпик 20: quality.item, quality.index, вклады показателей качества
 	// machinelogs (эпик 23): профили выполнения изделия, индекс выполнений,
 	// состояние и журнал оборудования, окна нарушений специального процесса.
 	if err := machinelogsapp.RegisterProjections(r, mldomain.Env{}); err != nil {
@@ -36,6 +38,13 @@ func engineRegistry() *engineapp.Registry {
 	// области риска, несоответствия для гипотез и общих факторов.
 	analysisapp.MustRegister(r)
 	return r
+}
+
+// mustRegister — ошибка регистрации проекции — ошибка сборки (одно имя — один писатель, AD-45).
+func mustRegister(err error) {
+	if err != nil {
+		panic(err)
+	}
 }
 
 // runWorker — роль worker (AD-5, AD-6, AD-45): партиции hash(item_id) mod P
@@ -49,6 +58,7 @@ func runWorker(ctx context.Context, env *environment) error {
 	wf := feed.NewWorkFeed(c.journal, c.leases, c.listener, env.cfg.Engine.Partitions, c.feedOptions(env, "worker"))
 	w := engineapp.NewWorker(engineapp.WorkerConfig{
 		Feed: wf, Codec: c.codec, Projections: c.registry, Log: env.log, Now: c.codec.Now,
+		Bundles: c.qualityBundles(nil), // эпик 20; эпик 17 передаст сюда свой источник версии
 		// Аренды партиций продлевает WorkFeed.Partitions — не реже TTL/3.
 		Refresh: c.ttl / 3,
 	})
@@ -99,7 +109,7 @@ func runRebuild(ctx context.Context, env *environment) error {
 	if err != nil {
 		return err
 	}
-	rb := &engineapp.Rebuilder{Codec: c.codec, Registry: c.registry}
+	rb := &engineapp.Rebuilder{Codec: c.codec, Registry: c.registry, Bundles: c.qualityBundles(nil)}
 	var rep engineapp.RebuildReport
 	if env.item != "" {
 		rep, err = rb.RebuildItem(ctx, env.item, env.reason)

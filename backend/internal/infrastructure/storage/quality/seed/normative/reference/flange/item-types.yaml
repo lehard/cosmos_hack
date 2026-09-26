@@ -1,0 +1,43 @@
+# Номенклатура демо-изделия: фланец люка гермокорпуса в сборе ФЛ-100.00.000 СБ, версия «Б», литера О1 (PRD §11.15, FR-104).
+# Состав и связи — по описанию условной сборки КОМПАС в PRD §11.15: 6 позиций; шов W-1, болтовое соединение J-1, уплотнение S-1.
+# Обозначения компонентов — проектные допущения [ПП]; сверка с файлом условной сборки — эпики 17 и 31 (cad.assembly.imported).
+version: 1
+item_types:
+  - id: FL-100.00.000
+    designation: "ФЛ-100.00.000 СБ"
+    name: "Фланец люка гермокорпуса в сборе"
+    revision: "Б"
+    marking: dpm_datamatrix
+    components:
+      - {item_type_id: FL-100.01.000, quantity: 1, lot_tracked: false}   # сварной узел: фланец + патрубок
+      - {item_type_id: FL-100.00.003, quantity: 1, lot_tracked: false}   # крышка
+      - {item_type_id: FL-100.00.004, quantity: 1, lot_tracked: true}    # уплотнение (срок хранения)
+      - {item_type_id: FL-100.00.005, quantity: 12, lot_tracked: true}   # болт
+      - {item_type_id: FL-100.00.006, quantity: 12, lot_tracked: true}   # шайба
+    zones:
+      - {zone_id: W-1.U1, name: "Шов W-1, участок У1 (0–40 мм)",    kind: weld_section}
+      - {zone_id: W-1.U2, name: "Шов W-1, участок У2 (40–80 мм)",   kind: weld_section}
+      - {zone_id: W-1.U3, name: "Шов W-1, участок У3 (80–120 мм)",  kind: weld_section}
+      - {zone_id: W-1.U4, name: "Шов W-1, участок У4 (120–160 мм)", kind: weld_section}
+      - {zone_id: W-1.U5, name: "Шов W-1, участок У5 (160–200 мм)", kind: weld_section}
+      - {zone_id: W-1.U6, name: "Шов W-1, участок У6 (200–240 мм)", kind: weld_section}
+      - {zone_id: W-1.U7, name: "Шов W-1, участок У7 (240–280 мм)", kind: weld_section}
+      - {zone_id: W-1.U8, name: "Шов W-1, участок У8 (280–320 мм)", kind: weld_section}
+      - {zone_id: J-1,    name: "Болтовое соединение крышки (12 болтов)", kind: joint}
+      - {zone_id: S-1,    name: "Канавка уплотнения",                kind: groove}
+      - {zone_id: CAV,    name: "Полость под крышкой",               kind: cavity}
+      - {zone_id: F-FACE, name: "Уплотнительная поверхность фланца", kind: surface}
+      - {zone_id: F-HOLES, name: "Отверстия под крепёж",             kind: hole}
+      - {zone_id: F-OUTER, name: "Наружная поверхность",             kind: surface}
+    links:
+      - {link_id: W-1, kind: weld,         zones: [W-1.U1, W-1.U2, W-1.U3, W-1.U4, W-1.U5, W-1.U6, W-1.U7, W-1.U8], rework_limit_per_zone: 3}
+      - {link_id: J-1, kind: bolted_joint, zones: [J-1], closes_access_to: [S-1, CAV]}
+      - {link_id: S-1, kind: seal,         zones: [S-1], install_before: J-1}
+  - {id: FL-100.01.000, designation: "ФЛ-100.01.000", name: "Узел сварной: фланец + патрубок", revision: "Б", marking: dpm_datamatrix,
+     components: [{item_type_id: FL-100.01.001, quantity: 1, lot_tracked: false}, {item_type_id: FL-100.01.002, quantity: 1, lot_tracked: false}]}
+  - {id: FL-100.01.001, designation: "ФЛ-100.01.001", name: "Фланец (заготовка — поковка АМг6 [ПП])", revision: "Б", marking: tag_qr}
+  - {id: FL-100.01.002, designation: "ФЛ-100.01.002", name: "Патрубок (покупной)",     revision: "А", marking: tag_qr}
+  - {id: FL-100.00.003, designation: "ФЛ-100.00.003", name: "Крышка",                 revision: "Б", marking: dpm_datamatrix}
+  - {id: FL-100.00.004, designation: "ФЛ-100.00.004", name: "Уплотнение (покупное, срок хранения)", revision: "А", marking: container_cell}
+  - {id: FL-100.00.005, designation: "ФЛ-100.00.005", name: "Болт М8 (покупной)",     revision: "А", marking: container_cell}
+  - {id: FL-100.00.006, designation: "ФЛ-100.00.006", name: "Шайба 8 (покупная)",     revision: "А", marking: container_cell}

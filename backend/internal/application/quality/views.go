@@ -40,6 +40,17 @@ type QualitySignal struct {
 	Versions             map[string]string      `json:"versions,omitempty" doc:"Вектор версий наблюдения (AD-29): ревизия изделия, карта контроля, камера, калибровка, анализатор, профиль порогов, контракт, приложение."`
 	EvidenceRefs         []string               `json:"evidence_refs" doc:"Адреса материалов: кадр, иллюстрация (если есть)."`
 	BasisSeq             int64                  `json:"basis_seq" doc:"seq, на котором построен ответ (AD-39)."`
+	// Почему система это предлагает (FR-51): правило карты, ограничения, требование КД.
+	UnableToAssess  bool     `json:"unable_to_assess,omitempty" doc:"Сигнал «оценка невозможна» — повторный контроль, а не признак дефекта (FR-36)."`
+	UnableReason    string   `json:"unable_reason,omitempty" doc:"Код причины «оценка невозможна»."`
+	RequirementRef  string   `json:"requirement_ref,omitempty" doc:"Требование КД; нет — вопрос технологу, а не брак (FR-48)."`
+	RuleTitle       string   `json:"rule_title,omitempty" doc:"Правило карты реакций."`
+	AutomationMode  int      `json:"automation_mode,omitempty" minimum:"0" maximum:"5" doc:"Режим автоматизации, с которым исполнена реакция (FR-50)."`
+	ProposedOutcome string   `json:"proposed_outcome,omitempty" doc:"Реакция карты до ограничений, если она ограничена (FR-144)."`
+	Limits          []string `json:"limits,omitempty" doc:"Почему реакция ограничена: mode_requires_human, trust_level_N, permissive_not_delegated, critical_hold."`
+	Containment     string   `json:"containment,omitempty" doc:"Предложенный уровень сдерживания (ось nonconformity)."`
+	ObservationIDs  []string `json:"observation_ids,omitempty" doc:"Все наблюдения сигнала: повторные наблюдения одного дефекта (FR-37)."`
+	ClosedByEventID string   `json:"closed_by_event_id,omitempty" doc:"«Оценка невозможна» или пропуск проверки закрыты этим результатом повторного контроля (человек сигнал не рассматривал)."`
 }
 
 // QualitySignalList — сигналы.
@@ -77,6 +88,25 @@ type InspectionResult struct {
 	Reliability          string             `json:"reliability" enum:"high,medium,low,unknown"`
 	OccurredAt           time.Time          `json:"occurred_at"`
 	EvidenceRefs         []string           `json:"evidence_refs"`
+	// Интерпретация системы (FR-36): исход источника и почему он изменён.
+	ReportedOutcome string                  `json:"reported_outcome,omitempty" doc:"Исход, сообщённый источником."`
+	UnableReason    string                  `json:"unable_reason,omitempty" doc:"Код причины «оценка невозможна»."`
+	Reinterpreted   string                  `json:"reinterpreted,omitempty" doc:"Почему система изменила исход: processing_not_completed, poor_observation, measurement_outside, not_measured."`
+	Analyzer        bool                    `json:"analyzer,omitempty" doc:"Наблюдение анализатора (VisionQC)."`
+	TrustLevel      *int                    `json:"trust_level,omitempty" minimum:"0" maximum:"4" doc:"Уровень доверия паспорта анализатора на момент наблюдения (AD-29)."`
+	TrustNote       string                  `json:"trust_note,omitempty" doc:"admitted, no_qualified_analyzer, suspended:…, shadow, analyzer_version_mismatch."`
+	Stages          []QualityAnalyzerStage  `json:"stages,omitempty" doc:"Ступени анализатора (FR-38)."`
+	Measurements    []InspectionMeasurement `json:"measurements,omitempty" doc:"Измерения «значение против допуска» (FR-36)."`
+	Superseded      bool                    `json:"superseded,omitempty" doc:"Наблюдение исправлено более поздней записью (FR-122)."`
+}
+
+// InspectionMeasurement — измерение против допуска: оценка источника и системы.
+type InspectionMeasurement struct {
+	Characteristic string `json:"characteristic"`
+	Value          string `json:"value,omitempty"`
+	Tolerance      string `json:"tolerance,omitempty"`
+	SourceVerdict  string `json:"source_verdict" enum:"within,outside,not_measured"`
+	Verdict        string `json:"verdict" enum:"within,outside,not_measured" doc:"Строже из оценки источника и расчёта системы."`
 }
 
 // InspectionResultList — результаты контроля изделия.
@@ -94,6 +124,7 @@ type CoveragePoint struct {
 	Status          string  `json:"status" enum:"received,pending,missing" doc:"Результат получен / ещё ждём / нет (quality.inspection.missing)."`
 	MissingReason   *string `json:"missing_reason,omitempty" enum:"result_not_received,check_skipped,point_manual_mode,not_covered_by_method,unknown"`
 	EventID         *string `json:"event_id,omitempty" doc:"Результат или запись о пропуске."`
+	Outcome         string  `json:"outcome,omitempty" enum:"defect_indicated,no_defect_indicated,unable_to_assess" doc:"Действующий исход полученного результата; «оценка невозможна» — нужен повторный контроль (FR-36)."`
 }
 
 // InspectionCoverage — полнота контроля изделия (FR-35, FR-14).
@@ -102,6 +133,20 @@ type InspectionCoverage struct {
 	Complete bool            `json:"complete" doc:"Все обязательные результаты получены."`
 	Points   []CoveragePoint `json:"points"`
 	BasisSeq int64           `json:"basis_seq"`
+	// QualityState — ось «состояние качества» (§3b, AD-30).
+	QualityState string `json:"quality_state,omitempty" enum:"not_inspected,conforming,accepted_with_concession,unable_to_assess,signal,nonconforming" doc:"Состояние качества изделия."`
+	// Types — виды дефектов плана: проверен ли каждый методом, способным его выявить (FR-14).
+	Types []DefectTypeCoverage `json:"types,omitempty"`
+}
+
+// DefectTypeCoverage — вид дефекта и его проверка методами (FR-14).
+type DefectTypeCoverage struct {
+	Code     string   `json:"code"`
+	Name     string   `json:"name"`
+	Severity string   `json:"severity" enum:"critical,major,minor,unknown"`
+	Status   string   `json:"status" enum:"defect,no_defect,unable,not_checked" doc:"not_checked — не проверено методом, способным выявить: не годность."`
+	Methods  []string `json:"methods,omitempty"`
+	EventIDs []string `json:"event_ids,omitempty"`
 }
 
 // QualityDefect — физический дефект (FR-37): ключ — изделие, зона и место в

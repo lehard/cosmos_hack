@@ -99,6 +99,8 @@ type apiOptions struct {
 	// эпика 08, identity.go); nil — разрешающая заглушка без сеансов.
 	identity  accessapp.IdentityProvider
 	directory *accessapp.Directory
+	// quality — живые операции quality над проекциями движка (quality.go); nil — 501.
+	quality *qualityapp.Service
 }
 
 // buildAPI собирает HTTP API: общий декоратор (Gate) над портами прав и входа,
@@ -156,7 +158,11 @@ func buildAPI(mux *http.ServeMux, o apiOptions) *httpapi.API {
 		itemhttp.Register(a, q, c)
 	}
 	{
-		q, c := pick[qualityapp.Queries, qualityapp.Commands](a.ModeFor("quality"), qualityapp.NewService(), qualityfx.New())
+		live := o.quality
+		if live == nil {
+			live = qualityapp.NewService()
+		}
+		q, c := pick[qualityapp.Queries, qualityapp.Commands](a.ModeFor("quality"), live, qualityfx.New())
 		qualityhttp.Register(a, q, c)
 	}
 	{
