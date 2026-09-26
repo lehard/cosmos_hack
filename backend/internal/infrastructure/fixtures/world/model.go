@@ -56,7 +56,9 @@ type Model struct {
 	// templates — шаблоны документов нормативного слоя; docs — документы мира
 	// (render_documents.go, строятся один раз).
 	templates dom.Templates
-	docs      []*wdoc
+	// federation — партнёры и подписанные выписки сценария (эпик 41, scenarios/federation).
+	federation *Federation
+	docs       []*wdoc
 }
 
 // Item — изделие сценария.

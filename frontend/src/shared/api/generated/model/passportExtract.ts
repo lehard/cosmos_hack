@@ -18,8 +18,12 @@ export interface PassportExtract {
   document_id?: string;
   /** Отпечаток выписки. */
   extract_digest: string;
+  /** Глобальный ID предмета «код_предприятия:локальный_id» (соглашения спайна). */
+  global_id?: string;
   /** Плавка. */
   heat_no?: string;
+  /** Что в выписке для человека: материал, партия или изделие (эпик 41). */
+  label?: string;
   /** Исходные байты выписки в хранилище материалов. */
   material_address?: string;
   /** Межзаводское сообщение. */

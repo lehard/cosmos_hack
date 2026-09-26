@@ -57,4 +57,17 @@ func Register(api *httpapi.API, q app.Queries, c app.Commands) {
 		func(ctx context.Context, in *struct{ Body app.SendExtract }) (platform.Receipt, error) {
 			return c.SendExtract(ctx, in.Body)
 		})
+
+	registerReceive(api, c)
+}
+
+// registerReceive — порт межзаводского обмена: приём выписки партнёра (эпик 41).
+func registerReceive(api *httpapi.API, c app.Commands) {
+	httpapi.Do(api, httpapi.Post("/passport-extracts/incoming", "Принять выписку паспорта партнёра",
+		"FR-132, AD-19: получатель сам проверяет подписи выписки цепочкой к корням партнёра из нашего акта регистрации; изменённая — 422 federation.extract_tampered; непроверяемая — принята с пометкой «происхождение не подтверждено»; принятая — корень генеалогии партии."),
+		platform.Action{ID: "federation.extract.receive", Class: platform.ClassRecord, Owner: owner, Subject: "lot",
+			Emits: []catalog.Type{catalog.FederationExtractReceived}},
+		func(ctx context.Context, in *struct{ Body app.ReceiveExtract }) (platform.Receipt, error) {
+			return c.ReceiveExtract(ctx, in.Body)
+		})
 }

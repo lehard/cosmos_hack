@@ -9,8 +9,9 @@ import { computed, onBeforeUnmount, onMounted, ref, watch, type Component } from
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import {
-  Alarm, ChartLine, ClipboardCheck, Clock, Components, Dashboard, Database, Eye, FileAnalytics, FileText,
-  History, Key, Layout2, ListCheck, Lock, PlugConnected, Point, Route, Search, Shield, ShieldCheck, Signature, Sitemap, Target, Terminal,
+  Affiliate, Alarm, ChartLine, ClipboardCheck, Clock, Components, Dashboard, Database, Eye, FileAnalytics, FileText,
+  GitBranch, History, Key, Layout2, ListCheck, Lock, PlugConnected, Point, Route, Search, Shield, ShieldCheck,
+  Signature, Sitemap, Target, Terminal,
   Tool, Users,
 } from '@vicons/tabler'
 import { useDesk } from '@/entities/desk'
@@ -56,6 +57,7 @@ const ICONS: Record<string, Component> = {
   terminal: Terminal,
   documents: FileText,
   quality: ShieldCheck,
+  federation: Affiliate,
 }
 
 const tabs = computed(() => desk.data.value?.data?.tabs ?? [])

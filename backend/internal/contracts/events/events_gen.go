@@ -2689,14 +2689,24 @@ type FederationMessageSentV1 struct {
 	// Документ.
 	DocumentID *ObjectID `json:"document_id,omitempty,omitzero"`
 
+	// Отпечаток выписки паспорта (kind = passport_extract): H(канонического
+	// содержимого).
+	ExtractDigest *Digest `json:"extract_digest,omitempty,omitzero"`
+
 	// Вид.
 	Kind FederationMessageSentV1Kind `json:"kind"`
+
+	// Адрес подписанного пакета выписки в хранилище материалов.
+	MaterialAddress *Digest `json:"material_address,omitempty,omitzero"`
 
 	// Идентификатор сообщения.
 	MessageID UUID `json:"message_id"`
 
 	// Получатель.
 	PartnerCode string `json:"partner_code"`
+
+	// Изделие или партия выписки (локальный ID).
+	SubjectID *string `json:"subject_id,omitempty,omitzero"`
 }
 
 type FederationMessageSentV1Kind string

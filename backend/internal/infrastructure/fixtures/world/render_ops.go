@@ -604,8 +604,8 @@ func renderOps(c *Ctx) []loader.Response {
 
 // integrations — экран «Интеграции» (ops.integration.list, FR-157; эпик 48):
 // в мире заготовок установлены стенды 1С, Галактики и MES (эпик 43),
-// КОМПАС-3D, СКУД (эпик 37), VisionQC, контроля действий оператора и демо-УЦ;
-// партнёры — «не установлена». Канал 1С — как в erp.channel.list того же шага.
+// КОМПАС-3D, СКУД (эпик 37), VisionQC, контроля действий оператора, демо-УЦ
+// и партнёров федерации (эпик 41). Канал 1С — как в erp.channel.list того же шага.
 func (c *Ctx) integrations() opsapp.IntegrationList {
 	queued, rejected := int64(0), int64(0)
 	var last time.Time
@@ -665,6 +665,26 @@ func (c *Ctx) integrations() opsapp.IntegrationList {
 	ca.Detail = ptr("Демо-УЦ: выпуск и отзыв сертификатов mTLS, OCSP")
 	return opsapp.IntegrationList{Profile: "fixtures", Items: []opsapp.IntegrationEntry{
 		onec, gal, mes, stand("kompas", "file:///var/lib/ant/exchange/kompas"), skud,
-		ca, stand("visionqc", "http://stands:8090/visionqc"), stand("operatorvision", "http://stands:8090/operatorvision"), absent("partner"),
+		ca, stand("visionqc", "http://stands:8090/visionqc"), stand("operatorvision", "http://stands:8090/operatorvision"), c.partnerIntegration(stand, absent),
 	}}
+}
+
+// partnerIntegration — порт межзаводского обмена (эпик 41, FR-131): стенд
+// партнёров федерации — выписки сценария из scenarios/federation; нет
+// каталога федерации — «не установлена».
+func (c *Ctx) partnerIntegration(stand func(sys, ep string) opsapp.IntegrationEntry, absent func(string) opsapp.IntegrationEntry) opsapp.IntegrationEntry {
+	f := c.M.federation
+	if f == nil {
+		return absent("partner")
+	}
+	e := stand("partner", "http://stands:8491/stand/federation/v1")
+	names := ""
+	for i, p := range f.Manifest.Partners {
+		if i > 0 {
+			names += ", "
+		}
+		names += p.Name
+	}
+	e.Detail = ptr("Межзаводской обмен выписками паспорта: " + names)
+	return e
 }

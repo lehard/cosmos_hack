@@ -172,8 +172,8 @@ profiles:
     # integrations.enabled — список stand-ов заполняют эпики интеграций.
     integrations:
       # эпик 30: обмен с stand-ом 1С; эпик 37: stand СКУД; эпик 43: stand-ы
-      # Галактики и MES (роли outbox и stands).
-      enabled: [onec, skud, galaktika, mes]
+      # Галактики и MES (роли outbox и stands); эпик 41: партнёры федерации (выписки паспорта).
+      enabled: [onec, skud, galaktika, mes, partner]
     # Эпик 43: учётный обмен ведёт 1С; Галактика установлена stand-ом —
     # «Проверить соединение» работает, переключение — ANT_ERP_LEDGER=galaktika.
     erp:

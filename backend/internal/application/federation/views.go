@@ -38,6 +38,8 @@ type PassportExtract struct {
 	MessageID       string             `json:"message_id,omitempty" doc:"Межзаводское сообщение."`
 	Acknowledged    *bool              `nullable:"true" json:"acknowledged" doc:"Квитанция партнёра; null — ещё нет."`
 	At              time.Time          `json:"at"`
+	Label           string             `json:"label,omitempty" doc:"Что в выписке для человека: материал, партия или изделие (эпик 41)."`
+	GlobalID        string             `json:"global_id,omitempty" doc:"Глобальный ID предмета «код_предприятия:локальный_id» (соглашения спайна)."`
 }
 
 // PassportExtractList — выписки.
@@ -53,6 +55,9 @@ type PassportExtractView struct {
 	Content    map[string]any     `json:"content" doc:"Содержимое выписки."`
 	Signatures []PartnerSignature `json:"signatures"`
 	Checkpoint string             `json:"checkpoint,omitempty" doc:"Контрольная точка хранителя отправителя."`
+	// Эпик 41: пакет для скачивания и пояснение статуса.
+	Envelope     string `json:"envelope,omitempty" doc:"Подписанный пакет выписки — конверт DSSE (JSON): его скачивают и проверяют у получателя без доступа к журналу отправителя (AD-19)."`
+	OriginReason string `json:"origin_reason,omitempty" doc:"Почему такой статус происхождения — для человека."`
 }
 
 // PartnerSignature — подпись внутри выписки, проверенная цепочкой к корням партнёра.
@@ -60,4 +65,6 @@ type PartnerSignature struct {
 	KeyRef       string `json:"key_ref"`
 	SignerRole   string `json:"signer_role,omitempty"`
 	Verification string `json:"verification" enum:"valid,invalid,unverifiable"`
+	Name         string `json:"name,omitempty" doc:"Подписант у партнёра (из выписки)."`
+	Human        bool   `json:"human,omitempty" doc:"Ключ сотрудника по акту, подписанному корнем партнёра; false — корень или шлюз предприятия."`
 }

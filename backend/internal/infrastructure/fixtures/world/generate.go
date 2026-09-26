@@ -26,7 +26,7 @@ var InputFiles = []string{"normative/policy/policy.v1.yaml", "normative/process/
 	"normative/documents/templates.v1.yaml"}
 
 // InputGlobs — входы генератора по шаблону.
-var InputGlobs = []string{"normative/desks/*.yaml", FixturesDir + "/*/world.yaml"}
+var InputGlobs = []string{"normative/desks/*.yaml", FixturesDir + "/*/world.yaml", FederationDir + "/*.json"}
 
 //go:embed all:input
 var input embed.FS
@@ -122,6 +122,10 @@ func Generate(fsys fs.FS) (map[string][]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	fed, err := LoadFederation(fsys)
+	if err != nil {
+		return nil, err
+	}
 	out := map[string][]byte{"common/blobs/" + BpmnBlob: bpmn, "common/blobs/" + BracketBpmnBlob: BracketBpmn}
 	var people []PersonRef
 	seen := map[string]bool{}
@@ -139,6 +143,7 @@ func Generate(fsys fs.FS) (map[string][]byte, error) {
 		m.shifts = shifts
 		m.names = names
 		m.templates = templates
+		m.federation = fed
 		if err := m.write(out); err != nil {
 			return nil, err
 		}

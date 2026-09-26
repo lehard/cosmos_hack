@@ -39,7 +39,7 @@ roles:
   - id: staff
     title: "Работник предприятия: просмотр производственных данных"
     inherits: [employee]
-    actions: ["item.*.read", "process.*.read", "quality.*.read", "nonconformity.*.read", "analysis.*.read", "analytics.*.read", "machinelogs.*.read", "crossitem.*.read", "documents.*.read", "reference.*.read", "vision.*.read", "materials.*.read", "erp.*.read", "mes.*.list", "cad.*.list", "signing.*.read", "simulation.*.read", "journal.timeline.read", "journal.head.read", "access.workplace.list"]
+    actions: ["item.*.read", "process.*.read", "quality.*.read", "nonconformity.*.read", "analysis.*.read", "analytics.*.read", "machinelogs.*.read", "crossitem.*.read", "documents.*.read", "reference.*.read", "vision.*.read", "materials.*.read", "erp.*.read", "mes.*.list", "cad.*.list", "signing.*.read", "simulation.*.read", "journal.timeline.read", "journal.head.read", "access.workplace.list", "federation.*.read"]
   - id: device_source
     title: "Источник фактов (устройство без сеанса)"
     actions: ["ingest.event.submit", "ingest.batch.submit", "materials.material.upload"]
@@ -49,7 +49,7 @@ roles:
     case_role: true
     domain: qc
     inherits: [staff]
-    actions: ["quality.*.read", "nonconformity.signal.reject", "nonconformity.nonconformity.confirm", "nonconformity.recheck.request", "nonconformity.item.isolate", "nonconformity.presentation.resolve", "nonconformity.presentation.review", "nonconformity.lot.resolve", "nonconformity.containment.set", "nonconformity.disposition.verify", "item.intervention.close", "item.identification.confirm", "analysis.item.assess", "documents.document.sign", "documents.signature.*", "documents.version.request", "documents.paper.print", "documents.document.request", "crossitem.binding.assign", "item.*.read", "analysis.*.read", "process.*.read", "access.workplace.admit", "access.workplace.release"]
+    actions: ["quality.*.read", "nonconformity.signal.reject", "nonconformity.nonconformity.confirm", "nonconformity.recheck.request", "nonconformity.item.isolate", "nonconformity.presentation.resolve", "nonconformity.presentation.review", "nonconformity.lot.resolve", "nonconformity.containment.set", "nonconformity.disposition.verify", "item.intervention.close", "item.identification.confirm", "analysis.item.assess", "documents.document.sign", "documents.signature.*", "documents.version.request", "documents.paper.print", "documents.document.request", "crossitem.binding.assign", "item.*.read", "analysis.*.read", "process.*.read", "access.workplace.admit", "access.workplace.release", "federation.extract.send", "federation.extract.receive"]
   - id: site_foreman
     title: "Мастер участка"
     case_role: true
@@ -70,7 +70,7 @@ roles:
     case_role: true
     domain: admin
     inherits: [staff]
-    actions: ["access.person.register", "access.account.activate", "access.policy.grant", "access.policy.revoke", "access.qualification.grant", "access.qualification.revoke", "documents.version.request", "documents.document.request", "documents.request.list", "signing.key.register", "signing.key.revoke", "ops.source.disable", "ops.source.enable", "ops.integration.set", "ops.integration.check", "ops.processing.retry", "ingest.message.reprocess", "ingest.import.submit", "erp.posting.resend", "crossitem.binding.assign", "simulation.*.*", "reference.*.define", "ops.*.read", "ingest.*.read", "access.*.read", "journal.*.read", "security.*.read"]
+    actions: ["access.person.register", "access.account.activate", "access.policy.grant", "access.policy.revoke", "access.qualification.grant", "access.qualification.revoke", "documents.version.request", "documents.document.request", "documents.request.list", "signing.key.register", "signing.key.revoke", "ops.source.disable", "ops.source.enable", "ops.integration.set", "ops.integration.check", "ops.processing.retry", "ingest.message.reprocess", "ingest.import.submit", "erp.posting.resend", "crossitem.binding.assign", "simulation.*.*", "reference.*.define", "ops.*.read", "ingest.*.read", "access.*.read", "journal.*.read", "security.*.read", "federation.partner.register", "federation.extract.receive"]
   # ── дополнительные роли (PRD §2, AD-15) ──
   - id: performer
     title: "Исполнитель"
@@ -79,7 +79,7 @@ roles:
   - id: storekeeper
     title: "Кладовщик"
     inherits: [performer]
-    actions: ["crossitem.lot.register", "crossitem.lot.issue", "item.item.register", "item.carrier.apply", "item.release.record", "process.movement.send"]
+    actions: ["crossitem.lot.register", "crossitem.lot.issue", "item.item.register", "item.carrier.apply", "item.release.record", "process.movement.send", "federation.extract.receive"]
   # Редкие подписанты (FR-136): только карточка «требуется ваше решение» — документ, где он в маршруте, и его
   # предмет (паспорт, история, генеалогия изделия) как доказательства; прочие экраны закрыты.
   - id: customer_representative

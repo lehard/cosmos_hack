@@ -142,6 +142,8 @@ type apiOptions struct {
 	// signing — ключи, профили, акты и проверка подписи команд уровня ≥ 1
 	// общим декоратором (signing.go, Д-59); nil — 501 и без проверки подписи.
 	signing *signingapp.Service
+	// federation — партнёры и выписки паспорта (federation.go, эпик 41); nil — 501.
+	federation *federationapp.Service
 }
 
 // buildAPI собирает HTTP API: общий декоратор (Gate) над портами прав и входа,
@@ -370,7 +372,11 @@ func buildAPI(mux *http.ServeMux, o apiOptions) *httpapi.API {
 		cadhttp.Register(a, q, c)
 	}
 	{
-		q, c := pick[federationapp.Queries, federationapp.Commands](a.ModeFor("federation"), federationapp.NewService(), federationfx.New())
+		live := o.federation
+		if live == nil {
+			live = federationapp.NewService()
+		}
+		q, c := pick[federationapp.Queries, federationapp.Commands](a.ModeFor("federation"), live, federationfx.New())
 		federationhttp.Register(a, q, c)
 	}
 	{

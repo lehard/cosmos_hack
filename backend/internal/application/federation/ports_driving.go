@@ -20,6 +20,8 @@ type Queries interface {
 type Commands interface {
 	RegisterPartner(ctx context.Context, in RegisterPartner) (platform.Receipt, error)
 	SendExtract(ctx context.Context, in SendExtract) (platform.Receipt, error)
+	// ReceiveExtract — принять выписку партнёра (federation.extract.receive, FR-132).
+	ReceiveExtract(ctx context.Context, in ReceiveExtract) (platform.Receipt, error)
 }
 
 // Unimplemented — заглушка портов federation: каждая операция отвечает 501
@@ -42,6 +44,10 @@ func (Unimplemented) RegisterPartner(context.Context, RegisterPartner) (platform
 }
 func (Unimplemented) SendExtract(context.Context, SendExtract) (platform.Receipt, error) {
 	return platform.Receipt{}, ni("federation.extract.send")
+}
+
+func (Unimplemented) ReceiveExtract(context.Context, ReceiveExtract) (platform.Receipt, error) {
+	return platform.Receipt{}, ni("federation.extract.receive")
 }
 
 var (

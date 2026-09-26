@@ -138,6 +138,7 @@ var renderers = []func(c *Ctx) []loader.Response{
 	renderItems, renderProcess, renderQuality, renderNonconformity, renderAnalysis, renderSuggestions,
 	renderAnalytics, renderNotifications, renderERP, renderJournal, renderMachinelogs,
 	renderVision, renderIngest, renderOps, renderSimulation, renderMaterials, renderDocuments,
+	renderFederation,
 }
 
 // Render — все ответы шага n.

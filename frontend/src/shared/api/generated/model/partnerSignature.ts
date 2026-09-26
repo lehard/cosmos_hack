@@ -5,7 +5,11 @@
 import type { PartnerSignatureVerification } from './partnerSignatureVerification';
 
 export interface PartnerSignature {
+  /** Ключ сотрудника по акту, подписанному корнем партнёра; false — корень или шлюз предприятия. */
+  human?: boolean;
   key_ref: string;
+  /** Подписант у партнёра (из выписки). */
+  name?: string;
   signer_role?: string;
   verification: PartnerSignatureVerification;
 }

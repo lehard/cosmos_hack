@@ -10604,7 +10604,13 @@ components:
     PartnerSignature:
       additionalProperties: false
       properties:
+        human:
+          description: Ключ сотрудника по акту, подписанному корнем партнёра; false — корень или шлюз предприятия.
+          type: boolean
         key_ref:
+          type: string
+        name:
+          description: Подписант у партнёра (из выписки).
           type: string
         signer_role:
           type: string
@@ -10724,8 +10730,14 @@ components:
         extract_digest:
           description: Отпечаток выписки.
           type: string
+        global_id:
+          description: Глобальный ID предмета «код_предприятия:локальный_id» (соглашения спайна).
+          type: string
         heat_no:
           description: Плавка.
+          type: string
+        label:
+          description: "Что в выписке для человека: материал, партия или изделие (эпик 41)."
           type: string
         material_address:
           description: Исходные байты выписки в хранилище материалов.
@@ -10776,8 +10788,14 @@ components:
           additionalProperties: {}
           description: Содержимое выписки.
           type: object
+        envelope:
+          description: "Подписанный пакет выписки — конверт DSSE (JSON): его скачивают и проверяют у получателя без доступа к журналу отправителя (AD-19)."
+          type: string
         extract:
           $ref: "#/components/schemas/PassportExtract"
+        origin_reason:
+          description: Почему такой статус происхождения — для человека.
+          type: string
         signatures:
           items:
             $ref: "#/components/schemas/PartnerSignature"
@@ -12068,6 +12086,46 @@ components:
         - seq
         - event_ids
         - replayed
+      type: object
+    ReceiveExtract:
+      additionalProperties: false
+      properties:
+        basis_seq:
+          description: "seq, на котором клиент видел объект (basis_seq из ответа чтения): после него в потоках гарда не должно быть новых записей guard_relevant, иначе 409 journal.stale_state (AD-39)."
+          format: int64
+          minimum: 0
+          type: integer
+        command_id:
+          description: UUIDv7 клиента; повтор с тем же id возвращает прежний ответ (AD-7). У подписанной команды — event_id пакета.
+          format: uuid
+          type: string
+        envelope:
+          description: Подписанный пакет выписки — конверт DSSE (JSON) как пришёл.
+          maxLength: 262144
+          minLength: 2
+          type: string
+        partner_code:
+          description: От кого пришла выписка (канал партнёра).
+          pattern: ^[A-Z0-9][A-Z0-9_-]{0,15}$
+          type: string
+        policy_seq:
+          description: Версия политики, по которой показаны права (policy_seq сеанса); изменилась — 409 journal.stale_policy (AD-39).
+          format: int64
+          minimum: 0
+          type: integer
+        signature:
+          $ref: "#/components/schemas/DsseEnvelope"
+          description: "Подписанный пакет DSSE для операций с уровнем подписи ≥ 1 (AD-10, AD-13, AD-14): подписывает агент токена, сервер сверяет отпечаток."
+        workplace_id:
+          description: Рабочее место сеанса (барьер 2, AD-15).
+          maxLength: 128
+          type: string
+      required:
+        - partner_code
+        - envelope
+        - command_id
+        - basis_seq
+        - policy_seq
       type: object
     ReceiveMovement:
       additionalProperties: false
@@ -27354,6 +27412,45 @@ paths:
         emits:
           - federation.message.sent
         id: federation.extract.send
+        owner: federation
+        subject: lot
+  /api/v1/passport-extracts/incoming:
+    post:
+      description: "FR-132, AD-19: получатель сам проверяет подписи выписки цепочкой к корням партнёра из нашего акта регистрации; изменённая — 422 federation.extract_tampered; непроверяемая — принята с пометкой «происхождение не подтверждено»; принятая — корень генеалогии партии."
+      operationId: federation.extract.receive
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReceiveExtract"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Receipt"
+          description: OK
+          headers:
+            Ant-Backend:
+              schema:
+                $ref: "#/components/schemas/BackendMode"
+                description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Error
+      summary: Принять выписку паспорта партнёра
+      tags:
+        - federation
+      x-ant-action:
+        class: record
+        critical: false
+        emits:
+          - federation.extract.received
+        id: federation.extract.receive
         owner: federation
         subject: lot
   /api/v1/passport-extracts/{extract_digest}:

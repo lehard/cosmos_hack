@@ -7,6 +7,7 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { SummaryTag, splitGenealogy, type GenealogyNode, type ItemGenealogy } from '@/entities/item'
+import { useDrillDown, type DrillRef } from '@/features/drill-down'
 import { EmptyState } from '@/shared/ui'
 
 const props = defineProps<{ genealogy: ItemGenealogy }>()
@@ -21,6 +22,9 @@ const sections = computed(() => [
   { key: 'extracts', title: 'passport.supplierExtract', nodes: view.value.extracts },
 ])
 const openable = (n: GenealogyNode) => n.kind === 'item'
+// Эпик 41: выписка партнёра открывается окном выписки с подписями (Д-70).
+const drill = useDrillDown()
+const openExtract = (n: GenealogyNode) => drill.open({ entity: 'extract', id: n.ref } as unknown as DrillRef)
 </script>
 
 <template>
@@ -31,6 +35,7 @@ const openable = (n: GenealogyNode) => n.kind === 'item'
       <ul v-else>
         <li v-for="n in s.nodes" :key="n.ref" :data-ref="n.ref" :data-kind="n.kind">
           <button v-if="openable(n)" type="button" class="linklike" @click="emit('open-item', n.ref)">{{ n.label }}</button>
+          <button v-else-if="n.kind === 'partner_extract'" type="button" class="linklike" data-testid="open-extract" @click="openExtract(n)">{{ n.label }}</button>
           <span v-else>{{ n.label }}</span>
           <span v-if="n.position" class="muted">· {{ n.position }}</span>
           <SummaryTag v-if="n.summary" :code="n.summary" />

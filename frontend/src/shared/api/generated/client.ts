@@ -273,6 +273,7 @@ import type {
   QuarantineList,
   ReactionMap,
   Receipt,
+  ReceiveExtract,
   ReceiveMovement,
   RecordAssembly,
   RecordHypothesis,
@@ -20746,6 +20747,126 @@ export const useFederationExtractSend = <TError = globalThis.Error & { info?: Pr
         TContext
       > => {
       return useMutation(getFederationExtractSendMutationOptions(options), queryClient);
+    }
+
+export type federationExtractReceiveResponse200 = {
+  data: Receipt
+  status: 200
+}
+
+export type federationExtractReceiveResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type federationExtractReceiveResponseSuccess = (federationExtractReceiveResponse200) & {
+  headers: Headers;
+};
+export type federationExtractReceiveResponseError = (federationExtractReceiveResponseDefault) & {
+  headers: Headers;
+};
+
+export const getFederationExtractReceiveUrl = () => {
+
+
+
+
+  return `/api/v1/passport-extracts/incoming`
+}
+
+/**
+ * FR-132, AD-19: получатель сам проверяет подписи выписки цепочкой к корням партнёра из нашего акта регистрации; изменённая — 422 federation.extract_tampered; непроверяемая — принята с пометкой «происхождение не подтверждено»; принятая — корень генеалогии партии.
+ * @summary Принять выписку паспорта партнёра
+ */
+export const federationExtractReceive = async (receiveExtract: ReceiveExtract, options?: RequestInit): Promise<federationExtractReceiveResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getFederationExtractReceiveUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(receiveExtract)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: federationExtractReceiveResponseError['data'], status?: number} = new globalThis.Error();
+    const data : federationExtractReceiveResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: federationExtractReceiveResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as federationExtractReceiveResponseSuccess
+}
+
+
+
+
+
+export const getFederationExtractReceiveMutationKey = () => ['federationExtractReceive'] as const;
+
+export const getFederationExtractReceiveMutationOptions = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof federationExtractReceive>>, TError,FederationExtractReceiveMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof federationExtractReceive>>, TError,FederationExtractReceiveMutationVariables, TContext> => {
+
+const mutationKey = getFederationExtractReceiveMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof federationExtractReceive>>, FederationExtractReceiveMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  federationExtractReceive(data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type FederationExtractReceiveMutationResult = NonNullable<Awaited<ReturnType<typeof federationExtractReceive>>>
+    export type FederationExtractReceiveMutationBody = ReceiveExtract
+    export type FederationExtractReceiveMutationError = globalThis.Error & { info?: Problem; status?: number }
+    export type FederationExtractReceiveMutationVariables = {data: ReceiveExtract}
+
+    /**
+ * @summary Принять выписку паспорта партнёра
+ */
+export const useFederationExtractReceive = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof federationExtractReceive>>, TError,FederationExtractReceiveMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof federationExtractReceive>>,
+        TError,
+        FederationExtractReceiveMutationVariables,
+        TContext
+      > => {
+      return useMutation(getFederationExtractReceiveMutationOptions(options), queryClient);
     }
 
 export type federationExtractReadResponse200 = {

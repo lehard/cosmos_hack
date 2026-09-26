@@ -138,6 +138,12 @@ func runAPI(ctx context.Context, env *environment) error {
 			return err
 		}
 	}
+	if modeOf(opts, "federation") == platform.ModeLive {
+		// Эпик 41: партнёры, выписки паспорта, приём с проверкой подписей.
+		if opts.federation, err = federationLive(ctx, env); err != nil {
+			return err
+		}
+	}
 	if modeOf(opts, "analysis") == platform.ModeLive {
 		if opts.analysis, err = analysisLive(ctx, env, opts.accessDirectory()); err != nil {
 			return err
