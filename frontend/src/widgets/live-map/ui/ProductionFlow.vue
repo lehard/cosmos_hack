@@ -12,7 +12,7 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { LiveMap, TimelineMark } from '@/shared/api/generated/model'
-import { containment, sectionStates, sectionsOf, type SectionState, type SectionStatus } from '../model/flow'
+import { containment, sectionStates, sectionsOf, type SectionState, type SectionStatus } from '@/entities/live-map'
 
 const props = withDefaults(
   defineProps<{

@@ -5,7 +5,7 @@ import { createPinia } from 'pinia'
 import { describe, expect, it } from 'vitest'
 import { i18n } from '@/shared/i18n'
 import type { LiveMap } from '@/shared/api/generated/model'
-import { containment, sectionStates, sectionsOf } from '../model/flow'
+import { containment, sectionStates, sectionsOf } from '@/entities/live-map'
 import ProductionFlow from '../ui/ProductionFlow.vue'
 
 const bpmn = `<?xml version="1.0" encoding="UTF-8"?>

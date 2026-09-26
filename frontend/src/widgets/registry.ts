@@ -32,6 +32,7 @@ export interface WidgetDefinition {
 export const widgetRegistry = {
   // ── эпик 10: Живая карта и стол руководителя ──
   'live-map': { titleKey: 'liveMap.title', epic: 10, load: () => import('./live-map'), fill: true },
+  'control-center': { titleKey: 'widgets.controlCenter.title', epic: 10, load: () => import('./control-center') },
   'map-timeline': { titleKey: 'widgets.mapTimeline', epic: 10, load: () => import('./map-timeline') },
   'posts': { titleKey: 'liveMap.posts.title', epic: 10, load: () => import('./posts') },
   'attention': { titleKey: 'liveMap.attention.title', epic: 10, load: () => import('./attention') },
