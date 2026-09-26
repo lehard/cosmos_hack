@@ -2,6 +2,7 @@ package nonconformity_test
 
 import (
 	"context"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -50,5 +51,39 @@ func TestQueueReviewAfterNewData(t *testing.T) {
 	if r.SourceEventID == nil || *r.SourceEventID != late.Entry.EventID || r.ReviewSince == nil || !strings.Contains(r.Title, "ZT-3") ||
 		strings.Contains(r.Title, late.Entry.EventID) || strings.Contains(r.Title, string(catalog.EquipmentCycleSummarized)) {
 		t.Fatalf("строка пересмотра: %+v", r)
+	}
+	// Контекст решения для пересмотра: прежнее решение и что пришло после (с числами режима).
+	pv, err := svc.Presentation(nctest.As("qc-2", "quality_inspector"), item, platform.Moment{})
+	if err != nil || pv.Review == nil || pv.Presentation.ClosingPoint != "ZT-3" || pv.Presentation.StepKey != "welding.zt3_acceptance" {
+		t.Fatalf("предъявление для пересмотра: %+v %v", pv, err)
+	}
+	if pv.Review.Decision.Kind != "decision" || len(pv.Review.NewFacts) != 1 || pv.Review.NewFacts[0].EventID != late.Entry.EventID {
+		t.Fatalf("пересмотр: %+v", pv.Review)
+	}
+}
+
+// Точка предъявления: поля команды решения; исполнитель операции принять не
+// может (разделение обязанностей), без результатов методов «принять» нет;
+// вернуть — можно; без предъявления — ошибка.
+func TestPresentationRead(t *testing.T) {
+	w := nctest.NewWorld(t)
+	svc := w.Service(app.DemoRoutes{})
+	w.Add(nctest.Record(catalog.ItemPresentationRecorded, "FL:0006", nctest.T0, map[string]any{"step_key": "welding.zt3_acceptance",
+		"presentation_no": 1, "presented_to": "qc", "presented_by": "master-1"}))
+	w.Add(nctest.Run("FL:0006", nctest.T0.Add(-time.Hour), "RUN-6", "op-7"))
+	w.Settle()
+	pv, err := svc.Presentation(nctest.As("op-7", "quality_inspector"), "FL:0006", platform.Moment{})
+	if err != nil || pv.Presentation.StepKey != "welding.zt3_acceptance" || pv.Presentation.PresentationNo != 1 || pv.Presentation.EventID == "" || pv.Review != nil {
+		t.Fatalf("предъявление: %+v %v", pv, err)
+	}
+	if slices.Contains(pv.Presentation.AllowedResolutions, "accept") {
+		t.Fatalf("исполнитель операции: %v", pv.Presentation.AllowedResolutions)
+	}
+	pv, _ = svc.Presentation(nctest.As("qc-2", "quality_inspector"), "FL:0006", platform.Moment{})
+	if !slices.Contains(pv.Presentation.AllowedResolutions, "reject") || slices.Contains(pv.Presentation.AllowedResolutions, "accept_with_concession") {
+		t.Fatalf("контролёр: %v", pv.Presentation.AllowedResolutions)
+	}
+	if _, err := svc.Presentation(context.Background(), "FL:0404", platform.Moment{}); err == nil {
+		t.Fatal("без изделия — ошибка")
 	}
 }

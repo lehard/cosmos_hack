@@ -244,6 +244,39 @@ type NCCard struct {
 	GroupItemIDs        []string               `json:"group_item_ids,omitempty" doc:"Изделия группового несоответствия: окно нарушения специального процесса — одно несоответствие на все изделия окна, решение комиссии приходит каждому (FR-151)."`
 }
 
+// NCPresentationView — точка предъявления изделия для решения контролёра
+// (nonconformity.presentation.read; FR-19, FR-56): всё, что нужно команде
+// nonconformity.presentation.resolve, результаты методов, на которых решение,
+// и — у пересмотра — прежнее решение, его основание и что пришло после (AD-3).
+type NCPresentationView struct {
+	ItemID        string                `json:"item_id"`
+	ItemLabel     string                `json:"item_label" doc:"Номер детали для людей."`
+	Presentation  NCPresentationPoint   `json:"presentation"`
+	MethodResults []NCRecordRef         `json:"method_results" doc:"Результаты методов контроля, на которых решение (как happened.after в карточке НС)."`
+	Review        *NCPresentationReview `json:"review,omitempty" doc:"Пересмотр решения, принятого до новых данных (строка очереди kind = review)."`
+	BasisSeq      int64                 `json:"basis_seq" doc:"seq, на котором построен ответ (basis_seq команды, AD-39)."`
+}
+
+// NCPresentationPoint — точка предъявления: поля команды решения и подписи для людей.
+type NCPresentationPoint struct {
+	EventID            string   `json:"event_id" doc:"Запись предъявления (item.presentation.recorded)."`
+	StepKey            string   `json:"step_key"`
+	StepLabel          *string  `json:"step_label,omitempty" doc:"Имя шага по описанию процесса."`
+	ClosingPoint       string   `json:"closing_point" doc:"Закрывающая точка (ЗТ) — поле команды."`
+	ClosingPointLabel  *string  `json:"closing_point_label,omitempty" doc:"Закрывающая точка для людей — имя узла процесса с этой ЗТ."`
+	PresentationNo     int      `json:"presentation_no" minimum:"1" doc:"Номер предъявления (повторное — больше 1)."`
+	MethodEventIDs     []string `json:"method_event_ids" doc:"Результаты методов контроля — method_event_ids команды."`
+	NextStepLabel      *string  `json:"next_step_label,omitempty" doc:"Куда передаётся изделие при «Принять» — имя следующего шага процесса."`
+	AllowedResolutions []string `json:"allowed_resolutions" enum:"accept,accept_with_concession,reject,insufficient_data" doc:"Решения, которые пройдут гарды для вошедшего: разделение обязанностей, полномочие точки, блок, результаты методов, действующее разрешение на отклонение."`
+}
+
+// NCPresentationReview — пересмотр: прежнее решение, основание при подписи и новые факты.
+type NCPresentationReview struct {
+	Decision        NCRecordRef   `json:"decision" doc:"Прежнее решение на точке (автор, время)."`
+	KnownAtDecision []NCRecordRef `json:"known_at_decision" doc:"Что было в основании при подписи (результаты методов решения)."`
+	NewFacts        []NCRecordRef `json:"new_facts" doc:"Что пришло после решения (с числами режима reading, если есть)."`
+}
+
 // NCSummary — несоответствие в списке.
 type NCSummary struct {
 	NCID           string    `json:"nc_id"`

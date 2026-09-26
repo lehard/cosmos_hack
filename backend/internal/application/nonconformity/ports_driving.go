@@ -30,6 +30,8 @@ type Queries interface {
 	List(ctx context.Context, f NCFilter, m platform.Moment, p platform.Page) (NCList, error)
 	// Concessions — разрешения на отклонение, применимые к изделию (nonconformity.concession.list, FR-54).
 	Concessions(ctx context.Context, itemID string, m platform.Moment) (ConcessionList, error)
+	// Presentation — точка предъявления изделия для решения (nonconformity.presentation.read, FR-19).
+	Presentation(ctx context.Context, itemID string, m platform.Moment) (NCPresentationView, error)
 }
 
 // Commands — ведущий порт команд модуля nonconformity (AD-39): решения
@@ -72,6 +74,9 @@ func (Unimplemented) List(context.Context, NCFilter, platform.Moment, platform.P
 }
 func (Unimplemented) Concessions(context.Context, string, platform.Moment) (ConcessionList, error) {
 	return ConcessionList{}, ni("nonconformity.concession.list")
+}
+func (Unimplemented) Presentation(context.Context, string, platform.Moment) (NCPresentationView, error) {
+	return NCPresentationView{}, ni("nonconformity.presentation.read")
 }
 func (Unimplemented) Confirm(context.Context, string, ConfirmNonconformity) (platform.Receipt, error) {
 	return nr("nonconformity.nonconformity.confirm")

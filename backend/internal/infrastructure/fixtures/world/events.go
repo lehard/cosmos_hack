@@ -357,6 +357,8 @@ func (m *Model) storyEvents() {
 		e := m.ev("equipment.deviation.detected", "fact", le.Occurred.Time(), fmt.Sprintf("%s: ток %d А при уставке %s — первое отклонение (запись %s)", "ИС-2", le.CurrentA, le.Setpoint, le.ID),
 			withItem(it), withSource(le.Source, "machine"), withParams("record", le.ID, "value", fmt.Sprint(le.CurrentA), "setpoint", le.Setpoint), recordedAt(le.Received.Time()))
 		e.Params["late"] = "true"
+		e.Reading = &ncapp.NCParameterReading{Parameter: "current_a", Unit: "A", SetpointNominal: ptr(int64(160)), SetpointMin: ptr(int64(150)), SetpointMax: ptr(int64(170)),
+			ObservedMin: ptr(int64(le.CurrentA)), ObservedMax: ptr(int64(le.CurrentA))}
 	}
 	for _, rv := range m.Spec.Reviews {
 		it := m.itemByID[rv.Item]
