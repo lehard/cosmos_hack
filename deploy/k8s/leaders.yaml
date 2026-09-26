@@ -37,10 +37,8 @@ spec:
             # Проектор держит по потребителю на глобальную проекцию (их десятки):
             # пул больше, чем у api, иначе потребители ждут соединения (эпик 35).
             - {name: ANT_DB_MAX_CONNS, value: "24"}
-          ports: [{name: http, containerPort: 8080}]
-          readinessProbe:
-            httpGet: {path: /readyz, port: http}
-            periodSeconds: 5
+          # HTTP (/healthz, /readyz) слушает только роль api: проб у копии нет,
+          # живость — сам процесс, готовность не нужна — входящего трафика нет.
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true

@@ -34,10 +34,8 @@ spec:
           env:
             - {name: ANT_DB_MAX_CONNS, value: "12"}
             - {name: ANT_ENGINE_FOLD_PARALLELISM, value: "4"}
-          ports: [{name: http, containerPort: 8080}]
-          readinessProbe:
-            httpGet: {path: /readyz, port: http}
-            periodSeconds: 5
+          # HTTP (/healthz, /readyz) слушает только роль api: проб у копии нет,
+          # живость — сам процесс, готовность не нужна — входящего трафика нет.
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true

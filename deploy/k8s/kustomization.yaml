@@ -1,5 +1,7 @@
 # Конфигурация масштабирования ant для Kubernetes (эпик 35, AD-6, AD-25, FR-112).
-# Описание промышленного окружения, без локального запуска: kubectl apply -k deploy/k8s
+# Описание промышленного окружения, без локального запуска (ant.yaml берётся из
+# deploy/config — вне каталога kustomize, поэтому --load-restrictor):
+#   kubectl kustomize --load-restrictor LoadRestrictionsNone deploy/k8s | kubectl apply -f -
 # (образ ant — тот же, что собирает make build; Postgres — внешний, см. README.md).
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization

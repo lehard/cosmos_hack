@@ -25,7 +25,7 @@ SEED=${SEED:-0}
 OUTAGE=${OUTAGE:-20}
 OUT="$ROOT/scenarios/load/out"
 export ANT_HTTP_PORT=${ANT_HTTP_PORT:-8484} ANT_STANDS_PORT=${ANT_STANDS_PORT:-8494}
-export ANT_PROFILE=load ANT_LOAD_SCENARIO=$SCENARIO ANT_LOAD_SEED=$SEED ANT_LOAD_WORKERS=$N
+export ANT_LOAD_SCENARIO=$SCENARIO ANT_LOAD_SEED=$SEED ANT_LOAD_WORKERS=$N
 DOCKER="$ROOT/deploy/scripts/docker.sh"
 compose() {
   "$DOCKER" compose -p ant-load -f "$ROOT/deploy/compose/compose.yaml" -f "$ROOT/scenarios/load/compose.load.yaml" "$@"
