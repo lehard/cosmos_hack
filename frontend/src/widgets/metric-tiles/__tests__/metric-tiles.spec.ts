@@ -1,6 +1,6 @@
 // Плитки стола руководителя (FR-8, FR-86, FR-89; Д-11): название от сервера,
-// единицы, происхождение времени, «оценка невозможна» — не ноль; нажатие —
-// раскрытие числа (FR-7).
+// единицы, происхождение времени — в подсказке, не плашкой; «оценка
+// невозможна» — не ноль; нажатие — раскрытие числа (FR-7); период уходит в запрос.
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mockApi, mountWidget } from '@/entities/incident/__tests__/api-mock'
 import { tiles } from '@/entities/metric/__tests__/fixtures'
@@ -13,7 +13,7 @@ const props = { widgetId: 'metric-tiles', titleKey: 'widgets.metricTiles' }
 describe('плитки показателей', () => {
   afterEach(() => vi.unstubAllGlobals())
 
-  it('название по Д-11, значения в своих единицах, прошлый период, происхождение времени', async () => {
+  it('название по Д-11, значения в своих единицах, прошлый период; оговорки — в подсказке, не плашками', async () => {
     const calls = mockApi({ 'GET /api/v1/metrics/tiles': tiles() })
     const w = await mountWidget(MetricTilesWidget, props)
     expect(calls[0]!.path).toBe('/api/v1/metrics/tiles')
@@ -23,7 +23,15 @@ describe('плитки показателей', () => {
     expect(norm(w.find('[data-metric="first_pass_yield"] [data-testid="previous"]').text())).toBe('Прошлый период: 95 % (−2,50 п. п.)')
     expect(w.find('[data-metric="inspected_items"] [data-testid="previous"]').text()).toBe('Прошлый период: 38 (+3)')
     expect(norm(w.find('[data-metric="lead_time"]').text())).toContain('1 ч 15 мин')
-    expect(w.find('[data-metric="lead_time"] [data-origin="computed_by_system"]').text()).toBe('Вычислено системой')
+    // Плашек «Вычислено системой» / «Иной интервал» на плитке нет.
+    expect(w.find('[data-metric="lead_time"] [data-origin]').exists()).toBe(false)
+    expect(w.find('[data-metric="lead_time"] [data-meaning]').exists()).toBe(false)
+    expect(w.find('[data-metric="lead_time"]').text()).not.toContain('Вычислено системой')
+    // Оговорка о происхождении времени — в подписи кнопки (и в подсказке значка).
+    expect(w.find('[data-metric="lead_time"] button').attributes('aria-label')).toContain('Время вычислено системой')
+    expect(w.find('[data-metric="lead_time"] [data-testid="tile-info"]').exists()).toBe(true)
+    // Полное название — в title (заголовок обрезается до двух строк).
+    expect(w.find('[data-metric="lead_time"] [data-testid="tile-title"]').attributes('title')).toBe('Время детали в системе (выпущенные)')
   })
 
   it('«оценка невозможна» — словами и прочерком, не ноль', async () => {
@@ -44,8 +52,15 @@ describe('плитки показателей', () => {
     expect(w.attributes('data-state')).toBe('unable_to_assess')
   })
 
-  it('нажатие на плитку выбирает число для раскрытия; смена периода — новый запрос', async () => {
+  it('нажатие на плитку выбирает число для раскрытия; смена периода — новый запрос с period', async () => {
     const calls = mockApi({ 'GET /api/v1/metrics/tiles': tiles() })
+    // Запоминаем полные адреса: mockApi хранит путь без параметров.
+    const urls: string[] = []
+    const inner = globalThis.fetch
+    vi.stubGlobal('fetch', (url: string, init?: RequestInit) => {
+      urls.push(url)
+      return inner(url, init)
+    })
     const w = await mountWidget(MetricTilesWidget, props)
     await w.find('[data-metric="items_with_confirmed_nc"] button').trigger('click')
     const focus = useMetricFocusStore()
@@ -53,6 +68,8 @@ describe('плитки показателей', () => {
     focus.period = 'week'
     await new Promise((r) => setTimeout(r, 0))
     await vi.waitFor(() => expect(calls.length).toBe(2))
+    expect(new URL(urls[0]!, 'http://ant.local').searchParams.get('period')).toBe('shift')
+    expect(new URL(urls[1]!, 'http://ant.local').searchParams.get('period')).toBe('week')
   })
 
   it('ошибка сервера — «ошибка входа» с текстом по коду', async () => {

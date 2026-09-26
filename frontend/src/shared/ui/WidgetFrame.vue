@@ -86,7 +86,7 @@ const showHeader = computed(() => !context.hideTitle || effectiveState.value !==
 <template>
   <NCard
     class="widget-frame"
-    :class="[densityClass(density), { 'widget-frame--plain': context.plain, 'widget-frame--headless': !showHeader }]"
+    :class="[densityClass(density), { 'widget-frame--plain': context.plain, 'widget-frame--headless': !showHeader, 'widget-frame--fill': context.fill }]"
     :size="naiveSizeOf(density)"
     :style="{ '--accent': accent }"
     :data-state="effectiveState"
@@ -200,6 +200,27 @@ const showHeader = computed(() => !context.hideTitle || effectiveState.value !==
 
 .frame-body {
   min-width: 0;
+}
+
+/* На всю высоту места: тело растягивается, содержимое само делит высоту. */
+.widget-frame--fill {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.widget-frame--fill :deep(.n-card__content) {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.widget-frame--fill .frame-body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .center {

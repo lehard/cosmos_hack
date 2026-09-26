@@ -18,7 +18,8 @@ import {
 } from '@/entities/process-version'
 import { codeToKey } from '@/shared/i18n'
 import type { Density } from '@/shared/config/widget'
-import { ActionButton } from '@/shared/ui'
+import { ActionButton, KeyValue, KeyValueList } from '@/shared/ui'
+import { usePropertyLabels } from '../model/labels'
 
 type Mode = 'view' | 'diff'
 
@@ -60,15 +61,8 @@ const entries = computed<ProcessDiffEntry[] | null>(() => {
 const statusText = (s: string) => t(`statuses.processVersion.${codeToKey(s)}`)
 const dateTime = (x: string) => d(new Date(x), 'dateTime')
 
-/** Значение свойства в читаемом виде. */
-function valueText(v: ProcessPropertyValue | undefined): string {
-  if (v === true) return t('widgets.analysis.process.valueYes')
-  if (v === false) return t('widgets.analysis.process.valueNo')
-  if (v === null || v === undefined || v === '') return t('widgets.analysis.process.valueEmpty')
-  return typeof v === 'number' ? n(v) : v
-}
-
-const propText = (p: ProcessPropertyKey) => t(`process.properties.${p}`)
+/** Подпись свойства и значение словами (словари, каталог событий; код — только без перевода). */
+const { propLabel, propValue } = usePropertyLabels()
 const threshold = (bp: number | null) => (bp === null ? t('widgets.analysis.process.valueEmpty') : n(bp / 10_000, 'decimal2'))
 
 /** Строка отличия (process.diff.*). */
@@ -83,13 +77,14 @@ function diffText(e: ProcessDiffEntry): string {
     case 'thresholdChanged':
       return t('process.diff.thresholdChanged', { defectType: e.defectType, from: threshold(e.from), to: threshold(e.to) })
     case 'propertyChanged':
-      return t('process.diff.propertyChanged', { element: e.element, property: propText(e.property), from: valueText(e.from), to: valueText(e.to) })
+      return t('process.diff.propertyChanged', { element: e.element, property: propLabel(e.property), from: propValue(e.property, e.from), to: propValue(e.property, e.to) })
   }
   return ''
 }
 
 const propsOf = (p: Partial<Record<ProcessPropertyKey, ProcessPropertyValue>>) =>
   Object.entries(p) as [ProcessPropertyKey, ProcessPropertyValue][]
+const hasThresholds = (x: Record<string, number> | undefined) => !!x && Object.keys(x).length > 0
 </script>
 
 <template>
@@ -142,22 +137,19 @@ const propsOf = (p: Partial<Record<ProcessPropertyKey, ProcessPropertyValue>>) =
         <li v-for="e in current.elements" :key="e.id" class="element" :data-kind="e.kind">
           <div class="el-head">
             <span class="kind">{{ t(`process.elements.${e.kind}`) }}</span>
-            <strong>{{ e.name }}</strong>
-            <span v-if="e.lane" class="muted">· {{ t('process.elements.lane') }}: {{ e.lane }}</span>
-            <code v-if="e.step_key" class="step">{{ t('widgets.analysis.process.step', { key: e.step_key }) }}</code>
+            <strong v-if="e.name" class="ant-wrap">{{ e.name }}</strong>
+            <span v-if="e.lane" class="muted ant-wrap">· {{ t('process.elements.lane') }}: {{ e.lane }}</span>
           </div>
-          <dl v-if="propsOf(e.properties).length || e.thresholds" class="props">
-            <template v-for="[k, v] in propsOf(e.properties)" :key="k">
-              <dt>{{ propText(k) }}</dt>
-              <dd>{{ valueText(v) }}</dd>
-            </template>
-            <template v-if="e.thresholds && Object.keys(e.thresholds).length">
-              <dt>{{ propText('reactionMap') }}</dt>
-              <dd>
-                <span v-for="(bp, type) in e.thresholds" :key="type" class="thr">{{ type }}: {{ threshold(bp) }}</span>
-              </dd>
-            </template>
-          </dl>
+          <!-- Ключ шага — второстепенная техническая пометка: подпись обычным шрифтом, код моноширинным. -->
+          <i18n-t v-if="e.step_key" keypath="widgets.analysis.process.step" tag="div" class="step ant-wrap" scope="global">
+            <template #key><code class="step-key">{{ e.step_key }}</code></template>
+          </i18n-t>
+          <KeyValueList v-if="propsOf(e.properties).length || hasThresholds(e.thresholds)" class="props">
+            <KeyValue v-for="[k, v] in propsOf(e.properties)" :key="k" :label="propLabel(k)" :value="propValue(k, v)" :data-prop="k" />
+            <KeyValue v-if="hasThresholds(e.thresholds)" :label="propLabel('reactionMap')">
+              <span v-for="(bp, type) in e.thresholds" :key="type" class="thr">{{ type }}: {{ threshold(bp) }}</span>
+            </KeyValue>
+          </KeyValueList>
         </li>
       </ol>
     </section>
@@ -277,24 +269,17 @@ h4 {
 }
 
 .step {
+  margin-top: 2px;
   color: var(--ant-text-3);
-  font-family: var(--ant-font-mono);
   font-size: var(--ant-fs-xs);
 }
 
+.step-key {
+  font-family: var(--ant-font-mono);
+}
+
 .props {
-  display: grid;
-  grid-template-columns: max-content 1fr;
-  gap: 2px 12px;
-  margin: 4px 0 0;
-}
-
-.props dt {
-  color: var(--ant-text-3);
-}
-
-.props dd {
-  margin: 0;
+  margin-top: 4px;
 }
 
 .thr {

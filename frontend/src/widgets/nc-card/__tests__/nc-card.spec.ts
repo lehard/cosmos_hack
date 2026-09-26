@@ -5,6 +5,7 @@ import { mount } from '@vue/test-utils'
 import { createPinia } from 'pinia'
 import { describe, expect, it } from 'vitest'
 import { i18n } from '@/shared/i18n'
+import { WIDGET_FRAME_CONTEXT } from '@/shared/ui'
 import { at } from '@/entities/item/__tests__/fixtures'
 import { ncCard } from '@/entities/nonconformity/__tests__/fixtures'
 import NcCardView from '../ui/NcCardView.vue'
@@ -104,5 +105,20 @@ describe('карточка несоответствия', () => {
 
   it('решений людей нет — «нет решения ≠ нет данных»', () => {
     expect(mountCard({ human_decisions: [] }).find('[data-testid="human-decisions"]').text()).toBe('Нет решения ≠ нет данных')
+  })
+
+  it('в окне записи (Д-70): номер и изделие не повторяются, срок виден, зона решения — «основания», без кнопок решения', () => {
+    const w = mount(NcCardView, {
+      props: { card: ncCard(), now: NOW },
+      global: { plugins: [createPinia(), i18n], provide: { [WIDGET_FRAME_CONTEXT as symbol]: { hideTitle: true, plain: true } } },
+    })
+    expect(w.find('[data-testid="nc-card"]').attributes('data-in-window')).toBe('true')
+    expect(w.find('.number').exists()).toBe(false)
+    expect(w.find('[data-testid="open-item"]').exists()).toBe(false)
+    expect(norm(w.find('[data-testid="deadline"]').text())).toBe('Осталось 37 мин')
+    expect(w.find('[data-zone="what-to-decide"] h3').text()).toBe('Основания для решения')
+    expect(w.find('[data-zone="what-to-decide"]').text()).toContain('Почему система это предлагает')
+    // Кнопки решения — только в нижней панели окна; здесь лишь «показать прежние версии».
+    expect(w.findAll('[data-zone="what-to-decide"] button').map((b) => b.attributes('data-testid'))).toEqual(['toggle-previous'])
   })
 })

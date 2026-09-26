@@ -13,7 +13,7 @@
  */
 import { computed, toValue, type MaybeRefOrGetter } from 'vue'
 import { keepPreviousData, useQuery } from '@tanstack/vue-query'
-import { journalTimelineRead, processLiveMapRead } from '@/shared/api/generated/client'
+import { journalTimelineRead, processLiveMapRead, processProcessList } from '@/shared/api/generated/client'
 import type {
   LiveMap,
   MapBottleneck,
@@ -66,6 +66,8 @@ export type PositionStatus = MapItemPosition
 
 /** Параметры запроса живой карты (помимо момента). */
 export interface LiveMapParams {
+  /** Процесс (UI-11); не задан — основной. */
+  process_id?: string
   /** Версия процесса; не задана — действующая. */
   process_version_id?: string
   period: CounterPeriod
@@ -91,6 +93,18 @@ export function useLiveMap(params: MaybeRefOrGetter<LiveMapParams>) {
     },
     // Смена момента или периода не мигает пустой картой — старое видно до нового ответа.
     placeholderData: keepPreviousData,
+  })
+}
+
+/** Процессы предприятия для выбора на карте (UI-11) — `process.process.list`. */
+export function useProcesses() {
+  const moment = useMomentStore()
+  return useQuery({
+    queryKey: computed(() => liveMapKeys.list('processes', {}, moment.params)),
+    queryFn: async ({ signal }) => {
+      const res = await processProcessList(moment.params, { signal })
+      return res.data.items
+    },
   })
 }
 

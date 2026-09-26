@@ -9,6 +9,7 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { BASIS_KIND_TEXT, SEVERITY_TEXT, bpToFraction, codeText, type NCSourceSignal } from '@/entities/nonconformity'
+import { KeyValue, KeyValueList } from '@/shared/ui'
 import RecordLine from './RecordLine.vue'
 
 const props = defineProps<{ signal: NCSourceSignal }>()
@@ -32,38 +33,36 @@ const dec = (bp: number) => n(bpToFraction(bp), 'decimal2')
 <template>
   <article class="signal" :data-signal="signal.signal_id" :data-severity="signal.severity" data-testid="source-signal">
     <RecordLine :record="signal.record" />
-    <dl class="facts">
-      <dt>{{ t('common.words.basis') }}</dt>
-      <dd>{{ codeText(BASIS_KIND_TEXT, signal.basis_kind, t) }}</dd>
-      <dt>{{ t('common.words.defectType') }}</dt>
-      <dd data-testid="defect-type">
-        <template v-if="!signal.defect_type_code">{{ t('common.words.unknown') }}</template>
-        <template v-else-if="!signal.defect_type_known">{{ t('inspection.unknownDefectType', { code: signal.defect_type_code }) }}</template>
-        <template v-else>{{ signal.defect_type_code }}</template>
-      </dd>
-      <dt>{{ t('common.words.severity') }}</dt>
-      <dd>{{ codeText(SEVERITY_TEXT, signal.severity, t) }}</dd>
-      <template v-if="signal.zone_id">
-        <dt>{{ t('common.words.zone') }}</dt>
-        <dd>{{ signal.zone_id }}</dd>
-      </template>
-      <dt>{{ t('inspection.analyzerConfidence') }}</dt>
-      <dd data-testid="confidence" :title="t('hints.analyzerConfidence')">
-        <template v-if="signal.analyzer_confidence_bp != null">
-          {{ dec(signal.analyzer_confidence_bp) }} <span class="muted">— {{ t('inspection.confidenceIsNotProbability') }}</span>
-        </template>
-        <template v-else>{{ t('empty.noDataUnknown') }}</template>
-      </dd>
-      <dt>{{ t('inspection.observationQuality') }}</dt>
-      <dd data-testid="observation-quality" :title="t('hints.observationQuality')">
-        {{ signal.observation_quality_bp != null ? dec(signal.observation_quality_bp) : t('empty.noDataUnknown') }}
-      </dd>
-    </dl>
+    <KeyValueList>
+      <KeyValue :label="t('common.words.basis')" :value="codeText(BASIS_KIND_TEXT, signal.basis_kind, t)" />
+      <KeyValue :label="t('common.words.defectType')">
+        <span data-testid="defect-type">
+          <template v-if="!signal.defect_type_code">{{ t('common.words.unknown') }}</template>
+          <template v-else-if="!signal.defect_type_known">{{ t('inspection.unknownDefectType', { code: signal.defect_type_code }) }}</template>
+          <template v-else>{{ signal.defect_type_code }}</template>
+        </span>
+      </KeyValue>
+      <KeyValue :label="t('common.words.severity')" :value="codeText(SEVERITY_TEXT, signal.severity, t)" />
+      <KeyValue v-if="signal.zone_id" :label="t('common.words.zone')" :value="signal.zone_id" />
+      <KeyValue :label="t('inspection.analyzerConfidence')">
+        <span data-testid="confidence" :title="t('hints.analyzerConfidence')">
+          <template v-if="signal.analyzer_confidence_bp != null">
+            {{ dec(signal.analyzer_confidence_bp) }} <span class="muted">— {{ t('inspection.confidenceIsNotProbability') }}</span>
+          </template>
+          <template v-else>{{ t('empty.noDataUnknown') }}</template>
+        </span>
+      </KeyValue>
+      <KeyValue :label="t('inspection.observationQuality')">
+        <span data-testid="observation-quality" :title="t('hints.observationQuality')">{{
+          signal.observation_quality_bp != null ? dec(signal.observation_quality_bp) : t('empty.noDataUnknown')
+        }}</span>
+      </KeyValue>
+    </KeyValueList>
 
     <section v-if="signal.stages.length" class="block">
-      <h5>{{ t('inspection.stages.title') }}</h5>
+      <h5 class="ant-wrap">{{ t('inspection.stages.title') }}</h5>
       <ul>
-        <li v-for="s in signal.stages" :key="s.stage" :data-stage="s.stage">
+        <li v-for="s in signal.stages" :key="s.stage" class="ant-wrap" :data-stage="s.stage">
           {{
             t('inspection.stages.stageLine', {
               stage: s.stage,
@@ -77,58 +76,57 @@ const dec = (bp: number) => n(bpToFraction(bp), 'decimal2')
     </section>
 
     <section v-if="versions.length" class="block">
-      <h5>{{ t('inspection.versions.title') }}</h5>
-      <dl class="facts">
-        <template v-for="v in versions" :key="v.k">
-          <dt>{{ v.label }}</dt>
-          <dd><code>{{ v.v }}</code></dd>
-        </template>
-      </dl>
+      <h5 class="ant-wrap">{{ t('inspection.versions.title') }}</h5>
+      <KeyValueList>
+        <KeyValue v-for="v in versions" :key="v.k" :label="v.label" :value="v.v" mono />
+      </KeyValueList>
     </section>
 
     <section class="block">
-      <h5>{{ t('common.words.evidence') }}</h5>
+      <h5 class="ant-wrap">{{ t('common.words.evidence') }}</h5>
       <ul v-if="signal.evidence_refs.length">
-        <li v-for="ref in signal.evidence_refs" :key="ref"><code>{{ ref }}</code></li>
+        <li v-for="ref in signal.evidence_refs" :key="ref" class="ant-wrap"><code>{{ ref }}</code></li>
       </ul>
-      <p v-else class="muted" data-testid="no-material">{{ t('empty.materialNotProvided') }}</p>
+      <p v-else class="muted ant-wrap" data-testid="no-material">{{ t('empty.materialNotProvided') }}</p>
     </section>
-    <p class="muted">{{ t('inspection.outcomeNote.defectFound') }} · {{ t('decisions.signal.originalSignalKept') }}</p>
+    <p class="muted ant-wrap">{{ t('inspection.outcomeNote.defectFound') }} · {{ t('decisions.signal.originalSignalKept') }}</p>
   </article>
 </template>
 
 <style scoped>
+/* Карточка сигнала — на всю ширину колонки зоны. */
 .signal {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 8px 10px;
+  gap: var(--ant-space-2);
+  min-width: 0;
+  padding: var(--ant-space-3) var(--ant-space-4);
   border: 1px solid var(--ant-border);
   border-radius: var(--ant-radius-md);
 }
 
-.facts {
-  display: grid;
-  grid-template-columns: max-content minmax(0, 1fr);
-  gap: 2px 12px;
-  margin: 0;
-}
-
-.facts dt {
-  color: var(--ant-text-3);
-}
-
-.facts dd {
-  margin: 0;
+.block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ant-space-1);
+  min-width: 0;
 }
 
 h5 {
-  margin: 0 0 2px;
+  margin: 0;
+  color: var(--ant-text-2);
 }
 
 ul {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   margin: 0;
-  padding-left: 16px;
+  padding-left: var(--ant-space-4);
+}
+
+code {
+  font-family: var(--ant-font-mono);
 }
 
 .muted {

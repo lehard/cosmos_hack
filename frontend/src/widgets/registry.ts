@@ -22,11 +22,16 @@ export interface WidgetDefinition {
   epic: number
   /** Ленивая загрузка компонента: виджеты не утяжеляют вход. */
   load: () => Promise<{ default: Component }>
+  /**
+   * Виджет занимает всю высоту раздела стола (живая карта): страница не
+   * прокручивается, виджет растягивается на оставшуюся высоту окна.
+   */
+  fill?: boolean
 }
 
 export const widgetRegistry = {
   // ── эпик 10: Живая карта и стол руководителя ──
-  'live-map': { titleKey: 'liveMap.title', epic: 10, load: () => import('./live-map') },
+  'live-map': { titleKey: 'liveMap.title', epic: 10, load: () => import('./live-map'), fill: true },
   'map-timeline': { titleKey: 'widgets.mapTimeline', epic: 10, load: () => import('./map-timeline') },
   'posts': { titleKey: 'liveMap.posts.title', epic: 10, load: () => import('./posts') },
   'attention': { titleKey: 'liveMap.attention.title', epic: 10, load: () => import('./attention') },
@@ -77,3 +82,6 @@ export type WidgetId = keyof typeof widgetRegistry
 
 /** Есть ли такой виджет (стол пришёл с сервера строкой). */
 export const isWidgetId = (id: string): id is WidgetId => Object.hasOwn(widgetRegistry, id)
+
+/** Виджет занимает всю высоту раздела стола (признак `fill`). */
+export const fillsSection = (id: string): boolean => isWidgetId(id) && (widgetRegistry[id] as WidgetDefinition).fill === true

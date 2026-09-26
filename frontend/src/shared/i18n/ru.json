@@ -732,7 +732,8 @@
     "zones": {
       "whatHappened": "Что произошло",
       "evidence": "Доказательства",
-      "whatToDecide": "Что решить"
+      "whatToDecide": "Что решить",
+      "basisForDecision": "Основания для решения"
     },
     "layers": {
       "sourceSignal": "Исходный сигнал",
@@ -1381,6 +1382,11 @@
     "versionLabel": "Действующая версия процесса: {version}",
     "ownVersionNote": "Изделия, запущенные по прежней версии, показаны на карте своей версии",
     "noPeopleOnMap": "Люди на схеме не показываются — присутствие в панели «Посты»",
+    "nodeKind": "Шаг процесса",
+    "processStatus": {
+      "draft": "черновик",
+      "retired": "выведен из работы"
+    },
     "counters": {
       "inQueue": "В очереди",
       "inWork": "В работе",
@@ -1453,7 +1459,9 @@
       "legendSuspect": "@:statuses.incident.suspect",
       "legendExcluded": "Проверено и исключено",
       "legendUnknown": "Данных недостаточно",
-      "colorNote": "Цвет — статус относительно этого инцидента, а не общий статус качества изделия"
+      "colorNote": "Цвет — статус относительно этого инцидента, а не общий статус качества изделия",
+      "collapse": "Свернуть пояснение инцидента",
+      "expand": "Развернуть пояснение инцидента"
     },
     "workshops": {
       "lane": "Цех",
@@ -1524,7 +1532,51 @@
       "warehouse": "Склад цеха",
       "specialProcess": "Специальный процесс",
       "paperAttester": "Кто заверяет бумажную подпись",
-      "description": "Описание элемента"
+      "description": "Описание элемента",
+      "stepKind": "Вид шага",
+      "bufferPlace": "@:process.properties.buffer",
+      "closingPoint": "Закрывающая точка",
+      "inspectionPoint": "Точка контроля",
+      "operationCode": "Операция по маршрутной карте",
+      "reworkLimitScope": "К чему относится лимит",
+      "erpAction": "Учётное действие в 1С",
+      "triggerEventType": "Событие-триггер",
+      "timerScope": "Окно таймера",
+      "outcome": "Итог подпроцесса"
+    },
+    "values": {
+      "stepKind": {
+        "operation": "Операция",
+        "automatedInspection": "Автоматизированный контроль",
+        "humanInspection": "Контроль человеком",
+        "movement": "Перемещение",
+        "storage": "Хранение"
+      },
+      "reworkLimitScope": {
+        "item": "На изделие",
+        "zone": "На зону изделия",
+        "loop": "На цикл доработки"
+      },
+      "erpAction": {
+        "acceptIntoWork": "Принять в работу",
+        "warehouseTransfer": "Перемещение между складами",
+        "scrapTransferRework": "Передача брака на доработку",
+        "scrapTransferWriteoff": "Передача брака на списание",
+        "scrapTransferReprocess": "Передача брака на переработку",
+        "returnToSupplier": "Возврат поставщику",
+        "returnFromDefect": "Возврат из брака",
+        "release": "Выпуск"
+      },
+      "timerScope": {
+        "untilStarted": "До начала операции",
+        "activity": "Всё время шага"
+      },
+      "outcome": {
+        "reworkOrRepair": "Переделка или ремонт",
+        "useAsIs": "Как есть",
+        "scrapped": "Списано",
+        "returned": "Возвращено поставщику"
+      }
     },
     "defectClassifier": {
       "title": "Классификатор видов дефектов",

@@ -5,7 +5,8 @@
  * Эпик 13: назначения на посты в смене, квалификации, действия исполнителя
  * с рабочего места и запрос назначения контролёра с согласованием начальника ОТК.
  *
- * Операции — `access.workplace.list`, `access.assignment.list|set|clear`,
+ * Операции — `access.workplace.list`, `journal.entry.list` (история поста),
+ * `access.assignment.list|set|clear`,
  * `access.qualification.list`, `access.operator.report_deviation|request_inspection`,
  * `documents.document.request|list` (contracts/openapi.yaml), сгенерированный клиент.
  */
@@ -22,6 +23,7 @@ import {
   accessWorkplaceList,
   documentsDocumentList,
   documentsDocumentRequest,
+  journalEntryList,
 } from '@/shared/api/generated/client'
 import type {
   AccessAssignment,
@@ -30,6 +32,8 @@ import type {
   AccessQualificationStatus,
   ClearAssignment,
   DocumentSummary,
+  JournalEntryList,
+  JournalEntryView,
   PostRow,
   PostRowPresence,
   ReportDeviation,
@@ -37,11 +41,12 @@ import type {
   RequestInspection,
   SetAssignment,
 } from '@/shared/api/generated/model'
+import type { StatusTone } from '@/shared/api/generated/statuses'
 import type { ApiError } from '@/shared/api/problem'
 import type { Envelope } from '@/shared/api/response'
 import { useMomentStore } from '@/shared/model/moment'
 
-export type { AccessAssignment, AccessAssignmentList, AccessQualification, AccessQualificationStatus, DocumentSummary, SetAssignment, ClearAssignment }
+export type { AccessAssignment, AccessAssignmentList, AccessQualification, AccessQualificationStatus, DocumentSummary, JournalEntryView, SetAssignment, ClearAssignment }
 
 export const workplaceKeys = entityKeys('workplace')
 
@@ -62,6 +67,34 @@ export function usePosts(params: MaybeRefOrGetter<{ workshop?: string; run_id?: 
   })
 }
 
+/**
+ * История поста — записи журнала в потоке `workplace:‹id›` (`journal.entry.list`):
+ * назначения и снятия с поста, ключ вставлен/вынут, допуск открыт/снят, сеанс
+ * завершён, отклонения присутствия (каталог событий, поток `workplace`).
+ * Журнал отдаёт записи по возрастанию seq страницами; `limit` — сколько взять.
+ * Чтение закрыто правом `journal.entry.list` — без него сервер отвечает ошибкой.
+ */
+export function useWorkplaceHistory(
+  workplaceId: MaybeRefOrGetter<string | null | undefined>,
+  runId: MaybeRefOrGetter<string | undefined> = undefined,
+  limit = 200,
+) {
+  const moment = useMomentStore()
+  const params = computed(() => {
+    const run = toValue(runId)
+    return { stream: `workplace:${toValue(workplaceId) ?? ''}`, limit, ...(run ? { run_id: run } : {}), ...moment.params }
+  })
+  return useQuery({
+    queryKey: computed(() => workplaceKeys.one(toValue(workplaceId) ?? '', 'history', params.value)),
+    queryFn: async ({ signal }): Promise<Envelope<JournalEntryList>> => {
+      const res = await journalEntryList(params.value, { signal })
+      return { data: res.data, headers: res.headers }
+    },
+    enabled: computed(() => !!toValue(workplaceId)),
+    retry: false,
+  })
+}
+
 // ─────────────────── смены и назначения на посты (FR-81, PRD §11.18) ───────────────────
 
 /** Назначения на посты в смене — `access.assignment.list` (ответ целиком: нужен basis_seq). */
@@ -79,12 +112,16 @@ export function useAssignments(params: MaybeRefOrGetter<{ shift_id?: string; wor
   })
 }
 
-/** Квалификации и аттестации (FR-80) — `access.qualification.list`; сотрудник пуст — все. */
-export function useQualifications(personId: MaybeRefOrGetter<string | null | undefined> = null) {
+/**
+ * Квалификации и аттестации (FR-80) — `access.qualification.list`; сотрудник пуст — все.
+ * `runId` — прогон сценария (окно записи берёт его из адреса).
+ */
+export function useQualifications(personId: MaybeRefOrGetter<string | null | undefined> = null, runId: MaybeRefOrGetter<string | undefined> = undefined) {
   const moment = useMomentStore()
   const full = computed(() => {
     const p = toValue(personId)
-    return p ? { person_id: p, ...moment.params } : { ...moment.params }
+    const run = toValue(runId)
+    return { ...(p ? { person_id: p } : {}), ...(run ? { run_id: run } : {}), ...moment.params }
   })
   return useQuery({
     queryKey: computed(() => workplaceKeys.list('qualifications', full.value)),
@@ -196,6 +233,19 @@ export const PRESENCE_TEXT: Record<PostPresence, string> = {
   absent: 'mapWidgets.posts.absent',
   not_assigned: 'liveMap.posts.notAssigned',
   unknown: 'empty.noDataUnknown',
+}
+
+/**
+ * Присутствие → тон словаря статусов (AD-30): на месте — зелёный; расхождение
+ * СКУД и ключа — жёлтый или красный; данных нет — серый «неизвестно».
+ */
+export const PRESENCE_TONE: Record<PostPresence, StatusTone> = {
+  present: 'success',
+  key_missing: 'attention',
+  owner_absent: 'danger',
+  absent: 'danger',
+  not_assigned: 'neutral',
+  unknown: 'neutral',
 }
 
 /** Тип метки Naive UI для присутствия: на месте — успех, расхождение — предупреждение. */
