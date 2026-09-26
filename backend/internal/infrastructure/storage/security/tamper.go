@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/jackc/pgx/v5"
 
@@ -40,6 +41,29 @@ type Tamperer struct {
 	KEK *atrest.KEK
 	// Profile — профиль стенда: подделка только в fixtures и demo.
 	Profile string
+
+	// mu — одно подключение: шаги сценария идут по одному.
+	mu sync.Mutex
+}
+
+// Open — демо-инструмент для роли, у которой есть учётные данные
+// суперпользователя БД (демо-стенд: ant входит как ant_admin): отдельное
+// подключение без SET ROLE и KEK из файла (нет файла — без перешифрования).
+// Так подключает кнопку подделки симуляция (эпик 32, порт Tamperer).
+func Open(ctx context.Context, cfg *pgx.ConnConfig, kekFile, profile string) (*Tamperer, error) {
+	t := &Tamperer{Profile: profile}
+	if err := t.allowed(); err != nil {
+		return nil, err
+	}
+	conn, err := pgx.ConnectConfig(ctx, cfg)
+	if err != nil {
+		return nil, err
+	}
+	t.Conn = conn
+	if k, err := atrest.Load(kekFile); err == nil {
+		t.KEK = k
+	}
+	return t, nil
 }
 
 // Result — что подделано.
@@ -67,6 +91,8 @@ func (t *Tamperer) allowed() error {
 
 // Apply — порт application/simulation.Tamperer: шаг tamper сценария (S09).
 func (t *Tamperer) Apply(ctx context.Context, _ string, tp sim.Tamper, eventID string) error {
+	t.mu.Lock()
+	defer t.mu.Unlock()
 	var err error
 	switch tp.Kind {
 	case "update_in_place":

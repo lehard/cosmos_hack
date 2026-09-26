@@ -168,7 +168,7 @@ func initTrust(data, verifierDir, antDir, tamperDir, kekFile string, hosts []str
 			}
 			src, err := os.ReadFile(filepath.Join(pki, f))
 			if err != nil {
-				return err
+				return fmt.Errorf("%s: %w (повторная подготовка без тома участника — удалите тома доверия и повторите)", f, err)
 			}
 			mode := os.FileMode(0o444)
 			if strings.HasSuffix(f, ".key") {
@@ -201,6 +201,11 @@ func initTrust(data, verifierDir, antDir, tamperDir, kekFile string, hosts []str
 		if _, err := atrest.Generate(kekFile); err != nil {
 			return err
 		}
+	}
+	// Закрытые ключи участников не остаются в томе хранителя: только у
+	// владельцев (ant, verifier, tamper) — сертификаты и УЦ остаются.
+	for _, c := range clients {
+		_ = os.Remove(filepath.Join(pki, c+".key"))
 	}
 	return nil
 }
