@@ -22,7 +22,8 @@ import {
   inWindow,
   isIncomingDefect,
   linkedIds,
-  makeTimeScale,
+  makeCompressedScale,
+  type ScaleBreak,
   phaseSummary,
   recordColor,
   sortByTime,
@@ -65,7 +66,8 @@ const scale = computed(() => {
   const moments: string[] = records.value.flatMap((r) => (r.ended_at ? [r.occurred_at, r.ended_at] : [r.occurred_at]))
   if (m.window) moments.push(m.window.start, m.window.end)
   if (m.operation) moments.push(...[m.operation.started_at, m.operation.finished_at].filter((x): x is string => x !== null))
-  return makeTimeScale(moments)
+  // Сжатая шкала: дни без событий — разрыв, операция в минуты — видна (UI-33).
+  return makeCompressedScale(moments)
 })
 
 const LEVEL_PX = 22
@@ -128,6 +130,31 @@ const band = (a: string, b: string | null) => {
 }
 
 const time = (x: string | number) => d(new Date(x), 'time')
+const tickText = (x: number) => (scale.value.dayTicks?.has(x) ? d(new Date(x), 'dateTime') : time(x))
+
+/** Длительность промежутка словами: «2 дн. 19 ч», «5 ч 20 мин». */
+function duration(ms: number): string {
+  const min = Math.round(ms / 60_000)
+  const days = Math.floor(min / 1440)
+  const hours = Math.floor((min % 1440) / 60)
+  const mins = min % 60
+  const parts: string[] = []
+  if (days) parts.push(t('common.units.days', { value: days }))
+  if (hours) parts.push(t('common.units.hours', { value: hours }))
+  if (!days && mins) parts.push(t('common.units.minutes', { value: mins }))
+  return parts.join(' ')
+}
+const gapText = (b: ScaleBreak) => t('widgets.analysis.circumstances.gap', { duration: duration(b.to - b.from) })
+
+/** Качество данных дорожки (сервер): опоздания и пропуски; пропуск — исключать нельзя. */
+function laneQuality(lane: CircumstanceLane): { text: string; bad: boolean } | null {
+  const q = props.model.lanes?.[lane]
+  if (!q) return null
+  const parts: string[] = []
+  if (q.late_count) parts.push(t('widgets.analysis.circumstances.laneLate', { n: q.late_count, delay: duration(q.max_delay_min * 60_000) }))
+  if (q.gaps.length) parts.push(t('widgets.analysis.circumstances.laneGaps', { n: q.gaps.length }))
+  return parts.length ? { text: parts.join(' · '), bad: q.gaps.length > 0 } : { text: t('widgets.analysis.circumstances.laneOk'), bad: false }
+}
 const dateTime = (x: string) => d(new Date(x), 'dateTime')
 
 function toggle(id: string): void {
@@ -179,11 +206,14 @@ const missingText = (code: string) => t(`widgets.analysis.missing.${codeToKey(co
     <div class="timeline" :style="{ '--lanes': lanes.length }" role="group" :aria-label="t('desks.circumstances')">
       <div class="axis-label" />
       <div class="axis">
-        <span v-for="tick in scale.ticks" :key="tick" class="tick" :style="{ left: `${scale.pos(tick)}%` }">{{ time(tick) }}</span>
+        <span v-for="tick in scale.ticks" :key="tick" class="tick" :class="{ day: scale.dayTicks?.has(tick) }" :style="{ left: `${scale.pos(tick)}%` }">{{ tickText(tick) }}</span>
       </div>
 
       <template v-for="(l, i) in lanes" :key="l.lane">
-        <div class="lane-label" :class="{ sep: i > 0 }" :style="{ gridRow: i + 2 }">{{ t(LANE_TITLE[l.lane]) }}</div>
+        <div class="lane-label" :class="{ sep: i > 0 }" :style="{ gridRow: i + 2 }">
+          {{ t(LANE_TITLE[l.lane]) }}
+          <span v-if="laneQuality(l.lane)" class="lane-quality ant-wrap" :class="{ bad: laneQuality(l.lane)!.bad, late: !laneQuality(l.lane)!.bad && model.lanes?.[l.lane]?.late_count }" :data-lane-quality="l.lane">{{ laneQuality(l.lane)!.text }}</span>
+        </div>
         <div class="lane" :class="{ sep: i > 0 }" :style="{ gridRow: i + 2, height: `${l.height}px` }" :data-lane="l.lane">
           <!-- Интервалы (цикл, отклонение) — полосой от начала до конца. -->
           <span
@@ -222,6 +252,9 @@ const missingText = (code: string) => t(`widgets.analysis.missing.${codeToKey(co
 
       <!-- Окно возможного возникновения и интервал операции — поверх всех дорожек. -->
       <div class="overlay" :style="{ gridRow: `2 / ${lanes.length + 2}` }" aria-hidden="true">
+        <div v-for="(b, bi) in scale.breaks ?? []" :key="`gap-${bi}`" class="gap-band" :style="{ left: `${b.left}%`, width: `${b.width}%` }" data-testid="gap-band">
+          <span class="gap-label">{{ gapText(b) }}</span>
+        </div>
         <div v-if="model.operation" class="op-band" :style="band(model.operation.started_at, model.operation.finished_at)" data-testid="operation-band">
           <span class="band-label">{{ t('widgets.analysis.circumstances.operation', { name: model.operation.label }) }}</span>
         </div>
@@ -659,5 +692,49 @@ const missingText = (code: string) => t(`widgets.analysis.missing.${codeToKey(co
   padding: 1px 8px;
   border-radius: var(--ant-radius-lg);
   background: var(--ant-n-100);
+}
+
+/* Свёрнутый промежуток без событий. */
+.gap-band {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(135deg, var(--ant-surface-subtle) 0 6px, var(--ant-surface) 6px 12px);
+  border-right: 1px dashed var(--ant-border-strong);
+  border-left: 1px dashed var(--ant-border-strong);
+}
+
+.gap-label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  padding: 2px var(--ant-space-1);
+  border-radius: var(--ant-radius-sm);
+  background: var(--ant-surface);
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-xs);
+  text-align: center;
+  transform: translate(-50%, -50%) rotate(-90deg);
+  white-space: nowrap;
+}
+
+.tick.day {
+  color: var(--ant-text-2);
+  font-weight: var(--ant-fw-bold);
+}
+
+.lane-quality {
+  display: block;
+  color: var(--ant-status-success-text);
+  font-size: var(--ant-fs-xs);
+  font-weight: normal;
+}
+
+.lane-quality.late {
+  color: var(--ant-status-attention-text);
+}
+
+.lane-quality.bad {
+  color: var(--ant-status-danger-text);
 }
 </style>

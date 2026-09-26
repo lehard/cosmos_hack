@@ -64,6 +64,10 @@ const counts = (i: IncidentSummary) =>
         </span>
         <span v-if="factor(i)" class="muted ant-ellipsis" :title="factor(i) ?? undefined">{{ factor(i) }}</span>
         <span v-if="i.next_step" class="next ant-wrap" data-testid="next-step">{{ t('widgets.analysis.investigations.next', { what: i.next_step }) }}</span>
+        <span v-if="i.status === 'open' && i.close_blockers?.length" class="blockers" data-testid="close-blockers">
+          <span class="blockers-title">{{ t('widgets.analysis.investigations.cannotClose') }}</span>
+          <span v-for="(b, bi) in i.close_blockers" :key="bi" class="blocker ant-wrap">{{ b.text }}</span>
+        </span>
         <span class="state" data-testid="state">
           {{ t(i.status === 'open' ? 'widgets.analysis.investigations.open' : 'widgets.analysis.investigations.closed') }}
           · {{ t('widgets.analysis.investigations.opened', { time: d(new Date(i.opened_at), 'dateTime') }) }}
@@ -156,6 +160,24 @@ const counts = (i: IncidentSummary) =>
   width: 8px;
   height: 8px;
   border-radius: 50%;
+}
+
+.blockers {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 2px;
+  font-size: var(--ant-fs-meta);
+}
+
+.blockers-title {
+  color: var(--ant-text-2);
+  font-weight: var(--ant-fw-bold);
+}
+
+.blocker {
+  padding-left: var(--ant-space-3);
+  color: var(--ant-status-attention-text);
 }
 
 .next {
