@@ -11,6 +11,7 @@ export function useProblemText(): (err: unknown) => string {
   return (err) => {
     const m = problemMessage(err)
     if (te(m.key)) return t(m.key, m.params)
-    return m.fallback ?? t('errors.generic')
+    // Нет текста по ключу — пояснение сервера (у 409 гардов оно и есть ответ человеку), затем заголовок.
+    return m.detail || m.fallback || t('errors.generic')
   }
 }
