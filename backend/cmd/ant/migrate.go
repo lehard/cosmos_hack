@@ -2,16 +2,25 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"ant/cmd/internal/db"
+	journalstore "ant/internal/infrastructure/storage/journal"
+	"ant/internal/infrastructure/storage/journal/migrator"
 )
 
-// runMigrate — разовая роль migrate (AD-1, AD-25): ждёт БД и применяет
-// миграции модулей. Схемы модулей, роли БД ant_owner / ant_app / ant_verifier
-// и миграции goose по схемам добавляет эпик 04 «Журнал и хранение»; пока роль
-// только проверяет, что БД доступна, чтобы compose уже сейчас строил правильный
-// порядок запуска (migrate → ant).
+// migrationSets — миграции модулей в порядке применения (AD-1: у каждого
+// модуля своя схема и свои миграции goose в infrastructure/storage/‹модуль›/
+// migrations). Модуль со своей схемой добавляет сюда строку.
+var migrationSets = []migrator.Set{
+	{Module: "journal", FS: journalstore.Migrations, Dir: journalstore.MigrationsDir},
+}
+
+// runMigrate — разовая роль migrate (AD-1, AD-25): ждёт БД, создаёт роли БД
+// ant_owner / ant_app / ant_verifier и применяет миграции goose модулей ролью
+// ant_owner. Подключение — пользователем с правом создавать роли (в демо —
+// ant_admin, владелец кластера compose). Повторный запуск ничего не меняет.
 func runMigrate(ctx context.Context, env *environment) error {
 	pool, err := db.Open(ctx, env.cfg.DB, "ant-migrate")
 	if err != nil {
@@ -25,6 +34,22 @@ func runMigrate(ctx context.Context, env *environment) error {
 	if err := pool.QueryRow(ctx, "SHOW server_version").Scan(&serverVersion); err != nil {
 		return err
 	}
-	env.log.Info("миграции: БД доступна, миграций модулей пока нет", "postgres", serverVersion)
+	conn, err := pool.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	err = migrator.EnsureRoles(ctx, conn.Conn())
+	conn.Release()
+	if err != nil {
+		return err
+	}
+	applied, err := migrator.Up(ctx, pool.Config().ConnConfig, env.log, migrationSets...)
+	for _, a := range applied {
+		env.log.Info("миграции: применена", "module", a.Module, "version", a.Version, "source", a.Source)
+	}
+	if err != nil {
+		return fmt.Errorf("миграции: %w", err)
+	}
+	env.log.Info("миграции: схема актуальна", "postgres", serverVersion, "applied", len(applied), "modules", len(migrationSets))
 	return nil
 }
