@@ -146,6 +146,7 @@ func Scenario(t *testing.T, w *World, store engineapp.ProjectionStore) {
 		"deviation_kind": "out_of_setpoint", "started_at": "2026-09-23T07:45:00.000Z", "ended_at": "2026-09-23T07:55:00.000Z",
 		"parameter": "current", "value": map[string]any{"value": 176, "unit": "A", "scale": 0}})
 	must(err)
+	must(w.Settle(ctx))
 	ci, err := svc.Circumstances(ctx, "NC-01", m)
 	must(err)
 	lanes := map[string]int{}

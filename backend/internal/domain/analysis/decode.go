@@ -7,6 +7,7 @@ import (
 
 	"ant/internal/contracts/catalog"
 	"ant/internal/domain/kernel"
+	"ant/internal/domain/machinelogs"
 )
 
 // Представления чтения данных чужих фактов, которые разбирает модуль analysis.
@@ -120,52 +121,6 @@ type lotIssuedData struct {
 	ItemIDs []string `json:"item_ids"`
 }
 
-// measurementData — измерение: целое + единица + масштаб (AD-4).
-type measurementData struct {
-	Value int    `json:"value"`
-	Unit  string `json:"unit"`
-	Scale int    `json:"scale"`
-}
-
-// toleranceData — уставка.
-type toleranceData struct {
-	Nominal *measurementData `json:"nominal"`
-	Lower   *measurementData `json:"lower"`
-	Upper   *measurementData `json:"upper"`
-}
-
-// parameterSummaryData — сводка параметра за цикл.
-type parameterSummaryData struct {
-	Parameter       string           `json:"parameter"`
-	Max             *measurementData `json:"max"`
-	Mean            *measurementData `json:"mean"`
-	OutOfSetpointMs *int             `json:"out_of_setpoint_ms"`
-	Setpoint        *toleranceData   `json:"setpoint"`
-}
-
-// equipmentData — факты семейства equipment (FR-121, FR-147): отклонение,
-// сводка цикла, состояние, инструмент, программа.
-type equipmentData struct {
-	EquipmentID     string                 `json:"equipment_id"`
-	DeviationKind   string                 `json:"deviation_kind"`
-	StartedAt       *time.Time             `json:"started_at"`
-	EndedAt         *time.Time             `json:"ended_at"`
-	Parameter       *string                `json:"parameter"`
-	Value           *measurementData       `json:"value"`
-	Setpoint        *toleranceData         `json:"setpoint"`
-	WindowStart     *time.Time             `json:"window_start"`
-	WindowEnd       *time.Time             `json:"window_end"`
-	Parameters      []parameterSummaryData `json:"parameters"`
-	ToolID          string                 `json:"tool_id"`
-	FixtureID       *string                `json:"fixture_id"`
-	ProgramRef      string                 `json:"program_ref"`
-	ProgramRevision string                 `json:"program_revision"`
-	Planned         *bool                  `json:"planned"`
-	Condition       string                 `json:"condition"`
-	Execution       string                 `json:"execution"`
-	ControllerMode  string                 `json:"controller_mode"`
-}
-
 // decodeAs разбирает data записи в представление чтения; ошибка разбора —
 // пустое значение и false (запись с неверными данными не ломает свёртку:
 // схему проверил приём, AD-20).
@@ -199,8 +154,8 @@ func deref(p *string) string {
 	return *p
 }
 
-// fmtMeasurement — измерение для подписи: «176 A», «1.5 mm» (без float, AD-4).
-func fmtMeasurement(m *measurementData) string {
+// fmtMeasure — измерение для подписи: «176 A», «1.5 mm» (без float, AD-4).
+func fmtMeasure(m *machinelogs.Measure) string {
 	if m == nil {
 		return ""
 	}
@@ -212,12 +167,12 @@ func fmtMeasurement(m *measurementData) string {
 }
 
 // fmtScaled — целое с масштабом как десятичная строка.
-func fmtScaled(v, scale int) string {
+func fmtScaled(v int64, scale int) string {
 	neg := v < 0
 	if neg {
 		v = -v
 	}
-	s := strconv.Itoa(v)
+	s := strconv.FormatInt(v, 10)
 	if scale > 0 {
 		for len(s) <= scale {
 			s = "0" + s
@@ -230,20 +185,20 @@ func fmtScaled(v, scale int) string {
 	return s
 }
 
-// fmtTolerance — уставка для подписи: «160 ± 10 A» или «150…170 A».
-func fmtTolerance(t *toleranceData) string {
+// fmtTolerance — уставка для подписи: «150…170 A», номинал или граница.
+func fmtTolerance(t *machinelogs.Tolerance) string {
 	if t == nil {
 		return ""
 	}
 	switch {
 	case t.Lower != nil && t.Upper != nil:
-		return fmtScaled(t.Lower.Value, t.Lower.Scale) + "…" + fmtMeasurement(t.Upper)
+		return fmtScaled(t.Lower.Value, t.Lower.Scale) + "…" + fmtMeasure(t.Upper)
 	case t.Nominal != nil:
-		return fmtMeasurement(t.Nominal)
+		return fmtMeasure(t.Nominal)
 	case t.Upper != nil:
-		return "≤ " + fmtMeasurement(t.Upper)
+		return "≤ " + fmtMeasure(t.Upper)
 	case t.Lower != nil:
-		return "≥ " + fmtMeasurement(t.Lower)
+		return "≥ " + fmtMeasure(t.Lower)
 	}
 	return ""
 }

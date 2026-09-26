@@ -21,62 +21,6 @@ import (
 
 // Ведомые порты модуля analysis.
 
-// EquipmentLog — порт временной линии оборудования для разбора (AD-42:
-// владелец — межизделийная стадия; факты — machinelogs, эпик 23): события
-// оборудования в окне и установки инструмента до него. До проекции эпика 23 —
-// JournalEquipmentLog (чтение потока оборудования из журнала).
-type EquipmentLog interface {
-	// Events — события оборудования equipmentID с пересечением [from, to] и
-	// смены инструмента не позже to.
-	Events(ctx context.Context, equipmentID string, from, to time.Time) ([]dom.EquipmentEvent, error)
-}
-
-// JournalEquipmentLog — EquipmentLog над журналом: поток `equipment:‹id›`,
-// записи семейства equipment, разобранные доменной функцией.
-type JournalEquipmentLog struct {
-	Journal appjournal.JournalStore
-	Codec   *engineapp.Codec
-}
-
-var _ EquipmentLog = JournalEquipmentLog{}
-
-// Events — события оборудования из журнала.
-func (l JournalEquipmentLog) Events(ctx context.Context, equipmentID string, from, to time.Time) ([]dom.EquipmentEvent, error) {
-	out := []dom.EquipmentEvent{}
-	var after int64
-	for {
-		es, err := l.Journal.Read(ctx, appjournal.ReadQuery{Stream: "equipment:" + equipmentID, AfterSeq: after, Limit: 1000})
-		if err != nil {
-			return nil, err
-		}
-		for _, e := range es {
-			after = int64(e.Seq)
-			if !strings.HasPrefix(e.EventType, "equipment.") {
-				continue
-			}
-			d, err := l.Codec.Decode(ctx, e)
-			if err != nil {
-				continue
-			}
-			x, ok := dom.EquipmentEventOf(d.Record)
-			if !ok {
-				continue
-			}
-			end := x.OccurredAt
-			if x.EndedAt != nil {
-				end = *x.EndedAt
-			}
-			tool := x.EventType == string(catalog.EquipmentToolChanged) && !x.OccurredAt.After(to)
-			if tool || (!x.OccurredAt.After(to) && !end.Before(from)) {
-				out = append(out, x)
-			}
-		}
-		if len(es) < 1000 {
-			return out, nil
-		}
-	}
-}
-
 // Decision — решение человека к записи (AD-2: вид «решение», AD-39): тип
 // модуля analysis, поток объекта, данные и метаданные команды.
 type Decision struct {

@@ -31,6 +31,11 @@ type ItemView struct {
 	ItemID   string    `json:"item_id"`
 	BasisSeq int64     `json:"basis_seq"`
 	State    dom.State `json:"state"`
+	// Equipment — события оборудования из профилей выполнения machinelogs
+	// (FR-148, эпик 23): стадия привязала их к выполнениям изделия (AD-42);
+	// null — выполнений с профилем нет (оборудование не оценивается), [] —
+	// профили есть, событий нет («журнала оборудования нет»).
+	Equipment []dom.EquipmentEvent `json:"equipment"`
 }
 
 // Register подключает проекции analysis к реестру движка (одна строка в
@@ -63,7 +68,7 @@ func circumstancesView(itemID string, s engine.Snapshot, _ []kernel.Reaction) (a
 	if len(a.Marks) == 0 && len(a.Runs) == 0 && len(a.Cases) == 0 && len(a.Incidents) == 0 && len(a.Equipment) == 0 {
 		return nil, nil
 	}
-	return ItemView{ItemID: itemID, BasisSeq: s.BasisSeq, State: a}, nil
+	return ItemView{ItemID: itemID, BasisSeq: s.BasisSeq, State: a, Equipment: dom.EquipmentFromProfiles(s.Machinelogs)}, nil
 }
 
 func stepIncident(key string, prev json.RawMessage, r kernel.Record) (json.RawMessage, error) {

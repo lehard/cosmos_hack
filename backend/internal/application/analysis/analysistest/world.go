@@ -86,10 +86,10 @@ type World struct {
 	Journal  appjournal.JournalStore
 	Codec    *engineapp.Codec
 	Registry *engineapp.Registry
-	stage crossitem.Stage
-	after int64
-	n     int
-	tag   string
+	stage    crossitem.Stage
+	after    int64
+	n        int
+	tag      string
 }
 
 // New — мир над журналом; tag различает прогоны в одной БД.
@@ -234,7 +234,6 @@ func (w *World) Service(store engineapp.ProjectionStore, now time.Time) *appanal
 	return appanalysis.NewLive(appanalysis.Config{
 		Projections: store,
 		Decisions:   appanalysis.JournalDecisions{Journal: w.Journal, DomainBuild: w.Codec.DomainBuild, Partitions: w.Codec.Partitions},
-		Equipment:   appanalysis.JournalEquipmentLog{Journal: w.Journal, Codec: w.Codec},
 		Clock:       Clock{T: now},
 	})
 }

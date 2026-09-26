@@ -2385,6 +2385,10 @@ type IncidentIncidentOpenedV1 struct {
 	// Инцидент.
 	IncidentID ObjectID `json:"incident_id"`
 
+	// Операция (шаг процесса), через которую действует фактор; для партии компонента
+	// — отсутствует.
+	StepKey *StepKey `json:"step_key,omitempty,omitzero"`
+
 	// Записи, открывшие инцидент.
 	TriggerEventIds []UUID `json:"trigger_event_ids"`
 }

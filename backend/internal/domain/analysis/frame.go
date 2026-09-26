@@ -48,11 +48,10 @@ const RuleHypotheses = "analysis.hypotheses"
 
 // React вычисляет реакции модуля по состоянию после записи и намерения к
 // ранним модулям (AD-3, AD-40): версию вывода разбора incident.hypothesis.computed
-// по каждому несоответствию изделия (FR-58, FR-59). Оборудование в свёртке
-// изделия — только события, привязанные к изделию приёмом; временная линия
-// оборудования (эпик 23) придёт через Upstream.Machinelogs (EquipmentFrom).
-// Без событий оборудования выводов о нём версия не содержит и не категорична;
-// полный разбор с портом оборудования даёт запрос analysis.circumstances.read.
+// по каждому несоответствию изделия (FR-58, FR-59). Оборудование — профили
+// выполнения machinelogs (Upstream.Machinelogs, эпик 23): события, которые
+// стадия привязала к выполнениям изделия; без выполнений с профилем выводов
+// об оборудовании нет и вывод не категоричен.
 func React(s State, env Env, up Upstream) kernel.Output {
 	_ = env
 	var out kernel.Output
@@ -77,12 +76,13 @@ func React(s State, env Env, up Upstream) kernel.Output {
 	return out
 }
 
-// EquipmentFrom — события оборудования для разбора из состояния machinelogs в
-// свёртке изделия (порт временной линии, AD-42). Эпик 23 наполняет
-// machinelogs.State; до него — nil: «порт не подключён».
+// EquipmentFrom — события оборудования для разбора из профилей выполнения
+// machinelogs в свёртке изделия (FR-148; привязку делает стадия, AD-42).
 func EquipmentFrom(up Upstream) []EquipmentEvent {
-	_ = up
-	return nil
+	if up.Machinelogs == nil {
+		return nil
+	}
+	return EquipmentFromProfiles(*up.Machinelogs)
 }
 
 // itemSubject — субъект слота реакции: поток изделия (reaction_id различается

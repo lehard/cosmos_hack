@@ -90,6 +90,9 @@ type apiOptions struct {
 	// machinelogs — live-реализация machinelogs над проекциями (engine.go);
 	// nil — заглушка 501.
 	machinelogs *machinelogsapp.Service
+	// analysis — live-реализация analysis над проекциями и журналом
+	// (engine.go, эпик 22); nil — заглушка 501.
+	analysis *analysisapp.Service
 	// ingest — live-приём над журналом ядра (ingest.go); nil — заглушка 501.
 	ingest *ingestapp.Service
 	// identity, directory — вход демо-персоной и каталог политики (демо-трек
@@ -161,7 +164,11 @@ func buildAPI(mux *http.ServeMux, o apiOptions) *httpapi.API {
 		nonconformityhttp.Register(a, q, c)
 	}
 	{
-		q, c := pick[analysisapp.Queries, analysisapp.Commands](a.ModeFor("analysis"), analysisapp.NewService(), analysisfx.New())
+		live := o.analysis
+		if live == nil {
+			live = analysisapp.NewService()
+		}
+		q, c := pick[analysisapp.Queries, analysisapp.Commands](a.ModeFor("analysis"), live, analysisfx.New())
 		analysishttp.Register(a, q, c)
 	}
 	{

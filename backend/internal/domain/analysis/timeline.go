@@ -7,6 +7,7 @@ import (
 
 	"ant/internal/contracts/catalog"
 	"ant/internal/domain/kernel"
+	"ant/internal/domain/machinelogs"
 )
 
 // Дорожки экрана «Разбор обстоятельств» (FR-153): изделие, человек, оборудование.
@@ -347,56 +348,101 @@ type EquipmentEvent struct {
 	FixtureID string `json:"fixture_id,omitempty"`
 }
 
-// EquipmentEventOf — событие оборудования из записи журнала семейства
-// equipment; false — запись не про оборудование.
+// EquipmentEventOf — событие оборудования из факта семейства equipment
+// (состояние, программа, инструмент, сводка цикла, отклонение); false —
+// запись не факт оборудования. Разбор — функцией machinelogs (эпик 23).
 func EquipmentEventOf(r kernel.Record) (EquipmentEvent, bool) {
-	if family(r.Type) != "equipment" {
+	ev, ok, err := machinelogs.ParseEvent(r)
+	if !ok || err != nil {
 		return EquipmentEvent{}, false
 	}
-	d, ok := decodeAs[equipmentData](r)
-	if !ok || d.EquipmentID == "" {
-		return EquipmentEvent{}, false
+	return fromMachinelogs(ev, isDeviation(ev)), true
+}
+
+// EquipmentFromProfiles — события оборудования из профилей выполнения
+// операций изделия (machinelogs.State, FR-148): стадия привязала их к
+// выполнению (equipment.event.bound, AD-42). Отклонения — по классификации
+// профиля (Deviations, Warnings). nil — у изделия нет выполнений с профилем.
+func EquipmentFromProfiles(ml machinelogs.State) []EquipmentEvent {
+	profiles := ml.Profiles()
+	if len(profiles) == 0 {
+		return nil
 	}
-	e := EquipmentEvent{EventID: r.EventID, EventType: string(r.Type), EquipmentID: d.EquipmentID, OccurredAt: r.OccurredAt,
-		Seq: r.Seq, SourceKind: r.SourceKind}
-	params := map[string]string{}
-	switch r.Type {
+	out := []EquipmentEvent{}
+	seen := map[string]bool{}
+	for _, p := range profiles {
+		dev := map[string]bool{}
+		for _, d := range p.Deviations {
+			dev[d.EventID] = true
+		}
+		for _, w := range p.Warnings {
+			if w.Condition == machinelogs.ConditionFault {
+				dev[w.EventID] = true
+			}
+		}
+		for _, e := range p.Events {
+			if seen[e.EventID] {
+				continue
+			}
+			seen[e.EventID] = true
+			x := fromMachinelogs(e.Event, dev[e.EventID] || isDeviation(e.Event))
+			if x.Params == nil {
+				x.Params = map[string]string{}
+			}
+			x.Params["binding"] = e.Binding
+			out = append(out, x)
+		}
+	}
+	return out
+}
+
+// isDeviation — отклонение режима по самому событию: выход за уставку,
+// перегрузка, ручное изменение, сводка цикла вне уставки, неисправность,
+// внеплановая смена программы.
+func isDeviation(e machinelogs.Event) bool {
+	switch e.Type {
 	case catalog.EquipmentDeviationDetected:
-		e.Variant, e.Deviation = d.DeviationKind, true
-		if d.StartedAt != nil {
-			e.OccurredAt = d.StartedAt.UTC()
+		return true
+	case catalog.EquipmentCycleSummarized:
+		for _, p := range e.Parameters {
+			if in := p.InRange(); in != nil && !*in {
+				return true
+			}
 		}
-		if d.EndedAt != nil {
-			end := d.EndedAt.UTC()
-			e.EndedAt = &end
+	case catalog.EquipmentStateChanged:
+		return e.Condition == machinelogs.ConditionFault
+	case catalog.EquipmentProgramChanged:
+		return e.Planned != nil && !*e.Planned
+	}
+	return false
+}
+
+// fromMachinelogs — событие оборудования machinelogs в представлении разбора.
+func fromMachinelogs(e machinelogs.Event, deviation bool) EquipmentEvent {
+	x := EquipmentEvent{EventID: e.EventID, EventType: string(e.Type), EquipmentID: e.EquipmentID, OccurredAt: e.Start,
+		EndedAt: e.End, Seq: e.Seq, SourceKind: e.SourceKind, Deviation: deviation}
+	params := map[string]string{}
+	switch e.Type {
+	case catalog.EquipmentDeviationDetected:
+		x.Variant = e.DeviationKind
+		if e.Parameter != "" {
+			params["parameter"] = e.Parameter
 		}
-		if d.Parameter != nil {
-			params["parameter"] = *d.Parameter
-		}
-		if v := fmtMeasurement(d.Value); v != "" {
+		if v := fmtMeasure(e.Value); v != "" {
 			params["value"] = v
 		}
-		if v := fmtTolerance(d.Setpoint); v != "" {
+		if v := fmtTolerance(e.Setpoint); v != "" {
 			params["setpoint"] = v
 		}
 	case catalog.EquipmentCycleSummarized:
-		e.Variant = "cycle"
-		if d.WindowStart != nil {
-			e.OccurredAt = d.WindowStart.UTC()
-		}
-		if d.WindowEnd != nil {
-			end := d.WindowEnd.UTC()
-			e.EndedAt = &end
-		}
-		for _, p := range d.Parameters {
-			if p.OutOfSetpointMs != nil && *p.OutOfSetpointMs > 0 {
-				e.Deviation = true
-			}
-			if _, done := params["parameter"]; done && !e.Deviation {
+		x.Variant = "cycle"
+		for _, p := range e.Parameters {
+			in := p.InRange()
+			if _, done := params["parameter"]; done && (in == nil || *in) {
 				continue
 			}
 			params["parameter"] = p.Parameter
-			if v := fmtMeasurement(p.Max); v != "" {
+			if v := fmtMeasure(p.Max); v != "" {
 				params["value"] = v
 			}
 			if v := fmtTolerance(p.Setpoint); v != "" {
@@ -404,29 +450,25 @@ func EquipmentEventOf(r kernel.Record) (EquipmentEvent, bool) {
 			}
 		}
 	case catalog.EquipmentStateChanged:
-		e.Variant = d.Condition
-		if e.Variant == "" {
-			e.Variant = d.Execution
+		x.Variant = e.Condition
+		if x.Variant == "" {
+			x.Variant = e.Execution
 		}
-		e.Deviation = d.Condition == "fault"
-		if d.ControllerMode != "" {
-			params["mode"] = d.ControllerMode
+		if e.ControllerMode != "" {
+			params["mode"] = e.ControllerMode
 		}
 	case catalog.EquipmentToolChanged:
-		e.Variant, e.ToolID, e.FixtureID = "tool_changed", d.ToolID, deref(d.FixtureID)
-		params["tool"] = d.ToolID
+		x.Variant, x.ToolID = "tool_changed", e.ToolID
+		params["tool"] = e.ToolID
 	case catalog.EquipmentProgramChanged:
-		e.Variant = "program_changed"
-		params["program"] = d.ProgramRef
-		if d.ProgramRevision != "" {
-			params["revision"] = d.ProgramRevision
+		x.Variant = "program_changed"
+		params["program"] = e.ProgramRef
+		if e.ProgramRevision != "" {
+			params["revision"] = e.ProgramRevision
 		}
-		e.Deviation = d.Planned != nil && !*d.Planned
-	default:
-		e.Variant = strings.TrimPrefix(string(r.Type), "equipment.")
 	}
 	if len(params) > 0 {
-		e.Params = params
+		x.Params = params
 	}
-	return e, true
+	return x
 }

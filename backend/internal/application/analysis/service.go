@@ -13,15 +13,13 @@ import (
 )
 
 // Config — зависимости живой реализации (AD-36, режим live): проекции
-// analysis.*, запись решений, порт оборудования и доменные часы.
+// analysis.*, запись решений и доменные часы. Оборудование — из профилей
+// выполнения machinelogs в проекции изделия (эпик 23).
 type Config struct {
 	// Projections — чтение проекций движка (кэш входа гардов, AD-39).
 	Projections engineapp.ProjectionStore
 	// Decisions — запись решений человека (journal.Append, AD-44).
 	Decisions DecisionWriter
-	// Equipment — временная линия оборудования (эпик 23); nil — не подключена:
-	// разбор без выводов об оборудовании.
-	Equipment EquipmentLog
 	// Clock — доменное «сейчас» при приёме команды (AD-37); nil — системное.
 	Clock appjournal.DomainClock
 }
@@ -110,35 +108,22 @@ func (s *Service) list(ctx context.Context, name string) ([]string, error) {
 	return l.IDs, err
 }
 
-// analyze — разбор несоответствия: состояние изделия + временная линия
-// оборудования из порта в окне операции (FR-58, FR-153).
+// analyze — разбор несоответствия: состояние изделия и события оборудования
+// из профилей выполнения (FR-58, FR-148, FR-153).
 func (s *Service) analyze(ctx context.Context, n dom.NCRecord) (dom.Analysis, ItemView, error) {
 	iv, err := s.item(ctx, n.ItemID)
 	if err != nil {
 		return dom.Analysis{}, iv, err
 	}
-	a, ok := dom.Analyze(iv.State, n.ItemID, n.NCID, nil)
+	a, ok := dom.Analyze(iv.State, n.ItemID, n.NCID, iv.Equipment)
 	if !ok {
 		return dom.Analysis{}, iv, notFound("Несоответствие", n.NCID)
 	}
-	if s.cfg.Equipment == nil || a.Operation == nil || a.Operation.Equipment == "" {
-		return a, iv, nil
-	}
-	from, to := a.Operation.Started, n.At
-	if a.Window != nil {
-		from, to = a.Window.Start, a.Window.End
-	}
-	eq, err := s.cfg.Equipment.Events(ctx, a.Operation.Equipment, from, to)
-	if err != nil {
-		return dom.Analysis{}, iv, err
-	}
-	a, _ = dom.Analyze(iv.State, n.ItemID, n.NCID, eq)
 	return a, iv, nil
 }
 
 // profiles — профили всех несоответствий (для групп, общих факторов и
-// похожих случаев); разбор — без порта оборудования (профиль не зависит от
-// событий, кроме инструмента).
+// похожих случаев).
 func (s *Service) profiles(ctx context.Context) ([]dom.Profile, map[string]dom.NCRecord, error) {
 	ids, err := s.list(ctx, ProjectionNC)
 	if err != nil {
@@ -159,7 +144,7 @@ func (s *Service) profiles(ctx context.Context) ([]dom.Profile, map[string]dom.N
 			}
 			items[n.ItemID] = iv
 		}
-		a, ok := dom.Analyze(iv.State, n.ItemID, id, nil)
+		a, ok := dom.Analyze(iv.State, n.ItemID, id, iv.Equipment)
 		if !ok {
 			continue
 		}
