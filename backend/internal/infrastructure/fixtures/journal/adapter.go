@@ -2,6 +2,7 @@ package journal
 
 import (
 	"context"
+	"encoding/json"
 	"strconv"
 	"sync"
 	"time"
@@ -112,34 +113,42 @@ func (s *subscription) Close() {
 	})
 }
 
-// Entries — журнал событий (journal.entry.list) с фильтром.
-func (a *Adapter) Entries(ctx context.Context, f app.EntryFilter, m platform.Moment, _ platform.Page) (app.JournalEntryList, error) {
-	params := map[string]string{"item_id": f.ItemID, "stream": f.Stream, "event_type": f.EventType, "entry_kind": f.EntryKind}
-	if f.AfterSeq > 0 {
-		params["after_seq"] = strconv.FormatInt(f.AfterSeq, 10)
-	}
-	v, err := respond[app.JournalEntryList](ctx, "journal.entry.list", params, &m)
+// Entries — журнал событий (journal.entry.list): все записи, известные к
+// шагу курсора (ответы journal.entry.read мира заготовок), с тем же отбором,
+// порядком (order=desc — новые сверху) и курсором страниц, что у live.
+func (a *Adapter) Entries(ctx context.Context, f app.EntryFilter, m platform.Moment, p platform.Page) (app.JournalEntryList, error) {
+	rt, err := a.rt()
 	if err != nil {
-		return v, err
+		return app.JournalEntryList{}, err
 	}
-	out := v.Items[:0]
-	for _, x := range v.Items {
-		if f.ItemID != "" && (x.ItemID == nil || *x.ItemID != f.ItemID) {
-			continue
+	var all []app.JournalEntryView
+	err = rt.RespondAll(ctx, "journal.entry.read", &m, func(body json.RawMessage) error {
+		var v app.JournalEntryView
+		if err := json.Unmarshal(body, &v); err != nil {
+			return err
 		}
-		if (f.Stream != "" && x.Stream != f.Stream) || (f.EventType != "" && x.EventType != f.EventType) ||
-			(f.EntryKind != "" && x.EntryKind != f.EntryKind) || x.Seq <= f.AfterSeq {
-			continue
-		}
-		out = append(out, x)
+		all = append(all, v)
+		return nil
+	})
+	if err != nil {
+		return app.JournalEntryList{}, err
 	}
-	v.Items = out
-	return v, nil
+	if len(all) == 0 {
+		// Мир без записей по seq — прежний ответ списка шага.
+		return respond[app.JournalEntryList](ctx, "journal.entry.list", nil, &m)
+	}
+	// Идентификаторы тел и фильтров — с префиксом прогона одинаково (applyRun).
+	return app.PageEntries(all, f, p), nil
 }
 
 // Entry — запись журнала по seq (journal.entry.read).
 func (a *Adapter) Entry(ctx context.Context, seq int64) (app.JournalEntryView, error) {
 	return respond[app.JournalEntryView](ctx, "journal.entry.read", map[string]string{"seq": strconv.FormatInt(seq, 10)}, nil)
+}
+
+// Event — запись по event_id для окна записи (journal.event.read, интерфейс 6).
+func (a *Adapter) Event(ctx context.Context, eventID string, m platform.Moment) (app.JournalEventView, error) {
+	return respond[app.JournalEventView](ctx, "journal.event.read", map[string]string{"event_id": eventID}, &m)
 }
 
 // Head — голова журнала (journal.head.read).

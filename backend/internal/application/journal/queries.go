@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -38,26 +39,33 @@ func (s *Service) Entries(ctx context.Context, f EntryFilter, m platform.Moment,
 	if limit <= 0 || limit > 500 {
 		limit = 100
 	}
-	after := f.AfterSeq
-	if p.Cursor != "" {
-		if c, err := strconv.ParseInt(p.Cursor, 10, 64); err == nil && c > after {
-			after = c
-		}
+	desc := f.Order == OrderDesc
+	cursor, _ := strconv.ParseInt(p.Cursor, 10, 64)
+	q := ReadQuery{Stream: f.Stream, ItemID: f.ItemID, EventID: f.EventID, Limit: limit, Moment: m, RunID: m.RunID, Backward: desc}
+	if desc {
+		q.BeforeSeq = cursor
+	} else {
+		q.AfterSeq = max(f.AfterSeq, cursor)
 	}
-	q := ReadQuery{Stream: f.Stream, ItemID: f.ItemID, AfterSeq: after, Limit: limit, Moment: m, RunID: m.RunID}
 	prefix := strings.HasSuffix(f.EventType, ".")
 	if f.EventType != "" && !prefix {
 		q.EventType = f.EventType
 	}
 	out := JournalEntryList{Items: []JournalEntryView{}}
+	last := int64(0)
 	for len(out.Items) < limit {
 		page, err := s.store.Read(ctx, q)
 		if err != nil {
 			return JournalEntryList{}, err
 		}
 		for _, e := range page {
-			q.AfterSeq = int64(e.Seq)
-			if prefix && !strings.HasPrefix(e.EventType, f.EventType) || f.EntryKind != "" && string(e.EntryKind) != f.EntryKind {
+			last = int64(e.Seq)
+			if desc {
+				q.BeforeSeq = last
+			} else {
+				q.AfterSeq = last
+			}
+			if !Matches(f, e.EventType, string(e.EntryKind), int64(e.Seq)) {
 				continue
 			}
 			out.Items = append(out.Items, s.view(ctx, e))
@@ -69,8 +77,58 @@ func (s *Service) Entries(ctx context.Context, f EntryFilter, m platform.Moment,
 			return out, nil
 		}
 	}
-	out.NextCursor = strconv.FormatInt(q.AfterSeq, 10)
+	out.NextCursor = strconv.FormatInt(last, 10)
 	return out, nil
+}
+
+// OrderDesc — журнал «новые сверху» (параметр order=desc).
+const OrderDesc = "desc"
+
+// Matches — запись проходит отбор журнала по типу (или префиксу семейства
+// «quality.»), виду записи и after_seq (остальные условия — у чтения журнала).
+func Matches(f EntryFilter, eventType, kind string, seq int64) bool {
+	switch {
+	case strings.HasSuffix(f.EventType, "."):
+		if !strings.HasPrefix(eventType, f.EventType) {
+			return false
+		}
+	case f.EventType != "" && eventType != f.EventType:
+		return false
+	}
+	return (f.EntryKind == "" || kind == f.EntryKind) && seq > f.AfterSeq
+}
+
+// PageEntries — страница журнала из всех записей в памяти (заготовки): тот же
+// отбор, порядок и курсор, что у live (Entries).
+func PageEntries(all []JournalEntryView, f EntryFilter, p platform.Page) JournalEntryList {
+	limit := p.Limit
+	if limit <= 0 || limit > 500 {
+		limit = 100
+	}
+	desc := f.Order == OrderDesc
+	cursor, _ := strconv.ParseInt(p.Cursor, 10, 64)
+	slices.SortFunc(all, func(a, b JournalEntryView) int {
+		if desc {
+			return int(b.Seq - a.Seq)
+		}
+		return int(a.Seq - b.Seq)
+	})
+	out := JournalEntryList{Items: []JournalEntryView{}}
+	for _, e := range all {
+		if cursor > 0 && (desc && e.Seq >= cursor || !desc && e.Seq <= cursor) {
+			continue
+		}
+		if !Matches(f, e.EventType, e.EntryKind, e.Seq) || f.EventID != "" && e.EventID != f.EventID ||
+			f.Stream != "" && e.Stream != f.Stream || f.ItemID != "" && (e.ItemID == nil || *e.ItemID != f.ItemID) {
+			continue
+		}
+		if len(out.Items) == limit {
+			out.NextCursor = strconv.FormatInt(out.Items[len(out.Items)-1].Seq, 10)
+			break
+		}
+		out.Items = append(out.Items, e)
+	}
+	return out
 }
 
 // Entry — запись основной цепочки по seq (journal.entry.read).

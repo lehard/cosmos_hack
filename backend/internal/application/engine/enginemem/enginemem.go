@@ -258,10 +258,12 @@ func (j *Journal) Read(_ context.Context, q appjournal.ReadQuery) ([]jc.JournalE
 		switch {
 		case e.Chain != chain,
 			!q.Backward && int64(e.Seq) <= q.AfterSeq,
+			q.Backward && q.BeforeSeq > 0 && int64(e.Seq) >= q.BeforeSeq,
 			q.Stream != "" && e.Stream != q.Stream,
 			q.ItemID != "" && (e.ItemID == nil || *e.ItemID != q.ItemID),
 			q.Partition != nil && e.Partition != *q.Partition,
-			q.EventType != "" && e.EventType != q.EventType:
+			q.EventType != "" && e.EventType != q.EventType,
+			q.EventID != "" && e.EventID != q.EventID:
 			continue
 		}
 		out = append(out, e)

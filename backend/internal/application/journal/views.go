@@ -76,4 +76,9 @@ type EntryFilter struct {
 	EventType string
 	AfterSeq  int64
 	EntryKind string
+	// EventID — одна запись по event_id (переход по causation, corrects, correlation; интерфейс 6).
+	EventID string
+	// Order — asc (по умолчанию: от старых, курсор — seq последней) или desc
+	// («новые сверху»: курсор — seq последней, следующая страница — seq меньше).
+	Order string
 }

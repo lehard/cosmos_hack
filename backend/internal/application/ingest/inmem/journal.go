@@ -99,7 +99,7 @@ func (j *Journal) Read(_ context.Context, q journal.ReadQuery) ([]jc.JournalEntr
 	var out []jc.JournalEntry
 	for _, s := range src {
 		if int64(s.Entry.Seq) <= q.AfterSeq || (q.Stream != "" && s.Entry.Stream != q.Stream) ||
-			(q.Partition != nil && s.Entry.Partition != *q.Partition) || (q.EventType != "" && s.Entry.EventType != q.EventType) {
+			(q.Partition != nil && s.Entry.Partition != *q.Partition) || (q.EventType != "" && s.Entry.EventType != q.EventType) || (q.EventID != "" && s.Entry.EventID != q.EventID) {
 			continue
 		}
 		out = append(out, s.Entry)
