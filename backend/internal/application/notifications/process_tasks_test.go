@@ -142,15 +142,22 @@ func TestProcessStepTasks(t *testing.T) {
 	if _, closed := f.tasks(); !closed[rcv.TaskID] {
 		t.Fatal("приёмка выполнена — задача не снята")
 	}
-	edge := f.only(dp.OpOperationStart)
-	if edge.AssigneeRoleID != "performer" || edge.LocationID != "WS-WC" || edge.StepKey != "welding.edge_prep" {
-		t.Fatalf("подготовка кромок: %+v", edge)
-	}
-	f.add(catalog.OperationRunStarted, 6, map[string]any{"operation_run_id": "EP-1", "operation_code": "EP", "step_key": "welding.edge_prep", "operator_id": "W21"})
-	f.add(catalog.OperationRunFinished, 6.5, map[string]any{"operation_run_id": "EP-1", "completion": "completed"})
+	// Подготовка кромок — подготовительный шаг сварки (окно «edge_prep<=PT8H»
+	// у сварки): сварщику сразу «Начать: Сварка…», кромки засчитываются по её началу.
 	weld := f.only(dp.OpOperationStart)
-	if weld.StepKey != "welding.weld" || weld.Title != "Начать: Сварка фланца с патрубком — Ф-001" {
+	if weld.AssigneeRoleID != "performer" || weld.LocationID != "WS-WC" || weld.StepKey != "welding.weld" ||
+		weld.Title != "Начать: Сварка фланца с патрубком — Ф-001" {
 		t.Fatalf("сварка: %+v", weld)
+	}
+	// Кромки записаны отдельным выполнением — пока оно идёт, задача «Завершить» его;
+	// после — снова «Начать: Сварка…» (та же задача).
+	f.add(catalog.OperationRunStarted, 6, map[string]any{"operation_run_id": "EP-1", "operation_code": "EP", "step_key": "welding.edge_prep", "operator_id": "W21"})
+	if ep := f.only(dp.OpOperationFinish); ep.StepKey != "welding.edge_prep" {
+		t.Fatalf("кромки в работе: %+v", ep)
+	}
+	f.add(catalog.OperationRunFinished, 6.5, map[string]any{"operation_run_id": "EP-1", "completion": "completed"})
+	if again := f.only(dp.OpOperationStart); again.TaskID != weld.TaskID {
+		t.Fatalf("сварка после кромок: %+v", again)
 	}
 	f.add(catalog.OperationRunStarted, 7, map[string]any{"operation_run_id": "SV-1", "operation_code": "SV", "step_key": "welding.weld", "operator_id": "W21",
 		"equipment_id": "IS-2"})
