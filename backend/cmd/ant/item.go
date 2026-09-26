@@ -29,7 +29,6 @@ func (c *core) itemBundles(next engineapp.BundleSource) engineapp.BundleSource {
 	return itemapp.Bundles{Next: next, Env: env}
 }
 
-
 // itemWriter — запись команд item и crossitem в журнал ядра.
 func (c *core) itemWriter(env *environment) itemapp.JournalWriter {
 	return itemapp.JournalWriter{Journal: c.journal, DomainBuild: c.codec.DomainBuild, Partitions: env.cfg.Engine.Partitions, Now: c.codec.Now}

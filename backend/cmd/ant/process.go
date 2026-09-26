@@ -26,7 +26,9 @@ const processSeedFile = "normative/process/flange-process.bpmn"
 // bundleSource — нормативный слой изделия для воркера, запросов на момент,
 // пересборки и гардов команд: версия процесса, закреплённая при запуске
 // изделия (эпик 17), слои quality (эпик 20) и item (эпик 18) поверх неё.
-func (c *core) bundleSource() engineapp.BundleSource { return c.itemBundles(c.qualityBundles(c.bundles)) }
+func (c *core) bundleSource() engineapp.BundleSource {
+	return c.itemBundles(c.qualityBundles(c.bundles))
+}
 
 // states — запросы состояния изделия на момент с тем же нормативным слоем (AD-22).
 func (c *core) states() engineapp.StateQueries {
