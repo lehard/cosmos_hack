@@ -21,7 +21,8 @@ export interface ActiveRun {
 }
 
 const ACTIVE_STATES = new Set(['running', 'paused', 'waiting_for_decision'])
-const SKIP = [/^\/api\/v1\/runs(\/|$)/, /^\/api\/v1\/scenarios(\/|$)/, /^\/api\/v1\/auth(\/|$)/]
+// Задачи — без run_id: задачи процесса от действий людей в интерфейсе создаются без run_id (фильтр их прятал).
+const SKIP = [/^\/api\/v1\/runs(\/|$)/, /^\/api\/v1\/scenarios(\/|$)/, /^\/api\/v1\/auth(\/|$)/, /^\/api\/v1\/tasks(\/|$)/]
 
 export const activeRun = ref<ActiveRun | null>(null)
 

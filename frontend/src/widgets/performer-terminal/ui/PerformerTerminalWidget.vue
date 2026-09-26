@@ -88,7 +88,16 @@ watch(
 )
 const itemsQ = useItemsAtStep(stepKey)
 const items = computed(() => postItems(post.value, runProfile.value, itemsQ.data.value?.data))
-const candidates = computed(() => startCandidates(itemsQ.data.value?.data))
+/** Очередь шага + изделия из открытых задач «Начать» этого шага (шаг изделия меняется только при старте операции). */
+const candidates = computed(() => {
+  const base = startCandidates(itemsQ.data.value?.data)
+  const have = new Set(base.map((c) => c.row.item_id))
+  const fromTasks = (tasksQ.data.value?.data.items ?? [])
+    .filter((t) => t.state === 'open' && t.operation_id === 'process.operation.start' && t.step_key === stepKey.value && t.item_id && !have.has(t.item_id))
+    .map((t) => ({ row: { item_id: t.item_id!, label: t.item_label ?? t.item_id! } as (typeof base)[number]['row'], blocked: false }))
+  // Есть задачи «Начать» — очередь это они (без сваренного в истории); иначе очередь шага.
+  return fromTasks.length ? fromTasks : base
+})
 
 // «Идёт N мин» против нормы шага.
 const now = ref(new Date())
