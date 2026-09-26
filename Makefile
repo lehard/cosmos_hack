@@ -217,7 +217,11 @@ load: ## Нагрузочный прогон 1 и N воркеров (эпик 3
 	@echo "load: пока пусто — эпик 35 (FR-107)"
 verify: ## Независимый верификатор журнала (эпик 29)
 	@echo "verify: пока пусто — эпик 29 (AD-9)"
-rebuild: ## Пересборка проекций из журнала (эпики 07, 34)
-	@echo "rebuild: пока пусто — эпики 07, 34"
+rebuild: ## Пересборка проекций из журнала (ant rebuild; ITEM=‹item_id› — одно изделие: повтор после «обработка остановлена»)
+	@# Полная пересборка — при остановленных worker и projector (служба ant),
+	@# после неё служба запускается снова; -item — на работающей системе.
+	@if [[ -z "$(ITEM)" ]]; then $(COMPOSE) stop ant; fi; \
+	status=0; $(COMPOSE_LOCKED) run --rm --no-deps ant -role=rebuild $(if $(ITEM),-item=$(ITEM)) || status=$$?; \
+	if [[ -z "$(ITEM)" ]]; then $(COMPOSE) start ant; fi; exit $$status
 token-agent: ## Агент токена и расширение браузера (эпик 38)
 	@echo "token-agent: пока пусто — эпик 38 (AD-14)"

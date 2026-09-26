@@ -112,9 +112,14 @@ func ApplyEffect(ctx context.Context, tx Execer, e appjournal.Effect) (handled b
 type Store struct {
 	Pool *pgxpool.Pool
 
-	mu     sync.Mutex
-	listen *pgxpool.Conn
+	mu      sync.Mutex
+	listen  *pgxpool.Conn
+	waiting bool
+	closed  bool
 }
+
+// ErrClosed — Wait после Close.
+var ErrClosed = errors.New("engine: журнал изменений закрыт")
 
 var (
 	_ engineapp.ProjectionStore = (*Store)(nil)
@@ -178,9 +183,18 @@ func (s *Store) Tail(ctx context.Context) (int64, error) {
 
 // Wait блокирует до NOTIFY ant_changes (LISTEN на выделенном соединении) или
 // отмены ctx. После разрыва соединения возвращается сразу: вызывающий
-// дочитает по seq (копия догоняет после переподключения, AD-6).
+// дочитает по seq (копия догоняет после переподключения, AD-6). Ждущий —
+// один (публикатор копии api).
 func (s *Store) Wait(ctx context.Context) error {
 	s.mu.Lock()
+	if s.closed {
+		s.mu.Unlock()
+		return ErrClosed
+	}
+	if s.waiting {
+		s.mu.Unlock()
+		return errors.New("engine: Wait уже ждёт — ждущий один")
+	}
 	conn := s.listen
 	if conn == nil {
 		c, err := s.Pool.Acquire(ctx)
@@ -195,26 +209,41 @@ func (s *Store) Wait(ctx context.Context) error {
 		}
 		s.listen, conn = c, c
 	}
+	s.waiting = true
 	s.mu.Unlock()
+
 	_, err := conn.Conn().WaitForNotification(ctx)
-	if err != nil && ctx.Err() == nil {
-		s.mu.Lock()
-		if s.listen == conn {
-			s.listen = nil
-			_ = conn.Hijack().Close(context.WithoutCancel(ctx))
-		}
-		s.mu.Unlock()
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.waiting = false
+	switch {
+	case s.closed:
+		s.dropListen()
+		return ErrClosed
+	case err != nil && ctx.Err() == nil:
+		// Обрыв: следующее Wait откроет LISTEN заново.
+		s.dropListen()
 		return nil
 	}
 	return err
 }
 
-// Close освобождает соединение LISTEN.
+// dropListen закрывает соединение LISTEN (в пул оно не возвращается:
+// подписка на канал осталась бы на чужом соединении). Под s.mu.
+func (s *Store) dropListen() {
+	if s.listen != nil {
+		_ = s.listen.Hijack().Close(context.Background())
+		s.listen = nil
+	}
+}
+
+// Close закрывает соединение LISTEN; если Wait ещё ждёт — его закроет Wait.
 func (s *Store) Close() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.listen != nil {
-		s.listen.Release()
-		s.listen = nil
+	s.closed = true
+	if !s.waiting {
+		s.dropListen()
 	}
 }

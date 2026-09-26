@@ -10,6 +10,8 @@ import (
 	"ant/internal/domain/engine"
 	"ant/internal/domain/engine/enginetest"
 	"ant/internal/domain/kernel"
+	"ant/internal/domain/notifications"
+	"ant/internal/domain/quality/qualitytest"
 )
 
 var t0 = time.Date(2026, 9, 26, 8, 0, 0, 0, time.UTC)
@@ -129,8 +131,8 @@ func TestDiffProtectiveNotWithdrawn(t *testing.T) {
 // Два типа в одном слоте — ошибка: совпал бы reaction_id (AD-3).
 func TestDiffSlotConflict(t *testing.T) {
 	slot := kernel.Slot{RuleID: "r", Subject: "item:X", TriggerKey: "k"}
-	a, _ := kernel.NewReaction("quality", catalog.QualitySignalRaised, slot, nil)
-	b, _ := kernel.NewReaction("notifications", catalog.TaskTaskCreated, slot, nil)
+	a, _ := qualitytest.SignalRaised(slot, nil)
+	b, _ := notifications.ReviewTask(slot, ev.TaskTaskCreatedV1KindProtectionBasisChanged, "t", "r", "")
 	if _, err := engine.Diff([]kernel.Reaction{a, b}, nil, engine.Trigger{}); err == nil {
 		t.Fatal("ждали ошибку конфликта слота")
 	}

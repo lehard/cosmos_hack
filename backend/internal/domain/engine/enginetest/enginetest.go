@@ -23,6 +23,7 @@ import (
 	ev "ant/internal/contracts/events"
 	"ant/internal/domain/engine"
 	"ant/internal/domain/kernel"
+	"ant/internal/domain/quality/qualitytest"
 )
 
 // RuleID — правило пустышки.
@@ -83,7 +84,8 @@ func Signal(in []kernel.Record) (kernel.Reaction, bool) {
 		Severity:        ev.SeverityMajor,
 		SignalID:        ev.ObjectID("sig-" + item),
 	}
-	re, err := kernel.NewReaction("quality", catalog.QualitySignalRaised, kernel.Slot{RuleID: RuleID, Subject: subject, TriggerKey: "signal"}, data, causes...)
+	// Реакцию строит опора модуля-эмитента (AD-40): пустышка играет за quality.
+	re, err := qualitytest.SignalRaised(kernel.Slot{RuleID: RuleID, Subject: subject, TriggerKey: "signal"}, data, causes...)
 	if err != nil {
 		panic(err)
 	}

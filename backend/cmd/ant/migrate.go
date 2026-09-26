@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"ant/cmd/internal/db"
+	enginestore "ant/internal/infrastructure/storage/engine"
 	journalstore "ant/internal/infrastructure/storage/journal"
 	"ant/internal/infrastructure/storage/journal/migrator"
 )
@@ -15,6 +16,7 @@ import (
 // migrations). Модуль со своей схемой добавляет сюда строку.
 var migrationSets = []migrator.Set{
 	{Module: "journal", FS: journalstore.Migrations, Dir: journalstore.MigrationsDir},
+	{Module: "engine", FS: enginestore.Migrations, Dir: enginestore.MigrationsDir},
 }
 
 // runMigrate — разовая роль migrate (AD-1, AD-25): ждёт БД, создаёт роли БД

@@ -34,9 +34,11 @@ func TestEffectsAndNotify(t *testing.T) {
 	waited := make(chan error, 1)
 	// Первый Wait открывает LISTEN; сигнал до него не теряется благодаря After.
 	listenReady := make(chan struct{})
+	wctx, wcancel := context.WithCancel(ctx)
+	defer wcancel()
 	go func() {
 		close(listenReady)
-		waited <- st.Wait(ctx)
+		waited <- st.Wait(wctx)
 	}()
 	<-listenReady
 
@@ -66,6 +68,9 @@ func TestEffectsAndNotify(t *testing.T) {
 			t.Fatalf("Wait: %v", err)
 		}
 	case <-time.After(500 * time.Millisecond):
+		// Ждущий один: снимаем первое ожидание, соединение LISTEN остаётся.
+		wcancel()
+		<-waited
 	}
 	changes, err := st.After(ctx, engineapp.ChangeQuery{Limit: 10})
 	if err != nil || len(changes) != 1 || changes[0].Pos != 1 || changes[0].Seq != 7 || changes[0].Entity != platform.EntityItem || !changes[0].ReceivedAt.Equal(recv) {

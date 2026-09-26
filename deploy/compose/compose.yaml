@@ -1,9 +1,12 @@
 # Демо-стенд ant: `docker compose up` из корня репозитория (AD-25, FR-109).
 #
 # Порядок запуска: secrets-init (пароль БД в том, один раз) → postgres →
-# migrate (разовая роль) → ant (роль api, фронтенд встроен).
-# Следующие эпики добавляют сюда init (ключи, генезис), ant-worker ×N, keeper,
-# verifier, edge-agent, demo-signer.
+# migrate (разовая роль: схемы journal и engine) → ant (роли api, worker,
+# crossitem, projector в одном процессе — делят пул и LISTEN; фронтенд встроен).
+# ant входит в БД как ant_admin и работает ролью ant_app (SET ROLE, AD-1).
+# Следующие эпики добавляют сюда init (ключи, генезис), отдельные ant-worker ×N
+# (нагрузочный профиль, эпик 35), keeper, verifier, edge-agent, demo-signer.
+# Пересборка проекций — make rebuild [ITEM=‹item_id›].
 #
 # Память — под ~2,4 ГБ на всю систему (спайн, AD-25). Сейчас занято:
 #   postgres 768 МБ + ant 384 МБ (+ разовые secrets-init 32 МБ, migrate 128 МБ);
@@ -100,12 +103,17 @@ services:
 
   ant:
     <<: [*ant-image, *ant-common]
-    command: ["-role=api"]
+    command: ["-role=api,worker,crossitem,projector"]
     depends_on:
       migrate:
         condition: service_completed_successfully
     ports:
       - "${ANT_HTTP_BIND:-127.0.0.1}:${ANT_HTTP_PORT:-8480}:8080"
+    volumes:
+      - secrets:/run/ant-secrets:ro
+      - ../config/ant.yaml:/etc/ant/ant.yaml:ro
+      # Хранилище материалов по адресу содержимого (materials.dir, AD-23).
+      - materials:/var/lib/ant/materials
     tmpfs:
       - /tmp:size=64m
     healthcheck:
@@ -119,6 +127,9 @@ services:
 
 volumes:
   pgdata:
+    labels:
+      ant.project: ant
+  materials:
     labels:
       ant.project: ant
   secrets:

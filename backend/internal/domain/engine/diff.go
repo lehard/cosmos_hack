@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"ant/internal/contracts/catalog"
-	"ant/internal/contracts/constants"
 	ev "ant/internal/contracts/events"
 	"ant/internal/domain/kernel"
+	"ant/internal/domain/notifications"
 )
 
 // Recorded — версия слота реакции, уже записанная в журнал (AD-3). Воркер
@@ -244,17 +244,7 @@ func withdrawal(l Recorded, wt catalog.Type, trigger Trigger) (kernel.Reaction, 
 func protectionBasisTask(l Recorded) (kernel.Reaction, error) {
 	slot := kernel.Slot{RuleID: RuleProtectionBasisChanged, Subject: l.Slot.Subject, TriggerKey: l.Slot.RuleID + "/" + l.Slot.TriggerKey}
 	info, _ := catalog.Lookup(l.Type)
-	data := ev.TaskTaskCreatedV1{
-		AssigneeRoleID: ReviewerRole,
-		Kind:           ev.TaskTaskCreatedV1KindProtectionBasisChanged,
-		SubjectRef:     ev.StreamRef(l.Slot.Subject),
-		TaskID:         ev.ObjectID(kernel.UUIDv5(constants.NsAnt, "task\x1f"+slot.Key())),
-		Title:          "Основание защиты изменилось — пересмотрите: " + info.Title,
-	}
-	r, err := kernel.NewReaction("notifications", catalog.TaskTaskCreated, slot, data, kernel.Record{EventID: l.EventID, OccurredAt: l.OccurredAt})
-	if err != nil {
-		return kernel.Reaction{}, err
-	}
-	r.AutomationMode = 1
-	return r, nil
+	return notifications.ReviewTask(slot, ev.TaskTaskCreatedV1KindProtectionBasisChanged,
+		"Основание защиты изменилось — пересмотрите: "+info.Title, ReviewerRole, "",
+		kernel.Record{EventID: l.EventID, OccurredAt: l.OccurredAt})
 }

@@ -49,7 +49,14 @@ func runAPI(ctx context.Context, env *environment) error {
 	})
 	mux.HandleFunc("GET /readyz", readyHandler(pool, &started))
 	// Операции всех модулей (AD-20, AD-36); неизвестный путь /api/ — 404 problem+json.
-	buildAPI(mux, apiOptions{mode: platform.Mode(cfg.Ports.Mode), moduleModes: moduleModes(cfg.Ports.Modules)})
+	opts := apiOptions{mode: platform.Mode(cfg.Ports.Mode), moduleModes: moduleModes(cfg.Ports.Modules)}
+	if modeOf(opts, "journal") == platform.ModeLive {
+		// Живые обновления (SSE) и журнал — на ядре процесса (эпики 04, 07).
+		if opts.journal, err = journalLive(ctx, env); err != nil {
+			return err
+		}
+	}
+	buildAPI(mux, opts)
 	mux.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/problem+json")
 		w.WriteHeader(http.StatusNotFound)
@@ -125,6 +132,14 @@ func writeJSON(w http.ResponseWriter, code int, v any) {
 	w.Header().Set("Cache-Control", "no-store")
 	w.WriteHeader(code)
 	_ = json.NewEncoder(w).Encode(v)
+}
+
+// modeOf — режим ведущих портов модуля с учётом переопределения (AD-36).
+func modeOf(o apiOptions, module string) platform.Mode {
+	if m, ok := o.moduleModes[module]; ok {
+		return m
+	}
+	return o.mode
 }
 
 // moduleModes — переопределение режима ведущих портов по модулю (вертикальные

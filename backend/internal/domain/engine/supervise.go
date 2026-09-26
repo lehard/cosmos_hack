@@ -4,9 +4,9 @@ import (
 	"strings"
 
 	"ant/internal/contracts/catalog"
-	"ant/internal/contracts/constants"
 	ev "ant/internal/contracts/events"
 	"ant/internal/domain/kernel"
+	"ant/internal/domain/notifications"
 )
 
 // decisionsBeforeNewData — правило движка AD-5 / FR-32: решение человека не
@@ -15,7 +15,7 @@ import (
 // решения, движок ставит автору задачу «решение принято до новых данных —
 // пересмотрите». Причины — решение и все такие записи (отсортированы), поэтому
 // новая поздняя запись даёт следующую версию задачи. Эмитент типа задачи —
-// notifications (AD-40).
+// notifications (AD-40): запись строит его функция notifications.ReviewTask.
 func decisionsBeforeNewData(in []kernel.Record) []kernel.Reaction {
 	var out []kernel.Reaction
 	for _, d := range in {
@@ -41,23 +41,16 @@ func decisionsBeforeNewData(in []kernel.Record) []kernel.Reaction {
 			subject = "item:" + d.ItemID
 		}
 		slot := kernel.Slot{RuleID: RuleDecisionBeforeNewData, Subject: subject, TriggerKey: d.EventID}
-		data := ev.TaskTaskCreatedV1{
-			AssigneeRoleID: ReviewerRole,
-			Kind:           ev.TaskTaskCreatedV1KindReviewAfterNewData,
-			SubjectRef:     ev.StreamRef(subject),
-			TaskID:         ev.ObjectID(kernel.UUIDv5(constants.NsAnt, "task\x1f"+slot.Key())),
-			Title:          "Решение принято до новых данных — пересмотрите",
-		}
+		person := ""
 		if d.Actor != "" && !strings.Contains(d.Actor, "@") {
-			p := ev.PersonRef(d.Actor)
-			data.AssigneePersonID = &p
+			person = d.Actor
 		}
-		re, err := kernel.NewReaction("notifications", catalog.TaskTaskCreated, slot, data, causes...)
+		re, err := notifications.ReviewTask(slot, ev.TaskTaskCreatedV1KindReviewAfterNewData,
+			"Решение принято до новых данных — пересмотрите", ReviewerRole, person, causes...)
 		if err != nil {
 			// Тип и эмитент постоянны: ошибка здесь — рассинхронизация с каталогом.
 			panic(err)
 		}
-		re.AutomationMode = 1
 		out = append(out, re)
 	}
 	return out
