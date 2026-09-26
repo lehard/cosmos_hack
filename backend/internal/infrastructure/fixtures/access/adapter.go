@@ -189,15 +189,6 @@ func (Adapter) ReleaseWorkplace(ctx context.Context, workplaceID string, in app.
 	return record(ctx, "access.workplace.release", workplaceID, in.CommandMeta(), in)
 }
 
-// record — команда над постом: квитанция и факт сессии.
-func record(ctx context.Context, op, workplaceID string, meta platform.CommandMeta, body any) (platform.Receipt, error) {
-	rt, err := runtime()
-	if err != nil {
-		return platform.Receipt{}, err
-	}
-	return rt.Record(ctx, op, loader.ObjectRef{Kind: "workplace", ID: workplaceID}, meta, body)
-}
-
 // GrantQualification — выдать квалификацию (access.qualification.grant, эпик 37).
 func (Adapter) GrantQualification(ctx context.Context, personID string, in app.GrantQualification) (platform.Receipt, error) {
 	return decide(ctx, "access.qualification.grant", "person", personID, in.CommandMeta())
