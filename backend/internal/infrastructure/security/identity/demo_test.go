@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -58,6 +59,18 @@ func TestDemoSession(t *testing.T) {
 	ps, err := idp.DemoPersonas(ctx)
 	if err != nil || len(ps) == 0 {
 		t.Fatal(ps, err)
+	}
+	// Экран входа — только персоны показа (demo_login политики, решение
+	// пользователя); остальные в политике и входят персоной и заголовком.
+	var ids []string
+	for _, p := range ps {
+		ids = append(ids, p.ID)
+	}
+	if want := "INS-01 HQC-01 TEC-01 CWL-01 PM-01 ADM-01"; strings.Join(ids, " ") != want {
+		t.Fatalf("персоны экрана входа: %v, want %s", ids, want)
+	}
+	if got, _ := idp.Identify(ctx, access.Credentials{DemoPersona: "FOR-SK"}); got.PersonID != "FOR-SK" || got.Role != "site_foreman" {
+		t.Fatalf("заголовок скрытой персоны: %+v", got)
 	}
 	p, token, err := idp.Open(ctx, access.SessionCreate{PersonaID: "INS-01"})
 	if err != nil || token == "" || p.Role != "quality_inspector" || !p.Demo {

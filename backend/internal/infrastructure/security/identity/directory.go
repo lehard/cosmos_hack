@@ -72,9 +72,11 @@ type policyFile struct {
 		SecurityBusSubscribers []string `yaml:"security_bus_subscribers"`
 	} `yaml:"audit"`
 	Persons []struct {
-		ID    string `yaml:"id"`
-		Name  string `yaml:"name"`
-		Roles []struct {
+		ID   string `yaml:"id"`
+		Name string `yaml:"name"`
+		// DemoLogin — в списке экрана входа (access.persona.list).
+		DemoLogin bool `yaml:"demo_login"`
+		Roles     []struct {
 			Role  string `yaml:"role"`
 			Scope string `yaml:"scope"`
 		} `yaml:"roles"`
@@ -270,6 +272,12 @@ func LoadDirectory(fsys fs.FS) (*access.Directory, error) {
 			return nil, fmt.Errorf("%s: у сотрудника %s неизвестная роль %q", PolicyFile, p.ID, p.Roles[0].Role)
 		}
 		d.Personas = append(d.Personas, access.DemoPersona{ID: p.ID, Name: p.Name, Role: role, Scope: p.Roles[0].Scope})
+		if p.DemoLogin {
+			if d.Login == nil {
+				d.Login = map[string]bool{}
+			}
+			d.Login[p.ID] = true
+		}
 	}
 	if d.Workplaces, err = loadWorkplaces(fsys); err != nil {
 		return nil, err

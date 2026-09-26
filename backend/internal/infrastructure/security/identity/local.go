@@ -277,7 +277,7 @@ func (l *Local) DemoPersonas(context.Context) ([]access.DemoPersona, error) {
 	if !l.opts.Personas {
 		return nil, platform.Fail(errcodes.ApiNotFound, "object", "демо-персоны", "id", "")
 	}
-	return append([]access.DemoPersona(nil), l.dir.Personas...), nil
+	return l.dir.LoginPersonas(), nil
 }
 
 // report — событие шины безопасности о неудачном входе (ошибка записи не

@@ -189,17 +189,36 @@ func (m *Model) Changes(n int) []loader.Change {
 // ─────────────────────────────── общие ───────────────────────────────
 
 // Common — ответы, общие для сценариев: демо-персоны, сеансы, столы ролей (access).
+// Экран входа (access.persona.list) — как в live: сотрудники с demo_login в
+// порядке политики; никто не отмечен — люди сценариев. Сеанс есть у людей
+// сценариев и у персон экрана входа.
 func Common(pol *Policy, people []PersonRef) ([]loader.Response, error) {
 	var out []loader.Response
 	personas := accessapp.DemoPersonaList{Items: []accessapp.DemoPersona{}}
 	roles := map[string]bool{}
+	seen := map[string]bool{}
+	for _, pr := range people {
+		seen[pr.Person] = true
+	}
+	var login []string
+	for _, p := range pol.Persons {
+		if p.DemoLogin {
+			login = append(login, p.ID)
+			if !seen[p.ID] {
+				seen[p.ID] = true
+				people = append(people, PersonRef{Person: p.ID})
+			}
+		}
+	}
 	for _, pr := range people {
 		p, ok := pol.Person(pr.Person)
 		if !ok || len(p.Roles) == 0 {
 			return nil, fmt.Errorf("демо-персона %s: нет в normative/policy", pr.Person)
 		}
 		role := roleRef(pol, p.Roles[0].Role)
-		personas.Items = append(personas.Items, accessapp.DemoPersona{ID: p.ID, Name: p.Name, Role: role, Scope: p.Roles[0].Scope})
+		if len(login) == 0 {
+			personas.Items = append(personas.Items, accessapp.DemoPersona{ID: p.ID, Name: p.Name, Role: role, Scope: p.Roles[0].Scope})
+		}
 		s := accessapp.Session{User: accessapp.SessionUser{ID: p.ID, Name: p.Name}, Role: role, Scope: p.Roles[0].Scope, Demo: true}
 		if pr.Shift != "" {
 			s.Shift = &accessapp.SessionShift{ID: pr.Shift, Title: map[string]string{"SHIFT-1": "Первая смена 08:00–16:30", "SHIFT-2": "Вторая смена 16:30–01:00"}[pr.Shift]}
@@ -212,6 +231,10 @@ func Common(pol *Policy, people []PersonRef) ([]loader.Response, error) {
 		for _, r := range p.Roles {
 			roles[r.Role] = true
 		}
+	}
+	for _, id := range login {
+		p, _ := pol.Person(id)
+		personas.Items = append(personas.Items, accessapp.DemoPersona{ID: p.ID, Name: p.Name, Role: roleRef(pol, p.Roles[0].Role), Scope: p.Roles[0].Scope})
 	}
 	out = append([]loader.Response{resp("access.persona.list", personas)}, out...)
 	for _, r := range pol.Roles {

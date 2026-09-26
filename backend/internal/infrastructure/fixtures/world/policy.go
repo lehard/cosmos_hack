@@ -38,9 +38,11 @@ type PolicyRole struct {
 
 // PolicyPerson — сотрудник (псевдоним) с ролями в областях.
 type PolicyPerson struct {
-	ID    string `yaml:"id"`
-	Name  string `yaml:"name"`
-	Roles []struct {
+	ID   string `yaml:"id"`
+	Name string `yaml:"name"`
+	// DemoLogin — в списке экрана входа (access.persona.list), как в live.
+	DemoLogin bool `yaml:"demo_login"`
+	Roles     []struct {
 		Role  string `yaml:"role"`
 		Scope string `yaml:"scope"`
 	} `yaml:"roles"`
