@@ -13,8 +13,14 @@ title_key: desks.investigation
 density: compact
 help_key: technologist # раздел встроенной справки (эпик 47); наследники роли получают его вместе со столом
 tabs:
+  # Рабочий стол (UI-37): что сейчас требует действий — расследования, повторяющиеся проблемы, меры, версии процесса.
+  - id: workbench
+    title_key: desks.workbench
+    layout: single
+    slots:
+      - {id: inbox, area: main, widget: technologist-inbox}
   - id: investigation
-    title_key: desks.investigation
+    title_key: desks.investigations
     layout: main-side
     slots:
       - {id: investigations, area: main, widget: investigations}
@@ -24,12 +30,12 @@ tabs:
       - {id: hypothesis, area: right, widget: hypothesis}
   # Эпик 42 (FR-64, FR-138): меры и их эффективность — тот же виджет, что у руководителя, плотный вид.
   - id: actions
-    title_key: widgets.quality.tab
+    title_key: desks.actionsEffectiveness
     layout: single
     slots:
       - {id: actions, area: main, widget: corrective-actions}
   - id: process
-    title_key: desks.process
+    title_key: desks.techProcesses
     layout: single
     slots:
       - {id: processes, area: main, widget: process-registry}

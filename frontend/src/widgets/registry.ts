@@ -49,6 +49,7 @@ export const widgetRegistry = {
   'hypothesis': { titleKey: 'ncCard.hypotheses.title', epic: 12, load: () => import('./hypothesis') },
   'risk-scope': { titleKey: 'riskScope.title', epic: 12, load: () => import('./risk-scope') },
   'investigations': { titleKey: 'widgets.analysis.investigations.title', epic: 12, load: () => import('./investigations') },
+  'technologist-inbox': { titleKey: 'widgets.analysis.inbox.title', epic: 12, load: () => import('./technologist-inbox') },
   'process-versions': { titleKey: 'desks.process', epic: 12, load: () => import('./process-versions') },
   // ── эпик 39: Редактор процесса и кворум ──
   'process-registry': { titleKey: 'processEditor.registry.title', epic: 39, load: () => import('./process-registry') },
