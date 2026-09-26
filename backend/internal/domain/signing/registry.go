@@ -449,3 +449,18 @@ func ValidateRevocation(r *Registry, v RevocationAct, at time.Time) error {
 	}
 	return nil
 }
+
+// Clone — глубокая копия реестра (снимок для проверки вне блокировки).
+func (r *Registry) Clone() *Registry {
+	c := NewRegistry()
+	for _, ref := range slices.Sorted(maps.Keys(r.keys)) {
+		k := *r.keys[ref]
+		k.PayloadClasses = slices.Clone(k.PayloadClasses)
+		if k.Revoked != nil {
+			v := *k.Revoked
+			k.Revoked = &v
+		}
+		c.keys[ref] = &k
+	}
+	return c
+}

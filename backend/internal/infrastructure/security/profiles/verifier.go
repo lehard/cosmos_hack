@@ -55,6 +55,12 @@ func (v Verifier) Check(ctx context.Context, raw []byte) (dom.Envelope, []byte, 
 	return env, payload, out, nil
 }
 
+// VerifyRaw — подпись sig над PAE(payloadType, payload) ключом pub профиля
+// profile (доказательство владения новым ключом, AD-11).
+func (Verifier) VerifyRaw(profile string, pub []byte, payloadType string, payload, sig []byte) bool {
+	return Verify(profile, pub, payloadType, dom.PAE(payloadType, payload), sig)
+}
+
 // Verify — порт приёма (FR-26): payload и подписанты с верной подписью.
 // Ни одной верной подписи — ошибка (недоступный ключ — ErrKeyUnavailable).
 func (v Verifier) Verify(ctx context.Context, raw []byte) (app.Verified, error) {

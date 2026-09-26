@@ -1971,6 +1971,23 @@ types:
     current_version: 1
     refs: ["FR-70", "FR-79", "AD-11", "AD-32"]
 
+  key.shift_report.recorded:
+    title: "Сменный рапорт записан"
+    emitter: "signing"
+    role: "api"
+    kind: "decision"
+    stream: "key"
+    axis: "none"
+    action_class: "record"
+    critical: false
+    ca_group: null
+    guard_relevant: false
+    publish_stage: false
+    provenance: ["personal", "scenario"]
+    versions: [1]
+    current_version: 1
+    refs: ["FR-66", "FR-81", "AD-12", "AD-14"]
+
   # ── time (владелец схемы: journal) ──
   time.clock.mode_set:
     title: "Режим часов установлен"

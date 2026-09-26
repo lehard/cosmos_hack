@@ -123,6 +123,10 @@ type Verdict struct {
 	Detail   string
 	Required string // обязательный профиль на момент подписи
 	Signers  []SignerVerdict
+	// Extra — подписи сверх перечня обязательных: в итог не засчитываются
+	// (AD-10), но проверяются по отдельности — ими, например, субъект
+	// подтверждает ротацию действующим ключом (AD-11).
+	Extra []SignerVerdict
 }
 
 // Judge — решение по пакету (AD-10, AD-32):
@@ -159,27 +163,19 @@ func Judge(reg *Registry, book *ProfileBook, j Judgement) Verdict {
 	}
 	have := map[string][]string{} // субъект → профили действительных подписей
 	var subjects []string
+	for _, ref := range dedupe(j.Present) {
+		if !slices.Contains(j.Declared.Signers, ref) {
+			v.Extra = append(v.Extra, judgeOne(reg, j, ref))
+		}
+	}
 	for _, ref := range dedupe(j.Declared.Signers) {
 		sv := SignerVerdict{KeyRef: ref, Status: StatusValid}
 		k, ok := reg.Key(ref)
-		res := cryptoOf(j.Crypto, ref)
 		switch {
 		case !slices.Contains(j.Present, ref):
 			sv.Status, sv.Reason = StatusRejected, ReasonDowngrade // обязательную подпись удалили
-		case !ok:
-			sv.Status, sv.Reason = StatusRejected, ReasonUnknownKey
-		case k.Revoked != nil && k.Revoked.Seq <= j.Seq:
-			sv.Status, sv.Reason = StatusRejected, ReasonRevoked
-		case !k.ActiveAt(j.Seq, j.At):
-			sv.Status, sv.Reason = StatusRejected, ReasonKeyInactive
-		case !slices.Contains(k.PayloadClasses, j.Class):
-			sv.Status, sv.Reason = StatusRejected, ReasonClassForbidden
-		case res == CryptoUnavailable || res == "":
-			sv.Status, sv.Reason = StatusUnverifiable, ReasonUnavailable
-		case res == CryptoBad:
-			sv.Status, sv.Reason = StatusRejected, ReasonTampered
-		case k.CompromisedAt(j.Seq, j.At):
-			sv.Status, sv.Reason = StatusDoubtful, ReasonCompromised
+		default:
+			sv = judgeOne(reg, j, ref)
 		}
 		if ok {
 			sv.Profile, sv.SubjectID, sv.Subject, sv.Provenance = k.ProfileID, k.SubjectID, k.SubjectKind, k.Provenance
@@ -203,6 +199,35 @@ func Judge(reg *Registry, book *ProfileBook, j Judgement) Verdict {
 		}
 	}
 	return v
+}
+
+// judgeOne — одна подпись: ключ зарегистрирован, действует на момент
+// подписи, допускает класс пакета, открытая часть доступна, подпись сходится,
+// не после «скомпрометирован с».
+func judgeOne(reg *Registry, j Judgement, ref string) SignerVerdict {
+	sv := SignerVerdict{KeyRef: ref, Status: StatusValid}
+	k, ok := reg.Key(ref)
+	res := cryptoOf(j.Crypto, ref)
+	switch {
+	case !ok:
+		sv.Status, sv.Reason = StatusRejected, ReasonUnknownKey
+	case k.Revoked != nil && k.Revoked.Seq <= j.Seq:
+		sv.Status, sv.Reason = StatusRejected, ReasonRevoked
+	case !k.ActiveAt(j.Seq, j.At):
+		sv.Status, sv.Reason = StatusRejected, ReasonKeyInactive
+	case !slices.Contains(k.PayloadClasses, j.Class):
+		sv.Status, sv.Reason = StatusRejected, ReasonClassForbidden
+	case res == CryptoUnavailable || res == "":
+		sv.Status, sv.Reason = StatusUnverifiable, ReasonUnavailable
+	case res == CryptoBad:
+		sv.Status, sv.Reason = StatusRejected, ReasonTampered
+	case k.CompromisedAt(j.Seq, j.At):
+		sv.Status, sv.Reason = StatusDoubtful, ReasonCompromised
+	}
+	if ok {
+		sv.Profile, sv.SubjectID, sv.Subject, sv.Provenance = k.ProfileID, k.SubjectID, k.SubjectKind, k.Provenance
+	}
+	return sv
 }
 
 func coveredBy(profiles []string, need string) bool {

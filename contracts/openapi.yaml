@@ -8040,6 +8040,25 @@ components:
       required:
         - text
       type: object
+    PaperQRView:
+      additionalProperties: false
+      properties:
+        doc_digest:
+          type: string
+        document_id:
+          type: string
+        svg:
+          description: QR векторной картинкой для печатной рамки (без внешних ресурсов).
+          type: string
+        text:
+          description: ant:doc:‹id›:‹отпечаток›.
+          type: string
+      required:
+        - text
+        - document_id
+        - doc_digest
+        - svg
+      type: object
     Partner:
       additionalProperties: false
       properties:
@@ -9934,6 +9953,14 @@ components:
           type: string
         public_key_b64:
           type: string
+        receipt_attested_by:
+          description: "Первичная выдача: кто заверил расписку (≠ субъект, AD-43)."
+          maxLength: 64
+          type: string
+        receipt_original_no:
+          description: "Первичная выдача: учётный номер бумажной расписки субъекта с отпечатком ключа (архив ОТК, AD-11)."
+          maxLength: 64
+          type: string
         rotates:
           description: Заменяемый ключ (ротация).
           type: string
@@ -10114,6 +10141,57 @@ components:
       required:
         - person_id
         - display_name
+        - command_id
+        - basis_seq
+        - policy_seq
+      type: object
+    RegisterProfile:
+      additionalProperties: false
+      properties:
+        basis_seq:
+          description: "seq, на котором клиент видел объект (basis_seq из ответа чтения): после него в потоках гарда не должно быть новых записей guard_relevant, иначе 409 journal.stale_state (AD-39)."
+          format: int64
+          minimum: 0
+          type: integer
+        command_id:
+          description: UUIDv7 клиента; повтор с тем же id возвращает прежний ответ (AD-7). У подписанной команды — event_id пакета.
+          format: uuid
+          type: string
+        effective_from_seq:
+          description: С какой позиции журнала обязателен; 0 — с позиции записи.
+          format: int64
+          minimum: 0
+          type: integer
+        object_classes:
+          description: Классы пакетов (contracts/crypto/payload-classes.yaml).
+          items:
+            type: string
+          minItems: 1
+          type: array
+        policy_seq:
+          description: Версия политики, по которой показаны права (policy_seq сеанса); изменилась — 409 journal.stale_policy (AD-39).
+          format: int64
+          minimum: 0
+          type: integer
+        profile_id:
+          enum:
+            - gost
+            - pq
+            - hybrid
+          type: string
+        reason:
+          $ref: "#/components/schemas/SigningReason"
+        signature:
+          $ref: "#/components/schemas/DsseEnvelope"
+          description: "Подписанный пакет DSSE для операций с уровнем подписи ≥ 1 (AD-10, AD-13, AD-14): подписывает агент токена, сервер сверяет отпечаток."
+        workplace_id:
+          description: Рабочее место сеанса (барьер 2, AD-15).
+          maxLength: 128
+          type: string
+      required:
+        - profile_id
+        - object_classes
+        - reason
         - command_id
         - basis_seq
         - policy_seq
@@ -11371,6 +11449,44 @@ components:
         - action
         - object_id
       type: object
+    ScanRead:
+      additionalProperties: false
+      properties:
+        doc_digest:
+          maxLength: 80
+          type: string
+        document_id:
+          maxLength: 128
+          type: string
+        image_b64:
+          description: Скан PNG или JPEG в base64.
+          maxLength: 16777216
+          type: string
+      required:
+        - image_b64
+      type: object
+    ScanView:
+      additionalProperties: false
+      properties:
+        doc_digest:
+          type: string
+        document_id:
+          type: string
+        matches:
+          description: QR совпал с ожидаемым документом.
+          type: boolean
+        scan_address:
+          description: H(байты скана) — адрес в хранилище материалов (AD-23).
+          type: string
+        text:
+          type: string
+      required:
+        - text
+        - document_id
+        - doc_digest
+        - scan_address
+        - matches
+      type: object
     Scenario:
       additionalProperties: false
       properties:
@@ -12612,6 +12728,35 @@ components:
           type: string
       required:
         - items
+      type: object
+    SubmitShiftReport:
+      additionalProperties: false
+      properties:
+        basis_seq:
+          description: "seq, на котором клиент видел объект (basis_seq из ответа чтения): после него в потоках гарда не должно быть новых записей guard_relevant, иначе 409 journal.stale_state (AD-39)."
+          format: int64
+          minimum: 0
+          type: integer
+        command_id:
+          description: UUIDv7 клиента; повтор с тем же id возвращает прежний ответ (AD-7). У подписанной команды — event_id пакета.
+          format: uuid
+          type: string
+        policy_seq:
+          description: Версия политики, по которой показаны права (policy_seq сеанса); изменилась — 409 journal.stale_policy (AD-39).
+          format: int64
+          minimum: 0
+          type: integer
+        signature:
+          $ref: "#/components/schemas/DsseEnvelope"
+          description: "Подписанный пакет DSSE для операций с уровнем подписи ≥ 1 (AD-10, AD-13, AD-14): подписывает агент токена, сервер сверяет отпечаток."
+        workplace_id:
+          description: Рабочее место сеанса (барьер 2, AD-15).
+          maxLength: 128
+          type: string
+      required:
+        - command_id
+        - basis_seq
+        - policy_seq
       type: object
     SubmitVersion:
       additionalProperties: false
@@ -15072,6 +15217,45 @@ paths:
         critical: false
         id: signing.profile.list
         owner: signing
+    post:
+      description: "AD-32, FR-76, кейс §6.3: обязательный профиль для классов пакетов с позиции журнала. Только повышение (gost → hybrid); понижение отвергается (signing.profile_downgrade). Старые подписи не трогаются и проверяются по профилю на момент подписи."
+      operationId: signing.profile.register
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterProfile"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Receipt"
+          description: OK
+          headers:
+            Ant-Backend:
+              schema:
+                $ref: "#/components/schemas/BackendMode"
+                description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Error
+      summary: Сменить криптопрофиль
+      tags:
+        - signing
+      x-ant-action:
+        ca_group: admin_security
+        class: protective
+        critical: true
+        emits:
+          - key.profile.registered
+        id: signing.profile.register
+        owner: signing
+        signature_level: 2
   /api/v1/decision-cards/{document_id}:
     get:
       description: "FR-136: для редких подписантов (представитель заказчика, согласующий): что решается, почему вы, основания, кто ещё подписывает, что будет после подписи."
@@ -21650,6 +21834,83 @@ paths:
         id: ops.processing.retry
         owner: ops
         subject: item
+  /api/v1/paper/qr:
+    get:
+      description: "FR-139, AD-12, Д-30: QR ant:doc:‹id›:‹отпечаток› картинкой SVG для распечатки документа или листа решения; рисует сервер. Печатная рамка в отрисовку документа не входит — отпечаток от неё не зависит."
+      operationId: signing.paper.qr
+      parameters:
+        - description: ant:doc:‹id›:‹отпечаток›.
+          explode: false
+          in: query
+          name: text
+          required: true
+          schema:
+            description: ant:doc:‹id›:‹отпечаток›.
+            maxLength: 256
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaperQRView"
+          description: OK
+          headers:
+            Ant-Backend:
+              schema:
+                $ref: "#/components/schemas/BackendMode"
+                description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Error
+      summary: QR печатной рамки
+      tags:
+        - signing
+      x-ant-action:
+        class: read
+        critical: false
+        id: signing.paper.qr
+        owner: signing
+  /api/v1/paper/scans:
+    post:
+      description: "FR-139, AD-43: QR со скана подписанной распечатки и сверка с ожидаемым документом — скан с чужим QR не принимается (signing.qr_mismatch). Окончательная проверка — при заверении бумажной подписи."
+      operationId: signing.paper.scan
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScanRead"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanView"
+          description: OK
+          headers:
+            Ant-Backend:
+              schema:
+                $ref: "#/components/schemas/BackendMode"
+                description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Error
+      summary: Прочитать QR со скана
+      tags:
+        - signing
+      x-ant-action:
+        class: read
+        critical: false
+        id: signing.paper.scan
+        owner: signing
+      x-ant-read-by-post: true
   /api/v1/partners:
     get:
       description: "AD-19: партнёр — такая же копия ant со своим кодом предприятия; доверие ключам — от нашего акта регистрации партнёра и его корней."
@@ -24453,6 +24714,45 @@ paths:
         id: security.event.list
         owner: security
         subject: integrity
+  /api/v1/shift-reports:
+    post:
+      description: "FR-66 (уровень 3), FR-81, AD-12, AD-14: подпись агента над корнем дерева Меркла RFC 6962 отпечатков подписей смены из его локального журнала; сервер строит тот же корень по своему журналу и сверяет, расхождение — тревога agent_journal_mismatch. Конверт — в поле signature (класс shift-report)."
+      operationId: signing.shift_report.submit
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitShiftReport"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Receipt"
+          description: OK
+          headers:
+            Ant-Backend:
+              schema:
+                $ref: "#/components/schemas/BackendMode"
+                description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Error
+      summary: Сдать сменный рапорт
+      tags:
+        - signing
+      x-ant-action:
+        class: record
+        critical: false
+        emits:
+          - key.shift_report.recorded
+        id: signing.shift_report.submit
+        owner: signing
+        signature_level: 3
   /api/v1/signals:
     get:
       description: Сигналы quality.signal.raised по изделию и состоянию рассмотрения. Сигнал ≠ брак (NFR-UI-4).

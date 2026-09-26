@@ -196,3 +196,13 @@ func (b *ProfileBook) Changes() []ProfileChange { return slices.Clone(b.changes)
 
 // Base — исходный обязательный профиль класса.
 func (b *ProfileBook) Base(class string) string { return b.base[class] }
+
+// Clone — копия реестра профилей.
+func (b *ProfileBook) Clone() *ProfileBook {
+	c := &ProfileBook{base: b.base, changes: make([]ProfileChange, len(b.changes))}
+	for i, ch := range b.changes {
+		ch.Classes = slices.Clone(ch.Classes)
+		c.changes[i] = ch
+	}
+	return c
+}

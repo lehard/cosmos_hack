@@ -1,0 +1,75 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/key/key.shift_report.recorded.v1.json",
+  "title": "KeyShiftReportRecordedV1",
+  "description": "Сменный рапорт записан — подпись уровня 3 над корнем дерева Меркла отпечатков подписей смены из локального журнала агента токена и итог сверки с журналом сервера; расхождение — тревога agent_journal_mismatch (FR-66, FR-81, AD-12, AD-14).",
+  "type": "object",
+  "properties": {
+    "person_id": {
+      "$ref": "../common/defs.v1.json#/definitions/person_ref",
+      "description": "Подписант рапорта."
+    },
+    "shift_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Смена."
+    },
+    "workplace_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Рабочее место."
+    },
+    "window_from": {
+      "$ref": "../common/defs.v1.json#/definitions/timestamp",
+      "description": "Начало окна смены."
+    },
+    "window_to": {
+      "$ref": "../common/defs.v1.json#/definitions/timestamp",
+      "description": "Конец окна смены."
+    },
+    "merkle_root": {
+      "$ref": "../common/defs.v1.json#/definitions/digest",
+      "description": "Корень по рапорту агента: лист H(0x00‖отпечаток подписи), узел H(0x01‖l‖r), RFC 6962."
+    },
+    "leaf_count": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991,
+      "description": "Число подписей по рапорту агента."
+    },
+    "server_merkle_root": {
+      "$ref": "../common/defs.v1.json#/definitions/digest",
+      "description": "Корень по журналу сервера за то же окно."
+    },
+    "server_leaf_count": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991,
+      "description": "Число подписей по журналу сервера."
+    },
+    "matches": {
+      "type": "boolean",
+      "description": "Рапорт агента совпал с журналом сервера."
+    },
+    "mismatch_types": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/event_type"
+      },
+      "description": "Типы записей, по которым расходятся счётчики.",
+      "uniqueItems": true
+    },
+    "signed_report": {
+      "type": "object",
+      "description": "Подписанный агентом конверт DSSE класса shift-report (contracts/crypto/dsse-envelope.schema.json) — как есть."
+    }
+  },
+  "required": [
+    "person_id",
+    "shift_id",
+    "window_from",
+    "window_to",
+    "merkle_root",
+    "leaf_count",
+    "matches",
+    "signed_report"
+  ]
+}
