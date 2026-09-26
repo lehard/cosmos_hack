@@ -11,7 +11,7 @@ key=$(cat go.mod go.sum */*.go | sha256sum | cut -c1-16)
 bin="$TOOLBIN/$key"
 pkgs=("$@")
 if [[ ${#pkgs[@]} == 0 ]]; then
-  pkgs=(github.com/golangci/golangci-lint/v2/cmd/golangci-lint ./detcheck ./archgen)
+  pkgs=(github.com/golangci/golangci-lint/v2/cmd/golangci-lint ./detcheck ./archgen ./emitcheck)
 fi
 need=()
 for p in "${pkgs[@]}"; do

@@ -16,6 +16,8 @@ type Queries interface {
 	// Desks — стол активной роли: normative/desks/‹роль›.yaml; у роли-наследника
 	// без своего файла — стол ближайшей базовой роли (access.desk.read, AD-21).
 	Desks(ctx context.Context) (Desk, error)
+	// Workplaces — посты для панели «Посты» (access.workplace.list, FR-6, FR-81).
+	Workplaces(ctx context.Context, workshop string, m platform.Moment) (PostList, error)
 }
 
 // Commands — ведущий порт команд модуля access.
@@ -41,6 +43,10 @@ func (Unimplemented) Session(context.Context) (Session, error) {
 
 func (Unimplemented) Desks(context.Context) (Desk, error) {
 	return Desk{}, platform.NotImplemented("access.desk.read")
+}
+
+func (Unimplemented) Workplaces(context.Context, string, platform.Moment) (PostList, error) {
+	return PostList{}, platform.NotImplemented("access.workplace.list")
 }
 
 func (Unimplemented) OpenSession(context.Context, SessionCreate) (Session, string, error) {

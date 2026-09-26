@@ -33,6 +33,9 @@ else
   echo "пакетов домена пока нет"
 fi
 
+step "emitcheck: модуль эмитит только свои типы записей (AD-40)"
+go vet -vettool="$bin/emitcheck" ./internal/domain/... ./internal/application/...
+
 step "go test"
 # ANT_CHECK_FAST=1 — быстрый прогон при слиянии пачек (Д-18): тесты из кэша, без самопроверки линтеров.
 if [[ "${ANT_CHECK_FAST-}" == 1 ]]; then go test ./...; else go test -count=1 ./...; fi

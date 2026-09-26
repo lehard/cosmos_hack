@@ -22,7 +22,7 @@ const REPO = resolve(CONTRACTS, '..')
 const OUT = join(REPO, 'frontend/src/shared/contracts')
 
 const banner = (src) =>
-  `/* eslint-disable */\n// СГЕНЕРИРОВАНО contracts/scripts/gen-ts.mjs (make generate) — руками не править (AD-20).\n// Источник: ${src}\n`
+  `// СГЕНЕРИРОВАНО contracts/scripts/gen-ts.mjs (make generate) — руками не править (AD-20).\n// Источник: ${src}\n`
 
 function walk(dir) {
   return readdirSync(dir).flatMap((n) => {
