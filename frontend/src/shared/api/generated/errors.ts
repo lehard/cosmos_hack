@@ -388,6 +388,21 @@ export const errorCatalog = {
     "title": "Нужно основание",
     "uiKey": "riskScope.basisRequired"
   },
+  "incident.item_not_in_scope": {
+    "status": 409,
+    "title": "Изделия нет в области риска",
+    "uiKey": "errors.generic"
+  },
+  "incident.closed": {
+    "status": 409,
+    "title": "Инцидент закрыт",
+    "uiKey": "errors.generic"
+  },
+  "incident.explanation_required": {
+    "status": 422,
+    "title": "Нужно письменное объяснение работника",
+    "uiKey": "errors.generic"
+  },
   "erp.unavailable": {
     "status": 503,
     "title": "1С недоступна",

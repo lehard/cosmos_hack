@@ -51,6 +51,22 @@
       },
       "description": "Основания.",
       "uniqueItems": true
+    },
+    "hypothesis_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Гипотеза, о которой запись: у записи с verdict = rejected — отклоняемая гипотеза (вывода системы `HYP-‹nc›-‹категория›` или записанная человеком), иначе — идентификатор новой гипотезы."
+    },
+    "verdict": {
+      "type": "string",
+      "enum": [
+        "proposed",
+        "rejected"
+      ],
+      "description": "Что записано: предложена гипотеза / гипотеза отклонена с основанием (вывод системы не переписывается, FR-59). Нет поля — proposed."
+    },
+    "reason": {
+      "$ref": "../common/defs.v1.json#/definitions/reason",
+      "description": "Основание отклонения (для verdict = rejected)."
     }
   },
   "required": [

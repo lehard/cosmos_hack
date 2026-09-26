@@ -86,6 +86,32 @@
       },
       "description": "Основания — `event_id` записей, на которые опирается запись.",
       "uniqueItems": true
+    },
+    "change": {
+      "type": "string",
+      "enum": [
+        "computed",
+        "expanded",
+        "narrowed"
+      ],
+      "description": "Что дало версию: правило системы (вычислена или расширена правилом) / решение человека «расширить» / решение человека «сузить». Нет поля — computed."
+    },
+    "decision_event_id": {
+      "$ref": "../common/defs.v1.json#/definitions/uuid",
+      "description": "Решение человека (`incident.scope.expanded` / `incident.scope.narrowed`), по которому построена версия; у версий правила — отсутствует."
+    },
+    "removed_item_ids": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/item_id",
+        "description": "Изделие."
+      },
+      "description": "Исключённые изделия — только по решению человека с основанием (FR-61, AD-27); правило системы изделий не исключает.",
+      "uniqueItems": true
+    },
+    "last_known_good_item_id": {
+      "$ref": "../common/defs.v1.json#/definitions/item_id",
+      "description": "Изделие последнего подтверждённо нормального состояния через тот же фактор."
     }
   },
   "required": [

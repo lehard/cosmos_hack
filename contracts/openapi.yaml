@@ -19657,7 +19657,7 @@ paths:
         subject: nonconformity
   /api/v1/nonconformities/{nc_id}/measurements:
     post:
-      description: "Проверка гипотезы измерением: задачу исполнителю ставит notifications по записи запроса (тип записи — предложение контракта, см. docs/codegen.md)."
+      description: "Проверка гипотезы измерением: запись incident.measurement.requested; задачу исполнителю ставит notifications по этой записи."
       operationId: analysis.measurement.request
       parameters:
         - in: path
@@ -19696,6 +19696,8 @@ paths:
       x-ant-action:
         class: record
         critical: false
+        emits:
+          - incident.measurement.requested
         id: analysis.measurement.request
         owner: analysis
         subject: nonconformity

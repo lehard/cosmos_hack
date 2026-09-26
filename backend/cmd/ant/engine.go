@@ -6,11 +6,13 @@ import (
 	"time"
 
 	"ant/cmd/internal/db"
+	analysisapp "ant/internal/application/analysis"
 	crossitemapp "ant/internal/application/crossitem"
 	engineapp "ant/internal/application/engine"
 	appjournal "ant/internal/application/journal"
 	machinelogsapp "ant/internal/application/machinelogs"
 	mldomain "ant/internal/domain/machinelogs"
+	"ant/internal/infrastructure/storage/journal/clock"
 	"ant/internal/infrastructure/storage/journal/feed"
 )
 
@@ -30,6 +32,9 @@ func engineRegistry() *engineapp.Registry {
 	if err := machinelogsapp.RegisterProjections(r, mldomain.Env{}); err != nil {
 		panic(err)
 	}
+	// analysis (эпик 22): разбор обстоятельств изделия, инциденты и версии
+	// области риска, несоответствия для гипотез и общих факторов.
+	analysisapp.MustRegister(r)
 	return r
 }
 
@@ -149,4 +154,21 @@ func machinelogsLive(ctx context.Context, env *environment) (*machinelogsapp.Ser
 		return nil, err
 	}
 	return machinelogsapp.NewLiveService(c.engine, engineapp.StateQueries{Codec: c.codec}, mldomain.Env{}), nil
+}
+
+// analysisLive — live-реализация ведущих портов analysis для роли api (эпик
+// 22): чтение — проекции analysis.* на ядре процесса; команды — гард над
+// состоянием инцидента и решение в журнал ядра; доменное «сейчас» — часы
+// журнала (AD-37).
+func analysisLive(ctx context.Context, env *environment) (*analysisapp.Service, error) {
+	c, err := env.core(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return analysisapp.NewLive(analysisapp.Config{
+		Projections: c.engine,
+		Decisions: analysisapp.JournalDecisions{Journal: c.journal, DomainBuild: c.codec.DomainBuild,
+			Partitions: env.cfg.Engine.Partitions, Now: c.codec.Now},
+		Clock: clock.NewJournal(c.journal),
+	}), nil
 }
