@@ -310,7 +310,14 @@ func (s *Service) build(ctx context.Context, st *RunState) (*runPlan, error) {
 	if err != nil {
 		return nil, err
 	}
-	rp := &runPlan{plan: plan, refs: b.Run.Refs, world: b.World}
+	rp := &runPlan{plan: plan, refs: b.Run.Refs, world: b.World, notes: map[string]string{}}
+	for _, sc := range b.Scenarios {
+		for _, x := range sc.Steps {
+			if x.Label != "" && x.Note != "" {
+				rp.notes[x.Label] = x.Note
+			}
+		}
+	}
 	for _, c := range cards(cat.Entries[i]) {
 		ex, ok, err := s.d.Definitions.Expected(ctx, c)
 		if err != nil {
@@ -568,3 +575,166 @@ func actionTitle(a sim.Action) string {
 
 // errStop — прогон остановился на решении человека.
 var errStop = errors.New("ждёт решения человека")
+
+// Plan — план прогона (simulation.run.plan, Д-85): решения людей с
+// остановками, события машин и внешних систем (журнал тока по минутам — одной
+// строкой), запланированные сбои (сварка с током вне уставки) — заранее.
+func (s *Service) Plan(ctx context.Context, runID string, q PlanQuery) (RunPlan, error) {
+	if !s.live {
+		return s.Unimplemented.Plan(ctx, runID, q)
+	}
+	st, err := s.load(ctx, runID)
+	if err != nil {
+		return RunPlan{}, err
+	}
+	rp, err := s.plan(ctx, st)
+	if err != nil {
+		return RunPlan{}, err
+	}
+	v, err := s.view(ctx, st)
+	if err != nil {
+		return RunPlan{}, err
+	}
+	out := RunPlan{RunID: st.RunID, State: st.State, ClockAt: v.ClockAt, Speed: v.Speed, WaitingFor: v.WaitingFor, Items: []PlanEntry{}}
+	if !rp.plan.LiveFrom.IsZero() {
+		t := rp.plan.LiveFrom
+		out.LiveFrom = &t
+	}
+	limit := q.Limit
+	if limit <= 0 {
+		limit = 50
+	}
+	ids := s.ids(st, rp)
+	expand := func(v any) string {
+		if v == nil {
+			return ""
+		}
+		x, err := ids.ExpandString(fmt.Sprint(v), true)
+		if err != nil {
+			return ""
+		}
+		return x
+	}
+	var rows []PlanEntry
+	for i, a := range rp.plan.Actions {
+		done := i < st.Cursor.Actions
+		if done && !q.All {
+			continue
+		}
+		e := PlanEntry{At: a.At, Kind: string(a.Kind), Title: actionTitle(a), Label: a.Label, Done: done,
+			Waiting: st.Waiting != nil && st.Waiting.Action == i}
+		if a.Kind == sim.ActionDecision {
+			e.Stop = a.Stop && st.Mode == ModeInteractive
+			e.Role, e.Persona, e.Operation = roleOf(rp, a.Role), a.Actor, a.Operation
+			if a.Item != "" {
+				e.ItemID = expand("{item:" + a.Item + "}")
+			}
+			for _, m := range []map[string]any{a.Params, a.Body} {
+				for _, k := range waitKeys {
+					if x, ok := m[k]; ok && e.ObjectID == "" {
+						e.ObjectID = expand(x)
+					}
+				}
+			}
+			if e.Waiting {
+				e.ObjectID = st.Waiting.Object
+			}
+		}
+		rows = append(rows, e)
+	}
+	rows = append(rows, s.planEvents(st, rp, q.All, expand)...)
+	slices.SortStableFunc(rows, func(a, b PlanEntry) int { return a.At.Compare(b.At) })
+	if len(rows) > limit {
+		rows = rows[:limit]
+	}
+	out.Items = append(out.Items, rows...)
+	return out, nil
+}
+
+// waitKeys — ключи параметров и тела решения, по которым узнаётся его объект.
+var waitKeys = []string{"nc_id", "item_id", "incident_id", "lot_id", "workplace_id", "equipment_id", "run_id"}
+
+// roleOf — роль контракта по роли определения (сведение имён мира).
+func roleOf(rp *runPlan, r string) string {
+	if x, ok := rp.world.Aliases.Roles[r]; ok {
+		return x
+	}
+	return strings.ToLower(r)
+}
+
+// planEvents — события источников плана: сводки по минутам одного
+// источника и выполнения — одной строкой; сварки с током вне уставки —
+// предупреждением заранее.
+func (s *Service) planEvents(st *RunState, rp *runPlan, all bool, expand func(any) string) []PlanEntry {
+	var out []PlanEntry
+	em := rp.plan.Emissions
+	from := st.Cursor.Emissions
+	if all {
+		from = 0
+	}
+	// сводки по минутам одного источника и изделия — одна строка, пока идут
+	// подряд (разрыв больше 2 минут — новая строка)
+	type group struct {
+		row   int
+		last  time.Time
+		count int
+		src   string
+	}
+	open := map[string]*group{}
+	for i := from; i < len(em); i++ {
+		e := em[i]
+		src := e.SourceID
+		if x, ok := rp.world.Sources[e.SourceKey]; ok && x.Equipment != "" {
+			src = x.Equipment
+		}
+		if e.EventType == "equipment.cycle.summarized" {
+			key := e.SourceKey + "|" + e.Scenario + "|" + e.Item + "|" + labelItem(e.Label)
+			if g := open[key]; g != nil && e.DeliverAt.Sub(g.last) <= 2*time.Minute {
+				g.last, g.count = e.DeliverAt, g.count+1
+				u := e.DeliverAt
+				out[g.row].Until = &u
+				out[g.row].Title = fmt.Sprintf("Журнал %s: сводки по минутам (%d)", g.src, g.count)
+				out[g.row].Done = i < st.Cursor.Emissions
+				continue
+			}
+			open[key] = &group{row: len(out), last: e.DeliverAt, count: 1, src: src}
+		}
+		r := PlanEntry{At: e.DeliverAt, Kind: "event", Label: e.Label, Done: i < st.Cursor.Emissions}
+		if e.Item != "" {
+			r.ItemID = expand("{item:" + e.Item + "}")
+		}
+		switch {
+		case e.EventType == "equipment.cycle.summarized":
+			r.Title = fmt.Sprintf("Журнал %s: сводки по минутам (1)", src)
+		case rp.notes[e.Label] != "":
+			r.Title = rp.notes[e.Label]
+		default:
+			r.Title = e.EventType + " — " + src
+		}
+		out = append(out, r)
+	}
+	nom, tol := rp.world.Route.CurrentNominal, rp.world.Route.CurrentTol
+	for _, w := range rp.plan.Truth.Welds {
+		if w.CurrentMax <= nom+tol && w.CurrentMin >= nom-tol {
+			continue
+		}
+		done := !st.LastTick.IsZero() && !w.Start.After(st.LastTick)
+		if done && !all {
+			continue
+		}
+		eq := w.Station
+		if x, ok := rp.world.Aliases.Equipment[w.Station]; ok {
+			eq = x
+		}
+		out = append(out, PlanEntry{At: w.Start, Kind: "alert", Done: done, ItemID: expand("{item:" + w.Item + "}"), Label: w.Run,
+			Title: fmt.Sprintf("Сбой: %s уходит из уставки — ток %d–%d А при уставке %d ± %d (сварка %s, %s)", eq, w.CurrentMin, w.CurrentMax, nom, tol, w.Run, w.Item)})
+	}
+	return out
+}
+
+// labelItem — изделие метки события (‹изделие›/‹этап›/…): сводки тока разных
+// сварок не склеиваются в одну строку плана.
+func labelItem(label string) string {
+	item, _, _ := strings.Cut(label, "/")
+	return item
+}

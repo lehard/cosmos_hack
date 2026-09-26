@@ -20,7 +20,9 @@ type runPlan struct {
 	plan *sim.Plan
 	refs map[string]sim.Ref
 	// world — мир прогона: уставки и линии для кнопок цифрового стенда.
-	world  sim.World
+	world sim.World
+	// notes — примечания строк карточек по метке (названия событий в плане).
+	notes  map[string]string
 	rows   []row
 	points []sim.Point
 	// byPoint — строки точки (номер Point.Index → номера строк).

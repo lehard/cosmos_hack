@@ -84,9 +84,11 @@ type ActResult struct {
 type Actor interface {
 	// Act — выполнить команду operation от имени persona.
 	Act(ctx context.Context, persona, operation string, params map[string]string, body map[string]any) (ActResult, error)
-	// Decided — после since в журнале прогона есть запись, которую эмитит
-	// operation (решение принято на столе роли).
-	Decided(ctx context.Context, runID, operation string, since int64) (bool, int64, error)
+	// Decided — seq записей журнала после since, которые эмитит operation над
+	// object (решение принято на столе роли), по возрастанию; object пусто —
+	// любой объект. Ищет в журнале прогона, а при заданном object — и среди
+	// записей без run_id (допуск к посту, остановка поста: у них нет изделия).
+	Decided(ctx context.Context, runID, operation, object string, since int64) ([]int64, error)
 }
 
 // Stands — служебный порт stand-ов (AD-18): сбои включаются только со
@@ -181,6 +183,15 @@ type RunState struct {
 	Injections []InjectionState `json:"injections,omitempty"`
 	// StandSeq — последние source_seq источников stand-а цифрового стенда.
 	StandSeq map[string]int64 `json:"stand_seq,omitempty"`
+	// Live — прогон дошёл до живой части (Plan.LiveFrom): история проиграна,
+	// часы идут от начала живой части (Д-85).
+	Live bool `json:"live,omitempty"`
+	// LiveSeq — seq журнала на входе в живую часть: решения людей живой части
+	// ищутся после него — человек может нажать раньше, чем прогон дошёл до шага.
+	LiveSeq int64 `json:"live_seq,omitempty"`
+	// Consumed — seq решений людей, уже закрывших остановки: одна запись
+	// закрывает одну остановку (два приёма Ф-003 — в цех и в изолятор).
+	Consumed []int64 `json:"consumed,omitempty"`
 }
 
 // Waiting — ожидание решения человека (FR-129).

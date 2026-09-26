@@ -96,12 +96,12 @@ func (x *portProxy) Act(ctx context.Context, persona, op string, params map[stri
 	return p.Act(ctx, persona, op, params, body)
 }
 
-func (x *portProxy) Decided(ctx context.Context, runID, op string, since int64) (bool, int64, error) {
+func (x *portProxy) Decided(ctx context.Context, runID, op, object string, since int64) ([]int64, error) {
 	p := x.p.Load()
 	if p == nil {
-		return false, 0, nil
+		return nil, nil
 	}
-	return p.Decided(ctx, runID, op, since)
+	return p.Decided(ctx, runID, op, object, since)
 }
 
 // runGateway — события прогона в обычный приём с прогоном в контексте:

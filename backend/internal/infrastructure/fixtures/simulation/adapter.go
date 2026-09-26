@@ -126,6 +126,36 @@ func (a *Adapter) Injections(ctx context.Context, runID string) (app.InjectionLi
 	return out, err
 }
 
+// Plan — план прогона на заготовках (simulation.run.plan): шаги сценария с
+// доменными часами; шаг с ожиданием — остановка до решения человека.
+func (a *Adapter) Plan(ctx context.Context, runID string, q app.PlanQuery) (app.RunPlan, error) {
+	rt, st, sc, err := a.current(ctx, runID)
+	if err != nil {
+		return app.RunPlan{}, err
+	}
+	v := a.view(ctx, rt, st, sc)
+	out := app.RunPlan{RunID: v.RunID, State: v.State, ClockAt: v.ClockAt, Speed: v.Speed, WaitingFor: v.WaitingFor, Items: []app.PlanEntry{}}
+	limit := q.Limit
+	if limit <= 0 {
+		limit = 50
+	}
+	for n := 0; n < sc.Steps() && len(out.Items) < limit; n++ {
+		done := n < st.Step || (n == st.Step && sc.Header(n).Wait == nil)
+		if done && !q.All {
+			continue
+		}
+		h := sc.Header(n)
+		e := app.PlanEntry{At: h.Clock, Kind: "event", Title: h.Title, Label: fmt.Sprintf("step-%02d", n), Done: done}
+		if w := h.Wait; w != nil {
+			e.Kind, e.Stop, e.Role, e.Operation = "decision", true, w.Role, w.Action
+			e.ObjectID, e.Title = sc.PrefixID(w.Object.ID, st.RunID), w.Title
+			e.Waiting = n == st.Step && v.State == "waiting_for_decision"
+		}
+		out.Items = append(out.Items, e)
+	}
+	return out, nil
+}
+
 // StartRun — запуск прогона сценария (simulation.run.start): новый run_id;
 // курсор — на шаге старта (startStep).
 func (a *Adapter) StartRun(ctx context.Context, scenarioID string, in app.StartRun) (app.StartedRun, error) {

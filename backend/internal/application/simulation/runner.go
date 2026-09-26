@@ -94,10 +94,22 @@ func (s *Service) Step(ctx context.Context, runID string) error {
 	if fast {
 		target = rp.plan.End
 	}
+	// Д-85: история до живой части проигрывается сразу, без часов; часы
+	// прогона пойдут от начала живой части, когда история кончится.
+	catching := !fast && !st.Live && !rp.plan.LiveFrom.IsZero()
+	if catching {
+		target = rp.plan.LiveFrom.Add(-time.Nanosecond)
+	}
 	afterAction := true
 	for budget := s.d.Batch; budget > 0; budget-- {
 		due := sim.NextDue(rp.plan, rp.points, st.Cursor)
 		if due.At.After(target) {
+			if catching {
+				if err := s.goLive(ctx, st, rp); err != nil {
+					return s.fail(ctx, st, err)
+				}
+				return s.d.Store.Save(ctx, st)
+			}
 			break
 		}
 		if due.Kind != sim.DuePoint || !rp.points[due.Index].Baseline {
@@ -152,7 +164,7 @@ func (s *Service) Step(ctx context.Context, runID string) error {
 	}
 	// в интерактиве доменное «сейчас» идёт и между событиями: тик раз в
 	// виртуальную минуту, чтобы столы видели время сценария (AD-37)
-	if !fast && target.Sub(st.LastTick) >= time.Minute && !target.After(rp.plan.End) {
+	if !fast && !catching && target.Sub(st.LastTick) >= time.Minute && !target.After(rp.plan.End) {
 		if err := s.tick(ctx, st, target.Truncate(time.Second)); err != nil {
 			return s.fail(ctx, st, err)
 		}
@@ -213,14 +225,13 @@ func (s *Service) action(ctx context.Context, st *RunState, rp *runPlan, i int) 
 	s.settle(ctx, st)
 	if st.Mode == ModeInteractive && a.Stop && st.Waiting == nil {
 		// FR-129: сценарий ждёт решения на столе роли; часы стоят.
-		obj := ""
-		for _, k := range []string{"nc_id", "item_id", "incident_id", "lot_id"} {
-			if v, ok := a.Params[k]; ok {
-				obj, _ = s.expand(ctx, st, rp, fmt.Sprint(v))
-				break
-			}
+		obj := s.waitObject(ctx, st, rp, a)
+		since := st.BasisSeq
+		if st.Live {
+			// живая часть (Д-85): человек мог нажать раньше, чем прогон дошёл до шага
+			since = st.LiveSeq
 		}
-		st.Waiting = &Waiting{Action: i, Role: a.Role, Op: a.Operation, Object: obj, Title: actionTitle(a), Since: st.BasisSeq}
+		st.Waiting = &Waiting{Action: i, Role: roleOf(rp, a.Role), Op: a.Operation, Object: obj, Title: actionTitle(a), Since: since}
 		st.State = StateWaiting
 		st.Clock = st.Clock.Pause(s.now())
 		st.Steps[key] = StepResult{Operation: a.Operation, At: a.At, Status: "waiting"}
@@ -250,10 +261,22 @@ func (s *Service) waitDone(ctx context.Context, st *RunState) (bool, error) {
 	if s.d.Actor == nil {
 		return false, nil
 	}
-	ok, seq, err := s.d.Actor.Decided(ctx, st.RunID, w.Op, w.Since)
-	if err != nil || !ok {
+	seqs, err := s.d.Actor.Decided(ctx, st.RunID, w.Op, w.Object, w.Since)
+	if err != nil {
 		return false, err
 	}
+	// одна запись закрывает одну остановку (Consumed)
+	seq := int64(-1)
+	for _, x := range seqs {
+		if !slices.Contains(st.Consumed, x) {
+			seq = x
+			break
+		}
+	}
+	if seq < 0 {
+		return false, nil
+	}
+	st.Consumed = append(st.Consumed, seq)
 	rp, err := s.plan(ctx, st)
 	if err != nil {
 		return false, err
@@ -266,6 +289,35 @@ func (s *Service) waitDone(ctx context.Context, st *RunState) (bool, error) {
 	st.Clock = st.Clock.Resume(s.now())
 	_, err = s.record(ctx, st, "simulation.run.resumed", a.At, map[string]any{"run_id": st.RunID})
 	return err == nil, err
+}
+
+// waitObject — объект ожидания: изделие, несоответствие, инцидент, партия,
+// пост или оборудование шага (из параметров, иначе из тела команды) —
+// решение человека засчитывается только над ним (не любое решение этого типа).
+func (s *Service) waitObject(ctx context.Context, st *RunState, rp *runPlan, a sim.Action) string {
+	for _, m := range []map[string]any{a.Params, a.Body} {
+		for _, k := range waitKeys {
+			if v, ok := m[k]; ok {
+				obj, _ := s.expand(ctx, st, rp, fmt.Sprint(v))
+				return obj
+			}
+		}
+	}
+	return ""
+}
+
+// goLive — история проиграна (Д-85): часы прогона встают на начало живой
+// части и идут от «сейчас»; решения людей ищутся после этой точки журнала.
+func (s *Service) goLive(ctx context.Context, st *RunState, rp *runPlan) error {
+	s.settle(ctx, st)
+	if err := s.tick(ctx, st, rp.plan.LiveFrom); err != nil {
+		return err
+	}
+	st.Live = true
+	st.LiveSeq = st.BasisSeq
+	st.Clock = st.Clock.Rebase(s.now(), rp.plan.LiveFrom)
+	_, err := s.record(ctx, st, "simulation.run.resumed", rp.plan.LiveFrom, map[string]any{"run_id": st.RunID})
+	return err
 }
 
 func stepKey(a sim.Action) string {

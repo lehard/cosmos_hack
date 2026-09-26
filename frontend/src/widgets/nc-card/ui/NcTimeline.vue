@@ -6,8 +6,10 @@
  * дефекта), текст сервера и источник факта (FR-140); у записи с числами режима —
  * полоса «уставка / наблюдалось» (один раз на параметр). Действия исполнителя —
  * обстоятельство, а не вина. Узкое окно записи: без горизонтальной прокрутки.
+ * Коротко (UI-53): в фазе до 3 главных событий — сначала признаки дефекта, потом
+ * обстоятельства, потом нормы (по времени внутри); остальное — «Показать всю историю».
  */
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { SourceMark, entryText } from '@/entities/item'
 import { evidencePhases, recordTone, type NCCard, type RecordTone } from '@/entities/nonconformity'
@@ -16,7 +18,25 @@ import RegimeBar from './RegimeBar.vue'
 const props = defineProps<{ card: NCCard }>()
 const { t, d } = useI18n()
 
-const phases = computed(() => evidencePhases(props.card))
+const PER_PHASE = 3
+const RANK: Record<RecordTone, number> = { danger: 0, warn: 1, ok: 2, neutral: 3 }
+const all = ref(false)
+const full = computed(() => evidencePhases(props.card))
+/** Главные события фазы: не больше трёх, по важности, внутри — по времени. */
+const phases = computed(() =>
+  full.value.map((b) => {
+    if (all.value || b.records.length <= PER_PHASE) return b
+    const keep = new Set(
+      [...b.records]
+        .map((r, i) => ({ r, i }))
+        .sort((a, b2) => RANK[recordTone(a.r)] - RANK[recordTone(b2.r)] || a.i - b2.i)
+        .slice(0, PER_PHASE)
+        .map((x) => x.r.event_id),
+    )
+    return { ...b, records: b.records.filter((r) => keep.has(r.event_id)) }
+  }),
+)
+const hidden = computed(() => full.value.reduce((n, b) => n + b.records.length, 0) - phases.value.reduce((n, b) => n + b.records.length, 0))
 /** Полоса режима — один раз на параметр: у последней по времени записи с числами. */
 const barAt = computed(() => {
   const last = new Map<string, string>()
@@ -77,6 +97,9 @@ const TONE_TEXT: Record<RecordTone, string> = {
       </li>
     </template>
   </ol>
+  <button v-if="hidden > 0 || all" type="button" class="more" data-testid="toggle-history" @click="all = !all">
+    {{ all ? t('ncCard.timeline.showMain') : t('ncCard.timeline.showAll', { n: hidden }) }}
+  </button>
 </template>
 
 <style scoped>
@@ -202,5 +225,16 @@ p {
 .muted {
   color: var(--ant-text-3);
   font-size: var(--ant-fs-meta);
+}
+.more {
+  align-self: flex-start;
+  margin-top: var(--ant-space-2);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ant-accent);
+  font: inherit;
+  font-size: var(--ant-fs-meta);
+  cursor: pointer;
 }
 </style>

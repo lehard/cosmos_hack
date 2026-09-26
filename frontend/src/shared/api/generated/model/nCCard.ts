@@ -9,6 +9,7 @@ import type { NCCardResolution } from './nCCardResolution';
 import type { NCCardStatus } from './nCCardStatus';
 import type { NCContainmentSource } from './nCContainmentSource';
 import type { NCEvidence } from './nCEvidence';
+import type { NCHandoff } from './nCHandoff';
 import type { NCHappened } from './nCHappened';
 import type { NCIsolation } from './nCIsolation';
 import type { NCItemAxes } from './nCItemAxes';
@@ -30,6 +31,8 @@ export interface NCCard {
   evidence: NCEvidence;
   /** Изделия группового несоответствия: окно нарушения специального процесса — одно несоответствие на все изделия окна, решение комиссии приходит каждому (FR-151). */
   group_item_ids?: string[];
+  /** Кому передано исполнение решения по изделию и в каком оно состоянии; нет решения — поля нет. */
+  handoff?: NCHandoff;
   happened: NCHappened;
   /** Решения людей с подписью (отдельно от вывода системы). */
   human_decisions: NCRecordRef[];

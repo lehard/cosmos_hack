@@ -1,0 +1,266 @@
+# Ожидания сценария показа «Партия фланцев: сбой ИС-2» (Д-85) — по таблице шагов 0–14
+# demo-show-scenario.md; отдельно от входа (кейс §5.1, AD-26). Формат — как у других
+# expected/: check — операция, путь в ответе (board.go), сравнение; mapping: exact —
+# поле ответа контракта; draft — по смыслу; manual — видно на экране.
+scenario: SHOW-IS2
+version: '0.1'
+title: 'Показ: партия фланцев, сбой ИС-2'
+run: SHOW-IS2
+source: 'demo-show-scenario.md (Д-85): таблица шагов 0–14'
+checkpoints:
+- at: '2026-09-21T07:59:00+03:00'
+  label: 'шаг 0: история проиграна, партия на входе сварочного цеха'
+  assertions:
+  - id: SHOW-00a
+    what: прошлая партия Ф-201 выпущена (история — до показа)
+    check:
+      operation: item.passport.read
+      params:
+        item_id: '{item:F-201}'
+      path: /status/summary
+      op: eq
+      value: released
+    mapping: exact
+  - id: SHOW-00b
+    what: позапрошлая партия Ф-101 выпущена
+    check:
+      operation: item.passport.read
+      params:
+        item_id: '{item:F-101}'
+      path: /status/summary
+      op: eq
+      value: released
+    mapping: exact
+  - id: SHOW-00c
+    what: у Ф-001 до показа нет несоответствий
+    check:
+      operation: nonconformity.nonconformity.list
+      params:
+        item_id: '{item:F-001}'
+      path: /items/#
+      op: eq
+      value: 0
+    mapping: exact
+- at: '2026-09-21T09:13:00+03:00'
+  label: 'шаги 1–4: приёмка, сварка Ф-001 в уставке, ЗТ-3 Ф-001'
+  assertions:
+  - id: SHOW-01
+    what: мастер FOR-WC принял Ф-001 в цех — «Принять» (решение человека)
+    check:
+      operation: step
+      params:
+        label: SHOW/receive-F-001
+      path: /status
+      op: eq
+      value: done
+    mapping: exact
+    note: в интерактиве — «решение принято на столе роли»
+  - id: SHOW-02
+    what: сварщик W21 сам начал и закончил сварку Ф-001
+    check:
+      operation: step
+      params:
+        label: SV-001-1/finish
+      path: /status
+      op: eq
+      value: done
+    mapping: exact
+  - id: SHOW-03
+    what: 'КТ-3 Ф-001: признаков нет'
+    check:
+      operation: quality.inspection.list
+      params:
+        item_id: '{item:F-001}'
+      path: /items[step_key=welding.kt3_camera]/0/outcome
+      op: eq
+      value: no_defect_indicated
+    mapping: exact
+  - id: SHOW-04
+    what: ЗТ-3 Ф-001 принята контролёром INS-01 — одно решение
+    check:
+      operation: journal.entry.list
+      params:
+        event_type: decision.presentation.resolved
+        limit: 500
+        item_id: '{item:F-001}'
+      path: /items[data.step_key=welding.zt3_acceptance]/#
+      op: eq
+      value: 1
+    mapping: exact
+- at: '2026-09-21T10:57:00+03:00'
+  label: 'шаги 5–6: поломка ИС-2 на Ф-002, прожог Ф-003'
+  assertions:
+  - id: SHOW-05
+    what: ток ИС-2 на сварке Ф-002 вне уставки (176–182 А при 160 ± 10) — журнал источника
+    check:
+      operation: journal.entry.list
+      params:
+        event_type: equipment.cycle.summarized
+        limit: 500
+      path: /items[data.cycle_ref={local:SV-002-1}]/0/data/parameters/0/out_of_setpoint_ms
+      op: eq
+      value: 60000
+    mapping: exact
+    note: 'сводка тока ИС-2 за минуту сварки Ф-002: вся минута вне уставки'
+  - id: SHOW-06
+    what: 'КТ-3 Ф-003: прожог У2 — сигнал'
+    check:
+      operation: quality.signal.list
+      params:
+        item_id: '{item:F-003}'
+      path: /items/#
+      op: gte
+      value: 1
+    mapping: exact
+  - id: SHOW-06b
+    what: Ф-002 не получил «годно» (ЗТ-3 не принята)
+    check:
+      operation: journal.entry.list
+      params:
+        event_type: decision.presentation.resolved
+        limit: 500
+        item_id: '{item:F-002}'
+      path: /items[data.step_key=welding.zt3_acceptance]/#
+      op: eq
+      value: 0
+    mapping: exact
+- at: '2026-09-21T11:10:00+03:00'
+  label: 'шаги 7–8: НС и изоляция Ф-003, доп. проверка Ф-002, изолятор, остановка ИС-2'
+  assertions:
+  - id: SHOW-07
+    what: НС Ф-003 подтверждено контролёром и изолировано
+    check:
+      operation: nonconformity.card.read
+      params:
+        nc_id: '{ref:NC-F003}'
+      path: /human_decisions/*/event_type
+      op: contains
+      value:
+      - decision.nonconformity.confirmed
+      - decision.item.isolated
+    mapping: exact
+  - id: SHOW-07b
+    what: подтверждение — запись контролёра INS-01
+    check:
+      operation: nonconformity.card.read
+      params:
+        nc_id: '{ref:NC-F003}'
+      path: /human_decisions[event_type=decision.nonconformity.confirmed]/0/author
+      op: eq
+      value: QC-01
+    mapping: exact
+  - id: SHOW-08
+    what: Ф-003 физически в изоляторе
+    check:
+      operation: item.passport.read
+      params:
+        item_id: '{item:F-003}'
+      path: /status/position
+      op: eq
+      value: isolated
+    mapping: exact
+  - id: SHOW-08b
+    what: пост ИС-2 остановлен мастером — решение человека
+    check:
+      operation: step
+      params:
+        label: SHOW/hold-IS2
+      path: /status
+      op: eq
+      value: done
+    mapping: exact
+- at: '2026-09-21T11:27:00+03:00'
+  label: 'шаги 9–10: причина — оборудование ИС-2, переделка Ф-003'
+  assertions:
+  - id: SHOW-10
+    what: причина — оборудование ИС-2 подтверждена технологом
+    check:
+      operation: analysis.hypothesis.list
+      params:
+        nc_id: '{ref:NC-F003}'
+      path: /hypotheses[category=equipment]/0/status
+      op: eq
+      value: confirmed
+    mapping: exact
+  - id: SHOW-10b
+    what: в 1С — «перевод в брак (переделка)» по Ф-003
+    check:
+      operation: erp.message.list
+      params:
+        item_id: '{item:F-003}'
+      path: /items[action=scrap_transfer_rework]/#
+      op: eq
+      value: 1
+    mapping: exact
+  - id: SHOW-10c
+    what: ошибок сварщика не записано
+    check:
+      operation: analysis.hypothesis.list
+      params:
+        nc_id: '{ref:NC-F003}'
+      path: /hypotheses[category=performer,status=confirmed]/#
+      op: eq
+      value: 0
+    mapping: exact
+- at: '2026-09-21T12:40:00+03:00'
+  label: 'шаги 11–12: переварка Ф-003 на ИС-1, ЗТ-3 Ф-003 и Ф-002'
+  assertions:
+  - id: SHOW-11
+    what: переварка Ф-003 — новое выполнение со ссылкой на прежнее (два выполнения сварки)
+    check:
+      operation: journal.entry.list
+      params:
+        event_type: operation.run.started
+        limit: 500
+        item_id: '{item:F-003}'
+      path: /items[data.step_key=welding.weld]/#
+      op: eq
+      value: 2
+    mapping: exact
+  - id: SHOW-12
+    what: ЗТ-3 Ф-003 принята после переварки
+    check:
+      operation: journal.entry.list
+      params:
+        event_type: decision.presentation.resolved
+        limit: 500
+        item_id: '{item:F-003}'
+      path: /items[data.step_key=welding.zt3_acceptance]/#
+      op: eq
+      value: 1
+    mapping: exact
+  - id: SHOW-12b
+    what: ЗТ-3 Ф-002 принята после доп. проверки
+    check:
+      operation: journal.entry.list
+      params:
+        event_type: decision.presentation.resolved
+        limit: 500
+        item_id: '{item:F-002}'
+      path: /items[data.step_key=welding.zt3_acceptance]/#
+      op: eq
+      value: 1
+    mapping: exact
+- at: end
+  label: 'шаги 13–14: целостность и итог'
+  assertions:
+  - id: SHOW-13
+    what: цепочка журнала цела
+    check:
+      operation: security.integrity.read
+      path: /status
+      op: eq
+      value: ok
+    mapping: draft
+    note: статус «цела» — по контракту security.integrity.read
+  - id: SHOW-14
+    what: demo-signer не подписал ни одного решения живой партии — только люди
+    check:
+      operation: step
+      params:
+        label: SV-003-2/finish
+      path: /status
+      op: eq
+      value: done
+    mapping: manual
+    note: 'на табло: все шаги живой партии — «решение принято на столе роли»'

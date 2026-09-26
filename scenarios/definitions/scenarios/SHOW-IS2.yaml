@@ -1,0 +1,697 @@
+# Карточка сценария показа «Партия фланцев: сбой ИС-2» (Д-85, demo-show-scenario.md).
+# Шаги с stop: true — действия людей живой партии: прогон ждёт нажатия на столе роли
+# (метка SHOW/… — строка таблицы показа). Остальное — машины и внешние системы
+# (weld — ток поста по минутам, fact — камера и лаборатория) и вспомогательные шаги.
+# Собрана скриптом из таблицы показа; править можно руками.
+id: SHOW-IS2
+version: '0.1'
+title: 'Показ: партия фланцев, сбой ИС-2'
+kind: demo
+goal: 'Показ руками: каждое действие человека по живой партии — только нажатием на его столе; машины и 1С идут сами, авария ИС-2 — на второй сварке партии.'
+case:
+  demo:
+  - §1.5 сквозной сценарий
+  - станок сломался
+run: SHOW-IS2
+where: Сварочный участок, посты ИС-1 и ИС-2, Пн 21.09 с 08:00; история — прошлая партия Ф-201…Ф-203 и мехобработка живой партии
+source: ~/ant/_bmad-output/implementation-artifacts/demo-show-scenario.md (Д-85)
+steps:
+- at: '2026-09-21T07:00:00+03:00'
+  ref: Е-01, Е-03…Е-09
+  route: order:ORD-0917
+  note: 'История до показа: задание ЗП-0917, партии ЗФ-201 и П-116, мехобработка и ЗТ-2 Ф-001…Ф-003 (Пт 18.09), передача в сварочный цех (Пн 07:50); прошлая партия Ф-201…Ф-203 проведена целиком'
+- at: '2026-09-21T07:53:00+03:00'
+  label: F-001/ring/receive
+  note: 'История: кольцо R-001 принято в сварочном цехе (ветка патрубка)'
+  decision: process.movement.receive
+  role: MASTER
+  actor: MST-02
+  item: F-001
+  params:
+    item_id: '{item:F-001}'
+  body:
+    destination_kind: workshop
+    from_location_id: WH-SK
+    to_location_id: WS-WC
+    inspection_on_receipt: no_damage
+    step_key: incoming.issue_pipe
+- at: '2026-09-21T07:53:00+03:00'
+  label: F-001/ring/issue
+  decision: crossitem.lot.issue
+  role: STOREKEEPER
+  actor: STK-01
+  item: F-001
+  params:
+    lot_id: '{local:LOT-R-116}'
+  body:
+    item_ids:
+    - '{item:F-001}'
+    quantity: 1
+    to_location_id: WS-WC
+- at: '2026-09-21T07:56:00+03:00'
+  label: F-001/ring/scan
+  decision: item.assembly.record
+  role: PERFORMER
+  actor: WLD-02
+  item: F-001
+  params:
+    item_id: '{item:F-001}'
+  body:
+    binding_method: dpm_datamatrix
+    component_lot_id: '{local:LOT-R-116}'
+    component_type_id: FL-100.01.002
+    position: R-001
+    quantity: 1
+- at: '2026-09-21T07:54:00+03:00'
+  label: F-002/ring/receive
+  note: 'История: кольцо R-002 принято в сварочном цехе (ветка патрубка)'
+  decision: process.movement.receive
+  role: MASTER
+  actor: MST-02
+  item: F-002
+  params:
+    item_id: '{item:F-002}'
+  body:
+    destination_kind: workshop
+    from_location_id: WH-SK
+    to_location_id: WS-WC
+    inspection_on_receipt: no_damage
+    step_key: incoming.issue_pipe
+- at: '2026-09-21T07:54:00+03:00'
+  label: F-002/ring/issue
+  decision: crossitem.lot.issue
+  role: STOREKEEPER
+  actor: STK-01
+  item: F-002
+  params:
+    lot_id: '{local:LOT-R-116}'
+  body:
+    item_ids:
+    - '{item:F-002}'
+    quantity: 1
+    to_location_id: WS-WC
+- at: '2026-09-21T07:57:00+03:00'
+  label: F-002/ring/scan
+  decision: item.assembly.record
+  role: PERFORMER
+  actor: WLD-02
+  item: F-002
+  params:
+    item_id: '{item:F-002}'
+  body:
+    binding_method: dpm_datamatrix
+    component_lot_id: '{local:LOT-R-116}'
+    component_type_id: FL-100.01.002
+    position: R-002
+    quantity: 1
+- at: '2026-09-21T07:55:00+03:00'
+  label: F-003/ring/receive
+  note: 'История: кольцо R-003 принято в сварочном цехе (ветка патрубка)'
+  decision: process.movement.receive
+  role: MASTER
+  actor: MST-02
+  item: F-003
+  params:
+    item_id: '{item:F-003}'
+  body:
+    destination_kind: workshop
+    from_location_id: WH-SK
+    to_location_id: WS-WC
+    inspection_on_receipt: no_damage
+    step_key: incoming.issue_pipe
+- at: '2026-09-21T07:55:00+03:00'
+  label: F-003/ring/issue
+  decision: crossitem.lot.issue
+  role: STOREKEEPER
+  actor: STK-01
+  item: F-003
+  params:
+    lot_id: '{local:LOT-R-116}'
+  body:
+    item_ids:
+    - '{item:F-003}'
+    quantity: 1
+    to_location_id: WS-WC
+- at: '2026-09-21T07:58:00+03:00'
+  label: F-003/ring/scan
+  decision: item.assembly.record
+  role: PERFORMER
+  actor: WLD-02
+  item: F-003
+  params:
+    item_id: '{item:F-003}'
+  body:
+    binding_method: dpm_datamatrix
+    component_lot_id: '{local:LOT-R-116}'
+    component_type_id: FL-100.01.002
+    position: R-003
+    quantity: 1
+- at: '2026-09-21T08:00:00+03:00'
+  system: 'Начало показа: часы прогона идут, партия Ф-001…Ф-003 на входе сварочного цеха, у мастера FOR-WC — задачи «принять»'
+- at: '2026-09-21T08:01:00+03:00'
+  ref: Е-13
+  label: SHOW/receive-F-001
+  note: 'Мастер FOR-WC: «Принять в цех» F-001'
+  decision: process.movement.receive
+  role: MASTER
+  actor: MST-02
+  stop: true
+  item: F-001
+  params:
+    item_id: '{item:F-001}'
+  body:
+    destination_kind: workshop
+    from_location_id: WS-MC
+    to_location_id: WS-WC
+    inspection_on_receipt: no_damage
+    step_key: welding.receive
+- at: '2026-09-21T08:02:00+03:00'
+  ref: Е-13
+  label: SHOW/receive-F-002
+  note: 'Мастер FOR-WC: «Принять в цех» F-002'
+  decision: process.movement.receive
+  role: MASTER
+  actor: MST-02
+  stop: true
+  item: F-002
+  params:
+    item_id: '{item:F-002}'
+  body:
+    destination_kind: workshop
+    from_location_id: WS-MC
+    to_location_id: WS-WC
+    inspection_on_receipt: no_damage
+    step_key: welding.receive
+- at: '2026-09-21T08:03:00+03:00'
+  ref: Е-13
+  label: SHOW/receive-F-003
+  note: 'Мастер FOR-WC: «Принять в цех» F-003'
+  decision: process.movement.receive
+  role: MASTER
+  actor: MST-02
+  stop: true
+  item: F-003
+  params:
+    item_id: '{item:F-003}'
+  body:
+    destination_kind: workshop
+    from_location_id: WS-MC
+    to_location_id: WS-WC
+    inspection_on_receipt: no_damage
+    step_key: welding.receive
+- at: '2026-09-21T08:08:00+03:00'
+  label: SHOW/admit-WP-WELD-2
+  note: 'Сварщик W21: допуск к посту ИС-2'
+  decision: access.workplace.admit
+  role: PERFORMER
+  actor: WLD-02
+  stop: true
+  params:
+    workplace_id: WP-WELD-2
+  body:
+    shift_id: SHIFT-1
+- at: '2026-09-21T08:15:00+03:00'
+  label: SHOW/weld-SV-001-1
+  note: 'Сварщик W21: Ф-001 «Начать» на ИС-2 — ток 158–163 А, в уставке 160 ± 10'
+  weld:
+    item: F-001
+    run: SV-001-1
+    station: WS-2
+    welder: WLD-02
+    minutes: 40
+    current:
+    - 158
+    - 163
+    no_confirm: true
+- at: '2026-09-21T09:05:00+03:00'
+  ref: Е-44
+  label: F-001/kt3
+  fact: inspection.result.recorded
+  source: cam-kt3-a
+  item: F-001
+  data:
+    observation_id: '{local:KT3-KT3-F-001}'
+    method: camera
+    phase: after_operation
+    step_key: welding.kt3_camera
+    inspection_point: KT-3
+    operation_run_id: '{local:SV-001-1}'
+    zone_ids: &id001
+    - '{zone:U1}'
+    - '{zone:U2}'
+    - '{zone:U3}'
+    - '{zone:U4}'
+    - '{zone:U5}'
+    - '{zone:U6}'
+    - '{zone:U7}'
+    - '{zone:U8}'
+    processing_state: completed
+    outcome: no_defect_indicated
+    analyzer_confidence_bp: 9500
+    observation_quality_bp: 9100
+    versions:
+      analyzer_version: vqc-weld 2.3.1
+      contract_version: '1.0'
+      recipe_ref: kt3-weld@1
+      camera_config: angle-1
+      item_revision: Б
+  note: 'КТ-3 F-001: признаков нет'
+- at: '2026-09-21T09:08:00+03:00'
+  ref: Е-45
+  label: F-001/xray
+  note: 'Рентген Ф-001: признаков нет'
+  fact: inspection.result.recorded
+  source: xray
+  item: F-001
+  data:
+    observation_id: '{local:RK-0921-01}'
+    method: radiography
+    phase: after_operation
+    step_key: welding.kt3_radiography
+    operation_run_id: '{local:SV-001-1}'
+    zone_ids: *id001
+    outcome: no_defect_indicated
+    processing_state: completed
+    inspector_id: '{person:NDT-01}'
+    conclusion_ref: РК-0921-01
+- at: '2026-09-21T09:12:00+03:00'
+  ref: Е-47
+  label: SHOW/zt3-F-001
+  note: 'Контролёр INS-01: ЗТ-3 F-001 «Принять и передать»'
+  decision: nonconformity.presentation.resolve
+  role: QC
+  actor: QC-01
+  stop: true
+  item: F-001
+  params:
+    item_id: '{item:F-001}'
+  body:
+    closing_point: ZT-3
+    step_key: welding.zt3_acceptance
+    presentation_no: 1
+    resolution: accept
+    method_event_ids:
+    - '{event:F-001/kt3}'
+    - '{event:F-001/xray}'
+- at: '2026-09-21T09:20:00+03:00'
+  label: SHOW/weld-SV-002-1
+  note: 'Сварщик W21: Ф-002 «Начать» на ИС-2 — ПОЛОМКА: ток уходит в 176–182 А (вторая сварка партии)'
+  weld:
+    item: F-002
+    run: SV-002-1
+    station: WS-2
+    welder: WLD-02
+    minutes: 40
+    current:
+    - 176
+    - 182
+    no_confirm: true
+- at: '2026-09-21T10:05:00+03:00'
+  label: SHOW/weld-SV-003-1
+  note: 'Сварщик W21: Ф-003 «Начать» на ИС-2 — ток 176–182 А'
+  weld:
+    item: F-003
+    run: SV-003-1
+    station: WS-2
+    welder: WLD-02
+    minutes: 40
+    current:
+    - 176
+    - 182
+    no_confirm: true
+- at: '2026-09-21T10:10:00+03:00'
+  ref: Е-44
+  label: F-002/kt3
+  fact: inspection.result.recorded
+  source: cam-kt3-a
+  item: F-002
+  data:
+    observation_id: '{local:KT3-KT3-F-002}'
+    method: camera
+    phase: after_operation
+    step_key: welding.kt3_camera
+    inspection_point: KT-3
+    operation_run_id: '{local:SV-002-1}'
+    zone_ids: *id001
+    processing_state: completed
+    outcome: no_defect_indicated
+    analyzer_confidence_bp: 9100
+    observation_quality_bp: 3400
+    versions:
+      analyzer_version: vqc-weld 2.3.1
+      contract_version: '1.0'
+      recipe_ref: kt3-weld@1
+      camera_config: angle-1
+      item_revision: Б
+  note: 'КТ-3 Ф-002: «признаков нет, 0,91», но качество наблюдения 0,34 ниже порога карты → «оценка невозможна», «годно» не выдаётся; плюс ток ИС-2 вне уставки'
+- at: '2026-09-21T10:55:00+03:00'
+  ref: Е-44
+  label: F-003/kt3
+  fact: inspection.result.recorded
+  source: cam-kt3-a
+  item: F-003
+  data:
+    observation_id: '{local:KT3-KT3-F-003}'
+    method: camera
+    phase: after_operation
+    step_key: welding.kt3_camera
+    inspection_point: KT-3
+    operation_run_id: '{local:SV-003-1}'
+    zone_ids: *id001
+    processing_state: completed
+    outcome: defect_indicated
+    analyzer_confidence_bp: 9300
+    observation_quality_bp: 9000
+    versions:
+      analyzer_version: vqc-weld 2.3.1
+      contract_version: '1.0'
+      recipe_ref: kt3-weld@1
+      camera_config: angle-1
+      item_revision: Б
+    defects:
+    - defect_type_code: W-BURNTHRU
+      description: Прожог
+      zone_id: '{zone:U2}'
+      location: участок У2, лицевая сторона
+      severity: critical
+    comparison_before: appeared
+    recommendation: isolate
+  note: 'КТ-3 Ф-003, ракурс 1: прожог У2, критический; уверенность 0,93, качество 0,90 → по правилу W-BURNTHRU система сама ставит блок, черновик НС и задачу мастеру «в изолятор»; кадр источником не передан'
+- at: '2026-09-21T10:55:00+03:00'
+  ref: Е-44
+  label: F-003/kt3-b
+  fact: inspection.result.recorded
+  source: cam-kt3-b
+  item: F-003
+  data:
+    observation_id: '{local:KT3-KT3-B-F-003}'
+    method: camera
+    phase: after_operation
+    step_key: welding.kt3_camera
+    inspection_point: KT-3
+    operation_run_id: '{local:SV-003-1}'
+    zone_ids: *id001
+    processing_state: completed
+    outcome: defect_indicated
+    analyzer_confidence_bp: 8100
+    observation_quality_bp: 8800
+    versions:
+      analyzer_version: vqc-weld 2.3.1
+      contract_version: '1.0'
+      recipe_ref: kt3-weld@1
+      camera_config: angle-2
+      item_revision: Б
+    defects:
+    - defect_type_code: W-BURNTHRU
+      description: Прожог
+      zone_id: '{zone:U2}'
+      location: участок У2, лицевая сторона
+      severity: critical
+    comparison_before: appeared
+    recommendation: isolate
+  note: 'КТ-3 Ф-003, ракурс 2: тот же прожог У2 — одно несоответствие, два наблюдения'
+- at: '2026-09-21T10:56:00+03:00'
+  ref: Е-80, Е-84
+  system: Сигнал по Ф-003 и черновик несоответствия; Ф-002 — «режим нарушен» (FR-151), «годно» не получает
+- at: '2026-09-21T11:00:00+03:00'
+  ref: Е-90
+  label: SHOW/confirm-F-003
+  note: 'Контролёр INS-01: подтвердить несоответствие Ф-003 (прожог У2)'
+  decision: nonconformity.nonconformity.confirm
+  role: QC
+  actor: QC-01
+  stop: true
+  item: F-003
+  params:
+    nc_id: '{ref:NC-F003}'
+  body:
+    signal_ids:
+    - '{ref:SIG-F003}'
+    severity: critical
+    defect_type_code: W-BURNTHRU
+    reason:
+      code: confirmed_by_views
+      text: Прожог У2 подтверждён по двум ракурсам КТ-3
+- at: '2026-09-21T11:01:00+03:00'
+  ref: Е-93
+  label: SHOW/isolate-F-003
+  note: 'Контролёр INS-01: изолировать Ф-003 до решения'
+  decision: nonconformity.item.isolate
+  role: QC
+  actor: QC-01
+  stop: true
+  item: F-003
+  params:
+    item_id: '{item:F-003}'
+  body:
+    isolator_location_id: ISO-WC
+    reason:
+      code: nc_confirmed
+      text: Прожог У2 — изолировать до решения по изделию
+- at: '2026-09-21T11:03:00+03:00'
+  ref: Е-92
+  label: SHOW/recheck-F-002
+  note: 'Контролёр INS-01: доп. проверка Ф-002 (режим нарушен)'
+  decision: nonconformity.recheck.request
+  role: QC
+  actor: QC-01
+  stop: true
+  item: F-002
+  params:
+    item_id: '{item:F-002}'
+  body:
+    method: radiography
+    reason:
+      code: regime_violation
+      text: Ток ИС-2 вне уставки при сварке — рентген перед ЗТ-3
+- at: '2026-09-21T11:06:00+03:00'
+  ref: Е-93
+  label: SHOW/isolator-F-003
+  note: 'Мастер FOR-WC: «Принять в изоляторе» Ф-003'
+  decision: process.movement.receive
+  role: MASTER
+  actor: MST-02
+  stop: true
+  item: F-003
+  params:
+    item_id: '{item:F-003}'
+  body:
+    destination_kind: isolator
+    from_location_id: ST-WELD
+    to_location_id: ISO-WC
+    inspection_on_receipt: not_inspected
+- at: '2026-09-21T11:08:00+03:00'
+  ref: Е-114
+  label: SHOW/hold-IS2
+  note: 'Мастер FOR-WC: остановить пост ИС-2'
+  decision: nonconformity.process_hold.set
+  role: MASTER
+  actor: MST-02
+  stop: true
+  body:
+    hold_id: '{local:HOLD-IS2}'
+    level: process_point_stop
+    equipment_id: '{equipment:WS-2}'
+    step_key: welding.weld
+    reason:
+      code: regime_violation
+      text: Ток ИС-2 176–182 А при уставке 160 ± 10; прожог на Ф-003
+    release_condition: Ремонт регулятора тока и проверка контрольным образцом
+- at: '2026-09-21T11:12:00+03:00'
+  label: SHOW/admit-WP-WELD-1
+  note: 'Сварщик W21: допуск к посту ИС-1 (перевод с ИС-2)'
+  decision: access.workplace.admit
+  role: PERFORMER
+  actor: WLD-02
+  stop: true
+  params:
+    workplace_id: WP-WELD-1
+  body:
+    shift_id: SHIFT-1
+- at: '2026-09-21T11:20:00+03:00'
+  ref: П-04
+  label: SHOW/cause
+  note: 'Технолог TEC-01: подтвердить причину — оборудование ИС-2 (дрейф регулятора тока)'
+  decision: analysis.cause.conclude
+  role: TECHNOLOGIST
+  actor: TECH-01
+  stop: true
+  params:
+    incident_id: '{ref:INC-IS2}'
+  body:
+    category: equipment
+    conclusion: confirmed
+    nc_ids:
+    - '{ref:NC-F003}'
+    reason:
+      code: equipment_drift
+      text: Ток ИС-2 вне уставки на сварках Ф-002 и Ф-003; на Ф-001 ток в уставке
+    verification: журнал тока ИС-2, КТ-3
+- at: '2026-09-21T11:25:00+03:00'
+  ref: Е-94
+  label: SHOW/rework-F-003
+  note: 'Технолог TEC-01: решение по Ф-003 — «Переделка» → 1С «перевод в брак (переделка)»'
+  decision: nonconformity.disposition.set
+  role: TECHNOLOGIST
+  actor: TECH-01
+  stop: true
+  item: F-003
+  params:
+    nc_id: '{ref:NC-F003}'
+  body:
+    disposition: rework
+    reason:
+      code: rework_per_tp
+      text: Переварка участка У2 по ТП на ИС-1
+- at: '2026-09-21T11:30:00+03:00'
+  label: SHOW/weld-SV-003-2
+  note: 'Сварщик W21: Ф-003 «Начать» на ИС-1 — переварка, новое выполнение со ссылкой на SV-003-1'
+  weld:
+    item: F-003
+    run: SV-003-2
+    station: WS-1
+    welder: WLD-02
+    minutes: 40
+    rework_of: SV-003-1
+    no_confirm: true
+- at: '2026-09-21T11:40:00+03:00'
+  ref: Е-45
+  label: F-002/xray
+  note: 'Доп. проверка Ф-002 — рентген: признаков нет'
+  fact: inspection.result.recorded
+  source: xray
+  item: F-002
+  data:
+    observation_id: '{local:RK-0921-02}'
+    method: radiography
+    phase: after_operation
+    step_key: welding.kt3_radiography
+    operation_run_id: '{local:SV-002-1}'
+    zone_ids: *id001
+    outcome: no_defect_indicated
+    processing_state: completed
+    inspector_id: '{person:NDT-01}'
+    conclusion_ref: РК-0921-02
+- at: '2026-09-21T11:42:00+03:00'
+  ref: Е-44
+  label: F-002/kt3-2
+  fact: inspection.result.recorded
+  source: cam-kt3-a
+  item: F-002
+  data:
+    observation_id: '{local:KT3-RECHECK-F-002}'
+    method: camera
+    phase: after_operation
+    step_key: welding.kt3_camera
+    inspection_point: KT-3
+    operation_run_id: '{local:SV-002-1}'
+    zone_ids:
+    - '{zone:U1}'
+    - '{zone:U2}'
+    - '{zone:U3}'
+    - '{zone:U4}'
+    - '{zone:U5}'
+    - '{zone:U6}'
+    - '{zone:U7}'
+    - '{zone:U8}'
+    processing_state: completed
+    outcome: no_defect_indicated
+    analyzer_confidence_bp: 9400
+    observation_quality_bp: 9000
+    versions:
+      analyzer_version: vqc-weld 2.3.1
+      contract_version: '1.0'
+      recipe_ref: kt3-weld@1
+      camera_config: angle-1
+      item_revision: Б
+  note: 'Доп. проверка Ф-002: повторный кадр КТ-3 — признаков нет, качество 0,90'
+- at: '2026-09-21T12:20:00+03:00'
+  ref: Е-44
+  label: F-003/kt3-2
+  fact: inspection.result.recorded
+  source: cam-kt3-a
+  item: F-003
+  data:
+    observation_id: '{local:KT3-KT3-2-F-003}'
+    method: camera
+    phase: after_operation
+    step_key: welding.kt3_camera
+    inspection_point: KT-3
+    operation_run_id: '{local:SV-003-2}'
+    zone_ids: *id001
+    processing_state: completed
+    outcome: no_defect_indicated
+    analyzer_confidence_bp: 9500
+    observation_quality_bp: 9100
+    versions:
+      analyzer_version: vqc-weld 2.3.1
+      contract_version: '1.0'
+      recipe_ref: kt3-weld@1
+      camera_config: angle-1
+      item_revision: Б
+  note: 'КТ-3 F-003: признаков нет'
+- at: '2026-09-21T12:25:00+03:00'
+  ref: Е-45
+  label: F-003/xray
+  note: 'Рентген Ф-003 после переварки: признаков нет'
+  fact: inspection.result.recorded
+  source: xray
+  item: F-003
+  data:
+    observation_id: '{local:RK-0921-03}'
+    method: radiography
+    phase: after_operation
+    step_key: welding.kt3_radiography
+    operation_run_id: '{local:SV-003-2}'
+    zone_ids: *id001
+    outcome: no_defect_indicated
+    processing_state: completed
+    inspector_id: '{person:NDT-01}'
+    conclusion_ref: РК-0921-03
+- at: '2026-09-21T12:30:00+03:00'
+  ref: Е-47
+  label: SHOW/zt3-F-003
+  note: 'Контролёр INS-01: ЗТ-3 F-003 «Принять и передать»'
+  decision: nonconformity.presentation.resolve
+  role: QC
+  actor: QC-01
+  stop: true
+  item: F-003
+  params:
+    item_id: '{item:F-003}'
+  body:
+    closing_point: ZT-3
+    step_key: welding.zt3_acceptance
+    presentation_no: 1
+    resolution: accept
+    method_event_ids:
+    - '{event:F-003/kt3-2}'
+    - '{event:F-003/xray}'
+- at: '2026-09-21T12:35:00+03:00'
+  ref: Е-47
+  label: SHOW/zt3-F-002
+  note: 'Контролёр INS-01: ЗТ-3 F-002 «Принять и передать»'
+  decision: nonconformity.presentation.resolve
+  role: QC
+  actor: QC-01
+  stop: true
+  item: F-002
+  params:
+    item_id: '{item:F-002}'
+  body:
+    closing_point: ZT-3
+    step_key: welding.zt3_acceptance
+    presentation_no: 1
+    resolution: accept
+    method_event_ids:
+    - '{event:F-002/kt3-2}'
+    - '{event:F-002/xray}'
+- at: '2026-09-21T12:40:00+03:00'
+  system: 'Партия прошла ЗТ-3; паспорт Ф-003: переделка — новое выполнение SV-003-2 со ссылкой на SV-003-1'
+outcome:
+- Ф-001 — ЗТ-3 принята; Ф-002 — после доп. проверки принята; Ф-003 — прожог У2, НС, изоляция, причина — оборудование ИС-2, переделка на ИС-1, ЗТ-3 принята
+- ИС-2 остановлен мастером; в 1С — «перевод в брак (переделка)» по Ф-003
+must_not:
+- 'Робот (demo-signer) не делает ни одного решения по живой партии Ф-001…Ф-003 с 08:00: приём, допуск, «Начать», «Выполнено», ЗТ-3, НС, изоляция, доп. проверка, изолятор, остановка поста, причина, переделка
+  — только люди'
+- Ф-002 не получает «годно» до результата доп. проверки

@@ -53,6 +53,17 @@ func Register(api *httpapi.API, q app.Queries, c app.Commands) {
 			return q.Board(ctx, in.RunID, m)
 		})
 
+	httpapi.Read(api, httpapi.Get("/runs/{run_id}/plan", "План прогона",
+		"Д-85: чего ждёт прогон сейчас (роль, действие) и что будет дальше — решения людей с остановками, события машин и внешних систем, запланированные сбои — с доменным временем; часы прогона и скорость."),
+		platform.Action{ID: "simulation.run.plan", Owner: owner, Subject: "run"},
+		func(ctx context.Context, in *struct {
+			RunID string `path:"run_id" maxLength:"128" doc:"Прогон сценария."`
+			All   bool   `query:"all" doc:"Весь план (прошедшее — done); по умолчанию — от текущего места."`
+			Limit int    `query:"limit" minimum:"0" maximum:"1000" doc:"Сколько строк (по умолчанию 50)."`
+		}, _ platform.Moment) (app.RunPlan, error) {
+			return q.Plan(ctx, in.RunID, app.PlanQuery{All: in.All, Limit: in.Limit})
+		})
+
 	httpapi.Read(api, httpapi.Get("/runs/{run_id}/injections", "Кнопки цифрового стенда",
 		"FR-152: повтор события, опоздавшее событие, испорченный кадр, сбой станка, потеря куска данных, подделка в обход системы (только профили fixtures и demo)."),
 		platform.Action{ID: "simulation.injection.list", Owner: owner, Subject: "run"},
