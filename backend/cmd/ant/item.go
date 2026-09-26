@@ -48,7 +48,10 @@ func itemLive(ctx context.Context, env *environment) (*itemapp.Service, error) {
 		return nil, err
 	}
 	return itemapp.NewLive(itemapp.Config{Codec: c.codec, Projections: c.engine, Bundles: c.bundleSource(), Writer: c.itemWriter(env),
-		Clock: c.domainClock(), Env: ienv, ProcessVersion: pv, NormativeRev: qualityRev}), nil
+		Clock: c.domainClock(), Env: ienv, NormativeRev: qualityRev,
+		// Новые изделия — по действующей версии процесса (эпик 39, FR-22);
+		// стартовая версия — запасная, пока версий в хранилище нет.
+		ProcessVersion: pv, ActiveProcess: &activeProcess{store: c.versions}}), nil
 }
 
 // crossitemLive — живые операции crossitem (AD-36).

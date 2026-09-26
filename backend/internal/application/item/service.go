@@ -35,10 +35,23 @@ type Config struct {
 	// Enterprise — код предприятия для новых ID изделий (AD-16); пусто — ENT01.
 	Enterprise string
 	// ProcessVersion, NormativeRev — версия процесса (хеш BPMN) и ревизия
-	// нормативного слоя, закрепляемые при регистрации (AD-17), пока источник
-	// версии (эпик 17) не отдаёт их сам.
+	// нормативного слоя, закрепляемые при регистрации (AD-17). ProcessVersion —
+	// запасная: действует, только если ActiveProcess не задан или действующей
+	// версии нет.
 	ProcessVersion string
 	NormativeRev   string
+	// ActiveProcess — хеш действующей версии процесса (модуль process, эпик 39):
+	// новое изделие закрепляет версию, действующую на момент регистрации.
+	ActiveProcess ActiveProcess
+}
+
+// ActiveProcess — ведомый порт «действующая версия процесса» (FR-22, AD-17):
+// после ввода новой версии новые изделия идут по ней, изделия в работе
+// доделываются по своей закреплённой. Адаптер собирает cmd/ant над
+// хранилищем версий модуля process.
+type ActiveProcess interface {
+	// ActiveVersionHash — хеш действующей версии; "" — действующей версии нет.
+	ActiveVersionHash(ctx context.Context) (string, error)
 }
 
 // Service — реализация live ведущих портов модуля item (AD-36): чтение — та
