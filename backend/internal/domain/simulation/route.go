@@ -635,6 +635,16 @@ func (g *gen) assemblyEvents(p *ItemPlan, t time.Time, run func(string) string, 
 		"observation_id": "{local:KT4D-" + p.ID + "}", "method": "camera", "phase": "before_zone_closure", "step_key": "assembly.kt4d_zone_camera",
 		"inspection_point": "KT-4d", "operation_run_id": run("AS"), "zone_ids": []any{"S-1", "CAV"}, "outcome": "no_defect_indicated",
 		"processing_state": "completed"}, camera("kt4d-uv@1", "vqc-uv 1.0.3", rnd.Between(9200, 9700), rnd.Between(8800, 9400))))
+	// ЗТ-4 ч.1 — предъявление зоны ОТК до установки крышки (нормативный слой:
+	// assembly.zt4_zone_presentation, closingPoint ZT-4.1; эпик 16): без
+	// подписи установка крышки и крепежа блокируется.
+	if !slices.Contains(p.Skip, "assembly.kt4d") {
+		decide("zt4_1_presented", t.Add(13*time.Minute), "item.presentation.record", r.MasterAC, itemParam,
+			map[string]any{"presentation_no": 1, "presented_to": "qc", "step_key": "assembly.zt4_zone_presentation"})
+		decide("zt4_1", t.Add(15*time.Minute), "nonconformity.presentation.resolve", r.QCAssembly, itemParam, map[string]any{
+			"closing_point": "ZT-4.1", "step_key": "assembly.zt4_zone_presentation", "presentation_no": 1, "resolution": "accept",
+			"method_event_ids": methodEvents(p, "kt4d")})
+	}
 	var torques []any
 	for b := 1; b <= 12; b++ {
 		torques = append(torques, map[string]any{"characteristic": fmt.Sprintf("Момент затяжки болта %d, Н·м", b),
