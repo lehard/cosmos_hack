@@ -51,6 +51,7 @@ const ICONS: Record<string, Component> = {
   'security-events': Lock,
   grants: Key,
   scenarios: Terminal,
+  reliability: ShieldCheck,
   access: Key,
   sources: Database,
   integrations: PlugConnected,
