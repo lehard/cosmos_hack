@@ -144,7 +144,7 @@ describe('виджет разбора обстоятельств', () => {
     mockApi({ 'GET /api/v1/analysis/groups': { items: [] } })
     const w = await mountWidget(CircumstancesWidget, { widgetId: 'circumstances', titleKey: 'desks.circumstances' })
     expect(w.attributes('data-state')).toBe('normal')
-    expect(w.text()).toContain('Выберите несоответствие')
+    expect(w.text()).toContain('Выберите расследование')
   })
 
   it('ошибка сервера — «ошибка входа»', async () => {
