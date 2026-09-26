@@ -215,6 +215,13 @@ type ItemPlan struct {
 	BlankLot  string `json:"blank_lot,omitempty"`
 	Note      string `json:"note,omitempty"`
 	Reference bool   `json:"reference,omitempty"` // эталон для сравнения (Ф-001)
+	// Entry — короткая история: "weld" — изделие входит в процесс сразу на
+	// сварочном участке (регистрация с entry_step_key welding.edge_prep —
+	// одно решение человека), сварка — фактами источника (начало, сводки
+	// тока, конец), дальше до Until — только факты контроля (КТ-3). Путь
+	// мехобработки и решения людей до сварки не строятся (показ SHOW-IS2:
+	// история проигрывается за минуты, а не десятки минут).
+	Entry string `json:"entry,omitempty"`
 }
 
 // WeldPlan — сварка фланца с кольцом.
