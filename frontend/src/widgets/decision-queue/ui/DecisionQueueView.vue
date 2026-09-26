@@ -62,11 +62,14 @@ const groups = computed(() => {
 /** Плановая приёмка — рутина: свёрнута, пока её не раскрыли или не открыли её строку. */
 const routineOpen = ref(false)
 const isOpen = (g: { kind: DecisionQueueRow['kind']; items: Item[] }) => g.kind !== 'presentation' || routineOpen.value || g.items.some((x) => x.key === props.selected)
-/** Сводка: сколько на пересмотр, по отклонениям, плановых приёмок. */
-const summary = computed(() => {
-  const count = (kinds: DecisionQueueRow['kind'][]) => props.rows.filter((r) => kinds.includes(r.kind)).length
-  return { review: count(['review']), deviations: count(['signal', 'isolated']), routine: count(['presentation']) }
-})
+/** Сводка по четырём видам работы: пересмотр, новые сигналы, решения по изделиям, плановая приёмка. */
+const SUMMARY_ORDER: DecisionQueueRow['kind'][] = ['review', 'signal', 'isolated', 'presentation']
+const summary = computed(() =>
+  SUMMARY_ORDER.map((kind) => ({ kind, n: props.rows.filter((r) => r.kind === kind).length })).filter((x) => x.n > 0),
+)
+/** Строка задачи: у сигнала — «Возможный дефект: …» (это ещё не несоответствие), у остальных — суть или заголовок сервера. */
+const rowTitle = (row: DecisionQueueRow) =>
+  row.kind === 'signal' && row.reason ? t('widgets.decisionQueue.signalTitle', { what: row.reason.toLowerCase() }) : (row.reason ?? row.title)
 /** Строки в порядке показа (только раскрытые группы) — для ↑/↓ сквозь группы. */
 const flat = computed(() => groups.value.filter(isOpen).flatMap((g) => g.items))
 
@@ -88,14 +91,13 @@ function move(delta: number): void {
       <span class="hint" data-testid="open-hint">{{ t('widgets.decisionQueue.openHint') }}</span>
     </div>
     <p class="summary ant-wrap" data-testid="queue-summary">
-      <span v-if="summary.review" class="summary-urgent">{{ t('widgets.decisionQueue.summary.review', { n: summary.review }, summary.review) }}</span>
-      <span v-if="summary.deviations">{{ t('widgets.decisionQueue.summary.deviations', { n: summary.deviations }, summary.deviations) }}</span>
-      <span v-if="summary.routine">{{ t('widgets.decisionQueue.summary.routine', { n: summary.routine }, summary.routine) }}</span>
+      <span v-for="x in summary" :key="x.kind" :data-kind="x.kind">{{ t(`widgets.decisionQueue.summary.${x.kind}`, { n: x.n }, x.n) }}</span>
     </p>
     <div class="groups" tabindex="0" :aria-label="t('desks.decisionQueue')" data-testid="queue-groups" @keydown.down.prevent="move(1)" @keydown.up.prevent="move(-1)">
+      <!-- Четыре вида работы — четыре блока со своим акцентом и одной строкой смысла (UI-50). -->
       <section v-for="g in groups" :key="g.kind" class="group" :data-group="g.kind">
         <h4 class="group-title">
-          <span class="ant-ellipsis">{{ t(QUEUE_GROUP_TEXT[g.kind]) }}</span>
+          <span class="ant-wrap">{{ t(QUEUE_GROUP_TEXT[g.kind]) }}</span>
           <span class="count" data-testid="group-count">{{ g.items.length }}</span>
           <span v-if="g.overdue" class="overdue-count" data-testid="group-overdue">{{ t('widgets.decisionQueue.overdueCount', { n: g.overdue }) }}</span>
           <button
@@ -109,6 +111,7 @@ function move(delta: number): void {
             {{ isOpen(g) ? t('widgets.decisionQueue.hideRoutine') : t('widgets.decisionQueue.showRoutine') }}
           </button>
         </h4>
+        <p class="group-sense ant-wrap" data-testid="group-sense">{{ t(`widgets.decisionQueue.sense.${g.kind}`) }}</p>
         <ol v-if="isOpen(g)" class="rows">
           <li
             v-for="{ row, key, overdue, due } in g.items"
@@ -127,7 +130,7 @@ function move(delta: number): void {
             <p v-if="row.kind === 'review'" class="hero-kicker ant-wrap">{{ t('widgets.decisionQueue.heroKicker') }}</p>
             <div class="line head">
               <strong class="item">{{ row.item_label }}</strong>
-              <span class="title ant-ellipsis" :title="row.reason ?? row.title" data-testid="row-title">{{ row.reason ?? row.title }}</span>
+              <span class="title ant-ellipsis" :title="rowTitle(row)" data-testid="row-title">{{ rowTitle(row) }}</span>
               <span v-if="due" class="due" data-testid="due">{{ due }}</span>
             </div>
             <div class="line meta">
@@ -183,6 +186,36 @@ function move(delta: number): void {
   flex-direction: column;
   gap: var(--ant-space-2);
   min-width: 0;
+  padding: var(--ant-space-3) var(--ant-space-4);
+  border: 1px solid var(--ant-border);
+  border-left: 4px solid var(--ant-border-strong);
+  border-radius: var(--ant-radius-lg);
+  background: var(--ant-surface);
+}
+
+/* Пересмотр — самое критичное исключение; сигнал — установить факт; решение — судьба изделия; приёмка — рутина. */
+.group[data-group='review'] {
+  border-left-color: var(--ant-status-attention);
+  background: var(--ant-status-attention-soft);
+}
+
+.group[data-group='signal'] {
+  border-left-color: var(--ant-accent);
+}
+
+.group[data-group='isolated'] {
+  border-left-color: var(--ant-status-danger);
+}
+
+.group[data-group='presentation'] {
+  border-left-color: var(--ant-border);
+  background: var(--ant-surface-subtle);
+}
+
+.group-sense {
+  margin: 0;
+  color: var(--ant-text-2);
+  font-size: var(--ant-fs-meta);
 }
 
 .summary {
@@ -193,8 +226,8 @@ function move(delta: number): void {
   color: var(--ant-text-2);
 }
 
-.summary-urgent {
-  color: var(--ant-status-danger-text);
+.summary [data-kind='review'] {
+  color: var(--ant-status-attention-text);
   font-weight: var(--ant-fw-bold);
 }
 
@@ -214,8 +247,7 @@ function move(delta: number): void {
 .row.hero {
   padding: var(--ant-space-3) var(--ant-space-4);
   border-color: var(--ant-status-attention);
-  border-left: 4px solid var(--ant-status-attention);
-  background: var(--ant-status-attention-soft);
+  background: var(--ant-surface);
 }
 
 .row.hero .item {
@@ -243,11 +275,9 @@ function move(delta: number): void {
   align-items: baseline;
   min-width: 0;
   margin: 0;
-  color: var(--ant-text-2);
-  font-size: var(--ant-fs-meta);
+  color: var(--ant-text);
+  font-size: var(--ant-fs-title);
   font-weight: var(--ant-fw-bold);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
 }
 
 .count {

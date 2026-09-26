@@ -75,6 +75,33 @@ const investigation = computed(() => {
   const s = props.card.investigation_status
   return s ? t(INVESTIGATION_TEXT[s]) : t('empty.noDataUnknown')
 })
+/** Состояние по изделию для строки сверху: сигнал → подтверждено → решение → закрыто. */
+const stateKey = computed(() => {
+  const st = props.card.status
+  if (st === 'draft') return props.card.origin === 'special_process' ? 'specialProcess' : 'signal'
+  if (st === 'confirmed') return 'confirmed'
+  if (st === 'disposition_set') return 'dispositionSet'
+  return 'closed'
+})
+/** Что есть в доказательной базе сигнала и человеческий вывод; ничего не досчитывается. */
+const evidence = computed(() => {
+  const s = signal.value
+  const checks = [
+    { key: 'frame', ok: materials.value.length > 0 },
+    { key: 'confidence', ok: s?.analyzer_confidence_bp != null },
+    { key: 'quality', ok: s?.observation_quality_bp != null },
+    { key: 'requirement', ok: !!props.card.evidence.requirement },
+  ]
+  const complete = checks.every((c) => c.ok)
+  const verdict = !props.card.evidence.requirement
+    ? 'ncCard.evidence.verdict.noRequirement'
+    : !materials.value.length
+      ? 'ncCard.evidence.verdict.noFrame'
+      : complete
+        ? 'ncCard.evidence.verdict.complete'
+        : 'ncCard.evidence.verdict.partial'
+  return { checks, complete, verdict }
+})
 const dec = (bp: number) => n(bpToFraction(bp), 'decimal2')
 const time = (x: string) => d(new Date(x), 'dateTime')
 const mode = (m: number) => (te(`decisions.automationMode.mode${m}`) ? t(`decisions.automationMode.mode${m}`) : `UNKNOWN(${m})`)
@@ -111,6 +138,8 @@ const inWindow = computed(() => !!frame.plain)
         </button>
         <span v-else class="ant-wrap">{{ t('common.words.item') }} {{ card.item_label }}</span>
       </header>
+      <!-- Состояние экрана одной строкой (UI-51): что уже установлено и что дальше. -->
+      <p class="state ant-wrap" :data-state="stateKey" data-testid="nc-state">{{ t(`ncCard.state.${stateKey}`) }}</p>
       <p v-if="signal" class="kicker ant-wrap">
         {{ codeText(BASIS_KIND_TEXT, signal.basis_kind, t) }} · {{ t('common.words.severity').toLowerCase() }}: {{ codeText(SEVERITY_TEXT, signal.severity, t).toLowerCase() }}
       </p>
@@ -150,7 +179,16 @@ const inWindow = computed(() => !!frame.plain)
         <EvidenceMaterial v-for="ref in materials" :key="ref" :address="ref" />
       </div>
       <p v-else-if="signal" class="no-material muted ant-wrap" data-testid="no-material">{{ t('ncCard.material.none') }}</p>
-      <p class="muted ant-wrap">{{ t('hints.signalVsNonconformity') }}</p>
+
+      <!-- Полнота доказательств — состояние, а не отсутствие интерфейса (UI-51). -->
+      <div v-if="signal" class="completeness" :data-complete="evidence.complete || undefined" data-testid="evidence-completeness">
+        <ul class="checks">
+          <li v-for="c in evidence.checks" :key="c.key" :data-ok="c.ok || undefined">
+            <span class="mark" aria-hidden="true">{{ c.ok ? '✓' : '—' }}</span>{{ t(`ncCard.evidence.${c.key}.${c.ok ? 'yes' : 'no'}`) }}
+          </li>
+        </ul>
+        <p class="verdict ant-wrap" data-testid="evidence-verdict">{{ t(evidence.verdict) }}</p>
+      </div>
     </section>
 
     <!-- 2. Почему это проблема -->
@@ -310,6 +348,69 @@ p {
 
 .number {
   font-size: 1.15em;
+}
+
+.state {
+  align-self: flex-start;
+  padding: var(--ant-space-1) var(--ant-space-3);
+  border-radius: var(--ant-radius-pill);
+  background: var(--ant-accent-soft);
+  color: var(--ant-accent);
+  font-weight: var(--ant-fw-bold);
+}
+
+.state[data-state='confirmed'],
+.state[data-state='specialProcess'] {
+  background: var(--ant-status-danger-soft);
+  color: var(--ant-status-danger-text);
+}
+
+.state[data-state='dispositionSet'],
+.state[data-state='closed'] {
+  background: var(--ant-status-success-soft);
+  color: var(--ant-status-success-text);
+}
+
+.completeness {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ant-space-1);
+  padding: var(--ant-space-2) var(--ant-space-3);
+  border: 1px dashed var(--ant-status-attention);
+  border-radius: var(--ant-radius-md);
+}
+
+.completeness[data-complete] {
+  border-style: solid;
+  border-color: var(--ant-border);
+}
+
+.checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ant-space-1) var(--ant-space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-meta);
+}
+
+.checks li[data-ok] {
+  color: var(--ant-text);
+}
+
+.checks .mark {
+  display: inline-block;
+  width: 1.2em;
+}
+
+.checks li[data-ok] .mark {
+  color: var(--ant-status-success);
+}
+
+.verdict {
+  font-weight: var(--ant-fw-bold);
 }
 
 .kicker {

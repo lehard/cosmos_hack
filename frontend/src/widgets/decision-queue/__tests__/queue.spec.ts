@@ -28,8 +28,8 @@ describe('очередь «Ждут моего решения»', () => {
     const w = mountView()
     const groups = w.findAll('section.group')
     expect(groups.map((g) => g.find('.group-title').text())).toEqual([
-      expect.stringContaining('Подтвердить или отклонить сигнал'),
-      expect.stringContaining('Решить, что делать с изделием'),
+      expect.stringContaining('Новые сигналы — установить, есть ли несоответствие'),
+      expect.stringContaining('Несоответствие подтверждено — решить судьбу изделия'),
       expect.stringContaining('Плановая приёмка на точках предъявления'),
     ])
     expect(groups.map((g) => g.find('[data-testid="group-count"]').text())).toEqual(['1', '1', '1'])
@@ -76,9 +76,12 @@ describe('очередь «Ждут моего решения»', () => {
     const review = { ...c!, kind: 'review' as const, object_id: 'REV-1', title: 'Решение ЗТ-3 принято до новых данных — пересмотрите', review_since: at('10:20') }
     const w = mountView({ rows: [a!, b!, c!, review] })
     const sum = norm(w.find('[data-testid="queue-summary"]').text())
-    expect(sum).toContain('1 решение на пересмотр')
-    expect(sum).toContain('2 по отклонениям')
+    expect(sum).toContain('1 на пересмотр')
+    expect(sum).toContain('1 новый сигнал')
+    expect(sum).toContain('1 решение по изделию')
     expect(sum).toContain('1 плановая приёмка')
+    // У каждого вида работы — строка смысла.
+    expect(w.find('[data-group="signal"] [data-testid="group-sense"]').text()).toContain('Это ещё не брак')
     const hero = w.find('li.row.hero')
     expect(hero.attributes('data-key')).toBe('review:REV-1')
     expect(hero.text()).toContain('Изменились данные после принятого решения')

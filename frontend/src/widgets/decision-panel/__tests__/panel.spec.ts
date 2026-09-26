@@ -68,26 +68,31 @@ describe('панель решений контролёра', () => {
   it('решение по несоответствию: переделка / ремонт / как есть / списать / вернуть', () => {
     const w = mountPanel({ card: confirmedCard() })
     expect(w.findAll('[data-group="disposition"] .option-title').map((b) => b.text())).toEqual([
-      'Переделка — вернуть на операцию «Сварка»',
-      'Ремонт — по разрешению на отклонение',
-      'Как есть — по разрешению на отклонение',
-      'Списать — оформить акт о браке',
-      'Вернуть поставщику — оформить возврат с основанием претензии',
+      'Переделка — вернуть на операцию',
+      'Ремонт',
+      'Принять как есть',
+      'Списать',
+      'Вернуть поставщику',
     ])
     expect(w.text()).toContain('Решение по изделию не ждёт установления причины')
     // Этап 2 — карточки вариантов: смысл, условия, итог; первичных «подтвердить / отклонить» нет.
     const asIs = w.find('[data-disposition="use_as_is"]')
-    expect(asIs.find('.option-terms').text()).toContain('нужно действующее разрешение на отклонение')
-    expect(asIs.find('.option-terms').text()).toContain('не «годно»')
-    expect(w.find('[data-disposition="rework"] .option-terms').text()).toContain('без разрешения на отклонение')
+    expect(asIs.find('.option-terms').text()).toBe('требуется разрешение на отклонение')
+    expect(w.find('[data-disposition="rework"] .option-terms').text()).toBe('без разрешения')
+    // Шаг 1 свёрнут в итог, шаг 2 — «требуется ваше решение», шаг 3 — «ещё не начато».
+    const states = w.findAll('[data-testid="stage-state"]').map((x) => x.text())
+    expect(states).toEqual(['завершено: несоответствие подтверждено', 'требуется ваше решение', 'ещё не начато'])
     expect(w.find('[data-action="confirm_nc"]').exists()).toBe(false)
     expect(w.find('[data-stage="disposition"]').attributes('data-state')).toBe('current')
   })
 
-  it('выбранный вариант отмечен', async () => {
+  it('выбранный вариант отмечен; смысл и итог — после выбора', async () => {
     const w = mountPanel({ card: confirmedCard() })
+    expect(w.find('[data-testid="chosen-title"]').exists()).toBe(false)
     await w.find('[data-disposition="scrap"]').trigger('click')
     expect(w.find('[data-disposition="scrap"]').attributes('aria-pressed')).toBe('true')
+    expect(w.find('[data-testid="chosen-title"]').text()).toBe('Списать — оформить акт о браке')
+    expect(w.find('[data-testid="chosen-outcome"]').text()).toContain('акт о браке')
     expect(w.find('[data-disposition="rework"]').attributes('aria-pressed')).toBe('false')
   })
 
