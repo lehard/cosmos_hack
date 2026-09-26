@@ -36,6 +36,8 @@ type Runtime struct {
 	// живут в памяти копии api — для пульта этого достаточно (см. отчёт эпика 09).
 	runs     map[string]*RunInfo
 	lastTick time.Time
+	// sess — сессионное наложение: факты команд людей поверх мира (session.go).
+	sess session
 }
 
 // RunInfo — сведения о прогоне пульта сверх положения курсора.
@@ -200,6 +202,7 @@ func (r *Runtime) Start(ctx context.Context, scenario, runID, mode string, seed 
 	r.runs[runID] = &RunInfo{RunID: runID, Scenario: scenario, Mode: mode, Seed: seed, StartedAt: now}
 	r.lastTick = now
 	r.mu.Unlock()
+	r.resetSession(runID)
 	return st, nil
 }
 
@@ -231,6 +234,7 @@ func (r *Runtime) Stop(ctx context.Context, runID string, now time.Time) error {
 	if st.RunID != runID {
 		return nil
 	}
+	r.resetSession("")
 	return r.cur().Move(ctx, platform.CursorState{})
 }
 
@@ -369,7 +373,9 @@ func (r *Runtime) setPaused(ctx context.Context, p bool) (platform.CursorState, 
 
 // Decide — команда человека на заготовках (FR-129): если шаг курсора ждёт
 // именно этого решения над этим объектом, курсор уходит на следующий шаг —
-// «сценарий продолжается». Иначе мир не меняется. Возвращает квитанцию.
+// «сценарий продолжается». Иначе мир не меняется. Возвращает квитанцию с
+// уникальным номером (seq шага и счётчик сессии, session.go); наложение
+// факта поверх мира — Record.
 func (r *Runtime) Decide(ctx context.Context, action string, obj ObjectRef, meta platform.CommandMeta) (platform.Receipt, error) {
 	st, sc, err := r.State(ctx)
 	if err != nil {
@@ -381,7 +387,9 @@ func (r *Runtime) Decide(ctx context.Context, action string, obj ObjectRef, meta
 			return platform.Receipt{}, err
 		}
 	}
-	seq := StepSeq(st.Step)
+	r.sess.mu.Lock()
+	seq := r.sess.nextSeq(st.Step)
+	r.sess.mu.Unlock()
 	id := kernel.UUIDv5(constants.NsAnt, fmt.Sprintf("fixtures/%s/%s/%d/%s", st.Scenario, st.RunID, st.Step, meta.CommandID))
 	return platform.Receipt{CommandID: meta.CommandID, Seq: seq, EventIDs: []string{id}, RecordedAt: sc.Header(st.Step).Clock}, nil
 }

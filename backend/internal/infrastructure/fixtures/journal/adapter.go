@@ -38,7 +38,9 @@ func (a *Adapter) rt() (*loader.Runtime, error) {
 
 // Subscribe — живые обновления (journal.stream.subscribe, AD-21): подписка
 // опрашивает курсор и при смене шага или прогона отдаёт изменения сущностей
-// шагов между прежним и новым положением (переход назад — тоже).
+// шагов между прежним и новым положением (переход назад — тоже), а также
+// изменения объектов сессионных фактов — команд людей поверх мира
+// (loader.Runtime.Record): открытые экраны перечитывают их сами.
 func (a *Adapter) Subscribe(ctx context.Context, _ int64, _ string) (app.Subscription, error) {
 	rt, err := a.rt()
 	if err != nil {
@@ -52,7 +54,7 @@ func (a *Adapter) Subscribe(ctx context.Context, _ int64, _ string) (app.Subscri
 	if poll <= 0 {
 		poll = 500 * time.Millisecond
 	}
-	return &subscription{rt: rt, step: st.Step, run: st.RunID, scenario: st.Scenario, ticker: time.NewTicker(poll), done: make(chan struct{})}, nil
+	return &subscription{rt: rt, step: st.Step, run: st.RunID, scenario: st.Scenario, sver: rt.SessionVersion(), ticker: time.NewTicker(poll), done: make(chan struct{})}, nil
 }
 
 // subscription — подписка на смену шага курсора.
@@ -61,10 +63,12 @@ type subscription struct {
 	step     int
 	run      string
 	scenario string
-	queue    []loader.SeqChange
-	ticker   *time.Ticker
-	once     sync.Once
-	done     chan struct{}
+	// sver — версия сессионных изменений, уже отданных подписке.
+	sver   int64
+	queue  []loader.SeqChange
+	ticker *time.Ticker
+	once   sync.Once
+	done   chan struct{}
 }
 
 // Next блокирует до следующего изменения, отмены ctx или Close.
@@ -82,6 +86,7 @@ func (s *subscription) Next(ctx context.Context) (app.Change, error) {
 			return app.Change{}, err
 		}
 		if st.Step == s.step && st.RunID == s.run && st.Scenario == s.scenario {
+			s.queue, s.sver = s.rt.SessionChanges(s.sver)
 			continue
 		}
 		from := s.step
@@ -89,6 +94,9 @@ func (s *subscription) Next(ctx context.Context) (app.Change, error) {
 			from = -1 // другой прогон или сценарий — изменилось всё, что есть к шагу
 		}
 		s.queue = s.rt.ChangesBetween(sc, from, st.Step, st.RunID)
+		var sess []loader.SeqChange
+		sess, s.sver = s.rt.SessionChanges(s.sver)
+		s.queue = append(s.queue, sess...)
 		s.step, s.run, s.scenario = st.Step, st.RunID, st.Scenario
 	}
 	c := s.queue[0]
