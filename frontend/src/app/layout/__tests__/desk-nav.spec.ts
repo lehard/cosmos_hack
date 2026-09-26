@@ -38,6 +38,14 @@ async function mountNav(desk: Desk, path = '/desk') {
 }
 
 describe('меню стола', () => {
+  it('«Работа / Справочно»: у руководителя процессы, документы и аналитика — внизу под тихой подписью; Alt — по показанному порядку', async () => {
+    const desk = { ...manager, tabs: [tab('overview', 'desks.dashboard'), tab('process', 'desks.processes'), tab('proposals', 'desks.proposals'), tab('analytics', 'desks.analytics')] } as Desk
+    const { w } = await mountNav(desk)
+    expect(w.findAll('[data-item]').map((x) => x.attributes('data-item'))).toEqual(['overview', 'proposals', 'process', 'analytics'])
+    expect(w.find('[data-testid="nav-group"]').text()).toBe('Справочно')
+    expect(w.find('.group-start [data-item]').attributes('data-item')).toBe('process')
+  })
+
   it('разделы стола по порядку yaml; первый выбран по умолчанию; щелчок — адрес раздела', async () => {
     const { w, router } = await mountNav(manager)
     const items = w.findAll('[data-item]')

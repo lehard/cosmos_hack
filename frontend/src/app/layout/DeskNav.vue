@@ -64,15 +64,30 @@ const ICONS: Record<string, Component> = {
   federation: Affiliate,
 }
 
-const tabs = computed(() => desk.data.value?.data?.tabs ?? [])
-const items = computed<SideNavItem[]>(() =>
-  tabs.value.map((tab, i) => ({
+/**
+ * Меню «Работа / Справочно»: справочные разделы (документы, аналитика; у
+ * руководителя — ещё процессы) — в конце под тихой подписью, чтобы меню не выглядело
+ * девятью одинаково важными направлениями. Порядок внутри групп — как на столе.
+ */
+const REFERENCE = new Set(['documents', 'analytics'])
+// Для руководителя процессы — справочно (управляет через центр и карту); технологу «Техпроцессы» — часть рабочего цикла.
+const REFERENCE_BY_ROLE: Record<string, readonly string[]> = { production_manager: ['process'] }
+const isReference = (id: string) => REFERENCE.has(id) || (REFERENCE_BY_ROLE[desk.data.value?.data?.role ?? ''] ?? []).includes(id)
+const tabs = computed(() => {
+  const all = desk.data.value?.data?.tabs ?? []
+  return [...all.filter((x) => !isReference(x.id)), ...all.filter((x) => isReference(x.id))]
+})
+const items = computed<SideNavItem[]>(() => {
+  const firstRef = tabs.value.findIndex((x) => isReference(x.id))
+  // Группа «Справочно» — только если до неё есть рабочие разделы.
+  return tabs.value.map((tab, i) => ({
     id: tab.id,
     label: t(tab.title_key),
     icon: ICONS[tab.id] ?? Point,
     hint: i < 9 ? `Alt+${i + 1}` : undefined,
-  })),
-)
+    groupStart: i === firstRef && firstRef > 0 ? t('shell.nav.reference') : undefined,
+  }))
+})
 
 /** Выбранный раздел — только на странице стола. */
 const active = computed(() => {

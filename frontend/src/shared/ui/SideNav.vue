@@ -19,6 +19,8 @@ export interface SideNavItem {
   icon: Component
   /** Дополнение к подсказке (горячая клавиша). */
   hint?: string
+  /** Первый пункт группы: перед ним — разделитель с этой подписью («Справочно»). */
+  groupStart?: string
 }
 
 defineProps<{
@@ -39,7 +41,8 @@ const emit = defineEmits<{ select: [id: string]; 'update:collapsed': [value: boo
 <template>
   <nav class="side-nav" :class="{ collapsed }" :aria-label="label" :data-collapsed="collapsed">
     <ul class="items">
-      <li v-for="x in items" :key="x.id">
+      <li v-for="x in items" :key="x.id" :class="{ 'group-start': x.groupStart }">
+        <p v-if="x.groupStart && !collapsed" class="group-label ant-ellipsis" data-testid="nav-group">{{ x.groupStart }}</p>
         <NTooltip placement="right" :disabled="!collapsed && !x.hint" :delay="collapsed ? 0 : 600">
           <template #trigger>
             <button
@@ -87,6 +90,20 @@ const emit = defineEmits<{ select: [id: string]; 'update:collapsed': [value: boo
 
 .side-nav.collapsed {
   width: var(--ant-w-nav-collapsed);
+}
+
+/* Группа «Справочно»: отделена воздухом и тихой подписью, без рамок. */
+.group-start {
+  margin-top: var(--ant-space-5);
+  padding-top: var(--ant-space-3);
+  border-top: 1px solid var(--ant-border);
+}
+
+.group-label {
+  margin: 0 0 var(--ant-space-1);
+  padding: 0 var(--ant-space-3);
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-meta);
 }
 
 .items {
