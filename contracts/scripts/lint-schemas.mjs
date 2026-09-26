@@ -16,6 +16,13 @@ function isOpen(file) {
   const r = path.relative(CONTRACTS, file).split(path.sep);
   return r[0] === 'events' && !r[r.length - 1].startsWith('catalog');
 }
+// Схемы подмножества внешнего стандарта (B2MML V7, MESA International; эпик 31): имена свойств и значения
+// перечислений повторяют стандарт (ProcessOperationsSchedule, BODID, Disposition = In-Process), как payloadType у DSSE.
+const EXTERNAL_STANDARD_DIRS = [['integrations', 'mes', 'b2mml']];
+function isExternalStandard(file) {
+  const r = path.relative(CONTRACTS, file).split(path.sep);
+  return EXTERNAL_STANDARD_DIRS.some((d) => d.every((x, i) => r[i] === x));
+}
 // Мета-схемы файлов конфигурации (catalog.schema.json) — не контракт данных, правила имён к ним не применяются.
 const META = ['catalog.schema.json', 'errors.schema.json'];
 function isMeta(file) { return META.includes(path.basename(file)); }
@@ -34,7 +41,7 @@ function lintNode(node, where, file, ctx) {
   if (types.includes('number')) fail(where, 'type: number запрещён — целое + масштаб (AD-4)');
   if (node.format && BANNED_FORMATS.includes(node.format)) fail(where, `format: ${node.format} запрещён — date-time или pattern`);
   for (const b of ['minimum', 'maximum']) if (b in node && Math.abs(node[b]) > MAXI) fail(where, `${b} вне ±(2^53−1)`);
-  if (Array.isArray(node.enum) && !ctx.meta) {
+  if (Array.isArray(node.enum) && !ctx.meta && !ctx.external) {
     for (const v of node.enum) if (typeof v === 'string' && !ENUM_VAL.test(v)) fail(where, `значение enum «${v}» не snake_case`);
   }
   if (types.includes('object') || node.properties) {
@@ -43,7 +50,7 @@ function lintNode(node, where, file, ctx) {
     if (!open && !ctx.meta && node.properties && node.additionalProperties !== false) fail(where, 'закрытая схема: нужен additionalProperties: false (AD-10)');
     for (const [pn, pv] of Object.entries(node.properties || {})) {
       const pw = `${where}.properties.${pn}`;
-      if (!ctx.meta && !NAME.test(pn) && !EXTERNAL_NAMES.has(pn)) fail(pw, 'имя свойства не snake_case');
+      if (!ctx.meta && !ctx.external && !NAME.test(pn) && !EXTERNAL_NAMES.has(pn)) fail(pw, 'имя свойства не snake_case');
       if (pv && typeof pv === 'object' && !('$ref' in pv)) {
         if (!pv.description) fail(pw, 'нет description');
         else if (!ctx.meta && !CYR.test(pv.description)) fail(pw, 'description не на русском');
@@ -74,7 +81,7 @@ for (const f of files) {
   if (s.$id !== idFor(f)) fail(where, `$id должен повторять путь: ${idFor(f)}`);
   if (!s.title || !/^[A-Z][A-Za-z0-9]*$/.test(s.title)) fail(where, 'нет title в PascalCase (имя генерируемого типа)');
   if (!s.description || !CYR.test(s.description)) fail(where, 'нет description на русском у корня');
-  lintNode(s, where, f, { open: isOpen(f), meta: isMeta(f) });
+  lintNode(s, where, f, { open: isOpen(f), meta: isMeta(f), external: isExternalStandard(f) });
 }
 
 // Компиляция: все $ref разрешаются, схемы корректны для Ajv (strict).

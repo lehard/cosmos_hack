@@ -1,0 +1,31 @@
+{
+  "ConfirmBOD": {
+    "releaseID": "7.01",
+    "ApplicationArea": {
+      "Sender": {
+        "LogicalID": "mes-ceh-2"
+      },
+      "CreationDateTime": "2026-09-25T10:42:17.911Z",
+      "BODID": "mes-ack-ca864e07"
+    },
+    "DataArea": {
+      "Confirm": {},
+      "BOD": [
+        {
+          "OriginalApplicationArea": {
+            "BODID": "ca864e07-e236-5855-a32c-ae28ef14d9b0"
+          },
+          "BODFailureMessage": {
+            "ErrorMessage": [
+              {
+                "ErrorCode": "SUBLOT_UNKNOWN",
+                "ErrorType": "Data",
+                "ErrorDescription": "Экземпляр ENT01:F-007 не найден"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

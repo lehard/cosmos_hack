@@ -1,0 +1,207 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/integrations/mes/b2mml/ProcessOperationsSchedule.schema.json",
+  "title": "B2mmlProcessOperationsSchedule",
+  "description": "Задание MES (B2MML ProcessOperationsSchedule, подмножество mes.isa95.v1): расписание → запросы → требования сегментов. Вход ant через шлюз MES и обычный приём → mes.job.received (FR-93).",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "ProcessOperationsSchedule": {
+      "type": "object",
+      "description": "Сообщение ProcessOperationsSchedule.",
+      "additionalProperties": false,
+      "properties": {
+        "releaseID": {
+          "$ref": "common.schema.json#/definitions/ReleaseID",
+          "description": "Релиз B2MML."
+        },
+        "versionID": {
+          "$ref": "common.schema.json#/definitions/VersionID",
+          "description": "Версия контракта mes.isa95."
+        },
+        "ApplicationArea": {
+          "$ref": "common.schema.json#/definitions/ApplicationArea",
+          "description": "Заголовок сообщения."
+        },
+        "DataArea": {
+          "type": "object",
+          "description": "Глагол и существительные.",
+          "additionalProperties": false,
+          "properties": {
+            "Process": {
+              "$ref": "common.schema.json#/definitions/EmptyVerb",
+              "description": "Глагол Process."
+            },
+            "OperationsSchedule": {
+              "type": "array",
+              "description": "Расписания.",
+              "items": {
+                "type": "object",
+                "description": "Расписание операций.",
+                "additionalProperties": false,
+                "properties": {
+                  "ID": {
+                    "$ref": "common.schema.json#/definitions/Identifier",
+                    "description": "ID расписания."
+                  },
+                  "Description": {
+                    "type": "string",
+                    "description": "Описание.",
+                    "maxLength": 256
+                  },
+                  "OperationsRequest": {
+                    "type": "array",
+                    "description": "Запросы.",
+                    "items": {
+                      "type": "object",
+                      "description": "Производственный запрос (задание).",
+                      "additionalProperties": false,
+                      "properties": {
+                        "ID": {
+                          "$ref": "common.schema.json#/definitions/Identifier",
+                          "description": "ID запроса в MES."
+                        },
+                        "Description": {
+                          "type": "string",
+                          "description": "Описание.",
+                          "maxLength": 256
+                        },
+                        "Priority": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 1000,
+                          "description": "Приоритет."
+                        },
+                        "SegmentRequirement": {
+                          "type": "array",
+                          "description": "Требования сегментов.",
+                          "items": {
+                            "type": "object",
+                            "description": "Требование сегмента: операция, материал, оборудование, срок.",
+                            "additionalProperties": false,
+                            "properties": {
+                              "ID": {
+                                "$ref": "common.schema.json#/definitions/Identifier",
+                                "description": "ID требования сегмента."
+                              },
+                              "Description": {
+                                "type": "string",
+                                "description": "Описание.",
+                                "maxLength": 256
+                              },
+                              "ProcessSegmentID": {
+                                "$ref": "common.schema.json#/definitions/Identifier",
+                                "description": "Операция маршрута — код операции нормативного слоя (BPMN operationCode)."
+                              },
+                              "EarliestStartTime": {
+                                "$ref": "common.schema.json#/definitions/DateTime",
+                                "description": "Плановое начало."
+                              },
+                              "LatestEndTime": {
+                                "$ref": "common.schema.json#/definitions/DateTime",
+                                "description": "Плановое окончание."
+                              },
+                              "EquipmentRequirement": {
+                                "type": "array",
+                                "description": "Оборудование.",
+                                "items": {
+                                  "type": "object",
+                                  "description": "Требование к оборудованию.",
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "EquipmentID": {
+                                      "$ref": "common.schema.json#/definitions/Identifier",
+                                      "description": "Оборудование или участок."
+                                    }
+                                  },
+                                  "required": [
+                                    "EquipmentID"
+                                  ]
+                                },
+                                "maxItems": 20
+                              },
+                              "MaterialRequirement": {
+                                "type": "array",
+                                "description": "Материалы.",
+                                "items": {
+                                  "type": "object",
+                                  "description": "Требование к материалу.",
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "MaterialDefinitionID": {
+                                      "$ref": "common.schema.json#/definitions/Identifier",
+                                      "description": "Обозначение КД изготавливаемого или расходуемого."
+                                    },
+                                    "MaterialLotID": {
+                                      "$ref": "common.schema.json#/definitions/Identifier",
+                                      "description": "Партия."
+                                    },
+                                    "MaterialSubLotID": {
+                                      "$ref": "common.schema.json#/definitions/Identifier",
+                                      "description": "Экземпляр."
+                                    },
+                                    "MaterialUse": {
+                                      "type": "string",
+                                      "enum": [
+                                        "Produced",
+                                        "Consumed",
+                                        "Consumable"
+                                      ],
+                                      "description": "Назначение материала."
+                                    },
+                                    "Quantity": {
+                                      "$ref": "common.schema.json#/definitions/Quantity",
+                                      "description": "Количество."
+                                    }
+                                  },
+                                  "required": [
+                                    "MaterialDefinitionID"
+                                  ]
+                                },
+                                "maxItems": 100
+                              }
+                            },
+                            "required": [
+                              "ID",
+                              "ProcessSegmentID"
+                            ]
+                          },
+                          "minItems": 1,
+                          "maxItems": 200
+                        }
+                      },
+                      "required": [
+                        "ID",
+                        "SegmentRequirement"
+                      ]
+                    },
+                    "minItems": 1,
+                    "maxItems": 500
+                  }
+                },
+                "required": [
+                  "ID",
+                  "OperationsRequest"
+                ]
+              },
+              "minItems": 1,
+              "maxItems": 50
+            }
+          },
+          "required": [
+            "Process",
+            "OperationsSchedule"
+          ]
+        }
+      },
+      "required": [
+        "releaseID",
+        "ApplicationArea",
+        "DataArea"
+      ]
+    }
+  },
+  "required": [
+    "ProcessOperationsSchedule"
+  ]
+}

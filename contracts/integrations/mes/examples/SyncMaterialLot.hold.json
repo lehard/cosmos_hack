@@ -1,0 +1,32 @@
+{
+  "SyncMaterialLot": {
+    "releaseID": "7.01",
+    "versionID": "mes.isa95.v1",
+    "ApplicationArea": {
+      "Sender": {
+        "LogicalID": "ant",
+        "ConfirmationCode": "Always"
+      },
+      "CreationDateTime": "2026-09-25T10:42:17.305Z",
+      "BODID": "cc23fba6-3f5c-5c8b-a168-29f08bc0c246"
+    },
+    "DataArea": {
+      "Sync": {
+        "ActionCriteria": {
+          "ActionExpression": {
+            "actionCode": "Change"
+          }
+        }
+      },
+      "MaterialLot": [
+        {
+          "ID": "LOT-P-2026-0915",
+          "Description": "Блок по сдерживанию: ожидается решение контролёра; ant: LOT-P-2026-0915; ключ LOT-P-2026-0915/hold/1",
+          "Disposition": "Restricted",
+          "Status": "QC-HOLD",
+          "StorageLocation": "Изолятор ОТК"
+        }
+      ]
+    }
+  }
+}
