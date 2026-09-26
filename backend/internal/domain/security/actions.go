@@ -2,7 +2,6 @@ package security
 
 import (
 	"encoding/json"
-	"fmt"
 	"slices"
 	"strings"
 
@@ -101,8 +100,12 @@ func refine(a Action, data json.RawMessage) (before, after string) {
 	}
 	switch a.Type {
 	case catalog.DecisionContainmentSet, catalog.DecisionContainmentApplied:
-		if d.Level != "" {
-			after = fmt.Sprintf("заблокировано: %s", label("containment", d.Level))
+		switch d.Level {
+		case "":
+		case "item_hold", "lot_hold":
+			after = "заблокировано: " + label("containment", d.Level)
+		default:
+			after = "сдерживание: " + label("containment", d.Level)
 		}
 	case catalog.DecisionDispositionSet:
 		if d.Disposition != "" {
