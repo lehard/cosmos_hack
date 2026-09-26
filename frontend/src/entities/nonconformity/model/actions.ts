@@ -264,7 +264,10 @@ export function decisionSummary(draft: DecisionDraft, card: Pick<NCCard, 'item_l
   fields.push({ labelKey: 'common.words.item', value: card.item_label })
   fields.push({ labelKey: 'common.words.nonconformity', value: card.number })
   const signal = card.evidence.signals[0]
-  if (signal?.defect_type_code) fields.push({ labelKey: 'common.words.defectType', value: signal.zone_id ? `${signal.defect_type_code} · ${signal.zone_id}` : signal.defect_type_code })
+  // Названия из справочников, код — только если названия нет (UI-24).
+  const defect = signal?.defect_type_label ?? signal?.defect_type_code
+  const zone = signal?.zone_label ?? signal?.zone_id
+  if (defect) fields.push({ labelKey: 'common.words.defectType', value: zone ? `${defect} · ${zone}` : defect })
   if (draft.action === 'request_recheck' && draft.method) fields.push({ labelKey: 'inspection.method.title', valueKey: METHOD_TEXT[draft.method] })
   if (draft.action === 'disposition' && needsConcession(draft.disposition)) {
     const c = concessions.find((x) => x.concession_id === draft.concession_id)

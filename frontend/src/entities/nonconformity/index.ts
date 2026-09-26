@@ -17,6 +17,9 @@ import {
   nonconformityDispositionSet,
   nonconformityItemIsolate,
   nonconformityNonconformityConfirm,
+  nonconformityPresentationRead,
+  nonconformityPresentationResolve,
+  nonconformityPresentationReview,
   nonconformityQueueList,
   nonconformityRecheckRequest,
   nonconformitySignalReject,
@@ -25,6 +28,7 @@ import { entityKeys } from '@/shared/api/keys'
 import type { ApiError } from '@/shared/api/problem'
 import { useMomentStore } from '@/shared/model/moment'
 import type { DecisionRequest } from './model/actions'
+import type { PresentationCommand } from './model/presentation'
 import type { QueueSort } from './model/card'
 
 export * from './model/types'
@@ -32,6 +36,7 @@ export * from './model/texts'
 export * from './model/card'
 export * from './model/actions'
 export * from './model/command-id'
+export * from './model/presentation'
 
 export const nonconformityKeys = entityKeys('nonconformity')
 
@@ -111,6 +116,37 @@ export function useDecisionCommand() {
     mutationFn: send,
     onSuccess: (_res, req) => {
       void queryClient.invalidateQueries({ queryKey: nonconformityKeys.one(req.nc_id) })
+      void queryClient.invalidateQueries({ queryKey: nonconformityKeys.list() })
+      void queryClient.invalidateQueries({ queryKey: ['item', req.item_id] })
+    },
+  })
+}
+
+/**
+ * Текущее предъявление изделия (FR-19, FR-32, Д-81): точка, результаты методов,
+ * рекомендация, пересмотр и действия с последствиями. Пустой id — не читается.
+ */
+export function usePresentation(itemId: MaybeRefOrGetter<string | null | undefined>, runId: MaybeRefOrGetter<string | undefined> = undefined) {
+  const params = useReadParams(runId)
+  return useQuery({
+    queryKey: computed(() => nonconformityKeys.one(`presentation:${toValue(itemId) ?? ''}`, 'current', params.value)),
+    queryFn: ({ signal }) => nonconformityPresentationRead(toValue(itemId) ?? '', params.value, { signal }),
+    enabled: computed(() => !!toValue(itemId)),
+    retry: false,
+  })
+}
+
+/**
+ * Команда на точке предъявления: решение или пересмотр. После успеха
+ * перечитываются предъявление, очередь и паспорт изделия.
+ */
+export function usePresentationCommand() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (req: PresentationCommand) =>
+      req.kind === 'review' ? nonconformityPresentationReview(req.item_id, req.body) : nonconformityPresentationResolve(req.item_id, req.body),
+    onSuccess: (_res, req) => {
+      void queryClient.invalidateQueries({ queryKey: nonconformityKeys.one(`presentation:${req.item_id}`) })
       void queryClient.invalidateQueries({ queryKey: nonconformityKeys.list() })
       void queryClient.invalidateQueries({ queryKey: ['item', req.item_id] })
     },
