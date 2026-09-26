@@ -2,6 +2,7 @@ package onec_test
 
 import (
 	"context"
+	"io"
 	"io/fs"
 	"net/http"
 	"net/http/httptest"
@@ -140,6 +141,18 @@ func TestPostIdempotent(t *testing.T) {
 	}
 	if snap.Documents[0].Type != "Document_ПередачаПродукцииИзПроизводства" || snap.Documents[0].WarehouseTo != "WH-FG" {
 		t.Fatalf("документ выпуска: %+v", snap.Documents[0])
+	}
+	// Страница «глазами 1С»: журнал обмена, документ, склад изделия, этап производства.
+	resp, err := http.Get(e.srv.URL + "/stand/1c/")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	body, _ := io.ReadAll(resp.Body)
+	for _, want := range []string{"Журнал обмена", r1.Receipt, "Передача продукции из производства", "WH-FG", "ЭП00-000917", "повтор — та же квитанция"} {
+		if !strings.Contains(string(body), want) {
+			t.Errorf("на странице stand-а нет «%s»", want)
+		}
 	}
 }
 

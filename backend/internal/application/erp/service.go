@@ -351,3 +351,19 @@ func page[T any](xs []T, p platform.Page) ([]T, string) {
 	}
 	return slices.Clone(xs[off:end]), next
 }
+
+// AccountingOf — ось «учёт в 1С» изделия (AD-30, владелец erp) для паспорта
+// изделия и столов (эпики 10, 18): проекция erp.item_accounting — значение
+// оси, где изделие числится по подтверждённым сообщениям и бизнес-ключи его
+// сообщений; сообщений ещё не было — not_sent.
+func AccountingOf(ctx context.Context, p engineapp.ProjectionStore, itemID string) (dom.ItemAccounting, error) {
+	a := dom.ItemAccounting{ItemID: itemID, State: string(ev.AxisErpAccountingNotSent), Keys: []string{}}
+	raw, ok, err := p.Get(ctx, ProjectionItemAccounting, itemID)
+	if err != nil || !ok {
+		return a, err
+	}
+	if err := json.Unmarshal(raw, &a); err != nil {
+		return a, err
+	}
+	return a, nil
+}

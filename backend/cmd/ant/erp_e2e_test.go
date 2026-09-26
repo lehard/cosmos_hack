@@ -26,10 +26,13 @@ import (
 	"ant/internal/infrastructure/integration/ingest/stands"
 	enginestore "ant/internal/infrastructure/storage/engine"
 	erpstore "ant/internal/infrastructure/storage/erp"
+	ingeststore "ant/internal/infrastructure/storage/ingest"
 	journalstore "ant/internal/infrastructure/storage/journal"
+	"ant/internal/infrastructure/storage/journal/clock"
 	"ant/internal/infrastructure/storage/journal/feed"
 	"ant/internal/infrastructure/storage/journal/journaltest"
 	"ant/internal/infrastructure/storage/journal/migrator"
+	materialsstore "ant/internal/infrastructure/storage/materials"
 )
 
 // Сквозной путь модуля erp на своей БД (make dev-db), эпик 30:
@@ -51,6 +54,7 @@ type erpRig struct {
 	stand    *onecstand.Stand
 	registry *stands.Registry
 	outbox   *erpapp.Outbox
+	gateway  *erpapp.Outbox
 	service  *erpapp.Service
 	reactor  *erpapp.Reactor
 	n        int
@@ -64,6 +68,7 @@ func newERPRig(t *testing.T) *erpRig {
 	t.Cleanup(cancel)
 	db := journaltest.NewDB(t)
 	if _, err := migrator.Up(ctx, db.Admin.ConnConfig, nil,
+		migrator.Set{Module: "ingest", FS: ingeststore.Migrations, Dir: ingeststore.MigrationsDir},
 		migrator.Set{Module: "erp", FS: erpstore.Migrations, Dir: erpstore.MigrationsDir},
 		migrator.Set{Module: "stand_onec", FS: onecstand.Migrations, Dir: onecstand.MigrationsDir}); err != nil {
 		t.Fatal(err)
@@ -114,6 +119,18 @@ func newERPRig(t *testing.T) *erpRig {
 		Store: store, Ledger: client, Retry: erpapp.RetryPolicy{Delays: []time.Duration{150 * time.Millisecond}, Max: 5},
 		Poll: 50 * time.Millisecond, Recheck: 200 * time.Millisecond, Log: slog.New(slog.DiscardHandler)}
 	go func() { _ = lead("outbox").Run(ctx, r.outbox.Run) }()
+
+	// Шлюз входящих — отдельный экземпляр (опрос входящих вызывает тест).
+	ist := ingeststore.NewStore(pool)
+	mat, err := materialsstore.NewVolume(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	ic := appingest.DefaultConfig()
+	ic.Signature, ic.Partitions, ic.StagePartition, ic.DomainBuild = appingest.SignatureDemoUnverified, 4, 4, dj.ZeroLink.String()
+	intake := appingest.NewService(appingest.WithConfig(ic), appingest.WithDeps(appingest.Deps{Journal: r.journal, Registry: ist, Quarantine: ist,
+		Materials: mat, DomainClock: clock.SystemDomain{}, InfraClock: clock.System{}}))
+	r.gateway = &erpapp.Outbox{Journal: r.journal, Codec: r.codec, Store: store, Ledger: client, Intake: ingestIntake{intake}}
 
 	r.service = erpapp.NewLive(erpapp.Config{Projections: r.engine, Outbox: store,
 		Decisions: erpapp.JournalDecisions{Journal: r.journal, DomainBuild: dj.ZeroLink.String()}, Channels: []erpapp.LedgerInfo{client.Info()}})
@@ -251,6 +268,36 @@ func TestERPEndToEnd(t *testing.T) {
 		return len(ch.Items) == 1 && ch.Items[0].State == "ok"
 	})
 
+	// 0. Вход порта учёта: задания, номенклатура, партии и соответствия ID из
+	// OData stand-а — через обычный приём; повторный опрос ничего не добавляет.
+	n, err := r.gateway.PullOnce(r.ctx)
+	if err != nil || n == 0 {
+		t.Fatalf("опрос входящих: %d %v", n, err)
+	}
+	types := map[string]int{}
+	var order ev.ErpOrderReceivedV1
+	for _, e := range journaltest.ReadAll(t, r.journal, "main") {
+		types[e.EventType]++
+		if e.EventType == string(catalog.ErpOrderReceived) {
+			d, _ := r.codec.Decode(r.ctx, e)
+			_ = json.Unmarshal(d.Record.Data, &order)
+			if e.SourceID != "erp.onec" || e.ProvenanceClass != "server_attested" {
+				t.Fatalf("факт шлюза: источник %s, класс %s", e.SourceID, e.ProvenanceClass)
+			}
+		}
+	}
+	if types[string(catalog.ErpOrderReceived)] != 1 || types[string(catalog.ErpLotReceived)] != 7 || types[string(catalog.ErpNomenclatureSynced)] != 1 ||
+		types[string(catalog.ReferenceExternalIdMapped)] == 0 || order.OrderID != "ORD-0917" || order.Quantity != 40 {
+		t.Fatalf("входящие в журнале: %v, задание %+v", types, order)
+	}
+	if n2, err := r.gateway.PullOnce(r.ctx); err != nil || n2 != 0 {
+		t.Fatalf("повторный опрос: %d %v", n2, err)
+	}
+	r.wait("задание в операциях erp", func() bool {
+		o, _ := r.service.Orders(r.ctx, platform.Moment{}, platform.Page{})
+		return len(o.Items) == 1 && o.Items[0].OrderID == "ORD-0917"
+	})
+
 	// 1. Смена склада и выпуск; на выпуск Ф-001 stand отвечает 503 (сбой по
 	// образцу из сценария S01) — повтор с тем же номером, затем квитанция.
 	r.fault(appingest.Fault{Kind: appingest.FaultError, Param: 503, Match: "release_good:F-001", Detail: "503 Service Unavailable"})
@@ -278,8 +325,7 @@ func TestERPEndToEnd(t *testing.T) {
 	lot := "LOT-R-117"
 	ret := lot + "/return_to_supplier/ZT-1"
 	r.fault(appingest.Fault{Kind: appingest.FaultError, Param: 422, Match: "return_to_supplier:" + lot, Detail: "422 не найден договор с контрагентом ctr-0b19-0003"})
-	r.put(engineapp.Out{Type: catalog.ErpLotReceived, Kind: catalog.KindFact, Stream: "lot:" + lot,
-		Data: ev.ErpLotReceivedV1{LotID: ev.ObjectID(lot), ExternalSystem: "onec", ExternalNumber: "ПТ00-000217", SupplierID: "SUP-3", ItemTypeID: "FL-100.01.003", Quantity: 10}})
+	// Партия пришла из 1С на шаге 0 (erp.lot.received через приём).
 	r.put(engineapp.Out{Type: catalog.DecisionLotResolved, Kind: catalog.KindDecision, Stream: "lot:" + lot,
 		Data: ev.DecisionLotResolvedV1{LotID: ev.ObjectID(lot), Resolution: "reject", MethodEventIds: []ev.UUID{}, Reason: &ev.Reason{Text: "Входной брак партии П-117"}}})
 	r.wait("карантин возврата поставщику", func() bool {
