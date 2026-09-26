@@ -13,6 +13,8 @@ export interface RoutedDocument {
   document_id: string;
   drafted_at: string;
   route: DocumentRouteStage[];
+  /** Содержимое для подписи (AD-12, AD-14): base64 канонических байт {content, rendering_hash, template_ref, doc_format_version}, отпечаток которых — doc_digest. Агент токена подписывает содержимое, а не отпечаток, и пересчитывает отпечаток сам. */
+  signing_payload_b64?: string;
   /** Те же значения, что у документов паспорта. */
   status: RoutedDocumentStatus;
   template_ref: string;

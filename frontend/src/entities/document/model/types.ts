@@ -60,6 +60,13 @@ export interface DocumentHead {
 /** Документ с маршрутом подписей. */
 export interface RoutedDocument extends DocumentHead {
   route: RouteStage[]
+  /** seq, на котором сервер видел документ (basis_seq команды, AD-39). */
+  basis_seq?: number
+  /**
+   * Содержимое для подписи (AD-12, AD-14): base64 канонических байт, отпечаток
+   * которых — `doc_digest`. Расширение подписывает содержимое, а не отпечаток.
+   */
+  signing_payload_b64?: string
 }
 
 /** Похожее прошлое решение для редкого подписанта (FR-136): принятое или отклонённое. */

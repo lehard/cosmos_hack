@@ -108,6 +108,13 @@ services:
   # запускается профилем compose demo (make demo, --profile demo).
   demo-signer:
     image: ${ANT_IMAGE:-ant:local}
+    build:
+      context: ../..
+      dockerfile: deploy/Dockerfile
+      args:
+        VERSION: ${ANT_VERSION:-dev}
+      labels:
+        ant.project: ant
     entrypoint: ["/demo-signer"]
     command: ["serve"]
     profiles: [demo]

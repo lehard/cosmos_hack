@@ -18,6 +18,11 @@ export const errorCatalog = {
     "title": "Объект не найден",
     "uiKey": "empty.notFound"
   },
+  "api.method_not_allowed": {
+    "status": 405,
+    "title": "Метод не разрешён",
+    "uiKey": "errors.generic"
+  },
   "api.replay_read_only": {
     "status": 403,
     "title": "В режиме воспроизведения действия недоступны",

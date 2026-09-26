@@ -5,9 +5,9 @@
  * (или список, если ждут несколько) и подписывают с неё без доступа к
  * остальным экранам.
  *
- * Операций модуля documents в контракте пока нет — запрос и подпись стоят на
- * заглушке `api.not_implemented` (entities/document). Подпись: окно уровня 2 →
- * агент токена через порт подписи; без агента — бумага с QR (FR-139): печать
+ * Запросы решения и подпись этапа — операции модуля documents (эпик 28).
+ * Подпись: окно уровня 2 → агент токена или ключ в браузере через порт
+ * подписи над содержимым документа (signing_payload_b64); без агента — бумага с QR (FR-139): печать
  * здесь; если бумажная подпись этапа ждёт заверения текущим пользователем —
  * загрузка скана и заверение (заверитель ≠ подписант). Паспорт изделия —
  * правым окном записи (Д-70), не панелью сбоку.
@@ -71,10 +71,12 @@ async function signWithAgent(): Promise<void> {
   if (!r || r.my_stage == null) return
   error.value = undefined
   try {
+    // Содержимое документа от сервера (AD-12, AD-14): расширение подписывает
+    // его и само сверяет отпечаток с doc_digest; по одному отпечатку не подписывает.
     const envelope = await port.sign({
       level: 2,
       payload_type: payloadTypeOf('document-signature'),
-      payload_b64: '',
+      payload_b64: r.document.signing_payload_b64 ?? '',
       template_ref: r.document.template_ref,
       expected_doc_digest: r.document.doc_digest,
     })
@@ -85,6 +87,10 @@ async function signWithAgent(): Promise<void> {
       stage: r.my_stage,
       key_ref: sig?.keyid ?? '',
       signature_b64: sig?.sig ?? '',
+      doc_digest: r.document.doc_digest,
+      basis_seq: r.document.basis_seq ?? 0,
+      policy_seq: session.data.value?.data?.policy_seq ?? 0,
+      signature: envelope,
     })
     dialog.value = null
   } catch (err) {
