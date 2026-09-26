@@ -9,6 +9,7 @@ export interface IntegrationState {
   detail?: string;
   /** @nullable */
   since: string | null;
+  /** disabled — система не включена (integrations.enabled) или канал выключен. */
   state: IntegrationStateState;
   system: IntegrationStateSystem;
 }

@@ -14,5 +14,10 @@ export interface QueueState {
   name: string;
   /** @minimum 0 */
   pending: number;
+  /**
+     * Очередь исходящих: сообщений в карантине (ждут решения человека, FR-96).
+     * @minimum 0
+     */
+  quarantined?: number;
   scope: QueueStateScope;
 }
