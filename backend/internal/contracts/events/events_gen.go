@@ -2527,6 +2527,17 @@ const GenealogyWitnessPropagatedV1GroupKindCharge GenealogyWitnessPropagatedV1Gr
 const GenealogyWitnessPropagatedV1GroupKindOther GenealogyWitnessPropagatedV1GroupKind = "other"
 const GenealogyWitnessPropagatedV1GroupKindTransport GenealogyWitnessPropagatedV1GroupKind = "transport"
 
+type GenesisAnchorKey struct {
+	// KeyRef corresponds to the JSON schema field "key_ref".
+	KeyRef KeyRef `json:"key_ref"`
+
+	// Профиль ключа.
+	ProfileID JournalGenesisRecordedV1AnchorKeysElemProfileID `json:"profile_id"`
+
+	// Открытый ключ в base64 (кодирование — contracts/crypto/README.md).
+	PublicKeyB64 string `json:"public_key_b64"`
+}
+
 // Гипотеза причины — только предположение (третий статус кейса §2.3).
 type Hypothesis struct {
 	// Категория причины.
@@ -3630,6 +3641,16 @@ type JournalGenesisRecordedV1 struct {
 	// Отпечаток ключа-якоря.
 	AnchorFingerprint Digest `json:"anchor_fingerprint"`
 
+	// Открытые ключи якоря (`hybrid`: ГОСТ и ML-DSA-65) — ими проверяются подписи
+	// всех записей блока; их общий отпечаток — `anchor_fingerprint`, закреплённый в
+	// `trust-anchors` вне системы (AD-33). Закрытый ключ-якорь уничтожен
+	// (`journal.anchor.destroyed`).
+	AnchorKeys []GenesisAnchorKey `json:"anchor_keys,omitempty,omitzero"`
+
+	// Отпечаток остальной части блока: H(H(payload₂) ‖ … ‖ H(payloadₖ)) по порядку
+	// seq — подмена, удаление или перестановка записи блока меняет его (AD-33).
+	BlockDigest *Digest `json:"block_digest,omitempty,omitzero"`
+
 	// Число записей блока генезиса.
 	BlockSize int `json:"block_size"`
 
@@ -3642,6 +3663,11 @@ type JournalGenesisRecordedV1 struct {
 	// Хеш стартовой версии процесса.
 	NormativeVersionHash *Digest `json:"normative_version_hash,omitempty,omitzero"`
 }
+
+type JournalGenesisRecordedV1AnchorKeysElemProfileID string
+
+const JournalGenesisRecordedV1AnchorKeysElemProfileIDGost JournalGenesisRecordedV1AnchorKeysElemProfileID = "gost"
+const JournalGenesisRecordedV1AnchorKeysElemProfileIDPq JournalGenesisRecordedV1AnchorKeysElemProfileID = "pq"
 
 // Акт восстановления — журнал из копии старше контрольной точки принимается только
 // при подписанном акте (администратор безопасности + Аудитор ИБ) с диапазоном
@@ -3680,7 +3706,7 @@ type KeyProfileRegisteredV1 struct {
 	EffectiveFromSeq *Seq `json:"effective_from_seq,omitempty,omitzero"`
 
 	// Классы пакетов, для которых профиль обязателен.
-	ObjectClasses []Code `json:"object_classes"`
+	ObjectClasses []string `json:"object_classes"`
 
 	// Профиль.
 	ProfileID KeyProfileRegisteredV1ProfileID `json:"profile_id"`
@@ -3713,7 +3739,7 @@ type KeyRegistrationRecordedV1 struct {
 	KeyRef KeyRef `json:"key_ref"`
 
 	// Допустимые классы пакетов для ключа.
-	PayloadClasses []Code `json:"payload_classes"`
+	PayloadClasses []string `json:"payload_classes"`
 
 	// Профиль ключа.
 	ProfileID KeyRegistrationRecordedV1ProfileID `json:"profile_id"`

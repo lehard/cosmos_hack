@@ -57,7 +57,10 @@
     "payload_classes": {
       "type": "array",
       "items": {
-        "$ref": "../common/defs.v1.json#/definitions/code"
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9-]*$",
+        "maxLength": 64,
+        "description": "Класс пакета (contracts/crypto/payload-classes.yaml): `event`, `document-signature`, `key-act`, …"
       },
       "description": "Допустимые классы пакетов для ключа.",
       "minItems": 1,

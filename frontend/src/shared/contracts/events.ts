@@ -5258,6 +5258,34 @@ block_size: number
  * Отпечаток по хешу формата цепочки с префиксом алгоритма: `streebog256:‹64 hex›` (AD-44). Им же адресуются материалы.
  */
 normative_version_hash?: string
+/**
+ * Открытые ключи якоря (`hybrid`: ГОСТ и ML-DSA-65) — ими проверяются подписи всех записей блока; их общий отпечаток — `anchor_fingerprint`, закреплённый в `trust-anchors` вне системы (AD-33). Закрытый ключ-якорь уничтожен (`journal.anchor.destroyed`).
+ * 
+ * @minItems 1
+ * @maxItems 4
+ */
+anchor_keys?: [GenesisAnchorKey]|[GenesisAnchorKey, GenesisAnchorKey]|[GenesisAnchorKey, GenesisAnchorKey, GenesisAnchorKey]|[GenesisAnchorKey, GenesisAnchorKey, GenesisAnchorKey, GenesisAnchorKey]
+/**
+ * Отпечаток по хешу формата цепочки с префиксом алгоритма: `streebog256:‹64 hex›` (AD-44). Им же адресуются материалы.
+ */
+block_digest?: string
+}
+export interface GenesisAnchorKey {
+/**
+ * Ссылка на ключ подписанта: `key_id@версия` (AD-10).
+ * 
+ * This interface was referenced by `AntDefsV1`'s JSON-Schema
+ * via the `definition` "key_ref".
+ */
+key_ref: string
+/**
+ * Профиль ключа.
+ */
+profile_id: ("gost" | "pq")
+/**
+ * Открытый ключ в base64 (кодирование — contracts/crypto/README.md).
+ */
+public_key_b64: string
 }
 /**
  * Акт восстановления — журнал из копии старше контрольной точки принимается только при подписанном акте (администратор безопасности + Аудитор ИБ) с диапазоном потерянных номеров (AD-34, описание).
@@ -5335,10 +5363,7 @@ profile_id: ("gost" | "pq" | "hybrid")
  * 
  * @minItems 1
  * 
- * Items: Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
- * 
- * This interface was referenced by `AntDefsV1`'s JSON-Schema
- * via the `definition` "code".
+ * Items: Класс пакета (contracts/crypto/payload-classes.yaml): `event`, `document-signature`, `key-act`, …
  */
 object_classes: [string, ...(string)[]]
 /**
@@ -5386,10 +5411,7 @@ fingerprint: string
  * 
  * @minItems 1
  * 
- * Items: Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
- * 
- * This interface was referenced by `AntDefsV1`'s JSON-Schema
- * via the `definition` "code".
+ * Items: Класс пакета (contracts/crypto/payload-classes.yaml): `event`, `document-signature`, `key-act`, …
  */
 payload_classes: [string, ...(string)[]]
 /**
