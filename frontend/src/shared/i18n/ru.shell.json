@@ -1576,6 +1576,8 @@
       "workplace": "Пост и смена",
       "policy": "Права",
       "concession": "Разрешение",
+      "equipment": "Оборудование",
+      "incident": "Инцидент",
       "other": "Прочее"
     },
     "kinds": {
