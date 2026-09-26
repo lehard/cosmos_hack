@@ -162,8 +162,14 @@ function startAdmit(): void {
           <NAlert v-if="passport.suspension" type="error" :bordered="false" :show-icon="false" data-testid="suspension">
             <strong class="ant-wrap">{{ t(`widgets.visionAdaptation.trigger.${passport.suspension.trigger}`) }} · {{ time(passport.suspension.at) }}</strong>
             <p v-if="passport.suspension.note" class="ant-wrap">{{ passport.suspension.note }}</p>
-            <p class="ant-wrap">{{ t(`widgets.visionAdaptation.fallback.${passport.suspension.fallback}`, { id: passport.suspension.fallback_passport_id ?? '' }) }}</p>
-            <p class="ant-wrap">{{ t('widgets.visionAdaptation.onlyHeadOfQc') }}</p>
+            <!-- Что сделала система сама — списком (разбор роли администратора). -->
+            <p class="done-title">{{ t('widgets.visionAdaptation.systemDid.title') }}</p>
+            <ul class="done" data-testid="system-did">
+              <li>✓ {{ t('widgets.visionAdaptation.systemDid.stopped') }}</li>
+              <li>✓ {{ t(`widgets.visionAdaptation.fallback.${passport.suspension.fallback}`, { id: passport.suspension.fallback_passport_id ?? '' }) }}</li>
+              <li v-if="passport.suspension.trigger === 'escape_detected'">✓ {{ t('widgets.visionAdaptation.systemDid.recheck') }}</li>
+            </ul>
+            <p class="ant-wrap" data-testid="only-head-of-qc">🔒 {{ t('widgets.visionAdaptation.onlyHeadOfQc') }}</p>
           </NAlert>
           <p v-if="passport.provenance === 'genesis'" class="muted ant-wrap">{{ t('widgets.visionAdaptation.genesis') }}</p>
           <SectionPanel variant="subtle" :title="t('widgets.visionAdaptation.versions')">
@@ -383,5 +389,15 @@ p {
 
 .ok {
   color: var(--ant-status-success);
+}
+.done-title {
+  margin: var(--ant-space-2) 0 0;
+  font-weight: var(--ant-fw-bold);
+}
+
+.done {
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 </style>
