@@ -52,8 +52,8 @@ func runAPI(ctx context.Context, env *environment) error {
 	mux.HandleFunc("GET /readyz", readyHandler(pool, &started))
 	// Операции всех модулей (AD-20, AD-36); неизвестный путь /api/ — 404 problem+json.
 	opts := apiOptions{mode: platform.Mode(cfg.Ports.Mode), moduleModes: moduleModes(cfg.Ports.Modules)}
-	// Вход демо-персоной, сеанс и стол роли (демо-трек эпика 08).
-	if opts.identity, opts.directory, err = demoIdentity(cfg); err != nil {
+	// Вход, сеансы и права (эпик 08): порт входа, проекция политики, Casbin.
+	if opts.access, err = accessLive(ctx, env); err != nil {
 		return err
 	}
 	if modeOf(opts, "journal") == platform.ModeLive || modeOf(opts, "ingest") == platform.ModeLive {

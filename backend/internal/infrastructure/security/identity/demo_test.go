@@ -39,10 +39,11 @@ func TestLoadDirectory(t *testing.T) {
 	if !ok || head.TitleKey != desk.TitleKey {
 		t.Fatalf("стол начальника ОТК: %+v", head)
 	}
-	for _, r := range d.Roles {
-		// У каждой роли политики — свой стол или стол базовой роли.
-		if _, ok := d.DeskFor(r.ID); !ok {
-			t.Errorf("нет стола у роли %s", r.ID)
+	for _, p := range d.Personas {
+		// У роли каждого сотрудника — свой стол или стол базовой роли (общие
+		// роли employee, staff, device_source столов не имеют).
+		if _, ok := d.DeskFor(p.Role.ID); !ok {
+			t.Errorf("нет стола у роли %s", p.Role.ID)
 		}
 	}
 }

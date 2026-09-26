@@ -12,47 +12,73 @@ scopes:
   root: ent01
   paths: [ent01, ent01/b1, ent01/b1/sk, ent01/b1/mc, ent01/b1/wc, ent01/b1/ac, ent01/b1/qa, ent01/b1/ndt]
 
+# Субъект без сеанса (edge-агент, станок, stand, анализатор): только приём фактов и материалов —
+# подлинность такого сообщения даёт подпись пакета (AD-10) и реестр источников, а не сеанс.
+unauthenticated_role: device_source
+
+# Операция чтения (класс read, AD-27) проверяется ещё и под именем `‹модуль›.*.read`: шаблон `quality.*.read`
+# разрешает все чтения модуля (`quality.signal.read`, `quality.signal.list`, …); `*` в других шаблонах — любой сегмент.
 roles:
+  # ── общие роли: их наследуют роли ниже (права — данные политики, а не код, AD-15) ──
+  - id: employee
+    title: "Сотрудник: сеанс, стол, уведомления"
+    actions: ["access.session.read", "access.session.delete", "access.desk.read", "access.permission.list", "access.permission.explain", "notifications.*.read", "security.integrity.read", "journal.stream.subscribe", "item.item.lookup"]
+  - id: staff
+    title: "Работник предприятия: просмотр производственных данных"
+    inherits: [employee]
+    actions: ["item.*.read", "process.*.read", "quality.*.read", "nonconformity.*.read", "analysis.*.read", "analytics.*.read", "machinelogs.*.read", "crossitem.*.read", "documents.*.read", "reference.*.read", "vision.*.read", "materials.*.read", "erp.*.read", "mes.*.list", "cad.*.list", "signing.*.read", "simulation.*.read", "journal.timeline.read", "journal.head.read", "access.workplace.list"]
+  - id: device_source
+    title: "Источник фактов (устройство без сеанса)"
+    actions: ["ingest.event.submit", "ingest.batch.submit", "materials.material.upload"]
   # ── пять ролей кейса (основа) ──
   - id: quality_inspector
     title: "Контролёр качества"
     case_role: true
+    inherits: [staff]
     actions: ["quality.*.read", "nonconformity.signal.reject", "nonconformity.nonconformity.confirm", "nonconformity.recheck.request", "nonconformity.item.isolate", "nonconformity.presentation.resolve", "nonconformity.lot.resolve", "nonconformity.containment.set", "nonconformity.disposition.verify", "item.intervention.close", "item.identification.confirm", "analysis.item.assess", "documents.document.sign", "documents.document.request", "crossitem.binding.assign", "item.*.read", "analysis.*.read", "process.*.read"]
   - id: site_foreman
     title: "Мастер участка"
     case_role: true
-    actions: ["process.movement.send", "process.movement.receive", "item.presentation.record", "item.carrier.apply", "item.carrier.remove", "item.intervention.open", "access.assignment.set", "access.assignment.clear", "notifications.task.acknowledge", "documents.document.sign", "documents.document.request", "item.*.read", "process.*.read", "quality.*.read"]
+    inherits: [staff]
+    actions: ["process.movement.send", "process.movement.receive", "item.presentation.record", "item.carrier.apply", "item.carrier.remove", "item.intervention.open", "access.assignment.set", "access.assignment.clear", "access.assignment.list", "notifications.task.acknowledge", "nonconformity.process_hold.set", "reference.shift.schedule", "ingest.event.submit", "documents.document.sign", "documents.document.request", "item.*.read", "process.*.read", "quality.*.read"]
   - id: technologist
     title: "Технолог"
     case_role: true
-    actions: ["analysis.hypothesis.record", "analysis.cause.conclude", "analysis.scope.narrow", "analysis.scope.expand", "analysis.analysis.scope", "analysis.action.*", "nonconformity.disposition.set", "process.version.submit", "process.version.draft", "documents.document.sign", "documents.document.request", "analysis.*.read", "item.*.read", "process.*.read", "quality.*.read", "machinelogs.*.read"]
+    inherits: [staff]
+    actions: ["analysis.hypothesis.record", "analysis.hypothesis.reject", "analysis.measurement.request", "analysis.cause.conclude", "analysis.scope.narrow", "analysis.scope.expand", "analysis.analysis.scope", "analysis.action.*", "analysis.item.assess", "analysis.incident.close", "nonconformity.disposition.set", "nonconformity.lot.resolve", "process.version.submit", "process.version.draft", "ingest.import.submit", "documents.document.sign", "documents.document.request", "analysis.*.read", "item.*.read", "process.*.read", "quality.*.read", "machinelogs.*.read"]
   - id: production_manager
     title: "Руководитель производства"
     case_role: true
+    inherits: [staff]
     actions: ["process.version.activate", "process.version.retire", "nonconformity.process_hold.set", "nonconformity.process_hold.release", "documents.document.sign", "analytics.*.read", "item.*.read", "process.*.read", "analysis.*.read", "quality.*.read", "reference.*.read"]
   - id: administrator
     title: "Администратор (безопасности)"
     case_role: true
-    actions: ["access.person.register", "access.account.activate", "access.policy.grant", "access.policy.revoke", "signing.key.register", "signing.key.revoke", "ops.source.disable", "ops.source.enable", "ops.processing.retry", "ingest.message.reprocess", "erp.posting.resend", "simulation.*.*", "reference.*.define", "ops.*.read", "ingest.*.read", "access.*.read"]
+    inherits: [staff]
+    actions: ["access.person.register", "access.account.activate", "access.policy.grant", "access.policy.revoke", "signing.key.register", "signing.key.revoke", "ops.source.disable", "ops.source.enable", "ops.processing.retry", "ingest.message.reprocess", "ingest.import.submit", "erp.posting.resend", "crossitem.binding.assign", "simulation.*.*", "reference.*.define", "ops.*.read", "ingest.*.read", "access.*.read", "journal.*.read", "security.*.read"]
   # ── дополнительные роли (PRD §2, AD-15) ──
   - id: performer
     title: "Исполнитель"
-    actions: ["process.operation.start", "process.operation.pause", "process.operation.resume", "process.operation.finish", "access.operator.confirm_step", "access.operator.report_deviation", "access.operator.request_inspection", "process.movement.receive", "notifications.task.acknowledge", "item.assembly.record"]
+    inherits: [staff]
+    actions: ["process.operation.start", "process.operation.pause", "process.operation.resume", "process.operation.finish", "access.operator.confirm_step", "access.operator.report_deviation", "access.operator.request_inspection", "process.movement.receive", "notifications.task.acknowledge", "item.assembly.record", "item.intervention.open", "ingest.event.submit"]
   - id: storekeeper
     title: "Кладовщик"
     inherits: [performer]
-    actions: ["crossitem.lot.register", "crossitem.lot.issue", "item.release.record", "process.movement.send"]
+    actions: ["crossitem.lot.register", "crossitem.lot.issue", "item.item.register", "item.carrier.apply", "item.release.record", "process.movement.send"]
   - id: customer_representative
     title: "Представитель заказчика (ВП / ПЗ)"
-    actions: ["documents.document.sign", "documents.decision_card.read"]
+    inherits: [employee]
+    actions: ["documents.document.sign", "documents.*.read", "item.*.read", "nonconformity.card.read"]
   - id: approver
     title: "Согласующий (держатель КД, метролог, член комиссии)"
+    inherits: [staff]
     actions: ["documents.document.sign", "documents.decision_card.read"]
   - id: security_auditor
     title: "Аудитор ИБ"
+    inherits: [staff]
     actions: ["security.*.read", "access.*.read", "journal.*.read", "access.audit.set_parameters", "signing.key.register", "access.policy.grant"]
   # ── руководящие подписанты — наследники базовых ролей ──
-  - {id: head_of_qc,       title: "Начальник ОТК",           inherits: [quality_inspector], actions: ["vision.passport.reinstate", "vision.passport.admit", "vision.passport.retire", "nonconformity.containment.release", "nonconformity.concession.revoke", "access.policy.grant", "signing.key.register"]}
+  - {id: head_of_qc,       title: "Начальник ОТК",           inherits: [quality_inspector], actions: ["vision.passport.reinstate", "vision.passport.admit", "vision.passport.retire", "nonconformity.containment.release", "nonconformity.concession.revoke", "access.assignment.set", "analysis.action.assign", "access.policy.grant", "signing.key.register"]}
   - {id: head_of_workshop, title: "Начальник цеха",          inherits: [site_foreman],      actions: ["nonconformity.containment.release"]}
   - {id: chief_welder,     title: "Главный сварщик",         inherits: [technologist],      actions: []}
   - {id: metrologist,      title: "Метролог",                inherits: [approver],          actions: ["reference.equipment.verify"]}

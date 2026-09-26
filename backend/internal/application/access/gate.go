@@ -17,16 +17,28 @@ import (
 // список прав фронтенда и допустимые действия по объекту вычисляет тем же
 // Enforce («в списке ⇔ разрешено»).
 //
-// Волна 1: AccessControl — разрешающая заглушка, гардов нет, сеанс не
-// обязателен (RequireSession = false); эпик 08 включает барьеры.
+// Барьер 3 (AD-15, FR-85): решение — у AccessControl (Casbin — единственный
+// вычислитель): субъект сеанса (или субъект без сеанса), действие, место
+// операции (рабочее место команды, объекта или сеанса — Places) и доменное
+// время. Отказ без сеанса — access.unauthenticated; действие разрешено ролью,
+// но не в этом месте — access.wrong_workplace; иначе — access.forbidden.
+// Каждый отказ операции — событие шины безопасности security.access.denied.
 type Gate struct {
 	ac      AccessControl
 	guards  GuardChecker
 	actions func() []platform.Action
-	// RequireSession — без сеанса отказ access.unauthenticated (кроме операций входа).
+	// RequireSession — без сеанса отказ access.unauthenticated до вычислителя
+	// (кроме операций входа). Выключен: субъекту без сеанса политика даёт
+	// только приём фактов от устройств (Policy.Unauthenticated).
 	RequireSession bool
 	// Now — доменное «сейчас» для атрибута времени запроса (DomainClock, AD-37).
 	Now func() time.Time
+	// Places — области рабочих мест (место операции); nil — место не определяется.
+	Places Places
+	// Events — шина безопасности для отказов (AD-24); nil — не сообщать.
+	Events SecurityEvents
+	// OnEventError — ошибка записи события безопасности (отказ остаётся отказом).
+	OnEventError func(error)
 }
 
 // NewGate — декоратор над портом прав ac; guards может быть nil; actions —
@@ -38,6 +50,38 @@ func NewGate(ac AccessControl, guards GuardChecker, actions func() []platform.Ac
 // SetCatalog задаёт каталог операций (после регистрации всех операций API).
 func (g *Gate) SetCatalog(actions func() []platform.Action) { g.actions = actions }
 
+// unknownPlace — область неизвестного рабочего места: не входит ни в одну
+// область политики, кроме всего предприятия без пути («*»).
+const unknownPlace = "?"
+
+// Place — место операции (барьер 3): рабочее место команды (workplace_id),
+// объекта вида workplace или допуска сеанса (барьер 2); пусто — не определено.
+func (g *Gate) Place(p platform.Principal, obj platform.ObjectRef, meta *platform.CommandMeta) string {
+	id := ""
+	switch {
+	case meta != nil && meta.WorkplaceID != "":
+		id = meta.WorkplaceID
+	case obj.Kind == "workplace" && obj.ID != "":
+		id = obj.ID
+	case p.WorkplaceID != "":
+		id = p.WorkplaceID
+	}
+	if id == "" || g.Places == nil {
+		return ""
+	}
+	if s, ok := g.Places.ScopeOf(id); ok {
+		return s
+	}
+	return unknownPlace
+}
+
+func (g *Gate) now() time.Time {
+	if g.Now == nil {
+		return time.Time{}
+	}
+	return g.Now()
+}
+
 // Authorize — проверка операции до вызова порта: сеанс (барьер 1), права и
 // место (барьеры 2–3), гард владельца операции (AD-39). Отказ — *platform.Error
 // с кодом из contracts/errors.yaml.
@@ -48,18 +92,14 @@ func (g *Gate) Authorize(ctx context.Context, p platform.Principal, act platform
 	if p.Anonymous() && g.RequireSession {
 		return platform.Fail(errcodes.AccessUnauthenticated)
 	}
-	d, err := g.ac.Enforce(ctx, Request{Principal: p, Action: act, Object: obj, At: g.Now()})
+	rq := Request{Principal: p, Action: act, Object: obj, Scope: g.Place(p, obj, meta), At: g.now()}
+	d, err := g.ac.Enforce(ctx, rq)
 	if err != nil {
 		return err
 	}
 	if !d.Allowed {
-		code := d.Code
-		if code == "" {
-			code = errcodes.AccessForbidden
-		}
-		e := platform.Fail(code, "action", act.ID)
-		e.Detail = d.Reason
-		e.AllowedActions = d.AllowedActions
+		e := g.refusal(ctx, rq, d)
+		g.report(ctx, p, act, obj, e.Code, rq.At)
 		return e
 	}
 	if act.IsCommand() && meta != nil && g.guards != nil {
@@ -68,6 +108,53 @@ func (g *Gate) Authorize(ctx context.Context, p platform.Principal, act platform
 		}
 	}
 	return nil
+}
+
+// refusal — отказ с кодом: без сеанса — нужен вход; роль разрешает действие,
+// но не в этом месте — не своё рабочее место (FR-78: исполнитель поста А не
+// действует на посту Б); иначе — нет полномочий.
+func (g *Gate) refusal(ctx context.Context, rq Request, d Decision) *platform.Error {
+	code := d.Code
+	if code == "" {
+		code = errcodes.AccessForbidden
+		switch {
+		case rq.Principal.Anonymous():
+			code = errcodes.AccessUnauthenticated
+		case rq.Scope != "":
+			anywhere := rq
+			anywhere.Scope = ""
+			if d2, err := g.ac.Enforce(ctx, anywhere); err == nil && d2.Allowed {
+				code = errcodes.AccessWrongWorkplace
+			}
+		}
+	}
+	obj := rq.Object.Kind
+	if rq.Object.ID != "" {
+		obj += " " + rq.Object.ID
+	}
+	e := platform.Fail(code, "action_id", rq.Action.ID, "action", rq.Action.ID, "object", obj, "workplace", rq.Scope)
+	e.Detail = d.Reason
+	if e.Detail == "" {
+		switch code {
+		case errcodes.AccessForbidden:
+			e.Detail = "Действие " + rq.Action.ID + " не разрешено вашим ролям политикой"
+		case errcodes.AccessWrongWorkplace:
+			e.Detail = "Действие " + rq.Action.ID + " разрешено вашей роли, но не в этом месте (" + rq.Scope + ")"
+		}
+	}
+	e.AllowedActions = d.AllowedActions
+	return e
+}
+
+// report — событие шины безопасности об отказе (AD-24, FR-85).
+func (g *Gate) report(ctx context.Context, p platform.Principal, act platform.Action, obj platform.ObjectRef, code errcodes.Code, at time.Time) {
+	if g.Events == nil {
+		return
+	}
+	err := g.Events.AccessDenied(ctx, Denial{PersonID: p.PersonID, ActionID: act.ID, Object: obj, Code: string(code), At: at})
+	if err != nil && g.OnEventError != nil {
+		g.OnEventError(err)
+	}
 }
 
 // Permission — разрешённое действие для @casl/vue (AD-15 «Для фронтенда»).
@@ -96,6 +183,7 @@ func (g *Gate) Permissions(ctx context.Context, p platform.Principal, obj *platf
 	if g.actions == nil {
 		return out, nil
 	}
+	at := g.now()
 	for _, act := range g.actions() {
 		if act.Anonymous {
 			continue
@@ -114,7 +202,7 @@ func (g *Gate) Permissions(ctx context.Context, p platform.Principal, obj *platf
 			}
 			o = *obj
 		}
-		d, err := g.ac.Enforce(ctx, Request{Principal: p, Action: act, Object: o, At: g.Now()})
+		d, err := g.ac.Enforce(ctx, Request{Principal: p, Action: act, Object: o, Scope: g.Place(p, o, nil), At: at})
 		if err != nil {
 			return PermissionList{}, err
 		}
@@ -143,11 +231,16 @@ func (g *Gate) Explain(ctx context.Context, p platform.Principal, actionID strin
 			if act.ID != actionID {
 				continue
 			}
-			d, err := g.ac.Enforce(ctx, Request{Principal: p, Action: act, Object: obj, At: g.Now()})
+			rq := Request{Principal: p, Action: act, Object: obj, Scope: g.Place(p, obj, nil), At: g.now()}
+			d, err := g.ac.Enforce(ctx, rq)
 			if err != nil {
 				return Explanation{}, err
 			}
 			ex := Explanation{Action: actionID, Allowed: d.Allowed, Code: string(d.Code), Reason: d.Reason, AllowedActions: d.AllowedActions}
+			if !d.Allowed {
+				e := g.refusal(ctx, rq, d)
+				ex.Code, ex.Reason = string(e.Code), e.Detail
+			}
 			if ex.AllowedActions == nil {
 				ex.AllowedActions = []string{}
 			}

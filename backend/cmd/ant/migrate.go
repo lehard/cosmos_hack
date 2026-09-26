@@ -7,6 +7,7 @@ import (
 
 	"ant/cmd/internal/db"
 	onecstand "ant/internal/infrastructure/integration/erp/onec/stand"
+	accessstore "ant/internal/infrastructure/storage/access"
 	enginestore "ant/internal/infrastructure/storage/engine"
 	erpstore "ant/internal/infrastructure/storage/erp"
 	storagefx "ant/internal/infrastructure/storage/fixtures"
@@ -28,6 +29,8 @@ var migrationSets = []migrator.Set{
 	// Эпик 30: очередь исходящих и каналы обмена (erp), состояние stand-а 1С (stand_onec).
 	{Module: "erp", FS: erpstore.Migrations, Dir: erpstore.MigrationsDir},
 	{Module: "stand_onec", FS: onecstand.Migrations, Dir: onecstand.MigrationsDir},
+	// Эпик 08: учётные данные входа и сеансы веба scs (access).
+	{Module: "access", FS: accessstore.Migrations, Dir: accessstore.MigrationsDir},
 }
 
 // runMigrate — разовая роль migrate (AD-1, AD-25): ждёт БД, создаёт роли БД
