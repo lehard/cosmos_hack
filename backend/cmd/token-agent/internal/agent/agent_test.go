@@ -284,3 +284,14 @@ func TestWasmVectors(t *testing.T) {
 		}
 	}
 }
+
+// AD-14: без содержимого (только ожидаемый отпечаток) агент не подписывает.
+func TestNoBlindSigning(t *testing.T) {
+	g := keyFile(t, "ins-01-ta@1", dom.ProfileGost, 7)
+	s, _ := sealed(t, "1234", g)
+	d := "streebog256:" + strings.Repeat("a", 64)
+	blk := procs.SignBlock{Level: 2, PayloadType: dom.PayloadType(dom.ClassDocumentSignature, 1), PayloadB64: "", ExpectedDocDigest: &d}
+	if _, err := Prepare(blk, s.PersonID, s.Keys, Context{Now: at}); CodeOf(err) != CodeNoPath {
+		t.Fatalf("подпись по отпечатку: %v", err)
+	}
+}

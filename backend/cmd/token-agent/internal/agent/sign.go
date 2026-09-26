@@ -27,6 +27,7 @@ const (
 	CodeCancelled     = "signing.cancelled"
 	CodeRate          = "signing.rate_limited"
 	CodeInvalid       = "api.validation_failed"
+	CodeNoPath        = "signing.no_signature_path"
 )
 
 // Error — отказ агента с кодом из каталога ошибок.
@@ -116,6 +117,11 @@ func Prepare(b procs.SignBlock, person string, keys []KeyInfo, c Context) (Prepa
 	raw, err := base64.StdEncoding.DecodeString(b.PayloadB64)
 	if err != nil {
 		return p, refuse(CodeInvalid, "payload_b64 — не base64")
+	}
+	if len(raw) == 0 {
+		// AD-14: агент не подписывает «по отпечатку» — только содержимое,
+		// по которому сам посчитает отпечаток и сводку.
+		return p, refuse(CodeNoPath, "страница не передала содержимое документа — по одному отпечатку агент не подписывает; подпишите на бумаге")
 	}
 	signers, err := signersFor(keys, c.Profile)
 	if err != nil {
