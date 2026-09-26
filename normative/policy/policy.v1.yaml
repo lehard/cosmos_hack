@@ -33,7 +33,7 @@ roles:
   - id: administrator
     title: "Администратор (безопасности)"
     case_role: true
-    actions: ["access.person.register", "access.account.activate", "access.policy.grant", "access.policy.revoke", "signing.key.register", "signing.key.revoke", "ops.source.disable", "ops.source.enable", "ops.processing.retry", "ingest.message.reprocess", "erp.posting.resend", "simulation.run.*", "reference.*.define", "ops.*.read", "ingest.*.read", "access.*.read"]
+    actions: ["access.person.register", "access.account.activate", "access.policy.grant", "access.policy.revoke", "signing.key.register", "signing.key.revoke", "ops.source.disable", "ops.source.enable", "ops.processing.retry", "ingest.message.reprocess", "erp.posting.resend", "simulation.*.*", "reference.*.define", "ops.*.read", "ingest.*.read", "access.*.read"]
   # ── дополнительные роли (PRD §2, AD-15) ──
   - id: performer
     title: "Исполнитель"

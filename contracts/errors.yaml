@@ -161,6 +161,12 @@ codes:
     ui_key: errors.decision.concessionRequired
     guard: true
     refs: [FR-54, AD-39]
+  journal.duplicate:
+    status: 409
+    title: "Запись уже есть в журнале"
+    detail: "Запись с этим event_id уже записана — повтор не записывается"
+    ui_key: errors.generic
+    refs: [AD-7, AD-44]
   journal.append_only:
     status: 405
     title: "Журнал только на дописывание"
@@ -414,6 +420,20 @@ codes:
     ui_key: errors.decision.concessionRequired
     guard: true
     refs: [FR-54]
+  nonconformity.invalid_transition:
+    status: 409
+    title: "Решение недопустимо в этом состоянии"
+    detail: "«{action}» недопустимо: несоответствие {nc_id} в состоянии «{status}»"
+    ui_key: errors.generic
+    guard: true
+    refs: [FR-51, FR-52, FR-53, AD-39]
+  nonconformity.process_hold_not_active:
+    status: 409
+    title: "Остановка точки процесса не действует"
+    detail: "Остановка {hold_id} не найдена или уже снята"
+    ui_key: errors.generic
+    guard: true
+    refs: [FR-49]
 
   # ── item: изделие, носители, генеалогия и межизделийная стадия (эпик 18; FR-15, FR-34, FR-42…FR-46, AD-16, AD-41, AD-42) ──
   item.not_registered:
@@ -579,6 +599,12 @@ codes:
     detail: "Хеш версии {version_id} не совпадает с подписанным — версия не исполняется"
     ui_key: errors.process.versionTampered
     refs: [FR-23, AD-17]
+  process.version_unknown:
+    status: 409
+    title: "Версия процесса изделия не найдена"
+    detail: "Версия процесса с хешем {hash}, закреплённая за изделием, не найдена — изделие не исполняется"
+    ui_key: errors.process.versionTampered
+    refs: [FR-22, AD-17]
   process.quorum_incomplete:
     status: 409
     title: "Не хватает подписей кворума"

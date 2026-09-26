@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ant.invalid/contracts/events/normative/normative.version.drafted.v1.json",
+  "title": "NormativeVersionDraftedV1",
+  "description": "Черновик версии процесса сохранён — технолог сохранил BPMN из редактора; загрузчик проверил его (FR-13); дальше — отправка на утверждение кворумом `normative.version.submitted` (FR-22, FR-25). Черновик не действует до введения в действие.",
+  "type": "object",
+  "properties": {
+    "version_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Версия-черновик."
+    },
+    "label": {
+      "type": "string",
+      "maxLength": 64,
+      "description": "Метка версии для людей."
+    },
+    "base_version_id": {
+      "$ref": "../common/defs.v1.json#/definitions/object_id",
+      "description": "Версия, от которой начат черновик (для читаемой разницы)."
+    },
+    "process_version_hash": {
+      "$ref": "../common/defs.v1.json#/definitions/digest",
+      "description": "Хеш BPMN XML черновика; им же XML адресуется в хранилище материалов (AD-17)."
+    },
+    "bundle_digest": {
+      "$ref": "../common/defs.v1.json#/definitions/digest",
+      "description": "Отпечаток пакета нормативного слоя черновика, если собран."
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Номер сохранения черновика: каждое сохранение — новая запись с номером на единицу больше."
+    }
+  },
+  "required": [
+    "version_id",
+    "label",
+    "process_version_hash"
+  ]
+}

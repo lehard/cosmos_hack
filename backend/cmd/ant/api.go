@@ -113,6 +113,17 @@ func runAPI(ctx context.Context, env *environment) error {
 			return err
 		}
 	}
+	if modeOf(opts, "nonconformity") == platform.ModeLive {
+		if opts.nonconformity, err = nonconformityLive(ctx, env); err != nil {
+			return err
+		}
+	}
+	if modeOf(opts, "process") == platform.ModeLive {
+		// Живая карта, версии и команды исполнителя (эпик 17).
+		if opts.process, err = processLive(ctx, env, opts.ingest, opts.analytics); err != nil {
+			return err
+		}
+	}
 	buildAPI(mux, opts)
 	mux.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/problem+json")

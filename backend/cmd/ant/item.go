@@ -29,8 +29,6 @@ func (c *core) itemBundles(next engineapp.BundleSource) engineapp.BundleSource {
 	return itemapp.Bundles{Next: next, Env: env}
 }
 
-// engineBundles — нормативный слой свёртки изделия: item поверх quality.
-func (c *core) engineBundles() engineapp.BundleSource { return c.itemBundles(c.qualityBundles(nil)) }
 
 // itemWriter — запись команд item и crossitem в журнал ядра.
 func (c *core) itemWriter(env *environment) itemapp.JournalWriter {
@@ -51,7 +49,7 @@ func itemLive(ctx context.Context, env *environment) (*itemapp.Service, error) {
 	if err != nil {
 		return nil, err
 	}
-	return itemapp.NewLive(itemapp.Config{Codec: c.codec, Projections: c.engine, Bundles: c.engineBundles(), Writer: c.itemWriter(env),
+	return itemapp.NewLive(itemapp.Config{Codec: c.codec, Projections: c.engine, Bundles: c.bundleSource(), Writer: c.itemWriter(env),
 		Clock: clock.NewJournal(c.journal), Env: ienv, ProcessVersion: pv, NormativeRev: qualityRev}), nil
 }
 

@@ -13,6 +13,8 @@ import (
 	itemapp "ant/internal/application/item"
 	appjournal "ant/internal/application/journal"
 	machinelogsapp "ant/internal/application/machinelogs"
+	nonconformityapp "ant/internal/application/nonconformity"
+	processapp "ant/internal/application/process"
 	qualityapp "ant/internal/application/quality"
 	mldomain "ant/internal/domain/machinelogs"
 	"ant/internal/infrastructure/storage/journal/clock"
@@ -30,13 +32,14 @@ import (
 // (AddContributor) — одна строка на модуль, как в buildAPI.
 func engineRegistry() *engineapp.Registry {
 	r := engineapp.NewRegistry()
-	mustRegister(qualityapp.Register(r)) // эпик 20: quality.item, quality.index, вклады показателей качества
-	mustRegister(itemapp.Register(r))    // эпик 18: item.row, item.index
 	// machinelogs (эпик 23): профили выполнения изделия, индекс выполнений,
 	// состояние и журнал оборудования, окна нарушений специального процесса.
 	if err := machinelogsapp.RegisterProjections(r, mldomain.Env{}); err != nil {
 		panic(err)
 	}
+	// process (эпик 17): положение изделия в процессе, перечень изделий и
+	// выполнений для живой карты, вклады шагов.
+	mustRegister(processapp.RegisterProjections(r))
 	// analysis (эпик 22): разбор обстоятельств изделия, инциденты и версии
 	// области риска, несоответствия для гипотез и общих факторов.
 	analysisapp.MustRegister(r)
@@ -44,6 +47,11 @@ func engineRegistry() *engineapp.Registry {
 	if err := analyticsapp.Register(r); err != nil {
 		panic(err)
 	}
+	// nonconformity (эпик 21): оси «решение по изделию» и «сдерживание»,
+	// изоляция и несоответствия изделия.
+	mustRegister(nonconformityapp.RegisterProjections(r))
+	mustRegister(qualityapp.Register(r)) // эпик 20: quality.item, quality.index, вклады показателей качества
+	mustRegister(itemapp.Register(r))    // эпик 18: item.row, item.index
 	return r
 }
 
@@ -65,7 +73,7 @@ func runWorker(ctx context.Context, env *environment) error {
 	wf := feed.NewWorkFeed(c.journal, c.leases, c.listener, env.cfg.Engine.Partitions, c.feedOptions(env, "worker"))
 	w := engineapp.NewWorker(engineapp.WorkerConfig{
 		Feed: wf, Codec: c.codec, Projections: c.registry, Log: env.log, Now: c.codec.Now,
-		Bundles: c.engineBundles(), // эпики 18, 20; эпик 17 передаст сюда свой источник версии
+		Bundles: c.bundleSource(), // версия процесса изделия (эпик 17) + слой quality (эпик 20)
 		// Аренды партиций продлевает WorkFeed.Partitions — не реже TTL/3.
 		Refresh: c.ttl / 3,
 	})
@@ -116,7 +124,7 @@ func runRebuild(ctx context.Context, env *environment) error {
 	if err != nil {
 		return err
 	}
-	rb := &engineapp.Rebuilder{Codec: c.codec, Registry: c.registry, Bundles: c.engineBundles()}
+	rb := &engineapp.Rebuilder{Codec: c.codec, Registry: c.registry, Bundles: c.bundleSource()}
 	var rep engineapp.RebuildReport
 	if env.item != "" {
 		rep, err = rb.RebuildItem(ctx, env.item, env.reason)
@@ -145,6 +153,7 @@ func (e *environment) readyCore(ctx context.Context) (*core, error) {
 	if err := db.WaitReady(ctx, c.pool, 2*time.Minute); err != nil {
 		return nil, err
 	}
+	c.ensureProcessSeed(ctx, e)
 	return c, nil
 }
 
@@ -170,7 +179,7 @@ func machinelogsLive(ctx context.Context, env *environment) (*machinelogsapp.Ser
 	if err != nil {
 		return nil, err
 	}
-	return machinelogsapp.NewLiveService(c.engine, engineapp.StateQueries{Codec: c.codec}, mldomain.Env{}), nil
+	return machinelogsapp.NewLiveService(c.engine, c.states(), mldomain.Env{}), nil
 }
 
 // analysisLive — live-реализация ведущих портов analysis для роли api (эпик

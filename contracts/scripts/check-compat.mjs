@@ -24,7 +24,22 @@ async function load(p) {
     console.error(`✗ asyncapi diff: ${p} не разобран: ${diagnostics.filter((d) => d.severity === 0).map((d) => d.message).join('; ')}`);
     process.exit(1);
   }
-  return document.json();
+  return byName(document.json());
+}
+// Сообщения операции сравниваются по имени, а не по позиции в массиве:
+// новый тип в середине отсортированного списка — совместимое добавление
+// (FR-29), а не «правка» всех следующих за ним сообщений.
+function byName(doc) {
+  for (const op of Object.values(doc.operations ?? {})) {
+    if (!Array.isArray(op.messages)) continue;
+    const m = {};
+    for (const [i, msg] of op.messages.entries()) {
+      const key = msg?.name ?? msg?.messageId ?? msg?.['x-parser-message-name'] ?? msg?.payload?.allOf?.[1]?.properties?.event_type?.const ?? String(i);
+      m[key] = msg;
+    }
+    op.messages = m;
+  }
+  return doc;
 }
 const b = await load(base);
 const n = await load(next);

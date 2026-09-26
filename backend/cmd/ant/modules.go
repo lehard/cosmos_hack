@@ -93,6 +93,9 @@ type apiOptions struct {
 	// analysis — live-реализация analysis над проекциями и журналом
 	// (engine.go, эпик 22); nil — заглушка 501.
 	analysis *analysisapp.Service
+	// nonconformity — live-реализация nonconformity над журналом и свёрткой
+	// изделия (nonconformity.go, эпик 21); nil — заглушка 501.
+	nonconformity *nonconformityapp.Service
 	// ingest — live-приём над журналом ядра (ingest.go); nil — заглушка 501.
 	ingest *ingestapp.Service
 	// identity, directory — вход демо-персоной и каталог политики (демо-трек
@@ -108,6 +111,8 @@ type apiOptions struct {
 	// (item.go, эпик 18); nil — заглушка 501.
 	item      *itemapp.Service
 	crossitem *crossitemapp.Service
+	// process — живая карта, версии и команды исполнителя (process.go, эпик 17); nil — 501.
+	process *processapp.Service
 }
 
 // buildAPI собирает HTTP API: общий декоратор (Gate) над портами прав и входа,
@@ -161,7 +166,11 @@ func buildAPI(mux *http.ServeMux, o apiOptions) *httpapi.API {
 		referencehttp.Register(a, q, c)
 	}
 	{
-		q, c := pick[processapp.Queries, processapp.Commands](a.ModeFor("process"), processapp.NewService(), processfx.New())
+		live := o.process
+		if live == nil {
+			live = processapp.NewService()
+		}
+		q, c := pick[processapp.Queries, processapp.Commands](a.ModeFor("process"), live, processfx.New())
 		processhttp.Register(a, q, c)
 	}
 	{
@@ -181,7 +190,11 @@ func buildAPI(mux *http.ServeMux, o apiOptions) *httpapi.API {
 		qualityhttp.Register(a, q, c)
 	}
 	{
-		q, c := pick[nonconformityapp.Queries, nonconformityapp.Commands](a.ModeFor("nonconformity"), nonconformityapp.NewService(), nonconformityfx.New())
+		live := o.nonconformity
+		if live == nil {
+			live = nonconformityapp.NewService()
+		}
+		q, c := pick[nonconformityapp.Queries, nonconformityapp.Commands](a.ModeFor("nonconformity"), live, nonconformityfx.New())
 		nonconformityhttp.Register(a, q, c)
 	}
 	{

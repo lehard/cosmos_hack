@@ -22,7 +22,7 @@ import (
 // Генеалогия стадии отдаётся analysis через его порт (AD-42).
 var _ analysis.Genealogy = crossitem.GenealogyView{}
 
-var t0 = time.Date(2026, 9, 26, 8, 0, 0, 0, time.UTC)
+var g0 = time.Date(2026, 9, 26, 8, 0, 0, 0, time.UTC)
 
 // world — стадия и записанные ею адресованные записи.
 type world struct {
@@ -41,7 +41,7 @@ func (w *world) feed(typ catalog.Type, itemID string, at time.Duration, data any
 	}
 	info, _ := catalog.Lookup(typ)
 	r := kernel.Record{Seq: w.seq, EventID: fmt.Sprintf("00000000-0000-7000-8000-%012d", w.seq), Type: typ, Kind: info.Kind,
-		ItemID: itemID, OccurredAt: t0.Add(at), ReceivedAt: t0.Add(at), RecordedAt: t0.Add(at), Data: raw}
+		ItemID: itemID, OccurredAt: g0.Add(at), ReceivedAt: g0.Add(at), RecordedAt: g0.Add(at), Data: raw}
 	if itemID != "" {
 		r.Stream = "item:" + itemID
 	}
@@ -290,7 +290,7 @@ func TestRetroactiveReferenceChange(t *testing.T) {
 	}
 	// Поверка признана недействительной с 08:30 — задним числом, записано в 12:00.
 	w.feed(catalog.ReferenceEquipmentVerified, "", 30*time.Minute, map[string]any{"equipment_id": "WELD-2", "kind": "welding_source", "result": "failed"},
-		func(r *kernel.Record) { r.RecordedAt, r.Stream = t0.Add(4*time.Hour), "reference" })
+		func(r *kernel.Record) { r.RecordedAt, r.Stream = g0.Add(4*time.Hour), "reference" })
 	if len(w.to(catalog.ReferenceChangeAffectsItem, "ENT01:A")) != 1 || len(w.to(catalog.ReferenceChangeAffectsItem, "ENT01:B")) != 1 {
 		t.Fatalf("изменение справочника: %+v", w.out)
 	}
@@ -322,7 +322,7 @@ func TestGenealogyFixedPoint(t *testing.T) {
 		item := strings.TrimPrefix(a.Stream, "item:")
 		// Реакция nonconformity на блок: сдерживание правилом, вызванное адресованной записью.
 		r := kernel.Record{Seq: 1000 + int64(i), EventID: fmt.Sprintf("00000000-0000-5000-8000-%012d", i), Type: catalog.DecisionContainmentApplied,
-			Kind: catalog.KindReaction, ItemID: item, Stream: a.Stream, CausationID: crossitem.AddressedID(a), OccurredAt: t0.Add(3 * time.Hour),
+			Kind: catalog.KindReaction, ItemID: item, Stream: a.Stream, CausationID: crossitem.AddressedID(a), OccurredAt: g0.Add(3 * time.Hour),
 			Data: json.RawMessage(`{"level":"item_hold","basis":["` + crossitem.AddressedID(a) + `"]}`)}
 		var out []kernel.Addressed
 		w.s, out = crossitem.Fold(w.s, r)

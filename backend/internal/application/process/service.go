@@ -1,16 +1,9 @@
 package process
 
-// Service — реализация live ведущих портов модуля process (AD-36): сценарии
-// приложения над доменом, журналом и проекциями. В волне 1 — заглушка:
-// все операции отвечают 501 (Unimplemented).
-type Service struct {
-	Unimplemented
-}
+// Service — реализация live ведущих портов модуля process (AD-36):
+// LiveService. Без зависимостей (NewService: выгрузка OpenAPI, тесты API)
+// операции отвечают 501 api.not_implemented.
+type Service = LiveService
 
-// NewService создаёт реализацию live.
-func NewService() *Service { return &Service{} }
-
-var (
-	_ Queries  = (*Service)(nil)
-	_ Commands = (*Service)(nil)
-)
+// NewService создаёт реализацию live без зависимостей (операции — 501).
+func NewService() *Service { return &LiveService{} }

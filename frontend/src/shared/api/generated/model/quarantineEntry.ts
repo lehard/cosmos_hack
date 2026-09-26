@@ -5,6 +5,8 @@
 import type { QuarantineEntryState } from './quarantineEntryState';
 
 export interface QuarantineEntry {
+  /** seq, на котором построен ответ (для basis_seq команды переобработки, AD-39). */
+  basis_seq: number;
   /** Исходное содержимое (только в чтении одной записи и при правах). */
   content?: string;
   detail?: string;

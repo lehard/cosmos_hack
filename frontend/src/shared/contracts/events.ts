@@ -1325,7 +1325,7 @@ export interface SseEntityChangedV1 {
 /**
  * Вид сущности — первый элемент ключа Vue Query.
  */
-entity: ("item" | "lot" | "nonconformity" | "incident" | "document" | "task" | "notification" | "workplace" | "equipment" | "process_version" | "analyzer_passport" | "erp_message" | "run" | "integrity" | "live_map" | "policy" | "quarantine")
+entity: ("item" | "lot" | "nonconformity" | "incident" | "document" | "task" | "notification" | "workplace" | "equipment" | "process_version" | "analyzer_passport" | "erp_message" | "run" | "integrity" | "live_map" | "policy" | "quarantine" | "concession" | "process_hold" | "person" | "reference" | "key" | "material" | "partner")
 /**
  * Идентификатор объекта системы или справочника: ASCII, без пробелов.
  */
@@ -1344,6 +1344,115 @@ run_id?: string
 mode?: ("fixtures" | "live")
 }
 /**
+ * Изделие попало в «точку чистоты» (FR-49): после снятия стопа точки процесса первые N изделий, прошедших её, проходят усиленный контроль; межизделийная стадия адресует запись в поток изделия.
+ * 
+ * This interface was referenced by `EventsContracts`'s JSON-Schema
+ * via the `definition` "DecisionCleanPointAssignedV1".
+ */
+export interface DecisionCleanPointAssignedV1 {
+/**
+ * Идентификатор объекта системы или справочника: ASCII, без пробелов.
+ */
+hold_id: string
+/**
+ * Идентификатор объекта системы или справочника: ASCII, без пробелов.
+ */
+operation_run_id: string
+/**
+ * Идентификатор объекта системы или справочника: ASCII, без пробелов.
+ */
+equipment_id?: string
+/**
+ * Порядковый номер изделия после снятия (1…N).
+ */
+ordinal: number
+/**
+ * Сколько изделий под усиленным контролем (N).
+ */
+of: number
+}
+/**
+ * Разрешение на отклонение выдано (ГОСТ Р ИСО 9000 п. 3.12.5, FR-54): номер, пункт КД/ТУ, область действия, лимит количества, срок; лимит открывается атомарно с записью, расход — атомарно с решением (AD-39).
+ * 
+ * This interface was referenced by `EventsContracts`'s JSON-Schema
+ * via the `definition` "DecisionConcessionGrantedV1".
+ */
+export interface DecisionConcessionGrantedV1 {
+/**
+ * Идентификатор объекта системы или справочника: ASCII, без пробелов.
+ */
+concession_id: string
+/**
+ * Номер разрешения по стандарту предприятия.
+ */
+number?: string
+/**
+ * Краткое содержание отклонения.
+ */
+title?: string
+/**
+ * Для какого решения по несоответствию.
+ */
+kind: ("repair" | "use_as_is")
+/**
+ * Пункт КД/ТУ, от которого разрешено отклонение.
+ */
+requirement_ref?: string
+/**
+ * Область действия — перечень изделий.
+ * 
+ * Items: Внутренний идентификатор изделия: `код_предприятия:локальный_id` (AD-16). Из метки не выводится; в прогоне локальная часть несёт префикс прогона.
+ * 
+ * This interface was referenced by `AntDefsV1`'s JSON-Schema
+ * via the `definition` "item_id".
+ */
+scope_item_ids?: string[]
+/**
+ * Область действия — диапазон номеров: от (включительно).
+ */
+scope_range_from?: string
+/**
+ * Область действия — диапазон номеров: до (включительно).
+ */
+scope_range_to?: string
+/**
+ * Лимит количества изделий.
+ */
+limit: number
+/**
+ * Момент времени: RFC 3339 UTC, ровно три знака после секунд (YYYY-MM-DDTHH:MM:SS.mmmZ).
+ */
+valid_until?: string
+/**
+ * Идентификатор объекта системы или справочника: ASCII, без пробелов.
+ */
+document_id?: string
+/**
+ * Подписи маршрута разрешения на момент записи; demo_stub — демо-профиль, подписи не проверялись.
+ */
+approvals_status?: ("route_closed" | "pending" | "demo_stub")
+reason: Reason6
+}
+/**
+ * Причина действия: код и текст.
+ */
+export interface Reason6 {
+/**
+ * Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
+ * 
+ * This interface was referenced by `AntDefsV1`'s JSON-Schema
+ * via the `definition` "code".
+ */
+code?: string
+/**
+ * Текст на русском для человека.
+ * 
+ * This interface was referenced by `AntDefsV1`'s JSON-Schema
+ * via the `definition` "text".
+ */
+text: string
+}
+/**
  * Разрешение на отклонение отозвано — отзыв — новая запись; решения, принятые по разрешению, подсвечиваются (FR-54).
  * 
  * This interface was referenced by `EventsContracts`'s JSON-Schema
@@ -1354,12 +1463,12 @@ export interface DecisionConcessionRevokedV1 {
  * Идентификатор объекта системы или справочника: ASCII, без пробелов.
  */
 concession_id: string
-reason: Reason6
+reason: Reason7
 }
 /**
  * Причина действия: код и текст.
  */
-export interface Reason6 {
+export interface Reason7 {
 /**
  * Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
  * 
@@ -1420,12 +1529,12 @@ export interface DecisionContainmentReleasedV1 {
  * via the `definition` "uuid".
  */
 released_event_ids: string[]
-reason: Reason7
+reason: Reason8
 }
 /**
  * Причина действия: код и текст.
  */
-export interface Reason7 {
+export interface Reason8 {
 /**
  * Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
  * 
@@ -1452,12 +1561,12 @@ export interface DecisionContainmentSetV1 {
  * Уровень сдерживания.
  */
 level: ("none" | "observe" | "additional_check" | "item_hold" | "lot_hold")
-reason: Reason8
+reason: Reason9
 }
 /**
  * Причина действия: код и текст.
  */
-export interface Reason8 {
+export interface Reason9 {
 /**
  * Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
  * 
@@ -1520,12 +1629,16 @@ document_id?: string
  * Основание претензии для возврата поставщику.
  */
 claim_basis?: string
-reason: Reason9
+reason: Reason10
+/**
+ * Подписи маршрута решения на момент записи (FR-50 режим 4, AD-43): route_closed — маршрут закрыт; pending — исполнение ждёт document.route.closed; demo_stub — демо-профиль, подписи не проверялись (заглушка порта «маршрут закрыт»).
+ */
+approvals_status?: ("route_closed" | "pending" | "demo_stub")
 }
 /**
  * Причина действия: код и текст.
  */
-export interface Reason9 {
+export interface Reason10 {
 /**
  * Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
  * 
@@ -1577,12 +1690,12 @@ isolator_location_id?: string
  * Момент времени: RFC 3339 UTC, ровно три знака после секунд (YYYY-MM-DDTHH:MM:SS.mmmZ).
  */
 decision_due_at?: string
-reason: Reason10
+reason: Reason11
 }
 /**
  * Причина действия: код и текст.
  */
-export interface Reason10 {
+export interface Reason11 {
 /**
  * Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
  * 
@@ -1626,12 +1739,12 @@ accepted_quantity?: number
  * via the `definition` "uuid".
  */
 method_event_ids: string[]
-reason?: Reason11
+reason?: Reason12
 }
 /**
  * Причина действия: код и текст.
  */
-export interface Reason11 {
+export interface Reason12 {
 /**
  * Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
  * 
@@ -1701,12 +1814,12 @@ defect_type_code?: string
  * Нужен ли полный разбор причин (по политике).
  */
 full_analysis_required?: boolean
-reason: Reason12
+reason: Reason13
 }
 /**
  * Причина действия: код и текст.
  */
-export interface Reason12 {
+export interface Reason13 {
 /**
  * Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
  * 
@@ -1723,7 +1836,7 @@ code?: string
 text: string
 }
 /**
- * Черновик карточки несоответствия — система собрала карточку для контролёра: сигналы, обстоятельства до и после, чего не хватает (режим 1, FR-50).
+ * Черновик карточки несоответствия — система собрала карточку для контролёра: сигналы, обстоятельства до и после, чего не хватает (режим 1, FR-50). Те же данные — полезная нагрузка функции-намерения nonconformity «черновик несоответствия» (draft_nonconformity), которую вызывают quality и machinelogs.
  * 
  * This interface was referenced by `EventsContracts`'s JSON-Schema
  * via the `definition` "DecisionNonconformityDraftedV1".
@@ -1745,6 +1858,57 @@ signal_ids: [string, ...(string)[]]
  * Идентификатор объекта системы или справочника: ASCII, без пробелов.
  */
 document_id?: string
+/**
+ * На чём основан сигнал.
+ */
+basis_kind?: ("inspection_result" | "equipment_deviation" | "check_skipped" | "damage_on_receipt" | "leak" | "special_process_violation" | "operator_report")
+/**
+ * Класс тяжести дефекта по ГОСТ 15467: критический / значительный / малозначительный / неизвестен.
+ * 
+ * This interface was referenced by `AntDefsV1`'s JSON-Schema
+ * via the `definition` "severity".
+ */
+severity?: ("critical" | "major" | "minor" | "unknown")
+/**
+ * Вид дефекта по классификатору; неизвестный — с флагом.
+ */
+defect_type_code?: string
+/**
+ * Идентификатор объекта системы или справочника: ASCII, без пробелов.
+ */
+zone_id?: string
+/**
+ * Ключ шага процесса (`ant:properties/@stepKey`), к которому относится запись.
+ */
+step_key?: string
+/**
+ * Идентификатор объекта системы или справочника: ASCII, без пробелов.
+ */
+operation_run_id?: string
+/**
+ * Требование КД: характеристика, допуск, ревизия.
+ */
+requirement_ref?: string
+/**
+ * Реакция карты реакций (FR-48): isolate — сдерживание правилом.
+ */
+reaction_outcome?: ("pass_to_next" | "manual_review" | "isolate" | "question_to_technologist")
+/**
+ * Карта реакций и строка: `‹id›@‹версия›#‹строка›`.
+ */
+reaction_map_ref?: string
+/**
+ * Закрывающая точка предъявления (`ZT-…`), если черновик возник на ней.
+ */
+closing_point?: string
+/**
+ * Номер предъявления, если черновик возник на точке предъявления.
+ */
+presentation_no?: number
+/**
+ * Нехватка сведений для разбора (перечисление, как у incident.hypothesis.computed).
+ */
+missing_information?: ("tool_unknown" | "cycle_end_time_unknown" | "no_observation_after_operation" | "no_observation_before_operation" | "operator_unknown" | "equipment_log_missing" | "other")[]
 }
 /**
  * Несоответствие зарегистрировано правилом — межизделийная стадия регистрирует несоответствие всем изделиям окна нарушения специального процесса, даже без найденного дефекта; решение — маршрутом комиссии (FR-151, AD-29).
@@ -1810,12 +1974,12 @@ method_event_ids: string[]
  * Идентификатор объекта системы или справочника: ASCII, без пробелов.
  */
 document_id?: string
-reason?: Reason13
+reason?: Reason14
 }
 /**
  * Причина действия: код и текст.
  */
-export interface Reason13 {
+export interface Reason14 {
 /**
  * Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
  * 
@@ -1846,12 +2010,12 @@ hold_id: string
  * Сколько первых изделий под усиленным контролем.
  */
 clean_point_items: number
-reason: Reason14
+reason: Reason15
 }
 /**
  * Причина действия: код и текст.
  */
-export interface Reason14 {
+export interface Reason15 {
 /**
  * Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
  * 
@@ -1906,12 +2070,12 @@ incident_id?: string
  * Условие снятия.
  */
 release_condition?: string
-reason: Reason15
+reason: Reason16
 }
 /**
  * Причина действия: код и текст.
  */
-export interface Reason15 {
+export interface Reason16 {
 /**
  * Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
  * 
@@ -1955,12 +2119,12 @@ due_at?: string
  * Идентификатор объекта системы или справочника: ASCII, без пробелов.
  */
 suggested_by_rule?: string
-reason: Reason16
+reason: Reason17
 }
 /**
  * Причина действия: код и текст.
  */
-export interface Reason16 {
+export interface Reason17 {
 /**
  * Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
  * 
@@ -1999,12 +2163,12 @@ limit: number
  * Сколько дополнительных доработок разрешено.
  */
 extra_allowed: number
-reason: Reason17
+reason: Reason18
 }
 /**
  * Причина действия: код и текст.
  */
-export interface Reason17 {
+export interface Reason18 {
 /**
  * Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
  * 
@@ -2035,7 +2199,7 @@ export interface DecisionSignalRejectedV1 {
  * Items: Идентификатор объекта системы или справочника: ASCII, без пробелов.
  */
 signal_ids: [string, ...(string)[]]
-reason: Reason18
+reason: Reason19
 /**
  * Снимок — кандидат в размеченные данные для настройки модели (FR-99).
  */
@@ -2044,7 +2208,7 @@ label_for_adaptation?: boolean
 /**
  * Причина действия: код и текст.
  */
-export interface Reason18 {
+export interface Reason19 {
 /**
  * Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
  * 
@@ -2203,12 +2367,12 @@ document_id: string
  * Версия.
  */
 version: number
-reason: Reason19
+reason: Reason20
 }
 /**
  * Причина действия: код и текст.
  */
-export interface Reason19 {
+export interface Reason20 {
 /**
  * Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
  * 
@@ -2348,6 +2512,14 @@ subject_ref: string
  * via the `definition` "uuid".
  */
 source_event_ids?: string[]
+/**
+ * Решение, которое оформляется документом «Запросить решение» (например, `disposition=scrap`; FR-146).
+ */
+decision?: string
+/**
+ * Комментарий автора запроса.
+ */
+comment?: string
 }
 /**
  * Сводка параметров за цикл — edge-агент на окно цикла отдаёт сводку (среднее, максимум, выход за уставку) — не миллисекундную телеметрию; сырые данные остаются на краю (FR-147, AD-25). `event_id` = UUIDv5(устройство, окно, вид сводки).
@@ -2933,12 +3105,12 @@ new_request_event_id?: string
  * Решение.
  */
 decision: ("send_correction" | "keep_as_sent")
-reason: Reason20
+reason: Reason21
 }
 /**
  * Причина действия: код и текст.
  */
-export interface Reason20 {
+export interface Reason21 {
 /**
  * Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
  * 
@@ -3045,12 +3217,12 @@ business_key: string
  * Идентификатор UUID в нижнем регистре (RFC 9562).
  */
 request_event_id: string
-reason: Reason21
+reason: Reason22
 }
 /**
  * Причина действия: код и текст.
  */
-export interface Reason21 {
+export interface Reason22 {
 /**
  * Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
  * 
@@ -3575,12 +3747,12 @@ incident_id: string
  * Нужен полный разбор.
  */
 full_analysis: boolean
-reason: Reason22
+reason: Reason23
 }
 /**
  * Причина действия: код и текст.
  */
-export interface Reason22 {
+export interface Reason23 {
 /**
  * Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
  * 
@@ -3627,12 +3799,12 @@ category?: ("incoming" | "equipment" | "performer" | "handling" | "assembly" | "
  * Чем проверили.
  */
 verification: string
-reason: Reason23
+reason: Reason24
 }
 /**
  * Причина действия: код и текст.
  */
-export interface Reason23 {
+export interface Reason24 {
 /**
  * Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
  * 
@@ -3759,12 +3931,12 @@ hypothesis_id?: string
  * Что записано: предложена гипотеза / гипотеза отклонена с основанием (вывод системы не переписывается, FR-59). Нет поля — proposed.
  */
 verdict?: ("proposed" | "rejected")
-reason?: Reason24
+reason?: Reason25
 }
 /**
  * Причина действия: код и текст.
  */
-export interface Reason24 {
+export interface Reason25 {
 /**
  * Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
  * 
@@ -4066,12 +4238,12 @@ incident_id: string
  * Items: Внутренний идентификатор изделия: `код_предприятия:локальный_id` (AD-16). Из метки не выводится; в прогоне локальная часть несёт префикс прогона.
  */
 item_ids: [string, ...(string)[]]
-reason: Reason25
+reason: Reason26
 }
 /**
  * Причина действия: код и текст.
  */
-export interface Reason25 {
+export interface Reason26 {
 /**
  * Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
  * 
@@ -4119,12 +4291,12 @@ evidence_event_ids: string[]
  * Снять блок с исключённых (как настроено, FR-62).
  */
 release_containment?: boolean
-reason: Reason26
+reason: Reason27
 }
 /**
  * Причина действия: код и текст.
  */
-export interface Reason26 {
+export interface Reason27 {
 /**
  * Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
  * 
@@ -4300,12 +4472,12 @@ outcome: ("accepted" | "still_invalid" | "discarded")
  * Идентификатор UUID в нижнем регистре (RFC 9562).
  */
 accepted_event_id?: string
-reason?: Reason27
+reason?: Reason28
 }
 /**
  * Причина действия: код и текст.
  */
-export interface Reason27 {
+export interface Reason28 {
 /**
  * Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
  * 
@@ -4360,12 +4532,12 @@ equipment_id?: string
  * Новый режим.
  */
 mode: ("operational" | "degraded" | "manual_only" | "out_of_service")
-reason?: Reason28
+reason?: Reason29
 }
 /**
  * Причина действия: код и текст.
  */
-export interface Reason28 {
+export interface Reason29 {
 /**
  * Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
  * 
@@ -4625,12 +4797,12 @@ carrier_type: ("dpm_datamatrix" | "tag_qr" | "container_cell" | "route_card" | "
  * Значение снятого носителя.
  */
 value: string
-reason?: Reason29
+reason?: Reason30
 }
 /**
  * Причина действия: код и текст.
  */
-export interface Reason29 {
+export interface Reason30 {
 /**
  * Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
  * 
@@ -4770,7 +4942,7 @@ zone_ids: [string, ...(string)[]]
  * Items: Идентификатор объекта системы или справочника: ASCII, без пробелов.
  */
 removed_components?: string[]
-purpose: Reason30
+purpose: Reason31
 /**
  * Условный идентификатор (псевдоним) сотрудника; соответствие человеку хранит модуль access.
  */
@@ -4779,7 +4951,7 @@ qc_consent_by?: string
 /**
  * Причина действия: код и текст.
  */
-export interface Reason30 {
+export interface Reason31 {
 /**
  * Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
  * 
@@ -5000,12 +5172,12 @@ lost_to_seq: number
  * Идентификатор объекта системы или справочника: ASCII, без пробелов.
  */
 document_id: string
-reason: Reason31
+reason: Reason32
 }
 /**
  * Причина действия: код и текст.
  */
-export interface Reason31 {
+export interface Reason32 {
 /**
  * Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
  * 
@@ -5158,7 +5330,7 @@ compromised_since?: string
  * Позиция записи в основной цепочке журнала (порядок знания, AD-37).
  */
 compromised_since_seq?: number
-reason: Reason32
+reason: Reason33
 /**
  * Идентификатор объекта системы или справочника: ASCII, без пробелов.
  */
@@ -5167,7 +5339,7 @@ document_id?: string
 /**
  * Причина действия: код и текст.
  */
-export interface Reason32 {
+export interface Reason33 {
 /**
  * Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
  * 
@@ -5328,6 +5500,38 @@ process_version_hash: string
 route_closed_event_id: string
 }
 /**
+ * Черновик версии процесса сохранён — технолог сохранил BPMN из редактора; загрузчик проверил его (FR-13); дальше — отправка на утверждение кворумом `normative.version.submitted` (FR-22, FR-25). Черновик не действует до введения в действие.
+ * 
+ * This interface was referenced by `EventsContracts`'s JSON-Schema
+ * via the `definition` "NormativeVersionDraftedV1".
+ */
+export interface NormativeVersionDraftedV1 {
+/**
+ * Идентификатор объекта системы или справочника: ASCII, без пробелов.
+ */
+version_id: string
+/**
+ * Метка версии для людей.
+ */
+label: string
+/**
+ * Идентификатор объекта системы или справочника: ASCII, без пробелов.
+ */
+base_version_id?: string
+/**
+ * Отпечаток по хешу формата цепочки с префиксом алгоритма: `streebog256:‹64 hex›` (AD-44). Им же адресуются материалы.
+ */
+process_version_hash: string
+/**
+ * Отпечаток по хешу формата цепочки с префиксом алгоритма: `streebog256:‹64 hex›` (AD-44). Им же адресуются материалы.
+ */
+bundle_digest?: string
+/**
+ * Номер сохранения черновика: каждое сохранение — новая запись с номером на единицу больше.
+ */
+revision?: number
+}
+/**
  * Стартовая версия нормативного слоя загружена — seed при первом запуске: BPMN как загружен, карта реакций, классификатор, шаблоны, политика; подписи кворума — ключами генезиса (FR-10, AD-33).
  * 
  * This interface was referenced by `EventsContracts`'s JSON-Schema
@@ -5377,12 +5581,12 @@ export interface NormativeVersionRetiredV1 {
  * Идентификатор объекта системы или справочника: ASCII, без пробелов.
  */
 version_id: string
-reason: Reason33
+reason: Reason34
 }
 /**
  * Причина действия: код и текст.
  */
-export interface Reason33 {
+export interface Reason34 {
 /**
  * Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
  * 
@@ -5720,6 +5924,14 @@ interval_end?: string
  * Откуда границы: переданы источником / вычислены системой.
  */
 interval_origin: ("source_reported" | "system_computed")
+/**
+ * Стабильный ключ шага процесса из расширения BPMN (`ant:properties/@stepKey`, AD-17).
+ */
+step_key?: string
+/**
+ * Шаг — специальный процесс по закреплённой версии процесса изделия (`ant:properties/@specialProcess`, FR-151): стадия относит выполнение к окнам нарушения режима.
+ */
+special_process?: boolean
 }
 /**
  * Операция приостановлена — перерыв внутри выполнения операции: наладка, сбой, ожидание, конец смены.
@@ -5910,12 +6122,12 @@ inspection_point?: string
  * Стабильный ключ шага процесса из расширения BPMN (`ant:properties/@stepKey`, AD-17).
  */
 step_key: string
-reason?: Reason34
+reason?: Reason35
 }
 /**
  * Причина действия: код и текст.
  */
-export interface Reason34 {
+export interface Reason35 {
 /**
  * Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
  * 
@@ -6038,12 +6250,12 @@ operator_id: string
  * Что обошли.
  */
 bypassed: ("interlock" | "automation" | "workplace_admission" | "other")
-reason?: Reason35
+reason?: Reason36
 }
 /**
  * Причина действия: код и текст.
  */
-export interface Reason35 {
+export interface Reason36 {
 /**
  * Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
  * 
@@ -6138,12 +6350,12 @@ export interface OpsProcessingRetriedV1 {
  * Идентификатор UUID в нижнем регистре (RFC 9562).
  */
 failure_event_id: string
-reason?: Reason36
+reason?: Reason37
 }
 /**
  * Причина действия: код и текст.
  */
-export interface Reason36 {
+export interface Reason37 {
 /**
  * Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
  * 
@@ -6170,12 +6382,12 @@ export interface OpsSourceDisabledV1 {
  * Идентификатор источника событий: устройство, шлюз, терминал, партнёр (`partner:‹код›`); в прогоне сценария — `‹run_id›/‹источник›` (AD-38).
  */
 source_id: string
-reason: Reason37
+reason: Reason38
 }
 /**
  * Причина действия: код и текст.
  */
-export interface Reason37 {
+export interface Reason38 {
 /**
  * Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
  * 
@@ -6202,12 +6414,12 @@ export interface OpsSourceEnabledV1 {
  * Идентификатор источника событий: устройство, шлюз, терминал, партнёр (`partner:‹код›`); в прогоне сценария — `‹run_id›/‹источник›` (AD-38).
  */
 source_id: string
-reason: Reason38
+reason: Reason39
 }
 /**
  * Причина действия: код и текст.
  */
-export interface Reason38 {
+export interface Reason39 {
 /**
  * Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
  * 
@@ -6351,12 +6563,12 @@ scope: string
  * Момент времени: RFC 3339 UTC, ровно три знака после секунд (YYYY-MM-DDTHH:MM:SS.mmmZ).
  */
 effective_from: string
-reason?: Reason39
+reason?: Reason40
 }
 /**
  * Причина действия: код и текст.
  */
-export interface Reason39 {
+export interface Reason40 {
 /**
  * Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
  * 
@@ -6451,12 +6663,12 @@ scope: string
  * Момент времени: RFC 3339 UTC, ровно три знака после секунд (YYYY-MM-DDTHH:MM:SS.mmmZ).
  */
 effective_from: string
-reason?: Reason40
+reason?: Reason41
 }
 /**
  * Причина действия: код и текст.
  */
-export interface Reason40 {
+export interface Reason41 {
 /**
  * Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
  * 
@@ -6555,12 +6767,12 @@ stamp_id: string
  * Момент времени: RFC 3339 UTC, ровно три знака после секунд (YYYY-MM-DDTHH:MM:SS.mmmZ).
  */
 effective_from: string
-reason: Reason41
+reason: Reason42
 }
 /**
  * Причина действия: код и текст.
  */
-export interface Reason41 {
+export interface Reason42 {
 /**
  * Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
  * 
@@ -7213,12 +7425,12 @@ basis_event_ids: string[]
  * Отменяемое критическое действие `CA-‹n›`.
  */
 cancels?: string
-cancel_reason?: Reason42
+cancel_reason?: Reason43
 }
 /**
  * Причина действия: код и текст.
  */
-export interface Reason42 {
+export interface Reason43 {
 /**
  * Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
  * 
@@ -7394,9 +7606,9 @@ source_id?: string
  */
 key_ref?: string
 /**
- * Что не так.
+ * Что не так; `unsigned` — подписи нет там, где политика её требует.
  */
-failure: ("unknown_key" | "revoked_key" | "foreign_key" | "profile_downgrade" | "payload_tampered" | "bad_signature" | "key_unavailable" | "class_not_allowed")
+failure: ("unknown_key" | "revoked_key" | "foreign_key" | "profile_downgrade" | "payload_tampered" | "bad_signature" | "key_unavailable" | "class_not_allowed" | "unsigned")
 /**
  * Идентификатор UUID в нижнем регистре (RFC 9562).
  */
@@ -7619,12 +7831,12 @@ export interface TaskTaskWithdrawnV1 {
  * Идентификатор объекта системы или справочника: ASCII, без пробелов.
  */
 task_id: string
-reason?: Reason43
+reason?: Reason44
 }
 /**
  * Причина действия: код и текст.
  */
-export interface Reason43 {
+export interface Reason44 {
 /**
  * Машинный код: латиница в нижнем регистре, цифры, подчёркивание.
  * 
