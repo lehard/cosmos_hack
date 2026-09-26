@@ -227,7 +227,7 @@ func (a *API) before(ctx context.Context, act platform.Action, in any) (context.
 		}
 	}
 	if a.cfg.Gate == nil {
-		return ctx, nil
+		return a.checkSignature(ctx, act, meta)
 	}
 	ctx, err := a.cfg.Gate.Admit(ctx, platform.PrincipalFrom(ctx), act, obj, meta)
 	if err != nil {
