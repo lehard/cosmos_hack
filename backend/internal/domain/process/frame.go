@@ -337,6 +337,15 @@ func GuardStart(s State, env Env, c StartCommand, at time.Time) error {
 	if t.Phase == PhaseBlocked {
 		return kernel.Refuse(errcodes.ProcessPreconditionFailed, "condition", "блок снят ("+t.Block+")")
 	}
+	// Д-8: окно until_started истекло к моменту команды — изделие уходит на
+	// повторную обработку по ветке таймера, начинать операцию нельзя.
+	for _, tm := range s.Timers {
+		if tm.Token == t.ID && tm.Host == n.ID && tm.Scope == timerScopeUntilStart && tm.DueAt.Before(at) {
+			r := kernel.Refuse(errcodes.ProcessPreconditionFailed, "condition", "окно "+tm.StepKey+" до "+ts(tm.DueAt))
+			r.Detail = "окно истекло " + ts(tm.DueAt) + " — нужна повторная подготовка"
+			return r
+		}
+	}
 	zones := s.zonesFor(n)
 	if s.runsAt(n.ID, "") == 0 {
 		zones = n.Zones
