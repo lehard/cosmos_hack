@@ -13,7 +13,6 @@ import (
 	processapp "ant/internal/application/process"
 	referenceapp "ant/internal/application/reference"
 	"ant/internal/infrastructure/fixtures/world"
-	"ant/internal/infrastructure/storage/journal/clock"
 )
 
 // Модуль process (эпик 17) на ядре процесса: хранилище версий в схеме
@@ -31,8 +30,9 @@ const processSeedFile = "normative/process/flange-process.bpmn"
 // (эпик 24: описание процесса для сроков окон BPMN и точек предъявления) поверх неё.
 func (c *core) bundleSource() engineapp.BundleSource {
 	// Внешний слой — срез справочников на basis_seq изделия (эпик 19, AD-31):
-	// поверка и квалификации для предусловий, производственный календарь сроков.
-	return &referenceapp.Bundles{Next: notificationsapp.Bundles{Next: c.itemBundles(c.qualityBundles(c.bundles))}, Source: c.refSource}
+	// поверка и квалификации для предусловий, производственный календарь сроков;
+	// под ним documents (эпик 28): шаблоны документов, срез политики, названия шагов.
+	return &referenceapp.Bundles{Next: c.documentsBundles(notificationsapp.Bundles{Next: c.itemBundles(c.qualityBundles(c.bundles))}), Source: c.refSource}
 }
 
 // states — запросы состояния изделия на момент с тем же нормативным слоем (AD-22).
@@ -69,7 +69,7 @@ func processLive(ctx context.Context, env *environment, ingest *ingestapp.Servic
 	}
 	c.ensureProcessSeed(ctx, env)
 	svc := &processapp.LiveService{Store: c.engine, States: c.states(), Library: c.versions, Bundles: c.bundles,
-		Clock:    clock.NewJournal(c.journal).Now,
+		Clock:    c.domainClock().Now,
 		Recorder: &processapp.Recorder{Journal: c.journal, DomainBuild: c.codec.DomainBuild, Partitions: env.cfg.Engine.Partitions, Now: c.codec.Now}}
 	if ingest != nil {
 		svc.Facts = ingestFacts{ingest}

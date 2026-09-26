@@ -38,8 +38,8 @@ const text = computed(() => formatValue({ t, n: (v, f) => n(v, f) }, props.value
 }
 
 .unknown {
-  color: #6b7280;
-  font-size: 12px;
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-meta);
   font-weight: 400;
 }
 </style>

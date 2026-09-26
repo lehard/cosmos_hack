@@ -54,7 +54,7 @@ steps:
       observation: step_missed
       analyzer_confidence_bp: 7800
       observation_quality_bp: 8500
-      versions: {analyzer_version: "ov-asm 0.9.4", contract_version: "1.0", recipe_ref: "OV-ASM@1"}
+      versions: {analyzer_version: "ov-asm 0.9.4", contract_version: "1.0", recipe_ref: "ov-asm@1"}
   - {at: "2026-09-22T11:50:06+03:00", ref: Е-13, system: "Нарушено условие шага: «установка крышки» заблокирована — нет подтверждения «установка уплотнения» и предъявления зоны ОТК"}
   - at: "2026-09-22T11:52:00+03:00"
     ref: Е-23
@@ -84,7 +84,7 @@ steps:
       processing_state: completed
       analyzer_confidence_bp: 9400
       observation_quality_bp: 9100
-      versions: {analyzer_version: "vqc-uv 1.0.3", contract_version: "1.0", recipe_ref: "KT-4d@2", item_revision: "Б"}
+      versions: {analyzer_version: "vqc-uv 1.0.3", contract_version: "1.0", recipe_ref: "kt4d-uv@1", item_revision: "Б"}
   - at: "2026-09-22T12:03:00+03:00"
     note: "Зона предъявлена ОТК перед закрытием"
     decision: item.presentation.record

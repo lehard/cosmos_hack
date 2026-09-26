@@ -33,7 +33,7 @@ func visionLive(ctx context.Context, env *environment) (*appvision.Service, erro
 		routes = appvision.DemoRoutes{}
 	}
 	return appvision.NewService(
-		appvision.WithDeps(appvision.Deps{Journal: c.journal, Codec: c.codec, DomainClock: clock.NewJournal(c.journal), Routes: routes, Now: c.codec.Now}),
+		appvision.WithDeps(appvision.Deps{Journal: c.journal, Codec: c.codec, DomainClock: c.domainClock(), Routes: routes, Now: c.codec.Now}),
 		appvision.WithConfig(appvision.Config{DomainBuild: c.codec.DomainBuild, Partitions: env.cfg.Engine.Partitions}),
 	), nil
 }

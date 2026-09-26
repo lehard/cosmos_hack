@@ -49,6 +49,276 @@
               "input"
             ],
             "description": "Класс: запись, решение, требование, вход."
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 999,
+            "description": "Версия шаблона: template_ref = ‹id›@‹версия› (AD-12). Нет — 1."
+          },
+          "doc_type": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$",
+            "maxLength": 64,
+            "description": "Построитель содержимого в domain/documents: traveler, nc_statement, nc_disposition, generic. Нет — шаблон только объявлен (эпик 44)."
+          },
+          "subject": {
+            "type": "string",
+            "enum": [
+              "item",
+              "nonconformity",
+              "process_version",
+              "lot",
+              "policy",
+              "other"
+            ],
+            "description": "Вид объекта документа."
+          },
+          "summary": {
+            "type": "array",
+            "maxItems": 7,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "key",
+                "label"
+              ],
+              "description": "Поле: путь в content и подпись.",
+              "properties": {
+                "key": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*$",
+                  "maxLength": 128,
+                  "description": "Путь к полю content через точку."
+                },
+                "label": {
+                  "type": "string",
+                  "maxLength": 128,
+                  "description": "Подпись поля."
+                }
+              }
+            },
+            "description": "Поля сводки уровня 2 (3–7), входят в отпечаток (AD-12, FR-66)."
+          },
+          "route": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "stage",
+                "title",
+                "authority_id",
+                "quorum",
+                "signature_level",
+                "paper_allowed"
+              ],
+              "description": "Этап маршрута подписей (AD-13); обязательные подписи вычисляет access.RequiredApprovals (AD-43).",
+              "properties": {
+                "stage": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 100,
+                  "description": "Номер этапа по порядку."
+                },
+                "title": {
+                  "type": "string",
+                  "maxLength": 128,
+                  "description": "Кто подписывает — для людей."
+                },
+                "role": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_]*$",
+                  "maxLength": 64,
+                  "description": "Роль подписанта по политике (с наследованием)."
+                },
+                "authority_id": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_]*$",
+                  "maxLength": 64,
+                  "description": "Полномочие этапа (normative/policy) или роль, если отдельного полномочия нет."
+                },
+                "stamp_kind": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_]*$",
+                  "maxLength": 64,
+                  "description": "Вид цифрового клейма для действий контроля (FR-145)."
+                },
+                "quorum": {
+                  "type": "string",
+                  "enum": [
+                    "one",
+                    "all",
+                    "k_of_n"
+                  ],
+                  "description": "Сколько подписей: 1 | все | k из n."
+                },
+                "k": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 100,
+                  "description": "k для k из n и число подписей для «все»."
+                },
+                "signature_level": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 3,
+                  "description": "Уровень подписи (AD-13)."
+                },
+                "paper_allowed": {
+                  "type": "boolean",
+                  "description": "Бумага с заверением допустима (AD-43)."
+                },
+                "attester_authority_id": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_]*$",
+                  "maxLength": 64,
+                  "description": "Полномочие заверителя бумажной подписи; нет — бумага на этапе запрещена."
+                },
+                "external_party": {
+                  "type": "string",
+                  "enum": [
+                    "none",
+                    "customer_representative",
+                    "partner"
+                  ],
+                  "description": "Внешняя сторона."
+                },
+                "by_source": {
+                  "type": "boolean",
+                  "description": "Этап закрывает само решение-источник документа."
+                },
+                "separation": {
+                  "type": "array",
+                  "uniqueItems": true,
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "distinct_signers",
+                      "not_item_participant"
+                    ]
+                  },
+                  "description": "Разделение обязанностей (FR-56, AD-43)."
+                },
+                "when": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "description": "Этап нужен только при условии (режим автоматизации, решение).",
+                  "properties": {
+                    "decisions": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "pattern": "^[a-z][a-z0-9_]*$",
+                        "maxLength": 64
+                      },
+                      "description": "Решения, при которых этап нужен (например, repair, use_as_is — режим 4)."
+                    },
+                    "customer_acceptance": {
+                      "type": "boolean",
+                      "description": "Этап нужен для продукции с приёмкой представителя заказчика (режим 5)."
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Маршрут подписей (AD-13, AD-43)."
+          },
+          "layout": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "kind"
+              ],
+              "description": "Раздел канонической HTML-отрисовки (AD-12).",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "fields",
+                    "table",
+                    "route",
+                    "text"
+                  ],
+                  "description": "Вид раздела: поля, таблица по массиву, маршрут подписей, текст поля."
+                },
+                "title": {
+                  "type": "string",
+                  "maxLength": 128,
+                  "description": "Заголовок раздела."
+                },
+                "fields": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "key",
+                      "label"
+                    ],
+                    "description": "Поле: путь в content и подпись.",
+                    "properties": {
+                      "key": {
+                        "type": "string",
+                        "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*$",
+                        "maxLength": 128,
+                        "description": "Путь к полю content через точку."
+                      },
+                      "label": {
+                        "type": "string",
+                        "maxLength": 128,
+                        "description": "Подпись поля."
+                      }
+                    }
+                  },
+                  "description": "Поля раздела fields."
+                },
+                "rows": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*$",
+                  "maxLength": 128,
+                  "description": "Путь к массиву строк раздела table."
+                },
+                "columns": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "key",
+                      "label"
+                    ],
+                    "description": "Поле: путь в content и подпись.",
+                    "properties": {
+                      "key": {
+                        "type": "string",
+                        "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*$",
+                        "maxLength": 128,
+                        "description": "Путь к полю content через точку."
+                      },
+                      "label": {
+                        "type": "string",
+                        "maxLength": 128,
+                        "description": "Подпись поля."
+                      }
+                    }
+                  },
+                  "description": "Колонки раздела table: путь внутри строки и подпись."
+                },
+                "key": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*$",
+                  "maxLength": 128,
+                  "description": "Путь к полю раздела text."
+                }
+              }
+            },
+            "description": "Каноническая отрисовка HTML (AD-12): печатная рамка в неё не входит."
           }
         }
       }

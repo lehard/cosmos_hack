@@ -13,7 +13,7 @@
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NAlert, NButton } from 'naive-ui'
+import { NAlert } from 'naive-ui'
 import {
   CIRCUMSTANCE_LANES,
   PHASES,
@@ -35,6 +35,7 @@ import {
 } from '@/entities/incident'
 import { codeToKey } from '@/shared/i18n'
 import type { Density } from '@/shared/config/widget'
+import { ActionButton } from '@/shared/ui'
 
 const props = withDefaults(defineProps<{ model: CircumstancesModel; density?: Density }>(), { density: 'compact' })
 /** Выбранная запись (`event_id`) — двусторонняя привязка. */
@@ -257,7 +258,7 @@ const missingText = (code: string) => t(`widgets.analysis.missing.${codeToKey(co
         </template>
         <dt>{{ t('common.words.evidence') }}</dt>
         <dd>
-          <NButton
+          <ActionButton
             v-for="ref in selectedRecord.evidence_refs ?? []"
             :key="ref"
             size="tiny"
@@ -265,23 +266,21 @@ const missingText = (code: string) => t(`widgets.analysis.missing.${codeToKey(co
             class="chip"
             data-testid="evidence"
             @click="emit('open-evidence', ref, selectedRecord.event_id)"
-          >
-            {{ t('widgets.analysis.circumstances.frame', { ref }) }}
-          </NButton>
+            :label="t('widgets.analysis.circumstances.frame', { ref })"
+          />
           <span v-if="!selectedRecord.evidence_refs?.length" class="muted">{{ t('widgets.analysis.circumstances.noFrame') }}</span>
         </dd>
         <dt>{{ t('timeline.feed') }}</dt>
         <dd>
-          <NButton
+          <ActionButton
             v-if="selectedRecord.journal_seq != null"
             size="tiny"
             secondary
             class="chip"
             data-testid="journal-record"
             @click="emit('open-record', selectedRecord.journal_seq, selectedRecord.event_id)"
-          >
-            {{ t('widgets.analysis.circumstances.journalRecord', { seq: selectedRecord.journal_seq }) }}
-          </NButton>
+            :label="t('widgets.analysis.circumstances.journalRecord', { seq: selectedRecord.journal_seq })"
+          />
           <span v-else class="muted">{{ t('widgets.analysis.circumstances.journalRecordUnknown') }}</span>
         </dd>
         <template v-if="linked.size > 1">
@@ -311,11 +310,11 @@ const missingText = (code: string) => t(`widgets.analysis.missing.${codeToKey(co
   display: flex;
   flex-direction: column;
   gap: 12px;
-  font-size: 13px;
+  font-size: var(--ant-fs-body);
 }
 
 .density-large {
-  font-size: 16px;
+  font-size: var(--ant-fs-lg);
 }
 
 .heading {
@@ -329,7 +328,7 @@ const missingText = (code: string) => t(`widgets.analysis.missing.${codeToKey(co
 
 .muted {
   margin: 0;
-  color: #6b7280;
+  color: var(--ant-text-3);
 }
 
 .dot {
@@ -366,8 +365,8 @@ const missingText = (code: string) => t(`widgets.analysis.missing.${codeToKey(co
   margin: 0;
   padding: 0;
   list-style: none;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
+  border: 1px solid var(--ant-border);
+  border-radius: var(--ant-radius-md);
 }
 
 .phase {
@@ -376,16 +375,16 @@ const missingText = (code: string) => t(`widgets.analysis.missing.${codeToKey(co
 }
 
 .phase + .phase {
-  border-left: 1px solid #e5e7eb;
+  border-left: 1px solid var(--ant-border);
 }
 
 .phase[data-phase='during'] {
-  background: #f8fafc;
+  background: var(--ant-surface-subtle);
 }
 
 .phase-title {
   margin-bottom: 4px;
-  font-weight: 700;
+  font-weight: var(--ant-fw-bold);
 }
 
 .phase-list {
@@ -408,15 +407,15 @@ const missingText = (code: string) => t(`widgets.analysis.missing.${codeToKey(co
   display: grid;
   grid-template-columns: 104px minmax(0, 1fr);
   grid-auto-rows: auto;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
+  border: 1px solid var(--ant-border);
+  border-radius: var(--ant-radius-md);
   overflow: hidden;
 }
 
 .axis-label {
   grid-row: 1;
   grid-column: 1;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--ant-border);
 }
 
 .axis {
@@ -424,16 +423,16 @@ const missingText = (code: string) => t(`widgets.analysis.missing.${codeToKey(co
   grid-row: 1;
   grid-column: 2;
   height: 24px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--ant-border);
 }
 
 .tick {
   position: absolute;
   top: 5px;
   transform: translateX(-50%);
-  color: #6b7280;
-  font-family: 'PT Mono', monospace;
-  font-size: 11px;
+  color: var(--ant-text-3);
+  font-family: var(--ant-font-mono);
+  font-size: var(--ant-fs-xs);
   white-space: nowrap;
 }
 
@@ -442,9 +441,9 @@ const missingText = (code: string) => t(`widgets.analysis.missing.${codeToKey(co
   display: flex;
   align-items: center;
   padding: 0 10px;
-  font-weight: 700;
-  background: #f9fafb;
-  border-right: 1px solid #e5e7eb;
+  font-weight: var(--ant-fw-bold);
+  background: var(--ant-surface-subtle);
+  border-right: 1px solid var(--ant-border);
 }
 
 .lane {
@@ -455,7 +454,7 @@ const missingText = (code: string) => t(`widgets.analysis.missing.${codeToKey(co
 
 .lane-label.sep,
 .lane.sep {
-  border-top: 1px dashed #e5e7eb;
+  border-top: 1px dashed var(--ant-border);
 }
 
 .interval {
@@ -485,22 +484,22 @@ const missingText = (code: string) => t(`widgets.analysis.missing.${codeToKey(co
 }
 
 .op-band {
-  background: repeating-linear-gradient(135deg, rgb(47 111 219 / 5%) 0 6px, transparent 6px 12px);
-  border-left: 1px solid rgb(47 111 219 / 40%);
-  border-right: 1px solid rgb(47 111 219 / 40%);
+  background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--ant-accent) 5%, transparent) 0 6px, transparent 6px 12px);
+  border-left: 1px solid color-mix(in srgb, var(--ant-accent) 40%, transparent);
+  border-right: 1px solid color-mix(in srgb, var(--ant-accent) 40%, transparent);
 }
 
 .window-band {
-  background: rgb(224 161 0 / 12%);
-  border-left: 2px solid rgb(224 161 0 / 70%);
-  border-right: 2px solid rgb(224 161 0 / 70%);
+  background: color-mix(in srgb, var(--ant-status-attention) 12%, transparent);
+  border-left: 2px solid color-mix(in srgb, var(--ant-status-attention) 70%, transparent);
+  border-right: 2px solid color-mix(in srgb, var(--ant-status-attention) 70%, transparent);
 }
 
 .band-label {
   position: absolute;
   bottom: 2px;
   left: 4px;
-  color: #6b7280;
+  color: var(--ant-text-3);
   font-size: 10px;
   white-space: nowrap;
 }
@@ -508,7 +507,7 @@ const missingText = (code: string) => t(`widgets.analysis.missing.${codeToKey(co
 .window-band .band-label {
   top: 2px;
   bottom: auto;
-  color: #8a6400;
+  color: var(--ant-status-attention-text);
 }
 
 /* Отметка: форма по смыслу + подпись; цвет — из словаря статусов. */
@@ -521,11 +520,11 @@ const missingText = (code: string) => t(`widgets.analysis.missing.${codeToKey(co
   height: 20px;
   padding: 0 4px 0 0;
   border: 0;
-  border-radius: 3px;
+  border-radius: var(--ant-radius-sm);
   background: transparent;
-  color: #1f2937;
+  color: var(--ant-text);
   font: inherit;
-  font-size: 12px;
+  font-size: var(--ant-fs-meta);
   cursor: pointer;
   transform: translateX(-5px);
 }
@@ -538,8 +537,8 @@ const missingText = (code: string) => t(`widgets.analysis.missing.${codeToKey(co
 
 .mark:hover,
 .mark:focus-visible {
-  background: rgb(255 255 255 / 90%);
-  outline: 1px solid #cbd5e1;
+  background: color-mix(in srgb, var(--ant-surface) 90%, transparent);
+  outline: 1px solid var(--ant-n-300);
   z-index: 2;
 }
 
@@ -573,7 +572,7 @@ const missingText = (code: string) => t(`widgets.analysis.missing.${codeToKey(co
 }
 
 .shape[data-shape='unable'] {
-  background: #fff;
+  background: var(--ant-surface);
   border: 2px solid var(--c);
 }
 
@@ -583,15 +582,15 @@ const missingText = (code: string) => t(`widgets.analysis.missing.${codeToKey(co
 }
 
 .mark.is-selected {
-  background: #fff;
-  outline: 2px solid #1f2937;
-  font-weight: 700;
+  background: var(--ant-surface);
+  outline: 2px solid var(--ant-text);
+  font-weight: var(--ant-fw-bold);
   z-index: 3;
 }
 
 .mark.is-linked {
-  background: #fff;
-  outline: 2px dashed #2f6fdb;
+  background: var(--ant-surface);
+  outline: 2px dashed var(--ant-accent);
   z-index: 3;
 }
 
@@ -600,7 +599,7 @@ const missingText = (code: string) => t(`widgets.analysis.missing.${codeToKey(co
 }
 
 .mark.is-muted {
-  color: #9ca3af;
+  color: var(--ant-n-400);
 }
 
 .window-legend {
@@ -614,22 +613,22 @@ const missingText = (code: string) => t(`widgets.analysis.missing.${codeToKey(co
 .swatch {
   width: 14px;
   height: 10px;
-  background: rgb(224 161 0 / 25%);
-  border: 1px solid rgb(224 161 0 / 70%);
+  background: color-mix(in srgb, var(--ant-status-attention) 25%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ant-status-attention) 70%, transparent);
 }
 
 .details {
   padding: 8px 12px;
-  border: 1px solid #cbd5e1;
-  border-radius: 6px;
-  background: #f8fafc;
+  border: 1px solid var(--ant-n-300);
+  border-radius: var(--ant-radius-md);
+  background: var(--ant-surface-subtle);
 }
 
 .details-title {
   display: flex;
   gap: 6px;
   align-items: center;
-  font-weight: 700;
+  font-weight: var(--ant-fw-bold);
 }
 
 .details dl {
@@ -640,7 +639,7 @@ const missingText = (code: string) => t(`widgets.analysis.missing.${codeToKey(co
 }
 
 .details dt {
-  color: #6b7280;
+  color: var(--ant-text-3);
 }
 
 .details dd {
@@ -660,7 +659,7 @@ const missingText = (code: string) => t(`widgets.analysis.missing.${codeToKey(co
 
 .chip-text {
   padding: 1px 8px;
-  border-radius: 10px;
-  background: #f3f4f6;
+  border-radius: var(--ant-radius-lg);
+  background: var(--ant-n-100);
 }
 </style>

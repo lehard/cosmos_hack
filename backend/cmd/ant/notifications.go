@@ -7,7 +7,6 @@ import (
 
 	appjournal "ant/internal/application/journal"
 	notificationsapp "ant/internal/application/notifications"
-	"ant/internal/infrastructure/storage/journal/clock"
 	"ant/internal/infrastructure/storage/journal/feed"
 	notificationsstore "ant/internal/infrastructure/storage/notifications"
 )
@@ -39,7 +38,7 @@ func notificationsLive(ctx context.Context, env *environment) (*notificationsapp
 		Projections: notificationsstore.New(c.pool),
 		Decisions: notificationsapp.JournalDecisions{Journal: c.journal, DomainBuild: c.codec.DomainBuild,
 			Partitions: env.cfg.Engine.Partitions, Now: c.codec.Now},
-		Clock: clock.NewJournal(c.journal),
+		Clock: c.domainClock(),
 	}), nil
 }
 
@@ -55,7 +54,7 @@ func runScheduler(ctx context.Context, env *environment) error {
 	}
 	s := &notificationsapp.Scheduler{
 		Projections: notificationsstore.New(c.pool), Codec: c.codec,
-		Clock: clock.NewJournal(c.journal), Log: env.log, BatchMax: env.cfg.Journal.BatchMax,
+		Clock: c.domainClock(), Log: env.log, BatchMax: env.cfg.Journal.BatchMax,
 	}
 	integrity := &notificationsapp.Integrity{Journal: c.journal, Log: env.log}
 	checks := []notificationsapp.Check{{Name: "integrity", Every: integrityEvery, Run: integrity.Check}}

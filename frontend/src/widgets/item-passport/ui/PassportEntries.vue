@@ -19,6 +19,7 @@ import {
   type PassportEntry,
   type RecordLayer,
 } from '@/entities/item'
+import { EmptyState } from '@/shared/ui'
 
 const props = withDefaults(
   defineProps<{
@@ -50,7 +51,7 @@ const time = (x: string) => d(new Date(x), 'dateTime')
       <NRadioButton value="all">{{ t('timeline.layer.all') }}</NRadioButton>
       <NRadioButton v-for="l in RECORD_LAYERS" :key="l" :value="l">{{ t(LAYER_TEXT[l]) }}</NRadioButton>
     </NRadioGroup>
-    <p v-if="!rows.length" class="muted">{{ t('empty.noRecords') }}</p>
+    <EmptyState v-if="!rows.length" compact :title="t('empty.noRecords')" />
     <ol class="list">
       <li v-for="{ e, text, critical } in rows" :key="e.event_id" class="row" :data-kind="e.kind" :data-event="e.event_type" :data-id="e.event_id">
         <div class="line">
@@ -102,7 +103,7 @@ h4 {
 
 .row {
   padding: 4px 0;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid var(--ant-n-100);
 }
 
 .line {
@@ -113,36 +114,36 @@ h4 {
 }
 
 .time {
-  color: #6b7280;
+  color: var(--ant-text-3);
   font-variant-numeric: tabular-nums;
 }
 
 .text {
-  font-weight: 600;
+  font-weight: var(--ant-fw-bold);
 }
 
 .layer,
 .ca,
 .seq {
-  color: #6b7280;
-  font-size: 11px;
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-xs);
 }
 
 .ca {
-  font-weight: 700;
+  font-weight: var(--ant-fw-bold);
 }
 
 .meta,
 .signatures {
   padding-left: 12px;
-  font-size: 12px;
+  font-size: var(--ant-fs-meta);
 }
 
 .mark,
 .muted {
   margin: 0;
-  color: #6b7280;
-  font-size: 12px;
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-meta);
 }
 
 .mark {

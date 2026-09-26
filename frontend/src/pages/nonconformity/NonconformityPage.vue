@@ -33,8 +33,8 @@ const passportSlice = computed(() => ({ item_id: itemId.value, view: 'compact' }
 <style scoped>
 .nc-page {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(320px, 400px);
-  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) minmax(var(--ant-w-side-min), var(--ant-w-side));
+  gap: var(--ant-space-5);
   align-items: start;
 }
 
@@ -42,7 +42,7 @@ const passportSlice = computed(() => ({ item_id: itemId.value, view: 'compact' }
 .side {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--ant-space-5);
   min-width: 0;
 }
 

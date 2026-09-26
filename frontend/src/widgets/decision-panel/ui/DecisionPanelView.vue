@@ -14,7 +14,7 @@
  */
 import { computed, reactive, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NAlert, NButton, NInput, NSelect } from 'naive-ui'
+import { NAlert, NInput, NSelect } from 'naive-ui'
 import {
   DECISION_ACTIONS,
   DISPOSITIONS,
@@ -35,6 +35,7 @@ import {
 import { AuthorityNote, type Explanation } from '@/features/decision-authority'
 import { naiveSizeOf, type Density } from '@/shared/config/widget'
 import { useProblemText } from '@/shared/i18n/problem'
+import { ActionButton } from '@/shared/ui'
 
 const props = withDefaults(
   defineProps<{
@@ -135,7 +136,7 @@ const reasonLabel = computed(() => (draft.action === 'reject_signal' ? t('decisi
     <p v-if="!actions.length" class="muted" data-testid="nothing">{{ t('widgets.decisions.nothingToDecide') }}</p>
 
     <section v-if="signalActions.length" class="group" data-group="signal">
-      <NButton
+      <ActionButton overflow="wrap"
         v-for="a in signalActions"
         :key="a"
         :size="size"
@@ -144,14 +145,13 @@ const reasonLabel = computed(() => (draft.action === 'reject_signal' ? t('decisi
         :disabled="!canAct || busy"
         :data-action="a"
         @click="choose(a)"
-      >
-        {{ t(DECISION_ACTIONS[a].labelKey, { nextStep: t('widgets.decisions.nextStep'), method: '' }) }}
-      </NButton>
+        :label="t(DECISION_ACTIONS[a].labelKey, { nextStep: t('widgets.decisions.nextStep'), method: '' })"
+      />
     </section>
 
     <section v-if="dispositionOpen" class="group" data-group="disposition">
       <h4>{{ t('decisions.disposition.title') }}</h4>
-      <NButton
+      <ActionButton overflow="wrap"
         v-for="d in DISPOSITIONS"
         :key="d"
         :size="size"
@@ -160,9 +160,8 @@ const reasonLabel = computed(() => (draft.action === 'reject_signal' ? t('decisi
         :disabled="!canAct || busy"
         :data-disposition="d"
         @click="choose('disposition', d)"
-      >
-        {{ t(DISPOSITION_LABEL[d], { operation: reworkOperation }) }}
-      </NButton>
+        :label="t(DISPOSITION_LABEL[d], { operation: reworkOperation })"
+      />
       <p class="muted">{{ t('decisions.disposition.decisionDoesNotWaitForCause') }}</p>
     </section>
 
@@ -185,9 +184,7 @@ const reasonLabel = computed(() => (draft.action === 'reject_signal' ? t('decisi
             <NSelect v-if="usable.length" v-model:value="draft.concession_id" :options="concessionOptions" :size="size" data-testid="concession" />
           </label>
           <p v-if="!usable.length" class="warn" data-testid="no-concession">{{ t('decisions.disposition.noActiveConcession') }}</p>
-          <NButton v-if="!usable.length" :size="size" secondary :disabled="!canAct || busy" data-testid="create-concession" @click="emit('create-concession')">
-            {{ t('decisions.concession.create') }}
-          </NButton>
+          <ActionButton overflow="wrap" v-if="!usable.length" :size="size" secondary :disabled="!canAct || busy" data-testid="create-concession" @click="emit('create-concession')" :label="t('decisions.concession.create')" />
           <p class="muted" data-testid="concession-result">{{ t('decisions.concession.resultStatus') }}</p>
           <p class="muted">{{ t('decisions.concession.notDeviationPermit') }}</p>
         </template>
@@ -232,7 +229,7 @@ const reasonLabel = computed(() => (draft.action === 'reject_signal' ? t('decisi
         @request-decision="operation && emit('request-decision', operation)"
       />
 
-      <NButton
+      <ActionButton overflow="wrap"
         v-if="permitted !== false"
         type="primary"
         :size="size"
@@ -240,9 +237,8 @@ const reasonLabel = computed(() => (draft.action === 'reject_signal' ? t('decisi
         :loading="busy"
         data-testid="sign"
         @click="emit('sign', { ...draft })"
-      >
-        {{ t('decisions.signature.signClosingDecision') }}
-      </NButton>
+        :label="t('decisions.signature.signClosingDecision')"
+      />
     </section>
 
     <NAlert v-if="error" type="error" :bordered="false" :show-icon="false" data-testid="command-error">{{ problemText(error) }}</NAlert>
@@ -257,11 +253,11 @@ const reasonLabel = computed(() => (draft.action === 'reject_signal' ? t('decisi
   display: flex;
   flex-direction: column;
   gap: 10px;
-  font-size: 13px;
+  font-size: var(--ant-fs-body);
 }
 
 .density-large {
-  font-size: 16px;
+  font-size: var(--ant-fs-lg);
 }
 
 .group {
@@ -281,8 +277,8 @@ const reasonLabel = computed(() => (draft.action === 'reject_signal' ? t('decisi
   flex-direction: column;
   gap: 8px;
   padding: 8px 10px;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
+  border: 1px solid var(--ant-border);
+  border-radius: var(--ant-radius-md);
 }
 
 .field {
@@ -295,25 +291,25 @@ const reasonLabel = computed(() => (draft.action === 'reject_signal' ? t('decisi
 .warn,
 .receipt {
   margin: 0;
-  font-size: 12px;
+  font-size: var(--ant-fs-meta);
 }
 
 .muted {
-  color: #6b7280;
+  color: var(--ant-text-3);
 }
 
 .warn {
-  color: #b45309;
+  color: var(--ant-status-attention-text);
 }
 
 .problems {
   margin: 0;
   padding-left: 16px;
-  color: #b45309;
-  font-size: 12px;
+  color: var(--ant-status-attention-text);
+  font-size: var(--ant-fs-meta);
 }
 
 .receipt {
-  color: #2e9e5b;
+  color: var(--ant-status-success);
 }
 </style>

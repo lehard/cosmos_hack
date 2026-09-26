@@ -74,6 +74,8 @@ type ActResult struct {
 	// Code — код отказа problem+json (пусто — команда принята).
 	Code   string
 	Status int
+	// Detail — пояснение отказа problem+json.
+	Detail string
 }
 
 // Actor — решения людей теми же операциями API от имени демо-персоны

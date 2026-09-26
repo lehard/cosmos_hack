@@ -7,8 +7,8 @@
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NEmpty, NText } from 'naive-ui'
 import type { WidgetProps } from '@/shared/config/widget'
+import EmptyState from './EmptyState.vue'
 import WidgetFrame from './WidgetFrame.vue'
 
 const props = defineProps<WidgetProps & { /** Эпик, который наполняет виджет. */ epic: number }>()
@@ -19,12 +19,20 @@ const slice = computed(() => (Object.keys(props.slice).length ? JSON.stringify(p
 
 <template>
   <WidgetFrame :title-key="titleKey" :density="density" :data-widget="widgetId" data-stub="true">
-    <NEmpty :description="t('shell.stub.title')">
-      <template #extra>
-        <NText depth="3">{{ t('shell.stub.body', { epic, slot: slotId, density: t(`shell.density.${density}`) }) }}</NText>
-        <br />
-        <NText v-if="slice" depth="3" code>{{ t('shell.stub.slice', { slice }) }}</NText>
-      </template>
-    </NEmpty>
+    <EmptyState :title="t('shell.stub.title')" :description="t('shell.stub.body', { epic, slot: slotId, density: t(`shell.density.${density}`) })">
+      <code v-if="slice" class="slice ant-wrap">{{ t('shell.stub.slice', { slice }) }}</code>
+    </EmptyState>
   </WidgetFrame>
 </template>
+
+<style scoped>
+.slice {
+  display: block;
+  max-width: 60ch;
+  padding: var(--ant-space-1) var(--ant-space-2);
+  border-radius: var(--ant-radius-sm);
+  background: var(--ant-n-100);
+  color: var(--ant-text-2);
+  font-size: var(--ant-fs-xs);
+}
+</style>

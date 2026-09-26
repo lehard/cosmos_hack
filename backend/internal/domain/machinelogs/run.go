@@ -38,6 +38,9 @@ type Run struct {
 	// Resolved — интервал задан operation.run.interval_resolved (главнее
 	// сообщённого источником).
 	Resolved bool `json:"resolved,omitempty"`
+	// Special — признак «специальный процесс» из operation.run.interval_resolved
+	// (главнее нормативной части Env: DefaultSpecialSteps до эпика 17).
+	Special *bool `json:"special_resolved,omitempty"`
 	// Causes — записи выполнения (начало, конец, интервал) для причин
 	// адресованных записей стадии.
 	Causes []Cause `json:"causes,omitempty"`
@@ -52,6 +55,16 @@ type Cause struct {
 // Record — причина как запись для kernel.NewAddressed.
 func (c Cause) Record() kernel.Record {
 	return kernel.Record{EventID: c.EventID, OccurredAt: c.OccurredAt}
+}
+
+// IsSpecial — выполнение — специальный процесс (FR-151): признак процесса из
+// operation.run.interval_resolved главнее нормативной части env (стык эпиков
+// 17 и 23, эпик 16); признака ещё нет — по шагу (env.Special).
+func (r Run) IsSpecial(env Env) bool {
+	if r.Special != nil {
+		return *r.Special
+	}
+	return env.Special(r.StepKey)
 }
 
 // Closed — интервал выполнения закрыт (конец известен).
@@ -85,6 +98,9 @@ type runData struct {
 	IntervalStart       *time.Time `json:"interval_start"`
 	IntervalEnd         *time.Time `json:"interval_end"`
 	IntervalOrigin      string     `json:"interval_origin"`
+	// SpecialProcess — признак «специальный процесс» шага выполнения от
+	// process (operation.run.interval_resolved, закреплённая версия, FR-151).
+	SpecialProcess *bool `json:"special_process"`
 }
 
 // IsRunRecord — запись выполнения операции, которую читает machinelogs.
@@ -147,6 +163,13 @@ func ApplyRun(run Run, r kernel.Record) (Run, error) {
 		}
 	case catalog.OperationRunIntervalResolved:
 		run.Resolved = true
+		if d.SpecialProcess != nil {
+			v := *d.SpecialProcess
+			run.Special = &v
+		}
+		if run.StepKey == "" {
+			run.StepKey = d.StepKey
+		}
 		if d.IntervalStart != nil {
 			run.StartedAt = d.IntervalStart.UTC()
 		}

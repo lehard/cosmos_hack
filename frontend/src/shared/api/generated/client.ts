@@ -106,6 +106,8 @@ import type {
   CryptoProfileList,
   DecisionCard,
   DecisionQueue,
+  DecisionRequestList,
+  DeclineSignature,
   DefineCalendar,
   DefineEquipment,
   DefineItemType,
@@ -120,6 +122,8 @@ import type {
   DocumentsDocumentListParams,
   DocumentsDocumentReadParams,
   DocumentsDocumentRenderParams,
+  DocumentsPaperPrintViewParams,
+  DocumentsRequestListParams,
   DraftVersion,
   EquipmentList,
   EquipmentState,
@@ -218,6 +222,9 @@ import type {
   PauseOperation,
   PermissionList,
   PostList,
+  PrintAccepted,
+  PrintPaper,
+  PrintView,
   Problem,
   ProcessBpmn,
   ProcessLiveMapReadParams,
@@ -249,6 +256,7 @@ import type {
   RecordHypothesis,
   RecordPresentation,
   RecordRelease,
+  RecordSignature,
   RefCalendar,
   RefEquipmentList,
   RefExternalIDList,
@@ -280,10 +288,12 @@ import type {
   RemoveCarrier,
   ReportDeviation,
   ReprocessMessage,
+  RequestAccepted,
   RequestDecision,
   RequestInspection,
   RequestMeasurement,
   RequestRecheck,
+  RequestVersion,
   ResendPosting,
   ResolveLot,
   ResolvePresentation,
@@ -4639,6 +4649,124 @@ export function useNonconformityQueueList<TData = Awaited<ReturnType<typeof nonc
 
 
 
+export type documentsRequestListResponse200 = {
+  data: DecisionRequestList
+  status: 200
+}
+
+export type documentsRequestListResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type documentsRequestListResponseSuccess = (documentsRequestListResponse200) & {
+  headers: Headers;
+};
+export type documentsRequestListResponseError = (documentsRequestListResponseDefault) & {
+  headers: Headers;
+};
+
+export const getDocumentsRequestListUrl = (params?: DocumentsRequestListParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/decision-requests?${stringifiedParams}` : `/api/v1/decision-requests`
+}
+
+/**
+ * FR-136: открытые версии документов, чей ближайший незакрытый этап маршрута вправе подписать пользователь сеанса: документ с маршрутом, что предлагается, почему к вам, доводы, ваш этап, ожидаемый подписант (он же в QR бумажного экземпляра).
+ * @summary Запросы решения, ждущие вашей подписи
+ */
+export const documentsRequestList = async (params?: DocumentsRequestListParams, options?: RequestInit): Promise<documentsRequestListResponseSuccess> => {
+
+  const res = await fetch(getDocumentsRequestListUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: documentsRequestListResponseError['data'], status?: number} = new globalThis.Error();
+    const data : documentsRequestListResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: documentsRequestListResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as documentsRequestListResponseSuccess
+}
+
+
+
+
+
+export const getDocumentsRequestListQueryKey = (params?: MaybeRefOrGetter<DocumentsRequestListParams>,) => {
+    return [
+    'api','v1','decision-requests', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getDocumentsRequestListQueryOptions = <TData = Awaited<ReturnType<typeof documentsRequestList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(params?: MaybeRefOrGetter<DocumentsRequestListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof documentsRequestList>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getDocumentsRequestListQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof documentsRequestList>>> = ({ signal }) => documentsRequestList(toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof documentsRequestList>>, TError, TData>
+}
+
+export type DocumentsRequestListQueryResult = NonNullable<Awaited<ReturnType<typeof documentsRequestList>>>
+export type DocumentsRequestListQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Запросы решения, ждущие вашей подписи
+ */
+
+export function useDocumentsRequestList<TData = Awaited<ReturnType<typeof documentsRequestList>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ params?: MaybeRefOrGetter<DocumentsRequestListParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof documentsRequestList>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getDocumentsRequestListQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+
 export type qualityDefectListResponse200 = {
   data: QualityDefectList
   status: 200
@@ -5104,6 +5232,126 @@ export const useDocumentsDocumentRequest = <TError = globalThis.Error & { info?:
         TContext
       > => {
       return useMutation(getDocumentsDocumentRequestMutationOptions(options), queryClient);
+    }
+
+export type documentsVersionRequestResponse200 = {
+  data: RequestAccepted
+  status: 200
+}
+
+export type documentsVersionRequestResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type documentsVersionRequestResponseSuccess = (documentsVersionRequestResponse200) & {
+  headers: Headers;
+};
+export type documentsVersionRequestResponseError = (documentsVersionRequestResponseDefault) & {
+  headers: Headers;
+};
+
+export const getDocumentsVersionRequestUrl = () => {
+
+
+
+
+  return `/api/v1/documents/versions`
+}
+
+/**
+ * FR-146, FR-136, AD-12: document.version.requested; шаблон — явно или по недоступному действию. У изделия версию оформляет свёртка (воркер: document.version.drafted), у объекта вне изделия — в той же пачке. Обязательные подписи вычисляются один раз (AD-43).
+ * @summary Запросить решение / новая версия документа
+ */
+export const documentsVersionRequest = async (requestVersion: RequestVersion, options?: RequestInit): Promise<documentsVersionRequestResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getDocumentsVersionRequestUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(requestVersion)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: documentsVersionRequestResponseError['data'], status?: number} = new globalThis.Error();
+    const data : documentsVersionRequestResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: documentsVersionRequestResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as documentsVersionRequestResponseSuccess
+}
+
+
+
+
+
+export const getDocumentsVersionRequestMutationKey = () => ['documentsVersionRequest'] as const;
+
+export const getDocumentsVersionRequestMutationOptions = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof documentsVersionRequest>>, TError,DocumentsVersionRequestMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof documentsVersionRequest>>, TError,DocumentsVersionRequestMutationVariables, TContext> => {
+
+const mutationKey = getDocumentsVersionRequestMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof documentsVersionRequest>>, DocumentsVersionRequestMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  documentsVersionRequest(data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DocumentsVersionRequestMutationResult = NonNullable<Awaited<ReturnType<typeof documentsVersionRequest>>>
+    export type DocumentsVersionRequestMutationBody = RequestVersion
+    export type DocumentsVersionRequestMutationError = globalThis.Error & { info?: Problem; status?: number }
+    export type DocumentsVersionRequestMutationVariables = {data: RequestVersion}
+
+    /**
+ * @summary Запросить решение / новая версия документа
+ */
+export const useDocumentsVersionRequest = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof documentsVersionRequest>>, TError,DocumentsVersionRequestMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof documentsVersionRequest>>,
+        TError,
+        DocumentsVersionRequestMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDocumentsVersionRequestMutationOptions(options), queryClient);
     }
 
 export type documentsDocumentReadResponse200 = {
@@ -5592,6 +5840,250 @@ export const useDocumentsPaperStatusSet = <TError = globalThis.Error & { info?: 
       return useMutation(getDocumentsPaperStatusSetMutationOptions(options), queryClient);
     }
 
+export type documentsPaperPrintViewResponse200 = {
+  data: PrintView
+  status: 200
+}
+
+export type documentsPaperPrintViewResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type documentsPaperPrintViewResponseSuccess = (documentsPaperPrintViewResponse200) & {
+  headers: Headers;
+};
+export type documentsPaperPrintViewResponseError = (documentsPaperPrintViewResponseDefault) & {
+  headers: Headers;
+};
+
+export const getDocumentsPaperPrintViewUrl = (documentId: string,
+    params?: DocumentsPaperPrintViewParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/documents/${documentId}/print?${stringifiedParams}` : `/api/v1/documents/${documentId}/print`
+}
+
+/**
+ * FR-139, AD-12: каноническая отрисовка в печатной рамке — QR ant:doc:‹id›:‹отпечаток› (SVG рисует сервер), дата печати, колонтитул «получено из системы». Рамка в отпечаток не входит.
+ * @summary Печатная форма документа
+ */
+export const documentsPaperPrintView = async (documentId: string,
+    params?: DocumentsPaperPrintViewParams, options?: RequestInit): Promise<documentsPaperPrintViewResponseSuccess> => {
+
+  const res = await fetch(getDocumentsPaperPrintViewUrl(documentId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: documentsPaperPrintViewResponseError['data'], status?: number} = new globalThis.Error();
+    const data : documentsPaperPrintViewResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: documentsPaperPrintViewResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as documentsPaperPrintViewResponseSuccess
+}
+
+
+
+
+
+export const getDocumentsPaperPrintViewQueryKey = (documentId: MaybeRefOrGetter<string>,
+    params?: MaybeRefOrGetter<DocumentsPaperPrintViewParams>,) => {
+    return [
+    'api','v1','documents',documentId,'print', ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getDocumentsPaperPrintViewQueryOptions = <TData = Awaited<ReturnType<typeof documentsPaperPrintView>>, TError = globalThis.Error & { info?: Problem; status?: number }>(documentId: MaybeRefOrGetter<string>,
+    params?: MaybeRefOrGetter<DocumentsPaperPrintViewParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof documentsPaperPrintView>>, TError, TData>>, fetch?: RequestInit}
+) => {
+
+const {query: queryOptions, fetch: fetchOptions} = options ?? {};
+
+  const queryKey =  getDocumentsPaperPrintViewQueryKey(documentId,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof documentsPaperPrintView>>> = ({ signal }) => documentsPaperPrintView(toValue(documentId),toValue(params), { signal, ...fetchOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: computed(() => toValue(documentId) !== null && toValue(documentId) !== undefined), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof documentsPaperPrintView>>, TError, TData>
+}
+
+export type DocumentsPaperPrintViewQueryResult = NonNullable<Awaited<ReturnType<typeof documentsPaperPrintView>>>
+export type DocumentsPaperPrintViewQueryError = globalThis.Error & { info?: Problem; status?: number }
+
+
+/**
+ * @summary Печатная форма документа
+ */
+
+export function useDocumentsPaperPrintView<TData = Awaited<ReturnType<typeof documentsPaperPrintView>>, TError = globalThis.Error & { info?: Problem; status?: number }>(
+ documentId: MaybeRefOrGetter<string>,
+    params?: MaybeRefOrGetter<DocumentsPaperPrintViewParams>, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof documentsPaperPrintView>>, TError, TData>>, fetch?: RequestInit}
+ , queryClient?: QueryClient
+ ): UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getDocumentsPaperPrintViewQueryOptions(documentId,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryReturnType<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = unref(queryOptions).queryKey as DataTag<QueryKey, TData, TError>;
+
+  return query;
+}
+
+
+
+
+
+
+
+export type documentsPaperPrintResponse200 = {
+  data: PrintAccepted
+  status: 200
+}
+
+export type documentsPaperPrintResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type documentsPaperPrintResponseSuccess = (documentsPaperPrintResponse200) & {
+  headers: Headers;
+};
+export type documentsPaperPrintResponseError = (documentsPaperPrintResponseDefault) & {
+  headers: Headers;
+};
+
+export const getDocumentsPaperPrintUrl = (documentId: string,) => {
+
+
+
+
+  return `/api/v1/documents/${documentId}/print`
+}
+
+/**
+ * FR-139, AD-12: document.paper.status_changed (printed); у сопроводительной карты печать фиксирует новую версию, если содержимое изменилось. Ответ — версия, отпечаток, QR и адрес печатной формы.
+ * @summary Напечатать бумажный экземпляр с QR
+ */
+export const documentsPaperPrint = async (documentId: string,
+    printPaper: PrintPaper, options?: RequestInit): Promise<documentsPaperPrintResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getDocumentsPaperPrintUrl(documentId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(printPaper)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: documentsPaperPrintResponseError['data'], status?: number} = new globalThis.Error();
+    const data : documentsPaperPrintResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: documentsPaperPrintResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as documentsPaperPrintResponseSuccess
+}
+
+
+
+
+
+export const getDocumentsPaperPrintMutationKey = () => ['documentsPaperPrint'] as const;
+
+export const getDocumentsPaperPrintMutationOptions = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof documentsPaperPrint>>, TError,DocumentsPaperPrintMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof documentsPaperPrint>>, TError,DocumentsPaperPrintMutationVariables, TContext> => {
+
+const mutationKey = getDocumentsPaperPrintMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof documentsPaperPrint>>, DocumentsPaperPrintMutationVariables> = (props) => {
+          const {documentId,data} = props ?? {};
+
+          return  documentsPaperPrint(documentId,data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DocumentsPaperPrintMutationResult = NonNullable<Awaited<ReturnType<typeof documentsPaperPrint>>>
+    export type DocumentsPaperPrintMutationBody = PrintPaper
+    export type DocumentsPaperPrintMutationError = globalThis.Error & { info?: Problem; status?: number }
+    export type DocumentsPaperPrintMutationVariables = {documentId: string;data: PrintPaper}
+
+    /**
+ * @summary Напечатать бумажный экземпляр с QR
+ */
+export const useDocumentsPaperPrint = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof documentsPaperPrint>>, TError,DocumentsPaperPrintMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof documentsPaperPrint>>,
+        TError,
+        DocumentsPaperPrintMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDocumentsPaperPrintMutationOptions(options), queryClient);
+    }
+
 export type documentsDocumentRenderResponse200 = {
   data: DocumentRendering
   status: 200
@@ -5714,6 +6206,248 @@ export function useDocumentsDocumentRender<TData = Awaited<ReturnType<typeof doc
 
 
 
+
+export type documentsSignatureDeclineResponse200 = {
+  data: Receipt
+  status: 200
+}
+
+export type documentsSignatureDeclineResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type documentsSignatureDeclineResponseSuccess = (documentsSignatureDeclineResponse200) & {
+  headers: Headers;
+};
+export type documentsSignatureDeclineResponseError = (documentsSignatureDeclineResponseDefault) & {
+  headers: Headers;
+};
+
+export const getDocumentsSignatureDeclineUrl = (documentId: string,) => {
+
+
+
+
+  return `/api/v1/documents/${documentId}/route/declines`
+}
+
+/**
+ * FR-136, AD-43: document.signature.declined; маршрут этой версии не закрывается — нужна новая версия или аннулирование. Замечание обязательно.
+ * @summary Не согласовать — вернуть с замечанием
+ */
+export const documentsSignatureDecline = async (documentId: string,
+    declineSignature: DeclineSignature, options?: RequestInit): Promise<documentsSignatureDeclineResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getDocumentsSignatureDeclineUrl(documentId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(declineSignature)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: documentsSignatureDeclineResponseError['data'], status?: number} = new globalThis.Error();
+    const data : documentsSignatureDeclineResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: documentsSignatureDeclineResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as documentsSignatureDeclineResponseSuccess
+}
+
+
+
+
+
+export const getDocumentsSignatureDeclineMutationKey = () => ['documentsSignatureDecline'] as const;
+
+export const getDocumentsSignatureDeclineMutationOptions = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof documentsSignatureDecline>>, TError,DocumentsSignatureDeclineMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof documentsSignatureDecline>>, TError,DocumentsSignatureDeclineMutationVariables, TContext> => {
+
+const mutationKey = getDocumentsSignatureDeclineMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof documentsSignatureDecline>>, DocumentsSignatureDeclineMutationVariables> = (props) => {
+          const {documentId,data} = props ?? {};
+
+          return  documentsSignatureDecline(documentId,data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DocumentsSignatureDeclineMutationResult = NonNullable<Awaited<ReturnType<typeof documentsSignatureDecline>>>
+    export type DocumentsSignatureDeclineMutationBody = DeclineSignature
+    export type DocumentsSignatureDeclineMutationError = globalThis.Error & { info?: Problem; status?: number }
+    export type DocumentsSignatureDeclineMutationVariables = {documentId: string;data: DeclineSignature}
+
+    /**
+ * @summary Не согласовать — вернуть с замечанием
+ */
+export const useDocumentsSignatureDecline = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof documentsSignatureDecline>>, TError,DocumentsSignatureDeclineMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof documentsSignatureDecline>>,
+        TError,
+        DocumentsSignatureDeclineMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDocumentsSignatureDeclineMutationOptions(options), queryClient);
+    }
+
+export type documentsSignatureRecordResponse200 = {
+  data: Receipt
+  status: 200
+}
+
+export type documentsSignatureRecordResponseDefault = {
+  data: Problem
+  status: Exclude<HTTPStatusCodes, 200>
+}
+
+export type documentsSignatureRecordResponseSuccess = (documentsSignatureRecordResponse200) & {
+  headers: Headers;
+};
+export type documentsSignatureRecordResponseError = (documentsSignatureRecordResponseDefault) & {
+  headers: Headers;
+};
+
+export const getDocumentsSignatureRecordUrl = (documentId: string,) => {
+
+
+
+
+  return `/api/v1/documents/${documentId}/route/signatures`
+}
+
+/**
+ * FR-66, AD-13, AD-43: подпись уровня 2 над отпечатком версии (агентом токена — signature_b64; в демо без агента — пометка, Д-30). Гард: версия текущая, отпечаток совпадает, этап открыт и по порядку, полномочие, клеймо, разделение обязанностей. «Маршрут закрыт» — только реакция document.route.closed модуля documents.
+ * @summary Подписать этап маршрута
+ */
+export const documentsSignatureRecord = async (documentId: string,
+    recordSignature: RecordSignature, options?: RequestInit): Promise<documentsSignatureRecordResponseSuccess> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+const res = await fetch(getDocumentsSignatureRecordUrl(documentId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(recordSignature)
+  }
+)
+
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+  if (!res.ok) {
+
+    const err: globalThis.Error & {info?: documentsSignatureRecordResponseError['data'], status?: number} = new globalThis.Error();
+    const data : documentsSignatureRecordResponseError['data'] = body ? JSON.parse(body) : {}
+    err.info = data;
+    err.status = res.status;
+    throw err;
+  }
+  const data: documentsSignatureRecordResponseSuccess['data'] = body ? JSON.parse(body) : {}
+  return { data, status: res.status, headers: res.headers } as documentsSignatureRecordResponseSuccess
+}
+
+
+
+
+
+export const getDocumentsSignatureRecordMutationKey = () => ['documentsSignatureRecord'] as const;
+
+export const getDocumentsSignatureRecordMutationOptions = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof documentsSignatureRecord>>, TError,DocumentsSignatureRecordMutationVariables, TContext>, fetch?: RequestInit}
+): UseMutationOptions<Awaited<ReturnType<typeof documentsSignatureRecord>>, TError,DocumentsSignatureRecordMutationVariables, TContext> => {
+
+const mutationKey = getDocumentsSignatureRecordMutationKey();
+const {mutation: mutationOptions, fetch: fetchOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, fetch: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof documentsSignatureRecord>>, DocumentsSignatureRecordMutationVariables> = (props) => {
+          const {documentId,data} = props ?? {};
+
+          return  documentsSignatureRecord(documentId,data,fetchOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DocumentsSignatureRecordMutationResult = NonNullable<Awaited<ReturnType<typeof documentsSignatureRecord>>>
+    export type DocumentsSignatureRecordMutationBody = RecordSignature
+    export type DocumentsSignatureRecordMutationError = globalThis.Error & { info?: Problem; status?: number }
+    export type DocumentsSignatureRecordMutationVariables = {documentId: string;data: RecordSignature}
+
+    /**
+ * @summary Подписать этап маршрута
+ */
+export const useDocumentsSignatureRecord = <TError = globalThis.Error & { info?: Problem; status?: number },
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof documentsSignatureRecord>>, TError,DocumentsSignatureRecordMutationVariables, TContext>, fetch?: RequestInit}
+ , queryClient?: QueryClient): UseMutationReturnType<
+        Awaited<ReturnType<typeof documentsSignatureRecord>>,
+        TError,
+        DocumentsSignatureRecordMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDocumentsSignatureRecordMutationOptions(options), queryClient);
+    }
 
 export type documentsDocumentSignResponse200 = {
   data: Receipt

@@ -166,6 +166,10 @@ func (s *Service) Passport(ctx context.Context, itemID string, m platform.Moment
 		Documents: []ItemDocumentRef{}, Zones: []ItemZone{}, Carriers: []ItemCarrier{}, Incidents: []string{}, Nonconformities: []string{},
 		BasisSeq: a.Snap.BasisSeq, SplitFrom: it.SplitFrom}
 	p.Entries = entries(a, it)
+	// FR-65: документы изделия, собранные из истории (модуль documents, эпик 28).
+	for _, r := range a.Snap.Documents.Refs() {
+		p.Documents = append(p.Documents, ItemDocumentRef{DocumentID: r.DocumentID, Template: r.TemplateRef, Title: r.Title, Status: r.Status, Digest: r.Digest})
+	}
 	for _, z := range it.Zones {
 		p.Zones = append(p.Zones, ItemZone{ZoneID: z.ZoneID, Title: z.Title, Closed: z.Closed, ClosedBy: z.ClosedBy, OpenIntervention: z.OpenIntervention,
 			InspectionStatus: z.Status, LastInspection: z.LastInspection})

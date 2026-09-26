@@ -3,17 +3,18 @@
  * Шапка (PRD §3a): пользователь, роль, смена, статус токена, индикатор
  * целостности «по данным сервера», уведомления, поиск по номеру детали; плюс
  * момент просмотра, режим данных fixtures | live, справка и выход.
+ * Имя системы — «Главный» (Д-65). Длинные имена и роли — многоточие с подсказкой.
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { NButton, NIcon, NSpace, NTag, NText, NTooltip } from 'naive-ui'
+import { NButton, NIcon, NTooltip } from 'naive-ui'
 import { Help, Logout } from '@vicons/tabler'
 import { useLogout, useSession } from '@/entities/session'
 import { backendModeOf } from '@/shared/api'
 import type { LiveStatus } from '@/shared/api/sse'
 import { codeToKey } from '@/shared/i18n'
-import { statusPalette } from '@/shared/api/generated/statuses'
+import { BrandMark } from '@/shared/ui'
 import IntegrityIndicator from './header/IntegrityIndicator.vue'
 import ItemSearch from './header/ItemSearch.vue'
 import MomentIndicator from './header/MomentIndicator.vue'
@@ -46,32 +47,33 @@ async function onLogout() {
 
 <template>
   <div class="header">
-    <RouterLink to="/desk" class="brand">
-      <NText strong>{{ t('common.appName') }}</NText>
+    <RouterLink to="/desk" class="brand" :title="t('shell.brand.tagline')">
+      <BrandMark />
     </RouterLink>
 
     <ItemSearch class="search" />
 
-    <NSpace align="center" :size="16" :wrap="false" class="right">
+    <div class="right">
       <MomentIndicator />
-      <NTag v-if="mode" size="small" data-testid="backend-mode">
+      <span v-if="mode" class="mode" data-testid="backend-mode">
         {{ t(mode === 'fixtures' ? 'common.modes.backendFixtures' : 'common.modes.backendLive') }}
-      </NTag>
+      </span>
       <NTooltip v-if="live === 'closed'">
         <template #trigger>
-          <span class="live-off" :style="{ background: statusPalette.attention }" />
+          <span class="live-off" />
         </template>
         {{ t('shell.header.liveOff') }}
       </NTooltip>
       <IntegrityIndicator />
       <TokenStatus />
+      <span class="divider" aria-hidden="true" />
       <NotificationsBell />
-      <div v-if="s" class="user" data-testid="header-user">
-        <NText strong>{{ s.user.name }}</NText>
-        <NText depth="3">
+      <div v-if="s" class="user" data-testid="header-user" :title="[s.user.name, roleTitle].join(' · ')">
+        <span class="user-name ant-ellipsis">{{ s.user.name }}</span>
+        <span class="user-role ant-ellipsis">
           {{ roleTitle }}<template v-if="s.shift"> · {{ t('common.words.shift') }}: {{ s.shift.title }}</template>
           <template v-if="s.workplace"> · {{ t('common.header.workplace', { workplace: s.workplace.title }) }}</template>
-        </NText>
+        </span>
       </div>
       <NTooltip>
         <template #trigger>
@@ -89,43 +91,83 @@ async function onLogout() {
         </template>
         {{ t('common.actions.logout') }}
       </NTooltip>
-    </NSpace>
+    </div>
   </div>
 </template>
 
 <style scoped>
 .header {
   display: flex;
-  gap: 24px;
+  gap: var(--ant-space-6);
   align-items: center;
-  padding: 8px 24px;
-  min-height: 40px;
+  height: 100%;
+  padding: 0 var(--ant-space-6);
 }
 
 .brand {
+  display: inline-flex;
+  flex: none;
   color: inherit;
   text-decoration: none;
-  white-space: nowrap;
 }
 
 .search {
-  width: 320px;
+  flex: 0 1 var(--ant-w-search);
+  min-width: 180px;
 }
 
 .right {
-  margin-left: auto;
+  display: flex;
+  flex: 1 1 auto;
+  gap: var(--ant-space-4);
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 0;
+  font-size: var(--ant-fs-sm);
+}
+
+.mode {
+  flex: none;
+  padding: 0 6px;
+  border: 1px solid var(--ant-border-strong);
+  border-radius: var(--ant-radius-sm);
+  color: var(--ant-text-2);
+  font-size: var(--ant-fs-xs);
+  line-height: 20px;
+  white-space: nowrap;
+}
+
+.divider {
+  flex: none;
+  width: 1px;
+  height: 24px;
+  background: var(--ant-border);
 }
 
 .user {
   display: flex;
+  flex: 0 1 auto;
   flex-direction: column;
-  line-height: 1.2;
+  min-width: 0;
+  max-width: 280px;
+  line-height: var(--ant-lh-tight);
+}
+
+.user-name {
+  font-weight: var(--ant-fw-bold);
+}
+
+.user-role {
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-xs);
 }
 
 .live-off {
   display: inline-block;
+  flex: none;
   width: 8px;
   height: 8px;
   border-radius: 50%;
+  background: var(--ant-status-attention);
 }
 </style>

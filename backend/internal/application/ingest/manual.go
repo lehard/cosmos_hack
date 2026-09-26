@@ -6,6 +6,7 @@ import (
 	"strings"
 	"uuid"
 
+	"ant/internal/application/journal"
 	"ant/internal/application/platform"
 	"ant/internal/contracts/errcodes"
 )
@@ -66,6 +67,11 @@ func (s *Service) SubmitManual(ctx context.Context, cmd Cmd[ManualInput]) (Resul
 	}
 	if in.ItemID != "" {
 		ev["item_id"] = in.ItemID
+	}
+	// Прогон сценария (AD-38): команда демо-подписанта идёт с прогоном в
+	// контексте — факт принадлежит прогону (эпик 16).
+	if run := journal.RunFrom(ctx); run != "" {
+		ev["run_id"] = run
 	}
 	if in.CarrierType != "" {
 		ev["item_ref"] = map[string]any{"carrier_type": in.CarrierType, "value": in.CarrierValue, "identification_level": "probable"}

@@ -65,7 +65,7 @@ const playback = usePlayback(() => range.value)
 <style scoped>
 .problem {
   margin: 0 0 8px;
-  color: #d64545;
-  font-size: 13px;
+  color: var(--ant-status-danger);
+  font-size: var(--ant-fs-body);
 }
 </style>

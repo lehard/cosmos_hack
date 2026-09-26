@@ -7,13 +7,14 @@
  */
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NAlert, NButton, NInput } from 'naive-ui'
+import { NAlert, NInput } from 'naive-ui'
 import type { ErpChannel } from '@/entities/erp-message'
 import type { SourceView } from '@/entities/quarantine'
 import { statusPalette, type StatusTone } from '@/shared/api/generated/statuses'
 import type { Density } from '@/shared/config/widget'
 import { codeToKey } from '@/shared/i18n'
 import { useProblemText } from '@/shared/i18n/problem'
+import { ActionButton, DataTable } from '@/shared/ui'
 
 withDefaults(
   defineProps<{
@@ -57,7 +58,7 @@ function confirm(s: SourceView): void {
     <section>
       <h4>{{ t('admin.devices') }}</h4>
       <p v-if="!sources.length" class="muted">{{ t('widgets.admin.sources.noSources') }}</p>
-      <table v-else>
+      <DataTable v-else>
         <thead>
           <tr>
             <th>{{ t('widgets.admin.sources.source') }}</th>
@@ -88,18 +89,14 @@ function confirm(s: SourceView): void {
               <span v-if="done === s.source_id" class="ok">{{ t('widgets.admin.sources.switched') }}</span>
               <form v-else-if="editing?.id === s.source_id" class="reason" @submit.prevent="confirm(s)">
                 <NInput v-model:value="reason" size="tiny" :placeholder="t('widgets.admin.sources.reason')" :aria-label="t('widgets.admin.sources.reason')" />
-                <NButton size="tiny" attr-type="submit" type="primary" :disabled="!canAct || busy || !reason.trim()" data-testid="confirm">
-                  {{ t(editing.to === 'enable' ? 'widgets.admin.sources.enable' : 'widgets.admin.sources.disable') }}
-                </NButton>
-                <NButton size="tiny" quaternary @click="editing = null">{{ t('common.actions.cancel') }}</NButton>
+                <ActionButton size="tiny" attr-type="submit" type="primary" :disabled="!canAct || busy || !reason.trim()" data-testid="confirm" :label="t(editing.to === 'enable' ? 'widgets.admin.sources.enable' : 'widgets.admin.sources.disable')" />
+                <ActionButton size="tiny" quaternary @click="editing = null" :label="t('common.actions.cancel')" />
               </form>
-              <NButton v-else size="tiny" :disabled="!canAct || busy" data-testid="switch" @click="ask(s)">
-                {{ t(s.state === 'disabled' ? 'widgets.admin.sources.enable' : 'widgets.admin.sources.disable') }}
-              </NButton>
+              <ActionButton v-else size="tiny" :disabled="!canAct || busy" data-testid="switch" @click="ask(s)" :label="t(s.state === 'disabled' ? 'widgets.admin.sources.enable' : 'widgets.admin.sources.disable')" />
             </td>
           </tr>
         </tbody>
-      </table>
+      </DataTable>
       <NAlert v-if="error" type="error" :bordered="false" :show-icon="false" data-testid="command-error">{{ problemText(error) }}</NAlert>
     </section>
 
@@ -126,30 +123,12 @@ function confirm(s: SourceView): void {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  font-size: 13px;
+  font-size: var(--ant-fs-body);
 }
 
 h4 {
   margin: 0 0 4px;
   font-size: 1em;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-th,
-td {
-  padding: 3px 6px;
-  border-bottom: 1px solid #e5e7eb;
-  text-align: left;
-  vertical-align: top;
-}
-
-th {
-  color: #6b7280;
-  font-weight: 400;
 }
 
 .dot {
@@ -183,16 +162,16 @@ th {
 
 .warn,
 .error {
-  color: #d64545;
+  color: var(--ant-status-danger);
 }
 
 .ok {
-  color: #2e9e5b;
+  color: var(--ant-status-success);
 }
 
 .muted {
   margin: 0;
-  color: #6b7280;
-  font-size: 12px;
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-meta);
 }
 </style>

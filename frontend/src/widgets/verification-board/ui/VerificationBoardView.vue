@@ -75,16 +75,16 @@ const rows = computed(() =>
   display: flex;
   flex-direction: column;
   gap: 8px;
-  font-size: 13px;
+  font-size: var(--ant-fs-body);
 }
 
 .density-large {
-  font-size: 16px;
+  font-size: var(--ant-fs-lg);
 }
 
 .subtitle {
   margin: 0;
-  color: #6b7280;
+  color: var(--ant-text-3);
 }
 
 .summary {
@@ -95,12 +95,12 @@ const rows = computed(() =>
 }
 
 .all {
-  color: #2e9e5b;
+  color: var(--ant-status-success);
 }
 
 .failed {
-  color: #d64545;
-  font-weight: 700;
+  color: var(--ant-status-danger);
+  font-weight: var(--ant-fw-bold);
 }
 
 .rows {
@@ -114,12 +114,12 @@ const rows = computed(() =>
 
 .row {
   padding: 6px 8px;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
+  border: 1px solid var(--ant-border);
+  border-radius: var(--ant-radius-md);
 }
 
 .row[data-status='failed'] {
-  border-left: 3px solid #d64545;
+  border-left: 3px solid var(--ant-status-danger);
 }
 
 .row[data-status='not_reached'] {
@@ -138,7 +138,7 @@ const rows = computed(() =>
   display: inline-flex;
   gap: 6px;
   align-items: center;
-  font-weight: 700;
+  font-weight: var(--ant-fw-bold);
 }
 
 .dot {
@@ -148,13 +148,13 @@ const rows = computed(() =>
 }
 
 code {
-  font-family: 'PT Mono', monospace;
-  font-size: 12px;
+  font-family: var(--ant-font-mono);
+  font-size: var(--ant-fs-meta);
 }
 
 .muted {
-  color: #6b7280;
-  font-size: 12px;
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-meta);
 }
 
 .check {

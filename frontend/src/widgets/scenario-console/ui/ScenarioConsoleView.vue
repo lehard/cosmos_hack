@@ -36,6 +36,7 @@ import { statusPalette } from '@/shared/api/generated/statuses'
 import type { Density } from '@/shared/config/widget'
 import { codeToKey } from '@/shared/i18n'
 import { useProblemText } from '@/shared/i18n/problem'
+import { ActionButton } from '@/shared/ui'
 
 const props = withDefaults(
   defineProps<{
@@ -183,9 +184,7 @@ function inject(item: Injection): void {
           </NRadioGroup>
         </div>
         <p v-if="cfgError" class="error" data-testid="cfg-error">{{ t(cfgError) }}</p>
-        <NButton type="primary" attr-type="submit" :disabled="!canAct || busy || !!cfgError" data-testid="start">
-          {{ t('testStand.controls.start') }}
-        </NButton>
+        <ActionButton type="primary" attr-type="submit" :disabled="!canAct || busy || !!cfgError" data-testid="start" :label="t('testStand.controls.start')" />
       </form>
       <p v-else class="muted">{{ t('widgets.scenarios.selectHint') }}</p>
     </section>
@@ -239,9 +238,9 @@ function inject(item: Injection): void {
         </NAlert>
 
         <div class="controls">
-          <NButton v-if="controls.pause" :disabled="!canAct || busy" data-testid="pause" @click="emit('control', 'pause')">{{ t('testStand.controls.pause') }}</NButton>
-          <NButton v-if="controls.resume" type="primary" :disabled="!canAct || busy" data-testid="resume" @click="emit('control', 'resume')">{{ t('testStand.controls.resume') }}</NButton>
-          <NButton v-if="controls.stop" :disabled="!canAct || busy" data-testid="stop" @click="emit('control', 'stop')">{{ t('testStand.controls.stop') }}</NButton>
+          <ActionButton v-if="controls.pause" :disabled="!canAct || busy" data-testid="pause" @click="emit('control', 'pause')" :label="t('testStand.controls.pause')" />
+          <ActionButton v-if="controls.resume" type="primary" :disabled="!canAct || busy" data-testid="resume" @click="emit('control', 'resume')" :label="t('testStand.controls.resume')" />
+          <ActionButton v-if="controls.stop" :disabled="!canAct || busy" data-testid="stop" @click="emit('control', 'stop')" :label="t('testStand.controls.stop')" />
         </div>
         <div v-if="live" class="field">
           <span>{{ t('widgets.scenarios.speed') }}</span>
@@ -282,9 +281,7 @@ function inject(item: Injection): void {
         <p class="muted">{{ live ? t('widgets.scenarios.stand.hint') : t('widgets.scenarios.stand.noRun') }}</p>
         <ul v-if="live" class="injections">
           <li v-for="item in injections" :key="item.injection" :data-injection="item.injection">
-            <NButton size="small" :disabled="!canAct || busy || !item.available || (item.needs_target && !targets[item.injection]?.trim())" @click="inject(item)">
-              {{ item.title }}
-            </NButton>
+            <ActionButton size="small" :disabled="!canAct || busy || !item.available || (item.needs_target && !targets[item.injection]?.trim())" @click="inject(item)" :label="item.title" />
             <NInput
               v-if="hasTarget(item)"
               v-model:value="targets[item.injection]"
@@ -309,11 +306,11 @@ function inject(item: Injection): void {
   display: grid;
   grid-template-columns: minmax(240px, 1fr) minmax(280px, 1.2fr);
   gap: 16px;
-  font-size: 13px;
+  font-size: var(--ant-fs-body);
 }
 
 .density-large {
-  font-size: 16px;
+  font-size: var(--ant-fs-lg);
 }
 
 h4 {
@@ -335,14 +332,14 @@ h4 {
   flex-direction: column;
   gap: 2px;
   padding: 6px 8px;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
+  border: 1px solid var(--ant-border);
+  border-radius: var(--ant-radius-md);
   cursor: pointer;
 }
 
 .scenario[aria-selected='true'] {
-  border-color: #2f6fdb;
-  background: #eff6ff;
+  border-color: var(--ant-accent);
+  background: var(--ant-accent-soft);
 }
 
 .config,
@@ -377,7 +374,7 @@ h4 {
   display: inline-flex;
   gap: 6px;
   align-items: center;
-  font-weight: 700;
+  font-weight: var(--ant-fw-bold);
 }
 
 .dot {
@@ -394,7 +391,7 @@ h4 {
 }
 
 .facts dt {
-  color: #6b7280;
+  color: var(--ant-text-3);
 }
 
 .facts dd {
@@ -422,17 +419,17 @@ h4 {
 }
 
 .muted {
-  color: #6b7280;
-  font-size: 12px;
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-meta);
 }
 
 .error {
   margin: 0;
-  color: #d64545;
+  color: var(--ant-status-danger);
 }
 
 .ok {
   margin: 0;
-  color: #2e9e5b;
+  color: var(--ant-status-success);
 }
 </style>

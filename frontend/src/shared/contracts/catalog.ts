@@ -465,6 +465,17 @@ export const eventCatalog = {
     "caGroup": null,
     "currentVersion": 1
   },
+  "document.signature.declined": {
+    "title": "Подписант не согласовал документ",
+    "emitter": "documents",
+    "kind": "decision",
+    "stream": "document",
+    "axis": "none",
+    "actionClass": "record",
+    "critical": false,
+    "caGroup": null,
+    "currentVersion": 1
+  },
   "document.signature.recorded": {
     "title": "Подпись документа записана",
     "emitter": "documents",

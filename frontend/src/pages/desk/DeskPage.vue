@@ -3,11 +3,13 @@
  * Стол роли (AD-21, NFR-EXT-1): всё, что на странице, пришло данными
  * normative/desks/‹роль›.yaml через access.desk.read. Кода под конкретную роль
  * здесь нет — новый стол собирается правкой yaml.
+ * Вид — общие элементы shared/ui: заголовок стола (AppPage) или вкладки.
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { NAlert, NSpin, NTabPane, NTabs } from 'naive-ui'
+import { AppPage, EmptyState } from '@/shared/ui'
 import { useDesk } from '@/entities/desk'
 import { useProblemText } from '@/shared/i18n/problem'
 import DeskTabView from './ui/DeskTabView.vue'
@@ -29,31 +31,39 @@ const select = (id: string) => router.replace({ name: 'desk', params: { tab: id 
 </script>
 
 <template>
-  <NSpin v-if="desk.isPending.value" class="center" />
+  <div v-if="desk.isPending.value" class="center"><NSpin /></div>
   <NAlert v-else-if="desk.isError.value" type="error" :bordered="false">{{ problemText(desk.error.value) }}</NAlert>
   <section v-else-if="d && active" class="desk" :data-role="d.role" :data-density="d.density">
-    <NTabs v-if="d.tabs.length > 1" type="line" :value="active.id" @update:value="select">
+    <NTabs v-if="d.tabs.length > 1" type="line" size="large" class="desk-tabs" :value="active.id" @update:value="select">
       <NTabPane v-for="tab in d.tabs" :key="tab.id" :name="tab.id" :tab="t(tab.title_key)" display-directive="if">
         <DeskTabView :tab="tab" :density="d.density" />
       </NTabPane>
     </NTabs>
-    <template v-else>
-      <h2 class="title">{{ t(active.title_key) }}</h2>
+    <AppPage v-else :title="t(active.title_key)">
       <DeskTabView :tab="active" :density="d.density" />
-    </template>
+    </AppPage>
   </section>
-  <NAlert v-else type="default" :bordered="false">{{ t('shell.desk.empty') }}</NAlert>
+  <EmptyState v-else :title="t('shell.desk.empty')" />
 </template>
 
 <style scoped>
-.title {
-  margin: 0 0 16px;
-  font-size: 18px;
-}
-
 .center {
   display: flex;
   justify-content: center;
-  padding: 48px 0;
+  padding: var(--ant-space-12) 0;
+}
+
+.desk-tabs :deep(.n-tabs-nav) {
+  margin-bottom: var(--ant-space-5);
+}
+
+.desk-tabs :deep(.n-tabs-tab) {
+  max-width: 320px;
+}
+
+.desk-tabs :deep(.n-tabs-tab__label) {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 </style>

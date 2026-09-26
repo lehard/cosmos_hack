@@ -5,6 +5,7 @@ import (
 	"slices"
 	"strings"
 
+	appjournal "ant/internal/application/journal"
 	"ant/internal/application/platform"
 	"ant/internal/contracts/catalog"
 	"ant/internal/contracts/constants"
@@ -80,6 +81,11 @@ func (s *Service) Register(ctx context.Context, in RegisterItem) (platform.Recei
 		return s.Unimplemented.Register(ctx, in)
 	}
 	id := s.newItemID(in.LocalID, in.CommandID)
+	if run := appjournal.RunFrom(ctx); run != "" && in.LocalID == "" {
+		// AD-38: локальный ID изделия прогона несёт префикс прогона (эпик 16).
+		_, local, _ := strings.Cut(id, ":")
+		id = s.cfg.Enterprise + ":" + run + "/" + local
+	}
 	if _, err := s.guard(ctx, id, "item.item.register", in.CommandMeta(), nil); err != nil {
 		return platform.Receipt{}, err
 	}

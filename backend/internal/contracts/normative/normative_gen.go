@@ -224,11 +224,30 @@ type DocumentTemplatesSeedTemplatesElem struct {
 	// Класс: запись, решение, требование, вход.
 	Class DocumentTemplatesSeedTemplatesElemClass `json:"class"`
 
+	// Построитель содержимого в domain/documents: traveler, nc_statement,
+	// nc_disposition, generic. Нет — шаблон только объявлен (эпик 44).
+	DocType *string `json:"doc_type,omitempty,omitzero"`
+
 	// Идентификатор шаблона.
 	ID string `json:"id"`
 
+	// Каноническая отрисовка HTML (AD-12): печатная рамка в неё не входит.
+	Layout []DocumentTemplatesSeedTemplatesElemLayoutElem `json:"layout,omitempty,omitzero"`
+
+	// Маршрут подписей (AD-13, AD-43).
+	Route []DocumentTemplatesSeedTemplatesElemRouteElem `json:"route,omitempty,omitzero"`
+
+	// Вид объекта документа.
+	Subject *DocumentTemplatesSeedTemplatesElemSubject `json:"subject,omitempty,omitzero"`
+
+	// Поля сводки уровня 2 (3–7), входят в отпечаток (AD-12, FR-66).
+	Summary []DocumentTemplatesSeedTemplatesElemSummaryElem `json:"summary,omitempty,omitzero"`
+
 	// Название документа.
 	Title string `json:"title"`
+
+	// Версия шаблона: template_ref = ‹id›@‹версия› (AD-12). Нет — 1.
+	Version *int `json:"version,omitempty,omitzero"`
 }
 
 type DocumentTemplatesSeedTemplatesElemClass string
@@ -237,6 +256,142 @@ const DocumentTemplatesSeedTemplatesElemClassDecision DocumentTemplatesSeedTempl
 const DocumentTemplatesSeedTemplatesElemClassInput DocumentTemplatesSeedTemplatesElemClass = "input"
 const DocumentTemplatesSeedTemplatesElemClassRecord DocumentTemplatesSeedTemplatesElemClass = "record"
 const DocumentTemplatesSeedTemplatesElemClassRequirement DocumentTemplatesSeedTemplatesElemClass = "requirement"
+
+// Раздел канонической HTML-отрисовки (AD-12).
+type DocumentTemplatesSeedTemplatesElemLayoutElem struct {
+	// Колонки раздела table: путь внутри строки и подпись.
+	Columns []DocumentTemplatesSeedTemplatesElemLayoutElemColumnsElem `json:"columns,omitempty,omitzero"`
+
+	// Поля раздела fields.
+	Fields []DocumentTemplatesSeedTemplatesElemLayoutElemFieldsElem `json:"fields,omitempty,omitzero"`
+
+	// Путь к полю раздела text.
+	Key *string `json:"key,omitempty,omitzero"`
+
+	// Вид раздела: поля, таблица по массиву, маршрут подписей, текст поля.
+	Kind DocumentTemplatesSeedTemplatesElemLayoutElemKind `json:"kind"`
+
+	// Путь к массиву строк раздела table.
+	Rows *string `json:"rows,omitempty,omitzero"`
+
+	// Заголовок раздела.
+	Title *string `json:"title,omitempty,omitzero"`
+}
+
+// Поле: путь в content и подпись.
+type DocumentTemplatesSeedTemplatesElemLayoutElemColumnsElem struct {
+	// Путь к полю content через точку.
+	Key string `json:"key"`
+
+	// Подпись поля.
+	Label string `json:"label"`
+}
+
+// Поле: путь в content и подпись.
+type DocumentTemplatesSeedTemplatesElemLayoutElemFieldsElem struct {
+	// Путь к полю content через точку.
+	Key string `json:"key"`
+
+	// Подпись поля.
+	Label string `json:"label"`
+}
+
+type DocumentTemplatesSeedTemplatesElemLayoutElemKind string
+
+const DocumentTemplatesSeedTemplatesElemLayoutElemKindFields DocumentTemplatesSeedTemplatesElemLayoutElemKind = "fields"
+const DocumentTemplatesSeedTemplatesElemLayoutElemKindRoute DocumentTemplatesSeedTemplatesElemLayoutElemKind = "route"
+const DocumentTemplatesSeedTemplatesElemLayoutElemKindTable DocumentTemplatesSeedTemplatesElemLayoutElemKind = "table"
+const DocumentTemplatesSeedTemplatesElemLayoutElemKindText DocumentTemplatesSeedTemplatesElemLayoutElemKind = "text"
+
+// Этап маршрута подписей (AD-13); обязательные подписи вычисляет
+// access.RequiredApprovals (AD-43).
+type DocumentTemplatesSeedTemplatesElemRouteElem struct {
+	// Полномочие заверителя бумажной подписи; нет — бумага на этапе запрещена.
+	AttesterAuthorityID *string `json:"attester_authority_id,omitempty,omitzero"`
+
+	// Полномочие этапа (normative/policy) или роль, если отдельного полномочия нет.
+	AuthorityID string `json:"authority_id"`
+
+	// Этап закрывает само решение-источник документа.
+	BySource *bool `json:"by_source,omitempty,omitzero"`
+
+	// Внешняя сторона.
+	ExternalParty *DocumentTemplatesSeedTemplatesElemRouteElemExternalParty `json:"external_party,omitempty,omitzero"`
+
+	// k для k из n и число подписей для «все».
+	K *int `json:"k,omitempty,omitzero"`
+
+	// Бумага с заверением допустима (AD-43).
+	PaperAllowed bool `json:"paper_allowed"`
+
+	// Сколько подписей: 1 | все | k из n.
+	Quorum DocumentTemplatesSeedTemplatesElemRouteElemQuorum `json:"quorum"`
+
+	// Роль подписанта по политике (с наследованием).
+	Role *string `json:"role,omitempty,omitzero"`
+
+	// Разделение обязанностей (FR-56, AD-43).
+	Separation []DocumentTemplatesSeedTemplatesElemRouteElemSeparationElem `json:"separation,omitempty,omitzero"`
+
+	// Уровень подписи (AD-13).
+	SignatureLevel int `json:"signature_level"`
+
+	// Номер этапа по порядку.
+	Stage int `json:"stage"`
+
+	// Вид цифрового клейма для действий контроля (FR-145).
+	StampKind *string `json:"stamp_kind,omitempty,omitzero"`
+
+	// Кто подписывает — для людей.
+	Title string `json:"title"`
+
+	// Этап нужен только при условии (режим автоматизации, решение).
+	When *DocumentTemplatesSeedTemplatesElemRouteElemWhen `json:"when,omitempty,omitzero"`
+}
+
+type DocumentTemplatesSeedTemplatesElemRouteElemExternalParty string
+
+const DocumentTemplatesSeedTemplatesElemRouteElemExternalPartyCustomerRepresentative DocumentTemplatesSeedTemplatesElemRouteElemExternalParty = "customer_representative"
+const DocumentTemplatesSeedTemplatesElemRouteElemExternalPartyNone DocumentTemplatesSeedTemplatesElemRouteElemExternalParty = "none"
+const DocumentTemplatesSeedTemplatesElemRouteElemExternalPartyPartner DocumentTemplatesSeedTemplatesElemRouteElemExternalParty = "partner"
+
+type DocumentTemplatesSeedTemplatesElemRouteElemQuorum string
+
+const DocumentTemplatesSeedTemplatesElemRouteElemQuorumAll DocumentTemplatesSeedTemplatesElemRouteElemQuorum = "all"
+const DocumentTemplatesSeedTemplatesElemRouteElemQuorumKOfN DocumentTemplatesSeedTemplatesElemRouteElemQuorum = "k_of_n"
+const DocumentTemplatesSeedTemplatesElemRouteElemQuorumOne DocumentTemplatesSeedTemplatesElemRouteElemQuorum = "one"
+
+type DocumentTemplatesSeedTemplatesElemRouteElemSeparationElem string
+
+const DocumentTemplatesSeedTemplatesElemRouteElemSeparationElemDistinctSigners DocumentTemplatesSeedTemplatesElemRouteElemSeparationElem = "distinct_signers"
+const DocumentTemplatesSeedTemplatesElemRouteElemSeparationElemNotItemParticipant DocumentTemplatesSeedTemplatesElemRouteElemSeparationElem = "not_item_participant"
+
+// Этап нужен только при условии (режим автоматизации, решение).
+type DocumentTemplatesSeedTemplatesElemRouteElemWhen struct {
+	// Этап нужен для продукции с приёмкой представителя заказчика (режим 5).
+	CustomerAcceptance *bool `json:"customer_acceptance,omitempty,omitzero"`
+
+	// Решения, при которых этап нужен (например, repair, use_as_is — режим 4).
+	Decisions []string `json:"decisions,omitempty,omitzero"`
+}
+
+type DocumentTemplatesSeedTemplatesElemSubject string
+
+const DocumentTemplatesSeedTemplatesElemSubjectItem DocumentTemplatesSeedTemplatesElemSubject = "item"
+const DocumentTemplatesSeedTemplatesElemSubjectLot DocumentTemplatesSeedTemplatesElemSubject = "lot"
+const DocumentTemplatesSeedTemplatesElemSubjectNonconformity DocumentTemplatesSeedTemplatesElemSubject = "nonconformity"
+const DocumentTemplatesSeedTemplatesElemSubjectOther DocumentTemplatesSeedTemplatesElemSubject = "other"
+const DocumentTemplatesSeedTemplatesElemSubjectPolicy DocumentTemplatesSeedTemplatesElemSubject = "policy"
+const DocumentTemplatesSeedTemplatesElemSubjectProcessVersion DocumentTemplatesSeedTemplatesElemSubject = "process_version"
+
+// Поле: путь в content и подпись.
+type DocumentTemplatesSeedTemplatesElemSummaryElem struct {
+	// Путь к полю content через точку.
+	Key string `json:"key"`
+
+	// Подпись поля.
+	Label string `json:"label"`
+}
 
 // Оборудование и поверка (AD-31, FR-17): normative/reference/*/equipment.yaml.
 type EquipmentSeed struct {

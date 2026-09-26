@@ -1,6 +1,18 @@
-# Перечень шаблонов документов, на которые ссылаются шаги процесса (ant:document/@template) — затравка.
-# Поля, отрисовку и маршруты подписей шаблонов строит эпик 28 «Документы» по каталогу документов спайна
-# (класс: record — генерируется из журнала; decision — черновик + маршрут подписей; input — внешняя запись).
+# Шаблоны документов шагов процесса (AD-12, FR-65) — нормативный слой. Шаги ссылаются на них (ant:document/@template).
+# Класс: record — генерируется из журнала; decision — черновик + маршрут подписей; input — внешняя запись.
+# Полностью описаны (эпик 28, «позвоночник»): сопроводительная карта, заявление о несоответствии, решение по
+# несоответствующей продукции, лист утверждения версии процесса, «Запросить решение». Остальные — только объявлены;
+# поля, отрисовку и маршруты строит эпик 44 по каталогу документов спайна.
+#
+# Поля полного шаблона (схема — contracts/normative/templates.schema.json):
+#   version   — версия шаблона: template_ref = ‹id›@‹версия›; новая версия шаблона — новый файл templates.v‹N›.yaml;
+#   doc_type  — построитель содержимого в domain/documents (traveler, nc_statement, nc_disposition, generic);
+#   summary   — поля сводки уровня 2 (3–7), входят в отпечаток;
+#   route     — маршрут подписей (AD-13): этапы по порядку; обязательные подписи вычисляет access.RequiredApprovals
+#               при черновике и замораживает в каноническом JSON документа (AD-43);
+#   layout    — каноническая отрисовка HTML: разделы fields / table / route / text; печатная рамка (QR, дата печати,
+#               колонтитул «получено из системы») в отрисовку не входит.
+# Полномочия и роли — из normative/policy/policy.v1.yaml. Все составы маршрутов — проектные допущения [ПП].
 version: 1
 templates:
   - {id: incoming-register,            title: "Журнал регистрации продукции, поступившей на входной контроль", class: record}
@@ -9,7 +21,60 @@ templates:
   - {id: incoming-results-register,    title: "Журнал результатов входного контроля",                         class: record}
   - {id: lot-conformity-label,         title: "Ярлык соответствия / несоответствия партии (QR)",              class: record}
   - {id: item-tag,                     title: "Бирка изделия с QR",                                           class: record}
-  - {id: traveler,                     title: "Сопроводительная карта изделия",                               class: record}
+  - id: traveler
+    title: "Сопроводительная карта изделия"
+    class: record
+    version: 1
+    doc_type: traveler
+    subject: item
+    summary:
+      - {key: item.item_id,   label: "Изделие"}
+      - {key: rows_count,     label: "Операций"}
+      - {key: otk_count,      label: "Отметок ОТК"}
+      - {key: nc_count,       label: "Несоответствий"}
+      - {key: final.status,   label: "Итоговая годность"}
+    route:
+      - {stage: 1, title: "Контролёр ОТК — итоговая годность", role: quality_inspector, authority_id: qc_acceptance, stamp_kind: final,
+         quorum: one, signature_level: 2, paper_allowed: true, attester_authority_id: paper_attestation, separation: [distinct_signers, not_item_participant]}
+      - {stage: 2, title: "Мастер участка — итоговая годность", role: site_foreman, authority_id: site_foreman,
+         quorum: one, signature_level: 2, paper_allowed: true, attester_authority_id: paper_attestation, separation: [distinct_signers]}
+    layout:
+      - kind: fields
+        title: "Изделие"
+        fields:
+          - {key: item.item_id,              label: "Изделие"}
+          - {key: item.item_type_id,         label: "Обозначение ДСЕ"}
+          - {key: item.item_revision,        label: "Изменение КД"}
+          - {key: item.order_id,             label: "Задание"}
+          - {key: item.lots,                 label: "Партии"}
+          - {key: item.process_version_hash, label: "Версия техпроцесса"}
+      - kind: table
+        title: "Операции"
+        rows: rows
+        columns:
+          - {key: no,        label: "№"}
+          - {key: operation, label: "Операция"}
+          - {key: executor,  label: "Исполнитель"}
+          - {key: date,      label: "Дата"}
+          - {key: signature, label: "Подпись"}
+          - {key: params,    label: "Фактические параметры"}
+          - {key: otk,       label: "Отметка ОТК"}
+          - {key: remarks,   label: "Отметки"}
+      - kind: table
+        title: "Несоответствия и разрешения"
+        rows: nonconformities
+        columns:
+          - {key: number,      label: "№ заявления"}
+          - {key: status,      label: "Состояние"}
+          - {key: disposition, label: "Решение"}
+          - {key: concession,  label: "Разрешение на отклонение"}
+      - kind: fields
+        title: "Итог"
+        fields:
+          - {key: final.status, label: "Итоговая годность"}
+          - {key: final.at,     label: "Дата"}
+      - {kind: route, title: "Итоговая годность — подписи"}
+      - {kind: text, title: "Происхождение", key: origin}
   - {id: requisition,                  title: "Требование-накладная",                                         class: record}
   - {id: first-article-act,            title: "Акт первой детали",                                            class: record}
   - {id: cmm-protocol,                 title: "Протокол КИМ, карта измерений",                                class: input}
@@ -29,7 +94,127 @@ templates:
   - {id: passport,                     title: "Паспорт / формуляр изделия",                                   class: decision}
   - {id: isolator-log,                 title: "Журнал изолятора",                                             class: record}
   - {id: nc-label,                     title: "Ярлык «Брак» / НП (QR)",                                       class: record}
-  - {id: nc-statement,                 title: "Заявление о несоответствии",                                   class: record}
-  - {id: nc-disposition,               title: "Решение по несоответствующей продукции",                       class: decision}
+  - id: nc-statement
+    title: "Заявление о несоответствии"
+    class: record
+    version: 1
+    doc_type: nc_statement
+    subject: nonconformity
+    summary:
+      - {key: nc.number,      label: "Заявление"}
+      - {key: item.item_id,   label: "Изделие"}
+      - {key: nc.requirement, label: "Требование"}
+      - {key: nc.fact,        label: "Факт"}
+      - {key: nc.severity,    label: "Значимость"}
+    route:
+      - {stage: 1, title: "Обнаруживший", authority_id: nc_detection, quorum: one, signature_level: 1, paper_allowed: false, by_source: true}
+      - {stage: 2, title: "Контролёр качества подтверждает", role: quality_inspector, authority_id: qc_acceptance,
+         quorum: one, signature_level: 2, paper_allowed: true, attester_authority_id: paper_attestation, by_source: true}
+    layout:
+      - kind: fields
+        title: "Заявление"
+        fields:
+          - {key: nc.number,       label: "Номер"}
+          - {key: item.item_id,    label: "Изделие"}
+          - {key: item.item_type_id, label: "Обозначение ДСЕ"}
+          - {key: nc.found_at,     label: "Обнаружено"}
+          - {key: nc.found_by,     label: "Кто обнаружил"}
+          - {key: nc.stage,        label: "Этап (операция)"}
+          - {key: nc.requirement,  label: "Требование"}
+          - {key: nc.fact,         label: "Факт"}
+          - {key: nc.severity,     label: "Значимость"}
+          - {key: nc.defect_type,  label: "Вид дефекта"}
+          - {key: nc.evidence,     label: "Доказательства"}
+          - {key: nc.confirmed_by, label: "Подтвердил"}
+          - {key: nc.confirmed_at, label: "Дата подтверждения"}
+          - {key: nc.reason,       label: "Основание"}
+      - {kind: route, title: "Подписи"}
+  - id: nc-disposition
+    title: "Решение по несоответствующей продукции"
+    class: decision
+    version: 1
+    doc_type: nc_disposition
+    subject: nonconformity
+    summary:
+      - {key: nc.number,           label: "Несоответствие"}
+      - {key: item.item_id,        label: "Изделие"}
+      - {key: decision.label,      label: "Решение"}
+      - {key: decision.concession, label: "Разрешение на отклонение"}
+      - {key: decision.reason,     label: "Основание"}
+    route:
+      - {stage: 1, title: "Автор решения (контролёр качества)", authority_id: nc_disposition, quorum: one, signature_level: 2,
+         paper_allowed: false, by_source: true, separation: [distinct_signers]}
+      - {stage: 2, title: "Технолог", role: technologist, authority_id: nc_disposition, quorum: one, signature_level: 2,
+         paper_allowed: true, attester_authority_id: paper_attestation, separation: [distinct_signers], when: {decisions: [repair, use_as_is]}}
+      - {stage: 3, title: "Начальник ОТК", role: head_of_qc, authority_id: nc_disposition, quorum: one, signature_level: 2,
+         paper_allowed: true, attester_authority_id: paper_attestation, separation: [distinct_signers], when: {decisions: [repair, use_as_is]}}
+      - {stage: 4, title: "Представитель заказчика", role: customer_representative, authority_id: customer_acceptance, quorum: one,
+         signature_level: 2, paper_allowed: true, attester_authority_id: paper_attestation, external_party: customer_representative,
+         separation: [distinct_signers], when: {customer_acceptance: true}}
+    layout:
+      - kind: fields
+        title: "Решение"
+        fields:
+          - {key: nc.number,           label: "Несоответствие"}
+          - {key: item.item_id,        label: "Изделие"}
+          - {key: nc.requirement,      label: "Требование"}
+          - {key: nc.severity,         label: "Значимость"}
+          - {key: decision.label,      label: "Решение"}
+          - {key: decision.scrap_kind, label: "Вид списания"}
+          - {key: decision.concession, label: "Разрешение на отклонение"}
+          - {key: decision.claim,      label: "Основание претензии"}
+          - {key: decision.reason,     label: "Основание"}
+          - {key: decision.author,     label: "Автор решения"}
+          - {key: decision.at,         label: "Дата решения"}
+      - {kind: route, title: "Подписи маршрута"}
   - {id: scrap-act,                    title: "Акт о браке",                                                  class: decision}
   - {id: concession,                   title: "Разрешение на отклонение",                                     class: decision}
+  - id: process-version-approval
+    title: "Лист утверждения версии процесса"
+    class: decision
+    version: 1
+    doc_type: generic
+    subject: process_version
+    summary:
+      - {key: subject,  label: "Версия процесса"}
+      - {key: decision, label: "Что утверждается"}
+      - {key: comment,  label: "Читаемая разница"}
+    route:
+      - {stage: 1, title: "Технолог-автор", role: technologist, authority_id: quorum_signature, quorum: one, signature_level: 2, paper_allowed: false, separation: [distinct_signers]}
+      - {stage: 2, title: "Контролёр качества (кворум)", role: quality_inspector, authority_id: quorum_signature, quorum: one, signature_level: 2, paper_allowed: false, separation: [distinct_signers]}
+      - {stage: 3, title: "Руководитель производства (кворум)", role: production_manager, authority_id: quorum_signature, quorum: one, signature_level: 2, paper_allowed: false, separation: [distinct_signers]}
+    layout:
+      - kind: fields
+        title: "Лист утверждения"
+        fields:
+          - {key: subject,        label: "Версия процесса"}
+          - {key: decision,       label: "Что утверждается"}
+          - {key: comment,        label: "Читаемая разница"}
+          - {key: requested_by,   label: "Запросил"}
+          - {key: requested_at,   label: "Дата запроса"}
+          - {key: sources,        label: "Основания"}
+      - {kind: route, title: "Подписи кворума"}
+  - id: decision-request
+    title: "Запрос решения уполномоченного"
+    class: decision
+    version: 1
+    doc_type: generic
+    subject: other
+    summary:
+      - {key: subject,  label: "Объект"}
+      - {key: decision, label: "Что решается"}
+      - {key: comment,  label: "Комментарий"}
+    route:
+      - {stage: 1, title: "Начальник ОТК", role: head_of_qc, authority_id: nc_disposition, quorum: one, signature_level: 2,
+         paper_allowed: true, attester_authority_id: paper_attestation, separation: [distinct_signers]}
+    layout:
+      - kind: fields
+        title: "Запрос решения"
+        fields:
+          - {key: subject,      label: "Объект"}
+          - {key: decision,     label: "Что решается"}
+          - {key: comment,      label: "Комментарий"}
+          - {key: requested_by, label: "Запросил"}
+          - {key: requested_at, label: "Дата запроса"}
+          - {key: sources,      label: "Основания"}
+      - {kind: route, title: "Подписи"}

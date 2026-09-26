@@ -10,6 +10,7 @@ import { SECURITY_EVENT_TYPES, type SecurityEvent } from '@/entities/integrity'
 import { statusPalette, type StatusTone } from '@/shared/api/generated/statuses'
 import type { Density } from '@/shared/config/widget'
 import { codeToKey } from '@/shared/i18n'
+import { EmptyState } from '@/shared/ui'
 
 withDefaults(defineProps<{ events: SecurityEvent[]; eventType: string | null; density?: Density }>(), { density: 'compact' })
 const emit = defineEmits<{ 'update:eventType': [eventType: string | null] }>()
@@ -32,7 +33,7 @@ const time = (iso: string) => d(new Date(iso), 'dateTime')
         <option v-for="o in typeOptions" :key="o.value" :value="o.value">{{ o.label }}</option>
       </select>
     </label>
-    <p v-if="!events.length" class="muted">{{ t('empty.noRecords') }}</p>
+    <EmptyState v-if="!events.length" compact :title="t('empty.noRecords')" />
     <ol class="rows">
       <li v-for="e in events" :key="e.event_id" class="row" :data-seq="e.seq" :data-severity="e.severity" :style="{ borderLeftColor: statusPalette[TONE[e.severity]] }">
         <div class="line">
@@ -56,7 +57,7 @@ const time = (iso: string) => d(new Date(iso), 'dateTime')
   display: flex;
   flex-direction: column;
   gap: 8px;
-  font-size: 13px;
+  font-size: var(--ant-fs-body);
 }
 
 .filter {
@@ -73,9 +74,9 @@ const time = (iso: string) => d(new Date(iso), 'dateTime')
 .filter select {
   flex: 1;
   padding: 3px 6px;
-  border: 1px solid #d1d5db;
-  border-radius: 4px;
-  background: #fff;
+  border: 1px solid var(--ant-border-strong);
+  border-radius: var(--ant-radius-sm);
+  background: var(--ant-surface);
   font: inherit;
 }
 
@@ -90,9 +91,9 @@ const time = (iso: string) => d(new Date(iso), 'dateTime')
 
 .row {
   padding: 4px 8px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--ant-border);
   border-left-width: 3px;
-  border-radius: 6px;
+  border-radius: var(--ant-radius-md);
 }
 
 .line {
@@ -103,13 +104,13 @@ const time = (iso: string) => d(new Date(iso), 'dateTime')
 }
 
 .row[data-severity='alarm'] .sev {
-  color: #8b1e1e;
-  font-weight: 700;
+  color: var(--ant-status-critical);
+  font-weight: var(--ant-fw-bold);
 }
 
 .muted {
   margin: 0;
-  color: #6b7280;
-  font-size: 12px;
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-meta);
 }
 </style>

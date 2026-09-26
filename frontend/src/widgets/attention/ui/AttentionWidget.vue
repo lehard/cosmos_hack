@@ -84,9 +84,9 @@ const state = computed(() => (entries.value?.some((e) => e.kind === 'overdue_dec
 .attention li {
   padding: 6px 10px;
   border-left: 3px solid;
-  border-radius: 4px;
-  background: #f9fafb;
-  font-size: 14px;
+  border-radius: var(--ant-radius-sm);
+  background: var(--ant-surface-subtle);
+  font-size: var(--ant-fs-md);
 }
 
 .link {

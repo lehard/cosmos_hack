@@ -62,7 +62,7 @@ const isPicked = (sliceKey?: string) => props.picked?.metricId === props.row.met
 <style scoped>
 .metric-row {
   padding: 8px 0;
-  border-bottom: 1px solid #f0f1f3;
+  border-bottom: 1px solid var(--ant-n-100);
 }
 
 .metric-row:last-child {
@@ -77,19 +77,19 @@ const isPicked = (sliceKey?: string) => props.picked?.metricId === props.row.met
 }
 
 .title {
-  font-weight: 500;
+  font-weight: var(--ant-fw-bold);
 }
 
 .hint {
   margin: 2px 0 0;
-  color: #6b7280;
-  font-size: 12px;
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-meta);
 }
 
 .num {
   padding: 1px 6px;
   border: 1px solid transparent;
-  border-radius: 4px;
+  border-radius: var(--ant-radius-sm);
   background: none;
   color: inherit;
   font: inherit;
@@ -98,29 +98,29 @@ const isPicked = (sliceKey?: string) => props.picked?.metricId === props.row.met
 
 .num:hover,
 .num:focus-visible {
-  border-color: #9ca3af;
+  border-color: var(--ant-n-400);
 }
 
 .num[data-picked] {
-  border-color: #1f2937;
-  background: #f3f4f6;
+  border-color: var(--ant-text);
+  background: var(--ant-n-100);
 }
 
 .total {
-  font-size: 16px;
-  font-weight: 600;
+  font-size: var(--ant-fs-lg);
+  font-weight: var(--ant-fw-bold);
   white-space: nowrap;
 }
 
 .slices {
   margin: 6px 0 0 12px;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: var(--ant-fs-body);
 }
 
 .slices caption {
-  color: #6b7280;
-  font-size: 11px;
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-xs);
   text-align: left;
 }
 

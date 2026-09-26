@@ -20,6 +20,7 @@ export interface DocumentSignatureView {
      * @maximum 3
      */
   level: number;
+  /** source_decision — этап закрыт самим решением-источником (by_source). */
   method: DocumentSignatureViewMethod;
   /** Класс происхождения подписи (AD-2). */
   provenance_class: DocumentSignatureViewProvenanceClass;

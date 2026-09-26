@@ -129,6 +129,12 @@ func (p *HTTPPort) Act(ctx context.Context, persona, operation string, params ma
 		res.Seq, res.EventIDs = r.Seq, r.EventIDs
 	default:
 		res.Code = problemCode(b)
+		var pr struct {
+			Detail string `json:"detail"`
+		}
+		if json.Unmarshal(b, &pr) == nil {
+			res.Detail = pr.Detail
+		}
 	}
 	return res, nil
 }

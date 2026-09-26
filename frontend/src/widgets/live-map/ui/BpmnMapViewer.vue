@@ -234,32 +234,32 @@ defineExpose({ index })
 
 .lane-count {
   padding: 1px 6px;
-  border-radius: 8px;
-  background: rgb(47 111 219 / 12%);
-  color: #1f2937;
+  border-radius: var(--ant-radius-lg);
+  background: color-mix(in srgb, var(--ant-accent) 12%, transparent);
+  color: var(--ant-text);
   font: 600 11px/16px 'PT Sans', sans-serif;
   white-space: nowrap;
 }
 
 /* Маркеры на фигурах bpmn-js (цвета — палитра словаря статусов). */
 .canvas :deep(.djs-element.ant-anomaly .djs-visual > :first-child) {
-  stroke: #e0a100 !important;
+  stroke: var(--ant-status-attention) !important;
   stroke-width: 3px !important;
   stroke-dasharray: 6 3;
 }
 
 .canvas :deep(.djs-element.ant-bottleneck .djs-visual > :first-child) {
   stroke-dasharray: none !important;
-  stroke: #d64545 !important;
+  stroke: var(--ant-status-danger) !important;
   stroke-width: 4px !important;
 }
 
 .canvas :deep(.djs-element.ant-data-gap .djs-visual > :first-child) {
-  fill: #eef0f3 !important;
+  fill: var(--ant-border) !important;
 }
 
 .canvas :deep(.djs-element.ant-selected .djs-visual > :first-child) {
-  stroke: #2f6fdb !important;
+  stroke: var(--ant-accent) !important;
   stroke-width: 3px !important;
 }
 </style>

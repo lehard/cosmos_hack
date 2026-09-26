@@ -53,7 +53,7 @@ steps:
     versions:
       analyzer_version: vqc-weld 2.3.1
       contract_version: '1.0'
-      recipe_ref: KT-3@5
+      recipe_ref: kt3-weld@1
       camera_config: angle-1
       item_revision: Б
 - at: '2026-09-29T10:05:10+03:00'
@@ -83,7 +83,7 @@ steps:
     versions:
       analyzer_version: vqc-weld 2.3.1
       contract_version: '1.0'
-      recipe_ref: KT-3@5
+      recipe_ref: kt3-weld@1
       camera_config: angle-2
       item_revision: Б
 - at: '2026-09-29T10:06:00+03:00'
@@ -147,7 +147,7 @@ steps:
     versions:
       analyzer_version: vqc-weld 2.3.1
       contract_version: '1.0'
-      recipe_ref: KT-3@5
+      recipe_ref: kt3-weld@1
       camera_config: angle-1
       item_revision: Б
 - at: '2026-09-29T10:55:10+03:00'
@@ -177,7 +177,7 @@ steps:
     versions:
       analyzer_version: vqc-weld 2.3.1
       contract_version: '1.0'
-      recipe_ref: KT-3@5
+      recipe_ref: kt3-weld@1
       camera_config: angle-2
       item_revision: Б
 - at: '2026-09-29T10:56:00+03:00'
@@ -341,7 +341,7 @@ steps:
     versions:
       analyzer_version: vqc-weld 2.3.1
       contract_version: '1.0'
-      recipe_ref: KT-3@5
+      recipe_ref: kt3-weld@1
       camera_config: angle-1
       item_revision: Б
 - at: '2026-09-29T13:45:10+03:00'
@@ -371,7 +371,7 @@ steps:
     versions:
       analyzer_version: vqc-weld 2.3.1
       contract_version: '1.0'
-      recipe_ref: KT-3@5
+      recipe_ref: kt3-weld@1
       camera_config: angle-2
       item_revision: Б
 - at: '2026-09-29T13:46:00+03:00'

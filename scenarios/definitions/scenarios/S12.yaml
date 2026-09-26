@@ -37,7 +37,7 @@ steps:
       processing_state: completed
       analyzer_confidence_bp: 9400
       observation_quality_bp: 9000
-      versions: {analyzer_version: "vqc-weld 2.3.1", contract_version: "1.0", recipe_ref: "KT-3@5", camera_config: "angle-1", item_revision: "Б"}
+      versions: {analyzer_version: "vqc-weld 2.3.1", contract_version: "1.0", recipe_ref: "kt3-weld@1", camera_config: "angle-1", item_revision: "Б"}
   - at: "2026-09-22T14:00:10+03:00"
     ref: "S12 №2"
     label: S12/unknown-version
@@ -59,7 +59,7 @@ steps:
     source: cam-kt3-b
     item: F-026
     mutate: {set: {data/outcome: maybe}, invalid: true, quarantine: true}
-    data: {<<: *kt3, observation_id: "{local:KT3-F-026-B}", versions: {analyzer_version: "vqc-weld 2.3.1", contract_version: "1.0", recipe_ref: "KT-3@5", camera_config: "angle-2"}}
+    data: {<<: *kt3, observation_id: "{local:KT3-F-026-B}", versions: {analyzer_version: "vqc-weld 2.3.1", contract_version: "1.0", recipe_ref: "kt3-weld@1", camera_config: "angle-2"}}
   - at: "2026-09-22T14:00:30+03:00"
     ref: "S12 №4"
     label: S12/new-optional-field
@@ -67,7 +67,7 @@ steps:
     fact: inspection.result.recorded
     source: cam-kt3-b
     item: F-024
-    data: {<<: *kt3, observation_id: "{local:KT3-F-024-B}", lens_temp_c: {value: 412, scale: 1, unit: Cel}, versions: {analyzer_version: "vqc-weld 2.3.1", contract_version: "1.1", recipe_ref: "KT-3@5", camera_config: "angle-2"}}
+    data: {<<: *kt3, observation_id: "{local:KT3-F-024-B}", lens_temp_c: {value: 412, scale: 1, unit: Cel}, versions: {analyzer_version: "vqc-weld 2.3.1", contract_version: "1.1", recipe_ref: "kt3-weld@1", camera_config: "angle-2"}}
   - at: "2026-09-22T14:00:40+03:00"
     ref: "S12 №5"
     label: S12/unknown-noncritical
@@ -76,7 +76,7 @@ steps:
     source: cam-kt3-b
     item: F-022
     mutate: {set: {data/recommendation: spatter_x}, invalid: true}
-    data: {<<: *kt3, observation_id: "{local:KT3-F-022-B}", versions: {analyzer_version: "vqc-weld 2.3.1", contract_version: "1.0", recipe_ref: "KT-3@5", camera_config: "angle-2"}}
+    data: {<<: *kt3, observation_id: "{local:KT3-F-022-B}", versions: {analyzer_version: "vqc-weld 2.3.1", contract_version: "1.0", recipe_ref: "kt3-weld@1", camera_config: "angle-2"}}
   - at: "2026-09-22T14:30:00+03:00"
     ref: "S12 №6"
     label: S12/manual-binding

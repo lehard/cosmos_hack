@@ -99,8 +99,8 @@ const doubtful = computed(() => identificationDoubtful(props.passport.identifica
 
 .muted {
   margin: 0;
-  color: #6b7280;
-  font-size: 12px;
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-meta);
 }
 
 .axes {
@@ -111,7 +111,7 @@ const doubtful = computed(() => identificationDoubtful(props.passport.identifica
 }
 
 .axes dt {
-  color: #6b7280;
+  color: var(--ant-text-3);
 }
 
 .axes dd {
@@ -122,7 +122,7 @@ const doubtful = computed(() => identificationDoubtful(props.passport.identifica
   padding: 0;
   border: 0;
   background: none;
-  color: #2f6fdb;
+  color: var(--ant-accent);
   font: inherit;
   cursor: pointer;
 }

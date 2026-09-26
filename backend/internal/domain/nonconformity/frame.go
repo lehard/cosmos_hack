@@ -56,6 +56,10 @@ type Env struct {
 	// для гарда решения на точке предъявления: quality.PresentationBlockers
 	// (FR-35, FR-44). Нулевая — гард без проверки полноты контроля quality.
 	Quality quality.Env `json:"-"`
+	// Process — нормативный слой процесса изделия (закреплённая версия) для
+	// гарда решения на точке предъявления: process.PresentationGuard (FR-19,
+	// FR-21, FR-44; стык эпиков 17 и 21, эпик 16). Нулевой — без проверки.
+	Process process.Env `json:"-"`
 }
 
 // Upstream — состояния модулей раньше nonconformity в композиции на этом шаге
@@ -337,7 +341,29 @@ func Reduce(s State, r kernel.Record, env Env, up Upstream) State {
 		}
 	}
 	s.fromQuality(up, r)
+	s.fromDocuments(up, r)
 	return s
+}
+
+// fromDocuments — решения режима 4–5 с подписями «ожидаются» исполняются,
+// когда модуль documents закрыл маршрут подписей документа решения (AD-43,
+// AD-40: documents стоит в композиции раньше; закрытие вычисляется в свёртке
+// заново по подписям — documents.RouteClosed, эпик 28). Подписи
+// nonconformity сам не считает.
+func (s *State) fromDocuments(up Upstream, r kernel.Record) {
+	if up.Documents == nil {
+		return
+	}
+	for i := range s.NCs {
+		n := &s.NCs[i]
+		if n.Disposition == "" || n.Executed || n.ApprovalsStatus != ApprovalsPending || n.DocumentID == "" {
+			continue
+		}
+		if documents.RouteClosed(*up.Documents, n.DocumentID) {
+			n.Executed, n.ApprovalsStatus = true, ApprovalsRouteClosed
+			s.executed(*n, r)
+		}
+	}
 }
 
 // fromQuality — намерения quality, выраженные данными его состояния

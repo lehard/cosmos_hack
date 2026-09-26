@@ -35,6 +35,10 @@
       "type": "string",
       "maxLength": 2000,
       "description": "Комментарий автора запроса."
+    },
+    "requested_by": {
+      "$ref": "../common/defs.v1.json#/definitions/person_ref",
+      "description": "Кто запросил (псевдоним сотрудника); ключ подписи — в integrity конверта."
     }
   },
   "required": [

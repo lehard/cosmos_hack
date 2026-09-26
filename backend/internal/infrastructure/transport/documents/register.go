@@ -109,4 +109,89 @@ func Register(api *httpapi.API, q app.Queries, c app.Commands) {
 		func(ctx context.Context, in *docCmd[app.AnnulVersion]) (platform.Receipt, error) {
 			return c.AnnulVersion(ctx, in.DocumentID, in.Body)
 		})
+
+	registerRoute(api, q, c)
+}
+
+// registerRoute — операции маршрута подписей в формах карточки подписи
+// эпика 11 (FR-66, FR-136, FR-139, FR-146; AD-12, AD-13, AD-43): запросы
+// решения текущего пользователя, «Запросить решение» / новая версия,
+// подпись этапа, отказ в согласовании, печать с QR.
+func registerRoute(api *httpapi.API, q app.Queries, c app.Commands) {
+	httpapi.Read(api, httpapi.Get("/decision-requests", "Запросы решения, ждущие вашей подписи",
+		"FR-136: открытые версии документов, чей ближайший незакрытый этап маршрута вправе подписать пользователь сеанса: документ с маршрутом, "+
+			"что предлагается, почему к вам, доводы, ваш этап, ожидаемый подписант (он же в QR бумажного экземпляра)."),
+		platform.Action{ID: "documents.request.list", Owner: owner, Subject: "document"},
+		func(ctx context.Context, in *struct {
+			httpapi.MomentQuery
+		}, m platform.Moment) (app.DecisionRequestList, error) {
+			return q.DecisionRequests(ctx, m)
+		})
+
+	httpapi.Read(api, httpapi.Get("/documents/{document_id}/print", "Печатная форма документа",
+		"FR-139, AD-12: каноническая отрисовка в печатной рамке — QR ant:doc:‹id›:‹отпечаток› (SVG рисует сервер), дата печати, колонтитул «получено из системы». "+
+			"Рамка в отпечаток не входит."),
+		platform.Action{ID: "documents.paper.print_view", Owner: owner, Subject: "document"},
+		func(ctx context.Context, in *struct {
+			DocumentID string `path:"document_id" maxLength:"128"`
+			Version    int    `query:"version" minimum:"0" doc:"Версия; 0 — последняя (у карты без версий — текущий сбор)."`
+		}, _ platform.Moment) (app.PrintView, error) {
+			return q.PrintView(ctx, in.DocumentID, in.Version)
+		})
+
+	httpapi.Register(api, httpapi.Post("/documents/versions", "Запросить решение / новая версия документа",
+		"FR-146, FR-136, AD-12: document.version.requested; шаблон — явно или по недоступному действию. У изделия версию оформляет свёртка "+
+			"(воркер: document.version.drafted), у объекта вне изделия — в той же пачке. Обязательные подписи вычисляются один раз (AD-43)."),
+		platform.Action{ID: "documents.version.request", Class: platform.ClassRecord, Owner: owner, Subject: "document",
+			Emits: []catalog.Type{catalog.DocumentVersionRequested, catalog.DocumentVersionDrafted}},
+		func(ctx context.Context, in *struct{ Body app.RequestVersion }) (*httpapi.Out[app.RequestAccepted], error) {
+			r, err := c.RequestVersion(ctx, in.Body)
+			if err != nil {
+				return nil, err
+			}
+			if r.EventIDs == nil {
+				r.EventIDs = []string{}
+			}
+			return httpapi.OK(r), nil
+		})
+
+	type docCmd[B any] struct {
+		DocumentID string `path:"document_id" maxLength:"128"`
+		Body       B
+	}
+	httpapi.Do(api, httpapi.Post("/documents/{document_id}/route/signatures", "Подписать этап маршрута",
+		"FR-66, AD-13, AD-43: подпись уровня 2 над отпечатком версии (агентом токена — signature_b64; в демо без агента — пометка, Д-30). "+
+			"Гард: версия текущая, отпечаток совпадает, этап открыт и по порядку, полномочие, клеймо, разделение обязанностей. "+
+			"«Маршрут закрыт» — только реакция document.route.closed модуля documents."),
+		platform.Action{ID: "documents.signature.record", Class: platform.ClassRecord, Owner: owner, Subject: "document",
+			Guards: []string{"access.signature_required", "signing.document_changed", "access.separation_of_duties", "access.no_stamp", "document.stage_not_open"},
+			Emits:  []catalog.Type{catalog.DocumentSignatureRecorded, catalog.DocumentRouteClosed}, SignatureLevel: 2},
+		func(ctx context.Context, in *docCmd[app.RecordSignature]) (platform.Receipt, error) {
+			return c.RecordSignature(ctx, in.DocumentID, in.Body)
+		})
+
+	httpapi.Do(api, httpapi.Post("/documents/{document_id}/route/declines", "Не согласовать — вернуть с замечанием",
+		"FR-136, AD-43: document.signature.declined; маршрут этой версии не закрывается — нужна новая версия или аннулирование. Замечание обязательно."),
+		platform.Action{ID: "documents.signature.decline", Class: platform.ClassRecord, Owner: owner, Subject: "document",
+			Guards: []string{"access.signature_required", "signing.document_changed", "document.stage_not_open"},
+			Emits:  []catalog.Type{catalog.DocumentSignatureDeclined}, SignatureLevel: 2},
+		func(ctx context.Context, in *docCmd[app.DeclineSignature]) (platform.Receipt, error) {
+			return c.Decline(ctx, in.DocumentID, in.Body)
+		})
+
+	httpapi.Register(api, httpapi.Post("/documents/{document_id}/print", "Напечатать бумажный экземпляр с QR",
+		"FR-139, AD-12: document.paper.status_changed (printed); у сопроводительной карты печать фиксирует новую версию, если содержимое изменилось. "+
+			"Ответ — версия, отпечаток, QR и адрес печатной формы."),
+		platform.Action{ID: "documents.paper.print", Class: platform.ClassRecord, Owner: owner, Subject: "document",
+			Emits: []catalog.Type{catalog.DocumentPaperStatusChanged, catalog.DocumentVersionRequested}},
+		func(ctx context.Context, in *docCmd[app.PrintPaper]) (*httpapi.Out[app.PrintAccepted], error) {
+			r, err := c.Print(ctx, in.DocumentID, in.Body)
+			if err != nil {
+				return nil, err
+			}
+			if r.EventIDs == nil {
+				r.EventIDs = []string{}
+			}
+			return httpapi.OK(r), nil
+		})
 }

@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -192,5 +193,47 @@ func TestViolationWindowOpensIncident(t *testing.T) {
 	f.deviation("dev-current", "IS-2", at(20), at(95))
 	if len(f.out["dev-current"]) != 0 {
 		t.Fatalf("повтор: %+v", f.out["dev-current"])
+	}
+}
+
+// Эпик 16, стык 21 и 22: несоответствия окна нарушения (функция-намерение
+// nonconformity в шаге machinelogs) в том же проходе попадают в инцидент,
+// который окно открыло, — вход разбора обстоятельств.
+func TestViolationWindowNCsJoinIncident(t *testing.T) {
+	f := newFeed(t)
+	for i := range 4 {
+		f.weld(i, "IS-2")
+	}
+	f.deviation("dev-current", "IS-2", at(20), at(50))
+	out := f.out["dev-current"]
+	ncs := byType(out, catalog.DecisionNonconformityRegistered)
+	opened := byType(out, catalog.IncidentIncidentOpened)
+	if len(ncs) == 0 || len(opened) != 1 {
+		t.Fatalf("окно: несоответствия %d, инцидентов %d", len(ncs), len(opened))
+	}
+	if len(f.st.Analysis.Incidents) != 1 {
+		t.Fatalf("инцидентов %d", len(f.st.Analysis.Incidents))
+	}
+	inc := f.st.Analysis.Incidents[strings.TrimPrefix(opened[0].Stream, "incident:")]
+	if len(inc.NCs) != len(ncs) {
+		t.Fatalf("несоответствия окна в инциденте: %v, выдано %d", inc.NCs, len(ncs))
+	}
+}
+
+// Эпик 16, стык 17 и 23: признак «специальный процесс» — из
+// operation.run.interval_resolved: шаг, который процесс не считает
+// спецпроцессом, несоответствий окна не получает, хотя он в списке по умолчанию.
+func TestSpecialProcessFromIntervalResolved(t *testing.T) {
+	f := newFeed(t)
+	for i := range 4 {
+		f.weld(i, "IS-2")
+		run := fmt.Sprintf("RUN-W-%d", i)
+		f.add("interval-"+run, catalog.OperationRunIntervalResolved, fmt.Sprintf("ENT01:FL-%d", i), at(i*15+10), map[string]any{
+			"operation_run_id": run, "equipment_id": "IS-2", "interval_start": stamp(at(i * 15)), "interval_end": stamp(at(i*15 + 10)),
+			"interval_origin": "source_reported", "step_key": "welding.weld", "special_process": false})
+	}
+	f.deviation("dev-current", "IS-2", at(20), at(50))
+	if n := len(byType(f.out["dev-current"], catalog.DecisionNonconformityRegistered)); n != 0 {
+		t.Fatalf("процесс: не спецпроцесс — несоответствий окна нет, выдано %d", n)
 	}
 }

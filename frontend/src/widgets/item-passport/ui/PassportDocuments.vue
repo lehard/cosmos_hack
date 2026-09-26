@@ -43,15 +43,15 @@ li {
 
 .status {
   padding: 0 6px;
-  border-radius: 8px;
-  background: #f3f4f6;
-  font-size: 12px;
+  border-radius: var(--ant-radius-lg);
+  background: var(--ant-n-100);
+  font-size: var(--ant-fs-meta);
 }
 
 .muted {
   margin: 0;
-  color: #6b7280;
-  font-size: 12px;
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-meta);
   word-break: break-all;
 }
 </style>

@@ -13,9 +13,10 @@ import (
 // волне 1; с хранилищем и сигналом (NewServiceWith) — живые обновления.
 type Service struct {
 	Unimplemented
-	store  JournalStore
-	signal Signal
-	live   LiveSource
+	store     JournalStore
+	signal    Signal
+	live      LiveSource
+	clockMode ClockModeFunc
 }
 
 // LiveSource — источник живых обновлений, которому Service отдаёт операцию

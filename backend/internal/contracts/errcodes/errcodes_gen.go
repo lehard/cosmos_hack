@@ -73,6 +73,8 @@ const (
 	ApiReplayReadOnly Code = "api.replay_read_only"
 	// Запрос не соответствует контракту
 	ApiValidationFailed Code = "api.validation_failed"
+	// Этап маршрута не ждёт подписи
+	DocumentStageNotOpen Code = "document.stage_not_open"
 	// Канал обмена в режиме degraded
 	ErpChannelDegraded Code = "erp.channel_degraded"
 	// Несовместимое изменение контракта обмена
@@ -298,6 +300,7 @@ var codes = [...]Info{
 	{Code: ApiRateLimited, Status: 429, Title: "Слишком много запросов", Detail: "Повторите через {retry_after} с", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: ApiReplayReadOnly, Status: 403, Title: "В режиме воспроизведения действия недоступны", Detail: "Запрос на момент {as_of} только для чтения", UIKey: "errors.decision.replayReadOnly", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: ApiValidationFailed, Status: 400, Title: "Запрос не соответствует контракту", Detail: "Поле {field}: {reason}", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
+	{Code: DocumentStageNotOpen, Status: 409, Title: "Этап маршрута не ждёт подписи", Detail: "Документ {doc_id}, версия {version}, этап {stage}: {why}", UIKey: "errors.generic", Quarantine: false, Severity: "error", Guard: true, Aliases: nil},
 	{Code: ErpChannelDegraded, Status: 503, Title: "Канал обмена в режиме degraded", Detail: "Канал {system} в режиме degraded: {detail} — отправка остановлена до восстановления контракта", UIKey: "errors.integration.contractIncompatible", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: ErpContractIncompatible, Status: 422, Title: "Несовместимое изменение контракта обмена", Detail: "Метаданные {system} не совпали с версией контракта адаптера — канал degraded, результат не отправлен", UIKey: "errors.integration.contractIncompatible", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},
 	{Code: ErpContractNotFound, Status: 422, Title: "Не найден договор с контрагентом", Detail: "Не найден договор с контрагентом {counterparty}", UIKey: "errors.integration.contractNotFound", Quarantine: false, Severity: "error", Guard: false, Aliases: nil},

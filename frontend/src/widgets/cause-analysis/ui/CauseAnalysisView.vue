@@ -9,6 +9,7 @@ import { useI18n } from 'vue-i18n'
 import { sortGroups, type NcGroup } from '@/entities/incident'
 import { codeToKey } from '@/shared/i18n'
 import type { Density } from '@/shared/config/widget'
+import { DataTable } from '@/shared/ui'
 
 const props = withDefaults(defineProps<{ groups: NcGroup[]; density?: Density }>(), { density: 'compact' })
 /** Выбранная группа (`group_key`). */
@@ -21,7 +22,7 @@ const toggle = (key: string) => (selected.value = selected.value === key ? null 
 
 <template>
   <div class="causes" :class="`density-${density}`" data-testid="cause-analysis">
-    <table class="table">
+    <DataTable class="table">
       <thead>
         <tr>
           <th>{{ t('common.words.defectType') }}</th>
@@ -52,35 +53,17 @@ const toggle = (key: string) => (selected.value = selected.value === key ? null 
           <td class="muted">{{ d(new Date(g.last_found_at), 'dateTime') }}</td>
         </tr>
       </tbody>
-    </table>
+    </DataTable>
   </div>
 </template>
 
 <style scoped>
 .causes {
-  font-size: 13px;
+  font-size: var(--ant-fs-body);
 }
 
 .density-large {
-  font-size: 16px;
-}
-
-.table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.table th {
-  padding: 4px 8px;
-  color: #6b7280;
-  font-weight: 400;
-  text-align: left;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.table td {
-  padding: 5px 8px;
-  border-bottom: 1px solid #f3f4f6;
+  font-size: var(--ant-fs-lg);
 }
 
 tbody tr {
@@ -89,25 +72,25 @@ tbody tr {
 
 tbody tr:hover,
 tbody tr:focus-visible {
-  background: #f8fafc;
+  background: var(--ant-surface-subtle);
   outline: none;
 }
 
 tbody tr.on {
-  background: #eff6ff;
-  box-shadow: inset 3px 0 0 #2f6fdb;
+  background: var(--ant-accent-soft);
+  box-shadow: inset 3px 0 0 var(--ant-accent);
 }
 
 .num {
-  font-family: 'PT Mono', monospace;
+  font-family: var(--ant-font-mono);
   text-align: right;
 }
 
 .strong {
-  font-weight: 700;
+  font-weight: var(--ant-fw-bold);
 }
 
 .muted {
-  color: #6b7280;
+  color: var(--ant-text-3);
 }
 </style>

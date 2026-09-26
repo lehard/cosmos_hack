@@ -96,7 +96,7 @@ const pick = (e: Event) => (focus.incidentId = (e.target as HTMLSelectElement).v
   gap: 6px;
   align-items: center;
   margin-bottom: 8px;
-  font-size: 13px;
+  font-size: var(--ant-fs-body);
 }
 
 .cmd-note {

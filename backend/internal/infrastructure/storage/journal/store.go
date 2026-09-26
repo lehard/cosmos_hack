@@ -25,6 +25,12 @@ import (
 // головы основной цепочки.
 const NotifyChannel = "ant_journal"
 
+// ProgressChannel — канал LISTEN/NOTIFY «курсор потребителя сдвинулся»
+// (эпик 16): полезной нагрузки нет. Нужен тем, кто ждёт, пока воркер,
+// стадия и проектор догонят журнал (Settler), — курсор без новых записей
+// головы не двигает и сигнала NotifyChannel не даёт.
+const ProgressChannel = "ant_journal_progress"
+
 // Ключи pg_advisory_xact_lock голов цепочек (AD-44): порядок фиксирован —
 // сначала основная, затем ca, поэтому две цепочки не блокируют друг друга
 // взаимно. Значения — «antjmain» и «antjca» в ASCII.
@@ -55,6 +61,9 @@ type Store struct {
 	// cipher — шифрование блока при хранении (AD-23); nil — блок открыт.
 	cipher Cipher
 	deks   dekCache
+	// scenario — журнал в режиме часов scenario (AD-37): recorded_at записи
+	// без доменного времени — доменное «сейчас» журнала (recorded_at головы).
+	scenario bool
 }
 
 // EffectApplier — применяющий эффекты модуля-писателя проекций внутри
@@ -77,6 +86,14 @@ func WithBatchMax(k int) Option { return func(s *Store) { s.batchMax = k } }
 
 // WithSkew — допустимое отставание часов копии от головы цепочки.
 func WithSkew(d time.Duration) Option { return func(s *Store) { s.skew = d } }
+
+// WithScenarioClock — журнал в режиме часов scenario (AD-37, эпик 16):
+// записи, которым писатель не поставил recorded_at (реакции движка, решения
+// модулей без своего флага часов), получают recorded_at головы — последнее
+// доменное «сейчас» сценария, а не реальное committed_at. Иначе реальное
+// время обгоняет виртуальное, и следующий тик прогона отвергается как
+// убывание recorded_at.
+func WithScenarioClock(on bool) Option { return func(s *Store) { s.scenario = on } }
 
 // WithEffects — применяющие эффекты модулей со своими проекциями (сверх
 // движка), по порядку: эффект применяет первый, кто его взял.
@@ -310,6 +327,10 @@ ON CONFLICT (name, partition) DO UPDATE SET seq = GREATEST(consumer_offsets.seq,
 			c.Name, c.Partition, c.Seq, now); err != nil {
 			return err
 		}
+		// Сигнал «курсор сдвинулся» — при фиксации (Settler, эпик 16).
+		if _, err := tx.Exec(ctx, "SELECT pg_notify($1, '')", ProgressChannel); err != nil {
+			return err
+		}
 	}
 	// 7. Выход потребителя в таблицы модулей — в той же транзакции: эффекты
 	// (проекции, вклады, журнал изменений), затем Project.
@@ -375,8 +396,12 @@ func (s *Store) sealChain(chain jc.JournalEntryChain, batch []app.Pending, h hea
 		e.Chain = chain
 		e.CommittedAt = committedS
 		if e.RecordedAt == "" {
-			// Часы system: recorded_at = committed_at (AD-37).
+			// Часы system: recorded_at = committed_at (AD-37). Часы scenario:
+			// доменное «сейчас» — recorded_at головы (последний тик прогона).
 			e.RecordedAt = committedS
+			if s.scenario && !recorded.IsZero() {
+				e.RecordedAt = dj.FormatTime(recorded)
+			}
 		}
 		rec, err := dj.ParseTime(e.RecordedAt)
 		if err != nil {

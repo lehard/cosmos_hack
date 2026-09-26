@@ -8,12 +8,13 @@
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NButton, NDatePicker, NRadioButton, NRadioGroup, NSlider } from 'naive-ui'
+import { NDatePicker, NRadioButton, NRadioGroup, NSlider } from 'naive-ui'
 import type { TimelineMark, TimelineMarkKind } from '@/entities/live-map'
 import type { Axis } from '@/shared/api/generated/model'
 import { statusPalette } from '@/shared/api/generated/statuses'
 import { naiveSizeOf, type Density } from '@/shared/config/widget'
 import { SPEEDS, type PlaybackRange, type Speed } from '../model/playback'
+import { ActionButton } from '@/shared/ui'
 
 const props = withDefaults(
   defineProps<{
@@ -77,13 +78,9 @@ const formatTooltip = (v: number) => d(new Date(v), 'dateTime')
 <template>
   <div class="timeline" :data-replay="replay || undefined" :data-playing="playing || undefined">
     <div class="controls">
-      <NButton :size="size" :type="replay ? 'default' : 'primary'" :disabled="!replay" data-action="live" @click="emit('live')">
-        {{ t('liveMap.playback.now') }}
-      </NButton>
-      <NButton v-if="!playing" :size="size" :disabled="!range" data-action="play" @click="emit('play')">
-        ▶ {{ replay ? t('liveMap.playback.play') : t('liveMap.playback.replay') }}
-      </NButton>
-      <NButton v-else :size="size" data-action="pause" @click="emit('pause')">⏸ {{ t('liveMap.playback.pause') }}</NButton>
+      <ActionButton :size="size" :type="replay ? 'default' : 'primary'" :disabled="!replay" data-action="live" @click="emit('live')" :label="t('liveMap.playback.now')" />
+      <ActionButton v-if="!playing" :size="size" :disabled="!range" data-action="play" @click="emit('play')" :label="`▶ ${replay ? t('liveMap.playback.play') : t('liveMap.playback.replay')}`" />
+      <ActionButton v-else :size="size" data-action="pause" @click="emit('pause')" :label="`⏸ ${t('liveMap.playback.pause')}`" />
       <NRadioGroup :value="speed" :size="size" name="speed" @update:value="(v: Speed) => emit('speed', v)">
         <NRadioButton v-for="s in SPEEDS" :key="s" :value="s" :data-speed="s">{{ t('liveMap.playback.speed', { speed: s }) }}</NRadioButton>
       </NRadioGroup>
@@ -178,18 +175,18 @@ const formatTooltip = (v: number) => d(new Date(v), 'dateTime')
 .ends {
   display: flex;
   justify-content: space-between;
-  color: #6b7280;
-  font-size: 12px;
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-meta);
 }
 
 .at {
-  color: #1f2937;
-  font-weight: 700;
+  color: var(--ant-text);
+  font-weight: var(--ant-fw-bold);
 }
 
 .note {
   margin: 0;
-  color: #6b7280;
-  font-size: 12px;
+  color: var(--ant-text-3);
+  font-size: var(--ant-fs-meta);
 }
 </style>

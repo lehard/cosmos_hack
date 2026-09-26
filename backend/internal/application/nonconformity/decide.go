@@ -69,6 +69,11 @@ func (s *Service) onItem(ctx context.Context, v *itemView, c itemCommand) (platf
 	if err := dom.Guard(v.State(), v.Env, v.Upstream(), cmd); err != nil {
 		return platform.Receipt{}, err
 	}
+	if p, ok := c.Data.(dom.PresentationResolvedData); ok {
+		if err := s.gateAuthority(v, actor, p.StepKey); err != nil {
+			return platform.Receipt{}, err
+		}
+	}
 	checks := []appjournal.Check{{Stream: stream, BasisSeq: basis}}
 	if c.Extra != nil {
 		more, err := c.Extra(v, now)
@@ -434,3 +439,17 @@ func shortID(commandID string) string {
 
 // fmtTime — время по соглашению (RFC 3339 UTC, три знака после секунд).
 func fmtTime(t time.Time) string { return t.UTC().Format("2006-01-02T15:04:05.000Z") }
+
+// gateAuthority — решение на точке предъявления принимает обладатель
+// полномочия точки: process State.Gates[step].Authority (FR-19: повторное
+// предъявление — полномочие выше). Стык эпиков 17 и 21 (эпик 16).
+func (s *Service) gateAuthority(v *itemView, actor, stepKey string) error {
+	g, ok := v.Snap.Process.Gate(stepKey)
+	if !ok || g.Authority == "" || actor == "" || s.d.Authorities == nil {
+		return nil
+	}
+	if s.d.Authorities.HasAuthority(actor, g.Authority) {
+		return nil
+	}
+	return kernel.Refuse(errcodes.AccessSignatureRequired, "who", "обладатель полномочия «"+g.Authority+"»")
+}
