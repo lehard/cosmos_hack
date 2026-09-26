@@ -9,7 +9,8 @@
  * `analysis.measurement.request`. Кнопка доступна, только если действие есть в
  * списке прав сервера (AD-15).
  */
-import { computed } from 'vue'
+import { computed, inject } from 'vue'
+import { routerKey } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { NAlert } from 'naive-ui'
 import { FACTOR_TEXT, hypothesesState, useAnalysisCommands, useAnalysisFocusStore, useCan, type Hypothesis } from '@/entities/incident'
@@ -50,6 +51,12 @@ const actions = computed(() => (src.incidentId.value ? (measures.data.value?.dat
 const session = useSession()
 const me = computed(() => session.data.value?.data?.user ?? null)
 const canAssign = computed(() => Boolean(src.incidentId.value && me.value) && can('analysis.action.assign', 'incident', src.incidentId.value))
+
+/** Переход в раздел стола технолога. */
+const router = inject(routerKey, null)
+function goTab(tab: 'actions' | 'process'): void {
+  if (router?.hasRoute('desk')) void router.push({ name: 'desk', params: { tab } })
+}
 
 function assign(direction: 'prevent_occurrence' | 'improve_detection', input: AssignInput): void {
   if (!src.incidentId.value || !me.value) return
@@ -138,6 +145,7 @@ const fromFactor = computed(() => {
       :can-assign="canAssign"
       :owner-name="me?.name ?? null"
       @assign="assign"
+      @go="goTab"
     />
   </WidgetFrame>
 </template>

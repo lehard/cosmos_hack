@@ -51,7 +51,8 @@ const seed = (params: LiveMapParams, data: LiveMapData, mode = 'fixtures') =>
 
 function mountWidget(slice: Record<string, unknown> = { period: 'shift' }) {
   wrapper = mount(LiveMapWidget, {
-    props: { widgetId: 'live-map', titleKey: 'liveMap.title', slotId: 'map', slice, density: 'comfortable' },
+    // Эти проверки — схема процесса (BPMN); «Карта производства» — в flow.spec.ts.
+    props: { widgetId: 'live-map', titleKey: 'liveMap.title', slotId: 'map', slice: { view: 'bpmn', ...slice }, density: 'comfortable' },
     attachTo: document.body,
     global: { plugins: [pinia, i18n, router, [VueQueryPlugin, { queryClient }]] },
   })

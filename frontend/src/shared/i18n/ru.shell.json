@@ -278,6 +278,64 @@
   },
 
   "widgets": {
+    "controlCenter": {
+      "title": "Состояние производства",
+      "decisionsTitle": "Требует моего решения",
+      "decisionsEmpty": "Сейчас ничего не требует вашего решения",
+      "incidentTitle": "Главный инцидент",
+      "scope": "Область риска",
+      "contained": "Локализовано",
+      "stage": "Стадия",
+      "openMap": "Открыть на карте производства",
+      "production": {
+        "title": "Производство",
+        "main": "{items} в работе",
+        "queue": "в очереди {n}",
+        "delayed": "задерживаются участков: {n}"
+      },
+      "quality": {
+        "title": "Качество",
+        "mainIncident": "{items} в области риска",
+        "mainNcs": "несоответствий за смену: {n}",
+        "confirmed": "подтверждено: {n}"
+      },
+      "flow": {
+        "title": "Поток",
+        "mainBottleneck": "Ограничение: {step}",
+        "mainOk": "Без ограничений",
+        "wait": "ожидание {wait}",
+        "anomalies": "отклонений от норм: {n}"
+      },
+      "decisions": {
+        "title": "Решения",
+        "main": "требуют решения: {n}",
+        "none": "решений не ждёт",
+        "overdue": "просрочено: {n}"
+      }
+    },
+    "liveMap": {
+      "flow": {
+        "title": "Карта производства",
+        "scheme": "Схема процесса",
+        "views": "Вид карты",
+        "inScope": "{items} в области риска",
+        "contained": "локализовано {n} из {m}",
+        "openScheme": "Открыть схему процесса",
+        "inProgress": "в работе",
+        "counts": "очередь {queue} · прошло {passed}",
+        "defects": "дефектов {n}",
+        "sectionScope": "в области риска: {m} · локализовано {n}",
+        "bottleneck": "узкое место · ожидание {wait}",
+        "noSections": "Участки не заданы в схеме процесса",
+        "feed": "Что сейчас произошло",
+        "status": {
+          "normal": "норма",
+          "attention": "отклонение",
+          "danger": "инцидент",
+          "unknown": "нет данных"
+        }
+      }
+    },
     "mapTimeline": "Таймлайн: «сейчас» и воспроизведение",
     "grantsHistory": "История выдачи прав",
     "metricTiles": "Показатели",
@@ -343,6 +401,11 @@
         "requestCheck": "Запросить проверку",
         "supportLine": "Доводов «за»: {pro} · «против»: {con}",
         "moreTitle": "Доводы, уверенность, что меняло вывод",
+        "outcomeTitle": "Итог расследования: две причины и меры",
+        "noConclusion": "вывода пока нет",
+        "measuresCount": "мер: {n}",
+        "toActions": "К мерам и эффективности",
+        "toProcess": "К техпроцессу",
         "couldExclude": "может исключить {n} из {of} изделий области",
         "historyTitle": "Что меняло уверенность ({n})",
         "confidenceNow": "уверенность {value}"

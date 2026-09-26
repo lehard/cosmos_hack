@@ -27,10 +27,9 @@ const text = computed(() =>
 
 <style scoped>
 .nc {
-  padding: 0 var(--ant-space-2);
-  border: 1px solid var(--ant-border);
-  border-radius: var(--ant-radius-sm);
-  background: var(--ant-surface);
+  padding: 0;
+  border: 0;
+  background: none;
   color: var(--ant-accent);
   font: inherit;
   font-size: var(--ant-fs-meta);
@@ -39,6 +38,6 @@ const text = computed(() =>
 }
 
 .nc:hover {
-  background: var(--ant-surface-hover);
+  text-decoration: underline;
 }
 </style>

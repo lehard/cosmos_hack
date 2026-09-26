@@ -10,6 +10,7 @@
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useNcGroups } from '@/entities/incident'
 import { useCorrectiveActions, useOpenRecord } from '@/entities/suggestion'
 import { backendModeOf } from '@/shared/api/response'
 import type { WidgetDataState, WidgetProps } from '@/shared/config/widget'
@@ -23,6 +24,16 @@ const data = computed(() => q.data.value?.data ?? null)
 const items = computed(() => data.value?.items ?? [])
 const { open, setOpen } = useOpenRecord(['action'] as const)
 const current = computed(() => (open.value ? (items.value.find((a) => a.action_id === open.value?.id) ?? null) : null))
+
+/**
+ * Повторяющаяся проблема словами: вид дефекта и шаг — из групп разбора (названия
+ * сервера), если такая группа есть; иначе — код, выдумывать не будем.
+ */
+const groups = useNcGroups()
+function recurringText(defect: string, step: string): { defect: string; step: string } {
+  const g = (groups.data.value ?? []).find((x) => x.defect_type === defect && x.operation === step)
+  return { defect: g?.defect_type_label || defect, step: g?.operation_label || step }
+}
 
 /** Просроченные или не помогшие меры — «признак дефекта» рамки: требует внимания. */
 const state = computed<WidgetDataState>(() => (data.value && (data.value.summary.overdue || data.value.summary.ineffective) ? 'defect_indication' : 'normal'))
@@ -106,7 +117,7 @@ const time = (iso?: string | null) => (iso ? d(new Date(iso), 'dateTime') : '—
           <EmptyState v-if="!data.recurring.length" compact :title="t('widgets.quality.recurringEmpty')" />
           <ul v-else class="list" data-testid="recurring">
             <li v-for="r in data.recurring" :key="r.defect_type + r.step_key" class="ant-wrap">
-              {{ t('widgets.quality.recurringRow', { defect: r.defect_type, step: r.step_key, n: r.count }) }} ·
+              {{ t('widgets.quality.recurringRow', { ...recurringText(r.defect_type, r.step_key), n: r.count }) }} ·
               <span :class="r.with_action ? 'muted' : 'warn'">{{ r.with_action ? t('widgets.quality.withAction') : t('widgets.quality.withoutAction') }}</span>
             </li>
           </ul>

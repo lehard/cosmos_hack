@@ -77,7 +77,7 @@ const count = computed(() => props.tasks.length)
 .inbox {
   display: flex;
   flex-direction: column;
-  gap: var(--ant-space-3);
+  gap: var(--ant-space-4);
   min-width: 0;
 }
 
@@ -86,13 +86,12 @@ p {
 }
 
 .head {
-  font-size: var(--ant-fs-title);
+  color: var(--ant-text-2);
 }
 
 .tasks {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: var(--ant-space-3);
+  display: flex;
+  flex-direction: column;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -103,11 +102,9 @@ p {
   flex-direction: column;
   gap: var(--ant-space-1);
   min-width: 0;
-  padding: var(--ant-space-3) var(--ant-space-4);
-  border: 1px solid var(--ant-border);
-  border-left: 4px solid var(--tone);
-  border-radius: var(--ant-radius-md);
-  background: var(--ant-surface);
+  padding: var(--ant-space-5) 0 var(--ant-space-5) var(--ant-space-4);
+  border-top: 1px solid var(--ant-border);
+  box-shadow: inset 3px 0 0 var(--tone);
 }
 
 .title {
@@ -117,6 +114,7 @@ p {
 
 .line {
   color: var(--ant-text-2);
+  font-size: var(--ant-fs-meta);
 }
 
 .next {
@@ -126,17 +124,17 @@ p {
 .go {
   align-self: flex-start;
   margin-top: var(--ant-space-2);
-  padding: var(--ant-space-1) var(--ant-space-3);
-  border: 1px solid var(--ant-accent);
+  padding: var(--ant-space-1) var(--ant-space-4);
+  border: 0;
   border-radius: var(--ant-radius-md);
-  background: var(--ant-accent-soft);
-  color: var(--ant-accent);
+  background: var(--ant-accent);
+  color: var(--ant-surface);
   font: inherit;
   font-weight: var(--ant-fw-bold);
   cursor: pointer;
 }
 
 .go:hover {
-  background: var(--ant-surface-hover);
+  opacity: 0.9;
 }
 </style>

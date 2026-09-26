@@ -6,17 +6,17 @@ title_key: desks.dashboard
 density: comfortable
 help_key: production_manager # раздел встроенной справки (эпик 47); наследники роли получают его вместе со столом
 tabs:
-  # Обзор разгружен (UI-10): сверху показатели, затем «требует вашего внимания»
-  # и тревоги; живая карта и посты — отдельными разделами.
+  # Центр управления (показ SHOW-IS2, шаг 9): состояние предприятия четырьмя словами,
+  # «Требует моего решения» — одна лента вместо «внимания» и «тревог», главный инцидент
+  # (область риска, локализация, стадия); показатели смены — вторым слоем ниже.
   - id: overview
-    title_key: desks.dashboard
+    title_key: desks.controlCenter
     layout: single
     slots:
+      - {id: center, area: main, widget: control-center}
       - {id: tiles, area: main, widget: metric-tiles, slice: {set: production_manager}}
-      - {id: attention, area: main, widget: attention}
-      - {id: alerts, area: main, widget: alerts-feed}
   - id: processes
-    title_key: desks.liveMap
+    title_key: desks.productionMap
     layout: single
     slots:
       # Таймлайн — часть живой карты (полоса внизу, UI-19), отдельного слота нет.

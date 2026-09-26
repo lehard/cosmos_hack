@@ -103,7 +103,7 @@ function submit(): void {
       v-if="canAssign && !open"
       overflow="wrap"
       :size="size"
-      secondary
+      quaternary
       :disabled="busy || moment.isReplay"
       data-testid="assign-open"
       @click="start"
@@ -144,8 +144,6 @@ function submit(): void {
   gap: var(--ant-space-2);
   align-items: flex-start;
   min-width: 0;
-  padding-top: var(--ant-space-2);
-  border-top: 1px dashed var(--ant-border);
 }
 
 p {
@@ -171,10 +169,8 @@ p {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  padding: var(--ant-space-1) var(--ant-space-2);
+  padding-left: var(--ant-space-3);
   border-left: 3px solid var(--ant-status-info);
-  border-radius: var(--ant-radius-sm);
-  background: var(--ant-surface-subtle);
 }
 
 .item[data-status='effective'] {
@@ -194,12 +190,10 @@ p {
 .form {
   display: flex;
   flex-direction: column;
-  gap: var(--ant-space-2);
+  gap: var(--ant-space-3);
   width: 100%;
-  padding: var(--ant-space-2);
-  border: 1px solid var(--ant-border-strong);
-  border-radius: var(--ant-radius-md);
-  background: var(--ant-surface-subtle);
+  padding-left: var(--ant-space-3);
+  border-left: 3px solid var(--ant-border-strong);
 }
 
 .missing {
