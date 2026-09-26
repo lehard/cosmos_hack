@@ -35,13 +35,16 @@ onBeforeUnmount(() => {
   clearInterval(runTimer)
 })
 /** Идёт прогон сценария — столы работают в нём: живые обновления переподключаются (SSE фильтрует по run_id), данные перечитываются. */
+// Ключ — run_id и начало: после пересоздания стенда run_id тот же, а прогон новый — старые данные сбрасываются.
 watch(
-  () => activeRun.value?.run_id ?? null,
-  (runId) => {
+  () => (activeRun.value ? `${activeRun.value.run_id}@${activeRun.value.started_at ?? ''}` : null),
+  (key, prev) => {
+    const runId = activeRun.value?.run_id ?? null
     updates.value?.stop()
     const url = runId ? `${SSE_ADDRESS}${SSE_ADDRESS.includes('?') ? '&' : '?'}run_id=${encodeURIComponent(runId)}` : SSE_ADDRESS
     updates.value = startLiveUpdates(queryClient, url)
-    void queryClient.invalidateQueries()
+    if (prev !== undefined) void queryClient.resetQueries()
+    else void queryClient.invalidateQueries()
   },
 )
 </script>

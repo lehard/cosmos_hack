@@ -14,6 +14,8 @@ export interface ActiveRun {
   steps?: number
   step_title?: string
   clock_at?: string
+  /** Начало прогона: тот же run_id после пересоздания стенда — другой прогон. */
+  started_at?: string
   speed?: number
   waiting_for?: { role: string; action: string; object_id?: string; title?: string } | null
 }
