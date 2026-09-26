@@ -55,7 +55,7 @@ const emit = defineEmits<{
 }>()
 defineSlots<{
   /** Автор версии (id персоны) — контейнер показывает имя. */
-  author(props: { id: string }): unknown
+  author(props: { id: string; authorName: string | null }): unknown
 }>()
 
 const { t, n, d } = useI18n()
@@ -220,7 +220,7 @@ function submit(): void {
               <template v-else-if="v.change === 'narrowed'">{{ t('riskScope.basis') }}: {{ t('widgets.analysis.riskScope.noBasis') }}</template>
             </p>
             <p class="step-meta muted ant-wrap">
-              <template v-if="v.author"><slot name="author" :id="v.author">{{ v.author }}</slot></template>
+              <template v-if="v.author"><slot name="author" :id="v.author" :author-name="v.author_name ?? null">{{ v.author_name || v.author }}</slot></template>
               <template v-else>{{ t('widgets.analysis.riskScope.systemAuthor') }}</template>
               · {{ dateTime(v.recorded_at) }}
               <template v-if="v.evidence_event_ids.length"> · {{ t('widgets.analysis.riskScope.evidence', { n: v.evidence_event_ids.length }) }}</template>

@@ -96,6 +96,7 @@ export const toRiskScopeModel = (a: RiskScope): RiskScopeModel => ({
     size: v.size,
     recorded_at: v.recorded_at,
     author: v.author ?? null,
+    author_name: v.author_name ?? null,
     reason: v.reason ? { code: v.reason.code ?? null, text: v.reason.text } : null,
     evidence_event_ids: v.evidence_event_ids,
     breakdown: v.breakdown,

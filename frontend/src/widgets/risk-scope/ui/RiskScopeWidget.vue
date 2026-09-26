@@ -92,7 +92,7 @@ const pick = (e: Event) => (focus.incidentId = (e.target as HTMLSelectElement).v
       @expand="(input) => change('expand', input)"
       @open-item="openItem"
     >
-      <template #author="{ id }"><AuthorName :id="id" @open="openPerson" /></template>
+      <template #author="{ id, authorName }"><AuthorName :id="id" :name="authorName" @open="openPerson" /></template>
     </RiskScopeView>
   </WidgetFrame>
 </template>

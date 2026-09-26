@@ -221,6 +221,8 @@ export interface ScopeVersion {
   recorded_at: string
   /** Автор (псевдоним); null — правило системы. */
   author: string | null
+  /** Имя автора для людей (сервер); нет — показать код автора. */
+  author_name?: string | null
   /** Основание: код и текст (`reason`). */
   reason: { code?: string | null; text: string } | null
   /** Доказательства — `event_id` записей (`evidence_event_ids` / `basis`). */

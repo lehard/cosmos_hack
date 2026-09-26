@@ -31,6 +31,10 @@ describe('область риска', () => {
     expect(steps[1]!.text()).toContain('Журнал станка: до 08:05 режим в норме')
     expect(steps[1]!.text()).toContain('Технолог Т-03')
     expect(steps[1]!.text()).toContain('доказательств: 2')
+    const named = weldScope()
+    named.versions[1]!.author = 'TEC-01'
+    named.versions[1]!.author_name = 'Е. Орлова'
+    expect(mountView(named).findAll('[data-testid="version-line"]')[1]!.text()).toContain('Е. Орлова')
     expect(steps[2]!.find('.delta').text()).toBe('−7')
     expect(steps[2]!.find('.step-where').text()).toContain('Ушли дальше 1')
     expect(steps[2]!.find('.step-where').text()).not.toContain('Отгружены')
