@@ -209,6 +209,10 @@ func (v *run) criticalActions() {
 		ref := dom.Ref(a.seq)
 		m, ok := v.byID[a.r.MainEventID]
 		switch {
+		case a.r.MainCommit == dj.ZeroLink.String():
+			// Запись моста эпика 06 до сервиса доверенных решений: номер и
+			// commit — заполнители; сверить один к одному нельзя.
+			c.unverifiable("chains.ca_legacy", fmt.Sprintf("критическое действие %s записано до эпика 29 (заполнитель commit) — один к одному не сверяется", ref))
 		case !ok:
 			c.reject("chain_link_mismatch.ca_orphan", fmt.Sprintf("критическое действие %s ссылается на запись %s, которой нет в журнале — изменено вне разрешённого процесса", ref, a.r.MainEventID), "ca", a.seq, ref)
 		case m.commit != a.r.MainCommit:
