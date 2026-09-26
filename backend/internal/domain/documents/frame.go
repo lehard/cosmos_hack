@@ -248,6 +248,9 @@ func (s *State) reduceDocs(r kernel.Record, env Env, up Upstream) {
 		for _, id := range d.SourceEventIds {
 			c.Sources = append(c.Sources, string(id))
 		}
+		if d.RequestedBy != nil {
+			c.Author = string(*d.RequestedBy)
+		}
 		s.fromIntent(env, c, r, up)
 	case catalog.DocumentSignatureRecorded:
 		d, err := kernel.Decode[ev.DocumentSignatureRecordedV1](r)
@@ -349,7 +352,11 @@ func (s *State) fromIntent(env Env, c DraftContext, r kernel.Record, up Upstream
 		s.Docs = append(s.Docs, Doc{ID: c.Key, TemplateRef: t.Ref(), DocType: t.DocType, Class: t.Class, Title: t.Title, Subject: subject})
 		d = &s.Docs[len(s.Docs)-1]
 	}
-	d.Context = DocContext{Decision: c.Decision, Comment: c.Comment, Author: PersonOf(r.Actor), At: FormatTime(r.OccurredAt),
+	author := c.Author
+	if author == "" {
+		author = PersonOf(r.Actor)
+	}
+	d.Context = DocContext{Decision: c.Decision, Comment: c.Comment, Author: author, At: FormatTime(r.OccurredAt),
 		Sources: slices.Clone(c.Sources), SourceEvent: r.EventID}
 	s.draft(env, d, r, up)
 }

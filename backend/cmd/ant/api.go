@@ -118,6 +118,12 @@ func runAPI(ctx context.Context, env *environment) error {
 			return err
 		}
 	}
+	if modeOf(opts, "documents") == platform.ModeLive {
+		// Документы-проекции журнала и маршруты подписей (эпик 28).
+		if opts.documents, err = documentsLive(ctx, env); err != nil {
+			return err
+		}
+	}
 	if modeOf(opts, "vision") == platform.ModeLive {
 		// Паспорта допуска анализаторов — над журналом ядра (эпик 33).
 		if opts.vision, err = visionLive(ctx, env); err != nil {

@@ -9,6 +9,7 @@ import (
 	analysisapp "ant/internal/application/analysis"
 	analyticsapp "ant/internal/application/analytics"
 	crossitemapp "ant/internal/application/crossitem"
+	documentsapp "ant/internal/application/documents"
 	engineapp "ant/internal/application/engine"
 	itemapp "ant/internal/application/item"
 	appjournal "ant/internal/application/journal"
@@ -55,6 +56,8 @@ func engineRegistry() *engineapp.Registry {
 	// notifications (эпик 24): единственная проекция сроков, задачи, уведомления.
 	mustRegister(notificationsapp.Register(r))
 	mustRegister(itemapp.Register(r)) // эпик 18: item.row, item.index
+	// documents (эпик 28): документы изделия и счётчик «документов собрано из истории».
+	mustRegister(documentsapp.RegisterProjections(r))
 	return r
 }
 

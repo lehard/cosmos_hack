@@ -1511,6 +1511,9 @@ type DocumentVersionRequestedV1 struct {
 	// Будущий документ.
 	DocumentID ObjectID `json:"document_id"`
 
+	// Кто запросил (псевдоним сотрудника); ключ подписи — в integrity конверта.
+	RequestedBy *PersonRef `json:"requested_by,omitempty,omitzero"`
+
 	// События-источники.
 	SourceEventIds []UUID `json:"source_event_ids,omitempty,omitzero"`
 

@@ -2,6 +2,7 @@ package documents_test
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"os"
@@ -11,6 +12,7 @@ import (
 	"time"
 
 	app "ant/internal/application/documents"
+	"ant/internal/application/ingest"
 	engineapp "ant/internal/application/engine"
 	"ant/internal/application/engine/enginemem"
 	appjournal "ant/internal/application/journal"
@@ -20,6 +22,7 @@ import (
 	"ant/internal/contracts/catalog"
 	"ant/internal/contracts/errcodes"
 	dom "ant/internal/domain/documents"
+	domingest "ant/internal/domain/ingest"
 )
 
 // world — журнал в памяти, воркер движка (свёртка nctest.DraftingFold —
@@ -332,6 +335,8 @@ func TestSpineFlow(t *testing.T) {
 		t.Fatalf("печатная форма: %v", err)
 	}
 
+	w.checkSchemas()
+
 	// Отпечаток сервера = отпечаток агента: записанный document.version.drafted
 	// совпадает с пересчётом из content и шаблона (как у агента токена, AD-12).
 	for _, e := range w.j.Entries() {
@@ -398,6 +403,42 @@ func TestProcessApprovalSheet(t *testing.T) {
 	}
 	if d := w.doc(acc2.DocumentID, 0); d.Status != dom.StatusReturned {
 		t.Fatalf("возвращён: %s", d.Status)
+	}
+	w.checkSchemas()
+}
+
+// checkSchemas — каждая запись семейства document в журнале проходит схему
+// конверта и схему data своего типа (AD-20): реакции и решения модуля
+// соответствуют контракту.
+func (w *world) checkSchemas() {
+	w.t.Helper()
+	n := 0
+	for _, e := range w.j.Entries() {
+		if !strings.HasPrefix(e.EventType, "document.") {
+			continue
+		}
+		env, err := w.j.Open(context.Background(), e)
+		if err != nil {
+			w.t.Fatal(err)
+		}
+		var dsse struct {
+			Payload string `json:"payload"`
+		}
+		if err := json.Unmarshal(env.Raw, &dsse); err != nil {
+			w.t.Fatal(err)
+		}
+		raw, err := base64.StdEncoding.DecodeString(dsse.Payload)
+		if err != nil {
+			w.t.Fatal(err)
+		}
+		dec, err := ingest.ValidateEnvelope(raw)
+		if err != nil || dec.Outcome != domingest.OutcomeAccepted {
+			w.t.Fatalf("%s %s: %+v %v\n%s", e.EventType, e.EventID, dec, err, raw)
+		}
+		n++
+	}
+	if n == 0 {
+		w.t.Fatal("нет записей document.*")
 	}
 }
 

@@ -1315,6 +1315,18 @@ components:
         - basis_seq
         - policy_seq
       type: object
+    AwaitingAttestation:
+      additionalProperties: false
+      properties:
+        signer:
+          type: string
+        stage:
+          format: int64
+          type: integer
+      required:
+        - stage
+        - signer
+      type: object
     Axis:
       description: "Ось момента (AD-37): occurred — «как было» (по умолчанию), recorded — «что мы знали»."
       enum:
@@ -2636,6 +2648,69 @@ components:
         - doc_digest
         - basis_seq
       type: object
+    DecisionEscalation:
+      additionalProperties: false
+      properties:
+        automation_mode:
+          format: int64
+          maximum: 5
+          minimum: 0
+          type: integer
+        reason:
+          type: string
+        rule_id:
+          type: string
+        rule_rev:
+          type: string
+      required:
+        - reason
+        - automation_mode
+      type: object
+    DecisionEvidence:
+      additionalProperties: false
+      properties:
+        event_id:
+          type: string
+        event_type:
+          type: string
+        occurred_at:
+          format: date-time
+          type: string
+      required:
+        - event_id
+        - event_type
+        - occurred_at
+      type: object
+    DecisionProposal:
+      additionalProperties: false
+      properties:
+        code:
+          description: "Код предложения: вариант решения, concession, accept…"
+          type: string
+        item_id:
+          type: string
+        item_label:
+          type: string
+        kind:
+          enum:
+            - disposition
+            - concession
+            - presentation
+            - other
+          type: string
+        nc_id:
+          type: string
+        nc_number:
+          type: string
+        summary:
+          type: string
+      required:
+        - kind
+        - code
+        - summary
+        - item_id
+        - item_label
+      type: object
     DecisionQueue:
       additionalProperties: false
       properties:
@@ -2709,6 +2784,104 @@ components:
         - risk_rank
         - overdue
         - basis_seq
+      type: object
+    DecisionRequest:
+      additionalProperties: false
+      properties:
+        awaiting_attestation:
+          $ref: "#/components/schemas/AwaitingAttestation"
+        document:
+          $ref: "#/components/schemas/RoutedDocument"
+        due_at:
+          format: date-time
+          type: string
+        escalation:
+          $ref: "#/components/schemas/DecisionEscalation"
+        evidence:
+          items:
+            $ref: "#/components/schemas/DecisionEvidence"
+          type: array
+        expected_signer:
+          description: Ожидаемый подписант этапа — он же в QR бумажного экземпляра.
+          type: string
+        my_stage:
+          description: Этап, который ждёт подписи текущего пользователя; нет — не ваш черёд.
+          format: int64
+          type: integer
+        proposal:
+          $ref: "#/components/schemas/DecisionProposal"
+        similar_accepted:
+          items:
+            $ref: "#/components/schemas/SimilarDecision"
+          type: array
+        similar_rejected:
+          items:
+            $ref: "#/components/schemas/SimilarDecision"
+          type: array
+      required:
+        - document
+        - proposal
+        - escalation
+        - evidence
+        - similar_accepted
+        - similar_rejected
+      type: object
+    DecisionRequestList:
+      additionalProperties: false
+      properties:
+        items:
+          items:
+            $ref: "#/components/schemas/DecisionRequest"
+          type: array
+      required:
+        - items
+      type: object
+    DeclineSignature:
+      additionalProperties: false
+      properties:
+        basis_seq:
+          description: "seq, на котором клиент видел объект (basis_seq из ответа чтения): после него в потоках гарда не должно быть новых записей guard_relevant, иначе 409 journal.stale_state (AD-39)."
+          format: int64
+          minimum: 0
+          type: integer
+        command_id:
+          description: UUIDv7 клиента; повтор с тем же id возвращает прежний ответ (AD-7). У подписанной команды — event_id пакета.
+          format: uuid
+          type: string
+        comment:
+          description: Замечание — обязательно.
+          maxLength: 2000
+          minLength: 1
+          type: string
+        doc_digest:
+          type: string
+        policy_seq:
+          description: Версия политики, по которой показаны права (policy_seq сеанса); изменилась — 409 journal.stale_policy (AD-39).
+          format: int64
+          minimum: 0
+          type: integer
+        signature:
+          $ref: "#/components/schemas/DsseEnvelope"
+          description: "Подписанный пакет DSSE для операций с уровнем подписи ≥ 1 (AD-10, AD-13, AD-14): подписывает агент токена, сервер сверяет отпечаток."
+        stage:
+          format: int64
+          minimum: 1
+          type: integer
+        version:
+          format: int64
+          minimum: 1
+          type: integer
+        workplace_id:
+          description: Рабочее место сеанса (барьер 2, AD-15).
+          maxLength: 128
+          type: string
+      required:
+        - version
+        - stage
+        - comment
+        - command_id
+        - basis_seq
+        - policy_seq
       type: object
     DefectTypeCoverage:
       additionalProperties: false
@@ -3231,14 +3404,48 @@ components:
     DocumentList:
       additionalProperties: false
       properties:
+        collected_from_history:
+          description: "FR-65: документов собрано из истории изделия."
+          format: int64
+          type: integer
         items:
           items:
             $ref: "#/components/schemas/DocumentSummary"
           type: array
+        manual_entries:
+          description: "FR-65: сколько полей заполнено вручную — у документов-проекций всегда 0."
+          format: int64
+          type: integer
         next_cursor:
           type: string
       required:
         - items
+      type: object
+    DocumentPaperMark:
+      additionalProperties: false
+      properties:
+        at:
+          format: date-time
+          type: string
+        copy_no:
+          type: string
+        event_id:
+          type: string
+        paper_status:
+          enum:
+            - printed
+            - signed
+            - destroyed
+          type: string
+        version:
+          format: int64
+          minimum: 1
+          type: integer
+      required:
+        - event_id
+        - version
+        - paper_status
+        - at
       type: object
     DocumentReason:
       additionalProperties: false
@@ -3273,6 +3480,77 @@ components:
         - rendering_hash
         - html
       type: object
+    DocumentRouteStage:
+      additionalProperties: false
+      properties:
+        attester_authority_id:
+          type: string
+        authority_id:
+          type: string
+        authority_label:
+          description: Кто подписывает этап — для людей.
+          type: string
+        by_source:
+          description: Этап закрыт самим решением-источником.
+          type: boolean
+        done:
+          type: boolean
+        external_party:
+          enum:
+            - none
+            - customer_representative
+            - partner
+          type: string
+        k:
+          format: int64
+          type: integer
+        paper_allowed:
+          type: boolean
+        quorum:
+          enum:
+            - one
+            - all
+            - k_of_n
+          type: string
+        required:
+          description: Сколько засчитанных подписей нужно на этапе.
+          format: int64
+          minimum: 1
+          type: integer
+        role:
+          type: string
+        separation:
+          items:
+            type: string
+          type: array
+        signature_level:
+          format: int64
+          maximum: 3
+          minimum: 0
+          type: integer
+        signatures:
+          items:
+            $ref: "#/components/schemas/DocumentStageSignature"
+          type: array
+        stage:
+          format: int64
+          minimum: 1
+          type: integer
+        stamp_kind:
+          type: string
+        title:
+          type: string
+      required:
+        - stage
+        - authority_id
+        - authority_label
+        - quorum
+        - required
+        - signature_level
+        - paper_allowed
+        - done
+        - signatures
+      type: object
     DocumentSignatureView:
       additionalProperties: false
       properties:
@@ -3294,11 +3572,13 @@ components:
           minimum: 0
           type: integer
         method:
+          description: source_decision — этап закрыт самим решением-источником (by_source).
           enum:
             - token_agent
             - paper
             - device
             - demo_signer
+            - source_decision
           type: string
         provenance_class:
           description: Класс происхождения подписи (AD-2).
@@ -3340,13 +3620,97 @@ components:
         - verification
         - provenance_class
       type: object
+    DocumentStageSignature:
+      additionalProperties: false
+      properties:
+        attested_by:
+          description: Заверитель бумажной подписи (AD-43).
+          type: string
+        check:
+          description: "Проверка подписи (FR-68): демо без агента токена — unchecked."
+          enum:
+            - valid
+            - rejected
+            - not_verifiable
+            - unchecked
+          type: string
+        class:
+          description: Класс происхождения подписи (AD-2).
+          enum:
+            - device
+            - personal
+            - paper
+            - partner
+            - server_attested
+            - scenario
+            - genesis
+          type: string
+        counted:
+          description: "Засчитана модулем documents: текущий отпечаток, полномочие и клеймо, уровень, разделение обязанностей."
+          type: boolean
+        event_id:
+          description: Запись document.signature.recorded или решение-источник (by_source).
+          type: string
+        level:
+          description: Уровень подписи (AD-13).
+          format: int64
+          maximum: 3
+          minimum: 0
+          type: integer
+        method:
+          enum:
+            - token_agent
+            - paper
+            - device
+            - demo_signer
+            - source_decision
+          type: string
+        paper_original_ref:
+          description: Учётный номер бумажного оригинала в архиве ОТК.
+          type: string
+        previous_version:
+          description: Подпись по прежней версии — видна, но не засчитывается.
+          type: boolean
+        scan_address:
+          description: Адрес скана в хранилище материалов.
+          type: string
+        signed_at:
+          format: date-time
+          type: string
+        signer_id:
+          description: Псевдоним подписанта или id устройства.
+          type: string
+        why:
+          description: "Почему не засчитана: prior_version, authority, no_stamp, level, separation_*, paper_forbidden, attester_*, surplus."
+          type: string
+      required:
+        - event_id
+        - signer_id
+        - class
+        - level
+        - check
+        - method
+        - signed_at
+        - counted
+      type: object
     DocumentSummary:
       additionalProperties: false
       properties:
+        class:
+          description: "Класс документа: запись, решение, требование, вход."
+          enum:
+            - record
+            - decision
+            - requirement
+            - input
+          type: string
         closed_at:
           format: date-time
           type: string
         doc_digest:
+          type: string
+        doc_type:
+          description: "Вид документа: traveler, nc_statement, nc_disposition, generic."
           type: string
         document_id:
           type: string
@@ -3361,12 +3725,15 @@ components:
             - destroyed
           type: string
         status:
+          description: live — сопроводительная карта собирается из истории, версия ещё не зафиксирована; returned — подписант вернул версию с замечанием.
           enum:
             - requested
             - drafted
             - signing
             - route_closed
             - annulled
+            - live
+            - returned
           type: string
         subject:
           $ref: "#/components/schemas/DrillRef"
@@ -3379,6 +3746,10 @@ components:
         version:
           format: int64
           minimum: 1
+          type: integer
+        versions:
+          description: Сколько версий сформировано.
+          format: int64
           type: integer
       required:
         - document_id
@@ -3402,12 +3773,50 @@ components:
         - label
         - value
       type: object
+    DocumentVersionRef:
+      additionalProperties: false
+      properties:
+        doc_digest:
+          type: string
+        drafted_at:
+          format: date-time
+          type: string
+        signatures:
+          description: Сколько подписей записано над этой версией.
+          format: int64
+          type: integer
+        status:
+          enum:
+            - drafted
+            - signing
+            - route_closed
+            - annulled
+            - returned
+          type: string
+        version:
+          format: int64
+          minimum: 1
+          type: integer
+      required:
+        - version
+        - doc_digest
+        - status
+        - drafted_at
+        - signatures
+      type: object
     DocumentView:
       additionalProperties: false
       properties:
         basis_seq:
           format: int64
           type: integer
+        class:
+          enum:
+            - record
+            - decision
+            - requirement
+            - input
+          type: string
         content:
           additionalProperties: {}
           description: Канонические данные документа (JCS без rendering_hash).
@@ -3419,13 +3828,32 @@ components:
           format: int64
           minimum: 1
           type: integer
+        doc_type:
+          description: Вид документа.
+          type: string
         document_id:
           type: string
+        live:
+          description: "Версия ещё не зафиксирована: показан текущий сбор из истории (номер — следующей версии)."
+          type: boolean
+        paper:
+          description: "Бумажные экземпляры: напечатан, подписан, уничтожен (AD-12)."
+          items:
+            $ref: "#/components/schemas/DocumentPaperMark"
+          type: array
         qr:
           description: ant:doc:‹id›:‹отпечаток› — для печатной рамки.
           type: string
         rendering_hash:
           description: H(render(шаблон@версия, content)).
+          type: string
+        route:
+          description: "Маршрут с подписями по этапам: засчитана или нет и почему (AD-43)."
+          items:
+            $ref: "#/components/schemas/DocumentRouteStage"
+          type: array
+        route_closed_event_id:
+          description: Реакция document.route.closed версии.
           type: string
         signatures:
           items:
@@ -3448,6 +3876,8 @@ components:
             - signing
             - route_closed
             - annulled
+            - live
+            - returned
           type: string
         subject:
           $ref: "#/components/schemas/DrillRef"
@@ -3464,10 +3894,21 @@ components:
           type: string
         title:
           type: string
+        verification:
+          description: Как проверены подписи при закрытии маршрута; demo — без агента токена (Д-30).
+          enum:
+            - full
+            - demo
+          type: string
         version:
           format: int64
           minimum: 1
           type: integer
+        versions:
+          description: "Версии документа: у каждой свой отпечаток, подписи прежней остаются при ней (AD-12)."
+          items:
+            $ref: "#/components/schemas/DocumentVersionRef"
+          type: array
       required:
         - document_id
         - version
@@ -8486,6 +8927,115 @@ components:
         - station
         - presence
       type: object
+    PrintAccepted:
+      additionalProperties: false
+      properties:
+        command_id:
+          type: string
+        doc_digest:
+          type: string
+        event_ids:
+          items:
+            type: string
+          type: array
+        print_url:
+          description: Страница для печати (GET).
+          type: string
+        qr:
+          type: string
+        replayed:
+          type: boolean
+        seq:
+          format: int64
+          type: integer
+        version:
+          description: Печатаемая версия (у живой карты — новая версия, зафиксированная этой печатью).
+          format: int64
+          minimum: 1
+          type: integer
+      required:
+        - command_id
+        - seq
+        - event_ids
+        - replayed
+        - version
+        - doc_digest
+        - qr
+        - print_url
+      type: object
+    PrintPaper:
+      additionalProperties: false
+      properties:
+        basis_seq:
+          description: "seq, на котором клиент видел объект (basis_seq из ответа чтения): после него в потоках гарда не должно быть новых записей guard_relevant, иначе 409 journal.stale_state (AD-39)."
+          format: int64
+          minimum: 0
+          type: integer
+        command_id:
+          description: UUIDv7 клиента; повтор с тем же id возвращает прежний ответ (AD-7). У подписанной команды — event_id пакета.
+          format: uuid
+          type: string
+        copy_no:
+          description: Номер экземпляра.
+          maxLength: 32
+          type: string
+        policy_seq:
+          description: Версия политики, по которой показаны права (policy_seq сеанса); изменилась — 409 journal.stale_policy (AD-39).
+          format: int64
+          minimum: 0
+          type: integer
+        signature:
+          $ref: "#/components/schemas/DsseEnvelope"
+          description: "Подписанный пакет DSSE для операций с уровнем подписи ≥ 1 (AD-10, AD-13, AD-14): подписывает агент токена, сервер сверяет отпечаток."
+        version:
+          description: Версия; 0 — текущая (у карты — текущее содержимое).
+          format: int64
+          minimum: 0
+          type: integer
+        workplace_id:
+          description: Рабочее место сеанса (барьер 2, AD-15).
+          maxLength: 128
+          type: string
+      required:
+        - version
+        - command_id
+        - basis_seq
+        - policy_seq
+      type: object
+    PrintView:
+      additionalProperties: false
+      properties:
+        doc_digest:
+          type: string
+        document_id:
+          type: string
+        html:
+          description: "Полная страница для печати: отрисовка + рамка."
+          type: string
+        printed_at:
+          format: date-time
+          type: string
+        qr:
+          type: string
+        qr_svg:
+          description: QR как SVG — рисует сервер (Д-30).
+          type: string
+        rendering_hash:
+          type: string
+        version:
+          format: int64
+          minimum: 1
+          type: integer
+      required:
+        - document_id
+        - version
+        - doc_digest
+        - rendering_hash
+        - qr
+        - qr_svg
+        - printed_at
+        - html
+      type: object
     Problem:
       additionalProperties: false
       properties:
@@ -9559,6 +10109,58 @@ components:
         - basis_seq
         - policy_seq
       type: object
+    RecordSignature:
+      additionalProperties: false
+      properties:
+        basis_seq:
+          description: "seq, на котором клиент видел объект (basis_seq из ответа чтения): после него в потоках гарда не должно быть новых записей guard_relevant, иначе 409 journal.stale_state (AD-39)."
+          format: int64
+          minimum: 0
+          type: integer
+        command_id:
+          description: UUIDv7 клиента; повтор с тем же id возвращает прежний ответ (AD-7). У подписанной команды — event_id пакета.
+          format: uuid
+          type: string
+        doc_digest:
+          description: Отпечаток, который увидел подписант; расхождение — signing.document_changed. Пусто — отпечаток версии.
+          type: string
+        key_ref:
+          description: Ключ подписанта key_id@версия (агент токена).
+          maxLength: 128
+          type: string
+        policy_seq:
+          description: Версия политики, по которой показаны права (policy_seq сеанса); изменилась — 409 journal.stale_policy (AD-39).
+          format: int64
+          minimum: 0
+          type: integer
+        signature:
+          $ref: "#/components/schemas/DsseEnvelope"
+          description: "Подписанный пакет DSSE для операций с уровнем подписи ≥ 1 (AD-10, AD-13, AD-14): подписывает агент токена, сервер сверяет отпечаток."
+        signature_b64:
+          description: Подпись агента над отпечатком (base64); проверяет signing (эпик 27). Пусто — демо без агента токена.
+          maxLength: 16384
+          type: string
+        stage:
+          description: Этап маршрута.
+          format: int64
+          minimum: 1
+          type: integer
+        version:
+          description: Подписываемая версия.
+          format: int64
+          minimum: 1
+          type: integer
+        workplace_id:
+          description: Рабочее место сеанса (барьер 2, AD-15).
+          maxLength: 128
+          type: string
+      required:
+        - version
+        - stage
+        - command_id
+        - basis_seq
+        - policy_seq
+      type: object
     RefCalendar:
       additionalProperties: false
       properties:
@@ -10491,6 +11093,35 @@ components:
         - basis_seq
         - policy_seq
       type: object
+    RequestAccepted:
+      additionalProperties: false
+      properties:
+        command_id:
+          type: string
+        doc_digest:
+          type: string
+        document_id:
+          type: string
+        event_ids:
+          items:
+            type: string
+          type: array
+        replayed:
+          type: boolean
+        seq:
+          format: int64
+          type: integer
+        version:
+          description: Версия, которую оформит запрос; 0 — содержимое не изменилось, новой версии нет.
+          format: int64
+          type: integer
+      required:
+        - command_id
+        - seq
+        - event_ids
+        - replayed
+        - document_id
+      type: object
     RequestDecision:
       additionalProperties: false
       properties:
@@ -10672,6 +11303,66 @@ components:
       required:
         - method
         - reason
+        - command_id
+        - basis_seq
+        - policy_seq
+      type: object
+    RequestVersion:
+      additionalProperties: false
+      properties:
+        action:
+          description: Недоступное действие (x-ant-action), для которого запрашивается решение; по нему сервер выбирает шаблон.
+          maxLength: 128
+          type: string
+        basis_seq:
+          description: "seq, на котором клиент видел объект (basis_seq из ответа чтения): после него в потоках гарда не должно быть новых записей guard_relevant, иначе 409 journal.stale_state (AD-39)."
+          format: int64
+          minimum: 0
+          type: integer
+        command_id:
+          description: UUIDv7 клиента; повтор с тем же id возвращает прежний ответ (AD-7). У подписанной команды — event_id пакета.
+          format: uuid
+          type: string
+        comment:
+          maxLength: 2000
+          type: string
+        decision:
+          description: Решение, которое оформляется.
+          maxLength: 128
+          type: string
+        document_id:
+          description: Документ, новую версию которого запрашивают; пусто — новый документ.
+          maxLength: 128
+          type: string
+        policy_seq:
+          description: Версия политики, по которой показаны права (policy_seq сеанса); изменилась — 409 journal.stale_policy (AD-39).
+          format: int64
+          minimum: 0
+          type: integer
+        signature:
+          $ref: "#/components/schemas/DsseEnvelope"
+          description: "Подписанный пакет DSSE для операций с уровнем подписи ≥ 1 (AD-10, AD-13, AD-14): подписывает агент токена, сервер сверяет отпечаток."
+        source_event_ids:
+          description: Записи-основания.
+          items:
+            type: string
+          maxItems: 50
+          type: array
+        subject_ref:
+          description: "Объект: item:‹id›, nonconformity:‹id›, process_version:‹id›…"
+          maxLength: 160
+          minLength: 3
+          type: string
+        template_ref:
+          description: Шаблон ‹id›[@‹версия›] явно (traveler — новая версия сопроводительной карты).
+          maxLength: 128
+          type: string
+        workplace_id:
+          description: Рабочее место сеанса (барьер 2, AD-15).
+          maxLength: 128
+          type: string
+      required:
+        - subject_ref
         - command_id
         - basis_seq
         - policy_seq
@@ -11171,6 +11862,54 @@ components:
       required:
         - id
         - title
+      type: object
+    RoutedDocument:
+      additionalProperties: false
+      properties:
+        basis_seq:
+          format: int64
+          type: integer
+        doc_digest:
+          description: Отпечаток — входит в QR бумажного экземпляра (AD-43).
+          type: string
+        doc_type:
+          type: string
+        document_id:
+          type: string
+        drafted_at:
+          format: date-time
+          type: string
+        route:
+          items:
+            $ref: "#/components/schemas/DocumentRouteStage"
+          type: array
+        status:
+          description: Те же значения, что у документов паспорта.
+          enum:
+            - drafted
+            - in_route
+            - closed
+            - annulled
+          type: string
+        template_ref:
+          type: string
+        title:
+          type: string
+        version:
+          format: int64
+          minimum: 1
+          type: integer
+      required:
+        - document_id
+        - version
+        - template_ref
+        - doc_type
+        - title
+        - doc_digest
+        - status
+        - drafted_at
+        - route
+        - basis_seq
       type: object
     Run:
       additionalProperties: false
@@ -12324,6 +13063,30 @@ components:
           type: array
       required:
         - items
+      type: object
+    SimilarDecision:
+      additionalProperties: false
+      properties:
+        decided_at:
+          format: date-time
+          type: string
+        number:
+          type: string
+        outcome:
+          enum:
+            - accepted
+            - rejected
+          type: string
+        ref_id:
+          type: string
+        summary:
+          type: string
+      required:
+        - ref_id
+        - number
+        - summary
+        - outcome
+        - decided_at
       type: object
     SourceList:
       additionalProperties: false
@@ -15252,6 +16015,61 @@ paths:
         id: nonconformity.queue.list
         owner: nonconformity
         subject: nonconformity
+  /api/v1/decision-requests:
+    get:
+      description: "FR-136: открытые версии документов, чей ближайший незакрытый этап маршрута вправе подписать пользователь сеанса: документ с маршрутом, что предлагается, почему к вам, доводы, ваш этап, ожидаемый подписант (он же в QR бумажного экземпляра)."
+      operationId: documents.request.list
+      parameters:
+        - description: "Ось момента: occurred — «как было» (по умолчанию), recorded — «что мы знали» (AD-37)."
+          explode: false
+          in: query
+          name: axis
+          schema:
+            $ref: "#/components/schemas/Axis"
+            description: "Ось момента: occurred — «как было» (по умолчанию), recorded — «что мы знали» (AD-37)."
+        - description: "Момент (RFC 3339 UTC); пусто — «сейчас». Задан — воспроизведение: команды выключены (AD-21)."
+          explode: false
+          in: query
+          name: as_of
+          schema:
+            description: "Момент (RFC 3339 UTC); пусто — «сейчас». Задан — воспроизведение: команды выключены (AD-21)."
+            format: date-time
+            type: string
+        - description: "Прогон сценария: данные в его пространстве имён (AD-38)."
+          explode: false
+          in: query
+          name: run_id
+          schema:
+            description: "Прогон сценария: данные в его пространстве имён (AD-38)."
+            maxLength: 128
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DecisionRequestList"
+          description: OK
+          headers:
+            Ant-Backend:
+              schema:
+                $ref: "#/components/schemas/BackendMode"
+                description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Error
+      summary: Запросы решения, ждущие вашей подписи
+      tags:
+        - documents
+      x-ant-action:
+        class: read
+        critical: false
+        id: documents.request.list
+        owner: documents
+        subject: document
   /api/v1/defects:
     get:
       description: "FR-37: физические дефекты (ключ — изделие, зона и место, без вида дефекта); дефекты и изделия с дефектами — раздельно."
@@ -15492,6 +16310,46 @@ paths:
         id: documents.document.request
         owner: documents
         subject: document
+  /api/v1/documents/versions:
+    post:
+      description: "FR-146, FR-136, AD-12: document.version.requested; шаблон — явно или по недоступному действию. У изделия версию оформляет свёртка (воркер: document.version.drafted), у объекта вне изделия — в той же пачке. Обязательные подписи вычисляются один раз (AD-43)."
+      operationId: documents.version.request
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RequestVersion"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RequestAccepted"
+          description: OK
+          headers:
+            Ant-Backend:
+              schema:
+                $ref: "#/components/schemas/BackendMode"
+                description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Error
+      summary: Запросить решение / новая версия документа
+      tags:
+        - documents
+      x-ant-action:
+        class: record
+        critical: false
+        emits:
+          - document.version.requested
+          - document.version.drafted
+        id: documents.version.request
+        owner: documents
+        subject: document
   /api/v1/documents/{document_id}:
     get:
       description: "AD-12, AD-43: канонический content, отпечаток doc_digest, rendering_hash, поля сводки уровня 2, замороженный набор обязательных подписей с прогрессом и статусом проверки каждой подписи. Агент токена пересчитывает отпечаток сам (AD-14)."
@@ -15709,6 +16567,99 @@ paths:
         id: documents.paper.status_set
         owner: documents
         subject: document
+  /api/v1/documents/{document_id}/print:
+    get:
+      description: "FR-139, AD-12: каноническая отрисовка в печатной рамке — QR ant:doc:‹id›:‹отпечаток› (SVG рисует сервер), дата печати, колонтитул «получено из системы». Рамка в отпечаток не входит."
+      operationId: documents.paper.print_view
+      parameters:
+        - in: path
+          name: document_id
+          required: true
+          schema:
+            maxLength: 128
+            type: string
+        - description: Версия; 0 — последняя (у карты без версий — текущий сбор).
+          explode: false
+          in: query
+          name: version
+          schema:
+            description: Версия; 0 — последняя (у карты без версий — текущий сбор).
+            format: int64
+            minimum: 0
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PrintView"
+          description: OK
+          headers:
+            Ant-Backend:
+              schema:
+                $ref: "#/components/schemas/BackendMode"
+                description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Error
+      summary: Печатная форма документа
+      tags:
+        - documents
+      x-ant-action:
+        class: read
+        critical: false
+        id: documents.paper.print_view
+        owner: documents
+        subject: document
+    post:
+      description: "FR-139, AD-12: document.paper.status_changed (printed); у сопроводительной карты печать фиксирует новую версию, если содержимое изменилось. Ответ — версия, отпечаток, QR и адрес печатной формы."
+      operationId: documents.paper.print
+      parameters:
+        - in: path
+          name: document_id
+          required: true
+          schema:
+            maxLength: 128
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PrintPaper"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PrintAccepted"
+          description: OK
+          headers:
+            Ant-Backend:
+              schema:
+                $ref: "#/components/schemas/BackendMode"
+                description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Error
+      summary: Напечатать бумажный экземпляр с QR
+      tags:
+        - documents
+      x-ant-action:
+        class: record
+        critical: false
+        emits:
+          - document.paper.status_changed
+          - document.version.requested
+        id: documents.paper.print
+        owner: documents
+        subject: document
   /api/v1/documents/{document_id}/rendering:
     get:
       description: "AD-12: HTML по шаблону@версия; серверного PDF нет, печатная рамка (QR, дата печати) в отрисовку не входит."
@@ -15755,6 +16706,111 @@ paths:
         critical: false
         id: documents.document.render
         owner: documents
+        subject: document
+  /api/v1/documents/{document_id}/route/declines:
+    post:
+      description: "FR-136, AD-43: document.signature.declined; маршрут этой версии не закрывается — нужна новая версия или аннулирование. Замечание обязательно."
+      operationId: documents.signature.decline
+      parameters:
+        - in: path
+          name: document_id
+          required: true
+          schema:
+            maxLength: 128
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeclineSignature"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Receipt"
+          description: OK
+          headers:
+            Ant-Backend:
+              schema:
+                $ref: "#/components/schemas/BackendMode"
+                description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Error
+      summary: Не согласовать — вернуть с замечанием
+      tags:
+        - documents
+      x-ant-action:
+        class: record
+        critical: false
+        emits:
+          - document.signature.declined
+        guards:
+          - access.signature_required
+          - signing.document_changed
+          - documents.stage_not_open
+        id: documents.signature.decline
+        owner: documents
+        signature_level: 2
+        subject: document
+  /api/v1/documents/{document_id}/route/signatures:
+    post:
+      description: "FR-66, AD-13, AD-43: подпись уровня 2 над отпечатком версии (агентом токена — signature_b64; в демо без агента — пометка, Д-30). Гард: версия текущая, отпечаток совпадает, этап открыт и по порядку, полномочие, клеймо, разделение обязанностей. «Маршрут закрыт» — только реакция document.route.closed модуля documents."
+      operationId: documents.signature.record
+      parameters:
+        - in: path
+          name: document_id
+          required: true
+          schema:
+            maxLength: 128
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecordSignature"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Receipt"
+          description: OK
+          headers:
+            Ant-Backend:
+              schema:
+                $ref: "#/components/schemas/BackendMode"
+                description: "Режим ведущих портов, отдавших ответ: метка fixtures | live на виджете (AD-36, FR-150)."
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Error
+      summary: Подписать этап маршрута
+      tags:
+        - documents
+      x-ant-action:
+        class: record
+        critical: false
+        emits:
+          - document.signature.recorded
+          - document.route.closed
+        guards:
+          - access.signature_required
+          - signing.document_changed
+          - access.separation_of_duties
+          - access.no_stamp
+          - documents.stage_not_open
+        id: documents.signature.record
+        owner: documents
+        signature_level: 2
         subject: document
   /api/v1/documents/{document_id}/signatures:
     post:

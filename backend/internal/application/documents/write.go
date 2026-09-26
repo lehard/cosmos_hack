@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"regexp"
 	"strings"
 	"time"
 	"uuid"
@@ -34,6 +35,9 @@ import (
 // SourceAPI — source_id записей, принятых операциями API модуля.
 const SourceAPI = "ant-api"
 
+// objectID — шаблон object_id контракта (contracts/events/common/defs.v1.json).
+var objectID = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,127}$`)
+
 // out — запись к Append.
 type out struct {
 	Type       catalog.Type
@@ -47,6 +51,9 @@ type out struct {
 	Level      int
 	// EventID — id записи; пусто — command_id (AD-7) или новый UUIDv7.
 	EventID string
+	// Basis — seq, на котором гард проверил поток (basis_seq конверта, AD-39);
+	// 0 — basis_seq клиента.
+	Basis int64
 }
 
 // pending — запись журнала и её представление в домене (для свёртки до записи).
@@ -71,7 +78,11 @@ func (s *Service) pending(o out) (appjournal.Pending, kernel.Record, error) {
 		return appjournal.Pending{}, kernel.Record{}, err
 	}
 	occurred := engineapp.FormatTime(o.OccurredAt)
-	actor := o.Actor + "@1"
+	// Подписант конверта `key_id@версия`: до реестра ключей (эпики 05, 27) —
+	// псевдоним в нижнем регистре (шаблон key_ref контракта).
+	actor := strings.ToLower(o.Actor) + "@1"
+	basis := max(o.Basis, o.Meta.BasisSeq, 1)
+	policy := max(o.Meta.PolicySeq, 1)
 	env := map[string]any{
 		"event_id": id, "event_type": string(o.Type), "schema_version": info.CurrentVersion, "source_id": SourceAPI,
 		"source_kind": "manual_entry", "occurred_at": occurred, "correlation_id": id, "causation_id": nil,
@@ -79,8 +90,8 @@ func (s *Service) pending(o out) (appjournal.Pending, kernel.Record, error) {
 		"data":      json.RawMessage(canonData),
 	}
 	if info.Kind == catalog.KindDecision {
-		cmd := map[string]any{"command_id": id, "basis_seq": o.Meta.BasisSeq, "guard_streams": []string{streamOf(o.DocumentID)},
-			"policy_seq": o.Meta.PolicySeq, "signature_level": o.Level}
+		cmd := map[string]any{"command_id": id, "basis_seq": basis, "guard_streams": []string{streamOf(o.DocumentID)},
+			"policy_seq": policy, "signature_level": o.Level}
 		if o.Meta.WorkplaceID != "" {
 			cmd["workplace_id"] = o.Meta.WorkplaceID
 		}
@@ -123,13 +134,9 @@ func (s *Service) pending(o out) (appjournal.Pending, kernel.Record, error) {
 		run := o.RunID
 		e.RunID = &run
 	}
-	if o.Meta.BasisSeq > 0 {
-		b := int(o.Meta.BasisSeq)
-		e.BasisSeq = &b
-	}
-	if o.Meta.PolicySeq > 0 {
-		p := int(o.Meta.PolicySeq)
-		e.PolicySeq = &p
+	if info.Kind == catalog.KindDecision {
+		b, p := int(basis), int(policy)
+		e.BasisSeq, e.PolicySeq = &b, &p
 	}
 	rec := kernel.Record{EventID: id, Type: o.Type, SchemaVersion: info.CurrentVersion, Kind: info.Kind, SourceID: SourceAPI, SourceKind: "manual_entry",
 		Provenance: string(jc.JournalEntryProvenanceClassPersonal), ItemID: o.ItemID, Stream: streamOf(o.DocumentID), RunID: o.RunID,
@@ -157,10 +164,10 @@ func (s *Service) replayed(ctx context.Context, documentID, commandID string) (p
 }
 
 // commit — пачка записей одной транзакцией с проверкой AD-39 по потоку документа.
-func (s *Service) commit(ctx context.Context, documentID string, meta platform.CommandMeta, batch []appjournal.Pending, at time.Time) (platform.Receipt, error) {
+func (s *Service) commit(ctx context.Context, documentID string, meta platform.CommandMeta, batch []appjournal.Pending, at time.Time, basis int64) (platform.Receipt, error) {
 	var checks []appjournal.Check
-	if meta.BasisSeq > 0 {
-		checks = append(checks, appjournal.Check{Stream: streamOf(documentID), BasisSeq: meta.BasisSeq})
+	if b := max(meta.BasisSeq, basis); b > 0 {
+		checks = append(checks, appjournal.Check{Stream: streamOf(documentID), BasisSeq: b})
 	}
 	res, err := s.d.Journal.Append(ctx, appjournal.AppendRequest{Batch: batch, Checks: checks})
 	if errors.Is(err, appjournal.ErrDuplicate) {
@@ -204,15 +211,16 @@ func (s *Service) withReactions(ctx context.Context, v *view, documentID string,
 		have[r.Slot] = true
 	}
 	trigger := recs[len(recs)-1]
+	basis := max(v.BasisSeq, 1)
 	for _, re := range dom.Reactions(d) {
 		if have[re.Slot] {
 			continue
 		}
 		p, err := s.d.Codec.Encode(ctx, engineapp.Out{
 			EventID: re.ID(1), Type: re.Type, Kind: catalog.KindReaction, Stream: streamOf(documentID), RunID: trigger.RunID,
-			OccurredAt: re.OccurredAt, Correlation: trigger.CorrelationID, Causation: trigger.EventID, BasisSeq: v.BasisSeq, NormRev: re.RuleRev,
+			OccurredAt: re.OccurredAt, Correlation: trigger.CorrelationID, Causation: trigger.EventID, BasisSeq: basis, NormRev: re.RuleRev,
 			Reaction: &engineapp.ReactionMeta{RuleID: re.Slot.RuleID, RuleRev: re.RuleRev, AutomationMode: 1, Version: 1, Causes: nonNilStrings(re.Causes),
-				BasisSeq: v.BasisSeq, Slot: engineapp.SlotMeta{RuleID: re.Slot.RuleID, Subject: re.Slot.Subject, TriggerKey: re.Slot.TriggerKey}},
+				BasisSeq: basis, Slot: engineapp.SlotMeta{RuleID: re.Slot.RuleID, Subject: re.Slot.Subject, TriggerKey: re.Slot.TriggerKey}},
 			Data: re.Data,
 		})
 		if err != nil {
@@ -333,7 +341,9 @@ func (s *Service) sign(ctx context.Context, documentID string, meta platform.Com
 	data := map[string]any{"document_id": documentID, "version": g.Version, "doc_digest": g.Digest, "stage": g.Stage, "method": g.Method,
 		"signer_person_id": signer, "signature_level": 2, "authority_id": st.AuthorityID}
 	if p, ok := v.Env.People.Find(signer); ok && st.StampKind != "" {
-		if stamp := p.StampOf(st.StampKind); stamp != "" {
+		// Номер клейма — object_id контракта (ASCII); номера стартовой политики
+		// кириллические — тогда клеймо видно по полномочию, номер не пишется.
+		if stamp := p.StampOf(st.StampKind); stamp != "" && objectID.MatchString(stamp) {
 			data["stamp_id"] = stamp
 		}
 	}
@@ -388,7 +398,7 @@ func (s *Service) record(ctx context.Context, v *view, documentID string, o out)
 	if err != nil {
 		return platform.Receipt{}, err
 	}
-	o.DocumentID, o.ItemID, o.RunID, o.OccurredAt = documentID, v.ItemID, v.RunID, now
+	o.DocumentID, o.ItemID, o.RunID, o.OccurredAt, o.Basis = documentID, v.ItemID, v.RunID, now, v.BasisSeq
 	p, rec, err := s.pending(o)
 	if err != nil {
 		return platform.Receipt{}, err
@@ -397,7 +407,7 @@ func (s *Service) record(ctx context.Context, v *view, documentID string, o out)
 	if err != nil {
 		return platform.Receipt{}, err
 	}
-	return s.commit(ctx, documentID, o.Meta, batch, now)
+	return s.commit(ctx, documentID, o.Meta, batch, now, v.BasisSeq)
 }
 
 // Decline — не согласовать версию, вернуть с замечанием (documents.signature.decline, FR-136).

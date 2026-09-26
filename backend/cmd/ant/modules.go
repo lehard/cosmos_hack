@@ -118,6 +118,9 @@ type apiOptions struct {
 	crossitem *crossitemapp.Service
 	// process — живая карта, версии и команды исполнителя (process.go, эпик 17); nil — 501.
 	process *processapp.Service
+	// documents — документы-проекции, маршруты подписей, печать с QR
+	// (documents.go, эпик 28); nil — заглушка 501.
+	documents *documentsapp.Service
 }
 
 // buildAPI собирает HTTP API: общий декоратор (Gate) над портами прав и входа,
@@ -227,7 +230,11 @@ func buildAPI(mux *http.ServeMux, o apiOptions) *httpapi.API {
 		visionhttp.Register(a, q, c)
 	}
 	{
-		q, c := pick[documentsapp.Queries, documentsapp.Commands](a.ModeFor("documents"), documentsapp.NewService(), documentsfx.New())
+		live := o.documents
+		if live == nil {
+			live = documentsapp.NewService()
+		}
+		q, c := pick[documentsapp.Queries, documentsapp.Commands](a.ModeFor("documents"), live, documentsfx.New())
 		documentshttp.Register(a, q, c)
 	}
 	{

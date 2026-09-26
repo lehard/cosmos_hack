@@ -105,7 +105,9 @@ func (s *Service) RequestVersion(ctx context.Context, in RequestVersion) (Reques
 	if err != nil {
 		return RequestAccepted{}, err
 	}
-	o := out{Type: catalog.DocumentVersionRequested, DocumentID: docID, ItemID: v.ItemID, RunID: v.RunID, Data: data, Meta: in.CommandMeta(), Actor: me, Level: 2, OccurredAt: now}
+	data["requested_by"] = me
+	o := out{Type: catalog.DocumentVersionRequested, DocumentID: docID, ItemID: v.ItemID, RunID: v.RunID, Data: data, Meta: in.CommandMeta(), Actor: me, Level: 2,
+		OccurredAt: now, Basis: v.BasisSeq}
 	p, rec, err := s.pending(o)
 	if err != nil {
 		return RequestAccepted{}, err
@@ -114,7 +116,7 @@ func (s *Service) RequestVersion(ctx context.Context, in RequestVersion) (Reques
 	if err != nil {
 		return RequestAccepted{}, err
 	}
-	r, err := s.commit(ctx, docID, o.Meta, batch, now)
+	r, err := s.commit(ctx, docID, o.Meta, batch, now, v.BasisSeq)
 	if err != nil {
 		return RequestAccepted{}, err
 	}
@@ -177,8 +179,8 @@ func (s *Service) Print(ctx context.Context, documentID string, in PrintPaper) (
 		no, digest = pv.No, pv.Digest
 		if changed {
 			p, _, err := s.pending(out{Type: catalog.DocumentVersionRequested, DocumentID: documentID, ItemID: v.ItemID, RunID: v.RunID, Meta: in.CommandMeta(),
-				Actor: me, Level: 1, OccurredAt: now, Data: map[string]any{"document_id": documentID, "template_ref": d.TemplateRef,
-					"subject_ref": d.Subject, "decision": "print", "comment": "Печать бумажного экземпляра"}})
+				Actor: me, Level: 1, OccurredAt: now, Basis: v.BasisSeq, Data: map[string]any{"document_id": documentID, "template_ref": d.TemplateRef,
+					"subject_ref": d.Subject, "decision": "print", "comment": "Печать бумажного экземпляра", "requested_by": me}})
 			if err != nil {
 				return PrintAccepted{}, err
 			}
@@ -191,7 +193,7 @@ func (s *Service) Print(ctx context.Context, documentID string, in PrintPaper) (
 		}
 		no, digest = ver.No, ver.Digest
 	}
-	mark := out{Type: catalog.DocumentPaperStatusChanged, DocumentID: documentID, ItemID: v.ItemID, RunID: v.RunID, Meta: in.CommandMeta(), Actor: me,
+	mark := out{Type: catalog.DocumentPaperStatusChanged, DocumentID: documentID, ItemID: v.ItemID, RunID: v.RunID, Meta: in.CommandMeta(), Actor: me, Basis: v.BasisSeq,
 		OccurredAt: now.Add(time.Millisecond), Data: map[string]any{"document_id": documentID, "version": no, "paper_status": "printed"}}
 	if in.CopyNo != "" {
 		mark.Data.(map[string]any)["copy_no"] = in.CopyNo
@@ -208,7 +210,7 @@ func (s *Service) Print(ctx context.Context, documentID string, in PrintPaper) (
 	if err != nil {
 		return PrintAccepted{}, err
 	}
-	r, err := s.commit(ctx, documentID, in.CommandMeta(), batch, now)
+	r, err := s.commit(ctx, documentID, in.CommandMeta(), batch, now, v.BasisSeq)
 	if err != nil {
 		return PrintAccepted{}, err
 	}

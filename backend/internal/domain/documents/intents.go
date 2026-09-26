@@ -21,6 +21,8 @@ type DraftContext struct {
 	Comment string `json:"comment,omitempty"`
 	// Sources — записи-основания.
 	Sources []string `json:"sources,omitempty"`
+	// Author — кто запросил (псевдоним сотрудника).
+	Author string `json:"author,omitempty"`
 }
 
 // Draft — функция-намерение documents (AD-40): поздний модуль просит
