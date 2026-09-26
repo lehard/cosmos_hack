@@ -1,6 +1,7 @@
 package world
 
 import (
+	"sync"
 	"bytes"
 	"embed"
 	"encoding/json"
@@ -51,7 +52,20 @@ func init() {
 		}
 		return LibraryFrom(sub)
 	}
+	loader.Holders = func(action string) []string {
+		holdersOnce.Do(func() { holdersPol, _ = LoadPolicy(Inputs()) })
+		if holdersPol == nil {
+			return nil
+		}
+		return holdersPol.Holders(action)
+	}
 }
+
+// holdersPol — стартовая политика для loader.Holders (читается один раз).
+var (
+	holdersOnce sync.Once
+	holdersPol  *Policy
+)
 
 // LibraryFrom строит библиотеку заготовок в памяти из входов (fsys — корень репозитория).
 func LibraryFrom(fsys fs.FS) (*loader.Library, error) {

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/fs"
 	"path"
+	"slices"
 	"sort"
 	"strings"
 
@@ -31,6 +32,8 @@ type PolicyRole struct {
 	ID       string   `yaml:"id"`
 	Title    string   `yaml:"title"`
 	Inherits []string `yaml:"inherits"`
+	// Actions — операции роли (шаблоны access): кто вправе решить по «Запросить решение».
+	Actions []string `yaml:"actions"`
 }
 
 // PolicyPerson — сотрудник (псевдоним) с ролями в областях.
@@ -114,4 +117,36 @@ func (p *Policy) DeskFor(role string) (map[string]any, bool) {
 		}
 	}
 	return nil, false
+}
+
+// Holders — псевдонимы сотрудников, чья роль (с наследованием) разрешает
+// действие action: подписанты запроса решения на заготовках (FR-146) —
+// «запрос уходит к тем, у кого есть полномочия». Области не учитываются.
+func (p *Policy) Holders(action string) []string {
+	h := make(accessdom.Roles, len(p.Roles))
+	acts := map[string][]string{}
+	for _, r := range p.Roles {
+		h[r.ID] = r.Inherits
+		acts[r.ID] = r.Actions
+	}
+	var out []string
+	for _, x := range p.Persons {
+		for _, pr := range x.Roles {
+			if p.grants(h, acts, pr.Role, action) && !slices.Contains(out, x.ID) {
+				out = append(out, x.ID)
+			}
+		}
+	}
+	return out
+}
+
+func (p *Policy) grants(h accessdom.Roles, acts map[string][]string, role, action string) bool {
+	for _, r := range h.Closure(role) {
+		for _, pat := range acts[r] {
+			if accessdom.ActionMatches(action, pat) {
+				return true
+			}
+		}
+	}
+	return false
 }

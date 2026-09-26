@@ -2,9 +2,11 @@ package documents
 
 import (
 	"context"
+	"html"
 	"net/url"
 	"slices"
 	"strconv"
+	"strings"
 
 	app "ant/internal/application/documents"
 	"ant/internal/application/platform"
@@ -58,9 +60,38 @@ func docParams(id string, version int) map[string]string {
 	return p
 }
 
-// all — все документы мира на шаге курсора (или на момент as_of).
+// all — все документы мира на шаге курсора (или на момент as_of) с
+// наложением сессии: строки документов с фактами пересчитаны, документы
+// «Запросить решение» — сверху.
 func all(ctx context.Context, m platform.Moment) (app.DocumentList, error) {
-	return respond[app.DocumentList](ctx, opList, nil, &m)
+	l, err := respond[app.DocumentList](ctx, opList, nil, &m)
+	if err != nil {
+		return l, err
+	}
+	created, items := requested(ctx, &m)
+	for i, d := range l.Items {
+		if slices.ContainsFunc(created, func(v app.DocumentView) bool { return v.DocumentID == d.DocumentID }) {
+			continue
+		}
+		if fs := facts(ctx, &m, d.DocumentID); len(fs) > 0 {
+			if v, err := respond[app.DocumentView](ctx, opRead, docParams(d.DocumentID, 0), &m); err == nil {
+				l.Items[i] = summaryOf(d, overlay(v, fs))
+			}
+		}
+	}
+	var mine []app.DocumentSummary
+	for _, v := range created {
+		v = overlay(v, facts(ctx, &m, v.DocumentID))
+		row := summaryOfView(v, items[v.DocumentID])
+		if i := slices.IndexFunc(l.Items, func(d app.DocumentSummary) bool { return d.DocumentID == v.DocumentID }); i >= 0 {
+			row.ItemIDs = l.Items[i].ItemIDs
+			l.Items = slices.Delete(l.Items, i, i+1)
+		}
+		mine = append(mine, row)
+	}
+	slices.Reverse(mine)
+	l.Items = append(mine, l.Items...)
+	return l, nil
 }
 
 // Documents — документы объекта (documents.document.list, FR-65).
@@ -77,13 +108,37 @@ func (Adapter) Registry(ctx context.Context, f app.DocumentFilter, m platform.Mo
 	return app.PageDocuments(app.FilterDocuments(l, f), p), nil
 }
 
-// Document — документ с маршрутом подписей (documents.document.read).
+// Document — документ с маршрутом подписей (documents.document.read): ответ
+// мира или документ «Запросить решение» сессии, поверх — подписи и отказы сессии.
 func (Adapter) Document(ctx context.Context, documentID string, version int, m platform.Moment) (app.DocumentView, error) {
-	return respond[app.DocumentView](ctx, opRead, docParams(documentID, version), &m)
+	created, _ := requested(ctx, &m)
+	for _, v := range created {
+		if v.DocumentID == documentID && (version == 0 || version == v.Version) {
+			return overlay(v, facts(ctx, &m, documentID)), nil
+		}
+	}
+	v, err := respond[app.DocumentView](ctx, opRead, docParams(documentID, version), &m)
+	if err != nil || (version != 0 && version != v.Version) {
+		return v, err
+	}
+	return overlay(v, facts(ctx, &m, documentID)), nil
 }
 
-// Render — каноническая отрисовка (documents.document.render).
+// Render — каноническая отрисовка (documents.document.render); у документа
+// «Запросить решение» сессии — простая отрисовка полей сводки.
 func (Adapter) Render(ctx context.Context, documentID string, version int) (app.DocumentRendering, error) {
+	created, _ := requested(ctx, nil)
+	for _, v := range created {
+		if v.DocumentID == documentID {
+			var b strings.Builder
+			b.WriteString("<article><h1>" + html.EscapeString(v.Title) + "</h1><dl>")
+			for _, f := range v.SummaryFields {
+				b.WriteString("<dt>" + html.EscapeString(f.Label) + "</dt><dd>" + html.EscapeString(f.Value) + "</dd>")
+			}
+			b.WriteString("</dl></article>")
+			return app.DocumentRendering{DocumentID: v.DocumentID, Version: v.Version, RenderingHash: v.RenderingHash, HTML: b.String()}, nil
+		}
+	}
 	return respond[app.DocumentRendering](ctx, opRender, docParams(documentID, version), nil)
 }
 
@@ -161,39 +216,87 @@ func (Adapter) PrintView(ctx context.Context, documentID string, version int) (a
 		PrintedAt: now, HTML: app.PrintFrame(r.HTML, qr, svg, dom.FormatTime(now))}, nil
 }
 
-// ── команды: квитанция без изменения мира (FR-129) ──
+// ── команды: квитанция и факт сессии поверх мира (FR-129, loader.Runtime.Record) ──
 
-func decide(ctx context.Context, op, id string, meta platform.CommandMeta) (platform.Receipt, error) {
+// record — команда над документом: квитанция и факт сессии с телом команды.
+func record(ctx context.Context, op, id string, meta platform.CommandMeta, body any) (platform.Receipt, error) {
 	rt, err := loader.Default()
 	if err != nil {
 		return platform.Receipt{}, err
 	}
-	return rt.Decide(ctx, op, loader.ObjectRef{Kind: "document", ID: id}, meta)
+	return rt.Record(ctx, op, loader.ObjectRef{Kind: kindDocument, ID: id}, meta, body,
+		loader.Change{Entity: kindDocument, ID: "global"}, loader.Change{Entity: string(platform.EntityNotification), ID: "global"})
 }
 
-// Sign — подпись документа (documents.document.sign).
+// exists — документ есть (в мире или в сессии): иначе 404, а не пустая квитанция.
+func exists(ctx context.Context, id string) error {
+	_, err := Adapter{}.Document(ctx, id, 0, platform.Moment{})
+	return err
+}
+
+// Sign — подпись документа (documents.document.sign): этап маршрута закрыт в сессии.
 func (Adapter) Sign(ctx context.Context, documentID string, in app.SignDocument) (platform.Receipt, error) {
-	return decide(ctx, "documents.document.sign", documentID, in.CommandMeta())
+	if err := exists(ctx, documentID); err != nil {
+		return platform.Receipt{}, err
+	}
+	return record(ctx, opSign, documentID, in.CommandMeta(), in)
 }
 
 // RecordSignature — подпись этапа (documents.signature.record).
 func (Adapter) RecordSignature(ctx context.Context, documentID string, in app.RecordSignature) (platform.Receipt, error) {
-	return decide(ctx, "documents.signature.record", documentID, in.CommandMeta())
+	if err := exists(ctx, documentID); err != nil {
+		return platform.Receipt{}, err
+	}
+	return record(ctx, opRecord, documentID, in.CommandMeta(), in)
 }
 
-// Decline — вернуть с замечанием (documents.signature.decline).
+// Decline — вернуть с замечанием (documents.signature.decline): версия «возвращена».
 func (Adapter) Decline(ctx context.Context, documentID string, in app.DeclineSignature) (platform.Receipt, error) {
-	return decide(ctx, "documents.signature.decline", documentID, in.CommandMeta())
+	if err := exists(ctx, documentID); err != nil {
+		return platform.Receipt{}, err
+	}
+	return record(ctx, opDecline, documentID, in.CommandMeta(), in)
 }
 
-// AttestPaper — заверение бумажной подписи (documents.paper.attest).
+// AttestPaper — заверение бумажной подписи (documents.paper.attest): подпись
+// ручкой засчитана этапу с заверителем, номером оригинала и адресом скана.
 func (Adapter) AttestPaper(ctx context.Context, documentID string, in app.AttestPaper) (platform.Receipt, error) {
-	return decide(ctx, "documents.paper.attest", documentID, in.CommandMeta())
+	if err := exists(ctx, documentID); err != nil {
+		return platform.Receipt{}, err
+	}
+	return record(ctx, opAttest, documentID, in.CommandMeta(), in)
 }
 
 // SetPaperStatus — статус бумажного экземпляра (documents.paper.status_set).
 func (Adapter) SetPaperStatus(ctx context.Context, documentID string, in app.SetPaperStatus) (platform.Receipt, error) {
-	return decide(ctx, "documents.paper.status_set", documentID, in.CommandMeta())
+	if err := exists(ctx, documentID); err != nil {
+		return platform.Receipt{}, err
+	}
+	return record(ctx, opPaper, documentID, in.CommandMeta(), in)
+}
+
+// RequestVersion — «Запросить решение» / новая версия документа
+// (documents.version.request, FR-146): документ сессии с маршрутом к тем, у
+// кого есть полномочие на действие; он виден в реестре и у подписантов в
+// «Требуется ваше решение» до сброса прогона.
+func (Adapter) RequestVersion(ctx context.Context, in app.RequestVersion) (app.RequestAccepted, error) {
+	rt, err := loader.Default()
+	if err != nil {
+		return app.RequestAccepted{}, err
+	}
+	now, err := rt.Clock(ctx)
+	if err != nil {
+		return app.RequestAccepted{}, err
+	}
+	v, items, err := newRequest(ctx, in, now)
+	if err != nil {
+		return app.RequestAccepted{}, err
+	}
+	rc, err := record(ctx, opRequest, v.DocumentID, in.CommandMeta(), requestedDoc{View: v, Items: items})
+	if err != nil {
+		return app.RequestAccepted{}, err
+	}
+	return app.RequestAccepted{CommandID: rc.CommandID, Seq: rc.Seq, EventIDs: rc.EventIDs, Replayed: rc.Replayed, DocumentID: v.DocumentID, Version: v.Version, DocDigest: v.DocDigest}, nil
 }
 
 // Print — бумажный экземпляр с QR (documents.paper.print): квитанция и адрес печатной формы.
@@ -202,7 +305,7 @@ func (Adapter) Print(ctx context.Context, documentID string, in app.PrintPaper) 
 	if err != nil {
 		return app.PrintAccepted{}, err
 	}
-	r, err := decide(ctx, "documents.paper.print", documentID, in.CommandMeta())
+	r, err := record(ctx, opPrint, documentID, in.CommandMeta(), in)
 	if err != nil {
 		return app.PrintAccepted{}, err
 	}

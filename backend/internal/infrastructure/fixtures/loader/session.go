@@ -236,3 +236,8 @@ func (r *Runtime) Local(ctx context.Context, id string) string {
 	}
 	return StripRun(id, st.RunID)
 }
+
+// Holders — кто вправе выполнить действие (псевдонимы по стартовой политике):
+// подписанты запроса решения на заготовках. Регистрирует встроенный мир
+// (пакет world); nil — неизвестно.
+var Holders func(action string) []string
