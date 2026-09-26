@@ -41,6 +41,14 @@
       "description": "Нерабочие дни сверх еженедельных (праздники).",
       "uniqueItems": true
     },
+    "working_days": {
+      "type": "array",
+      "items": {
+        "$ref": "../common/defs.v1.json#/definitions/date"
+      },
+      "description": "Рабочие дни, выпадающие на еженедельные выходные (перенос выходного, ТК РФ ст. 112).",
+      "uniqueItems": true
+    },
     "shortened_days": {
       "type": "array",
       "items": {
