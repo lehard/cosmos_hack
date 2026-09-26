@@ -118,3 +118,34 @@ func TestSignVerify(t *testing.T) {
 		t.Fatalf("недоступный ключ: %v", err)
 	}
 }
+
+// FromSeed (Д-82): одинаковый материал — одинаковый ключ; скаляр ГОСТ по
+// модулю q, нулевой (0 и q) — ErrZeroScalar; ML-DSA — материал как зерно.
+func TestFromSeed(t *testing.T) {
+	m := make([]byte, 32)
+	for i := range m {
+		m[i] = byte(i + 1)
+	}
+	for _, p := range []string{dom.ProfileGost, dom.ProfilePQ} {
+		a, err := FromSeed("x@1", p, m)
+		if err != nil {
+			t.Fatal(err)
+		}
+		b, _ := FromSeed("x@1", p, m)
+		if a.PublicB64() != b.PublicB64() || len(a.Secret()) != 32 {
+			t.Fatalf("%s: ключ из одного материала различается", p)
+		}
+	}
+	q := curve().Q.FillBytes(make([]byte, 32))
+	for i, j := 0, len(q)-1; i < j; i, j = i+1, j-1 {
+		q[i], q[j] = q[j], q[i]
+	}
+	for _, z := range [][]byte{make([]byte, 32), q} {
+		if _, err := FromSeed("x@1", dom.ProfileGost, z); !errors.Is(err, ErrZeroScalar) {
+			t.Fatalf("нулевой скаляр принят: %v", err)
+		}
+	}
+	if _, err := FromSeed("x@1", dom.ProfilePQ, m[:16]); err == nil {
+		t.Fatal("материал 16 байт принят")
+	}
+}

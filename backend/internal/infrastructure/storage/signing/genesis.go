@@ -138,6 +138,10 @@ func Provision(ctx context.Context, j journal.JournalStore, cfg ProvisionConfig)
 				return Provisioned{}, err
 			}
 		}
+		// Д-82: каталог ключей агента токена потерян — восстановить из демо-зерна.
+		if err := restoreDemoKeys(ctx, j, rep, cfg, log); err != nil {
+			return Provisioned{}, err
+		}
 		log.Info("генезис уже есть — ничего не делаю", "block_size", rep.Header.BlockSize, "genesis_digest", rep.Digest)
 		return Provisioned{Header: rep.Header, Digest: rep.Digest}, nil
 	}
@@ -284,14 +288,15 @@ func provisionKeys(cfg ProvisionConfig, seed app.Seed, validFrom time.Time, log 
 	}
 	var quorum []*profiles.PrivateKey
 	if cfg.Profile != "prod" {
-		// Демо-персоны сценариев (класс scenario) — том demo-signer (AD-26, AD-33).
-		pr, err := profiles.LoadDir(cfg.DemoSigner)
+		// Демо-персоны сценариев (класс scenario) — том demo-signer (AD-26, AD-33);
+		// в профилях затравки ключи детерминированы (Д-82).
+		pr, err := loadDemoKeys(cfg.DemoSigner, cfg.Profile)
 		if err != nil {
 			return nil, nil, "", err
 		}
 		for _, p := range seed.Policy.Persons {
 			for _, x := range []struct{ ref, profile string }{{app.PersonaKeyRef(p.ID), dom.ProfileGost}, {app.PersonaPQRef(p.ID), dom.ProfilePQ}} {
-				k, err := pr.Ensure(cfg.DemoSigner, x.ref, x.profile)
+				k, err := pr.ensure(p.ID, x.ref, x.profile)
 				if err != nil {
 					return nil, nil, "", err
 				}
@@ -301,19 +306,21 @@ func provisionKeys(cfg ProvisionConfig, seed app.Seed, validFrom time.Time, log 
 				}
 			}
 		}
-		// Интерактивные демо-персоны — ./.demo-keys/token-agent/ (вне репозитория).
+		pr.warn(log)
+		// Интерактивные демо-персоны — ./.demo-keys/token-agent/ (вне репозитория);
+		// в профилях затравки ключи детерминированы (Д-82): загруженный в
+		// расширение файл годится на любой машине и после сброса стенда.
 		if dir := cfg.TokenAgent; dir != "" {
 			if err := writable(dir); err != nil {
 				log.Warn("ключи интерактивных демо-персон не записаны: каталог недоступен (make keys)", "dir", dir, "err", err)
 			} else {
-				tr, err := profiles.LoadDir(dir)
+				tr, err := loadDemoKeys(dir, cfg.Profile)
 				if err != nil {
 					return nil, nil, "", err
 				}
 				for _, p := range InteractivePersonas {
-					low := strings.ToLower(p)
-					for _, x := range []struct{ ref, profile string }{{low + "-ta@1", dom.ProfileGost}, {low + "-ta-pq@1", dom.ProfilePQ}} {
-						k, err := tr.Ensure(dir, x.ref, x.profile)
+					for _, x := range interactiveRefs(p) {
+						k, err := tr.ensure(p, x.ref, x.profile)
 						if err != nil {
 							return nil, nil, "", err
 						}
@@ -323,6 +330,7 @@ func provisionKeys(cfg ProvisionConfig, seed app.Seed, validFrom time.Time, log 
 						regs[len(regs)-1].KeyStorage, regs[len(regs)-1].StorageVariant = dom.StorageSoftwareBrowser, dom.VariantExtension
 					}
 				}
+				tr.warn(log)
 			}
 		}
 	}

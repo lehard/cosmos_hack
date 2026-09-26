@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math/big"
 	"os"
 	"path/filepath"
 	"slices"
@@ -80,6 +81,33 @@ func FromSecret(ref, profile string, secret []byte) (*PrivateKey, error) {
 		return &PrivateKey{Ref: ref, Profile: profile, pq: k}, nil
 	}
 	return nil, fmt.Errorf("profiles: профиль %q", profile)
+}
+
+// ErrZeroScalar — материал ключа ГОСТ дал нулевой скаляр по модулю порядка
+// кривой (вероятность ~2⁻²⁵⁶): вызывающий берёт следующий материал.
+var ErrZeroScalar = errors.New("profiles: материал даёт нулевой закрытый ключ ГОСТ")
+
+// FromSeed — ключ из 32 байт детерминированного материала (демо-ключи персон,
+// Д-82): ГОСТ — скаляр material (little-endian) по модулю порядка q кривой,
+// ноль — ErrZeroScalar; ML-DSA-65 — material как зерно ξ (FIPS 204,
+// ML-DSA.KeyGen_internal). Одинаковый материал — одинаковый ключ на любой машине.
+func FromSeed(ref, profile string, material []byte) (*PrivateKey, error) {
+	if !dom.ValidKeyRef(ref) {
+		return nil, fmt.Errorf("profiles: key_ref %q", ref)
+	}
+	if len(material) != 32 {
+		return nil, fmt.Errorf("profiles: материал ключа %d байт, нужно 32", len(material))
+	}
+	if profile == dom.ProfileGost {
+		be := make([]byte, len(material))
+		for i := range material {
+			be[i] = material[len(material)-1-i]
+		}
+		if new(big.Int).Mod(new(big.Int).SetBytes(be), curve().Q).Sign() == 0 {
+			return nil, ErrZeroScalar
+		}
+	}
+	return FromSecret(ref, profile, material)
 }
 
 // Secret — закрытая часть ключа (для записи в том 0400).
