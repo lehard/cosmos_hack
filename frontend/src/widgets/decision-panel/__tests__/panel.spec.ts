@@ -3,6 +3,7 @@
 // «почему вы можете / не можете» и «Запросить решение» (FR-52, FR-53, FR-146).
 import { mount } from '@vue/test-utils'
 import { createPinia } from 'pinia'
+import { at } from '@/entities/item/__tests__/fixtures'
 import { describe, expect, it } from 'vitest'
 import { i18n } from '@/shared/i18n'
 import { concessions, confirmedCard, ncCard } from '@/entities/nonconformity/__tests__/fixtures'
@@ -94,6 +95,37 @@ describe('панель решений контролёра', () => {
     expect(w.find('[data-testid="chosen-title"]').text()).toBe('Списать — оформить акт о браке')
     expect(w.find('[data-testid="chosen-outcome"]').text()).toContain('акт о браке')
     expect(w.find('[data-disposition="rework"]').attributes('aria-pressed')).toBe('false')
+  })
+
+  it('действия сервера: недоступный вариант — с причиной; у выбранного — деловые последствия, технические по раскрытию (п. 15)', async () => {
+    const card = confirmedCard()
+    card.to_decide.actions = [
+      { operation: 'nonconformity.disposition.set', disposition: 'rework', label: 'Переделка', allowed: true, why_available: 'Лимит доработок зоны не исчерпан: 0 из 3', consequences: ['Изделие вернётся на сварку', 'Мастеру участка — задача переделки'], technical_consequences: ['1С: перевод в брак (переделка)'] },
+      { operation: 'nonconformity.disposition.set', disposition: 'return_to_supplier', label: 'Вернуть', allowed: false, why_available: 'Недоступно: дефект возник на сварке', consequences: [], technical_consequences: [] },
+    ]
+    const w = mountPanel({ card })
+    const ret = w.find('[data-disposition="return_to_supplier"]')
+    expect(ret.attributes('disabled')).toBeDefined()
+    expect(ret.find('[data-testid="option-why"]').text()).toBe('Недоступно: дефект возник на сварке')
+    await w.find('[data-disposition="rework"]').trigger('click')
+    expect(w.find('[data-testid="why-available"]').text()).toContain('0 из 3')
+    expect(w.findAll('[data-testid="consequences"] li').map((x) => x.text())).toEqual(['Изделие вернётся на сварку', 'Мастеру участка — задача переделки'])
+    expect(w.find('[data-testid="technical-consequences"]').exists()).toBe(false)
+    await w.find('[data-testid="toggle-technical"]').trigger('click')
+    expect(w.find('[data-testid="technical-consequences"]').text()).toContain('1С: перевод в брак')
+  })
+
+  it('после решения по изделию — «передано на исполнение: кому, что, состояние» (стык с мастером)', () => {
+    const card = confirmedCard()
+    card.status = 'disposition_set'
+    card.handoff = { decision_event_id: 'd-9', role_id: 'site_foreman', role_label: 'мастеру участка', task_title: 'Переделка на СВ-017-1', status: 'waiting', status_label: 'ожидает исполнения', since: at('10:00') }
+    const w = mountPanel({ card, receipt: { command_id: 'c', event_ids: ['e'], replayed: false, seq: 1300 } })
+    expect(w.findAll('[data-testid="stage-state"]').map((x) => x.text())).toEqual([
+      'завершено: несоответствие подтверждено',
+      'решение принято',
+      'передано мастеру участка: Переделка на СВ-017-1 · ожидает исполнения',
+    ])
+    expect(w.find('[data-testid="receipt-handoff"]').text()).toBe('Передано на исполнение мастеру участка: Переделка на СВ-017-1 · ожидает исполнения')
   })
 
   it('«как есть» без действующего разрешения не подписывается — оформить новое (FR-53, FR-54)', async () => {

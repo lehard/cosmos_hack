@@ -132,3 +132,39 @@ export function extraZoneHistory(card: Pick<NCCard, 'happened' | 'evidence'>): N
   const shown = new Set([...card.happened.before, ...card.happened.during, ...card.happened.after].map((r) => r.event_id))
   return card.evidence.zone_history.filter((r) => !shown.has(r.event_id)).sort(byTime)
 }
+
+// ─────────────────────────── камера: окно возникновения, наблюдение ───────────────────────────
+
+/** Окно возникновения признака: последняя чистая проверка до и первая проверка с признаком после. */
+export interface EmergenceWindow {
+  clean: NCRecordRef | null
+  first: NCRecordRef
+}
+
+const isResult = (r: NCRecordRef) => r.event_type === 'inspection.result.recorded'
+
+/**
+ * «Признак появился между …» — по записям контроля карточки (до операции и
+ * история зоны — чистые, после — с признаком). Не причина и не вина: окно, в
+ * котором искать, передаётся расследованию. Нет записи с признаком — null.
+ * @param card — карточка
+ */
+export function emergenceWindow(card: Pick<NCCard, 'happened' | 'evidence'>): EmergenceWindow | null {
+  const after = [...card.happened.after].filter(isResult).sort(byTime)
+  const first = after.find((r) => recordTone(r) === 'danger')
+  if (!first) return null
+  const earlier = [...card.happened.before, ...card.evidence.zone_history]
+    .filter((r) => isResult(r) && recordTone(r) === 'ok' && r.occurred_at < first.occurred_at)
+    .sort(byTime)
+  return { clean: earlier[earlier.length - 1] ?? null, first }
+}
+
+/**
+ * Наблюдение камеры, по которому поднят сигнал: первая запись результата контроля
+ * после операции с признаком или «оценка невозможна». Нет — null.
+ * @param card — карточка
+ */
+export function observationEventId(card: Pick<NCCard, 'happened'>): string | null {
+  const r = [...card.happened.after].filter(isResult).sort(byTime).find((x) => recordTone(x) !== 'ok')
+  return r?.event_id ?? null
+}

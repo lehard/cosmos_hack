@@ -133,7 +133,7 @@ const whyShown = computed(() => (whyAll.value ? (review.value?.why_significant ?
 const MAIN_EFFECTS = 3
 const techOpen = ref(false)
 const effects = computed(() => {
-  const a = chosen.value as (NCPresentationAction & { technical_consequences?: string[] }) | null
+  const a = chosen.value
   if (!a) return { main: [] as string[], technical: [] as string[] }
   if (a.technical_consequences) return { main: a.consequences, technical: a.technical_consequences }
   return { main: a.consequences.slice(0, MAIN_EFFECTS), technical: a.consequences.slice(MAIN_EFFECTS) }
