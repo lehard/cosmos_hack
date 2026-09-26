@@ -326,7 +326,7 @@ sequenceDiagram
 
 Права — данные политики «кто — что — над чем — где» (AD-15). Casbin — единственный вычислитель решений; источник политики — журнал; изменения политики — записи `policy.*` через маршрут подписей; каждая команда несёт `policy_seq`, и команда по устаревшей политике отвергается (AD-39). Три барьера:
 
-1. **Вход** — логин и пароль, сеанс (`scs` + `argon2id`), защита от перебора; следующий адаптер `IdentityProvider` — LDAP / ALD Pro / FreeIPA.
+1. **Вход** — логин и пароль, сеанс (`scs` + `argon2id`), защита от перебора; следующий адаптер `IdentityProvider` — LDAP / ALD Pro / FreeIPA; перспектива — единый вход (SSO: OpenID Connect, SAML) тем же портом ([sso.md](sso.md)).
 2. **Допуск к рабочему месту** — СКУД в зоне ∧ роль в области места ∧ квалификация на дату ∧ назначение на пост в смене ∧ токен и PIN; допуск и снятие — записи журнала.
 3. **Действие** — каждая операция объявляет id и класс; сервер решает по политике, месту сеанса и доменным гардам. Фронтенд только отображает допустимые действия, вычисленные тем же `Enforce`.
 
@@ -427,7 +427,7 @@ flowchart LR
 | `Telemetry` | observability | Prometheus `/metrics` | OTLP (OpenTelemetry) | тест с экспортёром в память |
 | `Signer` / `Verifier` / `Cipher` | security | ключ в браузере (расширение + WASM), агент токена, бумага, `demo-signer`; GoGOST, `crypto/mldsa`; AES-256-GCM при хранении (Д-61) | PKCS#11; сертифицированное СКЗИ; «Кузнечик»-MGM | `scenarios/crypto` |
 | `AccessControl` | security | Casbin | — | автотесты прав |
-| `IdentityProvider` | security | локальные пользователи | LDAP / ALD Pro / FreeIPA | тест входа |
+| `IdentityProvider` | security | локальные пользователи | SSO (OpenID Connect, SAML), LDAP / ALD Pro / FreeIPA — [sso.md](sso.md) | тест входа |
 | `DomainClock` / `InfraClock` | application / storage | системные часы | доменное «сейчас» из журнала в режиме сценария | сценарии |
 | внешние системы | integration | stand-ы | реальные 1С, Галактика:ERP, MES, СКУД, УЦ, VisionQC | контрактные тесты |
 
@@ -497,6 +497,7 @@ Go 1.27.1 (Huma v2 — OpenAPI 3.1 из Go, pgx, goose, Casbin, scs, GoGOST 7.0.
 | Промышленная церемония ключей, акт восстановления, разделение секрета KEK | описание ([backup-restore.md](backup-restore.md), [threat-model.md](threat-model.md)) |
 | Живое отслеживание у партнёров, межзаводской реестр | описание ([federation.md](federation.md)) |
 | Predictive, MobileOps | описание ([target-components.md](target-components.md)) |
+| Единый вход (SSO) | перспектива, описание — [sso.md](sso.md): адаптер порта `IdentityProvider`, права и подписи не меняются |
 | Прямое подключение к КОМПАС-3D через COM | описание; в MVP — импорт файла ([integrations/kompas.md](integrations/kompas.md)) |
 
 ## Решения этапа разработки
