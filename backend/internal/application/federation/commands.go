@@ -23,3 +23,14 @@ type SendExtract struct {
 	Subject     platform.DrillRef `json:"subject" doc:"Партия или изделие."`
 	DocumentID  string            `json:"document_id" doc:"Документ выписки с закрытым маршрутом."`
 }
+
+// ReceiveExtract — принять выписку паспорта партнёра (FR-132, AD-19): порт
+// межзаводского обмена передаёт подписанный пакет; получатель сам проверяет
+// подписи цепочкой к корням партнёра из нашего акта регистрации. Изменённая
+// выписка отклоняется (422 federation.extract_tampered); непроверяемая
+// принимается с пометкой «происхождение не подтверждено».
+type ReceiveExtract struct {
+	platform.CommandHeader
+	PartnerCode string `json:"partner_code" pattern:"^[A-Z0-9][A-Z0-9_-]{0,15}$" doc:"От кого пришла выписка (канал партнёра)."`
+	Envelope    string `json:"envelope" minLength:"2" maxLength:"262144" doc:"Подписанный пакет выписки — конверт DSSE (JSON) как пришёл."`
+}

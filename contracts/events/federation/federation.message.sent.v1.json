@@ -26,6 +26,19 @@
     "message_id": {
       "$ref": "../common/defs.v1.json#/definitions/uuid",
       "description": "Идентификатор сообщения."
+    },
+    "extract_digest": {
+      "$ref": "../common/defs.v1.json#/definitions/digest",
+      "description": "Отпечаток выписки паспорта (kind = passport_extract): H(канонического содержимого)."
+    },
+    "material_address": {
+      "$ref": "../common/defs.v1.json#/definitions/digest",
+      "description": "Адрес подписанного пакета выписки в хранилище материалов."
+    },
+    "subject_id": {
+      "type": "string",
+      "maxLength": 128,
+      "description": "Изделие или партия выписки (локальный ID)."
     }
   },
   "required": [

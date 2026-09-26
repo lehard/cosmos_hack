@@ -162,6 +162,8 @@ func (c *Ctx) genealogy(it *Item) itemapp.ItemGenealogy {
 	st := c.S(it)
 	g := itemapp.ItemGenealogy{ItemID: FullID(it.ID), Nodes: []itemapp.GenealogyNode{{Ref: FullID(it.ID), Kind: "item", Label: it.Label, Summary: st.Summary}}}
 	g.Nodes = append(g.Nodes, itemapp.GenealogyNode{Ref: lotOfItem(it), Kind: "lot", Label: "Партия заготовок " + map[string]string{"LOT-ZF-201": "ЗФ-201", "LOT-BLANK-0911": "ЗП-0911"}[lotOfItem(it)], ParentRef: FullID(it.ID), Position: "ФЛ-100.01.001"})
+	// Эпик 41: выписка паспорта металлургического завода — корень генеалогии партии (FR-132).
+	g.Nodes = append(g.Nodes, c.federationGenealogy(lotOfItem(it))...)
 	w := firstWeld(it)
 	unlinked := false
 	for _, u := range c.M.Spec.ComponentUnlinks {
@@ -173,6 +175,7 @@ func (c *Ctx) genealogy(it *Item) itemapp.ItemGenealogy {
 		g.Nodes = append(g.Nodes, itemapp.GenealogyNode{Ref: FullID(it.Ring), Kind: "item", Label: labelOf(it.Ring), ParentRef: FullID(it.ID), Position: "ФЛ-100.01.002"})
 		if it.RingLot != "" {
 			g.Nodes = append(g.Nodes, itemapp.GenealogyNode{Ref: it.RingLot, Kind: "lot", Label: "Партия колец " + lotLabel(c.M, it.RingLot), ParentRef: FullID(it.Ring)})
+			g.Nodes = append(g.Nodes, c.federationGenealogy(it.RingLot)...)
 		}
 	}
 	if strings.HasPrefix(st.Step, "assembly.") && st.Step != "assembly.receive" || strings.HasPrefix(st.Step, "testing") || strings.HasPrefix(st.Step, "final") {
