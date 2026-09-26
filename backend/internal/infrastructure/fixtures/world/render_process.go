@@ -24,8 +24,12 @@ func (c *Ctx) dayStart() time.Time {
 	return time.Date(l.Year(), l.Month(), l.Day(), 0, 0, 0, 0, c.M.clk.loc).UTC()
 }
 
-// Counters — счётчики всех узлов на шаге.
-func (c *Ctx) Counters() map[string]*NodeCount {
+// Counters — счётчики всех узлов на шаге (прошло и дефекты — за сутки).
+func (c *Ctx) Counters() map[string]*NodeCount { return c.CountersFrom(c.dayStart()) }
+
+// CountersFrom — счётчики всех узлов на шаге: очередь, в работе и открытые
+// несоответствия — на часы шага; прошло и дефекты — с from (начало периода).
+func (c *Ctx) CountersFrom(from time.Time) map[string]*NodeCount {
 	out := map[string]*NodeCount{}
 	get := func(k string) *NodeCount {
 		if out[k] == nil {
@@ -33,7 +37,7 @@ func (c *Ctx) Counters() map[string]*NodeCount {
 		}
 		return out[k]
 	}
-	day := c.dayStart()
+	day := from
 	for _, it := range c.Existing() {
 		st := c.S(it)
 		switch st.Position {
