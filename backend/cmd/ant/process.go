@@ -3,15 +3,20 @@ package main
 import (
 	notificationsapp "ant/internal/application/notifications"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"strings"
 	"io/fs"
 	"time"
 
 	analyticsapp "ant/internal/application/analytics"
+	documentsapp "ant/internal/application/documents"
 	engineapp "ant/internal/application/engine"
 	ingestapp "ant/internal/application/ingest"
 	"ant/internal/application/platform"
 	processapp "ant/internal/application/process"
 	referenceapp "ant/internal/application/reference"
+	dp "ant/internal/domain/process"
 	"ant/internal/infrastructure/fixtures/world"
 )
 
@@ -62,7 +67,7 @@ func (c *core) ensureProcessSeed(ctx context.Context, env *environment) {
 // processLive — live-реализация операций process для роли api: живая карта и
 // карточки узлов по проекциям движка, версии из схемы process, команды
 // исполнителя — гард над свёрткой изделия и факт через приём (ingest).
-func processLive(ctx context.Context, env *environment, ingest *ingestapp.Service, analytics *analyticsapp.Service) (*processapp.Service, error) {
+func processLive(ctx context.Context, env *environment, ingest *ingestapp.Service, analytics *analyticsapp.Service, documents *documentsapp.Service) (*processapp.Service, error) {
 	c, err := env.readyCore(ctx)
 	if err != nil {
 		return nil, err
@@ -77,7 +82,55 @@ func processLive(ctx context.Context, env *environment, ingest *ingestapp.Servic
 	if analytics != nil {
 		svc.Counters = analyticsCounters{analytics}
 	}
+	if documents != nil {
+		svc.Approvals = approvalDocs{documents}
+	}
 	return svc, nil
+}
+
+// approvalDocs — лист утверждения версии процесса над documents (эпики 28,
+// 39; FR-23, AD-43): документ по шаблону process-version-approval с маршрутом
+// кворума, подписи — операциями documents; засчитанные подписи этапов —
+// подписи кворума версии.
+type approvalDocs struct{ s *documentsapp.Service }
+
+func (a approvalDocs) Request(ctx context.Context, v processapp.VersionRecord, decision, comment string, meta platform.CommandMeta) (string, error) {
+	in := documentsapp.RequestVersion{SubjectRef: "process_version:" + v.ID, TemplateRef: processapp.ApprovalTemplate, Decision: decision, Comment: comment}
+	// Своя команда документа: id записи листа не должен совпасть с id решения
+	// normative.version.submitted (оно — с command_id клиента); повтор даёт тот же id.
+	in.CommandHeader = platform.CommandHeader{CommandID: derivedCommandID(meta.CommandID, "approval"), BasisSeq: meta.BasisSeq, PolicySeq: meta.PolicySeq}
+	r, err := a.s.RequestVersion(ctx, in)
+	if err != nil {
+		return "", err
+	}
+	return r.DocumentID, nil
+}
+
+func (a approvalDocs) Route(ctx context.Context, documentID string) (processapp.ApprovalRoute, error) {
+	if documentID == "" {
+		return processapp.ApprovalRoute{}, platform.Fail("api.not_found", "object", "лист утверждения", "id", "")
+	}
+	d, err := a.s.Document(ctx, documentID, 0, platform.Moment{})
+	if err != nil {
+		return processapp.ApprovalRoute{}, err
+	}
+	out := processapp.ApprovalRoute{Closed: d.RouteClosed != nil || d.Status == "route_closed"}
+	if d.RouteClosed != nil {
+		out.RouteClosedEventID = *d.RouteClosed
+	}
+	for _, st := range d.Route {
+		out.Need += st.Required
+		n := 0
+		for _, sg := range st.Signatures {
+			if !sg.Counted {
+				continue
+			}
+			n++
+			out.Signatures = append(out.Signatures, dp.Signature{Role: st.Role, Person: sg.SignerID, Authority: st.AuthorityID, Valid: true})
+		}
+		out.Have += min(n, st.Required)
+	}
+	return out, nil
 }
 
 // ingestFacts — FactWriter над ручным вводом приёма (FR-137, FR-141): схема,
@@ -125,4 +178,17 @@ func (a analyticsCounters) NodeCounters(ctx context.Context, versionID string, q
 		out.Anomalies = append(out.Anomalies, x)
 	}
 	return out, nil
+}
+
+// derivedCommandID — детерминированный UUID производной команды из id
+// команды клиента (повтор команды — тот же производный id, AD-7); пусто — пусто.
+func derivedCommandID(commandID, purpose string) string {
+	if commandID == "" {
+		return ""
+	}
+	h := sha256.Sum256([]byte(strings.ToLower(commandID) + "/" + purpose))
+	h[6] = (h[6] & 0x0f) | 0x70
+	h[8] = (h[8] & 0x3f) | 0x80
+	x := hex.EncodeToString(h[:16])
+	return x[0:8] + "-" + x[8:12] + "-" + x[12:16] + "-" + x[16:20] + "-" + x[20:32]
 }

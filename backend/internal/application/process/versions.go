@@ -2,6 +2,7 @@ package process
 
 import (
 	"context"
+	"errors"
 	"slices"
 	"sync"
 	"time"
@@ -42,6 +43,9 @@ type VersionRecord struct {
 	// Signatures, RouteClosedEventID — подписи кворума листа утверждения (AD-43).
 	Signatures         []dp.Signature
 	RouteClosedEventID string
+	// ApprovalDocumentID — лист утверждения версии (документ с маршрутом
+	// кворума, эпик 28), заводится при отправке на утверждение (FR-23).
+	ApprovalDocumentID string
 }
 
 // VersionStore — ведомый порт хранилища версий (адаптер Postgres —
@@ -56,6 +60,10 @@ type VersionStore interface {
 	// Save — сохранить новую версию (черновик или стартовую); существующую
 	// версию с тем же id не перезаписывает (версии неизменны).
 	Save(ctx context.Context, v VersionRecord) error
+	// Update — жизненный цикл версии (FR-22): статус, дата вступления в силу,
+	// подписи кворума, закрытие маршрута, лист утверждения. Байты XML и хеш
+	// не меняются никогда.
+	Update(ctx context.Context, v VersionRecord) error
 }
 
 // QuorumVerifier — ведомый порт проверки подписей кворума версии (FR-23,
@@ -157,6 +165,20 @@ func (m *MemVersions) Save(_ context.Context, v VersionRecord) error {
 	}
 	m.vs = append(m.vs, v)
 	return nil
+}
+
+// Update — жизненный цикл версии; XML и хеш не трогаются.
+func (m *MemVersions) Update(_ context.Context, v VersionRecord) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for i := range m.vs {
+		if m.vs[i].ID == v.ID {
+			x := &m.vs[i]
+			x.Status, x.EffectiveFrom, x.Signatures, x.RouteClosedEventID, x.ApprovalDocumentID = v.Status, v.EffectiveFrom, slices.Clone(v.Signatures), v.RouteClosedEventID, v.ApprovalDocumentID
+			return nil
+		}
+	}
+	return errors.New("process: нет версии " + v.ID)
 }
 
 // Tamper — изменить байты XML версии в обход системы (демо-инструмент

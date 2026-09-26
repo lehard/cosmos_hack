@@ -22,13 +22,13 @@ type Versions struct {
 
 var _ app.VersionStore = (*Versions)(nil)
 
-const columns = `version_id, label, status, base_version_id, author, hash, xml, created_at, effective_from, genesis, signatures, route_closed_event_id`
+const columns = `version_id, label, status, base_version_id, author, hash, xml, created_at, effective_from, genesis, signatures, route_closed_event_id, approval_document_id`
 
 func scan(row pgx.Row) (app.VersionRecord, error) {
 	var v app.VersionRecord
 	var sig []byte
 	var eff *time.Time
-	err := row.Scan(&v.ID, &v.Label, &v.Status, &v.BaseVersionID, &v.Author, &v.Hash, &v.XML, &v.CreatedAt, &eff, &v.Genesis, &sig, &v.RouteClosedEventID)
+	err := row.Scan(&v.ID, &v.Label, &v.Status, &v.BaseVersionID, &v.Author, &v.Hash, &v.XML, &v.CreatedAt, &eff, &v.Genesis, &sig, &v.RouteClosedEventID, &v.ApprovalDocumentID)
 	if err != nil {
 		return v, err
 	}
@@ -93,7 +93,28 @@ func (s *Versions) Save(ctx context.Context, v app.VersionRecord) error {
 		sig = []byte("[]")
 	}
 	_, err = s.Pool.Exec(ctx, `INSERT INTO process.versions (`+columns+`)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) ON CONFLICT (version_id) DO NOTHING`,
-		v.ID, v.Label, v.Status, v.BaseVersionID, v.Author, v.Hash, v.XML, v.CreatedAt, v.EffectiveFrom, v.Genesis, sig, v.RouteClosedEventID)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) ON CONFLICT (version_id) DO NOTHING`,
+		v.ID, v.Label, v.Status, v.BaseVersionID, v.Author, v.Hash, v.XML, v.CreatedAt, v.EffectiveFrom, v.Genesis, sig, v.RouteClosedEventID, v.ApprovalDocumentID)
 	return err
+}
+
+// Update — жизненный цикл версии (FR-22): статус, вступление в силу, подписи
+// кворума, закрытие маршрута, лист утверждения; xml и hash не меняются.
+func (s *Versions) Update(ctx context.Context, v app.VersionRecord) error {
+	sig, err := json.Marshal(v.Signatures)
+	if err != nil {
+		return err
+	}
+	if v.Signatures == nil {
+		sig = []byte("[]")
+	}
+	tag, err := s.Pool.Exec(ctx, `UPDATE process.versions SET status = $2, effective_from = $3, signatures = $4, route_closed_event_id = $5,
+approval_document_id = $6 WHERE version_id = $1`, v.ID, v.Status, v.EffectiveFrom, sig, v.RouteClosedEventID, v.ApprovalDocumentID)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return errors.New("process: нет версии " + v.ID)
+	}
+	return nil
 }

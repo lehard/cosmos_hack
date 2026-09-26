@@ -161,7 +161,7 @@ func runAPI(ctx context.Context, env *environment) error {
 	}
 	if modeOf(opts, "process") == platform.ModeLive {
 		// Живая карта, версии и команды исполнителя (эпик 17).
-		if opts.process, err = processLive(ctx, env, opts.ingest, opts.analytics); err != nil {
+		if opts.process, err = processLive(ctx, env, opts.ingest, opts.analytics, opts.documents); err != nil {
 			return err
 		}
 	}

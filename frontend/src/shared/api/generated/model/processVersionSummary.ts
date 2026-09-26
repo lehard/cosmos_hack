@@ -6,6 +6,10 @@ import type { ProcessVersionSummaryStatus } from './processVersionSummaryStatus'
 import type { VersionQuorum } from './versionQuorum';
 
 export interface ProcessVersionSummary {
+  /** Лист утверждения (FR-23). */
+  approval_document_id?: string;
+  /** Версия, от которой начат черновик. */
+  base_version_id?: string;
   created_at: string;
   /** @nullable */
   effective_from?: string | null;

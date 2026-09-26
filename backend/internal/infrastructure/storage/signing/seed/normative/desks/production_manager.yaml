@@ -37,4 +37,4 @@ tabs:
     title_key: desks.process
     layout: single
     slots:
-      - {id: versions, area: main, widget: process-versions, slice: {mode: activation}}
+      - {id: processes, area: main, widget: process-registry}

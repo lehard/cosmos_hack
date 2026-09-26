@@ -149,6 +149,10 @@ type ProcessVersion struct {
 	Quorum        *VersionQuorum   `json:"quorum,omitempty"`
 	Elements      []ProcessElement `json:"elements" doc:"Элементы в порядке маршрута."`
 	BasisSeq      int64            `json:"basis_seq"`
+	// ProcessID, BaseVersionID, ApprovalDocumentID — совместимые дополнения эпика 39.
+	ProcessID          string `json:"process_id,omitempty" doc:"Процесс версии (UI-11)."`
+	BaseVersionID      string `json:"base_version_id,omitempty" doc:"Версия, от которой начат черновик."`
+	ApprovalDocumentID string `json:"approval_document_id,omitempty" doc:"Лист утверждения (документ с маршрутом кворума, FR-23); есть с отправки на утверждение."`
 }
 
 // ProcessVersionSummary — версия в списке.
@@ -162,6 +166,9 @@ type ProcessVersionSummary struct {
 	EffectiveFrom *time.Time     `nullable:"true" json:"effective_from,omitempty"`
 	Quorum        *VersionQuorum `json:"quorum,omitempty"`
 	ItemsInWork   int            `json:"items_in_work" minimum:"0"`
+	// BaseVersionID, ApprovalDocumentID — совместимые дополнения эпика 39.
+	BaseVersionID      string `json:"base_version_id,omitempty" doc:"Версия, от которой начат черновик."`
+	ApprovalDocumentID string `json:"approval_document_id,omitempty" doc:"Лист утверждения (FR-23)."`
 }
 
 // ProcessVersionList — версии процесса.

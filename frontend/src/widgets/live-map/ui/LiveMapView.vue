@@ -7,7 +7,8 @@
  */
 import { computed, ref, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { NDatePicker, NRadioButton, NRadioGroup, NSelect } from 'naive-ui'
+import { NDatePicker, NRadioButton, NRadioGroup, NSelect, NSwitch } from 'naive-ui'
+import { NormsPanel, parseNorms, type StepNorms } from '@/features/norms-layer'
 import type { CounterPeriod, LiveMapData, NodeAnomaly, NodeCounters } from '@/entities/live-map'
 import { naiveSizeOf, type Density } from '@/shared/config/widget'
 import type { DiagramIndex } from '../model/bpmn'
@@ -72,6 +73,11 @@ const versionOptions = computed(() =>
   })),
 )
 
+// Слой «нормы» (FR-156, эпик 39): опоры шагов из XML показанной версии.
+const normsOn = ref(false)
+const norms = computed(() => (normsOn.value ? parseNorms(props.data.bpmn_xml) : new Map<string, StepNorms>()))
+const normSteps = computed(() => new Set(norms.value.keys()))
+
 const selectedNode = computed(() => (selected.value && index.value ? index.value.byStepKey.get(selected.value) ?? null : null))
 
 function onReady(idx: DiagramIndex) {
@@ -100,6 +106,10 @@ function onReady(idx: DiagramIndex) {
         clearable
         @update:value="(v: [number, number] | null) => emit('update:range', v)"
       />
+      <label class="norms-toggle" :title="t('normsLayer.hint')">
+        <NSwitch v-model:value="normsOn" :size="density === 'large' ? 'large' : 'medium'" data-testid="norms-toggle" />
+        {{ t('normsLayer.toggle') }}
+      </label>
       <NSelect
         class="version"
         :size="naiveSizeOf(density)"
@@ -145,23 +155,27 @@ function onReady(idx: DiagramIndex) {
           :data-gaps="dataGaps"
           :incident-mode="!!incident"
           :selected="selected"
+          :norm-steps="normSteps"
           @ready="onReady"
           @import-error="(e) => (importError = e)"
           @select-node="(k) => (selected = k)"
           @open-item="(id) => emit('open-item', id)"
         />
       </div>
-      <NodeCard
-        v-if="selectedNode"
-        :node="selectedNode"
-        :counters="counters.get(selectedNode.stepKey)"
-        :items="byStep.get(selectedNode.stepKey) ?? []"
-        :incident-mode="!!incident"
-        @close="selected = null"
-        @open-item="(id) => emit('open-item', id)"
-        @open-node="(k) => emit('open-node', k)"
-      />
+      <div v-if="selectedNode" class="side">
+        <NormsPanel v-if="normsOn" :norms="norms.get(selectedNode.stepKey) ?? null" />
+        <NodeCard
+          :node="selectedNode"
+          :counters="counters.get(selectedNode.stepKey)"
+          :items="byStep.get(selectedNode.stepKey) ?? []"
+          :incident-mode="!!incident"
+          @close="selected = null"
+          @open-item="(id) => emit('open-item', id)"
+          @open-node="(k) => emit('open-node', k)"
+        />
+      </div>
     </div>
+    <p v-if="normsOn" class="note" data-testid="norms-hint">{{ t('normsLayer.hint') }} · {{ t('normsLayer.count', { n: normSteps.size }) }}</p>
     <p class="note">{{ t('liveMap.noPeopleOnMap') }}</p>
   </div>
 </template>
@@ -241,6 +255,21 @@ function onReady(idx: DiagramIndex) {
 
 .body.with-card {
   grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+}
+
+.norms-toggle {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  font-size: var(--ant-fs-body);
+  cursor: pointer;
+}
+
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
 }
 
 .map {
