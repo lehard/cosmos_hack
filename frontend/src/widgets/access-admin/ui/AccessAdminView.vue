@@ -10,7 +10,7 @@ import { computed, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { NAlert, NButton, NInput, NRadioButton, NRadioGroup, NSelect } from 'naive-ui'
 import type { AccessPerson, AccessRoleList, AccessStamp, GrantPolicyKind } from '@/entities/policy'
-import { ACCESS_SECTIONS, grantReady as isReady, type AccessSection, type GrantDraft } from '../model/draft'
+import { ACCESS_SECTIONS, activationReady, grantReady as isReady, PASSWORD_MIN, type AccessSection, type ActivationDraft, type GrantDraft } from '../model/draft'
 import type { Density } from '@/shared/config/widget'
 import { useProblemText } from '@/shared/i18n/problem'
 
@@ -26,8 +26,8 @@ const props = withDefaults(
     canAct?: boolean
     busy?: boolean
     error?: unknown
-    /** Итог последней команды: номер критического действия или «ждёт второй подписи». */
-    result?: { kind: 'grant' | 'revoke'; ca: string | null } | null
+    /** Итог последней команды: номер критического действия или «ждёт второй подписи»; активация — запись журнала. */
+    result?: { kind: 'grant' | 'revoke' | 'activate'; ca: string | null; seq?: number } | null
     /** «Сейчас» для даты «действует с» по умолчанию (RFC 3339). */
     today: string
     density?: Density
@@ -50,6 +50,7 @@ const emit = defineEmits<{
   'update:section': [section: AccessSection]
   grant: [draft: GrantDraft]
   revoke: [person: AccessPerson, roleId: string, scope: string, reason: string]
+  activate: [person: AccessPerson, draft: ActivationDraft]
 }>()
 const { t, d } = useI18n()
 const problemText = useProblemText()
@@ -70,6 +71,21 @@ const grantReady = computed(() => isReady(draft))
 function setKind(k: GrantPolicyKind): void {
   draft.kind = k
   draft.subject_id = ''
+}
+
+// ── активация учётной записи (FR-128): логин, пароль, начальная роль и область ──
+const activating = ref<string | null>(null)
+const activation = reactive<ActivationDraft>({ login: '', password: '', initial_role_id: '', scope: 'ent01' })
+const roleOptions = computed(() => (props.roles?.items ?? []).map((r) => ({ label: r.title, value: r.id })))
+const canActivate = (p: AccessPerson) => p.account_status === 'pending' || p.account_status === 'none'
+function startActivation(p: AccessPerson): void {
+  activating.value = p.person_id
+  Object.assign(activation, { login: p.login ?? '', password: '', initial_role_id: '', scope: 'ent01' })
+}
+function confirmActivation(p: AccessPerson): void {
+  if (!activationReady(activation, p.account_status === 'pending')) return
+  emit('activate', p, { ...activation })
+  activating.value = null
 }
 
 // ── отзыв ──
@@ -136,7 +152,55 @@ function confirmRevoke(p: AccessPerson): void {
                 >
               </div>
             </td>
-            <td>{{ t(`widgets.admin.access.accountStatus.${p.account_status}`) }}</td>
+            <td>
+              {{ t(`widgets.admin.access.accountStatus.${p.account_status}`) }}
+              <template v-if="canActivate(p)">
+                <form v-if="activating === p.person_id" class="activation" data-testid="activation" @submit.prevent="confirmActivation(p)">
+                  <label>
+                    <span>{{ t('access.username') }}</span>
+                    <NInput v-model:value="activation.login" size="small" data-testid="activation-login" />
+                  </label>
+                  <label>
+                    <span>{{ t('access.password') }}</span>
+                    <NInput
+                      v-model:value="activation.password"
+                      type="password"
+                      show-password-on="click"
+                      size="small"
+                      autocomplete="new-password"
+                      :input-props="{ autocomplete: 'new-password' }"
+                      data-testid="activation-password"
+                    />
+                    <span class="muted">{{
+                      p.account_status === 'pending'
+                        ? t('widgets.admin.access.activation.passwordByRequest', { min: PASSWORD_MIN })
+                        : t('widgets.admin.access.activation.passwordRequired', { min: PASSWORD_MIN })
+                    }}</span>
+                  </label>
+                  <label>
+                    <span>{{ t('widgets.admin.access.activation.role') }}</span>
+                    <NSelect v-if="roleOptions.length" v-model:value="activation.initial_role_id" size="small" filterable clearable :options="roleOptions" data-testid="activation-role" />
+                    <NInput v-else v-model:value="activation.initial_role_id" size="small" data-testid="activation-role" />
+                  </label>
+                  <label>
+                    <span>{{ t('access.scope') }} <span class="muted">({{ t('access.scopeLevels') }})</span></span>
+                    <NInput v-model:value="activation.scope" size="small" data-testid="activation-scope" />
+                    <span class="muted">{{ t('widgets.admin.access.activation.scopeHint') }}</span>
+                  </label>
+                  <div class="inline">
+                    <NButton size="tiny" type="primary" attr-type="submit" :disabled="!canAct || busy || !activationReady(activation, p.account_status === 'pending')" data-testid="confirm-activation">
+                      {{ t('widgets.admin.access.activation.submit') }}
+                    </NButton>
+                    <NButton size="tiny" quaternary @click="activating = null">{{ t('common.actions.cancel') }}</NButton>
+                  </div>
+                </form>
+                <div v-else>
+                  <NButton size="tiny" secondary :disabled="!canAct || busy" data-testid="activate" @click="startActivation(p)">
+                    {{ t('widgets.admin.access.activation.open') }}
+                  </NButton>
+                </div>
+              </template>
+            </td>
           </tr>
         </tbody>
       </table>
@@ -222,7 +286,8 @@ function confirmRevoke(p: AccessPerson): void {
 
     <p v-if="result" class="ok" data-testid="result">
       <template v-if="result.kind === 'grant'">{{ result.ca ? t('widgets.admin.access.granted', { ca: result.ca }) : t('widgets.admin.access.grantedPending') }}</template>
-      <template v-else>{{ t('widgets.admin.access.revoked', { ca: result.ca ?? '—' }) }}</template>
+      <template v-else-if="result.kind === 'revoke'">{{ t('widgets.admin.access.revoked', { ca: result.ca ?? '—' }) }}</template>
+      <template v-else>{{ t('widgets.admin.access.activation.done', { seq: result.seq ?? '—' }) }}</template>
     </p>
     <NAlert v-if="error" type="error" :bordered="false" :show-icon="false" data-testid="command-error">{{ problemText(error) }}</NAlert>
   </div>
@@ -281,6 +346,20 @@ th {
   flex-wrap: wrap;
   gap: 2px 8px;
   align-items: baseline;
+}
+
+.activation {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 320px;
+  margin-top: 4px;
+}
+
+.activation label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .grant-form {

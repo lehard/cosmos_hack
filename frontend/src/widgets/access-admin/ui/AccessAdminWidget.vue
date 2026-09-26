@@ -8,14 +8,14 @@
  * Срез: `section: persons | roles | stamps | grant` — раздел по умолчанию.
  */
 import { computed, ref } from 'vue'
-import { usePersons, usePolicyCommand, useRoles, useStamps, type AccessPerson } from '@/entities/policy'
+import { useActivateAccount, usePersons, usePolicyCommand, useRoles, useStamps, type AccessPerson } from '@/entities/policy'
 import { useSession } from '@/entities/session'
 import { backendModeOf } from '@/shared/api/response'
 import type { WidgetProps } from '@/shared/config/widget'
 import { newCommandId } from '@/shared/lib/command-id'
 import { useMomentStore } from '@/shared/model/moment'
 import { WidgetFrame } from '@/shared/ui'
-import { ACCESS_SECTIONS, type AccessSection, type GrantDraft } from '../model/draft'
+import { ACCESS_SECTIONS, type AccessSection, type ActivationDraft, type GrantDraft } from '../model/draft'
 import AccessAdminView from './AccessAdminView.vue'
 
 const props = defineProps<WidgetProps>()
@@ -30,7 +30,8 @@ const stampsQ = useStamps()
 const persons = computed(() => personsQ.data.value?.data?.items ?? null)
 const roles = computed(() => rolesQ.data.value?.data ?? null)
 const command = usePolicyCommand()
-const result = ref<{ kind: 'grant' | 'revoke'; ca: string | null } | null>(null)
+const activate = useActivateAccount()
+const result = ref<{ kind: 'grant' | 'revoke' | 'activate'; ca: string | null; seq?: number } | null>(null)
 const today = new Date().toISOString()
 
 /** Общие поля команды: id, версия политики из ответа чтения, рабочее место. */
@@ -45,6 +46,7 @@ const dayStart = (v: string) => `${v}T00:00:00Z`
 
 async function onGrant(dr: GrantDraft): Promise<void> {
   result.value = null
+  activate.reset()
   const subject = dr.kind === 'role' ? { role_id: dr.subject_id } : dr.kind === 'authority' ? { authority_id: dr.subject_id } : { stamp_id: dr.subject_id }
   try {
     const res = await command.mutateAsync({
@@ -69,6 +71,7 @@ async function onGrant(dr: GrantDraft): Promise<void> {
 
 async function onRevoke(p: AccessPerson, roleId: string, scope: string, reason: string): Promise<void> {
   result.value = null
+  activate.reset()
   try {
     const res = await command.mutateAsync({
       kind: 'revoke',
@@ -77,6 +80,31 @@ async function onRevoke(p: AccessPerson, roleId: string, scope: string, reason: 
     result.value = { kind: 'revoke', ca: res.data.ca_ref ?? null }
   } catch {
     // Текст ошибки — из command.error.
+  }
+}
+
+/**
+ * Активировать учётную запись (FR-128, эпик 08): basis_seq — версия политики,
+ * на которой построена строка сотрудника; пароль — только если введён.
+ */
+async function onActivate(p: AccessPerson, dr: ActivationDraft): Promise<void> {
+  result.value = null
+  command.reset()
+  try {
+    const res = await activate.mutateAsync({
+      person_id: p.person_id,
+      body: {
+        ...meta(),
+        basis_seq: p.policy_seq,
+        login: dr.login.trim(),
+        ...(dr.password ? { password: dr.password } : {}),
+        ...(dr.initial_role_id ? { initial_role_id: dr.initial_role_id } : {}),
+        ...(dr.scope.trim() ? { scope: dr.scope.trim() } : {}),
+      },
+    })
+    result.value = { kind: 'activate', ca: res.data.ca_ref ?? null, seq: res.data.seq }
+  } catch {
+    // Текст ошибки — из activate.error.
   }
 }
 
@@ -101,13 +129,14 @@ const allFailed = computed(() => !!personsQ.error.value && !!rolesQ.error.value 
       :stamps="stampsQ.data.value?.data?.items ?? null"
       :stamps-error="stampsQ.data.value ? undefined : (stampsQ.error.value ?? undefined)"
       :can-act="!moment.isReplay"
-      :busy="command.isPending.value"
-      :error="command.error.value ?? undefined"
+      :busy="command.isPending.value || activate.isPending.value"
+      :error="command.error.value ?? activate.error.value ?? undefined"
       :result="result"
       :today="today"
       :density="density"
       @grant="onGrant"
       @revoke="onRevoke"
+      @activate="onActivate"
     />
   </WidgetFrame>
 </template>
