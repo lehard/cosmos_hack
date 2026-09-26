@@ -3,6 +3,8 @@ package notifications
 import (
 	"slices"
 	"time"
+
+	"ant/internal/domain/process"
 )
 
 // Env — закреплённая при запуске изделия часть нормативного слоя, нужная
@@ -25,6 +27,10 @@ type Env struct {
 	Calendar Calendar `json:"calendar"`
 	// Ladders — лестницы эскалации по основанию срока; нет — DefaultLadders.
 	Ladders map[string][]Rung `json:"ladders,omitempty"`
+	// Process — нормативная часть process той же версии (описание процесса):
+	// нужна process.State.Deadlines — окна BPMN и нормы ожидания на точках
+	// предъявления (эпик 17). Подставляет application/notifications.Bundles.
+	Process process.Env `json:"-"`
 }
 
 // Calendar — производственный календарь (срез справочника reference на
@@ -68,6 +74,7 @@ var DefaultLadders = map[string][]Rung{
 	BasisPresentation:  {{AfterMin: 0, Role: RoleHeadOfQC}, {AfterMin: 30, Role: RoleProductionManager}},
 	BasisIncidentScope: {{AfterMin: 0, Role: RoleHeadOfQC}, {AfterMin: 8 * 60, Role: RoleProductionManager}},
 	BasisRecheck:       {{AfterMin: 0, Role: RoleHeadOfQC}},
+	BasisBPMNTimer:     {{AfterMin: 0, Role: RoleHeadOfWorkshop}},
 }
 
 // Defaults — Env с умолчаниями вместо нулевых полей.

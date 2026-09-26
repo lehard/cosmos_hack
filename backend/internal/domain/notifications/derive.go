@@ -8,6 +8,7 @@ import (
 	"ant/internal/contracts/statuses"
 	"ant/internal/domain/kernel"
 	"ant/internal/domain/nonconformity"
+	"ant/internal/domain/process"
 	"ant/internal/domain/quality"
 )
 
@@ -25,8 +26,8 @@ func (s *State) derive(r kernel.Record, env Env, up Upstream) {
 	if s.ItemID == "" {
 		return
 	}
-	wantO, wantT := s.wanted(env, up)
 	at := Cause{EventID: r.EventID, At: r.OccurredAt}
+	wantO, wantT := s.wanted(env, up, at)
 
 	for _, w := range wantO {
 		o := s.obligation(w.ID)
@@ -79,8 +80,9 @@ func (s *State) derive(r kernel.Record, env Env, up Upstream) {
 	}
 }
 
-// wanted — обязательства и задачи, которые следуют из состояния владельцев.
-func (s *State) wanted(env Env, up Upstream) ([]Obligation, []Task) {
+// wanted — обязательства и задачи, которые следуют из состояния владельцев;
+// cur — запись шага (основание нового срока, если у владельца нет своей).
+func (s *State) wanted(env Env, up Upstream, cur Cause) ([]Obligation, []Task) {
 	var os []Obligation
 	var ts []Task
 	subject := "item:" + s.ItemID
@@ -95,6 +97,44 @@ func (s *State) wanted(env Env, up Upstream) ([]Obligation, []Task) {
 		slot := kernel.Slot{RuleID: RuleTask, Subject: subject, TriggerKey: key}
 		return Task{ID: TaskID(slot), Key: key, Kind: kind, Role: role, LocationID: s.Where.LocationID, Title: title,
 			Subject: subject, DueAt: due, Causes: causes}
+	}
+
+	// Сроки исполнителя процесса (эпик 17, process.State.Deadlines): окна
+	// BPMN и нормы ожидания на точках предъявления — с obligation_id
+	// процесса: «наступил срок» с ним же срабатывает таймер у process.
+	gates := map[string]bool{}
+	if p := up.Process; p != nil {
+		var ds []process.Deadline
+		if env.Process.Def != nil {
+			ds = p.Deadlines(env.Process)
+		} else {
+			for _, tm := range p.Timers {
+				due := tm.DueAt
+				ds = append(ds, process.Deadline{ObligationID: tm.ObligationID, Kind: process.DeadlineTimer, StepKey: tm.StepKey, From: tm.ArmedAt, DueAt: &due})
+			}
+		}
+		for _, d := range ds {
+			c := cur // срок взведён записью этого шага (у существующего причины сохраняются)
+			switch d.Kind {
+			case process.DeadlineTimer:
+				if d.DueAt == nil {
+					continue
+				}
+				o := obl(BasisBPMNTimer, "bpmn_timer", d.ObligationID, RoleForeman, "Окно "+d.StepKey+": "+s.ItemID, *d.DueAt, c)
+				o.ID, o.StepKey, o.WaitsOn = d.ObligationID, d.StepKey, "item:"+s.ItemID
+				os = append(os, o)
+			case process.DeadlinePresentation:
+				due := d.From.Add(d.Wait)
+				if d.WorkDays > 0 {
+					due = env.Calendar.AddWorkingDays(d.From, d.WorkDays)
+				}
+				o := obl(BasisPresentation, "presentation_wait", d.ObligationID, first(d.OwnerRole, RoleInspector),
+					"Решение на точке предъявления "+d.StepKey+": "+s.ItemID, due, c)
+				o.ID, o.StepKey, o.WaitsOn = d.ObligationID, d.StepKey, "item:"+s.ItemID
+				os = append(os, o)
+				gates[d.StepKey] = true
+			}
+		}
 	}
 
 	if nc := up.Nonconformity; nc != nil {
@@ -143,7 +183,7 @@ func (s *State) wanted(env Env, up Upstream) ([]Obligation, []Task) {
 			}
 		}
 		// Сроки на точках предъявления (FR-8, FR-19): изделие ждёт контролёра.
-		if p := nc.PendingPresentation(); p != nil {
+		if p := nc.PendingPresentation(); p != nil && !gates[p.StepKey] {
 			gate := first(p.ClosingPoint, p.StepKey)
 			o := obl(BasisPresentation, "presentation_wait", p.EventID, RoleInspector, "Решение на точке предъявления "+gate+": "+s.ItemID,
 				p.At.Add(time.Duration(env.PresentationWaitMin)*time.Minute), Cause{EventID: p.EventID, At: p.At})
@@ -167,7 +207,10 @@ func (s *State) wanted(env Env, up Upstream) ([]Obligation, []Task) {
 			default:
 				continue
 			}
-			cause := Cause{EventID: first(c.BasisEventID, c.Key), At: c.At}
+			cause := cur
+			if c.BasisEventID != "" {
+				cause = Cause{EventID: c.BasisEventID, At: c.At}
+			}
 			o := obl(BasisIncidentScope, "containment_review", c.Key, RoleHeadOfQC, "Решение по области риска "+incident+": "+s.ItemID,
 				env.Calendar.AddWorkingDays(c.At, env.DecisionWorkingDays), cause)
 			o.WaitsOn = c.Key

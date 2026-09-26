@@ -13,6 +13,7 @@ import (
 	"ant/internal/domain/kernel"
 	"ant/internal/domain/nonconformity"
 	notif "ant/internal/domain/notifications"
+	"ant/internal/domain/process"
 )
 
 // fold — свёртка входа изделия модулями nonconformity и notifications в
@@ -306,5 +307,29 @@ func TestObjectReact(t *testing.T) {
 	r.Stream, r.ItemID = "item:"+item, item
 	if len(notif.ObjectReact(r)) != 0 {
 		t.Fatal("записи изделия — не для ObjectReact")
+	}
+}
+
+// Эпик 17, Д-8: окно BPMN (таймер) — срок с obligation_id исполнителя
+// процесса: «наступил срок» с ним же срабатывает таймер; снятый таймер
+// снимает срок.
+func TestBPMNTimerDeadline(t *testing.T) {
+	obl := process.ObligationID(item, "timer_edges_to_weld", 1)
+	due := t0.Add(8 * time.Hour)
+	ps := process.State{ItemID: item, Timers: []process.Timer{{ObligationID: obl, StepKey: "welding.weld", ArmedAt: t0, DueAt: due}}}
+	var j journal
+	r := j.add(catalog.OperationRunFinished, t0, map[string]any{"operation_run_id": "RUN-0", "completion": "completed"})
+	s := notif.Reduce(notif.State{}, r, notif.Env{}, notif.Upstream{Process: &ps})
+	rs := notif.React(s, notif.Env{}, notif.Upstream{Process: &ps}).Reactions
+	d := dueSets(t, rs)[notif.BasisBPMNTimer]
+	if d.ObligationID != obl || d.Kind != "bpmn_timer" || d.DueAt != notif.FormatTime(due) {
+		t.Fatalf("срок окна: %+v", d)
+	}
+	ps.Timers = nil
+	r = j.add(catalog.OperationRunStarted, t0.Add(time.Hour), map[string]any{"operation_run_id": "RUN-1", "operation_code": "welding", "step_key": "welding.weld", "operator_id": "W21"})
+	s = notif.Reduce(s, r, notif.Env{}, notif.Upstream{Process: &ps})
+	rs = notif.React(s, notif.Env{}, notif.Upstream{Process: &ps}).Reactions
+	if c := of(rs, catalog.ObligationDueCleared); len(c) != 1 || data[notif.DueClearedData](t, c[0]).ObligationID != obl {
+		t.Fatalf("срок окна снят: %+v", c)
 	}
 }

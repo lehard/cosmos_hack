@@ -47,6 +47,9 @@ const (
 	BasisIncidentScope = "incident_scope"
 	// BasisRecheck — назначенная доп. проверка не выполнена (FR-52).
 	BasisRecheck = "recheck"
+	// BasisBPMNTimer — окно BPMN (таймер, Д-8): срок взвёл исполнитель
+	// процесса (эпик 17), «наступил срок» с тем же obligation_id его срабатывает.
+	BasisBPMNTimer = "bpmn_timer"
 )
 
 // Роли адресатов (normative/policy/policy.v1.yaml): задачи и уведомления —
