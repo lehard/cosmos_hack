@@ -98,18 +98,19 @@ func NewPresence() Presence {
 func (p Presence) Clone() Presence {
 	c := Presence{Seq: p.Seq, Zones: make(map[string]map[string]ZonePass, len(p.Zones)), Tokens: make(map[string]TokenIn, len(p.Tokens)),
 		Sessions: make(map[string]WorkplaceSession, len(p.Sessions))}
-	for k, v := range p.Zones {
+	for _, k := range slices.Sorted(maps.Keys(p.Zones)) {
+		v := p.Zones[k]
 		m := make(map[string]ZonePass, len(v))
-		for z, x := range v {
-			m[z] = x
+		for _, z := range slices.Sorted(maps.Keys(v)) {
+			m[z] = v[z]
 		}
 		c.Zones[k] = m
 	}
-	for k, v := range p.Tokens {
-		c.Tokens[k] = v
+	for _, k := range slices.Sorted(maps.Keys(p.Tokens)) {
+		c.Tokens[k] = p.Tokens[k]
 	}
-	for k, v := range p.Sessions {
-		c.Sessions[k] = v
+	for _, k := range slices.Sorted(maps.Keys(p.Sessions)) {
+		c.Sessions[k] = p.Sessions[k]
 	}
 	return c
 }
