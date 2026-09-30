@@ -2,6 +2,7 @@ package access
 
 import (
 	"encoding/json"
+	"maps"
 	"slices"
 	"strings"
 	"time"
@@ -193,12 +194,11 @@ func (p Presence) InZone(personID, zone string) (in, known bool) {
 // ZonesOf — зоны, в которых сотрудник сейчас находится (по последним проходам), по алфавиту.
 func (p Presence) ZonesOf(personID string) []string {
 	var out []string
-	for z, x := range p.Zones[personID] {
-		if x.In {
+	for _, z := range slices.Sorted(maps.Keys(p.Zones[personID])) {
+		if p.Zones[personID][z].In {
 			out = append(out, z)
 		}
 	}
-	slices.Sort(out)
 	return out
 }
 
@@ -217,15 +217,14 @@ func (p Presence) Session(workplaceID string) (WorkplaceSession, bool) {
 // SessionOf — открытый сеанс сотрудника (первое рабочее место по алфавиту).
 func (p Presence) SessionOf(personID string) (WorkplaceSession, bool) {
 	var ids []string
-	for wp, s := range p.Sessions {
-		if s.PersonID == personID {
+	for _, wp := range slices.Sorted(maps.Keys(p.Sessions)) {
+		if p.Sessions[wp].PersonID == personID {
 			ids = append(ids, wp)
 		}
 	}
 	if len(ids) == 0 {
 		return WorkplaceSession{}, false
 	}
-	slices.Sort(ids)
 	return p.Sessions[ids[0]], true
 }
 
@@ -417,12 +416,7 @@ func (p Presence) SessionsOf(personID string) []WorkplaceSession {
 }
 
 func sortedKeys[V any](m map[string]V) []string {
-	out := make([]string, 0, len(m))
-	for k := range m {
-		out = append(out, k)
-	}
-	slices.Sort(out)
-	return out
+	return slices.Sorted(maps.Keys(m))
 }
 
 // ZonePassRecord — данные записи прохода (для адаптера СКУД и тестов).
