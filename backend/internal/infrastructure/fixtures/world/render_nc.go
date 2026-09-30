@@ -521,10 +521,7 @@ func (c *Ctx) reviewBasis(it *Item, x ReviewSpec, decision, late *Event, rv *nca
 	v.Recommendation = &ncapp.NCRecommendation{Outcome: "revoked", Why: significant}
 
 	st := c.S(it)
-	var incidents []string
-	for _, id := range slices.Sorted(maps.Keys(st.Incidents)) {
-		incidents = append(incidents, id)
-	}
+	incidents := slices.Sorted(maps.Keys(st.Incidents))
 	where := "текущем шаге"
 	if n := c.nodeName(st.Step); n != nil {
 		where = "«" + *n + "»"

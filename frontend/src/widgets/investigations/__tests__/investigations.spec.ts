@@ -10,12 +10,17 @@ import InvestigationsView from '../ui/InvestigationsView.vue'
 import InvestigationsWidget from '../ui/InvestigationsWidget.vue'
 
 const incident = (id: string, over: Partial<IncidentSummary> = {}): IncidentSummary => ({
+  close_blockers: [],
   incident_id: id,
   label: `Инцидент ${id}`,
   common_factor: { factor: 'machine', value: 'ИС-2' },
+  counts: { confirmed: 0, suspect: 0, unknown: 0, excluded: 0 },
+  nc_ids: [],
+  next_step: null,
   size: 6,
   initial_size: 34,
   scope_version: 3,
+  stage: over.status === 'closed' ? 'closed' : 'scope_defined',
   status: 'open',
   opened_at: '2026-09-23T08:10:00Z',
   ...over,

@@ -33,13 +33,20 @@ func TestStandAndClient(t *testing.T) {
 	if err != nil || resp.StatusCode != http.StatusCreated {
 		t.Fatalf("проход: %v %v", resp, err)
 	}
-	resp.Body.Close()
+	if err := resp.Body.Close(); err != nil {
+		t.Fatal(err)
+	}
 	// Турникет не выпустит того, кого нет в зоне.
-	resp, _ = http.Post(srv.URL+"/stand/skud/api/v1/passes", "application/json", bytes.NewReader(b))
+	resp, err = http.Post(srv.URL+"/stand/skud/api/v1/passes", "application/json", bytes.NewReader(b))
+	if err != nil {
+		t.Fatal(err)
+	}
 	if resp.StatusCode != http.StatusConflict {
 		t.Fatalf("повторный выход: %d", resp.StatusCode)
 	}
-	resp.Body.Close()
+	if err := resp.Body.Close(); err != nil {
+		t.Fatal(err)
+	}
 	evs, last, err = c.Events(ctx, 1)
 	if err != nil || len(evs) != 1 || last != 2 || evs[0].Pass.Enter || evs[0].Seq != 2 {
 		t.Fatalf("после 1: %+v %d %v", evs, last, err)
@@ -49,5 +56,7 @@ func TestStandAndClient(t *testing.T) {
 	if err != nil || resp.StatusCode != http.StatusOK {
 		t.Fatalf("страница: %v %v", resp, err)
 	}
-	resp.Body.Close()
+	if err := resp.Body.Close(); err != nil {
+		t.Fatal(err)
+	}
 }

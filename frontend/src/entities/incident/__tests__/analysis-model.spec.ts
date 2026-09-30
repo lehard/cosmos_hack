@@ -206,7 +206,7 @@ describe('ответы API → данные экранов', () => {
     expect(m.operation).toBeNull()
     expect(m.window).toBeNull()
     expect(m.records[0]).toMatchObject({ variant: null, ended_at: null, journal_seq: null, evidence_refs: [], related_event_ids: [], source_kind: null })
-    const s = toRiskScopeModel({ incident_id: 'I', incident_label: 'И', basis_seq: 1, items: [], versions: [] })
+    const s = toRiskScopeModel({ incident_id: 'I', incident_label: 'И', basis_seq: 1, items: [], nc_ids: [], versions: [] })
     expect([s.common_factor, s.window, s.last_known_good]).toEqual([null, null, null])
   })
 })

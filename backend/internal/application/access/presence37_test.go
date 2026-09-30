@@ -239,7 +239,7 @@ func TestReleaseAndQualificationRevoke(t *testing.T) {
 	}
 	// Подписанный пакет команды — ключ вставлен и открыт PIN-ом.
 	in := access.AdmitWorkplace{}
-	in.CommandHeader.Signature = &crypto.DsseEnvelope{PayloadType: "application/vnd.ant.event+json; v=1", Payload: "e30=",
+	in.Signature = &crypto.DsseEnvelope{PayloadType: "application/vnd.ant.event+json; v=1", Payload: "e30=",
 		Signatures: []crypto.DsseEnvelopeSignaturesElem{{Keyid: "w21@1", Sig: "c2ln"}}}
 	if _, err := s.AdmitWorkplace(as("W21"), "WP-WELD-1", in); err != nil {
 		t.Fatalf("допуск по подписанному пакету: %v", err)
