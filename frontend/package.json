@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "description": "Интерфейс ant: столы ролей, живая карта, паспорт изделия (Vue 3 + Naive UI)",
-  "license": "UNLICENSED",
+  "license": "GPL-3.0-only",
   "type": "module",
   "engines": {
     "node": "24.21.0"

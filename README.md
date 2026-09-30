@@ -199,3 +199,7 @@ docs/             документы для жюри и пользователе
 `deploy/config/ant.yaml`: секция `defaults`, поверх неё — `profiles.<профиль>`, поверх —
 переменные `ANT_*` (путь ключа через `_`: `http.addr` → `ANT_HTTP_ADDR`). Секретов в переменных
 нет: пароль БД и ключи — только файлами (`ANT_DB_PASSWORD_FILE`).
+
+### Лицензия
+
+Код проекта распространяется по [GNU GPL v3](LICENSE). Сведения о заимствованиях — в [docs/third-party.md](docs/third-party.md).
