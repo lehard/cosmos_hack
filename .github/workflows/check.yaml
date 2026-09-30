@@ -1,12 +1,12 @@
-# Проверки «Главного» на GitVerse CI вместо машины разработки (Д-76).
+# Проверки «Главного» в GitHub Actions.
 # Три независимых задания — каждое в том же образе, что и make check локально;
 # скрипты ждут корень репозитория в /src, поэтому /src — ссылка на checkout.
-# Лимит GitVerse — 30 минут на задание и 500 минут в месяц на приватный
-# репозиторий: запуск только на push в master и вручную.
 name: check
 on:
   push:
-    branches: [master]
+    branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 jobs:
