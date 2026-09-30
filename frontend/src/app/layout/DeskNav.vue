@@ -10,7 +10,7 @@ import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import {
   Affiliate, Alarm, ChartLine, ClipboardCheck, Clock, Components, Dashboard, Database, Eye, FileAnalytics, FileText,
-  GitBranch, History, Key, Layout2, ListCheck, Lock, PlugConnected, Point, Route, Search, Shield, ShieldCheck,
+  History, Key, Layout2, ListCheck, Lock, PlugConnected, Point, Route, Search, Shield, ShieldCheck,
   Signature, Sitemap, Target, Terminal,
   Tool, Users,
 } from '@vicons/tabler'
